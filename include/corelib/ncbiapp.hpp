@@ -589,6 +589,7 @@ private:
     bool                       m_DryRun;       ///< Dry run
     string                     m_DefaultConfig; ///< conf parameter to AppMain
     bool                       m_ConfigLoaded;  ///< Finished loading config
+    const char*                m_LogFile;     ///< Logfile if set in the command line
 };
 
 

@@ -2232,11 +2232,9 @@ public:
     /// Set log file truncation flag
     static void SetLogTruncate(bool value);
 
-    /// Enable creating log files in /log directory. The function has no
-    /// effect if called after final SetupDiag() by AppMain(). Otherwise
-    /// it will try to switch logging to /log/fallback/UNKNOWN.log until
-    /// the real log name is known.
-    static void SetUseRootLog(void);
+    /// @depracated The flag is always set now, the funcion still calls
+    /// SetupDiag() for compatibility, but has no other effects.
+    NCBI_DEPRECATED static void SetUseRootLog(void);
 
     /// Check if the current diagnostics destination is /log/*
     static bool IsUsingRootLog(void);
@@ -2246,7 +2244,8 @@ public:
     /// gets name of the log file from the registry.
     static void SetupDiag(EAppDiagStream       ds = eDS_Default,
                           CNcbiRegistry*       config = NULL,
-                          EDiagCollectMessages collect = eDCM_NoChange);
+                          EDiagCollectMessages collect = eDCM_NoChange,
+                          const char*          cmd_logfile = NULL);
 
     typedef SDiagMessage::TCount TCount;
     /// Return process post number (incrementing depends on the flag).

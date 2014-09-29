@@ -373,7 +373,8 @@ NCBI_PARAM_DEF_EX(string, Log, LogRegistry, kEmptyStr,
 typedef NCBI_PARAM_TYPE(Log, LogRegistry) TLogRegistry;
 
 
-static bool s_UseRootLog = true;
+// Are we using applog automatically (set by SetupDiag)?
+static bool s_UsingAutoApplog = false;
 static bool s_FinishedSetupDiag = false;
 static bool s_MergeLinesSetBySetupDiag = false;
 
@@ -1583,12 +1584,17 @@ void CDiagContext::SetHostIP(const string& ip)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_AppNameMutex);
+
 const string& CDiagContext::GetAppName(void) const
 {
     if ( !m_AppNameSet ) {
-        m_AppName->SetString(CNcbiApplication::GetAppName());
-        if (CNcbiApplication::Instance()  &&  !m_AppName->IsEmpty()) {
-            m_AppNameSet = true;
+        CFastMutexGuard guard(s_AppNameMutex);
+        if ( !m_AppNameSet ) {
+            m_AppName->SetString(CNcbiApplication::GetAppName());
+            if (CNcbiApplication::Instance()  &&  !m_AppName->IsEmpty()) {
+                m_AppNameSet = true;
+            }
         }
     }
     return m_AppName->GetOriginalString();
@@ -1611,6 +1617,7 @@ void CDiagContext::SetAppName(const string& app_name)
         ERR_POST("Application name cannot be changed.");
         return;
     }
+    CFastMutexGuard guard(s_AppNameMutex);
     m_AppName->SetString(app_name);
     m_AppNameSet = true;
     if ( m_AppName->IsEncoded() ) {
@@ -2814,27 +2821,11 @@ void CDiagContext::SetLogTruncate(bool value)
 }
 
 
-bool OpenLogFileFromConfig(CNcbiRegistry* config, string* new_name)
+bool OpenLogFileFromConfig(const string& logname)
 {
-    string logname;
-    if ( !config ) {
-        const TXChar* env_logname =
-            NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__FILE"));
-        if (env_logname) {
-            logname = _T_STDSTRING(env_logname);
-        }
-    }
-    else {
-        logname = config->GetString("LOG", "File", kEmptyStr);
-    }
-    // In eDS_User mode do not use config unless IgnoreEnvArg
-    // is set to true.
     if ( !logname.empty() ) {
         if ( TLogNoCreate::GetDefault()  &&  !CDirEntry(logname).Exists() ) {
             return false;
-        }
-        if ( new_name ) {
-            *new_name = logname;
         }
         return SetLogFile(logname, eDiagFile_All, true);
     }
@@ -2844,12 +2835,9 @@ bool OpenLogFileFromConfig(CNcbiRegistry* config, string* new_name)
 
 void CDiagContext::SetUseRootLog(void)
 {
-    if (s_FinishedSetupDiag) {
-        return;
+    if (!s_FinishedSetupDiag) {
+        SetupDiag();
     }
-    s_UseRootLog = true;
-    // Try to switch to /log/ if available.
-    SetupDiag();
 }
 
 
@@ -2863,20 +2851,59 @@ void CDiagContext::x_FinalizeSetupDiag(void)
 // Helper function to set log file with forced splitting.
 bool SetApplogFile(const string& file_name)
 {
-    bool old_split = GetSplitLogFile();
-    SetSplitLogFile(true);
+    bool old_split = s_UsingAutoApplog;
+    s_UsingAutoApplog = true;
     bool res = SetLogFile(file_name);
     if ( !res ) {
-        SetSplitLogFile(old_split);
+        s_UsingAutoApplog = old_split;
     }
     return res;
 }
 
 
+// Load string value from config if not null, or from the environment.
+static string s_GetLogConfigString(const CTempString& name,
+                                   const CTempString& defval,
+                                   CNcbiRegistry*     config)
+{
+    if ( config ) {
+        return config->GetString("LOG", name, defval);
+    }
+    string envname = "NCBI_CONFIG__LOG__";
+    envname += name;
+    const TXChar* val = NcbiSys_getenv(_TX(envname.c_str()));
+    return val ? _T_STDSTRING(val) : defval;
+}
+
+
+// Load bool value from config if not null, or from the environment.
+static bool s_GetLogConfigBool(const CTempString& name,
+                               bool               defval,
+                               CNcbiRegistry*     config)
+{
+    if ( config ) {
+        return config->GetBool("LOG", name, defval);
+    }
+    string envname = "NCBI_CONFIG__LOG__";
+    envname += name;
+    const TXChar* val = NcbiSys_getenv(_TX(envname.c_str()));
+    if ( val ) {
+        try {
+            return NStr::StringToBool(_T_STDSTRING(val));
+        }
+        catch (CStringException) {
+        }
+    }
+    return defval;
+}
+
+
 void CDiagContext::SetupDiag(EAppDiagStream       ds,
                              CNcbiRegistry*       config,
-                             EDiagCollectMessages collect)
+                             EDiagCollectMessages collect,
+                             const char*          cmd_logfile)
 {
+    CDiagLock lock(CDiagLock::eWrite);
     CDiagContext& ctx = GetDiagContext();
     // Initialize message collecting
     if (collect == eDCM_Init) {
@@ -2885,79 +2912,109 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     else if (collect == eDCM_InitNoLimit) {
         ctx.InitMessages(size_t(-1));
     }
+    bool old_using_applog = s_UsingAutoApplog;
+    s_UsingAutoApplog = false; // Prevent splitting logs unless applog is used.
 
-    bool log_switched = false;
+    /*
+    The default order of checking possible log locations is:
+    
+      1. CMD - '-logfile <filename>' command line arg
+      2. ENV - NCBI_CONFIG__LOG__FILE (or [Log]/File)
+      3. LOG - /log/* if writable
+      4. Other locations depending on 'ds' flag (e.g. current directory)
+
+      IgnoreEnvArg: if CMD should be checked before (true) or after (false) ENV/LOG.
+      TryRootLogFirst: if LOG should be checked berofe (true) or after (false) ENV.
+
+      The resulting order is:
+
+           IgnoreEnvArg: | true              | false
+      -------------------+-------------------+---------------
+      TryRootLogFirst:   |                   |
+                    true | CMD, LOG, ENV     | LOG, ENV, CMD
+                   false | CMD, ENV, LOG     | ENV, LOG, CMD
+
+      Successfull opening of CMD/ENV/LOG also overrides any eDS_* flags except eDS_User.
+    */
+
+    bool log_set = false;
     bool name_changed = true; // By default consider it's a new name
     bool to_applog = false;
-    bool try_root_log_first = false;
+    string old_log_name;
+    string new_log_name;
 
-    // If env.var 'NCBI_CONFIG__LOG__FILE' is set, use it and ignore all other
-    // locations.
-    const TXChar* env_ignore =
-        NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__IgnoreEnvArg"));
-    bool env_ignore_bool = false;
-    if (env_ignore) {
-        try {
-            env_ignore_bool = NStr::StringToBool(_T_STDSTRING(env_ignore));
+    CDiagHandler* old_handler = GetDiagHandler();
+    if ( old_handler ) {
+        old_log_name = old_handler->GetLogName();
+    }
+    CNcbiApplication* app = CNcbiApplication::Instance();
+
+    string config_logfile = s_GetLogConfigString("FILE", kEmptyStr, config);
+    bool cmdline_first = s_GetLogConfigBool("IgnoreEnvArg", true, config);
+    bool applog_first = s_GetLogConfigBool("TryRootLogFirst", false, config);
+
+    if (ds != eDS_User) {
+        // If cmdline_first is not set, it will be checked later, after
+        // checking all other possibilities.
+        if (cmdline_first  &&  cmd_logfile) {
+            if ( SetLogFile(cmd_logfile, eDiagFile_All) ) {
+                log_set = true;
+                new_log_name = cmd_logfile;
+            }
         }
-        catch (CStringException) {
+        // If applog_first is set, config will be checked later for eDS_ToStdlog
+        // and eDS_Default but only if /log is not available.
+        if (!log_set  &&  !applog_first  &&  !config_logfile.empty()) {
+            if ( OpenLogFileFromConfig(config_logfile) ) {
+                log_set = true;
+                new_log_name = config_logfile;
+            }
+        }
+        // The following three eDS_* options should check /log/* before using -logfile.
+        if (!log_set  &&  !cmdline_first  &&  cmd_logfile  &&
+            ds != eDS_Default  &&  ds != eDS_ToStdlog  &&  ds != eDS_ToSyslog) {
+            if ( SetLogFile(cmd_logfile, eDiagFile_All) ) {
+                log_set = true;
+                new_log_name = cmd_logfile;
+            }
         }
     }
-    if (ds != eDS_User  &&  !env_ignore_bool) {
-        log_switched = OpenLogFileFromConfig(NULL, NULL);
-    }
 
-    if ( !log_switched  &&  config ) {
-        try_root_log_first = config->GetBool("LOG", "TryRootLogFirst", false)
-            &&  (ds == eDS_ToStdlog  ||  ds == eDS_Default);
-        bool force_config = !config->GetBool("LOG", "IgnoreEnvArg", false);
-        if ( force_config ) {
-            try_root_log_first = false;
-        }
-        if (force_config  ||  (ds != eDS_User  &&  !try_root_log_first)) {
-            log_switched = OpenLogFileFromConfig(config, NULL);
-        }
-    }
-
-    if ( !log_switched ) {
-        string old_log_name;
-        CDiagHandler* handler = GetDiagHandler();
-        if ( handler ) {
-            old_log_name = handler->GetLogName();
-        }
-        CNcbiApplication* app = CNcbiApplication::Instance();
-
+    if ( !log_set ) {
         switch ( ds ) {
         case eDS_ToStdout:
             if (old_log_name != kLogName_Stdout) {
                 SetDiagHandler(new CStreamDiagHandler(&cout,
                     true, kLogName_Stdout), true);
-                log_switched = true;
+                log_set = true;
+                new_log_name = kLogName_Stdout;
             }
             break;
         case eDS_ToStderr:
             if (old_log_name != kLogName_Stderr) {
                 SetDiagHandler(new CStreamDiagHandler(&cerr,
                     true, kLogName_Stderr), true);
-                log_switched = true;
+                log_set = true;
+                new_log_name = kLogName_Stderr;
             }
             break;
         case eDS_ToMemory:
             if (old_log_name != kLogName_Memory) {
                 ctx.InitMessages(size_t(-1));
                 SetDiagStream(0, false, 0, 0, kLogName_Memory);
-                log_switched = true;
+                log_set = true;
+                new_log_name = kLogName_Memory;
             }
             collect = eDCM_NoChange; // prevent flushing to memory
             break;
         case eDS_Disable:
             if (old_log_name != kLogName_None) {
                 SetDiagStream(0, false, 0, 0, kLogName_None);
-                log_switched = true;
+                log_set = true;
+                new_log_name = kLogName_None;
             }
             break;
         case eDS_User:
-            // log_switched = true;
             collect = eDCM_Discard;
             break;
         case eDS_AppSpecific:
@@ -2970,7 +3027,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             if (old_log_name != CSysLog::kLogName_Syslog) {
                 try {
                     SetDiagHandler(new CSysLog);
-                    log_switched = true;
+                    log_set = true;
+                    new_log_name = CSysLog::kLogName_Syslog;
                     break;
                 } catch (...) {
                     // fall through
@@ -2986,74 +3044,81 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 if ( !log_base.empty() ) {
                     log_base = CFile(log_base).GetBase() + ".log";
                     string log_name;
-                    if ( s_UseRootLog ) {
-                        string def_log_dir = GetDefaultLogLocation(*app);
-                        // Try /log/<port>
-                        if ( !def_log_dir.empty() ) {
-                            log_name = CFile::ConcatPath(def_log_dir, log_base);
-                            if ( SetApplogFile(log_name) ) {
-                                log_switched = true;
-                                name_changed = log_name != old_log_name;
-                                to_applog = true;
-                                break;
-                            }
-                        }
-                        // Try /log/srv if port is unknown or not writable
-                        log_name = CFile::ConcatPath("/log/srv", log_base);
+                    string def_log_dir = GetDefaultLogLocation(*app);
+                    // Try /log/<port>
+                    if ( !def_log_dir.empty() ) {
+                        log_name = CFile::ConcatPath(def_log_dir, log_base);
                         if ( SetApplogFile(log_name) ) {
-                            log_switched = true;
-                            name_changed = log_name != old_log_name;
+                            log_set = true;
+                            new_log_name = log_name;
                             to_applog = true;
                             break;
                         }
-                        if (try_root_log_first &&
-                            OpenLogFileFromConfig(config, &log_name)) {
-                            log_switched = true;
-                            name_changed = log_name != old_log_name;
-                            break;
-                        }
-                        // Try to switch to /log/fallback/
-                        log_name = CFile::ConcatPath("/log/fallback/", log_base);
-                        if ( SetApplogFile(log_name) ) {
-                            log_switched = true;
-                            name_changed = log_name != old_log_name;
-                            to_applog = true;
-                            break;
-                        }
+                    }
+                    // Try /log/srv if port is unknown or not writable
+                    log_name = CFile::ConcatPath("/log/srv", log_base);
+                    if ( SetApplogFile(log_name) ) {
+                        log_set = true;
+                        new_log_name = log_name;
+                        to_applog = true;
+                        break;
+                    }
+                    // Have we skipped config_logfile above?
+                    if (applog_first &&
+                        OpenLogFileFromConfig(config_logfile)) {
+                        log_set = true;
+                        new_log_name = config_logfile;
+                        break;
+                    }
+                    // Try to switch to /log/fallback/
+                    log_name = CFile::ConcatPath("/log/fallback/", log_base);
+                    if ( SetApplogFile(log_name) ) {
+                        log_set = true;
+                        new_log_name = log_name;
+                        to_applog = true;
+                        break;
                     }
                     // Try cwd/ for eDS_ToStdlog only
                     if (ds == eDS_ToStdlog) {
                         log_name = CFile::ConcatPath(".", log_base);
-                        log_switched = SetLogFile(log_name, eDiagFile_All);
-                        name_changed = log_name != old_log_name;
+                        if ( SetLogFile(log_name, eDiagFile_All) ) {
+                            log_set = true;
+                            new_log_name = log_name;
+                            break;
+                        }
                     }
-                    if ( !log_switched ) {
-                        ERR_POST_X(3, Info << "Failed to set log file to " +
-                            CFile::NormalizePath(log_name));
+                    ERR_POST_X(3, Info << "Failed to set log file to " +
+                        CFile::NormalizePath(log_name));
+                }
+                // Have we skipped cmd_logfile above?
+                if (!log_set  &&  !cmdline_first  &&  cmd_logfile) {
+                    if ( SetLogFile(cmd_logfile, eDiagFile_All) ) {
+                        log_set = true;
+                        new_log_name = cmd_logfile;
+                        break;
                     }
                 }
-                else {
+                // No command line and no base name.
+                // Try to switch to /log/fallback/UNKNOWN
+                if (!log_set  &&  log_base.empty()) {
                     static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
-                    // Try to switch to /log/fallback/UNKNOWN
-                    if ( s_UseRootLog ) {
-                        if ( SetApplogFile(kDefaultFallback) ) {
-                            log_switched = true;
-                            name_changed = kDefaultFallback != old_log_name;
-                            to_applog = true;
-                        }
-                        else {
-                            ERR_POST_X_ONCE(4, Info <<
-                                "Failed to set log file to " <<
-                                CFile::NormalizePath(kDefaultFallback));
-                        }
+                    if ( SetApplogFile(kDefaultFallback) ) {
+                        log_set = true;
+                        new_log_name = kDefaultFallback;
+                        to_applog = true;
+                        break;
                     }
+                    ERR_POST_X_ONCE(4, Info <<
+                        "Failed to set log file to " <<
+                        CFile::NormalizePath(kDefaultFallback));
                 }
-                const char* new_log_name = TTeeToStderr::GetDefault() ?
+                const char* log_name = TTeeToStderr::GetDefault() ?
                     kLogName_Tee : kLogName_Stderr;
-                if (!log_switched  &&  old_log_name != new_log_name) {
+                if (!log_set  &&  old_log_name != log_name) {
                     SetDiagHandler(new CStreamDiagHandler(&cerr,
                         true, kLogName_Stderr), true);
-                    log_switched = true;
+                    log_set = true;
+                    new_log_name = log_name;
                 }
                 break;
             }
@@ -3067,6 +3132,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     // Unlock severity level
     SetApplogSeverityLocked(false);
     if ( to_applog ) {
+        _ASSERT(s_UsingAutoApplog);
         ctx.SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
@@ -3077,6 +3143,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         SetApplogSeverityLocked(true);
     }
     else {
+        s_UsingAutoApplog = old_using_applog;
         if ( s_MergeLinesSetBySetupDiag ) {
             UnsetDiagPostFlag(eDPF_PreMergeLines);
             UnsetDiagPostFlag(eDPF_MergeLines);
@@ -3086,19 +3153,22 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         ctx.SetLogRate_Limit(eLogRate_Err, CRequestRateControl::kNoLimit);
         ctx.SetLogRate_Limit(eLogRate_Trace, CRequestRateControl::kNoLimit);
     }
-    log_switched &= name_changed;
-    CDiagHandler* handler = GetDiagHandler();
+
+    CDiagHandler* new_handler = GetDiagHandler();
+    if ( new_handler ) {
+        log_set = log_set  &&  new_handler->GetLogName() != old_log_name;
+    }
     if (collect == eDCM_Flush) {
         // Flush and discard
-        if ( log_switched  &&  handler ) {
-            ctx.FlushMessages(*handler);
+        if ( log_set  &&  new_handler ) {
+            ctx.FlushMessages(*new_handler);
         }
         collect = eDCM_Discard;
     }
     else if (collect == eDCM_NoChange) {
         // Flush but don't discard
-        if ( log_switched  &&  handler ) {
-            ctx.FlushMessages(*handler);
+        if ( log_set  &&  new_handler ) {
+            ctx.FlushMessages(*new_handler);
         }
     }
     if (collect == eDCM_Discard) {
@@ -6446,7 +6516,7 @@ extern bool SetLogFile(const string& file_name,
         // Auto-split log file
         SetSplitLogFile(true);
     }
-    bool no_split = !s_SplitLogFile;
+    bool no_split = !(s_SplitLogFile  ||  s_UsingAutoApplog);
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
             ERR_POST_X(8, Info <<

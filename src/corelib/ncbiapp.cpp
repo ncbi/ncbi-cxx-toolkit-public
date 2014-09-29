@@ -91,7 +91,8 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 
 CNcbiApplication::CNcbiApplication(void)
-    : m_ConfigLoaded(false)
+    : m_ConfigLoaded(false),
+      m_LogFile(0)
 {
     // Initialize UID and start timer
     GetDiagContext().GetUID();
@@ -279,7 +280,7 @@ void CNcbiApplication::x_TryInit(EAppDiagStream diag,
     }
     m_ConfigLoaded = true;
 
-    CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush);
+    CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush, m_LogFile);
     CDiagContext::x_FinalizeSetupDiag();
 
     // Setup the standard features from the config file.
@@ -488,6 +489,34 @@ int CNcbiApplication::AppMain
     }
     x_SetupStdio();
 
+    // Check if logfile is set in the args.
+    m_LogFile = 0;
+    if (!m_DisableArgDesc && argc > 1  &&  argv  &&  diag != eDS_User) {
+        for (int i = 1;  i < argc;  i++) {
+            if ( !argv[i] ) {
+                continue;
+            }
+            if ( NStr::strcmp(argv[i], s_ArgLogFile) == 0 ) {
+                if (!argv[++i]) {
+                    continue;
+                }
+                m_LogFile = argv[i];
+            }
+        }
+    }
+    // Setup logging as soon as possible.
+    // Setup for diagnostics
+    try {
+        CDiagContext::SetupDiag(diag, 0, eDCM_NoChange, m_LogFile);
+    } catch (CException& e) {
+        NCBI_RETHROW(e, CAppException, eSetupDiag,
+                     "Application diagnostic stream's setup failed");
+    } catch (exception& e) {
+        NCBI_THROW(CAppException, eSetupDiag,
+                   "Application diagnostic stream's setup failed: " +
+                   string(e.what()));
+    }
+
     // Get program executable's name & path.
     string exepath = FindProgramExecutablePath(argc, argv, &m_RealExePath);
     m_ExePath = exepath;
@@ -533,7 +562,6 @@ int CNcbiApplication::AppMain
 
     // Check command line for presence special arguments
     // "-logfile", "-conffile", "-version"
-    bool is_diag_setup = false;
     if (!m_DisableArgDesc && argc > 1  &&  argv) {
         const char** v = new const char*[argc];
         v[0] = argv[0];
@@ -551,10 +579,6 @@ int CNcbiApplication::AppMain
                 }
                 v[real_arg_index++] = argv[i - 1];
                 v[real_arg_index++] = argv[i];
-                if (SetLogFile(argv[i], eDiagFile_All, true)) {
-                    diag = eDS_User;
-                    is_diag_setup = true;
-                }
                 // Configuration file
             } else if ( NStr::strcmp(argv[i], s_ArgCfgFile) == 0 ) {
                 if (!argv[++i]) {
@@ -621,20 +645,6 @@ int CNcbiApplication::AppMain
 
     // Clear registry content
     m_Config->Clear();
-
-    // Setup for diagnostics
-    try {
-        if ( !is_diag_setup ) {
-            CDiagContext::SetupDiag(diag);
-        }
-    } catch (CException& e) {
-        NCBI_RETHROW(e, CAppException, eSetupDiag,
-                     "Application diagnostic stream's setup failed");
-    } catch (exception& e) {
-        NCBI_THROW(CAppException, eSetupDiag,
-                   "Application diagnostic stream's setup failed: " +
-                   string(e.what()));
-    }
 
     // Call:  Init() + Run() + Exit()
     int exit_code = 1;
@@ -785,14 +795,14 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
 {
-    CDiagContext::SetupDiag(diag, 0, eDCM_Flush);
+    CDiagContext::SetupDiag(diag, 0, eDCM_Flush, m_LogFile);
     return true;
 }
 
 
 bool CNcbiApplication::SetupDiag_AppSpecific(void)
 {
-    CDiagContext::SetupDiag(eDS_ToStderr, 0, eDCM_Flush);
+    CDiagContext::SetupDiag(eDS_ToStderr, 0, eDCM_Flush, m_LogFile);
     return true;
 }
 

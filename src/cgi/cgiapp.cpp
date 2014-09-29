@@ -649,8 +649,6 @@ CCgiApplication::CCgiApplication(void)
    m_RequestStartPrinted(false),
    m_ErrorStatus(false)
 {
-    // CGI applications should use /log for logging by default
-    CDiagContext::SetUseRootLog();
     // Disable system popup messages
     SuppressSystemMessageBox();
 
