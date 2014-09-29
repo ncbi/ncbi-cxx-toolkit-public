@@ -521,6 +521,10 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
         recog_site->SetId(id);
         locs.push_back(recog_site);
 
+        ENa_strand cut_strand =
+            IsReverse(site->GetStrand()) ? eNa_strand_minus
+                                         : eNa_strand_plus;
+
         // locs for the cleavage sites
         int negative_cut_locs = 0;  // count these exceptions
         ITERATE (vector<int>, cut, site->GetPlusCuts()) {
@@ -530,7 +534,7 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
                 // indicate that the cut is to the "left"
                 cut_site->SetPnt()
                     .SetFuzz().SetLim(CInt_fuzz::eLim_tl);
-                cut_site->SetPnt().SetStrand(site->GetStrand());
+                cut_site->SetPnt().SetStrand(cut_strand);
                 cut_site->SetId(id);
                 locs.push_back(cut_site);
             } else {
@@ -545,7 +549,7 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
                 // indicate that the cut is to the "left"
                 cut_site->SetPnt()
                     .SetFuzz().SetLim(CInt_fuzz::eLim_tl);
-                cut_site->SetPnt().SetStrand(Reverse(site->GetStrand()));
+                cut_site->SetPnt().SetStrand(Reverse(cut_strand));
                 cut_site->SetId(id);
                 locs.push_back(cut_site);
             } else {
