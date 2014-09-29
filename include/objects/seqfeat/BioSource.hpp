@@ -115,9 +115,9 @@ public:
     bool GetDisableStrainForwarding() const;
 
     // for BioSample
-    void UpdateWithBioSample(const CBioSource& biosample, bool force);
+    void UpdateWithBioSample(const CBioSource& biosample, bool force, bool is_local_copy = false);
 
-    TFieldDiffList GetBiosampleDiffs(const CBioSource& biosample) const;
+    TFieldDiffList GetBiosampleDiffs(const CBioSource& biosample, bool is_local_copy = false) const;
     bool BiosampleDiffsOkForUpdate(const TFieldDiffList& diffs) const;
 
     typedef pair<string, string> TNameVal;

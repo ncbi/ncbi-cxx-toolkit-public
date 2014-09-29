@@ -639,9 +639,9 @@ bool CBioSource::BiosampleDiffsOkForUpdate(const TFieldDiffList& diffs) const
 }
 
 
-void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
+void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bool is_local_copy)
 {
-    TFieldDiffList diffs = GetBiosampleDiffs(biosample);
+    TFieldDiffList diffs = GetBiosampleDiffs(biosample, is_local_copy);
     if (!force && !BiosampleDiffsOkForUpdate(diffs)) {        
         // throw exception
         NCBI_THROW(CException, eUnknown, "Conflicts found");                      
@@ -942,7 +942,7 @@ bool s_SameExceptPrecision (double val1, double val2)
 }
     
 
-static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_val)
+static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_val, bool is_local_copy)
 {
     int i;
     bool rval = false;
@@ -988,7 +988,11 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
 
     for (i = 0; i < kNumIgnoreConflictList; i++) {
         if (NStr::EqualNocase (label, sIgnoreConflictList[i].qual_name)) {
-            switch (sIgnoreConflictList[i].ignore_type) {
+            EConflictIgnoreType ignore_type = sIgnoreConflictList[i].ignore_type;
+            if (is_local_copy && ignore_type == eConflictIgnoreMissingInBioSample) {
+                ignore_type = eConflictIgnoreAll;
+            }
+            switch (ignore_type) {
                 case eConflictIgnoreAll:
                     rval = true;
                     break;
@@ -1058,7 +1062,8 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
 
 void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
                                    CBioSource::TNameValList& list1, 
-                                   CBioSource::TNameValList& list2)
+                                   CBioSource::TNameValList& list2,
+                                   bool is_local_copy)
 {
     CBioSource::TNameValList::iterator it1 = list1.begin();
     CBioSource::TNameValList::iterator it2 = list2.begin();
@@ -1066,21 +1071,21 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
     while (it1 != list1.end() && it2 != list2.end()) {
         int cmp = NStr::Compare(it1->first, it2->first);
         if (cmp == 0) {
-            if (!s_ShouldIgnoreConflict(it1->first, it1->second, it2->second)) {
+            if (!s_ShouldIgnoreConflict(it1->first, it1->second, it2->second, is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, it2->second));
                 list.push_back(diff);
             }
             it1++;
             it2++;
         } else if (cmp < 0) {
-            if (!s_ShouldIgnoreConflict(it1->first, it1->second, "")) {
+            if (!s_ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
                 list.push_back(diff);
             }
             it1++;
         } else {
             // cmp > 0
-            if (!s_ShouldIgnoreConflict(it2->first, "", it2->second)) {
+            if (!s_ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
                 list.push_back(diff);
             }
@@ -1088,14 +1093,14 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
         }
     }
     while (it1 != list1.end()) {
-        if (!s_ShouldIgnoreConflict(it1->first, it1->second, "")) {
+        if (!s_ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
             CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
             list.push_back(diff);
         }
         it1++;
     }
     while (it2 != list2.end()) {
-        if (!s_ShouldIgnoreConflict(it2->first, "", it2->second)) {
+        if (!s_ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
             CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
             list.push_back(diff);
         }
@@ -1163,7 +1168,7 @@ bool CBioSource::x_ShouldIgnoreNoteForBiosample() const
 }
 
 
-TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
+TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample, bool is_local_copy) const
 {
     TFieldDiffList rval;
 
@@ -1173,7 +1178,7 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
     TNameValList sample_list = biosample.GetNameValPairs();
     sort(sample_list.begin(), sample_list.end(), s_CompareNameVals);
 
-    GetFieldDiffsFromNameValLists(rval, src_list, sample_list);
+    GetFieldDiffsFromNameValLists(rval, src_list, sample_list, is_local_copy);
     x_RemoveNameElementDiffs(biosample, rval);
 
     if (x_ShouldIgnoreNoteForBiosample() && biosample.x_ShouldIgnoreNoteForBiosample()) {

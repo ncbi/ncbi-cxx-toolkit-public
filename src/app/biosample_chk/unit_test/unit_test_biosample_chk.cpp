@@ -469,5 +469,35 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2021)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2022)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Triticum aestivum");
+    CRef<CSubSource> c1(new CSubSource(CSubSource::eSubtype_chromosome, "4D"));
+    src->SetSubtype().push_back(c1);
+    CRef<CSubSource> m1(new CSubSource(CSubSource::eSubtype_map, "short arm"));
+    src->SetSubtype().push_back(m1);
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->SetOrg().SetTaxname("Triticum aestivum");
+    CRef<CSubSource> c2(new CSubSource(CSubSource::eSubtype_chromosome, "4S"));
+    smpl->SetSubtype().push_back(c2);
+    CRef<CSubSource> m2(new CSubSource(CSubSource::eSubtype_map, "long arm"));
+    smpl->SetSubtype().push_back(m2);
+
+    // differences should be reported
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 2);
+    // no differences should be reported if local copy
+    diff_list = src->GetBiosampleDiffs(*smpl, true);
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+
+    src->UpdateWithBioSample(*smpl, true, true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetName(), "4D");
+    BOOST_CHECK_EQUAL(src->GetSubtype().back()->GetName(), "short arm");
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

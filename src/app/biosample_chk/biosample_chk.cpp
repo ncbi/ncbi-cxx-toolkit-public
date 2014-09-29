@@ -1720,7 +1720,7 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
     } else {
         const CBioSource& bs = src_desc_ci->GetSource();
         CBioSource* old_src = const_cast<CBioSource *> (&bs);
-        old_src->UpdateWithBioSample(src, true);
+        old_src->UpdateWithBioSample(src, true, true);
     }
 }
 
