@@ -170,13 +170,20 @@ SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
 }
 
 CEntropyCalculator::CEntropyCalculator(size_t sequence_size, size_t word_size)
-: m_WordSize(word_size)
-, m_NumWords(sequence_size - word_size)
-, m_Words(m_NumWords)
-, m_EntropyValues(m_NumWords+1, -1.)
-, m_Denom(log(min((double)m_NumWords,
-                  pow(4.0, (int)word_size))))
+    : m_WordSize(word_size)
+    , m_NumWords(sequence_size - word_size)
+    , m_Denom(log(min((double)m_NumWords,
+                      pow(4.0, (int)word_size))))
 {
+    if (word_size > sequence_size) {
+        NCBI_THROW(CException, eUnknown,
+                   "entropy is undefined when the sequence size is "
+                   "smaller than the word size");
+    }
+
+    m_Words.resize(m_NumWords);
+    m_EntropyValues.resize(m_NumWords+1, -1.);
+
     /// Special case for count 0; don't calculate, to avoid calling log(0)
     m_EntropyValues[0] = 0;
 }
