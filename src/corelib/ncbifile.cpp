@@ -637,19 +637,30 @@ string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
     if ( IsAbsolutePath(path) ) {
         return path;
     }
+
+    string result;
+
 #if defined(NCBI_OS_MSWIN)
     if ( path.find(DISK_SEPARATOR) != NPOS ) {
         NCBI_THROW(CFileException, eRelativePath, 
                    "Path must not contain disk separator: " + path);
     }
-    // Path started form slash on MS Windows is a relative or network path
-    if ( !path.empty()  &&  (path[0] == '/'  || path[0] == '\\') ) {
-        NCBI_THROW(CFileException, eRelativePath, 
-                   "Cannot use relative or network path:" + path);
+    // Path started with slash
+    if (!path.empty() && (path[0] == '/' || path[0] == '\\')) {
+        // network path ?
+        if ( s_Win_IsNetworkPath(path) ) {
+            NCBI_THROW(CFileException, eRelativePath,
+                       "Cannot use network path: " + path);
+        }
+        // relative to current drive only
+        if (rtw != eRelativeToCwd) {
+            NCBI_THROW(CFileException, eRelativePath,
+                       "Path can be used as relative to current drive only: " + path);
+        }
+        return CDir::GetCwd().substr(0,3) + path;
     }
 #endif
 
-    string result;
     switch (rtw) {
     case eRelativeToCwd:
         result = ConcatPath(CDir::GetCwd(), path);
