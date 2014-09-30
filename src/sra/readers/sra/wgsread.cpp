@@ -897,7 +897,8 @@ bool CWGSSeqIterator::HasSeq_descr(void) const
 {
     x_CheckValid("HasSeq_descr");
 
-    return m_Seq->m_DESCR && m_Seq->DESCR(m_CurrId).size();
+    return (m_Seq->m_DESCR && m_Seq->DESCR(m_CurrId).size()) ||
+        !GetDb().GetMasterDescr().empty();
 }
 
 
@@ -906,27 +907,32 @@ CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(void) const
     x_CheckValid("GetSeq_descr");
 
     CRef<CSeq_descr> ret(new CSeq_descr);
-    CTempString descr_bytes = *CVDBStringValue(m_Seq->DESCR(m_CurrId));
-    CObjectIStreamAsnBinary in(descr_bytes.data(), descr_bytes.size());
-    // hack to determine if the data is of type Seq-descr (starts with byte 49)
-    // or of type Seqdesc (starts with byte >= 160)
-    if ( descr_bytes[0] == 49 ) {
-        in >> *ret;
-    }
-    else {
-        CRef<CSeqdesc> desc(new CSeqdesc);
-        in >> *desc;
-        ret->Set().push_back(desc);
-    }
-    bool has_source = false;
-    ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
-        const CSeqdesc& desc = **it;
-        if ( desc.IsSource() ) {
-            has_source = true;
-            break;
+    if ( m_Seq->m_DESCR ) {
+        CTempString descr_bytes = *CVDBStringValue(m_Seq->DESCR(m_CurrId));
+        if ( !descr_bytes.empty() ) {
+            CObjectIStreamAsnBinary in(descr_bytes.data(), descr_bytes.size());
+            // hack to determine if the data
+            // is of type Seq-descr (starts with byte 49)
+            // or of type Seqdesc (starts with byte >= 160)
+            if ( descr_bytes[0] == 49 ) {
+                in >> *ret;
+            }
+            else {
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                in >> *desc;
+                ret->Set().push_back(desc);
+            }
         }
     }
-    if ( GetDb().IsSetMasterDescr() ) {
+    if ( !GetDb().GetMasterDescr().empty() ) {
+        bool has_source = false;
+        ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
+            const CSeqdesc& desc = **it;
+            if ( desc.IsSource() ) {
+                has_source = true;
+                break;
+            }
+        }
         ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
             if ( has_source && (*it)->IsSource() ) {
                 // omit master 'source' if contig already has one

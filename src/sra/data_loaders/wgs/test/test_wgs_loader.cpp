@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq9)
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
     BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq10)
