@@ -857,7 +857,8 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
             *endptr = (char*)ptr;
         }
         double result = c-'0';
-        return sign < 0 ? -result : result;
+        // some compilers fail to negate zero
+    	return sign < 0 ? (c == '0' ? -0. : -result) : result;
     }
 
     bool         dot = false, expn = false, anydigits = false;
