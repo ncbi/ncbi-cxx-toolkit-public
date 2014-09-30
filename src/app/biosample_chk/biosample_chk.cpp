@@ -1111,6 +1111,20 @@ void s_AddSamplePair(node& sample_attrs, string attribute_name, string val)
 }
 
 
+bool s_OrgModOkToIncludeInBioSample(COrgMod::TSubtype subtype)
+{
+    if (subtype == COrgMod::eSubtype_old_name ||
+        subtype == COrgMod::eSubtype_old_lineage ||
+        subtype == COrgMod::eSubtype_gb_acronym ||
+        subtype == COrgMod::eSubtype_gb_anamorph ||
+        subtype == COrgMod::eSubtype_gb_synonym) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
 void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSource& src)
 {
     if (src.IsSetSubtype()) {
@@ -1133,7 +1147,8 @@ void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSour
         }
         if (src.GetOrg().IsSetOrgMod()) {
             ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
-                if ((*it)->IsSetSubtype() && (*it)->IsSetSubname()) {
+                if ((*it)->IsSetSubtype() && (*it)->IsSetSubname() &&
+                    s_OrgModOkToIncludeInBioSample((*it)->GetSubtype())) {
                     string attribute_name = "";
                     if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
                         attribute_name = "orgmod_note";
