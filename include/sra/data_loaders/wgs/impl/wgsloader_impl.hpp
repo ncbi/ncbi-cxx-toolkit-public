@@ -70,35 +70,32 @@ public:
             }
         DECLARE_OPERATOR_BOOL_REF(file);
 
-        CRef<CWGSFileInfo> file;
+        CConstRef<CWGSFileInfo> file;
         Uint8 row_id;
         char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
         bool has_version;
         int version;
     };
 
-    bool IsValidRowId(const SAccFileInfo& info, SIZE_TYPE row_digits);
+    bool IsValidRowId(const SAccFileInfo& info, SIZE_TYPE row_digits) const;
 
-    bool IsCorrectVersion(const SAccFileInfo& info);
+    bool IsCorrectVersion(const SAccFileInfo& info) const;
 
-    CMutex& GetMutex(void) const
-        {
-            return m_WGSMutex;
-        }
+    bool FindGi(SAccFileInfo& info, TGi gi) const;
 
-    CWGSDb& GetDb(void)
+    const CWGSDb& GetDb(void) const
         {
             return m_WGSDb;
         }
-    operator CWGSDb&(void)
+    operator const CWGSDb&(void) const
         {
             return GetDb();
         }
 
     void LoadBlob(const CWGSBlobId& blob_id,
-                  CTSE_LoadLock& load_lock);
+                  CTSE_LoadLock& load_lock) const;
     void LoadChunk(const CWGSBlobId& blob_id,
-                   CTSE_Chunk_Info& chunk);
+                   CTSE_Chunk_Info& chunk) const;
 
 protected:
     friend class CWGSDataLoader_Impl;
@@ -108,10 +105,7 @@ protected:
     void x_InitMasterDescr(void);
 
     string m_WGSPrefix;
-    mutable CMutex m_WGSMutex;
-    bool m_AddWGSMasterDescr;
     CWGSDb m_WGSDb;
-    Uint8 m_FirstBadRowId, m_FirstBadScaffoldRowId, m_FirstBadProteinRowId;
 };
 
 
@@ -121,9 +115,9 @@ public:
     CWGSDataLoader_Impl(const CWGSDataLoader::SLoaderParams& params);
     ~CWGSDataLoader_Impl(void);
 
-    CRef<CWGSFileInfo> GetWGSFile(const string& acc);
+    CConstRef<CWGSFileInfo> GetWGSFile(const string& acc);
 
-    CRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
+    CConstRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
     CWGSFileInfo::SAccFileInfo GetFileInfo(const string& acc);
     CWGSFileInfo::SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
@@ -169,8 +163,8 @@ private:
     // second: SRA accession or wgs file path
 
     // WGS files by accession
-    typedef map<string, CRef<CWGSFileInfo> > TFixedFiles;
-    typedef limited_size_map<string, CRef<CWGSFileInfo> > TFoundFiles;
+    typedef map<string, CConstRef<CWGSFileInfo> > TFixedFiles;
+    typedef limited_size_map<string, CConstRef<CWGSFileInfo> > TFoundFiles;
 
     // mutex guarding input into the map
     CMutex  m_Mutex;
@@ -180,6 +174,7 @@ private:
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;
+    bool m_ResolveGIs;
 };
 
 

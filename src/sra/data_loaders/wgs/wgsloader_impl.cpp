@@ -72,8 +72,7 @@ static const int kTSEId = 1;
 static const int kMainChunkId = -1;
 
 NCBI_PARAM_DECL(int, WGS_LOADER, DEBUG);
-NCBI_PARAM_DEF_EX(int, WGS_LOADER, DEBUG, 0,
-                  eParam_NoThread, WGS_LOADER_DEBUG);
+NCBI_PARAM_DEF(int, WGS_LOADER, DEBUG, 0);
 
 static int GetDebugLevel(void)
 {
@@ -83,34 +82,39 @@ static int GetDebugLevel(void)
 
 
 NCBI_PARAM_DECL(bool, WGS_LOADER, MASTER_DESCR);
-NCBI_PARAM_DEF_EX(bool, WGS_LOADER, MASTER_DESCR, true,
-                  eParam_NoThread, WGS_LOADER_MASTER_DESCR);
+NCBI_PARAM_DEF(bool, WGS_LOADER, MASTER_DESCR, true);
 
 static bool GetMasterDescrParam(void)
 {
-    return NCBI_PARAM_TYPE(WGS_LOADER, MASTER_DESCR)().Get();
+    return NCBI_PARAM_TYPE(WGS_LOADER, MASTER_DESCR)::GetDefault();
 }
 
 
 NCBI_PARAM_DECL(size_t, WGS_LOADER, GC_SIZE);
-NCBI_PARAM_DEF_EX(size_t, WGS_LOADER, GC_SIZE, 10,
-                  eParam_NoThread, WGS_LOADER_GC_SIZE);
+NCBI_PARAM_DEF(size_t, WGS_LOADER, GC_SIZE, 10);
 
 static size_t GetGCSize(void)
 {
-    static NCBI_PARAM_TYPE(WGS_LOADER, GC_SIZE) s_Value;
-    return s_Value.Get();
+    return NCBI_PARAM_TYPE(WGS_LOADER, GC_SIZE)::GetDefault();
 }
 
 
 NCBI_PARAM_DECL(string, WGS_LOADER, VOL_PATH);
-NCBI_PARAM_DEF_EX(string, WGS_LOADER, VOL_PATH, "",
-                  eParam_NoThread, WGS_LOADER_VOL_PATH);
+NCBI_PARAM_DEF(string, WGS_LOADER, VOL_PATH, "");
 
 static string GetWGSVolPath(void)
 {
-    static NCBI_PARAM_TYPE(WGS_LOADER, VOL_PATH) s_Value;
-    return s_Value.Get();
+    return NCBI_PARAM_TYPE(WGS_LOADER, VOL_PATH)::GetDefault();
+}
+
+
+NCBI_PARAM_DECL(bool, WGS_LOADER, RESOLVE_GIS);
+NCBI_PARAM_DEF(bool, WGS_LOADER, RESOLVE_GIS, true);
+
+
+static bool GetResolveGIsParem(void)
+{
+    return NCBI_PARAM_TYPE(WGS_LOADER, RESOLVE_GIS)::GetDefault();
 }
 
 
@@ -199,7 +203,8 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     const CWGSDataLoader::SLoaderParams& params)
     : m_WGSVolPath(params.m_WGSVolPath),
       m_FoundFiles(GetGCSize()),
-      m_AddWGSMasterDescr(GetMasterDescrParam())
+      m_AddWGSMasterDescr(GetMasterDescrParam()),
+      m_ResolveGIs(GetResolveGIsParem())
 {
     if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
         m_WGSVolPath = GetWGSVolPath();
@@ -221,7 +226,7 @@ CWGSDataLoader_Impl::~CWGSDataLoader_Impl(void)
 }
 
 
-CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
+CConstRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
 {
     if ( !m_FixedFiles.empty() ) {
         // no dynamic WGS accessions
@@ -237,7 +242,7 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
         return it->second;
     }
     try {
-        CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, prefix));
+        CConstRef<CWGSFileInfo> info(new CWGSFileInfo(*this, prefix));
         m_FoundFiles[prefix] = info;
         return info;
     }
@@ -292,7 +297,7 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc)
     if ( !ret.row_id && errno ) {
         return ret;
     }
-    if ( CRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
+    if ( CConstRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
         SIZE_TYPE row_digits = acc.size() - row_pos;
         if ( info->IsValidRowId(ret, row_digits) ) {
             ret.file = info;
@@ -307,16 +312,11 @@ CWGSFileInfo::SAccFileInfo
 CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
 {
     CWGSFileInfo::SAccFileInfo ret;
-    if ( idh.IsGi() ) {
+    if ( m_ResolveGIs && idh.IsGi() ) {
         TGi gi = idh.GetGi();
         if ( !m_FoundFiles.empty() ) {
             ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-                CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
-                if ( gi_it ) {
-                    ret.file = it->second;
-                    ret.row_id = gi_it.GetRowId();
-                    ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
-                    ret.has_version = false;
+                if ( it->second->FindGi(ret, gi) ) {
                     return ret;
                 }
             }
@@ -325,28 +325,18 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
             if ( m_GiResolver.IsValid() ) {
                 CWGSGiResolver::TAccessionList accs = m_GiResolver.FindAll(gi);
                 ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
-                    CRef<CWGSFileInfo> file = GetWGSFile(*it);
+                    CConstRef<CWGSFileInfo> file = GetWGSFile(*it);
                     if ( !file ) {
                         continue;
                     }
-                    CWGSGiIterator gi_it(file->m_WGSDb, gi);
-                    if ( gi_it ) {
-                        ret.file = file;
-                        ret.row_id = gi_it.GetRowId();
-                        ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
-                        ret.has_version = false;
+                    if ( file->FindGi(ret, gi) ) {
                         return ret;
                     }
                 }
             }
             else {
                 ITERATE ( TFoundFiles, it, m_FoundFiles ) {
-                    CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
-                    if ( gi_it ) {
-                        ret.file = it->second;
-                        ret.row_id = gi_it.GetRowId();
-                        ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
-                        ret.has_version = false;
+                    if ( it->second->FindGi(ret, gi) ) {
                         return ret;
                     }
                 }
@@ -357,6 +347,7 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     switch ( idh.Which() ) { // shortcut
     case CSeq_id::e_not_set:
     case CSeq_id::e_Local:
+    case CSeq_id::e_Gi:
     case CSeq_id::e_Gibbsq:
     case CSeq_id::e_Gibbmt:
     case CSeq_id::e_Giim:
@@ -387,7 +378,8 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
 }
 
 
-CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
+CConstRef<CWGSFileInfo>
+CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
 {
     return GetWGSFile(blob_id.m_WGSPrefix);
 }
@@ -417,7 +409,7 @@ CWGSDataLoader_Impl::GetSeqIterator(const CSeq_id_Handle& idh,
             return CWGSSeqIterator();
         }
         else if ( info.seq_type == 'P' ) {
-            ERR_POST("not supported");
+            ERR_POST("CWGSDataLoader: proteins aren't supported");
         }
         else {
             return CWGSSeqIterator(info.file->GetDb(), info.row_id,
@@ -581,7 +573,8 @@ CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
     }
     catch ( CSraException& exc ) {
         if ( GetDebugLevel() >= 1 ) {
-            ERR_POST_X(1, "Exception while opening WGS DB "<<prefix<<": "<<exc);
+            ERR_POST_X(1, "CWGSDataLoader: "
+                       "Exception while opening WGS DB "<<prefix<<": "<<exc);
         }
         if ( exc.GetParam().find(prefix) == NPOS ) {
             exc.SetParam(exc.GetParam()+" acc="+string(prefix));
@@ -590,7 +583,8 @@ CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
     }
     catch ( CException& exc ) {
         if ( GetDebugLevel() >= 1 ) {
-            ERR_POST_X(1, "Exception while opening WGS DB "<<prefix<<": "<<exc);
+            ERR_POST_X(1, "CWGSDataLoader: "
+                       "Exception while opening WGS DB "<<prefix<<": "<<exc);
         }
         NCBI_RETHROW_FMT(exc, CSraException, eOtherError,
                          "CWGSDataLoader: exception while opening WGS DB "<<prefix);
@@ -603,22 +597,19 @@ void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
 {
     m_WGSDb = CWGSDb(impl.m_Mgr, prefix, impl.m_WGSVolPath);
     m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
-    m_AddWGSMasterDescr = impl.GetAddWGSMasterDescr();
-    m_FirstBadRowId = m_FirstBadScaffoldRowId = m_FirstBadProteinRowId = 0;
     if ( GetDebugLevel() >= 1 ) {
-        ERR_POST_X(1, "Opened WGS DB "<<prefix<<" -> "<<
+        ERR_POST_X(1, "CWGSDataLoader: "
+                   "Opened WGS DB "<<prefix<<" -> "<<
                    GetWGSPrefix()<<" "<<m_WGSDb.GetWGSPath());
     }
-    x_InitMasterDescr();
+    if ( impl.GetAddWGSMasterDescr() ) {
+        x_InitMasterDescr();
+    }
 }
 
 
 void CWGSFileInfo::x_InitMasterDescr(void)
 {
-    if ( !m_AddWGSMasterDescr ) {
-        // master descriptors are disabled
-        return;
-    }
     if ( m_WGSDb->LoadMasterDescr() ) {
         // loaded descriptors from metadata
         return;
@@ -651,41 +642,27 @@ void CWGSFileInfo::x_InitMasterDescr(void)
 
 
 bool CWGSFileInfo::IsValidRowId(const SAccFileInfo& info,
-                                SIZE_TYPE row_digits)
+                                SIZE_TYPE row_digits) const
 {
     if ( info.row_id == 0 || m_WGSDb->GetIdRowDigits() != row_digits ) {
         return false;
     }
-    Uint8 first_bad_row_id;
-    {{
-        CMutexGuard guard(GetMutex());
-        if ( info.seq_type == 'S' ) {
-            Uint8& c_first_bad_row_id = m_FirstBadScaffoldRowId;
-            first_bad_row_id = c_first_bad_row_id;
-            if ( !first_bad_row_id ) {
-                CWGSScaffoldIterator it(m_WGSDb);
-                c_first_bad_row_id = first_bad_row_id = it.GetFirstBadRowId();
-            }
-        }
-        else if ( info.seq_type == 'P' ) {
-            ERR_POST("not supported");
-            return false;
-        }
-        else {
-            Uint8& c_first_bad_row_id = m_FirstBadRowId;
-            first_bad_row_id = c_first_bad_row_id;
-            if ( !first_bad_row_id ) {
-                CWGSSeqIterator it(m_WGSDb,
-                                   CWGSSeqIterator::eIncludeWithdrawn);
-                c_first_bad_row_id = first_bad_row_id = it.GetFirstBadRowId();
-            }
-        }
-    }}
-    return info.row_id < first_bad_row_id;
+    if ( info.seq_type == 'S' ) {
+        CWGSScaffoldIterator it(m_WGSDb);
+        return info.row_id < it.GetFirstBadRowId();
+    }
+    else if ( info.seq_type == 'P' ) {
+        ERR_POST("CWGSDataLoader: proteins aren't supported");
+        return false;
+    }
+    else {
+        CWGSSeqIterator it(m_WGSDb, CWGSSeqIterator::eIncludeWithdrawn);
+        return info.row_id < it.GetFirstBadRowId();
+    }
 }
 
 
-bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info)
+bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info) const
 {
     if ( info.row_id == 0 ) {
         return false;
@@ -695,7 +672,7 @@ bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info)
         return info.version == 1;
     }
     else if ( info.seq_type == 'P' ) {
-        ERR_POST("not supported");
+        ERR_POST("CWGSDataLoader: proteins aren't supported");
         return false;
     }
     else {
@@ -706,8 +683,22 @@ bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info)
 }
 
 
+bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
+{
+    CWGSGiIterator gi_it(m_WGSDb, gi);
+    if ( gi_it ) {
+        info.file = this;
+        info.row_id = gi_it.GetRowId();
+        info.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
+        info.has_version = false;
+        return true;
+    }
+    return false;
+}
+
+
 void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
-                            CTSE_LoadLock& load_lock)
+                            CTSE_LoadLock& load_lock) const
 {
     if ( !load_lock.IsLoaded() ) {
         CRef<CBioseq> seq;
@@ -716,7 +707,7 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
             seq = it.GetBioseq();
         }
         else if ( blob_id.m_SeqType == 'P' ) {
-            ERR_POST("not supported");
+            ERR_POST("CWGSDataLoader: proteins aren't supported");
         }
         else {
             CWGSSeqIterator it(GetDb(), blob_id.m_RowId,
@@ -754,7 +745,7 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
 
 
 void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
-                             CTSE_Chunk_Info& chunk_info)
+                             CTSE_Chunk_Info& chunk_info) const
 {
 }
 

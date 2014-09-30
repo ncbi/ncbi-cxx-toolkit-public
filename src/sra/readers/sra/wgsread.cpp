@@ -73,12 +73,16 @@ NCBI_PARAM_DEF(string, WGS, GI_INDEX, "");
 /////////////////////////////////////////////////////////////////////////////
 
 
+#if 0
 #if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
 # define PAN1_PATH "/net/pan1"
 #else
 # define PAN1_PATH "//panfs/pan1"
 #endif
 #define DEGAULT_GI_INDEX_PATH PAN1_PATH "/id_dumps/WGS/tmp/list.wgs_gi_ranges.sorted"
+#else
+#define DEGAULT_GI_INDEX_PATH NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
+#endif
 
 
 CWGSGiResolver::CWGSGiResolver(void)
@@ -119,23 +123,27 @@ void CWGSGiResolver::x_Load(const string& file_name)
         acc.accession[kMaxAccessionLength] = '\0';
         size_t length = strlen(acc.accession);
         if ( length < kMinAccessionLength ) {
-            break;
+            break; // error
         }
         in >> gi_from >> gi_to;
         if ( !in ) {
-            break;
-        }
-        if ( gi_from <= 0 || gi_from > gi_to ) {
-            break;
+            break; // error
         }
         if ( !in.getline(eol, sizeof(eol)) ) {
             // incomplete line
-            break;
+            break; // error
+        }
+        if ( gi_from == 0 && gi_to == 0 ) {
+            continue;
+        }
+        if ( gi_from <= 0 || gi_from > gi_to ) {
+            break; // error
         }
         m_GiIndex.insert
             (TGiIndex::value_type(CRange<TIntId>(gi_from, gi_to), acc));
     }
-    ERR_POST("CWGSGiResolver: bad file format: "<<file_name<<" at line "<<line);
+    ERR_POST_X(1, "CWGSGiResolver: "
+               "bad index file format: "<<file_name<<":"<<line);
     m_GiIndex.clear();
 }
 
