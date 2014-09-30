@@ -339,7 +339,7 @@
    fun:__memp_pgwrite
    fun:__memp_bhwrite
    fun:__memp_sync_int
-   fun:__memp_fsync
+   ...
    fun:__db_sync
    fun:__db_refresh
    fun:__db_close
