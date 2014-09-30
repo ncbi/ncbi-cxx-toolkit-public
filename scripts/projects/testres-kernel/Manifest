@@ -15,9 +15,13 @@ APP: testres_kernel
 #templates
 COPY: $srcdir/src/internal/cppcore/testres/tool/templates/ $installdir
 
+#copy modules
+POSTBUILD: $srcdir/scripts/projects/tetsres-kernel/copy_modules.py $srcdir $bindir $installdir
+
 #ini file
 COPY: $srcdir/src/internal/cppcore/testres/kernel/testres_kernel.ini $installdir/bin
 
 Linux64-Centos  : GCC481  : GCC.sh 4.8.1     --without-debug --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+
 
 
