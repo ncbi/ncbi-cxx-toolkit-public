@@ -19027,3 +19027,39 @@ BOOST_AUTO_TEST_CASE(Test_GP_9919)
 
     CLEAR_ERRORS
 }
+
+BOOST_AUTO_TEST_CASE(Test_RemoveLineageSourceNotes)
+{
+    CRef<CBioSource> bsrc(new CBioSource);
+    bsrc->SetOrg().SetTaxname("Influenza A virus");
+    bsrc->SetOrg().SetOrgname().SetLineage("Viruses; ssRNA negative-strand viruses; Orthomyxoviridae; Influenzavirus A");
+
+    CRef<CSubSource> subsrc(new CSubSource(CSubSource::eSubtype_other, "Organism: viruses"));
+    bsrc->SetSubtype().push_back(subsrc);
+    CRef<COrgMod> mod_a(new COrgMod(COrgMod::eSubtype_strain, "virus strain"));
+    CRef<COrgMod> mod_b(new COrgMod(COrgMod::eSubtype_other, "note: influenza A"));
+    bsrc->SetOrg().SetOrgname().SetMod().push_back(mod_a);
+    bsrc->SetOrg().SetOrgname().SetMod().push_back(mod_b);
+
+    bool removed = bsrc->RemoveLineageSourceNotes();
+    BOOST_CHECK_EQUAL(removed, false); // it won't remove the notes as there is no taxid
+    bsrc->SetOrg().SetTaxId(11320);
+
+    removed = bsrc->RemoveLineageSourceNotes();
+    BOOST_CHECK_EQUAL(removed, true);
+    BOOST_CHECK_EQUAL(bsrc->IsSetSubtype(), false);
+    FOR_EACH_ORGMOD_ON_BIOSOURCE( orgmod, *bsrc) {
+        if ((*orgmod)->IsSetSubtype()) {
+            BOOST_CHECK_EQUAL((*orgmod)->GetSubtype() == COrgMod::eSubtype_other, false);
+        }
+    }
+
+    CRef<COrgMod> mod_c(new COrgMod(COrgMod::eSubtype_other, "domain: unknown domain"));
+    removed = bsrc->RemoveLineageSourceNotes();
+    BOOST_CHECK_EQUAL(removed, false);
+    FOR_EACH_ORGMOD_ON_BIOSOURCE( orgmod, *bsrc) {
+        if ((*orgmod)->IsSetSubtype() && (*orgmod)->GetSubtype() != COrgMod::eSubtype_strain) {
+            BOOST_CHECK_EQUAL((*orgmod)->GetSubtype() == COrgMod::eSubtype_other, true);
+        }
+    }
+}

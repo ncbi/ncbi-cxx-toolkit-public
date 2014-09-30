@@ -1280,6 +1280,144 @@ void CBioSource::RemoveCultureNotes()
     }
 }
 
+static const string s_SpecialLineageWords[] = {
+  "Class",
+  "Classification",
+  "Domain",
+  "Family",
+  "Genus",
+  "Kingdom",
+  "Lineage",
+  "Note",
+  "Order",
+  "Organism",
+  "Phylum",
+  "Species",
+  "Superfamily",
+  "Tax class/lineage",
+  "Taxonomic classification", 
+  "Taxonomic Classification is",
+  "Taxonomy"
+};
+
+static void s_GetWordListFromText(string& str, vector<string>& word_list)
+{
+    if (NStr::IsBlank(str))
+        return;
+
+    vector<string> tokens;
+    std::replace_if(str.begin(), str.end(), ispunct, ' ');
+    NStr::Tokenize(str, " ", tokens, NStr::eMergeDelims);
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        word_list.push_back(tokens[i]);
+    }
+}
+
+static bool s_DoesTextContainOnlyTheseWords(const string& text, const vector<string>& word_list)
+{
+    if (NStr::IsBlank(text)) 
+        return false;
+
+    bool match = false, at_least_one = false;
+
+    const char* orig = text.c_str();
+    const char* ch = orig;
+
+    while (isspace(*ch) || ispunct(*ch)) {
+        ++ch;
+    }
+    
+    match = true;
+    while (*ch != 0 && match) {
+        match = false;
+        for (vector<string>::const_iterator word = word_list.begin(); word != word_list.end() && !match; ++word) {
+            size_t length = (*word).size();
+            if (NStr::strncasecmp(ch, (*word).c_str(), length) == 0 &&
+                (*(ch + length) == 0 || isspace(*(ch + length)) || ispunct(*(ch + length)))) {
+                match = true;
+                ch += length;
+                at_least_one = true;
+            }
+        }
+        while (isspace(*ch) || ispunct(*ch)) {
+            ++ch;
+        }
+    }
+    
+    return (match && at_least_one);
+}
+
+bool CBioSource::RemoveLineageSourceNotes()
+{
+    if (!IsSetOrg()  || !IsSetLineage() || GetOrg().GetTaxId() == 0) {
+        return false;
+    }
+
+    bool any_removed = false;
+
+    // gather all words that appear in lineage, taxname and in s_SpecialLineageWords
+    vector<string> word_list;
+
+    string lineage(GetLineage());
+    s_GetWordListFromText( lineage, word_list );
+    
+    string taxname(GetTaxname());
+    s_GetWordListFromText( taxname, word_list );
+    
+    for (unsigned int i = 0; i < sizeof(s_SpecialLineageWords)/sizeof(s_SpecialLineageWords[0]); ++i) {
+        word_list.push_back(s_SpecialLineageWords[i]);
+    }
+
+    if (IsSetSubtype()) {
+        CBioSource::TSubtype::iterator it = SetSubtype().begin();
+        while (it != SetSubtype().end()) {
+            CRef<CSubSource> subsrc = *it;
+            bool removed = false;
+            if (subsrc->IsSetSubtype() && subsrc->GetSubtype() == CSubSource::eSubtype_other) {
+                if (subsrc->IsSetName()) {
+                    if (s_DoesTextContainOnlyTheseWords(subsrc->GetName(), word_list)) {
+                        // remove this subsource note
+                        it = SetSubtype().erase(it);
+                        removed = true;
+                        any_removed = true;
+                    } 
+                }
+            }
+            if (!removed) {
+                ++it;
+            }
+        }
+        if (GetSubtype().empty()) {
+            ResetSubtype();
+        }
+    }
+
+    if (IsSetOrgname() && GetOrg().GetOrgname().IsSetMod()) {
+        COrgName::TMod::iterator iter = SetOrg().SetOrgname().SetMod().begin();
+        while (iter != SetOrg().SetOrgname().SetMod().end()) {
+            CRef<COrgMod> orgmod = *iter;
+            bool removed = false;
+            if (orgmod->IsSetSubtype() && orgmod->GetSubtype() == COrgMod::eSubtype_other) {
+                if (orgmod->IsSetSubname()) {
+                    if (s_DoesTextContainOnlyTheseWords(orgmod->GetSubname(), word_list)) {
+                        // remove this orgmod note
+                        iter = SetOrg().SetOrgname().SetMod().erase(iter);
+                        removed = true;
+                        any_removed = true;
+                    } 
+                }
+            }
+            if (!removed) {
+                ++iter;
+            }
+        }
+        if (GetOrg().GetOrgname().GetMod().empty()) {
+            SetOrg().SetOrgname().ResetMod();
+        }
+    }
+
+    return any_removed;
+}
 
 bool CBioSource::RemoveSubSource(unsigned int subtype)
 {

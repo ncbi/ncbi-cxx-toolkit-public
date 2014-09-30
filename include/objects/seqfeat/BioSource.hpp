@@ -129,6 +129,7 @@ public:
 
     void AutoFix();
     void RemoveCultureNotes();
+    bool RemoveLineageSourceNotes();
 
     bool RemoveSubSource(unsigned int subtype);
     bool RemoveOrgMod(unsigned int subtype);
