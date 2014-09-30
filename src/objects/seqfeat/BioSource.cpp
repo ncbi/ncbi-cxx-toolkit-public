@@ -1300,13 +1300,16 @@ static const string s_SpecialLineageWords[] = {
   "Taxonomy"
 };
 
+// workaround for std::replace_if
+inline bool s_IsPunct( char ch ) { return ispunct(ch) != 0; }
+
 static void s_GetWordListFromText(string& str, vector<string>& word_list)
 {
     if (NStr::IsBlank(str))
         return;
 
     vector<string> tokens;
-    std::replace_if(str.begin(), str.end(), ispunct, ' ');
+    std::replace_if(str.begin(), str.end(), s_IsPunct, ' ');
     NStr::Tokenize(str, " ", tokens, NStr::eMergeDelims);
     for (size_t i = 0; i < tokens.size(); ++i) {
         word_list.push_back(tokens[i]);
