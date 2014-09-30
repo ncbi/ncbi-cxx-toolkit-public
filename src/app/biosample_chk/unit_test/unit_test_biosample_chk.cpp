@@ -499,5 +499,32 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2022)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2028)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Triticum aestivum");
+    CRef<COrgMod> n1(new COrgMod(COrgMod::eSubtype_old_name, "old name 1"));
+    src->SetOrg().SetOrgname().SetMod().push_back(n1);
+    CRef<COrgMod> l1(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage 1"));
+    src->SetOrg().SetOrgname().SetMod().push_back(l1);
+    CRef<COrgMod> s1(new COrgMod(COrgMod::eSubtype_gb_synonym, "synonym 1"));
+    src->SetOrg().SetOrgname().SetMod().push_back(s1);
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->SetOrg().SetTaxname("Triticum aestivum");
+    CRef<COrgMod> n2(new COrgMod(COrgMod::eSubtype_old_name, "old name 2"));
+    smpl->SetOrg().SetOrgname().SetMod().push_back(n2);
+    CRef<COrgMod> l2(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage 2"));
+    smpl->SetOrg().SetOrgname().SetMod().push_back(l2);
+    CRef<COrgMod> s2(new COrgMod(COrgMod::eSubtype_gb_synonym, "synonym 2"));
+    smpl->SetOrg().SetOrgname().SetMod().push_back(s2);
+
+    // no differences should be reported
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
