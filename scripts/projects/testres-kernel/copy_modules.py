@@ -4,6 +4,7 @@ import shutil
 import sys
 
 MODULES_PATH = "src/internal/cppcore/testres/modules"
+MODULES_DEST_PATH = "modules"
 GENERATE_CONFIG = "generate_config"
 DEFAULT_RUN = "default_run"
 
@@ -14,20 +15,28 @@ try:
 
     #locate all modules
     modules_dir = os.path.join(src_dir, MODULES_PATH)
-    modules_dest_dir = os.path.join(install_dir, MODULES_PATH)
+    modules_dest_dir = os.path.join(install_dir, MODULES_DEST_PATH)
 
     for dir_entry in os.listdir(modules_dir):
         module_path = os.path.join(modules_dir, dir_entry)
         if os.path.isdir(module_path):
-            gen_conf_path = os.path.join(module_path, GENERATE_CONFIG)
-            def_run_path = os.path.join(module_path, DEFAULT_RUN)
+            gen_conf_path = os.path.join(
+                bin_dir,
+                dir_entry + "_" + GENERATE_CONFIG)
+            def_run_path = os.path.join(
+                bin_dir,
+                dir_entry + "_" + DEFAULT_RUN)
 
             if os.path.exists(gen_conf_path) and os.path.exists(def_run_path):
 
                 module_dest_dir = os.path.join(modules_dest_dir, dir_entry)
                 os.makedirs(module_dest_dir)
-                shutil.copy(gen_conf_path, module_dest_dir)
-                shutil.copy(def_run_path, module_dest_dir)
+                gen_conf_dest_path = os.path.join(
+                    module_dest_dir,
+                    GENERATE_CONFIG)
+                def_run_dest_path = os.path.join(module_dest_dir, DEFAULT_RUN)
+                shutil.copy(gen_conf_path, gen_conf_dest_path)
+                shutil.copy(def_run_path, def_run_dest_path)
 except Exception as excpt:
     print excpt
     exit(1)
