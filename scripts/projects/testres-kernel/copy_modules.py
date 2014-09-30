@@ -18,17 +18,32 @@ try:
     modules_dest_dir = os.path.join(install_dir, MODULES_DEST_PATH)
 
     for dir_entry in os.listdir(modules_dir):
-        module_path = os.path.join(modules_dir, dir_entry)
-        if os.path.isdir(module_path):
-            gen_conf_path = os.path.join(
+        module_src_dir = os.path.join(modules_dir, dir_entry)
+        if os.path.isdir(module_src_dir):
+            gen_conf_path_bin = os.path.join(
                 bin_dir,
                 dir_entry + "_" + GENERATE_CONFIG)
-            def_run_path = os.path.join(
+            def_run_path_bin = os.path.join(
                 bin_dir,
                 dir_entry + "_" + DEFAULT_RUN)
 
-            if os.path.exists(gen_conf_path) and os.path.exists(def_run_path):
+            # modules may still reside in the src directory (if non-compilable)
+            gen_conf_path_src = os.path.join(
+                module_src_dir,
+                dir_entry + "_" + GENERATE_CONFIG)
+            def_run_path_src = os.path.join(
+                module_src_dir,
+                dir_entry + "_" + DEFAULT_RUN)
 
+            if (os.path.exists(gen_conf_path_bin) and os.path.exists(def_run_path_bin)):
+                gen_conf_path = gen_conf_path_bin
+                def_run_path = def_run_path_bin
+            else:
+                if os.path.exists(gen_conf_path_src) and os.path.exists(def_run_path_src):
+                    gen_conf_path = gen_conf_path_src
+                    def_run_path = def_run_path_src
+
+            if os.path.exists(gen_conf_path) and os.path.exists(def_run_path):
                 module_dest_dir = os.path.join(modules_dest_dir, dir_entry)
                 os.makedirs(module_dest_dir)
                 gen_conf_dest_path = os.path.join(
