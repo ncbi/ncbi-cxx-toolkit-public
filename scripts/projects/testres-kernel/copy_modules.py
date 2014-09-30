@@ -35,6 +35,9 @@ try:
                 module_src_dir,
                 dir_entry + "_" + DEFAULT_RUN)
 
+            gen_conf_path = None
+            def_run_path = None
+
             if (os.path.exists(gen_conf_path_bin) and os.path.exists(def_run_path_bin)):
                 gen_conf_path = gen_conf_path_bin
                 def_run_path = def_run_path_bin
@@ -43,7 +46,7 @@ try:
                     gen_conf_path = gen_conf_path_src
                     def_run_path = def_run_path_src
 
-            if os.path.exists(gen_conf_path) and os.path.exists(def_run_path):
+            if gen_conf_path and def_run_path:
                 module_dest_dir = os.path.join(modules_dest_dir, dir_entry)
                 os.makedirs(module_dest_dir)
                 gen_conf_dest_path = os.path.join(
