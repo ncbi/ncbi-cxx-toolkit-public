@@ -1301,7 +1301,7 @@ static const string s_SpecialLineageWords[] = {
 };
 
 // workaround for std::replace_if
-inline bool s_IsPunct( char ch ) { return ispunct((unsigned char) ch) != 0; }
+static inline bool s_IsPunct( char ch ) { return ispunct((unsigned char) ch) != 0; }
 
 static void s_GetWordListFromText(string& str, vector<string>& word_list)
 {
