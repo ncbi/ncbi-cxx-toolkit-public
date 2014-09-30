@@ -3115,10 +3115,11 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
         size_t              total = 0;
         map< string,
              map<string, string> >      linked_sections;
+        vector<string>      warnings;
 
         queue_ref.Reset(m_Server->OpenQueue(qname));
         queue_ptr = queue_ref.GetPointer();
-        queue_ptr->GetJobsPerState("", "", jobs_per_state);
+        queue_ptr->GetJobsPerState("", "", jobs_per_state, warnings);
         queue_ptr->GetLinkedSections(linked_sections);
 
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
@@ -4002,8 +4003,9 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
                                      const string &          what,
                                      const CNSPreciseTime &  curr)
 {
-    bool   verbose = (m_CommandArguments.comment == "VERBOSE");
-    string info;
+    bool            verbose = (m_CommandArguments.comment == "VERBOSE");
+    string          info;
+    vector<string>  warnings;
 
     if (what == "CLIENTS") {
         info = q->PrintClientsList(verbose);
@@ -4026,15 +4028,23 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
             x_WriteMessage(info);
     }
     else if (what == "JOBS") {
-        x_WriteMessage(q->PrintJobsStat(m_CommandArguments.group,
-                                        m_CommandArguments.affinity_token));
+        info = q->PrintJobsStat(m_CommandArguments.group,
+                                m_CommandArguments.affinity_token,
+                                warnings);
+        if (!info.empty())
+            x_WriteMessage(info);
     }
     else if (what == "WNODE") {
-        x_WriteMessage("OK:WARNING:eCommandObsolete:Command is obsolete, "
-                       "use STAT CLIENTS instead;");
+        warnings.push_back("eCommandObsolete:Command is obsolete, "
+                           "use STAT CLIENTS instead");
     }
 
-    x_WriteMessage("OK:END");
+    string  msg;
+    for (vector<string>::const_iterator  k = warnings.begin();
+         k != warnings.end(); ++k) {
+        msg += "WARNING:" + *k + ";";
+    }
+    x_WriteMessage("OK:" + msg + "END");
     x_PrintCmdRequestStop();
 }
 

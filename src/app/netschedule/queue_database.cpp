@@ -1855,13 +1855,14 @@ string CQueueDataBase::PrintTransitionCounters(void)
 string CQueueDataBase::PrintJobsStat(void)
 {
     string                      result;
+    vector<string>              warnings;
     CFastMutexGuard             guard(m_ConfigureLock);
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k)
         // Group and affinity tokens make no sense for the server,
         // so they are both "".
         result += "OK:[queue " + k->first + "]\n" +
-                  k->second.second->PrintJobsStat("", "");
+                  k->second.second->PrintJobsStat("", "", warnings);
     return result;
 }
 

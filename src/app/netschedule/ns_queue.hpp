@@ -435,11 +435,13 @@ public:
     void PrintStatistics(size_t &  aff_count) const;
     unsigned int GetJobsToDeleteCount(void) const;
     string PrintTransitionCounters(void) const;
-    string PrintJobsStat(const string &  group_token,
-                         const string &  aff_token) const;
-    void GetJobsPerState(const string &  group_token,
-                         const string &  aff_token,
-                         size_t *        jobs) const;
+    string PrintJobsStat(const string &    group_token,
+                         const string &    aff_token,
+                         vector<string> &  warnings) const;
+    void GetJobsPerState(const string &    group_token,
+                         const string &    aff_token,
+                         size_t *          jobs,
+                         vector<string> &  warnings) const;
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }

@@ -2053,7 +2053,7 @@ CQueue::CancelSelectedJobs(const CNSClientId &         client,
         unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(aff_token);
         if (aff_id == 0) {
             jobs_to_cancel.clear();
-            warnings.push_back("eAffinityNotFound:" + aff_token +
+            warnings.push_back("eAffinityNotFound:affinity " + aff_token +
                                " is not found");
             if (logging)
                 LOG_POST(Message << Warning <<
@@ -4148,24 +4148,34 @@ string CQueue::PrintTransitionCounters(void) const
 }
 
 
-void CQueue::GetJobsPerState(const string &  group_token,
-                             const string &  aff_token,
-                             size_t *        jobs) const
+void CQueue::GetJobsPerState(const string &    group_token,
+                             const string &    aff_token,
+                             size_t *          jobs,
+                             vector<string> &  warnings) const
 {
     TNSBitVector        group_jobs;
     TNSBitVector        aff_jobs;
     CFastMutexGuard     guard(m_OperationLock);
 
-    if (!group_token.empty())
-        group_jobs = m_GroupRegistry.GetJobs(group_token);
+    if (!group_token.empty()) {
+        try {
+            group_jobs = m_GroupRegistry.GetJobs(group_token);
+        } catch (...) {
+            warnings.push_back("eGroupNotFound:job group " + group_token +
+                               " is not found");
+        }
+    }
     if (!aff_token.empty()) {
         unsigned int  aff_id = m_AffinityRegistry.GetIDByToken(aff_token);
         if (aff_id == 0)
-            NCBI_THROW(CNetScheduleException, eAffinityNotFound,
-                       "Unknown affinity token \"" + aff_token + "\"");
-
-        aff_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
+            warnings.push_back("eAffinityNotFound:affinity " + aff_token +
+                               " is not found");
+        else
+            aff_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
     }
+
+    if (!warnings.empty())
+        return;
 
     for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
         TNSBitVector  candidates =
@@ -4181,22 +4191,27 @@ void CQueue::GetJobsPerState(const string &  group_token,
 }
 
 
-string CQueue::PrintJobsStat(const string &  group_token,
-                             const string &  aff_token) const
+string CQueue::PrintJobsStat(const string &    group_token,
+                             const string &    aff_token,
+                             vector<string> &  warnings) const
 {
     size_t              total = 0;
     string              result;
     size_t              jobs_per_state[g_ValidJobStatusesSize];
 
-    GetJobsPerState(group_token, aff_token, jobs_per_state);
+    GetJobsPerState(group_token, aff_token, jobs_per_state, warnings);
 
-    for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
-        result += "OK:" +
-                  CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
-                  ": " + NStr::NumericToString(jobs_per_state[index]) + "\n";
-        total += jobs_per_state[index];
+    // Warnings could be about non existing affinity or group. If so there are
+    // no jobs to be printed.
+    if (warnings.empty()) {
+        for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+            result += "OK:" +
+                      CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
+                      ": " + NStr::NumericToString(jobs_per_state[index]) + "\n";
+            total += jobs_per_state[index];
+        }
+        result += "OK:Total: " + NStr::NumericToString(total) + "\n";
     }
-    result += "OK:Total: " + NStr::NumericToString(total) + "\n";
     return result;
 }
 
