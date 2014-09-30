@@ -837,7 +837,7 @@ double CObjectIStreamAsn::ReadDouble(void)
     }
 
     if ( base == 10 ) {
-        result = mantissa * pow(10, exp);
+        result = mantissa * pow(10.0, exp);
     } else {
         result = ldexp( mantissa, exp);
     }
