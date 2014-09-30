@@ -743,6 +743,54 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
     }
 }
 
+void CRemoteUpdater::PostProcessPubs(CSeq_entry& obj)
+{
+    if (obj.IsSet())
+    {
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, obj.SetSet().SetSeq_set())
+        {
+            PostProcessPubs(**it);
+        }
+    }
+    else
+    if (obj.IsSeq() && obj.IsSetDescr())
+    {
+        NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, obj.SetSeq().SetDescr().Set())
+        {
+            if ((**desc_it).IsPub())
+            {
+                PostProcessPubs((**desc_it).SetPub());
+            }
+        }
+    }
+}
+
+void CRemoteUpdater::PostProcessPubs(CPubdesc& pubdesc)
+{
+    if (!pubdesc.IsSetPub())
+        return;
+
+    NON_CONST_ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.SetPub().Set())
+    {
+        CReferenceItem::ChangeMedlineAuthorsToISO(*it);
+        if ((**it).IsSetAuthors())
+        {
+            ConvertToStandardAuthors((CAuth_list&)(**it).GetAuthors());
+        }
+    }
+}
+
+void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
+{
+    for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it)
+    {
+        for (CSeqdesc_CI desc_it(bioseq_it->GetEditHandle(), CSeqdesc::e_Pub); desc_it; ++desc_it)
+        {
+            PostProcessPubs((CPubdesc&)desc_it->GetPub());
+        }
+    }
+   
+}
 
 END_SCOPE(edit)
 END_SCOPE(objects)

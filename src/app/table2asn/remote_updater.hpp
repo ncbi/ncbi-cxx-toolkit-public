@@ -33,6 +33,9 @@ public:
    void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry_EditHandle& obj);
    void UpdateOrgFromTaxon(IMessageListener* logger, CSeqdesc& obj);
    static void ConvertToStandardAuthors(CAuth_list& auth_list);
+   static void PostProcessPubs(CSeq_entry_EditHandle& obj);
+   static void PostProcessPubs(CSeq_entry& obj);
+   static void PostProcessPubs(CPubdesc& pubdesc);
 
    // Use either shared singleton or individual instances
    static CRemoteUpdater& GetInstance();

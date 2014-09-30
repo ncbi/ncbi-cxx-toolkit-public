@@ -111,6 +111,7 @@ public:
     bool   m_avoid_submit_block;
     bool   m_split_log_files;
     bool   m_optmap_use_locations;
+    bool   m_postprocess_pubs;
     string m_asn1_suffix;
 
     CRef<objects::CSeq_descr>  m_descriptors;

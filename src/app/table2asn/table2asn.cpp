@@ -340,6 +340,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
     arg_desc->AddFlag("map-use-loc", "Optical map: use locations instead of lengths of fragments");
+    arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
@@ -462,6 +463,8 @@ int CTbl2AsnApp::Run(void)
         m_context.m_single_structure_cmt = args["w"].AsString();
 
     m_context.m_RemotePubLookup = args["P"].AsBoolean();
+    if (!m_context.m_RemotePubLookup) // those are always postprocessed
+        m_context.m_postprocess_pubs = args["postprocess-pubs"].AsBoolean();
 
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
 
@@ -755,7 +758,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     else
         result = m_context.CreateSubmitFromTemplate(entry, GetAppName() + " " + GetVersion().Print());
 
-#ifdef USE_SCOPE
     CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
 
     if (!m_context.m_genome_center_id.empty())
@@ -768,15 +770,13 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         m_context.VisitAllFeatures(entry_edit_handle, m_context.MakeDelayGenProdSet);
     }
 
-#endif
-
     if (m_context.m_RemotePubLookup)
     {
-#ifdef USE_SCOPE
         m_context.m_remote_updater->UpdatePubReferences(entry_edit_handle);
-#else
-        m_context.m_remote_updater->UpdatePubReferences(*result);
-#endif
+    }
+    if (m_context.m_postprocess_pubs)
+    {
+        edit::CRemoteUpdater::PostProcessPubs(entry_edit_handle);
     }
 
     if (m_context.m_RemoteTaxonomyLookup)
