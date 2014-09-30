@@ -110,6 +110,7 @@
    fun:__log_write
    fun:__log_flush_int
    fun:__log_flush
+   ...
    fun:__memp_sync_int
    ...
    fun:__memp_trickle_pp
