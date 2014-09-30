@@ -339,6 +339,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
+    arg_desc->AddFlag("map-use-loc", "Optical map: use locations instead of lengths of fragments");
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
@@ -465,6 +466,8 @@ int CTbl2AsnApp::Run(void)
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
 
     m_context.m_avoid_submit_block = args["avoid-submit"].AsBoolean();
+
+    m_context.m_optmap_use_locations = args["map-use-loc"].AsBoolean();
 
     if (args["a"])
     {

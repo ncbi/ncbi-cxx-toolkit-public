@@ -287,18 +287,49 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
     points.reserve(it.m_fragments.size());
     
     TSeqPos addr = 0;
-    ITERATE (list <TFragm>, fit, it.m_fragments) {
-        TSeqPos prev = addr;
-        addr += fit->second;
-        if (prev > addr)
-        {
-           m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-               string("Location reached numeric limit at row I=") + 
-               (fit->first.first == 0 ? NStr::IntToString(fit->first.second) :
-                                        NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second))));
-           break;
+    // There are two approaches of specifying fragments: locations and lengths of fragments
+    if (context.m_optmap_use_locations)
+    {
+        ITERATE (list <TFragm>, fit, it.m_fragments) {
+            list<TFragm>::const_iterator next = fit;
+            next++;
+            if (next != it.m_fragments.end())
+            {
+                if (next->second <= fit->second) {
+                    // if locations are not increasing raise an error
+                    m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                        string("Locations are overlapping at row I=") + 
+                        (fit->first.first == 0 ? NStr::IntToString(fit->first.second) :
+                        NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second))));
+
+                    points.clear();
+                    addr = 0;
+                    break;
+                }
+            }
+            points.push_back(fit->second);
+            addr = fit->second;
         }
-        points.push_back(addr - 1);
+    }
+    else
+    {
+        ITERATE (list <TFragm>, fit, it.m_fragments) 
+        {
+            TSeqPos prev = addr;
+            if (prev > addr)
+            {
+                m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                    string("Location reached numeric limit at row I=") + 
+                    (fit->first.first == 0 ? NStr::IntToString(fit->first.second) :
+                    NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second))));
+
+                points.clear();
+                addr = 0;
+                break;
+            }
+            addr += fit->second;
+            points.push_back(addr - 1);
+        }
     }
 
     inst.SetLength(addr);
