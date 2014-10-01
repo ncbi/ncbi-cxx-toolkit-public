@@ -610,6 +610,9 @@ void TestMapping_Spliced()
     TestMappingSeq_align(*mapper, in);
     cout << "  Trimming indels - 2" << endl;
     TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming indels - 3" << endl;
+    TestMappingSeq_align(*mapper, in);
 }
 
 

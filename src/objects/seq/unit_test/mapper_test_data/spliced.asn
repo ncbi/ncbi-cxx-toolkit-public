@@ -557,3 +557,110 @@ Seq-align ::= {
     }
   }
 }
+
+-- Trimming indels - 3: mapping source
+Seq-loc ::= mix {
+  int {
+    from 100,
+    to 200,
+    id gi 2
+  },
+  int {
+    from 300,
+    to 400,
+    id gi 2
+  }
+}
+-- Trimming indels - 3: mapping destination
+Seq-loc ::= mix {
+  int {
+    from 100,
+    to 200,
+    id gi 3
+  },
+  int {
+    from 300,
+    to 400,
+    id gi 3
+  }
+}
+-- Trimming indels - 3: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 199,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 799,
+        parts {
+          match 130,
+          genomic-ins 200,
+          diag 70,
+          match 200
+        },
+        partial FALSE
+      }
+    },
+    product-length 200
+  }
+}
+-- Trimming indels - 3: mapped, original indels must be preserved
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 33,
+          frame 2
+        },
+        product-end protpos {
+          amin 43,
+          frame 1
+        },
+        genomic-start 100,
+        genomic-end 200,
+        parts {
+          match 30,
+          genomic-ins 71
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 43,
+          frame 2
+        },
+        product-end protpos {
+          amin 66,
+          frame 3
+        },
+        genomic-start 300,
+        genomic-end 400,
+        parts {
+          genomic-ins 30,
+          diag 70,
+          match 1
+        },
+        partial TRUE
+      }
+    },
+    product-length 200
+  }
+}

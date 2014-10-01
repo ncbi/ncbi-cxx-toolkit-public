@@ -1595,6 +1595,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
     bool gstrand_set = false;
     bool pstrand_set = false;
     bool aln_protein = false;
+    size_t mapped_gaps = 0;
+    int non_gap_gen_end = 0;
+    int non_gap_prod_end = 0;
 
     if ( spliced.IsSetProduct_type() ) {
         aln_protein =
@@ -1857,6 +1860,16 @@ x_GetDstExon(CSpliced_seg&              spliced,
         // Add the mapped part except if it's a gap in the first position.
         if (!is_gap  ||  !exon->GetParts().empty()  ||  orig_ptype == ptype) {
             x_PushExonPart(last_part, ptype, seg->m_Len, *exon);
+            // Count trailing gaps resulting from mapping to remove them
+            // when the exon is ready.
+            if (is_gap  &&  orig_ptype != ptype) {
+                mapped_gaps++;
+            }
+            else {
+                mapped_gaps = 0;
+                non_gap_prod_end = prod_end;
+                non_gap_gen_end = gen_end;
+            }
         }
         else {
             if (ptype == CSpliced_exon_chunk::e_Genomic_ins) {
@@ -1876,6 +1889,17 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 }
             }
         }
+    }
+
+    // Trim trailing gaps resulting from mapping.
+    if (mapped_gaps > 0) {
+        CSpliced_exon::TParts& parts = exon->SetParts();
+        _ASSERT(parts.size() >= mapped_gaps);
+        for (; mapped_gaps > 0; mapped_gaps--) {
+            parts.pop_back();
+        }
+        gen_end = non_gap_gen_end;
+        prod_end = non_gap_prod_end;
     }
 
     // The whole alignment becomes partial if any its exon is partial.
