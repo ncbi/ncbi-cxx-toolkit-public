@@ -116,6 +116,7 @@ public:
 
     // for BioSample
     void UpdateWithBioSample(const CBioSource& biosample, bool force, bool is_local_copy = false);
+    static bool ShouldIgnoreConflict(const string& label, string src_val, string sample_val, bool is_local_copy = false);
 
     TFieldDiffList GetBiosampleDiffs(const CBioSource& biosample, bool is_local_copy = false) const;
     bool BiosampleDiffsOkForUpdate(const TFieldDiffList& diffs) const;

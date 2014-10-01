@@ -942,7 +942,7 @@ bool s_SameExceptPrecision (double val1, double val2)
 }
     
 
-static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_val, bool is_local_copy)
+bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, string sample_val, bool is_local_copy)
 {
     int i;
     bool rval = false;
@@ -1071,21 +1071,21 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
     while (it1 != list1.end() && it2 != list2.end()) {
         int cmp = NStr::Compare(it1->first, it2->first);
         if (cmp == 0) {
-            if (!s_ShouldIgnoreConflict(it1->first, it1->second, it2->second, is_local_copy)) {
+            if (!CBioSource::ShouldIgnoreConflict(it1->first, it1->second, it2->second, is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, it2->second));
                 list.push_back(diff);
             }
             it1++;
             it2++;
         } else if (cmp < 0) {
-            if (!s_ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
+            if (!CBioSource::ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
                 list.push_back(diff);
             }
             it1++;
         } else {
             // cmp > 0
-            if (!s_ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
+            if (!CBioSource::ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
                 list.push_back(diff);
             }
@@ -1093,14 +1093,14 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
         }
     }
     while (it1 != list1.end()) {
-        if (!s_ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
+        if (!CBioSource::ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
             CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
             list.push_back(diff);
         }
         it1++;
     }
     while (it2 != list2.end()) {
-        if (!s_ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
+        if (!CBioSource::ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
             CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
             list.push_back(diff);
         }
