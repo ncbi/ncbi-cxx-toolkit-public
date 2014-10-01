@@ -851,6 +851,14 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
         c = *ptr++;
     }
     
+    if (c == 0) {
+        if (endptr) {
+            *endptr = (char*)start;
+        }
+        err_guard.Set(EINVAL);
+        return 0.;
+    }
+
     // short-cut - single digit
     if ( !*ptr && c >= '0' && c <= '9' ) {
         if (endptr) {
