@@ -7294,7 +7294,14 @@ case "$host_os:$compiler:$compiler_version" in
 esac
 
 if test "$with_lfs" = "yes" ; then
-   LFSFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+   LFSFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+   # Modern BSD-based systems (including Mac OS X) already use a 64-bit
+   # off_t, but don't necessarily provide explicit ...64 variants of all
+   # relevant functions.
+   case "$host_os" in
+      *bsd* | darwin* ) ;;
+      * ) LFSFLAGS="$LFSFLAGS -D_LARGEFILE64_SOURCE" ;;
+   esac
    CPPFLAGS="$LFSFLAGS $CPPFLAGS"
 fi
 
