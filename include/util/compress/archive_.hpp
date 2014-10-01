@@ -62,6 +62,7 @@ class NCBI_XUTIL_EXPORT CArchiveException : public CCoreException
 public:
     /// Error types that file operations can generate.
     enum EErrCode {
+        eUnsupported,
         eMemory,
         eUnsupportedEntryType,
         eBadName,
@@ -80,6 +81,7 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
+        case eUnsupported:          return "eUnsupported";
         case eMemory:               return "eMemory";
         case eUnsupportedEntryType: return "eUnsupportedEntryType";
         case eBadName:              return "eBadName";
