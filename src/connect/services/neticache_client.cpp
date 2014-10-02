@@ -148,6 +148,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     }
 
     CNetServer::SExecResult StickToServerAndExec(const string& cmd,
+            bool multiline_output,
             const CNetCacheAPIParameters* parameters,
             INetServerConnectionListener* conn_listener = NULL);
 
@@ -228,7 +229,7 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
         cmd.append(" confirm=1");
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
 
-    return StickToServerAndExec(cmd, parameters).conn;
+    return StickToServerAndExec(cmd, false, parameters).conn;
 }
 
 CNetICacheClient::CNetICacheClient(EAppRegistry use_app_reg,
@@ -277,6 +278,7 @@ STimeout CNetICacheClient::GetCommunicationTimeout() const
 
 CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
         const string& cmd,
+        bool multiline_output,
         const CNetCacheAPIParameters* parameters,
         INetServerConnectionListener* conn_listener)
 {
@@ -284,7 +286,8 @@ CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
 
     if (selected_server) {
         try {
-            return selected_server.ExecWithRetry(cmd, conn_listener);
+            return selected_server.ExecWithRetry(cmd,
+                    multiline_output, conn_listener);
         }
         catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
@@ -297,7 +300,7 @@ CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
     for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
         try {
             m_DefaultParameters.SetServerToUse(*it);
-            return (*it).ExecWithRetry(cmd, conn_listener);
+            return (*it).ExecWithRetry(cmd, multiline_output, conn_listener);
         }
         catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
@@ -452,7 +455,7 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
         }
 
         CNetServer::SExecResult exec_result(
-                StickToServerAndExec(cmd, &parameters));
+                StickToServerAndExec(cmd, false, &parameters));
 
         unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
         if (parameters.GetMaxBlobAge() > 0 && actual_age_ptr != NULL)
@@ -716,7 +719,7 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
         }
 
         CNetServer::SExecResult exec_result(StickToServerAndExec(cmd,
-                &m_DefaultParameters));
+                false, &m_DefaultParameters));
 
         string::size_type pos = exec_result.response.find("VER=");
 
@@ -852,6 +855,7 @@ void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
                     m_Impl->MakeStdCmd("SETVALID",
                             s_KeyVersionSubkeyToBlobID(key, version, subkey),
                             &m_Impl->m_DefaultParameters),
+                    false,
                     &m_Impl->m_DefaultParameters,
                     warning_suppressor));
 
@@ -874,6 +878,7 @@ CNetServerMultilineCmdOutput CNetICacheClient::GetBlobInfo(const string& key,
                     m_Impl->MakeStdCmd("GETMETA",
                             s_KeyVersionSubkeyToBlobID(key, version, subkey),
                             &parameters),
+                    true,
                     &parameters));
 
     output->SetNetCacheCompatMode();
@@ -935,6 +940,7 @@ string SNetICacheClientImpl::ExecStdCmd(const char* cmd_base,
             MakeStdCmd(cmd_base,
                     s_KeyVersionSubkeyToBlobID(key, version, subkey),
                     parameters),
+            false,
             parameters).response;
 }
 
