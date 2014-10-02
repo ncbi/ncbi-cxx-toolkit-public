@@ -209,6 +209,7 @@ CGtfReader::ReadSeqAnnots(
     string line;
 
     while (xGetLine(lr, line)) {
+        xReportProgress(pEC);
         try {
             if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
                 continue;
@@ -235,6 +236,7 @@ CGtfReader::ReadSeqAnnots(
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
+    xProgressInit(istr);
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
 

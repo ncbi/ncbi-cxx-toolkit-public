@@ -589,17 +589,7 @@ void CReaderBase::xReportProgress(
     }
     // report something
     ios::streampos curPos = m_pInStream->tellg();
-
-    stringstream progMessage;
-    progMessage 
-        << "Conversion progress: " << curPos << " of " << m_uMaxFilePos << " bytes.";
-    AutoPtr<CObjReaderLineException> pErr(
-        CObjReaderLineException::Create(
-        eDiag_Info,
-        m_uLineNumber,
-        progMessage.str(),
-        ILineError::eProblem_ProgressInfo) );
-    this->ProcessError(*pErr, pProgress);
+    pProgress->PutProgress("Percent Progress", Uint8(100*curPos/m_uMaxFilePos), 100);
 
     m_uNextProgressReport += m_uProgressReportInterval;
 }

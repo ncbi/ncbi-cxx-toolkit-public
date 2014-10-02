@@ -68,6 +68,8 @@
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/ucscregion_reader.hpp>
+#include <objtools/readers/read_util.hpp>
+#include <misc/hgvs/hgvs_reader.hpp>
 
 #include <objtools/edit/feattable_edit.hpp>
 
@@ -133,15 +135,17 @@ private:
     void xProcessAgp(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessFasta(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
             
-	void xPostProcessAnnot(const CArgs&,  CSeq_annot&);
+	void xPostProcessAnnot(const CArgs&, CSeq_annot&);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
+    void xDumpTrack(const CArgs&, const CSeq_annot&, CNcbiOstream&);
 
     CFormatGuess::EFormat m_uFormat;
     bool m_bCheckOnly;
@@ -170,10 +174,44 @@ public:
     PutError(
         const ILineError& err ) 
     {
+        if (err.Problem() == ILineError::eProblem_ProgressInfo) {
+            cerr << err.Message();
+            return true;
+        }
         StoreError(err);
         return (err.Severity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
     };
     
+    void
+    PutProgress(
+        const string& msg,
+        const Uint8 pctDone,
+        const Uint8 pct100)
+    {
+        cerr << "Progress: " << pctDone << " % done." << endl;
+    };
+protected:
+    size_t m_iMaxCount;
+    int m_iMaxLevel;    
+};    
+        
+//  ============================================================================
+class CMessageListenerCustomLevel:
+//  ============================================================================
+    public CMessageListenerLevel
+{
+public:
+    CMessageListenerCustomLevel::CMessageListenerCustomLevel(int level):
+        CMessageListenerLevel(level) {};
+
+//    void
+//    PutProgress(
+//        const string& msg,
+//        const Uint8 pctDone,
+//        const Uint8 pct100)
+//    {
+//        cerr << msg << " (" << pctDone << "%)" << endl;
+//    };
 protected:
     size_t m_iMaxCount;
     int m_iMaxLevel;    
@@ -228,6 +266,7 @@ void CMultiReaderApp::Init(void)
             "fasta",
             "5colftbl",
             "ucsc",
+            "hgvs",
             "guess") );
 
     arg_desc->AddDefaultKey("out-format", "FORMAT", 
@@ -338,7 +377,7 @@ void CMultiReaderApp::Init(void)
             "info", "warning", "error" ) );
 
     arg_desc->AddFlag("show-progress", 
-        "This will show XML progress messages on stderr, if the underlying "
+        "This will show progress messages on stderr, if the underlying "
         "reader supports that.");
 
     //
@@ -551,6 +590,9 @@ CMultiReaderApp::Run(void)
             case CFormatGuess::eFasta:
                 xProcessFasta(args, istr, ostr);
                 break;
+            case CFormatGuess::eHgvs:
+                xProcessHgvs(args, istr, ostr);
+                break;
         }
     }
     catch(CObjReaderLineException& ) {
@@ -590,6 +632,7 @@ void CMultiReaderApp::xProcessWiggle(
     CStreamLineReader lr(istr);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xDumpTrack(args, **cit, cerr);
         xWriteObject(args, **cit, ostr);
     }
 }
@@ -670,6 +713,9 @@ void CMultiReaderApp::xProcessGtf(
         return xProcessGff2(args, istr, ostr);
     }
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    if (args["show-progress"]) {
+        reader.SetProgressReportInterval(10);
+    }
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
 		xPostProcessAnnot(args, **it);
@@ -691,6 +737,9 @@ void CMultiReaderApp::xProcessGff3(
         return xProcessGff2(args, istr, ostr);
     }
     CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    if (args["show-progress"]) {
+        reader.SetProgressReportInterval(10);
+    }
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
 		xPostProcessAnnot(args, **it);
@@ -709,6 +758,23 @@ void CMultiReaderApp::xProcessGff2(
     ANNOTS annots;
     
     CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteObject(args, **cit, ostr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessHgvs(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    
+    CHgvsReader reader;
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
@@ -803,10 +869,12 @@ void CMultiReaderApp::xProcessAgp(
     }
 }
 
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcess5ColFeatTable(
     const CArgs& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
 {
     CFeature_table_reader reader;
     CRef<ILineReader> pLineReader = ILineReader::New(istr);
@@ -823,10 +891,12 @@ void CMultiReaderApp::xProcess5ColFeatTable(
     }
 }
 
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessFasta(
     const CArgs& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
 {
     CFastaReader::TFlags fFlags = 0;
     fFlags |= CFastaReader::fNoSplit;
@@ -1014,6 +1084,36 @@ void CMultiReaderApp::xPostProcessAnnot(
 }
 
 //  ----------------------------------------------------------------------------
+void CMultiReaderApp::xDumpTrack(
+    const CArgs& args,
+    const CSeq_annot& annot,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    ostr << "[Track name=\"";
+    string name;
+    if (!CReadUtil::GetTrackName(annot, name)) {
+        name = "<>";
+    }
+    ostr << name;
+
+    ostr << "\" assembly=\"";
+    string assembly;
+    if (!CReadUtil::GetTrackAssembly(annot, assembly)) {
+        assembly = "<>";
+    }
+    ostr << assembly;
+
+    ostr << "\" offset=";
+    int offset=0;
+    if (!CReadUtil::GetTrackOffset(annot, offset)) {
+        offset = 0;
+    }
+    ostr << offset;
+    ostr << "]" << endl;
+}
+
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xWriteObject(
     const CArgs & args,
     CSerialObject& object,                  // potentially modified by mapper
@@ -1097,7 +1197,7 @@ CMultiReaderApp::xSetMessageListener(
         }
 
         if ( iMaxErrorCount == -1 ) {
-            m_pErrors.Reset(new CMessageListenerLevel(iMaxErrorLevel));
+            m_pErrors.Reset(new CMessageListenerCustomLevel(iMaxErrorLevel));
         } else {
             m_pErrors.Reset(new CMessageListenerCustom(iMaxErrorCount, iMaxErrorLevel));
         }
