@@ -201,7 +201,7 @@ class CMessageListenerCustomLevel:
     public CMessageListenerLevel
 {
 public:
-    CMessageListenerCustomLevel::CMessageListenerCustomLevel(int level):
+    CMessageListenerCustomLevel(int level):
         CMessageListenerLevel(level) {};
 
 //    void
