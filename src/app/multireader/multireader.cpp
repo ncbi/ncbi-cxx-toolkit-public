@@ -629,7 +629,10 @@ void CMultiReaderApp::xProcessWiggle(
     ANNOTS annots;
     
     CWiggleReader reader(m_iFlags);
-    CStreamLineReader lr(istr);
+    if (args["show-progress"]) {
+        reader.SetProgressReportInterval(10);
+    }
+    //CStreamLineReader lr(istr);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xDumpTrack(args, **cit, cerr);

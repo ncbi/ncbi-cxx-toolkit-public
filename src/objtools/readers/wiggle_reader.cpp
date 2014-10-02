@@ -174,6 +174,7 @@ CWiggleReader::xReadSeqAnnotGraph(
     }
     bool haveData = false;
     while (xGetLine(lr, m_CurLine)) {
+        xReportProgress(pMessageListener);
         if (xIsTrackLine(m_CurLine)  &&  haveData) {
             xUngetLine(lr);
             break;
@@ -223,6 +224,7 @@ CWiggleReader::xReadSeqAnnotTable(
 
     bool haveData = false;
     while (xGetLine(lr, m_CurLine)) {
+        xReportProgress(pMessageListener);
         if (xIsTrackLine(m_CurLine)  &&  haveData) {
             xUngetLine(lr);
             break;

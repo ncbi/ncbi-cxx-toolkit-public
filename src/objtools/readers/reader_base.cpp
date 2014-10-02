@@ -206,6 +206,7 @@ CReaderBase::ReadSeqAnnots(
     IMessageListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
+    xProgressInit(istr);
     CStreamLineReader lr( istr );
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
