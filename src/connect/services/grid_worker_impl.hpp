@@ -81,10 +81,10 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 
 class CJobRunRegistration;
 
-class CRunningJobCounter
+class CRunningJobLimit
 {
 public:
-    CRunningJobCounter() : m_MaxNumber(0) {}
+    CRunningJobLimit() : m_MaxNumber(0) {}
 
     void ResetJobCounter(unsigned max_number) {m_MaxNumber = max_number;}
 
@@ -107,8 +107,8 @@ class CJobRunRegistration
 public:
     CJobRunRegistration() : m_RunRegistered(false) {}
 
-    void RegisterRun(CRunningJobCounter* job_counter,
-            CRunningJobCounter::TJobCounter::iterator job_group_it)
+    void RegisterRun(CRunningJobLimit* job_counter,
+            CRunningJobLimit::TJobCounter::iterator job_group_it)
     {
         m_JobCounter = job_counter;
         m_JobGroupCounterIt = job_group_it;
@@ -126,8 +126,8 @@ public:
     }
 
 private:
-    CRunningJobCounter* m_JobCounter;
-    CRunningJobCounter::TJobCounter::iterator m_JobGroupCounterIt;
+    CRunningJobLimit* m_JobCounter;
+    CRunningJobLimit::TJobCounter::iterator m_JobGroupCounterIt;
     bool m_RunRegistered;
 };
 
@@ -199,8 +199,8 @@ struct SGridWorkerNodeImpl : public CObject
     CFastMutex m_JobWatcherMutex;
     TJobWatchers m_Watchers;
 
-    CRunningJobCounter m_JobsPerClientIP;
-    CRunningJobCounter m_JobsPerSessionID;
+    CRunningJobLimit m_JobsPerClientIP;
+    CRunningJobLimit m_JobsPerSessionID;
 
     CRef<CWorkerNodeCleanup> m_CleanupEventSource;
 

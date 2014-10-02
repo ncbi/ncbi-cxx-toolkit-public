@@ -460,7 +460,7 @@ void SGridWorkerNodeImpl::x_StartWorkerThreads()
     }
 }
 
-bool CRunningJobCounter::CountJob(const string& job_group,
+bool CRunningJobLimit::CountJob(const string& job_group,
         CJobRunRegistration* job_run_registration)
 {
     if (m_MaxNumber == 0)
