@@ -326,7 +326,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 // ADD_NAMED_*_MEMBER macros    
 #define ADD_NAMED_NULL_MEMBER(MemberAlias,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::AddMember(info,MemberAlias, \
-                            0,SERIAL_REF(TypeMacro)TypeMacroArgs)
+                            BASE_OBJECT(),SERIAL_REF(TypeMacro)TypeMacroArgs)
 #define ADD_NAMED_MEMBER(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
@@ -366,7 +366,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 // ADD_NAMED_*_CHOICE_VARIANT macros    
 #define ADD_NAMED_NULL_CHOICE_VARIANT(MemberAlias,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
-        0,SERIAL_REF(TypeMacro)TypeMacroArgs)
+        BASE_OBJECT(),SERIAL_REF(TypeMacro)TypeMacroArgs)
 #define ADD_NAMED_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
         SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
