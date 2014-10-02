@@ -31,7 +31,7 @@
  * File Description:
  *   Compression archive API - ZIP file support.
  *
- * Implementation based on 'miniz' v1.15 r4:
+ * Implementation based on 'miniz' v1.14:
  *   https://code.google.com/p/miniz/
  *
  * It support zip32 implementation only, no zip64 support yet. The number
