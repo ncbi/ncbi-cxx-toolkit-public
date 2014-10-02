@@ -135,7 +135,7 @@ private:
     void xProcessAgp(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessFasta(const CArgs&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    //void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
@@ -590,9 +590,9 @@ CMultiReaderApp::Run(void)
             case CFormatGuess::eFasta:
                 xProcessFasta(args, istr, ostr);
                 break;
-            case CFormatGuess::eHgvs:
-                xProcessHgvs(args, istr, ostr);
-                break;
+            //case CFormatGuess::eHgvs:
+            //    xProcessHgvs(args, istr, ostr);
+            //    break;
         }
     }
     catch(CObjReaderLineException& ) {
@@ -770,7 +770,7 @@ void CMultiReaderApp::xProcessGff2(
     }
 }
 
-//  ----------------------------------------------------------------------------
+/*//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessHgvs(
     const CArgs& args,
     CNcbiIstream& istr,
@@ -785,7 +785,7 @@ void CMultiReaderApp::xProcessHgvs(
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
     }
-}
+}*/
 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessGvf(
@@ -825,6 +825,9 @@ void CMultiReaderApp::xProcessVcf(
     ANNOTS annots;
 
     CVcfReader reader( m_iFlags );
+    if (args["show-progress"]) {
+        reader.SetProgressReportInterval(10);
+    }
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
