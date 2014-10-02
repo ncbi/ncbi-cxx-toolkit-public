@@ -204,6 +204,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
     { "Fungorum", CDbtag::eDbtagType_Fungorum },
     { "GRIN", CDbtag::eDbtagType_GRIN },
+    { "GenBank", CDbtag::eDbtagType_GenBank },
     { "Greengenes", CDbtag::eDbtagType_Greengenes },
     { "HMP", CDbtag::eDbtagType_HMP },
     { "HOMD", CDbtag::eDbtagType_HOMD },
@@ -230,6 +231,7 @@ static const TDbxrefPair kApprovedProbeDbXrefs[] = {
     { "DDBJ", CDbtag::eDbtagType_DDBJ },
     { "EMBL", CDbtag::eDbtagType_EMBL },
     { "GEO", CDbtag::eDbtagType_GEO },
+    { "GenBank", CDbtag::eDbtagType_GenBank },
     { "GrainGenes", CDbtag::eDbtagType_GrainGenes },
     { "PubChem", CDbtag::eDbtagType_PubChem },
     { "RefSeq", CDbtag::eDbtagType_RefSeq },
@@ -334,6 +336,7 @@ void CDbtag::GetLabel(string* label) const
 // Test if CDbtag.db is in the approved databases list.
 // NOTE: 'GenBank', 'EMBL', 'DDBJ' and 'REBASE' are approved only in 
 //        the context of a RefSeq record.
+// NOTE: 'GenBank' is approved in the context of a ProbeDb record.
 bool CDbtag::IsApproved( EIsRefseq refseq, EIsSource is_source, EIsEstOrGss is_est_or_gss ) const
 {
     if ( !CanGetDb() ) {
@@ -668,6 +671,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_MedGen, "http://www.ncbi.nlm.nih.gov/medgen/" },
     { CDbtag::eDbtagType_CGD, "http://www.candidagenome.org/cgi-bin/locus.pl?locus=" },
     { CDbtag::eDbtagType_Assembly, "http://www.ncbi.nlm.nih.gov/assembly/" },
+    { CDbtag::eDbtagType_GenBank, "http://www.ncbi.nlm.nih.gov/nuccore/" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
