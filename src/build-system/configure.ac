@@ -1648,6 +1648,7 @@ esac
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
+    cygwin* ) with_lfs=no ;;
     *:GCC:3[[4-9]]* | *:GCC:[[4-9]]* | *:ICC:[[91]]* ) : ${with_lfs=yes} ;;
 esac
 
