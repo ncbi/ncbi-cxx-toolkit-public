@@ -192,6 +192,11 @@ public:
         ILineReader& lr,
         IMessageListener* pErrors=0 );
 
+    virtual CRef< CSeq_annot >
+    ReadSeqAnnot(
+        CNcbiIstream& istr,
+        IMessageListener* pErrors=0 );
+
     virtual bool 
     ReadTrackData(
         ILineReader&,

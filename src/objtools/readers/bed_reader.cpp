@@ -116,6 +116,18 @@ CBedReader::~CBedReader()
 {
 }
 
+//  ----------------------------------------------------------------------------
+CRef< CSeq_annot >
+CBedReader::ReadSeqAnnot(
+    CNcbiIstream& istr,
+    IMessageListener* pMessageListener ) 
+//  ----------------------------------------------------------------------------
+{
+    xProgressInit(istr);
+    CStreamLineReader lr( istr );
+    return ReadSeqAnnot( lr, pMessageListener );
+}
+
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
@@ -136,6 +148,7 @@ CBedReader::ReadSeqAnnot(
     string line;
     int featureCount = 0;
     while (xGetLine(lr, line)) {
+        xReportProgress(pEC);
         if (xIsTrackLine(line)  &&  featureCount) {
             xUngetLine(lr);
             break;

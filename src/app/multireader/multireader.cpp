@@ -675,12 +675,15 @@ void CMultiReaderApp::xProcessBed(
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags);
-    CStreamLineReader lr(istr);
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    if (args["show-progress"]) {
+        reader.SetProgressReportInterval(10);
+    }
+    //CStreamLineReader lr(istr);
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr, m_pErrors);
     while(pAnnot) {
         xWriteObject(args, *pAnnot, ostr);
         pAnnot.Reset();
-        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+        pAnnot = reader.ReadSeqAnnot(istr, m_pErrors);
     }
 }
 
