@@ -2920,7 +2920,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     
       1. CMD - '-logfile <filename>' command line arg
       2. ENV - NCBI_CONFIG__LOG__FILE (or [Log]/File)
-      3. LOG - /log/* if writable
+      3. LOG - /log/ if writable
       4. Other locations depending on 'ds' flag (e.g. current directory)
 
       IgnoreEnvArg: if CMD should be checked before (true) or after (false) ENV/LOG.
@@ -2938,7 +2938,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     */
 
     bool log_set = false;
-    bool name_changed = true; // By default consider it's a new name
     bool to_applog = false;
     string old_log_name;
     string new_log_name;
