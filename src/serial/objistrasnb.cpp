@@ -2066,7 +2066,7 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
             ThrowError(fFormatError, "too long REAL data: length > "
                 + NStr::SizetToString(kMaxDoubleLength));
 
-        Uint1 type = ReadByte();
+        ReadByte();
         length--;
         SkipBytes(length);
     }
