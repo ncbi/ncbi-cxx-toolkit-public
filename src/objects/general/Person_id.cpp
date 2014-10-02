@@ -66,8 +66,11 @@ void CPerson_id::GetLabel(string* label, ETypeLabel type) const
         if (!GetName().GetLast().empty()) {
             *label += GetName().GetLast();
             if (GetName().IsSetInitials()) {
-                *label += sep;
-                *label += GetName().GetInitials();
+                string initials = GetName().GetInitials();
+                if (! initials.empty()) {
+                    *label += sep;
+                    *label += initials;
+                }
             }
             if (GetName().IsSetSuffix()) {
                 *label += string(" ");
