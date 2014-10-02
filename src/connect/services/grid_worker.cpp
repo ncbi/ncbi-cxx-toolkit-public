@@ -62,6 +62,9 @@ static CGridWorkerNode::EDisabledRequestEvents s_ReqEventsDisabled =
 
 void CWorkerNodeRequest::Process()
 {
+    // There are two implementations of x_RunJob(): one is for
+    // the real worker node, and the other is for the offline run.
+    // Do not add any implementation-specific code here.
     m_JobContext->x_RunJob();
 }
 
@@ -284,26 +287,24 @@ void CWorkerNodeIdleTaskContext::RequestShutdown()
 class CIdleWatcher : public IWorkerNodeJobWatcher
 {
 public:
-    CIdleWatcher(CWorkerNodeIdleThread& idle)
-        : m_Idle(idle), m_RunningJobs(0) {}
+    CIdleWatcher(CWorkerNodeIdleThread& idle) : m_Idle(idle) {}
 
     virtual ~CIdleWatcher() {};
 
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
     {
         if (event == eJobStarted) {
-            ++m_RunningJobs;
+            m_RunningJobs.Add(1);
             m_Idle.Suspend();
         } else if (event == eJobStopped) {
-            --m_RunningJobs;
-            if (m_RunningJobs == 0)
+            if (m_RunningJobs.Add(-1) == 0)
                 m_Idle.Schedule();
         }
     }
 
 private:
     CWorkerNodeIdleThread& m_Idle;
-    volatile int m_RunningJobs;
+    CAtomicCounter_WithAutoInit m_RunningJobs;
 };
 
 
@@ -457,6 +458,29 @@ void SGridWorkerNodeImpl::x_StartWorkerThreads()
             CNetScheduleAdmin::eShutdownImmediate);
         throw;
     }
+}
+
+bool CRunningJobCounter::CountJob(const string& job_group,
+        CJobRunRegistration* job_run_registration)
+{
+    if (m_MaxNumber == 0)
+        return true;
+
+    CFastMutexGuard guard(m_Mutex);
+
+    pair<TJobCounter::iterator, bool> insertion(
+            m_Counter.insert(TJobCounter::value_type(job_group, 1)));
+
+    if (!insertion.second) {
+        if (insertion.first->second == m_MaxNumber)
+            return false;
+
+        ++insertion.first->second;
+    }
+
+    job_run_registration->RegisterRun(this, insertion.first);
+
+    return true;
 }
 
 int CGridWorkerNode::Run(
@@ -730,6 +754,11 @@ int SGridWorkerNodeImpl::Run(
         }
     }
 
+    m_JobsPerClientIP.ResetJobCounter((unsigned) reg.GetInt(kServerSec,
+            "max_jobs_per_client_ip", 0, 0, IRegistry::eReturn));
+    m_JobsPerSessionID.ResetJobCounter((unsigned) reg.GetInt(kServerSec,
+            "max_jobs_per_session_id", 0, 0, IRegistry::eReturn));
+
     CWNJobWatcher& watcher(CGridGlobals::GetInstance().GetJobWatcher());
     watcher.SetMaxJobsAllowed(reg.GetInt(kServerSec,
             "max_total_jobs", 0, 0, IRegistry::eReturn));
@@ -889,13 +918,15 @@ void CGridWorkerNode::SetListener(IGridWorkerNodeApp_Listener* listener)
             listener ? listener : new CGridWorkerNodeApp_Listener());
 }
 
-void SGridWorkerNodeImpl::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
-    IWorkerNodeJobWatcher::EEvent event)
+void SGridWorkerNodeImpl::x_NotifyJobWatchers(
+        const CWorkerNodeJobContext& job_context,
+        IWorkerNodeJobWatcher::EEvent event)
 {
     CFastMutexGuard guard(m_JobWatcherMutex);
     NON_CONST_ITERATE(TJobWatchers, it, m_Watchers) {
         try {
-            const_cast<IWorkerNodeJobWatcher*>(it->first)->Notify(job, event);
+            const_cast<IWorkerNodeJobWatcher*>(it->first)->Notify(job_context,
+                    event);
         }
         NCBI_CATCH_ALL_X(66, "Error while notifying a job watcher");
     }

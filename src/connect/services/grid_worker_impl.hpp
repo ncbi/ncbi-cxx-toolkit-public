@@ -46,7 +46,7 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 {
     SWorkerNodeJobContextImpl(SGridWorkerNodeImpl* worker_node);
 
-    void Reset();
+    void ResetJobContext();
 
     void x_SetCanceled() { m_JobCommitted = CWorkerNodeJobContext::eCanceled; }
     void CheckIfCanceled();
@@ -77,6 +77,58 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 
     CDeadline m_CommitExpiration;
     bool      m_FirstCommitAttempt;
+};
+
+class CJobRunRegistration;
+
+class CRunningJobCounter
+{
+public:
+    CRunningJobCounter() : m_MaxNumber(0) {}
+
+    void ResetJobCounter(unsigned max_number) {m_MaxNumber = max_number;}
+
+    bool CountJob(const string& job_group,
+            CJobRunRegistration* job_run_registration);
+
+private:
+    friend class CJobRunRegistration;
+
+    unsigned m_MaxNumber;
+
+    CFastMutex m_Mutex;
+
+    typedef map<string, unsigned> TJobCounter;
+    TJobCounter m_Counter;
+};
+
+class CJobRunRegistration
+{
+public:
+    CJobRunRegistration() : m_RunRegistered(false) {}
+
+    void RegisterRun(CRunningJobCounter* job_counter,
+            CRunningJobCounter::TJobCounter::iterator job_group_it)
+    {
+        m_JobCounter = job_counter;
+        m_JobGroupCounterIt = job_group_it;
+        m_RunRegistered = true;
+    }
+
+    ~CJobRunRegistration()
+    {
+        if (m_RunRegistered) {
+            CFastMutexGuard guard(m_JobCounter->m_Mutex);
+
+            if (--m_JobGroupCounterIt->second == 0)
+                m_JobCounter->m_Counter.erase(m_JobGroupCounterIt);
+        }
+    }
+
+private:
+    CRunningJobCounter* m_JobCounter;
+    CRunningJobCounter::TJobCounter::iterator m_JobGroupCounterIt;
+    bool m_RunRegistered;
 };
 
 ///@internal
@@ -147,11 +199,14 @@ struct SGridWorkerNodeImpl : public CObject
     CFastMutex m_JobWatcherMutex;
     TJobWatchers m_Watchers;
 
+    CRunningJobCounter m_JobsPerClientIP;
+    CRunningJobCounter m_JobsPerSessionID;
+
     CRef<CWorkerNodeCleanup> m_CleanupEventSource;
 
     IWorkerNodeJob* GetJobProcessor();
 
-    void x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
+    void x_NotifyJobWatchers(const CWorkerNodeJobContext& job_context,
                             IWorkerNodeJobWatcher::EEvent event);
 
     set<SServerAddress> m_Masters;

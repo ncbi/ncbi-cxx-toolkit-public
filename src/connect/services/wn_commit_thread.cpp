@@ -158,6 +158,10 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
             m_WorkerNode->m_NSExecutor.PutFailure(job_context->m_Job);
             break;
 
+        default: /* eNotCommitted: job registration error,
+                                   e.g. too many jobs per client IP or
+                                   session ID. Return the job. */
+
         case CWorkerNodeJobContext::eReturn:
             m_WorkerNode->m_NSExecutor.ReturnJob(job_context->m_Job.job_id,
                     job_context->m_Job.auth_token);
@@ -167,7 +171,7 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
             m_WorkerNode->m_NSExecutor.Reschedule(job_context->m_Job);
             break;
 
-        default: // Always eCanceled; eNotCommitted is overridden in x_RunJob().
+        case CWorkerNodeJobContext::eCanceled:
             ERR_POST("Job " << job_context->m_Job.job_id <<
                     " has been canceled");
         }

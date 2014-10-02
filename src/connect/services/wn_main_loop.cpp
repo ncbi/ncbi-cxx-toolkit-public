@@ -318,7 +318,7 @@ void SWorkerNodeJobContextImpl::CheckIfCanceled()
     }
 }
 
-void SWorkerNodeJobContextImpl::Reset()
+void SWorkerNodeJobContextImpl::ResetJobContext()
 {
     m_JobNumber = CGridGlobals::GetInstance().GetNewJobNumber();
 
@@ -395,101 +395,122 @@ void SWorkerNodeJobContextImpl::x_RunJob()
     if (g_IsRequestStartEventEnabled())
         GetDiagContext().PrintRequestStart().Print("jid", m_Job.job_id);
 
-    m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-            IWorkerNodeJobWatcher::eJobStarted);
-
     m_RequestContext->SetAppState(eDiagAppState_Request);
 
-    try {
-        this_job_context.SetJobRetCode(
-                m_WorkerNode->GetJobProcessor()->Do(this_job_context));
-    }
-    catch (CGridWorkerNodeException& ex) {
-        switch (ex.GetErrCode()) {
-        case CGridWorkerNodeException::eJobIsCanceled:
-            x_SetCanceled();
-            break;
+    CJobRunRegistration client_ip_registration, session_id_registration;
 
-        case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
-            if (this_job_context.IsLogRequested()) {
-                LOG_POST_X(21, "Job " << m_Job.job_id <<
-                    " will be returned back to the queue "
-                    "because it requested exclusive mode while "
-                    "another job already has the exclusive status.");
-            }
-            if (!this_job_context.IsJobCommitted())
-                this_job_context.ReturnJob();
-            break;
+    if (!m_Job.client_ip.empty() &&
+            !m_WorkerNode->m_JobsPerClientIP.CountJob(m_Job.client_ip,
+                    &client_ip_registration)) {
+        ERR_POST("Too many jobs with client IP \"" <<
+                 m_Job.client_ip << "\"; job " <<
+                 m_Job.job_id << " will be returned.");
+        m_JobCommitted = CWorkerNodeJobContext::eReturn;
+    } else if (!m_Job.session_id.empty() &&
+            !m_WorkerNode->m_JobsPerSessionID.CountJob(m_Job.session_id,
+                    &session_id_registration)) {
+        ERR_POST("Too many jobs with session ID \"" <<
+                 m_Job.session_id << "\"; job " <<
+                 m_Job.job_id << " will be returned.");
+        m_JobCommitted = CWorkerNodeJobContext::eReturn;
+    } else {
+        m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                IWorkerNodeJobWatcher::eJobStarted);
 
-        default:
-            ERR_POST_X(62, ex);
-            if (!this_job_context.IsJobCommitted())
-                this_job_context.ReturnJob();
+        try {
+            m_Job.ret_code =
+                    m_WorkerNode->GetJobProcessor()->Do(this_job_context);
         }
-    }
-    catch (CNetScheduleException& e) {
-        ERR_POST_X(20, "job" << m_Job.job_id << " failed: " << e);
-        if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
-            x_SetCanceled();
-        else if (!this_job_context.IsJobCommitted())
-            this_job_context.CommitJobWithFailure(e.what());
-    }
-    catch (exception& e) {
-        ERR_POST_X(18, "job" << m_Job.job_id << " failed: " << e.what());
-        if (!this_job_context.IsJobCommitted())
-            this_job_context.CommitJobWithFailure(e.what());
-    }
+        catch (CGridWorkerNodeException& ex) {
+            switch (ex.GetErrCode()) {
+            case CGridWorkerNodeException::eJobIsCanceled:
+                m_JobCommitted = CWorkerNodeJobContext::eCanceled;
+                break;
 
-    this_job_context.CloseStreams();
+            case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
+                if (m_WorkerNode->m_LogRequested) {
+                    LOG_POST_X(21, "Job " << m_Job.job_id <<
+                        " will be returned back to the queue "
+                        "because it requested exclusive mode while "
+                        "another exclusive job is already running.");
+                }
+                if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted)
+                    m_JobCommitted = CWorkerNodeJobContext::eReturn;
+                break;
+
+            default:
+                ERR_POST_X(62, ex);
+                if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted)
+                    m_JobCommitted = CWorkerNodeJobContext::eReturn;
+            }
+        }
+        catch (CNetScheduleException& e) {
+            ERR_POST_X(20, "job " << m_Job.job_id << " failed: " << e);
+            if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
+                m_JobCommitted = CWorkerNodeJobContext::eCanceled;
+            else if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted) {
+                m_JobCommitted = CWorkerNodeJobContext::eFailure;
+                m_Job.error_msg = e.what();
+            }
+        }
+        catch (exception& e) {
+            ERR_POST_X(18, "job " << m_Job.job_id << " failed: " << e.what());
+            if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted) {
+                m_JobCommitted = CWorkerNodeJobContext::eFailure;
+                m_Job.error_msg = e.what();
+            }
+        }
+
+        this_job_context.CloseStreams();
+
+        switch (m_JobCommitted) {
+        case CWorkerNodeJobContext::eDone:
+            m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                    IWorkerNodeJobWatcher::eJobSucceeded);
+            break;
+
+        case CWorkerNodeJobContext::eNotCommitted:
+            if (TWorkerNode_AllowImplicitJobReturn::GetDefault() ||
+                    this_job_context.GetShutdownLevel() !=
+                            CNetScheduleAdmin::eNoShutdown) {
+                m_JobCommitted = CWorkerNodeJobContext::eReturn;
+                m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                        IWorkerNodeJobWatcher::eJobReturned);
+                break;
+            }
+
+            m_JobCommitted = CWorkerNodeJobContext::eFailure;
+            m_Job.error_msg = "Job was not explicitly committed";
+            /* FALL THROUGH */
+
+        case CWorkerNodeJobContext::eFailure:
+            m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                    IWorkerNodeJobWatcher::eJobFailed);
+            break;
+
+        case CWorkerNodeJobContext::eReturn:
+            m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                    IWorkerNodeJobWatcher::eJobReturned);
+            break;
+
+        case CWorkerNodeJobContext::eRescheduled:
+            m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                    IWorkerNodeJobWatcher::eJobRescheduled);
+            break;
+
+        default: // eCanceled - will be processed in x_SendJobResults().
+            break;
+        }
+
+        m_WorkerNode->x_NotifyJobWatchers(this_job_context,
+                IWorkerNodeJobWatcher::eJobStopped);
+    }
 
     if (m_WorkerNode->IsExclusiveMode() && m_ExclusiveJob)
         m_WorkerNode->LeaveExclusiveMode();
 
-    switch (this_job_context.GetCommitStatus()) {
-    case CWorkerNodeJobContext::eDone:
-        m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-                IWorkerNodeJobWatcher::eJobSucceeded);
-        break;
-
-    case CWorkerNodeJobContext::eNotCommitted:
-        if (TWorkerNode_AllowImplicitJobReturn::GetDefault() ||
-                this_job_context.GetShutdownLevel() !=
-                        CNetScheduleAdmin::eNoShutdown) {
-            this_job_context.ReturnJob();
-            m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-                    IWorkerNodeJobWatcher::eJobReturned);
-            break;
-        }
-
-        this_job_context.CommitJobWithFailure(
-                "Job was not explicitly committed");
-        /* FALL THROUGH */
-
-    case CWorkerNodeJobContext::eFailure:
-        m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-                IWorkerNodeJobWatcher::eJobFailed);
-        break;
-
-    case CWorkerNodeJobContext::eReturn:
-        m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-                IWorkerNodeJobWatcher::eJobReturned);
-        break;
-
-    case CWorkerNodeJobContext::eRescheduled:
-        m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-                IWorkerNodeJobWatcher::eJobRescheduled);
-        break;
-
-    default: // eCanceled - will be processed in x_SendJobResults().
-        break;
-    }
-
-    m_WorkerNode->x_NotifyJobWatchers(this_job_context,
-            IWorkerNodeJobWatcher::eJobStopped);
-
     if (!CGridGlobals::GetInstance().IsShuttingDown())
-        static_cast<CWorkerNodeJobCleanup*>(
-                this_job_context.GetCleanupEventSource())->CallEventHandlers();
+        m_CleanupEventSource->CallEventHandlers();
 
     m_WorkerNode->m_JobCommitterThread->RecycleJobContextAndCommitJob(this);
 }
@@ -515,7 +536,7 @@ void* CMainLoopThread::Main()
             }
 
             if (x_GetNextJob(job_context->m_Job)) {
-                job_context->Reset();
+                job_context->ResetJobContext();
 
                 try {
                     m_WorkerNode->m_ThreadPool->AcceptRequest(CRef<CStdRequest>(

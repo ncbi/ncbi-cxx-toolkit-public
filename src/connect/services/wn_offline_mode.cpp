@@ -115,18 +115,18 @@ void SOfflineJobContextImpl::x_RunJob()
         case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
             if (this_job_context.IsLogRequested()) {
                 LOG_POST_X(21, "Job " << this_job_context.GetJobKey() <<
-                    " will be returned back to the queue "
-                    "because it requested exclusive mode while "
-                    "another job already has the exclusive status.");
+                    " requested exclusive mode while "
+                    "another exclusive job is already running.");
             }
             if (!this_job_context.IsJobCommitted())
-                this_job_context.ReturnJob();
+                this_job_context.CommitJobWithFailure(
+                        "Exclusive mode denied");
             break;
 
         default:
             ERR_POST_X(62, ex);
             if (!this_job_context.IsJobCommitted())
-                this_job_context.ReturnJob();
+                this_job_context.CommitJobWithFailure(ex.GetMsg());
         }
     }
     catch (exception& e) {
@@ -222,7 +222,7 @@ int SGridWorkerNodeImpl::OfflineRun()
 
                 CWorkerNodeJobContext job_context(job_context_impl);
 
-                job_context_impl->Reset();
+                job_context_impl->ResetJobContext();
 
                 CNetScheduleJobSerializer job_serializer(job_context.GetJob(),
                         m_NetScheduleAPI.GetCompoundIDPool());
