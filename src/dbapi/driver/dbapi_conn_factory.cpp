@@ -37,6 +37,7 @@
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include <list>
 
@@ -688,6 +689,32 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
     rt_data.SetDispatchedServer(service_name, svr);
 }
 
+// Make an effort to give each request its own connection numbering.
+// The resulting field names can still technically repeat if an
+// application reuses request IDs or tampers with named properties.
+// However, that concern appears to be purely theoretical, and any
+// duplication that does manage to occur will have fairly minor
+// consequences.  In contrast, a global counter would cause trouble
+// for log analyzers, and a map would either accumulate stale keys or
+// risk duplication.
+static string s_GetNextLogPrefix(void)
+{
+    CRequestContext& rctx = GetDiagContext().GetRequestContext();
+    string rid_str = NStr::NumericToString(rctx.GetRequestID());
+    if (rctx.GetProperty("_dbapi_last_rid") == rid_str) {
+        string connection_no
+            = NStr::UIntToString(
+                NStr::StringToUInt(rctx.GetProperty("_dbapi_connection_no"))
+                + 1U);
+        rctx.SetProperty("_dbapi_connection_no", connection_no);
+        return connection_no + ".dbapi_";
+    } else {
+        rctx.SetProperty("_dbapi_last_rid",      rid_str);
+        rctx.SetProperty("_dbapi_connection_no", "1");
+        return "1.dbapi_";
+    }
+}
+
 void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
                                            const CDB_Connection* connection,
                                            const CDBConnParams& params)
@@ -700,6 +727,7 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     TSvrRef              dsp_srv   = rt_data.GetDispatchedServer(service);
 
     CDiagContext_Extra   extra     = GetDiagContext().Extra();
+    string               prefix    = s_GetNextLogPrefix();
 
     if (dsp_srv.Empty()) {
         dsp_srv.Reset(&stub_dsp_srv);
@@ -718,48 +746,49 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
             status_str = "temporarily-invalid";
             break;
         }
-        extra.Print("dbapi_conn_status", status_str);
+        extra.Print(prefix + "conn_status", status_str);
     }}
 
-    extra.Print("dbapi_resource", service);
+    extra.Print(prefix + "resource", service);
     if ( !dsp_srv->GetName().empty() ) {
-        extra.Print("dbapi_server_name", dsp_srv->GetName());
+        extra.Print(prefix + "server_name", dsp_srv->GetName());
     }
 
     if (dsp_srv->GetHost() != 0) {
-        extra.Print("dbapi_server_ip", impl::ConvertN2A(dsp_srv->GetHost()));
+        extra.Print(prefix + "server_ip",
+                    impl::ConvertN2A(dsp_srv->GetHost()));
     } else if (params.GetHost() != 0) {
-        extra.Print("dbapi_server_ip", impl::ConvertN2A(params.GetHost()));
+        extra.Print(prefix + "server_ip", impl::ConvertN2A(params.GetHost()));
     }
 
     if (dsp_srv->GetPort() != 0) {
-        extra.Print("dbapi_server_port", dsp_srv->GetPort());
+        extra.Print(prefix + "server_port", dsp_srv->GetPort());
     } else if (params.GetPort() != 0) {
-        extra.Print("dbapi_server_port", params.GetPort());
+        extra.Print(prefix + "server_port", params.GetPort());
     }
 
     if ( !params.GetUserName().empty() ) {
-        extra.Print("dbapi_username", params.GetUserName());
+        extra.Print(prefix + "username", params.GetUserName());
     }
 
     if ( !params.GetDatabaseName().empty() ) {
-        extra.Print("dbapi_db_name", params.GetDatabaseName());
+        extra.Print(prefix + "db_name", params.GetDatabaseName());
     } else {
         CTrivialConnValidator* tcv
             = dynamic_cast<CTrivialConnValidator*>(validator.GetPointer());
         if (tcv != NULL  &&  !tcv->GetDBName().empty()) {
-            extra.Print("dbapi_db_name", tcv->GetDBName());
+            extra.Print(prefix + "db_name", tcv->GetDBName());
         }
     }
 
     if (connection != NULL  &&  !connection->PoolName().empty() ) {
-        extra.Print("dbapi_pool", connection->PoolName());
+        extra.Print(prefix + "pool", connection->PoolName());
     } else if ( !params.GetParam("pool_name").empty() ) {
-        extra.Print("dbapi_pool", params.GetParam("pool_name"));
+        extra.Print(prefix + "pool", params.GetParam("pool_name"));
     }
 
     if (validator.NotEmpty()) {
-        extra.Print("dbapi_validator", validator->GetName());
+        extra.Print(prefix + "validator", validator->GetName());
     }
 
     {{
@@ -767,13 +796,14 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
                               ? ctx.driver_ctx.GetDriverName()
                               : connection->GetDriverName());
         if ( !driver_name.empty() ) {
-            extra.Print("dbapi_driver", driver_name);
+            extra.Print(prefix + "driver", driver_name);
         }
     }}
 
-    extra.Print("dbapi_name_mapper", rt_data.GetDBServiceMapper().GetName());
+    extra.Print(prefix + "name_mapper",
+                rt_data.GetDBServiceMapper().GetName());
 
-    extra.Print("dbapi_retries", ctx.retries);
+    extra.Print(prefix + "retries", ctx.retries);
 }
 
 
