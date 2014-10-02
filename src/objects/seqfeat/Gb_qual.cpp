@@ -79,6 +79,51 @@ static const char * const valid_inf_prefixes [] = {
 };
 
 
+void CGb_qual::ParseExperiment(const string& orig, string& category, string& experiment, string& doi)
+{
+    experiment = orig;
+    category = "";
+    doi = "";
+    NStr::TruncateSpacesInPlace(experiment);
+
+    for (unsigned int i = 0; i < sizeof (valid_inf_categories) / sizeof (char *); i++) {
+        if (NStr::StartsWith (experiment, valid_inf_categories[i])) {
+            category = valid_inf_categories[i];
+            experiment = experiment.substr(category.length());
+            NStr::TruncateSpacesInPlace(experiment);
+            if (NStr::StartsWith(experiment, ":")) {
+                experiment = experiment.substr(1);
+            }
+            NStr::TruncateSpacesInPlace(experiment);
+            break;
+        }
+    }
+    if (NStr::EndsWith(experiment, "]")) {
+        size_t start_doi = NStr::Find(experiment, "[");
+
+        if (start_doi != string::npos) {
+            doi = experiment.substr(start_doi + 1);
+            doi = doi.substr(0, doi.length() - 1);
+            experiment = experiment.substr(0, start_doi);
+        }
+    }
+}
+
+
+string CGb_qual::BuildExperiment(const string& category, const string& experiment, const string& doi)
+{
+    string rval = "";
+    if (!NStr::IsBlank(category)) {
+        rval += category + ":";
+    }
+    rval += experiment;
+    if (!NStr::IsBlank(doi)) {
+        rval += "[" + doi + "]";
+    }
+    return rval;
+}
+
+
 // constructor
 CInferencePrefixList::CInferencePrefixList(void)
 {

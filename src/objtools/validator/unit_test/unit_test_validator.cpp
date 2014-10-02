@@ -19063,3 +19063,41 @@ BOOST_AUTO_TEST_CASE(Test_RemoveLineageSourceNotes)
         }
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3714)
+{
+    string orig = CGb_qual::BuildExperiment("", "experiment", "");
+    BOOST_CHECK_EQUAL(orig, "experiment");
+
+    string experiment;
+    string category;
+    string doi;
+
+    CGb_qual::ParseExperiment(orig, category, experiment, doi);
+    BOOST_CHECK_EQUAL(category, "");
+    BOOST_CHECK_EQUAL(experiment, "experiment");
+    BOOST_CHECK_EQUAL(doi, "");
+
+    orig = CGb_qual::BuildExperiment("", "experiment2", "DOI");
+    BOOST_CHECK_EQUAL(orig, "experiment2[DOI]");
+    CGb_qual::ParseExperiment(orig, category, experiment, doi);
+    BOOST_CHECK_EQUAL(category, "");
+    BOOST_CHECK_EQUAL(experiment, "experiment2");
+    BOOST_CHECK_EQUAL(doi, "DOI");
+
+    orig = CGb_qual::BuildExperiment("COORDINATES", "experiment3", "");
+    BOOST_CHECK_EQUAL(orig, "COORDINATES:experiment3");
+    CGb_qual::ParseExperiment(orig, category, experiment, doi);
+    BOOST_CHECK_EQUAL(category, "COORDINATES");
+    BOOST_CHECK_EQUAL(experiment, "experiment3");
+    BOOST_CHECK_EQUAL(doi, "");
+
+    orig = CGb_qual::BuildExperiment("EXISTENCE", "experiment4", "DOI2");
+    BOOST_CHECK_EQUAL(orig, "EXISTENCE:experiment4[DOI2]");
+    CGb_qual::ParseExperiment(orig, category, experiment, doi);
+    BOOST_CHECK_EQUAL(category, "EXISTENCE");
+    BOOST_CHECK_EQUAL(experiment, "experiment4");
+    BOOST_CHECK_EQUAL(doi, "DOI2");
+
+}

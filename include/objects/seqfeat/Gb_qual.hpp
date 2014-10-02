@@ -68,6 +68,9 @@ public:
     
     int Compare(const CGb_qual& gbqual) const;
 
+    static void ParseExperiment(const string& orig, string& category, string& experiment, string& doi);
+    static string BuildExperiment(const string& category, const string& experiment, const string& doi);
+
 private:
     // Prohibit copy constructor and assignment operator
     CGb_qual(const CGb_qual& value);
