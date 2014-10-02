@@ -844,7 +844,7 @@ void CSubSource::DetectDateFormat(const string& orig_date, bool& ambiguous, bool
         ambiguous = true;
         return;
     }
-    typedef enum EPos { eDay = 0, eMonth = 1, eYear = 2 };
+    enum EPos { eDay = 0, eMonth = 1, eYear = 2 };
     vector<int> positions;
     positions.push_back(0);
     positions.push_back(0);
