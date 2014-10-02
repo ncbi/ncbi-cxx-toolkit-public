@@ -1358,7 +1358,7 @@ CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
             return eNullPointer;
         }
     }
-    if ( !HasAttlist() && InsideOpeningTag() && EndOpeningTagSelfClosed() ) {
+    if ( !HasAttlist() && ((InsideOpeningTag() && EndOpeningTagSelfClosed()) || SelfClosedTag()) ) {
         // self closed tag
         return eNullPointer;
     }
