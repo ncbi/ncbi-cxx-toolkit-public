@@ -149,6 +149,36 @@ public:
         ILineReader& lr,
         IMessageListener* pErrors=0 );
 
+    /// Read all objects from given insput stream, returning them as a vector of
+    /// Seq-annots.
+    /// @param annots
+    ///   (out) vector containing read Seq-annots
+    /// @param istr
+    ///   input stream to read from.
+    /// @param pErrors
+    ///   pointer to optional error container object. 
+    ///  
+    virtual void
+    ReadSeqAnnots(
+        vector< CRef<CSeq_annot> >& annots,
+        CNcbiIstream& istr,
+        IMessageListener* pErrors=0 );
+                        
+    /// Read all objects from given insput stream, returning them as a vector of
+    /// Seq-annots.
+    /// @param annots
+    ///   (out) vector containing read Seq-annots
+    /// @param lr
+    ///   line reader to read from.
+    /// @param pErrors
+    ///   pointer to optional error container object. 
+    ///  
+    virtual void
+    ReadSeqAnnots(
+        vector< CRef<CSeq_annot> >& annots,
+        ILineReader& lr,
+        IMessageListener* pErrors=0 );
+                        
     /// Read an object from a given input stream, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
     /// @param istr
@@ -195,6 +225,9 @@ protected:
     virtual bool xIsTrackLine(
         const CTempString& );
 
+    virtual bool xIsBrowserLine(
+        const CTempString& );
+
     virtual void xAssignTrackData(
         CRef<CSeq_annot>& );
                 
@@ -204,6 +237,10 @@ protected:
         IMessageListener*);
         
     virtual bool xParseTrackLine(
+        const string&,
+        IMessageListener*);
+        
+    virtual bool xParseBrowserLine(
         const string&,
         IMessageListener*);
         

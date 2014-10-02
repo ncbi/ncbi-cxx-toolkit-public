@@ -198,6 +198,33 @@ CReaderBase::ReadSeqAnnot(
     return CRef<CSeq_annot>();
 }
                 
+//  --------------------------------------------------------------------------- 
+void
+CReaderBase::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    CNcbiIstream& istr,
+    IMessageListener* pMessageListener )
+//  ---------------------------------------------------------------------------
+{
+    CStreamLineReader lr( istr );
+    ReadSeqAnnots( annots, lr, pMessageListener );
+}
+ 
+//  ---------------------------------------------------------------------------                       
+void
+CReaderBase::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    ILineReader& lr,
+    IMessageListener* pMessageListener )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pMessageListener);
+    while (annot) {
+        annots.push_back(annot);
+        annot = ReadSeqAnnot(lr, pMessageListener);
+    }
+}
+                        
 //  ----------------------------------------------------------------------------
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
@@ -441,6 +468,15 @@ bool CReaderBase::xParseTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
+bool CReaderBase::xParseBrowserLine(
+    const string& strLine,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 void CReaderBase::xSetTrackData(
     CRef<CSeq_annot>& annot,
     CRef<CUser_object>& trackdata,
@@ -626,6 +662,14 @@ bool CReaderBase::xIsTrackLine(
 //  ----------------------------------------------------------------------------
 {
     return NStr::StartsWith(strLine, "track ");
+}
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xIsBrowserLine(
+    const CTempString& strLine)
+//  ----------------------------------------------------------------------------
+{
+    return NStr::StartsWith(strLine, "browser ");
 }
 
 //  ----------------------------------------------------------------------------

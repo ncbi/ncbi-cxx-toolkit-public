@@ -269,18 +269,6 @@ public:
         ILineReader&,
         IMessageListener* =0 );
 
-    virtual void
-    ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >&,
-        CNcbiIstream&,
-        IMessageListener* =0 );
-                        
-    virtual void
-    ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >&,
-        ILineReader&,
-        IMessageListener* =0 );
-                
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
@@ -311,7 +299,8 @@ protected:
         IMessageListener*);
 
     bool 
-    xProcessTrackLine(
+    xParseTrackLine(
+        const string&,
         IMessageListener*);
 
     void

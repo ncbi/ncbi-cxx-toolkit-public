@@ -181,11 +181,11 @@ CWiggleReader::xReadSeqAnnotGraph(
         if (xProcessBrowserLine(pMessageListener)) {
             continue;
         }
-        if (xProcessTrackLine(pMessageListener)) {
+        if (xParseTrackLine(m_CurLine, pMessageListener)) {
             continue;
         }
 
-        CTempString s = xGetWord(pMessageListener);
+        string s = xGetWord(pMessageListener);
         if ( s == "fixedStep" ) {
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
@@ -230,7 +230,7 @@ CWiggleReader::xReadSeqAnnotTable(
         if (xProcessBrowserLine(pMessageListener)) {
             continue;
         }
-        if (xProcessTrackLine(pMessageListener)) {
+        if (xParseTrackLine(m_CurLine, pMessageListener)) {
             continue;
         }
 
@@ -261,35 +261,6 @@ CWiggleReader::xReadSeqAnnotTable(
         }
     }
     return xGetAnnot();
-}
-    
-//  --------------------------------------------------------------------------- 
-void
-CWiggleReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
-    CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
-//  ---------------------------------------------------------------------------
-{
-    xProgressInit(istr);
-    CStreamLineReader lr( istr );
-    ReadSeqAnnots( annots, lr, pMessageListener );
-}
- 
-//  ---------------------------------------------------------------------------                       
-void
-CWiggleReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
-    ILineReader& lr,
-    IMessageListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
-    while ( ! lr.AtEOF() ) {
-        CRef<CSeq_annot> pAnnot = ReadSeqAnnot( lr, pMessageListener );
-        if ( pAnnot ) {
-            annots.push_back( pAnnot );
-        }
-    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -1046,44 +1017,29 @@ bool CWiggleReader::xProcessBrowserLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleReader::xProcessTrackLine(
+bool CWiggleReader::xParseTrackLine(
+    const string& line,
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    if (!NStr::StartsWith(m_CurLine, "track")) {
+    if (!xIsTrackLine(line)) {
         return false;
     }
-    xParseTrackLine(m_CurLine, pMessageListener);
-
-    xGetWord(pMessageListener);
+    CReaderBase::xParseTrackLine(line, pMessageListener);
 
     m_TrackType = eTrackType_invalid;
-    while ( xSkipWS() ) {
-        string name = xGetParamName(pMessageListener);
-        string value = xGetParamValue(pMessageListener);
-        if ( name == "type" ) {
-             if ( value == "wiggle_0" ) {
-                m_TrackType = eTrackType_wiggle_0;
-            }
-            else if ( value == "bedGraph" ) {
-                m_TrackType = eTrackType_bedGraph;
-            }
-            else {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Warning,
-                    0,
-                    "Invalid track type") );
-                ProcessError(*pErr, pMessageListener);
-            }
-        }
+    if (m_pTrackDefaults->Type() == "wiggle_0") {
+        m_TrackType = eTrackType_wiggle_0;
     }
-    if ( m_TrackType == eTrackType_invalid ) {
+    else if (m_pTrackDefaults->Type() == "bedGraph") {
+        m_TrackType = eTrackType_bedGraph;
+    }
+    else {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
-            eDiag_Error,
+            eDiag_Warning,
             0,
-            "Unknown track type") );
+            "Invalid track type") );
         ProcessError(*pErr, pMessageListener);
     }
     return true;

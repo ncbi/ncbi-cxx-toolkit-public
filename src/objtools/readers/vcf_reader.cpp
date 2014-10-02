@@ -188,6 +188,9 @@ CVcfReader::ReadSeqAnnot(
     IMessageListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
+    if (lr.AtEOF()) {
+        return CRef<CSeq_annot>();
+    }
     CRef< CSeq_annot > annot( new CSeq_annot );
     CRef< CAnnot_descr > desc( new CAnnot_descr );
     annot->SetDesc( *desc );
@@ -234,35 +237,6 @@ CVcfReader::ReadSeqAnnot(
     return annot;
 }
 
-//  --------------------------------------------------------------------------- 
-void
-CVcfReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
-    CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
-//  ---------------------------------------------------------------------------
-{
-    xProgressInit(istr);
-    CStreamLineReader lr(istr);
-    ReadSeqAnnots(annots, lr, pMessageListener);
-}
- 
-//  ---------------------------------------------------------------------------                       
-void
-CVcfReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
-    ILineReader& lr,
-    IMessageListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
-    while ( ! lr.AtEOF() ) {
-        CRef<CSeq_annot> pAnnot = ReadSeqAnnot( lr, pMessageListener );
-        if ( pAnnot ) {
-            annots.push_back( pAnnot );
-        }
-    }
-}
-                        
 //  ----------------------------------------------------------------------------                
 CRef< CSerialObject >
 CVcfReader::ReadObject(

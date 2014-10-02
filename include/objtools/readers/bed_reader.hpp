@@ -192,36 +192,6 @@ public:
         ILineReader& lr,
         IMessageListener* pErrors=0 );
 
-    /// Read all objects from given insput stream, returning them as a vector of
-    /// Seq-annots, each containing a feature table.
-    /// @param annots
-    ///   (out) vector containing read Seq-annots
-    /// @param istr
-    ///   input stream to read from.
-    /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
-    virtual void
-    ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >& annots,
-        CNcbiIstream& istr,
-        IMessageListener* pErrors=0 );
-                        
-    /// Read all objects from given insput stream, returning them as a vector of
-    /// Seq-annots, each containing a feature table.
-    /// @param annots
-    ///   (out) vector containing read Seq-annots
-    /// @param lr
-    ///   line reader to read from.
-    /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
-    virtual void
-    ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >& annots,
-        ILineReader& lr,
-        IMessageListener* pErrors=0 );
-                        
     virtual bool 
     ReadTrackData(
         ILineReader&,

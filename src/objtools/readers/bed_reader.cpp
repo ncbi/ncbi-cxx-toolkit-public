@@ -186,33 +186,6 @@ CBedReader::ReadSeqAnnot(
     return annot;
 }
 
-//  --------------------------------------------------------------------------- 
-void
-CBedReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
-    CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
-//  ---------------------------------------------------------------------------
-{
-    CStreamLineReader lr( istr );
-    ReadSeqAnnots( annots, lr, pMessageListener );
-}
- 
-//  ---------------------------------------------------------------------------                       
-void
-CBedReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
-    ILineReader& lr,
-    IMessageListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pMessageListener);
-    while (annot) {
-        annots.push_back(annot);
-        annot = ReadSeqAnnot(lr, pMessageListener);
-    }
-}
-                        
 //  ----------------------------------------------------------------------------                
 CRef< CSerialObject >
 CBedReader::ReadObject(
