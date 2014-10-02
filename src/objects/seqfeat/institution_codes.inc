@@ -5411,6 +5411,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SGE	s	Stamford Park Museum",
 "SGEL	s	Stalybridge Library",
 "SGGS	s	The Museum",
+"SGGW	s	Warsaw University of Life Sciences",
 "SGMA	s	Universidade Nova de Lisboa",
 "SGO	s	Herbario, Museo Nacional de Historia Natural, Santiago",
 "SGSC	c	Salmonella Genetic Stock Centre",
