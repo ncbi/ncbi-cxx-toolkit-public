@@ -613,7 +613,6 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     string month = "";
     int year = 0, day = 0;
     string token_delimiters = " ,-/=_.";
-    size_t i;
     size_t num_original_tokens = 0;
 
     month_ambiguous = false;
@@ -901,7 +900,7 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
     if (NStr::IsBlank(lat_lon)) {
         return;
     } else if (sscanf (lat_lon.c_str(), "%lf %c %lf %c%n", &ns, &lat, &ew, &lon, &processed) != 4
-               || processed != lat_lon.length()) {
+               || size_t(processed) != lat_lon.length()) {
         return;
     } else if ((lat != 'N' && lat != 'S') || (lon != 'E' && lon != 'W')) {
         return;
@@ -1025,7 +1024,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     size_t pos = 0;
     double val = 0;
     size_t num_sep = 0, prev_start = 0;
-    int prec = 0;
+    size_t prec = 0;
     bool seen_period = false;
     bool last_is_sep = false;
     while (pos < token.length()) {
@@ -1183,7 +1182,7 @@ static bool s_IsNumberStringInRange(const string& val_str, double max)
     int processed;
 
     if (sscanf (val_str.c_str(), "%lf %c%n", &val, &dir, &processed) != 2
-        || processed != val_str.length()
+        || size_t(processed) != val_str.length()
         || val < 0.0 || val > max) {
         return false;
     } else {
@@ -3032,7 +3031,7 @@ string CCountries::WholeCountryFix(string country)
     return new_country;
 }
 
-bool CCountries::IsSubstringOfStringInList(const string& phrase, const string& country1, int pos1)
+bool CCountries::IsSubstringOfStringInList(const string& phrase, const string& country1, size_t pos1)
 {
     bool r = false;
     ITERATE ( TCStrSet, c, s_CountriesSet ) 
@@ -3040,7 +3039,7 @@ bool CCountries::IsSubstringOfStringInList(const string& phrase, const string& c
         string country2(*c);
         if (country2.length() > country1.length() && NStr::FindNoCase(country2,country1) != NPOS)
         {
-            int pos2 = NStr::FindNoCase(phrase,country2);
+            SIZE_TYPE pos2 = NStr::FindNoCase(phrase,country2);
             while (pos2 != NPOS)
             { 
                 if (pos2 <= pos1 && pos2+country2.length() >= pos1+country1.length())
@@ -3312,7 +3311,7 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
 {
     string country = NewFixCountry (input);
     string new_country = country;
-    int pos = NStr::Find(country,":");
+    SIZE_TYPE pos = NStr::Find(country,":");
     if (pos != NPOS)
     {
         string after = country.substr(pos+1);

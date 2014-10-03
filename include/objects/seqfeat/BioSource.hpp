@@ -132,8 +132,8 @@ public:
     void RemoveCultureNotes();
     bool RemoveLineageSourceNotes();
 
-    bool RemoveSubSource(unsigned int subtype);
-    bool RemoveOrgMod(unsigned int subtype);
+    bool RemoveSubSource(int subtype);
+    bool RemoveOrgMod(int subtype);
 
 private:
     // Prohibit copy constructor and assignment operator

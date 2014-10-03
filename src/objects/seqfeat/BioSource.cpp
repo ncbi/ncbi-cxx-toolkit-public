@@ -1422,7 +1422,7 @@ bool CBioSource::RemoveLineageSourceNotes()
     return any_removed;
 }
 
-bool CBioSource::RemoveSubSource(unsigned int subtype)
+bool CBioSource::RemoveSubSource(int subtype)
 {
     bool rval = false;
 
@@ -1444,7 +1444,7 @@ bool CBioSource::RemoveSubSource(unsigned int subtype)
 }
 
 
-bool CBioSource::RemoveOrgMod(unsigned int subtype)
+bool CBioSource::RemoveOrgMod(int subtype)
 {
     bool rval = false;
 

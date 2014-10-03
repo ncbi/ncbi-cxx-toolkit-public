@@ -242,7 +242,7 @@ public:
     static bool WasValid(const string& country, bool& is_miscapitalized);
     static string CapitalizeFirstLetterOfEveryWord (const string &phrase);
     static string WholeCountryFix(string country);
-    static bool IsSubstringOfStringInList(const string& phrase, const string& country1, int pos1);
+    static bool IsSubstringOfStringInList(const string& phrase, const string& country1, size_t pos1);
     static bool ContainsMultipleCountryNames (const string &phrase);
     static string GetCorrectedCountryCapitalization(const string& country);
     static string NewFixCountry (const string& input);
