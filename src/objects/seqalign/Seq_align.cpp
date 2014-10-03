@@ -1499,7 +1499,7 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
     case CSeq_align::TSegs::e_Spliced:
         {{
             ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
-                for (unsigned r = 0; r < 2; ++r) {
+                for (CSeq_align::TDim r = 0; r < 2; ++r) {
                     if (row != r) {
                         CRangeCollection<TSeqPos> insertions =
                              (*iter)->GetRowSeq_insertions(
@@ -1637,7 +1637,7 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
             ITERATE (CSpliced_seg::TExons, iter, GetSegs().GetSpliced().GetExons()) {
                 const CSpliced_exon& exon = **iter;
                 vector<TSeqPos> edge_insertions(2, 0);
-                for (unsigned r = 0; r < 2; ++r) {
+                for (TDim r = 0; r < 2; ++r) {
                     if (row != r) {
                         CRangeCollection<TSeqPos> insertions = 
                              exon.GetRowSeq_insertions(
