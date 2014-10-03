@@ -150,17 +150,16 @@ void CDiscRepOutput :: x_AddListOutputTags()
   }
  
   // AddOutpuTag
-  bool has_sub_fatal;
   NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, 
                                     thisInfo.disc_report_data) {
      setting_name = (*it)->setting_name;
      desc = (*it)->description; 
      if (desc.empty()) continue;
 
+     bool has_sub_fatal = false;
      // check subcategories first;
      NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, 
                                                (*it)->subcategories) {
-        has_sub_fatal = false;
         sub_desc = (*sit)->description;
         if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
                || (oc.add_extra_output_tag 
