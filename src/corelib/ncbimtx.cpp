@@ -1583,6 +1583,11 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
 
 bool CSemaphore::TryWait(const CTimeout& timeout)
 {
+    if (timeout.IsInfinite()) {
+        Wait();
+        return true;
+    }
+
     unsigned int s, ns;
     timeout.GetNano(&s, &ns);
     return TryWait(s, ns);
