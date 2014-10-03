@@ -797,13 +797,14 @@ class Scenario1315( TestBase ):
         # Put the non expected group2 job
         self.ns.putJob( 'TEST', jobID2, authToken2, 0,
                          'blah-out', 'node', 'session' )
-        time.sleep( 7 )
+        time.sleep( 3 )
         if self.hasNotification( notifSocket ):
             raise Exception( "Expected no notifications, received some" )
 
+        time.sleep( 1 )
         self.ns.putJob( 'TEST', jobID1, authToken1, 0,
                          'blah-out', 'node', 'session' )
-        time.sleep( 7 )
+        time.sleep( 3 )
         if not self.hasNotification( notifSocket ):
             raise Exception( "Expected notification, received nothing" )
         return True
