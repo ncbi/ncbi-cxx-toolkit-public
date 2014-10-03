@@ -1859,11 +1859,13 @@ x_GetDstExon(CSpliced_seg&              spliced,
 
         // Add the mapped part except if it's a gap in the first position.
         if (!is_gap  ||  !exon->GetParts().empty()  ||  orig_ptype == ptype) {
+            size_t old_size = exon->GetParts().size();
             x_PushExonPart(last_part, ptype, seg->m_Len, *exon);
             // Count trailing gaps resulting from mapping to remove them
             // when the exon is ready.
             if (is_gap  &&  orig_ptype != ptype) {
-                mapped_gaps++;
+                // Gaps can be merged, check the actual size change.
+                mapped_gaps += exon->GetParts().size() - old_size;
             }
             else {
                 mapped_gaps = 0;
