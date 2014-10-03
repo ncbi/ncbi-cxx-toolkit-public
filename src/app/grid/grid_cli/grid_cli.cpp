@@ -848,8 +848,9 @@ struct SCommandDefinition {
         "for reading. Without this option, if there are no completed, "
         "failed, or canceled jobs in the queue, nothing will be printed "
         "and the exit code will be zero.",
-        {eNetSchedule, eQueue, eRemoteAppStdOut, eRemoteAppStdErr,
-            eOutputFile, eJobGroup, eReliableRead, eWaitTimeout, eJobId,
+        {eNetSchedule, eQueue,
+            eRemoteAppStdOut, eRemoteAppStdErr, eOutputFile,
+            eAffinityList, eJobGroup, eReliableRead, eWaitTimeout, eJobId,
             eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
             eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},

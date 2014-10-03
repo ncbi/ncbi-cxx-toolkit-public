@@ -837,7 +837,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
             job_reader.SetJobGroup(m_Opts.job_group);
 
         if (IsOptionSet(eAffinity))
-            job_reader.SetJobGroup(m_Opts.affinity);
+            job_reader.SetAffinity(m_Opts.affinity);
 
         CNetScheduleJobReader::EReadNextJobResult rnj_result;
 

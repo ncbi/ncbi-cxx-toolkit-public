@@ -42,11 +42,13 @@ BEGIN_NCBI_SCOPE
 
 void CNetScheduleJobReader::SetJobGroup(const string& group_name)
 {
+    SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group_name);
     m_Impl->m_JobGroup = group_name;
 }
 
 void CNetScheduleJobReader::SetAffinity(const string& affinity)
 {
+    SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
     m_Impl->m_Affinity = affinity;
 }
 
@@ -147,9 +149,21 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
 {
-    string cmd("READ");
+    string cmd("READ2 reader_aff=0 ");
+
+    if (m_Affinity.empty())
+        cmd.append("any_aff=1");
+    else {
+        cmd.append("any_aff=0 aff=");
+        cmd.append(m_Affinity);
+    }
 
     m_API->m_NotificationThread->CmdAppendPortAndTimeout(&cmd, timeout);
+
+    if (!m_JobGroup.empty()) {
+        cmd.append(" group=");
+        cmd.append(m_JobGroup);
+    }
 
     g_AppendClientIPAndSessionID(cmd);
 
