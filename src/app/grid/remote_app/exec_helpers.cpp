@@ -70,17 +70,20 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         else if (NStr::CompareNocase(val, "done") == 0 )
             m_NonZeroExitAction = eDoneOnNonZeroExit;
         else {
-           ERR_POST(Warning << "Unknown parameter value : Section ["
-                     << sec_name << "], param : \"non_zero_exit_action\", value : \""
-                     << val << "\". Allowed values: fail, return, done");
+           ERR_POST("Unknown parameter value: "
+                   "section [" << sec_name << "], "
+                   "parameter \"non_zero_exit_action\", "
+                   "value: \"" << val << "\". "
+                   "Allowed values: fail, return, done");
         }
+    } else if (reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0,
+            CNcbiRegistry::eReturn))
+        m_NonZeroExitAction = eFailOnNonZeroExit;
 
-    } else {
-        if (reg.HasEntry(sec_name, "fail_on_non_zero_exit") ) {
-            if (reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0,
-                            CNcbiRegistry::eReturn) )
-                m_NonZeroExitAction = eFailOnNonZeroExit;
-        }
+    if (reg.HasEntry(sec_name, "fail_no_retries_if_exit_code")) {
+        m_RangeList.Parse(reg.GetString(sec_name,
+                    "fail_no_retries_if_exit_code",
+                    kEmptyStr).c_str(), "fail_no_retries_if_exit_code");
     }
 
     if (reg.GetBool(sec_name, "run_in_separate_dir", false, 0,
@@ -572,5 +575,20 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
     }
 }
 
+// Check whether retries are disabled for the specified exit code.
+bool CRemoteAppLauncher::MustFailNoRetries(int exit_code) const
+{
+    const CRangeList::TRangeVector& range = m_RangeList.GetRangeList();
+
+    if (range.empty())
+        return false;
+
+    ITERATE(CRangeList::TRangeVector, it, range) {
+        if (it->first <= exit_code && exit_code <= it->second)
+            return true;
+    }
+
+    return false;
+}
 
 END_NCBI_SCOPE
