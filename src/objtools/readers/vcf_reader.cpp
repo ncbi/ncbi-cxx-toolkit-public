@@ -203,6 +203,7 @@ CVcfReader::ReadSeqAnnot(
     string line;
     unsigned int dataCount = 0;
     while (xGetLine(lr, line)) {
+        xReportProgress(pEC);
         if (xIsTrackLine(line)  &&  dataCount) {
             xUngetLine(lr);
             break;

@@ -525,7 +525,7 @@ CMultiReaderApp::Run(void)
 //  ----------------------------------------------------------------------------
 {   
     const CArgs& args = GetArgs();
-    CNcbiIstream& istr = args["input"].AsInputFile();
+    CNcbiIstream& istr = args["input"].AsInputFile(CArgValue::fBinary);
     CNcbiOstream& ostr = args["output"].AsOutputFile();
 
     xSetFormat(args ,istr);    
