@@ -995,6 +995,107 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
 }
 
 
+BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Deleted)
+{
+    cout << "Testing FUNCTION: TrimSeqFeat - cdregion feature was completely deleted" << endl;
+
+    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["trim_seq_feat_feature_deleted"];
+
+    BOOST_CHECK( ! mapOfTests.empty() );
+
+    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
+        const string & sTestName = (test_it->first);
+        cout << "Running TEST: " << sTestName << endl;
+
+        TMapTestFiles & test_stage_map = (test_it->second);
+
+        BOOST_REQUIRE( test_stage_map.size() == 2u );
+
+        // Get the input/output files
+        const CFile & input_entry_file = test_stage_map["input_entry"];
+        const CFile & output_expected_file = test_stage_map["output_expected"];
+
+        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
+        CRef<CSeq_entry> pOutputExpectedEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
+
+        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
+        CSeq_entry_Handle expected_entry_h = s_pScope->AddTopLevelSeqEntry(*pOutputExpectedEntry);
+
+        // Find the bioseq(s) that we will trim
+        CBioseq_CI bioseq_ci( entry_h );
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle& bsh = *bioseq_ci;
+
+            if (s_FindLocalId(bsh, "Seq53")) {
+                // Create the cuts from known vector contamination
+                // Seqid "Seq53" has vector
+                edit::TRange cut1(0, 2205);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Iterate over bioseq features
+                SAnnotSelector feat_sel(CSeq_annot::C_Data::e_Ftable);
+                CFeat_CI feat_ci(bsh, feat_sel);
+                for (; feat_ci; ++feat_ci) {
+                    // Make a copy of the feature
+                    CRef<CSeq_feat> copy_feat(new CSeq_feat());
+                    copy_feat->Assign(feat_ci->GetOriginalFeature());
+
+                    // Detect complete deletions of feature
+                    bool bFeatureDeleted = false;
+
+                    // Detect case where feature was not deleted but merely trimmed
+                    bool bFeatureTrimmed = false;
+
+                    // Modify the copy of the feature
+                    BOOST_CHECK_NO_THROW(edit::TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed));
+
+                    if (bFeatureDeleted) {
+                        // Delete the feature
+                        // If the feature was a cdregion, delete the protein and
+                        // renormalize the nuc-prot set
+                        BOOST_CHECK_NO_THROW(edit::DeleteProteinAndRenormalizeNucProtSet(*feat_ci));
+                    }
+                    else 
+                    if (bFeatureTrimmed) {
+                        // Further modify the copy of the feature
+
+                        // Not testing AdjustCdregionFrame() and RetranslateCdregion()
+                        // in this unit test.  See next unit test.
+
+                        // Update the original feature with the modified copy
+                        CSeq_feat_EditHandle feat_eh(*feat_ci);
+                        feat_eh.Replace(*copy_feat);
+                    }
+                }
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
+            }
+        }
+
+        // Are the changes what we expect?
+        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
+             *entry_h.GetCompleteSeq_entry(),
+             *expected_entry_h.GetCompleteSeq_entry()) );
+
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Unverified)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
