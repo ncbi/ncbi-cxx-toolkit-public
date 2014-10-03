@@ -1025,12 +1025,12 @@ void s_SeqLocToRangeInfoMap(const CSeq_loc& loc,
 }
 
 
-ECompare Compare(const CSeq_loc& me,
-                 const CSeq_loc& you,
-                 CScope*         scope)
+ECompare s_CompareOverlapping(const CSeq_loc& me,
+                              const CSeq_loc& you,
+                              TSynMap&        syns,
+                              CScope*         scope)
 {
     TRangeInfoMap me_infos, you_infos;
-    TSynMap syns;
     s_SeqLocToRangeInfoMap(me, me_infos, syns, scope);
     s_SeqLocToRangeInfoMap(you, you_infos, syns, scope);
 
@@ -1139,6 +1139,94 @@ ECompare Compare(const CSeq_loc& me,
         return eContained;
     }
     return overlap ? eOverlap : eNoOverlap;
+}
+
+
+bool s_CheckAbutting(const CSeq_loc& loc1,
+                     const CSeq_loc& loc2,
+                     TSynMap&        syns,
+                     CScope*         scope,
+                     ESeqLocExtremes ext)
+{
+    // Compare biological end of loc1 and start of loc2.
+    // If not abutting, use Compare.
+    CSeq_loc_CI it1_last(loc1,
+        CSeq_loc_CI::eEmpty_Allow,
+        ext == eExtreme_Positional ?
+        CSeq_loc_CI::eOrder_Positional : CSeq_loc_CI::eOrder_Biological);
+    it1_last.SetPos(it1_last.GetSize() - 1);
+    CSeq_loc_CI it2_first(loc2,
+        CSeq_loc_CI::eEmpty_Allow,
+        ext == eExtreme_Positional ?
+        CSeq_loc_CI::eOrder_Positional : CSeq_loc_CI::eOrder_Biological);
+
+    CSeq_id_Handle id1_last = s_GetSynHandle(it1_last.GetSeq_id_Handle(), syns, scope);
+    CSeq_id_Handle id2_first = s_GetSynHandle(it2_first.GetSeq_id_Handle(), syns, scope);
+
+    // Empty and whole locations can not abut.
+    if (it1_last.IsEmpty()  ||  it2_first.IsEmpty()  ||
+        it1_last.IsWhole()  ||  it2_first.IsWhole()  ||
+        id1_last != id2_first) {
+        return false;
+    }
+
+    if (ext == eExtreme_Positional) {
+        return it1_last.GetRange().GetToOpen() == it2_first.GetRange().GetFrom();
+    }
+
+    // Plus strand
+    if (!IsReverse(it1_last.GetStrand())  &&
+        !IsReverse(it2_first.GetStrand())  &&
+        it1_last.GetRange().GetToOpen() == it2_first.GetRange().GetFrom()) {
+        return true;
+    }
+    // Minus strand
+    if (IsReverse(it1_last.GetStrand())  &&
+        IsReverse(it2_first.GetStrand()) &&
+        it1_last.GetRange().GetFrom() == it2_first.GetRange().GetToOpen()) {
+        return true;
+    }
+
+    return false;
+}
+
+
+ECompare Compare(const CSeq_loc& me,
+                 const CSeq_loc& you,
+                 CScope*         scope)
+{
+    TSynMap syns;
+    return s_CompareOverlapping(me, you, syns, scope);
+}
+
+
+ECompare Compare(const CSeq_loc& loc1,
+                 const CSeq_loc& loc2,
+                 CScope*         scope,
+                 TCompareFlags   flags)
+{
+    TSynMap syns;
+
+    bool abut = false;
+    ECompare ret = eNoOverlap;
+
+    if (flags & fCompareAbutting) {
+        abut = s_CheckAbutting(loc1, loc2, syns, scope,
+            (flags & fComparePositional)
+            ? eExtreme_Positional : eExtreme_Biological);
+    }
+    if (flags & fCompareOverlapping) {
+        ret = s_CompareOverlapping(loc1, loc2, syns, scope);
+    }
+    if ( abut ) {
+        if (ret == eNoOverlap) {
+            ret = eAbutting;
+        }
+        else {
+            ret = eAbutAndOverlap;
+        }
+    }
+    return ret;
 }
 
 

@@ -175,14 +175,18 @@ bool BadSeqLocSortOrder(const CBioseq&  seq,
  */
 
 enum ECompare {
-    eNoOverlap = 0, ///< CSeq_locs do not overlap
+    eNoOverlap = 0, ///< CSeq_locs do not overlap or abut
     eContained,     ///< First CSeq_loc contained by second
     eContains,      ///< First CSeq_loc contains second
     eSame,          ///< CSeq_locs contain each other
-    eOverlap        ///< CSeq_locs overlap
+    eOverlap,       ///< CSeq_locs overlap
+    eAbutting,      ///< Abutting seq-locs
+    eAbutAndOverlap ///< Seq-locs do both abut and overlap
 };
 
-/// Returns the sequence::ECompare containment relationship between CSeq_locs
+/// Returns the sequence::ECompare containment relationship between CSeq_locs.
+/// For backward compatibility the function does not check for abutting
+/// seq-locs and never returns eAbutting or eAbutAndOverlap.
 NCBI_XOBJUTIL_EXPORT
 sequence::ECompare Compare(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,
@@ -191,6 +195,34 @@ sequence::ECompare Compare(const CSeq_loc& loc1,
 /* @} */
 
 
+/** @name Compare
+ * Check if the two CSeq_locs are abutting
+ * @{
+ */
+
+enum FCompareFlags {
+    /// Check if seq-locs are abutting (loc2 follows loc1)
+    fCompareAbutting    = 1 << 0,
+    /// Check if seq-locs are overlapping
+    fCompareOverlapping = 1 << 1,
+    fCompareAll         = fCompareAbutting | fCompareOverlapping,
+
+    /// Use positional coordinates (ignore strands) when looking for
+    /// abutting locations.
+    fComparePositional  = 1 << 2
+};
+typedef int TCompareFlags;
+
+/// Compare the seq-locs. Depending on the selected flags the function
+/// checks if the seq-locs are abutting (loc2 immediately follows loc1),
+/// overlap (see ECompare) or both.
+NCBI_XOBJUTIL_EXPORT
+sequence::ECompare Compare(const CSeq_loc& loc1,
+                           const CSeq_loc& loc2,
+                           CScope*         scope,
+                           TCompareFlags   flags);
+
+/* @} */
 /** @name Change id
  * Replace seq-id with the best or worst rank
  * @{

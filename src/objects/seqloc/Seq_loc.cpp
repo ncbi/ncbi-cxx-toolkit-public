@@ -1365,6 +1365,18 @@ const SSeq_loc_CI_RangeInfo& CSeq_loc_CI::x_GetRangeInfo(void) const
 }
 
 
+size_t CSeq_loc_CI::GetSize(void) const
+{
+    return m_Impl->GetRanges().size();
+}
+
+
+void CSeq_loc_CI::SetPos(size_t pos)
+{
+    m_Index = pos;
+}
+
+
 // Append a string representation of a CSeq_id to label
 inline
 void s_GetLabel(const CSeq_id& id, string* label)

@@ -475,6 +475,12 @@ public:
     /// Reset the iterator to the initial state
     void Rewind(void);
 
+    /// Get number of ranges.
+    size_t GetSize(void) const;
+
+    /// Set iterator's position.
+    void SetPos(size_t pos);
+
 private:
     const SSeq_loc_CI_RangeInfo& x_GetRangeInfo(void) const;
 
