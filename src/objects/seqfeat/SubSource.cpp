@@ -1140,7 +1140,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             }
         }
         if (prec > 0) {
-            double mult = pow ((double)10.0, prec);
+            double mult = pow ((double)10.0, int(prec));
             bool round_down = true;
             double remainder = (val * mult) - floor (val * mult);
             if (remainder > 0.5) {
