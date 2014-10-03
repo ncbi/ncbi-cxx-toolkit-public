@@ -61,6 +61,7 @@ static char const rcsid[] = "";
 #include <algo/blast/core/ncbi_math.h>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_writer/taxid_set.hpp>
+#include "../blast/blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -242,6 +243,8 @@ private:
     vector<string> x_CreateDeltaList(void);
     void x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size);
     bool x_IsUpdateFreqRatios(const CPssm & p);
+
+    int x_Run(void);
 
     // Data
     CNcbiOstream * m_LogFile;
@@ -1285,7 +1288,7 @@ static CRef<CBlast_def_line_set> s_GenerateBlastDefline(const CBioseq & bio)
 	 return defline_set;
 }
 
-int CMakeProfileDBApp::Run(void)
+int CMakeProfileDBApp::x_Run(void)
 {
 	 s_CreateDirectories(m_OutDbName);
 	 if ( s_DeleteMakeprofileDb(m_OutDbName)) {
@@ -1681,6 +1684,32 @@ void CMakeProfileDBApp::x_WrapUpDelta(CTmpFile & tmp_obsr_file, CTmpFile & tmp_f
 }
 
 
+int CMakeProfileDBApp::Run(void)
+{
+	int status = 0;
+	try { x_Run(); }
+	catch(const blast::CInputException& e)  {
+		 LOG_POST(Error << "INPUT ERROR: " << e.GetMsg());
+		 status = BLAST_INPUT_ERROR;
+	}
+	catch (const CSeqDBException& e) {
+	     LOG_POST(Error << "ERROR: " << e.GetMsg());
+	     status = BLAST_DATABASE_ERROR;
+	}
+	catch (const blast::CBlastException& e) {
+		 LOG_POST(Error << "ERROR: " << e.GetMsg());
+		 status = BLAST_INPUT_ERROR;
+	}
+	catch (const CException& e) {
+	    LOG_POST(Error << "ERROR: " << e.GetMsg());
+	    status = BLAST_UNKNOWN_ERROR;
+	}
+	catch (...) {
+	    LOG_POST(Error << "Error: Unknown exception");
+	    status = BLAST_UNKNOWN_ERROR;
+	}
+	return status;
+}
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
