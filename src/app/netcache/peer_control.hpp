@@ -107,6 +107,7 @@ public:
     static void ResetServersForInitSync(void);
     static void ReconfServersForInitSync(Uint4 cnt_servers);
     static bool HasServersForInitSync(void);
+    static void PrintState(CSrvSocketTask& task);
 
     static CNCPeerControl* Peer(Uint8 srv_id);
     static string GetPeerNameOrEmpty(Uint8 srv_id);

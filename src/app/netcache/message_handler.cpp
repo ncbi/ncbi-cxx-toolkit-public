@@ -3405,6 +3405,7 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             if (stat) {
                 stat->PrintState(*this);
             }
+            CNCPeerControl::PrintState(*this);
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: netcache, storage, mirror\"");
         }

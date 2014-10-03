@@ -878,21 +878,21 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
             proxy << "Sync servers - " <<  NStr::Join(t,",") << endl;
             ITERATE(TSyncTimes, s, s_SyncSucceeded) {
                 s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
-                proxy << "Initial Sync succeeded - " <<
+                proxy << "Initial  Sync succeeded - " <<
                     CNCDistributionConf::GetPeerName(s->first) << " at " << buf << endl;
             }
             if (!s_SyncFailed.empty()) {
                 ITERATE(TSyncTimes, s, s_SyncFailed) {
                     s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
-                    proxy << "Initial Sync failed    - " <<
+                    proxy << "Initial  Sync failed    - " <<
                         CNCDistributionConf::GetPeerName(s->first) << " at " << buf << endl;
                 }
             }
-            ITERATE(TSyncTimes, s, s_SyncPeriodic) {
+            ITERATE(TSyncTimes, s,  s_SyncPeriodic) {
                 Uint8 agoSec = (now - s->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
                 Uint8 agoUsec = (now - s->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
                 s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
-                proxy << "Periodic Sync          - " <<
+                proxy << "Periodic Sync succeeded - " <<
                     CNCDistributionConf::GetPeerName(s->first) << " at " << buf <<
                     ", " << agoSec << "." << agoUsec << "s ago" << endl;
             }

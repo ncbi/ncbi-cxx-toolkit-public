@@ -736,11 +736,13 @@ void
 CNCPeerControl::ReadCurState(SNCStateStat& state)
 {
     Uint4 active = 0,  bg = 0;
+    s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
         active += peer->m_ActiveConns;
         bg += peer->m_BGConns;
     }
+    s_MapLock.Unlock();
     state.mirror_queue_size = CNCPeerControl::GetMirrorQueueSize();
     state.peer_active_conns = active;
     state.peer_bg_conns = bg;
@@ -749,37 +751,86 @@ CNCPeerControl::ReadCurState(SNCStateStat& state)
 Uint4
 CNCPeerControl::FindIPbyAlias(Uint4 alias)
 {
+    Uint4 res = 0;
+    s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
         if (!peer->m_MaybeThrottle && peer->m_HostAlias == alias) {
-            return peer->m_HostIP;
+            res = peer->m_HostIP;
+            break;
         }
     }
-    return 0;
+    s_MapLock.Unlock();
+    return res;
 }
 
 Uint4
 CNCPeerControl::FindIPbyName(const string& alias)
 {
+    Uint4 res = 0;
+    s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
         if (!peer->m_MaybeThrottle && peer->m_HostIPname == alias) {
-            return peer->m_HostIP;
+            res = peer->m_HostIP;
+            break;
         }
     }
-    return 0;
+    s_MapLock.Unlock();
+    return res;
 }
 
 bool
 CNCPeerControl::HasPeerInThrottle(void)
 {
+    bool res = false;
+    s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         if (CNCDistributionConf::HasCommonSlots(it_ctrl->first) && 
             it_ctrl->second->m_MaybeThrottle) {
-            return true;
+            res = true;
+            break;
         }
     }
-    return false;
+    s_MapLock.Unlock();
+    return res;
+}
+
+void CNCPeerControl::PrintState(CSrvSocketTask& task)
+{
+    s_MapLock.Lock();
+    TControlMap ctrl = s_Controls;
+    s_MapLock.Unlock();
+
+    string is("\": "), iss("\": \""), eol(",\n\""),  qt("\"");
+
+    task.WriteText(eol).WriteText("peers").WriteText(is).WriteText("\n[");
+    for(TControlMap::const_iterator it = ctrl.begin(); it != ctrl.end(); ++it) {
+        if (it != ctrl.begin()) {
+            task.WriteText(",");
+        }
+        task.WriteText("{\n");
+        CNCPeerControl* peer = it->second;
+        task.WriteText(qt).WriteText("hostname").WriteText(iss).WriteText(
+                    peer->GetPeerNameOrEmpty(peer->GetSrvId())).WriteText(qt);
+        task.WriteText(eol).WriteText("hostIPname").WriteText(iss).WriteText(peer->m_HostIPname).WriteText(qt);
+        task.WriteText(eol).WriteText("hostProtocol").WriteText(is).WriteNumber(peer->m_HostProtocol);
+        task.WriteText(eol).WriteText("healthy").WriteText(is).WriteText(
+                    (peer->m_InThrottle || peer->m_MaybeThrottle) ? "false" : "true");
+        task.WriteText(eol).WriteText("initiallySynced").WriteText(is).WriteText(
+                    peer->m_InitiallySynced ? "true" : "false");
+        task.WriteText(eol).WriteText("origSlotsToInitSync").WriteText(is).WriteNumber(peer->m_OrigSlotsToInitSync);
+        task.WriteText(eol).WriteText("slotsToInitSync").WriteText(is).WriteNumber(peer->m_SlotsToInitSync);
+        task.WriteText(eol).WriteText("cntActiveSyncs").WriteText(is).WriteNumber(peer->m_CntActiveSyncs);
+        task.WriteText(eol).WriteText("cntNWErrors").WriteText(is).WriteNumber(peer->m_CntNWErrors);
+        task.WriteText(eol).WriteText("hasBGTasks").WriteText(is).WriteText(
+                    peer->m_HasBGTasks ? "true" : "false");
+        task.WriteText(eol).WriteText("activeConns").WriteText(is).WriteNumber(peer->m_ActiveConns);
+        task.WriteText(eol).WriteText("bGConns").WriteText(is).WriteNumber(peer->m_BGConns);
+
+        task.WriteText("\n}");
+    }
+    task.WriteText("]");
 }
 
 void
