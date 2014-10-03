@@ -404,12 +404,7 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
     if (slot_srv == NULL) {
         return eUnknownServer;
     }
-    if (slot_srv == NULL
-        ||  (CNCPeerControl::HasServersForInitSync()
-             &&  (slot_srv->made_initial_sync
-                  ||  slot_data->cnt_sync_started != 0))
-        ||  CTaskServer::IsInShutdown())
-    {
+    if ( slot_data->cnt_sync_started != 0 ||  CTaskServer::IsInShutdown()) {
         return eServerBusy;
     }
 
@@ -573,6 +568,7 @@ CNCActiveSyncControl::x_StartScanSlots(void)
     m_MinNextTime = numeric_limits<Uint8>::max();
     m_LoopStart = CSrvTime::Current().AsUSec();
     m_NextSlotIt = s_SlotsList.begin();
+    m_VisitedSrv.clear();
     return &Me::x_CheckSlotOurSync;
 }
 
@@ -593,10 +589,11 @@ CNCActiveSyncControl::x_CheckSlotOurSync(void)
             m_SlotSrv = *it_srv;
             Uint8 next_time = max(m_SlotSrv->next_sync_time,
                                   m_SlotSrv->peer->GetNextSyncTime());
-            if (next_time <= CSrvTime::Current().AsUSec()
-                &&  (!CNCPeerControl::HasServersForInitSync()
-                     ||  !m_SlotSrv->made_initial_sync))
-            {
+            if (m_VisitedSrv.find(m_SlotSrv) != m_VisitedSrv.end()) {
+                continue;
+            }
+            m_VisitedSrv.insert(m_SlotSrv);
+            if (next_time <= CSrvTime::Current().AsUSec() ||  !m_SlotSrv->made_initial_sync) {
                 return &Me::x_DoPeriodicSync;
             }
         }
@@ -637,6 +634,7 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
     m_SlotData->lock.Unlock();
 
     ++m_NextSlotIt;
+    m_VisitedSrv.clear();
     SetState(&Me::x_CheckSlotOurSync);
     SetRunnable();
     return NULL;
@@ -677,8 +675,9 @@ CNCActiveSyncControl::State
 CNCActiveSyncControl::x_DoPeriodicSync(void)
 {
     ESyncInitiateResult init_res = s_StartSync(m_SlotData, m_SlotSrv, false);
-    if (init_res != eProceedWithEvents)
-        return &Me::x_CheckSlotTheirSync;
+    if (init_res != eProceedWithEvents) {
+        return &Me::x_CheckSlotOurSync;
+    }
 
     m_SrvId = m_SlotSrv->peer->GetSrvId();
     m_Slot = m_SlotData->slot;
@@ -860,13 +859,12 @@ CNCActiveSyncControl::x_FinishSync(void)
     CMiniMutexGuard g_srv(m_SlotSrv->lock);
     if (m_Result == eSynOK) {
         s_CommitSync(m_SlotData, m_SlotSrv);
-    }
-    else {
+    } else {
         s_CancelSync(m_SlotData, m_SlotSrv, CNCDistributionConf::GetFailedSyncRetryDelay());
     }
     m_DidSync = m_Result == eSynOK;
 
-    SetState(&Me::x_CheckSlotTheirSync);
+    SetState(&Me::x_CheckSlotOurSync);
     SetRunnable();
     return NULL;
 }

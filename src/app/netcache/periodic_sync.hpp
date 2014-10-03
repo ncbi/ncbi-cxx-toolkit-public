@@ -35,6 +35,7 @@
 #include "sync_log.hpp"
 #include "nc_db_info.hpp"
 #include "nc_utils.hpp"
+#include <set>
 
 
 BEGIN_NCBI_SCOPE
@@ -294,6 +295,7 @@ private:
 
     SSyncSlotData*  m_SlotData;
     SSyncSlotSrv*   m_SlotSrv;
+    set<SSyncSlotSrv*> m_VisitedSrv;
     Uint8       m_SrvId;
     Uint2       m_Slot;
     ESyncResult m_Result;
