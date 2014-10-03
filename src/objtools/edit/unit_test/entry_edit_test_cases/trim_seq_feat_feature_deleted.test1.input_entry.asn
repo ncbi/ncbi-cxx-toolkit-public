@@ -1,0 +1,370 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      origin artificial,
+      org {
+        taxname "Cloning vector pGGG002",
+        db {
+          {
+            db "taxon",
+            tag id 1439696
+          }
+        },
+        orgname {
+          name partial {
+            {
+              fixed-level other,
+              level "species",
+              name "Cloning vector pGGG002"
+            }
+          },
+          lineage "other sequences; artificial sequences; vectors",
+          gcode 11,
+          div "SYN"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Lampropoulos",
+                  first "Athanasios",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Sutikovic",
+                  first "Zoran",
+                  initials "Z."
+                }
+              },
+              {
+                name name {
+                  last "Wenzl",
+                  first "Christian",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Lohmann",
+                  first "Jan",
+                  initials "J.U."
+                }
+              },
+              {
+                name name {
+                  last "Forner",
+                  first "Joachim",
+                  initials "J."
+                }
+              }
+            }
+          },
+          title "GreenGate - a novel, versatile, and efficient cloning system
+ for plant transgenesis"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Forner",
+                  first "Joachim",
+                  initials "J."
+                }
+              }
+            },
+            affil std {
+              affil "Ruprecht-Karls-Universitaet Heidelberg",
+              div "Centre for Organismal Studies",
+              city "Heidelberg",
+              country "Germany",
+              street "Im Neuenheimer Feld 230",
+              postal-code "D-69221"
+            }
+          },
+          medium email,
+          date std {
+            year 2013,
+            month 9,
+            day 28
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "Vecscreen Comment:Submitter says that this sequence
+ represents a Cloning Vector"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:57"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SequinCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 27
+        },
+        {
+          label str "year",
+          data int 2013
+        }
+      }
+    },
+    update-date std {
+      year 2013,
+      month 12,
+      day 27
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Seq53",
+        general {
+          db "BankIt",
+          tag str "1662442/Seq53"
+        },
+        general {
+          db "TMSMART",
+          tag id 40248354
+        },
+        genbank {
+          accession "KF719016"
+        }
+      },
+      descr {
+        title "Cloning vector pGGG002, complete sequence.",
+        molinfo {
+          biomol other-genetic,
+          completeness complete
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq53"
+            }
+          }
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq53"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 2706,
+        topology circular,
+        seq-data ncbi2na '8602A5DB8C65CFFCCAF0ED38C30EBF7C86D2BA47FDAA03B99A05
+5CFEFCFFDC0C4F40CECD674E210C15E3039F430CF800A08B38B3D04FD6ED95F3D5FFF9A4FF97D7
+BFF9D152019EB80B008E78234BEAE462EAF13607A374126B08D7E22FF6558206FF50E3891FF02F
+79CEE99ACF356CF865A9089076B659311CF748387EBE2C7452D1200937C68E9384B0883CE4B9E5
+30538B8C11E6941F1F78418DA2858289C167FFE4413AA8D3B0765F8DBEA05A278382531406189B
+84518E5EC90E9041BE64073C1E981C7C7727D5A410F0C87A3A29A302F92851F799DA57D69E9EBF
+3E78C0DE896B89BA7762B34F9247AA523AC25756CDB2F371186A8B4A41CE8E060321236788CAE5
+D1E3C24FAC1ED2142FC74CCC7F23E3F007D3FF0FC028DCAE08D7FF8C374E140357C1B8BFDBD478
+9B4855B2008D028DF7E235FFFDE66C379E7E4040005167149AEBFBF968D089C5077FF582B07A7D
+2489923140C7BDF72EC96CBCA5147D081DEC9165C4C5D9DE70D7BC52E9E794BA630B6EDF16AFA1
+D08632F168C29926B6A781AAAF6E4449527E898185C4581E2317126E27388099467D582A2029A1
+2B35AC2692ADA04A226462A27D4AA8065EB37F32D7B6AFD945DE1F89B63FFB8E76D2AA9A25CE80
+0652419A5FFC6BD7A5FF9E97FE744EF7F5E6F355E3DEE8C16CF165FE2E278C59D9649606162649
+8B4B898A09A089950C64059775599BE963D3C3927A4612BF561E809A92E264190F0EE2F27474F2
+9154A7F11FCE7D69DB3BEEE83EE268C10FD1189CFCAE11CC82E09FADD32A9CE397AD105F88583D
+D95CCB8B6CF17A5B6FF106DB87A8015E9BC541F0D97E4913557F6527A6C32608A56458D95F5412
+F9925E0E983A65E39ACFF75F1937B9ACFD1164CEB91DD2C4379DE3964CBC252558456504567866
+5786A7EDE7569359F12109EE16DD6A2793BB48AFF45B4D16019980'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "bla"
+              },
+              location int {
+                from 200,
+                to 1060,
+                strand plus,
+                id local str "Seq53"
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "BsaI recognition site",
+              location int {
+                from 2240,
+                to 2245,
+                strand plus,
+                id local str "Seq53"
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "BsaI recognition site",
+              location int {
+                from 2276,
+                to 2281,
+                strand minus,
+                id local str "Seq53"
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "HA-adapter",
+              location int {
+                from 2251,
+                to 2270,
+                strand plus,
+                id local str "Seq53"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq53_prot_6",
+        general {
+          db "TMSMART",
+          tag id 40248355
+        },
+        genbank {
+          accession "AHE38553"
+        }
+      },
+      descr {
+        title "beta lactamase [Cloning vector pGGG002]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq53_prot_6"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 286,
+        seq-data ncbieaa "MSIQHFRVALIPFFAAFCLPVFAHPETLVKVKDAEDQLGARVGYIELDLNSG
+KILESFRPEERFPMMSTFKVLLCGAVLSRIDAGQEQLGRRIHYSQNDLVEYSPVTEKHLTDGMTVRELCSAAITMSDN
+TAANLLLTTIGGPKELTAFLHNMGDHVTRLDRWEPELNEAIPNDERDTTMPVAMATTLRKLLTGELLTLASRQQLIDW
+MEADKVAGPLLRSALPAGWFIADKSGAGERGSRGIIAALGPDGKPSRIVVIYTTGSQATMDERNRQIAEIGASLIKHW"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "beta lactamase"
+                }
+              },
+              location int {
+                from 0,
+                to 285,
+                id local str "Seq53_prot_6"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole local str "Seq53_prot_6",
+          location int {
+            from 200,
+            to 1060,
+            strand plus,
+            id local str "Seq53"
+          }
+        }
+      }
+    }
+  }
+}

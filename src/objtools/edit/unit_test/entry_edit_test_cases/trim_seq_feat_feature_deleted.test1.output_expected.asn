@@ -1,0 +1,267 @@
+Seq-entry ::= seq {
+  id {
+    local str "Seq53",
+    general {
+      db "BankIt",
+      tag str "1662442/Seq53"
+    },
+    general {
+      db "TMSMART",
+      tag id 40248354
+    },
+    genbank {
+      accession "KF719016"
+    }
+  },
+  descr {
+    title "Cloning vector pGGG002, complete sequence.",
+    molinfo {
+      biomol other-genetic,
+      completeness complete
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "LocalID:Seq53"
+        }
+      }
+    },
+    user {
+      type str "OrginalID",
+      data {
+        {
+          label str "LocalId",
+          data str "Seq53"
+        }
+      }
+    },
+    source {
+      genome genomic,
+      origin artificial,
+      org {
+        taxname "Cloning vector pGGG002",
+        db {
+          {
+            db "taxon",
+            tag id 1439696
+          }
+        },
+        orgname {
+          name partial {
+            {
+              fixed-level other,
+              level "species",
+              name "Cloning vector pGGG002"
+            }
+          },
+          lineage "other sequences; artificial sequences; vectors",
+          gcode 11,
+          div "SYN"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Lampropoulos",
+                  first "Athanasios",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Sutikovic",
+                  first "Zoran",
+                  initials "Z."
+                }
+              },
+              {
+                name name {
+                  last "Wenzl",
+                  first "Christian",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Lohmann",
+                  first "Jan",
+                  initials "J.U."
+                }
+              },
+              {
+                name name {
+                  last "Forner",
+                  first "Joachim",
+                  initials "J."
+                }
+              }
+            }
+          },
+          title "GreenGate - a novel, versatile, and efficient cloning system
+ for plant transgenesis"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Forner",
+                  first "Joachim",
+                  initials "J."
+                }
+              }
+            },
+            affil std {
+              affil "Ruprecht-Karls-Universitaet Heidelberg",
+              div "Centre for Organismal Studies",
+              city "Heidelberg",
+              country "Germany",
+              street "Im Neuenheimer Feld 230",
+              postal-code "D-69221"
+            }
+          },
+          medium email,
+          date std {
+            year 2013,
+            month 9,
+            day 28
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "Vecscreen Comment:Submitter says that this sequence
+ represents a Cloning Vector"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:57"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SequinCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 27
+        },
+        {
+          label str "year",
+          data int 2013
+        }
+      }
+    },
+    update-date std {
+      year 2013,
+      month 12,
+      day 27
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 500,
+    topology circular,
+    seq-data ncbi2na '89CFCAE11CC82E09FADD32A9CE397AD105F88583DD95CCB8B6CF17A5
+B6FF106DB87A8015E9BC541F0D97E4913557F6527A6C32608A56458D95F5412F9925E0E983A65E
+39ACFF75F1937B9ACFD1164CEB91DD2C4379DE3964CBC2525584565045678665786A7EDE756935
+9F12109EE16DD6A2793BB48AFF45B4D1601998'H
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data imp {
+            key "misc_feature"
+          },
+          comment "BsaI recognition site",
+          location int {
+            from 34,
+            to 39,
+            strand plus,
+            id local str "Seq53"
+          }
+        },
+        {
+          data imp {
+            key "misc_feature"
+          },
+          comment "BsaI recognition site",
+          location int {
+            from 70,
+            to 75,
+            strand minus,
+            id local str "Seq53"
+          }
+        },
+        {
+          data imp {
+            key "misc_feature"
+          },
+          comment "HA-adapter",
+          location int {
+            from 45,
+            to 64,
+            strand plus,
+            id local str "Seq53"
+          }
+        }
+      }
+    },
+    {
+      data ftable {
+      }
+    }
+  }
+}
