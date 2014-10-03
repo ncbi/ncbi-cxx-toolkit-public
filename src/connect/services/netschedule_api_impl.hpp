@@ -427,7 +427,7 @@ struct SNetScheduleJobReaderImpl : public CObject
     bool x_PerformTimelineAction(TNotificationTimeline& timeline,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
-            CNetScheduleJobReader::EReadNextJobResult* result);
+            bool* no_more_jobs);
     void x_ProcessReadJobNotifications();
 
     SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);

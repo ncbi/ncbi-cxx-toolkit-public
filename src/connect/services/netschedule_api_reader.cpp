@@ -89,8 +89,6 @@ static bool s_ParseReadJobResponse(const string& response,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
 {
-    *no_more_jobs = false;
-
     if (response.empty())
         return false;
 
@@ -179,8 +177,10 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
         SNetScheduleJobReaderImpl::TNotificationTimeline& timeline,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status,
-        CNetScheduleJobReader::EReadNextJobResult* result)
+        bool* no_more_jobs)
 {
+    *no_more_jobs = false;
+
     SNotificationTimelineEntry::TRef timeline_entry;
 
     timeline.Shift(timeline_entry);
@@ -210,25 +210,17 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
     timeline_entry->ResetTimeout(READJOB_TIMEOUT);
 
     try {
-        bool no_more_jobs;
-
         if (x_ReadJob(server, &timeline_entry->GetTimeout(),
-                job, job_status, &no_more_jobs)) {
+                job, job_status, no_more_jobs)) {
             // A job has been returned; add the server to
             // m_ImmediateActions because there can be more
             // jobs in the queue.
             m_ImmediateActions.Push(timeline_entry);
-            *result = no_more_jobs ? CNetScheduleJobReader::eRNJ_NoMoreJobs :
-                    CNetScheduleJobReader::eRNJ_JobReady;
             return true;
         } else {
             // No job has been returned by this server;
             // query the server later.
             m_Timeline.Push(timeline_entry);
-            if (no_more_jobs) {
-                *result = CNetScheduleJobReader::eRNJ_NoMoreJobs;
-                return true;
-            }
             return false;
         }
     }
@@ -260,16 +252,21 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
 
     char deadline_object[sizeof(CDeadline)];
 
-    CDeadline* timeout_expiration_time = timeout == NULL ? NULL :
+    CDeadline* deadline = timeout == NULL ? NULL :
             new (deadline_object) CDeadline(*timeout);
 
-    EReadNextJobResult result;
+    bool no_more_jobs;
 
     for (;;) {
+        bool matching_job_exists = false;
+
         while (!m_Impl->m_ImmediateActions.IsEmpty()) {
             if (m_Impl->x_PerformTimelineAction(m_Impl->m_ImmediateActions,
-                    *job, job_status, &result))
-                return result;
+                    *job, job_status, &no_more_jobs))
+                return eRNJ_JobReady;
+
+            if (!no_more_jobs)
+                matching_job_exists = true;
 
             while (!m_Impl->m_Timeline.IsEmpty() &&
                     m_Impl->m_Timeline.GetHead()->TimeHasCome())
@@ -279,30 +276,37 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
             m_Impl->x_ProcessReadJobNotifications();
         }
 
+        // All servers from m_ImmediateActions returned 'no_more_jobs'.
+        // However, this method can be called again to wait for possible
+        // notifications and to query the servers again periodically.
+        if (!matching_job_exists)
+            return eRNJ_NoMoreJobs;
+
         // FIXME Check for interrupt
         // if (CGridGlobals::GetInstance().IsShuttingDown())
             // return eRNJ_Interrupt;
 
-        if (timeout_expiration_time == NULL ||
-                timeout_expiration_time->GetRemainingTime().IsZero())
+        if (deadline == NULL || deadline->GetRemainingTime().IsZero())
             return eRNJ_Timeout;
 
+        // There's still time. Wait for notifications and query the servers.
         if (!m_Impl->m_Timeline.IsEmpty()) {
             const CDeadline& next_event_time =
                     m_Impl->m_Timeline.GetHead()->GetTimeout();
 
-            if (timeout_expiration_time != NULL &&
-                            !(next_event_time < *timeout_expiration_time)) {
+            if (*deadline < next_event_time) {
                 if (!m_Impl->m_API->m_NotificationThread->
-                        m_ReadNotifications.Wait(*timeout_expiration_time))
+                        m_ReadNotifications.Wait(*deadline))
                     return eRNJ_Timeout;
                 m_Impl->x_ProcessReadJobNotifications();
             } else if (m_Impl->m_API->m_NotificationThread->
                     m_ReadNotifications.Wait(next_event_time))
                 m_Impl->x_ProcessReadJobNotifications();
             else if (m_Impl->x_PerformTimelineAction(m_Impl->m_Timeline,
-                    *job, job_status, &result))
-                return result;
+                    *job, job_status, &no_more_jobs))
+                return eRNJ_JobReady;
+            else if (no_more_jobs)
+                return eRNJ_NoMoreJobs;
         }
     }
 }
