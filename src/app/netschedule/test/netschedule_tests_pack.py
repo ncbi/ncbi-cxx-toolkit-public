@@ -1024,7 +1024,8 @@ class Scenario37( TestBase ):
         try:
             execAny( ns_client, 'STAT JOBS aff=non_existing_affinity' )
             # Newer NS versions generate warning
-            if "Unknown affinity token" in self.warning:
+            if "Unknown affinity token" in self.warning or \
+               "eAffinityNotFound" in self.warning:
                 return True
             raise Exception( "Expected unknown affinity warning" )
         except Exception, exc:
