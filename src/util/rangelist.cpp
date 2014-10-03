@@ -81,7 +81,7 @@ void CRangeList::Parse(const char* init_string,
         while ((digit = (unsigned) (*++pos - '0')) <= 9)
             number = number * 10 + digit;
 
-        *current_bound_ptr = int(negative ? -number : number);
+        *current_bound_ptr = negative ? -int(number) : int(number);
 
         pos = s_SkipSpaces(pos);
 
