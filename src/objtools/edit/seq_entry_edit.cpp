@@ -2619,11 +2619,7 @@ void TrimSeqFeat(CRef<CSeq_feat> feat,
 /// re-normalize nuc-prot set.
 void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
 {
-    // Delete the feature
-    CSeq_feat_EditHandle feat_eh(feat_h);
-    feat_eh.Remove();
-
-    // If the feature was a Cdregion, then delete the protein sequence
+    // First, if the feature is a Cdregion, then delete the protein sequence
     CMappedFeat mapped_feat(feat_h);
     if ( mapped_feat.IsSetData() && 
          mapped_feat.GetData().Which() == CSeqFeatData::e_Cdregion &&
@@ -2635,12 +2631,14 @@ void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
 
         // Should be a protein!
         if ( prot_h.IsProtein() && !prot_h.IsRemoved() ) {
+            // Get the protein parent set before you remove the protein
+            CBioseq_set_Handle bssh = prot_h.GetParentBioseq_set();
+
             // Delete the protein
             CBioseq_EditHandle prot_eh(prot_h);
             prot_eh.Remove();
 
             // If lone nuc remains, renormalize the nuc-prot set
-            CBioseq_set_Handle bssh = prot_h.GetParentBioseq_set();
             if (bssh && bssh.IsSetClass() 
                 && bssh.GetClass() == CBioseq_set::eClass_nuc_prot
                 && !bssh.IsEmptySeq_set() 
@@ -2653,6 +2651,10 @@ void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
             }
         }
     }
+
+    // Finally, delete the feature
+    CSeq_feat_EditHandle feat_eh(feat_h);
+    feat_eh.Remove();
 }
 
 
