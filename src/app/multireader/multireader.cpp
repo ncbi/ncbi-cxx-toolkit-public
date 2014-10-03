@@ -804,6 +804,9 @@ void CMultiReaderApp::xProcessGvf(
         return xProcessGff3(args, istr, ostr);
     }
     CGvfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    if (args["show-progress"]) {
+        reader.SetProgressReportInterval(10);
+    }
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         const CSeq_annot& annot = **cit;
