@@ -684,10 +684,7 @@ static bool s_DeleteMakeprofileDb(const string & name )
 void CMakeProfileDBApp::x_InitRPSDbInfo(Int4 num_files)
 {
 
-	 s_CreateDirectories(m_OutDbName);
-	 if ( s_DeleteMakeprofileDb(m_OutDbName)) {
-		 *m_LogFile << "Deleted existing BLAST database with identical name." << endl;
-	 }
+
      m_RpsDbInfo.num_seqs = num_files;
 
      string rps_str = m_OutDbName + ".rps";
@@ -1290,6 +1287,10 @@ static CRef<CBlast_def_line_set> s_GenerateBlastDefline(const CBioseq & bio)
 
 int CMakeProfileDBApp::Run(void)
 {
+	 s_CreateDirectories(m_OutDbName);
+	 if ( s_DeleteMakeprofileDb(m_OutDbName)) {
+		 *m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+	 }
 	vector<string> smpFilenames = (op_delta == m_op_mode )? x_CreateDeltaList():x_GetSMPFilenames();
 
 	x_InitRPSDbInfo((Int4) smpFilenames.size());
