@@ -713,6 +713,15 @@ const char* CCoreException::GetErrCodeString(void) const
     }
 }
 
+const char* CInvalidParamException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eUndefined:            return "eUndefined";
+    case eInvalidCharacter:     return "eNullPtr";
+    default:                    return CException::GetErrCodeString();
+    }
+}
+
 #if (defined(NCBI_OS_MSWIN) && defined(_UNICODE)) || \
         (NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__)
 // MT: Store pointer to the strerror message in TLS

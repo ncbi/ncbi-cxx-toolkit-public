@@ -197,10 +197,12 @@ void CWorkerNodeJobContext::CommitJob()
     m_Impl->m_JobCommitted = eDone;
 }
 
-void CWorkerNodeJobContext::CommitJobWithFailure(const string& err_msg)
+void CWorkerNodeJobContext::CommitJobWithFailure(const string& err_msg,
+        bool no_retries)
 {
     m_Impl->CheckIfCanceled();
     m_Impl->m_JobCommitted = eFailure;
+    m_Impl->m_DisableRetries = no_retries;
     m_Impl->m_Job.error_msg = err_msg;
 }
 
@@ -323,6 +325,7 @@ void SWorkerNodeJobContextImpl::ResetJobContext()
     m_JobNumber = CGridGlobals::GetInstance().GetNewJobNumber();
 
     m_JobCommitted = CWorkerNodeJobContext::eNotCommitted;
+    m_DisableRetries = false;
     m_InputBlobSize = 0;
     m_ExclusiveJob =
             (m_Job.mask & CNetScheduleAPI::eExclusiveJob) != 0;

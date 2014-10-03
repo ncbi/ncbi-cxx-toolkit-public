@@ -238,15 +238,19 @@ public:
             if (!job_context.IsCanceled())
                 job_context.CommitJobWithFailure("Job has been canceled");
         } else
-            if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
+            if (m_RemoteAppLauncher.MustFailNoRetries(ret))
+                job_context.CommitJobWithFailure(
+                        "Exited with return code " + NStr::IntToString(ret) +
+                        " - will not be rerun",
+                        true /* no retries */);
+            else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
                     CRemoteAppLauncher::eDoneOnNonZeroExit)
                 job_context.CommitJob();
+            else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                    CRemoteAppLauncher::eReturnOnNonZeroExit)
+                job_context.ReturnJob();
             else
-                if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                        CRemoteAppLauncher::eReturnOnNonZeroExit)
-                    job_context.ReturnJob();
-                else
-                    job_context.CommitJobWithFailure(
+                job_context.CommitJobWithFailure(
                         "Exited with return code " + NStr::IntToString(ret));
 
         if (job_context.IsLogRequested()) {

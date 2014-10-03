@@ -1286,6 +1286,27 @@ public:
     NCBI_EXCEPTION_DEFAULT(CCoreException, CException);
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CInvalidParamException --
+///
+/// Exception to report configuration or command line parameter errors
+/// (external error sources as opposed to CCoreException::eInvalidArg).
+
+class NCBI_XNCBI_EXPORT CInvalidParamException : public CException
+{
+public:
+    enum EErrCode {
+        eUndefined = 1,         ///< Parameter is missing/undefined
+        eInvalidCharacter       ///< Parameter value contains invalid character
+    };
+
+    /// Translate from an error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const;
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CInvalidParamException, CException);
+};
 
 
 // Some implementations return char*, so strict compilers may refuse

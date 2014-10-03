@@ -26,11 +26,13 @@
  *
  * ===========================================================================
  *
- * Authors: Maxim Didenko
+ * Authors: Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *
  */
+
+#include <util/rangelist.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
@@ -66,6 +68,9 @@ public:
     ENonZeroExitAction GetNonZeroExitAction() const
         {return m_NonZeroExitAction;}
 
+    // Check whether retries are disabled for the specified exit code.
+    bool MustFailNoRetries(int exit_code) const;
+
     const CNcbiEnvironment& GetLocalEnv() const { return m_LocalEnv; }
 
 #ifdef NCBI_OS_MSWIN
@@ -85,6 +90,7 @@ private:
     int m_MaxAppRunningTime;
     int m_KeepAlivePeriod;
     ENonZeroExitAction m_NonZeroExitAction;
+    CRangeList m_RangeList;
     string m_TempDir;
     bool m_RemoveTempDir;
     bool m_CacheStdOutErr;
@@ -102,5 +108,5 @@ private:
 
 END_NCBI_SCOPE
 
-#endif 
+#endif
 

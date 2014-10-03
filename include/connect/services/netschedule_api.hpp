@@ -677,7 +677,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///     NetSchedule job description structure. its error_msg
     ///     and optionally ret_code and output fields should be set
     ///
-    void PutFailure(const CNetScheduleJob& job);
+    /// @param no_retries
+    ///     Instruct NetSchedule to fail the job permanently.
+    ///     The job will not be rerun regardless of whether retries
+    ///     are enabled for the queue or not.
+    ///
+    void PutFailure(const CNetScheduleJob& job, bool no_retries = false);
 
     /// Reschedule a job with new affinity and/or group information.
     ///

@@ -37,31 +37,14 @@
 #ifndef UTIL___DISTRIBUTION__HPP
 #define UTIL___DISTRIBUTION__HPP
 
-#include <corelib/ncbistd.hpp>
+#include "rangelist.hpp"
 
 BEGIN_NCBI_SCOPE
 
 class CRandom;
 
-/// @internal
-class NCBI_XUTIL_EXPORT CInvalidParamException : public CException
-{
-public:
-    enum EErrCode {
-        eUndefined = 1,
-        eNotANumber,
-        eInvalidCharacter
-    };
-
-    /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
-
-    // Standard exception boilerplate code.
-    NCBI_EXCEPTION_DEFAULT(CInvalidParamException, CException);
-};
-
 /// This class generates a random integer from a series of ranges
-/// defined like this: 5, 6 - 9, 10 - 50
+/// defined as follows: 5, 6 - 9, 10 - 50.
 class NCBI_XUTIL_EXPORT CDiscreteDistribution
 {
 public:
@@ -88,19 +71,18 @@ public:
     void InitFromParameter(
         const char* parameter_name,
         const char* parameter_value,
-        CRandom* random_gen);
+        CRandom* random_gen)
+    {
+        m_RandomGen = random_gen;
+        CRangeList::Parse(parameter_value, parameter_name, &m_RangeVector);
+    }
 
     /// Returns a random value from the distribution.
     unsigned GetNextValue() const;
 
 private:
-    typedef std::pair<unsigned, unsigned> TRange;
-    typedef std::vector<TRange> TRangeVector;
-
-    const char* SkipSpaces(const char* input_string);
-
     CRandom* m_RandomGen;
-    TRangeVector m_RangeVector;
+    CRangeList::TRangeVector m_RangeVector;
 };
 
 END_NCBI_SCOPE

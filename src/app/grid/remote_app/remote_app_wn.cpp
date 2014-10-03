@@ -69,7 +69,7 @@ public:
     CRemoteAppJob(const IWorkerNodeInitContext& context,
             const CRemoteAppLauncher& remote_app_launcher);
 
-    virtual ~CRemoteAppJob() {} 
+    virtual ~CRemoteAppJob() {}
 
     int Do(CWorkerNodeJobContext& context)
     {
@@ -180,15 +180,19 @@ public:
             if (!context.IsJobCommitted())
                 context.CommitJobWithFailure("Job has been canceled");
         } else
-            if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
+            if (m_RemoteAppLauncher.MustFailNoRetries(ret))
+                context.CommitJobWithFailure(
+                        "Exited with return code " + NStr::IntToString(ret) +
+                        " - will not be rerun",
+                        true /* no retries */);
+            else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
                     CRemoteAppLauncher::eDoneOnNonZeroExit)
                 context.CommitJob();
+            else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                    CRemoteAppLauncher::eReturnOnNonZeroExit)
+                context.ReturnJob();
             else
-                if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                        CRemoteAppLauncher::eReturnOnNonZeroExit)
-                    context.ReturnJob();
-                else
-                    context.CommitJobWithFailure(
+                context.CommitJobWithFailure(
                         "Exited with return code " + NStr::IntToString(ret));
 
         if (context.IsLogRequested()) {

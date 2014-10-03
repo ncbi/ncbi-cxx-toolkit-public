@@ -568,7 +568,8 @@ void CNetScheduleExecutor::GetProgressMsg(CNetScheduleJob& job)
     m_Impl->m_API.GetProgressMsg(job);
 }
 
-void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
+void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job,
+        bool no_retries)
 {
     s_CheckOutputSize(job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
@@ -594,6 +595,9 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
     cmd.append(NStr::NumericToString(job.ret_code));
 
     g_AppendClientIPAndSessionID(cmd);
+
+    if (no_retries)
+        cmd.append(" no_retries=1");
 
     m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
 }

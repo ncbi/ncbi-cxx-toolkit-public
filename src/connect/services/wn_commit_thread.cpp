@@ -155,7 +155,8 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
             break;
 
         case CWorkerNodeJobContext::eFailure:
-            m_WorkerNode->m_NSExecutor.PutFailure(job_context->m_Job);
+            m_WorkerNode->m_NSExecutor.PutFailure(job_context->m_Job,
+                    job_context->m_DisableRetries);
             break;
 
         default: /* eNotCommitted: job registration error,

@@ -255,7 +255,7 @@ class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
     /// This method should be called at the end of the
     /// IWorkerNodeJob::Do() method.
     ///
-    void CommitJobWithFailure(const string& err_msg);
+    void CommitJobWithFailure(const string& err_msg, bool no_retries = false);
 
     /// Schedule the job for return.
     ///

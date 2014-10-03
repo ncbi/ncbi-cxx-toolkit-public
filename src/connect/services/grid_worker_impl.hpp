@@ -57,6 +57,7 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
     SGridWorkerNodeImpl* m_WorkerNode;
     CNetScheduleJob m_Job;
     CWorkerNodeJobContext::ECommitStatus m_JobCommitted;
+    bool m_DisableRetries;
     size_t m_InputBlobSize;
     unsigned int m_JobNumber;
     bool m_ExclusiveJob;
