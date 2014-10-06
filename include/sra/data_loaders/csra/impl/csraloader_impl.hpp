@@ -59,7 +59,7 @@ public:
         eBlobType_reads
     };
 
-    CCSRABlobId(const CTempString& str);
+    explicit CCSRABlobId(const CTempString& str);
     CCSRABlobId(EBlobType blob_type,
                 const CCSRAFileInfo& file,
                 const CSeq_id_Handle& seq_id);
@@ -316,7 +316,7 @@ protected:
 class CCSRADataLoader_Impl : public CObject
 {
 public:
-    CCSRADataLoader_Impl(const CCSRADataLoader::SLoaderParams& params);
+    explicit CCSRADataLoader_Impl(const CCSRADataLoader::SLoaderParams& params);
     ~CCSRADataLoader_Impl(void);
 
     void AddSrzDef(void);

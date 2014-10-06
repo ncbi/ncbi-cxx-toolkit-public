@@ -112,7 +112,7 @@ protected:
 class CWGSDataLoader_Impl : public CObject
 {
 public:
-    CWGSDataLoader_Impl(const CWGSDataLoader::SLoaderParams& params);
+    explicit CWGSDataLoader_Impl(const CWGSDataLoader::SLoaderParams& params);
     ~CWGSDataLoader_Impl(void);
 
     CConstRef<CWGSFileInfo> GetWGSFile(const string& acc);

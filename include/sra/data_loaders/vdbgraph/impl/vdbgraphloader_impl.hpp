@@ -54,7 +54,7 @@ public:
     typedef CDataLoader::TTSE_Lock TTSE_Lock;
     typedef CDataLoader::TTSE_LockSet TTSE_LockSet;
 
-    CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files);
+    explicit CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files);
     ~CVDBGraphDataLoader_Impl(void);
 
     typedef vector<CAnnotName> TAnnotNames;

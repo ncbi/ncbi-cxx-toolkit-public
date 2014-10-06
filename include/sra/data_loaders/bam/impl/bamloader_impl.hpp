@@ -51,7 +51,7 @@ class CBamFileInfo;
 class CBAMBlobId : public CBlobId
 {
 public:
-    CBAMBlobId(const CTempString& str);
+    explicit CBAMBlobId(const CTempString& str);
     CBAMBlobId(const string& bam_name, const CSeq_id_Handle& seq_id);
     ~CBAMBlobId(void);
 
@@ -216,7 +216,7 @@ protected:
 class CBAMDataLoader_Impl : public CObject
 {
 public:
-    CBAMDataLoader_Impl(const CBAMDataLoader::SLoaderParams& params);
+    explicit CBAMDataLoader_Impl(const CBAMDataLoader::SLoaderParams& params);
     ~CBAMDataLoader_Impl(void);
 
     void AddSrzDef(void);
