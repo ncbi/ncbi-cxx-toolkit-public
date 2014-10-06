@@ -85,6 +85,7 @@ public:
         eStatus_NotFound            = 404, // Object is not found
         eStatus_Inactive            = 408, // Connection was closed due to inactivity
                                            // timeout
+        eStatus_Probe               = 444, // Routine test from systems
         eStatus_SocketIOError       = 499, // Error writing to socket
 
         eStatus_ServerError         = 500, // Internal server error

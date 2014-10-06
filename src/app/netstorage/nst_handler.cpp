@@ -197,10 +197,22 @@ void CNetStorageHandler::OnRead(void)
                 // excessive messages in AppLog.
                 ERR_POST("Incoming message parsing error. " << e <<
                          " The connection will be closed.");
+                x_SetConnRequestStatus(eStatus_BadRequest);
+            } else {
+                x_SetConnRequestStatus(eStatus_Probe);
             }
+            m_Server->CloseConnection(&GetSocket());
+        }
+        catch (const exception &  ex) {
+            ERR_POST("STL exception while processing incoming message: " <<
+                     ex.what());
             x_SetConnRequestStatus(eStatus_BadRequest);
             m_Server->CloseConnection(&GetSocket());
-            return;
+        }
+        catch (...) {
+            ERR_POST("Unknown exception while processing incoming message");
+            x_SetConnRequestStatus(eStatus_BadRequest);
+            m_Server->CloseConnection(&GetSocket());
         }
     }
 }
@@ -501,7 +513,20 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         x_SendSyncMessage(response);
         m_ObjectBeingWritten = NULL;
         m_DataMessageSN = -1;
-        return;
+    }
+    catch (...) {
+        string  message = "Unknown exception while writing into " +
+                          m_ObjectBeingWritten.GetLoc();
+        ERR_POST(message);
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                    m_DataMessageSN,
+                                    CNetStorageServerException::eWriteError,
+                                    message);
+        x_SendSyncMessage(response);
+        m_ObjectBeingWritten = NULL;
+        m_DataMessageSN = -1;
     }
 }
 
