@@ -1748,9 +1748,23 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         return;
     }
 
+    // Cannot get nuc sequence data
+    if (!bsh.CanGetInst()) {
+        return;
+    }
+
     // Sort the cuts 
     TCuts sorted_cuts;
     GetSortedCuts(bsh, cuts, sorted_cuts, internal_cut_conversion);
+
+    // Trim a copy of seq_inst but don't update the original seq_inst just yet.
+    // Do the update as the last step after trimming all annotation first.
+    // I need the trimmed seq_inst when I retranslate a protein sequence.
+    // Make a copy of seq_inst
+    CRef<CSeq_inst> copy_inst(new CSeq_inst());
+    copy_inst->Assign(bsh.GetInst());
+    // Modify the copy of seq_inst
+    TrimSeqData(bsh, copy_inst, sorted_cuts);
 
     // Trim Seq-feat annotation
     SAnnotSelector feat_sel(CSeq_annot::C_Data::e_Ftable);
@@ -1779,15 +1793,22 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         if (bFeatureTrimmed) {
             // Further modify the copy of the feature
 
-            // Get length of nuc sequence before trimming
-            TSeqPos original_nuc_len = 0;
-            if (bsh.CanGetInst() && bsh.GetInst().CanGetLength()) {
-                original_nuc_len = bsh.GetInst().GetLength();
-            }
-            AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
+            // If this feat is a Cdregion, then RETRANSLATE the protein
+            // sequence AND adjust any protein feature
+            if ( copy_feat->IsSetData() && 
+                 copy_feat->GetData().Which() == CSeqFeatData::e_Cdregion &&
+                 copy_feat->IsSetProduct() )
+            {
+                // Get length of nuc sequence before trimming
+                TSeqPos original_nuc_len = 0;
+                if (bsh.CanGetInst() && bsh.GetInst().CanGetLength()) {
+                    original_nuc_len = bsh.GetInst().GetLength();
+                }
+                AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
 
-            // Retranslate the coding region using the new nuc sequence
-            RetranslateCdregion(bsh, copy_feat, sorted_cuts);
+                // Retranslate the coding region using the new nuc sequence
+                RetranslateCdregion(bsh, copy_inst, copy_feat, sorted_cuts);
+            }
 
             // Update the original feature with the modified copy
             CSeq_feat_EditHandle feat_eh(*feat_ci);
@@ -1849,18 +1870,9 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         }
     }
 
-    // Trim sequence data
-    if (bsh.CanGetInst()) {
-        // Make a copy of seq_inst
-        CRef<CSeq_inst> copy_inst(new CSeq_inst());
-        copy_inst->Assign(bsh.GetInst());
-
-        // Modify the copy of seq_inst
-        TrimSeqData(bsh, copy_inst, sorted_cuts);
-
-        // Update the original seq_inst with the modified copy
-        bsh.GetEditHandle().SetInst(*copy_inst);
-    }
+    // Last step - trim sequence data by updating the original seq_inst with the
+    // modified copy
+    bsh.GetEditHandle().SetInst(*copy_inst);
 }
 
 
@@ -2744,7 +2756,8 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
 
 /// Secondary function needed after trimming Seq-feat.
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
-void RetranslateCdregion(CBioseq_Handle nuc_bsh, 
+void RetranslateCdregion(CBioseq_Handle nuc_bsh,
+                         CRef<CSeq_inst> trimmed_nuc_inst, 
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts)
 {
@@ -2752,8 +2765,20 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
          cds->GetData().Which() == CSeqFeatData::e_Cdregion &&
          cds->IsSetProduct() )
     {
+        // In order to retranslate correctly, we need to create a 
+        // new scope with the trimmed sequence data.
+
+        // Keep track of original seqinst
+        CRef<objects::CSeq_inst> orig_inst(new objects::CSeq_inst());
+        orig_inst->Assign(nuc_bsh.GetInst());
+
+        // Update the seqinst to the trimmed version, set the scope
+        // and retranslate
+        CBioseq_EditHandle bseh = nuc_bsh.GetEditHandle();
+        bseh.SetInst(*trimmed_nuc_inst);
+        CScope& new_scope = bseh.GetScope();
+
         // Use Cdregion.Product to get handle to protein bioseq 
-        CScope& new_scope = nuc_bsh.GetScope();
         CBioseq_Handle prot_bsh = new_scope.GetBioseqHandle(cds->GetProduct());
         if (!prot_bsh.IsProtein()) {
             return;
@@ -2795,6 +2820,9 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
                 prot_feat_eh.Replace(*new_feat);
             }
         }
+
+        // Restore the original seqinst
+        bseh.SetInst(*orig_inst);
     }
 }
 
