@@ -280,6 +280,7 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
 NCBI_XOBJEDIT_EXPORT
 void RetranslateCdregion(CBioseq_Handle nuc_bsh, 
+                         CRef<CSeq_inst> trimmed_nuc_inst,
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts);
 
