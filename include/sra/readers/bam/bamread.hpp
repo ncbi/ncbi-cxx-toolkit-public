@@ -482,7 +482,7 @@ class NCBI_BAMREAD_EXPORT CBamRefSeqIterator
 public:
     explicit CBamRefSeqIterator(const CBamDb& bam_db);
 
-    explicit CBamRefSeqIterator(const CBamRefSeqIterator& iter);
+    CBamRefSeqIterator(const CBamRefSeqIterator& iter);
     CBamRefSeqIterator& operator=(const CBamRefSeqIterator& iter);
 
     DECLARE_OPERATOR_BOOL(!m_LocateRC);
@@ -546,7 +546,7 @@ public:
                       TSeqPos ref_pos,
                       TSeqPos window = 0);
 
-    explicit CBamAlignIterator(const CBamAlignIterator& iter);
+    CBamAlignIterator(const CBamAlignIterator& iter);
     CBamAlignIterator& operator=(const CBamAlignIterator& iter);
 
     DECLARE_OPERATOR_BOOL(!m_LocateRC);

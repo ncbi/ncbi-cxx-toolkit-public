@@ -224,7 +224,7 @@ public:
         : m_Object(0)
         {
         }
-    explicit CSraRef(const TSelf& ref)
+    CSraRef(const TSelf& ref)
         : m_Object(s_AddRef(ref))
         {
         }
