@@ -73,16 +73,7 @@ NCBI_PARAM_DEF(string, WGS, GI_INDEX, "");
 /////////////////////////////////////////////////////////////////////////////
 
 
-#if 0
-#if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
-# define PAN1_PATH "/net/pan1"
-#else
-# define PAN1_PATH "//panfs/pan1"
-#endif
-#define DEGAULT_GI_INDEX_PATH PAN1_PATH "/id_dumps/WGS/tmp/list.wgs_gi_ranges.sorted"
-#else
 #define DEGAULT_GI_INDEX_PATH NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
-#endif
 
 
 CWGSGiResolver::CWGSGiResolver(void)
