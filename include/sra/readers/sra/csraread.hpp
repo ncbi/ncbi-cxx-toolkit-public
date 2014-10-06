@@ -283,7 +283,7 @@ public:
           m_Iter(iter)
         {
         }
-    CCSraRefSeqIterator(const CCSraDb& csra_db);
+    explicit CCSraRefSeqIterator(const CCSraDb& csra_db);
     NCBI_DEPRECATED
     CCSraRefSeqIterator(const CCSraDb& csra_db, const string& seq_id);
     enum EByName {

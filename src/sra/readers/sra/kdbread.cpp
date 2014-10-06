@@ -57,12 +57,6 @@ CKMetadata::CKMetadata(const CKTable& table)
 }
 
 
-CKMetadata::CKMetadata(const CVDBTable& table)
-{
-    x_Init(table);
-}
-
-
 CKMetadata::CKMetadata(const CVDB& db, const char* table_name)
 {
     x_Init(CVDBTable(db, table_name));

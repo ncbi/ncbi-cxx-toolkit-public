@@ -87,7 +87,10 @@ class CBamFileAlign;
 class CBamRcFormatter
 {
 public:
-    CBamRcFormatter(rc_t rc) : m_RC(rc) {}
+    explicit CBamRcFormatter(rc_t rc)
+        : m_RC(rc)
+        {
+        }
 
     rc_t GetRC(void) const
         {
@@ -207,7 +210,7 @@ public:
         : m_Object(0)
         {
         }
-    CBamRef(const TSelf& ref)
+    explicit CBamRef(const TSelf& ref)
         : m_Object(s_AddRef(ref))
         {
         }
@@ -403,7 +406,7 @@ public:
         : m_Size(0), m_Capacity(0)
         {
         }
-    CBamString(size_t capacity)
+    explicit CBamString(size_t capacity)
         : m_Size(0)
         {
             reserve(capacity);
@@ -477,9 +480,9 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CBamString& str)
 class NCBI_BAMREAD_EXPORT CBamRefSeqIterator
 {
 public:
-    CBamRefSeqIterator(const CBamDb& bam_db);
+    explicit CBamRefSeqIterator(const CBamDb& bam_db);
 
-    CBamRefSeqIterator(const CBamRefSeqIterator& iter);
+    explicit CBamRefSeqIterator(const CBamRefSeqIterator& iter);
     CBamRefSeqIterator& operator=(const CBamRefSeqIterator& iter);
 
     DECLARE_OPERATOR_BOOL(!m_LocateRC);
@@ -525,7 +528,7 @@ class NCBI_BAMREAD_EXPORT CBamFileAlign
     : public CBamRef<const BAMAlignment>
 {
 public:
-    CBamFileAlign(const CBamAlignIterator& iter);
+    explicit CBamFileAlign(const CBamAlignIterator& iter);
 
     Uint2 GetFlags(void) const;
     // returns false if BAM flags are not available
@@ -537,13 +540,13 @@ class NCBI_BAMREAD_EXPORT CBamAlignIterator
 {
 public:
     CBamAlignIterator(void);
-    CBamAlignIterator(const CBamDb& bam_db);
+    explicit CBamAlignIterator(const CBamDb& bam_db);
     CBamAlignIterator(const CBamDb& bam_db,
                       const string& ref_id,
                       TSeqPos ref_pos,
                       TSeqPos window = 0);
 
-    CBamAlignIterator(const CBamAlignIterator& iter);
+    explicit CBamAlignIterator(const CBamAlignIterator& iter);
     CBamAlignIterator& operator=(const CBamAlignIterator& iter);
 
     DECLARE_OPERATOR_BOOL(!m_LocateRC);

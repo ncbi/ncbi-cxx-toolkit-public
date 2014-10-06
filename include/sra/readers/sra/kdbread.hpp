@@ -66,8 +66,7 @@ class NCBI_SRAREAD_EXPORT CKMetadata
     : public CSraRef<const KMetadata>
 {
 public:
-    CKMetadata(const CKTable& table);
-    CKMetadata(const CVDBTable& table);
+    explicit CKMetadata(const CKTable& table);
     CKMetadata(const CVDB& db, const char* table_name);
 
 protected:
@@ -111,7 +110,7 @@ class NCBI_SRAREAD_EXPORT CKNameList
     : public CSraRef<KNamelist>
 {
 public:
-    CKNameList(const CKMDataNode& parent);
+    explicit CKNameList(const CKMDataNode& parent);
 
     size_t size(void) const
         {

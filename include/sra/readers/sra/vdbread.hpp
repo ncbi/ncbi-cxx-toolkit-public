@@ -77,7 +77,7 @@ class NCBI_SRAREAD_EXPORT CKConfig
 {
 public:
     CKConfig(void);
-    CKConfig(ENull /*null*/)
+    explicit CKConfig(ENull /*null*/)
         {
         }
 };
@@ -88,7 +88,7 @@ class NCBI_SRAREAD_EXPORT CVFSManager
 {
 public:
     CVFSManager(void);
-    CVFSManager(ENull /*null*/)
+    explicit CVFSManager(ENull /*null*/)
         {
         }
 };
@@ -168,7 +168,7 @@ class NCBI_SRAREAD_EXPORT CVResolver
 {
 public:
     CVResolver(const CVFSManager& mgr, const CKConfig& cfg);
-    CVResolver(ENull /*null*/)
+    explicit CVResolver(ENull /*null*/)
         {
         }
 
@@ -238,7 +238,7 @@ class NCBI_SRAREAD_EXPORT CVDBCursor
     : public CSraRef<const VCursor>
 {
 public:
-    CVDBCursor(const CVDBTable& table)
+    explicit CVDBCursor(const CVDBTable& table)
         : m_RowOpened(false)
         {
             Init(table);
@@ -462,7 +462,7 @@ public:
         {
             x_Get(cursor, row, column.GetIndex());
         }
-    CVDBValue(const SValueIndex& value_index)
+    explicit CVDBValue(const SValueIndex& value_index)
         : m_Data(0),
           m_ElemCount(0)
         {
@@ -505,7 +505,7 @@ class NCBI_SRAREAD_EXPORT CVDBValueFor4Bits
 public:
     typedef unsigned TValue;
 
-    CVDBValueFor4Bits(const CVDBValue::SValueIndex& value_index)
+    explicit CVDBValueFor4Bits(const CVDBValue::SValueIndex& value_index)
         : m_RawData(0),
           m_RawElemCount(0),
           m_ElemOffset(0)
@@ -585,7 +585,7 @@ public:
         : CVDBValue(cursor, row, column)
         {
         }
-    CVDBValueFor(const CVDBValue::SValueIndex& value_index)
+    explicit CVDBValueFor(const CVDBValue::SValueIndex& value_index)
         : CVDBValue(value_index)
         {
         }
@@ -637,7 +637,7 @@ public:
         : CVDBValueFor<char>(cursor, row, column)
         {
         }
-    CVDBStringValue(const CVDBValue::SValueIndex& value_index)
+    explicit CVDBStringValue(const CVDBValue::SValueIndex& value_index)
         : CVDBValueFor<char>(value_index)
         {
         }

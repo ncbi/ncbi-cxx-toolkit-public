@@ -284,8 +284,7 @@ public:
     CWGSDb(void)
         {
         }
-    explicit
-    CWGSDb(CWGSDb_Impl* impl)
+    explicit CWGSDb(CWGSDb_Impl* impl)
         : CRef<CWGSDb_Impl>(impl)
         {
         }

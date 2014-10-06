@@ -80,7 +80,7 @@ class CSeq_entry;
 class CSraRcFormatter
 {
 public:
-    CSraRcFormatter(rc_t rc) : m_RC(rc) {}
+    explicit CSraRcFormatter(rc_t rc) : m_RC(rc) {}
 
     rc_t GetRC(void) const
         {
@@ -224,7 +224,7 @@ public:
         : m_Object(0)
         {
         }
-    CSraRef(const TSelf& ref)
+    explicit CSraRef(const TSelf& ref)
         : m_Object(s_AddRef(ref))
         {
         }
@@ -306,14 +306,16 @@ class NCBI_SRAREAD_EXPORT CSraPath
     : public CSraRef<SRAPath>
 {
 public:
-    CSraPath(ENull /*null*/)
+    explicit CSraPath(ENull /*null*/)
         {
         }
     CSraPath(void);
     NCBI_DEPRECATED_CTOR(CSraPath(const string& rep_path,
                                   const string& vol_path));
 
+    NCBI_DEPRECATED
     static string GetDefaultRepPath(void);
+    NCBI_DEPRECATED
     static string GetDefaultVolPath(void);
 
     NCBI_DEPRECATED
@@ -336,6 +338,7 @@ public:
         eTrim
     };
 
+    NCBI_DEPRECATED
     CSraMgr(const string& rep_path, const string& vol_path,
             ETrim trim = eNoTrim);
 

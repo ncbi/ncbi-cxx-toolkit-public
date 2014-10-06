@@ -63,7 +63,7 @@ class CBamFile
 {
 public:
     CBamFile(void);
-    CBamFile(const string& path);
+    explicit CBamFile(const string& path);
     ~CBamFile(void);
 
     void Open(const string& path);

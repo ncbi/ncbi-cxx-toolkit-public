@@ -152,7 +152,7 @@ public:
     CVDBGraphDb(void)
         {
         }
-    CVDBGraphDb(CVDBGraphDb_Impl* impl)
+    explicit CVDBGraphDb(CVDBGraphDb_Impl* impl)
         : CRef<CVDBGraphDb_Impl>(impl)
         {
         }
@@ -178,9 +178,9 @@ public:
           m_Iter(pos)
         {
         }
-    CVDBGraphSeqIterator(const CVDBGraphDb& db);
+    explicit CVDBGraphSeqIterator(const CVDBGraphDb& db);
     CVDBGraphSeqIterator(const CVDBGraphDb& db,
-                            const CSeq_id_Handle& seq_id);
+                         const CSeq_id_Handle& seq_id);
 
     bool operator!(void) const {
         return !m_Db || m_Iter == m_Db->GetSeqInfoList().end();
