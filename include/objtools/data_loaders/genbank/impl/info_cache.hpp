@@ -85,7 +85,7 @@ public:
 
     bool IsLoading(void) const
         {
-            return m_LoadingRequestor;
+            return m_LoadingRequestor != 0;
         }
     
 protected:
@@ -159,7 +159,7 @@ protected:
 
     bool IsLocked(void) const
         {
-            return m_Mutex;
+            return m_Mutex.NotNull();
         }
 
     bool IsLoaded(void) const;

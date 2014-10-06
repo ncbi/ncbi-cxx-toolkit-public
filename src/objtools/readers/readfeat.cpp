@@ -2278,19 +2278,17 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                 case eQual_db_xref:
                     {
-                        string db, tag;
-                        int num;
+                        CTempString db, tag;
                         if (NStr::SplitInTwo (val, ":", db, tag)) {
                             CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
                             CRef<CDbtag> dbt (new CDbtag);
                             dbt->SetDb (db);
                             CRef<CObject_id> oid (new CObject_id);
-                            try {
-                                num = NStr::StringToLong(tag);
-                                oid->SetId(num);
-                            } catch( ... ) {
+                            static const char* digits = "0123456789";
+                            if (tag.find_first_not_of(digits) == string::npos)
+                                oid->SetId(NStr::StringToLong(tag));
+                            else
                                 oid->SetStr(tag);
-                            }
                             dbt->SetTag (*oid);
                             dblist.push_back (dbt);
                             return true;

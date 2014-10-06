@@ -285,24 +285,12 @@ CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const string& 
     CRef<CUser_object> uo(new CUser_object);
     uo->SetType(*oi);
 
-    CRef<CSeqdesc> sd(new CSeqdesc());
-    sd->Select(CSeqdesc::e_User);
-    sd->SetUser(*uo);
+    CRef<CSeqdesc> user_desc(new CSeqdesc());
+    user_desc->Select(CSeqdesc::e_User);
+    user_desc->SetUser(*uo);
 
-    descr.Set().push_back(sd);
+    descr.Set().push_back(user_desc);
     return *uo;
-}
-
-CBioSource& CTable2AsnContext::SetBioSource_old(CSeq_descr& SD)
-{
-    CRef<CSeqdesc> source_desc = CAutoAddDesc::LocateDesc(SD, CSeqdesc::e_Source);
-    if (source_desc.Empty())
-    {
-        source_desc.Reset(new CSeqdesc());
-        source_desc->Select(CSeqdesc::e_Source);
-        SD.Set().push_back(source_desc);
-    }
-    return source_desc->SetSource();
 }
 
 // create-date should go into each bioseq
@@ -333,66 +321,12 @@ bool CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
     return need_update;
 }
 
-bool CAutoAddDesc::IsNull()
-{
-    if (m_desc.IsNull())
-        m_desc = LocateDesc(*m_descr, m_which);
-    return (m_desc.IsNull());
-}
-
-const CSeqdesc& CAutoAddDesc::Get()
-{
-    if (m_desc.IsNull())
-        m_desc = LocateDesc(*m_descr, m_which);
-    return *m_desc;
-}
-
-CSeqdesc& CAutoAddDesc::Set(bool skip_lookup)
-{
-    if (!skip_lookup && m_desc.IsNull())
-        m_desc = LocateDesc(*m_descr, m_which);
-    if (m_desc.IsNull())
-    {
-        m_desc.Reset(new CSeqdesc);
-        m_descr->Set().push_back(m_desc);
-    }
-    return *m_desc;
-}
-
-// update-date should go only to top-level bioseq-set or bioseq
-CRef<CSeqdesc> CAutoAddDesc::LocateDesc(CSeq_descr& descr, CSeqdesc::E_Choice which)
-{
-    NON_CONST_ITERATE(CSeq_descr::Tdata, it, descr.Set())
-    {
-        if ((**it).Which() == which)
-            return *it;
-    }
-
-    return CRef<CSeqdesc>();
-}
-
-
 
 void CTable2AsnContext::ApplyUpdateDate(objects::CSeq_entry& entry) const
 {
     CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
     CAutoAddDesc date_desc(entry.SetDescr(), CSeqdesc::e_Update_date);
     date_desc.Set().SetUpdate_date(*date);
-
-    /*
-    CRef<CSeqdesc> date_desc = LocateDesc(entry.SetDescr(), CSeqdesc::e_Update_date);
-
-    if (date_desc.IsNull())
-    {
-        date_desc.Reset(new CSeqdesc);
-        date_desc->SetUpdate_date(*date);
-        entry.SetDescr().Set().push_back(date_desc);
-    }
-    else
-    {
-        date_desc->SetUpdate_date(*date);
-    }
-    */
 }
 
 void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
@@ -456,9 +390,9 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
             }
 #endif
 
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetPub().SetPub().Set().push_back(pub);
-            object->SetDescr().Set().push_back(desc);
+            CRef<CSeqdesc> pub_desc(new CSeqdesc);
+            pub_desc->SetPub().SetPub().Set().push_back(pub);
+            object->SetDescr().Set().push_back(pub_desc);
         }
 
 #if 0
@@ -471,9 +405,9 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
             CRef<CPub> pub(new CPub);
             pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
 
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetPub().SetPub().Set().push_back(pub);
-            object->SetDescr().Set().push_back(desc);
+            CRef<CSeqdesc> pub_desc(new CSeqdesc);
+            pub_desc->SetPub().SetPub().Set().push_back(pub);
+            object->SetDescr().Set().push_back(pub_desc);
         }
 #endif
 

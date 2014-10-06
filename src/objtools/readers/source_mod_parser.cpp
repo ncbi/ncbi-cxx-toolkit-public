@@ -95,39 +95,71 @@ T* LeaveAsIs(void)
     return static_cast<T*>(NULL);
 }
 
-class CAutoInitAddBioSource: public CAutoInitRef<CBioSource> 
-{         
+template<class _T>
+class CAutoInitDesc: public CAutoAddDesc
+{
 public:
-    CAutoInitAddBioSource(CSeq_descr& descr): 
-        m_need_to_add(true), m_descr(descr)
-      {
-          NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, m_descr.Set())
-          {
-              if ((**desc_it).IsSource())
-              {
-                  CBioSource& biosource = (**desc_it).SetSource();
-                  Set(&biosource);
-                  m_need_to_add = false;
-                  break;
-              }
-          }
-
-      };
-      ~CAutoInitAddBioSource()
-      {
-          if (m_need_to_add && &Get(LeaveAsIs<CBioSource>) != NULL) 
-          {
-              CRef<CSeqdesc> desc(new CSeqdesc);
-              desc->SetSource(Get()); 
-              m_descr.Set().push_back(desc);
-          }
-      }        
-
-private:
-    bool         m_need_to_add;
-    CSeq_descr&  m_descr;
+    CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which);
+    CAutoInitDesc(_T& obj);
+    _T* operator->();
+    _T& operator*();
+protected:
+    _T* m_ptr;
+    void _getfromdesc();
 };
 
+template<class _T>
+inline
+CAutoInitDesc<_T>::CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which):
+   CAutoAddDesc(descr, which), m_ptr(0)
+{
+}
+
+template<class _T>
+inline
+CAutoInitDesc<_T>::CAutoInitDesc(_T& obj):
+   CAutoAddDesc(*(CSeq_descr*)0, CSeqdesc::e_not_set), m_ptr(&obj)
+{
+}
+
+
+template<class _T>
+inline
+_T& CAutoInitDesc<_T>::operator*()
+{
+    return * operator->();
+}
+
+template<class _T>
+inline
+_T* CAutoInitDesc<_T>::operator->()
+{
+    if (m_ptr == 0 &&
+        m_which != CSeqdesc::e_not_set)
+    {
+        _getfromdesc();
+    }
+
+    return m_ptr;
+}
+
+template<>
+void CAutoInitDesc<CBioSource>::_getfromdesc()
+{
+    m_ptr = &Set().SetSource();
+}
+
+template<>
+void CAutoInitDesc<CMolInfo>::_getfromdesc()
+{
+    m_ptr = &Set().SetMolinfo();
+}
+
+template<>
+void CAutoInitDesc<CGB_block>::_getfromdesc()
+{
+    m_ptr = &Set().SetGenbank();
+}
 
 string CSourceModParser::ParseTitle(const CTempString& title, 
     CConstRef<CSeq_id> seqid,
@@ -250,28 +282,18 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
     }
 
     {{
-        CAutoInitAddBioSource bsrc(seq.SetDescr());
+        CAutoInitDesc<CBioSource> bsrc(seq.SetDescr(), CSeqdesc::e_Source);
         x_ApplyMods(bsrc, organism);
     }}
 
     {{
-        CAutoInitRef<CMolInfo> mi;
+        CAutoInitDesc<CMolInfo> mi(seq.SetDescr(), CSeqdesc::e_Molinfo);
         x_ApplyMods(mi);
-        if (&mi.Get(LeaveAsIs<CMolInfo>) != NULL) {
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetMolinfo(*mi);
-            seq.SetDescr().Set().push_back(desc);
-        }
     }}
 
     {{
-        CAutoInitRef<CGB_block> gbb;
+        CAutoInitDesc<CGB_block> gbb(seq.SetDescr(), CSeqdesc::e_Genbank);
         x_ApplyMods(gbb);
-        if (&gbb.Get(LeaveAsIs<CGB_block>) != NULL) {
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetGenbank(*gbb);
-            seq.SetDescr().Set().push_back(desc);
-        }
     }}
 
     {{
@@ -418,7 +440,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 }
 
-void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
+void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                                    CTempString organism)
 {
     const SMod* mod = NULL;
@@ -725,7 +747,7 @@ typedef CStaticPairArrayMap<const char*, CMolInfo::TCompleteness,
 CSourceModParser::PKeyCompare>  TCompletenessMap;
 DEFINE_STATIC_ARRAY_MAP(TCompletenessMap, sc_CompletenessMap, sc_CompletenessArray);
 
-void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
+void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
 {
     const SMod* mod = NULL;
 
@@ -814,7 +836,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CProt_ref>& prot)
 }
 
 
-void CSourceModParser::x_ApplyMods(CAutoInitRef<CGB_block>& gbb)
+void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
 {
     const SMod* mod = NULL;
 
@@ -1234,6 +1256,25 @@ void CSourceModParser::x_HandleBadModValue(
     }
 }
 
+void CSourceModParser::ApplyMods(CBioSource& bsrc, CTempString organism)
+{
+    CAutoInitDesc<CBioSource> ref(bsrc);
+    x_ApplyMods(ref, organism);
+}
+
+
+void CSourceModParser::ApplyMods(CMolInfo& mi)
+{
+    CAutoInitDesc<CMolInfo> ref(mi);
+    x_ApplyMods(ref);
+}
+
+
+void CSourceModParser::ApplyMods(CGB_block& gbb)
+{
+    CAutoInitDesc<CGB_block> ref(gbb);
+    x_ApplyMods(ref);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

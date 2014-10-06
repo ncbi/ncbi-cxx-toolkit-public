@@ -171,13 +171,13 @@ public:
     CBlob_Info(CConstRef<CBlob_id> blob_id, TContentsMask contents);
     ~CBlob_Info(void);
 
-    CConstRef<CBlob_id> GetBlob_id(void) const
+    const CConstRef<CBlob_id>& GetBlob_id(void) const
         {
             return m_Blob_id;
         }
     DECLARE_OPERATOR_BOOL_REF(m_Blob_id);
 
-    TContentsMask GetContentsMask(void) const
+    const TContentsMask& GetContentsMask(void) const
         {
             return m_Contents;
         }
@@ -185,9 +185,9 @@ public:
 
     bool IsSetAnnotInfo(void) const
         {
-            return m_AnnotInfo;
+            return m_AnnotInfo.NotEmpty();
         }
-    CConstRef<CBlob_Annot_Info> GetAnnotInfo(void) const
+    const CConstRef<CBlob_Annot_Info>& GetAnnotInfo(void) const
         {
             return m_AnnotInfo;
         }

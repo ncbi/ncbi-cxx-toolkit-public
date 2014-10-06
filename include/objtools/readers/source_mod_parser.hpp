@@ -75,6 +75,9 @@ class CBioseq;
 /// for allowing them to contain bracketed modifiers of the form [key=value],
 /// as documented at http://www.ncbi.nlm.nih.gov/Sequin/modifiers.html .
 
+template<class _T>
+class CAutoInitDesc;
+
 class NCBI_XOBJREAD_EXPORT CSourceModParser
 {
 public:
@@ -212,11 +215,11 @@ private:
 
     CRef<CModFilter> m_pModFilter;
 
-    void x_ApplyMods(CAutoInitRef<CBioSource>& bsrc, CTempString organism);
-    void x_ApplyMods(CAutoInitRef<CMolInfo>& mi);
+    void x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc, CTempString organism);
+    void x_ApplyMods(CAutoInitDesc<CMolInfo>& mi);
     void x_ApplyMods(CAutoInitRef<CGene_ref>& gene);
     void x_ApplyMods(CAutoInitRef<CProt_ref>& prot);
-    void x_ApplyMods(CAutoInitRef<CGB_block>& gbb);
+    void x_ApplyMods(CAutoInitDesc<CGB_block>& gbb);
     void x_ApplyMods(CAutoInitRef<CSeq_hist>& hist);
     // void x_ApplyMods(CAutoInitRef<CSubmit_block>& sb);
     void x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa);
@@ -234,24 +237,6 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 inline
-void CSourceModParser::ApplyMods(CBioSource& bsrc, CTempString organism)
-{
-    CAutoInitRef<CBioSource> ref;
-    ref.Set(&bsrc);
-    x_ApplyMods(ref, organism);
-}
-
-
-inline
-void CSourceModParser::ApplyMods(CMolInfo& mi)
-{
-    CAutoInitRef<CMolInfo> ref;
-    ref.Set(&mi);
-    x_ApplyMods(ref);
-}
-
-
-inline
 void CSourceModParser::ApplyMods(CGene_ref& gene)
 {
     CAutoInitRef<CGene_ref> ref;
@@ -265,15 +250,6 @@ void CSourceModParser::ApplyMods(CProt_ref& prot)
 {
     CAutoInitRef<CProt_ref> ref;
     ref.Set(&prot);
-    x_ApplyMods(ref);
-}
-
-
-inline
-void CSourceModParser::ApplyMods(CGB_block& gbb)
-{
-    CAutoInitRef<CGB_block> ref;
-    ref.Set(&gbb);
     x_ApplyMods(ref);
 }
 

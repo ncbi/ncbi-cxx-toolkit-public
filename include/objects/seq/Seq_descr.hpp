@@ -40,6 +40,7 @@
 #define OBJECTS_SEQ_SEQ_DESCR_HPP
 
 
+#include <objects/seq/Seqdesc.hpp>
 // generated includes
 #include <objects/seq/Seq_descr_.hpp>
 
@@ -79,6 +80,39 @@ CSeq_descr::CSeq_descr(void)
 
 NCBISER_HAVE_POST_READ(CSeq_descr)
 NCBISER_HAVE_PRE_WRITE(CSeq_descr)
+
+/////////////////// end of CSeq_descr inline methods
+// CAutoAddDesc automatically adds a new seqdesc object once it's accessed via 'Set' method
+class NCBI_SEQ_EXPORT CAutoAddDesc
+{
+public:
+    // construct
+    CAutoAddDesc(CSeq_descr& descr, CSeqdesc::E_Choice which);
+    const CSeqdesc& Get() const;
+    // use skip_lookup in case you always need to create an seqdesc, 
+    // e.g. for desc not requiring uniqueness (ePub, etc)
+    CSeqdesc& Set(bool skip_lookup = false);
+    bool IsNull() const;
+    static
+    CRef<CSeqdesc> LocateDesc(const CSeq_descr& descr, CSeqdesc::E_Choice which);
+
+private:
+    CAutoAddDesc();
+    CAutoAddDesc(const CAutoAddDesc&);
+
+protected:
+    CSeqdesc::E_Choice m_which;
+    CRef<CSeq_descr> m_descr;
+    mutable CRef<CSeqdesc> m_desc;
+};
+
+/////////////////// CAutoAddDesc inline methods
+inline
+CAutoAddDesc::CAutoAddDesc(CSeq_descr& descr, enum CSeqdesc::E_Choice which)
+{
+    m_descr.Reset(&descr);
+    m_which = which;
+}
 
 /////////////////// end of CSeq_descr inline methods
 

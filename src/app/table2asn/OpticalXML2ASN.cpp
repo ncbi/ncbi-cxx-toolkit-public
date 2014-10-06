@@ -205,18 +205,9 @@ int COpticalxml2asnOperatorImpl::Run(void)
 
 void COpticalxml2asnOperatorImpl::SetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context)
 {
-    CSeq_descr::Tdata& TD = SD.Set();
-
-
-    CRef<CMolInfo> mi(new CMolInfo);
-    mi->SetBiomol(CMolInfo::eBiomol_genomic);
-    mi->SetCompleteness(CMolInfo::eCompleteness_complete);
-
-    CRef<CSeqdesc> sdm(new CSeqdesc());
-    sdm->Select(CSeqdesc::e_Molinfo);
-    sdm->SetMolinfo(*mi);
-
-    TD.push_back(sdm);
+    CAutoAddDesc desc(SD, CSeqdesc::e_Molinfo);
+    desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+    desc.Set().SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_complete);
 }
 
 CRef<CSeq_entry> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context)

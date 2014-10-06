@@ -105,10 +105,10 @@ CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user
     if (user_obj == 0)
     {
         // create new user object
-        CRef<CSeqdesc> desc(new CSeqdesc);
-        user_obj = &(desc->SetUser());
+        CRef<CSeqdesc> user_desc(new CSeqdesc);
+        user_obj = &(user_desc->SetUser());
         user_obj->SetType().SetStr("StructuredComment");
-        descr.Set().push_back(desc);
+        descr.Set().push_back(user_desc);
     }
     user_obj->AddField(name, value);
     // create next user object

@@ -76,6 +76,44 @@ void CSeq_descr::PreWrite(void) const
     }
 }
 
+bool CAutoAddDesc::IsNull() const
+{
+    if (m_desc.IsNull())
+        m_desc = LocateDesc(*m_descr, m_which);
+    return (m_desc.IsNull());
+}
+
+const CSeqdesc& CAutoAddDesc::Get() const
+{
+    if (m_desc.IsNull())
+        m_desc = LocateDesc(*m_descr, m_which);
+    return *m_desc;
+}
+
+CSeqdesc& CAutoAddDesc::Set(bool skip_lookup)
+{
+    if (!skip_lookup && m_desc.IsNull())
+        m_desc = LocateDesc(*m_descr, m_which);
+    if (m_desc.IsNull())
+    {
+        m_desc.Reset(new CSeqdesc);
+        m_descr->Set().push_back(m_desc);
+    }
+    return *m_desc;
+}
+
+// update-date should go only to top-level bioseq-set or bioseq
+CRef<CSeqdesc> CAutoAddDesc::LocateDesc(const CSeq_descr& descr, CSeqdesc::E_Choice which)
+{
+    ITERATE(CSeq_descr::Tdata, it, descr.Get())
+    {
+        if ((**it).Which() == which)
+            return *it;
+    }
+
+    return CRef<CSeqdesc>();
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
