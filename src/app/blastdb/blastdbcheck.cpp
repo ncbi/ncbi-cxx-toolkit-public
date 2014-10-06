@@ -42,6 +42,7 @@
 #include <corelib/ncbi_mask.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/api/rps_aux.hpp>
 #include <objtools/align_format/align_format_util.hpp>
 #include "../blast/blast_app_util.hpp"
 
@@ -229,6 +230,9 @@ void CBlastDbCheckApplication::Init(void)
     arg_desc->AddFlag
         ("must_have_taxids", 
          "Require that all sequences in the database have taxid set.");
+
+    arg_desc->AddFlag
+        ("cdd_delta", "Do aditional tests for a CDD database for DELTA-BLAST");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -1156,6 +1160,196 @@ bool CDirTest::Test(CTestActionList & action)
     return (tot_faults == 0);
 }
 
+// Test comparing CDD header files to check that the numbers of records match.
+class CCddHeadersTest : public CTestAction
+{
+public:
+
+    CCddHeadersTest(CBlastDbCheckLog& log, int flags)
+        : CTestAction(log, "CDD_Headers", flags), m_NumFailures(0) {}
+
+    virtual int DoTest(CSeqDB& db, TSeen& /* seen */);
+
+protected:
+    bool x_GetHeader(CSeqDB& db);
+    bool x_TestFreqRatios(CSeqDB& db);
+
+protected:
+    vector<Int4> m_Offsets;
+    Int4 m_NumProfiles;
+    Int4 m_MagicNumber;
+    int m_NumFailures;
+};
+
+int CCddHeadersTest::DoTest(CSeqDB& db, TSeen& seen)
+{
+    if (x_GetHeader(db)) {
+        x_TestFreqRatios(db);
+    }
+
+    return m_NumFailures;
+}
+
+bool CCddHeadersTest::x_GetHeader(CSeqDB& db)
+{
+    try {
+        const string& db_name = db.GetDBNameList();
+        CBlastRPSInfo rps_info(db_name, CBlastRPSInfo::fRpsBlast);
+
+        // copy header information
+        BlastRPSProfileHeader* header = rps_info()->profile_header;
+        m_NumProfiles = header->num_profiles;
+        m_MagicNumber = header->magic_number;
+        m_Offsets.reserve(m_NumProfiles);
+        for (int i=0;i < m_NumProfiles;i++) {
+            m_Offsets.push_back(header->start_offsets[i]);
+        }
+    }
+    catch (exception& e) {
+        Log(db, e_Brief) << "  [ERROR] caught exception while reading rps header "
+                           << endl;
+        Log(db, e_Details) << e.what() << endl;
+        m_NumFailures++;
+    }
+
+    return (m_NumFailures == 0);
+}
+
+bool CCddHeadersTest::x_TestFreqRatios(CSeqDB& db)
+{
+    try {
+        const string& db_name = db.GetDBNameList();
+        CBlastRPSInfo rps_info(db_name, CBlastRPSInfo::fFreqRatiosFile);
+
+        BlastRPSProfileHeader* header = (BlastRPSProfileHeader*)rps_info()->freq_ratios_header;
+        if (header->magic_number != m_MagicNumber) {
+            Log(db, e_Brief) << "  [ERROR] Bad magic number of the "
+                " .freq file" << endl;
+            m_NumFailures++;
+        }
+
+        if (header->num_profiles != m_NumProfiles) {
+            Log(db, e_Brief) << "  [ERROR] Wrong number of profiles in the "
+                " .freq file: " << header->num_profiles << endl;
+            m_NumFailures++;
+        }
+
+        for (int i=0;i < m_NumProfiles;i++) {
+            if (header->start_offsets[i] != m_Offsets[i]) {
+                Log(db, e_Brief) << "  [ERROR] Header offsets differ between .rps "
+                    "and .freq files" << endl;
+                m_NumFailures++;
+            }
+        }
+    }
+    catch (exception& e) {
+        Log(db, e_Brief) << "  [ERROR] caught exception while reading "
+            ".freq freqs header " << endl;
+        Log(db, e_Details) << e.what() << endl;
+        m_NumFailures++;
+    }
+
+    return (m_NumFailures == 0);
+}
+
+
+class CCddDeltaHeadersTest : public CCddHeadersTest
+{
+public:
+    CCddDeltaHeadersTest(CBlastDbCheckLog& log, int flags)
+        : CCddHeadersTest(log, flags) {}
+
+    virtual int DoTest(CSeqDB& db, TSeen& /* seen */);
+
+private:
+    bool x_TestWeightedCounts(CSeqDB& db);
+    bool x_TestObservations(CSeqDB& db);
+};
+
+
+int CCddDeltaHeadersTest::DoTest(CSeqDB& db, TSeen& seen)
+{
+    if (x_GetHeader(db)) {
+        x_TestFreqRatios(db);
+        x_TestWeightedCounts(db);
+        x_TestObservations(db);
+    }
+
+    return m_NumFailures;
+}
+
+
+bool CCddDeltaHeadersTest::x_TestWeightedCounts(CSeqDB& db)
+{
+    try {
+        const string& db_name = db.GetDBNameList();
+        CBlastRPSInfo rps_info(db_name, CBlastRPSInfo::fFrequenciesFile);
+
+        BlastRPSProfileHeader* header = rps_info()->freq_header;
+        if (header->magic_number != m_MagicNumber) {
+            Log(db, e_Brief) << "  [ERROR] Bad magic number of the "
+                " .wcounts file" << endl;
+            m_NumFailures++;
+        }
+
+        if (header->num_profiles != m_NumProfiles) {
+            Log(db, e_Brief) << "  [ERROR] Wrong number of profiles in the "
+                " .wcounts file: " << header->num_profiles << endl;
+            m_NumFailures++;
+        }
+
+        for (int i=0;i < m_NumProfiles;i++) {
+            if (header->start_offsets[i] != m_Offsets[i]) {
+                Log(db, e_Brief) << "  [ERROR] Header offsets differ between .rps "
+                    "and .wcounts files" << endl;
+                m_NumFailures++;
+            }
+        }
+    }
+    catch (exception& e) {
+        Log(db, e_Brief) << "  [ERROR] caught exception while reading "
+            ".wcounts freqs header " << endl;
+        Log(db, e_Details) << e.what() << endl;
+        m_NumFailures++;
+    }
+
+    return (m_NumFailures == 0);
+}
+
+bool CCddDeltaHeadersTest::x_TestObservations(CSeqDB& db)
+{
+    try {
+        const string& db_name = db.GetDBNameList();
+        CBlastRPSInfo rps_info(db_name, CBlastRPSInfo::fObservationsFile);
+
+        BlastRPSProfileHeader* header = rps_info()->obsr_header;
+        if (header->magic_number != m_MagicNumber) {
+            Log(db, e_Brief) << "  [ERROR] Bad magic number of the "
+                " .obsr file" << endl;
+            m_NumFailures++;
+        }
+
+        if (header->num_profiles != m_NumProfiles) {
+            Log(db, e_Brief) << "  [ERROR] Wrong number of profiles in the "
+                " .obsr file: " << header->num_profiles << endl;
+            m_NumFailures++;
+        }
+
+        // The observations file is compressed and the offsets will be
+        // different from other files, hence we only compare the number
+        // of rectords.
+
+    }
+    catch (exception& e) {
+        Log(db, e_Brief) << "  [ERROR] caught exception while reading "
+            ".obsr freqs header " << endl;
+        Log(db, e_Details) << e.what() << endl;
+        m_NumFailures++;
+    }
+
+    return (m_NumFailures == 0);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
@@ -1276,6 +1470,12 @@ int CBlastDbCheckApplication::Run(void)
             output.Log(e_Summary)
                 << "By default, testing " << random_sample << " randomly sampled OIDs." << endl;
             tests->Add(new CSampleTest(output, random_sample, flags));
+        }
+
+        if (args["cdd_delta"]) {
+            output.Log(e_Summary)
+                << "Testing CDD files' headers for DELTA-BLAST" << endl;
+            tests->Add(new CCddDeltaHeadersTest(output, flags));
         }
         
         //if (fork1) {
