@@ -1213,6 +1213,106 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
 }
 
 
+BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
+{
+    cout << "Testing FUNCTION: TrimSequenceAndAnnotation" << endl;
+
+    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["trim_sequence_and_annotation"];
+
+    BOOST_CHECK( ! mapOfTests.empty() );
+
+    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
+        const string & sTestName = (test_it->first);
+        cout << "Running TEST: " << sTestName << endl;
+
+        TMapTestFiles & test_stage_map = (test_it->second);
+
+        BOOST_REQUIRE( test_stage_map.size() == 2u );
+
+        // Get the input/output files
+        const CFile & input_entry_file = test_stage_map["input_entry"];
+        const CFile & output_expected_file = test_stage_map["output_expected"];
+
+        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
+        CRef<CSeq_entry> pOutputExpectedEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
+
+        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
+        CSeq_entry_Handle expected_entry_h = s_pScope->AddTopLevelSeqEntry(*pOutputExpectedEntry);
+
+        // Find the bioseq(s) that we will trim
+        CBioseq_CI bioseq_ci( entry_h );
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle& bsh = *bioseq_ci;
+
+            // Seq4 is found in test1 input
+            if (s_FindLocalId(bsh, "Seq4")) {
+                // Create the cuts from known vector contamination
+                // Seqid "Seq4" has vector
+                edit::TRange cut1(376, 596);
+                edit::TRange cut2(0, 92);
+                edit::TRange cut3(93, 108);
+                edit::TRange cut4(109, 188);
+                edit::TRange cut5(662, 671);
+                edit::TRange cut6(672, 690);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+                cuts.push_back(cut2);
+                cuts.push_back(cut3);
+                cuts.push_back(cut4);
+                cuts.push_back(cut5);
+                cuts.push_back(cut6);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+
+            // trpB is found in test2 input
+            if (s_FindLocalId(bsh, "trpB")) {
+                // Create the cuts from known vector contamination
+                // Seqid "trpB" has vector
+                edit::TRange cut1(0, 2);
+                edit::TRange cut2(3, 68);
+                edit::TRange cut3(69, 86);
+                edit::TRange cut4(87, 119);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+                cuts.push_back(cut2);
+                cuts.push_back(cut3);
+                cuts.push_back(cut4);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+
+            // Seq1 is found in test3 input
+            if (s_FindLocalId(bsh, "Seq1")) {
+                // Create the cuts from known vector contamination
+                // Seqid "Seq1" has vector
+                edit::TRange cut1(0, 141);
+                edit::TRange cut2(2080, 3035);
+                edit::TRange cut3(285, 325);
+                edit::TRange cut4(326, 359);
+                edit::TRange cut5(360, 403);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+                cuts.push_back(cut2);
+                cuts.push_back(cut3);
+                cuts.push_back(cut4);
+                cuts.push_back(cut5);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+        }
+
+        // Are the changes what we expect?
+        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
+             *entry_h.GetCompleteSeq_entry(),
+             *expected_entry_h.GetCompleteSeq_entry()) );
+
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Unverified)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
