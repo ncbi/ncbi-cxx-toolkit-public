@@ -19104,3 +19104,33 @@ BOOST_AUTO_TEST_CASE(Test_GB_3714)
     BOOST_CHECK_EQUAL(doi, "DOI2");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2036)
+{
+    string msg = CSubSource::CheckCellLine("222", "Homo sapiens");
+    BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that 222 from Homo sapiens is known to be contaminated by PA1 from Human. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
+
+    msg = CSubSource::CheckCellLine("223", "Homo sapiens");
+    BOOST_CHECK_EQUAL(msg, "");
+
+    msg = CSubSource::CheckCellLine("222", "Canis familiaris");
+    BOOST_CHECK_EQUAL(msg, "");
+
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Cavia porcellus");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 10141);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_cell_line, "GPS-M");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", 
+                                                 eDiag_Warning, 
+                                                 "SuspectedContaminatedCellLine",
+                                                 "The International Cell Line Authentication Committee database indicates that GPS-M from Cavia porcellus is known to be contaminated by Strain L-M from Mouse. Please see http://iclac.org/databases/cross-contaminations/ for more information and references."));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}

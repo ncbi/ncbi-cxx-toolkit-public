@@ -865,6 +865,16 @@ void CValidError_imp::ValidateBioSource
             ++segment_count;
             break;
 
+        case CSubSource::eSubtype_cell_line:
+            if ((*ssit)->IsSetName() && orgref.IsSetTaxname()) {
+                string warning = CSubSource::CheckCellLine((*ssit)->GetName(), orgref.GetTaxname());
+                if (!NStr::IsBlank(warning)) {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
+                              warning, obj, ctx);
+                }
+            }
+            break;
+
         default:
             break;
         }

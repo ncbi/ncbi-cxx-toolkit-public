@@ -2242,6 +2242,66 @@ string CSubSource::FixAltitude (const string& value)
 }
 
 
+typedef pair<string, string> TContaminatingCellLine;
+typedef map<string, TContaminatingCellLine> TSpeciesContaminant;
+typedef map<string, TSpeciesContaminant> TCellLineContaminationMap;
+
+static TCellLineContaminationMap s_CellLineContaminationMap;
+static bool s_CellLineContaminationMapInitialized = false;
+DEFINE_STATIC_FAST_MUTEX(s_CellLineContaminationMutex);
+
+#include "cell_line.inc"
+
+static void s_ProcessCellLineLine(const CTempString& line)
+{
+    vector<string> tokens;
+    NStr::Tokenize(line, "\t", tokens);
+    if (tokens.size() < 4) {
+        ERR_POST_X(1, Warning << "Not enough columns in cell_line entry " << line
+                   << "; disregarding");
+    } else {
+        (s_CellLineContaminationMap[tokens[0]])[tokens[1]] = TContaminatingCellLine(tokens[2], tokens[3]);
+    }
+}
+
+
+static void s_InitializeCellLineContaminationMap(void)
+{
+    CFastMutexGuard GUARD(s_CellLineContaminationMutex);
+    if (s_CellLineContaminationMapInitialized) {
+        return;
+    }
+
+    // read table
+    
+    size_t count = sizeof(kCellLine) / sizeof (*kCellLine);
+    const char * const * start = kCellLine;
+    while (count--) {
+        s_ProcessCellLineLine(*start++);
+    }
+
+
+    s_CellLineContaminationMapInitialized = true;
+}
+
+
+string CSubSource::CheckCellLine(const string& cell_line, const string& organism)
+{
+    string rval = "";
+
+    s_InitializeCellLineContaminationMap();
+
+    if (!NStr::IsBlank(((s_CellLineContaminationMap[cell_line])[organism]).first)) {
+        rval = "The International Cell Line Authentication Committee database indicates that " +
+               cell_line + " from " + organism + " is known to be contaminated by " +
+               ((s_CellLineContaminationMap[cell_line])[organism]).first +
+               " from " + ((s_CellLineContaminationMap[cell_line])[organism]).second +
+               ". Please see http://iclac.org/databases/cross-contaminations/ for more information and references.";
+    }
+    return rval;
+}
+
+
 // =============================================================================
 //                                 Country Names
 // =============================================================================

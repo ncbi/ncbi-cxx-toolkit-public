@@ -659,6 +659,9 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
    { "OrganismIsUndefinedSpecies",
 "Organism is an undefined species and does not have a specific identifier." } },
+   { eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
+   { "SuspectedContaminatedCellLine",
+"Suspected contaminated cell line." } },
 
 /* SEQ_GENERIC */
 

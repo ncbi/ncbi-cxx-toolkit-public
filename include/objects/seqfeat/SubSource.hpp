@@ -187,6 +187,8 @@ public:
     static void RemoveCultureNotes(string& value);
     void RemoveCultureNotes();
 
+    static string CheckCellLine(const string& cell_line, const string& organism);
+
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);
