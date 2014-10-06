@@ -42,6 +42,7 @@
    fun:__log_write
    fun:__log_fill
    fun:__log_putr
+   ...
    fun:__log_put
    fun:__txn_regop_log
    fun:__txn_commit
@@ -67,7 +68,6 @@
    fun:__dbc_put
    fun:__db_put
    fun:__db_put_pp
-   fun:_ZN4ncbi12CBDB_RawFile9x_DB_CPutEP5__dbcP8__db_dbtS4_j
 }
 
 {
