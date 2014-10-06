@@ -6236,6 +6236,9 @@ static const string s_RefseqExceptionStrings [] = {
     "mismatches in transcription",
     "mismatches in translation",
     "adjusted for low-quality genome",
+    "16S ribosomal RNA and 23S ribosomal RNA overlap",
+    "16S ribosomal RNA and 5S ribosomal RNA overlap",
+    "23S ribosomal RNA and 16S ribosomal RNA overlap",
     "23S ribosomal RNA and 5S ribosomal RNA overlap",
     "5S ribosomal RNA and 16S ribosomal RNA overlap",
     "5S ribosomal RNA and 23S ribosomal RNA overlap"

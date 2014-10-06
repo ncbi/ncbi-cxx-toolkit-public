@@ -13226,6 +13226,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     feat->SetExcept_text("5S ribosomal RNA and 23S ribosomal RNA overlap");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    feat->SetExcept_text("23S ribosomal RNA and 16S ribosomal RNA overlap");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
 
 }
 
