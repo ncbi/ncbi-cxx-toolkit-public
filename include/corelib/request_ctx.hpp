@@ -269,6 +269,7 @@ private:
     CEncodedString m_SessionID;
     string         m_HitID;
     mutable bool   m_LoggedHitID;
+    int            m_SubHitID;
     int            m_ReqStatus;
     CStopWatch     m_ReqTimer;
     Int8           m_BytesRd;
@@ -413,6 +414,7 @@ void CRequestContext::UnsetHitID(void)
     x_UnsetProp(eProp_HitID);
     m_HitID.clear();
     m_LoggedHitID = false;
+    m_SubHitID = 0;
 }
 
 

@@ -48,6 +48,7 @@ CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
       m_LoggedHitID(false),
+      m_SubHitID(0),
       m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
@@ -308,17 +309,25 @@ void CRequestContext::SetHitID(const string& hit)
         }
     }
     x_SetProp(eProp_HitID);
+    if (m_HitID != hit) {
+        m_SubHitID = 0;
+    }
     m_HitID = hit;
 }
 
 
 const string& CRequestContext::GetNextSubHitID(void)
 {
-    static CSafeStatic<CAtomicCounter_WithAutoInit> s_SubHitCounter;
+    static CSafeStatic<CAtomicCounter_WithAutoInit> s_DefaultSubHitCounter;
 
     if ( !IsSetHitID() ) return kEmptyStr;
+
+    // Use global sub-hit counter for default hit id to prevent
+    // duplicate phids in different threads.
+    int sub_hit_id = GetHitID() == GetDiagContext().GetDefaultHitID() ?
+        s_DefaultSubHitCounter->Add(1) : ++m_SubHitID;
+
     // Cache the string so that C code can use it.
-    int sub_hit_id = s_SubHitCounter->Add(1);
     m_SubHitIDCache = GetHitID() + "." + NStr::NumericToString(sub_hit_id);
     return m_SubHitIDCache;
 }
@@ -452,6 +461,7 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_SessionID.SetString(m_SessionID.GetOriginalString());
     ret->m_HitID = m_HitID;
     ret->m_LoggedHitID = m_LoggedHitID;
+    ret->m_SubHitID = m_SubHitID;
     ret->m_ReqStatus = m_ReqStatus;
     ret->m_ReqTimer = m_ReqTimer;
     ret->m_BytesRd = m_BytesRd;
