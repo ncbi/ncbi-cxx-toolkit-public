@@ -2681,19 +2681,42 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
         is_completely_intronic = is_case1 || is_case2;
     }}
 
-    //collapse all gene-specific location properties into prop
-    ITERATE(CVariantPropertiesIndex::TGeneIDAndPropVector, it, v) {
-        int gene_id = it->first;
-        CVariantProperties::TGene_location loc_prop = it->second;
-        if(gene_id != 0) {
-            s_AttachGeneIDdbxref(placement, gene_id);
-        }
+    // collapse all gene-specific location properties into prop.
+    // Will do it in three rounds so that more important properties
+    // will have their gene-ids on top of the list: VAR-1297
+    //    First:  ignore near-gene-or-intron.
+    //    Second: ignore near-gene.
+    //    Third:  don't ignore any property.
+    for(size_t i = 0; i < 3; i++) {
+        static const CVariantProperties::TGene_location flags[3] = {
+                CVariantProperties::eGene_location_near_gene_3 
+              | CVariantProperties::eGene_location_near_gene_5 
+              | CVariantProperties::eGene_location_intron
+            ,
+                CVariantProperties::eGene_location_near_gene_3 
+              | CVariantProperties::eGene_location_near_gene_5 
+            ,
+            0 };
 
-        if(!is_completely_intronic) {
-            //we don't want to compute properties for intronic anchor points. VAR-149
-            placement.SetGene_location() |= loc_prop;
+        ITERATE(CVariantPropertiesIndex::TGeneIDAndPropVector, it, v) {
+            int gene_id = it->first;
+            CVariantProperties::TGene_location loc_prop = it->second;
+
+            if(loc_prop & flags[i]) {
+                continue;
+            }
+
+            if(gene_id != 0) {
+                s_AttachGeneIDdbxref(placement, gene_id);
+            }
+
+            if(!is_completely_intronic) {
+                //we don't want to compute properties for intronic anchor points. VAR-149
+                placement.SetGene_location() |= loc_prop;
+            }
         }
     }
+
 }
 
 
