@@ -56,7 +56,7 @@ CBlastxAppArgs::CBlastxAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    static const string kDefaultTask = "blastx";
+    static const char kDefaultTask[] = "blastx";
     SetTask(kDefaultTask);
     set<string> tasks;
     tasks.insert(kDefaultTask);

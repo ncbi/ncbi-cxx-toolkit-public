@@ -56,7 +56,7 @@ CBlastpAppArgs::CBlastpAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    static const string kDefaultTask = "blastp";
+    static const char kDefaultTask[] = "blastp";
     SetTask(kDefaultTask);
     set<string> tasks
         (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt));

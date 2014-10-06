@@ -57,7 +57,7 @@ CTblastnAppArgs::CTblastnAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    static const string kDefaultTask = "tblastn";
+    static const char kDefaultTask[] = "tblastn";
     SetTask(kDefaultTask);
     set<string> tasks;
     tasks.insert(kDefaultTask);

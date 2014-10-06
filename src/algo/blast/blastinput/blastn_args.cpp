@@ -50,14 +50,14 @@ USING_SCOPE(objects);
 CBlastnAppArgs::CBlastnAppArgs()
 {
     CRef<IBlastCmdLineArgs> arg;
-    static const string kProgram("blastn");
+    static const char kProgram[] = "blastn";
     arg.Reset(new CProgramDescriptionArgs(kProgram,
                                           "Nucleotide-Nucleotide BLAST"));
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
-    m_ClientId = kProgram + " " + CBlastVersion().Print();
+    m_ClientId = string(kProgram) + " " + CBlastVersion().Print();
 
-    static const string kDefaultTask = "megablast";
+    static const char kDefaultTask[] = "megablast";
     SetTask(kDefaultTask);
     set<string> tasks
         (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));

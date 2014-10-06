@@ -46,7 +46,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-static string delimiter="#rps#";
+static const char   delimiter[]   = "#rps#";
+static const size_t delimiter_len = sizeof(delimiter) - 1; // exclude \0
 
 
 static void s_ConvertConcatStringToVectorOfString(const string & s, vector<string> & v)
@@ -59,7 +60,7 @@ static void s_ConvertConcatStringToVectorOfString(const string & s, vector<strin
 			break;
 		TSeqPos length = pos_find - pos_start;
 		v.push_back(s.substr(pos_start, length));
-		pos_start = pos_find + delimiter.size();
+		pos_start = pos_find + delimiter_len;
 	}
 
 	v.push_back(s.substr(pos_start, s.size() - pos_start ));

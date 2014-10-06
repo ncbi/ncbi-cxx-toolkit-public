@@ -60,7 +60,7 @@ CDeltaBlastAppArgs::CDeltaBlastAppArgs()
      bool const kIsCBS2and3Supported = false;
      m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-     static const string kDefaultTask = "deltablast";
+     static const char kDefaultTask[] = "deltablast";
      SetTask(kDefaultTask);
 
      m_BlastDbArgs.Reset(new CBlastDatabaseArgs);

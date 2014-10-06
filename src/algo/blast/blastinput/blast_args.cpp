@@ -1364,7 +1364,7 @@ void
 CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Ig-BLAST options");
-    const static string suffix = "VDJ";
+    const static char suffix[] = "VDJ";
     const static int df_num_align[3] = {3,3,3};
     int num_genes = (m_IsProtein) ? 1 : 3;
 
@@ -1552,7 +1552,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastn));
     }
 
-    const static string suffix = "VDJ";
+    const static char suffix[] = "VDJ";
     int num_genes = (m_IsProtein) ? 1: 3;
     for (int gene=0; gene< num_genes; ++gene) {
         string arg_sub = kArgGLSubject;

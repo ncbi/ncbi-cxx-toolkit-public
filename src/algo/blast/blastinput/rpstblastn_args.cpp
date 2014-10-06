@@ -57,7 +57,7 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    static const string kDefaultTask = "rpstblastn";
+    static const char kDefaultTask[] = "rpstblastn";
     SetTask(kDefaultTask);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, kIsRpsBlast));

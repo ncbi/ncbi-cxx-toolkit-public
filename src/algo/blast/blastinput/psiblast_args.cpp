@@ -57,7 +57,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    static const string kDefaultTask = "psiblast";
+    static const char kDefaultTask[] = "psiblast";
     SetTask(kDefaultTask);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
