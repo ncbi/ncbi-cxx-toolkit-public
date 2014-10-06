@@ -66,11 +66,19 @@ static unsigned char symbol_type_table[256];
 static bool s_IsTokenPosInt(
     const string& strToken )
 {
-    try {
-        return ( -1 != NStr::StringToInt( strToken, NStr::fConvErr_NoThrow ) );
-    } catch(...) {
+    size_t tokenSize = strToken.size();
+    if (tokenSize == 0) {
         return false;
     }
+    if (strToken[0] < '1'  ||  '9' < strToken[0]) {
+        return false;
+    }
+    for (size_t i=1; i<tokenSize; ++i) {
+        if (strToken[i] < '1'  ||  '9' < strToken[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -161,9 +169,9 @@ CFormatGuess::s_CheckOrder[] =
     eAgp,
     eXml,
     eWiggle,
+    eNewick,
     eBed,
     eBed15,
-    eNewick,
     eHgvs,
     eAlignment,
     eDistanceMatrix,
@@ -192,9 +200,9 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "AGP",
     "XML",
     "WIGGLE",
+    "Newick",
     "BED",
     "BED15",
-    "Newick",
     "alignment",
     "distance matrix",
     "flat-file sequence",
@@ -448,14 +456,14 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatAgp( mode );
     case eXml:
         return TestFormatXml( mode );
+    case eNewick:
+        return TestFormatNewick( mode );
     case eWiggle:
         return TestFormatWiggle( mode );
     case eBed:
         return TestFormatBed( mode );
     case eBed15:
         return TestFormatBed15( mode );
-    case eNewick:
-        return TestFormatNewick( mode );
     case eAlignment:
         return TestFormatAlignment( mode );
     case eDistanceMatrix:
@@ -879,13 +887,6 @@ CFormatGuess::TestFormatNewick(
         CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
         m_TestLines.push_back(m_pTestBuffer);
     }
-
-    // Alignment files come in all different shapes and broken formats,
-    // and some of them are hard to recognize as such, in particular
-    // if they have been hacked up in a text editor.
-
-    // This functions only concerns itself with the ones that are
-    // easy to recognize.
 
     // Note: We can live with false negatives. Avoid false positives
     // at all cost.
