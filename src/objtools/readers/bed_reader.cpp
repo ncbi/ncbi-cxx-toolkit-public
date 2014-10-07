@@ -148,6 +148,16 @@ CBedReader::ReadSeqAnnot(
     string line;
     int featureCount = 0;
     while (xGetLine(lr, line)) {
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pEC);
+            return CRef<CSeq_annot>();
+        }
         xReportProgress(pEC);
         if (xIsTrackLine(line)  &&  featureCount) {
             xUngetLine(lr);
