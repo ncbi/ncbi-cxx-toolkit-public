@@ -74,7 +74,7 @@ static bool s_IsTokenPosInt(
         return false;
     }
     for (size_t i=1; i<tokenSize; ++i) {
-        if (strToken[i] < '1'  ||  '9' < strToken[i]) {
+        if (strToken[i] < '0'  ||  '9' < strToken[i]) {
             return false;
         }
     }
