@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/python-2.7/bin/python
 #
 # Authors: Sergey Satskiy
 #
@@ -500,10 +500,11 @@ def getClientData( nsConnect ):
 
 def setClientData( nsConnect, verb, value = None ):
     " Sets the client data unconditionally "
-    printVerbose( "Setting client data" )
     data = verb + " " + str( datetime.datetime.now() )
-    if value:
+    if value is not None:
         data += " " + str( value )
+    printVerbose( "Setting client data: " + data )
+
     cmd = 'SETCLIENTDATA data="' + data + '" version=-1'
     nsConnect.execute( cmd )
     return
