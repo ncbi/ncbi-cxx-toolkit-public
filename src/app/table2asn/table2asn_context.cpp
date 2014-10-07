@@ -355,8 +355,14 @@ void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
     }
 }
 
-CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry> object, const string& toolname) const
+CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>& object, CRef<CSeq_submit>& submit, const string& toolname) const
 {
+    if (submit.NotEmpty())
+    {
+        submit->SetSub().SetTool(toolname);
+        return CRef<CSerialObject>(submit);
+    }
+    else
     if (m_submit_template.NotEmpty())
     {
         CRef<CSeq_submit> submit(new CSeq_submit);
@@ -648,6 +654,37 @@ void CTable2AsnContext::VisitAllSeqDesc(objects::CSeq_entry_EditHandle& entry_h,
             m(*this, (CSeqdesc&)*it);
         }
     }
+}
+
+bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
+{
+    bool need_update = false;
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        need_update |= x_ApplyCreateDate(entry);
+        if (need_update)
+        {
+            if (entry.GetParentEntry() == 0)
+                ApplyUpdateDate(entry);
+            else
+                CAutoAddDesc::EraseDesc(entry.SetDescr(), CSeqdesc::e_Update_date);
+        }
+        break;
+    case CSeq_entry::e_Set:
+        {
+            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+            {
+                need_update |= ApplyCreateUpdateDates(**it);
+            }
+            if (need_update)
+               ApplyUpdateDate(entry);
+        }
+        break;
+    default:
+        break;
+    }
+    return need_update;
 }
 
 END_NCBI_SCOPE

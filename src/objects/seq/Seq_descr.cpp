@@ -114,6 +114,29 @@ CRef<CSeqdesc> CAutoAddDesc::LocateDesc(const CSeq_descr& descr, CSeqdesc::E_Cho
     return CRef<CSeqdesc>();
 }
 
+void CAutoAddDesc::Erase()
+{
+    if (!IsNull())
+      m_descr->Set().remove(CRef<CSeqdesc>(&Set()));
+}
+
+bool CAutoAddDesc::EraseDesc(CSeq_descr& descr, CSeqdesc::E_Choice which)
+{
+    bool erased = false;
+    for (CSeq_descr::Tdata::iterator it = descr.Set().begin(); it!= descr.Set().end(); )
+    {
+        if ((**it).Which() == which)
+        {
+            erased = true;
+            descr.Set().erase(it++);
+        }
+        else
+            ++it;
+    }
+
+    return erased;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

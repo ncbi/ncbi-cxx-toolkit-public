@@ -365,7 +365,7 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
 #endif
 
 
-CRef<CSeq_entry> CMultiReader::xReadFile(const string& ifname)
+bool CMultiReader::xReadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
     CNcbiIfstream istr(ifname.c_str());
     //CNcbiStreambuf istr;
@@ -375,45 +375,43 @@ CRef<CSeq_entry> CMultiReader::xReadFile(const string& ifname)
     xSetMapper(m_context);
     xSetErrorContainer(m_context);
 
-    CRef<CSeq_entry> result;
     switch( m_uFormat )
     {
     case CFormatGuess::eTextASN:
-        result = xReadASN1(istr);
+        return xReadASN1(istr, entry, submit);
         break;
     case CFormatGuess::eGff2:
     case CFormatGuess::eGff3:
-        result = xReadGFF3(istr);
+        entry = xReadGFF3(istr);
         break;
     case CFormatGuess::eBed:
-        result = xReadBed(istr);
+        entry = xReadBed(istr);
         break;
     default:
-        result = xReadFasta(istr);
+        entry = xReadFasta(istr);
         break;
     }
-    return result;
+    return entry.NotEmpty();
 }
 
-CRef<CSeq_entry>
-CMultiReader::xReadASN1(CNcbiIstream& instream)
+bool 
+CMultiReader::xReadASN1(CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
     auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(instream);
 
     // guess object type
     const string sType = pObjIstrm->ReadFileHeader();
 
-    CRef<CSeq_entry> entry;
     // do the right thing depending on the input type
     if( sType == CBioseq_set::GetTypeInfo()->GetName() ) {
         entry.Reset(new CSeq_entry);
         pObjIstrm->Read(ObjectInfo(entry->SetSet()), CObjectIStream::eNoFileHeader);
 
-        return entry;
+        return entry.NotNull();
     }
     else
     if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
-        CRef<CSeq_submit> submit (new CSeq_submit);
+        submit.Reset(new CSeq_submit);
         pObjIstrm->Read(ObjectInfo(*submit), CObjectIStream::eNoFileHeader);
 
         if (submit->GetData().GetEntrys().size() > 1)
@@ -431,14 +429,15 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
     }
     else
     {
-        return CRef<CSeq_entry>();
+        return false;
     }
 
     if (m_context.m_gapNmin > 0)
         CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, 
         (CSeq_gap::EType)m_context.m_gap_type,
         (CLinkage_evidence::EType)m_context.m_gap_evidence);
-    return entry;
+
+    return entry.NotNull();
 }
 
 //  ----------------------------------------------------------------------------
@@ -976,18 +975,10 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source
 
 void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
 {
-    if (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end())
-    {
-        LocateWhich<CSeqdesc> pred; pred.compare_to = source.Which();
-        CSeq_descr::Tdata::iterator it = find_if(dest.Set().begin(), dest.Set().end(), pred);
-        if (it != dest.Set().end())
-            dest.Set().erase(it);
-    }
+    bool duplicates = (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end());
 
-    CRef<CSeqdesc> desc (new CSeqdesc);
-    desc->Assign(source);
-    dest.Set().push_back(desc);
-
+    CAutoAddDesc desc(dest, source.Which());
+    desc.Set(duplicates).Assign(source);
 }
 
 void CMultiReader::ApplyDescriptors(objects::CSeq_entry& entry, const CSeq_descr& source)
@@ -1005,20 +996,20 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
     return result;
 }
 
-CRef<CSeq_entry> CMultiReader::LoadFile(const string& ifname)
+bool CMultiReader::LoadFile(const string& ifname, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    CRef<CSeq_entry> read_entry = xReadFile(ifname);
-    if (read_entry.NotEmpty())
+    xReadFile(ifname, entry, submit);
+    if (entry.NotEmpty())
     {
-        m_context.MergeWithTemplate(*read_entry);
+        m_context.MergeWithTemplate(*entry);
         if (!m_context.m_Comment.empty())
         {
-            CRef<CSeqdesc> value(new CSeqdesc());
-            value->SetComment(m_context.m_Comment);
-            read_entry->SetDescr().Set().push_back(value);
+            CRef<CSeqdesc> comment_desc(new CSeqdesc());
+            comment_desc->SetComment(m_context.m_Comment);
+            entry->SetDescr().Set().push_back(comment_desc);
         }
     }
-    return read_entry;
+    return entry.NotNull();
 }
 
 void CMultiReader::Cleanup(CRef<CSeq_entry> entry)

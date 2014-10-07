@@ -57,6 +57,7 @@
 #include "fcs_reader.hpp"
 
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objects/general/Date.hpp>
 
 #include <objects/seq/Linkage_evidence.hpp>
@@ -686,6 +687,8 @@ CRef<CScope> CTbl2AsnApp::GetScope (void)
 void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
+    CRef<CSeq_submit> submit;
+
     m_context.m_avoid_orf_lookup = false;
     bool avoid_submit_block = false;
     bool do_dates = false;
@@ -701,7 +704,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     else
     {
         do_dates = true;
-        entry = m_reader->LoadFile(m_context.m_current_file);
+        m_reader->LoadFile(m_context.m_current_file, entry, submit);
         if (m_fcs_reader.get())
         {
             m_fcs_reader->PostProcess(*entry);
@@ -747,8 +750,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (do_dates)
     {
         // if create-date exists apply update date
-        if (m_context.ApplyCreateDate(*entry))
-            m_context.ApplyUpdateDate(*entry);
+        m_context.ApplyCreateUpdateDates(*entry);
     }
 
     // this methods do not remove entry nor change it. But create 'result' object which either
@@ -756,7 +758,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
-        result = m_context.CreateSubmitFromTemplate(entry, GetAppName() + " " + GetVersion().Print());
+        result = m_context.CreateSubmitFromTemplate(entry, submit, GetAppName() + " " + GetVersion().Print());
 
     CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
 

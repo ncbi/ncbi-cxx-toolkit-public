@@ -26,8 +26,8 @@ class CMultiReader
 public:
    CMultiReader(const CTable2AsnContext& context);
    ~CMultiReader();
-
-   CRef<objects::CSeq_entry> LoadFile(const string& ifname);
+ 
+   bool LoadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);
@@ -41,9 +41,9 @@ public:
 
 protected:
 private:
-    CRef<objects::CSeq_entry> xReadFile(const string& ifname);
+    bool xReadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
-    CRef<objects::CSeq_entry> xReadASN1(CNcbiIstream& instream);
+    bool xReadASN1(CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadBed(CNcbiIstream& instream);
 

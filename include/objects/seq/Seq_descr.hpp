@@ -93,8 +93,11 @@ public:
     // e.g. for desc not requiring uniqueness (ePub, etc)
     CSeqdesc& Set(bool skip_lookup = false);
     bool IsNull() const;
+    void Erase();
     static
     CRef<CSeqdesc> LocateDesc(const CSeq_descr& descr, CSeqdesc::E_Choice which);
+    static
+    bool EraseDesc(CSeq_descr& descr, CSeqdesc::E_Choice which);
 
 private:
     CAutoAddDesc();
