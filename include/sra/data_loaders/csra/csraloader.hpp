@@ -51,10 +51,23 @@ class NCBI_XLOADER_CSRA_EXPORT CCSRADataLoader : public CDataLoader
 {
 public:
 
-    struct SLoaderParams
+    struct NCBI_XLOADER_CSRA_EXPORT SLoaderParams
     {
+        enum {
+            // -1 means from config
+            kMinMapQuality_config = -1,
+            kPileupGraphs_config = -1,
+            kQualityGraphs_config = -1,
+            kSpotGroups_config = -1,
+            kPathInId_config = -1
+        };
+
         SLoaderParams(void)
-            : m_MinMapQuality(-1)
+            : m_MinMapQuality(kMinMapQuality_config),
+              m_PileupGraphs(kPileupGraphs_config),
+              m_QualityGraphs(kQualityGraphs_config),
+              m_SpotGroups(kSpotGroups_config),
+              m_PathInId(kPathInId_config)
             {
             }
 
@@ -62,7 +75,18 @@ public:
         vector<string>  m_CSRAFiles;
         AutoPtr<IIdMapper> m_IdMapper;
         string          m_AnnotName;
-        int             m_MinMapQuality; // -1 means default (from config)
+        int             m_MinMapQuality;
+        int             m_PileupGraphs; // bool value or kPileupGraphs_config
+        int             m_QualityGraphs; // bool value or kQualityGraphs_config
+        int             m_SpotGroups; // bool value or kSpotGroups_config
+        int             m_PathInId; // bool value or kPathInId_config
+
+        string GetLoaderName(void) const;
+
+        int GetEffectiveMinMapQuality(void) const;
+        bool GetEffectivePileupGraphs(void) const;
+        bool GetEffectiveQualityGraphs(void) const;
+        int GetEffectiveSpotGroups(void) const;
     };
 
 
@@ -123,6 +147,12 @@ public:
 
     static bool GetPileupGraphsParamDefault(void);
     static void SetPileupGraphsParamDefault(bool param);
+    static bool GetQualityGraphsParamDefault(void);
+    static void SetQualityGraphsParamDefault(bool param);
+    static int GetMinMapQualityParamDefault(void);
+    static void SetMinMapQualityParamDefault(int param);
+    static int GetSpotGroupsParamDefault(void);
+    static void SetSpotGroupsParamDefault(int param);
 
 private:
     typedef CParamLoaderMaker<CCSRADataLoader, SLoaderParams> TMaker;
