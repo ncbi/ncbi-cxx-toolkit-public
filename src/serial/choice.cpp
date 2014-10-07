@@ -136,8 +136,10 @@ void CChoiceTypeInfo::InitChoiceTypeInfoFunctions(void)
 
 void CChoiceTypeInfo::AdjustChoiceTypeInfoFunctions(void)
 {
-//    m_AllowEmpty = CItemsInfo::FindNextMandatory(this) == NULL;
-    if ( !m_AllowEmpty && GetVariants().Size() != 0 &&
+    m_AllowEmpty = GetVariants().Size() == 0 || (
+                   GetVariantInfo(kFirstMemberIndex)->GetId().HaveNoPrefix() &&
+                   CItemsInfo::FindNextMandatory(this) == NULL);
+    if ( !m_AllowEmpty &&
          !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
         // simple
         SetReadFunction(&TFunc::ReadChoiceSimple);
