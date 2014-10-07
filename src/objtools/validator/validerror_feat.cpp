@@ -7628,14 +7628,40 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                  msg,
                                  feat);
                     }
-                } else if (from_end <= 0) {
-                    if (NStr::Equal(cb_trans, except_char)
-                        || !loc.IsPartialStop(eExtreme_Biological)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                 "Unexpected transl_except " + except_char
-                                 + " at position " + NStr::SizetToString (prot_pos + 1)
-                                 + " just past end of protein",
-                                 feat);
+                }
+                else if(from_end <= 0)
+                {
+                    if(NStr::Equal(cb_trans, except_char) ||
+                       !loc.IsPartialStop(eExtreme_Biological))
+                    {
+                        const CGenetic_code  *gcode;
+                        CBioseq_Handle       bsh;
+                        CSeqVector           vec;
+                        string               p;
+                        string               q;
+                        bool                 altst;
+
+                        bsh = GetCache().GetBioseqHandleFromLocation(m_Scope,
+                                feat.GetLocation(), m_Imp.GetTSE_Handle());
+                        vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                        altst = false;
+                        vec.GetSeqData(from, from + 3, q);
+
+                        if(cdregion.CanGetCode())
+                            gcode = &cdregion.GetCode();
+                        else
+                            gcode = NULL;
+
+                        CSeqTranslator::Translate(q, p,
+                                                  CSeqTranslator::fIs5PrimePartial,
+                                                  gcode, &altst);
+
+                        if(NStr::Equal(p, except_char))
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                    "Unexpected transl_except " + except_char
+                                    + " at position " + NStr::SizetToString(prot_pos + 1)
+                                    + " just past end of protein",
+                                    feat);
                     }
                 }
             }

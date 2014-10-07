@@ -15351,11 +15351,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryTranslExcept)
     CLEAR_ERRORS
     codebreak->SetLoc().SetInt().SetFrom(cds->GetLocation().GetStop(eExtreme_Biological) - 2);
     codebreak->SetLoc().SetInt().SetTo(cds->GetLocation().GetStop(eExtreme_Biological));
+    codebreak->SetAa().SetNcbieaa('*');
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
-                               "Unexpected transl_except P at position 9 just past end of protein"));
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "TransLen",
-                               "Given protein length [8] does not match translation length [9]"));
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NoStop", "Missing stop codon"));
+                               "Unexpected transl_except * at position 9 just past end of protein"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -18595,8 +18594,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
     scope.RemoveTopLevelSeqEntry(seh);
     nentry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTNAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
-                              "Unexpected transl_except * at position 9 just past end of protein"));
+
+// Error below is not expected anymore since VR-110 issue fixed:
+//
+//    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
+//                              "Unexpected transl_except * at position 9 just past end of protein"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
