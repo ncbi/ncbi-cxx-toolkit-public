@@ -12,6 +12,8 @@ Netschedule server health check script
 import sys, os, cgi, datetime, socket, re
 from distutils.version import StrictVersion
 from optparse import OptionParser
+from random import randrange
+from time import sleep
 
 OLD_MODE = True
 MAX_OLD_MODE_VALUE = 99
@@ -23,6 +25,9 @@ BASE_NO_ACTION_ALERT_CODE = 111
 VERBOSE = False
 COMMUNICATION_TIMEOUT = 1
 DYNAMIC_QUEUE_TO_TEST = "LBSMDTestQueue"
+CLIENT_NODE = "health_check"
+OTHER_CLIENT_DELAY = 1.0
+
 MEMORY_LIMIT = 90       # Percentage of used
 FD_LIMIT = 50           # At least 50 fds must be still available
 
@@ -148,8 +153,8 @@ class NSDirectConnect:
 
     def login( self ):
         " Performs a direct login to NS "
-        self.__sock.send( "netschedule_admin client_node=health_check "
-                          "client_session=check_session\n\n" )
+        self.__sock.send( "netschedule_admin client_node=" + CLIENT_NODE +
+                          " client_session=check_session\n\n" )
         return
 
     def execute( self, cmd, multiline = False):
@@ -282,6 +287,8 @@ def main():
                 "Unknown check script error at the login stage" ) )
 
 
+    canSetClientData = False
+    switchingDone = False
     # Second stage: 
     try:
         # Check the server state. It could be in a drained shutdown
@@ -289,6 +296,38 @@ def main():
             return BASE_SUPPRESS_CODE
 
         serverVersion = getServerVersion( nsConnect )
+        if serverVersion >= StrictVersion( '4.17.0' ):
+            # SETCLIENTDATA is available. Randomize the start and read client data
+            sleep( float( randrange( 0, 1000 ) ) / 10000 )
+
+            if testQueueExists( nsConnect ):
+                # The queue must exist to read something from it
+                printVerbose( "Switching to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
+                nsConnect.execute( "SETQUEUE " + DYNAMIC_QUEUE_TO_TEST )
+                canSetClientData = True
+                switchingDone = True
+
+                # Read the verb, timestamp and the value
+                verb, tm, value = getClientData( nsConnect )
+                if verb is not None:
+                    if verb == "DONE":
+                        delta = datetime.datetime.now() - tm
+                        if delta.total_seconds() < OTHER_CLIENT_DELAY:
+                            printVerbose( "Using other client value immediately: " + str( value ) )
+                            return value
+                        printVerbose( "Other client results are obsolete" )
+                    elif verb == "START":
+                        delta = datetime.datetime.now() - tm
+                        if delta.total_seconds() < OTHER_CLIENT_DELAY:
+                            sleep( OTHER_CLIENT_DELAY )
+                            verb, tm, value = getClientData( nsConnect )
+                            if verb == "DONE":
+                                printVerbose( "Using other client value after waiting: " + str( value ) )
+                                return value
+                        else:
+                            printVerbose( "Other client started too long ago" )
+
+        # Here: normal calculation of the penalty value
         if serverVersion >= StrictVersion( '4.16.10' ):
             staticChecker = StaticHealthChecker( nsConnect )
             staticChecker.check()   # Throws an exception
@@ -299,11 +338,18 @@ def main():
                             "default queue class has not been found" )
             createTestQueue( nsConnect )
 
+        if not switchingDone:
+            printVerbose( "Switching to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
+            nsConnect.execute( "SETQUEUE " + DYNAMIC_QUEUE_TO_TEST )
         if not testQueueAcceptSubmit( nsConnect ):
-            return log( BASE_NO_ACTION_ALERT_CODE + 3,
-                            "test queue refuses submits" )
+            penaltyValue = log( BASE_NO_ACTION_ALERT_CODE + 3,
+                                "test queue refuses submits" )
+            if canSetClientData:
+                setClientData( nsConnect, "DONE", penaltyValue )
+            return penaltyValue
 
         start = datetime.datetime.now()
+        setClientData( nsConnect, "START" )
         operationTest( nsConnect, serviceName )
         end = datetime.datetime.now()
 
@@ -345,8 +391,13 @@ def main():
     printVerbose( "Delta: " + str( delta ) +
                   " as float: " + str( deltaAsFloat ) )
 
-    return pickPenaltyValue( lastCheckExitCode, calcPenalty( deltaAsFloat ) )
-
+    penaltyValue = pickPenaltyValue( lastCheckExitCode,
+                                     calcPenalty( deltaAsFloat ) )
+    try:
+        setClientData( nsConnect, "DONE", penaltyValue )
+    except:
+        pass
+    return penaltyValue
 
 def deltaToFloat( delta ):
     " Converts time delta to float "
@@ -406,6 +457,56 @@ def getServerVersion( nsConnect ):
     output = nsConnect.execute( "VERSION" )
     values = cgi.parse_qs( output )
     return StrictVersion( values[ 'server_version' ][ 0 ] )
+
+
+def getClientData( nsConnect ):
+    """ Provides the client data:
+        verb  - DONE/START or None
+        tm    - timestamp or None
+        value - last check result or None """
+    printVerbose( "Getting client data" )
+    output = nsConnect.execute( "STAT CLIENTS", True )
+    pattern = "CLIENT: '" + CLIENT_NODE + "'"
+    waiting = False
+    for line in output:
+        if line == pattern:
+            waiting = True
+            continue
+        if waiting:
+            line = line.strip()
+            if line.startswith( "DATA: " ):
+                line = line[ 5 : ].strip()
+                data = line[ 1 : -1 ]
+                if data:
+                    parts = data.split( ' ' )
+                    if len( parts ) not in [ 3, 4 ]:
+                        return None, None
+                    if len( parts ) == 3:
+                        # No value, only a verb and a timestamp
+                        # START 2014-10-06 14:51:49.242633
+                        verb = parts[ 0 ]
+                        tm = datetime.datetime.strptime( parts[ 1 ] + " " + parts[ 2 ],
+                                                         "%Y-%m-%d %H:%M:%S.%f" )
+                        return verb, tm, None
+                    # A verb, a timestamp and a value
+                    # DONE 2014-10-06 14:51:49.242633 14
+                    verb = parts[ 0 ]
+                    tm = datetime.datetime.strptime( parts[ 1 ] + " " + parts[ 2 ],
+                                                     "%Y-%m-%d %H:%M:%S.%f" )
+                    value = int( parts[ 3 ] )
+                    return verb, tm, value
+                return None, None, None
+    return None, None, None
+
+def setClientData( nsConnect, verb, value = None ):
+    " Sets the client data unconditionally "
+    printVerbose( "Setting client data" )
+    data = verb + " " + str( datetime.datetime.now() )
+    if value:
+        data += " " + str( value )
+    cmd = 'SETCLIENTDATA data="' + data + '" version=-1'
+    nsConnect.execute( cmd )
+    return
 
 def isInDrainedShutdown( nsConnect ):
     " Checks the drain shutdown status "
@@ -474,8 +575,6 @@ def createTestQueue( nsConnect ):
 def operationTest( nsConnect, serviceName ):
     """ Tests the following operations:
         SUBMIT -> GET2 -> PUT2 -> SST -> WST """
-    printVerbose( "Switching to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
-    nsConnect.execute( "SETQUEUE " + DYNAMIC_QUEUE_TO_TEST )
     printVerbose( "Submitting a job to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
 
     # affinity = str( os.getpid() )
