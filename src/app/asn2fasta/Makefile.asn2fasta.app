@@ -8,9 +8,14 @@
 
 APP = asn2fasta
 SRC = asn2fasta
-LIB = $(XFORMAT_LIBS) ncbi_xloader_wgs $(SRAREAD_LIBS) xobjutil xalnmgr xcleanup valid valerr xregexp entrez2cli entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
+LIB = $(XFORMAT_LIBS) ncbi_xloader_wgs $(SRAREAD_LIBS) \
+	  xobjutil xalnmgr xcleanup valid valerr xregexp \
+	  ncbi_xdbapi_ftds dbapi dbapi_driver $(FTDS_LIB) \
+	  entrez2cli entrez2 tables $(ncbi_xreader_pubseqos2) $(OBJMGR_LIBS) \
+	  $(PCRE_LIB)
 
-LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
+LIBS = $(FTDS_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) \
+	   $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -BSD -Cygwin
 

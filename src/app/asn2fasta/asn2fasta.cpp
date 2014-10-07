@@ -41,6 +41,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
 
 #include <objects/seqset/gb_release_file.hpp>
 #include <objects/seqres/Seq_graph.hpp>
@@ -55,6 +56,7 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -293,6 +295,13 @@ int CAsn2FastaApp::Run(void)
 {
     // initialize conn library
     CONNECT_Init(&GetConfig());
+#ifdef HAVE_PUBSEQ_OS
+    // we may require PubSeqOS readers at some point, so go ahead and make
+    // sure they are properly registered
+    GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
+    DBAPI_RegisterDriver_FTDS();
+#endif
 
     const CArgs&   args = GetArgs();
 
