@@ -331,7 +331,9 @@ string CCSraDb::MakeSraIdPart(EPathInIdType path_in_id_type,
         sra_id_part = CDirEntry::MakePath(dir_path, csra_file);
     }
     else {
-        CDirEntry::SplitPath(csra_file, 0, &sra_id_part);
+        string dir, name;
+        CDirEntry::SplitPath(csra_file, &dir, &name);
+        sra_id_part = CDirEntry::MakePath(dir, name);
     }
     return sra_id_part;
 }
