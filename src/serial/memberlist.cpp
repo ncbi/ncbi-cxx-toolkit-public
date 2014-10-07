@@ -361,7 +361,7 @@ TMemberIndex CItemsInfo::FindEmpty(void) const
 {
     for (CIterator item(*this); item.Valid(); ++item) {
         const CItemInfo* info = GetItemInfo(item);
-        if (info->GetId().IsAttlist()) {
+        if (info->NonEmpty() || info->GetId().IsAttlist()) {
             continue;
         }
         const CTypeInfo* type;

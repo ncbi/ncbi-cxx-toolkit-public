@@ -1010,35 +1010,48 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
     BEGIN_OBJECT_2FRAMES_OF(copier, eFrameChoiceVariant);
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
-        copier.ThrowError(CObjectIStream::fFormatError,
-                          "choice variant id expected");
-    }
-
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    if (variantInfo->GetId().IsAttlist()) {
-        const CMemberInfo* memberInfo =
-            dynamic_cast<const CMemberInfo*>(
-                choiceType->GetVariants().GetItemInfo(index));
-        BeginClassMember(memberInfo->GetId());
-        memberInfo->CopyMember(copier);
-        EndClassMember();
-        copier.In().EndChoiceVariant();
-        index = copier.In().BeginChoiceVariant(choiceType);
-        if ( index == kInvalidMember )
+        if (choiceType->MayBeEmpty() || copier.In().CanSkipUnknownVariants()) {
+            copier.In().SkipAnyContentVariant();
+        } else {
             copier.ThrowError(CObjectIStream::fFormatError,
-                          "choice variant id expected");
-        variantInfo = choiceType->GetVariantInfo(index);
+                              "choice variant id expected");
+        }
+    } else {
+        for (;;) {
+        const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+        if (variantInfo->GetId().IsAttlist()) {
+            const CMemberInfo* memberInfo =
+                dynamic_cast<const CMemberInfo*>(
+                    choiceType->GetVariants().GetItemInfo(index));
+            BeginClassMember(memberInfo->GetId());
+            memberInfo->CopyMember(copier);
+            EndClassMember();
+            copier.In().EndChoiceVariant();
+            index = copier.In().BeginChoiceVariant(choiceType);
+            if ( index == kInvalidMember ) {
+                if (copier.In().CanSkipUnknownVariants()) {
+                    copier.In().SkipAnyContentVariant();
+                    break;
+                } else {
+                    copier.ThrowError(CObjectIStream::fFormatError,
+                                  "choice variant id expected");
+                }
+            }
+            variantInfo = choiceType->GetVariantInfo(index);
+        }
+        copier.In().SetTopMemberId(variantInfo->GetId());
+        copier.Out().SetTopMemberId(variantInfo->GetId());
+        copier.SetPathHooks(copier.Out(), true);
+        BeginChoiceVariant(choiceType, variantInfo->GetId());
+
+        variantInfo->CopyVariant(copier);
+
+        EndChoiceVariant();
+        copier.SetPathHooks(copier.Out(), false);
+        copier.In().EndChoiceVariant();
+        break;
+        }
     }
-    copier.In().SetTopMemberId(variantInfo->GetId());
-    copier.Out().SetTopMemberId(variantInfo->GetId());
-    copier.SetPathHooks(copier.Out(), true);
-    BeginChoiceVariant(choiceType, variantInfo->GetId());
-
-    variantInfo->CopyVariant(copier);
-
-    EndChoiceVariant();
-    copier.SetPathHooks(copier.Out(), false);
-    copier.In().EndChoiceVariant();
     END_OBJECT_2FRAMES_OF(copier);
     copier.In().EndChoice();
     EndChoice();

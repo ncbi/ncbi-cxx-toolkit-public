@@ -125,6 +125,11 @@ public:
     void SetGlobalHook(const CTempString& variant_names,
                        CReadChoiceVariantHook* hook);
 
+    void AdjustChoiceTypeInfoFunctions(void);
+    bool MayBeEmpty(void) const {
+        return m_AllowEmpty;
+    }
+
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);
     void CallUserOp_Assign(TObjectPtr dst, TConstObjectPtr src) const;
@@ -139,6 +144,7 @@ protected:
     TResetFunction m_ResetFunction;
     TSelectFunction m_SelectFunction;
     TSelectDelayFunction m_SelectDelayFunction;
+    bool m_AllowEmpty;
 };
 
 

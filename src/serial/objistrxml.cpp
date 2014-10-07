@@ -1091,7 +1091,7 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
 
 bool CObjectIStreamXml::SkipAnyContent(void)
 {
-    if (ThisTagIsSelfClosed()) {
+    if (SelfClosedTag() || ThisTagIsSelfClosed()) {
         //EndSelfClosedTag();
         return true;
     }
@@ -2330,7 +2330,13 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
             }
         }
         m_Attlist = false;
+        if ( SelfClosedTag() ) {
+            return kInvalidMember;
+        }
         if ( NextTagIsClosing() ) {
+            if (choiceType->MayBeEmpty()) {
+                return kInvalidMember;
+            }
             TMemberIndex ind = choiceType->GetVariants().FindEmpty();
             if (ind != kInvalidMember) {
                 TopFrame().SetNotag();

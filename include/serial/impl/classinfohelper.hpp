@@ -199,6 +199,7 @@ public:
             const CClassType* object = 0;
             NCBISERSetGlobalReadMemberHook(object, info);
             NCBISERSetGlobalReadVariantHook(object, info);
+            info->AdjustChoiceTypeInfoFunctions();
         }
 
     static CClassTypeInfo* CreateAbstractClassInfo(const char* name)

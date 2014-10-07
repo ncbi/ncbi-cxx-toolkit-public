@@ -131,18 +131,24 @@ void CChoiceTypeInfo::InitChoiceTypeInfoFunctions(void)
     SetCopyFunction(&TFunc::CopyChoiceDefault);
     SetSkipFunction(&TFunc::SkipChoiceDefault);
     m_SelectDelayFunction = 0;
+    m_AllowEmpty = false;
+}
+
+void CChoiceTypeInfo::AdjustChoiceTypeInfoFunctions(void)
+{
+    m_AllowEmpty = CItemsInfo::FindNextMandatory(this) == NULL;
+    if ( !m_AllowEmpty && GetVariants().Size() != 0 &&
+         !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
+        // simple
+        SetReadFunction(&TFunc::ReadChoiceSimple);
+        SetSkipFunction(&TFunc::SkipChoiceSimple);
+    }
 }
 
 CVariantInfo* CChoiceTypeInfo::AddVariant(const char* memberId,
                                           const void* memberPtr,
                                           const CTypeRef& memberType)
 {
-    if ( GetVariants().Size() == 1 &&
-         !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
-        // simple
-        SetReadFunction(&TFunc::ReadChoiceSimple);
-        SetSkipFunction(&TFunc::SkipChoiceSimple);
-    }
     CVariantInfo* variantInfo = new CVariantInfo(this, memberId,
                                                  TPointerOffsetType(memberPtr),
                                                  memberType);
@@ -154,12 +160,6 @@ CVariantInfo* CChoiceTypeInfo::AddVariant(const CMemberId& memberId,
                                           const void* memberPtr,
                                           const CTypeRef& memberType)
 {
-    if ( GetVariants().Size() == 1 &&
-         !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
-        // simple
-        SetReadFunction(&TFunc::ReadChoiceSimple);
-        SetSkipFunction(&TFunc::SkipChoiceSimple);
-    }
     CVariantInfo* variantInfo = new CVariantInfo(this, memberId,
                                                  TPointerOffsetType(memberPtr),
                                                  memberType);
@@ -360,7 +360,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
-        if (in.CanSkipUnknownVariants()) {
+        if (choiceType->MayBeEmpty() || in.CanSkipUnknownVariants()) {
             in.SkipAnyContentVariant();
         } else {
             in.ThrowError(in.fFormatError, "choice variant id expected");
@@ -426,7 +426,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
 
     index = choiceType->GetIndex(objectPtr);
     if ( index == kInvalidMember ) {
-        if (CItemsInfo::FindNextMandatory(objectType) != NULL) {
+        if (!choiceType->MayBeEmpty()) {
             out.ThrowError(out.fInvalidData, "cannot write empty choice");
         }
     } else {
@@ -459,26 +459,40 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     in.BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        in.ThrowError(in.fFormatError,"choice variant id expected");
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    if (variantInfo->GetId().IsAttlist()) {
-        const CMemberInfo* memberInfo =
-            dynamic_cast<const CMemberInfo*>(
-                choiceType->GetVariants().GetItemInfo(index));
-        memberInfo->SkipMember(in);
+    if ( index == kInvalidMember ) {
+        if (choiceType->MayBeEmpty() || in.CanSkipUnknownVariants()) {
+            in.SkipAnyContentVariant();
+        } else {
+            in.ThrowError(in.fFormatError, "choice variant id expected");
+        }
+    } else {
+        for (;;) {
+        const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+        if (variantInfo->GetId().IsAttlist()) {
+            const CMemberInfo* memberInfo =
+                dynamic_cast<const CMemberInfo*>(
+                    choiceType->GetVariants().GetItemInfo(index));
+            memberInfo->SkipMember(in);
+            in.EndChoiceVariant();
+            index = in.BeginChoiceVariant(choiceType);
+            if ( index == kInvalidMember ) {
+                if (in.CanSkipUnknownVariants()) {
+                    in.SkipAnyContentVariant();
+                    break;
+                } else {
+                    in.ThrowError(in.fFormatError, "choice variant id expected");
+                }
+            }
+            variantInfo = choiceType->GetVariantInfo(index);
+        }
+        in.SetTopMemberId(variantInfo->GetId());
+
+        variantInfo->SkipVariant(in);
         in.EndChoiceVariant();
-        index = in.BeginChoiceVariant(choiceType);
-        if ( index == kInvalidMember )
-            in.ThrowError(in.fFormatError,"choice variant id expected");
-        variantInfo = choiceType->GetVariantInfo(index);
+        break;
+        }
     }
 
-    in.SetTopMemberId(variantInfo->GetId());
-
-    variantInfo->SkipVariant(in);
-
-    in.EndChoiceVariant();
     END_OBJECT_FRAME_OF(in);
     in.EndChoice();
     END_OBJECT_FRAME_OF(in);
