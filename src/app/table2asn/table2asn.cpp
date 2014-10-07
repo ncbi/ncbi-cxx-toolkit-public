@@ -332,6 +332,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ft-url-mod", "String", "FileTrack URL for the XML file base modifications", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger);
@@ -451,7 +452,9 @@ int CTbl2AsnApp::Run(void)
     if (args["strain-name"])
         m_context.m_strain  = args["strain-name"].AsString();
     if (args["ft-url"])
-        m_context.m_url     = args["ft-url"].AsString();
+        m_context.m_ft_url     = args["ft-url"].AsString();
+    if (args["ft-url-mod"])
+        m_context.m_ft_url_mod = args["ft-url-mod"].AsString();
     if (args["A"])
         m_context.m_accession = args["A"].AsString();
     if (args["j"])
@@ -644,9 +647,10 @@ int CTbl2AsnApp::Run(void)
     }
     catch (CException& e)
     {
-        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
+        m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
             "", 0, "", "", "",
-            e.GetMsg()));
+            e.GetMsg())));
     }
 
     if (m_logger->Count() == 0)
@@ -700,6 +704,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         entry = op.LoadXML(m_context.m_current_file, m_context);
         if (entry.IsNull())
             return;
+
+        m_context.ApplyFileTracks(*entry);
     }
     else
     {
@@ -833,9 +839,9 @@ void CTbl2AsnApp::ProcessOneFile()
     CFile file(m_context.m_current_file);
     if (!file.Exists())
     {
-        m_logger->PutError(
-            *CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-            "File " + m_context.m_current_file + " does not exists"));
+        m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+            "File " + m_context.m_current_file + " does not exists")));
         return;
     }
     

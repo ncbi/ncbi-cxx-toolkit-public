@@ -250,7 +250,6 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
     CSeq_descr& SD = bioseq.SetDescr();
     SetOrganismData(SD, it.m_enzyme, context);
     SetOpticalDescr(SD, context);
-    context.AddUserTrack(SD, "FileTrack", "FileTrackURL", context.m_url);
 
     CSeq_inst& inst(bioseq.SetInst());
     inst.SetRepr(CSeq_inst::eRepr_map);
@@ -288,10 +287,11 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
             {
                 if (next->second <= fit->second) {
                     // if locations are not increasing raise an error
-                    m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                    m_logger->PutError(*auto_ptr<CLineError>(
+                        CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                         string("Locations are overlapping at row I=") + 
                         (fit->first.first == 0 ? NStr::IntToString(fit->first.second) :
-                        NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second))));
+                        NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second)))));
 
                     points.clear();
                     addr = 0;
@@ -309,10 +309,11 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
             TSeqPos prev = addr;
             if (prev > addr)
             {
-                m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                m_logger->PutError(*auto_ptr<CLineError>(
+                    CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                     string("Location reached numeric limit at row I=") + 
                     (fit->first.first == 0 ? NStr::IntToString(fit->first.second) :
-                    NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second))));
+                    NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second)))));
 
                 points.clear();
                 addr = 0;
@@ -437,8 +438,9 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
         doc = new document(in, &msg);
     }
     catch(...) {
-        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-            "No data found in " + FileIn + ": " + msg.print()));
+        m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+            "No data found in " + FileIn + ": " + msg.print())));
         return -1;
     }
 
@@ -463,9 +465,9 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
                 }
             }
             if (name.empty()) {
-                m_logger->PutError(
-                    *CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
-                    "No chromosome name found in RESTRICTION_MAP - ID '" + id + "' was used"));
+                m_logger->PutError(*auto_ptr<CLineError>(
+                    CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+                    "No chromosome name found in RESTRICTION_MAP - ID '" + id + "' was used")));
                 name = id;
             }
 

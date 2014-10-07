@@ -44,7 +44,8 @@ public:
     string m_single_table5_file;
     string m_find_open_read_frame;
     string m_strain;
-    string m_url;
+    string m_ft_url;
+    string m_ft_url_mod;
     CRef<objects::CDate> m_HoldUntilPublish;
     string F;
     string A;
@@ -110,6 +111,7 @@ public:
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
+    void ApplyFileTracks(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> CreateSubmitFromTemplate(
         CRef<objects::CSeq_entry>& object, 
         CRef<objects::CSeq_submit>& submit,

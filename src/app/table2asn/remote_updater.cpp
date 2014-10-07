@@ -358,11 +358,11 @@ public:
         CRef<CT3Reply> reply = GetOrgReply(org);
         if (reply->IsError() && logger)
         {
-            logger->PutError(
-                *CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
+            logger->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
                 string("Taxon update: ") + 
                 (org.IsSetTaxname() ? org.GetTaxname() : NStr::IntToString(org.GetTaxId())) + ": " +
-                reply->GetError().GetMessage()));
+                reply->GetError().GetMessage())));
         }
         else
         if (reply->IsData() && reply->SetData().IsSetOrg())

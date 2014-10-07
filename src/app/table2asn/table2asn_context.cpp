@@ -687,4 +687,10 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
     return need_update;
 }
 
+void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
+{
+    AddUserTrack(entry.SetDescr(), "FileTrack", "FileTrackURL", m_ft_url);
+    AddUserTrack(entry.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", m_ft_url_mod);
+}
+
 END_NCBI_SCOPE
