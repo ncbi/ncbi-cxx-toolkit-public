@@ -57,13 +57,28 @@ class CUser_object;
 class CUser_field;
 class IIdMapper;
 
-class NCBI_SRAREAD_EXPORT CCSraDb_Impl : public CObject
+struct SCSraDb_Defs
+{
+    enum ERefIdType {
+        eRefId_SEQ_ID,
+        eRefId_gnl_NAME
+    };
+    enum EPathInIdType {
+        ePathInId_config,
+        ePathInId_yes,
+        ePathInId_no
+    };
+};
+
+
+class NCBI_SRAREAD_EXPORT CCSraDb_Impl : public CObject, public SCSraDb_Defs
 {
 public:
     CCSraDb_Impl(void) : m_RowSize(0) {}
     CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
                  IIdMapper* ref_id_mapper,
-                 int ref_id_type);
+                 ERefIdType ref_id_type,
+                 EPathInIdType path_in_id_type);
 
     // SRefInfo holds cached refseq information - ids, len, rows
     struct SRefInfo {
@@ -238,23 +253,20 @@ private:
 };
 
 
-class CCSraDb : public CRef<CCSraDb_Impl>
+class CCSraDb : public CRef<CCSraDb_Impl>, public SCSraDb_Defs
 {
 public:
-    enum ERefIdType {
-        eRefId_SEQ_ID,
-        eRefId_gnl_NAME
-    };
-
     CCSraDb(void)
         {
         }
     CCSraDb(CVDBMgr& mgr, const string& csra_path,
             IIdMapper* ref_id_mapper = 0,
-            ERefIdType ref_id_type = eRefId_SEQ_ID)
+            ERefIdType ref_id_type = eRefId_SEQ_ID,
+            EPathInIdType path_in_id_type = ePathInId_config)
         : CRef<CCSraDb_Impl>(new CCSraDb_Impl(mgr, csra_path,
                                               ref_id_mapper,
-                                              ref_id_type))
+                                              ref_id_type,
+                                              path_in_id_type))
         {
         }
     

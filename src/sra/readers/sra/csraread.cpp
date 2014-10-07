@@ -223,12 +223,16 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
 
 CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
                            IIdMapper* ref_id_mapper,
-                           int ref_id_type)
+                           ERefIdType ref_id_type,
+                           EPathInIdType path_in_id_type)
     : m_Mgr(mgr),
       m_CSraPath(csra_path),
       m_RowSize(0)
 {
-    if ( s_GetPathInId() ) {
+    if ( path_in_id_type == ePathInId_config ) {
+        path_in_id_type = s_GetPathInId()? ePathInId_yes: ePathInId_no;
+    }
+    if ( path_in_id_type == ePathInId_yes ) {
         m_SraIdPart = csra_path;
         // to avoid conflict with ref seq ids like gnl|SRA|SRR452437/scaffold_1
         // we replace all slashes ('/') with backslashes ('\\')
