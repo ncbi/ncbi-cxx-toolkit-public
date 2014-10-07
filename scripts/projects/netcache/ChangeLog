@@ -73,3 +73,10 @@ Added into statistics count of peer connections and mirroring-related data.
 September 04, 2014
 version 6.8.0
 Added possibility of re-configuring blob mirroring on the fly, without stopping the server.
+
+October 06, 2014
+version 6.8.1
+Changed the way periodic sync is made to lower priority of initial sync and to sync all available servers for a given slot.
+Added report of peer servers state.
+
+
