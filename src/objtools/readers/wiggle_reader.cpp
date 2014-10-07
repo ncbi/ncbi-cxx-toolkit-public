@@ -174,6 +174,16 @@ CWiggleReader::xReadSeqAnnotGraph(
     }
     bool haveData = false;
     while (xGetLine(lr, m_CurLine)) {
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pMessageListener);
+            return CRef<CSeq_annot>();
+        }
         xReportProgress(pMessageListener);
         if (xIsTrackLine(m_CurLine)  &&  haveData) {
             xUngetLine(lr);
@@ -224,6 +234,16 @@ CWiggleReader::xReadSeqAnnotTable(
 
     bool haveData = false;
     while (xGetLine(lr, m_CurLine)) {
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pMessageListener);
+            return CRef<CSeq_annot>();
+        }
         xReportProgress(pMessageListener);
         if (xIsTrackLine(m_CurLine)  &&  haveData) {
             xUngetLine(lr);
