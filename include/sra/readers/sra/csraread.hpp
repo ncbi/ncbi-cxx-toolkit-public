@@ -258,16 +258,19 @@ public:
     CCSraDb(void)
         {
         }
+    NCBI_SRAREAD_EXPORT
     CCSraDb(CVDBMgr& mgr,
             const string& csra_path,
             IIdMapper* ref_id_mapper = 0,
             ERefIdType ref_id_type = eRefId_SEQ_ID);
+    NCBI_SRAREAD_EXPORT
     CCSraDb(CVDBMgr& mgr,
             const string& csra_path,
             const string& sra_id_part,
             IIdMapper* ref_id_mapper = 0,
             ERefIdType ref_id_type = eRefId_SEQ_ID);
     
+    NCBI_SRAREAD_EXPORT
     static string MakeSraIdPart(EPathInIdType path_in_id_type,
                                 const string& dir_path,
                                 const string& csra_file);
