@@ -53,8 +53,141 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
+/////////////////////////////////////////////////////////////////////////////
+// CCSRADataLoader params
+/////////////////////////////////////////////////////////////////////////////
+
+
 NCBI_PARAM_DECL(string, CSRA, ACCESSIONS);
 NCBI_PARAM_DEF(string, CSRA, ACCESSIONS, "");
+
+
+NCBI_PARAM_DECL(bool, CSRA_LOADER, PILEUP_GRAPHS);
+NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, PILEUP_GRAPHS, true,
+                  eParam_NoThread, CSRA_LOADER_PILEUP_GRAPHS);
+
+bool CCSRADataLoader::GetPileupGraphsParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS)::GetDefault();
+}
+
+
+void CCSRADataLoader::SetPileupGraphsParamDefault(bool param)
+{
+    NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS)::SetDefault(param);
+}
+
+
+NCBI_PARAM_DECL(bool, CSRA_LOADER, QUALITY_GRAPHS);
+NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, QUALITY_GRAPHS, false,
+                  eParam_NoThread, CSRA_LOADER_QUALITY_GRAPHS);
+
+bool CCSRADataLoader::GetQualityGraphsParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, QUALITY_GRAPHS)::GetDefault();
+}
+
+
+void CCSRADataLoader::SetQualityGraphsParamDefault(bool param)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, QUALITY_GRAPHS)::SetDefault(param);
+}
+
+
+NCBI_PARAM_DECL(int, CSRA_LOADER, MIN_MAP_QUALITY);
+NCBI_PARAM_DEF_EX(int, CSRA_LOADER, MIN_MAP_QUALITY, 0,
+                  eParam_NoThread, CSRA_LOADER_MIN_MAP_QUALITY);
+
+int CCSRADataLoader::GetMinMapQualityParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, MIN_MAP_QUALITY)::GetDefault();
+}
+
+
+void CCSRADataLoader::SetMinMapQualityParamDefault(int param)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, MIN_MAP_QUALITY)::SetDefault(param);
+}
+
+
+NCBI_PARAM_DECL(int, CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS);
+NCBI_PARAM_DEF_EX(int, CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS, 0,
+                  eParam_NoThread, CSRA_LOADER_MAX_SEPARATE_SPOT_GROUPS);
+
+int CCSRADataLoader::GetSpotGroupsParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS)::GetDefault();
+}
+
+
+void CCSRADataLoader::SetSpotGroupsParamDefault(int param)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS)::SetDefault(param);
+}
+
+
+int CCSRADataLoader::SLoaderParams::GetEffectiveMinMapQuality(void) const
+{
+    return m_MinMapQuality != kMinMapQuality_config?
+        m_MinMapQuality: CCSRADataLoader::GetMinMapQualityParamDefault();
+}
+
+
+bool CCSRADataLoader::SLoaderParams::GetEffectivePileupGraphs(void) const
+{
+    return m_PileupGraphs != kPileupGraphs_config?
+        m_PileupGraphs != 0: CCSRADataLoader::GetPileupGraphsParamDefault();
+}
+
+
+bool CCSRADataLoader::SLoaderParams::GetEffectiveQualityGraphs(void) const
+{
+    return m_QualityGraphs != kQualityGraphs_config?
+        m_QualityGraphs != 0: CCSRADataLoader::GetQualityGraphsParamDefault();
+}
+
+
+int CCSRADataLoader::SLoaderParams::GetEffectiveSpotGroups(void) const
+{
+    return m_SpotGroups != kSpotGroups_config?
+        m_SpotGroups != 0: CCSRADataLoader::GetSpotGroupsParamDefault();
+}
+
+
+string CCSRADataLoader::SLoaderParams::GetLoaderName(void) const
+{
+    CNcbiOstrstream str;
+    str << "CCSRADataLoader:" << m_DirPath;
+    if ( !m_CSRAFiles.empty() ) {
+        str << "/files=";
+        ITERATE ( vector<string>, it, m_CSRAFiles ) {
+            str << "+" << *it;
+        }
+    }
+    if ( m_IdMapper ) {
+        str << "/mapper=" << m_IdMapper.get();
+    }
+    if ( !m_AnnotName.empty() ) {
+        str << "/name=" << m_AnnotName;
+    }
+    if ( m_MinMapQuality != kMinMapQuality_config ) {
+        str << "/q=" << m_MinMapQuality;
+    }
+    if ( m_PileupGraphs != kPileupGraphs_config ) {
+        str << "/pileup_graphs=" << m_PileupGraphs;
+    }
+    if ( m_QualityGraphs != kQualityGraphs_config ) {
+        str << "/quality_graphs=" << m_QualityGraphs;
+    }
+    if ( m_SpotGroups != kSpotGroups_config ) {
+        str << "/spot_groups=" << m_SpotGroups;
+    }
+    if ( m_PathInId != kPathInId_config ) {
+        str << "/path_in_id=" << m_PathInId;
+    }
+    return CNcbiOstrstreamToString(str);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CCSRADataLoader
@@ -140,24 +273,7 @@ string CCSRADataLoader::GetLoaderNameFromArgs(void)
 
 string CCSRADataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 {
-    CNcbiOstrstream str;
-    str << "CCSRADataLoader:" << params.m_DirPath;
-    if ( !params.m_CSRAFiles.empty() ) {
-        str << "/files=";
-        ITERATE ( vector<string>, it, params.m_CSRAFiles ) {
-            str << "+" << *it;
-        }
-    }
-    if ( params.m_IdMapper ) {
-        str << "/mapper=" << params.m_IdMapper.get();
-    }
-    if ( !params.m_AnnotName.empty() ) {
-        str << "/name=" << params.m_AnnotName;
-    }
-    if ( params.m_MinMapQuality != -1 ) {
-        str << "/q=" << params.m_MinMapQuality;
-    }
-    return CNcbiOstrstreamToString(str);
+    return params.GetLoaderName();
 }
 
 

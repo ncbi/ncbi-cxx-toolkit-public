@@ -241,6 +241,14 @@ public:
         {
             return m_MinMapQuality;
         }
+    bool GetPileupGraphs(void) const
+        {
+            return m_PileupGraphs;
+        }
+    bool GetQualityGraphs(void) const
+        {
+            return m_QualityGraphs;
+        }
 
     bool IsValidReadId(Uint8 spot_id, Uint4 read_id,
                        CRef<CCSRARefSeqInfo>* ref_ptr = 0,
@@ -306,6 +314,8 @@ protected:
     CCSraDb::ERefIdType m_RefIdType;
     string m_AnnotName;
     int m_MinMapQuality;
+    bool m_PileupGraphs;
+    bool m_QualityGraphs;
     mutable CMutex m_CSRAMutex;
     CCSraDb m_CSRADb;
     vector<string> m_SeparateSpotGroups;
@@ -326,6 +336,22 @@ public:
     int GetMinMapQuality(void) const
         {
             return m_MinMapQuality;
+        }
+    bool GetPileupGraphs(void) const
+        {
+            return m_PileupGraphs;
+        }
+    bool GetQualityGraphs(void) const
+        {
+            return m_QualityGraphs;
+        }
+    int GetPathInId(void) const
+        {
+            return m_PathInId;
+        }
+    int GetSpotGroups(void) const
+        {
+            return m_SpotGroups;
         }
 
     CRef<CCSRARefSeqInfo> GetRefSeqInfo(const CSeq_id_Handle& idh);
@@ -388,6 +414,10 @@ private:
     CVDBMgr m_Mgr;
     string  m_DirPath;
     int m_MinMapQuality;
+    bool m_PileupGraphs;
+    bool m_QualityGraphs;
+    int m_PathInId;
+    int m_SpotGroups;
     TFixedFiles m_FixedFiles;
     TSRRFiles m_SRRFiles;
     AutoPtr<IIdMapper> m_IdMapper;

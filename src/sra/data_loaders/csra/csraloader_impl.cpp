@@ -93,62 +93,6 @@ static int GetDebugLevel(void)
 }
 
 
-NCBI_PARAM_DECL(bool, CSRA_LOADER, PILEUP_GRAPHS);
-NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, PILEUP_GRAPHS, true,
-                  eParam_NoThread, CSRA_LOADER_PILEUP_GRAPHS);
-
-bool CCSRADataLoader::GetPileupGraphsParamDefault(void)
-{
-    return NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS)::GetDefault();
-}
-
-
-void CCSRADataLoader::SetPileupGraphsParamDefault(bool param)
-{
-    NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS)::SetDefault(param);
-}
-
-
-static bool GetPileupGraphsParam(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS)> s_Value;
-    return s_Value->Get();
-}
-
-
-NCBI_PARAM_DECL(bool, CSRA_LOADER, QUALITY_GRAPHS);
-NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, QUALITY_GRAPHS, false,
-                  eParam_NoThread, CSRA_LOADER_QUALITY_GRAPHS);
-
-static bool GetQualityGraphsParam(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, QUALITY_GRAPHS)> s_Value;
-    return s_Value->Get();
-}
-
-
-NCBI_PARAM_DECL(int, CSRA_LOADER, MIN_MAP_QUALITY);
-NCBI_PARAM_DEF_EX(int, CSRA_LOADER, MIN_MAP_QUALITY, 0,
-                  eParam_NoThread, CSRA_LOADER_MIN_MAP_QUALITY);
-
-static int GetDefaultMinMapQuality(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, MIN_MAP_QUALITY)> s_Value;
-    return s_Value->Get();
-}
-
-
-NCBI_PARAM_DECL(int, CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS);
-NCBI_PARAM_DEF_EX(int, CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS, 0,
-                  eParam_NoThread, CSRA_LOADER_MAX_SEPARATE_SPOT_GROUPS);
-
-static int GetMaxSeparateSpotGroups(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS)> s_Value;
-    return s_Value->Get();
-}
-
-
 NCBI_PARAM_DECL(size_t, CSRA_LOADER, GC_SIZE);
 NCBI_PARAM_DEF_EX(size_t, CSRA_LOADER, GC_SIZE, 10,
                   eParam_NoThread, CSRA_LOADER_GC_SIZE);
@@ -473,10 +417,11 @@ CCSRADataLoader_Impl::CCSRADataLoader_Impl(
 {
     m_DirPath = params.m_DirPath;
     m_AnnotName = params.m_AnnotName;
-    m_MinMapQuality = params.m_MinMapQuality;
-    if ( m_MinMapQuality == -1 ) {
-        m_MinMapQuality = GetDefaultMinMapQuality();
-    }
+    m_MinMapQuality = params.GetEffectiveMinMapQuality();
+    m_PileupGraphs = params.GetEffectivePileupGraphs();
+    m_QualityGraphs = params.GetEffectiveQualityGraphs();
+    m_PathInId = params.m_PathInId;
+    m_SpotGroups = params.GetEffectiveSpotGroups();
     
     if ( params.m_CSRAFiles.empty() ) {
         if ( !m_DirPath.empty() ) {
@@ -947,10 +892,23 @@ void CCSRAFileInfo::x_Initialize(CCSRADataLoader_Impl& impl,
         m_AnnotName = m_CSRAName;
     }
     m_MinMapQuality = impl.GetMinMapQuality();
+    m_PileupGraphs = impl.GetPileupGraphs();
+    m_QualityGraphs = impl.GetQualityGraphs();
+    CCSraDb::EPathInIdType path_in_id_type;
+    switch ( impl.GetPathInId() ) {
+    case CCSRADataLoader::SLoaderParams::kPathInId_config:
+        path_in_id_type = CCSraDb::ePathInId_config;
+        break;
+    case 0:
+        path_in_id_type = CCSraDb::ePathInId_no;
+        break;
+    default:
+        path_in_id_type = CCSraDb::ePathInId_yes;
+    }
     m_CSRADb = CCSraDb(impl.m_Mgr, impl.m_DirPath+csra,
                        impl.m_IdMapper.get(),
-                       ref_id_type);
-    int max_separate_spot_groups = GetMaxSeparateSpotGroups();
+                       ref_id_type, path_in_id_type);
+    int max_separate_spot_groups = impl.GetSpotGroups();
     if ( max_separate_spot_groups > 1 ) {
         m_CSRADb.GetSpotGroups(m_SeparateSpotGroups);
         if ( m_SeparateSpotGroups.size() > size_t(max_separate_spot_groups) ) {
@@ -1133,7 +1091,7 @@ void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
                    first_spot_id<<"-"<<(stop_spot_id-1));
     }
     CCSraShortReadIterator::TBioseqFlags flags = CCSraShortReadIterator::fDefaultBioseqFlags;
-    if ( GetQualityGraphsParam() ) {
+    if ( m_QualityGraphs ) {
         flags |= CCSraShortReadIterator::fQualityGraph;
     }
     for ( CCSraShortReadIterator it(*this, first_spot_id); it; ++it ) {
@@ -1400,7 +1358,7 @@ void CCSRARefSeqInfo::LoadAnnotMainSplit(CTSE_LoadLock& load_lock)
     load_lock->SetSeq_entry(*entry);
     CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
 
-    bool has_pileup = GetPileupGraphsParam();
+    bool has_pileup = m_File->GetPileupGraphs();
     bool separate_spot_groups = !m_File->GetSeparateSpotGroups().empty();
     string align_name, pileup_name;
     if ( !separate_spot_groups ) {
@@ -1466,7 +1424,7 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
     int chunk_count = int(m_Chunks.size());
-    bool has_pileup = GetPileupGraphsParam();
+    bool has_pileup = m_File->GetPileupGraphs();
     string align_name, pileup_name;
     bool separate_spot_groups = !m_File->GetSeparateSpotGroups().empty();
     if ( !separate_spot_groups ) {
