@@ -224,23 +224,15 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
 CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
                            IIdMapper* ref_id_mapper,
                            ERefIdType ref_id_type,
-                           EPathInIdType path_in_id_type)
+                           const string& sra_id_part)
     : m_Mgr(mgr),
       m_CSraPath(csra_path),
+      m_SraIdPart(sra_id_part),
       m_RowSize(0)
 {
-    if ( path_in_id_type == ePathInId_config ) {
-        path_in_id_type = s_GetPathInId()? ePathInId_yes: ePathInId_no;
-    }
-    if ( path_in_id_type == ePathInId_yes ) {
-        m_SraIdPart = csra_path;
-        // to avoid conflict with ref seq ids like gnl|SRA|SRR452437/scaffold_1
-        // we replace all slashes ('/') with backslashes ('\\')
-        replace(m_SraIdPart.begin(), m_SraIdPart.end(), '/', '\\');
-    }
-    else {
-        CDirEntry::SplitPath(csra_path, 0, &m_SraIdPart);
-    }
+    // to avoid conflict with ref seq ids like gnl|SRA|SRR452437/scaffold_1
+    // we replace all slashes ('/') with backslashes ('\\')
+    replace(m_SraIdPart.begin(), m_SraIdPart.end(), '/', '\\');
     try {
         m_Db = CVDB(mgr, csra_path);
     }
@@ -327,6 +319,49 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
 }
 
 
+string CCSraDb::MakeSraIdPart(EPathInIdType path_in_id_type,
+                              const string& dir_path,
+                              const string& csra_file)
+{
+    string sra_id_part;
+    if ( path_in_id_type == ePathInId_config ) {
+        path_in_id_type = s_GetPathInId()? ePathInId_yes: ePathInId_no;
+    }
+    if ( path_in_id_type == ePathInId_yes ) {
+        sra_id_part = CDirEntry::MakePath(dir_path, csra_file);
+    }
+    else {
+        CDirEntry::SplitPath(csra_file, 0, &sra_id_part);
+    }
+    return sra_id_part;
+}
+
+
+CCSraDb::CCSraDb(CVDBMgr& mgr,
+                 const string& csra_path,
+                 IIdMapper* ref_id_mapper,
+                 ERefIdType ref_id_type)
+    : CRef<CCSraDb_Impl>(new CCSraDb_Impl(mgr, csra_path,
+                                          ref_id_mapper,
+                                          ref_id_type,
+                                          csra_path))
+{
+}
+
+
+CCSraDb::CCSraDb(CVDBMgr& mgr,
+                 const string& csra_path,
+                 const string& sra_id_part,
+                 IIdMapper* ref_id_mapper,
+                 ERefIdType ref_id_type)
+    : CRef<CCSraDb_Impl>(new CCSraDb_Impl(mgr, csra_path,
+                                          ref_id_mapper,
+                                          ref_id_type,
+                                          sra_id_part))
+{
+}
+
+
 void CCSraDb_Impl::GetSpotGroups(TSpotGroups& spot_groups)
 {
     CKMDataNode parent(CKMetadata(m_Db, "SEQUENCE"), "STATS/SPOT_GROUP");
@@ -389,7 +424,7 @@ void CCSraDb_Impl::x_MakeRefSeq_ids(SRefInfo& info,
     else {
         ret = new CSeq_id(CSeq_id::e_General,
                           "SRA",
-                          m_CSraPath+'/'+info.m_Name);
+                          m_SraIdPart+'/'+info.m_Name);
     }
     if ( ret ) {
         info.m_Seq_ids.push_back(ret);

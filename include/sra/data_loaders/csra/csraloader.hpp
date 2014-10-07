@@ -78,7 +78,7 @@ public:
         int             m_MinMapQuality;
         int             m_PileupGraphs; // bool value or kPileupGraphs_config
         int             m_QualityGraphs; // bool value or kQualityGraphs_config
-        int             m_SpotGroups; // bool value or kSpotGroups_config
+        int             m_SpotGroups;
         int             m_PathInId; // bool value or kPathInId_config
 
         string GetLoaderName(void) const;

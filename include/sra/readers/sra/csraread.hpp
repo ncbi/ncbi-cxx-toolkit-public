@@ -74,11 +74,10 @@ struct SCSraDb_Defs
 class NCBI_SRAREAD_EXPORT CCSraDb_Impl : public CObject, public SCSraDb_Defs
 {
 public:
-    CCSraDb_Impl(void) : m_RowSize(0) {}
     CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
                  IIdMapper* ref_id_mapper,
                  ERefIdType ref_id_type,
-                 EPathInIdType path_in_id_type);
+                 const string& sra_id_part);
 
     // SRefInfo holds cached refseq information - ids, len, rows
     struct SRefInfo {
@@ -259,17 +258,20 @@ public:
     CCSraDb(void)
         {
         }
-    CCSraDb(CVDBMgr& mgr, const string& csra_path,
+    CCSraDb(CVDBMgr& mgr,
+            const string& csra_path,
             IIdMapper* ref_id_mapper = 0,
-            ERefIdType ref_id_type = eRefId_SEQ_ID,
-            EPathInIdType path_in_id_type = ePathInId_config)
-        : CRef<CCSraDb_Impl>(new CCSraDb_Impl(mgr, csra_path,
-                                              ref_id_mapper,
-                                              ref_id_type,
-                                              path_in_id_type))
-        {
-        }
+            ERefIdType ref_id_type = eRefId_SEQ_ID);
+    CCSraDb(CVDBMgr& mgr,
+            const string& csra_path,
+            const string& sra_id_part,
+            IIdMapper* ref_id_mapper = 0,
+            ERefIdType ref_id_type = eRefId_SEQ_ID);
     
+    static string MakeSraIdPart(EPathInIdType path_in_id_type,
+                                const string& dir_path,
+                                const string& csra_file);
+
     TSeqPos GetRowSize(void) const
         {
             return GetObject().GetRowSize();

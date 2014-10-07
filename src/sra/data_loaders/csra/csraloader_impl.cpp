@@ -429,9 +429,6 @@ CCSRADataLoader_Impl::CCSRADataLoader_Impl(
             AddCSRAFile(params.m_DirPath);
         }
     }
-    if ( !m_DirPath.empty() && *m_DirPath.rbegin() != '/' ) {
-        m_DirPath += '/';
-    }
     ITERATE (vector<string>, it, params.m_CSRAFiles) {
         AddCSRAFile(*it);
     }
@@ -905,9 +902,16 @@ void CCSRAFileInfo::x_Initialize(CCSRADataLoader_Impl& impl,
     default:
         path_in_id_type = CCSraDb::ePathInId_yes;
     }
-    m_CSRADb = CCSraDb(impl.m_Mgr, impl.m_DirPath+csra,
+    m_CSRADb = CCSraDb(impl.m_Mgr,
+                       CDirEntry::MakePath(impl.m_DirPath, csra),
+                       CCSraDb::MakeSraIdPart(path_in_id_type,
+                                              impl.m_DirPath, csra),
                        impl.m_IdMapper.get(),
-                       ref_id_type, path_in_id_type);
+                       ref_id_type);
+    if ( GetDebugLevel() >= 1 ) {
+        LOG_POST_X(9, Info <<
+                   "CCSRADataLoader("<<csra<<")="<<m_CSRADb->GetSraIdPart());
+    }
     int max_separate_spot_groups = impl.GetSpotGroups();
     if ( max_separate_spot_groups > 1 ) {
         m_CSRADb.GetSpotGroups(m_SeparateSpotGroups);
