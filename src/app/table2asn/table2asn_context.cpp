@@ -53,7 +53,9 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 #include <objects/general/Date.hpp>
+
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/edit/remote_updater.hpp>
 
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -74,7 +76,6 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 
 #include <objmgr/seqdesc_ci.hpp>
-#include "remote_updater.hpp"
 
 #include "table2asn_context.hpp"
 #include "objtools/edit/dblink_field.hpp"

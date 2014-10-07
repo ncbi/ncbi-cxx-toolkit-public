@@ -47,13 +47,13 @@
 #include <objmgr/scope.hpp>
 
 #include <util/line_reader.hpp>
+#include <objtools/edit/remote_updater.hpp>
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
 #include "struc_cmt_reader.hpp"
 #include "OpticalXML2ASN.hpp"
 #include "feature_table_reader.hpp"
-#include "remote_updater.hpp"
 #include "fcs_reader.hpp"
 
 #include <objects/seq/Seq_descr.hpp>
