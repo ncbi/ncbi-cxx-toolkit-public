@@ -208,23 +208,25 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
 
 bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_columns)
 {
-    if (!reader.AtEOF())
+    if (!default_columns.empty())
     {
-        if (!default_columns.empty())
+        string lower = default_columns;
+        NStr::ToLower(lower);
+        NStr::Tokenize(lower, ",", m_col_defs); //using comma separator always
+    }
+    else
+    {
+        while (!reader.AtEOF())
         {
-            string lower = default_columns;
-            NStr::ToLower(lower);
-            NStr::Tokenize(lower, ",", m_col_defs); //using comma separator always
-        }
-        else
-        {
+            // skip all comment lines
             reader.ReadLine();
             // First line is a column definitions
             m_current_row_number = reader.GetLineNumber();
-
             string lower = reader.GetCurrentLine();
+            if (lower[0] == '#') continue;
             NStr::ToLower(lower);
             NStr::Tokenize(lower, m_delim, m_col_defs);
+            break;
         }
 
         if (m_col_defs.size()<1)
@@ -256,6 +258,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
         }
         else
         {
+            if (current[0] == '#') continue; // skip all comment lines
             vector<CTempStringEx> values; values.reserve(m_col_defs.size());
             NStr::Tokenize(current, m_delim, values);
 
