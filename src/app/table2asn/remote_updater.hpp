@@ -20,7 +20,7 @@ BEGIN_SCOPE(edit)
 
 class CCachedTaxon3_impl;
 
-class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
+class /*NCBI_XOBJEDIT_EXPORT*/ CRemoteUpdater
 {
 public:
    CRemoteUpdater(bool enable_caching = true);

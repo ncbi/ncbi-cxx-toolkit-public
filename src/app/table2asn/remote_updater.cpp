@@ -58,7 +58,7 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 
-#include <objtools/edit/remote_updater.hpp>
+#include "remote_updater.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 

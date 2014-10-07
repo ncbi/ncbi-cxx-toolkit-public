@@ -55,7 +55,7 @@
 #include <objects/general/Date.hpp>
 
 #include <objtools/readers/message_listener.hpp>
-#include <objtools/edit/remote_updater.hpp>
+#include "remote_updater.hpp"
 
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
