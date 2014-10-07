@@ -136,7 +136,7 @@ void CChoiceTypeInfo::InitChoiceTypeInfoFunctions(void)
 
 void CChoiceTypeInfo::AdjustChoiceTypeInfoFunctions(void)
 {
-    m_AllowEmpty = CItemsInfo::FindNextMandatory(this) == NULL;
+//    m_AllowEmpty = CItemsInfo::FindNextMandatory(this) == NULL;
     if ( !m_AllowEmpty && GetVariants().Size() != 0 &&
          !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
         // simple
