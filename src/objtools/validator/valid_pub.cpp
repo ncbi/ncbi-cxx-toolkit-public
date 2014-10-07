@@ -1007,8 +1007,12 @@ void CValidError_imp::ValidateSubAffil
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
+    EDiagSev sev = eDiag_Critical;
+    if (IsGenbank() || IsRefSeq()) {
+        sev = eDiag_Warning;
+    }
     if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
-        PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+        PostObjErr (sev, eErr_GENERIC_MissingPubInfo, 
                     "Submission citation affiliation has no country",
                     obj, ctx);
     } else if (NStr::EqualCase (std.GetCountry(), "USA")) {
@@ -1017,6 +1021,11 @@ void CValidError_imp::ValidateSubAffil
                         "Submission citation affiliation has no state",
                         obj, ctx);
         }
+    }
+    if ((!std.IsSetDiv() || NStr::IsBlank(std.GetDiv())) || (!std.IsSetAffil() || NStr::IsBlank(std.GetAffil()))) {
+        PostObjErr (sev, eErr_GENERIC_MissingPubInfo, 
+                    "Submission citation affiliation has no institution",
+                    obj, ctx);
     }
 }
 
@@ -1069,7 +1078,11 @@ void CValidError_imp::ValidateCitSub
     }
 
     if ( !has_name ) {
-        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+        EDiagSev sev = eDiag_Critical;
+        if (IsGenbank() || IsRefSeq()) {
+            sev = eDiag_Warning;
+        }
+        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no author names", obj, ctx);
     }
     if ( !has_affil ) {
