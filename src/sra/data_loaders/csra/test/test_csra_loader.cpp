@@ -490,7 +490,9 @@ BOOST_AUTO_TEST_CASE(FetchSeq4l)
         string path = NCBI_TRACES01_PATH "/compress/1KG/CEU/NA12249";
         params.m_DirPath = sx_GetPath(path);
         csra_name = "exome.ILLUMINA.MOSAIK.csra";
-        id = "gnl|SRA|\\panfs\\traces01.be-md.ncbi.nlm.nih.gov\\compress\\1KG\\CEU\\NA12249\\exome.ILLUMINA.MOSAIK.csra.6.1";
+        id = params.m_DirPath+'/'+csra_name;
+        replace(id.begin(), id.end(), '/', '\\');
+        id = "gnl|SRA|"+id+".6.1";
     }
     params.m_CSRAFiles.push_back(csra_name);
     params.m_PathInId = true;
