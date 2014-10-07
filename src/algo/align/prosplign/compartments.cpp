@@ -304,7 +304,7 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
             CRef<CSeq_loc> cur_compartment_loc(&compartment->SetDesc().Set().back()->SetRegion());
 
             TSeqPos cur_begin_extended = cur_begin < max_extent ? 0 : cur_begin - max_extent;
-            //prohibit extension to go over over non-bridgeable gaps    
+            //prohibit extension to go over non-bridgeable gaps    
             if( scope &&  cur_begin_extended < cur_begin ) {
                 THit::TId tid (cur_compartment_loc->GetId());       
                 CRef<CSeq_id> tmp_id(new CSeq_id());
@@ -328,7 +328,7 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
             }
 
             TSeqPos cur_end_extended = cur_end + max_extent;
-            //prohibit extension to go over over non-bridgeable gaps    
+            //prohibit extension to go over non-bridgeable gaps    
             if( scope && cur_end_extended > cur_end ) {
                 THit::TId tid (cur_compartment_loc->GetId());       
                 CRef<CSeq_id> tmp_id(new CSeq_id());
@@ -344,7 +344,7 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
                             if(slit && !slit->IsBridgeable()) {
                                 TSeqPos pos = smit.GetPosition();
                                 _ASSERT( cur_end + pos < cur_end_extended );
-                                cur_begin_extended -= pos - 1;
+                                cur_end_extended = cur_end + pos;
                             }
                         }
                     }
