@@ -203,6 +203,16 @@ CVcfReader::ReadSeqAnnot(
     string line;
     unsigned int dataCount = 0;
     while (xGetLine(lr, line)) {
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pEC);
+            return CRef<CSeq_annot>();
+        }
         xReportProgress(pEC);
         if (xIsTrackLine(line)  &&  dataCount) {
             xUngetLine(lr);

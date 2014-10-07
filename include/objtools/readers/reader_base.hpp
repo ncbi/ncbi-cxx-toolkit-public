@@ -211,6 +211,9 @@ public:
     SetCanceler(
         ICanceled* =0);
 
+    bool
+    IsCanceled() const { return m_pCanceler && m_pCanceler->IsCanceled(); };
+
 protected:
     virtual bool xGetLine(
         ILineReader&,
