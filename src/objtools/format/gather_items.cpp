@@ -1434,7 +1434,7 @@ void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
 
     for (CFeat_CI it(ctx.GetScope(), loc, CSeqFeatData::e_Comment);
         it; ++it) {
-        ECompare comp = Compare(it->GetLocation(), loc, scope);
+        ECompare comp = Compare(it->GetLocation(), loc, scope, fCompareOverlapping);
 
         if ((comp == eSame)  ||  (comp == eContains)) {
             x_AddComment(new CCommentItem(it->GetOriginalFeature(), ctx));

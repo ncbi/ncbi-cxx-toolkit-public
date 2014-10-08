@@ -919,7 +919,8 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
         
         if (backbone_component) {
             sequence::ECompare compare_result = 
-                sequence::Compare(*backbone_component, *component_loc, m_FeatureScope);
+                sequence::Compare(*backbone_component, *component_loc,
+                m_FeatureScope, sequence::fCompareOverlapping);
             if ( compare_result == sequence::eContains ||
                  compare_result ==  sequence::eContained ||
                  compare_result ==  sequence::eSame) {

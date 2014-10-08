@@ -94,7 +94,8 @@ CAnnotCompare::CompareFeats(const CSeq_feat& feat1,
     if (!SameOrientation(strand1, strand2)) {
         loc_state |= eLocation_Missing;
     } else {
-        sequence::ECompare comp_val = sequence::Compare(loc1, loc2, &scope1);
+        sequence::ECompare comp_val = sequence::Compare(loc1, loc2,
+            &scope1, sequence::fCompareOverlapping);
         switch (comp_val) {
         case sequence::eSame:
             loc_state |= eLocation_Same;

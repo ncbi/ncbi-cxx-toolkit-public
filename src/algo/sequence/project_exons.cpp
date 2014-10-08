@@ -378,7 +378,8 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
     for(CSeq_loc_CI ci(product_cds_loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
         CConstRef<CSeq_loc> cds_subloc = ci.GetRangeAsSeq_loc();
         
-        if(sequence::eNoOverlap == sequence::Compare(*query_exon_loc, *cds_subloc, NULL)) {
+        if(sequence::eNoOverlap == sequence::Compare(*query_exon_loc, *cds_subloc,
+            NULL, sequence::fCompareOverlapping)) {
             // exon does not overlap the CDS interval 
             // (i.e. UTR-only, or, in rare case of translational-frameshifts, not specific to this cds-chunk)
             continue;

@@ -218,7 +218,7 @@ CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
 
     for(CSeq_loc_CI ci(*merged_repeats); ci; ++ci) {
         const CSeq_loc& loc2 = ci.GetEmbeddingSeq_loc();
-        if(sequence::Compare(loc, loc2, NULL) != sequence::eNoOverlap) {
+        if(sequence::Compare(loc, loc2, NULL, sequence::fCompareOverlapping) != sequence::eNoOverlap) {
             result->Add(loc2);
         }
     }

@@ -533,7 +533,7 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
         case CLocationEditPolicy::eMergePolicy_SingleInterval:
             {
                 CRef<CSeq_loc> new_loc = sequence::Seq_loc_Merge(feat.GetLocation(), CSeq_loc::fMerge_SingleRange, &scope);
-                if (sequence::Compare(*new_loc, feat.GetLocation(), &scope) != sequence::eSame) {
+                if (sequence::Compare(*new_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eSame) {
                     feat.SetLocation().Assign(*new_loc);
                     any_change = true;
                 }

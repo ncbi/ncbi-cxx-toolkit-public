@@ -320,7 +320,8 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
 
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     CRef<CSeq_feat> mrna = edit::MakemRNAforCDS(*cds, scope);
-    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(), &scope), sequence::eSame);
+    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(),
+        &scope, sequence::fCompareOverlapping), sequence::eSame);
     BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStart(eExtreme_Biological), true);
     BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStop(eExtreme_Biological), true);
 
@@ -334,7 +335,8 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     mrna = edit::MakemRNAforCDS(*cds, scope);
-    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(), &scope), sequence::eContained);
+    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(),
+        &scope, sequence::fCompareOverlapping), sequence::eContained);
     BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStart(eExtreme_Biological), true);
     BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStop(eExtreme_Biological), false);
     BOOST_CHECK_EQUAL(mrna->GetLocation().GetStop(eExtreme_Biological), utr3->GetLocation().GetStop(eExtreme_Biological));
@@ -348,7 +350,8 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
     cds->SetLocation().SetInt().SetFrom(3);
     seh = scope.AddTopLevelSeqEntry(*entry);
     mrna = edit::MakemRNAforCDS(*cds, scope);
-    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(), &scope), sequence::eContained);
+    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(),
+        &scope, sequence::fCompareOverlapping), sequence::eContained);
     BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStart(eExtreme_Biological), false);
     BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStop(eExtreme_Biological), false);
     BOOST_CHECK_EQUAL(mrna->GetLocation().GetStart(eExtreme_Biological), utr5->GetLocation().GetStart(eExtreme_Biological));
@@ -364,7 +367,8 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
     // but will create if the existing mRNA has the wrong product
     mrna->SetData().SetRna().SetExt().SetName("abc");
     mrna2 = edit::MakemRNAforCDS(*cds, scope);
-    BOOST_CHECK_EQUAL(sequence::Compare(mrna2->GetLocation(), mrna->GetLocation(), &scope), sequence::eSame);
+    BOOST_CHECK_EQUAL(sequence::Compare(mrna2->GetLocation(), mrna->GetLocation(),
+        &scope, sequence::fCompareOverlapping), sequence::eSame);
 
 }
 

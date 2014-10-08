@@ -3747,7 +3747,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         ++it2;
         while (it2 != delta_locs.end()) {
             if ((*it1)->GetId()->Compare(*(*it2)->GetId()) == CSeq_id::e_YES
-                && Compare (**it1, **it2, m_Scope) != eNoOverlap) {
+                && Compare (**it1, **it2, m_Scope, fCompareOverlapping) != eNoOverlap) {
                 string seq_label;
                 (*it1)->GetId()->GetLabel(&seq_label);
                 PostErr (eDiag_Warning, eErr_SEQ_INST_OverlappingDeltaRange,
@@ -4251,7 +4251,7 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
             vector< int >::iterator nit = num_contained.begin();
             bool go_on = true;
             while (go_on && cit != containing_genes.end() && nit != num_contained.end()) {
-                ECompare comp = Compare(fi->GetLocation(), (*cit)->GetLocation(), m_Scope);
+                ECompare comp = Compare(fi->GetLocation(), (*cit)->GetLocation(), m_Scope, fCompareOverlapping);
                 if (comp == eContained  ||  comp == eSame) {
                     (*nit)++;
                 }
@@ -6793,7 +6793,7 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
         if ((feat2_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
              feat2_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
              feat2_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) &&
-            sequence::Compare(feat1_loc, feat2_loc, m_Scope) != eNoOverlap  &&
+            sequence::Compare(feat1_loc, feat2_loc, m_Scope, sequence::fCompareOverlapping) != eNoOverlap  &&
             s_NotPeptideException(feat1, feat2)) {
             EDiagSev overlapPepSev = 
                 m_Imp.IsOvlPepErr() ? eDiag_Error :eDiag_Warning;
@@ -8279,7 +8279,8 @@ void CValidError_bioseq::x_CompareStrings
                 // suppress for trans-spliced genes on small genome set
             } else if (is_gene_locus && sequence::Compare(feat->GetLocation(),
                                                    (*it->second).GetLocation(),
-                                                   m_Scope) == eSame) {
+                                                   m_Scope,
+                                                   sequence::fCompareOverlapping) == eSame) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
                          message + ", but feature locations are identical", *it->second);
             } else if (is_gene_locus 

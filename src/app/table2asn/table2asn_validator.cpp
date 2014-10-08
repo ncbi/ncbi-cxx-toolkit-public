@@ -184,7 +184,8 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
                         }
 
                         // is this the best?
-                        sequence::ECompare located = sequence::Compare(cds->GetLocation(), mrna->GetLocation(), 0);
+                        sequence::ECompare located = sequence::Compare(cds->GetLocation(), mrna->GetLocation(),
+                            0, sequence::fCompareOverlapping);
 
                         if (located == sequence::eContained || located == sequence::eSame)
                         {

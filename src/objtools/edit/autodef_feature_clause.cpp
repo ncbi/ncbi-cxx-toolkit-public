@@ -1101,7 +1101,8 @@ void CAutoDefFeatureClause::Label()
 
 sequence::ECompare CAutoDefFeatureClause::CompareLocation(const CSeq_loc& loc)
 {
-    return sequence::Compare(loc, *m_ClauseLocation, &(m_BH.GetScope()));
+    return sequence::Compare(loc, *m_ClauseLocation, &(m_BH.GetScope()),
+        sequence::fCompareOverlapping);
 }
 
 

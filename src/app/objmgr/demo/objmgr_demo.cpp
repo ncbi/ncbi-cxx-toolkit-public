@@ -1747,7 +1747,8 @@ int CDemoApp::Run(void)
                             "\n with: "<< it->GetOriginalFeature().GetLocation() <<
                             "\n = " << sequence::Compare(gene->GetLocation(),
                                                          it->GetOriginalFeature().GetLocation(),
-                                                         &scope);
+                                                         &scope,
+                                                         sequence::fCompareOverlapping);
                     }
                     else {
                         NcbiCout << "null";
@@ -1770,7 +1771,8 @@ int CDemoApp::Run(void)
                             "\n with: "<< it->GetOriginalFeature().GetLocation() <<
                             "\n = " << sequence::Compare(gene->GetLocation(),
                                                          it->GetOriginalFeature().GetLocation(),
-                                                         &scope);
+                                                         &scope,
+                                                         sequence::fCompareOverlapping);
                     }
                     else {
                         NcbiCout << "null";

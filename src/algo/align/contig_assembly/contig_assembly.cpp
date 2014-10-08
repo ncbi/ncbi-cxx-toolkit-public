@@ -869,7 +869,8 @@ void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
                 gap_loc.SetInt().SetTo(vec.GetStop(other_row, i));
                 sequence::ECompare cmp_res
                     = sequence::Compare(gap_loc, *dust_locs[other_row],
-                                        &vec.GetScope());
+                                        &vec.GetScope(),
+                                        sequence::fCompareOverlapping);
                 simple = cmp_res == sequence::eContained
                     || cmp_res == sequence::eSame;
 

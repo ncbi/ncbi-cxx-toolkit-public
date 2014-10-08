@@ -4599,7 +4599,8 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 // look for conflict with anticodon
                 if (trna->IsSetAnticodon()) {
                     if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
-                        if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(), trna->GetAnticodon(), m_Scope) != sequence::eSame) {
+                        if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(),
+                            trna->GetAnticodon(), m_Scope, sequence::fCompareOverlapping) != sequence::eSame) {
                             ok_to_apply = false;
                         }
                     } else {
@@ -4700,7 +4701,8 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat
     }
     
     if (break_loc == NULL 
-        || (break_loc->IsInt() && sequence::Compare (*break_loc, feat.GetLocation(), m_Scope) != sequence::eContained )
+        || (break_loc->IsInt()
+        && sequence::Compare (*break_loc, feat.GetLocation(), m_Scope, sequence::fCompareOverlapping) != sequence::eContained )
         || (break_loc->IsInt() && sequence::GetLength(*break_loc, m_Scope) != 3)) {
         return eAction_Nothing;
     }
@@ -8712,7 +8714,7 @@ public:
         const CSeq_loc &loc1 = GET_FIELD(*break1, Loc);
         const CSeq_loc &loc2 = GET_FIELD(*break2, Loc);
 
-        if( sequence::eSame != sequence::Compare( loc1, loc2, &*m_Scope ) ) {
+        if( sequence::eSame != sequence::Compare(loc1, loc2, &*m_Scope, sequence::fCompareOverlapping) ) {
             return false;
         }
 

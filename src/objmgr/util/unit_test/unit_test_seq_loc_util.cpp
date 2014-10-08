@@ -145,10 +145,10 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_whole)
     wl2.SetWhole().SetLocal().SetStr("local2");
     wl3.SetWhole().SetLocal().SetStr("local3");
 
-    BOOST_CHECK_EQUAL(Compare(wg2, wg2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(wg2, wl2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(wg2, wg3, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(wg2, wl3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, wg2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(wg2, wl2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(wg2, wg3, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, wl3, scope, fCompareOverlapping), eNoOverlap);
 }
 
 
@@ -162,15 +162,15 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_interval)
 
     // Partial overlap
     CRef<CSeq_loc> i = MakeInterval(2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, *i, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i, wg2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *i, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, wg3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, *i, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i, wg2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(wg3, *i, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, wg3, scope, fCompareOverlapping), eNoOverlap);
 
     // Full bioseq
     i = MakeInterval(2, 0, 1441);
-    BOOST_CHECK_EQUAL(Compare(wg2, *i, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*i, wg2, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(wg2, *i, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*i, wg2, scope, fCompareOverlapping), eSame);
 }
 
 
@@ -187,24 +187,24 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_packed_interval)
 
     CSeq_loc pki;
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().AddInterval(gi3, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 0, 1441);
     pki.SetPacked_int().AddInterval(gi3, 0, 374);
-    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -217,10 +217,10 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_point)
     wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
 
     CRef<CSeq_loc> pt = MakePoint(2, 10);
-    BOOST_CHECK_EQUAL(Compare(wg2, *pt, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, wg2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *pt, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*pt, wg3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, *pt, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*pt, wg2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(wg3, *pt, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*pt, wg3, scope, fCompareOverlapping), eNoOverlap);
 }
 
 
@@ -239,10 +239,10 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_packed_point)
     pp.SetPacked_pnt().AddPoint(10);
     pp.SetPacked_pnt().AddPoint(20);
     pp.SetPacked_pnt().AddPoint(30);
-    BOOST_CHECK_EQUAL(Compare(wg2, pp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp, wg2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(wl3, pp, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, wl3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, pp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, wg2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(wl3, pp, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, wl3, scope, fCompareOverlapping), eNoOverlap);
 }
 
 
@@ -256,38 +256,38 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_mix)
     // Check some basic cases
     CSeq_loc mix;
     mix.SetMix().Set().push_back(MakeInterval(3, 10, 20));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eNoOverlap);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 20));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 20));
     mix.SetMix().Set().push_back(MakeInterval(2, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 20));
     mix.SetMix().Set().push_back(MakeInterval(3, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eOverlap);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 0, 1441));
     mix.SetMix().Set().push_back(MakeInterval(3, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContains);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 0, 1441));
     CRef<CSeq_loc> sub(new CSeq_loc);
     sub->SetWhole().SetGi(GI_FROM(TIntId, 2));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -301,24 +301,24 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_bond)
 
     // B not set
     CRef<CSeq_loc> bond = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope, fCompareOverlapping), eNoOverlap);
 
     // A and B on different bioseqs
     bond = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope, fCompareOverlapping), eOverlap);
 
     // A and B on the same bioseq
     bond = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope, fCompareOverlapping), eNoOverlap);
 }
 
 
@@ -331,36 +331,36 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_interval)
 
     CRef<CSeq_loc> i = MakeInterval(2, 25, 35);
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eNoOverlap);
 
     // Abutting but not overlapping
     i = MakeInterval(2, 0, 22);
     i2 = MakeInterval(2, 23, 40);
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eNoOverlap);
 
     i2 = MakeInterval(2, 10, 20);
     i = MakeInterval(2, 5, 15);
     // Partial overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i3, *i, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i3, *i, scope, fCompareOverlapping), eNoOverlap);
 
     i = MakeInterval(2, 5, 25);
     // Contained/contains
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eContains);
     i = MakeInterval(2, 10, 25); // same on the right
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eContains);
     i = MakeInterval(2, 5, 20); // same on the left
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eContains);
 
     i = MakeInterval(2, 10, 20);
     // Same
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eSame);
 }
 
 
@@ -381,197 +381,197 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_packed_interval)
     // eNoOverlap + eNoOverlap = eNoOverlap
     pki.SetPacked_int().AddInterval(gi2, 25, 35);
     pki.SetPacked_int().AddInterval(gi2, 35, 45);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eNoOverlap);
 
     // eNoOverlap + eContained = eOverlap
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
     pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
 
     // eNoOverlap + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
     pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eNoOverlap + eSame = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eNoOverlap + eOverlap = eOverlap
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
     pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
 
     // eContained + eContained = eContained
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 11, 13);
     pki.SetPacked_int().AddInterval(gi2, 15, 18);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
 
     // eContained + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 11, 13);
     pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eContained + eSame = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 11, 13);
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
 
     // eContained + eOverlap = eOverlap
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 11, 13);
     pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
 
     // eContains + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 9, 21);
     pki.SetPacked_int().AddInterval(gi2, 5, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eContains + eSame = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 9, 21);
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eContains + eOverlap = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 9, 21);
     pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eSame + eSame = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
 
     // eSame + eOverlap = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eOverlap + eOverlap = eOverlap
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 8, 13);
     pki.SetPacked_int().AddInterval(gi2, 16, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
 
     // eNoOverlap + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 11, 19);
     pki.SetPacked_int().AddInterval(gi2, 25, 35);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eContained + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 11, 19);
     pki.SetPacked_int().AddInterval(gi2, 12, 18);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
 
     // eContains + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 11, 19);
     pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 
     // eSame + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 11, 19);
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
 
     // eOverlap + eContains = eContains
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 11, 19);
     pki.SetPacked_int().AddInterval(gi2, 15, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
     pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
 }
 
 
@@ -584,18 +584,18 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_point)
 
     CRef<CSeq_loc> pt = MakePoint(2, 5);
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *pt, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, *pt, scope, fCompareOverlapping), eNoOverlap);
     pt = MakePoint(2, 15);
-    BOOST_CHECK_EQUAL(Compare(*i3, *pt, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i3, *pt, scope, fCompareOverlapping), eNoOverlap);
 
     // Overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *pt, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, *i2, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i2, *pt, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*pt, *i2, scope, fCompareOverlapping), eContained);
 
     // Same - interval of length 1
     CRef<CSeq_loc> i1 = MakeInterval(2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(*pt, *i1, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*i1, *pt, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*pt, *i1, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*i1, *pt, scope, fCompareOverlapping), eSame);
 }
 
 
@@ -611,19 +611,19 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_packed_point)
     pp.SetPacked_pnt().AddPoint(5);
 
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope, fCompareOverlapping), eNoOverlap);
     pp.SetPacked_pnt().SetPoints().front() = 15;
-    BOOST_CHECK_EQUAL(Compare(*i3, pp, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i3, pp, scope, fCompareOverlapping), eNoOverlap);
 
     // Contained in the interval
-    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp, *i2, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *i2, scope, fCompareOverlapping), eContained);
     
     // Overlap
     pp.SetPacked_pnt().AddPoint(5);
     pp.SetPacked_pnt().AddPoint(25);
-    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, *i2, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *i2, scope, fCompareOverlapping), eOverlap);
 }
 
 
@@ -637,28 +637,28 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     CRef<CSeq_loc> sub, sub2;
 
     mix.SetMix().Set().push_back(MakeInterval(3, 10, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eNoOverlap);
 
     // Whole
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
     sub->SetWhole().SetGi(GI_FROM(TIntId, 2));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
 
     // Points
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakePoint(2, 50));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
     mix.SetMix().Set().push_back(MakePoint(2, 60));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
     mix.SetMix().Set().push_back(MakePoint(2, 150));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
 
     // Packed points - some more complicated cases
     mix.SetMix().Set().clear();
@@ -667,55 +667,55 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     sub->SetPacked_pnt().AddPoint(30);
     sub->SetPacked_pnt().AddPoint(60);
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
     sub2.Reset(new CSeq_loc);
     sub2->SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub2->SetPacked_pnt().AddPoint(10);
     sub2->SetPacked_pnt().AddPoint(50);
     mix.SetMix().Set().push_back(sub2);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
 
     // Intervals
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 15));
     mix.SetMix().Set().push_back(MakeInterval(2, 85, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eNoOverlap);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 25));
     mix.SetMix().Set().push_back(MakeInterval(2, 55, 70));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 35));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
 
     // This results in eOverlap although the mix covers the whole interval.
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 55));
     mix.SetMix().Set().push_back(MakeInterval(2, 50, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 90));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 80));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 80));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
 
     // Packed intervals
     mix.SetMix().Set().clear();
@@ -727,8 +727,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 70, 90)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
 
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
@@ -740,12 +740,12 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
         Ref(&MakeInterval(2, 70, 90)->SetInt()));
     mix.SetMix().Set().push_back(sub);
     try {
-        Compare(*i, mix, scope);
+        Compare(*i, mix, scope, fCompareOverlapping);
     }
     catch (...) {
     }
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
 
     // Mixed sub-location types
     mix.SetMix().Set().clear();
@@ -760,8 +760,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 50, 55)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 90));
@@ -771,8 +771,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 50, 85)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
 
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
@@ -780,8 +780,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     mix.SetMix().Set().push_back(MakeInterval(2, 60, 70));
     mix.SetMix().Set().push_back(sub);
     mix.SetMix().Set().push_back(MakeBond(2, 50, 3, 40));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
 }
 
 
@@ -797,25 +797,25 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_bond)
 
     CRef<CSeq_loc> i = MakeInterval(2, 15, 25);
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(*bA2, *i, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bA2, *i, scope, fCompareOverlapping), eNoOverlap);
 
     i = MakeInterval(2, 5, 15);
     // Overlap with one point (no B)
-    BOOST_CHECK_EQUAL(Compare(*bA2, *i, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*bA2, *i, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, *bA2, scope, fCompareOverlapping), eContains);
     // Overlap with only one of A or B
-    BOOST_CHECK_EQUAL(Compare(*bA2B3, *i, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2B3, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bA3B2, *i, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA3B2, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bA2B3, *i, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, *bA2B3, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bA3B2, *i, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, *bA3B2, scope, fCompareOverlapping), eOverlap);
     // B is on the same bioseq but out of range
-    BOOST_CHECK_EQUAL(Compare(*bA2B2, *i, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2B2, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bA2B2, *i, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*i, *bA2B2, scope, fCompareOverlapping), eOverlap);
 
     i = MakeInterval(2, 5, 25);
     // Overlap with both A and B
-    BOOST_CHECK_EQUAL(Compare(*bA2B2, *i, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2B2, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*bA2B2, *i, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*i, *bA2B2, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -836,8 +836,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk1.SetPacked_int().AddInterval(lcl2, 30, 40);
     pk2.SetPacked_int().AddInterval(gi2, 30, 40);
     pk2.SetPacked_int().AddInterval(lcl2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eSame);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 20);
@@ -845,7 +845,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi3, 10, 20);
     pk2.SetPacked_int().AddInterval(gi2, 50, 60);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 15, 20);
@@ -853,7 +853,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 5, 10);
     pk2.SetPacked_int().AddInterval(gi2, 50, 55);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 40);
@@ -861,11 +861,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 20, 30);
     pk2.SetPacked_int().AddInterval(gi2, 70, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 40);
@@ -873,11 +873,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 20, 30);
     pk2.SetPacked_int().AddInterval(gi3, 70, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 40);
@@ -885,11 +885,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 20, 30);
     pk2.SetPacked_int().AddInterval(gi2, 60, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 20);
@@ -897,11 +897,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 10, 20);
     pk2.SetPacked_int().AddInterval(gi2, 60, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 20);
@@ -909,12 +909,12 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 10, 20);
     pk2.SetPacked_int().AddInterval(gi2, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eSame);
     // The order does not matter.
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eSame);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 20);
@@ -923,11 +923,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 10, 90);
     pk2.SetPacked_int().AddInterval(gi2, 50, 60);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContains);
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContains);
 
     pk1.SetPacked_int().Set().clear();
     pk1.SetPacked_int().AddInterval(gi2, 10, 19);
@@ -935,11 +935,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
     pk2.SetPacked_int().Set().clear();
     pk2.SetPacked_int().AddInterval(gi2, 20, 29);
     pk2.SetPacked_int().AddInterval(gi3, 10, 19);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eNoOverlap);
     pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eNoOverlap);
 }
 
 
@@ -953,25 +953,25 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_point)
     CSeq_loc pki;
 
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eNoOverlap);
     pki.SetPacked_int().AddInterval(gi2, 20, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eContained);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eSame);
 
     pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -989,73 +989,73 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_point)
     CSeq_loc pki;
 
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eNoOverlap);
     pki.SetPacked_int().AddInterval(gi2, 20, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eSame);
 
     pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContains);
 
     pki.SetPacked_int().AddInterval(gi2, 25, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
 
     pkp.SetPacked_pnt().AddPoint(25);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 17, 23);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 5, 10);
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eOverlap);
 
     // Complicated case: each interval contains just one of the
     // points.
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 21, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi3, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eOverlap);
 }
 
 
@@ -1073,21 +1073,21 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     CRef<CSeq_loc> sub, sub2;
 
     mix.SetMix().Set().push_back(MakeInterval(3, 10, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eNoOverlap);
 
     // Whole
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
     sub->SetWhole().SetGi(GI_FROM(TIntId, 2));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 0, 1441);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eSame);
 
     // Points
     pki.SetPacked_int().Set().clear();
@@ -1095,14 +1095,14 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     pki.SetPacked_int().AddInterval(gi2, 30, 40);
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakePoint(2, 15));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
     mix.SetMix().Set().push_back(MakePoint(2, 35));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
     mix.SetMix().Set().push_back(MakePoint(2, 150));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
 
     // Packed points - some more complicated cases
     mix.SetMix().Set().clear();
@@ -1111,15 +1111,15 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     sub->SetPacked_pnt().AddPoint(15);
     sub->SetPacked_pnt().AddPoint(33);
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
     sub2.Reset(new CSeq_loc);
     sub2->SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub2->SetPacked_pnt().AddPoint(5);
     sub2->SetPacked_pnt().AddPoint(37);
     mix.SetMix().Set().push_back(sub2);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
 
     // Intervals
     pki.SetPacked_int().Set().clear();
@@ -1127,34 +1127,34 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 15));
     mix.SetMix().Set().push_back(MakeInterval(2, 85, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eNoOverlap);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 25));
     mix.SetMix().Set().push_back(MakeInterval(2, 55, 70));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 35));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
 
     // This results in eOverlap although the mix covers the whole interval.
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 55));
     mix.SetMix().Set().push_back(MakeInterval(2, 50, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
 
     // The same problem here.
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 60);
     pki.SetPacked_int().AddInterval(gi2, 56, 90);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 20, 80);
@@ -1163,15 +1163,15 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 90));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 80));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 80));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
 
     // Packed intervals
     pki.SetPacked_int().Set().clear();
@@ -1186,8 +1186,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 70, 90)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
 
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
@@ -1198,8 +1198,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 70, 90)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
 
     // Mixed sub-location types
     mix.SetMix().Set().clear();
@@ -1214,8 +1214,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 60, 65)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 40));
@@ -1225,8 +1225,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     sub->SetPacked_int().Set().push_back(
         Ref(&MakeInterval(2, 50, 85)->SetInt()));
     mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1242,81 +1242,81 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_bond)
     CSeq_loc pki;
 
     pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
     pki.SetPacked_int().AddInterval(gi2, 20, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
 
     // For bonds we only detect no-overlap/overlap/contained, not same.
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eSame);
 
     pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContains);
 
     b->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, 2));
     b->SetBond().SetB().SetPoint(25);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 17, 23);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 5, 10);
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
 
     b->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, 3));
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 10, 20);
     pki.SetPacked_int().AddInterval(gi3, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
 }
 
 
@@ -1328,9 +1328,9 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_point)
     CRef<CSeq_loc> p2b = MakePoint(2, 15);
     CRef<CSeq_loc> p3 = MakePoint(3, 20);
 
-    BOOST_CHECK_EQUAL(Compare(*p2a, *p2a, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*p2a, *p2b, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*p2a, *p3, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*p2a, *p2a, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*p2a, *p2b, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*p2a, *p3, scope, fCompareOverlapping), eNoOverlap);
 }
 
 
@@ -1345,19 +1345,19 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_packed_point)
     pp.SetPacked_pnt().AddPoint(10);
 
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eNoOverlap);
 
     p = MakePoint(2, 10);
     // Single entry in packed points
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eSame);
 
     pp.SetPacked_pnt().AddPoint(20);
     pp.SetPacked_pnt().AddPoint(30);
     // Multiple points
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eContains);
 
     // Special case: all packed points are the same.
     // The first seq-loc contains the second one in any direction.
@@ -1365,8 +1365,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_packed_point)
     pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(10);
     pp.SetPacked_pnt().AddPoint(10);
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1379,23 +1379,23 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_mix)
     CSeq_loc mix;
 
     mix.SetMix().Set().push_back(MakeInterval(3, 10, 90));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eNoOverlap);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 40));
     mix.SetMix().Set().push_back(MakeInterval(2, 60, 90));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eNoOverlap);
     mix.SetMix().Set().push_back(MakeInterval(2, 40, 60));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *p, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *p, scope, fCompareOverlapping), eContains);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakePoint(2, 50));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *p, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(mix, *p, scope, fCompareOverlapping), eSame);
     mix.SetMix().Set().push_back(MakePoint(2, 50));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *p, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *p, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1410,19 +1410,19 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_bond)
 
     CRef<CSeq_loc> p = MakePoint(2, 5);
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(*bA2, *p, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*bA2, *p, scope, fCompareOverlapping), eNoOverlap);
 
     p = MakePoint(2, 10);
     // Overlap with A
-    BOOST_CHECK_EQUAL(Compare(*bA2, *p, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*bA2B3, *p, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*p, *bA2B3, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*bA2B2, *p, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*p, *bA2B2, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*bA2, *p, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*bA2B3, *p, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, *bA2B3, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*bA2B2, *p, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, *bA2B2, scope, fCompareOverlapping), eContained);
 
     // Special case - A==B, contains in both directions.
-    BOOST_CHECK_EQUAL(Compare(*bA2B2eq, *p, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*p, *bA2B2eq, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*bA2B2eq, *p, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*p, *bA2B2eq, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1439,56 +1439,56 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_packed_point)
     pp2.SetPacked_pnt().AddPoint(10);
 
     // No overlap for different bioseqs
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eNoOverlap);
     pp1.SetPacked_pnt().AddPoint(20);
     pp2.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp2.SetPacked_pnt().SetPoints().front() = 5;
     pp2.SetPacked_pnt().AddPoint(15);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eNoOverlap);
     pp1.SetPacked_pnt().AddPoint(30);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eNoOverlap);
 
     // Same
     pp2.Assign(pp1);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eSame);
 
     // Overlap
     pp2.SetPacked_pnt().SetPoints().clear();
     pp2.SetPacked_pnt().AddPoint(5);
     pp2.SetPacked_pnt().AddPoint(10);
     pp2.SetPacked_pnt().AddPoint(15);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eOverlap);
 
     // Contained/contains
     pp1.SetPacked_pnt().AddPoint(40); // 10, 20, 30, 40
     pp2.SetPacked_pnt().SetPoints().clear();
     pp2.SetPacked_pnt().AddPoint(20); // 20
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
     pp2.SetPacked_pnt().AddPoint(30); // 20, 30
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
     // Wrong order of points should still work
     pp2.SetPacked_pnt().AddPoint(10); // 20, 30, 10
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
     // Duplicate points - same result
     pp2.SetPacked_pnt().AddPoint(20); // 20, 30, 10, 20
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
 
     // Special case - due to duplicate points both sets contain each other
     // but are not equal
     pp2.SetPacked_pnt().AddPoint(40); // 20, 30, 10, 20, 40
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContains);
 
     // Now they just overlap
     pp1.SetPacked_pnt().AddPoint(45);
     pp2.SetPacked_pnt().AddPoint(5);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eOverlap);
 }
 
 
@@ -1505,14 +1505,14 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_mix)
 
     // Each point is contained in a separate sub-location.
     mix.SetMix().Set().push_back(MakeInterval(2, 30, 70));
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eNoOverlap);
     pp.SetPacked_pnt().AddPoint(50);
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eOverlap);
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, pp, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1526,97 +1526,97 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_bond)
 
     CRef<CSeq_loc> b = MakeBond(3, 10);
     // No overlap
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eNoOverlap);
     b = MakeBond(2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eNoOverlap);
 
     b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eSame);
     b = MakeBond(2, 10, 3, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
     b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
     b = MakeBond(3, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
     b = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
 
     pp.SetPacked_pnt().AddPoint(20);
     b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eSame);
     // The order of points does not matter.
     b = MakeBond(2, 20, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eSame);
     b = MakeBond(2, 10, 3, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
     b = MakeBond(3, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
     b = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 20, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 10, 2, 40);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
 
     pp.SetPacked_pnt().AddPoint(30);
     b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 10, 2, 30);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 30, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 10, 3, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
     b = MakeBond(3, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
     b = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 10, 2, 40);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
 
     pp.SetPacked_pnt().SetPoints().clear();
     pp.SetPacked_pnt().AddPoint(10);
     pp.SetPacked_pnt().AddPoint(20);
     pp.SetPacked_pnt().AddPoint(20);
     b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
     b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
     b = MakeBond(2, 10, 2, 30);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
     b = MakeBond(2, 30, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
     b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
     b = MakeBond(2, 20, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1630,11 +1630,11 @@ BOOST_AUTO_TEST_CASE(Test_Compare_mix_vs_mix)
     mix1.SetMix().Set().push_back(MakeInterval(2, 50, 60));
     mix2.SetMix().Set().push_back(MakeInterval(2, 30, 40));
     mix2.SetMix().Set().push_back(MakeInterval(2, 70, 80));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eNoOverlap);
     mix1.SetMix().Set().push_back(MakeInterval(3, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eNoOverlap);
     mix2.SetMix().Set().push_front(MakeInterval(3, 20, 35));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eOverlap);
 
     mix1.SetMix().Set().clear();
     mix1.SetMix().Set().push_back(MakeInterval(2, 10, 30));
@@ -1642,28 +1642,28 @@ BOOST_AUTO_TEST_CASE(Test_Compare_mix_vs_mix)
     mix2.SetMix().Set().clear();
     mix2.SetMix().Set().push_back(MakeInterval(2, 60, 65));
     mix2.SetMix().Set().push_back(MakeInterval(2, 20, 25));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContained);
 
     mix2.SetMix().Set().push_back(MakeInterval(2, 50, 70));
     mix2.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContains);
 
     // Empty should not change anything (?)
     CRef<CSeq_loc> sub(new CSeq_loc);
     sub->SetEmpty().SetGi(GI_FROM(TIntId, 2));
     mix2.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContains);
 
     mix2.SetMix().Set().push_back(MakePoint(3, 100));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContains);
 
     mix1.SetMix().Set().push_back(MakePoint(2, 110));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eOverlap);
 }
 
 
@@ -1677,45 +1677,45 @@ BOOST_AUTO_TEST_CASE(Test_Compare_mix_vs_bond)
 
     // Each point is contained in a separate sub-location.
     mix.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eNoOverlap);
     mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eNoOverlap);
     mix.SetMix().Set().push_back(MakeInterval(2, 40, 60));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContains);
 
     b = MakeBond(2, 20, 3, 40);
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eOverlap);
 
     mix.SetMix().Set().push_back(MakeInterval(3, 30, 50));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContains);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakePoint(2, 20));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContained);
 
     mix.SetMix().Set().push_back(MakePoint(3, 40));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
     mix.SetMix().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
 
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 20, 20));
     mix.SetMix().Set().push_back(MakeInterval(3, 40, 40));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
     mix.SetMix().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
     mix.SetMix().Set().push_back(MakeInterval(3, 40, 40));
     mix.SetMix().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContains);
 }
 
 
@@ -1725,60 +1725,60 @@ BOOST_AUTO_TEST_CASE(Test_Compare_bond_vs_bond)
 
     CRef<CSeq_loc> b1 = MakeBond(2, 10);
     CRef<CSeq_loc> b2 = MakeBond(3, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eNoOverlap);
 
     b2 = MakeBond(2, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eNoOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eNoOverlap);
 
     b2 = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
 
     b2 = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContains);
     b1 = MakeBond(2, 10, 3, 25);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eOverlap);
     b1 = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
 
     b2 = MakeBond(2, 15, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eOverlap);
     b2 = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
     // The order or ranges is not important
     b2 = MakeBond(3, 20, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
 
     b1 = MakeBond(2, 10, 2, 10);
     b2 = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
 
     b1 = MakeBond(2, 10, 3, 20);
     b2 = MakeBond(3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContained);
     b2 = MakeBond(3, 20, 2, 15);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eOverlap);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eOverlap);
 
     b1 = MakeBond(2, 10, 2, 10);
     b2 = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContains);
     b2 = MakeBond(2, 10, 3, 15);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContains);
 
     b1 = MakeBond(2, 15, 3, 20);
     b2 = MakeBond(3, 20, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope), eContained);
+    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContains);
+    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContained);
 }
 
 

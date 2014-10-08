@@ -1230,7 +1230,9 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
         if (jt != gene_feat.end()) {
           sequence::ECompare
               ovp = sequence::Compare( (*it)->GetLocation(), 
-                                       (*jt)->GetLocation(), thisInfo.scope);
+                                       (*jt)->GetLocation(),
+                                       thisInfo.scope,
+                                       sequence::fCompareOverlapping);
           if (ovp == sequence::eSame
                    && (*it)->GetLocation().GetStrand() 
                               != (*jt)->GetLocation().GetStrand()) {
@@ -2240,7 +2242,9 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
         if (feat_left > src_right) break;
       }
       sequence::ECompare ovp = sequence::Compare((*jt)->GetLocation(), 
-                                         (*it)->GetLocation(), thisInfo.scope);
+                                         (*it)->GetLocation(),
+                                         thisInfo.scope,
+                                         sequence::fCompareOverlapping);
       if (ovp != sequence::eNoOverlap 
               && ovp != sequence::eContained 
               && ovp != sequence::eSame) {
@@ -2302,7 +2306,9 @@ void CBioseq_CDS_TRNA_OVERLAP :: TestOnObj(const CBioseq& bioseq)
        trna_str = (*jt)->GetLocation().GetStrand();
        sequence::ECompare 
          ovlp = sequence::Compare((*it)->GetLocation(), 
-                                  (*jt)->GetLocation(), thisInfo.scope);
+                                  (*jt)->GetLocation(),
+                                  thisInfo.scope,
+                                  sequence::fCompareOverlapping);
        if ( ((cd_str == eNa_strand_minus && trna_str == eNa_strand_minus )
                   || (cd_str !=eNa_strand_minus && trna_str !=eNa_strand_minus))
              && ovlp != sequence::eNoOverlap) {
@@ -2635,7 +2641,8 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
            if (right2 < left1) continue;
         }
         sequence::ECompare 
-            loc_cmp = sequence::Compare(loc1, loc2, thisInfo.scope);
+            loc_cmp = sequence::Compare(loc1, loc2,
+            thisInfo.scope, sequence::fCompareOverlapping);
         if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContained 
                                        || loc_cmp == sequence::eContains) {
           desc2 = GetDiscItemText(*cd_feat[j]);
@@ -4024,7 +4031,8 @@ void CBioseqTestAndRepData :: TestOverlapping_ed_Feats(const vector <const CSeq_
 
            if (isGene && loc_i.GetStrand() != loc_j.GetStrand()) continue;
            sequence::ECompare 
-                 ovlp = sequence::Compare(loc_i, loc_j, thisInfo.scope);
+                 ovlp = sequence::Compare(loc_i, loc_j, thisInfo.scope,
+                 sequence::fCompareOverlapping);
            if (isOverlapped) {
                if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
                   thisInfo.test_item_list[setting_name]
@@ -4322,7 +4330,8 @@ bool CBioseq_DISC_BAD_GENE_STRAND :: x_AreIntervalStrandsOk(const CSeq_loc& g_lo
         sequence::ECompare 
             ovlp = sequence::Compare(f_loc_it.GetEmbeddingSeq_loc(), 
                                      g_loc_it.GetEmbeddingSeq_loc(), 
-                                     thisInfo.scope);
+                                     thisInfo.scope,
+                                     sequence::fCompareOverlapping);
         if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
           found_match = true;
           feat_strand = f_loc_it.GetStrand();
@@ -7466,7 +7475,8 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
     ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
       const CSeq_loc& loc_j = (*jt)->GetLocation();
       sequence::ECompare 
-          ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope);
+          ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope,
+          sequence::fCompareOverlapping);
       subcat_tp = kEmptyStr;
       switch (ovlp_com) {
         case sequence::eSame: subcat_tp = "extrc"; break;
@@ -7687,7 +7697,8 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
            continue;
       }
       if ( sequence::eNoOverlap 
-                    != sequence::Compare(loc_i, loc_j, thisInfo.scope)) {
+                    != sequence::Compare(loc_i, loc_j, thisInfo.scope,
+                    sequence::fCompareOverlapping)) {
           if ( !added[i] && HasNoSuppressionWords(*it)) {
                AddToDiscRep(*it);
                added[i] = true;

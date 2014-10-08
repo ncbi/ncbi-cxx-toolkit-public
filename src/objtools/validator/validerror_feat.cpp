@@ -1623,7 +1623,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
     FOR_EACH_CODEBREAK_ON_CDREGION (it, cds) {
         const CCode_break& cbr = **it;
         const CSeq_loc& cbr_loc = cbr.GetLoc();
-        ECompare comp = Compare(cbr_loc, feat_loc, m_Scope);
+        ECompare comp = Compare(cbr_loc, feat_loc, m_Scope, fCompareOverlapping);
         if ( ((comp != eContained) && (comp != eSame)) || cbr_loc.IsNull() || cbr_loc.IsEmpty()) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                 "Code-break location not in coding region", feat);
@@ -1640,7 +1640,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
             }
         }
         if ( prev_cbr != 0 ) {
-            if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope) == eSame ) {
+            if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope, fCompareOverlapping) == eSame ) {
                 string msg = "Multiple code-breaks at same location ";
                 string str = GetValidatorLocationLabel (cbr_loc, *m_Scope);
                 if ( !str.empty() ) {
@@ -3413,7 +3413,8 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
             ECompare comp = sequence::Compare(anticodon,
                                               feat.GetLocation(),
-                                              m_Scope);
+                                              m_Scope,
+                                              sequence::fCompareOverlapping);
             if ( comp != eContained  &&  comp != eSame ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_Range,
                     "Anticodon location not in tRNA", feat);
@@ -6502,7 +6503,8 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                                 || FeaturePairIsTwoTypes(feat, ff,
                                                       CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion)) {
                                 if (feat.GetData().IsCdregion() && far_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-                                    ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(), m_Scope);
+                                    ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(),
+                                        m_Scope, fCompareOverlapping);
                                     if ( (comp != eContained) && (comp != eSame)) {
                                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
                                                  "CDS not contained within cross-referenced mRNA", feat);
@@ -7522,7 +7524,8 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
             continue;
         }
         // if the code break is outside the coding region, skip
-        ECompare comp = Compare((*cbr)->GetLoc(), feat.GetLocation(), m_Scope);
+        ECompare comp = Compare((*cbr)->GetLoc(), feat.GetLocation(),
+            m_Scope, fCompareOverlapping);
         if ( (comp != eContained) && (comp != eSame)) {
             continue;
         }
@@ -7701,12 +7704,12 @@ static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc&
             return false;
     }
     if (strand1 == eNa_strand_other) {
-        ECompare comp = Compare(loc1, loc2, scope);
+        ECompare comp = Compare(loc1, loc2, scope, fCompareOverlapping);
         if (comp == eContains) {
             return false;
         }
     } else if (strand2 == eNa_strand_other) {
-        ECompare comp = Compare(loc1, loc2, scope);
+        ECompare comp = Compare(loc1, loc2, scope, fCompareOverlapping);
         if (comp == eContained) {
             return false;
         }
@@ -7868,7 +7871,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 if (features_with_label.size() > 0) {
                     // ignore if gene xref is necessary because of strandedness
                     vector < CConstRef <CSeq_feat> >::iterator f1 = features_with_label.begin();
-                    if (Compare (feat.GetLocation(), (*f1)->GetLocation(), m_Scope) == eContained) {
+                    if (Compare (feat.GetLocation(), (*f1)->GetLocation(),
+                        m_Scope, fCompareOverlapping) == eContained) {
                         ENa_strand strand1 = eNa_strand_unknown;
                         ENa_strand strand2 = eNa_strand_unknown;
                         if ((*f1)->IsSetLocation() && (*f1)->GetLocation().IsSetStrand()) {

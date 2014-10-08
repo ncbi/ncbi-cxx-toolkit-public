@@ -187,6 +187,8 @@ enum ECompare {
 /// Returns the sequence::ECompare containment relationship between CSeq_locs.
 /// For backward compatibility the function does not check for abutting
 /// seq-locs and never returns eAbutting or eAbutAndOverlap.
+/// @deprecated Use the new Compare() taking the additional TCompareFlags arg.
+NCBI_DEPRECATED
 NCBI_XOBJUTIL_EXPORT
 sequence::ECompare Compare(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,

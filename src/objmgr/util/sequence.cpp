@@ -792,7 +792,8 @@ public:
         const CSeq_loc &loc2 = gene2.second->GetLocation();
 
          // If genes are at identical positions, we fall back on the label
-         if( sequence::Compare( loc1, loc2, scope ) == sequence::eSame ) {
+         if( sequence::Compare(loc1, loc2, scope, sequence::fCompareOverlapping ) ==
+             sequence::eSame) {
             if( gene1.second->IsSetData() && gene1.second->GetData().IsGene() && 
                 gene2.second->IsSetData() && gene2.second->GetData().IsGene() ) 
             {
@@ -1817,7 +1818,8 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
              ECompare comp = sequence::Compare(gene_feat.GetLocation(),
                                                feat_it->GetLocation(),
-                                               &scope);
+                                               &scope,
+                                               sequence::fCompareOverlapping);
              if (comp != eSame  &&  comp != eContains) {
                  continue;
              }
@@ -1863,7 +1865,8 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
                 ECompare comp = sequence::Compare(gene_feat.GetLocation(),
                                                 feat_it->GetLocation(),
-                                                &scope);
+                                                &scope,
+                                                sequence::fCompareOverlapping);
                 if (comp != eSame  &&  comp != eContains) {
                     continue;
                 }

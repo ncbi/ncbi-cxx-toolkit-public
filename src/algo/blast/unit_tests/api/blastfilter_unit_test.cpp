@@ -722,7 +722,8 @@ BOOST_AUTO_TEST_CASE(RepeatsAndDustFilter) {
     Blast_FindRepeatFilterLoc(query_v2, &nucl_handle);
     Blast_FindDustFilterLoc(query_v2, &nucl_handle);
 
-    BOOST_REQUIRE_EQUAL(sequence::Compare(*(query_v1[0].mask), *(query_v2[0].mask), qsl1->scope), sequence::eSame); 
+    BOOST_REQUIRE_EQUAL(sequence::Compare(*(query_v1[0].mask), *(query_v2[0].mask),
+        qsl1->scope, sequence::fCompareOverlapping), sequence::eSame); 
 }
 
 BOOST_AUTO_TEST_CASE(WindowMaskerAndDustFilter) {
@@ -748,7 +749,8 @@ BOOST_AUTO_TEST_CASE(WindowMaskerAndDustFilter) {
     Blast_FindWindowMaskerLoc(query_v2, &nucl_handle);
     Blast_FindDustFilterLoc(query_v2, &nucl_handle);
 
-    BOOST_REQUIRE_EQUAL(sequence::Compare(*(query_v1[0].mask), *(query_v2[0].mask), qsl1->scope), sequence::eSame); 
+    BOOST_REQUIRE_EQUAL(sequence::Compare(*(query_v1[0].mask), *(query_v2[0].mask),
+        qsl1->scope, sequence::fCompareOverlapping), sequence::eSame); 
 }
 
 BOOST_AUTO_TEST_CASE(WindowMasker_OnSeqInterval)

@@ -3740,7 +3740,8 @@ void CSuspectRuleCheck :: ListFeaturesInLocation (const CSeq_loc& seq_loc, CSeqF
      const CSeq_loc& feat_loc = feat.GetLocation();
      if (feat_loc.GetStart(eExtreme_Positional) > loc_right) break;
      if (feat_loc.GetStop(eExtreme_Positional) < loc_left) continue;
-     sequence::ECompare loc_comp = Compare(feat_loc, seq_loc, thisInfo.scope);
+     sequence::ECompare loc_comp = Compare(feat_loc, seq_loc,
+         thisInfo.scope, sequence::fCompareOverlapping);
      if (loc_comp == sequence::eContained) feat_list.push_back(&feat);
   }
 };

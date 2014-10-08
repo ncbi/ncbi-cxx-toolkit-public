@@ -113,8 +113,8 @@ int CRelLocTester::Run(void)
         SRelLoc rl(*parent, child, &scope);
         if (rl.m_Ranges.empty()) {
             cout << "nothing" << endl;
-            _ASSERT(sequence::Compare(*parent, child, &scope) ==
-                    sequence::eNoOverlap);
+            _ASSERT(sequence::Compare(*parent, child, &scope,
+                sequence::fCompareOverlapping) == sequence::eNoOverlap);
         } else {
             string sep;
             ITERATE (SRelLoc::TRanges, r, rl.m_Ranges) {

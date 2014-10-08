@@ -1771,7 +1771,8 @@ IsDuplicate
     if (feat1_subtype == feat2_subtype) {
         // if same location and strand
         if (s_IsSameStrand(feat1_loc, feat2_loc, scope)  &&
-            sequence::Compare(feat1_loc, feat2_loc, &scope) == sequence::eSame) {
+            sequence::Compare(feat1_loc, feat2_loc, &scope,
+            sequence::fCompareOverlapping) == sequence::eSame) {
 
             // same annot?
             bool diff_annot_desc = false;

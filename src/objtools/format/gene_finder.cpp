@@ -201,7 +201,7 @@ fGeneSearchLocOpt_RemoveFar :
             sequence::ECompare piece_comparison = sequence::Compare(
                 *candidate_feat_loc_iter.GetRangeAsSeq_loc(),
                 *cleaned_loc_this_iteration,
-                &*m_Scope );
+                &*m_Scope, sequence::fCompareOverlapping);
             if( piece_comparison != sequence::eNoOverlap ) 
             {
                 if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_loc_iter.GetStrand() ) ) {
@@ -379,7 +379,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
             bool ownGeneIsOkay = false;
             if( out_s_feat ) {
                 const CSeq_loc &gene_loc = out_s_feat->GetLocation();
-                if( sequence::Compare(gene_loc, *feat_loc, &ctx.GetScope()) == sequence::eSame ) {
+                if( sequence::Compare(gene_loc, *feat_loc, &ctx.GetScope(), sequence::fCompareOverlapping) == sequence::eSame ) {
                     ownGeneIsOkay = true;
                 }
             }

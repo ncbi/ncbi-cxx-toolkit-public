@@ -918,7 +918,7 @@ bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope)
     // start at 0 and end at the end of the Bioseq.
     CRef<CSeq_loc> whole_loc = MakeFullLengthLocation (cf.GetLocation(), scope);
 
-    if (sequence::Compare(*whole_loc, cf.GetLocation(), scope) == sequence::eSame) {
+    if (sequence::Compare(*whole_loc, cf.GetLocation(), scope, sequence::fCompareOverlapping) == sequence::eSame) {
         return true;
     } else {
         return false;

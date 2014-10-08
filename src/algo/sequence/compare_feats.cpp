@@ -244,8 +244,9 @@ CCompareSeq_locs::FCompareLocs CCompareSeq_locs::x_CompareInts(const CSeq_loc& l
     bool is5p_match = loc1.GetStart(eExtreme_Biological) == loc2.GetStart(eExtreme_Biological);
     bool is3p_match = loc1.GetStop(eExtreme_Biological) == loc2.GetStop(eExtreme_Biological);
 
-    sequence::ECompare cmp = sequence::Compare(loc1, loc2, m_scope_t); //we are comparing mapped query loc vs
-                                                                       //the target, hence the target scope
+    sequence::ECompare cmp = sequence::Compare(loc1, loc2,
+        m_scope_t, sequence::fCompareOverlapping); //we are comparing mapped query loc vs
+                                                   //the target, hence the target scope
     
     switch(cmp) {
         case sequence::eSame:       return fCmp_Match;
@@ -603,7 +604,8 @@ CCompareSeq_locs::TCompareLocsFlags CCompareSeq_locs::GetResult(string* str_resu
     }
     
     if(!result_flags) {
-        sequence::ECompare cmp = sequence::Compare(*m_loc1, *m_loc2, m_scope_t); 
+        sequence::ECompare cmp = sequence::Compare(*m_loc1, *m_loc2,
+            m_scope_t, sequence::fCompareOverlapping); 
     
         switch(cmp) {
             case sequence::eSame:       
@@ -755,7 +757,8 @@ bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComp
         
         
         if(!group_loc_q->IsNull() 
-           && sequence::Compare(*group_loc_q, feat1->GetLocation(), m_scope_q) == sequence::eNoOverlap) 
+           && sequence::Compare(*group_loc_q, feat1->GetLocation(),
+           m_scope_q, sequence::fCompareOverlapping) == sequence::eNoOverlap) 
         { 
             //the feature on query does not overlap anything in the current overlap group:
             //We might think that we've reached the next group; however, we want to keep
@@ -763,7 +766,8 @@ bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComp
             //group to avoid the ambiguity in selecting best matches. Hence we also require
             //the same on the target side:
             
-            if(group_loc_t->IsNull() || sequence::Compare(*group_loc_t, aggregate_match_loc_t, m_scope_t) == sequence::eNoOverlap) {
+            if(group_loc_t->IsNull() || sequence::Compare(*group_loc_t, aggregate_match_loc_t,
+                m_scope_t, sequence::fCompareOverlapping) == sequence::eNoOverlap) {
                 break;    
             }  
         }

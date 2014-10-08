@@ -1947,7 +1947,7 @@ bool Contains(const CSeq_loc& a, const CSeq_loc& b, CScope* scope)
     b1->Assign(b);
     b1->ResetStrand();
 
-    return sequence::Compare(*a1, *b1, scope) == sequence::eContains;
+    return sequence::Compare(*a1, *b1, scope, sequence::fCompareOverlapping) == sequence::eContains;
 }
 
 CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVariantPlacement::TMol mol)

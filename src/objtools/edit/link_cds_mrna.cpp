@@ -164,16 +164,15 @@ void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
                 // is this the best?
                 // TODO: add choosing of the best mRNA*CDS combinations 
                 // instead of getting the first one
-                sequence::ECompare located = sequence::Compare(mrna->GetLocation(), cds->GetLocation(), 0);
+                sequence::ECompare located = sequence::Compare(mrna->GetLocation(),
+                    cds->GetLocation(), 0, sequence::fCompareOverlapping);
                 switch (located)
                 {
                 case sequence::eContains:      ///< First CSeq_loc contains second
                 case sequence::eSame:          ///< CSeq_locs contain each other
                     best_fit = current;
                     break;
-                case sequence::eContained:     ///< First CSeq_loc contained by second
-                case sequence::eNoOverlap:     ///< CSeq_locs do not overlap
-                case sequence::eOverlap:       ///< CSeq_locs overlap
+                default:
                     break;
                 }          
 
