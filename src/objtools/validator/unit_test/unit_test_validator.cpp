@@ -8405,38 +8405,54 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
     ids.push_back("NC_123456");
 
     ITERATE(vector<string>, id_it, ids) {
+        EDiagSev sev = eDiag_Warning;
+        EDiagSev sev2 = eDiag_Warning;
         scope.RemoveTopLevelSeqEntry(seh);
         if (NStr::StartsWith(*id_it, "NC_")) {
             entry->SetSeq().SetId().front()->SetOther().SetAccession(*id_it);
         } else {
             entry->SetSeq().SetId().front()->SetLocal().SetStr(*id_it);
+            sev = eDiag_Critical;
+            sev2 = eDiag_Error;
         }
         seh = scope.AddTopLevelSeqEntry(*entry);
 
         submit->SetSub().SetCit().SetAuthors().ResetAffil();
         submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
         submit->SetSub().ResetContact();
-        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
                                   "Submission citation affiliation has no country"));
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
+                                  "Submission citation affiliation has no institution"));
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
 
         submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetCountry("USA");
         expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
 
         submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetSub("VA");
         submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetAffil("some affiliation");
-        expected_errors[0]->SetAccession("");
-        expected_errors[0]->SetErrMsg("Submission citation affiliation has no country");
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
+                                  "Submission citation affiliation has no institution"));
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
+                                  "Submission citation affiliation has no country"));
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
+                                  "Submission citation affiliation has no institution"));
+        expected_errors[1]->SetAccession("");
+        expected_errors[2]->SetAccession("");
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
 
         submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetCountry("USA");
-        expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        expected_errors[1]->SetErrMsg("Submission citation affiliation has no state");
+        expected_errors[1]->SetSeverity(eDiag_Warning);
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
 
         scope.RemoveTopLevelSeqEntry(seh);
         CRef<CPub> pub(new CPub());
@@ -8452,32 +8468,34 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
 
         seh = scope.AddTopLevelSeqEntry(*entry);
 
-        expected_errors[0]->SetErrMsg("Submission citation affiliation has no country");
-        expected_errors[0]->SetAccession(*id_it);
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
+                                  "Submission citation affiliation has no country"));
+        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
+                                  "Submission citation affiliation has no institution"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
         pub->SetSub().SetAuthors().SetAffil().SetStd().SetCountry("USA");
         expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
         pub->SetSub().SetAuthors().SetAffil().SetStd().SetSub("VA");
         pub->SetSub().SetAuthors().SetNames().SetStd().pop_back();
 
-        expected_errors[0]->SetSeverity(eDiag_Error);
-        expected_errors[0]->SetErrMsg("Submission citation has no author names");
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no institution");
+        expected_errors[1]->SetErrMsg("Submission citation has no author names");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
 
         pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetCountry();
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetSub();
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetAffil();
-        expected_errors[0]->SetErrMsg("Submission citation has no affiliation");
-        if (NStr::StartsWith(*id_it, "NC_")) {
-            expected_errors[0]->SetSeverity(eDiag_Warning);
-        }
+        expected_errors.push_back(new CExpectedError(*id_it, sev2, "MissingPubInfo",
+                                  "Submission citation has no affiliation"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         
