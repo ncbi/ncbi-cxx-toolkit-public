@@ -43,7 +43,8 @@
 
 #ifdef NCBI_COMPILER_MSVC
 #  define isfinite _finite
-#elif defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(__builtin_isfinite)
+#elif defined(NCBI_OS_SOLARIS)  &&  !defined(__builtin_isfinite)  \
+    &&  (!defined(__GNUC__) || (__GNUC__ == 4 && __GNUC_MINOR < 5))
 #  undef isfinite
 #  define isfinite finite
 #endif
