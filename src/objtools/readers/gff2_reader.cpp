@@ -187,6 +187,17 @@ CGff2Reader::ReadSeqAnnotsNew(
     string line;
     //int linecount = 0;
     while (xGetLine(lr, line)) {
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pEC);
+            annots.clear();
+            return;
+        }
         xReportProgress(pEC);
 
         try {
