@@ -561,6 +561,48 @@ BOOST_AUTO_TEST_CASE(FetchSeq4sx)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeq4sd)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CCSRADataLoader::SLoaderParams params;
+    string csra_name, id;
+
+    {
+        string path = NCBI_TRACES01_PATH "/compress/1KG/CEU/NA12249";
+        string file;
+        CDirEntry::SplitPath(sx_GetPath(path), &params.m_DirPath, &file);
+        csra_name = CDirEntry::MakePath(file, "exome.ILLUMINA.MOSAIK.csra");
+        id = CDirEntry::MakePath(file, "exome.ILLUMINA.MOSAIK");
+        replace(id.begin(), id.end(), '/', '\\');
+        id = "gnl|SRA|"+id+".6.1";
+    }
+    params.m_CSRAFiles.push_back(csra_name);
+    params.m_PathInId = false;
+    params.m_QualityGraphs = true;
+
+    CStopWatch sw(CStopWatch::eStart);
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, params,
+                                                 CObjectManager::eDefault, 88)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+
+    for ( int t = 0; t < 2; ++t ) {
+        CScope scope(*om);
+        scope.AddDefaults();
+
+        CRef<CSeq_id> seqid(new CSeq_id(id));
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+        CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+        BOOST_REQUIRE(bh);
+        BOOST_CHECK_EQUAL(bh.GetBioseqLength(), 97u);
+        CGraph_CI git(bh);
+        BOOST_CHECK_EQUAL(git.GetSize(), 1u);
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(FetchSeq4s)
 {
     CRef<CObjectManager> om = sx_GetOM();
