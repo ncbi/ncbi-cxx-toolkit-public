@@ -1004,7 +1004,7 @@ inline bool s_ITERATE_SameObject(const Type& obj1, const Type& obj2)
 #endif
 
 // *ITERATE helper macro to declare iterator variable
-#if false && defined(NCBI_HAVE_CXX11)
+#if 0 && defined(NCBI_HAVE_CXX11)
 # define ITERATE_VAR(Type) auto
 #else
 # define ITERATE_VAR(Type) Type
