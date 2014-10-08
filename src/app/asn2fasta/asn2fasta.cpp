@@ -312,7 +312,7 @@ int CAsn2FastaApp::Run(void)
                    "Could not create object manager");
     }
     CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-    CWGSDataLoader::RegisterInObjectManager(*m_Objmgr, CObjectManager::eDefault);
+    CWGSDataLoader::RegisterInObjectManager(*m_Objmgr, CObjectManager::eDefault, 88);
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
