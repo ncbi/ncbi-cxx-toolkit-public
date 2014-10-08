@@ -477,7 +477,7 @@ s_ImportDatabase(const CBlast4_subject& subj,
 
     if (opts_builder.HaveGiList()) {
         CSeqDBGiList *gilist = new CSeqDBGiList();
-        ITERATE(list<int>, gi, opts_builder.GetGiList()) {
+        ITERATE(list<TGi>, gi, opts_builder.GetGiList()) {
             gilist->AddGi(*gi);
         }
         search_db->SetGiList(gilist);
