@@ -61,7 +61,6 @@ public:
 private:
     CDDSplashDialog **handle;
     StructureWindow *structureWindow;
-    StructureSet *sSet;
 
     // event callbacks
     void OnCloseWindow(wxCloseEvent& event);

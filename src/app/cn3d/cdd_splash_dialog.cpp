@@ -107,7 +107,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     StructureSet *structureSet, CDDSplashDialog **parentHandle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
-        handle(parentHandle), structureWindow(cn3dFrame), sSet(structureSet)
+        handle(parentHandle), structureWindow(cn3dFrame)
 {
     if (!structureSet) {
         Destroy();

@@ -72,7 +72,6 @@ public:
     bool ReplaceAlignment(const BlockMultipleAlignment *origAln, BlockMultipleAlignment *newAln);
 
     // functions to save edited data
-    void SaveDialog(void);
     void SaveAlignment(void);
 
     // export current alignment

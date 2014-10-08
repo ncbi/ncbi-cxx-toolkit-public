@@ -355,7 +355,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
             const Sequence *sequence = sSet->FindOrCreateSequence(se->SetSeq());
             if (sequence)
                  newSequences->push_back(sequence);
-        } else if (se->IsSet() && se->GetSet().GetSeq_set().size() >= 0)  {
+        } else if (se->IsSet() && se->GetSet().GetSeq_set().size() > 0)  {
             CBioseq_set::TSeq_set::iterator b, be = se->SetSet().SetSeq_set().end();
             for (b=se->SetSet().SetSeq_set().begin(); b!=be; ++b) {
                 if (!(*b)->IsSeq()) {

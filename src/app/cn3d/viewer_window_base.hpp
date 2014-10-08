@@ -223,7 +223,7 @@ public:
     BlockMultipleAlignment::eUnalignedJustification GetCurrentJustification(void) const
         { return currentJustification; }
 
-    void Refresh(void) { viewerWidget->Refresh(false); }
+    void RefreshWidget(void) { viewerWidget->Refresh(false); }
     void KillWindow(void)
     {
         viewer = NULL;
@@ -243,7 +243,7 @@ public:
     bool SelectBlocksIsOn(void) const { return (viewerWidget->GetMouseMode() == SequenceViewerWidget::eSelectBlocks); }
 
     void SyncStructures(void) { ProcessCommand(MID_SYNC_STRUCS); }
-    bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
+    bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }  
 };
 
 END_SCOPE(Cn3D)

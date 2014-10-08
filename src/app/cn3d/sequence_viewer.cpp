@@ -346,7 +346,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     sequence->identifier->pdbID != "consensus") {
                     uids[row] = sequence->identifier->pdbID;
                     if (sequence->identifier->pdbChain != ' ')
-                        uids[row] += "_"  + (char) sequence->identifier->pdbChain;
+                        uids[row] += string("_")  + (char) sequence->identifier->pdbChain;
                 }
             } else {
                 uids[row] = sequence->identifier->GetLabel();

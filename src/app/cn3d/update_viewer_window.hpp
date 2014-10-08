@@ -208,7 +208,6 @@ public:
     bool GetValues(ThreaderOptions *options);
 
 private:
-    wxStaticBox *box;
     wxButton *bOK, *bCancel;
     ncbi::FloatingPointSpinCtrl *fpWeight, *fpLoops;
     ncbi::IntegerSpinCtrl *iStarts, *iResults, *iCutoff;

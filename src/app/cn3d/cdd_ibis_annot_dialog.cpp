@@ -1388,7 +1388,6 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
 
     if (selectedVecIndex >= 0 && (ibisIndexWithOverlap.find(selectedVecIndex) != ibisIndexEnd)) {
 
-        CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
         for (olapIt = overlapMap.begin(); olapIt != olapEnd; ++olapIt) {
             nOverlaps = olapIt->second.overlaps[selectedVecIndex].size();
             nRes = olapIt->second.nRes;

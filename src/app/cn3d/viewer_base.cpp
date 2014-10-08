@@ -293,7 +293,7 @@ void ViewerBase::SaveDialog(bool prompt)
 
 void ViewerBase::Refresh(void)
 {
-    if (*viewerWindow) (*viewerWindow)->Refresh();
+    if (*viewerWindow) (*viewerWindow)->RefreshWidget();
 }
 
 void ViewerBase::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)

@@ -158,6 +158,7 @@ static inline bool IsLocalID(const CSeq_id& sid, int localID)
         (sid.GetLocal().IsId() && sid.GetLocal().GetId() == localID)));
 }
 
+/*
 static inline bool GetLocalID(const CSeq_id& sid, int *localID)
 {
     *localID = kMin_Int;
@@ -172,6 +173,7 @@ static inline bool GetLocalID(const CSeq_id& sid, int *localID)
     }
     return true;
 }
+*/
 
 static inline bool SeqIdMatchesMaster(const CSeq_id& sid, bool usePSSM)
 {

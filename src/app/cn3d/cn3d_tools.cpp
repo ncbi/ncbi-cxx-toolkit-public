@@ -45,7 +45,7 @@
 // Under OSX 10.6 and earlier, /Developer was a root-level directory.  With 10.8, it is buried under XCode's tools.
 //#include "/Developer/Headers/FlatCarbon/Types.h"
 //#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
-#include "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/Developer/Headers/FlatCarbon/InternetConfig.h"
+#include "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/Headers/InternetConfig.h"
 #endif
 
 #include <corelib/ncbistd.hpp>
