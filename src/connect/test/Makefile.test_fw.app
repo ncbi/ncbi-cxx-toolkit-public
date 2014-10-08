@@ -6,4 +6,4 @@ LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
-WATCHERS = lar
+WATCHERS = lavr
