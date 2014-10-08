@@ -2949,6 +2949,10 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     CNcbiApplication* app = CNcbiApplication::Instance();
 
     string config_logfile = s_GetLogConfigString("FILE", kEmptyStr, config);
+    if ( config_logfile.empty() ) {
+        // Try the old-style name
+        config_logfile = s_GetLogConfigString("File", kEmptyStr, config);
+    }
     bool cmdline_first = s_GetLogConfigBool("IgnoreEnvArg", true, config);
     bool applog_first = s_GetLogConfigBool("TryRootLogFirst", false, config);
 
