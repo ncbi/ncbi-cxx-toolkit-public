@@ -548,7 +548,7 @@ bool CGene::IsAlternative(const CChain& a) const
             }
         }
 
-        if(has_common_cds || (has_common_splice && !gene_has_trusted && !a.HasTrustedEvidence()))
+        if(has_common_cds || (has_common_splice && (!gene_has_trusted || !a.HasTrustedEvidence()))) // separate trusted genes with similar splices if they don't have common cds
             return true;
         else
             return false;
