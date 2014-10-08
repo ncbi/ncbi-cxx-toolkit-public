@@ -487,7 +487,7 @@ public:
     void AddSpotId(string& short_id, const CBamAlignIterator* iter) {
         string seq = iter->GetShortSequence();
         if ( iter->IsSetStrand() && IsReverse(iter->GetStrand()) ) {
-            CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, seq.size());
+            CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, TSeqPos(seq.size()));
         }
         SShortSeqInfo& info = m_ShortSeqs[short_id];
         if ( info.spot1.empty() ) {
@@ -984,7 +984,7 @@ void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
     }
     load_lock->SetSeq_entry(*entry);
     CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
-    size_t chunk_count = m_Chunks.size();
+    int chunk_count = int(m_Chunks.size());
     bool has_pileup = GetPileupGraphsParam();
     CAnnotName name, pileup_name;
     if ( !m_File->GetAnnotName().empty() ) {
@@ -996,7 +996,7 @@ void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
     }
 
     // create chunk info for alignments
-    for ( size_t range_id = 0; range_id < chunk_count; ++range_id ) {
+    for ( int range_id = 0; range_id < chunk_count; ++range_id ) {
         CRef<CTSE_Chunk_Info> chunk;
         int base_id = range_id*kChunkIdMul;
         chunk = new CTSE_Chunk_Info(base_id+eChunk_align);
@@ -1067,7 +1067,7 @@ void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
     LoadRanges();
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
-    size_t chunk_count = m_Chunks.size();
+    int chunk_count = int(m_Chunks.size());
     bool has_pileup = GetPileupGraphsParam();
     CAnnotName name, pileup_name;
     if ( !m_File->GetAnnotName().empty() ) {
@@ -1086,7 +1086,7 @@ void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
     }
 
     // create chunk info for alignments
-    for ( size_t range_id = 0; range_id < chunk_count; ++range_id ) {
+    for ( int range_id = 0; range_id < chunk_count; ++range_id ) {
         CRef<CTSE_Chunk_Info> chunk;
         int base_id = range_id*kChunkIdMul;
         chunk = new CTSE_Chunk_Info(base_id+eChunk_align);
