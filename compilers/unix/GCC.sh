@@ -18,6 +18,7 @@ Usage() {
 
 platform="`uname -s``uname -r`-`uname -p`"
 platform="`echo $platform | sed -e 's/SunOS5\./solaris/; s/\(sol.*\)-i386/\1-intel/'`"
+oplatform=`echo $platform | sed -e 's/solaris11/solaris10/g'`
 
 case "$1" in
   [1-9].*)
@@ -32,6 +33,9 @@ case "$1" in
      elif /netopt/gcc/$1/$platform/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=/netopt/gcc/$1/$platform/bin/$CXX
        CC=/netopt/gcc/$1/$platform/bin/$CC
+     elif /netopt/gcc/$1/$oplatform/bin/$CXX -dumpversion >/dev/null 2>&1; then
+       CXX=/netopt/gcc/$1/$oplatform/bin/$CXX
+       CC=/netopt/gcc/$1/$oplatform/bin/$CC
      elif $CXX-$1 -dumpversion >/dev/null 2>&1; then
        CXX="$CXX-$1"
        CC="$CC-$1"
