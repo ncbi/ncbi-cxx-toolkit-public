@@ -73,9 +73,9 @@ an_core needs gc_util_sdbapi
 an_core needs gpipe_an_base
 an_core needs gpipe_jira
 an_core needs gpipe_kmer
+an_core needs gpipe_val
 an_core needs ncbi_xcache_netcache
 an_euk_pipeline needs an_core
-an_euk_pipeline needs gpipe_val
 an_prok_pipeline needs an_core
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
