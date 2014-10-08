@@ -80,5 +80,11 @@ bool CItemInfo::NonEmpty(void) const
     return m_NonEmpty;
 }
 
+inline
+bool CItemInfo::Optional(void) const
+{
+    return m_Optional;
+}
+
 
 #endif /* def ITEM__HPP  &&  ndef ITEM__INL */

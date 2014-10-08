@@ -83,6 +83,8 @@ public:
     bool NonEmpty(void) const;
     CItemInfo* SetNonEmpty(void);
 
+    bool Optional(void) const;
+
 private:
     friend class CItemsInfo;
 
@@ -96,6 +98,8 @@ private:
     CTypeRef m_Type;
 
     bool m_NonEmpty;
+protected:
+    bool m_Optional;
 };
 
 

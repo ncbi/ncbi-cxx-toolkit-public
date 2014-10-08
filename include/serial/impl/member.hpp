@@ -198,8 +198,6 @@ private:
 
     // containing class type info
     const CClassTypeInfoBase* m_ClassType;
-    // is optional
-    bool m_Optional;
     // default value
     TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object

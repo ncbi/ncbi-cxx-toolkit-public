@@ -299,11 +299,15 @@ const CTypeInfo* CItemsInfo::FindRealTypeInfo(const CTypeInfo* info)
 const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
 {
     if (!info->GetId().HasNotag()) {
+#if 0
         const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(info);
         if (mem && mem->Optional()) {
             return 0;
         }
         return info;
+#else
+        return info->Optional() ? 0 : info;
+#endif
     }
     return FindNextMandatory(info->GetTypeInfo());
 }

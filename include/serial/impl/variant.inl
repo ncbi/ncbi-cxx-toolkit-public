@@ -44,6 +44,14 @@ CVariantInfo::EVariantType CVariantInfo::GetVariantType(void) const
     return m_VariantType;
 }
 
+
+inline
+CVariantInfo* CVariantInfo::SetOptional(void)
+{
+    m_Optional = true;
+    return this;
+}
+
 inline
 CVariantInfo* CVariantInfo::SetNoPrefix(void)
 {

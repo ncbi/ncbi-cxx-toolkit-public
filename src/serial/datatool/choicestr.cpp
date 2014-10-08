@@ -1549,6 +1549,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->delayed ) {
                 methods << "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
             }
+            if (i->dataType && i->dataType->GetDataMember() && i->dataType->GetDataMember()->Optional()) {
+                methods << "->SetOptional()";
+            }
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
             }

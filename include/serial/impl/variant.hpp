@@ -95,6 +95,7 @@ public:
 
     EVariantType GetVariantType(void) const;
 
+    CVariantInfo* SetOptional(void);
     CVariantInfo* SetNoPrefix(void);
     CVariantInfo* SetNotag(void);
     CVariantInfo* SetCompressed(void);
