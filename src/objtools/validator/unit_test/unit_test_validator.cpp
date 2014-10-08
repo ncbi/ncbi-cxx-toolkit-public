@@ -8486,6 +8486,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
 
         expected_errors[0]->SetErrMsg("Submission citation affiliation has no institution");
         expected_errors[1]->SetErrMsg("Submission citation has no author names");
+        expected_errors[0]->SetSeverity(sev);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         CLEAR_ERRORS
