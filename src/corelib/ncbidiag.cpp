@@ -2871,7 +2871,7 @@ static string s_GetLogConfigString(const CTempString& name,
     }
     string envname = "NCBI_CONFIG__LOG__";
     envname += name;
-    const TXChar* val = NcbiSys_getenv(_TX(envname.c_str()));
+    const TXChar* val = NcbiSys_getenv(_T_XCSTRING(envname));
     return val ? _T_STDSTRING(val) : defval;
 }
 
@@ -2886,7 +2886,7 @@ static bool s_GetLogConfigBool(const CTempString& name,
     }
     string envname = "NCBI_CONFIG__LOG__";
     envname += name;
-    const TXChar* val = NcbiSys_getenv(_TX(envname.c_str()));
+    const TXChar* val = NcbiSys_getenv(_T_XCSTRING(envname));
     if ( val ) {
         try {
             return NStr::StringToBool(_T_STDSTRING(val));
