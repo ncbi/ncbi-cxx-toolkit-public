@@ -128,12 +128,11 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
     REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         string        var_name = it->second->RegToEnv(section, name);
         const string* resultp  = &m_Env->Get(var_name);
-        if ((flags & fCountCleared) == 0  &&  (m_Flags & fCaseFlags) == 0
-            &&  resultp->empty()) {
+        if ((m_Flags & fCaseFlags) == 0  &&  resultp->empty()) {
             // try capitalizing the name
             resultp = &m_Env->Get(NStr::ToUpper(var_name));
         }
-        if ((flags & fCountCleared) != 0  ||  !resultp->empty() ) {
+        if ( !resultp->empty() ) {
             return *resultp;
         }
     }
