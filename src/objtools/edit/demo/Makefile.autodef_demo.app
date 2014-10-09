@@ -4,7 +4,7 @@ APP = autodef_demo
 SRC = autodef_demo
 
 LIB = xobjutil xconnect xregexp $(PCRE_LIB) $(SOBJMGR_LIBS) $(OBJEDIT_LIBS) \
-      xalnmgr tables
+      $(XFORMAT_LIBS) xalnmgr tables
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
