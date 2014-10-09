@@ -70,7 +70,6 @@ void CJobQueueCleanerThread::RequestStop(void)
 {
     m_StopFlag.Add(1);
     m_StopSignal.Post();
-    return;
 }
 
 
@@ -165,8 +164,49 @@ void CJobQueueCleanerThread::x_DoJob(void)
 }
 
 
+CJobQueueExecutionWatcherThread::CJobQueueExecutionWatcherThread(
+            CBackgroundHost &       host,
+            CQueueDataBase &        qdb,
+            unsigned int            sec_delay,
+            unsigned int            nanosec_delay,
+            const bool &            logging) :
+    m_Host(host),
+    m_QueueDB(qdb),
+    m_ExecutionLogging(logging),
+    m_SecDelay(sec_delay),
+    m_NanosecDelay(nanosec_delay),
+    m_StopSignal(0, 10000000)
+{}
 
-void CJobQueueExecutionWatcherThread::DoJob(void)
+
+CJobQueueExecutionWatcherThread::~CJobQueueExecutionWatcherThread()
+{}
+
+
+void CJobQueueExecutionWatcherThread::RequestStop(void)
+{
+    m_StopFlag.Add(1);
+    m_StopSignal.Post();
+}
+
+
+void *  CJobQueueExecutionWatcherThread::Main(void)
+{
+    prctl(PR_SET_NAME, "netscheduled_ew", 0, 0, 0);
+    while (1) {
+        x_DoJob();
+
+        if (m_StopSignal.TryWait(m_SecDelay, m_NanosecDelay))
+            if (m_StopFlag.Get() != 0)
+                break;
+    } // while (1)
+
+    return 0;
+}
+
+
+
+void CJobQueueExecutionWatcherThread::x_DoJob(void)
 {
     if (!m_Host.ShouldRun())
         return;

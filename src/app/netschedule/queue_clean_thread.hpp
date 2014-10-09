@@ -62,9 +62,7 @@ struct SPurgeAttributes
 
 
 
-/// Thread class, removes obsolete job records
-///
-/// @internal
+// Thread class, removes obsolete job records
 class CJobQueueCleanerThread : public CThread
 {
 public:
@@ -100,39 +98,42 @@ private:
 };
 
 
-/// Thread class, watches job execution, reschedules forgotten jobs
-///
-/// @internal
-class CJobQueueExecutionWatcherThread : public CThreadNonStop
+// Thread class, watches job execution, reschedules forgotten jobs
+class CJobQueueExecutionWatcherThread : public CThread
 {
 public:
-    CJobQueueExecutionWatcherThread(CBackgroundHost&    host,
-                                    CQueueDataBase&     qdb,
-                                    unsigned            run_delay,
-                                    const bool &        logging)
-    : CThreadNonStop(run_delay),
-      m_Host(host),
-      m_QueueDB(qdb),
-      m_ExecutionLogging(logging)
-    {}
+    CJobQueueExecutionWatcherThread(CBackgroundHost &   host,
+                                    CQueueDataBase &    qdb,
+                                    unsigned int        sec_delay,
+                                    unsigned int        nanosec_delay,
+                                    const bool &        logging);
+    ~CJobQueueExecutionWatcherThread();
 
-    virtual void DoJob(void);
-    virtual void *  Main(void)
-    {
-        prctl(PR_SET_NAME, "netscheduled_ew", 0, 0, 0);
-        return CThreadNonStop::Main();
-    }
+    void RequestStop(void);
+
+protected:
+    virtual void *  Main(void);
+
+private:
+    void x_DoJob(void);
+
+private:
+    CBackgroundHost &   m_Host;
+    CQueueDataBase &    m_QueueDB;
+    const bool &        m_ExecutionLogging;
+    unsigned int        m_SecDelay;
+    unsigned int        m_NanosecDelay;
+
+private:
+    mutable CSemaphore                      m_StopSignal;
+    mutable CAtomicCounter_WithAutoInit     m_StopFlag;
 
 private:
     CJobQueueExecutionWatcherThread(const CJobQueueExecutionWatcherThread&);
     CJobQueueExecutionWatcherThread&
-        operator=(const CJobQueueExecutionWatcherThread&);
-
-private:
-    CBackgroundHost &       m_Host;
-    CQueueDataBase &        m_QueueDB;
-    const bool &            m_ExecutionLogging;
+                operator=(const CJobQueueExecutionWatcherThread&);
 };
+
 
 
 END_NCBI_SCOPE

@@ -160,7 +160,7 @@ public:
     void StopServiceThread(void);
 
     void CheckExecutionTimeout(bool  logging);
-    void RunExecutionWatcherThread(unsigned int  run_delay);
+    void RunExecutionWatcherThread(const CNSPreciseTime &  run_delay);
     void StopExecutionWatcherThread(void);
 
 

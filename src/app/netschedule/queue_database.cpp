@@ -2658,10 +2658,11 @@ void CQueueDataBase::StopServiceThread(void)
 }
 
 
-void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
+void CQueueDataBase::RunExecutionWatcherThread(const CNSPreciseTime & run_delay)
 {
     m_ExeWatchThread.Reset(new CJobQueueExecutionWatcherThread(
-                                    m_Host, *this, run_delay,
+                                    m_Host, *this,
+                                    run_delay.Sec(), run_delay.NSec(),
                                     m_Server->IsLogExecutionWatcherThread()));
     m_ExeWatchThread->Run();
 }
