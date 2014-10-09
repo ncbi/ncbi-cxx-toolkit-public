@@ -345,6 +345,8 @@ void CNSNotificationList::CheckTimeout(const CNSPreciseTime & current_time,
         if (cmd_group == rec->m_Reason) {
             m_PassiveListeners.push_back(SNSNotificationAttributes(*rec));
             rec = m_ActiveListeners.erase(rec);
+        } else {
+            ++rec;
         }
     }
 }
