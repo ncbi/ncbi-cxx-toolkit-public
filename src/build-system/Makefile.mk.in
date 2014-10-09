@@ -661,4 +661,4 @@ OBJREAD_LIBS = xobjread variation creaders submit
 XFORMAT_LIBS = xformat xcleanup gbseq submit mlacli mla medlars pubmed valid
 
 # object editing library
-OBJEDIT_LIBS = xobjedit taxon3 valid
+OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) $(XFORMAT_LIBS) taxon3

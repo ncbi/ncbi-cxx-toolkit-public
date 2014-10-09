@@ -47,7 +47,7 @@
 #include <objmgr/scope.hpp>
 
 #include <util/line_reader.hpp>
-#include "remote_updater.hpp"
+#include <objtools/edit/remote_updater.hpp>
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
