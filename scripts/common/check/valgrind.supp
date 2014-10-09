@@ -181,7 +181,6 @@
    fun:__log_putr
    ...
    fun:__log_put
-   fun:__bam_split_log
    ...
    fun:__bam_split
    fun:__bamc_put
