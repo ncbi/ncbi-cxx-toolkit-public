@@ -817,6 +817,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                         "Source and destination lengths do not match, "
                         "dropping " << src_total_len % 3 <<
                         " overhanging bases on source location");
+                    src_total_len -= src_total_len % 3;
                 }
             }
             else if (dst_total_len/3 == src_total_len) {
@@ -839,6 +840,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                         "Source and destination lengths do not match, "
                         "dropping " << dst_total_len % 3 <<
                         " overhanging bases on destination location");
+                    dst_total_len -= dst_total_len % 3;
                 }
             }
             else {
@@ -867,7 +869,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     TSeqPos src_len = 0;
     if ( rg.IsWhole() ) {
         src_start = 0;
-        src_len = kInvalidSeqPos;
+        src_len = GetSequenceLength(src_it.GetSeq_id());
+        if (src_len != kInvalidSeqPos) {
+            src_len = src_width*src_len;
+        }
     }
     else if ( !rg.Empty() ) {
         src_start = src_it.GetRange().GetFrom()*src_width;
@@ -879,7 +884,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     TSeqPos dst_len = 0;
     if ( rg.IsWhole() ) {
         dst_start = 0;
-        dst_len = kInvalidSeqPos;
+        dst_len = GetSequenceLength(dst_it.GetSeq_id());
+        if (dst_len != kInvalidSeqPos) {
+            dst_len = dst_width*dst_len;
+        }
     }
     else if ( !rg.Empty() ) {
         dst_start = dst_it.GetRange().GetFrom()*dst_width;
@@ -904,9 +912,11 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         }
     }
     // Iterate source and destination ranges.
-    const TSeqPos src_bioseq_len =
-        (source.GetId() ? src_width*(GetSequenceLength( *source.GetId()) - 1)
-        + (src_width - 1) : src_total_len);
+    TSeqPos src_bioseq_len = (source.GetId() ? GetSequenceLength( *source.GetId())
+        : src_total_len);
+    if (src_bioseq_len != kInvalidSeqPos) {
+        src_bioseq_len = src_width*src_bioseq_len;
+    }
     TSeqPos last_src_start = 0, last_src_len = 0;
     TSeqPos last_dst_start = 0, last_dst_len = 0;
     bool last_src_reverse = false, last_dst_reverse = false;
@@ -976,7 +986,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 src_start = 0;
-                src_len = kInvalidSeqPos;
+                src_len = GetSequenceLength(src_it.GetSeq_id());
+                if (src_len != kInvalidSeqPos) {
+                    src_len = src_width*src_len;
+                }
             }
             else {
                 src_start = src_it.GetRange().GetFrom()*src_width;
@@ -997,7 +1010,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 dst_start = 0;
-                dst_len = kInvalidSeqPos;
+                dst_len = GetSequenceLength(dst_it.GetSeq_id());
+                if (dst_len != kInvalidSeqPos) {
+                    dst_len = dst_width*dst_len;
+                }
             }
             else {
                 dst_start = dst_it.GetRange().GetFrom()*dst_width;
@@ -1010,6 +1026,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             last_dst_id = dst_it.GetSeq_id_Handle();
             last_dst_reverse = IsReverse(dst_it.GetStrand());
         }
+    }
+    if (src_len != 0  ||  dst_len != 0) {
+        NCBI_THROW(CAnnotMapperException, eBadLocation,
+                    "Source and destination lengths do not match.");
     }
     // Remember the direction of source and destination. This information
     // will be used when ordering ranges in the mapped location.
