@@ -12,11 +12,12 @@ SRC = unit_test_discrepancy_report
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE)
 
-LIB = xunittestutil xdiscrepancy_report xvalidate xobjedit valid valerr taxon3 \
-        xmlwrapp \
-        $(XFORMAT_LIBS) xalnmgr xobjutil tables \
-        macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
-        test_boost xncbi
+LIB = xunittestutil xdiscrepancy_report xvalidate valerr \
+      xmlwrapp \
+      $(XFORMAT_LIBS) xalnmgr xobjutil tables \
+      macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
+      test_boost xncbi \
+      $(OBJEDIT_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

@@ -11,9 +11,9 @@ SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context fe
       fcs_reader table2asn_validator remote_updater
 
 LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
-       xcleanup xvalidate xobjreadex valid valerr taxon3 taxon1 biotree \
-       xobjedit \
-       $(XFORMAT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+       xcleanup xvalidate xobjreadex valerr biotree \
+       $(XFORMAT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS) \
+       $(OBJEDIT_LIBS)
 
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) \

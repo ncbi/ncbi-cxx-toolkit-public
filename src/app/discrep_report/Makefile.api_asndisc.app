@@ -8,11 +8,12 @@
 APP = api_asndisc
 SRC = cApiAsndisc
 
-LIB = xdiscrepancy_report xvalidate xobjedit valid valerr \
+LIB = xdiscrepancy_report xvalidate valerr \
         xmlwrapp \
-        taxon3 $(XFORMAT_LIBS) xalnmgr xobjutil tables \
+        $(XFORMAT_LIBS) xalnmgr xobjutil tables \
         macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
-        $(ncbi_xreader_pubseqos2) $(OBJMGR_LIBS)
+        $(ncbi_xreader_pubseqos2) $(OBJMGR_LIBS) \
+        $(OBJEDIT_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

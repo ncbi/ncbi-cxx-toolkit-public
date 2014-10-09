@@ -4,8 +4,9 @@
 
 APP = test_validator
 SRC = test_validator
-LIB = xvalidate xobjedit $(XFORMAT_LIBS) xalnmgr xobjutil valerr submit tables taxon3 gbseq \
-      valid xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+LIB = xvalidate $(XFORMAT_LIBS) xalnmgr xobjutil valerr submit tables gbseq \
+      xregexp $(PCRE_LIB) $(OBJMGR_LIBS) \
+      $(OBJEDIT_LIBS)
 
 LIBS =  $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
