@@ -1348,7 +1348,8 @@ xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
 xobjedit needs taxon3
-xobjedit needs valid
+xobjedit needs xformat
+xobjedit needs xobjread
 xobjedit needs xobjutil
 xobjmanip needs general
 xobjmgr needs genome_collection
