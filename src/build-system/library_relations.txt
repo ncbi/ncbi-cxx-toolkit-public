@@ -430,8 +430,6 @@ gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_standalone needs gpipe_an_base
-gpipe_tree needs gpipe_property
-gpipe_tree needs xalgophytree
 gpipe_type_verifier needs gpipe_asn_cleanup
 gpipe_type_verifier needs xalgognomon
 gpipe_type_verifier needs xalgowinmask
@@ -1258,7 +1256,6 @@ xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
 xdiscrepancy_report needs $(OBJMGR_LIBS)
-xdiscrepancy_report needs $(OBJREAD_LIBS)
 xdiscrepancy_report needs macro
 xdiscrepancy_report needs xmlwrapp
 xdiscrepancy_report needs xvalidate
@@ -1285,9 +1282,10 @@ xgdsdata needs pub
 xgdsdata needs txxmldoc
 xgdsdata needs xconnect
 xgdsdata_misc needs xncbi
+xgencoll needs $(OBJEDIT_LIBS)
 xgencoll needs aligndb_reader
 xgencoll needs gpipe_objutil
-xgencoll needs xobjedit
+xgencoll needs valid
 xgencollstats needs $(GPIPE_GENCOLL_LIBS)
 xgencollstats needs gencoll_stats
 xgp_manifest needs xser
@@ -1442,10 +1440,10 @@ xthrserv needs xconnect
 xthrserv needs xutil
 xunittestutil needs xobjutil
 xutil needs xncbi
+xvalidate needs $(OBJEDIT_LIBS)
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
-xvalidate needs xobjedit
 xxconnect needs xncbi
 xxconnect needs3party $(NCBI_C_ncbi)
 z needs3party $(ORIG_LIBS)
