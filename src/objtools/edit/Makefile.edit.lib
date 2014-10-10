@@ -20,4 +20,4 @@ WATCHERS = bollin kornbluh gotvyans chenj
 
 
 USES_LIBRARIES =  \
-    taxon3 valid xobjutil
+    taxon3 xformat xobjread xobjutil
