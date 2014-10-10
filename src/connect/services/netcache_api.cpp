@@ -539,6 +539,11 @@ CNetCacheAPI::CNetCacheAPI(const string& service_name,
 {
 }
 
+void CNetCacheAPI::SetDefaultParameters(const CNamedParameterList* parameters)
+{
+    m_Impl->m_DefaultParameters.LoadNamedParameters(parameters);
+}
+
 string CNetCacheAPI::PutData(const void* buf, size_t size,
         const CNamedParameterList* optional)
 {
@@ -747,11 +752,6 @@ void CNetCacheAPI::Remove(const string& blob_id,
     catch (...) {
         ERR_POST("Could not remove blob \"" << blob_id << "\"");
     }
-}
-
-void CNetCacheAPI::SetDefaultParameters(const CNamedParameterList* parameters)
-{
-    m_Impl->m_DefaultParameters.LoadNamedParameters(parameters);
 }
 
 CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id,
@@ -973,6 +973,12 @@ void CNetCacheAPI::SetEventHandler(INetEventHandler* event_handler)
 CCompoundIDPool CNetCacheAPI::GetCompoundIDPool()
 {
     return m_Impl->m_CompoundIDPool;
+}
+
+void CNetCacheAPI::SetCompoundIDPool(
+        CCompoundIDPool::TInstance compound_id_pool)
+{
+    m_Impl->m_CompoundIDPool = compound_id_pool;
 }
 
 /* static */

@@ -80,6 +80,8 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
     string MoveFile(SNetStorageObjectAPIImpl* orig_file,
             SNetStorageObjectAPIImpl* new_file);
 
+    void x_InitNetCacheAPI();
+
     CCompoundIDPool m_CompoundIDPool;
     CNetICacheClient m_NetICacheClient;
     TNetStorageFlags m_DefaultFlags;
@@ -953,13 +955,10 @@ CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 CNetStorageObject SNetStorageAPIImpl::Open(
         const string& object_loc, TNetStorageFlags flags)
 {
-    CNetCacheKey nc_key;
-
     if (CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
-            &nc_key, m_CompoundIDPool)) {
-        if (!m_NetCacheAPI)
-            m_NetCacheAPI = CNetCacheAPI(CNetCacheAPI::eAppRegistry);
-        return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, nc_key);
+            NULL, m_CompoundIDPool)) {
+        x_InitNetCacheAPI();
+        return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, object_loc);
     }
 
     flags &= m_AvailableStorageMask;
@@ -1048,6 +1047,16 @@ void SNetStorageAPIImpl::Remove(const string& object_loc)
                     net_file(new SNetStorageObjectAPIImpl(this, object_loc));
 
     return net_file->Remove();
+}
+
+void SNetStorageAPIImpl::x_InitNetCacheAPI()
+{
+    if (!m_NetCacheAPI) {
+        CNetCacheAPI nc_api(CNetCacheAPI::eAppRegistry);
+        nc_api.SetCompoundIDPool(m_CompoundIDPool);
+        nc_api.SetDefaultParameters(nc_use_compound_id = true);
+        m_NetCacheAPI = nc_api;
+    }
 }
 
 struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl

@@ -377,7 +377,7 @@ private:
 NCBI_XCONNECT_EXPORT
 CNetStorageObject g_CreateNetStorage_NetCacheBlob(
         CNetCacheAPI::TInstance nc_api,
-        const CNetCacheKey& nc_key);
+        const string& blob_key);
 
 END_NCBI_SCOPE
 

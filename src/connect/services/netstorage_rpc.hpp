@@ -39,6 +39,13 @@
 
 BEGIN_NCBI_SCOPE
 
+enum EDefaultStorage {
+    eDefaultStorage_Undefined,
+    eDefaultStorage_NetStorage,
+    eDefaultStorage_NetCache,
+    eDefaultStorage_NoCreate,
+};
+
 struct SNetStorageRPC : public SNetStorageImpl
 {
     SNetStorageRPC(const string& init_string, TNetStorageFlags default_flags);
@@ -61,6 +68,9 @@ struct SNetStorageRPC : public SNetStorageImpl
             const string& object_loc);
     CJsonNode MkFileRequest(const string& request_type,
             const string& unique_key, TNetStorageFlags flags);
+    void x_InitNetCacheAPI();
+
+    EDefaultStorage m_DefaultStorage;
 
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;

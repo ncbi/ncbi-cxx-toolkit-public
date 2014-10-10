@@ -207,6 +207,18 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         eNPT_UseCompoundID,
     };
 
+    /// Override defaults used by this object.
+    ///
+    /// @param parameters
+    ///    A list of named parameters, for example:
+    ///        SetDefaultParameters(use_compound_id = true);
+    ///
+    /// @warning
+    ///    This method is not thread-safe (it cannot be called
+    ///    concurrently from multiple threads on the same object).
+    ///
+    void SetDefaultParameters(const CNamedParameterList* parameters);
+
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is
     /// transferred.
@@ -444,8 +456,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     void ProlongBlobLifetime(const string& blob_key, unsigned ttl,
             const CNamedParameterList* optional = NULL);
 
-    void SetDefaultParameters(const CNamedParameterList* parameters);
-
     CNetCacheAdmin GetAdmin();
 
     CNetService GetService();
@@ -557,6 +567,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     /// @internal
     CCompoundIDPool GetCompoundIDPool();
+    /// @internal
+    void SetCompoundIDPool(CCompoundIDPool::TInstance compound_id_pool);
 };
 
 NCBI_DECLARE_INTERFACE_VERSION(SNetCacheAPIImpl, "xnetcacheapi", 1, 1, 0);

@@ -307,12 +307,12 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  and the value of the attribute must be separated by the equality
     ///  sign, and the value must be URL-encoded.
     ///  The following attributes are recoginzed:
-    ///  * client     - Application name.
+    ///  * client     - Application name. Required.
     ///  * nst        - NetStorage server address or LBSM service name
     ///                 pointing to a group of NetStorage servers.
     ///  * nc         - NetCache service name or server address.
     ///  * cache      - Application-specific NetCache cache name.
-    ///  Example: "clent=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
+    ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
     ///
     /// @param default_flags
     ///  Default storage preferences for the created objects.
@@ -409,7 +409,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     ///                 pointing to a group of NetStorage servers.
     ///  * nc         - NetCache service name or server address.
     ///  * cache      - Application-specific NetCache cache name.
-    ///  Example: "clent=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
+    ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
     ///
     /// @param default_flags
     ///  Default storage preferences for objects created by this object.

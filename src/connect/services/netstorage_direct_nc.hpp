@@ -52,9 +52,9 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     };
 
     SNetStorage_NetCacheBlob(CNetCacheAPI::TInstance netcache_api,
-            const CNetCacheKey& nc_key) :
+            const string& blob_key) :
         m_NetCacheAPI(netcache_api),
-        m_NetCacheKey(nc_key),
+        m_BlobKey(blob_key),
         m_State(SNetStorage_NetCacheBlob::eReady)
     {
     }
@@ -85,7 +85,7 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
 
     CNetCacheAPI m_NetCacheAPI;
 
-    CNetCacheKey m_NetCacheKey;
+    string m_BlobKey;
     EState m_State;
 
     auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;

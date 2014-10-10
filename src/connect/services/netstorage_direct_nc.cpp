@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 string SNetStorage_NetCacheBlob::GetLoc()
 {
-    return m_NetCacheKey.GetKey();
+    return m_BlobKey;
 }
 
 #define CONVERT_NETCACHEEXCEPTION(read_write, reading_writing) \
@@ -60,10 +60,10 @@ string SNetStorage_NetCacheBlob::GetLoc()
             NCBI_RETHROW_FMT(e, CNetStorageException, eAuthError, \
                     "Authentication or authorization error " \
                     "while accessing NetCache blob " << \
-                    m_NetCacheKey.GetKey()); \
+                    m_BlobKey); \
         case CNetCacheException::eBlobNotFound: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, \
-                    "NetCache blob " << m_NetCacheKey.GetKey() << \
+                    "NetCache blob " << m_BlobKey << \
                     " does not exist"); \
         case CNetCacheException::eKeyFormatError: \
         case CNetCacheException::eUnknownCommand: \
@@ -71,11 +71,11 @@ string SNetStorage_NetCacheBlob::GetLoc()
         case CNetCacheException::eInvalidServerResponse: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, \
                     "Cannot " read_write " NetCache blob " << \
-                    m_NetCacheKey.GetKey()); \
+                    m_BlobKey); \
         default: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
                     "NetCache server error while " reading_writing " " << \
-                    m_NetCacheKey.GetKey()); \
+                    m_BlobKey); \
         } \
     }
 
@@ -85,15 +85,15 @@ string SNetStorage_NetCacheBlob::GetLoc()
         case CNetServiceException::eTimeout: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eTimeout, \
                     "Timeout while " reading_writing " NetCache blob " << \
-                    m_NetCacheKey.GetKey()); \
+                    m_BlobKey); \
         case CNetServiceException::eCommunicationError: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, \
                     "I/O error while " reading_writing " NetCache blob " << \
-                    m_NetCacheKey.GetKey()); \
+                    m_BlobKey); \
         default: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
                     "NetCache server error while " reading_writing " " << \
-                    m_NetCacheKey.GetKey()); \
+                    m_BlobKey); \
         } \
     }
 
@@ -106,7 +106,7 @@ void SNetStorage_NetCacheBlob::x_InitReader()
 
     try {
         m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(
-                m_NetCacheKey.GetKey(), 0, 0, &m_BlobSize, NULL));
+                m_BlobKey, 0, 0, &m_BlobSize, NULL));
     }
     CONVERT_NETCACHEEXCEPTION("read", "reading")
     CONVERT_NETSERVICEEXCEPTION("reading")
@@ -138,7 +138,7 @@ ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
 
 void SNetStorage_NetCacheBlob::Read(string* data)
 {
-    m_NetCacheAPI.ReadData(m_NetCacheKey.GetKey(), *data);
+    m_NetCacheAPI.ReadData(m_BlobKey, *data);
 }
 
 IReader& SNetStorage_NetCacheBlob::GetReader()
@@ -172,8 +172,7 @@ void SNetStorage_NetCacheBlob::x_InitWriter()
     }
 
     try {
-        string blob_key(m_NetCacheKey.GetKey());
-        m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&blob_key));
+        m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
     CONVERT_NETCACHEEXCEPTION("write", "writing")
     CONVERT_NETSERVICEEXCEPTION("writing")
@@ -213,23 +212,21 @@ IEmbeddedStreamWriter& SNetStorage_NetCacheBlob::GetWriter()
 Uint8 SNetStorage_NetCacheBlob::GetSize()
 {
     if (m_State != eReading)
-        return m_NetCacheAPI.GetBlobSize(m_NetCacheKey.GetKey());
+        return m_NetCacheAPI.GetBlobSize(m_BlobKey);
     else
         return m_NetCacheReader->GetBlobSize();
 }
 
 string SNetStorage_NetCacheBlob::GetAttribute(const string& /*attr_name*/)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            m_NetCacheKey.GetKey() <<
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
             ": attribute retrieval is not implemented for NetCache blobs");
 }
 
 void SNetStorage_NetCacheBlob::SetAttribute(const string& /*attr_name*/,
         const string& /*attr_value*/)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            m_NetCacheKey.GetKey() <<
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
             ": attribute setting for NetCache blobs is not implemented");
 }
 
@@ -237,7 +234,7 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
 {
     try {
         CNetServerMultilineCmdOutput output(
-                m_NetCacheAPI.GetBlobInfo(m_NetCacheKey.GetKey()));
+                m_NetCacheAPI.GetBlobInfo(m_BlobKey));
 
         CJsonNode blob_info = CJsonNode::NewObjectNode();
         string line, key, val;
@@ -251,15 +248,15 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
 
         Uint8 blob_size = size_node && size_node.IsInteger() ?
                 (Uint8) size_node.AsInteger() :
-                m_NetCacheAPI.GetBlobSize(m_NetCacheKey.GetKey());
+                m_NetCacheAPI.GetBlobSize(m_BlobKey);
 
-        return new SNetStorageObjectInfoImpl(m_NetCacheKey.GetKey(),
+        return new SNetStorageObjectInfoImpl(m_BlobKey,
                 eNFL_NetCache, NULL, blob_size, blob_info);
     }
     catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
-        return new SNetStorageObjectInfoImpl(m_NetCacheKey.GetKey(),
+        return new SNetStorageObjectInfoImpl(m_BlobKey,
                 eNFL_NotFound, NULL, 0, NULL);
     }
 }
@@ -303,9 +300,9 @@ void SNetStorage_NetCacheBlob::Abort()
 }
 
 CNetStorageObject g_CreateNetStorage_NetCacheBlob(
-        CNetCacheAPI::TInstance nc_api, const CNetCacheKey& nc_key)
+        CNetCacheAPI::TInstance nc_api, const string& blob_key)
 {
-    return new SNetStorage_NetCacheBlob(nc_api, nc_key);
+    return new SNetStorage_NetCacheBlob(nc_api, blob_key);
 }
 
 END_NCBI_SCOPE
