@@ -155,6 +155,7 @@ bob_g needs splitdbasn_g
 bob_g needs3party netblast
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs $(GPIPE_GENCOLL_LIBS)
+build_config needs $(XFORMAT_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs gpinit
 build_config needs gpinit_access
@@ -297,6 +298,7 @@ gc_util_sdbapi needs gencoll_client
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
+gcaccess_utils needs $(XFORMAT_LIBS)
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
@@ -394,13 +396,11 @@ gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
 gpipe_common needs xmlwrapp
-gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
 gpipe_ftp needs gpipe_alnutil
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
-gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gcaccess_utils
 gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs xalgoalignutil
@@ -430,6 +430,8 @@ gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_standalone needs gpipe_an_base
+gpipe_tree needs gpipe_property
+gpipe_tree needs xalgophytree
 gpipe_type_verifier needs gpipe_asn_cleanup
 gpipe_type_verifier needs xalgognomon
 gpipe_type_verifier needs xalgowinmask
@@ -857,6 +859,7 @@ refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs $(GPIPE_GENCOLL_LIBS)
+refseq_ctl needs $(XFORMAT_LIBS)
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs gpinit_access
 remap needs $(SEQ_LIBS)
@@ -1032,6 +1035,7 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs $(GPIPE_GENCOLL_LIBS)
+validate_regions needs $(XFORMAT_LIBS)
 variation needs $(SEQ_LIBS)
 variation needs pub
 variation_utils needs variation
@@ -1283,13 +1287,15 @@ xgdsdata needs txxmldoc
 xgdsdata needs xconnect
 xgdsdata_misc needs xncbi
 xgencoll needs $(OBJEDIT_LIBS)
+xgencoll needs $(XFORMAT_LIBS)
 xgencoll needs aligndb_reader
 xgencoll needs gpipe_objutil
-xgencoll needs valid
 xgencollstats needs $(GPIPE_GENCOLL_LIBS)
+xgencollstats needs $(XFORMAT_LIBS)
 xgencollstats needs gencoll_stats
 xgp_manifest needs xser
 xgpgcreport needs $(GPIPE_GENCOLL_LIBS)
+xgpgcreport needs $(XFORMAT_LIBS)
 xgpgcreport needs gencoll_release_report
 xgpp_console needs dbapi
 xgpp_console_access needs xgpp_console_commands
@@ -1347,9 +1353,10 @@ xngalign needs $(BLAST_INPUT_LIBS)
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
+xobjedit needs $(OBJREAD_LIBS)
+xobjedit needs $(XFORMAT_LIBS)
 xobjedit needs taxon3
-xobjedit needs valid
-xobjedit needs xobjutil
+xobjedit needs xalnmgr
 xobjmanip needs general
 xobjmgr needs genome_collection
 xobjmgr needs seqedit
