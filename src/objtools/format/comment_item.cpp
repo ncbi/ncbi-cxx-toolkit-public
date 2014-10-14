@@ -1347,7 +1347,25 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
         str << "s";
     }
     if( bHtml ) {
-        str << " ( )";
+        string pfx = " (";
+        string sfx = "";
+        int j = 0;
+        FOR_EACH_STRING_IN_VECTOR (itr, sBasemodURLs) {
+            string url = *itr;
+            if ( ! url.empty() ) {
+                j++;
+                str << pfx << "<a href=\"" << url << "\">" << j << "</a>";
+                if ( numBases == 2 ) {
+                    pfx = " and ";
+                } else if ( j == numBases - 1 ) {
+                    pfx = ", and ";
+                } else {
+                    pfx = ", ";
+                }
+                sfx = ")";
+            }
+        }
+        str << sfx;
     }
     str << " available for this genome";
 
