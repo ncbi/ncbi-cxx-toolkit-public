@@ -149,10 +149,11 @@ CReaderBase::CReaderBase(
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
     m_uProgressReportInterval(0),
+	m_uNextProgressReport(0),
     m_uMaxFilePos(0),
+    m_iFlags(flags),
     m_pInStream(0),
-    m_pCanceler(0),
-    m_iFlags(flags)
+    m_pCanceler(0)
 {
     m_pTrackDefaults = new CTrackData;
 }
