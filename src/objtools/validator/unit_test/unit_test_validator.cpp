@@ -6221,6 +6221,40 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
     CLEAR_ERRORS
 }
 
+BOOST_AUTO_TEST_CASE(Test_Descr_ModifyPCRPrimer)
+{
+    string fwd_seq;
+    fwd_seq.assign("5-agtctctctc-");
+    bool modified = CPCRPrimerSeq::TrimJunk(fwd_seq);
+    BOOST_CHECK_EQUAL(modified, true);
+    BOOST_CHECK_EQUAL(fwd_seq, string("agtctctctc"));
+    
+    fwd_seq.assign("5`aattggccaattg3'");
+    modified = CPCRPrimerSeq::TrimJunk(fwd_seq);
+    BOOST_CHECK_EQUAL(modified, true);
+    BOOST_CHECK_EQUAL(fwd_seq, string("aattggccaattg"));
+
+    fwd_seq.assign("aattggccaacct");
+    modified = CPCRPrimerSeq::TrimJunk(fwd_seq);
+    BOOST_CHECK_EQUAL(modified, false);
+    BOOST_CHECK_EQUAL(fwd_seq, string("aattggccaacct"));
+
+    fwd_seq.assign("agttt<I>tagaga<i>gac");
+    modified = CPCRPrimerSeq::Fixi(fwd_seq);
+    BOOST_CHECK_EQUAL(modified, true);
+    BOOST_CHECK_EQUAL(fwd_seq, string("agttt<i>tagaga<i>gac"));
+
+    fwd_seq.assign("agtccat<iagata>gtct");
+    modified = CPCRPrimerSeq::Fixi(fwd_seq);
+    BOOST_CHECK_EQUAL(modified, true);
+    BOOST_CHECK_EQUAL(fwd_seq, string("agtccat<i>agata>gtct"));
+
+    fwd_seq.assign("agtccat<i>gtctaaa");
+    modified = CPCRPrimerSeq::Fixi(fwd_seq);
+    BOOST_CHECK_EQUAL(modified, false);
+    BOOST_CHECK_EQUAL(fwd_seq, string("agtccat<i>gtctaaa"));
+
+}
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadPunctuation)
 {
