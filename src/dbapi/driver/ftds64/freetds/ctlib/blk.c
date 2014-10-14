@@ -1828,6 +1828,7 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
     int num_cols       = 0;
     int last_adjustment_increment = 0;
     int this_adjustment_increment = 0;
+    int adjustment_last_required = 0;
 
     int adjust_table_entries_required;
     int i;
@@ -1934,6 +1935,7 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
                     adjust_table[adjust_pos++] = num_cols;
                 }
                 last_adjustment_increment = this_adjustment_increment;
+                adjustment_last_required = num_cols;
             }
 
             row_pos += cpbytes;
@@ -1947,6 +1949,13 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
          */
 
         offset_table[offset_pos++] = row_pos % 256;
+
+        /* Trailing NULLs are not sent or included in the offset table. */
+        while (num_cols > adjustment_last_required
+               &&  offset_table[num_cols] == offset_table[num_cols - 1]) {
+            num_cols--;
+            offset_pos--;
+        }
 
         /*
          * Write the offset data etc. to the end of the record, starting with
