@@ -796,8 +796,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 // ranges according to the new sequence width.
             }
             // While checking if it's a mapping between nuc and prot,
-            // truncate incomplete codons.
-            else if (src_total_len/3 == dst_total_len) {
+            // truncate incomplete or stop codons.
+            else if (src_total_len/3 == dst_total_len  ||  src_total_len == (dst_total_len + 1)*3) {
                 if (src_type == eSeq_unknown) {
                     src_type = eSeq_nuc;
                 }
@@ -811,16 +811,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                         "Sequence types (nuc to prot) are inconsistent with "
                         "location lengths");
                 }
-                // Report overhanging bases if any
-                if (src_total_len % 3 != 0) {
-                    ERR_POST_X(28, Warning <<
-                        "Source and destination lengths do not match, "
-                        "dropping " << src_total_len % 3 <<
-                        " overhanging bases on source location");
-                    src_total_len -= src_total_len % 3;
-                }
             }
-            else if (dst_total_len/3 == src_total_len) {
+            else if (dst_total_len/3 == src_total_len  ||  dst_total_len == (src_total_len + 1)*3) {
                 if (src_type == eSeq_unknown) {
                     src_type = eSeq_prot;
                 }
@@ -834,14 +826,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                         "Sequence types (prot to nuc) are inconsistent with "
                         "location lengths");
                 }
-                // Report overhanging bases if any
-                if (dst_total_len % 3 != 0) {
-                    ERR_POST_X(29, Warning <<
-                        "Source and destination lengths do not match, "
-                        "dropping " << dst_total_len % 3 <<
-                        " overhanging bases on destination location");
-                    dst_total_len -= dst_total_len % 3;
-                }
             }
             else {
                 // If location lengths are not 1:1 or 1:3, there's no way
@@ -852,6 +836,51 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
         }
     }
+    if (src_total_len != kInvalidSeqPos  &&  dst_total_len != kInvalidSeqPos) {
+        // Check for incomplete and stop codons.
+        if (src_type == eSeq_nuc  &&  dst_type == eSeq_prot) {
+            // Report overhanging bases if any
+            if (src_total_len == (dst_total_len + 1)*3) {
+                // Skip stop codon
+                src_total_len -= 3;
+            }
+            else if (src_total_len/3 == dst_total_len  &&  src_total_len % 3 != 0) {
+                ERR_POST_X(28, Warning <<
+                    "Source and destination lengths do not match, "
+                    "dropping " << src_total_len % 3 <<
+                    " overhanging bases on source location");
+                src_total_len -= src_total_len % 3;
+            }
+            if (dst_total_len*3 != src_total_len) {
+                NCBI_THROW(CAnnotMapperException, eBadLocation,
+                            "Source and destination lengths do not match.");
+            }
+        }
+        else if (dst_type == eSeq_nuc  &&  src_type == eSeq_prot) {
+            // Report overhanging bases if any
+            if (dst_total_len == (src_total_len + 1)*3) {
+                // Skip stop codon
+                dst_total_len -= 3;
+            }
+            else if (dst_total_len/3 == src_total_len  &&  dst_total_len % 3 != 0) {
+                ERR_POST_X(29, Warning <<
+                    "Source and destination lengths do not match, "
+                    "dropping " << dst_total_len % 3 <<
+                    " overhanging bases on destination location");
+                dst_total_len -= dst_total_len % 3;
+            }
+            if (src_total_len*3 != dst_total_len) {
+                NCBI_THROW(CAnnotMapperException, eBadLocation,
+                            "Source and destination lengths do not match.");
+            }
+        }
+        // Same sequence types
+        else if (src_total_len != dst_total_len) {
+            NCBI_THROW(CAnnotMapperException, eBadLocation,
+                        "Source and destination lengths do not match.");
+        }
+    }
+
     // At this point all sequence types should be known or forced.
     // Set the widths.
     int src_width = (src_type == eSeq_prot) ? 3 : 1;
@@ -1026,10 +1055,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             last_dst_id = dst_it.GetSeq_id_Handle();
             last_dst_reverse = IsReverse(dst_it.GetStrand());
         }
-    }
-    if (src_len != 0  ||  dst_len != 0) {
-        NCBI_THROW(CAnnotMapperException, eBadLocation,
-                    "Source and destination lengths do not match.");
     }
     // Remember the direction of source and destination. This information
     // will be used when ordering ranges in the mapped location.
