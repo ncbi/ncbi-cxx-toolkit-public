@@ -294,7 +294,11 @@ if test -z "$use_arch"; then
       use_arch="ppc i386"
     fi
   else
-    use_arch="$arch"
+    if test "$use_64" == "yes"; then
+      use_arch="x86_64"
+    else
+      use_arch="i386"
+    fi
   fi
 fi 
 PTB_PLATFORM="$use_arch"
