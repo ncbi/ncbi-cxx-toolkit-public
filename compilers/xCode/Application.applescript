@@ -217,7 +217,7 @@ on clicked theObject
 		
 		(* Help button pressed *)
 		if theObject is equal to button "helpButton" then
-			open location "http://www.ncbi.nlm.nih.gov/books/NBK7160/"
+			open location "http://www.ncbi.nlm.nih.gov/toolkit/doc/book/"
 		end if
 		
 		(* Handle Paths *)
