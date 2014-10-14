@@ -143,6 +143,7 @@ public:
     static string GetStringForEncode(CBioseqContext& ctx);
     static string GetStringForAuthorizedAccess(CBioseqContext& ctx);
     static string GetStringForOpticalMap(CBioseqContext& ctx);
+    static string GetStringForBaseMod(CBioseqContext& ctx);
     static string GetStringForUnique(CBioseqContext& ctx);
 
     static void ResetFirst(void) { sm_FirstComment = true; }

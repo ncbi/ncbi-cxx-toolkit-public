@@ -769,6 +769,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_AuthorizedAccessComment(ctx);
 
     x_MapComment(ctx);
+    x_BasemodComment(ctx);
 
     // Gather comments related to the seq-id
     x_IdComments(ctx, 
@@ -970,6 +971,17 @@ void CFlatGatherer::x_MapComment(CBioseqContext& ctx) const
         x_AddComment(item);
     }
 }
+
+void CFlatGatherer::x_BasemodComment(CBioseqContext& ctx) const
+{
+    string sBaseModComment = CCommentItem::GetStringForBaseMod(ctx);
+    if ( ! NStr::IsBlank(sBaseModComment) ) {
+        CRef<CCommentItem> item(new CCommentItem(sBaseModComment, ctx));
+        item->SetNeedPeriod(false);
+        x_AddComment(item);
+    }
+}
+
 
 void CFlatGatherer::x_AuthorizedAccessComment(CBioseqContext& ctx) const
 {

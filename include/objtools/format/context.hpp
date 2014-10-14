@@ -243,6 +243,9 @@ public:
     /// Empty if no Filetrack URL.
     const string & GetFiletrackURL(void) const { return m_FiletrackURL; }
 
+    /// Empty if no Basemod URLs.
+    const vector< string > & GetBasemodURLs(void) const { return m_BasemodURLs; }
+
     // empty if there is none
     const string & GetAuthorizedAccess(void) const { return m_AuthorizedAccess; }
 
@@ -289,6 +292,7 @@ private:
     string                m_FinishingStatus;
     string                m_Taxname;
     string                m_FiletrackURL;
+    vector< string >      m_BasemodURLs;
     string                m_AuthorizedAccess;
     const CPacked_seqpnt* m_pOpticalMapPoints;
     // used to destroy m_pOpticalMapPoints if it was manually

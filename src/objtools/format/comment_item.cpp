@@ -1326,6 +1326,34 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(str);
 }
 
+string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
+{
+    const bool bHtml = ctx.Config().DoHTML();
+
+    const vector< string > & sBasemodURLs = ctx.GetBasemodURLs();
+    int numBases = sBasemodURLs.size();
+
+    CNcbiOstrstream str;
+
+    str << "There ";
+    if ( numBases > 1 ) {
+        str << "are ";
+    } else {
+        str << "is ";
+    }
+    str << numBases;
+    str << " base modification file";
+    if ( numBases > 1 ) {
+        str << "s";
+    }
+    if( bHtml ) {
+        str << " ( )";
+    }
+    str << " available for this genome";
+
+    return CNcbiOstrstreamToString(str);
+}
+
 string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
 {
     if( ! ctx.IsRSUniqueProt() ) {

@@ -423,15 +423,33 @@ void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
     {
         return;
     }
-    CConstRef<CUser_field> pFileTrackURLField =
-        uo.GetFieldRef("FileTrackURL");
-    if( ! pFileTrackURLField || 
-        ! FIELD_IS_SET_AND_IS(*pFileTrackURLField, Data, Str) ||
-        pFileTrackURLField->GetData().GetStr().empty() )
-    {
-        return;
+
+    CConstRef<CUser_field> pFileTrackURLField = uo.GetFieldRef("FileTrackURL");
+    if( ! pFileTrackURLField ) {
+        pFileTrackURLField = uo.GetFieldRef("Map-FileTrackURL");
     }
-    m_FiletrackURL = pFileTrackURLField->GetData().GetStr();
+    if ( pFileTrackURLField) {
+        if ( FIELD_IS_SET_AND_IS(*pFileTrackURLField, Data, Str) ) {
+            if ( ! pFileTrackURLField->GetData().GetStr().empty() ) {
+                m_FiletrackURL = pFileTrackURLField->GetData().GetStr();
+            }
+        } else if ( FIELD_IS_SET_AND_IS(*pFileTrackURLField, Data, Strs) ) {
+            const vector< string > & strs = pFileTrackURLField->GetData().GetStrs();
+            FOR_EACH_STRING_IN_VECTOR (itr, strs) {
+                string str = *itr;
+                if ( ! str.empty() ) {
+                    m_FiletrackURL = str;
+                }
+            }
+        }
+    }
+
+    CConstRef<CUser_field> pBaseModURLField = uo.GetFieldRef("BaseModification-FileTrackURL");
+    if ( pBaseModURLField) {
+        if ( FIELD_IS_SET_AND_IS(*pBaseModURLField, Data, Strs) ) {
+            m_BasemodURLs = pBaseModURLField->GetData().GetStrs();
+        }
+    }
 }
 
 void CBioseqContext::x_SetAuthorizedAccess(const CUser_object& uo)
