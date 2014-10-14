@@ -43,7 +43,6 @@ set use_dll=no
 set use_64=no
 set use_staticstd=no
 set use_arch=Win32
-set use_ide=1100
 set use_flags=
 set help_req=no
 set srcroot=../..
@@ -285,14 +284,6 @@ if "%help_req%"=="yes" (
   echo    --ignore-unsupported-options   -- ignore unsupported options
   exit /b 0
 )
-
-REM --------------------------------------------------------------------------------
-REM identify target MSVC version (based on the script location msvcNNN_prj)
-
-for /f "delims=" %%a in ('echo %script_dir%') do (set msvc_ver=%%~na)
-set msvc_ver=%msvc_ver:msvc=%
-set msvc_ver=%msvc_ver:_prj=%
-if not "%msvc_ver%"=="" (set use_ide=%msvc_ver%)
 
 REM --------------------------------------------------------------------------------
 REM target architecture, solution path, configuration and flags
