@@ -732,14 +732,14 @@ void CJsonNode::SetByKey(const string& key, CJsonNode::TInstance value)
     SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("SetByKey()"));
 
     pair<TJsonObjectElements::iterator, bool> insertion =
-            impl->m_Elements.insert(SJsonObjectElement(key, value));
+            impl->m_Elements.insert(SJsonObjectElement(key, NULL));
 
     SJsonObjectElement* element =
             &const_cast<SJsonObjectElement&>(*insertion.first);
 
-    if (!insertion.second)
-        element->m_Node = value;
-    else {
+    element->m_Node = value;
+
+    if (insertion.second) {
         element->m_Order = impl->m_NextElementOrder++;
         impl->m_ElementOrder.insert(element);
     }
@@ -747,7 +747,7 @@ void CJsonNode::SetByKey(const string& key, CJsonNode::TInstance value)
 
 void CJsonNode::DeleteByKey(const string& key)
 {
-    SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("SetByKey()"));
+    SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("DeleteByKey()"));
 
     TJsonObjectElements::iterator it =
             impl->m_Elements.find(SJsonObjectElement(key, NULL));
