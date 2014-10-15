@@ -54,7 +54,8 @@ class NCBI_XNCBI_EXPORT CConfigException : public CCoreException
 public:
     enum EErrCode {
         eParameterMissing,      ///< Missing mandatory parameter
-        eSynonymDuplicate
+        eSynonymDuplicate,
+        eInvalidParameter,      ///< Invalid parameter value
     };
 
     /// Translate from the error code value to its string representation.

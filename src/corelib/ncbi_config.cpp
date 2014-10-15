@@ -655,6 +655,7 @@ const char* CConfigException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eParameterMissing: return "eParameterMissing";
     case eSynonymDuplicate: return "eSynonymDuplicate";
+    case eInvalidParameter: return "eInvalidParameter";
     default:                return CException::GetErrCodeString();
     }
 }
