@@ -225,15 +225,8 @@ CReferenceItem::CReferenceItem(const CSubmit_block& sub, CBioseqContext& ctx) :
     m_Loc = loc;
 
     if (sub.IsSetCit()) {
-        m_Sub.Reset(&sub.GetCit());
-        m_Title = "Direct Submission";
-        m_PubType = ePub_sub;
-        if (m_Sub->IsSetAuthors()) {
-            m_Authors.Reset(&m_Sub->GetAuthors());
-        }
-        if (m_Sub->IsSetDate()) {
-            m_Date.Reset(&m_Sub->GetDate());
-        }
+        x_Init(sub.GetCit(), ctx);
+        m_JustUids = false;
     } else {
         x_SetSkip();
     }
