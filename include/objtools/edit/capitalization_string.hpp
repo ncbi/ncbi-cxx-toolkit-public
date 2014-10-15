@@ -31,6 +31,8 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Affil.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,6 +57,10 @@ NCBI_XOBJEDIT_EXPORT void FixOrgNames(objects::CSeq_entry_Handle seh, string& re
 NCBI_XOBJEDIT_EXPORT void FindOrgNames(objects::CSeq_entry_Handle seh, vector<string>& taxnames);
 
 NCBI_XOBJEDIT_EXPORT void RemoveFieldNameFromString( const string& field_name, string& str);
+
+NCBI_XOBJEDIT_EXPORT void GetStateAbbreviation(string& state);
+NCBI_XOBJEDIT_EXPORT bool FixStateAbbreviationsInCitSub(CCit_sub& sub);
+NCBI_XOBJEDIT_EXPORT bool FixStateAbbreviationsInAffil(CAffil& affil);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

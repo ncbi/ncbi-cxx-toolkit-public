@@ -55,7 +55,9 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
+
 #include <objtools/edit/source_edit.hpp>
+#include <objtools/edit/capitalization_string.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -157,6 +159,21 @@ BOOST_AUTO_TEST_CASE(Test_CleanupForTaxnameChange)
     BOOST_CHECK_EQUAL(src->GetOrg().IsSetSyn(), false);
 
     //cout << MSerial_AsnText << *src << endl;
+}
+
+BOOST_AUTO_TEST_CASE(Test_StateAbbreviation)
+{
+    string state = kEmptyStr;
+    edit::GetStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(NStr::IsBlank(state), true);
+
+    state.assign("south  carolina ");
+    edit::GetStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(state, string("SC"));
+
+    state.assign(" ind ");
+    edit::GetStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(state, string("IN"));
 }
     
 

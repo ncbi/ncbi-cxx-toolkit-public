@@ -34,6 +34,7 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/biblio/Auth_list.hpp>
 
 #include <util/xregexp/regexp.hpp>
 #include <objtools/edit/capitalization_string.hpp>
@@ -110,6 +111,107 @@ static const SStaticPair<const char*, const char*> set_abbreviation_list[] =
     {"\0","\0"}
 };
 
+static const SStaticPair<const char*, const char*> map_state_to_abbrev[] = 
+{
+{ "ala", "AL"},
+{ "alabama", "AL"},
+{ "alas", "AK"},
+{ "alaska", "AK"},
+{ "ariz", "AZ"},
+{ "arizona", "AZ"},
+{ "ark", "AR"},
+{ "arkansas", "AR"},
+{ "cal", "CA"},
+{ "cali", "CA"},
+{ "calif", "CA"},
+{ "california", "CA"},
+{ "col", "CO"},
+{ "colo", "CO"},
+{ "colorado", "CO"},
+{ "conn", "CT"},
+{ "connecticut", "CT"},
+{ "del", "DE"},
+{ "delaware", "DE"},
+{ "fla", "FL"},
+{ "florida", "FL"},
+{ "georgia", "GA"},
+{ "hawaii", "HI"},
+{ "ida", "ID"},
+{ "idaho", "ID"},
+{ "ill", "IL"},
+{ "illinois", "IL"},
+{ "ind", "IN"},
+{ "indiana", "IN"},
+{ "iowa", "IA"},
+{ "kan", "KS"},
+{ "kans", "KS"},
+{ "kansas", "KS"},
+{ "ken", "KY"},
+{ "kent", "KY"},
+{ "kentucky", "KY"},
+{ "louisiana", "LA"},
+{ "maine", "ME"},
+{ "maryland", "MD"},
+{ "mass", "MA"},
+{ "massachusetts", "MA"},
+{ "mich", "MI"},
+{ "michigan", "MI"},
+{ "minn", "MN"},
+{ "minnesota", "MN"},
+{ "miss", "MS"},
+{ "mississippi", "MS"},
+{ "missouri", "MO"},
+{ "mont", "MT"},
+{ "montana", "MT"},
+{ "n car", "NC"},
+{ "n dak", "ND"},
+{ "neb", "NE"},
+{ "nebr", "NE"},
+{ "nebraska", "NE"},
+{ "nev", "NV"},
+{ "nevada", "NV"},
+{ "new hampshire", "NH"},
+{ "new jersey", "NJ"},
+{ "new mexico", "NM"},
+{ "new york", "NY"},
+{ "north carolina", "NC"},
+{ "north dakota", "ND"},
+{ "ohio", "OH"},
+{ "okla", "OK"},
+{ "oklahoma", "OK"},
+{ "ore", "OR"},
+{ "oreg", "OR"},
+{ "oregon", "OR"},
+{ "penn", "PA"},
+{ "penna", "PA"},
+{ "pennsylvania", "PA"},
+{ "puerto rico", "PR"},
+{ "rhode island", "RI"},
+{ "s car", "SC"},
+{ "s dak", "SD"},
+{ "south carolina", "SC"},
+{ "south dakota", "SD"},
+{ "tenn", "TN"},
+{ "tennessee", "TN"},
+{ "tex", "TX"},
+{ "texas", "TX"},
+{ "utah", "UT"},
+{ "vermont", "VT"},
+{ "virg", "VA"},
+{ "virginia", "VA"},
+{ "wash", "WA"},
+{ "washington", "WA"},
+{ "west virginia", "WV"},
+{ "wis", "WI"},
+{ "wisc", "WI"},
+{ "wisconsin", "WI"},
+{ "wyo", "WY"},
+{ "wyoming", "WY"}
+
+};
+
+typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_state_abbrev, map_state_to_abbrev);
 
 void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECapChange capchange_opt)
 {
@@ -227,6 +329,60 @@ void RemoveFieldNameFromString( const string& field_name, string& str)
         NStr::ReplaceInPlace(str, field_name, kEmptyStr, 0, 1);
         NStr::TruncateSpacesInPlace(str);
     }
+}
+
+void GetStateAbbreviation(string& state)
+{
+    NStr::ReplaceInPlace (state, "  ", " ");
+    NStr::TruncateSpacesInPlace (state);
+    TCStringPairsMap::const_iterator found = k_state_abbrev.find(NStr::ToLower(state).c_str());
+    if (found != k_state_abbrev.end())
+        state = found->second;
+    else
+        NStr::ToUpper(state);
+}
+
+bool FixStateAbbreviationsInCitSub(CCit_sub& sub)
+{
+    bool modified = false;
+    if (sub.IsSetAuthors() && sub.GetAuthors().IsSetAffil() && sub.GetAuthors().GetAffil().IsStd()) {
+        CAffil::C_Std& std = sub.SetAuthors().SetAffil().SetStd();
+        if (std.IsSetCountry()) {
+            string country = std.GetCountry();
+            NStr::ReplaceInPlace (country, "  ", " ");
+            NStr::TruncateSpacesInPlace (country);
+
+            if (NStr::CompareNocase(country, "United States of America") == 0 ||
+                NStr::CompareNocase(country, "United States") == 0 ||
+                NStr::CompareNocase(country, "U.S.A.") == 0 ||
+                NStr::CompareNocase(country, "U S A") == 0 ) 
+            {
+                std.SetCountry("USA");
+                modified = true;
+            }
+        }
+
+        modified |= FixStateAbbreviationsInAffil(sub.SetAuthors().SetAffil());
+    }
+    return modified;
+}
+
+bool FixStateAbbreviationsInAffil(CAffil& affil)
+{
+    if (affil.IsStd()) {
+        CAffil::C_Std& std = affil.SetStd();
+        if (std.IsSetCountry() && NStr::EqualCase(std.GetCountry(), "USA")) {
+            if (std.IsSetSub() && !NStr::IsBlank(std.GetSub())) {
+                string state = std.GetSub();
+                edit::GetStateAbbreviation(state); // update the state abbreviation
+                if (!NStr::IsBlank(state) && !NStr::EqualCase(std.GetSub(), state)) {
+                    std.SetSub(state);
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 END_SCOPE(edit)
