@@ -3054,7 +3054,14 @@ void x_SingleRange(CSeq_loc& dst,
         if (id_it != rg_coll.end()) {
             it_rg_coll -= id_it->second;
         }
-        total_rg += it_rg_coll.GetLimits();
+        TRangeWithFuzz curr_rg(it_rg_coll.GetLimits());
+        if (curr_rg.GetFrom() == it_range.GetFrom()) {
+            curr_rg.AddFuzzFrom(it_range);
+        }
+        else if (curr_rg.GetTo() == it_range.GetTo()) {
+            curr_rg.AddFuzzTo(it_range);
+        }
+        total_rg += curr_rg;
     }
 
     if ( first_id ) {
@@ -3064,6 +3071,16 @@ void x_SingleRange(CSeq_loc& dst,
                                                        total_rg.GetFrom(),
                                                        total_rg.GetTo(),
                                                        first_strand));
+        if ( total_rg.IsSetFuzzFrom() ) {
+            CRef<CInt_fuzz> fuzz(new CInt_fuzz);
+            fuzz->Assign(total_rg.GetFuzzFrom());
+            interval->SetFuzz_from(*fuzz);
+        }
+        if ( total_rg.IsSetFuzzTo() ) {
+            CRef<CInt_fuzz> fuzz(new CInt_fuzz);
+            fuzz->Assign(total_rg.GetFuzzTo());
+            interval->SetFuzz_to(*fuzz);
+        }
         dst.SetInt(*interval);
     }
     else {
@@ -3110,10 +3127,17 @@ void x_SubNoSort(CSeq_loc& dst,
         }
         if ( modified ) {
             ITERATE(TRangeColl, rg_it, it_rg_coll) {
+                TRangeWithFuzz curr_rg(*rg_it);
+                if (curr_rg.GetFrom() == it_range.GetFrom()) {
+                    curr_rg.AddFuzzFrom(it_range);
+                }
+                else if (curr_rg.GetTo() == it_range.GetTo()) {
+                    curr_rg.AddFuzzTo(it_range);
+                }
                 if ( have_range  &&  last_id == idh ) {
                     if (x_MergeRanges(last_rg,
                                     last_strand,
-                                    *rg_it,
+                                    curr_rg,
                                     it.GetStrand(),
                                     flags)) {
                         have_range = true;
@@ -3125,7 +3149,7 @@ void x_SubNoSort(CSeq_loc& dst,
                     x_PushRange(dst, last_id, last_rg, last_strand);
                 }
                 last_id = idh;
-                last_rg = *rg_it;
+                last_rg = curr_rg;
                 last_strand = it.GetStrand();
                 have_range = true;
             }
@@ -3210,7 +3234,14 @@ void x_SubAndSort(CSeq_loc& dst,
         }
         if ( modified ) {
             ITERATE(TRangeColl, rg_it, it_rg_coll) {
-                rg_map.push_back(*rg_it);
+                TRangeWithFuzz curr_rg(*rg_it);
+                if (curr_rg.GetFrom() == it_range.GetFrom()) {
+                    curr_rg.AddFuzzFrom(it_range);
+                }
+                else if (curr_rg.GetTo() == it_range.GetTo()) {
+                    curr_rg.AddFuzzTo(it_range);
+                }
+                rg_map.push_back(curr_rg);
             }
         }
         else {
