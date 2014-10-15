@@ -193,7 +193,7 @@ CSplign::~CSplign()
 
 static CVersion* s_CreateVersion(void)
 {
-    return new CVersion(CVersionInfo(1, 39, 8));
+    return new CVersion(CVersionInfo(2, 0, 8));
 };
 
 
