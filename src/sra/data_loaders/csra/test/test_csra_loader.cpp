@@ -1420,6 +1420,7 @@ BOOST_AUTO_TEST_CASE(MultipleIds2)
     SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
     sel.SetSearchUnresolved();
     sel.ExcludeNamedAnnots(pileup_name);
+    sel.ExcludeNamedAnnots("SNP");
 
     //BOOST_REQUIRE(scope.GetBioseqHandle(idh));
     //NcbiCout<<MSerial_AsnText<<*scope.GetBioseqHandle(idh).GetCompleteObject();
