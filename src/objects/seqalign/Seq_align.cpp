@@ -2149,9 +2149,10 @@ CRef<CSeq_align>  CSeq_align::x_CreateSubsegAlignment(int from, int to) const
     subseg.SetIds() = seg.GetIds();
     subseg.SetDim(2);
     subseg.SetNumseg(to - from + 1);
+    subseg.SetStarts().reserve(subseg.GetNumseg()*2);
+    subseg.SetLens().reserve(subseg.GetNumseg());
     if (seg.IsSetStrands()) {
-        subseg.SetStrands() = seg.GetStrands();
-        subseg.SetStrands().resize(subseg.GetNumseg() * 2);
+        subseg.SetStrands().reserve(subseg.GetNumseg()*2);
     }
     
     int i;
@@ -2160,6 +2161,10 @@ CRef<CSeq_align>  CSeq_align::x_CreateSubsegAlignment(int from, int to) const
         subseg.SetLens().push_back(seg.GetLens()[i]);
         subseg.SetStarts().push_back(seg.GetStarts()[i * 2]);
         subseg.SetStarts().push_back(seg.GetStarts()[i * 2 + 1]);
+        if (seg.IsSetStrands()) {
+            subseg.SetStrands().push_back(seg.GetStrands()[i * 2]);
+            subseg.SetStrands().push_back(seg.GetStrands()[i * 2 + 1]);
+        }
     }
     
     subseg.TrimEndGaps();
