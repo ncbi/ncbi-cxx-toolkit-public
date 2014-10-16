@@ -571,7 +571,7 @@ string CMsvc7RegSettings::sm_MsvcVersionName = "30";
 
 CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
     CMsvc7RegSettings::eXCode;
-string CMsvc7RegSettings::sm_MsvcPlatformName = "ppc";
+string CMsvc7RegSettings::sm_MsvcPlatformName = "i386";
 
 #elif defined(NCBI_COMPILER_MSVC)
 
@@ -723,6 +723,14 @@ string CMsvc7RegSettings::GetMsvcSection(void)
         return s;
     } else if (GetMsvcPlatform() == eXCode) {
         s += GetMsvcVersionName();
+        string arch(GetRequestedArchs());
+        if (NStr::FindNoCase(arch,"64") != NPOS || NStr::FindNoCase(arch," ") != NPOS) {
+            list<string> lst;
+            NStr::Split(arch, " ", lst);
+            lst.sort();
+            arch = NStr::Join(lst,"_");
+            s += "." + arch;
+        }
         return s;
     }
     s += GetMsvcVersionName();
