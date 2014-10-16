@@ -465,7 +465,27 @@ s_IsSeedMasked(const LookupTableWrap   * lookup_wrap,
 {
     Uint1 *s  = subject->sequence + s_off / COMPRESSION_RATIO;
     Int4 shift = 2* (16 - s_off % COMPRESSION_RATIO - lut_word_length);
-    Int4 index = (s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3]) >> shift;
+    Int4 index;
+    switch (shift) {
+	case  8:
+	case 10:
+	case 12:
+	case 14:
+	    index = (s[0] << 24 | s[1] << 16 | s[2] << 8) >> shift;
+	break;
+	case 16:
+	case 18:
+	case 20:
+	case 22:
+	    index = (s[0] << 24 | s[1] << 16 ) >> shift;
+	break;
+	case 24:
+	    index = s[0];
+	break;
+	default:
+            index = (s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3]) >> shift;
+	break;
+	}
     return !(((T_Lookup_Callback)(lookup_wrap->lookup_callback))
                                          (lookup_wrap, index, q_pos));
 }
