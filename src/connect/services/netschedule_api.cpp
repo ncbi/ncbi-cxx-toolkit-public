@@ -601,6 +601,7 @@ void CNetScheduleServerListener::OnError(
 
     case CNetScheduleException::eGroupNotFound:
     case CNetScheduleException::eAffinityNotFound:
+    case CNetScheduleException::eDuplicateName:
         // Convert these errors into warnings.
         OnWarning(msg, server);
         break;
