@@ -255,6 +255,7 @@ const char* sm_ValidModifiedPrimerBases[] = {
   "m2a",
   "m2g",
   "m3c",
+  "m4c",
   "m5c",
   "m6a",
   "m7g",
