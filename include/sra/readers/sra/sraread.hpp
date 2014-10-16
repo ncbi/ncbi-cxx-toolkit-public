@@ -331,12 +331,12 @@ class NCBI_SRAREAD_EXPORT CSraMgr
     : public CSraRef<const SRAMgr>
 {
 public:
-    CSraMgr(void);
-
     enum ETrim {
         eNoTrim,
         eTrim
     };
+
+    CSraMgr(ETrim trim = eNoTrim);
 
     NCBI_DEPRECATED
     CSraMgr(const string& rep_path, const string& vol_path,

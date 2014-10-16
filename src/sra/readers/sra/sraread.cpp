@@ -212,30 +212,22 @@ void CSraException::ReportError(const char* msg, rc_t rc)
 }
 
 
-static const size_t kInitialPathSize = 256;
-
 CSraPath::CSraPath(void)
 {
-    // AddRepPath(GetDefaultRepPath());
-    // AddVolPath(GetDefaultVolPath());
 }
 
 
-CSraPath::CSraPath(const string& rep_path, const string& vol_path)
+CSraPath::CSraPath(const string& /*rep_path*/, const string& /*vol_path*/)
 {
-    AddRepPath(rep_path.empty()? GetDefaultRepPath(): rep_path);
-    AddVolPath(vol_path.empty()? GetDefaultVolPath(): vol_path);
 }
 
 
 NCBI_PARAM_DECL(string, SRA, REP_PATH);
-NCBI_PARAM_DEF_EX(string, SRA, REP_PATH, "",
-                  eParam_NoThread, SRA_REP_PATH);
+NCBI_PARAM_DEF(string, SRA, REP_PATH, "");
 
 
 NCBI_PARAM_DECL(string, SRA, VOL_PATH);
-NCBI_PARAM_DEF_EX(string, SRA, VOL_PATH, "",
-                  eParam_NoThread, SRA_VOL_PATH);
+NCBI_PARAM_DEF(string, SRA, VOL_PATH, "");
 
 
 string CSraPath::GetDefaultRepPath(void)
@@ -318,24 +310,22 @@ string CSraPath::FindAccPath(const string& acc) const
 }
 
 
-CSraMgr::CSraMgr(void)
+CSraMgr::CSraMgr(ETrim trim)
     : m_Path(null),
-      m_Trim(false)
+      m_Trim(trim == eTrim)
 {
     x_Init();
 }
 
 
-CSraMgr::CSraMgr(const string& rep_path, const string& vol_path,
+CSraMgr::CSraMgr(const string& /*rep_path*/, const string& /*vol_path*/,
                  ETrim trim)
     : m_Path(null),
       m_Trim(trim == eTrim)
 {
-    if ( !rep_path.empty() || !vol_path.empty() ) {
-        m_Path = CSraPath(rep_path, vol_path);
-    }
     x_Init();
 }
+
 
 void CSraMgr::RegisterFunctions(void)
 {
@@ -366,9 +356,6 @@ CSraPath& CSraMgr::GetPath(void) const
 
 string CSraMgr::FindAccPath(const string& acc) const
 {
-    if ( !m_Path ) {
-        return acc;
-    }
     return GetPath().FindAccPath(acc);
 }
 
@@ -438,9 +425,8 @@ void CSraRun::Init(CSraMgr& mgr, const string& acc)
 
 void CSraRun::x_DoInit(CSraMgr& mgr, const string& acc)
 {
-    const string& path = mgr.FindAccPath(acc);
     if ( rc_t rc = SRAMgrOpenTableRead(mgr, x_InitPtr(), "%.*s",
-                                       int(path.size()), path.data()) ) {
+                                       int(acc.size()), acc.data()) ) {
         *x_InitPtr() = 0;
         NCBI_THROW3(CSraException, eNotFoundDb,
                     "Cannot open run read", rc, acc);

@@ -123,7 +123,7 @@ int CSRATestApp::Run(void)
     if ( args["noclip"] ) {
         trim = CSraMgr::eNoTrim;
     }
-    CSraMgr mgr("", "", trim);
+    CSraMgr mgr(trim);
     
     if ( args["sra"] ) {
         string sra = args["sra"].AsString();
