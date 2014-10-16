@@ -724,7 +724,8 @@ string CMsvc7RegSettings::GetMsvcSection(void)
     } else if (GetMsvcPlatform() == eXCode) {
         s += GetMsvcVersionName();
         string arch(GetRequestedArchs());
-        if (NStr::FindNoCase(arch,"64") != NPOS || NStr::FindNoCase(arch," ") != NPOS) {
+        if (arch != "i386") {
+            NStr::ReplaceInPlace(arch, ",", " ");
             list<string> lst;
             NStr::Split(arch, " ", lst);
             lst.sort();
