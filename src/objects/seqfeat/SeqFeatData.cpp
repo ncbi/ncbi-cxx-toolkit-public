@@ -125,6 +125,7 @@ static const SImportEntry kImportTable[] = {
     { "primer_bind",         CSeqFeatData::eSubtype_primer_bind },
     { "promoter",            CSeqFeatData::eSubtype_promoter },
     { "protein_bind",        CSeqFeatData::eSubtype_protein_bind },
+    { "regulatory",          CSeqFeatData::eSubtype_regulatory },
     { "rep_origin",          CSeqFeatData::eSubtype_rep_origin },
     { "repeat_region",       CSeqFeatData::eSubtype_repeat_region },
     { "repeat_unit",         CSeqFeatData::eSubtype_repeat_unit },
@@ -479,6 +480,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "proprotein",         CSeqFeatData::eSubtype_preprotein          },
     {  "protein_bind",       CSeqFeatData::eSubtype_protein_bind        },
     {  "rRNA",               CSeqFeatData::eSubtype_rRNA                },
+    {  "regulatory",         CSeqFeatData::eSubtype_regulatory          },
     {  "rep_origin",         CSeqFeatData::eSubtype_rep_origin          },
     {  "repeat_region",      CSeqFeatData::eSubtype_repeat_region       },
     {  "repeat_unit",        CSeqFeatData::eSubtype_repeat_unit         },
@@ -712,7 +714,8 @@ static const SSubtypeInfo s_subtype_info[] = {
     SUBTYPE_INFO(               e_Imp,            eSubtype_centromere, 100),
     SUBTYPE_INFO(               e_Imp,              eSubtype_telomere, 101),
     SUBTYPE_INFO(               e_Imp,          eSubtype_assembly_gap, 102),
-    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 103),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_regulatory, 103),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 104),
     SUBTYPE_INFO(           e_not_set,                   eSubtype_any, 255)
 };
 static const size_t s_subtype_count =
@@ -2808,6 +2811,10 @@ START_SUBTYPE(telomere)
     ADD_QUAL(standard_name);
 END_SUBTYPE
 
+START_SUBTYPE(regulatory)
+    ADD_QUAL(regulatory_class);
+END_SUBTYPE
+
 #undef START_SUBTYPE
 #undef ADD_QUAL
 #undef END_SUBTYPE
@@ -2947,6 +2954,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_pseudogene, "pseudogene" },
     { CSeqFeatData::eQual_rearranged, "rearranged" },
     { CSeqFeatData::eQual_region_name, "region_name" },
+    { CSeqFeatData::eQual_regulatory_class, "regulatory_class" },
     { CSeqFeatData::eQual_replace, "replace" },
     { CSeqFeatData::eQual_ribosomal_slippage, "ribosomal_slippage" },
     { CSeqFeatData::eQual_rpt_family, "rpt_family" },

@@ -419,6 +419,14 @@ static bool s_CheckQuals_ncRNA(const CMappedFeat& feat)
     return false;
 }
 
+
+static bool s_CheckQuals_regulatory(const CMappedFeat& feat)
+{
+    // regulatory feature must have /regulatory_class qual
+    return ! feat.GetNamedQual("regulatory_class").empty();
+}
+
+
 static bool s_CheckMandatoryQuals(const CMappedFeat& feat,
                                   const CSeq_loc& loc,
                                   CBioseqContext& ctx)
@@ -460,6 +468,10 @@ static bool s_CheckMandatoryQuals(const CMappedFeat& feat,
     case CSeqFeatData::eSubtype_ncRNA:
         {
             return s_CheckQuals_ncRNA(feat);
+        }
+    case CSeqFeatData::eSubtype_regulatory:
+        {
+            return s_CheckQuals_regulatory(feat);
         }
     default:
         break;
@@ -1175,6 +1187,7 @@ void CFeatureItem::x_AddQualPseudo(
             case  CSeqFeatData::eSubtype_5UTR:
             case  CSeqFeatData::eSubtype_10_signal:
             case  CSeqFeatData::eSubtype_35_signal:
+            case  CSeqFeatData::eSubtype_regulatory:
                 return;
             default:
                 break;

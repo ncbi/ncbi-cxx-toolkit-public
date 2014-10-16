@@ -228,7 +228,8 @@ public:
         eSubtype_centromere         = 100,
         eSubtype_telomere           = 101,
         eSubtype_assembly_gap       = 102,
-        eSubtype_max                = 103,
+        eSubtype_regulatory         = 103,
+        eSubtype_max                = 104,
         eSubtype_any                = 255
     };
     ESubtype GetSubtype(void) const;
@@ -409,6 +410,7 @@ public:
         eQual_pseudogene,
         eQual_rearranged,
         eQual_region_name,
+        eQual_regulatory_class,
         eQual_replace,
         eQual_ribosomal_slippage,
         eQual_rpt_family,
