@@ -268,3 +268,7 @@ Fixed additional problems with import_project script
 August 28, 2014
 version 3.11.3
 XCode-related bug fix.
+
+October 16, 2014
+version 3.12.0
+Added support of 64bits architectures on XCode
