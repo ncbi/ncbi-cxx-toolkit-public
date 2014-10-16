@@ -88,9 +88,10 @@ private:
     bool x_IsAllCaps(const string& str) const;
     bool x_IsAllLowerCase(const string& str) const;
     bool x_IsAllPunctuation(const string& str) const;
+    bool x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const;
     bool x_AdvancedStringCompare(const string& str, 
                                 const string& str_match, 
-                                bool is_start, 
+                                const char prev_char, 
                                 unsigned int * ini_target_match_len = 0) const;
     bool x_AdvancedStringMatch(const string& str,const string& tmp_match) const;
     bool x_CaseNCompareEqual(string str1,

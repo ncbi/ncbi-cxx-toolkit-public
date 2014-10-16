@@ -201,147 +201,77 @@ bool CString_constraint :: x_IsWholeWordMatch(const string& start, const size_t&
   }
   return true;
 };
-bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, bool is_start, unsigned int * ini_target_match_len)  const
+
+
+bool CString_constraint :: x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const
 {
-  size_t pos_match = 0, pos_str = 0;
-  bool wd_case, whole_wd, word_start_m, word_start_s;
-  bool match = true, recursive_match = false;
-  unsigned len_m = str_match.size(), len_s = str.size(), target_match_len=0;
-  string cp_m, cp_s;
-  bool ig_space = GetIgnore_space();
-  bool ig_punct = GetIgnore_punct();
-  bool str_case = GetCase_sensitive();
-  EString_location loc = GetMatch_location();
-  unsigned len1 = 0, len2 = 0;
-  char ch1 = 0, ch2 = 0;
-  vector <string> word_word;
-  bool has_word = false;
-  if (IsSetIgnore_words()) {
-      has_word 
-          = (GetIgnore_words().CanGet() && !GetIgnore_words().Get().empty());
-      string strtmp;
-      ITERATE (list <CRef <CWord_substitution> >, 
-                 it, 
-                 GetIgnore_words().Get()) {
-          strtmp = ((*it)->CanGetWord()) ? (*it)->GetWord() : kEmptyStr;
-          word_word.push_back(strtmp);
-      }
-  }
+    bool matches = true;
 
-  unsigned i;
-  while (match && pos_match < len_m && pos_str < len_s && !recursive_match) {
-    cp_m = CTempString(str_match).substr(pos_match);
-    cp_s = CTempString(str).substr(pos_str);
-
-    /* first, check to see if we're skipping synonyms */
-    i=0;
-    if (has_word) {
-      ITERATE (list <CRef <CWord_substitution> >, 
-               it, 
-               GetIgnore_words().Get()) {
-        wd_case = (*it)->GetCase_sensitive();
-        whole_wd = (*it)->GetWhole_word();
-        len1 = word_word[i].size();
-        //text match
-        if (x_CaseNCompareEqual(word_word[i++], cp_m, len1,wd_case)){
-           word_start_m 
-               = (!pos_match && is_start) || !isalpha(cp_m[pos_match-1]);
-           ch1 = (cp_m.size() <= len1) ? ' ' : cp_m[len1];
-           
-           // whole word mch
-           if (!whole_wd || (!isalpha(ch1) && word_start_m)) { 
-              if ( !(*it)->CanGetSynonyms() || (*it)->GetSynonyms().empty() ){
-                 if (x_AdvancedStringCompare(cp_s, 
-                                           CTempString(cp_m).substr(len1), 
-                                           word_start_m, 
-                                           &target_match_len)) {
-                    recursive_match = true;
-                    break;
-                 }
-              }
-              else {
-                ITERATE (list <string>, sit, (*it)->GetSynonyms()) {
-                  len2 = (*sit).size();
-
-                    // text match
-                  if (x_CaseNCompareEqual(*sit, cp_s, len2,wd_case)){
-                    word_start_s 
-                       = (!pos_str && is_start) || !isalpha(cp_s[pos_str-1]);
-                    ch2 = (cp_s.size() <= len2) ? ' ' : cp_s[len2];
-                    // whole word match
-                    if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
-                      if(x_AdvancedStringCompare(
-                                    CTempString(cp_s).substr(len2),
-                                    CTempString(cp_m).substr(len1),
-                                    word_start_m & word_start_s, 
-                                    &target_match_len)){
-                            recursive_match = true;
-                            break;
-                      }
+    // check for synonyms to skip
+    if (IsSetIgnore_words()) {
+        ITERATE(CWord_substitution_set::Tdata, word, GetIgnore_words().Get()) {
+            vector<size_t> match_lens = (*word)->GetMatchLens(str, pattern, prev_char);
+            if (match_lens.size() > 0) {
+                size_t word_len = (*word)->GetWord().length();
+                ITERATE(vector<size_t>, len, match_lens) {
+                    size_t this_match = 0;
+                    char this_prev_char = 0;
+                    if (*len > 0) {
+                        this_prev_char = str.c_str()[(*len) - 1];
+                    } else {
+                        this_prev_char = prev_char;
                     }
-                  }
+                    if (x_PartialCompare(str.substr(*len), pattern.substr(word_len), this_prev_char, this_match)) {
+                        match_len += *len;
+                        match_len += this_match;                        
+                        return true;
+                    }
                 }
-              }
-           }
+            }
         }
-      }
     }
-
-    if (!recursive_match) {
-      if (x_CaseNCompareEqual(cp_m, cp_s, 1, str_case)) {
-           pos_match++;
-           pos_str++;
-           target_match_len++;
-      } 
-      else if ( ig_space && (isspace(cp_m[0]) || isspace(cp_s[0])) ) {
-        if ( isspace(cp_m[0]) ) pos_match++;
-        if ( isspace(cp_s[0]) ) {
-             pos_str++;
-             target_match_len++;
+    if (pattern.length() == 0) {
+        return true;
+    }
+    if (str.length() == 0) {
+        return false;
+    }
+    if (GetIgnore_space()) {
+        if (isspace(str.c_str()[0])) {
+            match_len++;
+            return x_PartialCompare(str.substr(1), pattern, str.c_str()[0], match_len);
+        } else if (isspace(pattern.c_str()[0])) {
+            return x_PartialCompare(str, pattern.substr(1), prev_char, match_len);
         }
-      }
-      else if (ig_punct && ( ispunct(cp_m[0]) || ispunct(cp_s[0]) )) {
-        if ( ispunct(cp_m[0]) ) pos_match++;
-        if ( ispunct(cp_s[0]) ) {
-             pos_str++;
-             target_match_len++;
+    }
+    if (GetIgnore_punct()) {
+        if (ispunct(str.c_str()[0])) {
+            match_len++;
+            return x_PartialCompare(str.substr(1), pattern, str.c_str()[0], match_len);
+        } else if (ispunct(pattern.c_str()[0])) {
+            return x_PartialCompare(str, pattern.substr(1), prev_char, match_len);
         }
-      }
-      else match = false;
     }
-  }
+    if (str.c_str()[0] == pattern.c_str()[0]) {
+        match_len++;
+        return x_PartialCompare(str.substr(1), pattern.substr(1), str.c_str()[0], match_len);
+    }
+    return false;
+}
 
-  if (match && !recursive_match) {
-    while ( pos_str < str.size() 
-             && ((ig_space && isspace(str[pos_str])) 
-                      || (ig_punct && ispunct(str[pos_str]))) ){
-       pos_str++;
-       target_match_len++;
-    }
-    while ( pos_match < str_match.size()
-              && ( (ig_space && isspace(str_match[pos_match])) 
-                     || (ig_punct && ispunct(str_match[pos_match])) ) ) {
-         pos_match++;
+
+bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, const char prev_char, unsigned int * ini_target_match_len)  const
+{
+    bool rval = false;
+    size_t match_len = 0;
+    if (x_PartialCompare(str, str_match, prev_char, match_len)) {
+        if (ini_target_match_len != NULL) {
+            *ini_target_match_len = match_len;
+        }
+        rval = true;
     }
 
-    if (pos_match < str_match.size()) {
-         match = false;
-    }
-    else if ( (loc == eString_location_ends || loc == eString_location_equals)
-                 && pos_str < len_s) {
-         match = false;
-    }
-    else if (GetWhole_word() 
-                && (!is_start 
-                       || (pos_str < len_s && isalpha (str[pos_str]))) ){
-             match = false;
-    }
-  }
-  if (match && ini_target_match_len) {
-         *ini_target_match_len += target_match_len;
-  }
-
-  return match;
+    return rval;
 };
 
 bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string& tmp_match) const
@@ -350,7 +280,7 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
   string
     match_text = CanGetMatch_text() ? tmp_match : kEmptyStr;
 
-  if (x_AdvancedStringCompare (str, match_text, true)) {
+  if (x_AdvancedStringCompare (str, match_text, 0)) {
        return true;
   }
   else if (GetMatch_location() == eString_location_starts
@@ -367,7 +297,7 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
       if (pos < len) {
         if (x_AdvancedStringCompare (CTempString(str).substr(pos),
                                       match_text,
-                                      true)) {
+                                      0)) {
             rval = true;
         }
         else {
@@ -723,7 +653,7 @@ bool CString_constraint::x_ReplaceContains(string& val, const string& replace) c
     while (offset < val.length()) {
         unsigned int match_len = 0;
         if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
-                                    (offset == 0 || !isalpha(val.c_str()[offset - 1])),
+                                    val.c_str()[offset - 1],
                                     &match_len)) {
             val = val.substr(0, offset) + replace + val.substr(offset + match_len);
             rval = true;
@@ -759,7 +689,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                 case eString_location_starts:
                     {{
                        unsigned int match_len = 0;
-                       if (x_AdvancedStringCompare(val, GetMatch_text(), true, &match_len)) {
+                       if (x_AdvancedStringCompare(val, GetMatch_text(), 0, &match_len)) {
                            val = replace + val.substr(match_len);
                            rval = true;
                        }
@@ -775,7 +705,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                             unsigned int match_len = 0;
                             if (x_AdvancedStringCompare(val.substr(offset), 
                                                          GetMatch_text(),
-                                                         (offset == 0), 
+                                                         (offset == 0 ? 0 : val.c_str()[offset - 1]), 
                                                           &match_len)
                                 && offset + match_len == val.length()) {
                                 val = val.substr(0, offset) + replace;
