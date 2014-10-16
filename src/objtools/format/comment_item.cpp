@@ -1335,6 +1335,10 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
 
     CNcbiOstrstream str;
 
+    if ( numBases < 1 ) {
+        return CNcbiOstrstreamToString(str);
+    }
+
     str << "There ";
     if ( numBases > 1 ) {
         str << "are ";
