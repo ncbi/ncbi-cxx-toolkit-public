@@ -872,7 +872,6 @@ BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
     options->SetGapXDropoff(100);
     options->SetMaskAtHash(false);
     CBl2Seq blaster(*query, *subj, *options);
-    bool caught_exception = false;
     CRef<CSearchResultSet> results;
     BOOST_REQUIRE_NO_THROW(results = blaster.RunEx());
 }
