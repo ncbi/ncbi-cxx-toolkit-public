@@ -852,8 +852,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 src_total_len -= src_total_len % 3;
             }
             if (dst_total_len*3 != src_total_len) {
-                NCBI_THROW(CAnnotMapperException, eBadLocation,
-                            "Source and destination lengths do not match.");
+                ERR_POST_X(31, Warning <<
+                    "Source and destination lengths do not match.");
             }
         }
         else if (dst_type == eSeq_nuc  &&  src_type == eSeq_prot) {
@@ -863,21 +863,21 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 dst_total_len -= 3;
             }
             else if (dst_total_len/3 == src_total_len  &&  dst_total_len % 3 != 0) {
-                ERR_POST_X(29, Warning <<
+                ERR_POST_X(28, Warning <<
                     "Source and destination lengths do not match, "
                     "dropping " << dst_total_len % 3 <<
                     " overhanging bases on destination location");
                 dst_total_len -= dst_total_len % 3;
             }
             if (src_total_len*3 != dst_total_len) {
-                NCBI_THROW(CAnnotMapperException, eBadLocation,
-                            "Source and destination lengths do not match.");
-            }
+                ERR_POST_X(31, Warning <<
+                    "Source and destination lengths do not match.");
+           }
         }
         // Same sequence types
         else if (src_total_len != dst_total_len) {
-            NCBI_THROW(CAnnotMapperException, eBadLocation,
-                        "Source and destination lengths do not match.");
+                ERR_POST_X(31, Warning <<
+                    "Source and destination lengths do not match.");
         }
     }
 
