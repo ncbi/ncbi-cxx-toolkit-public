@@ -662,6 +662,9 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
    { "SuspectedContaminatedCellLine",
 "Suspected contaminated cell line." } },
+   { eErr_SEQ_DESCR_WrongBiomolForTechnique,
+   { "WrongBiomolForTechnique",
+"TSA records are expected to make use of a very limited set of MolInfo.biomol values: transcribed-RNA, mRNA, rRNA, ncRNA." } },
 
 /* SEQ_GENERIC */
 

@@ -248,6 +248,7 @@ enum EErrType {
     eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
     eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
     eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
+    eErr_SEQ_DESCR_WrongBiomolForTechnique,
     ERR_CODE_END(SEQ_DESCR),
 
 

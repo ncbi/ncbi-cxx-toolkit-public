@@ -676,6 +676,51 @@ void CValidError_desc::ValidateMolInfo
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
             "Molinfo-biomol unknown used", *m_Ctx, desc);
     }
+
+    if(minfo.IsSetTech() && minfo.GetTech() == CMolInfo::eTech_tsa)
+    {
+        string p;
+        int    bm;
+
+        if(!minfo.IsSetBiomol())
+            bm = CMolInfo::eBiomol_unknown;
+        else
+            bm = minfo.GetBiomol();
+ 
+        if(bm == CMolInfo::eBiomol_unknown)
+            p = "unknown";
+        else if(bm == CMolInfo::eBiomol_genomic)
+            p = "genomic";
+        else if(bm == CMolInfo::eBiomol_pre_RNA)
+            p = "pre-RNA";
+        else if(bm == CMolInfo::eBiomol_tRNA)
+            p = "tRNA";
+        else if(bm == CMolInfo::eBiomol_snRNA)
+            p = "snRNA";
+        else if(bm == CMolInfo::eBiomol_scRNA)
+            p = "scRNA";
+        else if(bm == CMolInfo::eBiomol_peptide)
+            p = "peptide";
+        else if(bm == CMolInfo::eBiomol_other_genetic)
+            p = "other-genetic";
+        else if(bm == CMolInfo::eBiomol_genomic_mRNA)
+            p = "genomic-mRNA";
+        else if(bm == CMolInfo::eBiomol_cRNA)
+            p = "cRNA";
+        else if(bm == CMolInfo::eBiomol_snoRNA)
+            p = "snoRNA";
+        else if(bm == CMolInfo::eBiomol_tmRNA)
+            p = "tmRNA";
+        else if(bm == CMolInfo::eBiomol_other)
+            p = "other";
+        else
+            p = "";
+
+        if(p != "")
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_WrongBiomolForTechnique,
+                    "Biomol \"" + p + "\" is not appropriate for sequences that use the TSA technique.",
+                    *m_Ctx, desc);
+    }
 }
 
 
