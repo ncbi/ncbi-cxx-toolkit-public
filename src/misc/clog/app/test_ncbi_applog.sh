@@ -82,7 +82,7 @@ echo "$request_token" | \
     grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{1,\}&rid=1&rsid=request1&client=1\.2\.3\.4&rtime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
     || Error "Request 1 token have wrong format"
 
-Log 'start_request $request_token -sid=request1 -rid=1 -client=1.2.3.4 -param="r11=value1&r12=value2"' 'start_request(1)' "^00123/000/0001/RB $req1 request-start r11=value1&r12=value2"
+Log 'start_request $request_token -sid=request1 -rid=1 -client=1.2.3.4 -param="r11=value1&r12=value2"' 'start_request(1)' "^00123/000/0001/RB $req1 request-start .*r11=value1&r12=value2"
 Log 'post          $request_token -message "request message"'       'post(5)'          "^00123/000/0001/R  $req1 Error: request message"
 Log 'stop_request  $request_token -status=200 -input=11 -output=13' 'stop_request(1)'  "^00123/000/0001/RE $req1 request-stop  200 [0-9]\{1,\}.[0-9]\{3\} 11 13"
 
@@ -98,7 +98,7 @@ request_token=`$APPLOG start_request '' -sid=request2 -rid=2 -client=5.6.7.8 -pa
 if [ $? -ne 0 -o -z "$request_token" ] ; then
     Error "start_request(2)"
 fi
-Log 'start_request $request_token -sid=request2 -rid=2 -client=5.6.7.8 -param="r21=1&r22=2"' 'start_request(2)' "^00123/000/0002/RB $req2 request-start r21=1&r22=2"
+Log 'start_request $request_token -sid=request2 -rid=2 -client=5.6.7.8 -param="r21=1&r22=2"' 'start_request(2)' "^00123/000/0002/RB $req2 request-start .*r21=1&r22=2"
 Log 'stop_request  $request_token -status=600 -input=21 -output=23' 'stop_request(2)' "^00123/000/0002/RE $req2 request-stop  600 [0-9]\{1,\}\.[0-9]\{3\} 21 23"
 
 

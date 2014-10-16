@@ -67,8 +67,9 @@
     ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MESSAGE
     ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
     ncbi_applog perf          <token> -status STATUS -time TIMESPAN [-param PAIRS] [-timestamp TIME]
-    ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite]
-                                      [-pid] [-rid] [-sid] [-srvport] [-app_start_time] [-req_start_time]
+    ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-hostrole] [-hostloc]
+                                      [-logsite] [-pid] [-rid] [-sid] [-srvport]
+                                      [-app_start_time] [-req_start_time]
 
   Special commands (must be used without <token> parameter):
     ncbi_applog raw           -file <applog_formatted_logs.txt> [-logsite SITE]
@@ -146,6 +147,8 @@ struct SInfo {
     string            sid_app;          ///< Application-wide session ID (set in "start_app")
     string            sid_req;          ///< Session (request) ID (UNK_SESSION if unknown)
     string            logsite;          ///< Application-wide LogSite value (set in "start_app")
+    string            host_role;        ///< Host role (CGI mode only, ignored for local host)
+    string            host_location;    ///< Host location (CGI mode only, ignored for local host)
     // The log_site information can be passed in "start_request" also, but it will be used
     // for that command only, so we don't need to save it.
     STime             app_start_time;   ///< Application start time
@@ -174,6 +177,7 @@ typedef enum {
 } ETokenType;
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  CNcbiApplogApp
 
@@ -197,8 +201,9 @@ public:
     void UpdateInfo();
 
 private:
-    SInfo          m_Info;     ///< Logging information
-    string         m_Token;    ///< Current token
+    bool           m_IsRemoteLogging;  ///< TRUE if mode == "cgi"
+    SInfo          m_Info;             ///< Logging information
+    string         m_Token;            ///< Current token
 private:
     // Variables for raw logfile processing.
     bool           m_IsRaw;
@@ -249,8 +254,15 @@ void CNcbiApplogApp::Init(void)
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
+        // --- hidden arguments ---
         arg->AddDefaultKey
-            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.", 
+            ("hostrole", "ROLE", "Host role (will be used automatically for 'redirect' mode)",
+            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
+        arg->AddDefaultKey
+            ("hostloc", "LOCATION", "Host location (will be used automatically for 'redirect' mode)",
+            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
+        arg->AddDefaultKey
+            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("srvport", "PORT", "Server port (will be used automatically for 'redirect' mode)",
@@ -272,6 +284,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -304,6 +317,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).",
             CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -332,6 +346,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -361,6 +376,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -381,6 +397,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -405,6 +422,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -425,6 +443,8 @@ void CNcbiApplogApp::Init(void)
         arg->AddFlag("client",  "Client IP address.");
         arg->AddFlag("guid",    "Globally unique process ID.");
         arg->AddFlag("host",    "Name of the host where the application runs.");
+        arg->AddFlag("hostrole","Host role.");
+        arg->AddFlag("hostloc", "Host location.");
         arg->AddFlag("logsite", "Value for logsite parameter.");
         arg->AddFlag("pid",     "Process ID of the application.");
         arg->AddFlag("rid",     "Request ID.");
@@ -448,6 +468,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddKey
             ("file", "filename", "Name of the file with log lines. Use '-' to read from the standard input.",
             CArgDescriptions::eString);
+        // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -458,7 +479,9 @@ void CNcbiApplogApp::Init(void)
     }}
 
     SetupArgDescriptions(cmd.release());
+
     m_IsRaw = false;
+    m_IsRemoteLogging = false;
 }
 
 
@@ -539,11 +562,25 @@ int CNcbiApplogApp::Redirect()
             }
             // Current host name
             if (need_hostname) {
-                const char* hostname = NcbiLogP_GetHostName();
+                const char* hostname = NcbiLog_GetHostName();
                 if (hostname) {
                     s_args += string(" \"-host=") + hostname + "\"";
                 }
             }
+
+            // Host role and location
+            // (add unconditionally, users should not overwrite it via command line)
+            {{
+                const char* role     = NcbiLog_GetHostRoleStr();
+                const char* location = NcbiLog_GetHostLocationStr();
+                if (role) {
+                    s_args += string(" \"-hostrole=") + NStr::URLEncode(role) + "\"";
+                }
+                if (location) {
+                    s_args += string(" \"-hostloc=") + NStr::URLEncode(location) + "\"";
+                }
+            }}
+
             // $SERVER_PORT
             if (m_Info.server_port) {
                 s_args += string(" \"-srvport=") + NStr::UIntToString(m_Info.server_port) + "\"";
@@ -611,6 +648,12 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
     if (!m_Info.logsite.empty()) {
         token += "&logsite="  + m_Info.logsite;
     }
+    if (!m_Info.host_role.empty()) {
+        token += "&hostrole=" + m_Info.host_role;
+    }
+    if (!m_Info.host_location.empty()) {
+        token += "&hostloc=" + m_Info.host_location;
+    }
     if (m_Info.server_port) {
         token += "&srvport=" + NStr::UIntToString(m_Info.server_port);
     }
@@ -639,6 +682,8 @@ ETokenType CNcbiApplogApp::ParseToken()
     //     "name=STR&pid=NUM&guid=HEX&atime=N.N"
     // Also, can have: 
     //     asid, rsid, rtime, client, host, srvport, logsite.
+    // for redirect mode:
+    //     hostrole, hostloc
 
     ETokenType type = eApp;
 
@@ -668,6 +713,10 @@ ETokenType CNcbiApplogApp::ParseToken()
             have_guid = true;
         } else if ( key == "host") {
             m_Info.host = value;
+        } else if ( key == "hostrole") {
+            m_Info.host_role = value;
+        } else if ( key == "hostloc") {
+            m_Info.host_location = value;
         } else if ( key == "srvport") {
             m_Info.server_port =  NStr::StringToUInt(value);
         } else if ( key == "client") {
@@ -726,6 +775,10 @@ int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
             cout <<NStr::UInt8ToString((Uint8)m_Info.guid, 0, 16);
         } else if (arg == "-host") {
             cout << m_Info.host;
+        } else if (arg == "-hostrole") {
+            cout << m_Info.host_role;
+        } else if (arg == "-hostloc") {
+            cout << m_Info.host_location;
         } else if (arg == "-logsite") {
             cout << m_Info.logsite;
         } else if (arg == "-pid") {
@@ -755,6 +808,9 @@ void CNcbiApplogApp::SetInfo()
 {
     TNcbiLog_Info*   g_info = NcbiLogP_GetInfoPtr();
     TNcbiLog_Context g_ctx  = NcbiLogP_GetContextPtr();
+
+    // Set remote (cgi) or local logging flag
+    g_info->remote_logging = (int)m_IsRemoteLogging;
 
     // Set/restore logging parameters
     g_info->pid   = m_Info.pid;
@@ -802,6 +858,15 @@ void CNcbiApplogApp::SetInfo()
     }
     if (!m_Info.sid_req.empty()) {
         NcbiLog_SetSession(m_Info.sid_req.c_str());
+    }
+    // Host role/location
+    if (m_IsRemoteLogging) {
+        if (!m_Info.host_role.empty()) {
+            g_info->host_role = m_Info.host_role.c_str();
+        }
+        if (!m_Info.host_location.empty()) {
+            g_info->host_location = m_Info.host_location.c_str();
+        }
     }
 }
 
@@ -953,6 +1018,7 @@ int CNcbiApplogApp::Run(void)
         return Redirect();
     }
     if (mode == "cgi") {
+        m_IsRemoteLogging = true;
         // For CGI redirect all diagnostics to stdout to allow the calling
         // application see it. By default it goes to stderr for eDS_User.
         SetDiagStream(&NcbiCout);
@@ -997,7 +1063,7 @@ int CNcbiApplogApp::Run(void)
                 is_api_init = false;
                 NcbiLog_Destroy();
                 // Recursive redirection is not allowed
-                if (mode == "cgi") {
+                if (m_IsRemoteLogging) {
                     throw "/log is not writable for CGI logger";
                 }
                 return Redirect();
@@ -1039,7 +1105,7 @@ int CNcbiApplogApp::Run(void)
         m_Info.pid  = args["pid"].AsInteger();
         m_Info.host = args["host"].AsString();
         if (m_Info.host.empty()) {
-            m_Info.host = NcbiLogP_GetHostName();
+            m_Info.host = NcbiLog_GetHostName();
         }
         m_Info.sid_app = args["sid"].AsString();
         if (m_Info.sid_app.empty()) {
@@ -1051,6 +1117,10 @@ int CNcbiApplogApp::Run(void)
         m_Info.logsite = args["logsite"].AsString();
         if (m_Info.logsite.empty()) {
             m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
+        }
+        if (m_IsRemoteLogging) {
+            m_Info.host_role     = args["hostrole"].AsString();
+            m_Info.host_location = args["hostloc"].AsString();
         }
         SetInfo();
         NcbiLog_AppStart(NULL);

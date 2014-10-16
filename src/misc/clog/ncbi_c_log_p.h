@@ -48,11 +48,11 @@ extern "C" {
  *  Configurables that could theoretically change 
  */
 
-#define NCBILOG_HOST_MAX     256
-#define NCBILOG_CLIENT_MAX   256
-#define NCBILOG_SESSION_MAX  256
-#define NCBILOG_HITID_MAX    256
-#define NCBILOG_APPNAME_MAX  1024
+#define NCBILOG_HOST_MAX       256
+#define NCBILOG_CLIENT_MAX     256
+#define NCBILOG_SESSION_MAX    256
+#define NCBILOG_HITID_MAX      256
+#define NCBILOG_APPNAME_MAX   1024
 
 
 /******************************************************************************
@@ -115,18 +115,24 @@ struct SInfo_tag {
                                                 /**< App-wide client IP address (UNK_CLIENT if unknown)  */
     char              session[3*NCBILOG_SESSION_MAX+1];    
                                                 /**< App-wide session ID (UNK_SESSION if unknown)        */
+    char*             message;                  /**< Buffer used to collect a message and log it         */
+
+    /* Extras */
+
     char              phid[3*NCBILOG_HITID_MAX+1];    
                                                 /**< App-wide hit ID (empty string if unknown)           */
     int/*bool*/       phid_is_logged;           /**< 1 if request 'phid' has already logged              */
     unsigned int      phid_sub_id;              /**< App-wide sub-hit ID counter                         */
-    char*             message;                  /**< Buffer used to collect a message and log it         */
+    const char*       host_role;                /**< Host role (NULL if unknown or not set)              */
+    const char*       host_location;            /**< Host location (NULL if unknown or not set)          */
 
     /* Control parameters */
     
-    ENcbiLog_Severity post_level;               /**< Posting level                                 */
-    STime             app_start_time;           /**< Application start time                        */
-    char*             app_full_name;            /**< Pointer to a full application name (argv[0])  */
-    char*             app_base_name;            /**< Pointer to application base name              */
+    int/*bool*/       remote_logging;           /**< 1 if logging request is going from remote host */
+    ENcbiLog_Severity post_level;               /**< Posting level                                  */
+    STime             app_start_time;           /**< Application start time                         */
+    char*             app_full_name;            /**< Pointer to a full application name (argv[0])   */
+    char*             app_base_name;            /**< Pointer to application base name               */
 
     /* Log file names and handles */
 
@@ -238,13 +244,6 @@ extern void NcbiLogP_LogHitID(const char* hit_id);
  *  just write specified line to applog as is.
  */
 extern void NcbiLogP_Raw(const char* line);
-
-
-/** Get host name.
- *  The order is: cached hostname, cached host IP, uname or COMPUTERNAME,
- *  SERVER_ADDR, empty string.
- */
-extern const char* NcbiLogP_GetHostName(void);
 
 
 

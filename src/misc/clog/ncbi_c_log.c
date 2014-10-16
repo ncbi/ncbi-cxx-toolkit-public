@@ -83,7 +83,27 @@
 #ifdef TROUBLE
 #    undef TROUBLE
 #endif
-#define TROUBLE assert(0)
+#if defined(NDEBUG)
+    #define TROUBLE assert(0)
+#else
+    #define TROUBLE s_Abort()
+#endif
+
+/* Verify an expression and abort on error */
+#ifdef VERIFY
+#    undef VERIFY
+#endif
+#if defined(NDEBUG)
+    #define VERIFY(expr)     \
+        if (!expr) {         \
+            assert(expr);    \
+        }
+#else
+    #define VERIFY(expr)     \
+        if (!expr) {         \
+            s_Abort();       \
+        }
+#endif
 
 
 /* Directory separator */
@@ -372,19 +392,6 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[]);
         s_AppStart(ctx, NULL);    \
     }
 
-/* Verify an expression and unlock/return on error */
-#ifdef VERIFY
-#    undef VERIFY
-#endif
-#define VERIFY(expr)         \
-    if (!expr) {             \
-        /* error */          \
-        assert(expr);        \
-        MT_UNLOCK;           \
-        return;              \
-    }
-
-
 /* Forward declaration */
 static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params);
 static void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
@@ -472,12 +479,11 @@ static const char* s_ConcatPath(
 
 
 /** Get host name.
- *  The order is: cached hostname, cached host IP, uname or COMPUTERNAME,
- *  SERVER_ADDR, empty string.
+ *  The order is: cached host name, uname or COMPUTERNAME, empty string.
  */
-const char* NcbiLogP_GetHostName(void)
+const char* NcbiLog_GetHostName(void)
 {
-    static char* host = NULL;
+    static const char* host = NULL;
 #if defined(NCBI_OS_UNIX)
     struct utsname buf;
 #elif defined(NCBI_OS_MSWIN)
@@ -499,6 +505,116 @@ const char* NcbiLogP_GetHostName(void)
     }
 #endif
     return host;
+}
+
+/** Read first string from specified file.
+ *  Return NULL on error.
+ */
+static const char* s_ReadFileString(const char* filename)
+{
+    FILE*  fp;
+    char   buf[32];
+    size_t len = sizeof(buf);
+    char*  p = buf;
+
+    fp = fopen(filename, "rt");
+    if (!fp) {
+        return NULL;
+    }
+    if (fgets(buf, (int)len, fp) == NULL) {
+        fclose(fp);
+        return NULL;
+    }
+    fclose(fp);
+
+    /* Removing trailing spaces and following EOL */
+    while (*p  &&  !(*p == ' ' || *p == '\n')) p++;
+    *p = '\0';
+    return s_StrDup(buf);
+}
+
+
+/** Get host role.
+ */
+ENcbiLog_HostRole NcbiLog_GetHostRole(void)
+{
+    static ENcbiLog_HostRole role = eNcbiLog_Role_Unknown;
+    const char* s;
+
+    if (role) {
+        return role;
+    }
+    s = NcbiLog_GetHostRoleStr();
+    if (!s) {
+        return role;
+    }
+    if (strcmp(s, "development") == 0) {
+        role = eNcbiLog_Role_Development;
+    } else
+    if (strcmp(s, "intprod") == 0) {
+        role = eNcbiLog_Role_IntProd;
+    } else
+    if (strcmp(s, "try") == 0) {
+        role = eNcbiLog_Role_Try;
+    } else
+    if (strcmp(s, "qa") == 0) {
+        role = eNcbiLog_Role_QA;
+    } else
+    if (strcmp(s, "production") == 0) {
+        role = eNcbiLog_Role_Production;
+    }
+    return role;
+}
+
+
+/** Get host role string.
+ */
+const char* NcbiLog_GetHostRoleStr(void)
+{
+    static const char* role = NULL;
+    if ( role ) {
+        return role;
+    }
+    role = s_ReadFileString("/etc/ncbi/role");
+    return role;
+}
+
+
+/** Get host location.
+ */
+ENcbiLog_HostLocation NcbiLog_GetHostLocation(void)
+{
+    static ENcbiLog_HostLocation location = eNcbiLog_Loc_Unknown;
+    const char* s;
+
+    if (location) {
+        return location;
+    }
+    s = NcbiLog_GetHostLocationStr();
+    if (!s) {
+        return location;
+    }
+
+    if (strcmp(s, "be-md") == 0) {
+        location = eNcbiLog_Loc_Be_MD;
+    } else
+    if (strcmp(s, "st-va") == 0) {
+        location = eNcbiLog_Loc_St_VA;
+    }
+    return location;
+}
+
+
+/** Get host location string.
+ */
+const char* NcbiLog_GetHostLocationStr(void)
+{
+    static const char* location = NULL;
+    if ( location ) {
+        return location;
+    }
+    location = s_ReadFileString("/etc/ncbi/location");
+    return location;
 }
 
 
@@ -543,7 +659,7 @@ static TNcbiLog_Int8 s_CreateUID(void)
 {
     TNcbiLog_PID   pid = s_GetPID();
     time_t         t = time(0);
-    const char*    host = NcbiLogP_GetHostName();
+    const char*    host = NcbiLog_GetHostName();
     const char*    s;
     TNcbiLog_Int8  h = 212;
 
@@ -1065,7 +1181,6 @@ static void s_DestroyContext(void)
 static const char* s_GetToolkitRCLogLocation()
 {
     static const char* log_path       = NULL;
-    static const char  kToolkitRc[]   = "/etc/toolkitrc";
     static const char  kSectionName[] = "[Web_dir_to_port]";
 
     FILE*  fp;
@@ -1079,7 +1194,7 @@ static const char* s_GetToolkitRCLogLocation()
     }
 
     /* Try to get more specific location from configuration file */
-    fp = fopen(kToolkitRc, "rt");
+    fp = fopen("/etc/toolkitrc", "rt");
     if (!fp) {
         return log_path;
     }
@@ -1135,6 +1250,7 @@ static const char* s_GetToolkitRCLogLocation()
             while (*token == ' ') token++;
             p = token + 1;
             while (*p  &&  !(*p == ' ' || *p == '\n')) p++;
+            *p = '\0';
 
             /* Compose full directory name */
             {{
@@ -1652,14 +1768,13 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
         }
     }
     if (!s_GetTimeStr(x_time, sx_Info->post_time.sec, sx_Info->post_time.ns)) {
-        /* error */
-        return 0;
+        return 0;  /* error */
     }
 
     /* Define properties */
 
     if (!sx_Info->host[0]) {
-        s_SetHost(NcbiLogP_GetHostName());
+        s_SetHost(NcbiLog_GetHostName());
     }
     x_pid     = sx_Info->pid        ? sx_Info->pid            : s_GetPID();
     x_rid     = ctx->rid            ? ctx->rid                : 0;
@@ -1696,9 +1811,8 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
         x_session,
         x_appname
     );
-    if (n < 0) {
-        /* error */
-        return 0;
+    if (n <= 0) {
+        return 0;  /* error */
     }
     return n;
 }
@@ -1706,7 +1820,7 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
 
 /** Print one parameter's pair (key, value) to message buffer.
  *  Automatically URL encode each key and value.
- *  Return current position in the buffer.
+ *  Return new position in the buffer, or zero on error.
  */
 static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const char* value)
 {
@@ -1720,7 +1834,7 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
     s_URL_Encode(key, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
     if (pos >= NCBILOG_ENTRY_MAX-1) {
-        return pos;
+        return 0;  /* error */
     }
     /* Value */
     dst[pos++] = '=';
@@ -1736,7 +1850,7 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
 
 
 /** Print parameters to message buffer.
- *  Return current position in the buffer, or zero on error.
+ *  Return new position in the buffer, or zero on error.
  */
 static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
 {
@@ -1752,6 +1866,7 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
                     amp = 1;
                 }
                 pos = s_PrintParamsPair(dst, pos, params->key, params->value);
+                VERIFY(pos);
             }
             params++;
         }
@@ -1763,7 +1878,7 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
 
 /** Print parameters to message buffer (string version).
  *  The 'params' must be already prepared pairs with URL-encoded key and value.
- *  Return current position in the buffer, or zero on error.
+ *  Return new position in the buffer, or zero on error.
  */
 static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
 {
@@ -1774,7 +1889,7 @@ static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
     }
     len = strlen(params);
     if (len >= NCBILOG_ENTRY_MAX - pos) {
-        return pos;
+        return 0;  /* error */
     }
     memcpy(dst + pos, params, len);
     pos += len;
@@ -1824,7 +1939,8 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
+
     /* Severity */
     n = sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
     VERIFY(n > 0);
@@ -2436,7 +2552,7 @@ extern char* NcbiLog_GetNextSubHitID(void)
     MT_UNLOCK;
 
     if (n <= 0) {
-        return NULL;
+        return NULL;  /* error */
     }
     return s_StrDup(buf);
 }
@@ -2558,7 +2674,7 @@ extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
     s_SetState(ctx, eNcbiLog_AppEnd);
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
     /* We already have current time in sx_Info->post_time */
     timespan = s_DiffTime(sx_Info->app_start_time, sx_Info->post_time);
     if ( exit_signal ) {
@@ -2638,20 +2754,68 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
 }
 
 
+/** Print extra parameters for request start.
+ *  Automatically URL encode each key and value.
+ *  Return current position in the buffer.
+ */
+static size_t s_PrintReqStartExtraParams(char* dst, size_t pos)
+{
+    SNcbiLog_Param ext[3];
+    size_t ext_idx = 0;
+
+    memset((char*)ext, 0, sizeof(ext));
+
+    /* Add host role */
+    if (!sx_Info->host_role  &&  !sx_Info->remote_logging) {
+        sx_Info->host_role = NcbiLog_GetHostRoleStr();
+    }
+    if (sx_Info->host_role  &&  sx_Info->host_role[0]) {
+        ext[ext_idx].key = "ncbi_role";
+        ext[ext_idx].value = sx_Info->host_role;
+        ext_idx++;
+    }
+
+    /* Add host location */
+    if (!sx_Info->host_location  &&  !sx_Info->remote_logging) {
+        sx_Info->host_location = NcbiLog_GetHostLocationStr();
+    }
+    if (sx_Info->host_location  &&  sx_Info->host_location[0]) {
+        ext[ext_idx].key = "ncbi_location";
+        ext[ext_idx].value = sx_Info->host_location;
+        ext_idx++;
+    }
+
+    if (ext_idx) {
+        pos = s_PrintParams(sx_Info->message, pos, ext);
+    }
+    return pos;
+}
+
+
 void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
-    size_t n, pos;
+    size_t prev, pos = 0;
 
     MT_LOCK_API;
 
     ctx = s_GetContext();
     /* Common request info */
     pos = s_ReqStart(ctx);
-    VERIFY(pos > 0);
-    /* Parameters */
-    n = s_PrintParams(sx_Info->message, pos, params);
-    VERIFY(n > 0);
+    VERIFY(pos);
+
+    /* Print host role/location -- add it before users parameters */
+    prev = pos;
+    pos = s_PrintReqStartExtraParams(sx_Info->message, pos);
+    VERIFY(pos);
+    if (prev != pos  &&  params  &&  params->key  &&  params->key[0]  &&  pos < NCBILOG_ENTRY_MAX) {
+        sx_Info->message[pos++] = '&';
+    }
+
+    /* User request parameters */
+    pos = s_PrintParams(sx_Info->message, pos, params);
+    VERIFY(pos);
+
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -2662,17 +2826,27 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 extern void NcbiLogP_ReqStartStr(const char* params)
 {
     TNcbiLog_Context ctx = NULL;
-    size_t n, pos;
+    size_t prev, pos = 0;
 
     MT_LOCK_API;
 
     ctx = s_GetContext();
     /* Common request info */
     pos = s_ReqStart(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
+
+    /* Print host role/location */
+    prev = pos;
+    pos = s_PrintReqStartExtraParams(sx_Info->message, pos);
+    VERIFY(pos);
+    if (prev != pos  &&  params  &&  params[0]  &&  pos < NCBILOG_ENTRY_MAX) {
+        sx_Info->message[pos++] = '&';
+    }
+
     /* Parameters */
-    n = s_PrintParamsStr(sx_Info->message, pos, params);
-    VERIFY(n > 0);
+    pos = s_PrintParamsStr(sx_Info->message, pos, params);
+    VERIFY(pos);
+
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -2705,7 +2879,7 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
     /* We already have current time in sx_Info->post_time */
     timespan = s_DiffTime(ctx->req_start_time, sx_Info->post_time);
     n = sprintf(sx_Info->message + pos, "%-13s %d %.3f %lu %lu",
@@ -2737,20 +2911,20 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 {
     int    n;
-    size_t nu, pos;
+    size_t pos;
     char*  buf;
 
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
     /* Event name */
     n = sprintf(buf + pos, "%-13s ", "extra");
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    nu = s_PrintParams(buf, pos, params);
-    VERIFY(nu > 0);
+    pos = s_PrintParams(buf, pos, params);
+    VERIFY(pos);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 }
@@ -2759,20 +2933,20 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
 {
     int    n;
-    size_t nu, pos;
+    size_t pos;
     char*  buf;
 
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
     /* Event name */
     n = sprintf(buf + pos, "%-13s ", "extra");
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    nu = s_PrintParamsStr(buf, pos, params);
-    VERIFY(nu > 0);
+    pos = s_PrintParamsStr(buf, pos, params);
+    VERIFY(pos);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 }
@@ -2805,7 +2979,7 @@ extern void NcbiLog_Perf(int status, double timespan,
 {
     TNcbiLog_Context ctx = NULL;
     int    n;
-    size_t nu, pos;
+    size_t pos;
     char*  buf;
 
     MT_LOCK_API;
@@ -2815,14 +2989,14 @@ extern void NcbiLog_Perf(int status, double timespan,
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
     /* Print event name, status and timespan */
     n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    nu = s_PrintParams(buf, pos, params);
-    VERIFY(nu > 0);
+    pos = s_PrintParams(buf, pos, params);
+    VERIFY(pos);
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
@@ -2833,7 +3007,8 @@ extern void NcbiLog_Perf(int status, double timespan,
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 {
     TNcbiLog_Context ctx = NULL;
-    size_t n, pos;
+    int    n;
+    size_t pos;
     char*  buf;
 
     MT_LOCK_API;
@@ -2843,14 +3018,14 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    VERIFY(pos);
     /* Print event name, status and timespan */
     n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    n = s_PrintParamsStr(buf, pos, params);
-    VERIFY(n > 0);
+    pos = s_PrintParamsStr(buf, pos, params);
+    VERIFY(pos);
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
@@ -2892,6 +3067,7 @@ extern void NcbiLog_Fatal(const char* msg)
 extern void NcbiLogP_Raw(const char* line)
 {
     FILE* f = NULL;
+    int n;
 
     assert(line);
     assert(strlen(line) > 127);  /* minimal applog line length (?) */
@@ -2935,8 +3111,9 @@ extern void NcbiLogP_Raw(const char* line)
             break;
     }
     VERIFY(f);
-    fprintf(f, "%s\n", line);
+    n = fprintf(f, "%s\n", line);
     fflush(f);
+    VERIFY(n > 0);
     MT_UNLOCK;
 }
 
