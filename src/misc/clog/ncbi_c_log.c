@@ -64,45 +64,43 @@
 #endif
 
 #if defined(NCBI_POSIX_THREADS)
-#    include <pthread.h>
-#    include <sys/errno.h>
+#  include <pthread.h>
+#  include <sys/errno.h>
 #endif
 
 /* assert, verify */
 #if !defined(NDEBUG)  &&  !defined(_DEBUG)
 #  define NDEBUG
 #endif
+
 #include <assert.h>
+
 #if defined(NDEBUG)
-#  define verify(expr)  (void)(expr)
+#  define verify(expr)  while ( expr ) break
 #else
 #  define verify(expr)  assert(expr)
 #endif
 
-/* Critical error. Should never happens */ 
+/* Critical error. Should never happen */ 
 #ifdef TROUBLE
-#    undef TROUBLE
+#  undef TROUBLE
 #endif
+
 #if defined(NDEBUG)
-    #define TROUBLE assert(0)
+#  define TROUBLE  ((void)0)
 #else
-    #define TROUBLE s_Abort()
+#  define TROUBLE  s_Abort()
 #endif
 
 /* Verify an expression and abort on error */
 #ifdef VERIFY
-#    undef VERIFY
+#  undef VERIFY
 #endif
+
 #if defined(NDEBUG)
-    #define VERIFY(expr)     \
-        if (!expr) {         \
-            assert(expr);    \
-        }
+#  define VERIFY(expr)  while ( expr ) break
 #else
-    #define VERIFY(expr)     \
-        if (!expr) {         \
-            s_Abort();       \
-        }
+#  define VERIFY(expr)  do  { if ( !(expr) )  s_Abort(); }  while ( 0 )
 #endif
 
 
@@ -154,6 +152,34 @@ static volatile TNcbiLog_Info*    sx_Info      = NULL;
 
 /* Pointer to the context (single-threaded applications only, otherwise use TLS) */
 static volatile TNcbiLog_Context  sx_ContextST = NULL;
+
+
+
+
+/******************************************************************************
+ *  Abort  (for the locally defined ASSERT, VERIFY and TROUBLE macros)
+ */
+
+static void s_Abort(void)
+{
+    /* Check environment variable for silent exit */
+    char* value = getenv("DIAG_SILENT_ABORT");
+
+    if (value  &&  (*value == 'Y'  ||  *value == 'y'  ||  *value == '1')) {
+        exit(255);
+    }
+
+    if (value  &&  (*value == 'N'  ||  *value == 'n' || *value == '0')) {
+        abort();
+    }
+
+#if defined(_DEBUG)
+    abort();
+#else
+    exit(255);
+#endif
+}
+
 
 
 /******************************************************************************
@@ -1064,30 +1090,6 @@ static char* s_GetAppBaseName(const char* path)
     }
 #endif
     return name;
-}
-
-
-/** Abort application.
- */
-void s_Abort(void)
-{
-    char* value;
-    /* Check environment variable for silent exit */
-    value = getenv("DIAG_SILENT_ABORT");
-    if (value  &&  (*value == 'Y'  ||  *value == 'y'  ||  *value == '1')) {
-        exit(255);
-    }
-    else if (value  &&  (*value == 'N'  ||  *value == 'n' || *value == '0')) {
-        abort();
-    }
-    else {
-#if defined(_DEBUG)
-        abort();
-#else
-        exit(255);
-#endif
-    }
-    TROUBLE;
 }
 
 
