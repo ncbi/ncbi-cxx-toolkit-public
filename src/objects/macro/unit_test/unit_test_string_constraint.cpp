@@ -236,6 +236,62 @@ BOOST_AUTO_TEST_CASE(Test_StringConstraintWithSynonyms)
 
 }
 
+BOOST_AUTO_TEST_CASE(Test_synonyms)
+{
+    // string_constraint with ignore-words
+    CString_constraint s;
+    s.SetMatch_text("Homo sapiens");
+    s.SetMatch_location(eString_location_equals);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef <CWord_substitution> word_sub(new CWord_substitution);
+    word_sub->SetWord("Homo sapiens");
+    list <string> syns;
+    syns.push_back("human");
+    syns.push_back("Homo sapien");
+    syns.push_back("Homosapiens");
+    syns.push_back("Homo-sapiens");
+    syns.push_back("Homo spiens");
+    syns.push_back("Homo Sapience");
+    syns.push_back("homosapein");
+    syns.push_back("homosapiens");
+    syns.push_back("homosapien");
+    syns.push_back("homo_sapien");
+    syns.push_back("homo_sapiens");
+    syns.push_back("Homosipian");
+    word_sub->SetSynonyms() = syns;
+    s.SetIgnore_words().Set().push_back(word_sub);
+
+    CRef <CWord_substitution> word_sub2(new CWord_substitution);
+    word_sub2->SetWord("sapiens");
+    syns.clear();
+    syns.push_back("sapien");
+    syns.push_back("sapeins");
+    syns.push_back("sapein");
+    syns.push_back("sapins");
+    syns.push_back("sapens");
+    syns.push_back("sapin");
+    syns.push_back("sapen");
+    syns.push_back("sapians");
+    syns.push_back("sapian");
+    syns.push_back("sapies");
+    syns.push_back("sapie");
+    word_sub2->SetSynonyms() = syns;
+    s.SetIgnore_words().Set().push_back(word_sub2);
+    string test = "human";
+    BOOST_CHECK_EQUAL(s.Match(test), true);
+    test = "humano";
+    BOOST_CHECK_EQUAL(s.Match(test), false);
+    test = "Homo sapien";
+    BOOST_CHECK_EQUAL(s.Match(test), true);
+    test = "Human sapien";
+    BOOST_CHECK_EQUAL(s.Match(test), false);
+    test = "sapien";
+    BOOST_CHECK_EQUAL(s.Match(test), false);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SQD_2048)
 {
     CString_constraint s;

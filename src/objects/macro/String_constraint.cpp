@@ -280,7 +280,10 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
   string
     match_text = CanGetMatch_text() ? tmp_match : kEmptyStr;
 
-  if (x_AdvancedStringCompare (str, match_text, 0)) {
+  unsigned int match_len = 0;
+
+  if (x_AdvancedStringCompare (str, match_text, 0, &match_len) &&
+      (GetMatch_location() != eString_location_equals || match_len == str.length())) {
        return true;
   }
   else if (GetMatch_location() == eString_location_starts

@@ -78,8 +78,9 @@ vector<size_t> CWord_substitution :: GetMatchLens(const string& text, const stri
     vector<size_t> match_lens;
     size_t len;
 
-    if (IsSetWord() &&
-        !NStr::StartsWith(pattern, GetWord(), GetCase_sensitive() ? NStr::eCase : NStr::eNocase)) {
+    if (!IsSetWord()) {
+        // doesn't make sense
+    } else if (!NStr::StartsWith(pattern, GetWord(), GetCase_sensitive() ? NStr::eCase : NStr::eNocase)) {
         // no match
     } else if (IsSetSynonyms()) {
         ITERATE(CWord_substitution::TSynonyms, syn, GetSynonyms()) {
