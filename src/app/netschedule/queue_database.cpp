@@ -47,6 +47,7 @@
 #include "ns_util.hpp"
 #include "netschedule_version.hpp"
 #include "ns_server.hpp"
+#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -322,17 +323,15 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
                                   CBDB_Transaction::eTransASync);
 
     m_Env->OpenWithTrans(m_Path.c_str(), opt);
-    LOG_POST(Message << Warning
-                     << "Opened " << (params.private_env ? "private " : "")
-                     << "BDB environment with "
-                     << m_Env->GetMaxLocks() << " max locks, "
-//                    << m_Env->GetMaxLockers() << " max lockers, "
-//                    << m_Env->GetMaxLockObjects() << " max lock objects, "
-                     << (m_Env->GetTransactionSync() ==
-                                CBDB_Transaction::eTransSync ?
-                                      "" : "a") << "syncronous transactions, "
-                     << m_Env->MutexGetMax() <<  " max mutexes");
-
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("info", "opened BDB environment")
+        .Print("private", params.private_env ? "true" : "false")
+        .Print("max_locks", m_Env->GetMaxLocks())
+        .Print("transactions",
+               m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
+                    "syncronous" : "asyncronous")
+        .Print("max_mutexes", m_Env->MutexGetMax());
 
     m_Env->SetDirectDB(params.direct_db);
     m_Env->SetDirectLog(params.direct_log);
@@ -677,12 +676,15 @@ CQueueDataBase::x_ReadIniFileQueueClassDescriptions(const IRegistry &  reg)
         const string &      section_name = *it;
 
         NStr::SplitInTwo(section_name, "_", prefix, queue_class);
-        if (NStr::CompareNocase(prefix, "qclass") != 0 ||
-            queue_class.empty())
+        if (NStr::CompareNocase(prefix, "qclass") != 0 || queue_class.empty())
             continue;
 
+        // Warnings are ignored here. At this point they are not of interest
+        // because they have already been collected at the startup (allowed)
+        // or at RECO - a file with warnings is not allowed
         SQueueParameters    params;
-        params.Read(reg, section_name);
+        vector<string>      warnings;
+        params.ReadQueueClass(reg, section_name, warnings);
 
         // The same sections cannot appear twice
         queue_classes[queue_class] = params;
@@ -708,168 +710,16 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
         const string &      section_name = *it;
 
         NStr::SplitInTwo(section_name, "_", prefix, queue_name);
-        if (NStr::CompareNocase(prefix, "queue") != 0 ||
-            queue_name.empty())
+        if (NStr::CompareNocase(prefix, "queue") != 0 || queue_name.empty())
             continue;
 
-        string  qclass = reg.GetString(section_name, "class", kEmptyStr);
-        if (qclass.empty()) {
-            // This queue does not have a class so read it with defaults
-            SQueueParameters    params;
-            params.Read(reg, section_name);
+        // Warnings are ignored here. At this point they are not of interest
+        // because they have already been collected at the startup (allowed)
+        // or at RECO - a file with warnings is not allowed
+        SQueueParameters    params;
+        vector<string>      warnings;
+        params.ReadQueue(reg, section_name, classes, warnings);
 
-            queues[queue_name] = params;
-            continue;
-        }
-
-        // This queue derives from a class
-        TQueueParams::const_iterator  found = classes.find(qclass);
-        if (found == classes.end()) {
-            // Skip such a queue. The log message has been produced while the
-            // config file is validated.
-            continue;
-        }
-
-        // Take the class parameters
-        SQueueParameters    params = found->second;
-
-        // Override the class with what found in the section
-        list<string>        values;
-        reg.EnumerateEntries(section_name, &values);
-
-        for (list<string>::const_iterator  val = values.begin();
-             val != values.end(); ++val) {
-            if (*val == "timeout")
-                params.timeout =
-                    params.ReadTimeout(reg, section_name);
-            else if (*val == "notif_hifreq_interval")
-                params.notif_hifreq_interval =
-                    params.ReadNotifHifreqInterval(reg, section_name);
-            else if (*val == "notif_hifreq_period")
-                params.notif_hifreq_period =
-                    params.ReadNotifHifreqPeriod(reg, section_name);
-            else if (*val == "notif_lofreq_mult")
-                params.notif_lofreq_mult =
-                    params.ReadNotifLofreqMult(reg, section_name);
-            else if (*val == "notif_handicap")
-                params.notif_handicap =
-                    params.ReadNotifHandicap(reg, section_name);
-            else if (*val == "dump_buffer_size")
-                params.dump_buffer_size =
-                    params.ReadDumpBufferSize(reg, section_name);
-            else if (*val == "dump_client_buffer_size")
-                params.dump_client_buffer_size =
-                    params.ReadDumpClientBufferSize(reg, section_name);
-            else if (*val == "dump_aff_buffer_size")
-                params.dump_aff_buffer_size =
-                    params.ReadDumpAffBufferSize(reg, section_name);
-            else if (*val == "dump_group_buffer_size")
-                params.dump_group_buffer_size =
-                    params.ReadDumpGroupBufferSize(reg, section_name);
-            else if (*val == "run_timeout")
-                params.run_timeout =
-                    params.ReadRunTimeout(reg, section_name);
-            else if (*val == "read_timeout")
-                params.read_timeout =
-                    params.ReadReadTimeout(reg, section_name);
-            else if (*val == "program")
-                params.program_name = params.ReadProgram(reg, section_name);
-            else if (*val == "failed_retries")
-                params.failed_retries =
-                    params.ReadFailedRetries(reg, section_name);
-            else if (*val == "read_failed_retries")
-                // See CXX-5161, the read_failed_retries depends on
-                // failed_retries
-                params.read_failed_retries =
-                    params.ReadReadFailedRetries(reg, section_name,
-                            params.ReadFailedRetries(reg, section_name));
-            else if (*val == "blacklist_time")
-                params.blacklist_time =
-                    params.ReadBlacklistTime(reg, section_name);
-                // See CXX-4993, the read_blacklist_time depends on
-                // blacklist_time
-            else if (*val == "read_blacklist_time")
-                params.read_blacklist_time =
-                    params.ReadReadBlacklistTime(reg, section_name,
-                            params.ReadBlacklistTime(reg, section_name));
-            else if (*val == "max_input_size")
-                params.max_input_size =
-                    params.ReadMaxInputSize(reg, section_name);
-            else if (*val == "max_output_size")
-                params.max_output_size =
-                    params.ReadMaxOutputSize(reg, section_name);
-            else if (*val == "subm_host")
-                params.subm_hosts =
-                    params.ReadSubmHosts(reg, section_name);
-            else if (*val == "wnode_host")
-                params.wnode_hosts =
-                    params.ReadWnodeHosts(reg, section_name);
-            else if (*val == "reader_host")
-                params.reader_hosts =
-                    params.ReadReaderHosts(reg, section_name);
-            else if (*val == "wnode_timeout")
-                params.wnode_timeout =
-                    params.ReadWnodeTimeout(reg, section_name);
-            else if (*val == "reader_timeout")
-                params.reader_timeout =
-                    params.ReadReaderTimeout(reg, section_name);
-            else if (*val == "pending_timeout")
-                params.pending_timeout =
-                    params.ReadPendingTimeout(reg, section_name);
-            else if (*val == "max_pending_wait_timeout")
-                params.max_pending_wait_timeout =
-                    params.ReadMaxPendingWaitTimeout(reg, section_name);
-            else if (*val == "max_pending_read_wait_timeout")
-                params.max_pending_read_wait_timeout =
-                    params.ReadMaxPendingReadWaitTimeout(reg, section_name);
-            else if (*val == "description")
-                params.description =
-                    params.ReadDescription(reg, section_name);
-            else if (*val == "scramble_job_keys")
-                params.scramble_job_keys =
-                    params.ReadScrambleJobKeys(reg, section_name);
-            else if (*val == "client_registry_timeout_worker_node")
-                params.client_registry_timeout_worker_node =
-                    params.ReadClientRegistryTimeoutWorkerNode(reg,
-                                                               section_name);
-            else if (*val == "client_registry_min_worker_nodes")
-                params.client_registry_min_worker_nodes =
-                    params.ReadClientRegistryMinWorkerNodes(reg, section_name);
-            else if (*val == "client_registry_timeout_admin")
-                params.client_registry_timeout_admin =
-                    params.ReadClientRegistryTimeoutAdmin(reg, section_name);
-            else if (*val == "client_registry_min_admins")
-                params.client_registry_min_admins =
-                    params.ReadClientRegistryMinAdmins(reg, section_name);
-            else if (*val == "client_registry_timeout_submitter")
-                params.client_registry_timeout_submitter =
-                    params.ReadClientRegistryTimeoutSubmitter(reg,
-                                                              section_name);
-            else if (*val == "client_registry_min_submitters")
-                params.client_registry_min_submitters =
-                    params.ReadClientRegistryMinSubmitters(reg, section_name);
-            else if (*val == "client_registry_timeout_reader")
-                params.client_registry_timeout_reader =
-                    params.ReadClientRegistryTimeoutReader(reg, section_name);
-            else if (*val == "client_registry_min_readers")
-                params.client_registry_min_readers =
-                    params.ReadClientRegistryMinReaders(reg, section_name);
-            else if (*val == "client_registry_timeout_unknown")
-                params.client_registry_timeout_unknown =
-                    params.ReadClientRegistryTimeoutUnknown(reg, section_name);
-            else if (*val == "client_registry_min_unknowns")
-                params.client_registry_min_unknowns =
-                    params.ReadClientRegistryMinUnknowns(reg, section_name);
-        }
-
-        // Apply linked sections if so
-        map<string, string> linked_sections =
-                                params.ReadLinkedSections(reg, section_name);
-        for (map<string, string>::const_iterator  k = linked_sections.begin();
-             k != linked_sections.end(); ++k)
-            params.linked_sections[k->first] = k->second;
-
-        params.qclass = qclass;
         queues[queue_name] = params;
     }
 
@@ -1589,16 +1439,12 @@ CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
     unsigned int        recs = q->LoadStatusMatrix();
     m_Queues[qname] = make_pair(params, q.release());
 
-    if (params.qclass.empty())
-        LOG_POST(Message << Warning << "Queue '" << qname
-                                    << "' (without any class) mounted. "
-                                       "Number of records: " << recs);
-
-    else
-        LOG_POST(Message << Warning << "Queue '" << qname << "' of class '"
-                                    << params.qclass
-                                    << "' mounted. Number of records: "
-                                    << recs);
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("_queue", qname)
+        .Print("qclass", params.qclass)
+        .Print("info", "mount")
+        .Print("records", recs);
 }
 
 
@@ -1812,12 +1658,11 @@ void CQueueDataBase::Close(void)
 
         m_QueueDescriptionDB.Close();
         try {
-            if (m_Env->CheckRemove())
-                LOG_POST(Message << Warning << "JS: '" << m_Name
-                                 << "' Unmounted. BDB ENV deleted.");
-            else
-                LOG_POST(Message << Warning << "JS: '" << m_Name
-                                 << "' environment still in use.");
+            GetDiagContext().Extra()
+                .Print("_type", "finishing")
+                .Print("info", "unmount")
+                .Print("name", m_Name)
+                .Print("in_use", m_Env->CheckRemove() ? "false" : "true");
             x_RemoveNeedReinitFile();
         }
         catch (exception &  ex) {

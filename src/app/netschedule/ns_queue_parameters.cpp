@@ -44,6 +44,71 @@
 BEGIN_NCBI_SCOPE
 
 
+const string    g_WarnPrefix = "Validating config file: unexpected value of ";
+
+
+// Forms the ini file value name for warnings
+string NS_RegValName(const string &  section, const string &  entry)
+{
+    return "[" + section + "]/" + entry;
+}
+
+bool NS_ValidateDouble(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings)
+{
+    try {
+        reg.GetDouble(section, entry, 0.0);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected a floating point value.");
+        return false;
+    }
+    return true;
+}
+
+bool NS_ValidateBool(const IRegistry &  reg,
+                     const string &  section, const string &  entry,
+                     vector<string> &  warnings)
+{
+    try {
+        reg.GetBool(section, entry, false);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected boolean value.");
+        return false;
+    }
+    return true;
+}
+
+bool NS_ValidateInt(const IRegistry &  reg,
+                    const string &  section, const string &  entry,
+                    vector<string> &  warnings)
+{
+    try {
+        reg.GetInt(section, entry, 0);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected integer value.");
+        return false;
+    }
+    return true;
+}
+
+bool NS_ValidateString(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings)
+{
+    try {
+        reg.GetString(section, entry, "");
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected string value.");
+        return false;
+    }
+    return true;
+}
+
 
 
 SQueueParameters::SQueueParameters() :
@@ -99,56 +164,244 @@ SQueueParameters::SQueueParameters() :
 
 
 
-#define GetIntNoErr(name, dflt)    reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
-#define GetDoubleNoErr(name, dflt) reg.GetDouble(sname, name, dflt, 0, IRegistry::eReturn)
-#define GetBoolNoErr(name, dflt)   reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
-
-
-void SQueueParameters::Read(const IRegistry& reg, const string& sname)
+void SQueueParameters::ReadQueueClass(const IRegistry &  reg,
+                                      const string &  sname,
+                                      vector<string> &  warnings)
 {
-    qclass = reg.GetString(sname, "class", kEmptyStr);
+    qclass = "";    // No class name for the queue class
 
-    timeout = ReadTimeout(reg, sname);
-    notif_hifreq_interval = ReadNotifHifreqInterval(reg, sname);
-    notif_hifreq_period = ReadNotifHifreqPeriod(reg, sname);
-    notif_lofreq_mult = ReadNotifLofreqMult(reg, sname);
-    notif_handicap = ReadNotifHandicap(reg, sname);
-    dump_buffer_size = ReadDumpBufferSize(reg, sname);
-    dump_client_buffer_size = ReadDumpClientBufferSize(reg, sname);
-    dump_aff_buffer_size = ReadDumpAffBufferSize(reg, sname);
-    dump_group_buffer_size = ReadDumpGroupBufferSize(reg, sname);
-    run_timeout = ReadRunTimeout(reg, sname);
-    read_timeout = ReadReadTimeout(reg, sname);
-    program_name = ReadProgram(reg, sname);
-    failed_retries = ReadFailedRetries(reg, sname);
-    read_failed_retries = ReadReadFailedRetries(reg, sname, failed_retries);
-    blacklist_time = ReadBlacklistTime(reg, sname);
-    read_blacklist_time = ReadReadBlacklistTime(reg, sname, blacklist_time);
-    max_input_size = ReadMaxInputSize(reg, sname);
-    max_output_size = ReadMaxOutputSize(reg, sname);
-    subm_hosts = ReadSubmHosts(reg, sname);
-    wnode_hosts = ReadWnodeHosts(reg, sname);
-    reader_hosts = ReadReaderHosts(reg, sname);
-    wnode_timeout = ReadWnodeTimeout(reg, sname);
-    reader_timeout = ReadReaderTimeout(reg, sname);
-    pending_timeout = ReadPendingTimeout(reg, sname);
-    max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
-    max_pending_read_wait_timeout = ReadMaxPendingReadWaitTimeout(reg, sname);
-    description = ReadDescription(reg, sname);
-    scramble_job_keys = ReadScrambleJobKeys(reg, sname);
-    client_registry_timeout_worker_node = ReadClientRegistryTimeoutWorkerNode(reg, sname);
-    client_registry_min_worker_nodes = ReadClientRegistryMinWorkerNodes(reg, sname);
-    client_registry_timeout_admin = ReadClientRegistryTimeoutAdmin(reg, sname);
-    client_registry_min_admins = ReadClientRegistryMinAdmins(reg, sname);
-    client_registry_timeout_submitter = ReadClientRegistryTimeoutSubmitter(reg, sname);
-    client_registry_min_submitters = ReadClientRegistryMinSubmitters(reg, sname);
-    client_registry_timeout_reader = ReadClientRegistryTimeoutReader(reg, sname);
-    client_registry_min_readers = ReadClientRegistryMinReaders(reg, sname);
-    client_registry_timeout_unknown = ReadClientRegistryTimeoutUnknown(reg, sname);
-    client_registry_min_unknowns = ReadClientRegistryMinUnknowns(reg, sname);
-    linked_sections = ReadLinkedSections(reg, sname);
-    return;
+    timeout = ReadTimeout(reg, sname, warnings);
+    notif_hifreq_interval = ReadNotifHifreqInterval(reg, sname, warnings);
+    notif_hifreq_period = ReadNotifHifreqPeriod(reg, sname, warnings);
+    notif_lofreq_mult = ReadNotifLofreqMult(reg, sname, warnings);
+    notif_handicap = ReadNotifHandicap(reg, sname, warnings);
+    dump_buffer_size = ReadDumpBufferSize(reg, sname, warnings);
+    dump_client_buffer_size = ReadDumpClientBufferSize(reg, sname, warnings);
+    dump_aff_buffer_size = ReadDumpAffBufferSize(reg, sname, warnings);
+    dump_group_buffer_size = ReadDumpGroupBufferSize(reg, sname, warnings);
+    run_timeout = ReadRunTimeout(reg, sname, warnings);
+    read_timeout = ReadReadTimeout(reg, sname, warnings);
+    program_name = ReadProgram(reg, sname, warnings);
+    failed_retries = ReadFailedRetries(reg, sname, warnings);
+    read_failed_retries = ReadReadFailedRetries(reg, sname, warnings,
+                                                failed_retries);
+    blacklist_time = ReadBlacklistTime(reg, sname, warnings);
+    read_blacklist_time = ReadReadBlacklistTime(reg, sname, warnings,
+                                                blacklist_time);
+    max_input_size = ReadMaxInputSize(reg, sname, warnings);
+    max_output_size = ReadMaxOutputSize(reg, sname, warnings);
+    subm_hosts = ReadSubmHosts(reg, sname, warnings);
+    wnode_hosts = ReadWnodeHosts(reg, sname, warnings);
+    reader_hosts = ReadReaderHosts(reg, sname, warnings);
+    wnode_timeout = ReadWnodeTimeout(reg, sname, warnings);
+    reader_timeout = ReadReaderTimeout(reg, sname, warnings);
+    pending_timeout = ReadPendingTimeout(reg, sname, warnings);
+    max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname, warnings);
+    max_pending_read_wait_timeout = ReadMaxPendingReadWaitTimeout(reg, sname,
+                                                                  warnings);
+    description = ReadDescription(reg, sname, warnings);
+    scramble_job_keys = ReadScrambleJobKeys(reg, sname, warnings);
+    client_registry_timeout_worker_node = ReadClientRegistryTimeoutWorkerNode(
+                                                reg, sname, warnings);
+    client_registry_min_worker_nodes = ReadClientRegistryMinWorkerNodes(
+                                                reg, sname, warnings);
+    client_registry_timeout_admin = ReadClientRegistryTimeoutAdmin(reg, sname,
+                                                                   warnings);
+    client_registry_min_admins = ReadClientRegistryMinAdmins(reg, sname,
+                                                             warnings);
+    client_registry_timeout_submitter = ReadClientRegistryTimeoutSubmitter(
+                                                reg, sname, warnings);
+    client_registry_min_submitters = ReadClientRegistryMinSubmitters(reg, sname,
+                                                                     warnings);
+    client_registry_timeout_reader = ReadClientRegistryTimeoutReader(reg, sname,
+                                                                     warnings);
+    client_registry_min_readers = ReadClientRegistryMinReaders(reg, sname,
+                                                               warnings);
+    client_registry_timeout_unknown = ReadClientRegistryTimeoutUnknown(
+                                                reg, sname, warnings);
+    client_registry_min_unknowns = ReadClientRegistryMinUnknowns(reg, sname,
+                                                                 warnings);
+    linked_sections = ReadLinkedSections(reg, sname, warnings);
 }
+
+
+void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
+                                 const TQueueParams &  queue_classes,
+                                 vector<string> &  warnings)
+{
+    string      queue_class = ReadClass(reg, sname, warnings);
+    if (queue_class.empty()) {
+        // There is no class so it exactly matches a queue class
+        ReadQueueClass(reg, sname, warnings);
+        return;
+    }
+
+    // This queue derives from a class
+    TQueueParams::const_iterator  found = queue_classes.find(queue_class);
+    if (found == queue_classes.end()) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "class") +
+                           ". It refers to un unknown queue class");
+        // Read the queue as if there were no queue class
+        ReadQueueClass(reg, sname, warnings);
+        return;
+    }
+
+    // Here: the queue class is here and the queue needs to derive everything
+    // from the queue class
+    *this = found->second;
+    // The class name has been reset in the assignment above
+    qclass = queue_class;
+
+    // Override the class with what found in the section
+    list<string>        values;
+    reg.EnumerateEntries(sname, &values);
+
+    // Avoid to have double warnings if so
+    unsigned int        failed_retries_preread = ReadFailedRetries(reg, sname,
+                                                                   warnings);
+    CNSPreciseTime      blacklist_time_preread = ReadBlacklistTime(reg, sname,
+                                                                   warnings);
+
+    for (list<string>::const_iterator  val = values.begin();
+         val != values.end(); ++val) {
+        if (*val == "timeout")
+            timeout = ReadTimeout(reg, sname, warnings);
+        else if (*val == "notif_hifreq_interval")
+            notif_hifreq_interval =
+                ReadNotifHifreqInterval(reg, sname, warnings);
+        else if (*val == "notif_hifreq_period")
+            notif_hifreq_period = ReadNotifHifreqPeriod(reg, sname, warnings);
+        else if (*val == "notif_lofreq_mult")
+            notif_lofreq_mult = ReadNotifLofreqMult(reg, sname, warnings);
+        else if (*val == "notif_handicap")
+            notif_handicap = ReadNotifHandicap(reg, sname, warnings);
+        else if (*val == "dump_buffer_size")
+            dump_buffer_size = ReadDumpBufferSize(reg, sname, warnings);
+        else if (*val == "dump_client_buffer_size")
+            dump_client_buffer_size =
+                ReadDumpClientBufferSize(reg, sname, warnings);
+        else if (*val == "dump_aff_buffer_size")
+            dump_aff_buffer_size = ReadDumpAffBufferSize(reg, sname, warnings);
+        else if (*val == "dump_group_buffer_size")
+            dump_group_buffer_size =
+                ReadDumpGroupBufferSize(reg, sname, warnings);
+        else if (*val == "run_timeout")
+            run_timeout = ReadRunTimeout(reg, sname, warnings);
+        else if (*val == "read_timeout")
+            read_timeout = ReadReadTimeout(reg, sname, warnings);
+        else if (*val == "program")
+            program_name = ReadProgram(reg, sname, warnings);
+        else if (*val == "failed_retries")
+            failed_retries = failed_retries_preread;
+        else if (*val == "read_failed_retries")
+            // See CXX-5161, the read_failed_retries depends on failed_retries
+            read_failed_retries =
+                ReadReadFailedRetries(reg, sname, warnings,
+                                      failed_retries_preread);
+        else if (*val == "blacklist_time")
+            blacklist_time = blacklist_time_preread;
+        else if (*val == "read_blacklist_time")
+            // See CXX-4993, the read_blacklist_time depends on blacklist_time
+            read_blacklist_time =
+                ReadReadBlacklistTime(reg, sname, warnings,
+                                      blacklist_time_preread);
+        else if (*val == "max_input_size")
+            max_input_size = ReadMaxInputSize(reg, sname, warnings);
+        else if (*val == "max_output_size")
+            max_output_size = ReadMaxOutputSize(reg, sname, warnings);
+        else if (*val == "subm_host")
+            subm_hosts = ReadSubmHosts(reg, sname, warnings);
+        else if (*val == "wnode_host")
+            wnode_hosts = ReadWnodeHosts(reg, sname, warnings);
+        else if (*val == "reader_host")
+            reader_hosts = ReadReaderHosts(reg, sname, warnings);
+        else if (*val == "wnode_timeout")
+            wnode_timeout = ReadWnodeTimeout(reg, sname, warnings);
+        else if (*val == "reader_timeout")
+            reader_timeout = ReadReaderTimeout(reg, sname, warnings);
+        else if (*val == "pending_timeout")
+            pending_timeout = ReadPendingTimeout(reg, sname, warnings);
+        else if (*val == "max_pending_wait_timeout")
+            max_pending_wait_timeout =
+                ReadMaxPendingWaitTimeout(reg, sname, warnings);
+        else if (*val == "max_pending_read_wait_timeout")
+            max_pending_read_wait_timeout =
+                ReadMaxPendingReadWaitTimeout(reg, sname, warnings);
+        else if (*val == "description")
+            description = ReadDescription(reg, sname, warnings);
+        else if (*val == "scramble_job_keys")
+            scramble_job_keys = ReadScrambleJobKeys(reg, sname, warnings);
+        else if (*val == "client_registry_timeout_worker_node")
+            client_registry_timeout_worker_node =
+                ReadClientRegistryTimeoutWorkerNode(reg, sname, warnings);
+        else if (*val == "client_registry_min_worker_nodes")
+            client_registry_min_worker_nodes =
+                ReadClientRegistryMinWorkerNodes(reg, sname, warnings);
+        else if (*val == "client_registry_timeout_admin")
+            client_registry_timeout_admin =
+                ReadClientRegistryTimeoutAdmin(reg, sname, warnings);
+        else if (*val == "client_registry_min_admins")
+            client_registry_min_admins =
+                ReadClientRegistryMinAdmins(reg, sname, warnings);
+        else if (*val == "client_registry_timeout_submitter")
+            client_registry_timeout_submitter =
+                ReadClientRegistryTimeoutSubmitter(reg, sname, warnings);
+        else if (*val == "client_registry_min_submitters")
+            client_registry_min_submitters =
+                ReadClientRegistryMinSubmitters(reg, sname, warnings);
+        else if (*val == "client_registry_timeout_reader")
+            client_registry_timeout_reader =
+                ReadClientRegistryTimeoutReader(reg, sname, warnings);
+        else if (*val == "client_registry_min_readers")
+            client_registry_min_readers =
+                ReadClientRegistryMinReaders(reg, sname, warnings);
+        else if (*val == "client_registry_timeout_unknown")
+            client_registry_timeout_unknown =
+                ReadClientRegistryTimeoutUnknown(reg, sname, warnings);
+        else if (*val == "client_registry_min_unknowns")
+            client_registry_min_unknowns =
+                ReadClientRegistryMinUnknowns(reg, sname, warnings);
+    }
+
+    // Apply linked sections if so
+    map<string, string> linked_sections =
+                            ReadLinkedSections(reg, sname, warnings);
+    for (map<string, string>::const_iterator  k = linked_sections.begin();
+         k != linked_sections.end(); ++k)
+        linked_sections[k->first] = k->second;
+
+    // After deriving from a queue class there might be some restrictions
+    // broken. Check them here.
+    if (client_registry_timeout_worker_node <= wnode_timeout) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_worker_node")
+                           + ". It must be > " +
+                           NStr::NumericToString(double(wnode_timeout)));
+        double  fixed_timeout =
+                max(
+                    max(double(default_client_registry_timeout_worker_node),
+                        double(wnode_timeout + wnode_timeout)),
+                    double(run_timeout + run_timeout));
+        client_registry_timeout_worker_node = CNSPreciseTime(fixed_timeout);
+    }
+
+    if (client_registry_timeout_reader <= reader_timeout) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_reader")
+                           + ". It must be > " +
+                           NStr::NumericToString(double(reader_timeout)));
+        double  fixed_timeout =
+                max(
+                    max(double(default_client_registry_timeout_reader),
+                        double(reader_timeout + reader_timeout)),
+                    double(read_timeout + read_timeout));
+        client_registry_timeout_reader = CNSPreciseTime(fixed_timeout);
+    }
+}
+
 
 
 // Returns descriptive diff
@@ -658,446 +911,872 @@ SQueueParameters::CalculateRuntimePrecision(void) const
 }
 
 
+string
+SQueueParameters::ReadClass(const IRegistry &  reg,
+                            const string &     sname,
+                            vector<string> &   warnings)
+{
+    bool    ok = NS_ValidateString(reg, sname, "class", warnings);
+    if (!ok)
+        return kEmptyStr;
+
+    return reg.GetString(sname, "class", kEmptyStr);
+}
+
+
 CNSPreciseTime
 SQueueParameters::ReadTimeout(const IRegistry &  reg,
-                              const string &     sname)
+                              const string &     sname,
+                              vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("timeout",
-                                 double(default_timeout));
-
-    if (val <= 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "timeout", warnings);
+    if (!ok)
         return default_timeout;
+
+    double  val = reg.GetDouble(sname, "timeout", double(default_timeout));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "timeout") +
+                           ". It must be > 0.0");
+        return default_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadNotifHifreqInterval(const IRegistry &  reg,
-                                          const string &     sname)
+                                          const string &     sname,
+                                          vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("notif_hifreq_interval",
-                                 double(default_notif_hifreq_interval));
-    val = (int(val * 10)) / 10.0;
-    if (val <= 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "notif_hifreq_interval",
+                                   warnings);
+    if (!ok)
         return default_notif_hifreq_interval;
+
+    double  val = reg.GetDouble(sname, "notif_hifreq_interval",
+                                double(default_notif_hifreq_interval));
+    val = (int(val * 10)) / 10.0;
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "notif_hifreq_interval") +
+                           ". It must be > 0.0");
+        return default_notif_hifreq_interval;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadNotifHifreqPeriod(const IRegistry &  reg,
-                                        const string &     sname)
+                                        const string &     sname,
+                                        vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("notif_hifreq_period",
-                                 double(default_notif_hifreq_period));
-    if (val <= 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "notif_hifreq_period",
+                                   warnings);
+    if (!ok)
         return default_notif_hifreq_period;
+
+    double  val = reg.GetDouble(sname, "notif_hifreq_period",
+                                double(default_notif_hifreq_period));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "notif_hifreq_period") +
+                           ". It must be > 0.0");
+        return default_notif_hifreq_period;
+    }
     return CNSPreciseTime(val);
 }
 
 unsigned int
 SQueueParameters::ReadNotifLofreqMult(const IRegistry &  reg,
-                                      const string &     sname)
+                                      const string &     sname,
+                                      vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("notif_lofreq_mult",
-                                      default_notif_lofreq_mult);
-    if (val <= 0)
+    bool    ok = NS_ValidateInt(reg, sname, "notif_lofreq_mult", warnings);
+    if (!ok)
         return default_notif_lofreq_mult;
+
+    int     val = reg.GetInt(sname, "notif_lofreq_mult",
+                             default_notif_lofreq_mult);
+    if (val <= 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "notif_lofreq_mult") +
+                           ". It must be > 0");
+        return default_notif_lofreq_mult;
+    }
     return val;
 }
 
 CNSPreciseTime
 SQueueParameters::ReadNotifHandicap(const IRegistry &  reg,
-                                    const string &     sname)
+                                    const string &     sname,
+                                    vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("notif_handicap",
-                                 double(default_notif_handicap));
-    if (val < 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "notif_handicap", warnings);
+    if (!ok)
         return default_notif_handicap;
+
+    double  val = reg.GetDouble(sname, "notif_handicap",
+                                double(default_notif_handicap));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "notif_handicap") +
+                           ". It must be >= 0.0");
+        return default_notif_handicap;
+    }
     return CNSPreciseTime(val);
 }
 
 unsigned int
 SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
-                                     const string &     sname)
+                                     const string &     sname,
+                                     vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("dump_buffer_size",
-                                      default_dump_buffer_size);
-    if (val < default_dump_buffer_size)
-        val = default_dump_buffer_size; // Avoid too small buffer
-    if (val > max_dump_buffer_size)
-        val = max_dump_buffer_size;     // Avoid too large buffer
+    bool    ok = NS_ValidateInt(reg, sname, "dump_buffer_size", warnings);
+    if (!ok)
+        return default_dump_buffer_size;
+
+    int     val = reg.GetInt(sname, "dump_buffer_size",
+                             default_dump_buffer_size);
+    if (val < int(default_dump_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_buffer_size") +
+                           ". It must be not less than " +
+                           NStr::NumericToString(default_dump_buffer_size));
+        return default_dump_buffer_size; // Avoid too small buffer
+    }
+
+    if (val > int(max_dump_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_buffer_size") +
+                           ". It must be not larger than " +
+                           NStr::NumericToString(max_dump_buffer_size));
+        return max_dump_buffer_size;     // Avoid too large buffer
+    }
     return val;
 }
 
 unsigned int
 SQueueParameters::ReadDumpClientBufferSize(const IRegistry &  reg,
-                                           const string &     sname)
+                                           const string &     sname,
+                                           vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("dump_client_buffer_size",
-                                      default_dump_client_buffer_size);
-    if (val < default_dump_client_buffer_size)
-        val = default_dump_client_buffer_size;  // Avoid too small buffer
-    if (val > max_dump_client_buffer_size)
-        val = max_dump_client_buffer_size;      // Avoid too large buffer
+    bool    ok = NS_ValidateInt(reg, sname, "dump_client_buffer_size",
+                                warnings);
+    if (!ok)
+        return default_dump_client_buffer_size;
+
+    int     val = reg.GetInt(sname, "dump_client_buffer_size",
+                             default_dump_client_buffer_size);
+    if (val < int(default_dump_client_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_client_buffer_size") +
+                           ". It must be not less than " +
+                           NStr::NumericToString(
+                                        default_dump_client_buffer_size));
+        return default_dump_client_buffer_size;  // Avoid too small buffer
+    }
+
+    if (val > int(max_dump_client_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_client_buffer_size") +
+                           ". It must be not larger than " +
+                           NStr::NumericToString(
+                                        max_dump_client_buffer_size));
+        return max_dump_client_buffer_size;      // Avoid too large buffer
+    }
     return val;
 }
 
 unsigned int
 SQueueParameters::ReadDumpAffBufferSize(const IRegistry &  reg,
-                                        const string &     sname)
+                                        const string &     sname,
+                                        vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("dump_aff_buffer_size",
-                                      default_dump_aff_buffer_size);
-    if (val < default_dump_aff_buffer_size)
-        val = default_dump_aff_buffer_size; // Avoid too small buffer
-    if (val > max_dump_aff_buffer_size)
-        val = max_dump_aff_buffer_size;     // Avoid too large buffer
+    bool    ok = NS_ValidateInt(reg, sname, "dump_aff_buffer_size", warnings);
+    if (!ok)
+        return default_dump_aff_buffer_size;
+
+    int     val = reg.GetInt(sname, "dump_aff_buffer_size",
+                             default_dump_aff_buffer_size);
+    if (val < int(default_dump_aff_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_aff_buffer_size") +
+                           ". It must be not less than " +
+                           NStr::NumericToString(
+                                        default_dump_aff_buffer_size));
+        return default_dump_aff_buffer_size; // Avoid too small buffer
+    }
+
+    if (val > int(max_dump_aff_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_aff_buffer_size") +
+                           ". It must be not larger than " +
+                           NStr::NumericToString(
+                                        max_dump_aff_buffer_size));
+        return max_dump_aff_buffer_size;     // Avoid too large buffer
+    }
     return val;
 }
 
 unsigned int
 SQueueParameters::ReadDumpGroupBufferSize(const IRegistry &  reg,
-                                          const string &     sname)
+                                          const string &     sname,
+                                          vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("dump_group_buffer_size",
-                                      default_dump_group_buffer_size);
-    if (val < default_dump_group_buffer_size)
-        val = default_dump_group_buffer_size;   // Avoid too small buffer
-    if (val > max_dump_group_buffer_size)
-        val = max_dump_group_buffer_size;       // Avoid too large buffer
+    bool    ok = NS_ValidateInt(reg, sname, "dump_group_buffer_size", warnings);
+    if (!ok)
+        return default_dump_group_buffer_size;
+
+    int     val = reg.GetInt(sname, "dump_group_buffer_size",
+                             default_dump_group_buffer_size);
+    if (val < int(default_dump_group_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_group_buffer_size") +
+                           ". It must be not less than " +
+                           NStr::NumericToString(
+                                        default_dump_group_buffer_size));
+        return default_dump_group_buffer_size;   // Avoid too small buffer
+    }
+    if (val > int(max_dump_group_buffer_size)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "dump_group_buffer_size") +
+                           ". It must be not larger than " +
+                           NStr::NumericToString(
+                                        max_dump_group_buffer_size));
+        return max_dump_group_buffer_size;       // Avoid too large buffer
+    }
     return val;
 }
 
 CNSPreciseTime
 SQueueParameters::ReadRunTimeout(const IRegistry &  reg,
-                                 const string &     sname)
+                                 const string &     sname,
+                                 vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("run_timeout",
-                                 double(default_run_timeout));
-    if (val < 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "run_timeout", warnings);
+    if (!ok)
         return default_run_timeout;
+
+    double  val = reg.GetDouble(sname, "run_timeout",
+                                double(default_run_timeout));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "run_timeout") +
+                           ". It must be >= 0.0");
+        return default_run_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 
 CNSPreciseTime
 SQueueParameters::ReadReadTimeout(const IRegistry &  reg,
-                                  const string &     sname)
+                                  const string &     sname,
+                                  vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("read_timeout",
-                                 double(default_read_timeout));
-    if (val < 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "read_timeout", warnings);
+    if (!ok)
         return default_read_timeout;
+
+    double  val = reg.GetDouble(sname, "read_timeout",
+                                double(default_read_timeout));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "read_timeout") +
+                           ". It must be >= 0.0");
+        return default_read_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 
 string
 SQueueParameters::ReadProgram(const IRegistry &  reg,
-                              const string &     sname)
+                              const string &     sname,
+                              vector<string> &   warnings)
 {
+    bool    ok = NS_ValidateString(reg, sname, "program", warnings);
+    if (!ok)
+        return kEmptyStr;
+
     return reg.GetString(sname, "program", kEmptyStr);
 }
 
 unsigned int
 SQueueParameters::ReadFailedRetries(const IRegistry &  reg,
-                                    const string &     sname)
+                                    const string &     sname,
+                                    vector<string> &   warnings)
 {
-    int     val = GetIntNoErr("failed_retries", default_failed_retries);
-
-    if (val < 0)
+    bool    ok = NS_ValidateInt(reg, sname, "failed_retries", warnings);
+    if (!ok)
         return default_failed_retries;
+
+    int     val = reg.GetInt(sname, "failed_retries", default_failed_retries);
+    if (val < 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "failed_retries") +
+                           ". It must be >= 0");
+        return default_failed_retries;
+    }
     return val;
 }
 
 unsigned int
 SQueueParameters::ReadReadFailedRetries(const IRegistry &  reg,
                                         const string &     sname,
+                                        vector<string> &   warnings,
                                         unsigned int       failed_retries)
 {
     // The default for the read retries is failed_retries
-    int     val =  GetIntNoErr("read_failed_retries", failed_retries);
-    if (val < 0)
+    bool    ok = NS_ValidateInt(reg, sname, "read_failed_retries", warnings);
+    if (!ok)
         return failed_retries;
+
+    int     val =  reg.GetInt(sname, "read_failed_retries", failed_retries);
+    if (val < 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "read_failed_retries") +
+                           ". It must be >= 0");
+        return failed_retries;
+    }
     return val;
 }
 
 CNSPreciseTime
 SQueueParameters::ReadBlacklistTime(const IRegistry &  reg,
-                                    const string &     sname)
+                                    const string &     sname,
+                                    vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("blacklist_time",
-                                 double(default_blacklist_time));
-    if (val < 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "blacklist_time", warnings);
+    if (!ok)
         return default_blacklist_time;
+
+    double  val = reg.GetDouble(sname, "blacklist_time",
+                                double(default_blacklist_time));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "blacklist_time") +
+                           ". It must be >= 0.0");
+        return default_blacklist_time;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadReadBlacklistTime(const IRegistry &  reg,
                                         const string &     sname,
+                                        vector<string> &   warnings,
                                         const CNSPreciseTime &  blacklist_time)
 {
-    double  val = GetDoubleNoErr("read_blacklist_time", blacklist_time);
-    if (val < 0)
+    // The default for the read_blacklist_time is blacklist_time
+    bool    ok = NS_ValidateDouble(reg, sname, "read_blacklist_time", warnings);
+    if (!ok)
         return blacklist_time;
+
+    double  val = reg.GetDouble(sname, "read_blacklist_time",
+                                double(blacklist_time));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "read_blacklist_time") +
+                           ". It must be >= 0.0");
+        return blacklist_time;
+    }
     return CNSPreciseTime(val);
 }
 
 unsigned int
 SQueueParameters::ReadMaxInputSize(const IRegistry &  reg,
-                                   const string &     sname)
+                                   const string &     sname,
+                                   vector<string> &   warnings)
 {
-    string        s = reg.GetString(sname, "max_input_size", kEmptyStr);
-    unsigned int  val = kNetScheduleMaxDBDataSize;  // 2048
+    // default is kNetScheduleMaxDBDataSize, i.e. 2048
+    bool    ok = NS_ValidateString(reg, sname, "max_input_size", warnings);
+    if (!ok)
+        return kNetScheduleMaxDBDataSize;
 
-    try {
-        if (!s.empty())
+    string  s = reg.GetString(sname, "max_input_size", kEmptyStr);
+    if (!s.empty()) {
+        unsigned int    val = kNetScheduleMaxDBDataSize;
+        try {
             val = (unsigned int) NStr::StringToUInt8_DataSize(s);
-    }
-    catch (const CStringException &)
-    {}
+        } catch (const CStringException &  ex) {
+            warnings.push_back(g_WarnPrefix +
+                               NS_RegValName(sname, "max_input_size") +
+                               ". It could not be converted to "
+                               "unsigned integer: " + ex.what());
+            return kNetScheduleMaxDBDataSize;
+        } catch (...) {
+            warnings.push_back(g_WarnPrefix +
+                               NS_RegValName(sname, "max_input_size") +
+                               ". It could not be converted to "
+                               "unsigned integer");
+            return kNetScheduleMaxDBDataSize;
+        }
 
-    // kNetScheduleMaxOverflowSize is 1M
-    val = min(kNetScheduleMaxOverflowSize, val);
-    return val;
+        if (val > kNetScheduleMaxOverflowSize) {
+            warnings.push_back(g_WarnPrefix +
+                               NS_RegValName(sname, "max_input_size") +
+                               ". It must not be larger than " +
+                               NStr::NumericToString(
+                                                kNetScheduleMaxOverflowSize));
+            return kNetScheduleMaxOverflowSize;
+        }
+        return val;
+    }
+    return kNetScheduleMaxDBDataSize;
 }
 
 unsigned int
 SQueueParameters::ReadMaxOutputSize(const IRegistry &  reg,
-                                    const string &     sname)
+                                    const string &     sname,
+                                    vector<string> &   warnings)
 {
-    string        s = reg.GetString(sname, "max_output_size", kEmptyStr);
-    unsigned int  val = kNetScheduleMaxDBDataSize;  // 2048
+    // default is kNetScheduleMaxDBDataSize, i.e. 2048
+    bool    ok = NS_ValidateString(reg, sname, "max_output_size", warnings);
+    if (!ok)
+        return kNetScheduleMaxDBDataSize;
 
-    try {
-        if (!s.empty())
+    string  s = reg.GetString(sname, "max_output_size", kEmptyStr);
+    if (!s.empty()) {
+        unsigned int    val = kNetScheduleMaxDBDataSize;
+        try {
             val = (unsigned int) NStr::StringToUInt8_DataSize(s);
-    }
-    catch (const CStringException &)
-    {}
+        } catch (const CStringException &  ex) {
+            warnings.push_back(g_WarnPrefix +
+                               NS_RegValName(sname, "max_output_size") +
+                               ". It could not be converted to "
+                               "unsigned integer: " + ex.what());
+            return kNetScheduleMaxDBDataSize;
+        } catch (...) {
+            warnings.push_back(g_WarnPrefix +
+                               NS_RegValName(sname, "max_output_size") +
+                               ". It could not be converted to "
+                               "unsigned integer");
+            return kNetScheduleMaxDBDataSize;
+        }
 
-    // kNetScheduleMaxOverflowSize is 1M
-    val = min(kNetScheduleMaxOverflowSize, val);
-    return val;
+        if (val > kNetScheduleMaxOverflowSize) {
+            warnings.push_back(g_WarnPrefix +
+                               NS_RegValName(sname, "max_output_size") +
+                               ". It must not be larger than " +
+                               NStr::NumericToString(
+                                                kNetScheduleMaxOverflowSize));
+            return kNetScheduleMaxOverflowSize;
+        }
+        return val;
+    }
+    return kNetScheduleMaxDBDataSize;
 }
 
 string
 SQueueParameters::ReadSubmHosts(const IRegistry &  reg,
-                                const string &     sname)
+                                const string &     sname,
+                                vector<string> &   warnings)
 {
+    bool    ok = NS_ValidateString(reg, sname, "subm_host", warnings);
+    if (!ok)
+        return kEmptyStr;
+
     return reg.GetString(sname, "subm_host", kEmptyStr);
 }
 
 string
 SQueueParameters::ReadWnodeHosts(const IRegistry &  reg,
-                                 const string &     sname)
+                                 const string &     sname,
+                                 vector<string> &   warnings)
 {
+    bool    ok = NS_ValidateString(reg, sname, "wnode_host", warnings);
+    if (!ok)
+        return kEmptyStr;
+
     return reg.GetString(sname, "wnode_host", kEmptyStr);
 }
 
 string
 SQueueParameters::ReadReaderHosts(const IRegistry &  reg,
-                                  const string &     sname)
+                                  const string &     sname,
+                                  vector<string> &   warnings)
 {
+    bool    ok = NS_ValidateString(reg, sname, "reader_host", warnings);
+    if (!ok)
+        return kEmptyStr;
+
     return reg.GetString(sname, "reader_host", kEmptyStr);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadWnodeTimeout(const IRegistry &  reg,
-                                   const string &     sname)
+                                   const string &     sname,
+                                   vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("wnode_timeout",
-                                 double(default_wnode_timeout));
-    if (val <= 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "wnode_timeout", warnings);
+    if (!ok)
         return default_wnode_timeout;
+
+    double  val = reg.GetDouble(sname, "wnode_timeout",
+                                double(default_wnode_timeout));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "wnode_timeout") +
+                           ". It must be > 0.0");
+        return default_wnode_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadReaderTimeout(const IRegistry &  reg,
-                                    const string &     sname)
+                                    const string &     sname,
+                                    vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("reader_timeout",
-                                 double(default_reader_timeout));
-    if (val <= 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "reader_timeout", warnings);
+    if (!ok)
         return default_reader_timeout;
+
+    double  val = reg.GetDouble(sname, "reader_timeout",
+                                double(default_reader_timeout));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "reader_timeout") +
+                           ". It must be > 0.0");
+        return default_reader_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadPendingTimeout(const IRegistry &  reg,
-                                     const string &     sname)
+                                     const string &     sname,
+                                     vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("pending_timeout",
-                                 double(default_pending_timeout));
-    if (val <= 0)
+    bool    ok = NS_ValidateDouble(reg, sname, "pending_timeout", warnings);
+    if (!ok)
         return default_pending_timeout;
+
+    double  val = reg.GetDouble(sname, "pending_timeout",
+                                double(default_pending_timeout));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "pending_timeout") +
+                           ". It must be > 0.0");
+        return default_pending_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadMaxPendingWaitTimeout(const IRegistry &  reg,
-                                            const string &     sname)
+                                            const string &     sname,
+                                            vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("max_pending_wait_timeout",
-                                 double(default_max_pending_wait_timeout));
-    if (val < 0)
-        val = 0;
+    bool    ok = NS_ValidateDouble(reg, sname, "max_pending_wait_timeout",
+                                   warnings);
+    if (!ok)
+        return default_max_pending_wait_timeout;
+
+    double  val = reg.GetDouble(sname, "max_pending_wait_timeout",
+                                double(default_max_pending_wait_timeout));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "max_pending_wait_timeout") +
+                           ". It must be >= 0.0");
+        return default_max_pending_wait_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 CNSPreciseTime
 SQueueParameters::ReadMaxPendingReadWaitTimeout(const IRegistry &  reg,
-                                                const string &     sname)
+                                                const string &     sname,
+                                                vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("max_pending_read_wait_timeout",
-                                 double(default_max_pending_read_wait_timeout));
-    if (val < 0)
-        val = 0;
+    bool    ok = NS_ValidateDouble(reg, sname, "max_pending_read_wait_timeout",
+                                   warnings);
+    if (!ok)
+        return default_max_pending_read_wait_timeout;
+
+    double  val = reg.GetDouble(sname, "max_pending_read_wait_timeout",
+                                double(default_max_pending_read_wait_timeout));
+    if (val < 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "max_pending_read_wait_timeout")
+                           + ". It must be >= 0.0");
+        return default_max_pending_read_wait_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
 string
 SQueueParameters::ReadDescription(const IRegistry &  reg,
-                                  const string &     sname)
+                                  const string &     sname,
+                                  vector<string> &   warnings)
 {
+    bool    ok = NS_ValidateString(reg, sname, "description", warnings);
+    if (!ok)
+        return kEmptyStr;
     return reg.GetString(sname, "description", kEmptyStr);
 }
 
 bool
 SQueueParameters::ReadScrambleJobKeys(const IRegistry &  reg,
-                                      const string &     sname)
+                                      const string &     sname,
+                                      vector<string> &   warnings)
 {
-    return GetBoolNoErr("scramble_job_keys", false);
+    bool    ok = NS_ValidateBool(reg, sname, "scramble_job_keys", warnings);
+    if (!ok)
+        return default_scramble_job_keys;
+
+    return reg.GetBool(sname, "scramble_job_keys", default_scramble_job_keys);
 }
 
 CNSPreciseTime
-SQueueParameters::ReadClientRegistryTimeoutWorkerNode(const IRegistry &  reg,
-                                                      const string &     sname)
+SQueueParameters::ReadClientRegistryTimeoutWorkerNode(
+                                            const IRegistry &  reg,
+                                            const string &     sname,
+                                            vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("client_registry_timeout_worker_node",
+    double  calc_default =
+                max(
+                    max(double(default_client_registry_timeout_worker_node),
+                        double(wnode_timeout + wnode_timeout)),
+                    double(run_timeout + run_timeout));
+    bool    ok = NS_ValidateDouble(reg, sname,
+                                   "client_registry_timeout_worker_node",
+                                   warnings);
+    if (!ok)
+        return CNSPreciseTime(calc_default);
+
+    double  val = reg.GetDouble(sname, "client_registry_timeout_worker_node",
                          double(default_client_registry_timeout_worker_node));
-    if (val <= 0.0 || val <= wnode_timeout)
-        return max(max(default_client_registry_timeout_worker_node,
-                       wnode_timeout + wnode_timeout),
-                   run_timeout + run_timeout);
+    if (val <= 0.0 || val <= double(wnode_timeout)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_worker_node")
+                           + ". It must be > " +
+                           NStr::NumericToString(double(wnode_timeout)));
+        return CNSPreciseTime(calc_default);
+    }
     return CNSPreciseTime(val);
 }
 
 
 unsigned int
 SQueueParameters::ReadClientRegistryMinWorkerNodes(const IRegistry &  reg,
-                                                   const string &     sname)
+                                                   const string &     sname,
+                                                   vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("client_registry_min_worker_nodes",
-                                      default_client_registry_min_worker_nodes);
-    if (val <= 0)
+    bool    ok = NS_ValidateInt(reg, sname, "client_registry_min_worker_nodes",
+                                warnings);
+    if (!ok)
         return default_client_registry_min_worker_nodes;
+
+    int     val = reg.GetInt(sname, "client_registry_min_worker_nodes",
+                             default_client_registry_min_worker_nodes);
+    if (val <= 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_min_worker_nodes") +
+                           ". It must be > 0");
+        return default_client_registry_min_worker_nodes;
+    }
     return val;
 }
 
 
 CNSPreciseTime
 SQueueParameters::ReadClientRegistryTimeoutAdmin(const IRegistry &  reg,
-                                                 const string &     sname)
+                                                 const string &     sname,
+                                                 vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("client_registry_timeout_admin",
-                         double(default_client_registry_timeout_admin));
-    if (val <= 0.0)
+    bool    ok = NS_ValidateDouble(reg, sname, "client_registry_timeout_admin",
+                                   warnings);
+    if (!ok)
         return default_client_registry_timeout_admin;
+
+    double  val = reg.GetDouble(sname, "client_registry_timeout_admin",
+                                double(default_client_registry_timeout_admin));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_admin") +
+                           ". It must be > 0.0");
+        return default_client_registry_timeout_admin;
+    }
     return CNSPreciseTime(val);
 }
 
 
 unsigned int
 SQueueParameters::ReadClientRegistryMinAdmins(const IRegistry &  reg,
-                                              const string &     sname)
+                                              const string &     sname,
+                                              vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("client_registry_min_admins",
-                                      default_client_registry_min_admins);
-    if (val <= 0)
+    bool    ok = NS_ValidateInt(reg, sname, "client_registry_min_admins",
+                                warnings);
+    if (!ok)
         return default_client_registry_min_admins;
+
+    int     val = reg.GetInt(sname, "client_registry_min_admins",
+                             default_client_registry_min_admins);
+    if (val <= 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_min_admins") +
+                           ". It must be > 0");
+        return default_client_registry_min_admins;
+    }
     return val;
 }
 
 
 CNSPreciseTime
-SQueueParameters::ReadClientRegistryTimeoutSubmitter(const IRegistry &  reg,
-                                                     const string &     sname)
+SQueueParameters::ReadClientRegistryTimeoutSubmitter(
+                                            const IRegistry &  reg,
+                                            const string &     sname,
+                                            vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("client_registry_timeout_submitter",
-                         double(default_client_registry_timeout_submitter));
-    if (val <= 0.0)
+    bool    ok = NS_ValidateDouble(reg, sname,
+                                   "client_registry_timeout_submitter",
+                                   warnings);
+    if (!ok)
         return default_client_registry_timeout_submitter;
+
+    double  val = reg.GetDouble(sname, "client_registry_timeout_submitter",
+                        double(default_client_registry_timeout_submitter));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_submitter") +
+                           ". It must be > 0.0");
+        return default_client_registry_timeout_submitter;
+    }
     return CNSPreciseTime(val);
 }
 
 
 unsigned int
 SQueueParameters::ReadClientRegistryMinSubmitters(const IRegistry &  reg,
-                                                  const string &     sname)
+                                                  const string &     sname,
+                                                  vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("client_registry_min_submitters",
-                                      default_client_registry_min_submitters);
-    if (val <= 0)
+    bool    ok = NS_ValidateInt(reg, sname,
+                                "client_registry_min_submitters", warnings);
+    if (!ok)
         return default_client_registry_min_submitters;
+
+    int     val = reg.GetInt(sname, "client_registry_min_submitters",
+                             default_client_registry_min_submitters);
+    if (val <= 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_min_submitters") +
+                           ". It must be > 0");
+        return default_client_registry_min_submitters;
+    }
     return val;
 }
 
 
 CNSPreciseTime
 SQueueParameters::ReadClientRegistryTimeoutReader(const IRegistry &  reg,
-                                                  const string &     sname)
+                                                  const string &     sname,
+                                                  vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("client_registry_timeout_reader",
+    double  calc_default =
+                max(
+                    max(double(default_client_registry_timeout_reader),
+                        double(reader_timeout + reader_timeout)),
+                    double(read_timeout + read_timeout));
+    bool    ok = NS_ValidateDouble(reg, sname,
+                                   "client_registry_timeout_reader",
+                                   warnings);
+    if (!ok)
+        return CNSPreciseTime(calc_default);
+
+    double  val = reg.GetDouble(sname, "client_registry_timeout_reader",
                          double(default_client_registry_timeout_reader));
-    if (val <= 0.0 || val <= reader_timeout)
-        return max(max(default_client_registry_timeout_reader,
-                       reader_timeout + reader_timeout),
-                   read_timeout + read_timeout);
+    if (val <= 0.0 || val <= double(reader_timeout)) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_reader")
+                           + ". It must be > " +
+                           NStr::NumericToString(double(reader_timeout)));
+        CNSPreciseTime(calc_default);
+    }
     return CNSPreciseTime(val);
 }
 
 
 unsigned int
 SQueueParameters::ReadClientRegistryMinReaders(const IRegistry &  reg,
-                                               const string &     sname)
+                                               const string &     sname,
+                                               vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("client_registry_min_readers",
-                                      default_client_registry_min_readers);
-    if (val <= 0)
+    bool    ok = NS_ValidateInt(reg, sname, "client_registry_min_readers",
+                                warnings);
+    if (!ok)
         return default_client_registry_min_readers;
+
+    int     val = reg.GetInt(sname, "client_registry_min_readers",
+                             default_client_registry_min_readers);
+    if (val <= 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_min_readers") +
+                           ". It must be > 0");
+        return default_client_registry_min_readers;
+    }
     return val;
 }
 
 
 CNSPreciseTime
 SQueueParameters::ReadClientRegistryTimeoutUnknown(const IRegistry &  reg,
-                                                   const string &     sname)
+                                                   const string &     sname,
+                                                   vector<string> &   warnings)
 {
-    double  val = GetDoubleNoErr("client_registry_timeout_unknown",
-                         double(default_client_registry_timeout_unknown));
-    if (val <= 0.0)
+    bool    ok = NS_ValidateDouble(reg, sname,
+                                   "client_registry_timeout_unknown", warnings);
+    if (!ok)
         return default_client_registry_timeout_unknown;
+
+    double  val = reg.GetDouble(sname, "client_registry_timeout_unknown",
+                         double(default_client_registry_timeout_unknown));
+    if (val <= 0.0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_timeout_unknown") +
+                           ". It must be > 0.0");
+        return default_client_registry_timeout_unknown;
+    }
     return CNSPreciseTime(val);
 }
 
 
 unsigned int
 SQueueParameters::ReadClientRegistryMinUnknowns(const IRegistry &  reg,
-                                                const string &     sname)
+                                                const string &     sname,
+                                                vector<string> &   warnings)
 {
-    unsigned int    val = GetIntNoErr("client_registry_min_unknowns",
-                                      default_client_registry_min_unknowns);
-    if (val <= 0)
+    bool    ok = NS_ValidateInt(reg, sname,
+                                "client_registry_min_unknowns", warnings);
+    if (!ok)
         return default_client_registry_min_unknowns;
+
+    int     val = reg.GetInt(sname, "client_registry_min_unknowns",
+                             default_client_registry_min_unknowns);
+    if (val <= 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname,
+                                         "client_registry_min_unknowns") +
+                           ". It must be > 0");
+        return default_client_registry_min_unknowns;
+    }
     return val;
 }
 
 
 map<string, string>
 SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
-                                     const string &     sname)
+                                     const string &     sname,
+                                     vector<string> &   warnings)
 {
     map<string, string>     linked_sections;
     list<string>            entries;
@@ -1112,17 +1791,30 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
 
         if (!NStr::StartsWith(entry, "linked_section_", NStr::eCase))
             continue;
-        if (entry == "linked_section_")
+        if (entry == "linked_section_") {
+            warnings.push_back("Validating config file: unexpected entry name "
+                               + NS_RegValName(sname, "linked_section_") +
+                               ". Referring name is missed");
+            continue;
+        }
+
+        bool    ok = NS_ValidateString(reg, sname, entry, warnings);
+        if (!ok)
             continue;
 
         string  ref_section = reg.GetString(sname, entry, kEmptyStr);
-
-        if (ref_section.empty())
+        if (ref_section.empty()) {
+            warnings.push_back(g_WarnPrefix + NS_RegValName(sname, entry) +
+                               ". Referred section name is missed");
             continue;
+        }
         if (find(available_sections.begin(),
                  available_sections.end(),
-                 ref_section) == available_sections.end())
+                 ref_section) == available_sections.end()) {
+            warnings.push_back(g_WarnPrefix + NS_RegValName(sname, entry) +
+                               ". It refers to an unknown section");
             continue;
+        }
 
         // Here: linked section exists and the prefix is fine
         linked_sections[entry] = ref_section;

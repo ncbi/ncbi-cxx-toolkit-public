@@ -2728,13 +2728,29 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
     if (reloaded) {
         const CNcbiRegistry &   reg = app->GetConfig();
-        bool                    well_formed = NS_ValidateConfigFile(reg);
+        vector<string>          config_warnings;
+        NS_ValidateConfigFile(reg, config_warnings, false);
 
-        if (!well_formed) {
+        if (!config_warnings.empty()) {
+            string      msg;
+            for (vector<string>::const_iterator k = config_warnings.begin();
+                 k != config_warnings.end(); ++k) {
+                ERR_POST(*k);
+                if (!msg.empty())
+                    msg += "; ";
+                msg += *k;
+            }
             m_Server->RegisterAlert(eReconfigure);
             x_SetCmdRequestStatus(eStatus_BadRequest);
-            x_WriteMessage("ERR:eInvalidParameter:Configuration file is not "
-                           "well formed. See log for the details.");
+
+            msg = "ERR:eInvalidParameter:Configuration file is not "
+                  "well formed. " + msg;
+            if (msg.size() > 1024) {
+                msg.resize(1024);
+                msg += " TRUNCATED";
+            }
+
+            x_WriteMessage(msg);
             x_PrintCmdRequestStop();
             return;
         }

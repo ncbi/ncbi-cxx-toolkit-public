@@ -39,9 +39,10 @@
 BEGIN_NCBI_SCOPE
 
 
-// Validates the config file - it does LOG_POST(...) of the problems it found
-// Returns true if the config file is perfectly well formed
-bool NS_ValidateConfigFile(const IRegistry &  reg);
+// Validates the config file and populates a warnings list if the file has
+// problems.
+void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
+                           bool  throw_port_exception);
 
 
 END_NCBI_SCOPE

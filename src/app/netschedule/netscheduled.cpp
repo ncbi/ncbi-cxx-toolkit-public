@@ -144,7 +144,13 @@ void CNetScheduleDApp::Init(void)
 
 int CNetScheduleDApp::Run(void)
 {
-    LOG_POST(Message << Warning << NETSCHEDULED_FULL_VERSION);
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("info", "versions")
+        .Print("server", NETSCHEDULED_VERSION)
+        .Print("storage", NETSCHEDULED_STORAGE_VERSION)
+        .Print("protocol", NETSCHEDULED_PROTOCOL_VERSION)
+        .Print("build", NETSCHEDULED_BUILD_DATE);
 
     const CArgs &           args = GetArgs();
     const CNcbiRegistry &   reg  = GetConfig();
@@ -155,15 +161,18 @@ int CNetScheduleDApp::Run(void)
 
     CNcbiOstrstream     ostr;
     reg.Write(ostr);
-    LOG_POST(Message << Warning
-                     << "Configuration file content: "
-                     << (string)CNcbiOstrstreamToString(ostr));
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("info", "configuration")
+        .Print("content", (string)CNcbiOstrstreamToString(ostr));
 
     // attempt to get server gracefully shutdown on signal
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
-    bool    config_well_formed = NS_ValidateConfigFile(reg);
+    vector<string>      config_warnings;
+    // true -> throw exception if there is a port problem
+    NS_ValidateConfigFile(reg, config_warnings, true);
 
     // [bdb] section
     SNSDBEnvironmentParams  bdb_params;
@@ -200,7 +209,9 @@ int CNetScheduleDApp::Run(void)
                                                        m_EffectiveReinit));
 
     if (!args[kNodaemonArgName]) {
-        LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
+        GetDiagContext().Extra()
+            .Print("_type", "startup")
+            .Print("info", "entering UNIX daemon mode");
         // Here's workaround for SQLite3 bug: if stdin is closed in forked
         // process then 0 file descriptor is returned to SQLite after open().
         // But there's assert there which prevents fd to be equal to 0. So
@@ -215,7 +226,9 @@ int CNetScheduleDApp::Run(void)
                        "Error during daemonization.");
     }
     else
-        LOG_POST(Message << Warning << "Operating in non-daemon mode...");
+        GetDiagContext().Extra()
+            .Print("_type", "startup")
+            .Print("info", "operating in non-daemon mode");
 
     // [queue_*], [qclass_*] and [queues] sections
     // Scan and mount queues
@@ -225,16 +238,25 @@ int CNetScheduleDApp::Run(void)
     if (min_run_timeout < CNSPreciseTime(0.2))
         min_run_timeout = CNSPreciseTime(0.2);
 
-    LOG_POST(Message << Warning
-                     << "Checking running jobs expiration: every "
-                     << NS_FormatPreciseTimeAsSec(min_run_timeout)
-                     << " seconds");
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("info", "check running jobs expiration")
+        .Print("timeout", NS_FormatPreciseTimeAsSec(min_run_timeout));
 
     // Save the process PID if PID is given
     if (!x_WritePid())
         server->RegisterAlert(ePidFile);
-    if (!config_well_formed)
+    if (!config_warnings.empty()) {
+        string      msg;
+        for (vector<string>::const_iterator k = config_warnings.begin();
+             k != config_warnings.end(); ++k) {
+            ERR_POST(*k);
+            if (!msg.empty())
+                msg += "\n";
+            msg += *k;
+        }
         server->RegisterAlert(eConfig);
+    }
 
     qdb->RunExecutionWatcherThread(min_run_timeout);
     qdb->RunPurgeThread();

@@ -42,12 +42,31 @@ BEGIN_NCBI_SCOPE
 class IRegistry;
 
 
+string NS_RegValName(const string &  section, const string &  entry);
+bool NS_ValidateDouble(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings);
+bool NS_ValidateBool(const IRegistry &  reg,
+                     const string &  section, const string &  entry,
+                     vector<string> &  warnings);
+bool NS_ValidateInt(const IRegistry &  reg,
+                    const string &  section, const string &  entry,
+                    vector<string> &  warnings);
+bool NS_ValidateString(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings);
+
+
 
 // Queue parameters
 struct SQueueParameters
 {
     SQueueParameters();
-    void Read(const IRegistry& reg, const string& sname);
+    void ReadQueueClass(const IRegistry &  reg, const string &  sname,
+                        vector<string> &  warnings);
+    void ReadQueue(const IRegistry &  reg, const string &  sname,
+                   const map<string, SQueueParameters> &  queue_classes,
+                   vector<string> &  warnings);
 
     // Transit parameters; stored in memory and in the DB but not present
     // in the config files.
@@ -125,60 +144,101 @@ struct SQueueParameters
 
 
     // Parameters are always: registry and section name
-    CNSPreciseTime  ReadTimeout(const IRegistry &, const string &);
-    CNSPreciseTime  ReadNotifHifreqInterval(const IRegistry &, const string &);
-    CNSPreciseTime  ReadNotifHifreqPeriod(const IRegistry &, const string &);
-    unsigned int    ReadNotifLofreqMult(const IRegistry &, const string &);
-    CNSPreciseTime  ReadNotifHandicap(const IRegistry &, const string &);
-    unsigned int    ReadDumpBufferSize(const IRegistry &, const string &);
-    unsigned int    ReadDumpClientBufferSize(const IRegistry &, const string &);
-    unsigned int    ReadDumpAffBufferSize(const IRegistry &, const string &);
-    unsigned int    ReadDumpGroupBufferSize(const IRegistry &, const string &);
-    CNSPreciseTime  ReadRunTimeout(const IRegistry &, const string &);
-    CNSPreciseTime  ReadReadTimeout(const IRegistry &, const string &);
-    string          ReadProgram(const IRegistry &, const string &);
-    unsigned int    ReadFailedRetries(const IRegistry &, const string &);
+    string          ReadClass(const IRegistry &, const string &,
+                              vector<string> &);
+    CNSPreciseTime  ReadTimeout(const IRegistry &, const string &,
+                                vector<string> &);
+    CNSPreciseTime  ReadNotifHifreqInterval(const IRegistry &, const string &,
+                                            vector<string> &);
+    CNSPreciseTime  ReadNotifHifreqPeriod(const IRegistry &, const string &,
+                                          vector<string> &);
+    unsigned int    ReadNotifLofreqMult(const IRegistry &, const string &,
+                                        vector<string> &);
+    CNSPreciseTime  ReadNotifHandicap(const IRegistry &, const string &,
+                                      vector<string> &);
+    unsigned int    ReadDumpBufferSize(const IRegistry &, const string &,
+                                       vector<string> &);
+    unsigned int    ReadDumpClientBufferSize(const IRegistry &, const string &,
+                                             vector<string> &);
+    unsigned int    ReadDumpAffBufferSize(const IRegistry &, const string &,
+                                          vector<string> &);
+    unsigned int    ReadDumpGroupBufferSize(const IRegistry &, const string &,
+                                            vector<string> &);
+    CNSPreciseTime  ReadRunTimeout(const IRegistry &, const string &,
+                                   vector<string> &);
+    CNSPreciseTime  ReadReadTimeout(const IRegistry &, const string &,
+                                    vector<string> &);
+    string          ReadProgram(const IRegistry &, const string &,
+                                vector<string> &);
+    unsigned int    ReadFailedRetries(const IRegistry &, const string &,
+                                      vector<string> &);
     unsigned int    ReadReadFailedRetries(const IRegistry &, const string &,
+                                          vector<string> &,
                                           unsigned int  failed_retries);
-    CNSPreciseTime  ReadBlacklistTime(const IRegistry &, const string &);
+    CNSPreciseTime  ReadBlacklistTime(const IRegistry &, const string &,
+                                      vector<string> &);
     CNSPreciseTime  ReadReadBlacklistTime(const IRegistry &, const string &,
+                                          vector<string> &,
                                           const CNSPreciseTime &);
-    unsigned int    ReadMaxInputSize(const IRegistry &, const string &);
-    unsigned int    ReadMaxOutputSize(const IRegistry &, const string &);
-    string          ReadSubmHosts(const IRegistry &, const string &);
-    string          ReadWnodeHosts(const IRegistry &, const string &);
-    string          ReadReaderHosts(const IRegistry &, const string &);
-    CNSPreciseTime  ReadWnodeTimeout(const IRegistry &, const string &);
-    CNSPreciseTime  ReadReaderTimeout(const IRegistry &, const string &);
-    CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &);
+    unsigned int    ReadMaxInputSize(const IRegistry &, const string &,
+                                     vector<string> &);
+    unsigned int    ReadMaxOutputSize(const IRegistry &, const string &,
+                                      vector<string> &);
+    string          ReadSubmHosts(const IRegistry &, const string &,
+                                  vector<string> &);
+    string          ReadWnodeHosts(const IRegistry &, const string &,
+                                   vector<string> &);
+    string          ReadReaderHosts(const IRegistry &, const string &,
+                                    vector<string> &);
+    CNSPreciseTime  ReadWnodeTimeout(const IRegistry &, const string &,
+                                     vector<string> &);
+    CNSPreciseTime  ReadReaderTimeout(const IRegistry &, const string &,
+                                      vector<string> &);
+    CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &,
+                                       vector<string> &);
     CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &,
-                                              const string &);
+                                              const string &,
+                                              vector<string> &);
     CNSPreciseTime  ReadMaxPendingReadWaitTimeout(const IRegistry &,
-                                                  const string &);
-    string          ReadDescription(const IRegistry &, const string &);
-    bool            ReadScrambleJobKeys(const IRegistry &, const string &);
+                                                  const string &,
+                                                  vector<string> &);
+    string          ReadDescription(const IRegistry &, const string &,
+                                    vector<string> &);
+    bool            ReadScrambleJobKeys(const IRegistry &, const string &,
+                                        vector<string> &);
     CNSPreciseTime  ReadClientRegistryTimeoutWorkerNode(const IRegistry &,
-                                                        const string &);
+                                                        const string &,
+                                                        vector<string> &);
     unsigned int    ReadClientRegistryMinWorkerNodes(const IRegistry &,
-                                                     const string &);
+                                                     const string &,
+                                                     vector<string> &);
     CNSPreciseTime  ReadClientRegistryTimeoutAdmin(const IRegistry &,
-                                                   const string &);
+                                                   const string &,
+                                                   vector<string> &);
     unsigned int    ReadClientRegistryMinAdmins(const IRegistry &,
-                                                const string &);
+                                                const string &,
+                                                vector<string> &);
     CNSPreciseTime  ReadClientRegistryTimeoutSubmitter(const IRegistry &,
-                                                       const string &);
+                                                       const string &,
+                                                       vector<string> &);
     unsigned int    ReadClientRegistryMinSubmitters(const IRegistry &,
-                                                    const string &);
+                                                    const string &,
+                                                    vector<string> &);
     CNSPreciseTime  ReadClientRegistryTimeoutReader(const IRegistry &,
-                                                    const string &);
+                                                    const string &,
+                                                    vector<string> &);
     unsigned int    ReadClientRegistryMinReaders(const IRegistry &,
-                                                 const string &);
+                                                 const string &,
+                                                 vector<string> &);
     CNSPreciseTime  ReadClientRegistryTimeoutUnknown(const IRegistry &,
-                                                     const string &);
+                                                     const string &,
+                                                     vector<string> &);
     unsigned int    ReadClientRegistryMinUnknowns(const IRegistry &,
-                                                  const string &);
+                                                  const string &,
+                                                  vector<string> &);
     map<string,
-        string>     ReadLinkedSections(const IRegistry &, const string &);
+        string>     ReadLinkedSections(const IRegistry &, const string &,
+                                       vector<string> &);
 };
 
 

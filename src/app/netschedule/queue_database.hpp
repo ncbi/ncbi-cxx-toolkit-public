@@ -62,6 +62,11 @@ BEGIN_NCBI_SCOPE
 class CNetScheduleServer;
 
 
+// Holds parameters together with a queue instance
+typedef map<string,
+            pair<SQueueParameters, CRef<CQueue> > > TQueueInfo;
+
+
 struct SNSDBEnvironmentParams
 {
     string    db_storage_ver;      // Version of DB schema, should match
@@ -90,14 +95,6 @@ struct SNSDBEnvironmentParams
     bool Read(const IRegistry& reg, const string& sname);
 };
 
-
-
-// Holds all the queue parameters - used for queue classes
-// and for reading from DB and ini files
-typedef map<string, SQueueParameters>               TQueueParams;
-// Holds parameters together with a queue instance
-typedef map<string,
-            pair<SQueueParameters, CRef<CQueue> > > TQueueInfo;
 
 
 
