@@ -43,7 +43,7 @@ struct AlertToId
 };
 
 
-const AlertToId     alertToIdMap[] = { { eConfig,          "config" },
+const AlertToId     alertToIdMap[] = { { eStartupConfig,   "startupconfig" },
                                        { eReconfigure,     "reconfigure" },
                                        { ePidFile,         "pidfile" },
                                        { eStartAfterCrash, "startaftercrash" },

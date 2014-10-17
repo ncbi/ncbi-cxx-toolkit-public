@@ -2766,7 +2766,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         string      services_changed = m_Server->ReadServicesConfig(reg);
 
         if (what_changed.empty() && diff.empty() && services_changed.empty()) {
-            m_Server->AcknowledgeAlert(eConfig, "NSAcknowledge");
+            m_Server->AcknowledgeAlert(eStartupConfig, "NSAcknowledge");
             m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
             if (m_ConnContext.NotNull())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
@@ -2792,7 +2792,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         if (m_ConnContext.NotNull())
             GetDiagContext().Extra().Print("config_changes", total_changes);
 
-        m_Server->AcknowledgeAlert(eConfig, "NSAcknowledge");
+        m_Server->AcknowledgeAlert(eStartupConfig, "NSAcknowledge");
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
         x_WriteMessage("OK:" + total_changes);
     }

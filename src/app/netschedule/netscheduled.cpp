@@ -255,7 +255,7 @@ int CNetScheduleDApp::Run(void)
                 msg += "\n";
             msg += *k;
         }
-        server->RegisterAlert(eConfig);
+        server->RegisterAlert(eStartupConfig);
     }
 
     qdb->RunExecutionWatcherThread(min_run_timeout);

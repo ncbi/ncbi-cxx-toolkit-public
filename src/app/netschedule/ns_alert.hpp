@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 enum EAlertType {
     eUnknown = -1,
-    eConfig = 0,
+    eStartupConfig = 0,
     eReconfigure = 1,
     ePidFile = 2,
     eStartAfterCrash = 3,
