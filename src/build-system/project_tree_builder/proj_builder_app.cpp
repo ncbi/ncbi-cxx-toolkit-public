@@ -633,7 +633,7 @@ int CProjBulderApp::Run(void)
     }
 #endif
     // Build projects tree
-#ifndef _DEBUG
+//#ifndef _DEBUG
 // I need this to collect library relations data and metadata
     {
         bool b = m_ScanWholeTree;
@@ -641,7 +641,7 @@ int CProjBulderApp::Run(void)
         GetWholeTree();
         m_ScanWholeTree = b;
     }
-#endif
+//#endif
 
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
