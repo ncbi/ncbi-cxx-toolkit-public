@@ -496,7 +496,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     /// @param job_group
     ///    Group ID.
-    void CancelJobGroup(const string& job_group);
+    /// @param job_statuses
+    ///    Optional comma-separated list of job statuses
+    void CancelJobGroup(const string& job_group,
+            const string& job_statuses = kEmptyStr);
 
     /// Get progress message
     ///
@@ -877,9 +880,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///
     void ShutdownServer(EShutdownLevel level = eNormalShutdown);
 
-    /// Cancel all jobs in the queue.
+    /// Cancel all jobs in the queue (optionally with particular statuses).
     ///
-    void CancelAllJobs();
+    /// @param job_statuses
+    ///    Optional comma-separated list of job statuses
+    void CancelAllJobs(const string& job_statuses = kEmptyStr);
 
     void DumpJob(CNcbiOstream& out, const string& job_key);
     CNetServerMultilineCmdOutput DumpJob(const string& job_key);
@@ -914,10 +919,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void PrintHealth(CNcbiOstream& output_stream);
 
+    // Two versions of DumpQueue to keep the code compile compatible
     void DumpQueue(CNcbiOstream& output_stream,
         const string& start_after_job = kEmptyStr,
         size_t job_count = 0,
-        CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::eJobNotFound,
+        const string& job_statuses = kEmptyStr,
+        const string& job_group = kEmptyStr);
+    void DumpQueue(CNcbiOstream& output_stream,
+        const string& start_after_job,
+        size_t job_count,
+        CNetScheduleAPI::EJobStatus status,
         const string& job_group = kEmptyStr);
 
     typedef map<string, string> TQueueInfo;

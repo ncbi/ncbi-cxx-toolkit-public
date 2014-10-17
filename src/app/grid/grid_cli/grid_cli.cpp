@@ -305,8 +305,8 @@ struct SOptionDefinition {
     {OPT_DEF(eOptionWithParameter, eJobCount),
         "job-count", "Specify the maximum number of jobs in the output.", {-1}},
 
-    {OPT_DEF(eOptionWithParameter, eSelectByStatus),
-        "select-by-status", "Filter output by job status.", {-1}},
+    {OPT_DEF(eOptionWithParameter, eJobStatus),
+        "job-status", "Select jobs by job status.", {-1}},
 
     {OPT_DEF(eSwitch, eVerbose),
         "verbose", "Produce more verbose output.", {-1}},
@@ -861,7 +861,7 @@ struct SCommandDefinition {
         "This command also instructs the worker node that may be "
         "processing those jobs to stop the processing.",
         {eOptionalID, eNetSchedule, eQueue, eAllJobs, eJobGroup, eLoginToken,
-            eAuth, eClientNode, eClientSession,
+            eAuth, eClientNode, eClientSession, eJobStatus,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_RequestJob,
@@ -967,7 +967,7 @@ struct SCommandDefinition {
         "records printed and also to filter the output by job status "
         "and/or job group.",
         {eNetSchedule, eQueue, eStartAfterJob, eJobCount, eJobGroup,
-            eSelectByStatus, eLoginToken, eAuth, eClientNode, eClientSession,
+            eJobStatus, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
@@ -1443,8 +1443,13 @@ int CGridCommandLineInterfaceApp::Run()
             case eJobCount:
                 m_Opts.job_count = NStr::StringToSizet(opt_value);
                 break;
-            case eSelectByStatus:
-                m_Opts.job_status = StringToJobStatus(opt_value);
+            case eJobStatus:
+                // Job status validation, will throw on fail
+                StringToJobStatus(opt_value);
+                if (!m_Opts.job_statuses.empty()) {
+                    m_Opts.job_statuses.append(",");
+                }
+                m_Opts.job_statuses.append(opt_value);
                 break;
             case eWaitForJobStatus:
                 if (NStr::CompareNocase(opt_value, ANY_JOB_STATUS) == 0)

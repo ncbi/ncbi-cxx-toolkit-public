@@ -534,10 +534,15 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key)
     m_Impl->m_API->x_ExecOnce("CANCEL", job_key);
 }
 
-void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
+void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
+        const string& job_statuses)
 {
     SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
     string cmd("CANCEL group=" + job_group);
+    if (!job_statuses.empty()) {
+        cmd.append(" status=");
+        cmd.append(job_statuses);
+    }
     g_AppendClientIPAndSessionID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }

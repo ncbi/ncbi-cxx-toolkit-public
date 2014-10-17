@@ -111,9 +111,15 @@ CNetServerMultilineCmdOutput CNetScheduleAdmin::DumpJob(const string& job_key)
     return m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd, true);
 }
 
-void CNetScheduleAdmin::CancelAllJobs()
+void CNetScheduleAdmin::CancelAllJobs(const string& job_statuses)
 {
-    string cmd("CANCELQ");
+    string cmd;
+    if (job_statuses.empty()) {
+        cmd.assign("CANCELQ");
+    } else {
+        cmd.assign("CANCEL status=");
+        cmd.append(job_statuses);
+    }
     g_AppendClientIPAndSessionID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
@@ -132,13 +138,13 @@ void CNetScheduleAdmin::DumpQueue(
         CNcbiOstream& output_stream,
         const string& start_after_job,
         size_t job_count,
-        CNetScheduleAPI::EJobStatus status,
+        const string& job_statuses,
         const string& job_group)
 {
     string cmd("DUMP");
-    if (status != CNetScheduleAPI::eJobNotFound) {
+    if (!job_statuses.empty()) {
         cmd.append(" status=");
-        cmd.append(CNetScheduleAPI::StatusToString(status));
+        cmd.append(job_statuses);
     }
     if (!start_after_job.empty()) {
         cmd.append(" start_after=");
@@ -157,6 +163,24 @@ void CNetScheduleAdmin::DumpQueue(
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput);
 }
+
+void CNetScheduleAdmin::DumpQueue(
+        CNcbiOstream& output_stream,
+        const string& start_after_job,
+        size_t job_count,
+        CNetScheduleAPI::EJobStatus status,
+        const string& job_group)
+{
+    string job_statuses(CNetScheduleAPI::StatusToString(status));
+
+    // Must be a rare case
+    if (status == CNetScheduleAPI::eJobNotFound) {
+        job_statuses.clear();
+    }
+
+    DumpQueue(output_stream, start_after_job, job_count, job_statuses, job_group);
+}
+
 
 static string s_MkQINFCmd(const string& queue_name)
 {

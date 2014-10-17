@@ -206,7 +206,7 @@ enum EOption {
     eJobsByStatus,
     eStartAfterJob,
     eJobCount,
-    eSelectByStatus,
+    eJobStatus,
     eVerbose,
     eBrief,
     eStatusOnly,
@@ -307,7 +307,7 @@ private:
         string auth_token;
         string start_after_job;
         size_t job_count;
-        CNetScheduleAPI::EJobStatus job_status;
+        string job_statuses;
         int job_status_mask;
         int last_event_index;
         time_t extend_lifetime_by;
@@ -344,7 +344,7 @@ private:
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), job_count(0),
-            job_status(CNetScheduleAPI::eJobNotFound), job_status_mask(0),
+            job_status_mask(0),
             last_event_index(kMax_Int), extend_lifetime_by(0),
             on_off_switch(eDefault),
             input_stream(NULL), output_stream(NULL), protocol_dump(NULL),
