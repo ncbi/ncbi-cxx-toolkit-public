@@ -896,6 +896,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CEBU	s	University of San Carlos, Biology Department",
 "CECT	c	Coleccion Espanola de Cultivos Tipo",
 "CEDD	s	International Center for Ethnomedicine and Drug Development",
+"CEDiT	s	Centre of Excellence for Dinophyte Taxonomy",
 "CEEF	s	Escuela Nacional de Ciencias Forestales",
 "CEET	s	El Colegio de la Frontera Sur, Colleccion de Insectos Asociados a Plantas Cultivadas en la Frontera Sur",
 "CEL	s	University of Illinois, Crop Sciences Department",
