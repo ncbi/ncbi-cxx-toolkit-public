@@ -3411,6 +3411,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(product),
         DO_IMPORT(pseudogene),
         DO_IMPORT(rad_map),
+        DO_IMPORT(regulatory_class),
         DO_IMPORT(replace),
         DO_IMPORT(ribosomal_slippage),
         DO_IMPORT(rpt_family),
@@ -3836,6 +3837,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(mod_base);
     DO_QUAL(PCR_conditions);
     DO_QUAL(phenotype);
+    DO_QUAL(regulatory_class);
     DO_QUAL(rpt_family);
     DO_QUAL(rpt_type);
     DO_QUAL(rpt_unit);
@@ -4480,6 +4482,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_pseudogene, CSeqFeatData::eQual_pseudogene },
     { eFQ_region, CSeqFeatData::eQual_note },
     { eFQ_region_name, CSeqFeatData::eQual_region_name },
+    { eFQ_regulatory_class, CSeqFeatData::eQual_regulatory_class },
     { eFQ_replace, CSeqFeatData::eQual_replace },
     { eFQ_ribosomal_slippage, CSeqFeatData::eQual_ribosomal_slippage },
     { eFQ_rpt_family, CSeqFeatData::eQual_rpt_family },

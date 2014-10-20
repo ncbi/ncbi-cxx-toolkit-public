@@ -2812,7 +2812,15 @@ START_SUBTYPE(telomere)
 END_SUBTYPE
 
 START_SUBTYPE(regulatory)
+    ADD_QUAL(allele);
+    ADD_QUAL(bound_moiety);
+    ADD_QUAL(function);
+    ADD_QUAL(map);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
+    ADD_QUAL(phenotype);
     ADD_QUAL(regulatory_class);
+    ADD_QUAL(standard_name);
 END_SUBTYPE
 
 #undef START_SUBTYPE
@@ -2851,6 +2859,7 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
     table[eSubtype_operon].push_back(eQual_operon);
     table[eSubtype_source].push_back(eQual_organism);
     table[eSubtype_ncRNA].push_back(eQual_ncRNA_class);
+    table[eSubtype_regulatory].push_back(eQual_regulatory_class);
 
     // sort for binary_search
     NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
