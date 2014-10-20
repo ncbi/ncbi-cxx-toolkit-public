@@ -962,7 +962,7 @@ class NetSchedule:
         cmdLine = [ self.__grid_cli, "dumpqueue", "--queue=" + qname,
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         if status != '':
-            cmdLine += [ "--select-by-status=" + status ]
+            cmdLine += [ "--job-status=" + status ]
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
         if start_after != '':
             cmdLine += [ "--start-after-job=" + start_after ]
