@@ -4954,7 +4954,15 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                     // ignore start/stop not at end in genomic gpipe sequence
                 } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                    EDiagSev sev = eDiag_Warning;
+                    if (m_Imp.IsGenomeSubmission()) {
+                        if (j == 0 || j == 1) {
+                            if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+                                sev = eDiag_Error;
+                            }
+                        }
+                    }
+                    PostErr (sev, eErr_SEQ_FEAT_PartialProblem,
                         parterr[i] + ": " + parterrs[j], *(feat.GetSeq_feat()));
                 }
             }
