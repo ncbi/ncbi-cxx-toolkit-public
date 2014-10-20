@@ -689,73 +689,88 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         return false;  // CORS disabled, so -- do regular request processing
     }
 
-    // Is this a JQuery based hack for browsers that don't yet support CORS?
     CCgiRequest::ERequestMethod method = request.GetRequestMethod();
-    string jquery_callback = request.GetEntry("callback");
-    if (TCORS_JQuery_Callback_Enable::GetDefault()
-        &&  (method == CCgiRequest::eMethod_GET   || 
-             method == CCgiRequest::eMethod_POST  ||
-             method == CCgiRequest::eMethod_Other)
-        &&  !jquery_callback.empty()) {
-        string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
-        if (prefix == "*"  ||
-            NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
-            // Activate JQuery hack;
-            // skip standard CORS processing; do regular request processing
-            response.m_JQuery_Callback = jquery_callback;
-            return false;
-        }
-    }
 
     // Is this a standard CORS request?
     string origin = request.GetRandomProperty(s_HeaderToHttp(kAC_Origin));
-    if ( !s_IsAllowedOrigin(origin) )
-        return false;  // Not CORS, so -- do regular request processing
+    if ( origin.empty() ) {
+        // Is this a JQuery based hack for browsers that don't yet support CORS?
+        string jquery_callback = request.GetEntry("callback");
+        if (TCORS_JQuery_Callback_Enable::GetDefault()
+            &&  (method == CCgiRequest::eMethod_GET   ||
+                 method == CCgiRequest::eMethod_POST  ||
+                 method == CCgiRequest::eMethod_Other)
+            &&  !jquery_callback.empty()) {
+            string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
+            if (prefix == "*"  ||
+                NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
+                // Activate JQuery hack;
+                // skip standard CORS processing; do regular request processing
+                response.m_JQuery_Callback = jquery_callback;
+            }
+        }
+        return false;
+    }
+
+    if ( !s_IsAllowedOrigin(origin) ) {
+        // CORS with invalid origin -- terminate request.
+        response.DisableTrackingCookie();
+        response.SetStatus(CRequestStatus::e403_Forbidden);
+        response.WriteHeader();
+        return true;
+    }
 
     _ASSERT(!origin.empty());
 
     // Is this a preflight CORS request?
-    if (request.GetRequestMethod() == CCgiRequest::eMethod_OPTIONS) {
+    if (method == CCgiRequest::eMethod_OPTIONS) {
         string method = request.GetRandomProperty
             (s_HeaderToHttp(kAC_RequestMethod));
         string headers = request.GetRandomProperty
             (s_HeaderToHttp(kAC_RequestHeaders));
-        if (s_IsAllowedMethod(method)  &&  s_IsAllowedHeaderList(headers)) {
-            // Yes, it's a preflight CORS request, so -- set and send back
-            // the required headers, and don't do regular (non-CORS) request
-            // processing
-            response.SetHeaderValue(kAC_AllowOrigin, origin);
-            if ( TCORS_AllowCredentials::GetDefault() ) {
-                response.SetHeaderValue(kAC_AllowCredentials, "true");
-            }
-            string allow_methods = TCORS_AllowMethods::GetDefault();
-            if ( !allow_methods.empty() ) {
-                response.SetHeaderValue(kAC_AllowMethods, allow_methods);
-            }
-            string allow_headers = TCORS_AllowHeaders::GetDefault();
-            if ( !allow_headers.empty() ) {
-                response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
-            }
-            string max_age = TCORS_MaxAge::GetDefault();
-            if ( !max_age.empty() ) {
-                response.SetHeaderValue(kAC_MaxAge, max_age);
-            }
+        if (!s_IsAllowedMethod(method)  ||  !s_IsAllowedHeaderList(headers)) {
+            // This is CORS request, but the method or headers are not allowed.
+            response.DisableTrackingCookie();
+            response.SetStatus(CRequestStatus::e403_Forbidden);
             response.WriteHeader();
             return true;
         }
+        // Yes, it's a preflight CORS request, so -- set and send back
+        // the required headers, and don't do regular (non-CORS) request
+        // processing
+        response.SetHeaderValue(kAC_AllowOrigin, origin);
+        if ( TCORS_AllowCredentials::GetDefault() ) {
+            response.SetHeaderValue(kAC_AllowCredentials, "true");
+        }
+        string allow_methods = TCORS_AllowMethods::GetDefault();
+        if ( !allow_methods.empty() ) {
+            response.SetHeaderValue(kAC_AllowMethods, allow_methods);
+        }
+        string allow_headers = TCORS_AllowHeaders::GetDefault();
+        if ( !allow_headers.empty() ) {
+            response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
+        }
+        string max_age = TCORS_MaxAge::GetDefault();
+        if ( !max_age.empty() ) {
+            response.SetHeaderValue(kAC_MaxAge, max_age);
+        }
+        response.WriteHeader();
+    }
+    else {
+        // This is a normal CORS request (not a preflight), so -- set the required
+        // CORS headers, and then do regular (non-CORS) request processing
+        response.SetHeaderValue(kAC_AllowOrigin, origin);
+        if ( TCORS_AllowCredentials::GetDefault() ) {
+            response.SetHeaderValue(kAC_AllowCredentials, "true");
+        }
+        string exp_headers = TCORS_ExposeHeaders::GetDefault();
+        if ( !exp_headers.empty() ) {
+            response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
+        }
     }
 
-    // This is a normal CORS request (not a preflight), so -- set the required
-    // CORS headers, and then do regular (non-CORS) request processing
-    response.SetHeaderValue(kAC_AllowOrigin, origin);
-    if ( TCORS_AllowCredentials::GetDefault() ) {
-        response.SetHeaderValue(kAC_AllowCredentials, "true");
-    }
-    string exp_headers = TCORS_ExposeHeaders::GetDefault();
-    if ( !exp_headers.empty() ) {
-        response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
-    }
-    return false;
+    // This was CORS request (valid or not) - skip normap processing.
+    return true;
 }
 
 
