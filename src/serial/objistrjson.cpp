@@ -64,6 +64,9 @@ CObjectIStreamJson::~CObjectIStreamJson(void)
 void CObjectIStreamJson::ResetState(void)
 {
     CObjectIStream::ResetState();
+    if (GetStackDepth() > 1) {
+        return;
+    }
     m_LastTag.clear();
     m_RejectedTag.clear();
 }

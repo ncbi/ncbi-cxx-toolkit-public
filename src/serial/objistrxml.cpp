@@ -72,6 +72,9 @@ CObjectIStreamXml::~CObjectIStreamXml(void)
 void CObjectIStreamXml::ResetState(void)
 {
     CObjectIStream::ResetState();
+    if (GetStackDepth() > 1) {
+        return;
+    }
     m_TagState = eTagOutside;
     m_LastTag.clear();
     m_RejectedTag.clear();

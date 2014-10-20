@@ -142,6 +142,9 @@ void CObjectIStreamAsnBinary::ResetThisState(void)
 void CObjectIStreamAsnBinary::ResetState(void)
 {
     CObjectIStream::ResetState();
+    if (GetStackDepth() > 1) {
+        return;
+    }
     ResetThisState();
 }
 
