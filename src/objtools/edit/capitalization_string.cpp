@@ -210,6 +210,26 @@ static const SStaticPair<const char*, const char*> map_state_to_abbrev[] =
 
 };
 
+static const string mouse_strain_fixes[] = {
+    "129/Sv" ,
+    "129/SvJ" ,
+    "BALB/c" ,
+    "C57BL/6" ,
+    "C57BL/6J" ,
+    "CD-1" ,
+    "CZECHII" ,
+    "FVB/N",
+    "FVB/N-3" ,
+    "ICR" ,
+    "NMRI" ,
+    "NOD" ,
+    "C3H" ,
+    "C57BL" ,
+    "C57BL/6" ,
+    "C57BL/6J" ,
+    "DBA/2"
+};
+
 typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_state_abbrev, map_state_to_abbrev);
 
@@ -380,6 +400,26 @@ bool FixStateAbbreviationsInAffil(CAffil& affil)
                     return true;
                 }
             }
+        }
+    }
+    return false;
+}
+
+bool FixupMouseStrain(string& strain)
+{
+    if (NStr::IsBlank(strain))
+        return false;
+
+    NStr::TruncateSpacesInPlace (strain);
+
+    bool whole_word = true;
+    for (unsigned int i = 0; i < sizeof(mouse_strain_fixes)/sizeof(mouse_strain_fixes[0]); ++i) {
+        CRegexpUtil replacer(strain);
+        string pattern = whole_word ? ("\\b" + mouse_strain_fixes[i] + "\\b") : mouse_strain_fixes[i];
+        // whole-word and case insensitive search
+        if (replacer.Replace(pattern, mouse_strain_fixes[i], CRegexp::fCompile_ignore_case) > 0) {
+            replacer.GetResult().swap(strain);
+            return true;
         }
     }
     return false;

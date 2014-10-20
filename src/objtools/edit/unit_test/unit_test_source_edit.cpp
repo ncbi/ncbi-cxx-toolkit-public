@@ -174,8 +174,59 @@ BOOST_AUTO_TEST_CASE(Test_StateAbbreviation)
     state.assign(" ind ");
     edit::GetStateAbbreviation(state);
     BOOST_CHECK_EQUAL(state, string("IN"));
+
+    state.assign("Saxony");
+    edit::GetStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(state, string("SAXONY"));
 }
-    
+   
+
+BOOST_AUTO_TEST_CASE(Test_FixupMouseStrain)
+{
+    CRef<CBioSource> bsrc(new CBioSource);
+    bsrc->SetOrg().SetTaxname("Mus musculus domesticus");
+    unit_test_util::SetOrgMod (*bsrc, COrgMod::eSubtype_strain, "strain: icr");
+    unit_test_util::SetOrgMod (*bsrc, COrgMod::eSubtype_strain, "new strain:8icr");
+    unit_test_util::SetOrgMod (*bsrc, COrgMod::eSubtype_strain, "bad strain");
+    unit_test_util::SetOrgMod (*bsrc, COrgMod::eSubtype_strain, "C3h");
+
+    FOR_EACH_ORGMOD_ON_BIOSOURCE (orgmod, *bsrc) {
+        if ((*orgmod)->IsSetSubname()) {
+            bool changed(false);
+            string orig_strain = (*orgmod)->GetSubname();
+            changed = edit::FixupMouseStrain(orig_strain);
+            if (NStr::StartsWith((*orgmod)->GetSubname(), "strain")) {
+                BOOST_CHECK_EQUAL(changed, true);
+                BOOST_CHECK_EQUAL(orig_strain, string("strain: ICR"));
+            } else if (NStr::StartsWith((*orgmod)->GetSubname(), "new")) {
+                // does not change as it is not a whole word
+                BOOST_CHECK_EQUAL(changed, false);
+                BOOST_CHECK_EQUAL(orig_strain, string("new strain:8icr"));
+            } else if (NStr::StartsWith((*orgmod)->GetSubname(), "bad")) {
+                BOOST_CHECK_EQUAL(changed, false);
+                BOOST_CHECK_EQUAL(orig_strain, string("bad strain"));
+            } else if (NStr::StartsWith((*orgmod)->GetSubname(), "C3h")) {
+                BOOST_CHECK_EQUAL(changed, true);
+                BOOST_CHECK_EQUAL(orig_strain, string("C3H"));
+            }
+        }
+    }
+
+    // the function corrects the strain value independetly from the taxname
+    bsrc->SetOrg().SetTaxname("Homo sapiens");
+    bsrc->SetOrg().SetOrgname().ResetMod();
+    unit_test_util::SetOrgMod (*bsrc, COrgMod::eSubtype_strain, "strain: icr");
+    FOR_EACH_ORGMOD_ON_BIOSOURCE (orgmod, *bsrc) {
+        if ((*orgmod)->IsSetSubname()) {
+            string orig_strain = (*orgmod)->GetSubname();
+            bool changed = edit::FixupMouseStrain(orig_strain);
+            BOOST_CHECK_EQUAL(changed, true);
+            BOOST_CHECK_EQUAL(orig_strain, string("strain: ICR"));
+        }
+    }
+}
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

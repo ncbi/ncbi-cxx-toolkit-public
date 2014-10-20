@@ -61,6 +61,8 @@ NCBI_XOBJEDIT_EXPORT void RemoveFieldNameFromString( const string& field_name, s
 NCBI_XOBJEDIT_EXPORT void GetStateAbbreviation(string& state);
 NCBI_XOBJEDIT_EXPORT bool FixStateAbbreviationsInCitSub(CCit_sub& sub);
 NCBI_XOBJEDIT_EXPORT bool FixStateAbbreviationsInAffil(CAffil& affil);
+/// This function does not check whether the taxname starts with "Mus musculus", it only corrects the mouse strain value
+NCBI_XOBJEDIT_EXPORT bool FixupMouseStrain(string& strain);
 
 END_SCOPE(edit)
 END_SCOPE(objects)
