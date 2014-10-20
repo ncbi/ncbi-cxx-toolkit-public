@@ -2048,6 +2048,11 @@ bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
             // skip unresolvable IDs
             continue;
         }
+        else if ( m_Selector->GetAdaptiveDepthFlags() & SAnnotSelector::fAdaptive_ByPolicy &&
+                  bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_only_near ) {
+            // skip going deeper because of top-level interval policy
+            continue;
+        }
         
         if ( !bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef) ) {
             continue;
