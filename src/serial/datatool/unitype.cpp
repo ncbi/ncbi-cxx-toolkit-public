@@ -121,7 +121,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
         }
         else if (typeContainer->GetMembers().size() == 2) {
             hasAttlist = typeContainer->GetMembers().front().get()->Attlist();
-            typeStatic =  dynamic_cast<const CStaticDataType*>( typeContainer->GetMembers().back()->GetType() );
+            if (hasAttlist) {
+                typeStatic =  dynamic_cast<const CStaticDataType*>( typeContainer->GetMembers().back()->GetType() );
+            }
         }
     }
 
