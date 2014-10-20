@@ -150,7 +150,8 @@ void CNSClientId::SetClientName(const string &  client_name)
 
 
 void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
-                              CNetScheduleServer *  server)
+                              CNetScheduleServer *  server,
+                              const string &  cmd)
 {
     if (cmd_reqs & eNS_Queue) {
         if ((m_PassedChecks & eNS_Queue) == 0)
@@ -163,7 +164,8 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
     if (cmd_reqs & eNS_Admin) {
         if ((m_PassedChecks & eNS_Admin) == 0) {
-            server->RegisterAlert(eAccess);
+            server->RegisterAlert(eAccess, "admin privileges required "
+                                  "to execute " + cmd);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: admin privileges required");
         }
@@ -171,7 +173,8 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
     if (cmd_reqs & eNS_Submitter) {
         if ((m_PassedChecks & eNS_Submitter) == 0) {
-            server->RegisterAlert(eAccess);
+            server->RegisterAlert(eAccess, "submitter privileges required "
+                                  "to execute " + cmd);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: submitter privileges required");
         }
@@ -179,7 +182,8 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
     if (cmd_reqs & eNS_Worker) {
         if ((m_PassedChecks & eNS_Worker) == 0) {
-            server->RegisterAlert(eAccess);
+            server->RegisterAlert(eAccess, "worker node privileges required "
+                                  "to execute " + cmd);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: worker node privileges required");
         }
@@ -187,7 +191,8 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
     if (cmd_reqs & eNS_Reader) {
         if ((m_PassedChecks & eNS_Reader) == 0) {
-            server->RegisterAlert(eAccess);
+            server->RegisterAlert(eAccess, "reader privileges required "
+                                  "to execute " + cmd);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: reader privileges required");
         }
@@ -195,7 +200,8 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
     if (cmd_reqs & eNS_Program) {
         if ((m_PassedChecks & eNS_Program) == 0) {
-            server->RegisterAlert(eAccess);
+            server->RegisterAlert(eAccess, "program privileges required "
+                                  "to execute " + cmd);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: program privileges required");
         }

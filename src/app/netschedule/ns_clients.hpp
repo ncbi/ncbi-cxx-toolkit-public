@@ -107,7 +107,8 @@ class CNSClientId
           else           { m_PassedChecks = 0; } }
 
         void CheckAccess(TNSCommandChecks  cmd_reqs,
-                         CNetScheduleServer * server);
+                         CNetScheduleServer * server,
+                         const string &  cmd);
 
     private:
         unsigned int        m_Addr;           // Client peer address

@@ -71,6 +71,7 @@ struct SNSAlertAttributes
     bool                m_On;
     size_t              m_Count;
     string              m_User;
+    string              m_Message;
 
     SNSAlertAttributes() :
         m_LastDetectedTimestamp(CNSPreciseTime::Current()),
@@ -86,7 +87,7 @@ struct SNSAlertAttributes
 class CNSAlerts
 {
     public:
-        void Register(enum EAlertType alert_type);
+        void Register(enum EAlertType alert_type, const string &  message);
         enum EAlertAckResult Acknowledge(const string &  alert_id,
                                          const string &  user);
         enum EAlertAckResult Acknowledge(enum EAlertType alert_type,

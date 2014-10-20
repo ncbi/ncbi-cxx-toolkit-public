@@ -217,7 +217,9 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
             ERR_POST("Reinitialization due to the server "
                      "did not stop gracefully last time. "
                      << db_path << " removed.");
-            m_Server->RegisterAlert(eStartAfterCrash);
+            m_Server->RegisterAlert(eStartAfterCrash, "database has been "
+                                    "reinitialized due to the server did not "
+                                    "stop gracefully last time");
         }
     }
 
@@ -1493,7 +1495,8 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
             CNetScheduleAccessList  acl;
             acl.SetHosts(queue_class->second.subm_hosts);
             if (!acl.IsAllowed(client.GetAddress())) {
-                m_Server->RegisterAlert(eAccess);
+                m_Server->RegisterAlert(eAccess, "submitter privileges required"
+                                        " to create a dynamic queue");
                 NCBI_THROW(CNetScheduleException, eAccessDenied,
                            "Access denied: submitter privileges required");
             }
@@ -1515,7 +1518,8 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
             }
 
             if (!ok) {
-                m_Server->RegisterAlert(eAccess);
+                m_Server->RegisterAlert(eAccess, "program privileges required "
+                                        "to create a dynamic queue");
                 NCBI_THROW(CNetScheduleException, eAccessDenied,
                            "Access denied: program privileges required");
             }

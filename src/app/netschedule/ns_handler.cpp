@@ -1075,7 +1075,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         }
     }
 
-    m_ClientId.CheckAccess(extra.checks, m_Server);
+    m_ClientId.CheckAccess(extra.checks, m_Server, cmd.command->cmd);
 
     m_ClientIdentificationPrinted = false;
     if (queue_ptr) {
@@ -2733,14 +2733,18 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         if (!config_warnings.empty()) {
             string      msg;
+            string      alert_msg;
             for (vector<string>::const_iterator k = config_warnings.begin();
                  k != config_warnings.end(); ++k) {
                 ERR_POST(*k);
-                if (!msg.empty())
+                if (!msg.empty()) {
                     msg += "; ";
+                    alert_msg += "\n";
+                }
                 msg += *k;
+                alert_msg += *k;
             }
-            m_Server->RegisterAlert(eReconfigure);
+            m_Server->RegisterAlert(eReconfigure, alert_msg);
             x_SetCmdRequestStatus(eStatus_BadRequest);
 
             msg = "ERR:eInvalidParameter:Configuration file is not "

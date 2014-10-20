@@ -244,8 +244,8 @@ int CNetScheduleDApp::Run(void)
         .Print("timeout", NS_FormatPreciseTimeAsSec(min_run_timeout));
 
     // Save the process PID if PID is given
-    if (!x_WritePid())
-        server->RegisterAlert(ePidFile);
+    x_WritePid(server.get());
+
     if (!config_warnings.empty()) {
         string      msg;
         for (vector<string>::const_iterator k = config_warnings.begin();
@@ -255,7 +255,7 @@ int CNetScheduleDApp::Run(void)
                 msg += "\n";
             msg += *k;
         }
-        server->RegisterAlert(eStartupConfig);
+        server->RegisterAlert(eStartupConfig, msg);
     }
 
     qdb->RunExecutionWatcherThread(min_run_timeout);
@@ -307,7 +307,7 @@ void CNetScheduleDApp::x_SaveSection(const CNcbiRegistry &  reg,
 
 
 // true if the PID is written successfully
-bool CNetScheduleDApp::x_WritePid(void) const
+void CNetScheduleDApp::x_WritePid(CNetScheduleServer *  server) const
 {
     const CArgs &   args = GetArgs();
 
@@ -317,35 +317,35 @@ bool CNetScheduleDApp::x_WritePid(void) const
         string      pid_file = args[kPidFileArgName].AsString();
 
         if (pid_file == "-") {
-            LOG_POST(Message << Warning <<
-                                "PID file cannot be standard output and only "
-                                "file name is accepted. Ignore and continue.");
-            return false;
+            string      msg = "pid file cannot be standard output and only "
+                              "file name is accepted";
+            LOG_POST(Message << Warning << msg << ". Ignore and continue.");
+            server->RegisterAlert(ePidFile, msg);
+            return;
         }
 
         // Test writeability
         if (access(pid_file.c_str(), F_OK) == 0) {
             // File exists
             if (access(pid_file.c_str(), W_OK) != 0) {
-                LOG_POST(Message << Warning << "PID file is not writable. "
-                                    "Ignore and continue.");
-                return false;
+                string      msg = "pid file is not writable";
+                LOG_POST(Message << Warning << msg << ". Ignore and continue.");
+                server->RegisterAlert(ePidFile, msg);
+                return;
             }
         }
 
         // File does not exist or write access is granted
         FILE *  f = fopen(pid_file.c_str(), "w");
         if (f == NULL) {
-            LOG_POST(Message << Warning <<
-                                "Error opening PID file for writing. "
-                                "Ignore and continue.");
-            return false;
+            string      msg = "error opening pid file for writing";
+            LOG_POST(Message << Warning << msg << ". Ignore and continue.");
+            server->RegisterAlert(ePidFile, msg);
+            return;
         }
         fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
         fclose(f);
     }
-
-    return true;
 }
 
 

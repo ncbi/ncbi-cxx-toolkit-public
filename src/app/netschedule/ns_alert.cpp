@@ -43,11 +43,11 @@ struct AlertToId
 };
 
 
-const AlertToId     alertToIdMap[] = { { eStartupConfig,   "startupconfig" },
-                                       { eReconfigure,     "reconfigure" },
-                                       { ePidFile,         "pidfile" },
-                                       { eStartAfterCrash, "startaftercrash" },
-                                       { eAccess,          "accessdenied" } };
+const AlertToId     alertToIdMap[] = { { eStartupConfig,   "StartupConfig" },
+                                       { eReconfigure,     "Reconfigure" },
+                                       { ePidFile,         "PidFile" },
+                                       { eStartAfterCrash, "StartedAfterCrash" },
+                                       { eAccess,          "AccessDenied" } };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 
@@ -66,11 +66,13 @@ string SNSAlertAttributes::Serialize(void) const
            "OK:acknowledged_time: " + acknowledged + "\n"
            "OK:on: " + NStr::BoolToString(m_On) + "\n"
            "OK:count: " + NStr::NumericToString(m_Count) + "\n"
-           "OK:user: " + m_User;
+           "OK:user: " + m_User + "\n"
+           "OK:message: \"" + NStr::PrintableString(m_Message) + "\"";
 }
 
 
-void CNSAlerts::Register(enum EAlertType alert_type)
+void CNSAlerts::Register(enum EAlertType  alert_type,
+                         const string &   message)
 {
     map< enum EAlertType,
          SNSAlertAttributes >::iterator     found;
@@ -82,11 +84,14 @@ void CNSAlerts::Register(enum EAlertType alert_type)
         found->second.m_LastDetectedTimestamp = CNSPreciseTime::Current();
         found->second.m_On = true;
         ++found->second.m_Count;
+        found->second.m_Message = message;
         return;
     }
 
     // Brand new alert
-    m_Alerts[alert_type] = SNSAlertAttributes();
+    SNSAlertAttributes      attrs;
+    attrs.m_Message = message;
+    m_Alerts[alert_type] = attrs;
 }
 
 

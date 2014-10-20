@@ -548,9 +548,10 @@ CNetScheduleServer::AcknowledgeAlert(EAlertType      alert_type,
 }
 
 
-void CNetScheduleServer::RegisterAlert(EAlertType  alert_type)
+void CNetScheduleServer::RegisterAlert(EAlertType  alert_type,
+                                       const string &  message)
 {
-    m_Alerts.Register(alert_type);
+    m_Alerts.Register(alert_type, message);
 }
 
 
