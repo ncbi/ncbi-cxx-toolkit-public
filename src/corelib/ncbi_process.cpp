@@ -426,8 +426,10 @@ TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
         // No need to set success_flag to true here, because
         // either this process must be terminated or
         // the descriptors must be restored.
-        if ((flags & fDF_KeepParent) == 0)
+        if ((flags & fDF_KeepParent) == 0) {
+            GetDiagContext().PrintStop();
             ::_exit(0);
+        }
         return (TPid) pid/*success*/;
     }
     // Child process.

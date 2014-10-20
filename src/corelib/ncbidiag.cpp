@@ -1374,6 +1374,7 @@ CDiagContext::TPID CDiagContext::GetPID(void)
 
 bool CDiagContext::UpdatePID(void)
 {
+    TPID old_pid = sm_PID;
     TPID new_pid = CProcess::GetCurrentPid();
     if (sm_PID == new_pid) {
         // Parent process does not need to update pid/guid
@@ -1386,9 +1387,8 @@ bool CDiagContext::UpdatePID(void)
     ctx.x_CreateUID();
     ctx.Extra().
         Print("action", "fork").
-        Print("parent_guid", ctx.GetStringUID(old_uid));
-    //ctx.PrintExtra("New process created by fork(), "
-    //    "parent GUID=" + );
+        Print("parent_guid", ctx.GetStringUID(old_uid)).
+        Print("parent_pid", NStr::NumericToString(old_pid));
     return true;
 }
 
