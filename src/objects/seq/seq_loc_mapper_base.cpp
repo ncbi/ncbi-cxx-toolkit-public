@@ -836,13 +836,15 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
         }
     }
+    // If both source and destination total length are known, check if
+    // they match each other.
     if (src_total_len != kInvalidSeqPos  &&  dst_total_len != kInvalidSeqPos) {
         // Check for incomplete and stop codons.
         if (src_type == eSeq_nuc  &&  dst_type == eSeq_prot) {
             // Report overhanging bases if any
             if (src_total_len == (dst_total_len + 1)*3) {
                 // Skip stop codon
-                src_total_len -= 3;
+                dst_total_len++;
             }
             else if (src_total_len/3 == dst_total_len  &&  src_total_len % 3 != 0) {
                 ERR_POST_X(28, Warning <<
@@ -860,7 +862,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             // Report overhanging bases if any
             if (dst_total_len == (src_total_len + 1)*3) {
                 // Skip stop codon
-                dst_total_len -= 3;
+                src_total_len++;
             }
             else if (dst_total_len/3 == src_total_len  &&  dst_total_len % 3 != 0) {
                 ERR_POST_X(28, Warning <<
@@ -896,27 +898,22 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     // Start with an empty range
     TSeqPos src_start = kInvalidSeqPos;
     TSeqPos src_len = 0;
+    // For whole ranges don't fetch their actual length since it is allowed
+    // to be different from its genomic couterpart.
     if ( rg.IsWhole() ) {
         src_start = 0;
-        src_len = GetSequenceLength(src_it.GetSeq_id());
-        if (src_len != kInvalidSeqPos) {
-            src_len = src_width*src_len;
-        }
+        src_len = kInvalidSeqPos;
     }
     else if ( !rg.Empty() ) {
         src_start = src_it.GetRange().GetFrom()*src_width;
         src_len = x_GetRangeLength(src_it)*src_width;
     }
-
     rg = dst_it.GetRange();
     TSeqPos dst_start = kInvalidSeqPos;
     TSeqPos dst_len = 0;
     if ( rg.IsWhole() ) {
         dst_start = 0;
-        dst_len = GetSequenceLength(dst_it.GetSeq_id());
-        if (dst_len != kInvalidSeqPos) {
-            dst_len = dst_width*dst_len;
-        }
+        dst_len = kInvalidSeqPos;
     }
     else if ( !rg.Empty() ) {
         dst_start = dst_it.GetRange().GetFrom()*dst_width;
@@ -1015,10 +1012,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 src_start = 0;
-                src_len = GetSequenceLength(src_it.GetSeq_id());
-                if (src_len != kInvalidSeqPos) {
-                    src_len = src_width*src_len;
-                }
+                src_len = kInvalidSeqPos;
             }
             else {
                 src_start = src_it.GetRange().GetFrom()*src_width;
@@ -1039,10 +1033,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 dst_start = 0;
-                dst_len = GetSequenceLength(dst_it.GetSeq_id());
-                if (dst_len != kInvalidSeqPos) {
-                    dst_len = dst_width*dst_len;
-                }
+                dst_len = kInvalidSeqPos;
             }
             else {
                 dst_start = dst_it.GetRange().GetFrom()*dst_width;
@@ -1986,7 +1977,7 @@ void CSeq_loc_Mapper_Base::SetSeqTypeById(const CSeq_id_Handle& idh,
 
 bool CSeq_loc_Mapper_Base::x_CheckSeqTypes(const CSeq_loc& loc,
                                            ESeqType&       seqtype,
-                                           TSeqPos&        len) const
+                                           TSeqPos&        len)
 {
     // Iterate the seq-loc, try to get sequence types used in it.
     len = 0;
@@ -2009,7 +2000,7 @@ bool CSeq_loc_Mapper_Base::x_CheckSeqTypes(const CSeq_loc& loc,
         // Adjust total length or reset it.
         if (len != kInvalidSeqPos) {
             if ( it.GetRange().IsWhole() ) {
-                len = kInvalidSeqPos;
+                len = GetSequenceLength(it.GetSeq_id());
             }
             else {
                 len += it.GetRange().GetLength();

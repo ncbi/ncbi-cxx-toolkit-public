@@ -651,7 +651,7 @@ private:
     // if the type can not be detected or there are multiple types.
     bool x_CheckSeqTypes(const CSeq_loc& loc,
                          ESeqType&       seqtype,
-                         TSeqPos&        len) const;
+                         TSeqPos&        len);
     // If x_CheckSeqTypes returns false, it may indicate that some
     // sequence types could not be detected. In this case the mapper
     // will attempt to find at least one known type in the location
