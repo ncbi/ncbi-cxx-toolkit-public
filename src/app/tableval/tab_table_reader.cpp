@@ -320,13 +320,14 @@ void CTabDelimitedValidator::RegisterAliases(CNcbiIstream& in_stream)
     CRef<ILineReader> reader(ILineReader::New(in_stream));
     while (!reader->AtEOF())
     {
+        reader->ReadLine();
         CTempString line = reader->GetCurrentLine();
         if (line.empty())
             continue;
         if (line[0] == '#' || line[0] == ';')
             continue;
         CTempString name, alias;
-        NStr::SplitInTwo(line, "\t", name, alias);
+        NStr::SplitInTwo(line, "\t ", name, alias, NStr::eMergeDelims);
         if (name.empty() || alias.empty())
             continue;
         r.Register(name, alias);

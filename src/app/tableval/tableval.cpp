@@ -45,6 +45,7 @@
 
 #include <objtools/readers/message_listener.hpp>
 #include "tab_table_reader.hpp"
+#include "col_validator.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -155,7 +156,9 @@ void CTAbleValApp::Init(void)
 
     arg_desc->AddOptionalKey("aliases", "InFile", "Filename of data type aliases.", CArgDescriptions::eInputFile);
 
-    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
+    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);   
+
+    arg_desc->AddFlag("print-supported", "Show supported data types");   
 
     // Program description
     string prog_description = "Validates tab delimited files against ASN.1 data types\n";
@@ -182,6 +185,15 @@ int CTAbleValApp::Run(void)
     //m_ReportLevel = args["R"].AsInteger() - 1;
     //m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
+
+    if (args["aliases"])
+        CTabDelimitedValidator::RegisterAliases(args["aliases"].AsInputFile());
+
+    if (args["print-supported"])
+    {
+        CColumnValidatorRegistry::GetInstance().PrintSupported(ncbi::cout);
+        return 0;
+    }
 
     m_comma_separated = args["comma"];
     if (args["columns"])
@@ -235,9 +247,6 @@ int CTAbleValApp::Run(void)
             outputdir.Create();
     }
 
-    if (args["aliases"])
-        CTabDelimitedValidator::RegisterAliases(args["aliases"].AsInputFile());
-
     try
     {
     // Designate where do we get input: single file or a folder or folder structure
@@ -286,6 +295,7 @@ int CTAbleValApp::Run(void)
         return 0;
     }
 }
+
 void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
 {
    int flags = 

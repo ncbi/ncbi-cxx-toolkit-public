@@ -75,14 +75,41 @@ void CColumnValidatorRegistry::Register(const CTempString& name, CColumnValidato
 
 bool CColumnValidatorRegistry::IsSupported(const string& datatype) const
 {
-    map<string, CColumnValidator*>::const_iterator it = m_registry.find(datatype);
+    TColRegistry::const_iterator it = m_registry.find(datatype);
     return (it != m_registry.end());
+}
+
+void CColumnValidatorRegistry::PrintSupported(CNcbiOstream& out_stream) const
+{
+    set<string> names;
+    ITERATE(TColRegistry, it, m_registry)
+    {
+        names.insert(it->first);
+    }
+
+    static const char* message = "Supported data types are: ";
+    size_t n = strlen(message);
+    out_stream << message; 
+    ITERATE(set<string>, it, names)
+    {
+        if (it != names.begin()) {
+          out_stream << ", ";
+          n+=2;
+        }
+        if (n + it->length() > 77) {
+          out_stream << endl; 
+          n = 0;
+        }
+        out_stream << *it;
+        n += it->length();
+    }
+    out_stream << endl;
 }
 
 bool CColumnValidatorRegistry::DoValidate(const string& datatype, 
     const CTempString& value, string& error) const
 {
-    map<string, CColumnValidator*>::const_iterator it = m_registry.find(datatype);
+    TColRegistry::const_iterator it = m_registry.find(datatype);
     if (it == m_registry.end())
     {
         error = "Datatype \"";

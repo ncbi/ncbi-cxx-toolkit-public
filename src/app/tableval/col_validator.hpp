@@ -22,15 +22,18 @@ protected:
     CColumnValidatorRegistry();
     ~CColumnValidatorRegistry();
 public:
+    typedef map<string, CColumnValidator*> TColRegistry;
     static CColumnValidatorRegistry& GetInstance();
     void Register(const CTempString& name, CColumnValidator* val);
     void Register(const CTempString& name, const CTempString& alias);
     void UnRegister(CColumnValidator* val);
 
     bool IsSupported(const string& datatype) const; 
+    void PrintSupported(CNcbiOstream& out_stream) const;
+
     bool DoValidate(const string& datatype, const CTempString& value, string& error) const;
 private:
-    map<string, CColumnValidator*> m_registry;
+    TColRegistry m_registry;
 };
 
 
