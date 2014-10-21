@@ -259,7 +259,8 @@ int CNetScheduleDApp::Run(void)
     }
 
     // Calculate the config file checksum and memorize it
-    unsigned char   config_checksum[MD5_DIGEST_LENGTH];
+//    unsigned char   config_checksum[MD5_DIGEST_LENGTH];
+    unsigned char   config_checksum[32];
     vector<string>  config_checksum_warnings;
     NS_GetConfigFileChecksum(GetConfigPath(), config_checksum_warnings,
                              config_checksum);

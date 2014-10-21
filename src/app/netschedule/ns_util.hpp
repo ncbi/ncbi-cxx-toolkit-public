@@ -36,8 +36,6 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <openssl/md5.h>
-
 
 BEGIN_NCBI_SCOPE
 

@@ -38,11 +38,6 @@
 #include <util/bitset/bmalgo.h>
 #include <connect/ncbi_socket.hpp>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -497,16 +492,12 @@ string NS_OutOfLimitMessage(const string &  section,
 }
 
 
-// Special values for checksums for errors
-static bool             s_SpecialChecksumInitialized = false;
-static unsigned char    s_CannotOpenChecksum[MD5_DIGEST_LENGTH];
-static unsigned char    s_CannotGetSizeChecksum[MD5_DIGEST_LENGTH];
-static unsigned char    s_CannotMapChecksum[MD5_DIGEST_LENGTH];
 
 void NS_GetConfigFileChecksum(const string &  file_name,
                               vector<string> & warnings,
                               unsigned char *  md5)
 {
+/*
     if (!s_SpecialChecksumInitialized) {
         memset(s_CannotOpenChecksum, 0, MD5_DIGEST_LENGTH);
         s_CannotOpenChecksum[MD5_DIGEST_LENGTH - 1] = 1;
@@ -544,12 +535,14 @@ void NS_GetConfigFileChecksum(const string &  file_name,
     MD5(file_buffer, stat_buf.st_size, md5);
     munmap(file_buffer, stat_buf.st_size);
     close(fd);
+*/
 }
 
 
 int NS_CompareChecksums(unsigned char *  lhs_md5,
                         unsigned char *  rhs_md5)
 {
+/*
     for (size_t  k = 0; k < MD5_DIGEST_LENGTH; ++k) {
         if (lhs_md5[k] < rhs_md5[k])
             return -1;
@@ -557,6 +550,7 @@ int NS_CompareChecksums(unsigned char *  lhs_md5,
             return 1;
     }
     return 0;
+*/
 }
 
 

@@ -272,8 +272,10 @@ private:
 
     CCompoundIDPool                 m_CompoundIDPool;
 
-    unsigned char                   m_RAMConfigFileChecksum[MD5_DIGEST_LENGTH];
-    unsigned char                   m_DiskConfigFileChecksum[MD5_DIGEST_LENGTH];
+    //unsigned char                   m_RAMConfigFileChecksum[MD5_DIGEST_LENGTH];
+    unsigned char                   m_RAMConfigFileChecksum[32];
+    //unsigned char                   m_DiskConfigFileChecksum[MD5_DIGEST_LENGTH];
+    unsigned char                   m_DiskConfigFileChecksum[32];
 
 private:
     string x_GenerateGUID(void) const;

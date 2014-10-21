@@ -75,8 +75,6 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
 {
     m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
     sm_netschedule_server = this;
-    memset(m_RAMConfigFileChecksum, 0, MD5_DIGEST_LENGTH);
-    memset(m_DiskConfigFileChecksum, 0, MD5_DIGEST_LENGTH);
 }
 
 
@@ -644,7 +642,8 @@ string CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
 
 void CNetScheduleServer::SetRAMConfigFileChecksum(unsigned char *  checksum)
 {
-    memcpy(m_RAMConfigFileChecksum, checksum, MD5_DIGEST_LENGTH);
+    //memcpy(m_RAMConfigFileChecksum, checksum, MD5_DIGEST_LENGTH);
+    memcpy(m_RAMConfigFileChecksum, checksum, 32);
 }
 
 
@@ -656,7 +655,8 @@ unsigned char * CNetScheduleServer::GetRAMConfigFileChecksum(void)
 
 void CNetScheduleServer::SetDiskConfigFileChecksum(unsigned char *  checksum)
 {
-    memcpy(m_DiskConfigFileChecksum, checksum, MD5_DIGEST_LENGTH);
+    //memcpy(m_DiskConfigFileChecksum, checksum, MD5_DIGEST_LENGTH);
+    memcpy(m_DiskConfigFileChecksum, checksum, 32);
 }
 
 

@@ -2761,7 +2761,8 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         // Update the config file checksum in memory
         vector<string>          config_checksum_warnings;
-        unsigned char           config_checksum[MD5_DIGEST_LENGTH];
+        // unsigned char           config_checksum[MD5_DIGEST_LENGTH];
+        unsigned char           config_checksum[32];
         NS_GetConfigFileChecksum(app->GetConfigPath(),
                                  config_checksum_warnings,
                                  config_checksum);

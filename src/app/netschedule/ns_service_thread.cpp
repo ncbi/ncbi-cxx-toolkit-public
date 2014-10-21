@@ -100,7 +100,8 @@ void  CServiceThread::x_CheckDrainShutdown(void)
 void  CServiceThread::x_CheckConfigFile(void)
 {
     CNcbiApplication *      app = CNcbiApplication::Instance();
-    unsigned char           config_checksum[MD5_DIGEST_LENGTH];
+    //unsigned char           config_checksum[MD5_DIGEST_LENGTH];
+    unsigned char           config_checksum[32];
     vector<string>          config_checksum_warnings;
 
     NS_GetConfigFileChecksum(app->GetConfigPath(), config_checksum_warnings,
