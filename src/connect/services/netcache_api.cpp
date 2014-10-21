@@ -895,8 +895,18 @@ CNetCacheReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
         cmd += NStr::NumericToString(max_age);
     }
 
-    CNetServer::SExecResult exec_result(
-            ExecMirrorAware(key, cmd, false, &parameters));
+    CNetServer::SExecResult exec_result;
+
+    try {
+        exec_result = ExecMirrorAware(key, cmd, false, &parameters);
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() == CNetCacheException::eBlobNotFound) {
+            e.AddToMessage(", ID=");
+            e.AddToMessage(blob_id);
+        }
+        throw;
+    }
 
     unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
     if (max_age > 0 && actual_age_ptr != NULL)
