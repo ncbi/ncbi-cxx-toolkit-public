@@ -192,7 +192,7 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     }
 
     // Default:  add all possible ids
-    ITERATE(vector<int>, gi, gis) {
+    ITERATE(vector<TGi>, gi, gis) {
         retval.push_back(CRef<CBlastDBSeqId>
                          (new CBlastDBSeqId(NStr::IntToString(*gi))));
     }
