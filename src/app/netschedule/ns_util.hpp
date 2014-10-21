@@ -36,6 +36,9 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include <openssl/md5.h>
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -43,6 +46,13 @@ BEGIN_NCBI_SCOPE
 // problems.
 void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
                            bool  throw_port_exception);
+
+
+void NS_GetConfigFileChecksum(const string &  file_name,
+                              vector<string> & warnings,
+                              unsigned char *  md5);
+int NS_CompareChecksums(unsigned char *  lhs_md5,
+                        unsigned char *  rhs_md5);
 
 
 END_NCBI_SCOPE

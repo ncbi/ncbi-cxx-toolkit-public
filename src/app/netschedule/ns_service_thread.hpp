@@ -62,7 +62,8 @@ public:
       m_StatisticsLogging(logging),
       m_StatisticsInterval(statistics_interval),
       m_LastStatisticsOutput(0),
-      m_LastDrainCheck(0)
+      m_LastDrainCheck(0),
+      m_LastConfigFileCheck(0)
     {}
 
     virtual void DoJob(void);
@@ -74,6 +75,7 @@ public:
 
 private:
     void  x_CheckDrainShutdown(void);
+    void  x_CheckConfigFile(void);
 
 private:
     CServiceThread(const CServiceThread &);
@@ -87,6 +89,7 @@ private:
     const unsigned int &    m_StatisticsInterval;
     time_t                  m_LastStatisticsOutput;
     time_t                  m_LastDrainCheck;
+    time_t                  m_LastConfigFileCheck;
 };
 
 

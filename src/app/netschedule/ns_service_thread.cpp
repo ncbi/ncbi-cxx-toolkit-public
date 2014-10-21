@@ -59,6 +59,12 @@ void  CServiceThread::DoJob(void)
         m_LastDrainCheck = current_time;
     }
 
+    // Check that the config file is the original one every 60 seconds
+    if (current_time - m_LastConfigFileCheck >= 60) {
+        x_CheckConfigFile();
+        m_LastConfigFileCheck = current_time;
+    }
+
     if (!m_StatisticsLogging)
         return;
 
@@ -90,6 +96,49 @@ void  CServiceThread::x_CheckDrainShutdown(void)
     m_Server.SetShutdownFlag(0, true);
 }
 
+
+void  CServiceThread::x_CheckConfigFile(void)
+{
+    CNcbiApplication *      app = CNcbiApplication::Instance();
+    unsigned char           config_checksum[MD5_DIGEST_LENGTH];
+    vector<string>          config_checksum_warnings;
+
+    NS_GetConfigFileChecksum(app->GetConfigPath(), config_checksum_warnings,
+                             config_checksum);
+    if (NS_CompareChecksums(config_checksum,
+                            m_Server.GetDiskConfigFileChecksum()) == 0) {
+        // The current is the same as it was last time
+        return;
+    }
+
+    // Memorize the current disk config file checksum
+    m_Server.SetDiskConfigFileChecksum(config_checksum);
+    if (!config_checksum_warnings.empty()) {
+        string  alert_msg;
+        for (vector<string>::const_iterator
+                k = config_checksum_warnings.begin();
+                k != config_checksum_warnings.end(); ++k) {
+            if (!alert_msg.empty())
+                alert_msg += "\n";
+            alert_msg += *k;
+            ERR_POST(*k);
+        }
+        m_Server.RegisterAlert(eConfigOutOfSync, alert_msg);
+        return;
+    }
+
+
+    // Here: the sum has been calculated properly. Compare it with the RAM
+    // version
+    if (NS_CompareChecksums(config_checksum,
+                            m_Server.GetRAMConfigFileChecksum()) != 0) {
+        string      msg = "The configuration file on the disk (" +
+                          app->GetConfigPath() +
+                          ") does not match the currently loaded one";
+        ERR_POST(msg);
+        m_Server.RegisterAlert(eConfigOutOfSync, msg);
+    }
+}
 
 END_NCBI_SCOPE
 

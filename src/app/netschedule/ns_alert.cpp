@@ -43,11 +43,13 @@ struct AlertToId
 };
 
 
-const AlertToId     alertToIdMap[] = { { eStartupConfig,   "StartupConfig" },
-                                       { eReconfigure,     "Reconfigure" },
-                                       { ePidFile,         "PidFile" },
-                                       { eStartAfterCrash, "StartedAfterCrash" },
-                                       { eAccess,          "AccessDenied" } };
+const AlertToId     alertToIdMap[] = {
+                        { eStartupConfig,   "StartupConfig" },
+                        { eReconfigure,     "Reconfigure" },
+                        { ePidFile,         "PidFile" },
+                        { eStartAfterCrash, "StartedAfterCrash" },
+                        { eAccess,          "AccessDenied" },
+                        { eConfigOutOfSync, "ConfigOutOfSync" } };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 

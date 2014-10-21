@@ -2759,6 +2759,22 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             return;
         }
 
+        // Update the config file checksum in memory
+        vector<string>          config_checksum_warnings;
+        unsigned char           config_checksum[MD5_DIGEST_LENGTH];
+        NS_GetConfigFileChecksum(app->GetConfigPath(),
+                                 config_checksum_warnings,
+                                 config_checksum);
+        if (config_checksum_warnings.empty()) {
+            m_Server->SetRAMConfigFileChecksum(config_checksum);
+            m_Server->SetDiskConfigFileChecksum(config_checksum);
+        } else {
+            for (vector<string>::const_iterator
+                    k = config_checksum_warnings.begin();
+                    k != config_checksum_warnings.end(); ++k)
+                ERR_POST(*k);
+        }
+
         string                  diff;
         m_Server->Configure(reg, diff);
 
@@ -2770,7 +2786,6 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         string      services_changed = m_Server->ReadServicesConfig(reg);
 
         if (what_changed.empty() && diff.empty() && services_changed.empty()) {
-            m_Server->AcknowledgeAlert(eStartupConfig, "NSAcknowledge");
             m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
             if (m_ConnContext.NotNull())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
@@ -2796,7 +2811,6 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         if (m_ConnContext.NotNull())
             GetDiagContext().Extra().Print("config_changes", total_changes);
 
-        m_Server->AcknowledgeAlert(eStartupConfig, "NSAcknowledge");
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
         x_WriteMessage("OK:" + total_changes);
     }

@@ -258,6 +258,21 @@ int CNetScheduleDApp::Run(void)
         server->RegisterAlert(eStartupConfig, msg);
     }
 
+    // Calculate the config file checksum and memorize it
+    unsigned char   config_checksum[MD5_DIGEST_LENGTH];
+    vector<string>  config_checksum_warnings;
+    NS_GetConfigFileChecksum(GetConfigPath(), config_checksum_warnings,
+                             config_checksum);
+    if (config_checksum_warnings.empty()) {
+        server->SetRAMConfigFileChecksum(config_checksum);
+        server->SetDiskConfigFileChecksum(config_checksum);
+    } else {
+        for (vector<string>::const_iterator
+                k = config_checksum_warnings.begin();
+                k != config_checksum_warnings.end(); ++k)
+            ERR_POST(*k);
+    }
+
     qdb->RunExecutionWatcherThread(min_run_timeout);
     qdb->RunPurgeThread();
     qdb->RunNotifThread();
