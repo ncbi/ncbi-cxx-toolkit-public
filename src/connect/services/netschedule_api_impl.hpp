@@ -207,7 +207,7 @@ struct SNetScheduleAPIImpl : public CObject
     string x_ExecOnce(const string& cmd_name, const string& job_key)
     {
         string cmd(g_MakeBaseCmd(cmd_name, job_key));
-        g_AppendClientIPAndSessionID(cmd);
+        g_AppendClientIPSessionIDHitID(cmd);
 
         CNetServer::SExecResult exec_result;
         GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);

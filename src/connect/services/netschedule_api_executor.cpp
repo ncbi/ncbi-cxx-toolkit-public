@@ -52,6 +52,7 @@ static bool s_DoParseGet2JobResponse(
         eJobAffinity,
         eClientIP,
         eClientSessionID,
+        ePageHitID,
         eJobMask,
         eNumberOfJobBits
     };
@@ -97,6 +98,12 @@ static bool s_DoParseGet2JobResponse(
             if (field->name == "mask") {
                 job_bits |= (1 << eJobMask);
                 job.mask = atoi(field->value.c_str());
+            }
+            break;
+        case 'n':
+            if (field->name == "ncbi_phid") {
+                job_bits |= (1 << ePageHitID);
+                job.page_hit_id = field->value;
             }
         }
         if (job_bits == (1 << eNumberOfJobBits) - 1)
@@ -207,7 +214,7 @@ void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
     string cmd(g_MakeBaseCmd("JDEX", job_key));
     cmd += ' ';
     cmd += NStr::NumericToString(runtime_inc);
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd, false);
 }
 
@@ -261,7 +268,7 @@ void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
     if (m_PreferredAffinities.find(affinity) == m_PreferredAffinities.end()) {
         m_PreferredAffinities.insert(affinity);
         string new_preferred_aff_cmd = "CHAFF add=" + affinity;
-        g_AppendClientIPAndSessionID(new_preferred_aff_cmd);
+        g_AppendClientIPSessionIDHitID(new_preferred_aff_cmd);
         for (CNetServiceIterator it =
                 m_API->m_Service.ExcludeServer(orig_server); it; ++it)
             try {
@@ -293,7 +300,7 @@ string SNetScheduleExecutorImpl::MkSETAFFCmd()
         sep = ",";
     }
     cmd += '"';
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     return cmd;
 }
@@ -366,7 +373,7 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
             // Notify the rest of NetSchedule servers that
             // we are no longer listening on the UDP socket.
             string cancel_wget_cmd("CWGET");
-            g_AppendClientIPAndSessionID(cancel_wget_cmd);
+            g_AppendClientIPSessionIDHitID(cancel_wget_cmd);
             for (CNetServiceIterator it =
                     m_Impl->m_API->m_Service.ExcludeServer(server); it; ++it)
                 (*it).ExecWithRetry(cancel_wget_cmd, false);
@@ -455,7 +462,7 @@ string CNetScheduleNotificationHandler::CmdAppendTimeoutAndClientInfo(
         }
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     return cmd;
 }
@@ -474,7 +481,7 @@ bool CNetScheduleNotificationHandler::RequestJob(
         return false;
 
     string cancel_wget_cmd("CWGET");
-    g_AppendClientIPAndSessionID(cancel_wget_cmd);
+    g_AppendClientIPSessionIDHitID(cancel_wget_cmd);
 
     while (--it)
         (*it).ExecWithRetry(cancel_wget_cmd, false);
@@ -542,7 +549,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
     cmd.append(NStr::PrintableString(job.output));
     cmd.push_back('\"');
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
 }
@@ -557,7 +564,7 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
     cmd += " \"";
     cmd += NStr::PrintableString(job.progress_msg);
     cmd += '\"';
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     CNetServer::SExecResult exec_result;
     m_Impl->m_API->GetServer(job.job_id)->ConnectAndExec(cmd,
             false, exec_result);
@@ -594,7 +601,7 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job,
     cmd.append("\" job_return_code=");
     cmd.append(NStr::NumericToString(job.ret_code));
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     if (no_retries)
         cmd.append(" no_retries=1");
@@ -624,7 +631,7 @@ void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
         cmd += '"';
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
 }
@@ -646,7 +653,7 @@ void CNetScheduleExecutor::ReturnJob(const string& job_key,
     cmd.append(" auth_token=");
     cmd.append(auth_token);
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     m_Impl->ExecWithOrWithoutRetry(job_key, cmd);
 }
@@ -691,7 +698,7 @@ void CNetScheduleExecutor::ChangePreferredAffinities(
                     SNetScheduleExecutorImpl::eAddAffs) |
             m_Impl->AppendAffinityTokens(cmd, affs_to_delete,
                     SNetScheduleExecutorImpl::eDeleteAffs)) {
-        g_AppendClientIPAndSessionID(cmd);
+        g_AppendClientIPSessionIDHitID(cmd);
 
         m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
     }

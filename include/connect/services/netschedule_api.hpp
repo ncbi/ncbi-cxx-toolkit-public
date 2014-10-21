@@ -969,6 +969,16 @@ extern NCBI_XCONNECT_EXPORT
 void g_AppendClientIPAndSessionID(string& cmd,
         const string* default_session = NULL);
 
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+void g_AppendHitID(string& cmd);
+
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+void g_AppendClientIPSessionIDHitID(string& cmd,
+        const string* default_session = NULL);
+
+/// @internal
 extern NCBI_XCONNECT_EXPORT
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
         string* attr_values, int attr_count);

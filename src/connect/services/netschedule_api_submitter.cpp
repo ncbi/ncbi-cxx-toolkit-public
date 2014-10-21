@@ -103,6 +103,8 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
         cmd.append(job.group);
     }
 
+    g_AppendHitID(cmd);
+
     CNetServer::SExecResult exec_result(
             m_API->m_Service.FindServerAndExec(cmd, false));
 
@@ -138,6 +140,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
         cmd.append(" group=");
         cmd.append(job_group);
     }
+
+    g_AppendHitID(cmd);
 
     CNetServer::SExecResult exec_result(
         m_Impl->m_API->m_Service.FindServerAndExec(cmd, false));
@@ -306,7 +310,7 @@ bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
         cmd += job_group;
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     CReadCmdExecutor read_executor(cmd, *job_id, *auth_token, *job_status);
 
@@ -331,7 +335,7 @@ void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
         cmd += '"';
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     m_API->GetServer(job_id).ExecWithRetry(cmd, false);
 }
@@ -469,7 +473,7 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
     cmd += " timeout=";
     cmd += NStr::NumericToString(s_GetRemainingSeconds(deadline));
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     m_Message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
 
@@ -543,7 +547,7 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
         cmd.append(" status=");
         cmd.append(job_statuses);
     }
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 

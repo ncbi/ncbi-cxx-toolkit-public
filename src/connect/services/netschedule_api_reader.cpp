@@ -163,7 +163,7 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
         cmd.append(m_JobGroup);
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     CNetServer::SExecResult exec_result;
 

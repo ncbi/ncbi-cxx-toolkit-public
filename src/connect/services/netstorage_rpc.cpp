@@ -723,6 +723,7 @@ CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type)
         new_request.SetString("ClientIP", req.GetClientIP());
         new_request.SetString("SessionID", req.IsSetSessionID() ?
                 req.GetSessionID() : "UNKNOWN");
+        new_request.SetString("PageHitID", req.GetHitID());
     }
 
     return new_request;

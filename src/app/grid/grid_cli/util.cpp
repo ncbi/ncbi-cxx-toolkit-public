@@ -383,7 +383,7 @@ void g_SuspendNetSchedule(CNetScheduleAPI netschedule_api, bool pullback_mode)
 {
     string cmd(pullback_mode ? "QPAUSE pullback=1" : "QPAUSE");
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     netschedule_api.GetService().ExecOnAllServers(cmd);
 }
@@ -392,7 +392,7 @@ void g_ResumeNetSchedule(CNetScheduleAPI netschedule_api)
 {
     string cmd("QRESUME");
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     netschedule_api.GetService().ExecOnAllServers(cmd);
 }

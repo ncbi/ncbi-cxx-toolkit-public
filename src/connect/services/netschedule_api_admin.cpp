@@ -43,7 +43,7 @@ void CNetScheduleAdmin::SwitchToDrainMode(ESwitch on_off)
 {
     string cmd(on_off != eOff ?
             "REFUSESUBMITS mode=1" : "REFUSESUBMITS mode=0");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
@@ -53,7 +53,7 @@ void CNetScheduleAdmin::ShutdownServer(
     string cmd(level == eDie ? "SHUTDOWN SUICIDE" :
             level == eShutdownImmediate ? "SHUTDOWN IMMEDIATE" :
                     level == eDrain ? "SHUTDOWN drain=1" : "SHUTDOWN");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
@@ -61,7 +61,7 @@ void CNetScheduleAdmin::ShutdownServer(
 void CNetScheduleAdmin::ReloadServerConfig()
 {
     string cmd("RECO");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
@@ -80,7 +80,7 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
         cmd += '"';
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
@@ -90,7 +90,7 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname)
     SNetScheduleAPIImpl::VerifyQueueNameAlphabet(qname);
 
     string cmd("QDEL " + qname);
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
@@ -107,7 +107,7 @@ void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key)
 CNetServerMultilineCmdOutput CNetScheduleAdmin::DumpJob(const string& job_key)
 {
     string cmd("DUMP " + job_key);
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     return m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd, true);
 }
 
@@ -120,7 +120,7 @@ void CNetScheduleAdmin::CancelAllJobs(const string& job_statuses)
         cmd.assign("CANCEL status=");
         cmd.append(job_statuses);
     }
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
@@ -128,7 +128,7 @@ void CNetScheduleAdmin::CancelAllJobs(const string& job_statuses)
 void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream)
 {
     string cmd("VERSION");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eSingleLineOutput);
 }
@@ -159,7 +159,7 @@ void CNetScheduleAdmin::DumpQueue(
         cmd.append(" group=");
         cmd.append(job_group);
     }
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput);
 }
@@ -185,7 +185,7 @@ void CNetScheduleAdmin::DumpQueue(
 static string s_MkQINFCmd(const string& queue_name)
 {
     string qinf_cmd("QINF2 " + queue_name);
-    g_AppendClientIPAndSessionID(qinf_cmd);
+    g_AppendClientIPSessionIDHitID(qinf_cmd);
     return qinf_cmd;
 }
 
@@ -258,7 +258,7 @@ void CNetScheduleAdmin::GetWorkerNodes(
     set<pair<string, unsigned short> > m_Unique;
 
     string cmd("STAT");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
             CNetService::eIncludePenalized); it; ++it) {
@@ -322,7 +322,7 @@ void CNetScheduleAdmin::GetWorkerNodes(
 void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
 {
     string cmd("GETCONF");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput);
 }
@@ -332,7 +332,7 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 {
     string cmd(opt == eStatisticsBrief ? "STAT" :
             opt == eStatisticsClients ? "STAT CLIENTS" : "STAT ALL");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
@@ -340,7 +340,7 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 void CNetScheduleAdmin::PrintHealth(CNcbiOstream& output_stream)
 {
     string cmd("HEALTH");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
             output_stream, CNetService::eUrlEncodedOutput);
 }
@@ -348,7 +348,7 @@ void CNetScheduleAdmin::PrintHealth(CNcbiOstream& output_stream)
 void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 {
     string cmd("STAT QUEUES");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     string output_line;
 
@@ -387,7 +387,7 @@ void CNetScheduleAdmin::StatusSnapshot(
         cmd.append(job_group);
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     string output_line;
     CTempString st_str, cnt_str;

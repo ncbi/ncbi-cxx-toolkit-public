@@ -159,6 +159,12 @@ public:
                 env.insert(env.begin(), session_id.c_str());
             }
 
+            std::string hit_id(kEmptyStr);
+            if (!job.page_hit_id.empty()) {
+                hit_id = "NCBI_LOG_HIT_ID=" + job.page_hit_id;
+                env.insert(env.begin(), hit_id.c_str());
+            }
+
             finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                         m_Request.GetStdInForRead(),
                                         m_Result.GetStdOutForWrite(),

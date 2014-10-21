@@ -391,6 +391,9 @@ void SWorkerNodeJobContextImpl::x_RunJob()
     if (!m_Job.session_id.empty())
         m_RequestContext->SetSessionID(m_Job.session_id);
 
+    if (!m_Job.page_hit_id.empty())
+        m_RequestContext->SetHitID(m_Job.page_hit_id);
+
     m_RequestContext->SetAppState(eDiagAppState_RequestBegin);
 
     CRequestContextSwitcher request_state_guard(m_RequestContext);

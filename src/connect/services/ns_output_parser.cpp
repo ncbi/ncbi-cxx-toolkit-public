@@ -315,7 +315,7 @@ public:
     CExecAndParseStructuredOutput(const string& cmd) :
         m_Cmd(cmd)
     {
-        g_AppendClientIPAndSessionID(m_Cmd);
+        g_AppendClientIPSessionIDHitID(m_Cmd);
     }
 
 protected:
@@ -516,7 +516,7 @@ struct SQueueInfoToJson : public IExecToJson
     SQueueInfoToJson(const string& cmd, const string& section_prefix) :
         m_Cmd(cmd), m_SectionPrefix(section_prefix)
     {
-        g_AppendClientIPAndSessionID(m_Cmd);
+        g_AppendClientIPSessionIDHitID(m_Cmd);
     }
 
     virtual CJsonNode ExecOn(CNetServer server);

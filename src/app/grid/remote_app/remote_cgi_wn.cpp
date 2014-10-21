@@ -173,6 +173,15 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
     m_EnvValues.push_back("NCBI_NS_JID=" + job.job_id);
     m_EnvValues.push_back("NCBI_JOB_AFFINITY=" + job.affinity);
 
+    if (!job.client_ip.empty())
+        m_EnvValues.push_back("NCBI_LOG_CLIENT_IP=" + job.client_ip);
+
+    if (!job.session_id.empty())
+        m_EnvValues.push_back("NCBI_LOG_SESSION_ID=" + job.session_id);
+
+    if (!job.page_hit_id.empty())
+        m_EnvValues.push_back("NCBI_LOG_HIT_ID=" + job.page_hit_id);
+
     ITERATE(list<string>, it, m_EnvValues) {
         m_Env.push_back(it->c_str());
     }

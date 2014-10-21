@@ -77,6 +77,23 @@ void g_AppendClientIPAndSessionID(string& cmd, const string* default_session)
     }
 }
 
+void g_AppendHitID(string& cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+
+    if (req.IsSetHitID()) {
+        cmd += " ncbi_phid=\"";
+        cmd += req.GetHitID();
+        cmd += '"';
+    }
+}
+
+void g_AppendClientIPSessionIDHitID(string& cmd, const string* default_session)
+{
+    g_AppendClientIPAndSessionID(cmd, default_session);
+    g_AppendHitID(cmd);
+}
+
 SNetScheduleNotificationThread::SNetScheduleNotificationThread(
         SNetScheduleAPIImpl* ns_api) :
     m_API(ns_api),
@@ -358,7 +375,7 @@ void SNetScheduleAPIImpl::StopNotificationThread()
 void SNetScheduleAPIImpl::x_ClearNode()
 {
     string cmd("CLRN");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     for (CNetServiceIterator it =
             m_Service.Iterate(CNetService::eIncludePenalized); it; ++it) {
@@ -428,7 +445,7 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
     // like the "queue not found" error.
     if (!m_WorkerNodeCompatMode) {
         auth += "\r\nVERSION";
-        g_AppendClientIPAndSessionID(auth,
+        g_AppendClientIPSessionIDHitID(auth,
                 impl->m_ClientSession.empty() ? NULL : &impl->m_ClientSession);
     }
 
@@ -986,7 +1003,7 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
     m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize;
 
     string cmd("QINF2 " + m_Queue);
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     CUrlArgs url_parser(m_Service.FindServerAndExec(cmd, false).response);
 
@@ -1035,7 +1052,7 @@ void CNetScheduleAPI::GetQueueParams(
         cmd = "QINF2 " + queue_name;
     }
 
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd,
             false).response);
@@ -1049,7 +1066,7 @@ void CNetScheduleAPI::GetQueueParams(
         CNetScheduleAPI::TQueueParams& queue_params)
 {
     string cmd("GETP2");
-    g_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPSessionIDHitID(cmd);
 
     CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd,
             false).response);
