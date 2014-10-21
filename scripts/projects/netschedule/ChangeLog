@@ -1,3 +1,18 @@
+Release 4.20.1 cloned from 4.20.0 (2014-10-21)
+
+Improvements:
+    * NetSchedule: CANCEL/STAT in case of unknown group and/or affinity
+      (JIRA: CXX-5256)
+    * NetSchedule: incorrect value for the client_registry_timeout_worker_node
+      parameter (JIRA: CXX-5288)
+    * NetSchedule: a textual message for alerts (JIRA: CXX-5289)
+    * NetSchedule: wrong execution watcher thread interval (JIRA: CXX-5292)
+    * NetSchedule: 100% CPU of the notification thread (JIRA: CXX-5293)
+    * NetSchedule: config file alert split (JIRA: CXX-5297)
+    * NetSchedule - monitor config file, raise an alert when it's out-of-sync
+      with the process (JIRA: CXX-5298)
+
+
 Release 4.20.0 based on SC-15 (2014-09-19)
 
 Improvements:
