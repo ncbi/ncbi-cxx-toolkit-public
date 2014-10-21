@@ -146,8 +146,6 @@ set <string> CDiscTestInfo :: tests_run;
 CSeq_entry_Handle* CRepConfig::m_TopSeqEntry=0;
 
 static CDiscRepInfo thisInfo;
-static list <string>  strs;
-static vector <string> arr;
 static CDiscTestInfo thisTest;
 static CTestGrp  thisGrp;
 
@@ -423,6 +421,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
          "heam,,0",
          "mithocon,,0"
     };
+    vector <string> arr;
     for (i=0; i < (int)ArraySize(fix_data); i++) {
         arr.clear();
         arr = NStr::Tokenize(fix_data[i], ",", arr);
@@ -529,6 +528,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
       }
       thisInfo.feattype_featdef[(EMacro_feature_type)i]
           = CSeqFeatData :: SubtypeNameToValue(strtmp);
+      arr.clear();
       arr = NStr::Tokenize(tmp, "_", arr);
       if (!arr.empty()) {
          tmp = NStr::Join(arr, "-");
@@ -1111,9 +1111,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
    thisInfo.suspect_rna_rules->Set().push_back(this_rule); 
    thisInfo.rna_rule_summ
                .push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));
-
-   strs.clear();
-   arr.clear();
 };
 
 string CRepConfig :: GetDirStr(const string& src_dir)

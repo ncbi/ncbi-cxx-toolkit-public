@@ -42,7 +42,7 @@ USING_SCOPE(DiscRepNmSpc);
 
 static CDiscRepInfo thisInfo;
 
-static const s_SuspectProductNameData suspect_prod_terms111[] = {
+static const s_SuspectProductNameData suspect_prod_terms1[] = {
   { "beginning with period, comma, or hyphen" , CTestAndRepData::BeginsWithPunct, eSuspectNameType_InappropriateSymbol, NULL, NULL } ,
   { "begins or ends with quotes", CTestAndRepData::BeginsOrEndsWithQuotes, eSuspectNameType_QuickFix, NULL, CTestAndRepData::RemoveBeginningAndEndingQuotes } ,
   { "binding" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
@@ -525,8 +525,8 @@ static const s_SuspectProductNameData suspect_prod_terms111[] = {
 
 CDiscRepInfo :: CDiscRepInfo ()
 {
-   thisInfo.suspect_prod_terms = suspect_prod_terms111;
-   thisInfo.num_suspect_prod_terms = ArraySize(suspect_prod_terms111);
+   thisInfo.suspect_prod_terms = suspect_prod_terms1;
+   thisInfo.num_suspect_prod_terms = ArraySize(suspect_prod_terms1);
 }
 
 END_NCBI_SCOPE

@@ -91,7 +91,6 @@ static CDiscRepInfo thisInfo;
 static CDiscTestInfo thisTest;
 static set <string>::iterator end_it = thisTest.tests_run.end();
 static CSuspectRuleCheck rule_check;
-static CTestGrp thisGrp;
 
 // ini. CDiscTestInfo
 bool CDiscTestInfo :: is_Aa_run;
