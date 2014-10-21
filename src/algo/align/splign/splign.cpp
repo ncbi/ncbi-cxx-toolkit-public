@@ -2080,7 +2080,56 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 int ext_len = last_exon->CanExtendRight(m_mrna, m_genomic);
                 last_exon->ExtendRight(m_mrna, m_genomic, ext_len, m_aligner);
             }
+
+            //extension sometimes leads to gap dissapearance
+            //remove/correct gaps after extension of exons
+            {{
+                TSegmentDeque tmp_segments;
+                TSegment g;
+                g.SetToGap();
+                int prev_exon_index = -1;
+                for(size_t k0 = 0; k0 < segments.size(); ++k0) {
+                    if(segments[k0].m_exon) {
+                        if(prev_exon_index == -1) {//first exon
+                            if(segments[k0].m_box[0] > 0) {//gap at the beginning
+                                g.m_box[0] = 0;
+                                g.m_box[1] = segments[k0].m_box[0] - 1;
+                                g.m_box[2] = 0;
+                                g.m_box[3] = segments[k0].m_box[2] - 1;
+                                g.m_len = g.m_box[1] - g.m_box[0] + 1;
+                                tmp_segments.push_back(g);
+                            }
+                            
+                        } else {
+                            if( segments[prev_exon_index].m_box[1] + 1 < segments[k0].m_box[0] ) {// is there a gap?    
+                                g.m_box[0] = segments[prev_exon_index].m_box[1] + 1;
+                                g.m_box[1] = segments[k0].m_box[0] - 1;
+                                g.m_box[2] = segments[prev_exon_index].m_box[3] + 1;
+                                g.m_box[3] = segments[k0].m_box[2] - 1;
+                                g.m_len = g.m_box[1] - g.m_box[0] + 1;
+                                tmp_segments.push_back(g);
+                            }
+                        }
+                        prev_exon_index = (int)k0;
+                        tmp_segments.push_back(segments[k0]);
+                    }
+                }
+                
+                //check right end   
+                if(prev_exon_index >= 0) {
+                    if(segments[prev_exon_index].m_box[1] + 1 < SeqLen1) {                       
+                        g.m_box[0] = segments[prev_exon_index].m_box[1] + 1;
+                        g.m_box[1] = SeqLen1 - 1;
+                        g.m_box[2] = segments[prev_exon_index].m_box[3] + 1;
+                        g.m_box[3] = SeqLen2 - 1;
+                        g.m_len = g.m_box[1] - g.m_box[0] + 1;
+                        tmp_segments.push_back(g);
+                    }
+                }
+                segments.swap(tmp_segments);
+            }}
         }
+        
                       
 
         //PARTIAL TRIMMING OF TERMINAL EXONS
