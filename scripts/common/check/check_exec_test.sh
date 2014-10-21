@@ -38,6 +38,11 @@ script_dir=`(cd "$script_dir"; pwd)`
 is_stdin=false
 tmp=./$2.stdin.$$
 
+# Make timestamp
+timestamp_file=`mktemp /tmp/check_exec_timestamp.XXXXXXXXXX`
+touch $timestamp_file
+trap "rm -f $tmp $timestamp_file" 0 1 2 15
+
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
@@ -50,12 +55,12 @@ esac
 # Run command.
 if [ "X$1" = "X-stdin" ]; then
    is_stdin=true
-   trap 'rm -f $tmp' 1 2 15
    cat - > $tmp
    shift
 fi
 
-echo $1 | grep '\.sh' > /dev/null 2>&1 
+exe="$1"
+echo $exe | grep '\.sh' > /dev/null 2>&1 
 if test $? -eq 0;  then
    echo "Error: Using CHECK_EXEC macro to run shell scripts is prohibited!"
    exit 1
@@ -67,15 +72,45 @@ else
    $NCBI_CHECK_TOOL "$@" &
 fi
 pid=$!
-trap "$kill $pid; rm -f $tmp" 1 2 15
+trap "$kill $pid; rm -f $tmp $timestamp_file" 1 2 15
 
 # Execute time-guard
+#echo TEST guard -- $timeout $pid 
 $script_dir/check_exec_guard.sh $timeout $pid &
 
 # Wait ending of execution
 wait $pid > /dev/null 2>&1
 status=$?
 rm -f $tmp > /dev/null 2>&1
+
+# Special checks for core files on some platforms
+# Keep this part in sync with code in 'check_exec.sh'.
+if [ $status -gt 128  -a  ! -f core ]; then
+   if [ `uname -s` = "Darwin" -a -d "/cores" ]; then
+     core_files=`find /cores/core.* -newer $timestamp_file 2>/dev/null`
+   elif [ `uname -s` = "Linux" ]; then
+     if [ -f core.$pid ]; then
+       core_files=core.$pid
+     else
+       core_files=`find core.* -newer $timestamp_file 2>/dev/null`
+     fi
+   fi
+   for core in $core_files ; do
+      if [ -O "$core" ]; then
+         # Move the core file to current directory with name "core"
+         mv $core ./core > /dev/null 2>&1
+         # Save only last core file
+         # break
+      fi
+   done
+   # Get backstrace from coredump
+   if [ -f core -a -n "$NCBI_CHECK_BACK_TRACE" ]; then
+      echo "--- Backtrace:" "$@"
+      eval $NCBI_CHECK_BACK_TRACE $exe core
+      echo
+   fi
+fi
+rm $timestamp_file > /dev/null 2>&1
 
 # Return test exit code
 exit $status

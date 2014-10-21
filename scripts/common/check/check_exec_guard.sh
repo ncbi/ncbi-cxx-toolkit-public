@@ -8,9 +8,11 @@
 # Auxiliary time-guard script for run check command script
 #
 # Usage:
-#    check_exec_guard.sh <timeout> <pid>
+#    check_exec_guard.sh <timeout> <pid> <no_checks>
 #
-#    timeout - maximal time of execution process with "pid" in seconds
+#    timeout   - maximal time of execution process with "pid" in seconds
+#    no_checks - do not run any debug checks, usually this mean that 'pid'
+#                represent some (shell-)script.
 # 
 # Note:
 #    If process with "pid" still execute after "timeout" seconds, that 
@@ -23,6 +25,7 @@
 # Parameters
 timeout=$1
 pid=$2
+no_checks=$3
 sleep_time=5
 
 # Use different kill on Unix and Cygwin
@@ -41,7 +44,16 @@ while [ $timeout -gt 0 ]; do
    sleep $sleep_time >/dev/null 2>&1
 done
 
-# Time out, kill the process
+# Time out:
+
+# -- get stacktrace of a running process
+if [ -z "$no_checks"  -a  -n "NCBI_CHECK_STACK_TRACE" ]; then
+   echo "--- Timeout. Stacktrace for pid $pid:"
+   eval $NCBI_CHECK_STACK_TRACE $pid
+   echo
+fi
+
+# -- kill the process
 echo
 echo "Maximum execution time of $1 seconds is exceeded"
 echo

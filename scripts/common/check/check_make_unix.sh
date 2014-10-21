@@ -355,6 +355,20 @@ export CHECK_EXEC
 export CHECK_EXEC_STDIN
 export CHECK_SIGNATURE
 
+# Debug tools to get stack/back trace (except running under memory checkers)
+NCBI_CHECK_STACK_TRACE=''
+NCBI_CHECK_BACK_TRACE=''
+if test "\$NCBI_CHECK_TOOLS" == "regular"; then
+   if (which gdb) >/dev/null 2>&1; then
+       NCBI_CHECK_BACK_TRACE='gdb --batch --quiet -ex "thread apply all bt" -ex "quit"'
+   fi
+   if (which gstack) >/dev/null 2>&1; then
+       NCBI_CHECK_STACK_TRACE='gstack'
+   fi
+   export NCBI_CHECK_BACK_TRACE
+   export NCBI_CHECK_STACK_TRACE
+fi
+
 # Use AppLog-style output format in the testsuite by default
 if test -z "\$DIAG_OLD_POST_FORMAT"; then
     DIAG_OLD_POST_FORMAT=false

@@ -32,6 +32,7 @@ script_dir=`(cd "$script_dir"; pwd)`
 # Make timestamp
 timestamp_file=`mktemp /tmp/check_exec_timestamp.XXXXXXXXXX`
 touch $timestamp_file
+trap "rm -f $timestamp_file" 0 1 2 15
 
 # Save current pid (need for RunID)
 echo $$ > check_exec.pid
@@ -45,7 +46,8 @@ case `uname -s` in
    *)        cygwin=false ; kill='kill' ;;
 esac
 
-cmd="$1"
+exe="$1"
+cmd="$exe"
 shift
 # Quote all empty arguments
 for arg in "$@"; do
@@ -56,13 +58,23 @@ for arg in "$@"; do
    fi
 done
 
+is_script=''
+echo $exe | grep '\.sh' > /dev/null 2>&1 
+if test $? -eq 0;  then
+   is_script=1
+   # Increase timeout for running scripts, because usually they have
+   # its own guards for running sub-processes with the same timeout
+   timeout=`expr $timeout + 10`   
+fi
+
 # Run command.
 $cmd &
 pid=$!
-trap "$kill $pid" 1 2 15
+trap "$kill $pid; rm -f $timestamp_file" 1 2 15
 
 # Execute time-guard
-$script_dir/check_exec_guard.sh $timeout $pid &
+#echo MAIN guard -- timeout=$timeout, pid=$pid, script$is_script
+$script_dir/check_exec_guard.sh $timeout $pid $is_script &
 guard_pid=$!
 
 # Wait ending of execution
@@ -88,6 +100,13 @@ if [ $status -gt 128  -a  ! -f core ]; then
          # break
       fi
    done
+
+   # Get backstrace from coredump
+   if [ -f core -a -n "$NCBI_CHECK_BACK_TRACE" -a -z "$is_script" ]; then
+      echo "--- Backtrace:" $cmd
+      eval $NCBI_CHECK_BACK_TRACE $exe core
+      echo
+   fi
 fi
 rm $timestamp_file > /dev/null 2>&1
 
