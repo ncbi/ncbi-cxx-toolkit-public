@@ -174,7 +174,7 @@ CObjectIStreamAsnBinary::PeekLongTag(void)
 void CObjectIStreamAsnBinary::UnexpectedTagClassByte(TByte first_tag_byte,
                                                      TByte expected_class_byte)
 {
-    ThrowError(fFormatError, "unexpected tag class/constructed: " +
+    ThrowError(fFormatError, "unexpected tag: " +
                              TagToString(first_tag_byte) + ", should be " +
                              TagToString(expected_class_byte));
 }
@@ -211,7 +211,7 @@ void CObjectIStreamAsnBinary::UnexpectedTagValue(ETagClass tag_class,
     } else if (tag_class == ePrivate) {
         s += "Private ";
     }
-    s += NStr::NumericToString(tag_got) + " expected: " +
+    s += NStr::NumericToString(tag_got) + ", expected: " +
          NStr::NumericToString(tag_expected);
     ThrowError(fFormatError, s);
 }
@@ -326,11 +326,13 @@ string CObjectIStreamAsnBinary::TagToString(TByte byte)
     case eContextSpecific: cls = "contextspecific/";break;
     case ePrivate:         cls = "private/";        break;
     }
+    string str(cls);
     switch (byte & eTagConstructedMask) {
     default:
     case ePrimitive:         con = "";              break;
     case eConstructed:       con = "constructed/";  break;
     }
+    str += con;
     if ((byte & eTagClassMask) == eUniversal) {
         const char *v;
         switch (byte & eTagValueMask) {
@@ -362,9 +364,11 @@ string CObjectIStreamAsnBinary::TagToString(TByte byte)
         case eObjectReference:   v= "ObjectReference";  break;
         default:                 v= "unknown";          break;
         }
-        return string(cls) + con + v + " (" + NStr::IntToString(byte) + ")";
+        str += v;
+    } else {
+        str += NStr::NumericToString((byte & eTagValueMask));
     }
-    return string(cls) + con + NStr::NumericToString((byte & eTagValueMask));
+    return str += " (" + NStr::NumericToString(byte) + ")";
 }
 
 void CObjectIStreamAsnBinary::UnexpectedSysTagByte(TByte tag_byte)
