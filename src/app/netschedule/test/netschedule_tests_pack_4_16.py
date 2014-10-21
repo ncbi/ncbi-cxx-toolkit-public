@@ -935,8 +935,14 @@ class Scenario1110( TestBase ):
 
         output = execAny( ns_client, 'HEALTH' )
         values = parse_qs( output, True, True )
-        if values[ 'alert_startaftercrash' ][ 0 ] != '1':
-            raise Exception( "Unexpected alert_startaftercrash alert value" )
+        if 'alert_startaftercrash' in values:
+            if values[ 'alert_startaftercrash' ][ 0 ] != '1':
+                raise Exception( "Unexpected alert_startaftercrash alert value" )
+        elif 'alert_StartedAfterCrash' in values:
+            if values[ 'alert_StartedAfterCrash' ][ 0 ] != '1':
+                raise Exception( "Unexpected alert_StartedAfterCrash alert value" )
+        else:
+            raise Exception( "Start after crash alert is not found" )
 
         return True
 
@@ -972,7 +978,8 @@ class Scenario1111( TestBase ):
         ns_client1.set_client_identification( 'node1', 'session1' )
 
         output = "\n".join( execAny( ns_client1, 'STAT ALERTS', isMultiline = True ) )
-        if '[alert startaftercrash]' not in output:
+        if '[alert startaftercrash]' not in output.lower() and \
+           '[alert startedaftercrash]' not in output.lower():
             raise Exception( "Alert startaftercrash is not found" )
         if 'acknowledged_time: n/a' not in output:
             raise Exception( "Acknowledge time is not found" )
