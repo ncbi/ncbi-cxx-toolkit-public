@@ -3007,9 +3007,9 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
-AC_CHECK_HEADERS(atomic.h dlfcn.h ieeefp.h poll.h sys/epoll.h sys/mount.h \
-                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h \
-                 x86intrin.h)
+AC_CHECK_HEADERS(atomic.h cpuid.h dlfcn.h ieeefp.h poll.h sys/epoll.h \
+                 sys/mount.h sys/sockio.h sys/statvfs.h sys/sysinfo.h \
+                 sys/vfs.h x86intrin.h)
 case "$host_os" in
    cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
 esac

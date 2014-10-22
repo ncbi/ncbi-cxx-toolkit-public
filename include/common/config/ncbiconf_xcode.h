@@ -150,6 +150,9 @@
 /* Define to 1 if the preprocessor supports C99-style variadic macros. */
 #define HAVE_CPP_STD_VARARGS 1
 
+/* Define to 1 if you have the <cpuid.h> header file. */
+/* #undef HAVE_CPUID_H */
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 

@@ -12398,9 +12398,10 @@ fi
 
 
 
-for ac_header in atomic.h dlfcn.h ieeefp.h poll.h sys/epoll.h sys/mount.h \
-                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h \
-                 x86intrin.h
+
+for ac_header in atomic.h cpuid.h dlfcn.h ieeefp.h poll.h sys/epoll.h \
+                 sys/mount.h sys/sockio.h sys/statvfs.h sys/sysinfo.h \
+                 sys/vfs.h x86intrin.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then

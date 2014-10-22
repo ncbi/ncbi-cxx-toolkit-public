@@ -39,7 +39,7 @@
 # undef USE_CRC32C_INTEL // we'll define it again where available
 # if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC)
 #  if defined(__x86_64__) || defined(__i386__)
-#   if !defined(NCBI_OS_DARWIN) // our Darwin GCC doesn't have cpuid.h :(
+#   ifdef HAVE_CPUID_H
 #    include <cpuid.h>
 #   endif
 #   define USE_CRC32C_INTEL
