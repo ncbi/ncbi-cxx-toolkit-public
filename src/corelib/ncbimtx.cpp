@@ -587,9 +587,9 @@ CInternalRWLock::CInternalRWLock(void)
 CRWLock::CRWLock(TFlags flags)
     : m_Flags(flags),
       m_RW(new CInternalRWLock),
-      m_Count(0),
-      m_WaitingWriters(0)
+      m_Count(0)
 {
+    m_WaitingWriters.Set(0);
 #if defined(_DEBUG)
     m_Flags |= fTrackReaders;
 #else
@@ -620,7 +620,7 @@ inline bool CRWLock::x_MayAcquireForReading(TThreadSystemID self_id)
         != m_Readers.end()) {
         return true; // allow recursive read locks
     } else {
-        return !m_WaitingWriters;
+        return !m_WaitingWriters.Get();
     }
 }
 
@@ -1042,7 +1042,7 @@ void CRWLock::WriteLock(void)
         else {
             // Locked by another thread - wait for unlock
             if (m_Flags & fFavorWriters) {
-                if (++m_WaitingWriters == 1) {
+                if (m_WaitingWriters.Add(1) == 1) {
                     // First waiting writer - lock out readers
                     xncbi_Validate(WaitForSingleObject(m_RW->m_Rsema2, 0)
                                    == WAIT_OBJECT_0,
@@ -1058,7 +1058,7 @@ void CRWLock::WriteLock(void)
                            "CRWLock::WriteLock() - "
                            "error locking R&W-semaphores");
             if (m_Flags & fFavorWriters) {
-                if (--m_WaitingWriters == 0) {
+                if (m_WaitingWriters.Add(-1) == 0) {
                     xncbi_Validate(m_RW->m_Rsema2.Release() == 0,
                                    "CRWLock::WriteLock() - "
                                    "invalid R-semaphore 2 state");
@@ -1069,7 +1069,7 @@ void CRWLock::WriteLock(void)
         }
 #elif defined(NCBI_POSIX_THREADS)
         if (m_Flags & fFavorWriters) {
-            m_WaitingWriters++;
+            m_WaitingWriters.Add(1);
         }
         while (m_Count != 0) {
             xncbi_Validate(pthread_cond_wait(m_RW->m_Wcond,
@@ -1078,7 +1078,7 @@ void CRWLock::WriteLock(void)
                            "error locking R&W-conditionals");
         }
         if (m_Flags & fFavorWriters) {
-            m_WaitingWriters--;
+            m_WaitingWriters.Add(-1);
         }
 #endif
         xncbi_Validate(m_Count >= 0,
@@ -1195,7 +1195,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         else {
             // Locked by another thread - wait for unlock
             if (m_Flags & fFavorWriters) {
-                if (++m_WaitingWriters == 1) {
+                if (m_WaitingWriters.Add(1) == 1) {
                     // First waiting writer - lock out readers
                     xncbi_Validate(WaitForSingleObject(m_RW->m_Rsema2, 0)
                                    == WAIT_OBJECT_0,
@@ -1210,7 +1210,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
                 WaitForMultipleObjects(3, obj, TRUE, timeout_msec);
             if (wait_res == WAIT_TIMEOUT) {
                 if (m_Flags & fFavorWriters) {
-                    if (--m_WaitingWriters == 0) {
+                    if (m_WaitingWriters.Add(-1) == 0) {
                         xncbi_Validate(m_RW->m_Rsema2.Release() == 0,
                                        "CRWLock::TryWriteLock() - "
                                        "invalid R-semaphore 2 state");
@@ -1225,7 +1225,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
                            "CRWLock::TryWriteLock() - "
                            "error locking R&W-semaphores");
             if (m_Flags & fFavorWriters) {
-                if (--m_WaitingWriters == 0) {
+                if (m_WaitingWriters.Add(-1) == 0) {
                     xncbi_Validate(m_RW->m_Rsema2.Release() == 0,
                                    "CRWLock::TryWriteLock() - "
                                    "invalid R-semaphore 2 state");
@@ -1236,7 +1236,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         }
 #elif defined(NCBI_POSIX_THREADS)
         if (m_Flags & fFavorWriters) {
-            m_WaitingWriters++;
+            m_WaitingWriters.Add(1);
         }
         CDeadline deadline(timeout);
         time_t s;
@@ -1252,7 +1252,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         }
         if (res == ETIMEDOUT) {
             if (m_Flags & fFavorWriters) {
-                m_WaitingWriters--;
+                m_WaitingWriters.Add(-1);
             }
             return false;
         }
@@ -1260,7 +1260,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
                        "CRWLock::TryWriteLock() - "
                        "error locking R&W-conditionals");
         if (m_Flags & fFavorWriters) {
-            m_WaitingWriters--;
+            m_WaitingWriters.Add(-1);
         }
 #endif
         xncbi_Validate(m_Count >= 0,
@@ -1310,7 +1310,7 @@ void CRWLock::Unlock(void)
             xncbi_Validate(m_RW->m_Wsema.Release() == 0,
                            "CRWLock::Unlock() - invalid R-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-            if ( !m_WaitingWriters ) {
+            if ( !m_WaitingWriters.Get() ) {
                 xncbi_Validate(pthread_cond_broadcast(m_RW->m_Rcond) == 0,
                                "CRWLock::Unlock() - error signalling unlock");
             }

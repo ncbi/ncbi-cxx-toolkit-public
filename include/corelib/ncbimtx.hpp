@@ -877,6 +877,8 @@ private:
 //
 
 
+class CAtomicCounter;
+
 // Forward declaration of internal (platform-dependent) RW-lock representation
 class CInternalRWLock;
 class CRWLock;
@@ -1020,7 +1022,7 @@ private:
     volatile long              m_Count; ///< Number of readers (if >0) or
                                         ///< writers (if <0)
 
-    volatile unsigned int      m_WaitingWriters; ///< Number of writers waiting;
+    CAtomicCounter             m_WaitingWriters; ///< Number of writers waiting;
                                                  ///< zero if not keeping track
 
     vector<TThreadSystemID>    m_Readers;   ///< List of all readers or writers
