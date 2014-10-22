@@ -1290,12 +1290,14 @@ bool CValidError_imp::Validate
             "There are " + NStr::SizetToString(m_NumGeneXrefs) +
             " gene xrefs and no gene features in this record.", *m_TSE);
     }
+    /*
     if ( m_NumPseudo != m_NumPseudogene  &&  m_NumPseudo > 0  &&  m_NumPseudogene > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentPseudogeneCounts,
             "There are " + NStr::SizetToString(m_NumPseudo) +
             " pseudo features with " + NStr::SizetToString(m_NumPseudogene) +
             " pseudogene qualifiers in this record.", *m_TSE);
     }
+    */
     ValidateCitations (seh);
 
 

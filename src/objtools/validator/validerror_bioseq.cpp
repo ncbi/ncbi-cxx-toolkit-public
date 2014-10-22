@@ -5066,6 +5066,28 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
                     ValidateBadGeneOverlap (feat);
 
+                    CConstRef <CSeq_feat> gene = GetGeneForFeature (feat, m_Scope);
+                    string sfp_pseudo = "unqualified";
+                    string gene_pseudo = "unqualified";
+                    if (gene != 0) {
+                        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+                            if (!(*it)->IsSetQual()) continue;
+                            string str = (*it)->GetQual();
+                            if (! NStr::EqualNocase (str, "pseudogene")) continue;
+                            sfp_pseudo = str;
+                        }
+                        FOR_EACH_GBQUAL_ON_FEATURE (it, *gene) {
+                            if (!(*it)->IsSetQual()) continue;
+                            string str = (*it)->GetQual();
+                            if (! NStr::EqualNocase (str, "pseudogene")) continue;
+                            gene_pseudo = str;
+                        }
+                        if (! NStr::EqualNocase (sfp_pseudo, gene_pseudo)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentPseudogeneValue,
+                                   "Different pseudogene values on CDS (" + sfp_pseudo + ") and gene (" + gene_pseudo + ")", feat);
+                        }
+                    }
+
                     const CCdregion& cdregion = feat.GetData().GetCdregion();
                     if ( cdregion.CanGetCode() ) {
                         int cdsgencode = cdregion.GetCode().GetId();
@@ -5091,6 +5113,29 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         }
                     }                
                     ValidateBadGeneOverlap(feat);
+
+                    CConstRef <CSeq_feat> gene = GetGeneForFeature (feat, m_Scope);
+                    string sfp_pseudo = "unqualified";
+                    string gene_pseudo = "unqualified";
+                    if (gene != 0) {
+                        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+                            if (!(*it)->IsSetQual()) continue;
+                            string str = (*it)->GetQual();
+                            if (! NStr::EqualNocase (str, "pseudogene")) continue;
+                            sfp_pseudo = str;
+                        }
+                        FOR_EACH_GBQUAL_ON_FEATURE (it, *gene) {
+                            if (!(*it)->IsSetQual()) continue;
+                            string str = (*it)->GetQual();
+                            if (! NStr::EqualNocase (str, "pseudogene")) continue;
+                            gene_pseudo = str;
+                        }
+                        if (! NStr::EqualNocase (sfp_pseudo, gene_pseudo)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentPseudogeneValue,
+                                   "Different pseudogene values on mRNA (" + sfp_pseudo + ") and gene (" + gene_pseudo + ")", feat);
+                        }
+                    }
+
                 }
 
                 m_FeatValidator.ValidateSeqFeatContext(feat, seq);
