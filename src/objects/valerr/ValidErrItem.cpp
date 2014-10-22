@@ -1597,6 +1597,9 @@ same id type" } },
    { eErr_SEQ_FEAT_NonsenseIntron,
    { "NonsenseIntron",
 "3 base intron actually contains a stop codon." } },
+   { eErr_SEQ_FEAT_InconsistentPseudogeneValue,
+   { "InconsistentPseudogeneValue",
+"Pseudogene qualifiers do not match between a CDS or mRNA and the parent gene." } },
 
 /* SEQ_ALIGN */
 
