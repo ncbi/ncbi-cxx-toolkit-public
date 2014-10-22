@@ -8459,8 +8459,6 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         submit->SetSub().ResetContact();
         expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
                                   "Submission citation affiliation has no country"));
-        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
-                                  "Submission citation affiliation has no institution"));
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
 
@@ -8474,19 +8472,14 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetSub("VA");
         submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetAffil("some affiliation");
         expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
-                                  "Submission citation affiliation has no institution"));
-        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
                                   "Submission citation affiliation has no country"));
-        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
-                                  "Submission citation affiliation has no institution"));
-        expected_errors[1]->SetAccession("");
-        expected_errors[2]->SetAccession("");
+        expected_errors[0]->SetAccession("");
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
 
         submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetCountry("USA");
-        expected_errors[1]->SetErrMsg("Submission citation affiliation has no state");
-        expected_errors[1]->SetSeverity(eDiag_Warning);
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
         CLEAR_ERRORS
@@ -8507,8 +8500,6 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
 
         expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
                                   "Submission citation affiliation has no country"));
-        expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
-                                  "Submission citation affiliation has no institution"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
@@ -8521,8 +8512,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetSub().SetAuthors().SetAffil().SetStd().SetSub("VA");
         pub->SetSub().SetAuthors().SetNames().SetStd().pop_back();
 
-        expected_errors[0]->SetErrMsg("Submission citation affiliation has no institution");
-        expected_errors[1]->SetErrMsg("Submission citation has no author names");
+        expected_errors[0]->SetErrMsg("Submission citation has no author names");
         expected_errors[0]->SetSeverity(sev);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
@@ -9277,7 +9267,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_UnexpectedPubStatusComment)
     entry->SetSeq().SetDescr().Set().push_back(desc);
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnexpectedPubStatusComment",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnexpectedPubStatusComment",
                                                  "Publication status is in comment for pmid 0"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -9289,7 +9279,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_UnexpectedPubStatusComment)
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
                               "In-press is not expected to have page numbers"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnexpectedPubStatusComment",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnexpectedPubStatusComment",
                                                  "Publication status is in comment for pmid 0"));
     
     pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_aheadofprint);
