@@ -233,7 +233,7 @@ void CValidError_imp::ValidatePubdesc
                     && (NStr::Find(comment, "Publication Status") != string::npos
                         || NStr::Find(comment, "Publication-Status") != string::npos
                         || NStr::Find(comment, "Publication_Status") != string::npos)) {
-                    PostObjErr(eDiag_Error, eErr_GENERIC_UnexpectedPubStatusComment,
+                    PostObjErr(eDiag_Warning, eErr_GENERIC_UnexpectedPubStatusComment,
                                "Publication status is in comment for pmid " + NStr::IntToString (uid),
                                obj, ctx);
                 }
@@ -1022,7 +1022,7 @@ void CValidError_imp::ValidateSubAffil
                         obj, ctx);
         }
     }
-    if ((!std.IsSetDiv() || NStr::IsBlank(std.GetDiv())) || (!std.IsSetAffil() || NStr::IsBlank(std.GetAffil()))) {
+    if ((!std.IsSetDiv() || NStr::IsBlank(std.GetDiv())) && (!std.IsSetAffil() || NStr::IsBlank(std.GetAffil()))) {
         PostObjErr (sev, eErr_GENERIC_MissingPubInfo, 
                     "Submission citation affiliation has no institution",
                     obj, ctx);
