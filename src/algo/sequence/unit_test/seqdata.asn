@@ -3702,16 +3702,17 @@ F0C3F0C8A38B85DE303C79C8381FB438E8EB03FD3A0BCC02E3030015F9FF157B4B2575D7147815
                 }
               },
               except TRUE,
-              comment "isoform 1 is encoded by transcript variant 1",
+              comment "protein translation is dependent on -1 ribosomal
+ frameshift; isoform 1 is encoded by transcript variant 1",
               product whole gi 94421475,
-              location packed-int {
-                {
+              location mix {
+                int {
                   from 479,
                   to 1435,
                   strand plus,
                   id gi 94421474
                 },
-                {
+                int {
                   from 1435,
                   to 2604,
                   strand plus,

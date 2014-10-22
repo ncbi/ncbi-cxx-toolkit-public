@@ -1760,7 +1760,8 @@ Seq-annot ::= {
         }
       },
       except TRUE,
-      comment "isoform 1 is encoded by transcript variant 1",
+      comment "protein translation is dependent on -1 ribosomal frameshift;
+ isoform 1 is encoded by transcript variant 1",
       product whole gi 94421475,
       location packed-int {
         {
