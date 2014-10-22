@@ -168,8 +168,9 @@ void CMD5::Finalize(unsigned char digest[16])
 string CMD5::GetHexSum(unsigned char digest[16])
 {
     CNcbiOstrstream oss;
+    oss << hex << setfill('0');
     for (size_t i = 0; i < 16; ++i) {
-        oss << hex << setw(2) << setfill('0') << (int)digest[i];
+        oss << setw(2) << (int)digest[i];
     }
     return CNcbiOstrstreamToString(oss);
 }

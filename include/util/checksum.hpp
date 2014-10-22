@@ -63,12 +63,23 @@ public:
     enum EMethod {
         eNone,             ///< No checksum in file.
         eCRC32,            ///< 32-bit Cyclic Redundancy Check.
-        eCRC32ZIP,         ///< Exact zip CRC32, slightly differs from eCRC32.
+                           ///< Most significant bit first, no inversions.
+        eCRC32ZIP,         ///< Exact zip CRC32. Same polynomial as eCRC32.
+                           ///< Least significant bit are processed first,
+                           ///< extra inversions at the beginning and the end.
         eCRC32INSD,        ///< Inverted CRC32ZIP. Hash function used in
                            ///< the ID system to verify sequence uniqueness.
         eMD5,              ///< Message Digest version 5.
         eAdler32,          ///< A bit faster than CRC32ZIP, not recommended
                            ///< for small data sizes.
+        eCRC32CKSUM,       ///< CRC32 implemented by cksum utility.
+                           ///< Same as eCRC32, but with data length included
+                           ///< in CRC, and extra inversion at the end.
+        eCRC32C,           ///< CRC32C (Castagnoli). Better polynomial used
+                           ///< in some places (iSCSI). This method has
+                           ///< hardware support in new Intel processors.
+                           ///< Least significant bits are processed first,
+                           ///< extra inversions at the beginning and the end.
         eDefault = eCRC32
     };
     enum {
@@ -98,9 +109,15 @@ public:
     /// Check that method is specified (not equal eNone).
     bool Valid(void) const;
 
+    /// Return size of checksum in bytes.
+    size_t GetChecksumSize(void) const;
+
     /// Return calculated checksum.
     /// Only valid in CRC32/CRC32ZIP/Adler32 modes!
     Uint4 GetChecksum(void) const;
+
+    /// Return string with checksum in hexadecimal form
+    string GetHexSum(void) const;
 
     /// Return calculated MD5 digest.
     /// Only valid in MD5 mode!
@@ -125,7 +142,8 @@ public:
     /// Write checksum calculation results into output stream
     CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
     CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;
-
+    CNcbiOstream& WriteHexSum(CNcbiOstream& out) const;
+    
 private:
     size_t   m_LineCount;  ///< Number of lines
     size_t   m_CharCount;  ///< Number of chars
