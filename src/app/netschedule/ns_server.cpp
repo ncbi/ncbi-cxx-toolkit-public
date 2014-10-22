@@ -640,28 +640,14 @@ string CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
 }
 
 
-void CNetScheduleServer::SetRAMConfigFileChecksum(unsigned char *  checksum)
+void CNetScheduleServer::SetRAMConfigFileChecksum(const string &  checksum)
 {
-    //memcpy(m_RAMConfigFileChecksum, checksum, MD5_DIGEST_LENGTH);
-    memcpy(m_RAMConfigFileChecksum, checksum, 32);
+    m_RAMConfigFileChecksum = checksum;
 }
 
 
-unsigned char * CNetScheduleServer::GetRAMConfigFileChecksum(void)
+void CNetScheduleServer::SetDiskConfigFileChecksum(const string &  checksum)
 {
-    return m_RAMConfigFileChecksum;
-}
-
-
-void CNetScheduleServer::SetDiskConfigFileChecksum(unsigned char *  checksum)
-{
-    //memcpy(m_DiskConfigFileChecksum, checksum, MD5_DIGEST_LENGTH);
-    memcpy(m_DiskConfigFileChecksum, checksum, 32);
-}
-
-
-unsigned char * CNetScheduleServer::GetDiskConfigFileChecksum(void)
-{
-    return m_DiskConfigFileChecksum;
+    m_DiskConfigFileChecksum = checksum;
 }
 

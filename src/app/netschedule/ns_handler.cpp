@@ -2760,12 +2760,9 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         }
 
         // Update the config file checksum in memory
-        vector<string>          config_checksum_warnings;
-        // unsigned char           config_checksum[MD5_DIGEST_LENGTH];
-        unsigned char           config_checksum[32];
-        NS_GetConfigFileChecksum(app->GetConfigPath(),
-                                 config_checksum_warnings,
-                                 config_checksum);
+        vector<string>  config_checksum_warnings;
+        string          config_checksum = NS_GetConfigFileChecksum(
+                                app->GetConfigPath(), config_checksum_warnings);
         if (config_checksum_warnings.empty()) {
             m_Server->SetRAMConfigFileChecksum(config_checksum);
             m_Server->SetDiskConfigFileChecksum(config_checksum);

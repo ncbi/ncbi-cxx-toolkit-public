@@ -36,8 +36,10 @@
 #include "ns_ini_params.hpp"
 #include "ns_queue_parameters.hpp"
 #include <util/bitset/bmalgo.h>
+#include <util/checksum.hpp>
 #include <connect/ncbi_socket.hpp>
 
+#include <unistd.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -492,67 +494,49 @@ string NS_OutOfLimitMessage(const string &  section,
 }
 
 
+static const string     s_ErrorGettingChecksum = "error detected";
 
-void NS_GetConfigFileChecksum(const string &  file_name,
-                              vector<string> & warnings,
-                              unsigned char *  md5)
+
+string NS_GetConfigFileChecksum(const string &  file_name,
+                                vector<string> &  warnings)
 {
-/*
-    if (!s_SpecialChecksumInitialized) {
-        memset(s_CannotOpenChecksum, 0, MD5_DIGEST_LENGTH);
-        s_CannotOpenChecksum[MD5_DIGEST_LENGTH - 1] = 1;
-        memset(s_CannotGetSizeChecksum, 0, MD5_DIGEST_LENGTH);
-        s_CannotGetSizeChecksum[MD5_DIGEST_LENGTH - 1] = 2;
-        memset(s_CannotMapChecksum, 0, MD5_DIGEST_LENGTH);
-        s_CannotMapChecksum[MD5_DIGEST_LENGTH - 1] = 3;
-        s_SpecialChecksumInitialized = true;
+    // Note: at the time of writing the ComputeFileCRC32() function does not
+    //       generate exceptions at least in some error cases e.g. if there
+    //       is no file. Therefore some manual checks are introduced here:
+    //       - the file exists
+    //       - there are read permissions for it
+    // Technically speaking it is not 100% guarantee because the file could be
+    // replaced between the checks and the sum culculation but it is better
+    // than nothing.
+
+    if (access(file_name.c_str(), F_OK) != 0) {
+        warnings.push_back("Error computing config file checksum, "
+                           "the file does not exist: " + file_name);
+        return s_ErrorGettingChecksum;
     }
 
-    int     fd = open(file_name.c_str(), O_RDONLY);
-    if (fd < 0) {
-        warnings.push_back("Cannot open configuration file for reading: " +
-                           file_name);
-        memcpy(md5, s_CannotOpenChecksum, MD5_DIGEST_LENGTH);
-        return;
+    if (access(file_name.c_str(), R_OK) != 0) {
+        warnings.push_back("Error computing config file checksum, "
+                           "there are no read permissions: " + file_name);
+        return s_ErrorGettingChecksum;
     }
 
-    struct stat     stat_buf;
-    if (fstat(fd, &stat_buf) < 0) {
-        warnings.push_back("Cannot get configuration file size: " + file_name);
-        memcpy(md5, s_CannotGetSizeChecksum, MD5_DIGEST_LENGTH);
-        return;
-    }
+    try {
+        string      checksum_as_string;
+        CChecksum   checksum = ComputeFileChecksum(file_name, CChecksum::eMD5);
 
-    unsigned char * file_buffer = (unsigned char *)mmap(0, stat_buf.st_size,
-                                                        PROT_READ, MAP_SHARED,
-                                                        fd, 0);
-    if (file_buffer == MAP_FAILED) {
-        warnings.push_back("Cannot map configuration file into memory: " +
-                           file_name);
-        memcpy(md5, s_CannotMapChecksum, MD5_DIGEST_LENGTH);
-        return;
+        checksum.GetMD5Digest(checksum_as_string);
+        return checksum_as_string;
+    } catch (const exception &  ex) {
+        warnings.push_back("Error computing config file checksum. " +
+                           string(ex.what()));
+        return s_ErrorGettingChecksum;
+    } catch (...) {
+        warnings.push_back("Unknown error of computing config file checksum");
+        return s_ErrorGettingChecksum;
     }
-    MD5(file_buffer, stat_buf.st_size, md5);
-    munmap(file_buffer, stat_buf.st_size);
-    close(fd);
-*/
+    return s_ErrorGettingChecksum;
 }
-
-
-int NS_CompareChecksums(unsigned char *  lhs_md5,
-                        unsigned char *  rhs_md5)
-{
-/*
-    for (size_t  k = 0; k < MD5_DIGEST_LENGTH; ++k) {
-        if (lhs_md5[k] < rhs_md5[k])
-            return -1;
-        if (lhs_md5[k] > rhs_md5[k])
-            return 1;
-    }
-    return 0;
-*/
-}
-
 
 
 END_NCBI_SCOPE

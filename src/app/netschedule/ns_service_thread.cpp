@@ -100,14 +100,10 @@ void  CServiceThread::x_CheckDrainShutdown(void)
 void  CServiceThread::x_CheckConfigFile(void)
 {
     CNcbiApplication *      app = CNcbiApplication::Instance();
-    //unsigned char           config_checksum[MD5_DIGEST_LENGTH];
-    unsigned char           config_checksum[32];
     vector<string>          config_checksum_warnings;
-
-    NS_GetConfigFileChecksum(app->GetConfigPath(), config_checksum_warnings,
-                             config_checksum);
-    if (NS_CompareChecksums(config_checksum,
-                            m_Server.GetDiskConfigFileChecksum()) == 0) {
+    string                  config_checksum = NS_GetConfigFileChecksum(
+                        app->GetConfigPath(), config_checksum_warnings);
+    if (config_checksum == m_Server.GetDiskConfigFileChecksum()) {
         // The current is the same as it was last time
         return;
     }
@@ -131,11 +127,10 @@ void  CServiceThread::x_CheckConfigFile(void)
 
     // Here: the sum has been calculated properly. Compare it with the RAM
     // version
-    if (NS_CompareChecksums(config_checksum,
-                            m_Server.GetRAMConfigFileChecksum()) != 0) {
-        string      msg = "The configuration file on the disk (" +
-                          app->GetConfigPath() +
-                          ") does not match the currently loaded one";
+    if (config_checksum != m_Server.GetRAMConfigFileChecksum()) {
+        string      msg = "The configuration file on the disk "
+                          "does not match the currently loaded one: " +
+                          app->GetConfigPath();
         ERR_POST(msg);
         m_Server.RegisterAlert(eConfigOutOfSync, msg);
     }

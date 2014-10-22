@@ -46,11 +46,8 @@ void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
                            bool  throw_port_exception);
 
 
-void NS_GetConfigFileChecksum(const string &  file_name,
-                              vector<string> & warnings,
-                              unsigned char *  md5);
-int NS_CompareChecksums(unsigned char *  lhs_md5,
-                        unsigned char *  rhs_md5);
+string NS_GetConfigFileChecksum(const string &  file_name,
+                                vector<string> &  warnings);
 
 
 END_NCBI_SCOPE

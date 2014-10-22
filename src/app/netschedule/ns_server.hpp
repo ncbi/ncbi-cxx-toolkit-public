@@ -197,10 +197,12 @@ public:
                                           const string &  user);
     void RegisterAlert(EAlertType  alert_type,
                        const string &  message);
-    void SetRAMConfigFileChecksum(unsigned char *  checksum);
-    unsigned char * GetRAMConfigFileChecksum(void);
-    void SetDiskConfigFileChecksum(unsigned char *  checksum);
-    unsigned char * GetDiskConfigFileChecksum(void);
+    void SetRAMConfigFileChecksum(const string &  checksum);
+    string GetRAMConfigFileChecksum(void) const
+    { return m_RAMConfigFileChecksum; }
+    void SetDiskConfigFileChecksum(const string &  checksum);
+    string GetDiskConfigFileChecksum(void) const
+    { return m_DiskConfigFileChecksum; }
 
 protected:
     virtual void Exit();
@@ -272,10 +274,8 @@ private:
 
     CCompoundIDPool                 m_CompoundIDPool;
 
-    //unsigned char                   m_RAMConfigFileChecksum[MD5_DIGEST_LENGTH];
-    unsigned char                   m_RAMConfigFileChecksum[32];
-    //unsigned char                   m_DiskConfigFileChecksum[MD5_DIGEST_LENGTH];
-    unsigned char                   m_DiskConfigFileChecksum[32];
+    string                          m_RAMConfigFileChecksum;
+    string                          m_DiskConfigFileChecksum;
 
 private:
     string x_GenerateGUID(void) const;
