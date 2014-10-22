@@ -892,6 +892,14 @@ void CRemoteBlast::x_SetAlgoOpts(void)
     CBlast4_parameters * algo_opts =
         m_CBOH->SetOptions().GetBlast4AlgoOpts();
     
+    string user_ipv6_address;
+    CNcbiEnvironment env;
+    if( env.Get("HTTP_X_FORWARDED_FOR_IPV6") != kEmptyStr )
+	user_ipv6_address = env.Get("HTTP_X_FORWARDED_FOR_IPV6");
+    if( !user_ipv6_address.empty() ){
+	algo_opts->Add( string("HTTP_X_FORWARDED_FOR_IPV6"), user_ipv6_address );
+    }
+
     m_QSR->SetAlgorithm_options().Set() = *algo_opts;
 }
 
