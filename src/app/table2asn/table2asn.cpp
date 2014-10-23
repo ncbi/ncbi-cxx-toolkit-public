@@ -143,11 +143,9 @@ CTbl2AsnApp::CTbl2AsnApp(void)
 {
     int build_num = 
 #ifdef NCBI_PRODUCTION_VER
-    0
+    NCBI_PRODUCTION_VER
 #else
-#ifdef NCBI_DEVELOPMENT_VER 
-    NCBI_DEVELOPMENT_VER 
-#endif
+    0
 #endif
     ;   
 
