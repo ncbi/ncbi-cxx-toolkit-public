@@ -59,6 +59,8 @@ enum EClaimedClientType {
     eClaimedAdmin,
     eClaimedAutodetect,     // The detection of the type must be done basing
                             // on the issued commands
+    eClaimedReset,          // Reset the collected type bits (based on commands)
+                            // and switch to auto
     eClaimedNotProvided
 };
 
@@ -87,6 +89,8 @@ class CNSClientId
         { return m_ClientSession; }
         EClaimedClientType  GetType(void) const
         { return m_ClientType; }
+        void SetClientType(EClaimedClientType  new_type)
+        { m_ClientType = new_type; }
         unsigned short  GetControlPort(void) const
         { return m_ControlPort; }
         const string &  GetClientHost(void) const
@@ -118,6 +122,7 @@ class CNSClientId
         void ResetPassedCheck(void)
         { if (IsAdmin()) { m_PassedChecks = 0; SetPassedChecks(eNS_Admin); }
           else           { m_PassedChecks = 0; } }
+
 
         void CheckAccess(TNSCommandChecks  cmd_reqs,
                          CNetScheduleServer * server,

@@ -105,6 +105,11 @@ CNSClientsRegistry::Touch(CNSClientId &          client,
     }
 
     known_client->second.Touch(client);
+
+    // The 'reset' client type must not reset the collected types when the next
+    // command is issued
+    if (client.GetType() == eClaimedReset)
+        client.SetClientType(eClaimedAutodetect);
 }
 
 

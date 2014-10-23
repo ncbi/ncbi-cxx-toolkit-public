@@ -52,7 +52,8 @@ BEGIN_NCBI_SCOPE
 // - new style clients; they have all three pieces,
 //                      address, node id and session id
 CNSClientId::CNSClientId() :
-    m_Addr(0), m_PassedChecks(0), m_ID(0)
+    m_Addr(0), m_ClientType(eClaimedNotProvided),
+    m_PassedChecks(0), m_ID(0)
 {}
 
 
@@ -216,6 +217,8 @@ CNSClientId::x_ConvertToClaimedType(const string &  claimed_type) const
         return eClaimedAdmin;
     if (ci_claimed_type == "auto")
         return eClaimedAutodetect;
+    if (ci_claimed_type == "reset")
+        return eClaimedReset;
 
     LOG_POST(Message << Warning <<
              "Unsupported client_type value at the handshake phase. Supported "
@@ -544,7 +547,11 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_RegistrationTime = CNSPreciseTime::Current();
     m_SessionStartTime = m_RegistrationTime;
     m_LastAccess = m_RegistrationTime;
-    return;
+
+    // It does not make any sense at the time of creation to have 'reset'
+    // client type
+    if (m_ClaimedType == eClaimedReset)
+        m_ClaimedType = eClaimedAutodetect;
 }
 
 
@@ -593,8 +600,12 @@ void CNSClient::Touch(const CNSClientId &  client_id)
     m_ClientHost = client_id.GetClientHost();
     m_Addr = client_id.GetAddress();
 
-    if (client_id.GetType() != eClaimedNotProvided)
-        m_ClaimedType = client_id.GetType();
+    EClaimedClientType      claimed_client_type = client_id.GetType();
+    if (claimed_client_type == eClaimedReset) {
+        m_Type = 0;
+        m_ClaimedType = eClaimedAutodetect;
+    } else if (claimed_client_type != eClaimedNotProvided)
+        m_ClaimedType = claimed_client_type;
 
     // Check the session id
     if (m_Session == client_id.GetSession())
