@@ -69,7 +69,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
     m_ClientName     = "";
     m_ClientNode     = "";
     m_ClientSession  = "";
-    m_ClientType     = "";
+    m_ClientType     = eClaimedNotProvided;
     m_ClientHost     = "";
     m_ControlPort    = 0;
     m_PassedChecks   = 0;
@@ -84,16 +84,8 @@ void CNSClientId::Update(unsigned int            peer_addr,
         m_ClientSession = found->second;
 
     found = params.find("client_type");
-    if (found != params.end()) {
-        m_ClientType = found->second;
-
-        // The only recognized value for the moment is 'admin'
-        if (m_ClientType != "admin")
-            LOG_POST(Message << Warning <<
-                                "Unsupported client_type value at the "
-                                "handshake phase. Supported value is: admin. "
-                                "Received: " << m_ClientType);
-    }
+    if (found != params.end())
+        m_ClientType = x_ConvertToClaimedType(found->second);
 
     // It must be that either both client_node and client_session
     // parameters are provided or none of them
@@ -208,6 +200,29 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
     }
 }
 
+
+EClaimedClientType
+CNSClientId::x_ConvertToClaimedType(const string &  claimed_type) const
+{
+    string      ci_claimed_type = claimed_type;
+    NStr::ToLower(ci_claimed_type);
+    if (ci_claimed_type == "submitter")
+        return eClaimedSubmitter;
+    if (ci_claimed_type == "worker node")
+        return eClaimedWorkerNode;
+    if (ci_claimed_type == "reader")
+        return eClaimedReader;
+    if (ci_claimed_type == "admin")
+        return eClaimedAdmin;
+    if (ci_claimed_type == "auto")
+        return eClaimedAutodetect;
+
+    LOG_POST(Message << Warning <<
+             "Unsupported client_type value at the handshake phase. Supported "
+             "values are: submitter, worker node, reader, admin and auto. "
+             "Received: " << m_ClientType);
+    return eClaimedNotProvided;
+}
 
 
 SRemoteNodeData::SRemoteNodeData() :
@@ -487,7 +502,7 @@ void SRemoteNodeData::x_WaitAffinitiesOp(void) const
 CNSClient::CNSClient() :
     m_State(eActive),
     m_Type(0),
-    m_ClaimedAdmin(false),
+    m_ClaimedType(eClaimedNotProvided),
     m_Addr(0),
     m_ControlPort(0),
     m_RegistrationTime(0, 0),
@@ -507,7 +522,7 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
                      CNSPreciseTime *     read_blacklist_timeout) :
     m_State(eActive),
     m_Type(0),
-    m_ClaimedAdmin(client_id.GetType() == "admin"),
+    m_ClaimedType(client_id.GetType()),
     m_Addr(client_id.GetAddress()),
     m_ControlPort(client_id.GetControlPort()),
     m_ClientHost(client_id.GetClientHost()),
@@ -577,6 +592,9 @@ void CNSClient::Touch(const CNSClientId &  client_id)
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
     m_Addr = client_id.GetAddress();
+
+    if (client_id.GetType() != eClaimedNotProvided)
+        m_ClaimedType = client_id.GetType();
 
     // Check the session id
     if (m_Session == client_id.GetSession())
@@ -820,8 +838,18 @@ string  CNSClient::x_TypeAsString(void) const
 {
     string      result;
 
-    if (m_ClaimedAdmin)
-        return "admin";
+    switch (m_ClaimedType) {
+        case eClaimedSubmitter:     return "submitter";
+        case eClaimedWorkerNode:    return "worker node";
+        case eClaimedReader:        return "reader";
+        case eClaimedAdmin:         return "admin";
+
+        // autodetect or not provided falls to detection by a command group
+        case eClaimedAutodetect:
+        case eClaimedNotProvided:
+        default:
+                break;
+    }
 
     if (m_Type & eSubmitter)
         result = "submitter";

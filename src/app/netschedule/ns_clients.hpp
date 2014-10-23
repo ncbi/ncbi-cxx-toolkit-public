@@ -51,6 +51,19 @@ class CJobStatusTracker;
 class CNetScheduleServer;
 
 
+// The client can claim that it belongs to a certain type
+enum EClaimedClientType {
+    eClaimedSubmitter,
+    eClaimedWorkerNode,
+    eClaimedReader,
+    eClaimedAdmin,
+    eClaimedAutodetect,     // The detection of the type must be done basing
+                            // on the issued commands
+    eClaimedNotProvided
+};
+
+
+
 // The CClientId serves two types of clients:
 // - old style clients; they have peer address only
 // - new style clients; they have all three pieces,
@@ -72,7 +85,7 @@ class CNSClientId
         { return m_ClientNode; }
         const string &  GetSession(void) const
         { return m_ClientSession; }
-        const string &  GetType(void) const
+        EClaimedClientType  GetType(void) const
         { return m_ClientType; }
         unsigned short  GetControlPort(void) const
         { return m_ControlPort; }
@@ -120,7 +133,7 @@ class CNSClientId
                                               // e.g. service10:9300
         string              m_ClientSession;  // Session of working
                                               //  with netschedule.
-        string              m_ClientType;     // Client type, e.g. admin
+        EClaimedClientType  m_ClientType;     // Client type, e.g. admin
         unsigned short      m_ControlPort;    // Client control port
         string              m_ClientHost;     // Client host name if passed in
                                               // the handshake line.
@@ -135,6 +148,10 @@ class CNSClientId
         // registry will store IDs of the clients which informed that a certain
         // affinity is preferred.
         unsigned int        m_ID;
+
+    private:
+        EClaimedClientType  x_ConvertToClaimedType(
+                                        const string &  claimed_type) const;
 };
 
 
@@ -436,6 +453,9 @@ class CNSClient
           else                   m_ReaderData.CancelWaiting();
         }
 
+        void SetClaimedType(EClaimedClientType  new_type)
+        { m_ClaimedType = new_type; }
+
         void RegisterJob(unsigned int   job_id,
                          ECommandGroup  cmd_group);
         void RegisterSubmittedJobs(size_t  count);
@@ -457,14 +477,13 @@ class CNSClient
                                               // If true => m_Session == "n/a"
         unsigned int        m_Type;           // bit mask of ENSClientType
 
-        /* Note: at the handshake time a client may claim that it is an admin
-         * user. It has nothing to do with how NS decides if an adminstritive
-         * permission required command could be executed. The member below
-         * tells what the client claimed and also how it will be shown in the
-         * STAT CLIENTS output. And nothing else. This might be misleading
-         * however it is how it was requested to do.
+        /* Note: at the handshake time a client may claim that it is a certain
+         * type of client. It has nothing to do with how NS decides if an
+         * adminstritive permission required command could be executed. The
+         * member below tells what the client claimed and also how it will be
+         * shown in the STAT CLIENTS output. And nothing else.
          */
-        bool                m_ClaimedAdmin;
+        EClaimedClientType  m_ClaimedType;
         unsigned int        m_Addr;           // Client peer address
         unsigned short      m_ControlPort;    // Worker node control port
         string              m_ClientHost;     // Client host as given in the

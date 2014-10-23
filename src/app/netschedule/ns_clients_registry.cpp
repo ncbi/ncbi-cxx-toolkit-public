@@ -364,6 +364,7 @@ CNSClientsRegistry::ClearClient(const string &         node_name,
         old_session = cl->second.GetSession();
         cl->second.SetSession("");
         cl->second.SetState(CNSClient::eQuit);
+        cl->second.SetClaimedType(eClaimedNotProvided);
         x_ClearClient(node_name, cl->second, running_jobs,
                       had_wn_pref_affs, eGet);
         x_ClearClient(node_name, cl->second, reading_jobs,
