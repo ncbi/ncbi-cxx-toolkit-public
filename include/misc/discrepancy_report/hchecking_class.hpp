@@ -61,7 +61,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
          CCheckingClass();
 
          void CheckBioseq( CBioseq& bioseq );
-         void CheckSeqInstMol(CSeq_inst& seq_inst, CBioseq& bioseq); // not used
          void CheckSeqEntry ( CRef <CSeq_entry> seq_entry);
          void CheckBioseqSet ( CBioseq_set& bioseq_set);
 
