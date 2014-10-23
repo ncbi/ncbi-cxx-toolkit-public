@@ -208,7 +208,7 @@ extern "C" {
 }
 
 
-DEFINE_STATIC_FAST_MUTEX(s_CtxMutex);
+DEFINE_STATIC_MUTEX(s_CtxMutex);
 static CDBLibContext* g_pContext = NULL;
 
 
@@ -219,7 +219,7 @@ CDBLibContext::CDBLibContext(DBINT version)
 {
     SetApplicationName("DBLibDriver");
 
-    CFastMutexGuard mg(s_CtxMutex);
+    CMutexGuard mg(s_CtxMutex);
 
     CHECK_DRIVER_ERROR(
         g_pContext != NULL,
@@ -283,7 +283,7 @@ int CDBLibContext::GetTDSVersion(void) const
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     if (impl::CDriverContext::SetLoginTimeout(nof_secs)) {
-        CFastMutexGuard ctx_mg(s_CtxMutex);
+        CMutexGuard ctx_mg(s_CtxMutex);
         return Check(dbsetlogintime(GetLoginTimeout())) == SUCCEED;
     }
 
@@ -294,7 +294,7 @@ bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 bool CDBLibContext::SetTimeout(unsigned int nof_secs)
 {
     if (impl::CDriverContext::SetTimeout(nof_secs)) {
-        CFastMutexGuard ctx_mg(s_CtxMutex);
+        CMutexGuard ctx_mg(s_CtxMutex);
         return Check(dbsettime(GetTimeout())) == SUCCEED;
     }
 
@@ -309,7 +309,7 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
     char s[64];
     sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
 
-    CFastMutexGuard ctx_mg(s_CtxMutex);
+    CMutexGuard ctx_mg(s_CtxMutex);
     return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED;
 }
 
@@ -317,6 +317,12 @@ impl::CConnection*
 CDBLibContext::MakeIConnection(const CDBConnParams& params)
 {
     return new CDBL_Connection(*this, params);
+}
+
+
+SSystemMutex& CDBLibContext::x_GetCtxMtx(void) const
+{
+    return s_CtxMutex;
 }
 
 
@@ -351,10 +357,8 @@ CDBLibContext::~CDBLibContext()
 void
 CDBLibContext::x_Close(bool delete_conn)
 {
-    CMutexGuard mg(m_CtxMtx);
-
     if (g_pContext) {
-        CFastMutexGuard ctx_mg(s_CtxMutex);
+        CMutexGuard ctx_mg(s_CtxMutex);
 
         if (g_pContext) {
             // Unregister itself before any other poeration
@@ -421,7 +425,7 @@ void CDBLibContext::DBLIB_SetPacketSize(int p_size)
 
 bool CDBLibContext::DBLIB_SetMaxNofConns(int n)
 {
-    CFastMutexGuard ctx_mg(s_CtxMutex);
+    CMutexGuard ctx_mg(s_CtxMutex);
     return Check(dbsetmaxprocs(n)) == SUCCEED;
 }
 
@@ -452,7 +456,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
     CDB_Exception::SMessageInContext message = dberrstr;
 
-    CFastMutexGuard ctx_mg(s_CtxMutex);
+    CMutexGuard ctx_mg(s_CtxMutex);
 
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -564,7 +568,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
     CDB_Exception::SMessageInContext message = msgtxt;
 
-    CFastMutexGuard ctx_mg(s_CtxMutex);
+    CMutexGuard ctx_mg(s_CtxMutex);
 
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*>(dbgetuserdata(dblink)) : 0;
@@ -694,7 +698,7 @@ CDbapiDblibCF2::CreateInstance(
 
                 if ( v.id == "reuse_context" ) {
                     bool reuse_context = (v.value != "false");
-                    CFastMutexGuard mg(s_CtxMutex);
+                    CMutexGuard mg(s_CtxMutex);
 
                     if ( reuse_context && g_pContext ) {
                         return g_pContext;

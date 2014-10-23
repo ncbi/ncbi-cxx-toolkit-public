@@ -218,7 +218,10 @@ public:
 protected:
     typedef list<CConnection*> TConnPool;
 
-    mutable CMutex m_CtxMtx;
+    virtual SSystemMutex& x_GetCtxMtx(void) const
+    {
+        return m_DefaultCtxMtx;
+    }
 
     // To allow children of CDriverContext to create CDB_Connection
     CDB_Connection* MakeCDBConnection(CConnection* connection);
@@ -248,6 +251,8 @@ protected:
 
 
 private:
+    mutable CMutex  m_DefaultCtxMtx;
+
     unsigned int    m_LoginTimeout; //< Login timeout.
     unsigned int    m_Timeout;      //< Connection timeout.
     unsigned int    m_CancelTimeout;//< Canceling timeout.

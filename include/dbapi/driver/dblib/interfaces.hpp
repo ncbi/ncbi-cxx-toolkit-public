@@ -160,6 +160,7 @@ public:
 
 protected:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
+    SSystemMutex& x_GetCtxMtx(void) const;
 
 private:
     short                  m_PacketSize;

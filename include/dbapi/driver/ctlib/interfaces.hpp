@@ -306,6 +306,7 @@ public:
 
 protected:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
+    SSystemMutex& x_GetCtxMtx(void) const;
 
 private:
     CS_CONTEXT* m_Context;

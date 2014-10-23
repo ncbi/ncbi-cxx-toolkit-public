@@ -775,7 +775,7 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 
 string CTLibContext::GetApplicationName(void) const
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(s_CTLCtxMtx);
     string app_name = impl::CDriverContext::GetApplicationName();
     if (app_name.empty()) {
         app_name = GetDiagContext().GetAppName();
@@ -857,6 +857,12 @@ CTLibContext::MakeIConnection(const CDBConnParams& params)
     CMutexGuard mg(s_CTLCtxMtx);
 
     return new CTL_Connection(*this, params);
+}
+
+
+SSystemMutex& CTLibContext::x_GetCtxMtx(void) const
+{
+    return s_CTLCtxMtx;
 }
 
 

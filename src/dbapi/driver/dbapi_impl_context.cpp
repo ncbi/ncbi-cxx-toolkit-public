@@ -81,7 +81,7 @@ CDriverContext::~CDriverContext(void)
 void
 CDriverContext::SetApplicationName(const string& app_name)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_AppName = app_name;
 }
@@ -89,7 +89,7 @@ CDriverContext::SetApplicationName(const string& app_name)
 string
 CDriverContext::GetApplicationName(void) const
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_AppName;
 }
@@ -97,7 +97,7 @@ CDriverContext::GetApplicationName(void) const
 void
 CDriverContext::SetHostName(const string& host_name)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_HostName = host_name;
 }
@@ -105,21 +105,21 @@ CDriverContext::SetHostName(const string& host_name)
 string
 CDriverContext::GetHostName(void) const
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_HostName;
 }
 
 unsigned int CDriverContext::GetLoginTimeout(void) const 
 { 
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_LoginTimeout; 
 }
 
 bool CDriverContext::SetLoginTimeout (unsigned int nof_secs)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_LoginTimeout = nof_secs;
 
@@ -128,7 +128,7 @@ bool CDriverContext::SetLoginTimeout (unsigned int nof_secs)
 
 unsigned int CDriverContext::GetTimeout(void) const 
 { 
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_Timeout; 
 }
@@ -136,7 +136,7 @@ unsigned int CDriverContext::GetTimeout(void) const
 bool CDriverContext::SetTimeout(unsigned int nof_secs)
 {
     bool success = true;
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     try {
         m_Timeout = nof_secs;
@@ -153,7 +153,7 @@ bool CDriverContext::SetTimeout(unsigned int nof_secs)
 
 unsigned int CDriverContext::GetCancelTimeout(void) const 
 { 
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_CancelTimeout;
 }
@@ -161,7 +161,7 @@ unsigned int CDriverContext::GetCancelTimeout(void) const
 bool CDriverContext::SetCancelTimeout(unsigned int nof_secs)
 {
     bool success = true;
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     try {
         m_CancelTimeout = nof_secs;
@@ -174,7 +174,7 @@ bool CDriverContext::SetCancelTimeout(unsigned int nof_secs)
 
 bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_MaxTextImageSize = nof_bytes;
 
@@ -186,26 +186,26 @@ bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
 void CDriverContext::PushCntxMsgHandler(CDB_UserHandler* h,
                                          EOwnership ownership)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
     m_CntxHandlers.Push(h, ownership);
 }
 
 void CDriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
     m_CntxHandlers.Pop(h);
 }
 
 void CDriverContext::PushDefConnMsgHandler(CDB_UserHandler* h,
                                             EOwnership ownership)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
     m_ConnHandlers.Push(h, ownership);
 }
 
 void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
     m_ConnHandlers.Pop(h);
 
     // Remove this handler from all connections
@@ -263,7 +263,7 @@ void CDriverContext::ResetEnvSybase(void)
 
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
 
@@ -281,7 +281,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 void CDriverContext::CloseUnusedConnections(const string&   srv_name,
                                              const string&   pool_name)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     TConnPool::value_type con;
 
@@ -301,7 +301,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
 unsigned int CDriverContext::NofConnections(const TSvrRef& svr_ref,
                                             const string& pool_name) const
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     if ((!svr_ref  ||  !svr_ref->IsValid())  &&  pool_name.empty()) {
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
@@ -356,7 +356,7 @@ CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
     if (params.GetParam("is_pooled") == "true") {
-        CMutexGuard mg(m_CtxMtx);
+        CMutexGuard mg(x_GetCtxMtx());
 
         string pool_name(params.GetParam("pool_name"));
         if (!m_NotInUse.empty()) {
@@ -771,7 +771,7 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
 bool
 CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     string pool_min_str = params.GetParam("pool_minsize");
     if (pool_min_str.empty()  ||  pool_min_str == "default")
@@ -814,7 +814,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
 CDB_Connection* 
 CDriverContext::MakeConnection(const CDBConnParams& params)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     CMakeConnActualParams act_params(params);
     SDBConfParams conf_params;
@@ -964,7 +964,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
 
 void CDriverContext::CloseConnsForPool(const string& pool_name)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
@@ -991,7 +991,7 @@ void CDriverContext::DestroyConnImpl(CConnection* impl)
 
 void CDriverContext::SetClientCharset(const string& charset)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_ClientCharset = charset;
     m_ClientEncoding = eEncoding_Unknown;
