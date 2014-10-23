@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev
+ * Author:  Denis Vakatov
  *
  * File Description:
  *    Run-time debugging
@@ -41,9 +41,11 @@
 #if !defined(NDEBUG)  &&  !defined(_DEBUG)
 #  define NDEBUG
 #endif
+
 #include <assert.h>
+
 #if defined(NDEBUG)
-#  define verify(expr)  (void)(expr)
+#  define verify(expr)  while ( expr ) break
 #else
 #  define verify(expr)  assert(expr)
 #endif
