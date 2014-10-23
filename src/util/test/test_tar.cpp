@@ -650,8 +650,19 @@ int CTarTest::Run(void)
                 entries.splice(entries.end(), *add);
             }
             if (m_Flags & fVerbose) {
+                iterator<CTar::TEntries> pr = entries.end();
                 ITERATE(CTar::TEntries, it, entries) {
                     NcbiCerr << pfx << it->GetName() + x_Pos(*it) << NcbiEndl;
+                    _ASSERT(it->GetPosition(CTarEntryInfo::ePos_Header) <=
+                            it->GetPosition(CTarEntryInfo::ePos_Data));
+                    _ASSERT(it->GetPosition(CTarEntryInfo::ePos_Header) <
+                            it->GetPosition(CTarEntryInfo::ePos_Data)
+                            ||  !it->GetSize());
+                    if (pr != entries.end()) {
+                        _ASSERT(pr->GetPosition(CTarEntryInfo::ePos_Header) <
+                                it->GetPosition(CTarEntryInfo::ePos_Header));
+                    }
+                    pr = it;
                 }
             }
             tar->Close();  // finalize TAR file before streams close (below)

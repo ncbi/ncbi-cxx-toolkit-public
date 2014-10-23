@@ -105,13 +105,13 @@ ln -s $test_base.1/1234567890123456789012345678901234567890123456789012345678901
 
 dd of=$test_base.1/testdir/padfile  if=/dev/zero bs=1 count="`expr 1 + $$ % 20 '*' 511`" 2>/dev/null
 
-echo "`date` *** Creating test archive using native tar utility"
+echo "`date` *** Creating a test archive using the native tar utility"
 echo
 
 ( cd $test_base.1  &&  $tar cvf $test_base.tar . )
 
 echo
-echo "`date` *** Sanitizing test archive from unsupported features"
+echo "`date` *** Sanitizing the test archive from unsupported features"
 echo
 
 rm -rf $test_base.1
@@ -161,7 +161,7 @@ rm -f $test_base.1/.testfifo $test_base.2/.testfifo
 diff -r $test_base.1 $test_base.2 2>/dev/null                                            ||  exit 1
 
 echo
-echo "`date` *** Checking piping out and compatibility with native tar utility"
+echo "`date` *** Checking piping out and compatibility with the native tar utility"
 echo
 
 mkfifo -m 0567 $test_base.2/.testfifo >/dev/null 2>&1

@@ -1387,6 +1387,7 @@ bool CTar::x_Flush(bool no_throw)
                         &&  !m_Bad == !m_BufferPos);
             }
         }
+        m_ZeroBlockCount = zbc;
     }
     _ASSERT(!OFFSET_OF(m_BufferPos));
 
@@ -1542,12 +1543,12 @@ void CTar::x_Open(EAction action)
             _ASSERT(m_OpenMode > eWO  &&  action != eCreate);
             if (m_Bad) {
                 TAR_THROW(this, eOpen,
-                          "Archive is in bad state");
+                          "Archive file is in bad state");
             }
             if (action != eAppend  &&  action != eInternal) {
                 m_BufferPos = 0;
                 m_StreamPos = 0;
-                m_FileStream->seekg(0, IOS_BASE::beg);
+                m_FileStream->seekg(0);
             }
         }
     }
@@ -2673,12 +2674,12 @@ void CTar::x_Backspace(EAction action)
     m_StreamPos -= gap;
     CT_POS_TYPE rec  = (CT_OFF_TYPE)(m_StreamPos / m_BufferSize);
     size_t      off  = (size_t)     (m_StreamPos % m_BufferSize);
-    size_t     temp  = BLOCK_SIZE;
     if (m_BufferPos == 0) {
         m_BufferPos += m_BufferSize;
     }
     if (gap > m_BufferPos) {
         m_BufferPos  = 0;
+        size_t temp  = BLOCK_SIZE;
         // Re-fetch the entire record
         if (!m_FileStream->seekg(rec * m_BufferSize)
             // NB: successful positioning guarantees the stream was !fail(),
@@ -2688,7 +2689,7 @@ void CTar::x_Backspace(EAction action)
             TAR_POST(65, Error,
                      "Archive backspace error in record reget");
             s_SetStateSafe(m_Stream, NcbiBadbit);
-            temp = 0;
+            return;
         }
         m_BufferPos  = off;
     } else {
@@ -2696,11 +2697,15 @@ void CTar::x_Backspace(EAction action)
     }
     _ASSERT(!OFFSET_OF(m_BufferPos)  &&  m_BufferPos < m_BufferSize);
 
-    // Always set put position here
-    if (!m_FileStream->seekp(rec * m_BufferSize)  &&  temp) {
+    // Always reset the put position there
+#if defined(_LIBCPP_VERSION)  &&  _LIBCPP_VERSION <= 1101
+    m_FileStream->clear();  // This is to only work around a bug
+#endif //_LIBCPP_VERSION
+    if (!m_FileStream->seekp(rec * m_BufferSize)) {
         TAR_POST(80, Error,
                  "Archive backspace error in record reset");
         s_SetStateSafe(m_Stream, NcbiBadbit);
+        return;
     }
     m_ZeroBlockCount = 0;
 }
