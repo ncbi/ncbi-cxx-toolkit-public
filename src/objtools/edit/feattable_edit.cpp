@@ -153,6 +153,7 @@ void CFeatTableEdit::EliminateBadQualifiers()
 
     CFeat_CI it(mHandle);
     for ( ; it; ++it) {
+        CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (it)->GetOriginalFeature()));
         const QUALS& quals = (*it).GetQual();
@@ -161,7 +162,7 @@ void CFeatTableEdit::EliminateBadQualifiers()
                 ++qual) {
             string qualVal = (*qual)->GetQual();
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
-            if (qualType == CSeqFeatData::eQual_bad) {
+            if (!CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
                 badQuals.push_back(qualVal);
             }
         }
