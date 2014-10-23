@@ -46,7 +46,9 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objtools/readers/agp_read.hpp>
+#include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
+#include <objtools/readers/fasta.hpp>
 
 #include <util/line_reader.hpp>
 #include <objects/genomecoll/genome_collection__.hpp>
@@ -57,13 +59,13 @@
 #include <algo/align/ngalign/blast_aligner.hpp>
 #include <algo/align/ngalign/banded_aligner.hpp>
 #include <algo/align/ngalign/merge_aligner.hpp>
-#include <algo/align/ngalign/coverage_aligner.hpp>
+//#include <algo/align/ngalign/coverage_aligner.hpp>
 #include <algo/align/ngalign/overlap_aligner.hpp>
 #include <algo/align/ngalign/inversion_merge_aligner.hpp>
 #include <algo/align/ngalign/alignment_scorer.hpp>
 #include <algo/align/ngalign/unordered_spliter.hpp>
 
-#include <algo/align/ngalign/new_merge_aligner.hpp>
+#include <algo/align/ngalign/merge_tree_aligner.hpp>
 
 /*
 #include <asn_cache/lib/Cache_blob.hpp>
@@ -92,6 +94,8 @@ private:
 
 	list<CRef<CSeq_id> > m_LoadedIds;
 	list<CRef<CSeq_id> >::const_iterator LoadedIdsIter;
+    
+    int BatchCounter;
 
 	bool x_CreateNgAlignRun(CNgAligner& NgAligner, IRegistry* RunRegistry); 
 	CRef<ISequenceSet> x_CreateSequenceSet(IRegistry* RunRegistry, 
@@ -108,8 +112,8 @@ private:
 	CRef<CBlastAligner> x_CreateBlastAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CRemoteBlastAligner> x_CreateRemoteBlastAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CMergeAligner> x_CreateMergeAligner(IRegistry* RunRegistry, const string& Name);
-	CRef<CCoverageAligner> x_CreateCoverageAligner(IRegistry* RunRegistry, const string& Name);
-	CRef<CNewMergeAligner> x_CreateNewMergeAligner(IRegistry* RunRegistry, const string& Name);
+//	CRef<CCoverageAligner> x_CreateCoverageAligner(IRegistry* RunRegistry, const string& Name);
+	CRef<CMergeTreeAligner> x_CreateMergeTreeAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CInversionMergeAligner> x_CreateInversionMergeAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CSplitSeqAlignMerger> x_CreateSplitSeqMergeAligner(IRegistry* RunRegistry, const string& Name);
 
@@ -180,6 +184,14 @@ void CNgAlignApp::Init()
 
 	arg_desc->AddOptionalKey("nohit", "outfile", "List of nohit IDs", 
 							CArgDescriptions::eOutputFile);
+    
+    arg_desc->AddOptionalKey("filters", "string", 
+                            "semi-colon seperated list of filters, overrides the ini file",
+                            CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("scorers", "string", 
+                            "semi-colon seperated list of scorers, overrides the ini file",
+                            CArgDescriptions::eString);
+
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -243,6 +255,8 @@ ERR_POST(Info << "Dupes: " << AllowDupes);
 	}
 
 
+    BatchCounter = 0;
+
 	x_LoadExternalSequences(&RunRegistry, "", m_LoadedIds);
 	LoadedIdsIter = m_LoadedIds.begin();
 	
@@ -261,12 +275,20 @@ ERR_POST(Info << "Dupes: " << AllowDupes);
 		}
 
 		CRef<CSeq_align_set> CurrAligns;
-		CurrAligns = NgAligner.Align();
-		if(CurrAligns) {
+		try {
+            CurrAligns = NgAligner.Align();
+		} catch(CException& e) {
+            ERR_POST(Warning << e.ReportAll());
+            break;
+        }
+
+        if(CurrAligns) {
 			Alignments->Set().insert(Alignments->Set().end(), 
 									CurrAligns->Get().begin(), 
 									CurrAligns->Get().end());
 		}
+        //break;
+        ERR_POST(Info << "Looping" );
 	} while(!m_LoadedIds.empty() && LoadedIdsIter != m_LoadedIds.end() );
 
 	if(!Alignments.IsNull()) {
@@ -346,8 +368,17 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 	const string Type = RunRegistry->Get(Category, "type");
 
 	const string Source = RunRegistry->Get(Category, "source");
+    
+    const string Mask = RunRegistry->Get(Category, "mask");
+    CSeqMasker* Masker = NULL;
+    if(!Mask.empty()) {
+        string NMer = "/panfs/pan1/gpipe/ThirdParty/WindowMasker/data/" + Mask;
+        Masker = new CSeqMasker(NMer,
+                        0, 1, 1, 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, "mean", 0, false, 0, false);
+    }
 
     CArgs Args = GetArgs();
+
 
 	if(Type == "seqidlist") {
 		CRef<CSeqIdListSet> IdList(new CSeqIdListSet);
@@ -404,23 +435,50 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 			}
 			LoadedIdsIter = m_LoadedIds.begin();
 		}
-		
+	
+        cerr << __LINE__ << endl;
 		if(IdList->SetIdList().empty() && !m_LoadedIds.empty()) {
 			int BatchSize = Args["batch"].AsInteger();
 			for(int Count = 0; 
 				Count < BatchSize && LoadedIdsIter != m_LoadedIds.end(); 
 				Count++) {
-				IdList->SetIdList().push_back(*LoadedIdsIter);
+			cerr << __LINE__ << (*LoadedIdsIter)->AsFastaString() << endl;
+                IdList->SetIdList().push_back(*LoadedIdsIter);
 				++LoadedIdsIter;
 			}
 		}
+        
+        if(Masker != NULL)
+            IdList->SetSeqMasker(Masker);
 
 		Result.Reset(IdList.GetPointer());
 	}
     else if(Type == "seqloclist") {
         CRef<CSeqLocListSet> LocList(new CSeqLocListSet);
     
-        if(Args["qloclist"].HasValue() && Source.empty() && Category == "query" ) {
+        if(Args["query"].HasValue() && Source.empty() && Category == "query" ) {
+			string QueryString = Args["query"].AsString();
+			//CStreamLineReader Reader(In);
+			//while(!Reader.AtEOF()) {
+			//	++Reader;
+				string Line = QueryString;
+				if(!Line.empty() && Line[0] != '#') {
+					vector<string> Tokens;
+                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
+                    CRef<CSeq_loc> Loc(new CSeq_loc);
+                    
+                    Loc->SetInt().SetId().Set(Tokens[0]);
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                        Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
+                    }
+
+                    Loc->SetInt().SetFrom() = NStr::StringToInt(Tokens[1])-1;
+                    Loc->SetInt().SetTo() = NStr::StringToInt(Tokens[2])-1;
+				    LocList->SetLocList().push_back(Loc);
+                }
+			//}
+		}
+        else if(Args["qloclist"].HasValue() && Source.empty() && Category == "query" ) {
 			CNcbiIstream& In = Args["qloclist"].AsInputFile();
 			CStreamLineReader Reader(In);
 			while(!Reader.AtEOF()) {
@@ -428,14 +486,41 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 				string Line = *Reader;
 				if(!Line.empty() && Line[0] != '#') {
 					vector<string> Tokens;
-                    NStr::Tokenize(Line, "\t ", Tokens, NStr::eMergeDelims);
+                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
+                    
                     Loc->SetInt().SetId().Set(Tokens[0]);
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                        Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
+                    }
+
                     Loc->SetInt().SetFrom() = NStr::StringToInt(Tokens[1])-1;
                     Loc->SetInt().SetTo() = NStr::StringToInt(Tokens[2])-1;
 				    LocList->SetLocList().push_back(Loc);
                 }
 			}
+		}
+
+        else if(Args["subject"].HasValue() && Source.empty() && Category == "subject" ) {
+			string SubjectString = Args["subject"].AsString();
+			//CStreamLineReader Reader(In);
+			//while(!Reader.AtEOF()) {
+			//	++Reader;
+				string Line = SubjectString;
+				if(!Line.empty() && Line[0] != '#') {
+					vector<string> Tokens;
+                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
+                    CRef<CSeq_loc> Loc(new CSeq_loc);
+                    Loc->SetInt().SetId().Set(Tokens[0]);
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                        Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
+                    }
+
+                    Loc->SetInt().SetFrom() = NStr::StringToInt(Tokens[1])-1;
+                    Loc->SetInt().SetTo() = NStr::StringToInt(Tokens[2])-1;
+				    LocList->SetLocList().push_back(Loc);
+                }
+			//}
 		}
 
         else if(Args["sloclist"].HasValue() && Source.empty() && Category == "subject" ) {
@@ -446,15 +531,22 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 				string Line = *Reader;
 				if(!Line.empty() && Line[0] != '#') {
 					vector<string> Tokens;
-                    NStr::Tokenize(Line, "\t ", Tokens, NStr::eMergeDelims);
+                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                        Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
+                    }
+
                     Loc->SetInt().SetFrom() = NStr::StringToInt(Tokens[1])-1;
                     Loc->SetInt().SetTo() = NStr::StringToInt(Tokens[2])-1;
 				    LocList->SetLocList().push_back(Loc);
                 }
 			}
 		}
+
+        if(Masker != NULL)
+            LocList->SetSeqMasker(Masker);
 
 		Result.Reset(LocList.GetPointer());
     }
@@ -477,11 +569,17 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 		// yes, its being leaked.
 		CNcbiIfstream* FastaIn = new CNcbiIfstream(FileName.c_str());
 		CRef<CFastaFileSet> FastaSet;
-        if(Batch != -1)
-            FastaSet.Reset(new CFastaFileSet(FastaIn, 0, Batch));
-        else 
+        if(Batch != -1) {
+            FastaSet.Reset(new CFastaFileSet(FastaIn, BatchCounter, Batch));
+            BatchCounter += Batch;
+            for(int i = 0; i < Batch; i++) {
+                if(LoadedIdsIter != m_LoadedIds.end())
+                    ++LoadedIdsIter;
+            }
+        } else { 
             FastaSet.Reset(new CFastaFileSet(FastaIn));
-		Result.Reset(FastaSet.GetPointer());
+		}
+        Result.Reset(FastaSet.GetPointer());
 	}
 	else if(Type == "splitseqidlist") {
 		CRef<CSplitSeqIdListSet> IdList(new CSplitSeqIdListSet(m_Splitter.get()));
@@ -491,7 +589,8 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 			CRef<CSeq_id> QueryId(new CSeq_id(Id));
 			IdList->AddSeqId(QueryId);
 		}		
-		if(Args["idlist"].HasValue()) {
+		
+        /*if(Args["idlist"].HasValue()) {
 			CNcbiIstream& In = Args["idlist"].AsInputFile();
 			CStreamLineReader Reader(In);
 			while(!Reader.AtEOF()) {
@@ -503,11 +602,44 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 					IdList->AddSeqId(QueryId);
 				}
 			}
+		}*/
+
+        if(Args["idlist"].HasValue() && Source.empty() && m_LoadedIds.empty()) {
+			CNcbiIstream& In = Args["idlist"].AsInputFile();
+			CStreamLineReader Reader(In);
+			while(!Reader.AtEOF()) {
+				++Reader;
+				string Line = *Reader;
+				if(!Line.empty() && Line[0] != '#') {
+					Line = Line.substr(0, Line.find(" "));
+					CRef<CSeq_id> QueryId(new CSeq_id(Line));
+					m_LoadedIds.push_back(QueryId);
+					//IdList->SetIdList().push_back(QueryId);
+				}
+			}
+			LoadedIdsIter = m_LoadedIds.begin();
 		}
+	
+        cerr << __LINE__ << endl;
+		if(IdList->Empty() && !m_LoadedIds.empty()) {
+			int BatchSize = Args["batch"].AsInteger();
+			for(int Count = 0; 
+				Count < BatchSize && LoadedIdsIter != m_LoadedIds.end(); 
+				Count++) {
+			cerr << __LINE__ << (*LoadedIdsIter)->AsFastaString() << endl;
+				IdList->AddSeqId(*LoadedIdsIter);
+                //IdList->SetIdList().push_back(*LoadedIdsIter);
+				++LoadedIdsIter;
+			}
+		}
+
 		
         if(IdList->Empty()) {
             ERR_POST(Error << " Split Seq Id List is empty, maybe all gap? ");
         }
+        
+        if(Masker != NULL)
+            IdList->SetSeqMasker(Masker);
 
 		Result.Reset(IdList.GetPointer());
 	}
@@ -560,6 +692,9 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
         if(LocList->Empty()) {
             ERR_POST(Error << " Split Seq Loc List is empty, maybe all gap? ");
         }
+        
+        if(Masker != NULL)
+            LocList->SetSeqMasker(Masker);
 
 		Result.Reset(LocList.GetPointer());
 	}
@@ -573,6 +708,24 @@ void CNgAlignApp::x_LoadExternalSequences(IRegistry* RunRegistry,
 								list<CRef<CSeq_id> >& LoadedIds)
 {
     CArgs Args = GetArgs();
+    
+    if(Args["fasta"].HasValue()) {
+        CNcbiIstream& In = Args["fasta"].AsInputFile();
+        CFastaReader FastaReader(In);
+       
+        while(!FastaReader.AtEOF()) {
+            CRef<CSeq_entry> Entry;
+            try{
+                Entry = FastaReader.ReadOneSeq();
+            } catch(...) {
+                break;
+            }
+            m_Scope->AddTopLevelSeqEntry(*Entry);
+			LoadedIds.push_back( Entry->GetSeq().GetId().front() );
+        }
+        cerr << __LINE__ << "\t" << LoadedIds.size() << endl;
+    }
+
 
 	if(Args["seqentry"].HasValue()) {
 		CNcbiIstream& In = Args["seqentry"].AsInputFile();
@@ -607,17 +760,23 @@ void CNgAlignApp::x_LoadExternalSequences(IRegistry* RunRegistry,
 
 		vector< CRef< CSeq_entry > > SeqEntries;
 	    try {
-			AgpRead(In, SeqEntries, eAgpRead_ParseId, true);
+            CAgpToSeqEntry Reader(CAgpToSeqEntry::fSetSeqGap );
+            Reader.SetVersion( eAgpVersion_1_1);
+            Reader.ReadStream(In);
+            SeqEntries.clear();
+            SeqEntries = Reader.GetResult();
+			//AgpRead(In, SeqEntries, eAgpRead_ParseId, true);
 		} catch(CException& e) {
 			cerr << "AgpRead Exception: " << e.ReportAll() << endl;
 		}
 
 		ITERATE(vector<CRef<CSeq_entry> >, SeqEntryIter, SeqEntries) {
-			m_Scope->AddTopLevelSeqEntry(**SeqEntryIter);
+			//cerr << "Loading AGP: " << (*SeqEntryIter)->GetSeq().GetId().front()->AsFastaString() << endl;
+            m_Scope->AddTopLevelSeqEntry(**SeqEntryIter);
 			LoadedIds.push_back( (*SeqEntryIter)->GetSeq().GetId().front() );
 		}
 	}
-
+    
 }
 
 
@@ -646,9 +805,15 @@ void CNgAlignApp::x_RecurseSeqEntry(CRef<CSeq_entry> Top,
 
 void CNgAlignApp::x_AddScorers(CNgAligner& NgAligner, IRegistry* RunRegistry)
 {
-	string ScorerNames = RunRegistry->Get("scorers", "names");
-	vector<string> Names;
-	NStr::Tokenize(ScorerNames, " \t", Names);
+	string ScorerNames; 
+    
+    if(GetArgs()["scorers"].HasValue())
+        ScorerNames = GetArgs()["scorers"].AsString();
+    else
+        ScorerNames = RunRegistry->Get("scorers", "names");
+	
+    vector<string> Names;
+	NStr::Tokenize(ScorerNames, " \t;", Names);
 	
 	ITERATE(vector<string>, NameIter, Names) {
 
@@ -684,21 +849,41 @@ void CNgAlignApp::x_AddScorers(CNgAligner& NgAligner, IRegistry* RunRegistry)
 
 void CNgAlignApp::x_AddFilters(CNgAligner& NgAligner, IRegistry* RunRegistry)
 {
-	string FilterNames = RunRegistry->Get("filters", "names");
-	vector<string> Names;
-	NStr::Tokenize(FilterNames, " \t", Names);
-	int Rank = 0;
-	ITERATE(vector<string>, NameIter, Names) {
-		string FilterStr = RunRegistry->Get("filters", *NameIter);
-		try {
-			CRef<CQueryFilter> Filter(new CQueryFilter(Rank, FilterStr));
-			Rank++;
-			NgAligner.AddFilter(Filter);
-		} catch( CException& e) {
-			cerr << "x_AddFilters" << "  :  "  << *NameIter << "  :  " << FilterStr << endl;
-			cerr << e.ReportAll() << endl;
-		}
-	}
+    CArgs args = GetArgs();
+	
+    int Rank = 0;
+    
+    if(args["filters"].HasValue()) {        
+        string OrigFilters = args["filters"].AsString();
+        vector<string> SplitFilters;
+        NStr::Tokenize(OrigFilters, ";", SplitFilters);
+        ITERATE(vector<string>, FilterIter, SplitFilters) {
+            const string FilterStr = *FilterIter;
+            try {
+                CRef<CQueryFilter> Filter(new CQueryFilter(Rank, FilterStr));
+                Rank++;
+                NgAligner.AddFilter(Filter);
+            } catch( CException& e) {
+                cerr << "x_AddFilters" << "  :  "  << Rank << "  :  " << FilterStr << endl;
+                cerr << e.ReportAll() << endl;
+            }
+        }
+    } else {    
+        string FilterNames = RunRegistry->Get("filters", "names");
+        vector<string> Names;
+        NStr::Tokenize(FilterNames, " \t", Names);
+        ITERATE(vector<string>, NameIter, Names) {
+            string FilterStr = RunRegistry->Get("filters", *NameIter);
+            try {
+                CRef<CQueryFilter> Filter(new CQueryFilter(Rank, FilterStr));
+                Rank++;
+                NgAligner.AddFilter(Filter);
+            } catch( CException& e) {
+                cerr << "x_AddFilters" << "  :  "  << *NameIter << "  :  " << FilterStr << endl;
+                cerr << e.ReportAll() << endl;
+            }
+        }
+    }
 }
 
 
@@ -719,10 +904,10 @@ void CNgAlignApp::x_AddAligners(CNgAligner& NgAligner, IRegistry* RunRegistry)
 			Aligner = x_CreateRemoteBlastAligner(RunRegistry, *NameIter);
 		else if(Type == "merge")
 			Aligner = x_CreateMergeAligner(RunRegistry, *NameIter);
-		else if(Type == "coverage")
-			Aligner = x_CreateCoverageAligner(RunRegistry, *NameIter);
-		else if(Type == "newmerge")
-			Aligner = x_CreateNewMergeAligner(RunRegistry, *NameIter);
+		//else if(Type == "coverage")
+		//	Aligner = x_CreateCoverageAligner(RunRegistry, *NameIter);
+		else if(Type == "mergetree")
+			Aligner = x_CreateMergeTreeAligner(RunRegistry, *NameIter);
 		else if(Type == "inversion")
 			Aligner = x_CreateInversionMergeAligner(RunRegistry, *NameIter);
 		else if(Type == "split")
@@ -767,7 +952,7 @@ CNgAlignApp::x_CreateRemoteBlastAligner(IRegistry* RunRegistry, const string& Na
 {
 	string Params = RunRegistry->Get(Name, "params");
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
-	int Filter = RunRegistry->GetInt(Name, "filter", -1);
+	//int Filter = RunRegistry->GetInt(Name, "filter", -1);
 
 	CArgs Args = GetArgs();	
 	
@@ -786,23 +971,36 @@ CRef<CMergeAligner>
 CNgAlignApp::x_CreateMergeAligner(IRegistry* RunRegistry, const string& Name)
 {
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
-	return CRef<CMergeAligner>(new CMergeAligner(Threshold));
+	double Clip = RunRegistry->GetDouble(Name, "clip", 3.0);
+	return CRef<CMergeAligner>(new CMergeAligner(Threshold/*, Clip*/));
 }
 
-CRef<CCoverageAligner> 
+/*CRef<CCoverageAligner> 
 CNgAlignApp::x_CreateCoverageAligner(IRegistry* RunRegistry, const string& Name)
 {
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
 	return CRef<CCoverageAligner>(new CCoverageAligner(Threshold));
-}
+}*/
 
-CRef<CNewMergeAligner> 
-CNgAlignApp::x_CreateNewMergeAligner(IRegistry* RunRegistry, const string& Name)
+CRef<CMergeTreeAligner> 
+CNgAlignApp::x_CreateMergeTreeAligner(IRegistry* RunRegistry, const string& Name)
 {
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
-	double Limit = RunRegistry->GetDouble(Name, "limit", 3.0);
-	double Gain = RunRegistry->GetDouble(Name, "gain", 0.25);
-	return CRef<CNewMergeAligner>(new CNewMergeAligner(Threshold, Limit, Gain));
+	
+    CMergeTree::SScoring Scoring; 
+    string ScoringStr = RunRegistry->GetString(Name, "scoring", "");
+    if(!ScoringStr.empty()) {
+        vector<string> Tokens;
+        NStr::Tokenize(ScoringStr, ",", Tokens);
+        if(Tokens.size() == 4) {
+            Scoring.Match     = NStr::StringToInt(Tokens[0]);
+            Scoring.MisMatch  = NStr::StringToInt(Tokens[1]);
+            Scoring.GapOpen   = NStr::StringToInt(Tokens[2]);
+            Scoring.GapExtend = NStr::StringToInt(Tokens[3]);
+        }
+    }
+	
+    return CRef<CMergeTreeAligner>(new CMergeTreeAligner(Threshold, Scoring));
 }
 
 

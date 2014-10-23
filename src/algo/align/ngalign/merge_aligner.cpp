@@ -190,8 +190,8 @@ CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Sco
             }}
         }
     } catch(CException& e) {
-        ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
-        return CRef<CSeq_align_set>();
+        ERR_POST(Error << "Merge Error: " << e.ReportAll());
+        throw e;
     }
 
     NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {

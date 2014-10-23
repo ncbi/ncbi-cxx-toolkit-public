@@ -389,8 +389,8 @@ CInversionMergeAligner::x_MergeSeqAlignSet(const CSeq_align_set& InAligns, objec
 		Cleaner.FillUnaligned(true);
         Cleaner.Cleanup(In, Out->Set());
     } catch(CException& e) {
-        ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
-        return CRef<CSeq_align_set>();
+        ERR_POST(Error << "Cleanup Error: " << e.ReportAll());
+        throw e;
     }
 
     NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {

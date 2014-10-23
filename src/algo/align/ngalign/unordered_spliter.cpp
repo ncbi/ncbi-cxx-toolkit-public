@@ -170,6 +170,7 @@ void CUnorderedSplitter::CombineAlignments(const TSeqAlignList& SourceAligns, TS
     // Merge the ID pair sets into Disc alignments
     MergedAligns.clear();
     NON_CONST_ITERATE(TIdPairToAlignListMap, PairMapIter, PairsMap) {
+        ERR_POST(Info << "CUnorderedSplitter::CombineAlignments:: " << PairMapIter->first);
         TSeqAlignList& AlignList = PairMapIter->second;
         if(AlignList.size() == 1) {
             MergedAligns.push_back(AlignList.front());
@@ -595,7 +596,7 @@ void CUnorderedSplitter::x_TrimRows(const CDense_seg& DomSeg, CDense_seg& NonSeg
     //cerr << "NonRange Row " << Row << "  " << NonRange.GetFrom() << " to " << NonRange.GetTo() << endl;
     CRange<TSeqPos> Intersection = DomRange.IntersectionWith(NonRange);
     if(NonRange == Intersection) {
-        NonSeg.SetStarts().clear();
+        NonSeg.SetStarts().clear();  // basically a way to return that DomSeg has a real value, but NonSeg is empty
         NonSeg.SetStarts().push_back(-1);
         NonSeg.SetStarts().push_back(-1);
         NonSeg.SetLens().clear();
@@ -619,8 +620,7 @@ void CUnorderedSplitter::x_TrimRows(const CDense_seg& DomSeg, CDense_seg& NonSeg
     try { 
         Slice = NonSeg.ExtractSlice(Row, NonRange.GetFrom(), NonRange.GetTo());
     } catch(...) {  
-        //cerr << "ExtractSlice failed" << endl;
-        NonSeg.SetStarts().clear();
+        NonSeg.SetStarts().clear();  // basically a way to return that DomSeg has a real value, but NonSeg is empty
         NonSeg.SetStarts().push_back(-1);
         NonSeg.SetStarts().push_back(-1);
         NonSeg.SetLens().clear();
@@ -832,7 +832,8 @@ CSplitSeqAlignMerger::GenerateAlignments(objects::CScope& Scope,
                                     TAlignResultsRef AccumResults)
 {
     TAlignResultsRef NewResults(new CAlignResultsSet);
-
+    
+    ERR_POST(Info << "CSplitSeqAlignMerger");
 
     CRef<CSeq_align_set> MergedAligns(new CSeq_align_set);
     m_Splitter->CombineAlignments(AccumResults->ToSeqAlignSet()->Get(), MergedAligns->Set());

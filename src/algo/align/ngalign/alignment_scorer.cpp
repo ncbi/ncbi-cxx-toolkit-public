@@ -467,38 +467,28 @@ void CClippedScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
                     
                     CRef<CSeq_id> ClipId(new CSeq_id);
                     ClipId->SetLocal().SetStr("CLIPPED_SCORER_ID_"+EndId.GetSeqIdString(true) );
-                    
-                    CBioseq_Handle ClipHandle;  
-                    
-                    try {
-                        ClipHandle = Scope.GetBioseqHandle(*ClipId);
-                    } catch(...) {
-                        ;
-                    }
-
-                    if(!ClipHandle) {
-                        /*CRef<CSeq_entry> ClipEntry(new CSeq_entry);
-                        ClipEntry->SetSeq().SetId().push_back(ClipId);
-                        CRef<CDelta_seq> ClipDelta(new CDelta_seq);
-                        ClipDelta->SetLoc().Assign(ClipLoc);
-                        ClipEntry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(ClipDelta);
-                        ClipEntry->SetSeq().SetInst().SetRepr() = CSeq_inst::eRepr_virtual;
-                        ClipEntry->SetSeq().SetInst().SetMol() = CSeq_inst::eMol_dna;
-                        ClipEntry->SetSeq().SetInst().SetLength() = ClipLoc.GetInt().GetLength();
-                        //ClipHandle = Scope.AddTopLevelSeqEntry(*ClipEntry);
-                        */
+                   
+                    {{
+                        CBioseq_Handle ClipHandle;  
                         
-                        CRef<CBioseq> ClipBioseq(new CBioseq);
-                        ClipBioseq->SetId().push_back(ClipId);
-                        CRef<CDelta_seq> ClipDelta(new CDelta_seq);
-                        ClipDelta->SetLoc().Assign(ClipLoc);
-                        ClipBioseq->SetInst().SetExt().SetDelta().Set().push_back(ClipDelta);
-                        ClipBioseq->SetInst().SetRepr() = CSeq_inst::eRepr_virtual;
-                        ClipBioseq->SetInst().SetMol() = CSeq_inst::eMol_dna;
-                        ClipBioseq->SetInst().SetLength() = ClipLoc.GetInt().GetLength();
-                            
-                        ClipHandle = Scope.AddBioseq(*ClipBioseq);
-                    }
+                        try {
+                            ClipHandle = Scope.GetBioseqHandle(*ClipId);
+                        } catch(...) {
+                            ;
+                        }
+                        // if this sequence hasn't been added to the scope yet, add it
+                        if(!ClipHandle) {
+                            CRef<CBioseq> ClipBioseq(new CBioseq);
+                            ClipBioseq->SetId().push_back(ClipId);
+                            CRef<CDelta_seq> ClipDelta(new CDelta_seq);
+                            ClipDelta->SetLoc().Assign(ClipLoc);
+                            ClipBioseq->SetInst().SetExt().SetDelta().Set().push_back(ClipDelta);
+                            ClipBioseq->SetInst().SetRepr() = CSeq_inst::eRepr_virtual;
+                            ClipBioseq->SetInst().SetMol() = CSeq_inst::eMol_dna;
+                            ClipBioseq->SetInst().SetLength() = ClipLoc.GetInt().GetLength();
+                            ClipHandle = Scope.AddBioseq(*ClipBioseq);
+                        }
+                    }}
 
 
                     // Fudge the New alignment.
@@ -519,8 +509,9 @@ void CClippedScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
                         ClipAlign->SetSegs().SetDenseg().Assign(*ClipDenseg);
                         ClipAlign->SetScore().clear();
                     } catch(CException& e) {
-                        cerr << "Make Clip Align exception: " << e.ReportAll() << endl;
-                        continue;
+                        ERR_POST(Error << "Make Clip Align exception: " << e.ReportAll());
+                        ERR_POST("Probably means the clip region is invalid.");
+                        throw e;
                     }
                     
             
@@ -546,38 +537,15 @@ void CClippedScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
                     try {
                         // Sometimes the clipped region ends up being entirely gap, on the subject side.
                         AlignLen = ClipAlign->GetSeqRange(1).GetLength();
-                    } catch(CException& ) {
-                        //cerr << "Expansion exception: " << e.ReportAll() << endl;
-                        //cerr << MSerial_AsnText << *ClipAlign << endl;
+                        ClipAlign->SetNamedScore("expansion", double(AlignLen)/double(AlignedLen) );
+                        ClipAlign->GetNamedScore("expansion", Temp);
+                        Curr->SetNamedScore("expansion_clip", Temp);
+                    } catch(CException& e) {
+                        ERR_POST(Error << "Expansion exception, unable to get alignment length: " << e.ReportAll());
+                        throw e;
                     }
-                    ClipAlign->SetNamedScore("expansion", double(AlignLen)/double(AlignedLen) );
-                    ClipAlign->GetNamedScore("expansion", Temp);
-                    Curr->SetNamedScore("expansion_clip", Temp);
-
-                
-                    /*
-                    double WeightedIdent;
-                    double NumIdent, Matches, QueryLen;
-                    double k = 0.04;
-
-                    Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, NumIdent);
-                    Matches = Curr->GetAlignLength(false);
-                    QueryLen = EndHandle.GetInst_Length();
-                                        
-                    WeightedIdent = (NumIdent + (Matches * k)) / (Matches + (QueryLen * k ));
-                    Curr->SetNamedScore("weighted_identity", WeightedIdent); 
-
-                    ClipAlign->GetNamedScore(CSeq_align::eScore_IdentityCount, NumIdent);
-                    Matches = ClipAlign->GetAlignLength(false);
-                    QueryLen = ClipLoc.GetInt().GetLength();
-                    
-                    WeightedIdent = (NumIdent + (Matches * k)) / (Matches + (QueryLen * k ));
-                    Curr->SetNamedScore("weighted_identity_clip", WeightedIdent); 
-                    */
-
-                    //Scope.RemoveFromHistory(Scope.GetBioseqHandle(*ClipId));
-                    //Scope.RemoveTopLevelSeqEntry(ClipHandle);
-                }
+                                  
+                } // end alignment loop
             }
         }
     }

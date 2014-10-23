@@ -230,9 +230,14 @@ void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
     }
 
     // do not allow self-alignments into the result set
-    //if(Alignment->GetSeq_id(0).Equals(Alignment->GetSeq_id(1))) {
-    //    return;
-    //}
+    if(!s_AllowDupes) {
+		if(Alignment->GetSeq_id(0).Equals(Alignment->GetSeq_id(1)) &&
+           Alignment->GetSeqStart(0) == Alignment->GetSeqStart(1) &&
+           Alignment->GetSeqStop(0) == Alignment->GetSeqStop(1) &&
+           Alignment->GetSeqStrand(0) == Alignment->GetSeqStrand(1)) {
+        	return;
+    	}
+	}
 
 
 	CSeq_id_Handle IdHandle = CSeq_id_Handle::GetHandle(Alignment->GetSeq_id(1));
@@ -240,8 +245,12 @@ void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
 //cerr << __FILE__<<":"<<__LINE__<<endl;
 	if(m_GenColl) {
 		CConstRef<CGC_Sequence> Seq; 	
-		Seq = m_GenColl->Find(IdHandle);
-		if(Seq) {
+		CGC_Assembly::TSequenceList SeqList;
+        m_GenColl->Find(IdHandle, SeqList);
+        if(!SeqList.empty())
+            Seq = SeqList.front();
+        //Seq = m_GenColl->Find(IdHandle);
+        if(Seq) {
 			CConstRef<CGC_AssemblyUnit> Unit;
 			Unit = Seq->GetAssemblyUnit();
 			if(Unit) {
@@ -329,7 +338,8 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
             (*AlignIter)->GetSeqStop(0) == New.GetSeqStop(0) &&
             (*AlignIter)->GetSeqStart(1) == New.GetSeqStart(1) &&
             (*AlignIter)->GetSeqStop(1) == New.GetSeqStop(1) &&
-            (*AlignIter)->GetSegs().Which() == New.GetSegs().Which() ) {
+            (*AlignIter)->GetSegs().Which() == New.GetSegs().Which() &&
+			(*AlignIter)->Equals(New) ) {
             return true;
         } else if( (*AlignIter)->GetSegs().Equals(New.GetSegs()) ) {
             return true;
@@ -365,8 +375,14 @@ void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
 
             bool IsInnerContained = x_ContainsAlignment(**Outer, **Inner);
             if(IsInnerContained) {
-                ERR_POST(Info << "Filtering Strict Sub Alignment");
-                Inner = Source.Set().erase(Inner);
+                //ERR_POST(Info << "Filtering Strict Sub Alignment");
+                int OI, II;
+				(*Outer)->GetNamedScore("num_ident", OI);
+				(*Inner)->GetNamedScore("num_ident", II);
+
+				//ERR_POST(Info << (*Outer)->GetSegs().Which() << " : " << (*Inner)->GetSegs().Which() );
+				//ERR_POST(Info << OI << " : " << II );
+				Inner = Source.Set().erase(Inner);
             }
             else
                 ++Inner;

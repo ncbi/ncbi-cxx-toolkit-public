@@ -155,9 +155,7 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_CreateBlastOptions(const string& Params)
 
     try {
         auto_ptr<CArgs> Args(ArgDesc.CreateArgs(Tokens.size(), Tokens));
-
         return CBlastArgs::s_ExtractBlastArgs(*Args);
-
     } catch(CException& e) {
         string Message;
         ArgDesc.PrintUsage(Message, true);
@@ -256,8 +254,8 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
             Blast.SetInterruptCallback(m_InterruptFunc, m_InterruptData);
         BlastResults = Blast.Run();
     } catch(CException& e) {
-        ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
-        return Results;
+        ERR_POST(Error << "Local Blast Run() error: " << e.ReportAll());
+        throw e;
     }
 
     ITERATE(CSearchResultSet, SetIter, *BlastResults) {
@@ -386,8 +384,8 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
         CRemoteBlast Blast(Querys, m_BlastOptions, RemoteDb);
         BlastResults = Blast.GetResultSet();
     } catch(CException& e) {
-        ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
-        return Results;
+        ERR_POST(Error << "Remote Blast Run() error: " << e.ReportAll());
+        throw e;
     }
 
     ITERATE(CSearchResultSet, SetIter, *BlastResults) {

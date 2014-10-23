@@ -3,7 +3,7 @@ SRC = ngalign_app
 
 ASN_DEP = seq 
 
-LIB_ = xngalign \
+LIB_ = xngalign xmergetree \
 	  xalgoalignnw xalgoalignutil xalgoseq \
       blastinput $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) \
       align_format gene_info xalnmgr \

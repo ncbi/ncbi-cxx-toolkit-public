@@ -209,7 +209,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
         } catch(CException& e) {
             ERR_POST(Error << e.ReportAll());
             ERR_POST(Error << "CInstancedBandedAligner failed.");
-            continue;
+            throw e;
         }
 
         GetDiagContext().Extra()
@@ -438,8 +438,8 @@ CInstancedAligner::x_RunCleanup(const objects::CSeq_align_set& AlignSet,
     try {
         Cleaner.Cleanup(In, Out->Set());
     } catch(CException& e) {
-        ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
-        return CRef<CSeq_align_set>();
+        ERR_POST(Error << "Cleanup Error: " << e.ReportAll());
+        throw e;
     }
 
     NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {

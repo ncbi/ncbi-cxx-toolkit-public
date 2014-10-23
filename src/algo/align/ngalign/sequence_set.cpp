@@ -197,8 +197,9 @@ CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
     try {
         Handle = Scope.GetBioseqHandle(Id);
         Vector = Handle.GetSeqVector(Handle.eCoding_Iupac, Handle.eStrand_Plus);
-    } catch(...) {
-        return CRef<CSeq_loc>();
+    } catch(CException& e) {
+        ERR_POST(Error << "CSeqIdListSet::CreateQueryFactory GetSeqVector error: " << e.ReportAll());
+        throw e;
     }
 
     CSymDustMasker DustMasker;
@@ -207,8 +208,8 @@ CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
         Masks.reset((*SeqMasker)(Vector));
         DustMasks = DustMasker(Vector);
     } catch(CException& e) {
-        ERR_POST(Info << "CSeqIdListSet::CreateQueryFactory Masking Failure: " << e.ReportAll());
-        return CRef<CSeq_loc>();
+        ERR_POST(Error << "CSeqIdListSet::CreateQueryFactory Dust Masking Failure: " << e.ReportAll());
+        throw e;
     }
 
     if(!DustMasks->empty()) {
@@ -375,8 +376,8 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
             WholeLoc.Reset(new CSeq_loc);
             WholeLoc->SetWhole().Assign(**IdIter);
         }
-
-        if(m_SeqMasker == NULL || !BlastOpts.GetMaskAtHash()) {
+        string FilterStr = BlastOpts.GetFilterString();
+        if(m_SeqMasker == NULL || FilterStr.find('m') == string::npos  ) {
             SSeqLoc WholeSLoc(*WholeLoc, Scope);
             FastaLocVec.push_back(WholeSLoc);
         } else {
@@ -431,8 +432,9 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
             WholeLoc.Reset(new CSeq_loc);
             WholeLoc->SetWhole().Assign(**IdIter);
         }
-     
-        if(m_SeqMasker == NULL) {
+       
+        string FilterStr = BlastOpts.GetFilterString();
+        if(m_SeqMasker == NULL || FilterStr.find('m') == string::npos  ) {
             SSeqLoc WholeSLoc(*WholeLoc, Scope);
             FastaLocVec.push_back(WholeSLoc);
         } else {
@@ -537,6 +539,8 @@ CSeqLocListSet::CreateQueryFactory(CScope& Scope,
         if(Id == NULL)
             continue;
 
+        ERR_POST(Info << "Blast Including Loc: " << Id->AsFastaString() << "  " << (*LocIter)->GetTotalRange() );
+        
         CRef<CSeq_loc> BaseLoc(new CSeq_loc);
         BaseLoc->Assign(**LocIter);
         CRef<CSeq_loc> ClipLoc = s_GetClipLoc(*Id, Scope);
@@ -547,8 +551,9 @@ CSeqLocListSet::CreateQueryFactory(CScope& Scope,
                 BaseLoc->Assign(*Inters);
             }
         }
-
-        if(m_SeqMasker == NULL || !BlastOpts.GetMaskAtHash()) {
+        
+        string FilterStr = BlastOpts.GetFilterString();
+        if(m_SeqMasker == NULL || FilterStr.find('m') == string::npos  ) {
             SSeqLoc BaseSLoc(*BaseLoc, Scope);
             FastaLocVec.push_back(BaseSLoc);
         } else {
@@ -596,7 +601,7 @@ CSeqLocListSet::CreateQueryFactory(CScope& Scope,
             }
         }
     
-        ERR_POST(Info << "Blast Including ID: " << Id->GetSeqIdString(true));
+        ERR_POST(Info << "Blast Including Loc: " << Id->AsFastaString() << "  " << (*LocIter)->GetTotalRange() );
 
 		
         CRef<CSeq_loc> BaseLoc(new CSeq_loc), ClipLoc;
@@ -609,8 +614,9 @@ CSeqLocListSet::CreateQueryFactory(CScope& Scope,
                 BaseLoc->Assign(*Inters);
             }
         }
-     
-        if(m_SeqMasker == NULL) {
+  
+        string FilterStr = BlastOpts.GetFilterString();
+        if(m_SeqMasker == NULL || FilterStr.find('m') == string::npos  ) {
             SSeqLoc BaseSLoc(*BaseLoc, Scope);
             FastaLocVec.push_back(BaseSLoc);
         } else {
@@ -625,6 +631,7 @@ CSeqLocListSet::CreateQueryFactory(CScope& Scope,
                 FastaLocVec.push_back(MaskSLoc);
             }
         }
+        
     }
 
     CRef<IQueryFactory> Result;
@@ -774,7 +781,6 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
             }
         }
         m_Start += m_Count;
-    cerr <<"*"<< FastaLocVec.size()<<"*" << endl;
     }
 
 
