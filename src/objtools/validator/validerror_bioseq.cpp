@@ -3341,6 +3341,15 @@ static string linkEvStrings [] = {
     "UNKNOWN VALUE"
 };
 
+static bool s_IsGapComponent (const CDelta_seq& seg)
+{
+    if (! seg.IsLiteral()) return false;
+    const CSeq_literal& lit = seg.GetLiteral();
+    if (! lit.IsSetSeq_data()) return true;
+    if  (lit.GetSeq_data().IsGap() && lit.GetLength() > 0) return true;
+    return false;
+}
+
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
@@ -3772,8 +3781,9 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 if (delta_i->Empty()) {
                     continue; // Ignore NULLs, reported separately above.
                 }
-                size_t delta_len = s_GetDeltaLen (**delta_i, m_Scope);
-                if (sv.IsInGap (pos)) {
+                const CDelta_seq& seg = **delta_i;
+                size_t delta_len = s_GetDeltaLen (seg, m_Scope);
+                if (sv.IsInGap (pos) && s_IsGapComponent (seg)) {
                     if (pos > 0) {
                         CSeqVector_CI sv_iter(sv);
                         sv_iter += pos - 1;
