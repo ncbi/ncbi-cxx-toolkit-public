@@ -82,7 +82,131 @@ struct SNCSpecificParams : public CObject
     virtual ~SNCSpecificParams(void);
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// CNCBlobKeyLight
+class CNCBlobKeyLight
+{
+public:
+    CNCBlobKeyLight(void);
+    CNCBlobKeyLight(const CNCBlobKeyLight& another);
+    CNCBlobKeyLight& operator=(const CNCBlobKeyLight& another);
+    CNCBlobKeyLight(const string& packed_key);
+    CNCBlobKeyLight& operator=(const string& packed_key);
+    CNCBlobKeyLight(const CTempString& packed_key);
+    CNCBlobKeyLight& operator=(const CTempString& packed_key);
 
+    CNCBlobKeyLight& Copy(const CNCBlobKeyLight& another);
+
+    void Clear(void);
+    bool IsValid(void) const;
+
+    unsigned int KeyVersion(void) const;
+    bool IsICacheKey(void) const;
+    const string& PackedKey(void) const;
+    const CTempString& RawKey(void) const;
+    const CTempString& SubKey(void) const;
+    const CTempString& Cache(void) const;
+    string KeyForLogs(void) const;
+
+protected:
+    void PackBlobKey(const CTempString& cache_name,
+                     const CTempString& blob_key,
+                     const CTempString& blob_subkey);
+    void UnpackBlobKey(void);
+    void SetKeyVersion(unsigned int v);
+
+private:
+    string m_PackedKey;
+    CTempString m_Cachename;
+    CTempString m_RawKey;
+    CTempString m_SubKey;
+    unsigned int m_KeyVersion;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// CNCBlobKey
+class CNCBlobKey : public CNCBlobKeyLight,
+                   public CNetCacheKey
+{
+public:
+    CNCBlobKey(void);
+    bool Assign( const CTempString& cache_name,
+                 const CTempString& blob_key,
+                 const CTempString& blob_subkey);
+    bool Assign( const CTempString& blob_key);
+
+private:
+    CNCBlobKey(const CNCBlobKey& another);
+    CNCBlobKey& operator=(const CNCBlobKey& another);
+    CNCBlobKey(const string& packed_key);
+    CNCBlobKey& operator=(const string& packed_key);
+    CNCBlobKey(const CTempString& packed_key);
+    CNCBlobKey& operator=(const CTempString& packed_key);
+    CNCBlobKey& Copy(const CNCBlobKey& another);
+};
+
+/////////////////////////////////////////////////////////////////////////////
+inline
+CNCBlobKeyLight::CNCBlobKeyLight(void) {
+    Clear();
+}
+inline
+CNCBlobKeyLight::CNCBlobKeyLight(const CNCBlobKeyLight& another) {
+    Copy(another);
+}
+inline
+CNCBlobKeyLight& CNCBlobKeyLight::operator=(const CNCBlobKeyLight& another) {
+    return Copy(another);
+}
+inline
+CNCBlobKeyLight::CNCBlobKeyLight(const string& packed_key) {
+    *this = CTempString(packed_key);
+}
+inline
+CNCBlobKeyLight& CNCBlobKeyLight::operator=(const string& packed_key) {
+    return *this = CTempString(packed_key);
+}
+inline
+CNCBlobKeyLight::CNCBlobKeyLight(const CTempString& packed_key) {
+    *this = packed_key;
+}
+inline
+bool CNCBlobKeyLight::IsICacheKey(void) const {
+    return !m_Cachename.empty();
+}
+inline
+const string& CNCBlobKeyLight::PackedKey(void) const {
+    return m_PackedKey;
+}
+inline
+const CTempString& CNCBlobKeyLight::RawKey(void) const {
+    return m_RawKey;
+}
+inline
+const CTempString& CNCBlobKeyLight::SubKey(void) const {
+    return m_SubKey;
+}
+inline
+const CTempString& CNCBlobKeyLight::Cache(void) const {
+    return m_Cachename;
+}
+inline
+bool CNCBlobKeyLight::IsValid(void) const {
+    return !RawKey().empty();
+}
+inline
+void CNCBlobKeyLight::SetKeyVersion(unsigned int v) {
+    m_KeyVersion = v;
+}
+inline
+CNCBlobKey::CNCBlobKey(void) {
+}
+inline
+bool CNCBlobKey::Assign( const CTempString& blob_key) {
+    return Assign( CTempString(), blob_key, CTempString());
+}
+
+/////////////////////////////////////////////////////////////////////////////
 /// Netcache server
 class CNCServer
 {

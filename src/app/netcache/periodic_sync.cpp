@@ -34,9 +34,9 @@
 #include <corelib/request_ctx.hpp>
 #include <util/random_gen.hpp>
 
+#include "netcached.hpp"
 #include "periodic_sync.hpp"
 #include "distribution_conf.hpp"
-#include "netcached.hpp"
 #include "sync_log.hpp"
 #include "peer_control.hpp"
 #include "active_handler.hpp"
@@ -926,7 +926,7 @@ CNCActiveSyncControl::x_PrepareSyncByBlobs(void)
         delete it->second;
     }
     m_LocalBlobs.clear();
-    CNCBlobStorage::GetFullBlobsList(m_Slot, m_LocalBlobs);
+    CNCBlobStorage::GetFullBlobsList(m_Slot, m_LocalBlobs, NULL);
 
     m_CurLocalBlob = m_LocalBlobs.begin();
     m_CurRemoteBlob = m_RemoteBlobs.begin();
@@ -1027,6 +1027,10 @@ CNCActiveSyncControl::x_DoEventSend(const SSyncTaskInfo& task_info,
                                     CNCActiveHandler* conn)
 {
     SNCSyncEvent* event = *task_info.send_evt;
+    if (!conn->GetPeer()->AcceptsBlobKey(event->key)) {
+        conn->Release();
+        return;
+    }
     switch (event->event_type) {
     default:
         break;
@@ -1073,7 +1077,11 @@ void
 CNCActiveSyncControl::x_DoBlobUpdatePeer(const SSyncTaskInfo& task_info,
                                          CNCActiveHandler* conn)
 {
-    string key(task_info.remote_blob->first);
+    CNCBlobKeyLight key(task_info.remote_blob->first);
+    if (!conn->GetPeer()->AcceptsBlobKey(key)) {
+        conn->Release();
+        return;
+    }
     SNCBlobSummary* local_blob = task_info.local_blob->second;
     SNCBlobSummary* remote_blob = task_info.remote_blob->second;
     if (local_blob->isSameData(*remote_blob))
@@ -1086,7 +1094,11 @@ void
 CNCActiveSyncControl::x_DoBlobSend(const SSyncTaskInfo& task_info,
                                    CNCActiveHandler* conn)
 {
-    string key(task_info.local_blob->first);
+    CNCBlobKeyLight key(task_info.local_blob->first);
+    if (!conn->GetPeer()->AcceptsBlobKey(key)) {
+        conn->Release();
+        return;
+    }
     conn->SyncSend(this, key);
 }
 

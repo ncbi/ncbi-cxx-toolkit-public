@@ -282,6 +282,8 @@ public:
     CDiagContext& Print( const string& s1, const string& s2) {
         return *this;
     }
+    void PrintStop(void) {
+    }
     const string& GetDefaultHitID(void) { return m_hid; }
 private:
     string m_hid;

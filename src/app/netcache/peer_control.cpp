@@ -31,12 +31,12 @@
 
 #include <util/random_gen.hpp>
 
+#include "netcached.hpp"
 #include "peer_control.hpp"
 #include "active_handler.hpp"
 #include "periodic_sync.hpp"
 #include "distribution_conf.hpp"
 #include "nc_storage_blob.hpp"
-#include "netcached.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -79,7 +79,7 @@ s_SetNextTime(Uint8& next_time, Uint8 value, bool add_random)
 
 SNCMirrorProlong::SNCMirrorProlong(ENCSyncEvent typ,
                                    Uint2 slot_,
-                                   const string& key_,
+                                   const CNCBlobKeyLight& key_,
                                    Uint8 rec_no,
                                    Uint8 tm,
                                    const CNCBlobAccessor* accessor)
@@ -669,7 +669,7 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
 }
 
 void
-CNCPeerControl::MirrorUpdate(const string& key,
+CNCPeerControl::MirrorUpdate(const CNCBlobKey& key,
                               Uint2 slot,
                               Uint8 update_time)
 {
@@ -677,7 +677,7 @@ CNCPeerControl::MirrorUpdate(const string& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
-        if (peer->GetHostProtocol() >= 60700) {
+        if (peer->AcceptsSyncUpdate()) {
             SNCMirrorEvent* event = new SNCMirrorEvent(eSyncUpdate, slot, key, update_time);
             if (event) {
                 peer->x_ProcessUpdateEvent(event);
@@ -687,7 +687,7 @@ CNCPeerControl::MirrorUpdate(const string& key,
 }
 
 void
-CNCPeerControl::MirrorWrite(const string& key,
+CNCPeerControl::MirrorWrite(const CNCBlobKey& key,
                           Uint2 slot,
                           Uint8 orig_rec_no,
                           Uint8 size)
@@ -696,13 +696,15 @@ CNCPeerControl::MirrorWrite(const string& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
-        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, slot, key, orig_rec_no);
-        peer->x_AddMirrorEvent(event, size);
+        if (peer->AcceptsBlobKey(key)) {
+            SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, slot, key, orig_rec_no);
+            peer->x_AddMirrorEvent(event, size);
+        }
     }
 }
 
 void
-CNCPeerControl::MirrorProlong(const string& key,
+CNCPeerControl::MirrorProlong(const CNCBlobKey& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
                             Uint8 orig_time,
@@ -712,9 +714,11 @@ CNCPeerControl::MirrorProlong(const string& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
-        SNCMirrorProlong* event = new SNCMirrorProlong(eSyncProlong, slot, key,
-                                               orig_rec_no, orig_time, accessor);
-        peer->x_AddMirrorEvent(event, 0);
+        if (peer->AcceptsBlobKey(key)) {
+            SNCMirrorProlong* event = new SNCMirrorProlong(eSyncProlong, slot, key.PackedKey(),
+                                                   orig_rec_no, orig_time, accessor);
+            peer->x_AddMirrorEvent(event, 0);
+        }
     }
 }
 

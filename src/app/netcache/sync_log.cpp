@@ -33,6 +33,7 @@
 
 #include <corelib/ncbidbg.hpp>
 
+#include "netcached.hpp"
 #include "sync_log.hpp"
 #include "distribution_conf.hpp"
 #include "task_server.hpp"
@@ -188,7 +189,7 @@ s_ReadRecord(FILE* file)
     new_record->orig_server = record.orig_server;
     new_record->orig_rec_no = record.orig_rec_no;
     new_record->local_time  = record.local_time;
-    new_record->key         = string(key, key_size);
+    new_record->key         = CTempString(key, key_size);
 
     s_Log[record.slot].events.push_back(new_record);
     return true;
@@ -245,12 +246,12 @@ s_WriteRecord(FILE* file, Uint2 slot, const SNCSyncEvent* event)
         return false;
 
     // Write the key size
-    size_t key_size = event->key.size();
+    size_t key_size = event->key.PackedKey().size();
     if (fwrite(&key_size, sizeof(key_size), 1, file) != 1)
         return false;
 
     // Write the key
-    if (fwrite(event->key.data(), key_size, 1, file) != 1)
+    if (fwrite(event->key.PackedKey().data(), key_size, 1, file) != 1)
         return false;
 
     return true;
@@ -558,7 +559,7 @@ CNCSyncLog::AddEvent(Uint2 slot, SNCSyncEvent* event)
 {
     Uint2 real_slot = 0;
     Uint2 time_bucket = 0;
-    if (!CNCDistributionConf::GetSlotByKey(event->key,
+    if (!CNCDistributionConf::GetSlotByKey(event->key.PackedKey(),
             real_slot, time_bucket) || real_slot != slot)
         abort();
 
@@ -681,7 +682,7 @@ CNCSyncLog::GetEventsList(Uint8  server,
         // wr       | nothing    | nothing  | memorize
         // pr       | nothing    | nothing  | nothing
         // ^- found
-        SBlobEvent& blob_event = (*events)[evt->key];
+        SBlobEvent& blob_event = (*events)[evt->key.PackedKey()];
         switch (evt->event_type) {
         case eSyncUpdate:
             break;

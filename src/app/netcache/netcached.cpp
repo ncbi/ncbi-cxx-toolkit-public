@@ -37,8 +37,8 @@
 
 #include "task_server.hpp"
 
-#include "message_handler.hpp"
 #include "netcached.hpp"
+#include "message_handler.hpp"
 #include "netcache_version.hpp"
 #include "nc_stat.hpp"
 #include "distribution_conf.hpp"
@@ -118,6 +118,111 @@ static CNCMsgHandler_Factory s_MsgHandlerFactory;
 static CNCHeartBeat* s_HeartBeat;
 
 
+CNCBlobKeyLight& CNCBlobKeyLight::operator=(const CTempString& packed_key)
+{
+    m_PackedKey.assign(packed_key.data(), packed_key.size());
+    UnpackBlobKey();
+    m_KeyVersion = 0;
+    return *this;
+}
+
+unsigned int CNCBlobKeyLight::KeyVersion(void) const
+{
+    if (m_KeyVersion == 0) {
+        CNetCacheKey tmp;
+        if (CNetCacheKey::ParseBlobKey(m_RawKey.data(), m_RawKey.size(), &tmp)) {
+            return tmp.GetVersion();
+        }
+    }
+    return m_KeyVersion;
+}
+
+CNCBlobKeyLight& CNCBlobKeyLight::Copy(const CNCBlobKeyLight& another)
+{
+    if (this != &another) {
+        m_PackedKey = another.m_PackedKey;
+        UnpackBlobKey();
+        m_KeyVersion   = another.m_KeyVersion;
+    }
+    return *this;
+}
+void CNCBlobKeyLight::Clear(void)
+{
+    m_PackedKey.clear();
+    m_Cachename.clear();
+    m_RawKey.clear();
+    m_SubKey.clear();
+    m_KeyVersion = 0;
+}
+
+void CNCBlobKeyLight::PackBlobKey(const CTempString& cache_name,
+    const CTempString& blob_key, const CTempString& blob_subkey)
+{
+    m_PackedKey.clear();
+    m_PackedKey.reserve(cache_name.size() + blob_key.size()
+                        + blob_subkey.size() + 2);
+    m_PackedKey.append(cache_name.data(), cache_name.size());
+    m_PackedKey.append(1, '\1');
+    m_PackedKey.append(blob_key.data(), blob_key.size());
+    m_PackedKey.append(1, '\1');
+    m_PackedKey.append(blob_subkey.data(), blob_subkey.size());
+}
+
+void CNCBlobKeyLight::UnpackBlobKey()
+{
+    // cache
+    const char* cache_str = m_PackedKey.data();
+    size_t cache_size = m_PackedKey.find('\1', 0);
+    m_Cachename.assign(cache_str, cache_size);
+    // key
+    const char* key_str = cache_str + cache_size + 1;
+    size_t key_size = m_PackedKey.find('\1', cache_size + 1)
+                      - cache_size - 1;
+    m_RawKey.assign(key_str, key_size);
+    // subkey
+    const char* subkey_str = key_str + key_size + 1;
+    size_t subkey_size = m_PackedKey.size() - cache_size - key_size - 2;
+    m_SubKey.assign(subkey_str, subkey_size);
+}
+
+string CNCBlobKeyLight::KeyForLogs(void) const
+{
+    string result;
+    result.append("'");
+    result.append(m_RawKey.data(), m_RawKey.size());
+    result.append("'");
+    if (!m_Cachename.empty()  ||  !m_SubKey.empty()) {
+        result.append(", '");
+        result.append(m_SubKey.data(), m_SubKey.size());
+        result.append("' from cache '");
+        result.append(m_Cachename.data(), m_Cachename.size());
+        result.append("'");
+    }
+    return result;
+}
+
+bool CNCBlobKey::Assign( const CTempString& cache_name,
+                         const CTempString& blob_key,
+                         const CTempString& blob_subkey)
+{
+    string rawKey = blob_key;
+    if (CNetCacheKey::ParseBlobKey(blob_key.data(), blob_key.size(), this)) {
+        // If key is given and it's NetCache key (not ICache key) then we need
+        // to strip service name from it. It's necessary for the case when new
+        // CNetCacheAPI with enabled_mirroring=true passes key to an old CNetCacheAPI
+        // which doesn't even know about mirroring.
+        if (cache_name.empty() && HasExtensions()) {
+            rawKey = StripKeyExtensions();
+        }
+    } else {
+        Clear();
+        return false;
+    }
+    PackBlobKey(cache_name, rawKey, blob_subkey);
+    UnpackBlobKey();
+    SetKeyVersion(GetVersion());
+    return IsValid();
+}
 
 
 CNCHeartBeat::~CNCHeartBeat(void)

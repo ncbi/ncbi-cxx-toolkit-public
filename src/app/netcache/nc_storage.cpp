@@ -33,15 +33,16 @@
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_process.hpp>
 
+#include "netcached.hpp"
 #include "nc_storage.hpp"
 #include "storage_types.hpp"
 #include "nc_db_files.hpp"
 #include "distribution_conf.hpp"
-#include "netcached.hpp"
 #include "nc_storage_blob.hpp"
 #include "sync_log.hpp"
 #include "nc_stat.hpp"
 #include "logging.hpp"
+#include "peer_control.hpp"
 
 
 #ifdef NCBI_OS_LINUX
@@ -1054,70 +1055,6 @@ void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText(kNCStorage_FailedWriteSize  ).WriteText(is ).WriteNumber( CNCBlobAccessor::GetFailedWriteCount());
 }
 
-void
-CNCBlobStorage::PackBlobKey(string*      packed_key,
-                            CTempString  cache_name,
-                            CTempString  blob_key,
-                            CTempString  blob_subkey)
-{
-    packed_key->clear();
-    packed_key->reserve(cache_name.size() + blob_key.size()
-                        + blob_subkey.size() + 2);
-    packed_key->append(cache_name.data(), cache_name.size());
-    packed_key->append(1, '\1');
-    packed_key->append(blob_key.data(), blob_key.size());
-    packed_key->append(1, '\1');
-    packed_key->append(blob_subkey.data(), blob_subkey.size());
-}
-
-void
-CNCBlobStorage::UnpackBlobKey(const string& packed_key,
-                              string&       cache_name,
-                              string&       key,
-                              string&       subkey)
-{
-    // cache
-    const char* cache_str = packed_key.data();
-    size_t cache_size = packed_key.find('\1', 0);
-    cache_name.assign(cache_str, cache_size);
-    // key
-    const char* key_str = cache_str + cache_size + 1;
-    size_t key_size = packed_key.find('\1', cache_size + 1)
-                      - cache_size - 1;
-    key.assign(key_str, key_size);
-    // subkey
-    const char* subkey_str = key_str + key_size + 1;
-    size_t subkey_size = packed_key.size() - cache_size - key_size - 2;
-    subkey.assign(subkey_str, subkey_size);
-}
-
-string
-CNCBlobStorage::UnpackKeyForLogs(const string& packed_key)
-{
-    // cache
-    const char* cache_name = packed_key.data();
-    size_t cache_size = packed_key.find('\1', 0);
-    // key
-    const char* key = cache_name + cache_size + 1;
-    size_t key_size = packed_key.find('\1', cache_size + 1) - cache_size - 1;
-    // subkey
-    const char* subkey = key + key_size + 1;
-    size_t subkey_size = packed_key.size() - cache_size - key_size - 2;
-
-    string result;
-    result.append("'");
-    result.append(key, key_size);
-    result.append("'");
-    if (cache_size != 0  ||  subkey_size != 0) {
-        result.append(", '");
-        result.append(subkey, subkey_size);
-        result.append("' from cache '");
-        result.append(cache_name, cache_size);
-        result.append("'");
-    }
-    return result;
-}
-
 string
 CNCBlobStorage::PrintablePassword(const string& pass)
 {
@@ -1922,7 +1859,7 @@ CNCBlobStorage::GetNewBlobId(void)
 }
 
 void
-CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
+CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CNCPeerControl* peer)
 {
     blobs_lst.clear();
     Uint2 slot_buckets = CNCDistributionConf::GetCntSlotBuckets();
@@ -1955,6 +1892,9 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
                 abort();
 
             if (info_ptr->size > CNCDistributionConf::GetMaxBlobSizeSync()) {
+                continue;
+            }
+            if (peer && !peer->AcceptsBlobKey(info_ptr->key)) {
                 continue;
             }
             SNCBlobSummary* blob_sum = new SNCBlobSummary();

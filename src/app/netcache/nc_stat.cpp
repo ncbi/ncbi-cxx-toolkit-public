@@ -30,8 +30,8 @@
 
 #include <corelib/request_ctx.hpp>
 
-#include "nc_stat.hpp"
 #include "netcached.hpp"
+#include "nc_stat.hpp"
 #include "distribution_conf.hpp"
 #include "nc_storage.hpp"
 #include <set>

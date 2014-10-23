@@ -376,9 +376,9 @@ inline void
 CNCActiveSyncControl::AddStartEvent(SNCSyncEvent* evt)
 {
     if (evt->event_type == eSyncProlong)
-        m_RemoteEvents[evt->key].prolong_event = evt;
+        m_RemoteEvents[evt->key.PackedKey()].prolong_event = evt;
     else
-        m_RemoteEvents[evt->key].wr_or_rm_event = evt;
+        m_RemoteEvents[evt->key.PackedKey()].wr_or_rm_event = evt;
 }
 
 inline void

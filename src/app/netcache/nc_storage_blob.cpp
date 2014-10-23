@@ -28,10 +28,10 @@
 
 #include "nc_pch.hpp"
 
+#include "netcached.hpp"
 #include "nc_storage_blob.hpp"
 #include "nc_storage.hpp"
 #include "nc_stat.hpp"
-#include "netcached.hpp"
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -904,7 +904,7 @@ CCurVerReader::ExecuteSlice(TSrvThreadNum thr_num)
     m_VerMgr->m_CurVersion = ver_data;
     if (!CNCBlobStorage::ReadBlobInfo(ver_data)) {
         SRV_LOG(Critical, "Problem reading meta-information about blob "
-                          << CNCBlobStorage::UnpackKeyForLogs(m_VerMgr->m_Key));
+                          << CNCBlobKeyLight(m_VerMgr->m_Key).KeyForLogs());
         CSrvRef<SNCBlobVerData> cur_ver(ver_data);
         m_VerMgr->DeleteVersion(ver_data);
     }
@@ -1444,7 +1444,7 @@ CNCBlobAccessor::x_DelCorruptedVersion(void)
 {
     //abort();
     SRV_LOG(Critical, "Database information about blob "
-                      << CNCBlobStorage::UnpackKeyForLogs(m_BlobKey)
+                      << CNCBlobKeyLight(m_BlobKey).KeyForLogs()
                       << " is corrupted. Blob will be deleted");
     m_VerManager->DeleteVersion(m_CurData);
     m_CurData->has_error = true;

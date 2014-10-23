@@ -35,9 +35,7 @@
 #include <corelib/ncbi_bswap.hpp>
 #include <util/md5.hpp>
 
-#include <connect/services/netcache_key.hpp>
-#include <connect/services/netcache_api_expt.hpp>
-
+#include "netcached.hpp"
 #include "message_handler.hpp"
 #include "netcache_version.hpp"
 #include "nc_stat.hpp"
@@ -46,7 +44,6 @@
 #include "periodic_sync.hpp"
 #include "active_handler.hpp"
 #include "nc_storage.hpp"
-#include "netcached.hpp"
 #include "nc_storage_blob.hpp"
 
 
@@ -1483,8 +1480,8 @@ CNCMessageHandler::x_CloseCmdAndConn(void)
             GetDiagCtx()->SetRequestStatus(eStatus_CmdTimeout);
     }
     int status = GetDiagCtx()->GetRequestStatus();
-    if (x_IsFlagSet(eBlobPut) && m_BlobKey[0] != '\1') {
-        x_JournalBlobPutResult(status, m_BlobKey, m_BlobSlot);
+    if (x_IsFlagSet(eBlobPut) && m_NCBlobKey.IsICacheKey()) {
+        x_JournalBlobPutResult(status, m_NCBlobKey.PackedKey(), m_BlobSlot);
     }
     x_UnsetFlag(fConfirmOnFinish);
     x_CleanCmdResources();
@@ -1628,7 +1625,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
     LOG_CURRENT_FUNCTION
     CTempString blob_key, blob_subkey;
     m_BlobVersion = 0;
-    m_RawKey.clear();
+    m_NCBlobKey.Clear();
     m_BlobPass.clear();
     m_RawBlobPass.clear();
     m_KeyVersion = 1;
@@ -1712,7 +1709,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
                 break;
             case 'k':
                 if (key == "key") {
-                    m_RawKey = blob_key = val;
+                    blob_key = val;
                 }
                 break;
             case 'l':
@@ -1837,7 +1834,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
         m_ClientParams["client"] = "";
         cache_name = m_ClientParams["cache"];
         if (m_ClientParams.find("key") != m_ClientParams.end()) {
-            m_RawKey = blob_key = m_ClientParams["key"];
+            blob_key = m_ClientParams["key"];
         }
         // parse HTTP header
         CTempString cmd_line;
@@ -1893,7 +1890,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
         }
     }
 
-    CNCBlobStorage::PackBlobKey(&m_BlobKey, cache_name, blob_key, blob_subkey);
+    m_NCBlobKey.Assign(cache_name, blob_key, blob_subkey);
     if (cache_name.empty()) {
         m_AppSetup = m_BaseAppSetup;
         m_ClientParams.erase("cache");
@@ -2043,37 +2040,33 @@ CNCMessageHandler::x_StartCommand(void)
         return &CNCMessageHandler::x_FinishCommand;
     }
 
-    if (x_IsFlagSet(fCanGenerateKey)  &&  m_RawKey.empty()) {
+    if (x_IsFlagSet(fCanGenerateKey)  &&  m_NCBlobKey.RawKey().empty()) {
+        string raw_key;
+//to test
+//        bool old_ver = (CSrvTime::Current().CurSecs() % 2) != 0;
+        bool old_ver = m_HttpMode == eNoHttp;
+
         CNCDistributionConf::GenerateBlobKey(
             m_HttpMode == eNoHttp ? m_LocalPort : Uint4( CNCDistributionConf::GetSelfID()),
-            m_RawKey, m_BlobSlot, m_TimeBucket, m_HttpMode == eNoHttp ? 1 : 3);
-        CNCBlobStorage::PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
-
-        diag_msg.PrintParam("key", m_RawKey);
+            raw_key, m_BlobSlot, m_TimeBucket, old_ver ? 1 : 3);
+        m_NCBlobKey.Assign(raw_key);
+        diag_msg.PrintParam("key", m_NCBlobKey.RawKey());
         diag_msg.PrintParam("gen_key", "1");
     }
-    else if (m_BlobKey[0] == '\1') {
-        CNetCacheKey nc_key;
-        if (!nc_key.ParseBlobKey(m_RawKey.data(), m_RawKey.length(), &nc_key)) {
+    else if (!m_NCBlobKey.IsICacheKey()) {
+        if (!m_NCBlobKey.IsValid()) {
             diag_msg.Flush();
             GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
             if (m_HttpMode == eNoHttp) {
                 WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
-                SRV_LOG(Critical, "Invalid blob key format: " << m_RawKey);
+                SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
             }
             return &CNCMessageHandler::x_FinishCommand;
         }
-        CNCDistributionConf::GetSlotByRnd(nc_key.GetRandomPart(), m_BlobSlot, m_TimeBucket);
-        // If key is given and it's NetCache key (not ICache key) then we need
-        // to strip service name from it. It's necessary for the case when new
-        // CNetCacheAPI with enabled_mirroring=true passes key to an old CNetCacheAPI
-        // which doesn't even know about mirroring.
-        if (nc_key.HasExtensions())
-            CNCBlobStorage::PackBlobKey(&m_BlobKey, CTempString(),
-                    nc_key.StripKeyExtensions(), CTempString());
-    } else
-        CNCDistributionConf::GetSlotByICacheKey(m_BlobKey,
-                m_BlobSlot, m_TimeBucket);
+        CNCDistributionConf::GetSlotByRnd(m_NCBlobKey.GetRandomPart(), m_BlobSlot, m_TimeBucket);
+    } else {
+        CNCDistributionConf::GetSlotByICacheKey(m_NCBlobKey.PackedKey(), m_BlobSlot, m_TimeBucket);
+    }
 
     m_BlobSize = 0;
     diag_msg.PrintParam("slot", m_BlobSlot);
@@ -2116,7 +2109,7 @@ CNCMessageHandler::x_StartCommand(void)
 
     m_BlobAccess = CNCBlobStorage::GetBlobAccess(
                                     m_ParsedCmd.command->extra.blob_access,
-                                    m_BlobKey, m_BlobPass, m_TimeBucket);
+                                    m_NCBlobKey.PackedKey(), m_BlobPass, m_TimeBucket);
     m_BlobAccess->RequestMetaInfo(this);
     return &CNCMessageHandler::x_WaitForBlobAccess;
 }
@@ -2230,10 +2223,8 @@ CNCMessageHandler::x_GetCurSlotServers(void)
     LOG_CURRENT_FUNCTION
     CNCDistributionConf::GetServersForSlot(m_BlobSlot, m_CheckSrvs);
     Uint4 main_srv_ip = 0;
-    if (m_BlobKey[0] == '\1') {
-        string cache_name, key, subkey;
-        CNCBlobStorage::UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-        main_srv_ip = CNCDistributionConf::GetMainSrvIP(key);
+    if (!m_NCBlobKey.IsICacheKey()) {
+        main_srv_ip = CNCDistributionConf::GetMainSrvIP(m_NCBlobKey);
     }
     m_ThisServerIsMain = false;
     if (main_srv_ip != 0) {
@@ -2251,7 +2242,7 @@ CNCMessageHandler::x_GetCurSlotServers(void)
             ) {
             //m_ThisServerIsMain = true;
             m_ThisServerIsMain = 
-                CNCBlobAccessor::HasPutSucceeded(m_BlobKey);
+                CNCBlobAccessor::HasPutSucceeded(m_NCBlobKey.PackedKey());
         }
         if (!m_ThisServerIsMain) {
             CWriteBackControl::AnotherServerMain();
@@ -2304,7 +2295,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     if (m_BlobAccess->IsBlobExists()  // if it is a new blob, there is no need to 'mirror-update'
         && (m_Flags & eClientBlobWrite) == eClientBlobWrite // request from clients only
         && CNCDistributionConf::GetBlobUpdateHotline()) {
-        CNCPeerControl::MirrorUpdate(m_BlobKey, m_BlobSlot, CSrvTime::Current().AsUSec());
+        CNCPeerControl::MirrorUpdate(m_NCBlobKey, m_BlobSlot, CSrvTime::Current().AsUSec());
     }
 
     if (!x_IsFlagSet(fUsesPeerSearch))
@@ -2406,11 +2397,11 @@ CNCMessageHandler::x_ProlongBlobDeadTime(unsigned int add_time)
     m_BlobAccess->SetCurBlobExpire(new_expire);
     SNCSyncEvent* event = new SNCSyncEvent();
     event->event_type = eSyncProlong;
-    event->key = m_BlobKey;
+    event->key = m_NCBlobKey;
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = cur_time;
     CNCSyncLog::AddEvent(m_BlobSlot, event);
-    CNCPeerControl::MirrorProlong(m_BlobKey, m_BlobSlot,
+    CNCPeerControl::MirrorProlong(m_NCBlobKey, m_BlobSlot,
                                   event->orig_rec_no, cur_time, m_BlobAccess);
 }
 
@@ -2428,11 +2419,11 @@ CNCMessageHandler::x_ProlongVersionLife(void)
     m_BlobAccess->SetCurVerExpire(new_expire);
     SNCSyncEvent* event = new SNCSyncEvent();
     event->event_type = eSyncProlong;
-    event->key = m_BlobKey;
+    event->key = m_NCBlobKey;
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = cur_time;
     CNCSyncLog::AddEvent(m_BlobSlot, event);
-    CNCPeerControl::MirrorProlong(m_BlobKey, m_BlobSlot,
+    CNCPeerControl::MirrorProlong(m_NCBlobKey, m_BlobSlot,
                                   event->orig_rec_no, cur_time, m_BlobAccess);
 }
 
@@ -2542,8 +2533,8 @@ CNCMessageHandler::x_FinishCommand(void)
 {
     LOG_CURRENT_FUNCTION
     int status = GetDiagCtx()->GetRequestStatus();
-    if (x_IsFlagSet(eBlobPut) && m_BlobKey[0] != '\1') {
-        x_JournalBlobPutResult(status, m_BlobKey, m_BlobSlot);
+    if (x_IsFlagSet(eBlobPut) && m_NCBlobKey.IsICacheKey()) {
+        x_JournalBlobPutResult(status, m_NCBlobKey.PackedKey(), m_BlobSlot);
     }
     if (status == eStatus_PUT2Used)
         return &CNCMessageHandler::x_CloseCmdAndConn;
@@ -2609,7 +2600,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     // m_BlobAccess->Finalize().
     SNCSyncEvent* write_event = new SNCSyncEvent();
     write_event->event_type = eSyncWrite;
-    write_event->key = m_BlobKey;
+    write_event->key = m_NCBlobKey;
     if (x_IsFlagSet(fCopyLogEvent)) {
         write_event->orig_time = m_BlobAccess->GetNewBlobCreateTime();
         write_event->orig_server = m_BlobAccess->GetNewCreateServer();
@@ -2644,7 +2635,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     if (!x_IsFlagSet(fCopyLogEvent)) {
         if (m_BlobAccess->GetNewBlobSize() < CNCDistributionConf::GetMaxBlobSizeSync()) {
             m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
-            CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
+            CNCPeerControl::MirrorWrite(m_NCBlobKey, m_BlobSlot,
                                         m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
             // If fCopyLogEvent is not set then this blob comes from client and
             // thus we need to check quorum value before answering to client.
@@ -2660,7 +2651,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         } else {
             if (CNCDistributionConf::GetWarnBlobSizeSync()) {
                 SRV_LOG(Warning, "Received blob is too big and will not be mirrored:"
-                    << " blob key:"     << m_RawKey //m_BlobKey
+                    << " blob key:"     << m_NCBlobKey.RawKey()
                     << " blob size: "   << m_BlobAccess->GetNewBlobSize()
                     << " max allowed: " << CNCDistributionConf::GetMaxBlobSizeSync());
             }
@@ -2787,7 +2778,7 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         // NC server, but for some reason we got non-EOF chunk length.
         GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
         SRV_LOG(Critical, "Received non-EOF chunk len from peer "
-            << m_ActiveHub->GetFullPeerName() << ": " << m_ChunkLen);
+            << m_SrvId << ": " << m_ChunkLen);
         return &CNCMessageHandler::x_CloseCmdAndConn;
     }
 
@@ -2958,7 +2949,8 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError) {
+    if (m_ActiveHub->GetStatus() == eNCHubError ||
+        !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
@@ -2968,45 +2960,46 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
+
     switch (m_ParsedCmd.command->extra.proxy_cmd) {
     case eProxyRead:
-        m_ActiveHub->GetHandler()->ProxyRead(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyRead(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                              m_BlobVersion, m_StartPos, m_Size,
                                              m_Quorum, m_SearchOnRead, m_ForceLocal, m_AgeMax);
         break;
     case eProxyWrite:
-        m_ActiveHub->GetHandler()->ProxyWrite(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyWrite(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                               m_BlobVersion, m_BlobTTL, m_Quorum);
         // The only place that needs to go further to a different state.
         return &CNCMessageHandler::x_WriteInitWriteResponse;
     case eProxyHasBlob:
-        m_ActiveHub->GetHandler()->ProxyHasBlob(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyHasBlob(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                 m_Quorum);
         break;
     case eProxyGetSize:
-        m_ActiveHub->GetHandler()->ProxyGetSize(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyGetSize(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                 m_BlobVersion, m_Quorum,
                                                 m_SearchOnRead, m_ForceLocal);
         break;
     case eProxyReadLast:
-        m_ActiveHub->GetHandler()->ProxyReadLast(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyReadLast(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                  m_StartPos, m_Size, m_Quorum,
                                                  m_SearchOnRead, m_ForceLocal, m_AgeMax);
         break;
     case eProxySetValid:
-        m_ActiveHub->GetHandler()->ProxySetValid(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxySetValid(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                  m_BlobVersion);
         break;
     case eProxyRemove:
-        m_ActiveHub->GetHandler()->ProxyRemove(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyRemove(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                m_BlobVersion, m_Quorum);
         break;
     case eProxyGetMeta:
-        m_ActiveHub->GetHandler()->ProxyGetMeta(GetDiagCtx(), m_BlobKey,
+        m_ActiveHub->GetHandler()->ProxyGetMeta(GetDiagCtx(), m_NCBlobKey,
                                                 m_Quorum, m_ForceLocal);
         break;
     case eProxyProlong:
-        m_ActiveHub->GetHandler()->ProxyProlong(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
+        m_ActiveHub->GetHandler()->ProxyProlong(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                 m_BlobTTL, m_Quorum,
                                                 m_SearchOnRead, m_ForceLocal);
         break;
@@ -3077,7 +3070,8 @@ CNCMessageHandler::x_SendGetMetaCmd(void)
     LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError) {
+    if (m_ActiveHub->GetStatus() == eNCHubError ||
+        !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ReadMetaNextPeer;
@@ -3087,7 +3081,7 @@ CNCMessageHandler::x_SendGetMetaCmd(void)
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
-    m_ActiveHub->GetHandler()->SearchMeta(GetDiagCtx(), m_BlobKey);
+    m_ActiveHub->GetHandler()->SearchMeta(GetDiagCtx(), m_NCBlobKey);
     return &CNCMessageHandler::x_ReadMetaResults;
 }
 
@@ -3208,7 +3202,8 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
     LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError) {
+    if (m_ActiveHub->GetStatus() == eNCHubError ||
+        !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PutToNextPeer;
@@ -3218,7 +3213,7 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
 
-    m_ActiveHub->GetHandler()->CopyPut(GetDiagCtx(), m_BlobKey, m_BlobSlot, m_OrigRecNo);
+    m_ActiveHub->GetHandler()->CopyPut(GetDiagCtx(), m_NCBlobKey, m_BlobSlot, m_OrigRecNo);
     return &CNCMessageHandler::x_ReadPutResults;
 }
 
@@ -3491,9 +3486,9 @@ CNCMessageHandler::x_DoCmd_Put(void)
     m_BlobAccess->SetVersionTTL(0);
     m_BlobAccess->SetBlobVersion(0);
     if (m_HttpMode == eNoHttp) {
-        WriteText("OK:ID:").WriteText(m_RawKey).WriteText("\n");
+        WriteText("OK:ID:").WriteText(m_NCBlobKey.RawKey()).WriteText("\n");
     } else {
-        string key(m_RawKey);
+        string key(m_NCBlobKey.RawKey());
         if (!m_ClientParams["service"].empty()) {
             CNetCacheKey::AddExtensions(key, m_ClientParams["service"], 0, 3);
         }
@@ -3639,7 +3634,7 @@ CNCMessageHandler::x_DoCmd_Prolong(void)
             WriteText("OK:\n");
         else
             WriteText("OK:WARNING:Capped the requested TTL for '").
-                    WriteText(m_RawKey).WriteText("' at ").
+                    WriteText(m_NCBlobKey.RawKey()).WriteText("' at ").
                     WriteNumber(m_BlobTTL).WriteText(" seconds.\n");
     }
     return &CNCMessageHandler::x_FinishCommand;
@@ -3703,7 +3698,7 @@ CNCMessageHandler::x_WriteFullBlobsList(void)
 {
     LOG_CURRENT_FUNCTION
     TNCBlobSumList blobs_list;
-    CNCBlobStorage::GetFullBlobsList(m_Slot, blobs_list);
+    CNCBlobStorage::GetFullBlobsList(m_Slot, blobs_list, CNCPeerControl::Peer(m_SrvId));
     m_SendBuff.reset(new TNCBufferType());
     m_SendBuff->reserve_mem(blobs_list.size() * 200);
     NON_CONST_ITERATE(TNCBlobSumList, it_blob, blobs_list) {
@@ -3775,11 +3770,15 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
             const SBlobEvent& blob_evt = it_evt->second;
             for (int i = 0; i < 2; ++i) {
                 SNCSyncEvent* evt = (i == 0? blob_evt.wr_or_rm_event: blob_evt.prolong_event);
-                if (!evt)
+                if (!evt) {
                     continue;
-                Uint2 key_size = Uint2(evt->key.size());
+                }
+                if (!CNCPeerControl::Peer(m_SrvId)->AcceptsBlobKey(evt->key)) {
+                    continue;
+                }
+                Uint2 key_size = Uint2(evt->key.PackedKey().size());
                 m_SendBuff->append(&key_size, sizeof(key_size));
-                m_SendBuff->append(evt->key.data(), key_size);
+                m_SendBuff->append(evt->key.PackedKey().data(), key_size);
                 char c = char(evt->event_type);
                 m_SendBuff->append(&c, 1);
                 m_SendBuff->append(&evt->rec_no, sizeof(evt->rec_no));
@@ -3892,7 +3891,7 @@ CNCMessageHandler::x_DoCmd_CopyProlong(void)
         if (need_event  &&  m_OrigRecNo != 0) {
             SNCSyncEvent* event = new SNCSyncEvent();
             event->event_type = eSyncProlong;
-            event->key = m_BlobKey;
+            event->key = m_NCBlobKey;
             event->orig_server = m_OrigSrvId;
             event->orig_time = m_OrigTime;
             event->orig_rec_no = m_OrigRecNo;
@@ -4011,7 +4010,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 
         CNcbiOstrstream str;
 
-        tmp = m_RawKey;
+        tmp = m_NCBlobKey.RawKey();
         if (!m_ClientParams["service"].empty()) {
             CNetCacheKey::AddExtensions(tmp, m_ClientParams["service"], 0, 3);
         }
@@ -4191,7 +4190,7 @@ CNCMessageHandler::x_DoCmd_GetBlobsList(void)
             const string& raw_key = it_blob->first;
             SNCCacheData*& blob_sum = it_blob->second;
             string cache_name, key, subkey;
-            CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
+            CNCBlobKey::UnpackBlobKey(raw_key, cache_name, key, subkey);
             Write("OK:key: ").Write(key);
             if (!cache_name.empty())
                 Write(", subkey: ").Write(subkey);

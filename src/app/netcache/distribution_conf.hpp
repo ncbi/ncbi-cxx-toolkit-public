@@ -72,7 +72,7 @@ public:
     // Get the current server ID
     static Uint8 GetSelfID(void);
 
-    static Uint4 GetMainSrvIP(const string& key);
+    static Uint4 GetMainSrvIP(const CNCBlobKey& key);
     
     static Uint4 CreateHostAlias(Uint4 ip, Uint4 port);
 

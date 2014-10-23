@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 
 class CNCBlobAccessor;
 struct SNCStateStat;
+class CNCPeerControl;
 
 
 struct STimeTable_tag;
@@ -93,15 +94,6 @@ public:
     static void SetDraining(bool draining);
     static bool IsDraining(void);
 
-    static void PackBlobKey(string*      packed_key,
-                            CTempString  cache_name,
-                            CTempString  blob_key,
-                            CTempString  blob_subkey);
-    static void UnpackBlobKey(const string& packed_key,
-                              string&       cache_name,
-                              string&       key,
-                              string&       subkey);
-    static string UnpackKeyForLogs(const string& packed_key);
     static string PrintablePassword(const string& pass);
     /// Acquire access to the blob identified by key, subkey and version
     static CNCBlobAccessor* GetBlobAccess(ENCAccessType access,
@@ -120,7 +112,7 @@ public:
     static void CheckDiskSpace(void);
     static void MeasureDB(SNCStateStat& state);
 
-    static void GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst);
+    static void GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CNCPeerControl* peer);
     static Uint8 GetMaxSyncLogRecNo(void);
     static void SaveMaxSyncLogRecNo(void);
 

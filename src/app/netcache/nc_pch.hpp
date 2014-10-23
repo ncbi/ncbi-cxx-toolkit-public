@@ -36,5 +36,7 @@
 #define UTIL___SYNC_QUEUE__HPP
 #define UTIL__THREAD_POOL__HPP
 #include <util/util_exception.hpp>
+#include <connect/services/netcache_key.hpp>
+//#include <connect/services/netcache_api_expt.hpp>
 
 #include "nc_lib.hpp"

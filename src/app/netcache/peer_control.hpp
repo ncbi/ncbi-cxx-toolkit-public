@@ -60,13 +60,13 @@ struct SNCMirrorEvent
 {
     ENCSyncEvent evt_type;
     Uint2   slot;
-    string  key;
+    CNCBlobKeyLight  key;
     Uint8   orig_rec_no;
 
 
     SNCMirrorEvent(ENCSyncEvent typ,
                    Uint2 slot_,
-                   const string& key_,
+                   const CNCBlobKeyLight& key_,
                    Uint8 rec_no)
         : evt_type(typ),
           slot(slot_),
@@ -83,7 +83,7 @@ struct SNCMirrorProlong : public SNCMirrorEvent
 
     SNCMirrorProlong(ENCSyncEvent typ,
                      Uint2 slot_,
-                     const string& key_,
+                     const CNCBlobKeyLight& key_,
                      Uint8 rec_no,
                      Uint8 tm,
                      const CNCBlobAccessor* accessor);
@@ -112,14 +112,14 @@ public:
     static CNCPeerControl* Peer(Uint8 srv_id);
     static string GetPeerNameOrEmpty(Uint8 srv_id);
 
-    static void MirrorUpdate(const string& key,
+    static void MirrorUpdate(const CNCBlobKey& key,
                               Uint2 slot,
                               Uint8 update_time);
-    static void MirrorWrite(const string& key,
+    static void MirrorWrite(const CNCBlobKey& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
                             Uint8 size);
-    static void MirrorProlong(const string& key,
+    static void MirrorProlong(const CNCBlobKey& key,
                               Uint2 slot,
                               Uint8 orig_rec_no,
                               Uint8 orig_time,
@@ -160,7 +160,9 @@ public:
 
     void AbortInitialSync(void);
     void SetHostProtocol(Uint8 ver);
-    Uint8 GetHostProtocol(void) const;
+
+    bool AcceptsSyncUpdate(void) const;
+    bool AcceptsBlobKey(const CNCBlobKeyLight& key) const;
 
 private:
     CNCPeerControl(Uint8 srv_id);
@@ -266,10 +268,15 @@ CNCPeerControl::GetNextSyncTime(void)
     return m_NextSyncTime;
 }
 
-inline Uint8
-CNCPeerControl::GetHostProtocol(void) const
+inline bool 
+CNCPeerControl::AcceptsSyncUpdate(void) const
 {
-    return m_HostProtocol;
+    return m_HostProtocol >= 60700;
+}
+inline bool
+CNCPeerControl::AcceptsBlobKey(const CNCBlobKeyLight& key) const
+{
+    return m_HostProtocol >= 60700 || key.KeyVersion() < 3;
 }
 
 inline void

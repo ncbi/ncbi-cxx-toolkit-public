@@ -300,10 +300,8 @@ private:
     /// Time when command started execution
     CSrvTime                  m_CmdStartTime;
 
-    ///
-    string                    m_RawKey;
     /// Blob key in current command
-    string                    m_BlobKey;
+    CNCBlobKey                m_NCBlobKey;
     /// Blob version in current command
     int                       m_BlobVersion;
     /// "Password" to access the blob

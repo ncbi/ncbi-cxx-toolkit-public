@@ -35,13 +35,11 @@
 #include <corelib/ncbireg.hpp>
 #include <util/checksum.hpp>
 #include <util/random_gen.hpp>
-#include <connect/services/netcache_key.hpp>
-#include <connect/services/netcache_api_expt.hpp>
 
 #include "task_server.hpp"
 
-#include "distribution_conf.hpp"
 #include "netcached.hpp"
+#include "distribution_conf.hpp"
 #include "peer_control.hpp"
 
 
@@ -743,16 +741,15 @@ CNCDistributionConf::GetSlotByRnd(Uint4 key_rnd,
 }
 
 Uint4
-CNCDistributionConf::GetMainSrvIP(const string& key)
+CNCDistributionConf::GetMainSrvIP(const CNCBlobKey& key)
 {
     try {
-        CNetCacheKey nc_key(key);
-        if (nc_key.GetVersion() == 3) {
-            Uint4 alias = nc_key.GetHostPortCRC32();
+        if (key.GetVersion() == 3) {
+            Uint4 alias = key.GetHostPortCRC32();
             return (alias == s_SelfAlias) ? s_SelfIP :
                 CNCPeerControl::FindIPbyAlias(alias);
         }
-        string host_str(nc_key.GetHost());
+        const string& host_str(key.GetHost());
         if (s_SelfHostIP == host_str) {
             return s_SelfIP;
         }
@@ -762,7 +759,7 @@ CNCDistributionConf::GetMainSrvIP(const string& key)
         }
         return CTaskServer::GetIPByHost(host_str);
     }
-    catch (CNetCacheException&) {
+    catch (...) {
         return 0;
     }
 }

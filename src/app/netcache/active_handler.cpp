@@ -31,6 +31,7 @@
 
 #include <corelib/request_ctx.hpp>
 
+#include "netcached.hpp"
 #include "active_handler.hpp"
 #include "peer_control.hpp"
 #include "periodic_sync.hpp"
@@ -205,6 +206,12 @@ CNCActiveHandler::SetClientHub(CNCActiveClientHub* hub)
     SetState(&Me::x_WaitClientRelease);
 }
 
+void 
+CNCActiveHandler::Release(void)
+{
+    x_SetStateAndStartProcessing(&Me::x_FinishCommand);
+}
+
 void
 CNCActiveHandler::ClientReleased(void)
 {
@@ -302,21 +309,18 @@ CNCActiveHandler::x_ReplaceServerConn(void)
 }
 
 void
-CNCActiveHandler::SearchMeta(CRequestContext* cmd_ctx, const string& raw_key)
+CNCActiveHandler::SearchMeta(CRequestContext* cmd_ctx, const CNCBlobKey& nc_key)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eSearchMeta;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_META \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" \"";
     m_CmdToSend += cmd_ctx->GetClientIP();
     m_CmdToSend += "\" \"";
@@ -352,20 +356,17 @@ CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
 }
 
 void
-CNCActiveHandler::CopyUpdate(const string& raw_key, Uint8 create_time)
+CNCActiveHandler::CopyUpdate(const CNCBlobKeyLight& nc_key, Uint8 create_time)
 {
     m_CurCmd = eNeedOnlyConfirm;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "COPY_UPD \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UInt8ToString(create_time);
     m_CmdToSend += " ";
@@ -377,7 +378,7 @@ CNCActiveHandler::CopyUpdate(const string& raw_key, Uint8 create_time)
 
 void
 CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
-                          const string& key,
+                          const CNCBlobKeyLight& key,
                           Uint2 slot,
                           Uint8 orig_rec_no)
 {
@@ -393,7 +394,7 @@ CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyRemove(CRequestContext* cmd_ctx,
-                              const string& raw_key,
+                              const CNCBlobKey& nc_key,
                               const string& password,
                               int version,
                               Uint1 quorum)
@@ -401,16 +402,13 @@ CNCActiveHandler::ProxyRemove(CRequestContext* cmd_ctx,
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_RMV \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(version);
     m_CmdToSend.append(1, ' ');
@@ -431,23 +429,20 @@ CNCActiveHandler::ProxyRemove(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyHasBlob(CRequestContext* cmd_ctx,
-                               const string& raw_key,
+                               const CNCBlobKey& nc_key,
                                const string& password,
                                Uint1 quorum)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_HASB \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UIntToString(quorum);
     m_CmdToSend += " \"";
@@ -466,7 +461,7 @@ CNCActiveHandler::ProxyHasBlob(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyGetSize(CRequestContext* cmd_ctx,
-                               const string& raw_key,
+                               const CNCBlobKey& nc_key,
                                const string& password,
                                int version,
                                Uint1 quorum,
@@ -476,16 +471,13 @@ CNCActiveHandler::ProxyGetSize(CRequestContext* cmd_ctx,
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_GSIZ \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(version);
     m_CmdToSend.append(1, ' ');
@@ -510,23 +502,20 @@ CNCActiveHandler::ProxyGetSize(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxySetValid(CRequestContext* cmd_ctx,
-                                const string& raw_key,
+                                const CNCBlobKey& nc_key,
                                 const string& password,
                                 int version)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_SETVALID \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(version);
     m_CmdToSend += " \"";
@@ -545,7 +534,7 @@ CNCActiveHandler::ProxySetValid(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyRead(CRequestContext* cmd_ctx,
-                            const string& raw_key,
+                            const CNCBlobKey& nc_key,
                             const string& password,
                             int version,
                             Uint8 start_pos,
@@ -558,16 +547,13 @@ CNCActiveHandler::ProxyRead(CRequestContext* cmd_ctx,
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_GET \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(version);
     m_CmdToSend.append(1, ' ');
@@ -600,7 +586,7 @@ CNCActiveHandler::ProxyRead(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
-                                const string& raw_key,
+                                const CNCBlobKey& nc_key,
                                 const string& password,
                                 Uint8 start_pos,
                                 Uint8 size,
@@ -612,16 +598,13 @@ CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_READLAST \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UInt8ToString(start_pos);
     m_CmdToSend.append(1, ' ');
@@ -652,23 +635,20 @@ CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyGetMeta(CRequestContext* cmd_ctx,
-                               const string& raw_key,
+                               const CNCBlobKey& nc_key,
                                Uint1 quorum,
                                bool force_local)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_GETMETA \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UIntToString(quorum);
     m_CmdToSend.append(1, ' ');
@@ -684,7 +664,7 @@ CNCActiveHandler::ProxyGetMeta(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
-                             const string& raw_key,
+                             const CNCBlobKey& nc_key,
                              const string& password,
                              int version,
                              Uint4 ttl,
@@ -693,16 +673,13 @@ CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eWriteData;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_PUT \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(version);
     m_CmdToSend.append(1, ' ');
@@ -725,7 +702,7 @@ CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
 
 void
 CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
-                               const string& raw_key,
+                               const CNCBlobKey& nc_key,
                                const string& password,
                                unsigned int add_time,
                                Uint1 quorum,
@@ -735,16 +712,13 @@ CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "PROXY_PROLONG \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += nc_key.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(add_time);
     m_CmdToSend.append(1, ' ');
@@ -768,7 +742,7 @@ CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
 }
 
 void
-CNCActiveHandler::CopyProlong(const string& key,
+CNCActiveHandler::CopyProlong(const CNCBlobKeyLight& key,
                               Uint2 slot,
                               Uint8 orig_rec_no,
                               Uint8 orig_time,
@@ -835,7 +809,7 @@ CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, SNCSyncEvent* event)
 }
 
 void
-CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, const string& key)
+CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, const CNCBlobKeyLight& key)
 {
     m_SyncAction = eSynActionWrite;
     m_SyncCtrl = ctrl;
@@ -859,7 +833,7 @@ CNCActiveHandler::SyncRead(CNCActiveSyncControl* ctrl, SNCSyncEvent* event)
 
 void
 CNCActiveHandler::SyncRead(CNCActiveSyncControl* ctrl,
-                           const string& key,
+                           const CNCBlobKeyLight& key,
                            Uint8 create_time)
 {
     m_SyncCtrl = ctrl;
@@ -882,7 +856,7 @@ CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
     m_OrigServer = event->orig_server;
     x_SetSlotAndBucketAndVerifySlot(ctrl->GetSyncSlot());
     m_CurCmd = eSyncProlongPeer;
-    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCRead, m_BlobKey,
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCRead, m_BlobKey.PackedKey(),
                                                  kEmptyStr, m_TimeBucket);
     x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
@@ -890,7 +864,7 @@ CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
 
 void
 CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
-                                  const string& key,
+                                  const CNCBlobKeyLight& key,
                                   const SNCBlobSummary& blob_sum)
 {
     m_SyncCtrl = ctrl;
@@ -918,20 +892,17 @@ CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
     m_OrigServer = event->orig_server;
     m_CurCmd = eSyncProInfo;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "SYNC_PROINFO ";
     m_CmdToSend += NStr::UInt8ToString(CNCDistributionConf::GetSelfID());
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UIntToString(m_BlobSlot);
     m_CmdToSend += " \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += m_BlobKey.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += m_BlobKey.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += m_BlobKey.SubKey();
     m_CmdToSend += "\"";
 
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
@@ -1063,7 +1034,7 @@ void
 CNCActiveHandler::x_DoCopyPut(void)
 {
     m_CurCmd = eCopyPut;
-    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCReadData, m_BlobKey,
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCReadData, m_BlobKey.PackedKey(),
                                                  kEmptyStr, m_TimeBucket);
     x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
@@ -1076,7 +1047,7 @@ CNCActiveHandler::x_DoSyncGet(void)
     SetDiagCtx(m_SyncCtrl->GetDiagCtx());
     x_SetSlotAndBucketAndVerifySlot(m_SyncCtrl->GetSyncSlot());
     m_CurCmd = eSyncGet;
-    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCCopyCreate, m_BlobKey,
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCCopyCreate, m_BlobKey.PackedKey(),
                                                  kEmptyStr, m_TimeBucket);
     x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
@@ -1280,9 +1251,6 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
     if (m_Proxy->NeedEarlyClose()  ||  (m_CmdFromClient  &&  !m_Client))
         return &Me::x_CloseCmdAndConn;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     if (m_SyncCtrl) {
         m_CmdToSend += "SYNC_PUT ";
@@ -1294,11 +1262,11 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
         m_CmdToSend += "COPY_PUT";
     }
     m_CmdToSend += " \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += m_BlobKey.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += m_BlobKey.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += m_BlobKey.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::IntToString(m_BlobAccess->GetCurBlobVersion());
     m_CmdToSend += " \"";
@@ -1401,9 +1369,6 @@ CNCActiveHandler::x_SendCopyProlongCmd(const SNCBlobSummary& blob_sum)
 {
     m_CurCmd = eCopyProlong;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     if (m_SyncCtrl) {
         m_CmdToSend += "SYNC_PROLONG ";
@@ -1415,11 +1380,11 @@ CNCActiveHandler::x_SendCopyProlongCmd(const SNCBlobSummary& blob_sum)
         m_CmdToSend += "COPY_PROLONG";
     }
     m_CmdToSend += " \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += m_BlobKey.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += m_BlobKey.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += m_BlobKey.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UInt8ToString(blob_sum.create_time);
     m_CmdToSend.append(1, ' ');
@@ -1693,7 +1658,7 @@ CNCActiveHandler::x_ReadEventsListBody(void)
 
     const char* data = m_ReadBuf.data();
     evt = new SNCSyncEvent;
-    evt->key.assign(data, m_KeySize);
+    evt->key = CTempString(data, m_KeySize);
     data += m_KeySize;
     evt->event_type = ENCSyncEvent(*data);
     ++data;
@@ -1790,20 +1755,17 @@ CNCActiveHandler::x_SendSyncGetCmd(void)
     if (m_Proxy->NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
 
-    string cache_name, key, subkey;
-    CNCBlobStorage::UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
     m_CmdToSend.resize(0);
     m_CmdToSend += "SYNC_GET ";
     m_CmdToSend += NStr::UInt8ToString(CNCDistributionConf::GetSelfID());
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UIntToString(m_BlobSlot);
     m_CmdToSend += " \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += m_BlobKey.Cache();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += key;
+    m_CmdToSend += m_BlobKey.RawKey();
     m_CmdToSend += "\" \"";
-    m_CmdToSend += subkey;
+    m_CmdToSend += m_BlobKey.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UInt8ToString(m_OrigTime);
     m_CmdToSend.append(1, ' ');
@@ -2003,7 +1965,7 @@ CNCActiveHandler::x_ReadPeerVersion(void)
 void
 CNCActiveHandler::x_DoProlongOur(void)
 {
-    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCRead, m_BlobKey,
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCRead, m_BlobKey.PackedKey(),
                                                  kEmptyStr, m_TimeBucket);
     x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);

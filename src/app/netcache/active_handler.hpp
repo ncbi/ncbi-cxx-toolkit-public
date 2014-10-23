@@ -122,8 +122,9 @@ public:
     static void Initialize(void);
 
     void ClientReleased(void);
+    void Release(void);
 
-    void SearchMeta(CRequestContext* cmd_ctx, const string& key);
+    void SearchMeta(CRequestContext* cmd_ctx, const CNCBlobKey& key);
     bool IsBlobExists(void);
     const SNCBlobSummary& GetBlobSummary(void);
 
@@ -143,39 +144,39 @@ public:
             goto x_WriteBlobData -> x_FinishWritingBlob ->
                 request confirmation -> x_WaitOneLineAnswer
     */
-    void CopyUpdate(const string& key, Uint8 create_time);
+    void CopyUpdate(const CNCBlobKeyLight& key, Uint8 create_time);
     void CopyPut(CRequestContext* cmd_ctx,
-                 const string& key,
+                 const CNCBlobKeyLight& key,
                  Uint2 slot,
                  Uint8 orig_rec_no);
     // x_SendCmdToExecute ->  x_WaitOneLineAnswer -> x_ReadCopyProlong -> x_FinishCommand
-    void CopyProlong(const string& key,
+    void CopyProlong(const CNCBlobKeyLight& key,
                      Uint2 slot,
                      Uint8 orig_rec_no,
                      Uint8 orig_time,
                      const SNCBlobSummary& blob_sum);
     void ProxyRemove(CRequestContext* cmd_ctx,
-                     const string& key,
+                     const CNCBlobKey& key,
                      const string& password,
                      int version,
                      Uint1 quorum);
     void ProxyHasBlob(CRequestContext* cmd_ctx,
-                      const string& key,
+                      const CNCBlobKey& key,
                       const string& password,
                       Uint1 quorum);
     void ProxyGetSize(CRequestContext* cmd_ctx,
-                      const string& key,
+                      const CNCBlobKey& key,
                       const string& password,
                       int version,
                       Uint1 quorum,
                       bool search,
                       bool force_local);
     void ProxySetValid(CRequestContext* cmd_ctx,
-                       const string& key,
+                       const CNCBlobKey& key,
                        const string& password,
                        int version);
     void ProxyRead(CRequestContext* cmd_ctx,
-                   const string& key,
+                   const CNCBlobKey& key,
                    const string& password,
                    int version,
                    Uint8 start_pos,
@@ -185,7 +186,7 @@ public:
                    bool force_local,
                    Uint8 age);
     void ProxyReadLast(CRequestContext* cmd_ctx,
-                       const string& key,
+                       const CNCBlobKey& key,
                        const string& password,
                        Uint8 start_pos,
                        Uint8 size,
@@ -194,17 +195,17 @@ public:
                        bool force_local,
                        Uint8 age);
     void ProxyGetMeta(CRequestContext* cmd_ctx,
-                      const string& key,
+                      const CNCBlobKey& key,
                       Uint1 quorum,
                       bool force_local);
     void ProxyWrite(CRequestContext* cmd_ctx,
-                    const string& key,
+                    const CNCBlobKey& key,
                     const string& password,
                     int version,
                     Uint4 ttl,
                     Uint1 quorum);
     void ProxyProlong(CRequestContext* cmd_ctx,
-                      const string& raw_key,
+                      const CNCBlobKey& key,
                       const string& password,
                       unsigned int add_time,
                       Uint1 quorum,
@@ -218,14 +219,14 @@ public:
     void SyncStart(CNCActiveSyncControl* ctrl, Uint8 local_rec_no, Uint8 remote_rec_no);
     void SyncBlobsList(CNCActiveSyncControl* ctrl);
     void SyncSend(CNCActiveSyncControl* ctrl, SNCSyncEvent* event);
-    void SyncSend(CNCActiveSyncControl* ctrl, const string& key);
+    void SyncSend(CNCActiveSyncControl* ctrl, const CNCBlobKeyLight& key);
     void SyncRead(CNCActiveSyncControl* ctrl, SNCSyncEvent* event);
     void SyncRead(CNCActiveSyncControl* ctrl,
-                  const string& key,
+                  const CNCBlobKeyLight& key,
                   Uint8 create_time);
     void SyncProlongPeer(CNCActiveSyncControl* ctrl, SNCSyncEvent* event);
     void SyncProlongPeer(CNCActiveSyncControl* ctrl,
-                         const string& key,
+                         const CNCBlobKeyLight& key,
                          const SNCBlobSummary& blob_sum);
     void SyncProlongOur(CNCActiveSyncControl* ctrl, SNCSyncEvent* event);
     void SyncProlongOur(CNCActiveSyncControl* ctrl,
@@ -235,6 +236,10 @@ public:
     void SyncCommit(CNCActiveSyncControl* ctrl,
                     Uint8 local_rec_no,
                     Uint8 remote_rec_no);
+
+    const CNCPeerControl* GetPeer(void) const {
+        return m_Peer;
+    }
 
 public:
     CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer);
@@ -338,7 +343,7 @@ private:
     CNCActiveSyncControl* m_SyncCtrl;
     CNCActiveHandler_Proxy* m_Proxy;
     Uint8  m_CntCmds;
-    string m_BlobKey;
+    CNCBlobKeyLight m_BlobKey;
     CNCBlobAccessor* m_BlobAccess;
     SNCBlobSummary* m_BlobSum;
     Uint8 m_OrigTime;
@@ -385,7 +390,7 @@ public:
 inline void
 CNCActiveHandler::x_SetSlotAndBucketAndVerifySlot(Uint2 slot)
 {
-    if (!CNCDistributionConf::GetSlotByKey(m_BlobKey,
+    if (!CNCDistributionConf::GetSlotByKey(m_BlobKey.PackedKey(),
             m_BlobSlot, m_TimeBucket) || m_BlobSlot != slot)
         abort();
 }
