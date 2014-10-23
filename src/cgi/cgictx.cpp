@@ -295,7 +295,7 @@ const string& CCgiContext::GetSelfURL(void) const
         return m_SelfURL;
 
     // First check forwarded URLs
-    string caf_url = GetRequest().GetRandomProperty("CAF_URL");
+    const string& caf_url = GetRequest().GetRandomProperty("CAF_URL");
     if ( !caf_url.empty() ) {
         m_SelfURL = caf_url;
         return m_SelfURL;
@@ -587,7 +587,7 @@ typedef list<string> TStringList;
 // - If Allow-Origin is '*' and the input origin is empty, check
 //   Allow-Credentials flag. Return false if it's enabled. Otherwise
 //   set 'origin' argument to '*' and return true.
-static bool s_IsAllowedOrigin(string& origin)
+static bool s_IsAllowedOrigin(const string& origin)
 {
     if ( origin.empty() ) {
         // Origin header is not set - this is not a CORS request.
@@ -597,7 +597,7 @@ static bool s_IsAllowedOrigin(string& origin)
     if ( allowed.empty() ) {
         return false;
     }
-    if (allowed == "*") {
+    if (NStr::Equal(allowed, "*")) {
         // Accept any origin, it must be non-empty by now.
         return true;
     }
@@ -689,10 +689,10 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         return false;  // CORS disabled, so -- do regular request processing
     }
 
-    CCgiRequest::ERequestMethod method = request.GetRequestMethod();
+    const CCgiRequest::ERequestMethod method = request.GetRequestMethod();
 
     // Is this a standard CORS request?
-    string origin = request.GetRandomProperty(s_HeaderToHttp(kAC_Origin));
+    const string& origin = request.GetRandomProperty(s_HeaderToHttp(kAC_Origin));
     if ( origin.empty() ) {
         // Is this a JQuery based hack for browsers that don't yet support CORS?
         string jquery_callback = request.GetEntry("callback");
@@ -724,9 +724,9 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
 
     // Is this a preflight CORS request?
     if (method == CCgiRequest::eMethod_OPTIONS) {
-        string method = request.GetRandomProperty
+        const string& method = request.GetRandomProperty
             (s_HeaderToHttp(kAC_RequestMethod));
-        string headers = request.GetRandomProperty
+        const string& headers = request.GetRandomProperty
             (s_HeaderToHttp(kAC_RequestHeaders));
         if (!s_IsAllowedMethod(method)  ||  !s_IsAllowedHeaderList(headers)) {
             // This is CORS request, but the method or headers are not allowed.
@@ -742,35 +742,36 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         if ( TCORS_AllowCredentials::GetDefault() ) {
             response.SetHeaderValue(kAC_AllowCredentials, "true");
         }
-        string allow_methods = TCORS_AllowMethods::GetDefault();
+        const string& allow_methods = TCORS_AllowMethods::GetDefault();
         if ( !allow_methods.empty() ) {
             response.SetHeaderValue(kAC_AllowMethods, allow_methods);
         }
-        string allow_headers = TCORS_AllowHeaders::GetDefault();
+        const string& allow_headers = TCORS_AllowHeaders::GetDefault();
         if ( !allow_headers.empty() ) {
             response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
         }
-        string max_age = TCORS_MaxAge::GetDefault();
+        const string& max_age = TCORS_MaxAge::GetDefault();
         if ( !max_age.empty() ) {
             response.SetHeaderValue(kAC_MaxAge, max_age);
         }
         response.WriteHeader();
-    }
-    else {
-        // This is a normal CORS request (not a preflight), so -- set the required
-        // CORS headers, and then do regular (non-CORS) request processing
-        response.SetHeaderValue(kAC_AllowOrigin, origin);
-        if ( TCORS_AllowCredentials::GetDefault() ) {
-            response.SetHeaderValue(kAC_AllowCredentials, "true");
-        }
-        string exp_headers = TCORS_ExposeHeaders::GetDefault();
-        if ( !exp_headers.empty() ) {
-            response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
-        }
+        // This was CORS preflight request (valid or not) - skip normap processing.
+        return true;
     }
 
-    // This was CORS request (valid or not) - skip normap processing.
-    return true;
+    // This is a normal CORS request (not a preflight), so -- set the required
+    // CORS headers, and then do regular (non-CORS) request processing
+    response.SetHeaderValue(kAC_AllowOrigin, origin);
+    if ( TCORS_AllowCredentials::GetDefault() ) {
+        response.SetHeaderValue(kAC_AllowCredentials, "true");
+    }
+    string exp_headers = TCORS_ExposeHeaders::GetDefault();
+    if ( !exp_headers.empty() ) {
+        response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
+    }
+
+    // Proceed to ProcessRequest()
+    return false;
 }
 
 
