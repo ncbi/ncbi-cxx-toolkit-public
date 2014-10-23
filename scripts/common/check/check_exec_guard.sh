@@ -47,7 +47,7 @@ done
 # Time out:
 
 # -- get stacktrace of a running process
-if [ -z "$no_checks"  -a  -n "NCBI_CHECK_STACK_TRACE" ]; then
+if [ -z "$no_checks"  -a  -n "$NCBI_CHECK_STACK_TRACE" ]; then
    echo "--- Timeout. Stacktrace for pid $pid:"
    eval $NCBI_CHECK_STACK_TRACE $pid
    echo
