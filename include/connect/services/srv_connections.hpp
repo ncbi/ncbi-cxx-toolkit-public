@@ -49,7 +49,9 @@ struct SNetServerMultilineCmdOutputImpl;    ///< @internal
 
 // A host:port pair.
 struct SServerAddress {
-    SServerAddress(unsigned h, unsigned short p) : host(h), port(p) {}
+    SServerAddress(unsigned h, unsigned short p) : host(h), port(p), name(h) {}
+    SServerAddress(const string &n, unsigned short p)
+        : host(g_NetService_gethostbyname(n)), port(p), name(n, host) {}
 
     bool operator ==(const SServerAddress& h) const
     {
@@ -64,7 +66,7 @@ struct SServerAddress {
 
     string AsString() const
     {
-        string address(g_NetService_gethostnamebyaddr(host));
+        string address(name.get(host));
         address += ':';
         address += NStr::UIntToString(port);
 
@@ -73,6 +75,30 @@ struct SServerAddress {
 
     unsigned host;
     unsigned short port;
+
+private:
+    struct SName
+    {
+        SName() : host(0) {}
+        SName(unsigned h) : host(h) {}
+        SName(const string &n, unsigned h) : name(n), host(h) {}
+
+        string get(unsigned h)
+        {
+            // Name was not looked up yet or host changed
+            if (name.empty() || host != h) {
+                host = h;
+                name = g_NetService_gethostnamebyaddr(h);
+            }
+
+            return name;
+        }
+
+        string name;
+        unsigned host;
+    };
+
+    mutable SName name;
 };
 
 ///////////////////////////////////////////////////////////////////////////

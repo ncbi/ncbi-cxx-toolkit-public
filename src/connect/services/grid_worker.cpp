@@ -543,7 +543,7 @@ int SGridWorkerNodeImpl::Run(
         string host, port;
         NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, port);
         if (!host.empty() && !port.empty())
-            m_Masters.insert(SServerAddress(g_NetService_gethostbyname(host),
+            m_Masters.insert(SServerAddress(host,
                     (unsigned short) NStr::StringToUInt(port)));
     }
 

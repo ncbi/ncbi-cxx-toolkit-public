@@ -88,8 +88,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     void Init(CConfig* config, const string& section,
             INetServerConnectionListener* listener);
 
-    SNetServerInPool* FindOrCreateServerImpl(
-        unsigned host, unsigned short port);
+    SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
 
     void ResetServerConnections();
@@ -100,8 +99,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     string m_ClientName;
     CRef<INetServerConnectionListener> m_Listener;
 
-    unsigned m_EnforcedServerHost;
-    unsigned short m_EnforcedServerPort;
+    SServerAddress m_EnforcedServer;
 
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 

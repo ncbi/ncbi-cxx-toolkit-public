@@ -144,12 +144,12 @@ class NCBI_XCONNECT_EXPORT CNetService
 inline CNetServer CNetService::GetServer(const string& host,
         unsigned short port)
 {
-    return GetServer(g_NetService_gethostbyname(host), port);
+    return GetServer(SServerAddress(host, port));
 }
 
-inline CNetServer CNetService::GetServer(const SServerAddress& server_address)
+inline CNetServer CNetService::GetServer(unsigned host, unsigned short port)
 {
-    return GetServer(server_address.host, server_address.port);
+    return GetServer(SServerAddress(host, port));
 }
 
 /// This class is for use by the grid_cli utility only.

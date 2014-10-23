@@ -214,7 +214,7 @@ SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
     m_APIName(api_name),
     m_ClientName(client_name),
     m_Listener(listener),
-    m_EnforcedServerHost(0),
+    m_EnforcedServer(0, 0),
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
     m_UseOldStyleAuth(false)
@@ -247,9 +247,8 @@ void SNetServiceImpl::Construct()
         if (!NStr::SplitInTwo(m_ServiceName, ":", host, port))
             m_ServiceType = CNetService::eLoadBalancedService;
         else
-            Construct(m_ServerPool->FindOrCreateServerImpl(
-                    g_NetService_gethostbyname(host),
-                    (unsigned short) NStr::StringToInt(port)));
+            Construct(m_ServerPool->FindOrCreateServerImpl(SServerAddress(host,
+                    (unsigned short) NStr::StringToInt(port))));
     }
 }
 
@@ -603,8 +602,7 @@ bool CNetService::IsLoadBalanced() const
 
 void CNetServerPool::StickToServer(const string& host, unsigned short port)
 {
-    m_Impl->m_EnforcedServerHost = g_NetService_gethostbyname(host);
-    m_Impl->m_EnforcedServerPort = port;
+    m_Impl->m_EnforcedServer = SServerAddress(host, port);
 }
 
 void CNetService::PrintCmdOutput(const string& cmd,
@@ -655,10 +653,8 @@ void CNetService::PrintCmdOutput(const string& cmd,
 }
 
 SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
-    unsigned host, unsigned short port)
+        const SServerAddress& server_address)
 {
-    SServerAddress server_address(host, port);
-
     pair<TNetServerByAddress::iterator, bool> loc(m_Servers.insert(
             TNetServerByAddress::value_type(server_address,
                     (SNetServerInPool*) NULL)));
@@ -666,7 +662,7 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
     if (!loc.second)
         return loc.first->second;
 
-    SNetServerInPool* server = new SNetServerInPool(host, port,
+    SNetServerInPool* server = new SNetServerInPool(server_address.host, server_address.port,
             m_Listener->AllocServerProperties().GetPointerOrNull());
 
     loc.first->second = server;
@@ -685,17 +681,15 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer CNetService::GetServer(unsigned host, unsigned short port)
+CNetServer CNetService::GetServer(const SServerAddress& server_address)
 {
     m_Impl->m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
 
     CFastMutexGuard server_mutex_lock(m_Impl->m_ServerPool->m_ServerMutex);
 
-    SNetServerInPool* server = m_Impl->m_ServerPool->m_EnforcedServerHost == 0 ?
-            m_Impl->m_ServerPool->FindOrCreateServerImpl(host, port) :
-            m_Impl->m_ServerPool->FindOrCreateServerImpl(
-                    m_Impl->m_ServerPool->m_EnforcedServerHost,
-                    m_Impl->m_ServerPool->m_EnforcedServerPort);
+    SNetServerInPool* server = m_Impl->m_ServerPool->FindOrCreateServerImpl(
+            m_Impl->m_ServerPool->m_EnforcedServer.host == 0 ?
+            server_address : m_Impl->m_ServerPool->m_EnforcedServer);
 
     server->m_ServerPool = m_Impl->m_ServerPool;
 
@@ -839,7 +833,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                 if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
                         sinfo->rate != 0.0) {
                     SNetServerInPool* server = m_ServerPool->
-                            FindOrCreateServerImpl(sinfo->host, sinfo->port);
+                            FindOrCreateServerImpl(SServerAddress(sinfo->host, sinfo->port));
                     {{
                         CFastMutexGuard guard(server->m_ThrottleLock);
                         server->m_DiscoveredAfterThrottling = true;

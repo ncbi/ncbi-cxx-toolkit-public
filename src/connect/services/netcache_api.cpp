@@ -72,8 +72,7 @@ static SServerAddress* s_GetFallbackServer()
         string host, port;
         if (NStr::SplitInTwo(TCGI_NetCacheFallbackServer::GetDefault(),
                 ":", host, port)) {
-            s_FallbackServer->reset(new SServerAddress(
-                    g_NetService_gethostbyname(host),
+            s_FallbackServer->reset(new SServerAddress(host,
                             (unsigned short) NStr::StringToInt(port)));
         }
     } catch (...) {
@@ -760,7 +759,7 @@ CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id,
     CNetCacheKey key(blob_id, m_Impl->m_CompoundIDPool);
 
     string cmd("GETMETA " + key.StripKeyExtensions());
-    cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServerHost == 0 ?
+    cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServer.host == 0 ?
             " 0" : " 1");
 
     CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
