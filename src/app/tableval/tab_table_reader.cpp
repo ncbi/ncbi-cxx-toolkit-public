@@ -213,6 +213,8 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
         string lower = default_columns;
         NStr::ToLower(lower);
         NStr::Tokenize(lower, ",", m_col_defs); //using comma separator always
+
+        return true;
     }
     else
     {

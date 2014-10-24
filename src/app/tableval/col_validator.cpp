@@ -65,7 +65,12 @@ CColumnValidatorRegistry& CColumnValidatorRegistry::GetInstance()
 
 void CColumnValidatorRegistry::Register(const CTempString& name, const CTempString& alias)
 {
-    m_registry[name] = m_registry[alias];
+    if (m_registry.find(alias) == m_registry.end())
+    {
+       NCBI_THROW(CException, eUnknown, string("Datatype ") + string(alias) + string(" isn't supported"));
+    }
+    else
+       m_registry[name] = m_registry[alias];
 }
 
 void CColumnValidatorRegistry::Register(const CTempString& name, CColumnValidator* val)
