@@ -109,6 +109,89 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
     }
 }
 
+// The proposed format for orgname flags: flagname1[;flagname2]...[;flagnameN]
+// where flagnameX consists of ascii alphanum characters only. Each value of flagnameX is unique.
+// Presence of flag name in the strings means 'true' value for the flag.
+const CTempString s_flagDelim = ";";
+
+void COrgName::x_SetAttribFlag( const string& name )
+{
+    if( !x_GetAttribFlag( name ) ) {
+	if( IsSetAttrib() && !GetAttrib().empty() ) {
+	    SetAttrib().append(s_flagDelim).append(name);
+	} else {
+	    SetAttrib( name );
+	}
+    }
+}
+
+void COrgName::x_ResetAttribFlag( const string& name )
+{
+    if( !name.empty() && IsSetAttrib() ) {
+	const string& attr = GetAttrib();
+	list< CTempString > lVals;
+	NStr::Split( attr, s_flagDelim, lVals );
+	for( list< CTempString >::iterator i = lVals.begin(), li = lVals.end(); i != li; ) {
+	    NStr::TruncateSpacesInPlace( *i );
+	    if( NStr::EqualNocase( *i, name ) ) {
+		i = lVals.erase( i );
+	    } else {
+		++i;
+	    }
+	}
+	SetAttrib( NStr::Join( lVals, s_flagDelim ) );
+	if( SetAttrib().empty() ) {
+	    ResetAttrib();
+	}
+    }
+}
+
+bool COrgName::x_GetAttribFlag( const string& name ) const
+{
+    if( !name.empty() && IsSetAttrib() ) {
+	const string& attr = GetAttrib();
+	list< CTempString > lVals;
+	NStr::Split( attr, s_flagDelim, lVals );
+	NON_CONST_ITERATE( list< CTempString >, i, lVals ) {
+	    NStr::TruncateSpacesInPlace( *i );
+	    if( NStr::EqualNocase( *i, name ) ) {
+		return true;
+	    }
+	}
+    }
+    return false;
+}
+
+// Flag indicating that node's scientific name is "well specified" according to the
+// respective taxonomic nomenclature (e.g. Genus species subspecies). 
+// Based on "specified" property from Taxonomy database
+bool COrgName::IsFormalName() const
+{
+    return x_GetAttribFlag( "specified" );
+}
+
+void COrgName::SetFormalNameFlag( bool bFormalName )
+{
+    if( bFormalName ) {
+	x_SetAttribFlag( "specified" );
+    } else {
+	x_ResetAttribFlag( "specified" );
+    }
+}
+
+bool COrgName::IsUncultured() const
+{
+    return x_GetAttribFlag( "uncultured" );
+}
+
+void COrgName::SetUncultured( bool bUncultured )
+{
+    if( bUncultured ) {
+        x_SetAttribFlag( "uncultured" );
+    } else {
+        x_ResetAttribFlag( "uncultured" );
+    }
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

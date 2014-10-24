@@ -58,11 +58,30 @@ public:
 
     bool GetFlatName(string& name_out, string* lineage = 0) const;
 
+    // Flag indicating that node's scientific name is "well specified" according to the
+    // respective taxonomic nomenclature (e.g. Genus species subspecies). 
+    // Based on "specified" property from Taxonomy database.
+    // Flag is kept along with other flags in orgname.attrib field 
+    // (see comments to x_SetAttribFlag() function)
+    bool IsFormalName() const;
+    void SetFormalNameFlag( bool bFormalName );
+
+    // Uncultured flag.
+    // Flag is kept along with other flags in orgname.attrib field
+    // (see comments to x_SetAttribFlag() function)
+    bool IsUncultured() const;
+    void SetUncultured( bool bUncultured );
+
 private:
     // Prohibit copy constructor and assignment operator
     COrgName(const COrgName& value);
     COrgName& operator=(const COrgName& value);
-
+    // The proposed format for orgname flags: flagname1;[flagname2;]...
+    // where flagnameX consists of ascii alphanum characters only. Each value of flagnameX is unique.
+    // Presence of flag name in the strings means 'true' value for the flag.
+    void x_SetAttribFlag( const string& name );
+    void x_ResetAttribFlag( const string& name );
+    bool x_GetAttribFlag( const string& name ) const;
 };
 
 
