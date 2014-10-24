@@ -69,7 +69,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     void ShutdownServer(EShutdownOption shutdown_option = eNormalShutdown);
 
     /// Reload configuration parameters from the same source.
-    void ReloadServerConfig();
+    void ReloadServerConfig(const string& sections = kEmptyStr);
 
     /// Remove all blobs from an ICache database.
     void Purge(const string& cache_name);

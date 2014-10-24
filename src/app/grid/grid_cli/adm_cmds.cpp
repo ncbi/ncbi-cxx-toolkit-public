@@ -412,7 +412,7 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
 {
     switch (SetUp_AdminCmd(eSevereAdminCmd)) {
     case eNetCacheAdmin:
-        m_NetCacheAdmin.ReloadServerConfig();
+        m_NetCacheAdmin.ReloadServerConfig(m_Opts.reg_sections);
         return 0;
 
     case eNetScheduleAdmin:

@@ -241,6 +241,7 @@ enum EOption {
     ePreviousInterval,
     eFileTrackSite,
     eFileTrackAPIKey,
+    eRegSection,
 
     eExtendedOptionDelimiter,
 
@@ -331,6 +332,7 @@ private:
         TNetStorageFlags netstorage_flags;
         string attr_name;
         string attr_value;
+        string reg_sections;
 
         struct SICacheBlobKey {
             string key;
