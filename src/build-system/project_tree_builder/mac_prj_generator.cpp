@@ -405,8 +405,9 @@ void CMacProjectGenerator::CreateConfigureScript(const string& name, bool with_g
         script += "gui_";
     }
     script += name + ".sh";
+    string candidate = script + ".candidate";
 
-    CNcbiOfstream  ofs(script.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    CNcbiOfstream  ofs(candidate.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, script);
 
@@ -448,6 +449,7 @@ void CMacProjectGenerator::CreateConfigureScript(const string& name, bool with_g
     ofs << "export PTB_PROJECT_REQ=" << GetApp().m_Subtree << "\n";
     ofs << "$BUILD_TREE_ROOT/ptb.sh\n";
     ofs.close();
+    PromoteIfDifferent(script, candidate);
     CDirEntry(script).SetMode(
         CDirEntry::fExecute | CDirEntry::fRead | CDirEntry::fWrite,
         CDirEntry::fExecute | CDirEntry::fRead | CDirEntry::fWrite,
