@@ -44,6 +44,8 @@
 #include <fcntl.h>
 #endif
 
+#define PIPE_SIZE 64 * 1024
+
 BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
@@ -259,7 +261,9 @@ public:
             ret = CPipe::ExecWait(m_App, args, in,
                                   out, err, exit_value,
                                   kEmptyStr, m_Env,
-                                  &callback);
+                                  &callback,
+                                  NULL,
+                                  PIPE_SIZE);
         }
         catch (exception& ex) {
             err << ex.what();
@@ -566,7 +570,8 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                                std_err_guard.GetOStream(),
                                exit_value,
                                tmp_path, env, &callback,
-                               &kill_tm) == CPipe::eDone;
+                               &kill_tm,
+                               PIPE_SIZE) == CPipe::eDone;
 
         std_err_guard.Close();
         std_out_guard.Close();
