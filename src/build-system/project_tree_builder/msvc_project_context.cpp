@@ -670,6 +670,7 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
             continue;
         }
 
+        bool disabled = false;
         if ( !site.IsLibEnabledInConfig(requires, config) ) {
             if (unmet) {
                 if (!unmet->empty()) {
@@ -681,18 +682,25 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
                    != libs_required.end()) {
                 result = false;
             }
-            s_DisabledPackages[config.GetConfigFullName()].insert(requires);
-        } else {
-            s_EnabledPackages[config.GetConfigFullName()].insert(requires);
+            disabled = true;
         }
 
         if ( !site.IsLibOk(lib_info,true) && !site.Is3PartyLibWithChoice(requires) ) {
-            if (unmet_req) {
-                if (!unmet_req->empty()) {
-                    *unmet_req += ", ";
+            disabled = true;
+            if (find( libs_required.begin(), libs_required.end(), requires )
+                   != libs_required.end()) {
+                if (unmet_req) {
+                    if (!unmet_req->empty()) {
+                        *unmet_req += ", ";
+                    }
+                    *unmet_req += requires;
                 }
-                *unmet_req += requires;
             }
+        }
+        if (disabled) {
+            s_DisabledPackages[config.GetConfigFullName()].insert(requires);
+        } else {
+            s_EnabledPackages[config.GetConfigFullName()].insert(requires);
         }
     }
 
