@@ -156,7 +156,7 @@ void CTabDelimitedValidator::_ReportXML(CNcbiOstream* out_stream, bool no_header
     {
         xml::node new_node(it->m_warning?"warning":"error");
         new_node.get_attributes().insert("row", NStr::IntToString(it->m_row).c_str());
-        new_node.get_attributes().insert("column", NStr::IntToString(it->m_row).c_str());
+        new_node.get_attributes().insert("column", NStr::IntToString(it->m_col).c_str());
         new_node.get_attributes().insert("message", it->m_msg.c_str()); 
         // will be handled correctly
         root.insert(new_node);
