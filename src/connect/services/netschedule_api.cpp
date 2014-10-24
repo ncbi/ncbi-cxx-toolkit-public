@@ -412,6 +412,26 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         auth += '\"';
     }
 
+    switch (m_ClientType) {
+    case CNetScheduleAPI::eCT_Admin:
+        auth += " client_type=\"admin\"";
+        break;
+
+    case CNetScheduleAPI::eCT_Submitter:
+        auth += " client_type=\"submitter\"";
+        break;
+
+    case CNetScheduleAPI::eCT_WorkerNode:
+        auth += " client_type=\"worker node\"";
+        break;
+
+    case CNetScheduleAPI::eCT_Reader:
+        auth += " client_type=\"reader\"";
+
+    default: /* eCT_Auto */
+        break;
+    }
+
     if (!impl->m_ClientNode.empty()) {
         auth += " client_node=\"";
         auth += impl->m_ClientNode;
@@ -1129,6 +1149,13 @@ void CNetScheduleAPI::UpdateAuthString()
     m_Impl->m_Service->m_ServerPool->ResetServerConnections();
 
     m_Impl->GetListener()->SetAuthString(m_Impl);
+}
+
+void CNetScheduleAPI::SetClientType(CNetScheduleAPI::EClientType client_type)
+{
+    m_Impl->GetListener()->m_ClientType = client_type;
+
+    UpdateAuthString();
 }
 
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()

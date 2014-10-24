@@ -40,8 +40,11 @@
 
 USING_NCBI_SCOPE;
 
-void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class)
+void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
+        CGridCommandLineInterfaceApp::EAdminCmdSeverity /*cmd_severity*/)
 {
+    m_APIClass = api_class;
+
     if (api_class == eNetStorageAdmin && !IsOptionExplicitlySet(eNetStorage)) {
         NCBI_THROW(CArgException, eNoValue, "'--" NETSTORAGE_OPTION "' "
             "must be explicitly specified.");

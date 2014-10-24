@@ -39,6 +39,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
+    m_APIClass = api_class;
+
     CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
 
     if (IsOptionSet(eEnableMirroring))
@@ -181,17 +183,15 @@ void CGridCommandLineInterfaceApp::PrintSelectedICacheServer()
 
 int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 {
-    bool icache_mode = IsOptionSet(eCache);
+    SetUp_NetCacheCmd();
 
-    if (icache_mode)
+    if (m_APIClass != eNetCacheAPI)
         ParseICacheKey();
-
-    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     try {
         CNetServerMultilineCmdOutput output;
 
-        if (!icache_mode) {
+        if (m_APIClass == eNetCacheAPI) {
             PrintBlobMeta(CNetCacheKey(m_Opts.id, m_CompoundIDPool));
 
             output = m_NetCacheAPI.GetBlobInfo(m_Opts.id);
@@ -215,7 +215,7 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
         if (e.GetErrCode() != CNetCacheException::eServerError)
             throw;
 
-        if (!icache_mode)
+        if (m_APIClass == eNetCacheAPI)
             printf("Size: %lu\n", (unsigned long)
                 m_NetCacheAPI.GetBlobSize(m_Opts.id));
         else {
@@ -233,16 +233,14 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 
 int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 {
-    bool icache_mode = IsOptionSet(eCache);
-
-    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+    SetUp_NetCacheCmd();
 
     int reader_select = IsOptionSet(ePassword, OPTION_N(1)) |
         (m_Opts.offset != 0 || m_Opts.size != 0 ? OPTION_N(0) : 0);
 
     auto_ptr<IReader> reader;
 
-    if (!icache_mode) {
+    if (m_APIClass == eNetCacheAPI) {
         size_t blob_size = 0;
         switch (reader_select) {
         case 0: /* no special case */
@@ -355,15 +353,16 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 
 int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 {
-    bool icache_mode = IsOptionSet(eCache);
-
-    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+    SetUp_NetCacheCmd();
 
     auto_ptr<IEmbeddedStreamWriter> writer;
 
+    // Cannot use a reference here because m_Opts.id.empty() is
+    // used later to find out whether a blob was given in the
+    // command line.
     string blob_key = m_Opts.id;
 
-    if (!icache_mode) {
+    if (m_APIClass == eNetCacheAPI) {
         switch (IsOptionSet(ePassword, 1) | IsOptionSet(eUseCompoundID, 2)) {
         case 1:
             writer.reset(m_NetCacheAPI.PutData(&blob_key,
@@ -406,7 +405,8 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
         NCBI_USER_THROW("Cannot create blob stream");
     }
 
-    if (icache_mode && m_NetICacheClient.GetService().IsLoadBalanced())
+    if (m_APIClass != eNetCacheAPI &&
+            m_NetICacheClient.GetService().IsLoadBalanced())
         PrintSelectedICacheServer();
 
     size_t bytes_written;
@@ -433,7 +433,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
     writer->Close();
 
-    if (!icache_mode && m_Opts.id.empty())
+    if (m_APIClass == eNetCacheAPI && m_Opts.id.empty())
         NcbiCout << blob_key << NcbiEndl;
 
     return 0;
@@ -444,11 +444,9 @@ ErrorExit:
 
 int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
 {
-    bool icache_mode = IsOptionSet(eCache);
+    SetUp_NetCacheCmd();
 
-    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
-
-    if (!icache_mode)
+    if (m_APIClass == eNetCacheAPI)
         if (IsOptionSet(ePassword))
             m_NetCacheAPI.Remove(m_Opts.id, nc_blob_password = m_Opts.password);
         else
@@ -470,7 +468,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
 
 int CGridCommandLineInterfaceApp::Cmd_Purge()
 {
-    SetUp_NetCacheCmd(eNetCacheAdmin, eSevereAdminCmd);
+    SetUp_NetCacheCmd(eNetCacheAdmin, eAdminCmdWithSideEffects);
 
     m_NetCacheAdmin.Purge(m_Opts.cache_name);
 

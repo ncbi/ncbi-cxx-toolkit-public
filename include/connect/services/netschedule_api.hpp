@@ -260,6 +260,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     void SetClientSession(const string& client_session);
 
+    enum EClientType {
+        eCT_Auto,
+        eCT_Admin,
+        eCT_Submitter,
+        eCT_WorkerNode,
+        eCT_Reader,
+    };
+
+    void SetClientType(EClientType client_type);
+
     enum ENetScheduleWarningType {
         eWarnUnknown,
         eWarnAffinityNotFound,

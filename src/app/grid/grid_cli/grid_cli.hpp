@@ -283,6 +283,8 @@ private:
     int m_ArgC;
     const char** m_ArgV;
 
+    bool m_AdminMode;
+
     struct SOptions {
         string id;
         string auth;
@@ -499,7 +501,15 @@ private:
     class CNetScheduleWarningLogger : public INetEventHandler
     {
     public:
+        CNetScheduleWarningLogger(CGridCommandLineInterfaceApp* grid_cli_app) :
+            m_GridCLIApp(grid_cli_app)
+        {
+        }
+
         virtual void OnWarning(const string& warn_msg, CNetServer server);
+
+    private:
+        CGridCommandLineInterfaceApp* m_GridCLIApp;
     };
 
     enum EAPIClass {
@@ -513,16 +523,23 @@ private:
         eWorkerNodeAdmin,
         eNetStorageAPI,
         eNetStorageAdmin,
-    };
+    } m_APIClass;
+
     enum EAdminCmdSeverity {
         eReadOnlyAdminCmd,
-        eSevereAdminCmd
+        eAdminCmdWithSideEffects
     };
-    EAPIClass SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
+
+    void SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
     int NetCacheSanityCheck();
     int NetScheduleSanityCheck();
     void SetUp_NetCacheCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
+    void SetUp_NetCacheCmd()
+    {
+        SetUp_NetCacheCmd(IsOptionSet(eCache) ?
+                eNetICacheClient : eNetCacheAPI);
+    }
     void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
@@ -551,7 +568,8 @@ private:
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
 
-    void SetUp_NetStorageCmd(EAPIClass api_class);
+    void SetUp_NetStorageCmd(EAPIClass api_class,
+            EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void NetStorage_PrintServerReply(CJsonNode& server_reply);
     int PrintNetStorageServerInfo();
     int PrintNetStorageServerConfig();

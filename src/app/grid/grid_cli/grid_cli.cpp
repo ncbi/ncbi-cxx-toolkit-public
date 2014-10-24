@@ -53,6 +53,7 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
         int argc, const char* argv[]) :
     m_ArgC(argc),
     m_ArgV(argv),
+    m_AdminMode(false),
     m_NetICacheClient(eVoid)
 {
 }
@@ -1227,7 +1228,6 @@ int CGridCommandLineInterfaceApp::Run()
 
     {
         bool enable_extended_cli = false;
-        bool admin_mode = false;
 
         int argc = m_ArgC - 1;
         const char** argv = m_ArgV + 1;
@@ -1236,7 +1236,7 @@ int CGridCommandLineInterfaceApp::Run()
             if (strcmp(*argv, "--extended-cli") == 0)
                 enable_extended_cli = true;
             else if (strcmp(*argv, "--admin") == 0)
-                admin_mode = true;
+                m_AdminMode = true;
             else {
                 ++argv;
                 continue;
@@ -1276,7 +1276,8 @@ int CGridCommandLineInterfaceApp::Run()
         for (i = 0; i < TOTAL_NUMBER_OF_COMMANDS; ++i, ++cmd_def) {
             if (!enable_extended_cli &&
                     ((cmd_def->cat_id == eExtendedCLICommand) ||
-                    ((cmd_def->cat_id == eAdministrativeCommand) ^ admin_mode)))
+                    ((cmd_def->cat_id ==
+                            eAdministrativeCommand) ^ m_AdminMode)))
                 continue;
             clparser.AddCommand(i, cmd_def->name_variants,
                 cmd_def->synopsis, cmd_def->usage, cmd_def->cat_id);
@@ -1621,6 +1622,10 @@ int CGridCommandLineInterfaceApp::Run()
                 cmd_def->name_variants, e.GetMsg().c_str());
         return 2;
     }
+    catch (CNetSrvConnException& e) {
+        fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
+        return 3;
+    }
     catch (CNetServiceException& e) {
         fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
         return 3;
@@ -1651,17 +1656,23 @@ void CGridCommandLineInterfaceApp::CNetScheduleWarningLogger::OnWarning(
 {
     string warning(warn_msg);
 
+    const char* server_type = m_GridCLIApp->m_APIClass != eWorkerNodeAdmin ?
+            "NetSchedule server" : "Worker node";
+
     CNetScheduleAPI::ENetScheduleWarningType warning_type =
             CNetScheduleAPI::ExtractWarningType(warning);
 
     if (warning_type != CNetScheduleAPI::eWarnUnknown)
-        fprintf(stderr, "NetSchedule server at %s: WARNING [%s]: %s\n",
+        fprintf(stderr, "%s at %s: WARNING [%s]: %s\n",
+                server_type,
                 server.GetServerAddress().c_str(),
                 CNetScheduleAPI::WarningTypeToString(warning_type),
                 warning.c_str());
     else
-        fprintf(stderr, "NetSchedule server at %s: WARNING: %s\n",
-                server.GetServerAddress().c_str(), warning.c_str());
+        fprintf(stderr, "%s at %s: WARNING: %s\n",
+                server_type,
+                server.GetServerAddress().c_str(),
+                warning.c_str());
 }
 
 void CGridCommandLineInterfaceApp::PrintLine(const string& line)

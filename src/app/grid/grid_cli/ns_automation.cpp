@@ -142,7 +142,10 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
 bool SNetScheduleServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    if (method == "set_node_session") {
+    if (method == "set_client_type")
+        m_NetScheduleAPI.SetClientType(
+                (CNetScheduleAPI::EClientType) arg_array.NextInteger(0));
+    else if (method == "set_node_session") {
         CJsonNode arg(arg_array.NextNode());
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientNode(arg_array.GetString(arg));

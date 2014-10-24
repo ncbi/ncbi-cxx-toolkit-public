@@ -51,6 +51,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     if (api_class == eNetScheduleSubmitter)
         SetUp_NetCacheCmd(eNetCacheAPI);
 
+    m_APIClass = api_class;
+
     string queue = m_Opts.queue;
 
     if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
@@ -82,7 +84,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         }
     }
 
-    m_NetScheduleAPI.SetEventHandler(new CNetScheduleWarningLogger);
+    if (m_AdminMode)
+        m_NetScheduleAPI.SetClientType(CNetScheduleAPI::eCT_Admin);
+
+    m_NetScheduleAPI.SetEventHandler(new CNetScheduleWarningLogger(this));
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionSet(eAllowXSiteConn))
@@ -903,7 +908,7 @@ int CGridCommandLineInterfaceApp::Cmd_CancelJob()
         m_NetScheduleAPI.GetSubmitter().CancelJobGroup(m_Opts.job_group,
                 m_Opts.job_statuses);
     } else if (IsOptionSet(eAllJobs) || !m_Opts.job_statuses.empty()) {
-        SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
+        SetUp_NetScheduleCmd(eNetScheduleAdmin, eAdminCmdWithSideEffects);
 
         m_NetScheduleAdmin.CancelAllJobs(m_Opts.job_statuses);
     } else {
@@ -1137,7 +1142,7 @@ int CGridCommandLineInterfaceApp::Cmd_DumpQueue()
 
 int CGridCommandLineInterfaceApp::Cmd_CreateQueue()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eAdminCmdWithSideEffects);
 
     m_NetScheduleAdmin.CreateQueue(m_Opts.id,
             m_Opts.queue_class, m_Opts.queue_description);
@@ -1187,7 +1192,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
 
 int CGridCommandLineInterfaceApp::Cmd_DeleteQueue()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eAdminCmdWithSideEffects);
 
     m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
 

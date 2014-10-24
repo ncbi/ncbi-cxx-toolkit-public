@@ -76,7 +76,11 @@ struct SNetScheduleServerProperties : public INetServerProperties
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
 public:
-    CNetScheduleServerListener() : m_WorkerNodeCompatMode(false) {}
+    CNetScheduleServerListener() :
+        m_ClientType(CNetScheduleAPI::eCT_Auto),
+        m_WorkerNodeCompatMode(false)
+    {
+    }
 
     void SetAuthString(SNetScheduleAPIImpl* impl);
 
@@ -107,6 +111,7 @@ public:
     // preferred affinities from two threads.
     CFastMutex m_AffinitySubmissionMutex;
 
+    CNetScheduleAPI::EClientType m_ClientType;
     bool m_WorkerNodeCompatMode;
 };
 

@@ -38,9 +38,8 @@
 
 USING_NCBI_SCOPE;
 
-CGridCommandLineInterfaceApp::EAPIClass
-        CGridCommandLineInterfaceApp::SetUp_AdminCmd(
-                CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
+void CGridCommandLineInterfaceApp::SetUp_AdminCmd(
+        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
     // For commands that accept only one type of server.
     switch (IsOptionAccepted(eNetCache, OPTION_N(0)) |
@@ -49,19 +48,19 @@ CGridCommandLineInterfaceApp::EAPIClass
             IsOptionAccepted(eNetStorage, OPTION_N(3))) {
     case OPTION_N(0): // eNetCache
         SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
-        return eNetCacheAdmin;
+        return;
 
     case OPTION_N(1): // eNetSchedule
         SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity);
-        return eNetScheduleAdmin;
+        return;
 
     case OPTION_N(2): // eWorkerNode
         SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
-        return eWorkerNodeAdmin;
+        return;
 
     case OPTION_N(3): // eNetStorage
-        SetUp_NetStorageCmd(eNetStorageAdmin);
-        return eNetStorageAdmin;
+        SetUp_NetStorageCmd(eNetStorageAdmin, cmd_severity);
+        return;
 
     default:
         break;
@@ -74,19 +73,19 @@ CGridCommandLineInterfaceApp::EAPIClass
             IsOptionExplicitlySet(eNetStorage, OPTION_N(3))) {
     case OPTION_N(0): // eNetCache
         SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
-        return eNetCacheAdmin;
+        return;
 
     case OPTION_N(1): // eNetSchedule
         SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity);
-        return eNetScheduleAdmin;
+        return;
 
     case OPTION_N(2): // eWorkerNode
         SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
-        return eWorkerNodeAdmin;
+        return;
 
     case OPTION_N(3): // eNetStorage
-        SetUp_NetStorageCmd(eNetStorageAdmin);
-        return eNetStorageAdmin;
+        SetUp_NetStorageCmd(eNetStorageAdmin, cmd_severity);
+        return;
 
     case 0: // No options specified
         NCBI_THROW(CArgException, eNoValue, "this command requires "
@@ -102,11 +101,11 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 {
     CNetService service;
 
-    EAPIClass api_class = SetUp_AdminCmd(eReadOnlyAdminCmd);
+    SetUp_AdminCmd(eReadOnlyAdminCmd);
 
     bool server_version_key = true;
 
-    switch (api_class) {
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         service = m_NetCacheAPI.GetService();
         break;
@@ -156,7 +155,9 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
 int CGridCommandLineInterfaceApp::Cmd_Stats()
 {
-    switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
+    SetUp_AdminCmd(eReadOnlyAdminCmd);
+
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.PrintStat(NcbiCout, m_Opts.aggregation_interval,
                 !IsOptionSet(ePreviousInterval) ?
@@ -182,7 +183,9 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
 
 int CGridCommandLineInterfaceApp::Cmd_Health()
 {
-    switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
+    SetUp_AdminCmd(eReadOnlyAdminCmd);
+
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.PrintHealth(NcbiCout);
         return 0;
@@ -377,7 +380,9 @@ int CGridCommandLineInterfaceApp::NetScheduleSanityCheck()
 
 int CGridCommandLineInterfaceApp::Cmd_SanityCheck()
 {
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         return NetCacheSanityCheck();
 
@@ -391,7 +396,9 @@ int CGridCommandLineInterfaceApp::Cmd_SanityCheck()
 
 int CGridCommandLineInterfaceApp::Cmd_GetConf()
 {
-    switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
+    SetUp_AdminCmd(eReadOnlyAdminCmd);
+
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.PrintConfig(NcbiCout);
         return 0;
@@ -410,7 +417,9 @@ int CGridCommandLineInterfaceApp::Cmd_GetConf()
 
 int CGridCommandLineInterfaceApp::Cmd_Reconf()
 {
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.ReloadServerConfig(m_Opts.reg_sections);
         return 0;
@@ -427,7 +436,9 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
 
 int CGridCommandLineInterfaceApp::Cmd_Drain()
 {
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
+    switch (m_APIClass) {
     case eNetScheduleAdmin:
         m_NetScheduleAdmin.SwitchToDrainMode(m_Opts.on_off_switch);
         return 0;
@@ -453,7 +464,9 @@ void CGridCommandLineInterfaceApp::NetSchedule_SuspendResume(bool suspend)
 
 int CGridCommandLineInterfaceApp::Cmd_Suspend()
 {
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
+    switch (m_APIClass) {
     case eNetScheduleAdmin:
         NetSchedule_SuspendResume(true);
         return 0;
@@ -490,7 +503,9 @@ int CGridCommandLineInterfaceApp::Cmd_Suspend()
 
 int CGridCommandLineInterfaceApp::Cmd_Resume()
 {
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
+    switch (m_APIClass) {
     case eNetScheduleAdmin:
         NetSchedule_SuspendResume(false);
         return 0;
@@ -506,7 +521,9 @@ int CGridCommandLineInterfaceApp::Cmd_Resume()
 
 int CGridCommandLineInterfaceApp::Cmd_Shutdown()
 {
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.ShutdownServer(IsOptionSet(eDrain) ?
                 CNetCacheAdmin::eDrain : CNetCacheAdmin::eNormalShutdown);
@@ -551,9 +568,11 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
 
 int CGridCommandLineInterfaceApp::Cmd_Exec()
 {
+    SetUp_AdminCmd(eAdminCmdWithSideEffects);
+
     CNetService service;
 
-    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    switch (m_APIClass) {
     case eNetCacheAdmin:
         service = m_NetCacheAPI.GetService();
         break;

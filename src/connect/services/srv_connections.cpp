@@ -810,7 +810,12 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
 
     unsigned attempt = 0;
 
+    if (conn_listener == NULL)
+        conn_listener = m_Impl->m_Service->m_Listener;
+
     for (;;) {
+        string warning;
+
         try {
             m_Impl->ConnectAndExec(cmd, multiline_output,
                     exec_result, NULL, NULL, conn_listener);
@@ -830,8 +835,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
                 throw;
             }
 
-            LOG_POST(Warning << e.what() << ", reconnecting: attempt " <<
-                attempt << " of " << TServConn_ConnMaxRetries::GetDefault());
+            warning = e.GetMsg();
         }
         catch (CNetScheduleException& e) {
             if (++attempt > TServConn_ConnMaxRetries::GetDefault() ||
@@ -847,9 +851,16 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
                 throw;
             }
 
-            LOG_POST(Warning << e.what() << ", reconnecting: attempt " <<
-                attempt << " of " << TServConn_ConnMaxRetries::GetDefault());
+            warning = e.GetMsg();
         }
+
+        warning += ", reconnecting: attempt ";
+        warning += NStr::NumericToString(attempt);
+        warning += " of ";
+        warning += NStr::NumericToString(
+                TServConn_ConnMaxRetries::GetDefault());
+
+        conn_listener->OnWarning(warning, *this);
 
         SleepMilliSec(s_GetRetryDelay());
     }
