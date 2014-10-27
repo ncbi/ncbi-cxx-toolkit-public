@@ -7785,7 +7785,9 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     if ( gene_xref == 0) {
         // if there is no gene xref, then there should be 0 or 1 overlapping genes
         // so that mapping by overlap is unambiguous
-        if (num_genes > 1) {
+        if (num_genes > 1 &&
+            feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region &&
+            feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_mobile_element) {
             if (m_Imp.IsSmallGenomeSet() && num_genes == num_trans_spliced) {
                 /* suppress for trans-spliced genes on small genome set */
             } else if (equivalent) {
