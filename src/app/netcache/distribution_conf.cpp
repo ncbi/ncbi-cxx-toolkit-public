@@ -345,7 +345,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
             s_SelfGroup = "grp1";
         }
     }
-    if (isReconf) {
+    if (isReconf && !self_slots.empty()) {
         if (!std::equal(s_SelfSlots.begin(), s_SelfSlots.end(), self_slots.begin())) {
             err_message = s_SelfName + ": Changes in self description prohibited (slots)";
             goto do_error;
