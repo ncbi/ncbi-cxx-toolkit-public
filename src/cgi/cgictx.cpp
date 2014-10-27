@@ -500,7 +500,7 @@ typedef NCBI_PARAM_TYPE(CGI, CORS_Enable) TCORS_Enable;
 
 // Access-Control-Allow-Headers
 NCBI_PARAM_DECL(string, CGI, CORS_Allow_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, "X-Requested-With",
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, kEmptyStr,
                   eParam_NoThread, CGI_CORS_ALLOW_HEADERS);
 typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Headers) TCORS_AllowHeaders;
 
@@ -571,7 +571,10 @@ static const char* kAC_AllowCredentials = "Access-Control-Allow-Credentials";
 static const char* kAC_ExposeHeaders = "Access-Control-Expose-Headers";
 static const char* kAC_MaxAge = "Access-Control-Max-Age";
 static const char* kSimpleHeaders =
-    " Cache-Control Content-Language Expires Last-Modified Pragma";
+    " Accept Accept-Language Content-Language Content-Type";
+static const char* kDefaultHeaders =
+    " Cache-Control Expires Last-Modified Pragma X-Accept-Charset X-Accept"
+    " X-Requested-With NCBI-SID NCBI-PHID";
 
 
 typedef list<string> TStringList;
@@ -650,6 +653,7 @@ static bool s_IsAllowedHeaderList(const string& headers)
     string ah = TCORS_AllowHeaders::GetDefault();
     // Always allow simple headers.
     ah += kSimpleHeaders;
+    ah += kDefaultHeaders;
     NStr::ToUpper(ah);
     NStr::Split(ah, ", ", allowed);
     allowed.sort();
@@ -746,7 +750,8 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         if ( !allow_methods.empty() ) {
             response.SetHeaderValue(kAC_AllowMethods, allow_methods);
         }
-        const string& allow_headers = TCORS_AllowHeaders::GetDefault();
+        string allow_headers = TCORS_AllowHeaders::GetDefault();
+        allow_headers += kDefaultHeaders;
         if ( !allow_headers.empty() ) {
             response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
         }
