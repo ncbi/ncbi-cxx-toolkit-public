@@ -150,7 +150,6 @@ CReaderBase::CReaderBase(
     m_uLineNumber(0),
     m_uProgressReportInterval(0),
 	m_uNextProgressReport(0),
-    m_uMaxFilePos(0),
     m_iFlags(flags),
     m_pInStream(0),
     m_pCanceler(0)
@@ -591,7 +590,7 @@ void CReaderBase::xReportProgress(
     }
     // report something
     ios::streampos curPos = m_pInStream->tellg();
-    pProgress->PutProgress("Percent Progress", Uint8(100*curPos/m_uMaxFilePos), 100);
+    pProgress->PutProgress("Progress", Uint8(curPos), 0);
 
     m_uNextProgressReport += m_uProgressReportInterval;
 }
@@ -612,10 +611,6 @@ bool CReaderBase::xProgressInit(
         return true;
     }
     m_pInStream = &istr;
-    ios::streampos curPos = istr.tellg();
-    istr.seekg(0, ios::end);
-    m_uMaxFilePos = istr.tellg();
-    istr.seekg(curPos, ios::beg);
     return true;
 }
 

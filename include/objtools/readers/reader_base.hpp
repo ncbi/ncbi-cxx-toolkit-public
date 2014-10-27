@@ -312,7 +312,6 @@ protected:
     unsigned int m_uLineNumber;
     unsigned int m_uProgressReportInterval;
     unsigned int m_uNextProgressReport;
-    ios::streampos m_uMaxFilePos;
 
     TReaderFlags       m_iFlags;
     CTrackData*  m_pTrackDefaults;
