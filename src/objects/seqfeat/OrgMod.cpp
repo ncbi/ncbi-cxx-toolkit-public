@@ -580,13 +580,177 @@ string COrgMod::FixStrain( const string& strain)
 }
 
 
+const char* sm_KnownHostWords[] = {
+  "alfalfa",
+  "almond",
+  "apple",
+  "asparagus",
+  "badger",
+  "bean",
+  "bitter melon",
+  "blackberry",
+  "blossoms",
+  "blueberry",
+  "bovine",
+  "brinjal",
+  "broad bean",
+  "cabbage",
+  "canine",
+  "cantaloupe",
+  "caprine",
+  "carrot",
+  "cassava",
+  "cat",
+  "catfish",
+  "cattle",
+  "cauliflower",
+  "Channel catfish",
+  "chestnut",
+  "chicken",
+  "chimpanzee",
+  "clover",
+  "corn",
+  "cotton",
+  "cow",
+  "cowpea",
+  "crab",
+  "cucumber",
+  "curd",
+  "dairy cow",
+  "dog",
+  "duck",
+  "equine",
+  "feline",
+  "fish",
+  "fox",
+  "goat",
+  "goldfish",
+  "goose",
+  "guanabana",
+  "honeydew",
+  "horse",
+  "ice cream",
+  "juniper",
+  "larva",
+  "laurel",
+  "leek",
+  "lentil",
+  "lilac",
+  "lily",
+  "maize",
+  "mamey",
+  "mamey sapote",
+  "mango",
+  "mangrove",
+  "mangroves",
+  "marigold",
+  "marine sponge",
+  "melon",
+  "mosquito",
+  "mulberry",
+  "mungbean",
+  "nematode",
+  "oat",
+  "ornamental pear",
+  "ovine",
+  "papaya",
+  "pea",
+  "peach",
+  "peacock",
+  "pear",
+  "pepper",
+  "pig",
+  "pomegranate",
+  "porcine",
+  "potato",
+  "raccoon dog",
+  "red fox",
+  "rhizospheric soil",
+  "rice",
+  "salmon",
+  "seagrass",
+  "sesame",
+  "sheep",
+  "shrimp",
+  "sorghum",
+  "sour cherry",
+  "sourdough",
+  "soybean",
+  "sponge",
+  "squash",
+  "strawberry",
+  "sugar beet",
+  "sunflower",
+  "sweet cherry",
+  "swine",
+  "tobacco",
+  "tomato",
+  "turf",
+  "turfgrass",
+  "turkey",
+  "turtle",
+  "watermelon",
+  "wheat",
+  "white clover",
+  "willow",
+  "wolf",
+  "yak",
+};
+
+
+string COrgMod::FixHostCapitalization(const string& value)
+{
+    string fix = value;
+
+    size_t max = sizeof(sm_KnownHostWords) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_KnownHostWords[i])) {
+            fix = sm_KnownHostWords[i];
+            break;
+        }
+    }
+    return fix;
+}
+
+
 string COrgMod::FixHost(const string& value)
 {
     string fix = value;
     if (NStr::EqualNocase(fix, "human")) {
         fix = "Homo sapiens";
     }
+
     return fix;
+}
+
+
+string COrgMod::FixCapitalization(TSubtype subtype, const string& value)
+{
+    string new_val = value;
+    switch (subtype) {
+        case COrgMod::eSubtype_nat_host:
+            new_val = FixHostCapitalization(value);
+            break;
+        default:
+            new_val = value;
+            break;
+    }
+    return new_val;
+}
+
+
+void COrgMod::FixCapitalization()
+{
+    if (!IsSetSubtype() || !IsSetSubname()) {
+        return;
+    }
+
+    string new_val = FixCapitalization(GetSubtype(), GetSubname());
+
+    if (!NStr::IsBlank(new_val)) {
+        SetSubname(new_val);
+    }
+
 }
 
 

@@ -3387,7 +3387,465 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
     return new_country;
 }
       
+
+const char * sm_KnownDevStageWords[] = {
+  "adult",
+  "egg",
+  "juvenile",
+  "larva",
+};
+
+
+string CSubSource::FixDevStageCapitalization(const string& value)
+{
+    string fix = value;
+
+    size_t max = sizeof(sm_KnownDevStageWords) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_KnownDevStageWords[i])) {
+            fix = sm_KnownDevStageWords[i];
+            break;
+        }
+    }
+    return fix;
+}
+
+
+const char * sm_CellTypeWords[] = {
+  "hemocyte",
+  "hepatocyte",
+  "lymphocyte",
+  "neuroblast",
+};
+
+
+string CSubSource::FixCellTypeCapitalization(const string& value)
+{
+    string fix = value;
+
+    size_t max = sizeof(sm_CellTypeWords) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_CellTypeWords[i])) {
+            fix = sm_CellTypeWords[i];
+            break;
+        }
+    }
+    return fix;
+}
+
+
+const char * sm_KnownIsolationAndTissueTypeWords[] = {
+  "abdomen",
+  "abdominal fluid",
+  "acne",
+  "activated sludge",
+  "adductor muscle",
+  "agricultural soil",
+  "air",
+  "amniotic fluid",
+  "antenna",
+  "aspirate",
+  "bile",
+  "biofilm",
+  "blood",
+  "blood cells",
+  "blood sample",
+  "body fluid",
+  "bone",
+  "bovine feces",
+  "bovine milk",
+  "brain",
+  "brain abscess",
+  "brain tissue",
+  "branch",
+  "bronchial mucosa",
+  "bronchoalveolar lavage",
+  "buccal epithelial cells",
+  "buccal mucosa",
+  "buccal swab",
+  "bursa",
+  "callus",
+  "cave sediment",
+  "cave sediments",
+  "cerebellum",
+  "cerebrospinal fluid",
+  "cervix",
+  "cheese",
+  "clinical",
+  "clinical isolate",
+  "clinical isolates",
+  "clinical sample",
+  "clinical samples",
+  "cloaca",
+  "cloacal swab",
+  "compost",
+  "coral reef",
+  "corn rhizosphere",
+  "cornea",
+  "cotton rhizosphere",
+  "dairy cow rumen",
+  "distillery",
+  "drinking water",
+  "ear",
+  "egg",
+  "embryogenic callus",
+  "epithelium",
+  "esophageal mucosa",
+  "estuarine water",
+  "estuarine waters",
+  "eye",
+  "fecal",
+  "fecal sample",
+  "fecal samples",
+  "feces",
+  "fermented food",
+  "fermented soybeans",
+  "fetal brain",
+  "fin",
+  "fin wound",
+  "fish eggs",
+  "flooded rice soil",
+  "flower",
+  "food",
+  "food product",
+  "food sample",
+  "food samples",
+  "forest",
+  "forest soil",
+  "freshwater stream",
+  "fruit",
+  "fruitbody",
+  "fruiting body",
+  "gastric mucosa",
+  "gastrointestinal tract",
+  "genital cells",
+  "genitals",
+  "gill",
+  "gills",
+  "goat milk",
+  "head",
+  "head kidney",
+  "heart",
+  "heart blood",
+  "hemocyte",
+  "hepatocyte",
+  "hepatopancreas",
+  "horse",
+  "horse",
+  "hot spring",
+  "hot springs",
+  "human plasma",
+  "human skin",
+  "infected leaf",
+  "inflorescence",
+  "intestinal mucosa",
+  "intestine",
+  "intestines",
+  "kidney",
+  "kimchi",
+  "lake",
+  "lake sediment",
+  "lake soil",
+  "lake water",
+  "leaf",
+  "leaves",
+  "lentil",
+  "liver",
+  "liver abscess",
+  "lung",
+  "lymph node",
+  "lymphocyte",
+  "maize",
+  "mammary gland",
+  "mangrove sediment",
+  "mangrove sediments",
+  "manure",
+  "marine environment",
+  "marine sediment",
+  "marine sediments",
+  "marine water",
+  "mature leaf",
+  "meat",
+  "midgut",
+  "milk",
+  "mitral valve",
+  "mouth wound",
+  "mucosa",
+  "mucus",
+  "muscle",
+  "muscle tissue",
+  "mycelium",
+  "nasal mucosa",
+  "nasal sample",
+  "nasal samples",
+  "nasal swab",
+  "nasopharyngeal aspirate",
+  "nasopharyngeal swab",
+  "nasopharynx",
+  "nest",
+  "neuroblast",
+  "nodule",
+  "nodules",
+  "nose swab",
+  "olfactory mucosa",
+  "oral fluid",
+  "oral lexion",
+  "oral mucosa",
+  "ovary",
+  "oviduct",
+  "paddy soil",
+  "parietal cortex",
+  "patient",
+  "pericardial",
+  "pharnyx",
+  "placenta",
+  "plasma",
+  "pleopod",
+  "pleopods",
+  "pleura",
+  "pod",
+  "purulent fluid",
+  "respiratory tract",
+  "rhizosphere",
+  "rhizosphere soil",
+  "rice rhizosphere",
+  "rice soil",
+  "river sediment",
+  "river sediments",
+  "river water",
+  "root",
+  "root nodule",
+  "root nodules",
+  "root tip",
+  "root tips",
+  "roots",
+  "rumen",
+  "saliva",
+  "salivary gland",
+  "saltern soil",
+  "seafood",
+  "seawater",
+  "sediment",
+  "sediments",
+  "seedling",
+  "seedling roots",
+  "sera",
+  "serum",
+  "sesame seeds",
+  "shrimp pond",
+  "skeletal muscle",
+  "skin",
+  "skin lesion",
+  "sludge",
+  "soil",
+  "spindle leaf",
+  "spleen",
+  "sputum",
+  "stem",
+  "stem base",
+  "stems",
+  "stomach",
+  "stool",
+  "stool sample",
+  "stool samples",
+  "strawberry",
+  "swab",
+  "swamp soil",
+  "tail",
+  "tentacle",
+  "testes",
+  "testis",
+  "textile wastewater",
+  "throat",
+  "throat swab",
+  "throat wash",
+  "thymus",
+  "trachea",
+  "tracheal aspirate",
+  "tracheal swab",
+  "turfgrass",
+  "urine",
+  "uterine mucosa",
+  "wastewater",
+  "water",
+  "white clover",
+  "whole blood",
+  "whole cell/tissue lysate",
+  "wound",
+  "yogurt",
+};
+
      
+const char * sm_KnownIsolationSourceWords[] = {
+  "adductor muscle",
+  "aquaculture water",
+  "bile",
+  "bitumen",
+  "bone marrow",
+  "brain biopsy",
+  "buffy coat",
+  "cabbage leaves",
+  "catfish",
+  "Channel catfish",
+  "compost soil",
+  "crown",
+  "curd sample",
+  "dairy farm soil",
+  "farm soil",
+  "field soil",
+  "fish intestine",
+  "freshwater",
+  "fruit body",
+  "groundwater",
+  "hepatic bile duct",
+  "hepatic biliary duct",
+  "hot marine salterns",
+  "human skin",
+  "lake isolate",
+  "lake mud",
+  "mangrove soil",
+  "midgut",
+  "pond sediment",
+  "pond water",
+  "poultry farm soil",
+  "river sand",
+  "saline lake",
+  "sewage sludge",
+  "soda lake",
+  "soil rhizosphere",
+  "soil sample",
+  "solar saltern",
+  "solar salterns",
+  "sulphur spring",
+  "surface water",
+  "tannery waste",
+  "tannery waste effluent",
+  "tissue biopsy",
+  "twig",
+  "underground water",
+  "vegetable",
+  "vegetables",
+};
+
+
+string CSubSource::FixIsolationSourceCapitalization(const string& value)
+{
+    string fix = value;
+
+    size_t max = sizeof(sm_KnownIsolationSourceWords) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_KnownIsolationSourceWords[i])) {
+            fix = sm_KnownIsolationSourceWords[i];
+            break;
+        }
+    }
+
+    max = sizeof(sm_KnownIsolationAndTissueTypeWords) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_KnownIsolationAndTissueTypeWords[i])) {
+            fix = sm_KnownIsolationAndTissueTypeWords[i];
+            break;
+        }
+    }
+
+    max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_ValidSexQualifierTokens[i])) {
+            fix = sm_ValidSexQualifierTokens[i];
+            break;
+        }
+    }
+
+    fix = COrgMod::FixHostCapitalization(fix);
+    fix = FixDevStageCapitalization(fix);
+    fix = FixCellTypeCapitalization(fix);
+
+    return fix;
+}
+
+
+string CSubSource::FixTissueTypeCapitalization(const string& value)
+{
+    string fix = value;
+
+    size_t max = sizeof(sm_KnownIsolationAndTissueTypeWords) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_KnownIsolationAndTissueTypeWords[i])) {
+            fix = sm_KnownIsolationAndTissueTypeWords[i];
+            break;
+        }
+    }
+
+    max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(fix, sm_ValidSexQualifierTokens[i])) {
+            fix = sm_ValidSexQualifierTokens[i];
+            break;
+        }
+    }
+
+    fix = COrgMod::FixHostCapitalization(fix);
+    fix = FixDevStageCapitalization(fix);
+    fix = FixCellTypeCapitalization(fix);
+
+    return fix;
+}
+
+
+string CSubSource::FixLabHostCapitalization(const string& value)
+{
+    return COrgMod::FixHostCapitalization(value);
+}
+
+
+string CSubSource::FixCapitalization(TSubtype subtype, const string& value)
+{
+    string new_val = value;
+    switch (subtype) {
+        case CSubSource::eSubtype_sex:
+            new_val = FixSexQualifierValue(value);
+            if (NStr::IsBlank(new_val)) {
+                new_val = value;
+            }
+            break;
+        case CSubSource::eSubtype_isolation_source:
+            new_val = FixIsolationSourceCapitalization(value);
+            break;
+        case CSubSource::eSubtype_lab_host:
+            new_val = FixLabHostCapitalization(value);
+            break;
+        case CSubSource::eSubtype_tissue_type:
+            new_val = FixTissueTypeCapitalization(value);
+            break;
+        case CSubSource::eSubtype_dev_stage:
+            new_val = FixDevStageCapitalization(value);
+            break;
+        case CSubSource::eSubtype_cell_type:
+            new_val = FixCellTypeCapitalization(value);
+            break;
+        default:
+            new_val = value;
+            break;
+    }
+    return new_val;
+}
+
+
+void CSubSource::FixCapitalization()
+{
+    if (!IsSetSubtype() || !IsSetName()) {
+        return;
+    }
+
+    string new_val = FixCapitalization(GetSubtype(), GetName());
+
+    if (!NStr::IsBlank(new_val)) {
+        SetName(new_val);
+    }
+
+}
+
+
 string CSubSource::AutoFix(TSubtype subtype, const string& value)
 {
     string new_val = "";
@@ -3427,7 +3885,9 @@ void CSubSource::AutoFix()
     }
 
 }
-    
+   
+
+
 
 static const char * s_RemovableCultureNotes[] = {
  "[BankIt_uncultured16S_wizard]; [universal primers]; [tgge]",

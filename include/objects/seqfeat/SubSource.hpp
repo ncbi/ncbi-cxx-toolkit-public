@@ -181,6 +181,14 @@ public:
     static bool IsAltitudeValid (const string& value);
     static string FixAltitude (const string& value);
 
+    static string FixDevStageCapitalization(const string& value);
+    static string FixCellTypeCapitalization(const string& value);
+    static string FixIsolationSourceCapitalization(const string& value);
+    static string FixTissueTypeCapitalization(const string& value);
+    static string FixLabHostCapitalization(const string& value);
+    static string FixCapitalization(TSubtype subtype, const string& value);
+    void FixCapitalization();
+
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
 

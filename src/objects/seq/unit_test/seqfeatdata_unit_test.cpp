@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <corelib/ncbimisc.hpp>
 
 #include <corelib/ncbiapp.hpp>
@@ -117,3 +119,25 @@ BOOST_AUTO_TEST_CASE(s_TestSubtypeMaps)
     NCBITEST_CHECK( ! s_TestSubtype(CSeqFeatData::eSubtype_max) );
     NCBITEST_CHECK( ! s_TestSubtype(CSeqFeatData::eSubtype_any) );
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
+{
+
+    BOOST_CHECK_EQUAL(COrgMod::FixHostCapitalization("SQUASH"), "squash");
+    BOOST_CHECK_EQUAL(COrgMod::FixHostCapitalization("SOUR cherry"), "sour cherry");
+    CRef<COrgMod> m(new COrgMod());
+    m->SetSubtype(COrgMod::eSubtype_nat_host);
+    m->SetSubname("Turkey");
+    m->FixCapitalization();
+    BOOST_CHECK_EQUAL(s->GetSubname(), "turkey");
+
+    CRef<CSubSource> s(new CSubSource());
+    s->SetSubtype(CSubSource::eSubtype_sex);
+    s->SetName("Dioecious");
+    s->FixCapitalization();
+    BOOST_CHECK_EQUAL(s->GetName(), "dioecious");
+
+
+}
+

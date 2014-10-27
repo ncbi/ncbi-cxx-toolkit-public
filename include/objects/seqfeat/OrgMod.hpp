@@ -98,6 +98,9 @@ public:
     static bool FuzzyStrainMatch( const string& strain1, const string& strain2 );
 
     static string FixHost(const string& value);
+    static string FixHostCapitalization(const string& value);
+    static string FixCapitalization(TSubtype subtype, const string& value);
+    void FixCapitalization();
 
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
