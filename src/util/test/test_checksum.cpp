@@ -343,7 +343,7 @@ bool s_BigSelfTest(CRandom& random,
         }
         for ( size_t cur_size = size; cur_size > 0; ) {
             size_t chunk = random.GetRand(1, 20000);
-            chunk = random.GetRand(1, chunk);
+            chunk = random.GetRand(1, (CRandom::TValue)chunk);
             chunk = min(chunk, cur_size);
             checksum.AddChars(cur_data, chunk);
             cur_data += chunk;

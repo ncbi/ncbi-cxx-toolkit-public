@@ -95,14 +95,6 @@ public:
     /// Assignment operator.
     CChecksum& operator=(const CChecksum& cks);
 
-    /// Initialize static tables used in checksum calculation.
-    /// There is no need to call this method since it's done internally.
-    static void InitTables(void);
-
-    /// Print C++ code for CRC32 tables for direct inclusion into library.
-    /// It also eliminates the need to initialize CRC32 tables.
-    static void PrintTables(CNcbiOstream& out);
-
     /// Get current method used to compute control sum.
     EMethod GetMethod(void) const;
 
@@ -116,7 +108,7 @@ public:
     /// Only valid in CRC32/CRC32ZIP/Adler32 modes!
     Uint4 GetChecksum(void) const;
 
-    /// Return string with checksum in hexadecimal form
+    /// Return string with checksum in hexadecimal form.
     string GetHexSum(void) const;
 
     /// Return calculated MD5 digest.
@@ -131,19 +123,42 @@ public:
 
     /// Update current control sum with data provided.
     void AddLine(const char* line, size_t length);
-    void AddLine(const string& line);
+    void AddLine(CTempString line);
     void AddChars(const char* str, size_t length);
     void NextLine(void);
 
+    /// Compute checksum for the file, add it to this checksum.
+    /// On any error an exception will be thrown, and the checksum
+    /// will not change.
+    void AddFile(const string& file_path);
+
+    /// Compute checksum for the stream, add it to this checksum.
+    /// On any error an exception will be thrown, and the checksum
+    /// will not change.
+    /// @is
+    ///   Input stream to read data from.
+    ///   Please use ios_base::binary flag for the input stream
+    ///   if you want to count all symbols there, including end of lines.
+    void AddStream(CNcbiIstream& is);
+
     /// Check for checksum line.
     bool ValidChecksumLine(const char* line, size_t length) const;
-    bool ValidChecksumLine(const string& line) const;
+    bool ValidChecksumLine(CTempString line) const;
 
     /// Write checksum calculation results into output stream
     CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
     CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;
     CNcbiOstream& WriteHexSum(CNcbiOstream& out) const;
-    
+
+public:
+    /// Initialize static tables used in checksum calculation.
+    /// There is no need to call this method since it's done internally.
+    static void InitTables(void);
+
+    /// Print C++ code for CRC32 tables for direct inclusion into library.
+    /// It also eliminates the need to initialize CRC32 tables.
+    static void PrintTables(CNcbiOstream& out);
+
 private:
     size_t   m_LineCount;  ///< Number of lines
     size_t   m_CharCount;  ///< Number of chars
@@ -168,15 +183,50 @@ private:
 CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
 
 /// Compute checksum for the given file.
-NCBI_XUTIL_EXPORT
+/// @deprecated
+///   Please use CChecksum::AddFile() method instead.
+NCBI_DEPRECATED NCBI_XUTIL_EXPORT
 CChecksum  ComputeFileChecksum(const string& path, CChecksum::EMethod method);
 
 /// Computes checksum for the given file.
-NCBI_XUTIL_EXPORT
+/// @deprecated
+///   Please use CChecksum::AddFile() method instead.
+NCBI_DEPRECATED NCBI_XUTIL_EXPORT
 CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum);
 
 /// Compute CRC32 checksum for the given file.
+/// @deprecated
+///   Please use CChecksum::AddFile() method instead.
+NCBI_DEPRECATED
 Uint4      ComputeFileCRC32(const string& path);
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CChecksumException --
+///
+/// Define exceptions generated for CChecksum methods.
+///
+/// CChecksumException inherits its basic functionality from CCoreException
+/// and defines additional error codes for CChecksum methods.
+
+class NCBI_XNCBI_EXPORT CChecksumException : public CCoreException
+{
+public:
+    /// Error types that can be generated.
+    enum EErrCode {
+        eStreamIO,
+        eFileIO
+    };
+
+    /// Translate from an error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const;
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CChecksumException, CCoreException);
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -246,7 +296,7 @@ void CChecksum::AddLine(const char* line, size_t length)
 }
 
 inline
-void CChecksum::AddLine(const string& line)
+void CChecksum::AddLine(CTempString line)
 {
     AddLine(line.data(), line.size());
 }
@@ -255,13 +305,13 @@ inline
 bool CChecksum::ValidChecksumLine(const char* line, size_t length) const
 {
     return length > kMinimumChecksumLength &&
-        line[0] == '/' && line[1] == '*' && // first four letters of checksum
-        line[2] == ' ' && line[3] == 'O' && // see sx_Start in checksum.cpp
+        line[0] == '/' && line[1] == '*' &&  // first four letters of checksum
+        line[2] == ' ' && line[3] == 'O' &&  // see sx_Start in checksum.cpp
         ValidChecksumLineLong(line, length); // complete check
 }
 
 inline
-bool CChecksum::ValidChecksumLine(const string& line) const
+bool CChecksum::ValidChecksumLine(CTempString line) const
 {
     return ValidChecksumLine(line.data(), line.size());
 }
@@ -280,12 +330,6 @@ void CChecksum::GetMD5Digest(string& str) const
     m_Checksum.m_MD5->Finalize(buf);
     str.clear();
     str.insert(str.end(), (const char*)buf, (const char*)buf + 16);
-}
-
-inline
-Uint4 ComputeFileCRC32(const string& path)
-{
-    return ComputeFileChecksum(path, CChecksum::eCRC32).GetChecksum();
 }
 
 inline

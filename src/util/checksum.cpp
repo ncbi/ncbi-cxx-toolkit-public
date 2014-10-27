@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <util/checksum.hpp>
 
 #define USE_CRC32C_INTEL // try to use Intel CRC32C instructions
@@ -63,8 +64,9 @@ BEGIN_NCBI_SCOPE
 static const size_t kCRC32Size = 256;
 typedef Uint4 TCRC32Table[kCRC32Size];
 
-#define TABLES_COUNT 8
+// Defines
 
+#define TABLES_COUNT 8
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 // sx_Start must begin with "/* O" (see ValidChecksumLine() in checksum.hpp)
@@ -73,18 +75,20 @@ static const char sx_End[]       = " */";
 static const char sx_LineCount[] = "lines: ";
 static const char sx_CharCount[] = "chars: ";
 
+// Forward declarations
+
 #ifdef NCBI_USE_PRECOMPILED_CRC32_TABLES
-static inline void s_InitTableCRC32Forward() {}
-static inline void s_InitTableCRC32Reverse() {}
-static inline void s_InitTableCRC32CReverse() {}
+    static inline void s_InitTableCRC32Forward()  {}
+    static inline void s_InitTableCRC32Reverse()  {}
+    static inline void s_InitTableCRC32CReverse() {}
 #else
-static void s_InitTableCRC32Forward();
-static void s_InitTableCRC32Reverse();
-static void s_InitTableCRC32CReverse();
+    static void s_InitTableCRC32Forward();
+    static void s_InitTableCRC32Reverse();
+    static void s_InitTableCRC32CReverse();
 #endif //NCBI_USE_PRECOMPILED_CRC32_TABLES
 
 #ifdef USE_CRC32C_INTEL
-static bool s_IsCRC32CIntelEnabled(void);
+    static bool s_IsCRC32CIntelEnabled(void);
 #endif
 
 
@@ -96,13 +100,13 @@ CChecksum::CChecksum(EMethod method)
 
 
 CChecksum::CChecksum(const CChecksum& cks)
-    : m_LineCount(cks.m_LineCount), m_CharCount(cks.m_CharCount),
+    : m_LineCount(cks.m_LineCount),
+      m_CharCount(cks.m_CharCount),
       m_Method(cks.m_Method)
 {
     if ( GetMethod() == eMD5 ) {
         m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
-    }
-    else {
+    } else {
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
     }
 }
@@ -118,7 +122,7 @@ void CChecksum::x_Free(void)
 {
     if ( GetMethod() == eMD5 ) {
         delete m_Checksum.m_MD5;
-        m_Checksum.m_MD5 = 0;
+        m_Checksum.m_MD5 = NULL;
     }
 }
 
@@ -133,8 +137,7 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
 
     if ( GetMethod() == eMD5 ) {
         m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
-    }
-    else {
+    } else {
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
     }
     return *this;
@@ -186,9 +189,9 @@ void CChecksum::Reset(EMethod method)
 size_t CChecksum::GetChecksumSize(void) const
 {
     switch ( GetMethod() ) {
-    case eMD5: return 16;
+    case eMD5:  return 16;
     case eNone: return 0;
-    default: return 4;
+    default:    return 4;
     }
 }
 
@@ -230,9 +233,9 @@ CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
     if (!Valid()   ||  !out.good()) {
         return out;
     }
-    out << sx_Start <<
-        sx_LineCount << m_LineCount << ", " <<
-        sx_CharCount << m_CharCount << ", ";
+    out << sx_Start
+        << sx_LineCount << m_LineCount << ", "
+        << sx_CharCount << m_CharCount << ", ";
     WriteChecksumData(out);
     return out << sx_End << '\n';
 }
@@ -270,10 +273,8 @@ CNcbiOstream& CChecksum::WriteHexSum(CNcbiOstream& out) const
 {
     if ( GetMethod() == eMD5 ) {
         out << m_Checksum.m_MD5->GetHexSum();
-    }
-    else {
-        IOS_BASE::fmtflags flags =
-            out.setf(IOS_BASE::hex, IOS_BASE::basefield);
+    } else {
+        IOS_BASE::fmtflags flags = out.setf(IOS_BASE::hex, IOS_BASE::basefield);
         out << setprecision(8) << GetChecksum();
         out.flags(flags);
     }
@@ -308,30 +309,104 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
 }
 
 
-CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
+void CChecksum::NextLine(void)
 {
-    CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
-    CChecksum cks(method);
-    return ComputeFileChecksum(path, cks);
+    char eol = '\n';
+    x_Update(&eol, 1);
+    ++m_LineCount;
 }
 
 
-CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum)
+void CChecksum::AddFile(const string& file_path)
 {
-    CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
-    if ( !input.is_open() ) {
+    CFileIO f;
+    try {
+        f.Open(file_path, CFileIO::eOpen, CFileIO::eRead);
+        CChecksum tmp(*this);
+        size_t n;
+        char buf[1024 * 8];
+        while ((n = f.Read(buf, sizeof(buf))) > 0) {
+            tmp.AddChars(buf, n);
+        }
+        f.Close();
+        *this = tmp;
+    }
+    catch (CFileException& e) {
+        f.Close();
+        NCBI_RETHROW(e, CChecksumException, eFileIO,
+                     "Error add checksum for file: " + file_path);
+        throw;
+    }
+}
+
+
+void CChecksum::AddStream(CNcbiIstream& is)
+{
+    if ( is.eof() ) {
+        return;
+    }
+    if ( !is.good() ) {
+        NCBI_THROW(CChecksumException, eStreamIO,
+                   "Input stream is not good()");
+        return;
+    }
+    CChecksum tmp(*this);
+
+    while ( !is.eof() ) {
+        char buf[1024 * 8];
+        is.read(buf, sizeof(buf));
+        size_t n = (size_t)is.gcount();
+        if (n) {
+            tmp.AddChars(buf, n);
+        } else {
+            if (is.fail()  &&  !is.eof()) {
+                NCBI_THROW(CChecksumException, eStreamIO,
+                           "Error reading from input stream");
+                return;
+            }
+        }
+    }
+    *this = tmp;
+}
+
+
+// @deprecated
+CChecksum& ComputeFileChecksum_deprecated(const string& path, CChecksum& checksum)
+{
+    CNcbiIfstream is(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if ( !is.is_open() ) {
         return checksum;
     }
-    while ( !input.eof() ) {
-        char buf[1024*4];
-        input.read(buf, sizeof(buf));
-        size_t count = (size_t)input.gcount();
+    while ( !is.eof() ) {
+        char buf[1024*8];
+        is.read(buf, sizeof(buf));
+        size_t count = (size_t)is.gcount();
         if ( count ) {
             checksum.AddChars(buf, count);
         }
     }
-    input.close();
+    is.close();
     return checksum;
+}
+
+// @deprecated
+CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
+{
+    CChecksum cks(method);
+    return ComputeFileChecksum_deprecated(path, cks);
+}
+
+// @deprecated
+CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum)
+{
+    return ComputeFileChecksum_deprecated(path, checksum);
+}
+
+// @deprecated
+Uint4 ComputeFileCRC32(const string& path)
+{
+    CChecksum cks(CChecksum::eCRC32);
+    return ComputeFileChecksum_deprecated(path, cks).GetChecksum();
 }
 
 
@@ -361,8 +436,7 @@ void s_PrintTable(CNcbiOstream& out, const char* name,
             }
             if ( i % kLineSize == 0 ) {
                 out << "\n    ";
-            }
-            else {
+            } else {
                 out << ' ';
             }
             out << "0x" << hex << setw(8) << setfill('0') << table[k][i];
@@ -997,8 +1071,7 @@ Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len)
                 b += a += Uint1(data[3]);
                 data += 4;
             }
-        }
-        else {
+        } else {
             for ( size_t i = len >> 2; i; --i ) {
                 b += a += Uint1(data[0]);
                 b += a += Uint1(data[1]);
@@ -1038,14 +1111,12 @@ void CChecksum::x_Update(const char* str, size_t count)
     case eCRC32:
     case eCRC32CKSUM:
         m_Checksum.m_CRC32 =
-            s_UpdateCRC32Forward(m_Checksum.m_CRC32, str, count,
-                                 s_CRC32TableForward);
+            s_UpdateCRC32Forward(m_Checksum.m_CRC32, str, count, s_CRC32TableForward);
         break;
     case eCRC32ZIP:
     case eCRC32INSD:
         m_Checksum.m_CRC32 =
-            s_UpdateCRC32Reverse(m_Checksum.m_CRC32, str, count,
-                                 s_CRC32TableReverse);
+            s_UpdateCRC32Reverse(m_Checksum.m_CRC32, str, count, s_CRC32TableReverse);
         break;
     case eCRC32C:
 #ifdef USE_CRC32C_INTEL
@@ -1056,8 +1127,7 @@ void CChecksum::x_Update(const char* str, size_t count)
         }
 #endif
         m_Checksum.m_CRC32 =
-            s_UpdateCRC32Reverse(m_Checksum.m_CRC32, str, count,
-                                 s_CRC32CTableReverse);
+            s_UpdateCRC32Reverse(m_Checksum.m_CRC32, str, count, s_CRC32CTableReverse);
         break;
     case eAdler32:
         m_Checksum.m_CRC32 = s_UpdateAdler32(m_Checksum.m_CRC32, str, count);
@@ -1071,16 +1141,26 @@ void CChecksum::x_Update(const char* str, size_t count)
 }
 
 
-void CChecksum::NextLine(void)
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CChecksumException
+//
+
+const char* CChecksumException::GetErrCodeString(void) const
 {
-    char eol = '\n';
-    x_Update(&eol, 1);
-    ++m_LineCount;
+    switch (GetErrCode()) {
+    case eStreamIO:  return "eStreamError";
+    case eFileIO:    return "eFileError";
+    default:         return CException::GetErrCodeString();
+    }
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
+//
 // CChecksumStreamWriter
+//
 
 CChecksumStreamWriter::CChecksumStreamWriter(CChecksum::EMethod method)
     : m_Checksum(method)
