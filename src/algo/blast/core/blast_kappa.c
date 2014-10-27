@@ -1584,9 +1584,6 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
             seqData->data[idx] = origData[idx];
         } else {
             seqData->data[idx] = 21;
-            fprintf(stderr, "Selenocysteine (U) at position %ld"
-                    " replaced by X\n",
-                    (long) idx + 1);
         }
     }
 
