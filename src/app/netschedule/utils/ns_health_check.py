@@ -154,7 +154,7 @@ class NSDirectConnect:
     def login( self ):
         " Performs a direct login to NS "
         self.__sock.send( "netschedule_admin client_node=" + CLIENT_NODE +
-                          " client_session=check_session\n\n" )
+                          " client_session=check_session client_type=admin\n\n" )
         return
 
     def execute( self, cmd, multiline = False):
