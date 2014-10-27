@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Andrea Asztalos
+ * Authors:  Andrea Asztalos, Igor Filippov
  */
 
 #include <corelib/ncbistd.hpp>
@@ -63,6 +63,19 @@ NCBI_XOBJEDIT_EXPORT bool FixStateAbbreviationsInCitSub(CCit_sub& sub);
 NCBI_XOBJEDIT_EXPORT bool FixStateAbbreviationsInAffil(CAffil& affil);
 /// This function does not check whether the taxname starts with "Mus musculus", it only corrects the mouse strain value
 NCBI_XOBJEDIT_EXPORT bool FixupMouseStrain(string& strain);
+
+NCBI_XOBJEDIT_EXPORT void InsertMissingSpacesAfterCommas(string& result);
+NCBI_XOBJEDIT_EXPORT void InsertMissingSpacesAfterNo(string& result);
+NCBI_XOBJEDIT_EXPORT void FixCapitalizationInElement(string& result);
+NCBI_XOBJEDIT_EXPORT void FixShortWordsInElement(string& result);
+NCBI_XOBJEDIT_EXPORT void FindReplaceString_CountryFixes(string& result);
+NCBI_XOBJEDIT_EXPORT void CapitalizeAfterApostrophe(string& input);
+NCBI_XOBJEDIT_EXPORT void FixAffiliationShortWordsInElement(string& result);
+NCBI_XOBJEDIT_EXPORT void FixOrdinalNumbers(string& result);
+NCBI_XOBJEDIT_EXPORT void FixKnownAbbreviationsInElement(string& result);
+NCBI_XOBJEDIT_EXPORT void CapitalizeSAfterNumber(string& result);
+NCBI_XOBJEDIT_EXPORT void ResetCapitalization(string& result, bool first_is_upper);
+NCBI_XOBJEDIT_EXPORT void FixCountryCapitalization(string& result);
 
 END_SCOPE(edit)
 END_SCOPE(objects)
