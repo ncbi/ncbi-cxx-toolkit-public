@@ -1864,6 +1864,10 @@ CBulkInsertImpl::EndRow(void)
 inline void
 CBulkInsertImpl::Complete(void)
 {
+    if (m_BI == NULL) {
+        // Make idempotent, rather than letting x_CheckCanWrite throw.
+        return;
+    }
     x_CheckCanWrite(0);
     try {
         m_BI->Complete();
