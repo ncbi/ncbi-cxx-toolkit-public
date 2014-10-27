@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
     m->SetSubtype(COrgMod::eSubtype_nat_host);
     m->SetSubname("Turkey");
     m->FixCapitalization();
-    BOOST_CHECK_EQUAL(s->GetSubname(), "turkey");
+    BOOST_CHECK_EQUAL(m->GetSubname(), "turkey");
 
     CRef<CSubSource> s(new CSubSource());
     s->SetSubtype(CSubSource::eSubtype_sex);
