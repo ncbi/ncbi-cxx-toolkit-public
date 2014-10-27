@@ -197,7 +197,7 @@ CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum);
 /// Compute CRC32 checksum for the given file.
 /// @deprecated
 ///   Please use CChecksum::AddFile() method instead.
-NCBI_DEPRECATED
+NCBI_DEPRECATED NCBI_XUTIL_EXPORT
 Uint4      ComputeFileCRC32(const string& path);
 
 
