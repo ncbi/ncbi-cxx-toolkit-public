@@ -54,13 +54,12 @@ void CNetCacheAdmin::ShutdownServer(EShutdownOption shutdown_option)
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
-void CNetCacheAdmin::ReloadServerConfig(const string& sections)
+void CNetCacheAdmin::ReloadServerConfig(EReloadConfigOption reload_option)
 {
     string cmd("RECONF");
 
-    if (!sections.empty()) {
-        cmd += " section=";
-        cmd += sections;
+    if (reload_option == eMirrorReload) {
+        cmd += " section=mirror";
     }
 
     m_Impl->m_API->m_Service.ExecOnAllServers(m_Impl->MakeAdminCmd(cmd.c_str()));

@@ -68,8 +68,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     ///  Protected to avoid a temptation to call it from time to time. :)
     void ShutdownServer(EShutdownOption shutdown_option = eNormalShutdown);
 
+    /// Reload configuration options
+    enum EReloadConfigOption {
+        eCompleteReload,    ///< Complete reload is requested.
+        eMirrorReload,      ///< Parameters related to mirroring will only be reloaded.
+    };
+
     /// Reload configuration parameters from the same source.
-    void ReloadServerConfig(const string& sections = kEmptyStr);
+    void ReloadServerConfig(EReloadConfigOption reload_option = eCompleteReload);
 
     /// Remove all blobs from an ICache database.
     void Purge(const string& cache_name);

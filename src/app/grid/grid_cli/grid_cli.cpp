@@ -424,8 +424,8 @@ struct SOptionDefinition {
         "ft-api-key", "FileTrack API key. When connecting to "
             "FileTrack directly, an API key is required.", {-1}},
 
-    {OPT_DEF(eOptionWithParameter, eRegSection),
-        "reg-section", "Registry section to reconfigure", {-1}},
+    {OPT_DEF(eSwitch, eMirror),
+        "mirror", "NetCache: reconfigure mirroring.", {-1}},
 
     /* Options available only with --extended-cli go below. */
 
@@ -1083,7 +1083,7 @@ struct SCommandDefinition {
         "Update configuration parameters of a running server. "
         "The server will look for a configuration file in the "
         "same location that was used during start-up.",
-        {eNetCache, eNetSchedule, eLoginToken, eAuth, eRegSection,
+        {eNetCache, eNetSchedule, eLoginToken, eAuth, eMirror,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Drain,
@@ -1553,12 +1553,6 @@ int CGridCommandLineInterfaceApp::Run()
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
                     return 2;
                 }
-                break;
-            case eRegSection:
-                if (!m_Opts.reg_sections.empty()) {
-                    m_Opts.reg_sections.append(",");
-                }
-                m_Opts.reg_sections.append(opt_value);
                 break;
             default: // Just to silence the compiler.
                 break;

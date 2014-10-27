@@ -421,7 +421,8 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
 
     switch (m_APIClass) {
     case eNetCacheAdmin:
-        m_NetCacheAdmin.ReloadServerConfig(m_Opts.reg_sections);
+        m_NetCacheAdmin.ReloadServerConfig(IsOptionExplicitlySet(eMirror) ?
+                CNetCacheAdmin::eMirrorReload : CNetCacheAdmin::eCompleteReload);
         return 0;
 
     case eNetScheduleAdmin:
