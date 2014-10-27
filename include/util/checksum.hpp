@@ -123,7 +123,7 @@ public:
 
     /// Update current control sum with data provided.
     void AddLine(const char* line, size_t length);
-    void AddLine(CTempString line);
+    void AddLine(const string& line);
     void AddChars(const char* str, size_t length);
     void NextLine(void);
 
@@ -143,7 +143,7 @@ public:
 
     /// Check for checksum line.
     bool ValidChecksumLine(const char* line, size_t length) const;
-    bool ValidChecksumLine(CTempString line) const;
+    bool ValidChecksumLine(const string& line) const;
 
     /// Write checksum calculation results into output stream
     CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
@@ -296,7 +296,7 @@ void CChecksum::AddLine(const char* line, size_t length)
 }
 
 inline
-void CChecksum::AddLine(CTempString line)
+void CChecksum::AddLine(const string& line)
 {
     AddLine(line.data(), line.size());
 }
@@ -311,7 +311,7 @@ bool CChecksum::ValidChecksumLine(const char* line, size_t length) const
 }
 
 inline
-bool CChecksum::ValidChecksumLine(CTempString line) const
+bool CChecksum::ValidChecksumLine(const string& line) const
 {
     return ValidChecksumLine(line.data(), line.size());
 }
