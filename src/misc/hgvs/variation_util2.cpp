@@ -402,8 +402,12 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
             target_row = 1 - i;
         }
     }
+
     if(target_row == -1) {
-        NCBI_THROW(CException, eUnknown, "The alignment has no row for seq-id " + p2->GetLoc().GetId()->AsFastaString());
+        NCBI_THROW(CException, 
+                   eUnknown, 
+                   "The alignment has no row for seq-id " 
+                        + p2->GetLoc().GetId()->AsFastaString());
     }
 
     CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(aln, target_row, NULL));
@@ -416,10 +420,21 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
        && sequence::IsSameBioseq(aln.GetSegs().GetSpliced().GetGenomic_id(),
                                  *p3->GetLoc().GetId(), NULL))
     {
-        if(CheckExonBoundary(p, aln) == eFail) {
+        bool source_loc_is_projected = 
+             p.IsSetPlacement_method() 
+          && p.GetPlacement_method() == CVariantPlacement::ePlacement_method_projected;
+        // checkig exon-boundary only for non-projected cases, since an exon-boundary
+        // may become non-exon-boundary (e.g. transcript extended or exon boundary shifted).
+        // VAR-1274
+
+
+        if(!source_loc_is_projected && CheckExonBoundary(p, aln) == eFail) {
             CRef<CVariationException> exception(new CVariationException);
             exception->SetCode(CVariationException::eCode_hgvs_exon_boundary);
-            exception->SetMessage("HGVS exon-boundary position not found in alignment of " + aln.GetSeq_id(0).AsFastaString() + "-vs-" + aln.GetSeq_id(1).AsFastaString());
+            exception->SetMessage("HGVS exon-boundary position not found in alignment of " 
+                                  + aln.GetSeq_id(0).AsFastaString() 
+                                  + "-vs-" 
+                                  + aln.GetSeq_id(1).AsFastaString());
             p3->SetExceptions().push_back(exception);
         }
             
@@ -429,15 +444,19 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
     //note: AttachSeq happens only after the intronic offsets are resolved.
     AttachSeq(*p3);
 
-    //Note: as per SNP-5641 - will check for mismatches even in the presence of other more severe exceptions
-    //NcbiCerr << "Checking for mismatches-in-mapping" << MSerial_AsnText << p << MSerial_AsnText << *p3 << "\n\n";
+    // Note: as per SNP-5641 - will check for mismatches 
+    // even in the presence of other more severe exceptions
+    // NcbiCerr << "Checking for mismatches-in-mapping" 
+    //          << MSerial_AsnText << p << MSerial_AsnText << *p3 << "\n\n";
     if(p.IsSetSeq() && p3->IsSetSeq() 
        && p.GetSeq().GetLength() == p3->GetSeq().GetLength()
        && p.GetSeq().IsSetSeq_data() && p3->GetSeq().IsSetSeq_data()
        && p.GetSeq().GetSeq_data().Which() == p3->GetSeq().GetSeq_data().Which()
        && !p.GetSeq().GetSeq_data().Equals(p3->GetSeq().GetSeq_data())) 
     {    
-        p3->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
+        p3->SetExceptions().push_back(CreateException(
+                    "Mismatches in mapping", 
+                    CVariationException::eCode_mismatches_in_mapping));
     }    
 
     //VAR-1307
