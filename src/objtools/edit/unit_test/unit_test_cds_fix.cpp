@@ -372,6 +372,26 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
 
 }
 
+BOOST_AUTO_TEST_CASE(Test_GetmRNAforCDS)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CConstRef<CSeq_feat> mrna = edit::GetmRNAforCDS(*cds, scope);
+    BOOST_CHECK_EQUAL(mrna.Empty(), true);
+
+    CRef<objects::CSeq_entry> nuc_seq = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> mrna1 = unit_test_util::MakemRNAForCDS (cds);
+    mrna1->SetData().SetRna().SetExt().SetName("product 1");
+    CRef<CSeq_annot> annot = unit_test_util::AddFeat(mrna1, nuc_seq);
+    CSeq_entry_EditHandle edit_seh = seh.GetEditHandle();
+    edit_seh.AttachAnnot(*annot);
+
+    mrna = edit::GetmRNAforCDS(*cds, scope);
+    BOOST_REQUIRE(!mrna.Empty());
+    BOOST_CHECK_EQUAL(mrna == mrna1, true);
+}
 
 BOOST_AUTO_TEST_CASE(Test_GetGeneticCodeForBioseq)
 {

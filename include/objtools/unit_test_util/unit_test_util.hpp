@@ -182,7 +182,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddGoodImpFeat (CRef<objects
 // Adding Features
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry, size_t right_end);
-NCBI_UNIT_TEST_UTIL_EXPORT void AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry);
+NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<CSeq_feat> BuildGoodFeat ();
 
 // Building known good Seq-entries

@@ -341,7 +341,7 @@ void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot> annot, CRef<objects::CSeq
 }
 
 
-void AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_annot> AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_annot> annot;
 
@@ -365,8 +365,8 @@ void AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry)
         }
     }
     annot->SetData().SetFtable().push_back(feat);
+    return annot;
 }
-
 
 CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CSeq_entry> entry) 
 {

@@ -54,6 +54,7 @@ NCBI_XOBJEDIT_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_fea
 NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 NCBI_XOBJEDIT_EXPORT bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope);
+NCBI_XOBJEDIT_EXPORT CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh);
 NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);

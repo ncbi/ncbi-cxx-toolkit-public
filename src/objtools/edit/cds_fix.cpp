@@ -36,12 +36,14 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/seqfeat_macros.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -693,6 +695,43 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
     return new_mrna;
 } 
 
+/// GetmRNAforCDS
+/// A function to find a CSeq_feat representing the
+/// appropriate mRNA for a given CDS. 
+/// @param cds        The feature for which the mRNA to be found
+/// @param scope      The scope 
+///
+/// @return           CConstRef<CSeq_feat> for new mRNA (will be NULL if none is found)
+
+CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
+{
+    CConstRef<CSeq_feat> mrna;
+    
+    bool has_xref = false;
+    if (cds.IsSetXref()) {
+        /* using FeatID from feature cross-references:
+        * if CDS refers to an mRNA by feature ID, use that feature
+        */
+        CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
+        CTSE_Handle tse = bsh.GetTSE_Handle();
+        FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, cds) {
+            if ((*it)->IsSetId() && (*it)->GetId().IsLocal() && (*it)->GetId().GetLocal().IsId()) {
+                CSeq_feat_Handle mrna_h = tse.GetFeatureWithId(CSeqFeatData::eSubtype_mRNA, (*it)->GetId().GetLocal().GetId());
+                if (mrna_h) {
+                    mrna = mrna_h.GetSeq_feat();
+                }
+                has_xref = true;
+            }
+        }
+    }
+    if (!has_xref) {
+        /* using original location to find mRNA: 
+        * mRNA must include the CDS location and the internal interval boundaries need to be identical
+        */
+        mrna = sequence::GetBestOverlappingFeat( cds.GetLocation(), CSeqFeatData::eSubtype_mRNA, sequence::eOverlap_CheckIntRev, scope);
+    }
+    return mrna;
+}
 
 /// GetGeneticCodeForBioseq
 /// A function to construct the appropriate CGenetic_code object to use
