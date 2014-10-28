@@ -2262,15 +2262,12 @@ extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 
     /* Server port */
     if (!sx_Info->server_port) {
-        const char* port_str = NULL;
-        if (!port_str) {
-            port_str = getenv("SERVER_PORT");
-            if (port_str  &&  *port_str) {
-                char* e;
-                unsigned long port = strtoul(port_str, &e, 10);
-                if (port > 0  &&  port <= NCBILOG_PORT_MAX  &&  !*e) {
-                    sx_Info->server_port = (unsigned int)port;
-                }
+        const char* port_str = getenv("SERVER_PORT");
+        if (port_str  &&  *port_str) {
+            char* e;
+            unsigned long port = strtoul(port_str, &e, 10);
+            if (port > 0  &&  port <= NCBILOG_PORT_MAX  &&  !*e) {
+                sx_Info->server_port = (unsigned int)port;
             }
         }
     }
