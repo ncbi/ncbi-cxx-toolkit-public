@@ -10,6 +10,8 @@
 
 #include <objects/taxon1/taxon1.hpp>
 
+#include <corelib/ncbiexpt.hpp>
+
 BEGIN_NCBI_SCOPE
 
 #define DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, text1, text2, text3) \
@@ -284,6 +286,52 @@ DEFINE_COL_VALIDATOR(date)
     catch (const CException& ex)
     {
         error = ex.GetMsg();
+    }
+
+    return false;
+}
+
+DEFINE_COL_VALIDATOR(country)
+{
+    if (!value.empty())
+    try
+    {
+        bool is_miscapitalized(false);
+        if (!CCountries::IsValid(value, is_miscapitalized))
+            error = "Country is not valid";
+        if (is_miscapitalized)
+            error = "Country is miscapitalized";
+    }
+    catch (const CException& ex)
+    {
+        error = ex.GetMsg();
+    }
+
+    return false;
+}
+
+bool CColumnValidator::IsDiscouraged(const string& column)
+{
+    try
+    {
+       CSubSource::TSubtype st = CSubSource::GetSubtypeValue(column);
+       if (CSubSource::IsDiscouraged(st))
+           return true;
+    }
+    catch (const CSerialException&)
+    {
+        // that's ok
+    }
+
+    try
+    {
+       COrgMod::TSubtype om = COrgMod::GetSubtypeValue(column);
+       if (COrgMod::IsDiscouraged(om))
+           return true;
+    }
+    catch (const CSerialException&)
+    {
+        // that's ok
     }
 
     return false;

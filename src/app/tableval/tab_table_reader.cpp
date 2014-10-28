@@ -56,34 +56,42 @@ bool CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
         DoValidate(datatype, value, error);
 
     if (!error.empty())
-        _ReportError(col_number, error);
+        _ReportError(col_number, error, datatype);
 
     return isfatal;
 }
 
-void CTabDelimitedValidator::_ReportWarning(int col_number, const CTempString& warning)
+void CTabDelimitedValidator::_ReportWarning(int col_number, const CTempString& warning, const CTempString& colname)
 {
-    _ReportError(col_number, warning, true);
+    _ReportError(col_number, warning, colname, true);
 }
 
-void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& error, bool warning)
+void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& error, const CTempString& colname, bool warning)
 {
     CTabDelimitedValidatorMessage rec;
     rec.m_col = col_number;
     rec.m_row = m_current_row_number;
     rec.m_msg = error;
     rec.m_warning = warning;
+    rec.m_colname = colname;
     m_errors.push_back(rec);
 }
 
-void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempString& default_columns,
-    const CTempString& required, const CTempString& ignored,
-    const CTempString& unique)
+void CTabDelimitedValidator::ValidateInput(ILineReader& reader, 
+    const string& default_columns,
+    const string& required, const string& ignored,
+    const string& unique, const string& discouraged)
 {
     m_current_row_number = 0;
     m_delim = (m_flags & e_tab_comma_delim) ? "," : "\t";
 
-    if (_ProcessHeader(reader, default_columns))
+    vector<string> discouraged_cols;
+    if (!discouraged.empty())
+    {
+        NStr::Tokenize(discouraged, ",", discouraged_cols);
+    }
+
+    if (_ProcessHeader(reader, default_columns, discouraged_cols))
     {
         // preprocess headers & required & ignored
         if (_MakeColumns("Required", required, m_required_cols) &&
@@ -103,8 +111,7 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
 
                 if (!CColumnValidatorRegistry::GetInstance().IsSupported(m_col_defs[i]))
                 {
-                    _ReportError(i,
-                        "Datatype " + m_col_defs[i] + " is not supported", ignore_unknown);
+                    _ReportError(i, "Datatype is not supported", m_col_defs[i], ignore_unknown);
                     if (ignore_unknown)
                     {
                        m_ignored_cols[i] = true;
@@ -118,7 +125,7 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
                 if (count == 2)
                 {
                     // report only first occurance
-                    _ReportError(i, "Column " + m_col_defs[i] + " is not unique");
+                    _ReportError(i, "Column is not unique", m_col_defs[i]);
                     fatal = true;
                 }
                 
@@ -137,6 +144,7 @@ void CTabDelimitedValidator::_ReportTab(CNcbiOstream* out_stream)
     ITERATE(list<CTabDelimitedValidatorMessage>, it, m_errors)
     {
         *out_stream << it->m_row << "\t" << it->m_col << "\t"
+            << it->m_colname << "\t"
             << (it->m_warning?"\t":it->m_msg.c_str())
             << (it->m_warning?it->m_msg.c_str(): "\t")
             << endl;
@@ -158,6 +166,10 @@ void CTabDelimitedValidator::_ReportXML(CNcbiOstream* out_stream, bool no_header
         new_node.get_attributes().insert("row", NStr::IntToString(it->m_row).c_str());
         new_node.get_attributes().insert("column", NStr::IntToString(it->m_col).c_str());
         new_node.get_attributes().insert("message", it->m_msg.c_str()); 
+        if (!it->m_colname.empty())
+        {
+            new_node.get_attributes().insert("colname", it->m_colname.c_str());
+        }
         // will be handled correctly
         root.insert(new_node);
 
@@ -186,7 +198,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
             vector<string>::const_iterator col_it = find(m_col_defs.begin(), m_col_defs.end(), names[i]);
             if (col_it == m_col_defs.end())
             {
-                _ReportError(i, message + " column does not exist");
+                _ReportError(i, message + " column does not exist", names[i]);
                 // stop processing
                 can_process = false;
             }                   
@@ -196,7 +208,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
         else
         if (index > (int)m_col_defs.size() || index<1)
         {
-            _ReportError(index, message + " column does not exist");
+            _ReportError(i, message + " column does not exist", names[i]);
             // stop processing
             can_process = false;
         }
@@ -206,7 +218,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
     return can_process;
 }
 
-bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_columns)
+bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_columns, const vector<string>& discouraged_cols)
 {
     if (!default_columns.empty())
     {
@@ -233,13 +245,22 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
 
         if (m_col_defs.size()<1)
         {
-            _ReportError(1, "No columns specified");            
+            _ReportError(1, "No columns specified", "");            
             return false;
         }
-
-        return true;
     }
-    return false;
+    ITERATE(std::vector<std::string>, it, m_col_defs)
+    {
+        if (CColumnValidator::IsDiscouraged(*it) ||
+            find(discouraged_cols.begin(), discouraged_cols.end(), *it) != discouraged_cols.end())
+        {
+            int id = it - m_col_defs.begin();
+            _ReportError(id, "Column is discouraged", *it);
+            m_ignored_cols.resize(m_col_defs.size());
+            m_ignored_cols[id] = true;
+        }
+    }
+    return true;
 }
 
 void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
@@ -256,7 +277,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
             if (m_flags & e_tab_ignore_empty_rows)
                 continue;
             else
-                _ReportError(0, "Empty rows not allowed");
+                _ReportError(0, "Empty rows not allowed", "");
         }
         else
         {
@@ -265,14 +286,14 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
             NStr::Tokenize(current, m_delim, values);
 
             if (values.size() > m_col_defs.size())
-                _ReportError(m_col_defs.size(), "To many values");
+                _ReportError(m_col_defs.size(), "To many values", "");
 
             for (size_t i=0; i<m_col_defs.size(); i++)
             {
                 if (i>=values.size() || values[i].empty())
                 {
                     if (m_required_cols[i])
-                        _ReportError(i, "Missing required value");
+                        _ReportError(i, "Missing required value", "");
                     else
                         continue;
                 }
@@ -283,7 +304,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                 bool isfatal = _Validate(i, values[i]);
                 if (isfatal)
                 {
-                    _ReportError(i, "Fatal error occured, stopping");
+                    _ReportError(i, "Fatal error occured, stopping", "");
                     return;
                 }
                 if (!values[i].empty() && m_unique_cols[i])
@@ -291,7 +312,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                     int& count = m_unique_values[i][values[i]];
                     if (count++)
                     {
-                        _ReportError(i, "Non unique value");
+                        _ReportError(i, "Non unique value", "");
                     }
                     
                 }

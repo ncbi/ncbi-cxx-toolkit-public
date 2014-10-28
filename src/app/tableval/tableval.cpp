@@ -97,6 +97,7 @@ private:
     bool   m_no_header;
     bool   m_skip_empty;
     bool   m_ignore_unknown_types;
+    string m_discouraged;
 };
 
 CTAbleValApp::CTAbleValApp(void):
@@ -154,7 +155,9 @@ void CTAbleValApp::Init(void)
         "Comma separated columns needs to be unique in file, use indices or names",
         CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("aliases", "InFile", "Filename of data type aliases.", CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("aliases", "InFile", "Filename of data type aliases", CArgDescriptions::eInputFile);
+
+    arg_desc->AddOptionalKey("discouraged", "String", "Comma separated list of discouraged types", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);   
 
@@ -223,6 +226,12 @@ int CTAbleValApp::Run(void)
     m_skip_empty = args["skip-empty"];
     m_format = args["format"].AsString();
     m_ignore_unknown_types = args["ignore-unknown"];
+
+    if (args["discouraged"])
+    {
+       m_discouraged = args["discouraged"].AsString();
+       NStr::ToLower(m_discouraged);
+    }
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["o"])
@@ -320,7 +329,7 @@ void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
 
    CRef<ILineReader> reader(ILineReader::New(input));
 
-   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols, m_unique_cols);
+   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols, m_unique_cols, m_discouraged);
    validator.GenerateOutput(output, false);
 }
 

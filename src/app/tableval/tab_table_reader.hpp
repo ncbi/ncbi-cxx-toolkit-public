@@ -25,6 +25,7 @@ struct CTabDelimitedValidatorMessage
     int m_col;
     bool m_warning;
     string m_msg;
+    string m_colname;
 };
 
 class CTabDelimitedValidator
@@ -52,8 +53,9 @@ public:
 
    // TODO: replace with options flags instead of parameters
    void ValidateInput(ILineReader& reader, 
-       const CTempString& default_columns, const CTempString& required,
-       const CTempString& ignored, const CTempString& unique);
+       const string& default_columns, const string& required,
+       const string& ignored, const string& unique,
+       const string& discouraged);
 
    void GenerateOutput(CNcbiOstream* out_stream, bool no_headers);
    static void RegisterAliases(CNcbiIstream& in_stream);
@@ -62,13 +64,14 @@ private:
     bool _Validate(int col_number, const CTempString& value);
 
     void _OperateRows(ILineReader& reader);
-    bool _ProcessHeader(ILineReader& reader, const CTempString& default_cols);
+    bool _ProcessHeader(ILineReader& reader, const CTempString& default_cols, 
+        const vector<string>& discouraged);
 
     bool _MakeColumns(const string& message, 
         const CTempString& columns, vector<bool>& col_defs);
 
-    void _ReportError(int col_number, const CTempString& error, bool warning = false);
-    void _ReportWarning(int col_number, const CTempString& error);
+    void _ReportError(int col_number, const CTempString& error, const CTempString& colname, bool warning = false);
+    void _ReportWarning(int col_number, const CTempString& error, const CTempString& colname);
     void _ReportTab(CNcbiOstream* out_stream);
     void _ReportXML(CNcbiOstream* out_stream, bool no_headers);
     int  m_current_row_number;

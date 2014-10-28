@@ -14,6 +14,7 @@ protected:
 public:
     virtual ~CColumnValidator();
     virtual bool DoValidate(const CTempString& value, string& error) const = 0;
+    static bool IsDiscouraged(const string& column);
 };
 
 class CColumnValidatorRegistry
