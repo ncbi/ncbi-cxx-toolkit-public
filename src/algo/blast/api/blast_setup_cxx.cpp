@@ -736,13 +736,24 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
     for (TSeqPos i = 0; i < subjects.Size(); i++) {
         BLAST_SequenceBlk* subj = NULL;
 
-        SBlastSequence sequence =
-            subjects.GetBlastSequence(i, encoding, 
-                                      eNa_strand_plus, sentinels);
-
-        if (BlastSeqBlkNew(&subj) < 0) {
-            NCBI_THROW(CBlastSystemException, eOutOfMemory, 
-                       "Subject sequence block");
+        SBlastSequence sequence;
+        try {
+        	if (BlastSeqBlkNew(&subj) < 0) {
+        		NCBI_THROW(CBlastSystemException, eOutOfMemory, "Subject sequence block");
+             }
+        	sequence =
+        			subjects.GetBlastSequence(i, encoding, eNa_strand_plus, sentinels);
+        }
+        catch(CBlastException & e ) {
+        	// Skip bad subject sequence
+        	if(e.GetErrCode() == CBlastException::eInvalidArgument) {
+        		seqblk_vec->push_back(subj);
+        		continue;
+        	}
+        	else {
+        		subj = BlastSequenceBlkFree(subj);
+        		NCBI_RETHROW_SAME(e, e.GetMsg());
+        	}
         }
 
         if (Blast_SubjectIsTranslated(prog)) {
