@@ -89,7 +89,11 @@ void CGenomicCollectionsService::x_Connect()
     to5Min.usec=0;
     SetTimeout(&to5Min);
 
-    x_ConnectURL(x_GetURL());
+    string url = x_GetURL();
+    if(url.empty())
+        CGenomicCollectionsService_Base::x_Connect();
+    else
+        x_ConnectURL(url);
 }
 
 
