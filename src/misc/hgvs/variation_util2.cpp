@@ -440,6 +440,26 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
         p3->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
     }    
 
+    //VAR-1307
+    {{ 
+         static const TSeqPos thr = 5000;
+         long start_offset = !p2->IsSetStart_offset() ? 0 : p2->GetStart_offset();
+         long stop_offset  = !p2->IsSetStop_offset()  ? 0 : p2->GetStop_offset();
+         bool far_start = start_offset < -thr
+                       && (   p2->GetLoc().GetStart(eExtreme_Biological) == aln.GetSeqStart(1) 
+                           || p2->GetLoc().GetStart(eExtreme_Biological) == aln.GetSeqStop(1));
+
+         bool far_stop = stop_offset > thr
+                       && (   p2->GetLoc().GetStop(eExtreme_Biological) == aln.GetSeqStart(1) 
+                           || p2->GetLoc().GetStop(eExtreme_Biological) == aln.GetSeqStop(1));
+
+         if(far_start || far_stop) {
+               p3->SetExceptions().push_back(CreateException(
+                           "Mapped location is smaller than the original by at least 5kb", 
+                           CVariationException::eCode_partial_mapping));
+         } 
+    }}
+
     CheckPlacement(*p3);
     return p3;
 }
@@ -813,8 +833,37 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
         p2->SetMol(CVariantPlacement::eMol_unknown);
     }
 
-    ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
+    if(p2->GetLoc().GetId()) { // VAR-1307
+         bool mapped_whole = false;
+         {{
+            CBioseq_Handle bsh = m_scope->GetBioseqHandle(*p2->GetLoc().GetId());
+            TSeqPos seq_len = GetEffectiveTranscriptLength(bsh);
+            TSeqPos mapped_len = mapped_loc->Which() ? sequence::GetLength(*mapped_loc, NULL) : 0;
+            mapped_whole = mapped_len + 10 > seq_len;
+         }}
 
+         static const TSeqPos thr = 5000;
+
+         bool mapped_genomic_outer_fuzz = 
+                (p2->GetLoc().IsPartialStart(eExtreme_Positional) || p2->GetLoc().IsTruncatedStart(eExtreme_Positional))
+             && (p2->GetLoc().IsPartialStop(eExtreme_Positional)  || p2->GetLoc().IsTruncatedStop(eExtreme_Positional));
+
+         bool small_partial = mapped_whole
+                           && mapped_genomic_outer_fuzz 
+                           && (   p2->GetMol() == CVariantPlacement::eMol_genomic
+                               || p2->GetMol() == CVariantPlacement::eMol_mitochondrion
+                               || p2->GetMol() == CVariantPlacement::eMol_unknown)
+                           && s_GetLength(p, m_scope) > s_GetLength(*p2, m_scope) + thr;
+
+         if(small_partial) {
+               p2->SetExceptions().push_back(CreateException(
+                           "Mapped location is smaller than the original by at least 5kb", 
+                           CVariationException::eCode_partial_mapping));
+         }
+    }
+
+
+    ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
     return p2;
 }
 
