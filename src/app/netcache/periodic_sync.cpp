@@ -103,8 +103,9 @@ static ESyncInitiateResult
 s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
 {
     CMiniMutexGuard g_slot(slot_data->lock);
-    if (slot_data->cleaning  ||  slot_data->clean_required)
+    if (slot_data->cleaning  ||  slot_data->clean_required) {
         return eServerBusy;
+    }
 
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started) {
@@ -116,8 +117,9 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
         --slot_data->cnt_sync_started;
     }
 
-    if (!is_passive  &&  !slot_srv->peer->StartActiveSync())
+    if (!is_passive  &&  !slot_srv->peer->StartActiveSync()) {
         return eServerBusy;
+    }
     slot_srv->sync_started = true;
     slot_srv->is_passive = is_passive;
     slot_srv->cnt_sync_ops = 0;
@@ -444,8 +446,9 @@ CNCPeriodicSync::CanStartSyncCommand(Uint8  server_id,
         return eNetworkError;
     
     CMiniMutexGuard g_slot(slot_data->lock);
-    if (slot_data->clean_required  &&  can_abort)
+    if (slot_data->clean_required  &&  can_abort) {
         return eServerBusy;
+    }
 
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (!slot_srv->sync_started  ||  !slot_srv->is_passive)
@@ -1028,6 +1031,7 @@ CNCActiveSyncControl::x_DoEventSend(const SSyncTaskInfo& task_info,
 {
     SNCSyncEvent* event = *task_info.send_evt;
     if (!conn->GetPeer()->AcceptsBlobKey(event->key)) {
+        CmdFinished( eSynOK, eSynActionWrite, conn);
         conn->Release();
         return;
     }
@@ -1079,6 +1083,7 @@ CNCActiveSyncControl::x_DoBlobUpdatePeer(const SSyncTaskInfo& task_info,
 {
     CNCBlobKeyLight key(task_info.remote_blob->first);
     if (!conn->GetPeer()->AcceptsBlobKey(key)) {
+        CmdFinished( eSynOK, eSynActionWrite, conn);
         conn->Release();
         return;
     }
@@ -1096,6 +1101,7 @@ CNCActiveSyncControl::x_DoBlobSend(const SSyncTaskInfo& task_info,
 {
     CNCBlobKeyLight key(task_info.local_blob->first);
     if (!conn->GetPeer()->AcceptsBlobKey(key)) {
+        CmdFinished( eSynOK, eSynActionWrite, conn);
         conn->Release();
         return;
     }
