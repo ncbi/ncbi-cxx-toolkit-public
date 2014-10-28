@@ -125,12 +125,65 @@ bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc
 };
 
 
-void CDiscRepOutput :: x_AddFatalToSubcategories(vector <CRef <CClickableItem> >&  sub)
+bool CDiscRepOutput :: x_IsItemTrnaInCDS(const CClickableItem& item)
 {
-   NON_CONST_ITERATE (vector <CRef <CClickableItem> >, it, sub) {
-       (*it)->fatal = true;
-       if ( !((*it)->subcategories.empty()) ) x_AddFatalToSubcategories( (*it)->subcategories);
-   }
+    if (NStr::Equal(item.setting_name, "RNA_CDS_OVERLAP") &&
+        (NStr::Find(item.description, "contain tRNA") != string::npos ||
+         NStr::Find(item.description, "contains tRNA") != string::npos)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CDiscRepOutput ::IsFatal(const CClickableItem& item, bool extra, bool multiple_nt)
+{
+    string setting_name = item.setting_name;
+    string desc = item.description; 
+    bool needs_fatal = false;
+
+    if (x_IsItemTrnaInCDS(item)) {
+        needs_fatal = true;
+    } else if (x_NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
+            || (extra 
+                   && x_NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {        
+        if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
+            if (NStr::FindNoCase(desc, "taxname (all present, all unique)") 
+                  != string::npos) {
+                if (multiple_nt) {
+                    needs_fatal = true;
+                }
+            } else if (NStr::FindNoCase(desc, "some missing") != string::npos ||
+                       NStr::FindNoCase(desc, "some duplicate") != string::npos) {
+                needs_fatal = true;
+            }
+        } else {
+            needs_fatal = true;
+        }
+    } else if (NStr::Equal(setting_name, "RNA_CDS_OVERLAP")) {
+        ITERATE (vector <CRef <CClickableItem> >, sit, item.subcategories) {
+            if (x_IsItemTrnaInCDS(**sit)) {
+                needs_fatal = true;
+                break;
+            }
+        }
+    }
+    return needs_fatal;
+}
+
+
+void CDiscRepOutput :: x_AddFatalToItem(CClickableItem& item, COutputConfig& oc, bool more_than_one_nucleotide)
+{
+    if (IsFatal(item, oc.add_extra_output_tag, more_than_one_nucleotide)) {
+        item.fatal = true;
+        item.description = "FATAL: " + item.description;
+    }
+
+    NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, item.subcategories) {
+        x_AddFatalToItem(**sit, oc, more_than_one_nucleotide);
+    }
+
 };
 
 void CDiscRepOutput :: x_AddListOutputTags()
@@ -149,79 +202,10 @@ void CDiscRepOutput :: x_AddListOutputTags()
     }
   }
  
-  // AddOutpuTag
+  // AddOutputTag
   NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, 
                                     thisInfo.disc_report_data) {
-     setting_name = (*it)->setting_name;
-     desc = (*it)->description; 
-     if (desc.empty()) continue;
-
-     bool has_sub_fatal = false;
-     // check subcategories first;
-     NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, 
-                                               (*it)->subcategories) {
-        sub_desc = (*sit)->description;
-        if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
-               || (oc.add_extra_output_tag 
-                      && x_NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
-           if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
-             if (sub_desc.find("some missing") != string::npos
-                       || sub_desc.find("some duplicate") != string::npos) {
-                  (*sit)->description = "FATAL: " + sub_desc;
-             }
-           }
-           else if (setting_name == "RNA_CDS_OVERLAP"
-                      && (sub_desc.find("contain ") != string::npos
-                              || sub_desc.find("contains ") != string::npos)) {
-                ITERATE (vector <string>, iit, (*sit)->item_list) {
-                   if ( (*iit).find(": tRNA\t") != string::npos) {
-                      (*sit)->description = "FATAL: " + sub_desc;
-                      (*sit)->fatal = true;
-                      has_sub_fatal = true;
-                      break;
-                   }
-                }
-           }
-           else {
-              (*sit)->description = "FATAL: " + sub_desc;
-              (*sit)->fatal = true;
-               has_sub_fatal = true;
-           }
-           if (has_sub_fatal && !((*sit)->subcategories.empty())) {
-              x_AddFatalToSubcategories((*sit)->subcategories);
-           }
-        }
-     }
-
-     // check self
-     if (x_NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
-            || (oc.add_extra_output_tag 
-                   && x_NeedsTag(setting_name, desc, extra_fatal, extra_cnt))){
-        if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
-          if (NStr::FindNoCase(desc, "taxname (all present, all unique)") 
-                  != string::npos) {
-             if (na_cnt_grt1) {
-                (*it)->description = "FATAL: " + (*it)->description;
-                (*it)->fatal = true;
-             }
-          }
-          else if (desc.find("some missing") != string::npos 
-                       || desc.find("some duplicate") != string::npos) {
-              (*it)->description = "FATAL: " + (*it)->description;
-              (*it)->fatal = true;
-          }
-        }
-        else {
-          (*it)->description = "FATAL: " + (*it)->description;
-          (*it)->fatal = true;
-        }
-        if ( (*it)->fatal && !((*it)->subcategories.empty())) {
-              x_AddFatalToSubcategories((*it)->subcategories);
-        }
-     } 
-     else if (has_sub_fatal) {
-         (*it)->description = "FATAL: " + (*it)->description; 
-     }
+     x_AddFatalToItem(**it, oc, na_cnt_grt1);
   } 
 };
 

@@ -93,6 +93,8 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void Export(vector <CRef <CClickableText> >& item_list);
     void Export(CClickableItem& c_item, const string& setting_name);
     void Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name);
+
+    static bool IsFatal(const CClickableItem& item, bool extra, bool multiple_nt);
     
   private:
     Str2Int                    m_OnCallerToolPriorities;
@@ -103,7 +105,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void x_SortReport(UInt2UInts& prt_ord);
     void x_Clear(UInt2UInts* prt_ord = 0);
     void x_WriteDiscRepSummary(xml::node& root, UInt2UInts& m_PrtOrd);
-    bool x_NeedsTag(const string& setting_name, const string& desc, 
+    static bool x_NeedsTag(const string& setting_name, const string& desc, 
                             const s_fataltag* tags, const unsigned& cnt);
     void x_AddListOutputTags();
     void x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
@@ -141,7 +143,8 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
                                              const string& grp_idxes);
     void x_SendItemToGbench(CRef <CClickableItem> citem, 
                             vector <CRef <CClickableText> >& item_list);
-    void x_AddFatalToSubcategories(vector <CRef <CClickableItem> >&  sub);
+    static bool x_IsItemTrnaInCDS(const CClickableItem& item);
+    void x_AddFatalToItem(CClickableItem& item, COutputConfig& oc, bool more_than_one_nucleotide);
 };
 
 END_SCOPE(DiscRepNmSpc)

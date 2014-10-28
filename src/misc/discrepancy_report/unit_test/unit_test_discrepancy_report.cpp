@@ -42,6 +42,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqres/Int_graph.hpp>
@@ -153,35 +154,56 @@ NCBITEST_AUTO_FINI()
     cout << "Finalization function executed" << endl;
 }
 
-void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const string& msg)
+
+CRef<CClickableItem> RunOneTest(CSeq_entry& entry, const string& test_name)
 {
    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
    config->SetTopLevelSeqEntry(&seh);
 
    config->SetArg("e", test_name);
    config->CollectTests();
    config->Run();
    CDiscRepOutput output_obj;
-   CClickableItem c_item;
+
+   CRef<CClickableItem> c_item(new CClickableItem());
+
    if (test_name == "SUSPECT_PHRASES") {
-      output_obj.Export(c_item, "SUSPECT_PRODUCT_NAMES");
+      output_obj.Export(*c_item, "SUSPECT_PRODUCT_NAMES");
    }
    else { 
-      output_obj.Export(c_item, test_name);
+      output_obj.Export(*c_item, test_name);
    }
+  
+   return c_item;
+}
+
+
+void CheckOneItem(CClickableItem& c_item, const string& msg, bool expect_fatal)
+{
+   NCBITEST_CHECK_MESSAGE(c_item.item_list.size() == c_item.obj_list.size(),
+              "The sizes of item_list and obj_list are not equal");
+
+   BOOST_CHECK_EQUAL(c_item.description, msg);
+
+   BOOST_CHECK_EQUAL(CDiscRepOutput::IsFatal(c_item, true, true), expect_fatal);
+}
+
+
+void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const string& msg, bool expect_fatal = false)
+{
+    CRef<CClickableItem> c_item = RunOneTest(*entry, test_name);
+
    NCBITEST_CHECK_MESSAGE(
-    !(c_item.description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
+    !(c_item->description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
    if (msg == "print") {
      if ( test_name != "FIND_DUP_TRNAS") {
-          cerr << "desc " << c_item.description << endl;
+          cerr << "desc " << c_item->description << endl;
      }
      return;
    }
-   NCBITEST_CHECK_MESSAGE(c_item.item_list.size() == c_item.obj_list.size(),
-              "The sizes of item_list and obj_list are not equal");
-   NCBITEST_CHECK_MESSAGE(c_item.description == msg,
-              "Test report is incorrect: " + c_item.description);
+
+   CheckOneItem(*c_item, msg, expect_fatal);
 };
 
 void RunTest(CClickableItem& c_item, const string& setting_name)
@@ -379,7 +401,7 @@ BOOST_AUTO_TEST_CASE(DISC_QUALITY_SCORES)
    set_entry->SetSet().SetSeq_set().push_back(entry);
    set_entry->SetSet().SetSeq_set().push_back(entry2);
    RunAndCheckTest(set_entry, "DISC_QUALITY_SCORES", 
-                       "Quality scores are missing on some sequences.");
+                       "Quality scores are missing on some sequences.", true);
 };
 
 BOOST_AUTO_TEST_CASE(DISC_MISSING_DEFLINES)
@@ -495,7 +517,7 @@ BOOST_AUTO_TEST_CASE(DISC_SEGSETS_PRESENT)
 {
    CRef <CSeq_entry> entry = BuildGoodEcoSet();
    entry->SetSet().SetClass(CBioseq_set::eClass_segset);
-   RunAndCheckTest(entry, "DISC_SEGSETS_PRESENT", "1 segset is present.");
+   RunAndCheckTest(entry, "DISC_SEGSETS_PRESENT", "1 segset is present.", true);
 };
 
 BOOST_AUTO_TEST_CASE(TEST_SMALL_GENOME_SET_PROBLEM)
@@ -734,7 +756,7 @@ BOOST_AUTO_TEST_CASE(PSEUDO_MISMATCH)
    AddFeat(cds, entry);
 
    RunAndCheckTest(entry, "PSEUDO_MISMATCH", 
-                    "4 CDSs, RNAs, and genes have mismatching pseudos.");
+                    "4 CDSs, RNAs, and genes have mismatching pseudos.", true);
 };
 
 
@@ -818,7 +840,7 @@ BOOST_AUTO_TEST_CASE(DISC_MICROSATELLITE_REPEAT_TYPE)
  
    RunAndCheckTest(entry, 
                    "DISC_MICROSATELLITE_REPEAT_TYPE",
-                   "1 microsatellite does not have a repeat type of tandem");
+                   "1 microsatellite does not have a repeat type of tandem", true);
 };
 
 BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
@@ -836,7 +858,7 @@ BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
 
    RunAndCheckTest(entry, 
                     "DISC_RBS_WITHOUT_GENE",
-                    "1 RBS feature does not have overlapping genes");
+                    "1 RBS feature does not have overlapping genes", true);
 };
 
 BOOST_AUTO_TEST_CASE(ONCALLER_HIV_RNA_INCONSISTENT)
@@ -936,7 +958,7 @@ BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)
    AddFeat(new_rna, nuc_entry);
 
    RunAndCheckTest(entry, "DISC_SUSPECT_RRNA_PRODUCTS", 
-                     "7 rRNA product names contain suspect phrase");
+                     "7 rRNA product names contain suspect phrase", true);
 };
 
 BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
@@ -1047,7 +1069,7 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
    CGene_ref& gene_ref= (*(feats.begin()))->SetData().SetGene();
    string strtmp(kEmptyStr);
    gene_ref.SetLocus_tag("");
-   RunAndCheckTest(entry, "MISSING_LOCUS_TAGS", "1 gene has no locus tags.");
+   RunAndCheckTest(entry, "MISSING_LOCUS_TAGS", "1 gene has no locus tags.", true);
 };
 
 BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
@@ -1085,7 +1107,7 @@ BOOST_AUTO_TEST_CASE(MISSING_PROTEIN_ID)
    seq_id = MakeSeqIdWithDbAndIdStr("NCBIFILE", "67890");
    prot->SetSeq().SetId().push_back(seq_id);
    
-   RunAndCheckTest(nuc_prot_set, "MISSING_PROTEIN_ID", "1 protein has invalid ID.");
+   RunAndCheckTest(nuc_prot_set, "MISSING_PROTEIN_ID", "1 protein has invalid ID.", true);
 };
 
 BOOST_AUTO_TEST_CASE(INCONSISTENT_PROTEIN_ID)
@@ -1491,7 +1513,7 @@ BOOST_AUTO_TEST_CASE(ONCALLER_ORDERED_LOCATION)
    feat->ResetLocation();
    feat->SetLocation(*mix_loc);
 
-   RunAndCheckTest(entry, "ONCALLER_ORDERED_LOCATION", "1 feature has ordered locations");
+   RunAndCheckTest(entry, "ONCALLER_ORDERED_LOCATION", "1 feature has ordered locations", true);
 };
 
 BOOST_AUTO_TEST_CASE(ONCALLER_HAS_STANDARD_NAME)
@@ -1634,7 +1656,7 @@ BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
    feat->SetData().SetGene().SetLocus_tag("HHV4_EBNA-3B/EBNA-3C");
    AddFeat(feat, entry);
 
-   RunAndCheckTest(entry, "BAD_LOCUS_TAG_FORMAT", "3 locus tags are incorrectly formatted.");
+   RunAndCheckTest(entry, "BAD_LOCUS_TAG_FORMAT", "3 locus tags are incorrectly formatted.", true);
 }
 
 BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
@@ -1768,4 +1790,68 @@ BOOST_AUTO_TEST_CASE(DUPLICATE_GENE_LOCUS)
   RunAndCheckTest(entry, "DUPLICATE_GENE_LOCUS", 
           "2 genes have the same locus as another gene on the same Bioseq.");
    
+};
+
+
+BOOST_AUTO_TEST_CASE(RNA_CDS_OVERLAP)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    SetLineage(entry, "something");
+    CRef <CSeq_entry> nuc_entry = GetNucleotideSequenceFromGoodNucProtSet(entry);
+
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet (entry);
+
+    CRef <CSeq_feat> rna = BuildGoodtRNA(nuc_entry->GetSeq().GetId().front());
+    rna->SetLocation().SetInt().SetFrom(cds->GetLocation().GetInt().GetFrom() + 1);
+    rna->SetLocation().SetInt().SetTo(cds->GetLocation().GetInt().GetTo() - 1);
+   
+    AddFeat(rna, entry);
+
+    // check tRNA completely contained in coding region
+    CRef<CClickableItem> item = RunOneTest(*entry, "RNA_CDS_OVERLAP");
+    CheckOneItem(*item, "1 coding region overlaps RNA feature", true);
+    BOOST_CHECK_EQUAL(item->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]), "1 coding region completely contains tRNAs", true);
+
+    // change to miscRNA, still completely contained
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    rna->SetData().SetRna().SetExt().SetGen().SetProduct("something");
+
+    item = RunOneTest(*entry, "RNA_CDS_OVERLAP");
+    CheckOneItem(*item, "1 coding region overlaps RNA feature", false);
+    BOOST_CHECK_EQUAL(item->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]), "1 coding region completely contains an RNA", true);
+
+    // make locations equal
+    rna->SetLocation().Assign(cds->GetLocation());
+    item = RunOneTest(*entry, "RNA_CDS_OVERLAP");
+    CheckOneItem(*item, "1 coding region overlaps RNA feature", false);
+    BOOST_CHECK_EQUAL(item->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]), "1 coding region exactly matches an RNA", false);
+
+    // put coding region inside RNA
+    cds->SetLocation().SetInt().SetFrom(rna->GetLocation().GetInt().GetFrom() + 1);
+    item = RunOneTest(*entry, "RNA_CDS_OVERLAP");
+    CheckOneItem(*item, "1 coding region overlaps RNA feature", false);
+    BOOST_CHECK_EQUAL(item->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]), "1 coding region is completely contained in an RNA location", true);
+
+    // simple overlap
+    rna->SetLocation().SetInt().SetTo(cds->GetLocation().GetInt().GetTo() - 1);
+    item = RunOneTest(*entry, "RNA_CDS_OVERLAP");
+    CheckOneItem(*item, "1 coding region overlaps RNA feature", false);
+    BOOST_CHECK_EQUAL(item->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]), "1 coding region overlaps an RNA (no containment)", false);
+    BOOST_CHECK_EQUAL(item->subcategories[0]->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]->subcategories[0]), "1 coding region overlaps RNA on the same strand (no containment)", false);
+
+    // on opposite strand
+    rna->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    item = RunOneTest(*entry, "RNA_CDS_OVERLAP");
+    CheckOneItem(*item, "1 coding region overlaps RNA feature", false);
+    BOOST_CHECK_EQUAL(item->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]), "1 coding region overlaps an RNA (no containment)", false);
+    BOOST_CHECK_EQUAL(item->subcategories[0]->subcategories.size(), 1);
+    CheckOneItem(*(item->subcategories[0]->subcategories[0]), "1 coding region overlaps RNA on the opposite strand (no containment)", false);
+
 };

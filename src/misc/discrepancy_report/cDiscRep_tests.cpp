@@ -7461,109 +7461,127 @@ void CBioseq_DISC_QUALITY_SCORES ::  GetReport(CRef <CClickableItem> c_item)
 
 void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
 {
-  string text_i, text_j, subcat_tp;
-  ENa_strand strand_i, strand_j;
-  bool ignore_trna = IsEukaryotic(bioseq);
+    string text_i, text_j, subcat_tp;
+    ENa_strand strand_i, strand_j;
+    bool ignore_trna = IsEukaryotic(bioseq);
 
-  ITERATE (vector <const CSeq_feat*>, it, rna_not_mrna_feat) {
-    CSeqFeatData::ESubtype subtp = (*it)->GetData().GetSubtype();
-    if ( subtp == CSeqFeatData::eSubtype_ncRNA
-          || ( subtp == CSeqFeatData::eSubtype_tRNA && ignore_trna) ) continue;
-    if (IsShortrRNA(**it, thisInfo.scope)) continue;
-    const CSeq_loc& loc_i = (*it)->GetLocation();
-    ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
-      const CSeq_loc& loc_j = (*jt)->GetLocation();
-      sequence::ECompare 
-          ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope,
-          sequence::fCompareOverlapping);
-      subcat_tp = kEmptyStr;
-      switch (ovlp_com) {
-        case sequence::eSame: subcat_tp = "extrc"; break;
-        case sequence::eContained: subcat_tp = "cds_in_rna"; break;
-        case sequence::eContains: subcat_tp = "rna_in_cds"; break;
-        case sequence::eOverlap: {
-           strand_i = loc_i.GetStrand();
-           strand_j = loc_j.GetStrand();
-           if ((strand_i == eNa_strand_minus && strand_j != eNa_strand_minus)
-                       || (strand_i != eNa_strand_minus 
-                                && strand_j == eNa_strand_minus))
-                subcat_tp = "overlap_opp_strand";
-           else subcat_tp = "overlap_same_strand";
-           break;
+    ITERATE (vector <const CSeq_feat*>, it, rna_not_mrna_feat) {
+        CSeqFeatData::ESubtype subtp = (*it)->GetData().GetSubtype();
+        if ( subtp == CSeqFeatData::eSubtype_ncRNA
+             || ( subtp == CSeqFeatData::eSubtype_tRNA && ignore_trna) ) {
+            continue;
         }
-        default:;
-      }
-      if (!subcat_tp.empty()) {
-         thisInfo.test_item_list[GetName()]
-                     .push_back(subcat_tp +"$" +GetDiscItemText(**jt));
-         thisInfo.test_item_list[GetName()]
-                     .push_back(subcat_tp +"$" +GetDiscItemText(**it));
-         thisInfo.test_item_objs[GetName()+"$"+subcat_tp]
-                     .push_back(CConstRef <CObject>(*jt));
-         thisInfo.test_item_objs[GetName()+"$"+subcat_tp]
-                     .push_back(CConstRef <CObject>(*it));
-      }
+        if (IsShortrRNA(**it, thisInfo.scope)) {
+            continue;
+        }
+        const CSeq_loc& loc_i = (*it)->GetLocation();
+        ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
+            const CSeq_loc& loc_j = (*jt)->GetLocation();
+            sequence::ECompare 
+              ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope);
+            subcat_tp = kEmptyStr;
+            switch (ovlp_com) {
+                case sequence::eSame: 
+                    subcat_tp = "exact"; 
+                    break;
+                case sequence::eContained: 
+                    subcat_tp = "cds_in_rna"; 
+                    break;
+                case sequence::eContains: 
+                    if ((*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
+                        subcat_tp = "trna_in_cds";
+                    } else {
+                        subcat_tp = "rna_in_cds"; 
+                    }
+                    break;
+                case sequence::eOverlap: 
+                    strand_i = loc_i.GetStrand();
+                    strand_j = loc_j.GetStrand();
+                    if ((strand_i == eNa_strand_minus && strand_j != eNa_strand_minus)
+                        || (strand_i != eNa_strand_minus 
+                             && strand_j == eNa_strand_minus)) {
+                        subcat_tp = "overlap_opp_strand";
+                    } else {
+                        subcat_tp = "overlap_same_strand";
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (!subcat_tp.empty()) {
+                thisInfo.test_item_list[GetName()]
+                             .push_back(subcat_tp +"$" +GetDiscItemText(**jt));
+                thisInfo.test_item_list[GetName()]
+                             .push_back(subcat_tp +"$" +GetDiscItemText(**it));
+                thisInfo.test_item_objs[GetName()+"$"+subcat_tp]
+                             .push_back(CConstRef <CObject>(*jt));
+                thisInfo.test_item_objs[GetName()+"$"+subcat_tp]
+                             .push_back(CConstRef <CObject>(*it));
+            }
+        }
     }
-  }
 }; //  CBioseq_RNA_CDS_OVERLAP :: TestOnObj
 
 
 
 void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
 {
-   Str2Strs subcat2list;
-   GetTestItemList(c_item->item_list, subcat2list);
-   c_item->item_list.clear();
-   unsigned cnt_tot, cnt_ovp;
-   cnt_tot = cnt_ovp = 0;
+    Str2Strs subcat2list;
+    GetTestItemList(c_item->item_list, subcat2list);
+    c_item->item_list.clear();
+    unsigned cnt_tot, cnt_ovp;
+    cnt_tot = cnt_ovp = 0;
 
-   string desc1, desc2, desc3;
-   CRef <CClickableItem> ovp_subcat (new CClickableItem);
-   ITERATE (Str2Strs, it, subcat2list) {
-     if (it->first == "exact" 
-             || it->first == "cds_in_rna" || it->first == "rna_in_cds") {
-       if (it->first == "exact") {
-         desc1 = "coding region exactly matches an RNA";
-         desc2 = "coding regions exactly match RNAs";
-       }
-       else if (it->first == "cds_in_rna") {
-         desc1 = "coding region is completely contained in an RNA location";
-         desc2 = "coding regions are completely contained in RNA locations";
-       }
-       else if (it->first == "rna_in_cds" ) {
-         desc1 = "coding region completely contains an RNA";
-         desc2 = "coding regions completely contain RNAs";
-       }
-       AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
-                  desc1, desc2, e_OtherComment, true, "", true); 
-     }
-     else {
-       desc1 = "coding region overlaps RNA";
-       desc2 = "coding regions overlap RNAs";
-       if (it->first == "overlap_opp_strand") 
-             desc3 = " on the opposite strand (no containment)";
-       else desc3 = " on the same strand (no containment)";
-       AddSubcategory(ovp_subcat, GetName() + "$" + it->first, &(it->second), 
-                  desc1, desc2, e_OtherComment, true, desc3, true); 
-       cnt_ovp += it->second.size()/2;
-     } 
-     cnt_tot += it->second.size()/2;
-   }
-   if (!ovp_subcat->subcategories.empty()) {
-      ovp_subcat->setting_name = GetName();
-      ovp_subcat->description 
-         = GetOtherComment(cnt_ovp, 
+    string desc1, desc2, desc3;
+    CRef <CClickableItem> ovp_subcat (new CClickableItem);
+    ITERATE (Str2Strs, it, subcat2list) {
+        if (it->first == "exact" 
+            || it->first == "cds_in_rna" || it->first == "rna_in_cds"
+            || it->first == "trna_in_cds") {
+            if (it->first == "exact") {
+                desc1 = "coding region exactly matches an RNA";
+                desc2 = "coding regions exactly match RNAs";
+            } else if (it->first == "cds_in_rna") {
+                desc1 = "coding region is completely contained in an RNA location";
+                desc2 = "coding regions are completely contained in RNA locations";
+            } else if (it->first == "rna_in_cds" ) {
+                desc1 = "coding region completely contains an RNA";
+                desc2 = "coding regions completely contain RNAs";
+            } else if (it->first == "trna_in_cds") {
+                desc1 = "coding region completely contains tRNAs";
+                desc2 = "coding regions completely contain tRNAs";
+            }
+            AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
+                           desc1, desc2, e_OtherComment, true, "", true); 
+        } else {
+           desc1 = "coding region overlaps RNA";
+           desc2 = "coding regions overlap RNAs";
+           if (it->first == "overlap_opp_strand") {
+               desc3 = " on the opposite strand (no containment)";
+           } else {
+               desc3 = " on the same strand (no containment)";
+           }
+           AddSubcategory(ovp_subcat, GetName() + "$" + it->first, &(it->second), 
+                          desc1, desc2, e_OtherComment, true, desc3, true); 
+           cnt_ovp += it->second.size()/2;
+        } 
+        cnt_tot += it->second.size()/2;
+    }
+    if (!ovp_subcat->subcategories.empty()) {
+        ovp_subcat->setting_name = GetName();
+        ovp_subcat->description 
+            = GetOtherComment(cnt_ovp, 
                            "coding region overlaps an RNA", 
                            "coding region overlap RNAs") 
-             + " (no containment)";
-      copy(ovp_subcat->item_list.begin(), ovp_subcat->item_list.end(),
+                         + " (no containment)";
+        copy(ovp_subcat->item_list.begin(), ovp_subcat->item_list.end(),
                  back_inserter( c_item->item_list));
-      copy(ovp_subcat->obj_list.begin(), ovp_subcat->obj_list.end(),
+        copy(ovp_subcat->obj_list.begin(), ovp_subcat->obj_list.end(),
                  back_inserter( c_item->obj_list));
-      c_item->subcategories.push_back(ovp_subcat);
-   }
+        c_item->subcategories.push_back(ovp_subcat);
+    }
 
-   c_item->description 
+    c_item->description 
         = GetOtherComment(cnt_tot, 
                           "coding region overlaps RNA feature", 
                           "coding regions overlap RNA features") ;
