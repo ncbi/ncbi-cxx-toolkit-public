@@ -47,7 +47,8 @@ VariationException ::= SEQUENCE
         seqfetch-too-long (13), --can't fetch sequence because location is longer than specified threshold
         seqfetch-intronic (14), --can't fetch sequence for an intronic (anchor+offset)-based location
         seqfetch-invalid (15),   --can't fetch sequence because location is invalid (e.g. extends past the end)
-        no-mapping-from-newer-version (16) --have mapping from older version of a sequence, but not from newer
+        no-mapping-from-newer-version (16), --have mapping from older version of a sequence, but not from newer
+        source-location-overhang (17) --The source location overhangs the alignment by at least 5kb (VAR-1307)
     } OPTIONAL,
     
     message VisibleString
