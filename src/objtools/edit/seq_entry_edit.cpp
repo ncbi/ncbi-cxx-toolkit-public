@@ -1737,21 +1737,53 @@ void ResetLinkageEvidence(CSeq_ext& ext)
 **** Trim functions
 *******************************************************************************/
 
+void s_BasicValidation(CBioseq_Handle bsh, 
+                       const TCuts& cuts)
+{
+    // Should be a nuc!
+    if (!bsh.IsNucleotide()) {
+        NCBI_THROW(CEditException, eInvalid, "Bioseq is not a nucleotide.");
+    }
+
+    // Cannot get nuc sequence data
+    if (!bsh.CanGetInst()) {
+        NCBI_THROW(CEditException, eInvalid, "Cannot get sequence data for nucleotide.");
+    }
+
+    // Are the cuts within range of sequence length?
+    TSeqPos nuc_len = 0;
+    if (bsh.GetInst().CanGetLength()) {
+        nuc_len = bsh.GetInst().GetLength();
+    }
+
+    if (nuc_len <= 0) {
+        stringstream ss;
+        ss << "Nuc has invalid sequence length = " << nuc_len;
+        NCBI_THROW(CEditException, eInvalid, ss.str());
+    }
+
+    TCuts::const_iterator cit;
+    for (cit = cuts.begin(); cit != cuts.end(); ++cit) {
+        const TRange& cut = *cit;
+        TSeqPos cut_from = cut.GetFrom();
+        TSeqPos cut_to = cut.GetTo();
+        if (cut_from < 0 || cut_to < 0 || cut_from >= nuc_len || cut_to >= nuc_len) {
+            stringstream ss;
+            ss << "Cut location is invalid = [" << cut_from << " - " << cut_to << "]";
+            NCBI_THROW(CEditException, eInvalid, ss.str());
+        }
+    }
+}
+
+
 /// Implementation detail: first trim all associated annotation, then 
 /// trim sequence data
 void TrimSequenceAndAnnotation(CBioseq_Handle bsh, 
                                const TCuts& cuts,
                                EInternalTrimType internal_cut_conversion)
 {
-    // Should be a nuc!
-    if (!bsh.IsNucleotide()) {
-        return;
-    }
-
-    // Cannot get nuc sequence data
-    if (!bsh.CanGetInst()) {
-        return;
-    }
+    // Check the input data for anomalies
+    s_BasicValidation(bsh, cuts);
 
     // Sort the cuts 
     TCuts sorted_cuts;
@@ -1801,7 +1833,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
             {
                 // Get length of nuc sequence before trimming
                 TSeqPos original_nuc_len = 0;
-                if (bsh.CanGetInst() && bsh.GetInst().CanGetLength()) {
+                if (bsh.GetInst().CanGetLength()) {
                     original_nuc_len = bsh.GetInst().GetLength();
                 }
                 AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
