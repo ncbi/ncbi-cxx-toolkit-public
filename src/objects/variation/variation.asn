@@ -48,7 +48,8 @@ VariationException ::= SEQUENCE
         seqfetch-intronic (14), --can't fetch sequence for an intronic (anchor+offset)-based location
         seqfetch-invalid (15),   --can't fetch sequence because location is invalid (e.g. extends past the end)
         no-mapping-from-newer-version (16), --have mapping from older version of a sequence, but not from newer
-        source-location-overhang (17) --The source location overhangs the alignment by at least 5kb (VAR-1307)
+        source-location-overhang (17), --The source location overhangs the alignment by at least 5kb (VAR-1307)
+        hgvs-exon-boundary-induced (18)  --Similar to (2), except induced by 5'/3'-terminal or an exon extension (VAR-1309)
     } OPTIONAL,
     
     message VisibleString

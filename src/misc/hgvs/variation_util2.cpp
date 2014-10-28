@@ -420,22 +420,26 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
        && sequence::IsSameBioseq(aln.GetSegs().GetSpliced().GetGenomic_id(),
                                  *p3->GetLoc().GetId(), NULL))
     {
-        bool source_loc_is_projected = 
-             p.IsSetPlacement_method() 
-          && p.GetPlacement_method() == CVariantPlacement::ePlacement_method_projected;
-        // checkig exon-boundary only for non-projected cases, since an exon-boundary
-        // may become non-exon-boundary (e.g. transcript extended or exon boundary shifted).
-        // VAR-1274
+        if(CheckExonBoundary(p, aln) == eFail) {
 
+            bool source_loc_is_projected = 
+                 p.IsSetPlacement_method() 
+              && p.GetPlacement_method() == CVariantPlacement::ePlacement_method_projected;
+            // checkig exon-boundary only for non-projected cases, since an exon-boundary
+            // may become non-exon-boundary (e.g. transcript extended or exon boundary shifted).
+            // VAR-1309
 
-        if(!source_loc_is_projected && CheckExonBoundary(p, aln) == eFail) {
-            CRef<CVariationException> exception(new CVariationException);
-            exception->SetCode(CVariationException::eCode_hgvs_exon_boundary);
-            exception->SetMessage("HGVS exon-boundary position not found in alignment of " 
-                                  + aln.GetSeq_id(0).AsFastaString() 
-                                  + "-vs-" 
-                                  + aln.GetSeq_id(1).AsFastaString());
-            p3->SetExceptions().push_back(exception);
+            CVariationException::ECode code = 
+                    source_loc_is_projected ? CVariationException::eCode_hgvs_exon_boundary_induced
+                                            : CVariationException::eCode_hgvs_exon_boundary;
+
+            const string msg =
+                   "HGVS exon-boundary position not found in alignment of " 
+                  + aln.GetSeq_id(0).AsFastaString() 
+                  + "-vs-" 
+                  + aln.GetSeq_id(1).AsFastaString();
+
+            p3->SetExceptions().push_back(CreateException(msg, code));
         }
             
         s_ResolveIntronicOffsets(*p3);
