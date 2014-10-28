@@ -50,6 +50,7 @@
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objtools/edit/edit_exception.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <map>
 #include <objtools/unit_test_util/unit_test_util.hpp>
@@ -1309,6 +1310,61 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
 
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation_InvalidInput)
+{
+    cout << "Testing FUNCTION: TrimSequenceAndAnnotation with invalid input" << endl;
+
+    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["trim_sequence_and_annotation_invalid_input"];
+
+    BOOST_CHECK( ! mapOfTests.empty() );
+
+    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
+        const string & sTestName = (test_it->first);
+        cout << "Running TEST: " << sTestName << endl;
+
+        TMapTestFiles & test_stage_map = (test_it->second);
+
+        BOOST_REQUIRE( test_stage_map.size() == 1u );
+
+        // Need input file only
+        const CFile & input_entry_file = test_stage_map["input_entry"];
+
+        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
+
+        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
+
+        // Find the bioseq(s) of interest that we will check
+        CBioseq_CI bioseq_ci( entry_h );
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle& bsh = *bioseq_ci;
+
+            // Deliberately use invalid cut locations for Seq4 which has length 691
+            if (s_FindLocalId(bsh, "Seq4")) {
+                // Invalid "from" value of -1
+                edit::TCuts cuts;
+                cuts.push_back(edit::TRange(-1, 100));
+                BOOST_CHECK_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ), edit::CEditException);
+
+                // Invalid "to" value of 691
+                cuts.clear();
+                cuts.push_back(edit::TRange(100, 691));
+                BOOST_CHECK_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ), edit::CEditException);
+            }
+
+            // Deliberately specify cuts for a protein sequence!
+            if (s_FindLocalId(bsh, "Seq4_prot_4")) {
+                // Not a nuc bioseq!
+                edit::TCuts cuts;
+                cuts.push_back(edit::TRange(0, 10));
+                BOOST_CHECK_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ), edit::CEditException);
+            }
+        }
+
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
     }
 }
 
