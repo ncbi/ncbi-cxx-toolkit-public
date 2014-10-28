@@ -33,6 +33,7 @@
  */
 
 #include <dbapi/driver/public.hpp>
+#include <dbapi/driver/util/parameters.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -98,8 +99,6 @@ private:
 namespace impl {
 
 /////////////////////////////////////////////////////////////////////////////
-class CDB_Params;
-
 class NCBI_DBAPIDRIVER_EXPORT CDBBindedParams : public CDBParams
 {
 public:
