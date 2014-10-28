@@ -53,6 +53,7 @@ extern "C" {
 #define NCBILOG_SESSION_MAX    256
 #define NCBILOG_HITID_MAX      256
 #define NCBILOG_APPNAME_MAX   1024
+#define NCBILOG_PORT_MAX     65535
 
 
 /******************************************************************************
