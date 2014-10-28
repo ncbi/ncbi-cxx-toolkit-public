@@ -226,7 +226,41 @@ BOOST_AUTO_TEST_CASE(Test_FixupMouseStrain)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_CapitalizationFunctions)
+{
+    string str_test;
+    str_test.assign("bad: strain1,strain No.2 strain5,strain10");
+    edit::InsertMissingSpacesAfterCommas(str_test);
+    edit::InsertMissingSpacesAfterNo(str_test);
+    edit::FixCapitalizationInElement(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("Bad: Strain1, Strain No. 2 Strain5, Strain10"));
 
+    str_test.assign("region: Dubai In uae");
+    edit::FindReplaceString_CountryFixes(str_test);
+    edit::FixShortWordsInElement(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("Region: Dubai in UAE"));
+    
+    str_test.assign("country: noplace");
+    edit::FindReplaceString_CountryFixes(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("country: noplace"));
+
+    str_test.assign("Robert O'hair");
+    edit::CapitalizeAfterApostrophe(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("Robert O'Hair"));
+
+    str_test.assign("Robert williams");
+    edit::CapitalizeAfterApostrophe(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("Robert williams"));
+
+    str_test.assign("address: Po box");
+    edit::FixAffiliationShortWordsInElement(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("Address: PO Box"));
+
+    str_test.assign("Guinea-bissau");
+    edit::FixCountryCapitalization(str_test);
+    BOOST_CHECK_EQUAL(str_test, string("Guinea-Bissau"));
+
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
