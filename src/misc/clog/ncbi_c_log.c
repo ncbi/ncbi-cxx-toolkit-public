@@ -2255,9 +2255,25 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
 extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 {
     char* logfile = NULL;
+
     MT_LOCK_API;
     /* Close current destination */
     s_CloseLogFiles(1 /*force cleanup*/);
+
+    /* Server port */
+    if (!sx_Info->server_port) {
+        static const char* port_str = NULL;
+        if (!port_str) {
+            port_str = getenv("SERVER_PORT");
+            if (port_str  &&  *port_str) {
+                char* e;
+                unsigned long port = strtoul(port_str, &e, 10);
+                if (port > 0 && port < ULONG_MAX  &&  !*e) {
+                    sx_Info->server_port = (unsigned int)port;
+                }
+            }
+        }
+    }
     /* Set new destination */
     sx_Info->destination = ds;
     if (sx_Info->destination != eNcbiLog_Disable) {
@@ -2267,7 +2283,7 @@ extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
             /* Special case to redirect default logging output */
             logfile = getenv("NCBI_CONFIG__LOG__FILE");
             if (logfile) {
-                if (!*logfile ) {
+                if (!*logfile) {
                     logfile = NULL;
                 } else {
                     if (strcmp(logfile, "-") == 0) {

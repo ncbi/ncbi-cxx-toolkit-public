@@ -137,7 +137,7 @@ struct SInfo_tag {
     /* Log file names and handles */
 
     ENcbiLog_Destination destination;           /**< Current logging destination            */
-    unsigned int      server_port;              /**< $SERVER_PORT on calling host           */
+    unsigned int      server_port;              /**< $SERVER_PORT on calling/current host   */
     time_t            last_reopen_time;         /**< Last reopen time for log files         */
     FILE*             file_trace;               /**< Saved files for log files              */
     FILE*             file_err;
