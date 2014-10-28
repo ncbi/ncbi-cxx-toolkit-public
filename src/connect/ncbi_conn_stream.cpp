@@ -161,7 +161,6 @@ void CConn_IOStream::x_Destroy(void)
     CConn_Streambuf* sb = m_CSb;
     m_CSb = 0;
     delete sb;
-    rdbuf(0);
 }
 
 
