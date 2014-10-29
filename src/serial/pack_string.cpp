@@ -42,7 +42,7 @@ static const size_t kDefaultLengthLimit = 32;
 static const size_t kDefaultCountLimit = 32;
 
 CPackString::CPackString(void)
-    : m_LengthLimit(kDefaultCountLimit), m_CountLimit(kDefaultCountLimit),
+    : m_LengthLimit(kDefaultLengthLimit), m_CountLimit(kDefaultCountLimit),
       m_Skipped(0), m_CompressedIn(0),
       m_CompressedOut(0)
 {
