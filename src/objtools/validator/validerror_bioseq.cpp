@@ -603,7 +603,7 @@ void CValidError_bioseq::ValidateSeqIds
 
 
                 if ( has_gi ) {
-                    if ( !tsid->IsSetVersion()  ||  tsid->GetVersion() == 0 ) {
+                    if (tsid->IsSetVersion() && tsid->GetVersion() == 0) {
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Accession " + acc + " has 0 version", seq);
                     }
@@ -2337,11 +2337,15 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
 
     string title = sequence::CDeflineGenerator().GenerateDefline(bsh);
 
+/*bsv
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
+*/
     CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
     if (desc) {
         const CMolInfo& mi = desc->GetMolinfo();
+/*bsv
         tech = mi.GetTech();
+*/
         if (mi.GetCompleteness() != CMolInfo::eCompleteness_complete) {
             if (m_Imp.IsGenbank()) {
                 if (NStr::Find(title, "complete genome") != NPOS) {
@@ -3341,6 +3345,7 @@ static string linkEvStrings [] = {
     "UNKNOWN VALUE"
 };
 
+/*bsv
 static bool s_IsGapComponent (const CDelta_seq& seg)
 {
     if (! seg.IsLiteral()) return false;
@@ -3349,6 +3354,7 @@ static bool s_IsGapComponent (const CDelta_seq& seg)
     if  (lit.GetSeq_data().IsGap() && lit.GetLength() > 0) return true;
     return false;
 }
+*/
 
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
@@ -4001,8 +4007,8 @@ static bool s_LocIntervalsSpanOrigin (const CSeq_loc& loc, CBioseq_Handle bsh)
 static bool s_LocIntervalsCoverSegs (const CSeq_loc& loc)
 {
     if (loc.GetStrand() == eNa_strand_minus) {
-        int start = loc.GetTotalRange().GetTo();
-        int stop = loc.GetTotalRange().GetFrom();
+        unsigned int start = loc.GetTotalRange().GetTo();
+        unsigned int stop = loc.GetTotalRange().GetFrom();
         CSeq_loc_CI si(loc);
         while (si) {
             if (si.GetRange().GetTo() != start) {
@@ -4015,8 +4021,8 @@ static bool s_LocIntervalsCoverSegs (const CSeq_loc& loc)
             return false;
         }
     } else {
-        int start = loc.GetTotalRange().GetFrom();
-        int stop = loc.GetTotalRange().GetTo();
+        unsigned int start = loc.GetTotalRange().GetFrom();
+        unsigned int stop = loc.GetTotalRange().GetTo();
         CSeq_loc_CI si(loc);
         while (si) {
             if (si.GetRange().GetFrom() != start) {
@@ -5003,7 +5009,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(
     }
 
     try {
-        int            numgene = 0, nummrna = 0, num_pseudomrna = 0, numcds = 0, num_pseudocds = 0, num_rearrangedcds = 0;
+        unsigned int nummrna = 0, numcds = 0;
+        int          numgene = 0, num_pseudomrna = 0, num_pseudocds = 0, num_rearrangedcds = 0;
         vector< CConstRef < CSeq_id > > cds_products, mrna_products;
         
         int num_full_length_prot_ref = 0;
@@ -6280,7 +6287,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS, 
                                  "CDS does not abut 3'UTR", cug_it->GetOriginalFeature());
                     }
-                    if (is_mrna && num_cds == 1 && num_3utr == 1 && this_right != seq.GetBioseqLength() - 1) {
+                    if (is_mrna && num_cds == 1 && num_3utr == 1 && this_right != (int) seq.GetBioseqLength() - 1) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotExtendToEnd, 
                                  "3'UTR does not extend to end of mRNA", cug_it->GetOriginalFeature());
                     }

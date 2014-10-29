@@ -2248,6 +2248,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     // if GI, needs version
     scope.RemoveTopLevelSeqEntry(seh);
     bad_id->SetGenbank().SetAccession("AY123456");
+    bad_id->SetGenbank().SetVersion(0);
     unit_test_util::ChangeNucId(entry, bad_id);
     unit_test_util::ChangeProtId(entry, good_prot_id);
     CRef<CSeq_id> gi_id(new CSeq_id("gi|21914627"));
@@ -2256,6 +2257,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     eval = validator.Validate(seh, options);
     expected_errors.push_back (new CExpectedError ("AY123456", eDiag_Critical, "BadSeqIdFormat", 
                                                    "Accession AY123456 has 0 version"));
+    expected_errors.push_back (new CExpectedError ("AY123456", eDiag_Warning, "UnexpectedIdentifierChange", "New accession (gb|AY123456|) does not match one in NCBI sequence repository (gb|AY123456.1|) on gi (21914627)"));
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
