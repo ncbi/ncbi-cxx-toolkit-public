@@ -583,7 +583,7 @@ string CObjectIStreamXml::ReadFileHeader(void)
                 CTempString tagName = ReadName(m_Input.PeekChar());
                 if ( tagName == "DOCTYPE" ) {
                     m_Doctype_found = true;
-                    CTempString docType = ReadName(SkipWS());
+                    ReadName(SkipWS());
                     // skip the rest of !DOCTYPE
                     for ( ;; ) {
                         char c = SkipWS();
