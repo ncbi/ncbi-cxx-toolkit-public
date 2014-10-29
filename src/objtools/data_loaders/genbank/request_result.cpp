@@ -45,16 +45,7 @@ BEGIN_SCOPE(objects)
 
 using namespace GBL;
 
-static const CReaderRequestResult::TBlobState kBlobStateNotSet = -1;
 static const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
-
-
-static inline TThreadSystemID GetThreadId(void)
-{
-    TThreadSystemID thread_id = 0;
-    CThread::GetSystemID(&thread_id);
-    return thread_id;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
