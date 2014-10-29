@@ -143,6 +143,7 @@ int main(int argc, const char* argv[])
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
     size = 0;
+    const IOS_BASE::iostate ex = IOS_BASE::badbit;
     for (n = 0;  n < m;  n++) {
         CConn_MemoryStream* ms = 0;
         string data, back;
@@ -174,6 +175,7 @@ int main(int argc, const char* argv[])
                     LOG_POST(Info << "  CConn_MemoryStream()");
 #endif
                     ms = new CConn_MemoryStream;
+                    ms->exceptions(ex);
                     assert(*ms << bit);
                     break;
                 case 1:
@@ -184,6 +186,7 @@ int main(int argc, const char* argv[])
                     LOG_POST(Info << "  CConn_MemoryStream(BUF)");
 #endif
                     ms = new CConn_MemoryStream(buf, eTakeOwnership);
+                    ms->exceptions(ex);
                     break;
                 }}
                 default:
@@ -217,9 +220,16 @@ int main(int argc, const char* argv[])
         if (!(rand() & 1)) {
             assert(*ms << endl);
             *ms >> back;
-            assert(ms->good());
+            IOS_BASE::iostate state = ms->rdstate();
+            assert(state == IOS_BASE::goodbit);
             SetDiagTrace(eDT_Disable);
-            *ms >> ws;
+            ms->exceptions(ex | IOS_BASE::eofbit);
+            try {
+                *ms >> ws;
+            } catch (IOS_BASE::failure& ) {
+                state = ms->rdstate();
+            }
+            _ASSERT(state & IOS_BASE::eofbit);
             SetDiagTrace(eDT_Enable);
             ms->clear();
         } else
@@ -584,8 +594,8 @@ int main(int argc, const char* argv[])
 
     LOG_POST(Info << "Test 7 passed\n");
 
-    buf1.release();
-    buf2.release();
+    buf1.reset(0);
+    buf2.reset(0);
 
 
     LOG_POST(Info << "Test 8 of 9: NcbiStreamCopy()");
@@ -629,7 +639,7 @@ int main(int argc, const char* argv[])
 
 
     CORE_SetREG(0);
-    reg.release();
+    reg.reset(0);
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOCK(0);
