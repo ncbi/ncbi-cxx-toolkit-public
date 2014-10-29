@@ -108,6 +108,18 @@ void CFeatTableEdit::InferParentGenes()
         const CSeq_feat& rna = it->GetOriginalFeature();
         CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna);
         if (!pGene) {
+            if (!rna.IsSetPartial() ||  !rna.GetPartial()) {
+                continue;
+            }
+            CConstRef<CSeq_feat> pParentGene = xGetGeneParent(rna); 
+            if (pParentGene  &&  
+                    !(pParentGene->IsSetPartial()  &&  pParentGene->GetPartial())) {
+                CRef<CSeq_feat> pEditedGene(new CSeq_feat);
+                pEditedGene->Assign(*pParentGene);
+                pEditedGene->SetPartial(true);
+                CSeq_feat_EditHandle geneEh(mpScope->GetObjectHandle(*pParentGene));
+                geneEh.Replace(*pEditedGene);
+            }
             continue;
         }
         //find proper name for gene
@@ -125,6 +137,7 @@ void CFeatTableEdit::InferParentGenes()
 void CFeatTableEdit::InferPartials()
 //  ----------------------------------------------------------------------------
 {
+    bool infered(false);
     edit::CLocationEditPolicy editPolicy(
         edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd,
         edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd, 
@@ -139,9 +152,34 @@ void CFeatTableEdit::InferPartials()
         const CSeq_feat& cds = it->GetOriginalFeature();
         CRef<CSeq_feat> pEditedCds(new CSeq_feat);
         pEditedCds->Assign(cds);
-        editPolicy.ApplyPolicyToFeature(*pEditedCds, *mpScope);    
-        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
-        feh.Replace(*pEditedCds);
+        infered = editPolicy.ApplyPolicyToFeature(*pEditedCds, *mpScope);
+        if (!infered) {
+            continue;
+        }   
+        CSeq_feat_EditHandle cdsEh(mpScope->GetObjectHandle(cds));
+        cdsEh.Replace(*pEditedCds);
+
+        // make sure the parent rna is partial as well
+        CConstRef<CSeq_feat> pParentRna = xGetMrnaParent(cds);
+        if (pParentRna  &&  
+                !(pParentRna->IsSetPartial()  &&  pParentRna->GetPartial())) {
+            CRef<CSeq_feat> pEditedRna(new CSeq_feat);
+            pEditedRna->Assign(*pParentRna);
+            pEditedRna->SetPartial(true);
+            CSeq_feat_EditHandle rnaEh(mpScope->GetObjectHandle(*pParentRna));
+            rnaEh.Replace(*pEditedRna);
+        }
+
+        // make sure the gene parent is partial as well
+        CConstRef<CSeq_feat> pParentGene = xGetGeneParent(cds); 
+        if (pParentGene  &&  
+                !(pParentGene->IsSetPartial()  &&  pParentGene->GetPartial())) {
+            CRef<CSeq_feat> pEditedGene(new CSeq_feat);
+            pEditedGene->Assign(*pParentGene);
+            pEditedGene->SetPartial(true);
+            CSeq_feat_EditHandle geneEh(mpScope->GetObjectHandle(*pParentGene));
+            geneEh.Replace(*pEditedGene);
+        }
     }
 }
 
