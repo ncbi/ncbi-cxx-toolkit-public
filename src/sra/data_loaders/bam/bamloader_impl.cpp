@@ -70,8 +70,8 @@ class CDataLoader;
 
 static const int kTSEId = 1;
 static const size_t kChunkSize = 500;
-static const size_t kGraphScale = 1000;
-static const size_t kGraphPoints = 20;
+//static const size_t kGraphScale = 1000;
+//static const size_t kGraphPoints = 20;
 static const int kChunkIdMul = 4;
 static const int kMainChunkId = -1;
 
