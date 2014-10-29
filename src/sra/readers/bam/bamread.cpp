@@ -206,9 +206,6 @@ const char* CSrzException::GetErrCodeString(void) const
 }
 
 
-static const size_t kInitialPathSize = 256;
-
-
 CSrzPath::CSrzPath(void)
 {
     x_Init();
