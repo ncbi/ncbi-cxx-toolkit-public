@@ -84,7 +84,7 @@ using namespace ncbi;
 using namespace objects;
 using namespace validator;
 
-const char * ASNVAL_APP_VER = "10.0";
+const char * ASNVAL_APP_VER = "10.1";
 
 #define USE_XMLWRAPP_LIBS
 
@@ -136,6 +136,8 @@ private:
     CRef<CSeq_feat> ReadSeqFeat(void);
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
+
+    void ReportReadFailure(void);
 
     CRef<CScope> BuildScope(void);
 
@@ -572,6 +574,20 @@ void CAsnvalApp::ProcessReleaseFile
     *m_In >> *seqset;
 }
 
+void CAsnvalApp::ReportReadFailure(void)
+{
+    CNcbiOstream& os = *m_ValidErrorStream;
+
+    if (m_verbosity == eVerbosity_XML) {
+
+        os << "  <message severity=\"REJECT\" code=\"GENERIC_InvalidAsn\">Unable to read invalid ASN.1</message>";
+
+        return;
+    }
+
+    os << "REJECT: valid [GENERIC.InvalidAsn] Unable to read invalid ASN.1" << endl;
+}
+
 
 CRef<CSeq_entry> CAsnvalApp::ReadSeqEntry(void)
 {
@@ -609,6 +625,12 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(ReadSeqEntry());
+
+    if (se) {
+        ReportReadFailure();
+        CRef<CValidError> errors(new CValidError());
+        return errors;
+    }
 
     return ProcessSeqEntry(*se);
 }
@@ -714,7 +736,18 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
     CRef<CSeq_submit> ss(new CSeq_submit);
 
     // Get seq-submit to validate
-    m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+    try {
+        m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
+    }
+
+    if (ss) {
+        ReportReadFailure();
+        CRef<CValidError> errors(new CValidError());
+        return errors;
+    }
 
     // Validae Seq-submit
     CValidator validator(*m_ObjMgr);
