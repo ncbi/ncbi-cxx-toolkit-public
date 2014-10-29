@@ -1024,13 +1024,6 @@ bool x_IsDefaultSwissprotRelease(const string& release)
 }
 
 
-static inline
-bool x_IsDefaultSwissprotRelease(const CTextseq_id& tid)
-{
-    return tid.IsSetRelease() && x_IsDefaultSwissprotRelease(tid.GetRelease());
-}
-
-
 void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                                             const string& acc,
                                             const TVersion* ver) const
