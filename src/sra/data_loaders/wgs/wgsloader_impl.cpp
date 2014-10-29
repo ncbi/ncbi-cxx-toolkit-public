@@ -68,8 +68,8 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
-static const int kTSEId = 1;
-static const int kMainChunkId = -1;
+//static const int kTSEId = 1;
+//static const int kMainChunkId = -1;
 
 NCBI_PARAM_DECL(int, WGS_LOADER, DEBUG);
 NCBI_PARAM_DEF(int, WGS_LOADER, DEBUG, 0);
