@@ -183,6 +183,7 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq,
             CRef<CLinkage_evidence> le(new CLinkage_evidence);
             le->SetType(evidence);
             lit.SetSeq_data().SetGap().SetLinkage_evidence().push_back(le);
+            lit.SetSeq_data().SetGap().SetLinkage(CSeq_gap::eLinkage_linked);
             lit.SetSeq_data().SetGap().SetType(gap_type);
         }
     }
