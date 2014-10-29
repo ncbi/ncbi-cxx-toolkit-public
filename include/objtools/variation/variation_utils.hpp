@@ -228,6 +228,7 @@ public:
     //ASSUME scope has everything you need, but that lookups *can* fail so handle gracefully.
     static void NormalizeVariation(CVariation& var, ETargetContext target_ctxt, CScope& scope);     
     static void  NormalizeVariation(CSeq_annot& var, ETargetContext target_ctxt, CScope& scope);
+    static void  NormalizeVariation(CSeq_feat& feat, ETargetContext target_ctxt, CScope& scope);
 
 /////////////////////////////////////////////////////////
  
@@ -240,6 +241,7 @@ public:
     //the second is an interval representing the IOA
     static void NormalizeAmbiguousVars(CVariation& var, CScope &scope);
     static void NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope);
+    static void NormalizeAmbiguousVars(CSeq_feat& feat, CScope &scope);
  
     //HGVS
     //*Assume* Seq-equiv's are present and second one is 'IOA'
@@ -256,6 +258,7 @@ public:
     //VCF business logic
     static void AlterToVCFVar(CVariation& var, CScope& scope);
     static void AlterToVCFVar(CSeq_annot& var, CScope& scope);
+    static void AlterToVCFVar(CSeq_feat& feat, CScope& scope);
 
     //Future thoughts:
     // Combine/collapse objects with same SeqLoc/Type
@@ -264,6 +267,7 @@ public:
 
     static void AlterToVarLoc(CVariation& var, CScope& scope);
     static void AlterToVarLoc(CSeq_annot& var, CScope& scope);
+    static void AlterToVarLoc(CSeq_feat& feat, CScope& scope);
 
     static bool IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type); 
 };

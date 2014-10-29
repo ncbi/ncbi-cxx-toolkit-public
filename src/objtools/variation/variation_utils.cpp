@@ -1179,6 +1179,11 @@ void CVariationNormalization::AlterToVCFVar(CSeq_annot& var, CScope& scope)
     CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
+void CVariationNormalization::AlterToVCFVar(CSeq_feat& feat, CScope& scope)
+{
+    CVariationNormalizationLeft::x_Shift(feat,scope);
+}
+
 void CVariationNormalization::AlterToHGVSVar(CVariation& var, CScope& scope)
 {
     CVariationNormalizationRight::x_Shift(var,scope);
@@ -1199,15 +1204,16 @@ void CVariationNormalization::NormalizeAmbiguousVars(CVariation& var, CScope &sc
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-bool CVariationNormalization::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
-{
-    return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
-}
-
 void CVariationNormalization::NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope)
 {
     CVariationNormalizationInt::x_Shift(var,scope);
 }
+
+void CVariationNormalization::NormalizeAmbiguousVars(CSeq_feat& feat, CScope &scope)
+{
+    CVariationNormalizationInt::x_Shift(feat,scope);
+}
+
 
 void CVariationNormalization::AlterToVarLoc(CVariation& var, CScope& scope)
 {
@@ -1217,6 +1223,16 @@ void CVariationNormalization::AlterToVarLoc(CVariation& var, CScope& scope)
 void CVariationNormalization::AlterToVarLoc(CSeq_annot& var, CScope& scope)
 {
     CVariationNormalizationLeftInt::x_Shift(var,scope);
+}
+
+void CVariationNormalization::AlterToVarLoc(CSeq_feat& feat, CScope& scope)
+{
+    CVariationNormalizationLeftInt::x_Shift(feat,scope);
+}
+
+bool CVariationNormalization::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
+{
+    return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
 }
 
 void CVariationNormalization::NormalizeVariation(CVariation& var, ETargetContext target_ctxt, CScope& scope)
@@ -1237,6 +1253,17 @@ void CVariationNormalization::NormalizeVariation(CSeq_annot& var, ETargetContext
     case eHGVS : AlterToHGVSVar(var,scope); break;
     case eVCF : AlterToVCFVar(var,scope); break;
     case eVarLoc : AlterToVarLoc(var,scope); break;
+    default :  NCBI_THROW(CException, eUnknown, "Unknown context");
+    }
+}
+
+void CVariationNormalization::NormalizeVariation(CSeq_feat& feat, ETargetContext target_ctxt, CScope& scope)
+{
+    switch(target_ctxt) {
+    case eDbSnp : NormalizeAmbiguousVars(feat,scope); break;
+    case eHGVS : AlterToHGVSVar(feat,scope); break;
+    case eVCF : AlterToVCFVar(feat,scope); break;
+    case eVarLoc : AlterToVarLoc(feat,scope); break;
     default :  NCBI_THROW(CException, eUnknown, "Unknown context");
     }
 }
