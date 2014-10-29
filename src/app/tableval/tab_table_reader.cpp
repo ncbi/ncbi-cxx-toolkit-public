@@ -77,21 +77,68 @@ void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& err
     m_errors.push_back(rec);
 }
 
-void CTabDelimitedValidator::ValidateInput(ILineReader& reader, 
-    const string& default_columns,
-    const string& required, const string& ignored,
-    const string& unique, const string& discouraged)
+bool CTabDelimitedValidator::_CheckHeader(const string& discouraged, const vector<string>& require_one)
 {
-    m_current_row_number = 0;
-    m_delim = (m_flags & e_tab_comma_delim) ? "," : "\t";
-
+    bool columns_ok = true;
     vector<string> discouraged_cols;
     if (!discouraged.empty())
     {
         NStr::Tokenize(discouraged, ",", discouraged_cols);
     }
 
-    if (_ProcessHeader(reader, default_columns, discouraged_cols))
+    ITERATE(std::vector<std::string>, it, m_col_defs)
+    {
+        if (CColumnValidator::IsDiscouraged(*it) ||
+            find(discouraged_cols.begin(), discouraged_cols.end(), *it) != discouraged_cols.end())
+        {
+            int id = it - m_col_defs.begin();
+            _ReportError(id, "Column is discouraged", *it);
+            m_ignored_cols.resize(m_col_defs.size());
+            m_ignored_cols[id] = true;
+        }
+    }
+
+    ITERATE(vector<string>, it, require_one)
+    {
+        vector<string> require_one_cols;
+        NStr::Tokenize(*it, ",", require_one_cols);
+        int found(0);
+        ITERATE(vector<string>, it_col, require_one_cols)
+        {
+            if (find(m_col_defs.begin(), m_col_defs.end(), *it_col) != m_col_defs.end())
+            {
+                found++;
+            }
+        }
+        switch (found)
+        {
+            case 0:
+                _ReportError(0, "Not found any of require-one columns", *it);
+                columns_ok = false;
+                break;
+            case 1:
+                // good;
+                break;
+            default:
+                _ReportError(0, "Found several of require-one columns", *it);
+                columns_ok = false;
+                break;
+        }
+    }
+
+    return columns_ok;
+}
+
+void CTabDelimitedValidator::ValidateInput(ILineReader& reader, 
+    const string& default_columns,
+    const string& required, const string& ignored,
+    const string& unique, const string& discouraged,
+    const vector<string>& require_one)
+{
+    m_current_row_number = 0;
+    m_delim = (m_flags & e_tab_comma_delim) ? "," : "\t";
+
+    if (_ProcessHeader(reader, default_columns) && _CheckHeader(discouraged, require_one))
     {
         // preprocess headers & required & ignored
         if (_MakeColumns("Required", required, m_required_cols) &&
@@ -218,7 +265,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
     return can_process;
 }
 
-bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_columns, const vector<string>& discouraged_cols)
+bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_columns)
 {
     if (!default_columns.empty())
     {
@@ -247,17 +294,6 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
         {
             _ReportError(1, "No columns specified", "");            
             return false;
-        }
-    }
-    ITERATE(std::vector<std::string>, it, m_col_defs)
-    {
-        if (CColumnValidator::IsDiscouraged(*it) ||
-            find(discouraged_cols.begin(), discouraged_cols.end(), *it) != discouraged_cols.end())
-        {
-            int id = it - m_col_defs.begin();
-            _ReportError(id, "Column is discouraged", *it);
-            m_ignored_cols.resize(m_col_defs.size());
-            m_ignored_cols[id] = true;
         }
     }
     return true;
@@ -334,26 +370,33 @@ void CTabDelimitedValidator::GenerateOutput(CNcbiOstream* out_stream, bool no_he
     }
 }
 
-void CTabDelimitedValidator::RegisterAliases(CNcbiIstream& in_stream)
+void CTabDelimitedValidator::RegisterAliases(CNcbiIstream* in_stream)
 {
     CColumnValidatorRegistry& r = CColumnValidatorRegistry::GetInstance();
-    //r.Register("Collection date", "date");
-    //r.Register("Sequence ID", "seqid");
 
-    CRef<ILineReader> reader(ILineReader::New(in_stream));
-    while (!reader->AtEOF())
+    // default aliases
+    r.Register("germline", "boolean");
+    r.Register("metagenomic", "boolean");
+    r.Register("rearranged", "boolean");
+    r.Register("transgenic", "boolean");
+
+    if (in_stream)
     {
-        reader->ReadLine();
-        CTempString line = reader->GetCurrentLine();
-        if (line.empty())
-            continue;
-        if (line[0] == '#' || line[0] == ';')
-            continue;
-        CTempString name, alias;
-        NStr::SplitInTwo(line, "\t ", name, alias, NStr::eMergeDelims);
-        if (name.empty() || alias.empty())
-            continue;
-        r.Register(name, alias);
+        CRef<ILineReader> reader(ILineReader::New(*in_stream));
+        while (!reader->AtEOF())
+        {
+            reader->ReadLine();
+            CTempString line = reader->GetCurrentLine();
+            if (line.empty())
+                continue;
+            if (line[0] == '#' || line[0] == ';')
+                continue;
+            CTempString name, alias;
+            NStr::SplitInTwo(line, "\t ", name, alias, NStr::eMergeDelims);
+            if (name.empty() || alias.empty())
+                continue;
+            r.Register(name, alias);
+        }
     }
 }
 

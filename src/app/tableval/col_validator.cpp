@@ -310,6 +310,19 @@ DEFINE_COL_VALIDATOR(country)
     return false;
 }
 
+DEFINE_COL_VALIDATOR(boolean)
+{
+    if (value != "true")
+       error = "Can have TRUE only";
+
+    return false;
+}
+
+DEFINE_COL_VALIDATOR3(isolation_source, "isolation_source", "host")
+{
+    return false;
+}
+
 bool CColumnValidator::IsDiscouraged(const string& column)
 {
     try

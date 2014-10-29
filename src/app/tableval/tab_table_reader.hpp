@@ -55,17 +55,18 @@ public:
    void ValidateInput(ILineReader& reader, 
        const string& default_columns, const string& required,
        const string& ignored, const string& unique,
-       const string& discouraged);
+       const string& discouraged,
+       const vector<string>& require_one);
 
    void GenerateOutput(CNcbiOstream* out_stream, bool no_headers);
-   static void RegisterAliases(CNcbiIstream& in_stream);
+   static void RegisterAliases(CNcbiIstream* in_stream);
 
 private:
     bool _Validate(int col_number, const CTempString& value);
 
     void _OperateRows(ILineReader& reader);
-    bool _ProcessHeader(ILineReader& reader, const CTempString& default_cols, 
-        const vector<string>& discouraged);
+    bool _ProcessHeader(ILineReader& reader, const CTempString& default_cols);
+    bool _CheckHeader(const string& discouraged, const vector<string>& require_one);
 
     bool _MakeColumns(const string& message, 
         const CTempString& columns, vector<bool>& col_defs);
@@ -74,6 +75,8 @@ private:
     void _ReportWarning(int col_number, const CTempString& error, const CTempString& colname);
     void _ReportTab(CNcbiOstream* out_stream);
     void _ReportXML(CNcbiOstream* out_stream, bool no_headers);
+
+
     int  m_current_row_number;
     CTempString m_delim;
     vector<string> m_col_defs;

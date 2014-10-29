@@ -98,6 +98,7 @@ private:
     bool   m_skip_empty;
     bool   m_ignore_unknown_types;
     string m_discouraged;
+    CArgValue::TStringArray m_require_one;
 };
 
 CTAbleValApp::CTAbleValApp(void):
@@ -107,6 +108,15 @@ CTAbleValApp::CTAbleValApp(void):
     m_skip_empty(false),
     m_ignore_unknown_types(false)
 {
+    int build_num = 
+#ifdef NCBI_PRODUCTION_VER
+    NCBI_PRODUCTION_VER
+#else
+    0
+#endif
+    ;   
+
+    SetVersion(CVersionInfo(1, 0, build_num));
 }
 
 
@@ -159,6 +169,8 @@ void CTAbleValApp::Init(void)
 
     arg_desc->AddOptionalKey("discouraged", "String", "Comma separated list of discouraged types", CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("require-one", "String", "Comma separated list of choice columns", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);   
+
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);   
 
     arg_desc->AddFlag("print-supported", "Show supported data types");   
@@ -189,8 +201,7 @@ int CTAbleValApp::Run(void)
     //m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
-    if (args["aliases"])
-        CTabDelimitedValidator::RegisterAliases(args["aliases"].AsInputFile());
+    CTabDelimitedValidator::RegisterAliases(args["aliases"]?&args["aliases"].AsInputFile():0);
 
     if (args["print-supported"])
     {
@@ -231,6 +242,11 @@ int CTAbleValApp::Run(void)
     {
        m_discouraged = args["discouraged"].AsString();
        NStr::ToLower(m_discouraged);
+    }
+
+    if (args["require-one"])
+    {
+        m_require_one = args["require-one"].GetStringList();
     }
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
@@ -329,7 +345,9 @@ void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
 
    CRef<ILineReader> reader(ILineReader::New(input));
 
-   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols, m_unique_cols, m_discouraged);
+   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols, m_unique_cols, m_discouraged,
+       m_require_one);
+
    validator.GenerateOutput(output, false);
 }
 
