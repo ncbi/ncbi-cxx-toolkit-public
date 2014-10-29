@@ -2,6 +2,6 @@
 ExcludeProject = FALSE
 
 [AddToProject]
-SourceFiles    = ncbi_lbsmd_stub
+SourceFiles      = _pch ncbi_lbsmd_stub
 HeadersInInclude = *.hpp !threaded_server.hpp !server.hpp !server_monitor.hpp !server_connection.hpp !thread_pool_for_server.hpp
-HeadersInSrc = *.hpp !connection_pool.hpp
+HeadersInSrc     = *.hpp !connection_pool.hpp
