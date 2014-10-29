@@ -2131,7 +2131,18 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     v->SetPlacements().push_back(p);
 
     //normalize to delins form so we can deal with it uniformly
-    ChangeToDelins(*v);
+    try {
+        ChangeToDelins(*v);
+    } catch (...) {
+        //e.g. NM_000384.2:c.905-1_905dupGG - can't convert t odelins
+
+        return CreateUnknownProtConsequenceVariation(
+                nuc_p, 
+                cds_feat, 
+                false,
+                *m_scope);
+    }
+
     const CDelta_item& nuc_delta = *v->GetData().GetInstance().GetDelta().front();
 
     // note: using type long instead of TSignedSeqPos is a bug on 64-bit systems: 
