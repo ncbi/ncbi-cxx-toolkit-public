@@ -126,7 +126,18 @@ public:
     /// if an attempt is made to create another instance of the application.
     /// @return
     ///   Current application instance.
+    /// @sa
+    ///   GetInstanceMutex()
     static CNcbiApplication* Instance(void);
+
+    /// Mutex for application singleton object.
+    ///
+    /// Lock this mutex when calling Instance()
+    /// @return
+    ///   Reference to application instance mutex.
+    /// @sa
+    ///   Instance()
+    static SSystemMutex& GetInstanceMutex(void);
 
     /// Constructor.
     ///

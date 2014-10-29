@@ -377,6 +377,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* default_value)
 {
     if ( section  &&  *section ) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app  &&  app->HasLoadedConfig() ) {
             const string& value = app->GetConfig().Get(section, variable);

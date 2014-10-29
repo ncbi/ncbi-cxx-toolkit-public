@@ -81,6 +81,15 @@ static bool s_IsApplicationStarted = false;
 // CNcbiApplication
 //
 
+DEFINE_STATIC_MUTEX(s_InstanceMutex);
+
+
+SSystemMutex& CNcbiApplication::GetInstanceMutex(void)
+{
+    return s_InstanceMutex;
+}
+
+
 CNcbiApplication* CNcbiApplication::m_Instance;
 
 
@@ -130,7 +139,10 @@ CNcbiApplication::CNcbiApplication(void)
 
 CNcbiApplication::~CNcbiApplication(void)
 {
-    m_Instance = 0;
+    {
+        CMutexGuard guard(GetInstanceMutex());
+        m_Instance = 0;
+    }
     FlushDiag(0, true);
     if (m_CinBuffer) {
         delete [] m_CinBuffer;
