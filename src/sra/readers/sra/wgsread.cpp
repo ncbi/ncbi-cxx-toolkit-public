@@ -1156,13 +1156,14 @@ static const Uint1 sx_4naFlags[256] = {
 
 
 static const bool kRecoverGaps = true;
-    
+
+#if 0
 static inline
 bool sx_4naIs2naBoth(Uint1 b4na)
 {
     return sx_4naFlags[b4na] <= fBoth_2na_max;
 }
-
+#endif
 
 static inline
 bool sx_4naIs2na1st(Uint1 b4na)
@@ -1198,7 +1199,7 @@ bool sx_4naIsGap2nd(Uint1 b4na)
     return (b4na&0x0f) == 0x0f;
 }
 
-
+#if 0
 static inline
 bool sx_Is2na(const CVDBValueFor4Bits& read,
               TSeqPos pos,
@@ -1233,7 +1234,7 @@ bool sx_Is2na(const CVDBValueFor4Bits& read,
     }
     return true;
 }
-
+#endif
 
 static inline
 bool sx_IsGap(const CVDBValueFor4Bits& read,
