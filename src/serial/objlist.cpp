@@ -62,11 +62,13 @@ void CWriteObjectList::RegisterObject(TTypeInfo typeInfo)
     m_Objects.push_back(CWriteObjectInfo(typeInfo, NextObjectIndex()));
 }
 
+#if _DEBUG
 static inline
 TConstObjectPtr EndOf(TConstObjectPtr objectPtr, TTypeInfo objectType)
 {
     return CRawPointer::Add(objectPtr, TPointerOffsetType(objectType->GetSize()));
 }
+#endif
 
 const CWriteObjectInfo*
 CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
