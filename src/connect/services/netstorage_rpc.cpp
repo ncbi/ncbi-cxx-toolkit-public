@@ -509,6 +509,23 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
     }
 
     if (m_ClientName.empty()) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app != NULL) {
+            string path;
+            CDirEntry::SplitPath(app->GetProgramExecutablePath(),
+                    &path, &m_ClientName);
+            if (NStr::EndsWith(path, CDirEntry::GetPathSeparator()))
+                path.erase(path.length() - 1);
+            string parent_dir;
+            CDirEntry::SplitPath(path, NULL, &parent_dir);
+            if (!parent_dir.empty()) {
+                m_ClientName += '-';
+                m_ClientName += parent_dir;
+            }
+        }
+    }
+
+    if (m_ClientName.empty()) {
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Client name is required.");
     }

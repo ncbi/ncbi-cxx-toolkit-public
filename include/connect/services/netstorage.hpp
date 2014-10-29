@@ -307,7 +307,8 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  and the value of the attribute must be separated by the equality
     ///  sign, and the value must be URL-encoded.
     ///  The following attributes are recoginzed:
-    ///  * client     - Application name. Required.
+    ///  * client     - Application name. If omitted, generated from
+    ///                 the executable pathname.
     ///  * nst        - NetStorage server address or LBSM service name
     ///                 pointing to a group of NetStorage servers.
     ///  * nc         - NetCache service name or server address.
