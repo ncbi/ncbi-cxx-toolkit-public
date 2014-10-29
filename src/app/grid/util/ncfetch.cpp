@@ -49,6 +49,7 @@
 #include <corelib/ncbiargs.hpp>
 
 #define GRID_APP_NAME "ncfetch.cgi"
+#define CONFIG_SECTION "ncfetch"
 
 USING_NCBI_SCOPE;
 
@@ -75,8 +76,23 @@ void CNetCacheBlobFetchApp::Init()
 
     const CNcbiRegistry& reg = GetConfig();
 
-    string netstorage_init_string = reg.GetString("ncfetch",
+    string netstorage_init_string = reg.GetString(CONFIG_SECTION,
             "netstorage", kEmptyStr);
+
+    if (netstorage_init_string.empty()) {
+        CNetCacheAPI nc_api = CNetCacheAPI(CNetCacheAPI::eAppRegistry);
+        CNetService nc_svc = nc_api.GetService();
+        string nc_service_name = nc_svc.GetServiceName();
+        if (nc_service_name.empty()) {
+            NCBI_THROW(CConfigException, eParameterMissing,
+                    "Neither NetStorage initialization string "
+                    "nor NetCache service name is defined.");
+        }
+        netstorage_init_string = "client=" +
+                NStr::URLEncode(nc_svc.GetServerPool().GetClientName());
+        netstorage_init_string += "&nc=";
+        netstorage_init_string += NStr::URLEncode(nc_service_name);
+    }
 
     m_NetStorage = CNetStorage(netstorage_init_string);
 }
