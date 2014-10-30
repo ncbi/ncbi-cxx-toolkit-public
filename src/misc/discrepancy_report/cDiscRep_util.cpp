@@ -688,32 +688,24 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
 
 void CTestAndRepData :: RmvRedundancy(vector <string>& items, vector <CConstRef <CObject> >& objs)
 {
-  vector <string> tmp = items;
-  vector <CConstRef <CObject> > tmp_objs = objs;
-  set <string> uni_item;
-set <const CObject* > uni_objs;
-  items.clear(); 
-  objs.clear();
-  unsigned i=0;
-#if 0  // Flat file reader returns different ref pointer for the same feature: genbank set
-  ITERATE (vector <CConstRef <CObject> >, it, tmp_objs) {
-     if (uni_objs.find((*it).GetPointer()) == uni_objs.end()) {
-          items.push_back(tmp[i]);
-          objs.push_back(*it);
-          uni_objs.insert((*it).GetPointer());
-     }
-     i++;
-  }
-#endif
+    set <string> uni_item;
 
-  ITERATE (vector <string>, it, tmp) {
-    if (uni_item.find(*it) == uni_item.end()) {
-      items.push_back(*it);
-      objs.push_back(tmp_objs[i]);
-      uni_item.insert(*it);
-    } 
-    i++;
-  }
+    vector<string>::iterator item_it = items.begin();
+    vector <CConstRef <CObject> >::iterator obj_it = objs.begin();
+    while (item_it != items.end()) {
+        if (uni_item.find(*item_it) == uni_item.end()) {
+            uni_item.insert(*item_it);
+            item_it++;
+            if (obj_it != objs.end()) {
+                obj_it++;
+            }
+        } else {
+            item_it = items.erase(item_it);
+            if (obj_it != objs.end()) {
+                obj_it = objs.erase(obj_it);
+            }
+        }
+    }
 };
 
 
