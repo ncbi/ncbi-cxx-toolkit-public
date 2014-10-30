@@ -257,7 +257,7 @@ COrgRefCache::Lookup( int tax_id, CTaxon2_data** ppData )
 }
 
 bool
-s_BuildLineage( string& str, CTaxon1Node* pNode, unsigned sz, int sp_rank )
+s_BuildLineage( string& str, CTaxon1Node* pNode, size_t sz, int sp_rank )
 {
     if( !pNode->IsRoot() ) {
 //         if( pNode->GetRank() > sp_rank-1 ) {
@@ -686,7 +686,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 			}
 		    }
 		}
-	    } catch( exception& e ) {
+	    } catch( exception& /*e*/ ) {
 	    }
 	    // Fill some other orgname fields
             short div_id( node.GetDivision() );
@@ -816,7 +816,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 		}
 	    }
 	}
-    } catch( exception& e ) {
+    } catch( exception& /*e*/ ) {
     }
     return true;
 }
