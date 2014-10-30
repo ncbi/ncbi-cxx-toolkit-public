@@ -461,7 +461,8 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
     const TValue kMaxIntValue = kMax_I4;
     const TValue kMaxByteValue = kMax_UI1;
     TValue max_v = 0;
-    size_t values = 0, switches = 0;
+    size_t values = 0;
+    uint64_t switches = 0;
     TSeqPos pos = range.GetFrom();
     const SSeqInfo& info = GetInfo();
     TSeqPos row_size = info.m_RowSize;
@@ -478,7 +479,7 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
         max_v > kMaxIntValue? sizeof(double): sizeof(int);
     size_t graph_value_size =
         max_v > kMaxByteValue? table_value_size: 1;
-    size_t table_size =
+    uint64_t table_size =
         (table_value_size+2*sizeof(int))*switches; //+pos+span
     size_t graph_size =
         graph_value_size*values;

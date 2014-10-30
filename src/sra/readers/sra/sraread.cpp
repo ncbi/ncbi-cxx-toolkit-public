@@ -405,7 +405,15 @@ CSraValue::CSraValue(const CSraColumn& col, spotid_t id, ECheckRc check_rc)
             m_Error = RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported);
         }
         else {
-            m_Len = (m_Bitlen+7)>>3;
+            uint64_t len = (m_Bitlen+7)>>3;
+#if SIZEOF_SIZE_T == 4
+            m_Len = size_t(len);
+            if ( m_Len != len ) {
+                m_Error = RC(rcApp, rcColumn, rcDecoding, rcSize, rcUnsupported);
+            }
+#else
+            m_Len = len;
+#endif
         }
     }
     if ( m_Error && check_rc == eCheckRc ) {
