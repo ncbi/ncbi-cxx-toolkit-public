@@ -185,6 +185,7 @@ public:
           m_Timeout(DefaultTimeout)
     {
         LOG_POST(Trace << "NS: " << NS_registry_section);
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         static const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
         const string nc_reg(
             NStr::IsBlank(NC_registry_section)

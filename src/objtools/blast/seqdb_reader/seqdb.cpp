@@ -1446,6 +1446,7 @@ CWgsDbTrimmer::x_ExtractOriginalWgsDbs()
 CWgsDbTrimmer::CWgsDbTrimmer(const string& wgs_db_list)
     : m_OrigWgsList(wgs_db_list)
 {
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app) {
         m_Path = app->GetEnvironment().Get("WGS_GILIST_DIR");

@@ -369,6 +369,7 @@ void CQueryParseTree::Parse(const char*           query_str,
     CQueryParserEnv env(query_str, *this);
 
 #ifdef _DEBUG
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app  &&  app->GetEnvironment().Get("DIAG_TRACE") == "1") {
         yydebug = 1;

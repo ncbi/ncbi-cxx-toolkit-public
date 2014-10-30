@@ -101,6 +101,7 @@ CTrackMgrClient::AskDefault_display_tracks(
 CRef<CTMgr_DisplayTrackReply>
 CTrackMgrClient::s_Ask(const CTMgr_DisplayTrackRequest& request)
 {
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     static const CNcbiApplication* app = CNcbiApplication::Instance();
     const CNcbiRegistry& cfg = app->GetConfig();
     const string type = cfg.GetString("TrackMgr", "type", "service");
