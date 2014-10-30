@@ -328,4 +328,36 @@ CRandom::TValue CRandom::x_GetSysRand32Bits(void) const
 }
 
 
+inline
+Uint8 CRandom::x_GetRand64Bits(void)
+{
+    Uint8 v1 = x_GetRand32Bits();
+    return (v1 << 32)+x_GetRand32Bits();
+}
+
+
+Uint8 CRandom::GetRandIndexUint8(Uint8 size)
+{
+    if ( size <= kMax_UI4 ) {
+        return GetRandIndex(Uint4(size));
+    }
+
+    if ( (size & (size-1)) == 0 ) { // only one bit set - power of 2
+        // get high bits via multiplication - it's faster than division
+        Uint8 bits = x_GetRand64Bits();
+        while ( size <<= 1 ) {
+            bits >>= 1;
+        }
+        return bits;
+    }
+
+    Uint8 bits, r;
+    do {
+        bits = x_GetRand64Bits();
+        r = bits % size;
+    } while ( bits > r - size ); // 64-bit overflow is intentional
+    return r;
+}
+
+
 END_NCBI_SCOPE

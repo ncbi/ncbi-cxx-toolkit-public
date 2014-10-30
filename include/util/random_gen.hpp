@@ -94,11 +94,35 @@ public:
     ///       than eGetRand_Sys one
     TValue GetRand(TValue min_value, TValue max_value); 
 
+    /// Get random number in the interval [min_value..max_value] (inclusive)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
+    Uint8 GetRandUint8(Uint8 min_value, Uint8 max_value); 
+
+    /// Get random number in the interval [min_value..max_value] (inclusive)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
+    size_t GetRandSize_t(size_t min_value, size_t max_value); 
+
     /// Get random number in the interval [0..size-1] (e.g. index in array)
     /// @sa  EGetRandMethod
     /// @note eGetRand_LFG generator could be 100 times faster
     ///       than eGetRand_Sys one
     TValue GetRandIndex(TValue size);
+
+    /// Get random number in the interval [0..size-1] (e.g. index in array)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
+    Uint8 GetRandIndexUint8(Uint8 size);
+
+    /// Get random number in the interval [0..size-1] (e.g. index in array)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
+    size_t GetRandIndexSize_t(size_t size);
 
     /// The max. value GetRand() returns
     static TValue GetMax(void);
@@ -136,6 +160,7 @@ private:
     TValue          m_Seed;
 
     TValue x_GetRand32Bits(void);
+    Uint8 x_GetRand64Bits(void);
     TValue x_GetSysRand32Bits(void) const;
 
     // prevent copying
@@ -226,9 +251,31 @@ inline CRandom::TValue CRandom::GetRandIndex(TValue size)
 }
 
 
+inline size_t CRandom::GetRandIndexSize_t(size_t size)
+{
+#if SIZEOF_SIZE_T == 4
+    return GetRandIndex(Uint4(size));
+#else
+    return GetRandIndexUint8(size);
+#endif
+}
+
+
 inline CRandom::TValue CRandom::GetRand(TValue min_value, TValue max_value)
 {
     return min_value + GetRandIndex(max_value - min_value + 1);
+}
+
+
+inline Uint8 CRandom::GetRandUint8(Uint8 min_value, Uint8 max_value)
+{
+    return min_value + GetRandIndexUint8(max_value - min_value + 1);
+}
+
+
+inline size_t CRandom::GetRandSize_t(size_t min_value, size_t max_value)
+{
+    return min_value + GetRandIndexSize_t(max_value - min_value + 1);
 }
 
 
