@@ -91,7 +91,7 @@ bool CString_constraint :: x_IsAllLowerCase(const string& str) const
 bool CString_constraint :: x_IsAllPunctuation(const string& str) const
 {
    for (unsigned i=0; i< str.size(); i++) {
-     if (!ispunct(str[i])) return false;
+     if (!ispunct(Uint1(str[i]))) return false;
    }
    return true;
 };
@@ -112,7 +112,7 @@ static const string weasels[] = {
 
 bool CString_constraint :: x_IsWeasel(const string& str) const
 {
-  unsigned sz = ArraySize(weasels);
+  size_t sz = ArraySize(weasels);
   const string *begin = weasels;
   const string *end = &(weasels[sz]);
 
@@ -143,7 +143,7 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
   return ret_str;
 };
 
-bool CString_constraint :: x_CaseNCompareEqual(string str1, string str2, unsigned len1, bool case_sensitive) const
+bool CString_constraint :: x_CaseNCompareEqual(string str1, string str2, size_t len1, bool case_sensitive) const
 {
    if (!len1) return false;
    string comp_str1, comp_str2;
@@ -166,7 +166,7 @@ string CString_constraint :: x_StripUnimportantCharacters(const string& str, boo
    result.reserve(str.size());
    string::const_iterator it = str.begin();
    do {
-      if ((strip_space && isspace(*it)) || (strip_punct && ispunct(*it)));
+      if ((strip_space && isspace(Uint1(*it))) || (strip_punct && ispunct(Uint1(*it))));
       else result += *it;
    } while (++it != str.end());
 
@@ -175,14 +175,14 @@ string CString_constraint :: x_StripUnimportantCharacters(const string& str, boo
 
 bool CString_constraint :: x_DisallowCharacter(const char ch, bool disallow_slash) const
 {
-  if (isalpha (ch) || isdigit (ch) || ch == '_' || ch == '-') return true;
+  if (isalpha (Uint1(ch)) || isdigit (Uint1(ch)) || ch == '_' || ch == '-') return true;
   else if (disallow_slash && ch == '/') return true;
   else return false;
 };
 
-bool CString_constraint :: x_IsWholeWordMatch(const string& start, const size_t& found, const unsigned& match_len, bool disallow_slash) const
+bool CString_constraint :: x_IsWholeWordMatch(const string& start, size_t found, size_t match_len, bool disallow_slash) const
 {
-  unsigned after_idx;
+  size_t after_idx;
 
   if (!match_len) return true;
   else if (start.empty() || found == string::npos) return false;
@@ -237,30 +237,30 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
         return false;
     }
     if (GetIgnore_space()) {
-        if (isspace(str.c_str()[0])) {
+        if (isspace(Uint1(str[0]))) {
             match_len++;
-            return x_PartialCompare(str.substr(1), pattern, str.c_str()[0], match_len);
-        } else if (isspace(pattern.c_str()[0])) {
+            return x_PartialCompare(str.substr(1), pattern, str[0], match_len);
+        } else if (isspace(Uint1(pattern[0]))) {
             return x_PartialCompare(str, pattern.substr(1), prev_char, match_len);
         }
     }
     if (GetIgnore_punct()) {
-        if (ispunct(str.c_str()[0])) {
+        if (ispunct(Uint1(str[0]))) {
             match_len++;
-            return x_PartialCompare(str.substr(1), pattern, str.c_str()[0], match_len);
-        } else if (ispunct(pattern.c_str()[0])) {
+            return x_PartialCompare(str.substr(1), pattern, str[0], match_len);
+        } else if (ispunct(Uint1(pattern[0]))) {
             return x_PartialCompare(str, pattern.substr(1), prev_char, match_len);
         }
     }
-    if (str.c_str()[0] == pattern.c_str()[0]) {
+    if (str[0] == pattern[0]) {
         match_len++;
-        return x_PartialCompare(str.substr(1), pattern.substr(1), str.c_str()[0], match_len);
+        return x_PartialCompare(str.substr(1), pattern.substr(1), str[0], match_len);
     }
     return false;
 }
 
 
-bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, const char prev_char, unsigned int * ini_target_match_len)  const
+bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, const char prev_char, size_t * ini_target_match_len)  const
 {
     bool rval = false;
     size_t match_len = 0;
@@ -280,7 +280,7 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
   string
     match_text = CanGetMatch_text() ? tmp_match : kEmptyStr;
 
-  unsigned int match_len = 0;
+  size_t match_len = 0;
 
   if (x_AdvancedStringCompare (str, match_text, 0, &match_len) &&
       (GetMatch_location() != eString_location_equals || match_len == str.length())) {
@@ -292,10 +292,10 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
   }
   else {
     size_t pos = 1;
-    unsigned len = str.size();
+    size_t len = str.size();
     while (!rval && pos < len) {
       if (GetWhole_word()) {
-          while (pos < len && isalpha (str[pos-1])) pos++;
+          while (pos < len && isalpha (Uint1(str[pos-1]))) pos++;
       }
       if (pos < len) {
         if (x_AdvancedStringCompare (CTempString(str).substr(pos),
@@ -312,7 +312,7 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
   return rval;
 };
 
-bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, const size_t& hyphen, string& first, string& second) const
+bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, size_t hyphen, string& first, string& second) const
 {
    if (!hyphen) return false;
 
@@ -325,7 +325,7 @@ bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, const 
      cp = 0;
    }
 
-   unsigned len = hyphen - cp;
+   size_t len = hyphen - cp;
    first = CTempString(str).substr(cp, len);
    NStr::TruncateSpacesInPlace(first);
  
@@ -339,7 +339,7 @@ bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, const 
    }
 
    len = cp - hyphen;
-   if (!isspace (str[cp])) {
+   if (!isspace (Uint1(str[cp]))) {
      len--;
    }
    second = CTempString(str).substr(hyphen+1, len);
@@ -349,8 +349,8 @@ bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, const 
    if (first.empty() || second.empty()) {
       rval = false;
    }
-   else if (!isdigit (first[first.size() - 1]) 
-                 || !isdigit (second[second.size() - 1])) {
+   else if (!isdigit (Uint1(first[first.size() - 1])) 
+                 || !isdigit (Uint1(second[second.size() - 1]))) {
       /* if this is a span, then neither end point can end with anything other than a number */
       rval = false;
    }
@@ -427,8 +427,8 @@ bool CString_constraint :: x_IsStringInSpan(const string& str, const string& fir
     comp_str2 = CTempString(first).substr(0, prefix_len);
     if (prefix_len <= first.size() 
            && prefix_len <= second.size()
-           && isdigit (first[prefix_len-1]) 
-           && isdigit (second[prefix_len-1])
+           && isdigit (Uint1(first[prefix_len-1])) 
+           && isdigit (Uint1(second[prefix_len-1]))
            && comp_str1 == comp_str2) {
       new_first = CTempString(first).substr(prefix_len);
       new_second = CTempString(second).substr(prefix_len);
@@ -654,7 +654,7 @@ bool CString_constraint::x_ReplaceContains(string& val, const string& replace) c
 
     size_t offset = 0;
     while (offset < val.length()) {
-        unsigned int match_len = 0;
+        size_t match_len = 0;
         if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
                                     val.c_str()[offset - 1],
                                     &match_len)) {
@@ -691,7 +691,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                     break;
                 case eString_location_starts:
                     {{
-                       unsigned int match_len = 0;
+                       size_t match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), 0, &match_len)) {
                            val = replace + val.substr(match_len);
                            rval = true;
@@ -705,7 +705,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                     {{
                         size_t offset = 0;
                         while (!rval && offset < val.length()) {
-                            unsigned int match_len = 0;
+                            size_t match_len = 0;
                             if (x_AdvancedStringCompare(val.substr(offset), 
                                                          GetMatch_text(),
                                                          (offset == 0 ? 0 : val.c_str()[offset - 1]), 

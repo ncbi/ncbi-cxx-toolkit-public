@@ -84,7 +84,7 @@ private:
     bool x_ContainsNorMoreSetsOfBracketsOrParentheses(const string& str,
                                                        const int& n) const;
     char x_GetClose(char bp) const;
-    bool x_SkipBracketOrParen(const unsigned& idx, string& start) const;
+    bool x_SkipBracketOrParen(size_t idx, string& start) const;
     
     // e_Three_numbers
     bool x_ContainsThreeOrMoreNumbersTogether(const string& str) const;

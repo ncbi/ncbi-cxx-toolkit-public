@@ -92,21 +92,21 @@ private:
     bool x_AdvancedStringCompare(const string& str, 
                                 const string& str_match, 
                                 const char prev_char, 
-                                unsigned int * ini_target_match_len = 0) const;
+                                size_t * ini_target_match_len = 0) const;
     bool x_AdvancedStringMatch(const string& str,const string& tmp_match) const;
     bool x_CaseNCompareEqual(string str1,
                                string str2,
-                               unsigned len1, bool case_sensitive) const;
+                               size_t len1, bool case_sensitive) const;
     string x_StripUnimportantCharacters(const string& str,
                                      bool strip_space, bool strip_punct) const;
     bool x_IsWholeWordMatch(const string& start,
-                              const size_t& found,
-                              const unsigned& match_len,
+                              size_t found,
+                              size_t match_len,
                               bool disallow_slash = false) const;
     bool x_DisallowCharacter(const char ch, bool disallow_slash) const;
 
     bool x_GetSpanFromHyphenInString(const string& str, 
-                                     const size_t& hyphen, 
+                                     size_t hyphen, 
                                      string& first, 
                                      string& second) const;
     bool x_StringIsPositiveAllDigits(const string& str) const;

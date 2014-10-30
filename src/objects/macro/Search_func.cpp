@@ -65,7 +65,7 @@ bool CSearch_func :: Empty() const
 
 bool CSearch_func :: x_DoesStrContainPlural(const string& word, char last_letter, char second_to_last_letter, char next_letter) const
 {
-   unsigned len = word.size();
+   size_t len = word.size();
    if (last_letter == 's') {
       if (len >= 5  && CTempString(word).substr(len-5) == "trans") {
             return false; // not plural;
@@ -88,7 +88,7 @@ bool CSearch_func :: x_StringMayContainPlural(const string& str) const
   char last_letter, second_to_last_letter, next_letter;
   bool may_contain_plural = false;
   string word_skip = " ,";
-  unsigned len;
+  size_t len;
 
   if (str.empty()) {
       return false;
@@ -161,7 +161,7 @@ static const char* skip_bracket_paren[] = {
    "[acyl-carrier-protein]",
    "(acyl carrier protein)"
 };
-bool CSearch_func :: x_SkipBracketOrParen(const unsigned& idx, string& start) const
+bool CSearch_func :: x_SkipBracketOrParen(size_t idx, string& start) const
 {
   bool rval = false;
   size_t ep, ns;
@@ -171,8 +171,8 @@ bool CSearch_func :: x_SkipBracketOrParen(const unsigned& idx, string& start) co
      start = CTempString(start).substr(idx + 3);
   } 
   else {
-     unsigned len;
-     for (unsigned i = 0; i < ArraySize(skip_bracket_paren); i++) {
+     size_t len;
+     for (size_t i = 0; i < ArraySize(skip_bracket_paren); i++) {
        len = strlen(skip_bracket_paren[i]);
        if (CTempString(start).substr(idx, len) == skip_bracket_paren[i]) {
          start = CTempString(start).substr(idx + len);
@@ -243,9 +243,9 @@ static const char* ok_num_prefix[] = {
 };
 bool CSearch_func :: x_PrecededByOkPrefix (const string& start_str) const
 {
-  unsigned len_str = start_str.size();
-  unsigned len_i;
-  for (unsigned i = 0; i < ArraySize(ok_num_prefix); i++) {
+  size_t len_str = start_str.size();
+  size_t len_i;
+  for (size_t i = 0; i < ArraySize(ok_num_prefix); i++) {
     len_i = string(ok_num_prefix[i]).size();
     if (len_str >= len_i 
          && (CTempString(start_str).substr(len_str-len_i) == ok_num_prefix[i])){
@@ -266,7 +266,7 @@ bool CSearch_func :: x_InWordBeforeCytochromeOrCoenzyme(const string& start_str)
       strtmp = CTempString(start_str).substr(0, pos);
       pos = strtmp.find_last_not_of(' ');
       if (pos != string::npos) {
-         unsigned len = strtmp.size();
+         size_t len = strtmp.size();
          comp_str1 = CTempString(strtmp).substr(len-10);
          comp_str2 = CTempString(strtmp).substr(len-8);
          if ( (len >= 10  && NStr::EqualNocase(comp_str1, "cytochrome"))
@@ -369,7 +369,7 @@ bool CSearch_func :: x_IsPrefixPlusNumbers(const string& str, const string& pref
 {
   if (str.empty()) return false;
 
-  unsigned pattern_len = prefix.size();
+  size_t pattern_len = prefix.size();
   if (pattern_len > 0 && !NStr::EqualCase(str, 0, pattern_len, prefix)) {
        return false;
   }
