@@ -853,10 +853,10 @@ bool CTestHelper::sm_TestRemoveEntry = true;
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 TSeqPos seq_len,
                                 string seq_str, string seq_str_compl,
-                                int seq_desc_cnt,
-                                int seq_feat_ra_cnt, // resolve-all method
-                                int seq_feat_cnt, int seq_featrg_cnt,
-                                int seq_align_cnt, int seq_alignrg_cnt,
+                                size_t seq_desc_cnt,
+                                size_t seq_feat_ra_cnt, // resolve-all method
+                                size_t seq_feat_cnt, size_t seq_featrg_cnt,
+                                size_t seq_align_cnt, size_t seq_alignrg_cnt,
                                 size_t feat_annots_cnt,
                                 size_t featrg_annots_cnt,
                                 size_t align_annots_cnt,
@@ -913,7 +913,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     _ASSERT(!seg);
-    for ( int i = itrs.size()-1; i >= 0; --i ) {
+    for ( size_t i = itrs.size(); i--; ) {
         --seg;
         _ASSERT(seg);
         _ASSERT(seg == itrs[i]);
@@ -962,7 +962,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     _ASSERT(!seg);
-    for ( int i = itrs.size()-1; i >= 0; --i ) {
+    for ( size_t i = itrs.size(); i--; ) {
         --seg;
         _ASSERT(seg);
         _ASSERT(seg == itrs[i]);
@@ -1010,7 +1010,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     _ASSERT(!seg);
-    for ( int i = itrs.size()-1; i >= 0; --i ) {
+    for ( size_t i = itrs.size(); i--; ) {
         --seg;
         _ASSERT(seg);
         _ASSERT(seg == itrs[i]);
@@ -1057,7 +1057,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     _ASSERT(!seg);
-    for ( int i = itrs.size()-1; i >= 0; --i ) {
+    for ( size_t i = itrs.size(); i--; ) {
         --seg;
         _ASSERT(seg);
         _ASSERT(seg == itrs[i]);
@@ -1101,8 +1101,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_WRAP();
     CSeq_interval interval;
     interval.SetId(id);
-    interval.SetFrom(seq_str.size());
-    interval.SetTo(seq_str.size()-1);
+    interval.SetFrom(TSeqPos(seq_str.size()));
+    interval.SetTo(TSeqPos(seq_str.size()-1));
     CSeq_loc loc;
     loc.SetInt(interval);
     seq_vect = CSeqVector(loc, scope);
@@ -1131,7 +1131,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     CConstRef<CBioseq> bioseq = handle.GetCompleteBioseq();
 
-    int count = 0;
+    size_t count = 0;
     CHECK_WRAP();
     // Test CSeq_descr iterator
     for (CSeq_descr_CI desc_it(handle); desc_it;  ++desc_it) {
@@ -1271,7 +1271,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(annot_set.size() == feat_annots_cnt);
 
     ITERATE ( set<CSeq_annot_Handle>, annot_it, annot_set ) {
-        int expected_count =
+        size_t expected_count =
             annot_it->GetCompleteObject()->GetData().GetFtable().size();
         count = 0;
         for ( CSeq_annot_ftable_CI feat_it(*annot_it); feat_it; ++feat_it ) {
@@ -1313,7 +1313,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(annot_set.size() == featrg_annots_cnt);
 
     ITERATE ( set<CSeq_annot_Handle>, annot_it, annot_set ) {
-        int expected_count =
+        size_t expected_count =
             annot_it->GetCompleteObject()->GetData().GetFtable().size();
         count = 0;
         for ( CSeq_annot_ftable_CI feat_it(*annot_it); feat_it; ++feat_it ) {
