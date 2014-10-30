@@ -14,8 +14,6 @@
 #   define isfinite _finite
 #endif
 
-#define finite isfinite
-
 USING_NCBI_SCOPE;
 
 class CTestApplication : public CNcbiApplication
