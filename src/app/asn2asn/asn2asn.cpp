@@ -459,9 +459,9 @@ int CAsn2Asn::Run(void)
         SetDiagStream(&l.AsOutputFile());
 
 
-    size_t threadCount = args["tc"].AsInteger();
+    int threadCount = args["tc"].AsInteger();
     vector< CRef<CAsn2AsnThread> > threads(threadCount);
-    for ( size_t i = 1; i < threadCount; ++i ) {
+    for ( int i = 1; i < threadCount; ++i ) {
         threads[i] = new CAsn2AsnThread(i, this);
         threads[i]->Run();
     }
@@ -474,7 +474,7 @@ int CAsn2Asn::Run(void)
         return 1;
     }
 
-    for ( size_t i = 1; i < threadCount; ++i ) {
+    for ( int i = 1; i < threadCount; ++i ) {
         threads[i]->Join();
         if ( !threads[i]->DoneOk() ) {
             NcbiCerr << "Error in thread: " << i << NcbiEndl;
