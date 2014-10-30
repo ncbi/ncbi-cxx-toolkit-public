@@ -52,6 +52,9 @@ BEGIN_NCBI_SCOPE
 //
 //     CWorkerNodeJobContext     --
 
+CWorkerNodeJobContext::~CWorkerNodeJobContext()
+{
+}
 
 const CNetScheduleJob& CWorkerNodeJobContext::GetJob() const
 {

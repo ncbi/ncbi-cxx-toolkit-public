@@ -188,6 +188,7 @@ struct SWorkerNodeJobContextImpl;
 class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
 {
     NCBI_NET_COMPONENT(WorkerNodeJobContext);
+    virtual ~CWorkerNodeJobContext();
 
     /// Get the associated job structure to access all of its fields.
     const CNetScheduleJob& GetJob() const;
