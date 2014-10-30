@@ -319,8 +319,8 @@ bool CTestOM::Thread_Run(int idx)
         sel.SetOverlapType(sel.eOverlap_Intervals);
     }
     
-    int seq_count = 0, all_ids_count = 0;
-    int all_feat_count = 0, all_desc_count = 0;
+    size_t seq_count = 0, all_ids_count = 0;
+    size_t all_feat_count = 0, all_desc_count = 0;
     bool ok = true;
     typedef list<CConstRef<CSeq_entry> > TEntries;
     TEntries all_entries;
