@@ -158,10 +158,9 @@ void CNCBlobKeyLight::Clear(void)
 void CNCBlobKeyLight::PackBlobKey(const CTempString& cache_name,
     const CTempString& blob_key, const CTempString& blob_subkey)
 {
-    m_PackedKey.clear();
     m_PackedKey.reserve(cache_name.size() + blob_key.size()
                         + blob_subkey.size() + 2);
-    m_PackedKey.append(cache_name.data(), cache_name.size());
+    m_PackedKey.assign(cache_name.data(), cache_name.size());
     m_PackedKey.append(1, '\1');
     m_PackedKey.append(blob_key.data(), blob_key.size());
     m_PackedKey.append(1, '\1');
@@ -215,6 +214,7 @@ bool CNCBlobKey::Assign( const CTempString& cache_name,
             rawKey = StripKeyExtensions();
         }
     } else {
+        SRV_LOG(Critical, "CNetCacheKey failed to parse blob key: " << blob_key);
         Clear();
         return false;
     }

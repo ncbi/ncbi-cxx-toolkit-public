@@ -136,8 +136,9 @@ s_FireTimers(int fire_time)
     TTimerList& tlist = s_TimerLowQ[fire_time & kTimerLowMask];
     while (!tlist.empty()) {
         STimerTicket* ticket = &tlist.front();
-        if (ticket->timer_time != fire_time)
-            abort();
+        if (ticket->timer_time != fire_time) {
+            SRV_FATAL("Timers broken");
+        }
         tlist.pop_front();
         s_ExecuteTimerTicket(ticket);
     }
@@ -223,8 +224,9 @@ CSrvTask::RunAfter(Uint4 delay_sec)
     else {
 retry:
         TSrvTaskFlags old_flags = ACCESS_ONCE(m_TaskFlags);
-        if ((old_flags & fTaskOnTimer)  ||  m_Timer)
-            abort();
+        if ((old_flags & fTaskOnTimer)  ||  m_Timer) {
+            SRV_FATAL("Invalid task flags: " << old_flags);
+        }
         if (!(old_flags & (fTaskQueued + fTaskRunnable))) {
             TSrvTaskFlags new_flags = old_flags + fTaskOnTimer;
             if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))

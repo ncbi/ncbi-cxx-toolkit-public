@@ -151,6 +151,9 @@ CSrvTime::Print(char* buf, EFormatType fmt) const
     gmtime_r(&sec, &t);
 
     switch (fmt) {
+    default:
+        SRV_LOG(Error, "Unsupported time format: " << fmt);
+        // no break
     case eFmtLogging:
         s_Print4Digs(buf, t.tm_year + 1900);
         *(buf++) = '-';
@@ -184,8 +187,6 @@ CSrvTime::Print(char* buf, EFormatType fmt) const
             s_Print6Digs(buf, int(tv_nsec / kNSecsPerUSec));
         }
         break;
-    default:
-        abort();
     }
 #endif
 

@@ -164,6 +164,11 @@ public:
     }                                                           \
     while (0)                                                   \
 /**/
+#define SRV_FATAL(msg)                          \
+    do {                                           \
+        SRV_LOG(Fatal, "Fatal error: " << msg);    \
+        abort();                                   \
+    } while (0)                                    \
 
 /// Macro to be used for printing informational messages.
 /// Macro usage is as follows:

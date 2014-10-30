@@ -476,8 +476,9 @@ s_MarkTaskRunning(CSrvTask* task)
 {
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(task->m_TaskFlags);
-    if ((old_flags & fTaskQueued) == 0  ||  (old_flags & fTaskRunning) != 0)
-        abort();
+    if ((old_flags & fTaskQueued) == 0  ||  (old_flags & fTaskRunning) != 0) {
+        SRV_FATAL("Invalid task flags: " << old_flags);
+    }
     TSrvTaskFlags new_flags = old_flags + fTaskRunning - fTaskQueued;
     if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
         goto retry;
@@ -488,8 +489,9 @@ s_MarkTaskExecuted(CSrvTask* task, SSrvThread* thr)
 {
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(task->m_TaskFlags);
-    if ((old_flags & fTaskQueued) != 0  ||  (old_flags & fTaskRunning) == 0)
-        abort();
+    if ((old_flags & fTaskQueued) != 0  ||  (old_flags & fTaskRunning) == 0) {
+        SRV_FATAL("Invalid task flags: " << old_flags);
+    }
     TSrvTaskFlags new_flags = old_flags - fTaskRunning;
     if (new_flags & (fTaskNeedTermination + fTaskTerminated))
         new_flags &= ~fTaskRunnable;

@@ -64,8 +64,10 @@ CSrvTransitionTask::CSrvTransitionTask(void)
 
 CSrvTransitionTask::~CSrvTransitionTask(void)
 {
-    if (m_TransState == eState_Transition  ||  !m_Consumers.empty())
-        abort();
+    if (m_TransState == eState_Transition  ||  !m_Consumers.empty()) {
+        SRV_FATAL("CSrvTransitionTask destructor unexpected: m_TransState: "
+                  << m_TransState << ", Consumers: " << m_Consumers.size());
+    }
 }
 
 void
@@ -91,7 +93,7 @@ CSrvTransitionTask::RequestTransition(CSrvTransConsumer* consumer)
         consumer->SetRunnable();
         break;
     default:
-        abort();
+        SRV_FATAL("Unsupported transition state: " << m_TransState);
     }
 }
 
@@ -101,8 +103,9 @@ CSrvTransitionTask::FinishTransition(void)
     TSrvConsList cons_list;
 
     m_TransLock.Lock();
-    if (m_TransState != eState_Transition)
-        abort();
+    if (m_TransState != eState_Transition) {
+        SRV_FATAL("Unexpected transition state: " << m_TransState);
+    }
     m_TransState = eState_Final;
     cons_list.swap(m_Consumers);
     m_TransLock.Unlock();

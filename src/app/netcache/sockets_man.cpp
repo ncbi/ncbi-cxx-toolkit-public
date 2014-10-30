@@ -886,8 +886,9 @@ static inline void
 s_CompactBuffer(char* buf, Uint2& size, Uint2& pos)
 {
     if (pos != 0) {
-        if (pos > size)
-            abort();
+        if (pos > size) {
+            SRV_FATAL("IO buffer broken");
+        }
         Uint2 new_size = size - pos;
         memmove(buf, buf + pos, new_size);
         size = new_size;
@@ -940,8 +941,9 @@ s_WriteNoPending(CSrvSocketTask* task, const void* buf, size_t size)
 static inline void
 s_FlushData(CSrvSocketTask* task)
 {
-    if (task->m_WrSize < task->m_WrPos)
-        abort();
+    if (task->m_WrSize < task->m_WrPos) {
+        SRV_FATAL("IO buffer broken");
+    }
     Uint2 n_written = Uint2(s_WriteToSocket(task,
                                             task->m_WrBuf + task->m_WrPos,
                                             task->m_WrSize - task->m_WrPos));
@@ -1145,8 +1147,10 @@ CSrvSocketTask::CSrvSocketTask(void)
 
 CSrvSocketTask::~CSrvSocketTask(void)
 {
-    if (m_Fd != -1)
-        abort();
+    if (m_Fd != -1) {
+        SRV_LOG(Critical, "SocketTask failed to close socket");
+        s_CloseSocket(m_Fd, true);
+    }
     free(m_RdBuf);
     free(m_WrBuf);
 }
@@ -1279,8 +1283,9 @@ CSrvSocketTask::Write(const void* buf, size_t size)
 void
 CSrvSocketTask::WriteData(const void* buf, size_t size)
 {
-    if (Uint2(numeric_limits<Uint2>::max() - m_WrSize) < size)
-        abort();
+    if (Uint2(numeric_limits<Uint2>::max() - m_WrSize) < size) {
+        SRV_FATAL("IO buffer overflow");
+    }
     if (m_WrSize + size > m_WrMemSize) {
         m_WrBuf = (char*)realloc(m_WrBuf, m_WrSize + size);
         m_WrMemSize = Uint2(m_WrSize + size);

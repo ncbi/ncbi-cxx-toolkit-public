@@ -390,9 +390,11 @@ public:
 inline void
 CNCActiveHandler::x_SetSlotAndBucketAndVerifySlot(Uint2 slot)
 {
-    if (!CNCDistributionConf::GetSlotByKey(m_BlobKey.PackedKey(),
-            m_BlobSlot, m_TimeBucket) || m_BlobSlot != slot)
-        abort();
+    if (!CNCDistributionConf::GetSlotByKey(
+        m_BlobKey.PackedKey(),m_BlobSlot, m_TimeBucket) || m_BlobSlot != slot) {
+        SRV_FATAL("Slot verification failed, blob key: " << m_BlobKey.PackedKey() <<
+                  ", expected slot: " << slot << ", calculated slot: " << m_BlobSlot);
+    }
 }
 
 class CNCActiveHandler_Proxy : public CSrvSocketTask

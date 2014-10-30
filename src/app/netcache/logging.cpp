@@ -686,8 +686,9 @@ s_CheckOldStyleStart(const CSrvDiagMsg* msg)
             msg->StartSrvLog(data->severity, data->msg_file,
                              data->msg_line, data->msg_func);
         }
-        else
-            abort();
+        else {
+            SRV_FATAL("Unrecognized CSrvDiagMsg style");
+        }
     }
     return true;
 }
@@ -709,7 +710,7 @@ s_ConvertSeverity(EOldStyleSeverity sev)
     case Fatal:
         return CSrvDiagMsg::Fatal;
     default:
-        abort();
+        SRV_FATAL("Unsupported severity: " << sev);
     }
     return CSrvDiagMsg::Trace;
 }
@@ -731,7 +732,7 @@ s_ConvertSeverity(EDiagSev sev)
     case eDiag_Fatal:
         return CSrvDiagMsg::Fatal;
     default:
-        abort();
+        SRV_FATAL("Unsupported severity: " << sev);
     }
     return CSrvDiagMsg::Trace;
 }
@@ -925,8 +926,9 @@ CSrvDiagMsg::StartRequest(void)
 CSrvDiagMsg&
 CSrvDiagMsg::StartRequest(CRequestContext* ctx)
 {
-    if (CDiagContext::IsCtxRunning(ctx))
-        abort();
+    if (CDiagContext::IsCtxRunning(ctx)) {
+        SRV_FATAL("Unexpected StartRequest call");
+    }
     CDiagContext::StartCtxRequest(ctx);
     ctx->SetRequestStatus(200);
 
@@ -1010,8 +1012,9 @@ CSrvDiagMsg::StopRequest(void)
 void
 CSrvDiagMsg::StopRequest(CRequestContext* ctx)
 {
-    if (!CDiagContext::IsCtxRunning(ctx))
-        abort();
+    if (!CDiagContext::IsCtxRunning(ctx)) {
+        SRV_FATAL("Unexpected StopRequest call");
+    }
 
     if (s_LogRequests) {
         s_AddLogPrefix(m_Thr, m_Data, ctx);
@@ -1123,8 +1126,9 @@ CSrvTask::SetDiagCtx(CRequestContext* ctx)
     Uint4 mem_cap = Uint4(GetMemSize(m_DiagChain) / sizeof(m_DiagCtx));
     Uint4 cnt_in_chain = mem_cap;
     while (!m_DiagChain[cnt_in_chain - 1]) {
-        if (--cnt_in_chain == 0)
-            abort();
+        if (--cnt_in_chain == 0) {
+            SRV_FATAL("m_DiagChain broken");
+        }
     }
     if (cnt_in_chain == mem_cap) {
         m_DiagChain = (CRequestContext**)
@@ -1155,11 +1159,13 @@ CSrvTask::ReleaseDiagCtx(void)
     Uint4 mem_cap = Uint4(GetMemSize(m_DiagChain) / sizeof(m_DiagCtx));
     Uint4 cnt_in_chain = mem_cap;
     while (!m_DiagChain[cnt_in_chain - 1]) {
-        if (--cnt_in_chain == 0)
-            abort();
+        if (--cnt_in_chain == 0) {
+            SRV_FATAL("m_DiagChain broken");
+        }
     }
-    if (m_DiagChain[--cnt_in_chain] != was_ctx)
-        abort();
+    if (m_DiagChain[--cnt_in_chain] != was_ctx) {
+        SRV_FATAL("m_DiagChain broken");
+    }
     m_DiagChain[cnt_in_chain] = NULL;
     if (cnt_in_chain != 0)
         m_DiagCtx = m_DiagChain[cnt_in_chain - 1];

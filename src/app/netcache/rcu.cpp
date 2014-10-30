@@ -85,8 +85,9 @@ s_RCUExecuteCalls(SRCUInfo* rcu)
 static inline void
 s_RCUMoveGPMarkers(SRCUInfo* rcu)
 {
-    if (&rcu->calls.front() != rcu->gp_marker_cur)
-        abort();
+    if (&rcu->calls.front() != rcu->gp_marker_cur) {
+        SRV_FATAL("SRCUInfo broken");
+    }
     rcu->calls.pop_front();
     rcu->calls.push_back(*rcu->gp_marker_cur);
     swap(rcu->gp_marker_cur, rcu->gp_marker_next);
@@ -160,8 +161,9 @@ RCUFinalizeThread(SSrvThread* thr)
 {
     SRCUInfo* rcu = thr->rcu;
 
-    if (RCUHasCalls(rcu))
-        abort();
+    if (RCUHasCalls(rcu)) {
+        SRV_FATAL("RCUFinalizeThread unexpected");
+    }
 
     s_RCULock.Lock();
     if (rcu->seen_gp != s_CurrentGP)
@@ -192,11 +194,9 @@ void
 CSrvRCUUser::CallRCU(void)
 {
     SSrvThread* thr = GetCurThread();
-    if ((thr->thread_state == eThreadLockedForStop
-            ||  thr->thread_state >= eThreadStopped)
-        &&  this != thr)
-    {
-        abort();
+    if ((thr->thread_state == eThreadLockedForStop ||
+         thr->thread_state >= eThreadStopped) &&  this != thr) {
+        SRV_FATAL("CallRCU unexpected");
     }
     thr->rcu->calls.push_back(*this);
 }

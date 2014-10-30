@@ -50,7 +50,7 @@ enum ENCSyncEvent
 struct SNCSyncEvent
 {
     Uint8  rec_no;          //< Local event sequential number.
-    CNCBlobKeyLight key;             //< Blob key.
+    CNCBlobKeyLight key;    //< Blob key.
     ENCSyncEvent event_type;//< Event type (write, remove, prolong).
     Uint8  orig_time;       //< Timestamp of the event when
                             //< it originated by client.

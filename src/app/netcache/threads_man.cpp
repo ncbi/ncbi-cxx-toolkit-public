@@ -92,8 +92,9 @@ TSrvThreadNum
 CTaskServer::GetCurThreadNum(void)
 {
     SSrvThread* thr = GetCurThread();
-    if (thr->thread_num == 0  ||  thr->thread_num == s_MaxRunningThreads + 1)
-        abort();
+    if (thr->thread_num == 0  ||  thr->thread_num == s_MaxRunningThreads + 1) {
+        SRV_FATAL("Unexpected ThreadNum: " << thr->thread_num);
+    }
     return thr->thread_num - 1;
 }
 
@@ -426,7 +427,7 @@ InitCurThreadStorage(void)
     int res = pthread_key_create(&s_CurThreadKey, NULL);
     if (res) {
         printf("terminating after pthread_key_create returned error %d\n", res);
-        abort();
+        SRV_FATAL("pthread_key_create returned error: " << res);
     }
 #endif
 }
@@ -507,7 +508,7 @@ SSrvThread::ExecuteRCU(void)
         thread_state = eThreadRunning;
         break;
     default:
-        abort();
+        SRV_FATAL("Unexpected thread state: " << thread_state);
     }
 }
 

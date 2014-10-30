@@ -135,8 +135,9 @@ s_StopSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
                                      slot_srv->next_sync_time,
                                      next_delay);
     slot_srv->sync_started = false;
-    if (slot_data->cnt_sync_started == 0)
-        abort();
+    if (slot_data->cnt_sync_started == 0) {
+        SRV_FATAL("SyncSlotData broken");
+    }
     if (--slot_data->cnt_sync_started == 0  &&  slot_data->clean_required)
         s_LogCleaner->SetRunnable();
 }
@@ -488,8 +489,9 @@ CNCPeriodicSync::SyncCommandFinished(Uint8 server_id, Uint2 slot, Uint8 sync_id)
     if (slot_srv->sync_started  &&  slot_srv->is_passive
         &&  slot_srv->cur_sync_id == sync_id)
     {
-        if (slot_srv->started_cmds == 0)
-            abort();
+        if (slot_srv->started_cmds == 0) {
+            SRV_FATAL("SyncSlotData broken");
+        }
         if (--slot_srv->started_cmds == 0)
             slot_srv->last_active_time = CSrvTime::Current().AsUSec();
     }
@@ -760,8 +762,9 @@ CNCActiveSyncControl::x_ExecuteSyncCommands(void)
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_ExecuteFinalize(void)
 {
-    if (m_FinishSyncCalled)
-        abort();
+    if (m_FinishSyncCalled) {
+        SRV_FATAL("Command finalized already");
+    }
     if (m_Result == eSynOK) {
         if (m_SlotSrv->peer->FinishSync(this)) {
             m_FinishSyncCalled = true;
@@ -1128,24 +1131,27 @@ CNCActiveSyncControl::x_DoFinalize(CNCActiveHandler* conn)
     else if (m_Result == eSynAborted) {
         conn->SyncCancel(this);
     }
-    else
-        abort();
+    else {
+        SRV_FATAL("Unexpected Finalize call: m_Result: " << m_Result);
+    }
 }
 
 bool
 CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info)
 {
     m_Lock.Lock();
-    if (m_NextTask == eSynNoTask)
-        abort();
+    if (m_NextTask == eSynNoTask) {
+        SRV_FATAL("Invalid state: m_NextTask: " << m_NextTask);
+    }
     task_info.task_type = m_NextTask;
     task_info.get_evt = m_CurGetEvent;
     task_info.send_evt = m_CurSendEvent;
     task_info.local_blob = m_CurLocalBlob;
     task_info.remote_blob = m_CurRemoteBlob;
     ++m_StartedCmds;
-    if (m_StartedCmds == 0)
-        abort();
+    if (m_StartedCmds == 0) {
+        SRV_FATAL("Invalid state: no m_StartedCmds");
+    }
     if (m_NextTask != eSynNeedFinalize)
         ++m_SlotSrv->cnt_sync_ops;
     x_CalcNextTask();
@@ -1182,7 +1188,7 @@ CNCActiveSyncControl::ExecuteSyncTask(const SSyncTaskInfo& task_info,
         x_DoFinalize(conn);
         break;
     default:
-        abort();
+        SRV_FATAL("Unsupported task type: " << task_info.task_type);
     }
 }
 
@@ -1232,8 +1238,9 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCAct
     else if (res != eSynOK)
         m_Result = res;
 
-    if (m_StartedCmds == 0)
-        abort();
+    if (m_StartedCmds == 0) {
+        SRV_FATAL("Invalid state: no m_StartedCmds");
+    }
     if (--m_StartedCmds == 0
         &&  (m_NextTask == eSynNeedFinalize  ||  m_NextTask == eSynNoTask))
     {

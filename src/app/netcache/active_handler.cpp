@@ -190,7 +190,7 @@ CNCActiveHandler::Initialize(void)
 CNCActiveHandler::State
 CNCActiveHandler::x_InvalidState(void)
 {
-    abort();
+    SRV_FATAL("CNCActiveHandler started in invalid state");
     return NULL;
 }
 
@@ -281,8 +281,9 @@ CNCActiveHandler::x_ReplaceServerConn(void)
 
     CNCActiveHandler* src_handler = m_Peer->GetPooledConn();
     if (src_handler) {
-        if (!src_handler->m_ProcessingStarted)
-            abort();
+        if (!src_handler->m_ProcessingStarted) {
+            SRV_FATAL("src_handler in invalid state");
+        }
         m_ProcessingStarted = true;
         m_GotAnyAnswer = src_handler->m_GotAnyAnswer;
         m_Proxy = src_handler->m_Proxy;
@@ -1130,8 +1131,9 @@ CNCActiveHandler::x_CleanCmdResources(void)
     else {
         if (!m_CmdSuccess)
             x_FinishSyncCmd(eSynNetworkError);
-        else if (m_SyncCtrl)
-            abort();
+        else if (m_SyncCtrl) {
+            SRV_FATAL("Unfinished sync command");
+        }
     }
     m_ErrMsg.clear();
     m_CmdStarted = false;
@@ -1472,7 +1474,7 @@ CNCActiveHandler::x_ReadSizeToRead(void)
     case eSyncGet:
         return &Me::x_ReadSyncGetAnswer;
     default:
-        abort();
+        SRV_FATAL("Unexpected command: " << m_CurCmd);
     }
 
     return NULL;
@@ -2074,7 +2076,7 @@ CNCActiveHandler::x_WaitOneLineAnswer(void)
     case ePeerVersion:
         return &Me::x_ReadPeerVersion;
     default:
-        abort();
+        SRV_FATAL("Unexpected command: " << m_CurCmd);
     }
 
     return NULL;
@@ -2098,7 +2100,7 @@ CNCActiveHandler::x_WaitForMetaInfo(void)
     case eSyncProInfo:
         return &Me::x_ExecuteProInfoCmd;
     default:
-        abort();
+        SRV_FATAL("Unexpected command: " << m_CurCmd);
     }
 
     return NULL;

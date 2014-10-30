@@ -380,7 +380,7 @@ s_GetFileName(Uint4 file_id, ENCDBFileType file_type)
         file_name += kNCStorage_MapsFileSuffix;
         break;
     default:
-        abort();
+        SRV_FATAL("Unsupported file type: " << file_type);
     }
     file_name += NStr::UIntToString(file_id);
     file_name = CDirEntry::MakePath(s_Path, file_name, kNCStorage_DBFileExt);
@@ -634,14 +634,17 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 
     s_DeleteIndexRec(file_info, ind_rec);
     file_info->info_lock.Lock();
-    if (file_info->used_size < size)
-        abort();
+    if (file_info->used_size < size) {
+        SRV_FATAL("DB file info broken");
+    }
     file_info->used_size -= size;
     file_info->garb_size += size;
-    if (file_info->garb_size > file_info->file_size)
-        abort();
-    if (file_info->index_head->next_num == 0  &&  file_info->used_size != 0)
-        abort();
+    if (file_info->garb_size > file_info->file_size) {
+        SRV_FATAL("DB file info broken");
+    }
+    if (file_info->index_head->next_num == 0  &&  file_info->used_size != 0) {
+        SRV_FATAL("DB file info broken");
+    }
     file_info->info_lock.Unlock();
 
     AtomicAdd(s_GarbageSize,size);
@@ -880,7 +883,7 @@ s_CreateNewFile(size_t type_idx)
         *(Uint8*)file_info->file_map = kMapsSignature;
         break;
     default:
-        abort();
+        SRV_FATAL("Unsupported file type: " << true_type_idx);
     }
 
     s_DBFilesLock.Lock();
@@ -1074,8 +1077,9 @@ static SBucketCache*
 s_GetBucketCache(Uint2 bucket)
 {
     TBucketCacheMap::const_iterator it = s_BucketsCache.find(bucket);
-    if (it == s_BucketsCache.end())
-        abort();
+    if (it == s_BucketsCache.end()) {
+        SRV_FATAL("Unexpected state");
+    }
     return it->second;
 }
 
@@ -1206,7 +1210,7 @@ s_GetNextWriteCoord(EDBFileIndex file_index,
         if (w_info.cur_file->used_size
                 + w_info.cur_file->garb_size >= w_info.cur_file->file_size)
         {
-            abort();
+            SRV_FATAL("WritingInfo broken");
         }
         w_info.cur_file->info_lock.Unlock();
 
@@ -1239,8 +1243,9 @@ s_GetNextWriteCoord(EDBFileIndex file_index,
     SFileIndexRec* index_head = file_info->index_head;
     Uint4 prev_rec_num = index_head->prev_num;
     SFileIndexRec* prev_ind_rec = index_head - prev_rec_num;
-    if (prev_ind_rec->next_num != 0)
-        abort();
+    if (prev_ind_rec->next_num != 0) {
+        SRV_FATAL("File index broken");
+    }
     ind_rec->prev_num = prev_rec_num;
     ind_rec->next_num = 0;
     prev_ind_rec->next_num = coord.rec_num;
@@ -1387,8 +1392,9 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
                     break;
                 }
             }
-            if (down_coord.empty())
-                abort();
+            if (down_coord.empty()) {
+                SRV_FATAL("Blob coords broken");
+            }
         }
         else if (ver_data->size != 0) {
             down_coord = maps->maps[0]->coords[0];
@@ -1605,8 +1611,9 @@ CNCBlobStorage::ReadChunkData(SNCBlobVerData* ver_data,
 
     SNCDataCoord chunk_coord;
     if (ver_data->map_depth == 0) {
-        if (chunk_num != 0)
-            abort();
+        if (chunk_num != 0) {
+            SRV_FATAL("Blob coords broken");
+        }
         //up_coord = ver_data->coord;
         chunk_coord = ver_data->data_coord;
     }
@@ -1885,11 +1892,11 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CN
         info_ptr = (SNCTempBlobInfo*)big_block;
         for (Uint8 i = 0; i < cnt_blobs; ++i) {
             Uint2 key_slot = 0, key_bucket = 0;
-            if (!CNCDistributionConf::GetSlotByKey(info_ptr->key,
-                            key_slot, key_bucket) ||
-                    key_slot != slot ||
-                    key_bucket != bucket_num)
-                abort();
+            if (!CNCDistributionConf::GetSlotByKey(info_ptr->key, key_slot, key_bucket) ||
+                key_slot != slot || key_bucket != bucket_num) {
+                SRV_FATAL("Slot verification failed, blob key: " << info_ptr->key <<
+                          ", expected slot: " << slot << ", calculated slot: " << key_slot);
+            }
 
             if (info_ptr->size > CNCDistributionConf::GetMaxBlobSizeSync()) {
                 continue;
@@ -2183,8 +2190,9 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         ITERATE(TSizesMap, it, sizes_map) {
             SNCDBFileInfo* info = (*s_DBFiles)[it->first];
             info->used_size += it->second;
-            if (info->garb_size < it->second)
-                abort();
+            if (info->garb_size < it->second) {
+                SRV_FATAL("Blob coords broken");
+            }
             info->garb_size -= it->second;
             AtomicSub(s_GarbageSize, it->second);
         }
@@ -2195,8 +2203,9 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         rec_size += 8 - (rec_size & 7);
     rec_size += sizeof(SFileIndexRec);
     file_info->used_size += rec_size;
-    if (file_info->garb_size < rec_size)
-        abort();
+    if (file_info->garb_size < rec_size) {
+        SRV_FATAL("Blob coords broken");
+    }
     file_info->garb_size -= rec_size;
     AtomicSub(s_GarbageSize, rec_size);
 
@@ -3127,8 +3136,9 @@ CSpaceShrinker::x_MoveNextRecord(void)
         if (m_RecNum > m_PrevRecNum)
             ++m_CntProcessed;
         if (m_IndRec->next_num == 0) {
-            if (m_MaxFile->index_head->next_num == 0  &&  m_MaxFile->used_size != 0)
-                abort();
+            if (m_MaxFile->index_head->next_num == 0  &&  m_MaxFile->used_size != 0) {
+                SRV_FATAL("Blob coords index broken");
+            }
             m_IndRec = NULL;
             break;
         }

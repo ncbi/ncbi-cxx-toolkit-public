@@ -54,8 +54,9 @@ struct SSlotData
 
     SSlotData(const SSlotData& other) : rec_number(0)
     {
-        if (other.rec_number != 0  ||  !other.events.empty())
-            abort();
+        if (other.rec_number != 0  ||  !other.events.empty()) {
+            SRV_FATAL("Invalid state");
+        }
     }
 };
 
@@ -559,9 +560,11 @@ CNCSyncLog::AddEvent(Uint2 slot, SNCSyncEvent* event)
 {
     Uint2 real_slot = 0;
     Uint2 time_bucket = 0;
-    if (!CNCDistributionConf::GetSlotByKey(event->key.PackedKey(),
-            real_slot, time_bucket) || real_slot != slot)
-        abort();
+    if (!CNCDistributionConf::GetSlotByKey(
+        event->key.PackedKey(), real_slot, time_bucket) || real_slot != slot) {
+        SRV_FATAL("Slot verification failed, blob key: " << event->key.PackedKey() <<
+                  ", expected slot: " << slot << ", calculated slot: " << real_slot);
+    }
 
     SSlotData& data = s_GetSlotData(slot);
     CMiniMutexGuard guard(data.lock);

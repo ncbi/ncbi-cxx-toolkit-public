@@ -702,20 +702,28 @@ CNCDistributionConf::GetSlotByNetCacheKey(const string& key,
     SKIP_UNDERSCORE(key, ind);      // random
 #else
     ind = key.rfind('_');
-    if (ind == string::npos) \
-        return false;
+    if (ind == string::npos) {
+        goto on_error;
+    }
 #endif
     ++ind;
-
     unsigned key_rnd = NStr::StringToUInt(
             CTempString(&key[ind], key.size() - ind),
             NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols);
-
-    if (key_rnd == 0 && errno != 0)
-        return false;
-
+    if (key_rnd == 0 && errno != 0) {
+        goto on_error;
+    }
     GetSlotByRnd(key_rnd, slot, time_bucket);
+    return true;
 
+on_error:
+    CNetCacheKey tmp;
+    if (!CNetCacheKey::ParseBlobKey(key.data(), key.size(), &tmp)) {
+        SRV_LOG(Critical, "CNetCacheKey failed to parse blob key: " << key);
+        return false;
+    }
+    SRV_LOG(Error, "NetCache failed to parse blob key: " << key);
+    GetSlotByRnd(tmp.GetRandomPart(), slot, time_bucket);
     return true;
 }
 

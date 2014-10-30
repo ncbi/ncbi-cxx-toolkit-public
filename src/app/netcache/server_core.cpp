@@ -124,10 +124,10 @@ TrackShuttingDown(void)
     if (SchedIsAllIdle()  &&  s_IsReadyForShutdown()  &&  s_TotalSockets == 0)
         s_SrvState = eSrvStopping;
 
-    if (s_SrvState == eSrvShuttingDownHard  &&  s_AbortShutdownTO
-        &&  diff_time.Sec() >= s_AbortShutdownTO)
+    if (s_SrvState == eSrvShuttingDownHard  &&
+        s_AbortShutdownTO &&  diff_time.Sec() >= s_AbortShutdownTO)
     {
-        abort();
+        SRV_FATAL("TrackShuttingDown forced abort: s_SrvState: " << s_SrvState);
     }
 }
 

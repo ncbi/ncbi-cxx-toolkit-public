@@ -341,15 +341,17 @@ CNCPeerControl::x_ReserveBGConnNow(void)
 inline void
 CNCPeerControl::x_IncBGConns(void)
 {
-    if (++m_BGConns > m_ActiveConns)
-        abort();
+    if (++m_BGConns > m_ActiveConns) {
+        SRV_FATAL("too many BGConns");
+    }
 }
 
 inline void
 CNCPeerControl::x_DecBGConns(void)
 {
-    if (m_BGConns == 0)
-        abort();
+    if (m_BGConns == 0) {
+        SRV_FATAL("no BGConns");
+    }
     --m_BGConns;
 }
 
@@ -366,8 +368,9 @@ CNCPeerControl::x_DecBGConns(CNCActiveHandler* conn)
 inline void
 CNCPeerControl::x_DecActiveConns(void)
 {
-    if (m_ActiveConns == 0  ||  --m_ActiveConns < m_BGConns)
-        abort();
+    if (m_ActiveConns == 0  ||  --m_ActiveConns < m_BGConns) {
+        SRV_FATAL("no ActiveConns");
+    }
 }
 
 inline void
@@ -544,8 +547,9 @@ retry:
                 goto retry;
             }
         }
-        else
-            abort();
+        else {
+            SRV_FATAL("Unexpected state");
+        }
 
         result = false;
     }
@@ -584,8 +588,9 @@ CNCPeerControl::x_DeleteMirrorEvent(SNCMirrorEvent* event)
         delete event;
     else if (event->evt_type == eSyncProlong)
         delete (SNCMirrorProlong*)event;
-    else
-        abort();
+    else {
+        SRV_FATAL("Unexpected mirror event type: " << event->evt_type);
+    }
 }
 
 void
@@ -621,8 +626,9 @@ CNCPeerControl::x_ProcessMirrorEvent(CNCActiveHandler* conn, SNCMirrorEvent* eve
     else if (event->evt_type == eSyncUpdate) {
         conn->CopyUpdate(event->key, event->orig_rec_no);
     }
-    else
-        abort();
+    else {
+        SRV_FATAL("Unexpected mirror event type: " << event->evt_type);
+    }
     x_DeleteMirrorEvent(event);
 }
 

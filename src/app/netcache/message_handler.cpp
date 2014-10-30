@@ -1523,8 +1523,9 @@ check_again:
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
     }
-    else if (status != eNCHubCmdInProgress)
-        abort();
+    else if (status != eNCHubCmdInProgress) {
+        SRV_FATAL("Unexpected client status: " << status);
+    }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
@@ -2053,19 +2054,19 @@ CNCMessageHandler::x_StartCommand(void)
         diag_msg.PrintParam("key", m_NCBlobKey.RawKey());
         diag_msg.PrintParam("gen_key", "1");
     }
-    else if (!m_NCBlobKey.IsICacheKey()) {
-        if (!m_NCBlobKey.IsValid()) {
-            diag_msg.Flush();
-            GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-            if (m_HttpMode == eNoHttp) {
-                WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
-                SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
-            }
-            return &CNCMessageHandler::x_FinishCommand;
+    else if (!m_NCBlobKey.IsValid()) {
+        diag_msg.Flush();
+        GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
+            SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
         }
-        CNCDistributionConf::GetSlotByRnd(m_NCBlobKey.GetRandomPart(), m_BlobSlot, m_TimeBucket);
-    } else {
+        return &CNCMessageHandler::x_FinishCommand;
+    }
+    else if (m_NCBlobKey.IsICacheKey()) {
         CNCDistributionConf::GetSlotByICacheKey(m_NCBlobKey.PackedKey(), m_BlobSlot, m_TimeBucket);
+    } else {
+        CNCDistributionConf::GetSlotByRnd(m_NCBlobKey.GetRandomPart(), m_BlobSlot, m_TimeBucket);
     }
 
     m_BlobSize = 0;
@@ -2144,7 +2145,6 @@ CNCMessageHandler::x_ReadCommand(void)
         catch (CNSProtoParserException& ex) {
             SRV_LOG(Warning, "Error parsing command: " << ex);
             GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
-            //abort();
             return &CNCMessageHandler::x_SaveStatsAndClose;
         }
     } else {
@@ -2709,7 +2709,6 @@ CNCMessageHandler::x_ReadBlobSignature(void)
     GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
     SRV_LOG(Error, "Cannot determine the byte order. Got: "
                    << NStr::UIntToString(sig, 0, 16));
-    //abort();
     return &CNCMessageHandler::x_CloseCmdAndConn;
 }
 
@@ -2728,10 +2727,12 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
             else
                 return &CNCMessageHandler::x_CloseCmdAndConn;
         }
-        if (m_ActiveHub->GetStatus() == eNCHubError)
+        ENCClientHubStatus status = m_ActiveHub->GetStatus();
+        if (status == eNCHubError)
             return &CNCMessageHandler::x_CloseOnPeerError;
-        else if (m_ActiveHub->GetStatus() != eNCHubCmdInProgress)
-            abort();
+        else if (status != eNCHubCmdInProgress) {
+            SRV_FATAL("Unexpected client status: " << status);
+        }
 
         if (m_ChunkLen != 0) {
             CNCStat::ClientDataWrite(m_ChunkLen);
@@ -2923,8 +2924,9 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
         return &CNCMessageHandler::x_CloseCmdAndConn;
     if (m_SrvsIndex < m_CheckSrvs.size()) {
         Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
-        if (m_ActiveHub)
-            abort();
+        if (m_ActiveHub) {
+            SRV_FATAL("Previous client not released");
+        }
         m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
         return &CNCMessageHandler::x_SendCmdAsProxy;
     }
@@ -2955,8 +2957,9 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
@@ -3004,7 +3007,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
                                                 m_SearchOnRead, m_ForceLocal);
         break;
     default:
-        abort();
+        SRV_FATAL("Unsupported command: " << m_ParsedCmd.command->extra.proxy_cmd);
     }
 
     return &CNCMessageHandler::x_WaitForPeerAnswer;
@@ -3030,8 +3033,9 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
 
     const string& err_msg = m_ActiveHub->GetErrMsg();
     if (!x_IsFlagSet(fConfirmOnFinish) || err_msg.empty())
@@ -3058,8 +3062,9 @@ CNCMessageHandler::x_ReadMetaNextPeer(void)
         return &CNCMessageHandler::x_ExecuteOnLatestSrvId;
 
     Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
-    if (m_ActiveHub)
-        abort();
+    if (m_ActiveHub) {
+        SRV_FATAL("Previous client not released");
+    }
     m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
     return &CNCMessageHandler::x_SendGetMetaCmd;
 }
@@ -3076,8 +3081,9 @@ CNCMessageHandler::x_SendGetMetaCmd(void)
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ReadMetaNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
@@ -3096,8 +3102,9 @@ CNCMessageHandler::x_ReadMetaResults(void)
         return NULL;
     if (status == eNCHubError)
         goto results_processed;
-    if (status != eNCHubSuccess)
-        abort();
+    if (status != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << status);
+    }
 
     CNCActiveHandler* handler;
     handler = m_ActiveHub->GetHandler();
@@ -3190,8 +3197,9 @@ CNCMessageHandler::x_PutToNextPeer(void)
         return &CNCMessageHandler::x_FinishCommand;
 
     Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
-    if (m_ActiveHub)
-        abort();
+    if (m_ActiveHub) {
+        SRV_FATAL("Previous client not released");
+    }
     m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
     return &CNCMessageHandler::x_SendPutToPeerCmd;
 }
@@ -3208,8 +3216,9 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PutToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
 
@@ -3227,8 +3236,9 @@ CNCMessageHandler::x_ReadPutResults(void)
         return NULL;
     if (m_ActiveHub->GetStatus() == eNCHubError)
         goto results_processed;
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
 
     if (m_Quorum == 1)
         return &CNCMessageHandler::x_FinishCommand;
@@ -3249,8 +3259,9 @@ CNCMessageHandler::x_PurgeToNextPeer(void)
         return &CNCMessageHandler::x_FinishCommand;
 
     Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
-    if (m_ActiveHub)
-        abort();
+    if (m_ActiveHub) {
+        SRV_FATAL("Previous client not released");
+    }
     m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
     return &CNCMessageHandler::x_SendPurgeToPeerCmd;
 }
@@ -3266,8 +3277,9 @@ CNCMessageHandler::x_SendPurgeToPeerCmd(void)
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PurgeToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
 
@@ -3285,8 +3297,9 @@ CNCMessageHandler::x_ReadPurgeResults(void)
         return NULL;
     if (m_ActiveHub->GetStatus() == eNCHubError)
         goto results_processed;
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
-        abort();
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    }
 
 results_processed:
     m_ActiveHub->Release();

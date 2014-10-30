@@ -992,8 +992,9 @@ SNCBlobVerData::SNCBlobVerData(void)
 
 SNCBlobVerData::~SNCBlobVerData(void)
 {
-    if (chunk_maps)
-        abort();
+    if (chunk_maps) {
+        SRV_FATAL("chunk_maps not released");
+    }
 
     //AtomicSub(s_CntVers, 1);
     //Uint8 cnt = AtomicSub(s_CntVers, 1);
@@ -1094,14 +1095,16 @@ SNCBlobVerData::SetNonReleasable(void)
     wb_mem_lock.Lock();
     is_releasable = false;
     if (releasable_mem != 0) {
-        if (releasable_mem < meta_mem)
-            abort();
+        if (releasable_mem < meta_mem) {
+            SRV_FATAL("blob ver data broken");
+        }
         releasable_mem -= meta_mem;
         s_SubReleasableMem(meta_mem);
     }
     else {
-        if (releasing_mem < meta_mem)
-            abort();
+        if (releasing_mem < meta_mem) {
+            SRV_FATAL("blob ver data broken");
+        }
         releasing_mem -= meta_mem;
         need_mem_release = false;
         s_SubReleasingMem(meta_mem);
@@ -1178,17 +1181,20 @@ SNCBlobVerData::x_WriteCurChunk(char* write_mem, Uint4 write_size)
     wb_mem_lock.Lock();
     chunks[cur_chunk_num] = new_mem;
     ++cur_chunk_num;
-    if (data_mem < write_size)
-        abort();
+    if (data_mem < write_size) {
+        SRV_FATAL("blob ver data broken");
+    }
     data_mem -= write_size;
     if (releasing_mem != 0) {
-        if (releasing_mem < write_size)
-            abort();
+        if (releasing_mem < write_size) {
+            SRV_FATAL("blob ver data broken");
+        }
         releasing_mem -= write_size;
     }
     else {
-        if (releasable_mem < write_size)
-            abort();
+        if (releasable_mem < write_size) {
+            SRV_FATAL("blob ver data broken");
+        }
         releasable_mem -= write_size;
         // memory will be subtracted from global releasing after call to
         // deleter below
@@ -1246,14 +1252,16 @@ SNCBlobVerData::x_DeleteVersion(void)
     if (cur_chunk_num < cnt_chunks) {
         for (Uint8 num = cur_chunk_num; num < cnt_chunks - 1; ++num) {
             s_FreeWriteBackMem(chunks[num], chunk_size, chunk_size);
-            if (releasing_mem < chunk_size)
-                abort();
+            if (releasing_mem < chunk_size) {
+                SRV_FATAL("blob ver data broken");
+            }
             releasing_mem -= chunk_size;
         }
         Uint4 last_size = Uint4(min(size - (cnt_chunks - 1) * chunk_size, Uint8(chunk_size)));
         s_FreeWriteBackMem(chunks[cnt_chunks - 1], last_size, last_size);
-        if (releasing_mem < last_size)
-            abort();
+        if (releasing_mem < last_size) {
+            SRV_FATAL("blob ver data broken");
+        }
         releasing_mem -= last_size;
         cur_chunk_num = cnt_chunks;
     }
@@ -1292,8 +1300,9 @@ SNCBlobVerData::ExecuteSlice(TSrvThreadNum /* thr_num */)
 
         if (!is_cur_version)
             x_DeleteVersion();
-        if (releasable_mem != 0  ||  releasing_mem != meta_mem)
-            abort();
+        if (releasable_mem != 0  ||  releasing_mem != meta_mem) {
+            SRV_FATAL("blob ver data broken");
+        }
         if (!delete_scheduled)
             s_ScheduleVerDelete(this);
     }
@@ -1332,8 +1341,9 @@ CNCBlobAccessor::CNCBlobAccessor(void)
 
 CNCBlobAccessor::~CNCBlobAccessor(void)
 {
-    if (m_ChunkMaps)
-        abort();
+    if (m_ChunkMaps) {
+        SRV_FATAL("blob accessor broken");
+    }
 
     //Uint8 cnt = AtomicSub(s_CntAccs, 1);
     //INFO("~CNCBlobAccessor, cnt=" << cnt);
@@ -1442,7 +1452,6 @@ CNCBlobAccessor::ExecuteSlice(TSrvThreadNum /* thr_num */)
 void
 CNCBlobAccessor::x_DelCorruptedVersion(void)
 {
-    //abort();
     SRV_LOG(Critical, "Database information about blob "
                       << CNCBlobKeyLight(m_BlobKey).KeyForLogs()
                       << " is corrupted. Blob will be deleted");
@@ -1458,8 +1467,9 @@ CNCBlobAccessor::GetReadMemSize(void)
         m_HasError = true;
         return 0;
     }
-    if (GetPosition() >= m_CurData->size)
-        abort();
+    if (GetPosition() >= m_CurData->size) {
+        SRV_FATAL("blob accessor broken");
+    }
     if (m_Buffer) {
         if (m_ChunkPos < m_ChunkSize) {
             m_Buffer = m_CurData->chunks[m_CurChunk];
@@ -1529,8 +1539,9 @@ CNCBlobAccessor::GetWriteMemSize(void)
         return m_NewData->chunk_size - m_ChunkPos;
 
     if (m_Buffer) {
-        if (m_ChunkPos != m_NewData->chunk_size)
-            abort();
+        if (m_ChunkPos != m_NewData->chunk_size) {
+            SRV_FATAL("blob accessor broken");
+        }
         m_NewData->AddChunkMem(m_Buffer, m_NewData->chunk_size);
         m_Buffer = NULL;
         ++m_CurChunk;
