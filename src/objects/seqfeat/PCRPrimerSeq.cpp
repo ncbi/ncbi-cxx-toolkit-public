@@ -220,15 +220,15 @@ bool CPCRPrimerSeq::TrimJunk(string& seq)
     string orig(seq);
 
     for(int i=0; starts[i] != NULL; i++) {
-        unsigned int len = strlen(starts[i]);
-        unsigned int pos = seq.find(starts[i]);
+        size_t len = strlen(starts[i]);
+        size_t pos = seq.find(starts[i]);
         if (pos == 0 && len < seq.length())
             seq = seq.substr(len);
     }
     
     for(int i=0; ends[i] != NULL; i++) {
-        unsigned int len = strlen(ends[i]);
-        unsigned int pos = seq.rfind(ends[i]);
+        size_t len = strlen(ends[i]);
+        size_t pos = seq.rfind(ends[i]);
         if (len < seq.length() && pos == seq.length()-len)
             seq = seq.substr(0,seq.length()-len);
     }

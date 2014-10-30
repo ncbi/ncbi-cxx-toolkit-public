@@ -446,7 +446,7 @@ private:
     static bool s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
                                     const CCountryLine* line2);
 
-    int x_GetLatStartIndex (int y);
+    size_t x_GetLatStartIndex (int y);
     const CCountryExtreme * x_FindCountryExtreme (const string& country);
 
 

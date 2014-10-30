@@ -771,7 +771,7 @@ static void s_SetReplaces(CVariation_ref& ref,
             has_del = true;
         } else {
             CRef<CDelta_item> item(new CDelta_item);
-            item->SetSeq().SetLiteral().SetLength(rep.size());
+            item->SetSeq().SetLiteral().SetLength(TSeqPos(rep.size()));
             if (seq_type == CVariation_ref::eSeqType_na) {
                 item->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(rep);
             } else {

@@ -269,7 +269,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (!NStr::IsBlank(month)) {
         for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
             if (NStr::Equal(month, sm_LegalMonths[i])) {
-                month_val = i + 1;
+                month_val = int(i + 1);
                 break;
             }
         }
@@ -567,11 +567,12 @@ CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
 
 
 // return 1-based month number if found, 0 for error
-size_t GetMonthNumberFromString(const string& month) 
+static
+int GetMonthNumberFromString(const string& month) 
 {
     for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
         if (NStr::StartsWith(month, sm_LegalMonths[i], NStr::eNocase)) {
-            return i + 1;
+            return int(i + 1);
         }
     }
     return 0;
@@ -719,7 +720,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             try {
                 val1 = NStr::StringToInt (tokens[0]); 
                 val2 = NStr::StringToInt (tokens[1]);
-            } catch (CException& e) {
+            } catch (CException& /*e*/) {
                 // not actually numbers
                 return "";
             }
@@ -781,7 +782,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
 
     // make sure day is valid
     if (day > 0 && !NStr::IsBlank(month) && year > -1) {
-        size_t month_num = GetMonthNumberFromString(month);
+        int month_num = GetMonthNumberFromString(month);
         if (month_num == 0) {
             return "";
         } else if (!IsDayValueOkForMonth(day, month_num, year)) {
@@ -924,12 +925,12 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
             int precision_lat = 0;
             size_t pos = NStr::Find(pieces[0], ".");
             if (pos != string::npos) {
-                precision_lat = pieces[0].length() - pos - 1;
+                precision_lat = int(pieces[0].length() - pos - 1);
             }
             int precision_lon = 0;
             pos = NStr::Find(pieces[2], ".");
             if (pos != string::npos) {
-                precision_lon = pieces[2].length() - pos - 1;
+                precision_lon = int(pieces[2].length() - pos - 1);
             }
 
             char reformatted[1000];
@@ -4584,7 +4585,7 @@ bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
 const CCountryExtreme *
 CLatLonCountryMap::x_FindCountryExtreme(const string& country)
 {
-    int L, R, mid;
+    size_t L, R, mid;
 
     if (NStr::IsBlank (country)) return NULL;
 
@@ -4618,9 +4619,9 @@ bool CLatLonCountryMap::HaveLatLonForRegion(const string& region)
 }
 
 
-int CLatLonCountryMap::x_GetLatStartIndex (int y)
+size_t CLatLonCountryMap::x_GetLatStartIndex (int y)
 {
-    int L, R, mid;
+    size_t L, R, mid;
 
     L = 0;
     R = m_LatLonSortedList.size() - 1;
