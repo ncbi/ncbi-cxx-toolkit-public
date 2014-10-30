@@ -108,7 +108,7 @@ public:
                    bool tail_same = false) const;
     void VerifyReal(const CSeqTable_multi_data& index) const;
     
-    typedef vector< pair<size_t, size_t> > TSetRowsMap;
+    typedef vector< pair<unsigned, unsigned> > TSetRowsMap;
     TSetRowsMap m_SetRows;
     typedef vector<int> TInt;
     typedef vector<double> TReal;
@@ -197,18 +197,18 @@ void CTestSeq_table::VerifySetRows(const CSeqTable_sparse_index& index) const
 
     for ( size_t i = 0; i < 10000; ++i ) {
         if ( m_Random.GetRand(0, 1) ) {
-            size_t k = m_Random.GetRandIndex(m_SetRows.size());
-            size_t row = m_SetRows[k].first;
+            size_t k = m_Random.GetRandIndexSize_t(m_SetRows.size());
+            unsigned row = m_SetRows[k].first;
             _ASSERT(index.HasValueAt(row));
             size_t value_index = index.GetIndexAt(row);
             _ASSERT(value_index != CSeqTable_sparse_index::kSkipped);
             _ASSERT(value_index == m_SetRows[k].second);
         }
         else {
-            size_t row = m_Random.GetRandIndex(m_SetRows.back().first*1.01);
+            unsigned row = m_Random.GetRandIndex(unsigned(m_SetRows.back().first*1.01));
             size_t k =
                 lower_bound(m_SetRows.begin(), m_SetRows.end(),
-                            make_pair(row, size_t(0))) - m_SetRows.begin();
+                            make_pair(row, unsigned(0))) - m_SetRows.begin();
             if ( k < m_SetRows.size() && m_SetRows[k].first == row ) {
                 _ASSERT(index.HasValueAt(row));
                 size_t value_index = index.GetIndexAt(row);
@@ -236,7 +236,7 @@ void CTestSeq_table::VerifyBool(const CSeqTable_multi_data& data) const
         if ( !data.TryGetBool(row, v) ) {
             ERR_POST(Fatal<<"Cannot get bool at "<<row);
         }
-        if ( v != m_Int[row] ) {
+        if ( int(v) != m_Int[row] ) {
             ERR_POST(Fatal<<"Incorrect bool value at "<<row);
         }
     }
@@ -327,15 +327,15 @@ void CTestSeq_table::TestSparseIndex(void)
 {
     
     m_Random.SetSeed(m_Seed);
-    size_t num_rows = m_Random.GetRand(10000, 100000);
-    size_t set_count = m_Random.GetRand(10, num_rows>>m_Random.GetRand(0, 9));
-    set<size_t> set_rows;
-    for ( size_t i = 0; i < set_count; ) {
-        size_t start_row = m_Random.GetRandIndex(num_rows);
-        size_t row_count = m_Random.GetRand(1, 1<<m_Random.GetRand(0, 10));
+    unsigned num_rows = m_Random.GetRand(10000, 100000);
+    unsigned set_count = m_Random.GetRand(10, num_rows>>m_Random.GetRand(0, 9));
+    set<unsigned> set_rows;
+    for ( unsigned i = 0; i < set_count; ) {
+        unsigned start_row = m_Random.GetRandIndex(num_rows);
+        unsigned row_count = m_Random.GetRand(1, 1<<m_Random.GetRand(0, 10));
         row_count = min(row_count, num_rows-start_row);
         
-        for ( size_t j = 0; j < row_count; ++j ) {
+        for ( unsigned j = 0; j < row_count; ++j ) {
             set_rows.insert(start_row+j);
         }
         i += row_count;
@@ -346,8 +346,8 @@ void CTestSeq_table::TestSparseIndex(void)
                  << NcbiEndl;
     }
     m_SetRows.clear();
-    size_t value_index = 0;
-    NON_CONST_ITERATE ( set<size_t>, it, set_rows ) {
+    unsigned value_index = 0;
+    NON_CONST_ITERATE ( set<unsigned>, it, set_rows ) {
         m_SetRows.push_back(make_pair(*it, value_index++));
     }
 
@@ -452,15 +452,15 @@ void CTestSeq_table::TestMultiDataBit(void)
     m_Random.SetSeed(m_Seed+1);
 
     // bit delta
-    size_t num_rows = m_Random.GetRand(10000, 100000);
-    size_t set_count = m_Random.GetRand(10, num_rows>>m_Random.GetRand(0, 9));
-    set<size_t> set_rows;
-    for ( size_t i = 0; i < set_count; ) {
-        size_t start_row = m_Random.GetRandIndex(num_rows);
-        size_t row_count = m_Random.GetRand(1, 1<<m_Random.GetRand(0, 10));
+    unsigned num_rows = m_Random.GetRand(10000, 100000);
+    unsigned set_count = m_Random.GetRand(10, num_rows>>m_Random.GetRand(0, 9));
+    set<unsigned> set_rows;
+    for ( unsigned i = 0; i < set_count; ) {
+        unsigned start_row = m_Random.GetRandIndex(num_rows);
+        unsigned row_count = m_Random.GetRand(1, 1<<m_Random.GetRand(0, 10));
         row_count = min(row_count, num_rows-start_row);
         
-        for ( size_t j = 0; j < row_count; ++j ) {
+        for ( unsigned j = 0; j < row_count; ++j ) {
             set_rows.insert(start_row+j);
         }
         i += row_count;
@@ -471,7 +471,7 @@ void CTestSeq_table::TestMultiDataBit(void)
                  << NcbiEndl;
     }
     m_Int.assign(num_rows, 0);
-    NON_CONST_ITERATE ( set<size_t>, it, set_rows ) {
+    NON_CONST_ITERATE ( set<unsigned>, it, set_rows ) {
         m_Int[*it] = 1;
     }
 
@@ -545,15 +545,15 @@ void CTestSeq_table::TestMultiDataBitDelta(void)
     m_Random.SetSeed(m_Seed+2);
 
     // bit delta
-    size_t num_rows = m_Random.GetRand(10000, 100000);
-    size_t set_count = m_Random.GetRand(10, num_rows>>m_Random.GetRand(0, 9));
-    set<size_t> set_rows;
-    for ( size_t i = 0; i < set_count; ) {
-        size_t start_row = m_Random.GetRandIndex(num_rows);
-        size_t row_count = m_Random.GetRand(1, 1<<m_Random.GetRand(0, 10));
+    unsigned num_rows = m_Random.GetRand(10000, 100000);
+    unsigned set_count = m_Random.GetRand(10, num_rows>>m_Random.GetRand(0, 9));
+    set<unsigned> set_rows;
+    for ( unsigned i = 0; i < set_count; ) {
+        unsigned start_row = m_Random.GetRandIndex(num_rows);
+        unsigned row_count = m_Random.GetRand(1, 1<<m_Random.GetRand(0, 10));
         row_count = min(row_count, num_rows-start_row);
         
-        for ( size_t j = 0; j < row_count; ++j ) {
+        for ( unsigned j = 0; j < row_count; ++j ) {
             set_rows.insert(start_row+j);
         }
         i += row_count;
@@ -566,8 +566,8 @@ void CTestSeq_table::TestMultiDataBitDelta(void)
     m_Int.clear();
     m_Int.reserve(num_rows);
     int v = 0;
-    NON_CONST_ITERATE ( set<size_t>, it, set_rows ) {
-        size_t row = *it;
+    NON_CONST_ITERATE ( set<unsigned>, it, set_rows ) {
+        unsigned row = *it;
         m_Int.resize(row, v);
         ++v;
         m_Int.push_back(v);
@@ -682,11 +682,11 @@ void CTestSeq_table::TestMultiDataInt(void)
     m_Random.SetSeed(m_Seed+3);
 
     // bit delta
-    size_t num_rows = m_Random.GetRand(10000, 100000);
+    unsigned num_rows = m_Random.GetRand(10000, 100000);
     int min_value = m_Random.GetRand(-100000, 100000);
     int max_value = m_Random.GetRand(min_value, 100000);
     m_Int.resize(num_rows);
-    for ( size_t i = 0; i < num_rows; ++i ) {
+    for ( unsigned i = 0; i < num_rows; ++i ) {
         m_Int[i] = m_Random.GetRand(min_value, max_value);
     }
     if ( m_Verbose >= eTestName ) {
