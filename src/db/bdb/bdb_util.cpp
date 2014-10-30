@@ -82,7 +82,7 @@ int BDB_find_field(const CBDB_BufferManager& buffer_man,
             continue;
         }
 
-        unsigned str_buf_len;
+        size_t str_buf_len;
         const char* str_buf = BDB_GetStringFieldBuf(fld);
 
         // for string based fields it should be non-0
@@ -91,8 +91,8 @@ int BDB_find_field(const CBDB_BufferManager& buffer_man,
             str_buf_len = fld.GetDataLength(str_buf);
             match:
             if (str_buf_len) {
-                int pos = matcher.Search(str_buf, 0, str_buf_len);
-                if (pos >= 0) {
+                size_t pos = matcher.Search(str_buf, 0, str_buf_len);
+                if (pos == NPOS) {
                     fidx = i;
                     break;
                 }

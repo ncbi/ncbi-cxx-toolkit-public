@@ -232,7 +232,7 @@ public:
 
         if (qnode.HasValue()) {
             string& fvalue = qnode.GetValue();
-            int len = fvalue.length();
+            size_t len = fvalue.length();
             // if string value is in apostrophe marks: remove it
             if (fvalue[0] == '\'' && fvalue[len-1] == '\'') {
                 len -= 2;
@@ -434,13 +434,13 @@ public:
         } // for
     }
 
-    const string* GetArg(unsigned int idx) const
+    const string* GetArg(size_t idx) const
     {
         _ASSERT(idx < m_ArgVector.size());
         return m_ArgVector[idx];
     }
 
-    const CBDB_Field* GetArgField(unsigned int idx) const
+    const CBDB_Field* GetArgField(size_t idx) const
     {
         _ASSERT(idx < m_FieldVector.size());
         return m_FieldVector[idx];
@@ -493,8 +493,8 @@ CScannerFunctorArgN::~CScannerFunctorArgN()
 {
     CResourcePool<string>& str_pool = m_QueryEnv.GetStrPool();
 
-    unsigned int size = m_ArgValueVector.size();
-    for (unsigned int i = 0; i < size; ++i) {
+    size_t size = m_ArgValueVector.size();
+    for (size_t i = 0; i < size; ++i) {
         string* str = m_ArgValueVector[i];
         if (str) {
             str_pool.Return(str);
@@ -536,8 +536,8 @@ public:
 
         if (fld0 != 0 && fld1 == 0) {
             CBoyerMooreMatcher* matcher = GetMatcher(*arg1, 0);
-            int pos = matcher->Search(*arg0);
-            if (pos == -1) { // not found
+            size_t pos = matcher->Search(*arg0);
+            if (pos == NPOS) { // not found
                 qnode.SetValue("0");
             } else {
                 qnode.SetValue("1");
@@ -547,8 +547,8 @@ public:
 
         if (fld0 == 0 && fld1 != 0) {
             CBoyerMooreMatcher* matcher = GetMatcher(*arg0, 0);
-            int pos = matcher->Search(*arg1);
-            if (pos == -1) { // not found
+            size_t pos = matcher->Search(*arg1);
+            if (pos == NPOS) { // not found
                 qnode.SetValue("0");
             } else {
                 qnode.SetValue("1");
@@ -684,10 +684,10 @@ public:
 
         CBDB_QueryNode& qnode = tr.GetValue();
 
-        unsigned int size = m_ArgVector.size();
+        size_t size = m_ArgVector.size();
         _ASSERT(size);
 
-        for (unsigned int i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             const string* arg = GetArg(i);
             if (*arg == "0") {
                 qnode.SetValue("0");
@@ -716,10 +716,10 @@ public:
 
         CBDB_QueryNode& qnode = tr.GetValue();
 
-        unsigned int size = m_ArgVector.size();
+        size_t size = m_ArgVector.size();
         _ASSERT(size);
 
-        for (unsigned int i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             const string* arg = GetArg(i);
             if (*arg == "1") {
                 qnode.SetValue("1");

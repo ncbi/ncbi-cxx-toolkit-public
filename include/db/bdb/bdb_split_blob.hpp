@@ -90,7 +90,7 @@ public:
     /// paramaters
     ///
     static
-    unsigned SelectSplit(unsigned blob_size)
+    unsigned SelectSplit(size_t blob_size)
     {
         static const unsigned size_split[] = {
             256, 512, 2048, 4096, 8192, 16384, 32768
@@ -161,7 +161,7 @@ public:
 
         /// not found
         NewPlane();
-        coord[0] = m_RecS.GetRows() - 1;
+        coord[0] = unsigned(m_RecS.GetRows() - 1);
     }
 
 

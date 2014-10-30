@@ -1160,8 +1160,13 @@ CBDB_Cache::~CBDB_Cache()
 {
     try {
         Close();
-    } catch (exception& )
-    {}
+    }
+    catch (CException& exc) {
+        ERR_POST("~CBDB_Cache(): exception: "<<exc);
+    }
+    catch (exception& exc) {
+        ERR_POST("~CBDB_Cache(): exception: "<<exc.what());
+    }
 }
 
 void CBDB_Cache::SetTTL_Prolongation(unsigned ttl_prolong)

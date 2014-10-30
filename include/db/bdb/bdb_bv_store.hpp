@@ -469,7 +469,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::FetchToBuffer(CBDB_FileCursor& cur)
     }
     catch (CBDB_ErrnoException& e) {
         if (e.IsBufferSmall()  ||  e.IsNoMem()) {
-            unsigned buf_size = LobSize();
+            size_t buf_size = LobSize();
             m_Buffer.resize(buf_size);
             void* p = &m_Buffer[0];
             err = cur.Fetch(CBDB_FileCursor::eDefault,
