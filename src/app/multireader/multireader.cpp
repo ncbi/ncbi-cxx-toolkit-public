@@ -103,6 +103,13 @@ DumpMemory(
 }
   
 //  ============================================================================
+class TestCanceler: public ICanceled
+//  ============================================================================
+{
+    bool IsCanceled() const { return false; };
+};
+
+//  ============================================================================
 class CMultiReaderApp
 //  ============================================================================
      : public CNcbiApplication
@@ -167,7 +174,10 @@ class CMessageListenerCustom:
 public:
     CMessageListenerCustom(
         int iMaxCount,
-        int iMaxLevel ): m_iMaxCount( iMaxCount ), m_iMaxLevel( iMaxLevel ) {};
+        int iMaxLevel ): 
+        m_iMaxCount(iMaxCount), m_iMaxLevel(iMaxLevel)
+    {};
+
     ~CMessageListenerCustom() {};
     
     bool
@@ -185,14 +195,18 @@ public:
     void
     PutProgress(
         const string& msg,
-        const Uint8 pctDone,
-        const Uint8 pct100)
+        const Uint8 bytesDone,
+        const Uint8 dummy)
     {
-        cerr << "Progress: " << pctDone << " % done." << endl;
+        cerr << "Progress: " << bytesDone << " bytes done." << endl;
+        //if (bytesDone > 1000000) {
+        //    bIsCanceled = true;
+        //}
     };
+
 protected:
     size_t m_iMaxCount;
-    int m_iMaxLevel;    
+    int m_iMaxLevel; 
 };    
         
 //  ============================================================================
@@ -204,17 +218,21 @@ public:
     CMessageListenerCustomLevel(int level):
         CMessageListenerLevel(level) {};
 
-//    void
-//    PutProgress(
-//        const string& msg,
-//        const Uint8 pctDone,
-//        const Uint8 pct100)
-//    {
-//        cerr << msg << " (" << pctDone << "%)" << endl;
-//    };
+    void
+    PutProgress(
+        const string& msg,
+        const Uint8 bytesDone,
+        const Uint8 dummy)
+    {
+        cerr << msg << " (" << bytesDone << " bytes)" << endl;
+        //if (bytesDone > 1000000) {
+        //    bIsCanceled = true;
+        //}
+    };
+
 protected:
     size_t m_iMaxCount;
-    int m_iMaxLevel;    
+    int m_iMaxLevel; 
 };    
         
 //  ----------------------------------------------------------------------------
@@ -632,7 +650,8 @@ void CMultiReaderApp::xProcessWiggle(
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
-    //CStreamLineReader lr(istr);
+    //TestCanceler canceler;
+    //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xDumpTrack(args, **cit, cerr);
@@ -681,7 +700,8 @@ void CMultiReaderApp::xProcessBed(
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
-    //CStreamLineReader lr(istr);
+    //TestCanceler canceler;
+    //reader.SetCanceler(&canceler);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr, m_pErrors);
     while(pAnnot) {
         xWriteObject(args, *pAnnot, ostr);
@@ -722,6 +742,8 @@ void CMultiReaderApp::xProcessGtf(
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
+    //TestCanceler canceler;
+    //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
 		xPostProcessAnnot(args, **it);
@@ -746,6 +768,8 @@ void CMultiReaderApp::xProcessGff3(
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
+    //TestCanceler canceler;
+    //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
 		xPostProcessAnnot(args, **it);
@@ -800,13 +824,15 @@ void CMultiReaderApp::xProcessGvf(
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
-    if (args["format"].AsString() == "gff3") { // process as plain GFF2
+    if (args["format"].AsString() == "gff3") { // process as plain GFF3
         return xProcessGff3(args, istr, ostr);
     }
     CGvfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
+    //TestCanceler canceler;
+    //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         const CSeq_annot& annot = **cit;
@@ -831,6 +857,8 @@ void CMultiReaderApp::xProcessVcf(
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
+   //TestCanceler canceler;
+   //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
@@ -1086,7 +1114,7 @@ void CMultiReaderApp::xPostProcessAnnot(
 	}
     edit::CFeatTableEdit fte(annot, args["locus-tag-prefix"].AsString(),
 		m_pErrors);
-    fte.InferPartials();
+//    fte.InferPartials();
     fte.InferParentMrnas();
     fte.InferParentGenes();
 	fte.GenerateLocusTags();
