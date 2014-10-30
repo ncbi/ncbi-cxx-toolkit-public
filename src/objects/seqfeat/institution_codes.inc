@@ -1150,6 +1150,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CNRZ	c	Centre National de Recherches Zootechniques",
 "CNS<AUS>	s	Australian Tropical Herbarium",
 "CNU<CHN>	s	Capital Normal University, College of Life Sciences",
+"CNU<KOR-TJ>	s	Chungnam National University",
 "CNU<KOR>	s	Chonbuk National University",
 "CNWGRGL	b	Chinese National Waterfowl Germplasm Resources Gene Library",
 "CO	s	Museum National d'Histoire Naturelle, Department of Marine Biology",
