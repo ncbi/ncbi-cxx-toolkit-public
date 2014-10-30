@@ -94,7 +94,7 @@ public:
     typedef vector<CSeq_inst::TMol> TTypes;
     typedef vector<CBioseq_Handle::TBioseqStateFlags> TStates;
 
-    size_t m_Seed;
+    CRandom::TValue m_Seed;
     size_t m_RunCount;
     size_t m_RunSize;
     TIds m_Ids;
@@ -334,7 +334,7 @@ bool CTestApplication::Thread_Run(int thread_id)
         size_t size = min(m_RunSize, m_Ids.size());
         ids = m_Ids;
         for ( size_t i = 0; i < size; ++i ) {
-            swap(ids[i], ids[random.GetRand(i, m_Ids.size()-1)]);
+            swap(ids[i], ids[random.GetRandSize_t(i, m_Ids.size()-1)]);
         }
         ids.resize(size);
         if ( m_Sort ) {

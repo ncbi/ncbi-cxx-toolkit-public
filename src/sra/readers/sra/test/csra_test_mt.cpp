@@ -174,7 +174,7 @@ bool CCSRATestApp::Thread_Run(int idx)
     _ASSERT(m_IterCount);
     _ASSERT(m_IterSize);
     for ( int ti = 0; ti < m_IterCount; ++ti ) {
-        size_t index = random.GetRandIndex(m_Accession.size());
+        size_t index = random.GetRandIndexSize_t(m_Accession.size());
         const string& acc = m_Accession[index];
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc);
@@ -190,8 +190,8 @@ bool CCSRATestApp::Thread_Run(int idx)
             }
             _ASSERT(m_MaxSpotId[index] > 0);
         }
-        int count = int(min(m_MaxSpotId[index], Uint8(m_IterSize)));
-        Uint8 start_id = random.GetRandIndex(m_MaxSpotId[index]-count)+1;
+        Uint8 count = min(m_MaxSpotId[index], Uint8(m_IterSize));
+        Uint8 start_id = random.GetRandIndexUint8(m_MaxSpotId[index]-count)+1;
         Uint8 stop_id = start_id+count;
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc

@@ -280,7 +280,7 @@ bool CTestOM::Thread_Run(int idx)
     else if ( order ) {
         CRandom r(order);
         for ( size_t i = 0; i < ids.size(); ++i ) {
-            swap(ids[i], ids[r.GetRand(i, ids.size()-1)]);
+            swap(ids[i], ids[r.GetRandSize_t(i, ids.size()-1)]);
         }
     }
 
