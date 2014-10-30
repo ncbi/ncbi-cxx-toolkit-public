@@ -459,6 +459,9 @@ public:
     };
     static string GetAppName(ENameType)
     { return string(); }
+    static SSystemMutex& CNcbiApplication::GetInstanceMutex(void) {
+        return *(SSystemMutex*)Instance();
+    }
 };
 
 

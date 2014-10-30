@@ -688,6 +688,7 @@ CNCDistributionConf::GetSlotByNetCacheKey(const string& key,
         Uint2& slot, Uint2& time_bucket)
 {
     size_t ind = 0;
+    unsigned key_rnd = 0;
 #if 0
 #define SKIP_UNDERSCORE(key, ind) \
     ind = key.find('_', ind + 1); \
@@ -707,7 +708,7 @@ CNCDistributionConf::GetSlotByNetCacheKey(const string& key,
     }
 #endif
     ++ind;
-    unsigned key_rnd = NStr::StringToUInt(
+    key_rnd = NStr::StringToUInt(
             CTempString(&key[ind], key.size() - ind),
             NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols);
     if (key_rnd == 0 && errno != 0) {
