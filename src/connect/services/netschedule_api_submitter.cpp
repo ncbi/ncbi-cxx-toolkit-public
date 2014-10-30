@@ -426,6 +426,13 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
                 try {
                     return ns_api.GetJobDetails(job);
                 }
+                catch (CNetScheduleException& e) {
+                    if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
+                        throw;
+                    ERR_POST(job.job_id << ": error while "
+                            "retrieving job details: " << e);
+                    return status;
+                }
                 catch (CException& e) {
                     ERR_POST(job.job_id << ": error while "
                             "retrieving job details: " << e);
@@ -448,6 +455,14 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
                 status = ns_api.GetJobDetails(job);
                 if ((status != CNetScheduleAPI::eRunning &&
                         status != CNetScheduleAPI::ePending) || last_timeout)
+                    return status;
+            }
+            catch (CNetScheduleException& e) {
+                if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
+                    throw;
+                ERR_POST(job.job_id << ": error while "
+                        "retrieving job details: " << e);
+                if (last_timeout)
                     return status;
             }
             catch (CException& e) {
