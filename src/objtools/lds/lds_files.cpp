@@ -181,7 +181,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
             if (compute_check_sum) {
                 checksum.Reset();
-                ComputeFileChecksum(entry, checksum);
+                checksum.AddFile(entry);
                 crc = checksum.GetChecksum();
             }
 
@@ -223,7 +223,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
             Uint4 crc = 0;
             if (compute_check_sum) {
                 checksum.Reset();
-                ComputeFileChecksum(entry, checksum);
+                checksum.AddFile(entry);
                 crc = checksum.GetChecksum();
 
                 if (crc != (Uint4)m_FileDB.CRC) {
@@ -306,7 +306,9 @@ void CLDS_File::UpdateEntry(int    file_id,
                             bool   compute_check_sum)
 {
     if (!crc && compute_check_sum) {
-        crc = ComputeFileCRC32(file_name);
+        CChecksum checksum(CChecksum::eCRC32);
+        checksum.AddFile(file_name);
+        crc = checksum.GetChecksum();
     }
 
     m_FileDB.file_id = file_id;
