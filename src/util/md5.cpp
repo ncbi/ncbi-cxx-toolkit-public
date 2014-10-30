@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-// Note: this code is harmless on little-endian machines.
+#ifdef WORDS_BIGENDIAN
 inline
 static void s_ByteReverse(unsigned char* buf, size_t longs)
 {
@@ -50,6 +50,7 @@ static void s_ByteReverse(unsigned char* buf, size_t longs)
         buf += 4;
     } while (--longs);
 }
+#endif
 
 
 // Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
