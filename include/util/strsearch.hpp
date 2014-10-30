@@ -156,7 +156,8 @@ public:
     /// @param pos
     ///    Position shift in text
     /// @return 
-    ///    the position at which the pattern was found, -1 otherwise.
+    ///    the position at which the pattern was found,
+    ///    size_t(-1) (NPOS) otherwise.
     size_t Search(const string& text, size_t pos = 0) const
     {
         return Search(text.c_str(), pos, text.length());
@@ -172,7 +173,8 @@ public:
     /// @param text_len
     ///    Length of text
     /// @return 
-    ///    the position at which the pattern was found, -1 otherwise.
+    ///    the position at which the pattern was found,
+    ///    SIZE_TYPE(-1) (NPOS) otherwise.
     SIZE_TYPE Search(const char*  text, 
                      SIZE_TYPE pos,
                      SIZE_TYPE text_len) const;
