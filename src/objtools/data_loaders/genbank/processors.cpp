@@ -1879,7 +1879,7 @@ void CProcessor_ID2::x_ReadData(const CID2_Reply_Data& data,
     in->SetSkipUnknownMembers(eSerialSkipUnknown_Yes);
     in->SetSkipUnknownVariants(eSerialSkipUnknown_Yes);
     in->Read(object);
-    data_size += in->GetStreamPos();
+    data_size += size_t(in->GetStreamPos()); // in-memory size can't be bigger than size_t
 }
 
 
