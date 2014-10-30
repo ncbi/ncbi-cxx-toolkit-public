@@ -430,6 +430,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                 def = TParamParser::StringToValue(config_value,
                     TDescription::sm_ParamDescription);
             }
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
             CNcbiApplication* app = CNcbiApplication::Instance();
             sx_GetState() = app  &&  app->FinishedLoadingConfig()
                 ? eState_Config : eState_EnvVar;

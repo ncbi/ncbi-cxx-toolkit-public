@@ -2583,6 +2583,7 @@ void CDiagContext::x_StartRequest(void)
     ctx.StartRequest();
 
     // Print selected environment and registry values.
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* app = CNcbiApplication::Instance();
     if ( !app ) return;
     static CSafeStatic<TLogEnvironment> s_LogEnvironment;
@@ -2946,6 +2947,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     if ( old_handler ) {
         old_log_name = old_handler->GetLogName();
     }
+
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* app = CNcbiApplication::Instance();
 
     string config_logfile = s_GetLogConfigString("FILE", kEmptyStr, config);
@@ -6370,6 +6373,7 @@ void*
 CAsyncDiagThread::Main(void)
 {
     if (!m_ThreadSuffix.empty()) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
         thr_name += m_ThreadSuffix;
 #if defined(NCBI_OS_LINUX)  &&  defined(PR_SET_NAME)

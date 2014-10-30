@@ -355,6 +355,7 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 #endif
 
     {{
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* the_app = CNcbiApplication::Instance();
         if ( the_app ) {
             const CNcbiArguments& args = the_app->GetArguments();

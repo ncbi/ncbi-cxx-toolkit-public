@@ -1052,6 +1052,7 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 string CNcbiApplication::GetAppName(EAppNameType name_type, int argc,
                                     const char* const* argv)
 {
+    CMutexGuard guard(GetInstanceMutex());
     CNcbiApplication* instance = Instance();
     string app_name;
 
@@ -1091,6 +1092,7 @@ string CNcbiApplication::FindProgramExecutablePath
  const char* const*            argv,
  string*                       real_path)
 {
+    CMutexGuard guard(GetInstanceMutex());
     CNcbiApplication* instance = Instance();
     string ret_val;
     if (argc > 0  &&  argv != NULL  &&  argv[0] != NULL

@@ -1230,9 +1230,13 @@ CPluginManager<TClass>::CPluginManager(void)
 
     // Retrieve a driver name substitution map.
     // Get current registry ...
-    if (CNcbiApplication::Instance()) {
-        registry = &CNcbiApplication::Instance()->GetConfig();
-    }
+    {{
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app) {
+            registry = &app->GetConfig();
+        }
+    }}
 
     if (registry) {
         list<string> entries;
