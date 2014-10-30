@@ -47,6 +47,10 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Affil.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
 #include <misc/discrepancy_report/hDiscRep_tests.hpp>
@@ -1854,4 +1858,527 @@ BOOST_AUTO_TEST_CASE(RNA_CDS_OVERLAP)
     BOOST_CHECK_EQUAL(item->subcategories[0]->subcategories.size(), 1);
     CheckOneItem(*(item->subcategories[0]->subcategories[0]), "1 coding region overlaps RNA on the opposite strand (no containment)", false);
 
-};
+}
+
+
+const char *sc_GB_3763 = "\
+Seq-entry ::= set {\
+  class pop-set,\
+  descr {\
+    pub {\
+      pub {\
+        gen {\
+          cit \"Unpublished\",\
+          authors {\
+            names std {\
+              {\
+                name name {\
+                  last \"Ha\",\
+                  first \"Thi Thu\",\
+                  initials \"T.T.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Nguyen\",\
+                  first \"Thi Kim Lien\",\
+                  initials \"T.K.L.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Mai\",\
+                  first \"Thuy Linh\",\
+                  initials \"T.L.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Nguyen\",\
+                  first \"Thi Bich Nga\",\
+                  initials \"T.B.N.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Le\",\
+                  first \"Thanh Hoa\",\
+                  initials \"T.H.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Jung\",\
+                  first \"Suk- Chan\",\
+                  initials \"S.-C.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Kang\",\
+                  first \"Seung-Won\",\
+                  initials \"S.-W.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Dong\",\
+                  first \"Van Quyen\",\
+                  initials \"V.Q.\"\
+                }\
+              }\
+            }\
+          },\
+          title \"The complete genome sequence of Sacbrood virus from infected\
+ honeybee Apis cerana in Vietnam\"\
+        }\
+      }\
+    },\
+    pub {\
+      pub {\
+        sub {\
+          authors {\
+            names std {\
+              {\
+                name name {\
+                  last \"Ha\",\
+                  first \"Thi Thu\",\
+                  initials \"T.T.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Nguyen\",\
+                  first \"Thi Kim Lien\",\
+                  initials \"T.K.L.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Mai\",\
+                  first \"Thuy Linh\",\
+                  initials \"T.L.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Nguyen\",\
+                  first \"Thi Bich Nga\",\
+                  initials \"T.B.N.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Le\",\
+                  first \"Thanh Hoa\",\
+                  initials \"T.H.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Jung\",\
+                  first \"Suk- Chan\",\
+                  initials \"S.-C.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Kang\",\
+                  first \"Seung-Won\",\
+                  initials \"S.-W.\"\
+                }\
+              },\
+              {\
+                name name {\
+                  last \"Dong\",\
+                  first \"Van Quyen\",\
+                  initials \"V.Q.\"\
+                }\
+              }\
+            },\
+            affil std {\
+              affil \"Institue of Biotechnology-VAST\",\
+              div \"Molecular Microbiology\",\
+              city \"Ha Noi\",\
+              sub \"Ha Noi\",\
+              country \"84\",\
+              street \"18 Hoang Quoc Viet, Cau Giay District\",\
+              postal-code \"10000\"\
+            }\
+          },\
+          medium email,\
+          date std {\
+            year 2014,\
+            month 6,\
+            day 9\
+          }\
+        }\
+      }\
+    },\
+    update-date std {\
+      year 2014,\
+      month 6,\
+      day 4,\
+      hour 4,\
+      minute 36,\
+      second 19\
+    }\
+  },\
+  seq-set {\
+    set {\
+      class nuc-prot,\
+      descr {\
+        source {\
+          genome genomic,\
+          org {\
+            taxname \"Sacbrood virus\",\
+            db {\
+              {\
+                db \"taxon\",\
+                tag id 89463\
+              }\
+            },\
+            syn {\
+              \"Sac brood virus\"\
+            },\
+            orgname {\
+              name virus \"Sacbrood virus\",\
+              mod {\
+                {\
+                  subtype strain,\
+                  subname \"LDst\"\
+                },\
+                {\
+                  subtype nat-host,\
+                  subname \"Apis cerana\"\
+                }\
+              },\
+              lineage \"Viruses; ssRNA positive-strand viruses, no DNA stage;\
+ Picornavirales; Iflaviridae; Iflavirus\",\
+              gcode 1,\
+              div \"VRL\"\
+            }\
+          },\
+          subtype {\
+            {\
+              subtype country,\
+              name \"Viet Nam: Lam Dong province\"\
+            },\
+            {\
+              subtype isolation-source,\
+              name \"bee larvae\"\
+            },\
+            {\
+              subtype collection-date,\
+              name \"31-Mar-2013\"\
+            }\
+          }\
+        }\
+      },\
+      seq-set {\
+        seq {\
+          id {\
+            local str \"Seq1\",\
+            general {\
+              db \"BankIt\",\
+              tag str \"1732427/Seq1\"\
+            },\
+            general {\
+              db \"TMSMART\",\
+              tag id 46122716\
+            },\
+            genbank {\
+              accession \"KJ959613\"\
+            }\
+          },\
+          descr {\
+            title \"[Sacbrood virus] The complete genome sequence of Sacbrood\
+ virus strain LDst from infected honeybee Apis cerana in South Vietnam\",\
+            molinfo {\
+              biomol genomic,\
+              completeness complete\
+            },\
+            user {\
+              type str \"Submission\",\
+              data {\
+                {\
+                  label str \"AdditionalComment\",\
+                  data str \"LocalID:Seq1\"\
+                }\
+              }\
+            },\
+            user {\
+              type str \"OrginalID\",\
+              data {\
+                {\
+                  label str \"LocalId\",\
+                  data str \"Seq1\"\
+                }\
+              }\
+            }\
+          },\
+          inst {\
+            repr raw,\
+            mol rna,\
+            length 18,\
+            seq-data iupacna \"ATGAAATTTGGGCCCTAA\"\
+          }\
+        },\
+        seq {\
+          id {\
+            local str \"Seq1_prot_1\",\
+            general {\
+              db \"TMSMART\",\
+              tag id 46122717\
+            }\
+          },\
+          descr {\
+            title \"polyprotein [Sacbrood virus]\",\
+            molinfo {\
+              biomol peptide\
+            },\
+            user {\
+              type str \"OrginalID\",\
+              data {\
+                {\
+                  label str \"LocalId\",\
+                  data str \"Seq1_prot_1\"\
+                }\
+              }\
+            }\
+          },\
+          inst {\
+            repr raw,\
+            mol aa,\
+            length 5,\
+            seq-data ncbieaa \"MKFGP\"\
+          },\
+          annot {\
+            {\
+              data ftable {\
+                {\
+                  data prot {\
+                    name {\
+                      \"polyprotein\"\
+                    }\
+                  },\
+                  location int {\
+                    from 0,\
+                    to 2858,\
+                    id local str \"Seq1_prot_1\"\
+                  }\
+                }\
+              }\
+            }\
+          }\
+        }\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data cdregion {\
+                frame one,\
+                code {\
+                  id 1\
+                }\
+              },\
+              product whole local str \"Seq1_prot_1\",\
+              location int {\
+                from 180,\
+                to 8759,\
+                strand plus,\
+                id local str \"Seq1\"\
+              }\
+            }\
+          }\
+        }\
+      }\
+    },\
+    set {\
+      class nuc-prot,\
+      descr {\
+        source {\
+          genome genomic,\
+          org {\
+            taxname \"Sacbrood virus\",\
+            db {\
+              {\
+                db \"taxon\",\
+                tag id 89463\
+              }\
+            },\
+            syn {\
+              \"Sac brood virus\"\
+            },\
+            orgname {\
+              name virus \"Sacbrood virus\",\
+              mod {\
+                {\
+                  subtype strain,\
+                  subname \"HYnor\"\
+                },\
+                {\
+                  subtype nat-host,\
+                  subname \"Apis cerana\"\
+                }\
+              },\
+              lineage \"Viruses; ssRNA positive-strand viruses, no DNA stage;\
+ Picornavirales; Iflaviridae; Iflavirus\",\
+              gcode 1,\
+              div \"VRL\"\
+            }\
+          },\
+          subtype {\
+            {\
+              subtype country,\
+              name \"Viet Nam: Hung Yen province\"\
+            },\
+            {\
+              subtype isolation-source,\
+              name \"bee larvae\"\
+            },\
+            {\
+              subtype collection-date,\
+              name \"30-Jun-2013\"\
+            }\
+          }\
+        }\
+      },\
+      seq-set {\
+        seq {\
+          id {\
+            local str \"Seq2\",\
+            general {\
+              db \"BankIt\",\
+              tag str \"1732427/Seq2\"\
+            },\
+            general {\
+              db \"TMSMART\",\
+              tag id 46122718\
+            },\
+            genbank {\
+              accession \"KJ959614\"\
+            }\
+          },\
+          descr {\
+            title \"[Sacbrood virus] The complete genome sequence of Sacbrood\
+ virus strain HYnor from infected honeybee Apis cerana in North Vietnam\",\
+            molinfo {\
+              biomol genomic,\
+              completeness complete\
+            },\
+            user {\
+              type str \"Submission\",\
+              data {\
+                {\
+                  label str \"AdditionalComment\",\
+                  data str \"LocalID:Seq2\"\
+                }\
+              }\
+            },\
+            user {\
+              type str \"OrginalID\",\
+              data {\
+                {\
+                  label str \"LocalId\",\
+                  data str \"Seq2\"\
+                }\
+              }\
+            }\
+          },\
+          inst {\
+            repr raw,\
+            mol rna,\
+                        length 18,\
+            seq-data iupacna \"ATGAAATTTGGGCCCTAA\"\
+          }\
+        },\
+        seq {\
+          id {\
+            local str \"Seq2_prot_1\",\
+            general {\
+              db \"TMSMART\",\
+              tag id 46122719\
+            }\
+          },\
+          descr {\
+            title \"polyprotein [Sacbrood virus]\",\
+            molinfo {\
+              biomol peptide\
+            },\
+            user {\
+              type str \"OrginalID\",\
+              data {\
+                {\
+                  label str \"LocalId\",\
+                  data str \"Seq2_prot_1\"\
+                }\
+              }\
+            }\
+          },\
+          inst {\
+            repr raw,\
+            mol aa,\
+            length 5,\
+            seq-data ncbieaa \"MKFGP\"\
+          },\
+          annot {\
+            {\
+              data ftable {\
+                {\
+                  data prot {\
+                    name {\
+                      \"polyprotein\"\
+                    }\
+                  },\
+                  location int {\
+                    from 0,\
+                    to 2841,\
+                    id local str \"Seq2_prot_1\"\
+                  }\
+                }\
+              }\
+            }\
+          }\
+        }\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data cdregion {\
+                frame one,\
+                code {\
+                  id 1\
+                }\
+              },\
+              product whole local str \"Seq2_prot_1\",\
+              location int {\
+                from 181,\
+                to 8709,\
+                strand plus,\
+                id local str \"Seq2\"\
+              }\
+            }\
+          }\
+        }\
+      }\
+    }\
+  }\
+}\
+";
+
+BOOST_AUTO_TEST_CASE(GB_3763)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    {{
+         CNcbiIstrstream istr(sc_GB_3763);
+         istr >> MSerial_AsnText >> *entry;
+    }}
+
+    
+    CRef<CClickableItem> item = RunOneTest(*entry, "DISC_FLATFILE_FIND_ONCALLER_FIXABLE");
+    CheckOneItem(*item, "1 object contains institue", false);
+
+}

@@ -1995,6 +1995,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
        string m_bioseq_desc, m_setting_name, m_taxname; 
        CConstRef <CBioseq> m_bsq;
 
+       Str2Objs m_Matches;
+
        void x_GetDescAndObjRef4Seqdesc(CConstRef <CBioseq> bioseq, 
                  CSeqdesc :: E_Choice seqdesc_type, CSeqdesc& seqdesc, string& desc, 
                  CConstRef <CObject> obj_ref);

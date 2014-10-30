@@ -11553,6 +11553,8 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
                  + "#" + it->first;
        thisInfo.test_item_objs[strtmp].push_back(obj_ref);
        }
+
+       m_Matches[it->first].push_back(obj_ref);
      }
   } 
 
@@ -11616,7 +11618,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_
               thisInfo.disc_report_data.push_back(c_item);
            }
            c_item->item_list = jt->second;
-           strtmp = setting_name + "$" + it->first + "#" + jt->first;
+           strtmp = GetName() + "$" + it->first + "#" + jt->first;
            c_item->obj_list = thisInfo.test_item_objs[strtmp];
            RmvRedundancy(c_item->item_list, c_item->obj_list); // temp, check SQD-1818
            c_item->description
