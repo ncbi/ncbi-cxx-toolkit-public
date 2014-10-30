@@ -661,7 +661,7 @@ int CCSRATestApp::Run(void)
                 Uint8 total_count_a = 0, max_a = 0;
                 double k_min = 0, k_max = 1e9;
                 for ( uint64_t row = it.GetInfo().m_RowFirst; row <= it.GetInfo().m_RowLast; ++row ) {
-                    Uint1 b = graph->GetGraph().GetByte().GetValues()[row-it.GetInfo().m_RowFirst];
+                    Uint1 b = graph->GetGraph().GetByte().GetValues()[size_t(row-it.GetInfo().m_RowFirst)];
                     size_t a = it.GetRowAlignCount(row);
                     total_count_a += a;
                     if ( a > max_a ) {
@@ -975,7 +975,7 @@ int CCSRATestApp::Run(void)
         }
 
         if ( 0 ) {
-            typedef size_t TShortId;
+            typedef uint64_t TShortId;
             typedef map<TShortId, TSeqPos> TShortId2Pos;
             TShortId2Pos id2pos;
             for ( CCSraAlignIterator it(csra_db, query_idh,
