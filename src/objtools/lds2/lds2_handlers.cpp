@@ -105,7 +105,9 @@ Int8 CLDS2_UrlHandler_File::GetFileSize(const SLDS2_File& file_info)
 
 Uint4 CLDS2_UrlHandler_File::GetFileCRC(const SLDS2_File& file_info)
 {
-    return ComputeFileCRC32(file_info.name);
+    CChecksum crc(CChecksum::eCRC32);
+    crc.AddFile(file_info.name);
+    return crc.GetChecksum();
 }
 
 
