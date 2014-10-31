@@ -123,7 +123,6 @@ CBedReader::ReadSeqAnnot(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
-    xProgressInit(istr);
     CStreamLineReader lr( istr );
     return ReadSeqAnnot( lr, pMessageListener );
 }
@@ -136,6 +135,8 @@ CBedReader::ReadSeqAnnot(
 //  ----------------------------------------------------------------------------                
 {
     const size_t MAX_RECORDS = 100000;
+
+    xProgressInit(lr);
 
     CRef<CSeq_annot> annot;
     CRef<CAnnot_descr> desc;

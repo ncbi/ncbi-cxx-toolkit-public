@@ -206,8 +206,9 @@ CGtfReader::ReadSeqAnnots(
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    string line;
+    xProgressInit(lr);
 
+    string line;
     while (xGetLine(lr, line)) {
         if (IsCanceled()) {
             AutoPtr<CObjReaderLineException> pErr(
@@ -247,7 +248,6 @@ CGtfReader::ReadSeqAnnots(
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
-    xProgressInit(istr);
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
 

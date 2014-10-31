@@ -188,6 +188,7 @@ CVcfReader::ReadSeqAnnot(
     IMessageListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
+    xProgressInit(lr);
     if (lr.AtEOF()) {
         return CRef<CSeq_annot>();
     }

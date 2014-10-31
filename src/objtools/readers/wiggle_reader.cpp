@@ -152,6 +152,7 @@ CWiggleReader::ReadSeqAnnot(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 {
+    xProgressInit(lr);
     if (m_iFlags & CWiggleReader::fAsGraph) {
         return xReadSeqAnnotGraph(lr, pMessageListener);
     }

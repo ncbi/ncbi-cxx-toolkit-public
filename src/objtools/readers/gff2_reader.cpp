@@ -153,7 +153,6 @@ CGff2Reader::ReadSeqAnnots(
 //  ---------------------------------------------------------------------------
 {
     xReadInit();
-    xProgressInit(istr);
     CStreamLineReader lr( istr );
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
@@ -166,6 +165,8 @@ CGff2Reader::ReadSeqAnnots(
     IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(lr);
+
     if ( m_iFlags & fNewCode ) {
         return ReadSeqAnnotsNew( annots, lr, pMessageListener );
     }
@@ -238,6 +239,8 @@ CGff2Reader::ReadSeqEntry(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
+    xProgressInit(lr);
+
     vector<CRef<CSeq_annot> > annots;
     ReadSeqAnnotsNew( annots, lr, pMessageListener );
     

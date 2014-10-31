@@ -151,7 +151,7 @@ CReaderBase::CReaderBase(
     m_uProgressReportInterval(0),
 	m_uNextProgressReport(0),
     m_iFlags(flags),
-    m_pInStream(0),
+    m_pReader(0),
     m_pCanceler(0)
 {
     m_pTrackDefaults = new CTrackData;
@@ -171,7 +171,6 @@ CReaderBase::ReadObject(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
-    xProgressInit(istr);
     CStreamLineReader lr( istr );
     return ReadObject( lr, pMessageListener );
 }
@@ -183,7 +182,6 @@ CReaderBase::ReadSeqAnnot(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
-    xProgressInit(istr);
     CStreamLineReader lr( istr );
     return ReadSeqAnnot( lr, pMessageListener );
 }
@@ -191,10 +189,11 @@ CReaderBase::ReadSeqAnnot(
 //  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
-    ILineReader&,
+    ILineReader& lr,
     IMessageListener* ) 
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(lr);
     return CRef<CSeq_annot>();
 }
                 
@@ -206,7 +205,6 @@ CReaderBase::ReadSeqAnnots(
     IMessageListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
-    xProgressInit(istr);
     CStreamLineReader lr( istr );
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
@@ -219,6 +217,7 @@ CReaderBase::ReadSeqAnnots(
     IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(lr);
     CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pMessageListener);
     while (annot) {
         annots.push_back(annot);
@@ -233,20 +232,19 @@ CReaderBase::ReadSeqEntry(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
-    xProgressInit(istr);
     CStreamLineReader lr( istr );
     CRef<CSeq_entry> pResult = ReadSeqEntry( lr, pMessageListener );
-    m_pInStream = 0;
     return pResult;
 }
 
 //  ----------------------------------------------------------------------------
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
-    ILineReader&,
+    ILineReader& lr,
     IMessageListener* ) 
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(lr);
     return CRef<CSeq_entry>();
 }
                
@@ -570,7 +568,7 @@ bool CReaderBase::xIsReportingProgress() const
     if (0 == m_uProgressReportInterval) {
         return false;
     }
-    if (0 == m_pInStream) {
+    if (0 == m_pReader) {
         return false;
     }
     return true;
@@ -589,7 +587,7 @@ void CReaderBase::xReportProgress(
         return;
     }
     // report something
-    ios::streampos curPos = m_pInStream->tellg();
+    ios::streampos curPos = m_pReader->GetPosition();
     pProgress->PutProgress("Progress", Uint8(curPos), 0);
 
     m_uNextProgressReport += m_uProgressReportInterval;
@@ -604,13 +602,13 @@ bool CReaderBase::xReadInit()
 
 //  ============================================================================
 bool CReaderBase::xProgressInit(
-    CNcbiIstream& istr)
+    ILineReader& lr)
 //  ============================================================================
 {
     if (0 == m_uProgressReportInterval) {
         return true;
     }
-    m_pInStream = &istr;
+    m_pReader = &lr;
     return true;
 }
 

@@ -276,7 +276,7 @@ protected:
     virtual bool xReadInit();
 
     virtual bool xProgressInit(
-        CNcbiIstream& istr);
+        ILineReader& istr);
 
     void xReportProgress(
         IMessageListener* =0 );
@@ -315,7 +315,7 @@ protected:
 
     TReaderFlags       m_iFlags;
     CTrackData*  m_pTrackDefaults;
-    CNcbiIstream* m_pInStream;
+    ILineReader* m_pReader;
     ICanceled* m_pCanceler;
 };
 
