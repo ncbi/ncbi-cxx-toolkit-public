@@ -278,16 +278,41 @@ DEFINE_COL_VALIDATOR(seqid)
 
 DEFINE_COL_VALIDATOR(date)
 {
-    if (!value.empty())
-    try
-    {
-        CTime time(value, "M/D/Y");
-    }
-    catch (const CException& ex)
-    {
-        error = ex.GetMsg();
-    }
+    //if (!value.empty())
+    static const char* supported_formats[]= {
+       "d-b-Y", "d-B-Y", "b-Y", "B-Y", "Y", 
+       "M-D-Y", "M/D/Y",
+       0
+    };
+    bool bad_format(false), in_future(false);
+    CSubSource::IsCorrectDateFormat(value, bad_format, in_future);
 
+    if (bad_format)
+    for (const char** fmt = supported_formats; *fmt && bad_format; fmt++)
+    {
+       //check format
+       //cout << *fmt << endl;
+       try
+       {
+           CTime time(value, *fmt);
+           bad_format = false;
+           in_future = (time > CTime(CTime::eCurrent));
+           
+       }
+       catch (const CException& ex)
+       {
+           error = ex.GetMsg();
+           //cout << error.c_str() << endl;
+       }
+    }
+    if (bad_format)
+      error = "Unsupported date format";
+    else
+    if (in_future)
+      error = "Date in future";
+    else
+      error.clear();
+   
     return false;
 }
 
