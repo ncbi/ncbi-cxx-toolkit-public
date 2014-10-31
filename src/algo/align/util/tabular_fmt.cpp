@@ -1160,6 +1160,10 @@ void CTabularFormatter_TaxId::Print(CNcbiOstream& ostr,
 
 
 /////////////////////////////////////////////////////////////////////////////
+CTabularFormatter_BiggestGapBases::CTabularFormatter_BiggestGapBases(int row)
+: m_Row(row)
+{
+}
 
 void CTabularFormatter_BiggestGapBases::PrintHelpText(CNcbiOstream& ostr) const
 {
@@ -1167,7 +1171,16 @@ void CTabularFormatter_BiggestGapBases::PrintHelpText(CNcbiOstream& ostr) const
 }
 void CTabularFormatter_BiggestGapBases::PrintHeader(CNcbiOstream& ostr) const
 {
-    ostr << "biggestgap";
+    if(m_Row == e_All) {
+        ostr << "biggestgap";
+    } else if(m_Row == 0) {
+        ostr << "qbiggestgap";
+    } else if(m_Row == 1) {
+        ostr << "sbiggestgap";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+        "only pairwise alignments are supported");
+    }
 }
 void CTabularFormatter_BiggestGapBases::Print(CNcbiOstream& ostr,
                                               const CSeq_align& align)
@@ -1187,8 +1200,13 @@ TSeqPos CTabularFormatter_BiggestGapBases::x_CalcBiggestGap(const CSeq_align& al
         const CDense_seg& Denseg = align.GetSegs().GetDenseg();
         TSeqPos Biggest = 0;
         for(int Index = 0; Index < Denseg.GetNumseg(); Index++) {
-            if( Denseg.GetStarts()[2*Index] == -1 ||
-                Denseg.GetStarts()[(2*Index)+1] == -1) {
+            bool QGap = (Denseg.GetStarts()[2*Index] == -1);
+            bool SGap = (Denseg.GetStarts()[(2*Index)+1] == -1);
+            if(m_Row == e_All && (QGap || SGap)) { 
+                Biggest = max(Biggest, (TSeqPos)Denseg.GetLens()[Index]);
+            } else if(m_Row == 0 && QGap) {
+                Biggest = max(Biggest, (TSeqPos)Denseg.GetLens()[Index]);
+            } else if(m_Row == 1 && SGap) {
                 Biggest = max(Biggest, (TSeqPos)Denseg.GetLens()[Index]);
             }
         }
@@ -1353,7 +1371,7 @@ void CTabularFormatter_Tech::Print(CNcbiOstream& ostr,
 {
     CBioseq_Handle Handle = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(m_Row));
 
-    string TechStr = "";
+    string TechStr = "(none)";
 
     CSeqdesc_CI Iter(Handle, CSeqdesc::e_Molinfo);
     while(Iter) {
@@ -1744,7 +1762,6 @@ TSeqPos s_FindGaps(const CGC_Assembly& Assembly,
 {
     CConstRef<CGC_Sequence> Seq;
     CGC_Assembly::TSequenceList SeqList;
-    //Seq = Assembly.Find(CSeq_id_Handle::GetHandle(Id));
     Assembly.Find(CSeq_id_Handle::GetHandle(Id), SeqList);
     if(SeqList.empty())
         return 0;
@@ -1793,11 +1810,11 @@ void CTabularFormatter_NearestGap::Print(CNcbiOstream& ostr,
     }
 
     TSeqRange CompRange = align.GetSeqRange(m_Row);
-    
     TSeqPos MinGapDist = numeric_limits<TSeqPos>::max();
     MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetFrom()-0))); 
     MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetTo()-SeqLength))); 
 
+    
     ITERATE(list<TSeqRange>, GapIter, Gaps) {
         MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetFrom()-GapIter->GetFrom()))); 
         MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetTo()-GapIter->GetTo())));
@@ -1963,7 +1980,11 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
                                  CTabularFormatter_ExonIntrons::e_Length));
 
     formatter.RegisterField("biggestgap",
-            new CTabularFormatter_BiggestGapBases);
+            new CTabularFormatter_BiggestGapBases(CTabularFormatter_BiggestGapBases::e_All));
+    formatter.RegisterField("qbiggestgap",
+            new CTabularFormatter_BiggestGapBases(0));
+    formatter.RegisterField("sbiggestgap",
+            new CTabularFormatter_BiggestGapBases(1));
     formatter.RegisterField("qchrom",
             new CTabularFormatter_SeqChrom(0));
     formatter.RegisterField("schrom",

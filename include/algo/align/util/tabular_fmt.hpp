@@ -466,12 +466,15 @@ private:
 class CTabularFormatter_BiggestGapBases : public CTabularFormatter::IFormatter
 {
 public:
+    enum ERow { e_All = -1 };
+    CTabularFormatter_BiggestGapBases(int row);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
                const objects::CSeq_align& align);
 private:
     TSeqPos x_CalcBiggestGap(const objects::CSeq_align& align);
+    int m_Row;
 };
 
 /////////////////////////////////////////////////////////////////////////////
