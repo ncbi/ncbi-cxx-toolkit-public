@@ -24,7 +24,6 @@ SRC = \
     cuBookRefUtils \
     cuCD \
     cuCdCore \
-    cuCdAnnotation \
     cuCdFamily \
     cuCdFromFasta \
     cuCdUpdater \
