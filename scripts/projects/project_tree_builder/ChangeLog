@@ -272,3 +272,7 @@ XCode-related bug fix.
 October 16, 2014
 version 3.12.0
 Added support of 64bits architectures on XCode
+
+October 30, 2014
+version 3.12.1
+Corrected to allow projects which use, but not require, absent 3rd party libraries.
