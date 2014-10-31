@@ -31,8 +31,8 @@ CAutoColValidator##name CAutoColValidator##name::_singleton; \
 bool CAutoColValidator##name::DoValidate(const CTempString& value, string& error) const
 
 #define DEFINE_COL_VALIDATOR(name) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #name, 0, 0)
-#define DEFINE_COL_VALIDATOR2(name, text) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #text, 0, 0)
-#define DEFINE_COL_VALIDATOR3(name, text1, text2) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #text1, #text2, 0)
+#define DEFINE_COL_VALIDATOR2(name, text) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, text, 0, 0)
+#define DEFINE_COL_VALIDATOR3(name, text1, text2) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, text1, text2, 0)
 #define DEFINE_COL_VALIDATOR4(name, text1, text2, text3) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, text1, text2, text3)
 
 USING_SCOPE(objects);
@@ -318,7 +318,7 @@ DEFINE_COL_VALIDATOR(boolean)
     return false;
 }
 
-DEFINE_COL_VALIDATOR3(isolation_source, "isolation_source", "host")
+DEFINE_COL_VALIDATOR3(isolation_source, "isolation source", "host")
 {
     return false;
 }
