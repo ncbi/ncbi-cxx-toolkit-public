@@ -2027,6 +2027,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
                 prev = ii;
             }
+            if(first) NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons found
         }
     }}
 
@@ -2076,7 +2077,9 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     last_exon = &s;
                 }
             }
-            if(last_exon != 0) {
+            if(last_exon == NULL) {
+                NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons
+            } else {
                 int ext_len = last_exon->CanExtendRight(m_mrna, m_genomic);
                 last_exon->ExtendRight(m_mrna, m_genomic, ext_len, m_aligner);
             }
@@ -2125,6 +2128,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                         g.m_len = g.m_box[1] - g.m_box[0] + 1;
                         tmp_segments.push_back(g);
                     }
+                } else {
+                    NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons 
                 }
                 segments.swap(tmp_segments);
             }}
@@ -2222,6 +2227,11 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
 
         //CORRECTIONS AFTER PARTIAL TRIMMING
+
+        if( segments.size() == 0 ) {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons     
+        }
+
         // indicate any slack space on the left
         if(segments[0].m_box[0] > 0) {
             
@@ -2235,8 +2245,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
         
         // same on the right        
-        TSegment& seg_last (segments.back());
-        
+        TSegment& seg_last (segments.back());        
         if(seg_last.m_box[1] + 1 < SeqLen1) {
             
             TSegment g;
@@ -2517,6 +2526,10 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         size_t exon_count1 (0);
         ITERATE(TSegments, ii, m_segments) {
             if(ii->m_exon) ++exon_count1;
+        }
+
+        if(exon_count1 == 0 ) {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons 
         }
 
         if(exon_count0 == exon_count1 && continue_iterations == false) break;
