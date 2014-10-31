@@ -624,9 +624,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseqset(void)
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
-    CRef<CSeq_entry> se(ReadSeqEntry());
+    CRef<CSeq_entry> se(new CSeq_entry);
 
-    if (se) {
+    try {
+        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
         ReportReadFailure();
         CRef<CValidError> errors(new CValidError());
         return errors;
@@ -741,9 +745,6 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
     }
     catch (CException& e) {
         ERR_POST(Error << e);
-    }
-
-    if (ss) {
         ReportReadFailure();
         CRef<CValidError> errors(new CValidError());
         return errors;
