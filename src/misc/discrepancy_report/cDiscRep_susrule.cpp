@@ -123,8 +123,11 @@ bool CSuspectRuleCheck :: DoesTextMatchBankItId (const CSeq_id& sid, const CStri
                     CopyListWithoutBankIt (str_cons.GetMatch_text()) : kEmptyStr;
 
   CString_constraint tmp_cons;
+  /**
   strtmp = Blob2Str(str_cons);
   Str2Blob(strtmp, tmp_cons);
+  **/
+  tmp_cons.Assign(str_cons);
   tmp_cons.SetMatch_text(text);
   bool rval = DoesObjectIdMatchStringConstraint (dbtag.GetTag(), tmp_cons);
   size_t pos;
@@ -1456,8 +1459,11 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
         rval = true; 
     }
     else {
+        /**
       string strtmp = Blob2Str(*str_cons);
       Str2Blob(strtmp, tmp_cons);
+      **/
+      tmp_cons.Assign(*str_cons);
       tmp_match = tmp_cons.CanGetMatch_text() ? tmp_cons.GetMatch_text() : kEmptyStr;
       if (str_cons->GetIgnore_weasel()) {
             tmp_cons.SetMatch_text(SkipWeasel(str_cons->GetMatch_text()));
@@ -3007,8 +3013,11 @@ bool CSuspectRuleCheck :: DoesObjectMatchFeatureFieldConstraint(const CSeq_feat&
   if (IsStringConstraintEmpty (&str_cons)) return true;
 
   CString_constraint tmp_cons;
+  /**
   string strtmp = Blob2Str(str_cons);
   Str2Blob(strtmp, tmp_cons);
+  **/
+  tmp_cons.Assign(str_cons);
   tmp_cons.SetNot_present(false);
   string str = GetQualFromFeature (feat, feat_field, &tmp_cons);
   bool rval = str.empty() ? false : true;
@@ -3059,8 +3068,11 @@ bool CSuspectRuleCheck :: DoesObjectMatchRnaQualConstraint (const CSeq_feat& seq
 
   CString_constraint tmp_cons;
   if (IsStringConstraintEmpty (&str_cons)) return true;
+  /**
   string strtmp = Blob2Str(str_cons);
   Str2Blob(strtmp, tmp_cons);
+  **/
+  tmp_cons.Assign(str_cons);
   tmp_cons.SetNot_present(false);
   str = GetRNAQualFromFeature (seq_feat, rna_qual, &tmp_cons);
   if (!str.empty()) rval = true;
@@ -3318,8 +3330,11 @@ bool CSuspectRuleCheck :: DoesBiosourceMatchConstraint (const CBioSource& biosrc
     if (field1 && !field2) {
       if ( AllowSourceQualMulti(field1) && str_cons->GetNot_present() ) {
           CString_constraint tmp_cons;
+          /**
           string strtmp = Blob2Str(*str_cons);
           Str2Blob(strtmp, tmp_cons);
+          **/
+          tmp_cons.Assign(*str_cons);
           tmp_cons.SetNot_present(false);
           str1 = GetSrcQualValue4FieldType (biosrc, *field1, &tmp_cons);
           if (!str1.empty()) rval = false;
