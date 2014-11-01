@@ -689,23 +689,32 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
 void CTestAndRepData :: RmvRedundancy(vector <string>& items, vector <CConstRef <CObject> >& objs)
 {
     set <string> uni_item;
+    vector<string> new_items;
+    vector< CConstRef<CObject> > new_objs;
 
     vector<string>::iterator item_it = items.begin();
     vector <CConstRef <CObject> >::iterator obj_it = objs.begin();
     while (item_it != items.end()) {
-        if (uni_item.find(*item_it) == uni_item.end()) {
+        pair< set<string>::iterator, bool> p =
             uni_item.insert(*item_it);
+        if (p.second) {
+            // insert succeeded; new item
+            new_items.push_back(*item_it);
             item_it++;
             if (obj_it != objs.end()) {
+                new_objs.push_back(*obj_it);
                 obj_it++;
             }
         } else {
-            item_it = items.erase(item_it);
+            ++item_it;
             if (obj_it != objs.end()) {
-                obj_it = objs.erase(obj_it);
+                ++obj_it;
             }
         }
     }
+
+    items.swap(new_items);
+    objs.swap(new_objs);
 };
 
 
