@@ -9,7 +9,7 @@ Seq-annot ::= {
         },
         default loc int {
           from 0,
-          to 50,
+          to 49,
           id local str "chr1"
         }
       },

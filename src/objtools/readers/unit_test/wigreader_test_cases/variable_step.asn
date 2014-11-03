@@ -48,67 +48,10 @@ Seq-annot ::= {
         header {
           field-name "Seq-table location"
         },
-        default loc mix {
-          int {
-            from 4799,
-            to 4800,
-            id gi 1010
-          },
-          int {
-            from 4810,
-            to 4811,
-            id gi 1010
-          },
-          int {
-            from 4815,
-            to 4816,
-            id gi 1010
-          },
-          int {
-            from 4823,
-            to 4824,
-            id gi 1010
-          },
-          int {
-            from 4839,
-            to 4840,
-            id gi 1010
-          },
-          int {
-            from 4843,
-            to 4844,
-            id gi 1010
-          },
-          int {
-            from 4851,
-            to 4852,
-            id gi 1010
-          },
-          int {
-            from 6799,
-            to 6800,
-            id gi 1011
-          },
-          int {
-            from 6805,
-            to 6808,
-            id gi 1011
-          },
-          int {
-            from 6811,
-            to 6812,
-            id gi 1011
-          },
-          int {
-            from 6819,
-            to 6822,
-            id gi 1011
-          },
-          int {
-            from 6825,
-            to 6826,
-            id gi 1011
-          }
+        default loc int {
+          from 4799,
+          to 6825,
+          id gi 1011
         }
       },
       {
@@ -239,67 +182,10 @@ Seq-annot ::= {
         header {
           field-name "Seq-table location"
         },
-        default loc mix {
-          int {
-            from 4799,
-            to 4800,
-            id local id 10
-          },
-          int {
-            from 4810,
-            to 4811,
-            id local id 10
-          },
-          int {
-            from 4815,
-            to 4816,
-            id local id 10
-          },
-          int {
-            from 4823,
-            to 4824,
-            id local id 10
-          },
-          int {
-            from 4839,
-            to 4840,
-            id local id 10
-          },
-          int {
-            from 4843,
-            to 4844,
-            id local id 10
-          },
-          int {
-            from 4851,
-            to 4852,
-            id local id 10
-          },
-          int {
-            from 6799,
-            to 6800,
-            id local id 11
-          },
-          int {
-            from 6805,
-            to 6808,
-            id local id 11
-          },
-          int {
-            from 6811,
-            to 6812,
-            id local id 11
-          },
-          int {
-            from 6819,
-            to 6822,
-            id local id 11
-          },
-          int {
-            from 6825,
-            to 6826,
-            id local id 11
-          }
+        default loc int {
+          from 4799,
+          to 6825,
+          id local id 11
         }
       },
       {

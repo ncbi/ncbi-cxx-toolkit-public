@@ -48,22 +48,12 @@ Seq-annot ::= {
         header {
           field-name "Seq-table location"
         },
-        default loc mix {
-          int {
-            from 1499,
-            to 4499,
-            id other {
-              accession "AC_000017",
-              version 1
-            }
-          },
-          int {
-            from 14999,
-            to 44999,
-            id other {
-              accession "AC_000018",
-              version 1
-            }
+        default loc int {
+          from 1499,
+          to 44998,
+          id other {
+            accession "AC_000018",
+            version 1
           }
         }
       },
@@ -294,22 +284,12 @@ Seq-annot ::= {
         header {
           field-name "Seq-table location"
         },
-        default loc mix {
-          int {
-            from 2499,
-            to 5499,
-            id other {
-              accession "AC_000019",
-              version 1
-            }
-          },
-          int {
-            from 14999,
-            to 44999,
-            id other {
-              accession "AC_000020",
-              version 1
-            }
+        default loc int {
+          from 2499,
+          to 44998,
+          id other {
+            accession "AC_000020",
+            version 1
           }
         }
       },

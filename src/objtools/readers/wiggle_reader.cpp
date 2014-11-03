@@ -85,7 +85,10 @@ CWiggleReader::xGetContainingLoc()
     CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
         cit->m_Pos + cit->m_Span));
     pContainingLoc->SetInt(*pInterval);
+    int count = 0;
     for (cit++; cit != m_Values.end(); ++cit) {
+        ++count;
+        __debugbreak();
         CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
         CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
             cit->m_Pos + cit->m_Span));
@@ -502,7 +505,8 @@ CRef<CSeq_table> CWiggleReader::xMakeTable(void)
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table->SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_name("Seq-table location");
-        col_id->SetDefault().SetLoc(*xGetContainingLoc());
+        //col_id->SetDefault().SetLoc(*xGetContainingLoc());
+        col_id->SetDefault().SetLoc(*table_loc);
     }
 
     { // Seq-id
