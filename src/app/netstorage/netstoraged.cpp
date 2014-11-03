@@ -130,7 +130,12 @@ void CNetStorageDApp::Init(void)
 
 int CNetStorageDApp::Run(void)
 {
-    LOG_POST(Message << Warning << NETSTORAGED_FULL_VERSION);
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("info", "versions")
+        .Print("server", NETSTORAGED_VERSION)
+        .Print("protocol", NETSTORAGED_PROTOCOL_VERSION)
+        .Print("build", NETSTORAGED_BUILD_DATE);
 
     const CArgs &           args = GetArgs();
     const CNcbiRegistry &   reg  = GetConfig();
@@ -158,25 +163,14 @@ int CNetStorageDApp::Run(void)
     server->SetParameters(params, false);
     server->ReadMetadataConfiguration(reg);
 
-    // Connect to the database
-    try {
-        server->GetDb().InitialConnect();
-    } catch (const CException &  ex) {
-        ERR_POST(ex);
-    } catch (const std::exception &  ex) {
-        ERR_POST("Exception while connecting to the database: " << ex.what());
-    } catch (...) {
-        ERR_POST("Unknown exception while connecting to the database");
-    }
-
     // Use port passed through parameters
     server->AddDefaultListener(new CNetStorageConnectionFactory(&*server));
     server->StartListening();
-    LOG_POST(Message << Warning
-                     << "Server listening on port " << params.port);
 
     if (!args[kNodaemonArgName]) {
-        LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
+        GetDiagContext().Extra()
+            .Print("_type", "startup")
+            .Print("info", "entering UNIX daemon mode");
         // Here's workaround for SQLite3 bug: if stdin is closed in forked
         // process then 0 file descriptor is returned to SQLite after open().
         // But there's assert there which prevents fd to be equal to 0. So
@@ -191,7 +185,9 @@ int CNetStorageDApp::Run(void)
                        "Error during daemonization.");
     }
     else
-        LOG_POST(Message << Warning << "Operating in non-daemon mode...");
+        GetDiagContext().Extra()
+            .Print("_type", "startup")
+            .Print("info", "operating in non-daemon mode");
 
     // Save the process PID if PID is given
     if (!x_WritePid())
@@ -199,19 +195,50 @@ int CNetStorageDApp::Run(void)
     if (!config_well_formed)
         server->RegisterAlert(eConfig);
 
+    // Connect to the database
+    // Note: it is vitally important that the first GetDb() call is done after
+    // the daemonization. The first GetDb() creates the database object which
+    // in turn creates a thread which restores the DB connection. If we have a
+    // thread after the daemonization then the thread dies without any visible
+    // signs and simply does not work.
+    try {
+        server->GetDb().InitialConnect();
+    } catch (const CException &  ex) {
+        ERR_POST(ex);
+    } catch (const std::exception &  ex) {
+        ERR_POST("Exception while connecting to the database: " << ex.what());
+    } catch (...) {
+        ERR_POST("Unknown exception while connecting to the database");
+    }
+
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;
 
-    CAsyncDiagHandler diag_handler;
-    diag_handler.SetCustomThreadSuffix("_l");
+
+    // Note: the CAsyncDiagHandler cannot be used here. It conflicts with
+    // simple DB API in a wierd way so that it may result the logging not to
+    // work at all. In particular it behaves different in two scenarios:
+    // a. There is no DB connection, the server starts and then the connection
+    // is restored => logging with CAsyncDiagHandler works fine.
+    // b. There is a DB connection, server starts => no logging is produced.
+    // So, bearing in mind that:
+    // - the operations with actual objects and the DB records take way longer
+    //   than the logging of the corresponding commands
+    // - there is not significant benefits of the async diag handler in the
+    //   scenarios above
+    // it was decided to get rid of the CAsyncDiagHandler and use the out of
+    // the shelf logging which works fine in all the scenarios.
 
     try {
-        diag_handler.InstallToDiag();
         server->Run();
-        diag_handler.RemoveFromDiag();
-    }
-    catch (CThreadException& ex) {
+    } catch (const CThreadException &  ex) {
         ERR_POST(Critical << ex);
+    } catch (const CException &  ex) {
+        ERR_POST(Critical << ex);
+    } catch (const exception &  ex) {
+        ERR_POST(Critical << "C++ std exception: " << ex.what());
+    } catch (...) {
+        ERR_POST(Critical << "Unknown exception in the server run loop");
     }
 
     if (args[kNodaemonArgName])

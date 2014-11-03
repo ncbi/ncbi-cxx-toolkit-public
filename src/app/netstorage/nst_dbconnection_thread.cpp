@@ -34,6 +34,8 @@
 #include "nst_dbconnection_thread.hpp"
 #include "nst_precise_time.hpp"
 
+#include <sys/prctl.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -67,11 +69,25 @@ void CNSTDBConnectionThread::Wakeup(void)
 
 void *  CNSTDBConnectionThread::Main(void)
 {
+    prctl(PR_SET_NAME, "netstoraged_dbc", 0, 0, 0);
     for (;;) {
-        if (m_StopFlag.Get() != 0)
-            break;
-        m_StopSignal.Wait();
-        x_RestoreConnection();
+        try {
+            if (m_StopFlag.Get() != 0)
+                break;
+            m_StopSignal.Wait();
+            x_RestoreConnection();
+        } catch (const CException &  ex) {
+            ERR_POST("Unexpected toolkit exception in the DB restore "
+                     "connection thread Main() function: " + string(ex.what()) +
+                     " -- Ignore and continue.");
+        } catch (const exception &  ex) {
+            ERR_POST("Unexpected C++ std exception in the DB restore "
+                     "connection thread Main() function: " + string(ex.what()) +
+                     " -- Ignore and continue.");
+        } catch (...) {
+            ERR_POST("Unexpected unknown exception in the DB restore "
+                     "connection thread Main() function. Ignore and continue.");
+        }
     }
     return NULL;
 }
@@ -79,10 +95,11 @@ void *  CNSTDBConnectionThread::Main(void)
 
 void CNSTDBConnectionThread::x_RestoreConnection(void)
 {
+    // Paranoya check: this must never happened
     if (m_Database == NULL)
         return;
 
-    while (m_StopFlag.Get() == 0 && m_Connected == false ) {
+    while (m_StopFlag.Get() == 0 && m_Connected == false) {
         CNSTPreciseTime     start = CNSTPreciseTime::Current();
 
         try {
@@ -91,7 +108,16 @@ void CNSTDBConnectionThread::x_RestoreConnection(void)
             m_Connected = true;
             LOG_POST("Database connection has been restored");
             return;
-        } catch (...) {}
+        } catch (const CException &  ex) {
+            ERR_POST("Toolkit exception while restoring DB connection: " +
+                     string(ex.what()) + " -- Ignore and continue.");
+        } catch (const exception &  ex) {
+            ERR_POST("C++ std exception while restoring DB connection: " +
+                     string(ex.what()) + " -- Ignore and continue.");
+        } catch (...) {
+            ERR_POST("Unknown exception while restoring DB connection. "
+                     "Ignore and continue.");
+        }
 
         CNSTPreciseTime     loop_time = CNSTPreciseTime::Current() - start;
         if (loop_time < gs_MinRetryTimeout)
