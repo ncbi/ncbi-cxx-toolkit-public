@@ -895,14 +895,6 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
 {
     string resp = m_Impl->x_ExecOnce("STATUS2", job.job_id);
 
-    job.input.erase();
-    job.affinity.erase();
-    job.mask = CNetScheduleAPI::eEmptyMask;
-    job.ret_code = 0;
-    job.output.erase();
-    job.error_msg.erase();
-    job.progress_msg.erase();
-
     static const char* const s_JobStatusAttrNames[] = {
             "job_status",       // 0
             "job_exptime",      // 1
@@ -940,12 +932,20 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
         job.ret_code = NStr::StringToInt(attr_values[4],
                 NStr::fConvErr_NoThrow);
         job.error_msg = attr_values[5];
-
-        /* FALL THROUGH */
+        break;
 
     default:
-        return status;
+        job.input.erase();
+        job.ret_code = 0;
+        job.output.erase();
+        job.error_msg.erase();
     }
+
+    job.affinity.erase();
+    job.mask = CNetScheduleAPI::eEmptyMask;
+    job.progress_msg.erase();
+
+    return status;
 }
 
 CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,

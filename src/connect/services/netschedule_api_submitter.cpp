@@ -42,6 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 #define FORCED_SST_INTERVAL_SEC 0
+#define MAX_FORCED_SST_INTERVAL_SEC 3
 #define FORCED_SST_INTERVAL_NANOSEC 500 * 1000 * 1000
 
 //////////////////////////////////////////////////////////////////////////////
@@ -417,60 +418,62 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
-    bool last_timeout = false;
+    bool last_wait = false;
     for (;;) {
-        CDeadline timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
+        CDeadline timeout(wait_sec, FORCED_SST_INTERVAL_NANOSEC);
 
         if (!(timeout < deadline)) {
-            if (deadline.GetRemainingTime().IsZero())
-                try {
-                    return ns_api.GetJobDetails(job);
-                }
-                catch (CNetScheduleException& e) {
-                    if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
-                        throw;
-                    ERR_POST(job.job_id << ": error while "
-                            "retrieving job details: " << e);
-                    return status;
-                }
-                catch (CException& e) {
-                    ERR_POST(job.job_id << ": error while "
-                            "retrieving job details: " << e);
-                    return status;
-                }
-
             timeout = deadline;
-            last_timeout = true;
+            last_wait = true;
         }
 
         if (WaitForNotification(timeout)) {
-            if (CheckJobStatusNotification(job.job_id, &status)) {
-                if (status == CNetScheduleAPI::eDone)
-                    ns_api.GetJobDetails(job);
+            if (CheckJobStatusNotification(job.job_id, &status) &&
+                    status != CNetScheduleAPI::eRunning &&
+                    status != CNetScheduleAPI::ePending)
+                return ns_api.GetJobDetails(job);
+        } else {
+            // The wait has timed out - query the server directly.
 
-                return status;
-            }
-        } else
+            string err_msg;
             try {
                 status = ns_api.GetJobDetails(job);
                 if ((status != CNetScheduleAPI::eRunning &&
-                        status != CNetScheduleAPI::ePending) || last_timeout)
+                        status != CNetScheduleAPI::ePending) || last_wait)
                     return status;
+                // The job is still running - next time, wait one second
+                // longer before querying the server again.
+                if (wait_sec < MAX_FORCED_SST_INTERVAL_SEC)
+                    ++wait_sec;
+                // Go to the next cycle (jump over the error
+                // processing code below the catch blocks).
+                continue;
             }
             catch (CNetScheduleException& e) {
-                if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
+                if (last_wait)
                     throw;
-                ERR_POST(job.job_id << ": error while "
-                        "retrieving job details: " << e);
-                if (last_timeout)
-                    return status;
+                switch (e.GetErrCode()) {
+                case CNetScheduleException::eJobNotFound:
+                case CNetScheduleException::eUnknownQueue:
+                    throw;
+                }
+                err_msg = e.GetMsg();
             }
             catch (CException& e) {
-                ERR_POST(job.job_id << ": error while "
-                        "retrieving job details: " << e);
-                if (last_timeout)
-                    return status;
+                if (last_wait)
+                    throw;
+                err_msg = e.GetMsg();
             }
+            // An exception has occurred, but there's still some
+            // time left before the deadline.
+
+            CNetServer ns_server(ns_api->GetServer(job.job_id));
+            ns_api->GetListener()->OnWarning(err_msg, ns_server);
+
+            // The notification mechanism may have been disrupted
+            // by the error - query the server more often.
+            wait_sec = FORCED_SST_INTERVAL_SEC;
+        }
     }
 }
 
@@ -519,13 +522,13 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
-    bool last_timeout = false;
+    bool last_wait = false;
     do {
         CDeadline timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
         if (!(timeout < deadline)) {
             timeout = deadline;
-            last_timeout = true;
+            last_wait = true;
         }
 
         if (RequestJobWatching(ns_api, job_key,
@@ -543,7 +546,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
                 ((status_mask & (1 << job_status)) != 0 ||
                 *new_event_index > last_event_index))
             break;
-    } while (!last_timeout);
+    } while (!last_wait);
 
     return job_status;
 }
