@@ -80,9 +80,6 @@ bool BMARefinerOptionsDialog::SetRefinerOptionsViaDialog(wxWindow* parent, BMARe
 /////////////////////////////////////////////////////////////////////////////////////
 
 const int ID_TEXT = 12000;
-const int ID_CHECKBOX = 12001;
-const int ID_SPINCTRL = 12002;
-const int ID_TEXTCTRL = 12003;
 const int ID_FIX_STRUCT_CHECKBOX = 12004;
 const int ID_FULL_SEQ_CHECKBOX = 12005;
 const int ID_BE_COMBOBOX = 12006;
