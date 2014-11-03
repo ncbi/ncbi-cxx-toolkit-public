@@ -85,6 +85,8 @@ namespace boost {
     }
 }
 #  define isnan bool_isnan
+#elif defined(NCBI_OS_DARWIN)
+#  include <cmath>
 #endif
 
 #if defined(NCBI_OS_MSWIN)  &&  !defined(isnan)
@@ -94,15 +96,6 @@ namespace boost {
  * Checks double-precision value for not a number (NaN).
  */
 #   define isnan _isnan
-#elif defined(NCBI_OS_DARWIN)  &&  defined(MATH_ERRNO)  &&  !defined(isnan)
-/**
- * Define value of isnan (Is Not A Number).
- *
- * <math.h> changed a lot between 10.1 and 10.2; the presence of
- * MATH_ERRNO indicates 10.2, which needs this hack, thanks to
- * <cmath>'s obnoxious removal of <math.h>'s isnan macro.
- */
-#   define isnan __isnand
 #endif
 
 #if defined(NCBI_OS_MSWIN)
@@ -112,7 +105,7 @@ namespace boost {
  * Checks whether given double-precision floating point value is finite
  */
 #   define finite _finite
-#elif defined(NCBI_OS_DARWIN) && defined(__clang__)
+#elif defined(NCBI_OS_DARWIN)
 /**
  * Define value of finite (Is Finite).
  *
