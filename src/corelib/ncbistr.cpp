@@ -2157,7 +2157,7 @@ void NStr::DoubleToString(string& out_str, double value,
 {
     char buffer[kMaxDoubleStringSize];
     if (precision >= 0 ||
-        ((flags & fDoublePosix) && (isnan(value) || !finite(value) || value == 0.))) {
+        ((flags & fDoublePosix) && (!finite(value) || value == 0.))) {
         SIZE_TYPE n = DoubleToString(value, precision, buffer,
                                      kMaxDoubleStringSize, flags);
         buffer[n] = '\0';
@@ -2198,7 +2198,7 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 {
     char buffer[kMaxDoubleStringSize];
     int n = 0;
-    if ((flags & fDoublePosix) && (isnan(value) || !finite(value) || value == 0.)) {
+    if ((flags & fDoublePosix) && (!finite(value) || value == 0.)) {
         if (value == 0.) {
             double zero = 0.;
             if (memcmp(&value, &zero, sizeof(double)) == 0) {
