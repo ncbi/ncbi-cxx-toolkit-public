@@ -195,7 +195,7 @@ private:
                                        CRef<objects::CSeq_feat> cds_feat_on_transcribed_mrna,
                                        list<CRef<CSeq_loc> >& transcribed_mrna_seqloc_refs,
                                        const CSeq_align& align,
-                                       CConstRef<CSeq_loc> loc,
+                                       CRef<CSeq_loc> loc,
                                        const CTime& time,
                                        size_t model_num,
                                        CBioseq_set& seqs,
@@ -206,7 +206,7 @@ private:
                                          CSeq_loc_Mapper::TMapOptions opts);
     CRef<CSeq_feat> x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                                 const CSeq_align& align,
-                                CConstRef<CSeq_loc> loc,
+                                CRef<CSeq_loc> loc,
                                 CSeq_loc_Mapper::TMapOptions opts,
                                 TSeqPos &offset);
     void x_CheckInconsistentDbxrefs(CConstRef<CSeq_feat> gene_feat,

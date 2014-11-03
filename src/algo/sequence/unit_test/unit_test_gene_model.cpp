@@ -395,6 +395,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             actual_annot.SetData().SetFtable();
         {
             generator.SetFlags(default_flags);
+            generator.SetMinIntron(CFeatureGenerator::kDefaultMinIntron );
             TSeqRange adjust_range;
             CRef<CSeq_feat> feat;
             ITERATE (CSeq_align::TExt, ext_it, align->GetExt()) {
@@ -403,6 +404,10 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     if ((*ext_it)->HasField("Flags")) {
                         int flags = (*ext_it)->GetField("Flags").GetData().GetInt();
                         generator.SetFlags(flags);
+                    }
+                    if ((*ext_it)->HasField("MinIntron")) {
+                        int value = (*ext_it)->GetField("MinIntron").GetData().GetInt();
+                        generator.SetMinIntron(value);
                     }
                     if ((*ext_it)->HasField("AdjustRange")) {
                         const vector<int>& range_vec = (*ext_it)->GetField("AdjustRange").GetData().GetInts();
@@ -420,6 +425,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             }
 
             CConstRef<CSeq_align> clean_align = generator.CleanAlignment(*align);
+
+//             cerr << MSerial_AsnText << *clean_align;
 
             if (adjust_range.NotEmpty()) {
                 clean_align = generator.AdjustAlignment(*clean_align, adjust_range);
@@ -1631,6 +1638,48 @@ TACGATCAATA\n\
 
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseConvertLocToAnnotTrimXs)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+string buf = " \
+Seq-loc ::= packed-int { \
+            { \
+              from 194830, \
+              to 200052, \
+              strand minus, \
+              id gi 500770508, \
+              fuzz-from lim lt \
+            } \
+          } \
+";
+    CNcbiIstrstream istrs(buf.c_str());
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    CSeq_loc loc;
+    *istr >> loc;
+
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    CBioseq_set& seqs = seq_entry->SetSet();
+    seqs.SetSeq_set();
+    CSeq_annot annot;
+    annot.SetData().SetFtable();
+    CFeatureGenerator feat_gen(*scope);
+    int flags =
+        CFeatureGenerator::fCreateGene |
+        CFeatureGenerator::fCreateCdregion;
+    feat_gen.SetFlags(flags);
+
+
+    feat_gen.ConvertLocToAnnot(loc, annot, seqs);
+
+    BOOST_CHECK(annot.GetData().GetFtable().front()->GetLocation().Compare(
+                annot.GetData().GetFtable().back()->GetLocation())
+                == 0
+                );
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
-
-

@@ -74,6 +74,7 @@
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include "feature_generator.hpp"
+#include <serial/serial.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -868,6 +869,12 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             SetProduct().SetWhole().Assign(*transcribed_rna_id);
     }
 
+    CRef<CSeq_feat> cds_feat_on_genome_with_translated_product =
+        x_CreateCdsFeature(cds_feat_on_query_mrna, cds_feat_on_transcribed_mrna,
+                           transcribed_mrna_seqloc_refs,
+                           *align, rna_feat_loc_on_genome, time, model_num, seqs, opts);
+
+
     CRef<CSeq_feat> gene_feat;
 
     if(!call_on_align_list){
@@ -915,12 +922,6 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     }
 
     CSeq_annot::C_Data::TFtable propagated_features;
-
-    CRef<CSeq_feat> cds_feat_on_genome_with_translated_product =
-        x_CreateCdsFeature(cds_feat_on_query_mrna, cds_feat_on_transcribed_mrna,
-                           transcribed_mrna_seqloc_refs,
-                           *align, rna_feat_loc_on_genome, time, model_num, seqs, opts);
-
 
     if(cds_feat_on_genome_with_translated_product.NotNull()) {
         propagated_features.push_back(cds_feat_on_genome_with_translated_product);
@@ -1867,7 +1868,7 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                                     CRef<CSeq_feat> cds_feat_on_transcribed_mrna,
                                     list<CRef<CSeq_loc> >& transcribed_mrna_seqloc_refs,
                                     const CSeq_align& align,
-                                    CConstRef<CSeq_loc> loc,
+                                    CRef<CSeq_loc> loc,
                                     const CTime& time,
                                     size_t model_num,
                                     CBioseq_set& seqs,
@@ -2085,8 +2086,10 @@ SImplementation::x_CreateNcRnaFeature(const CSeq_feat* ncrnafeature_on_mrna,
     if ((m_flags & fPropagateNcrnaFeats) && ncrnafeature_on_mrna != NULL) {
 
         TSeqPos offset;
+        CRef<CSeq_loc> non_const_loc(new CSeq_loc); // x_MapFeature requires non-const loc
+        non_const_loc->Assign(*loc);
         ncrna_feat = x_MapFeature(ncrnafeature_on_mrna,
-                                  align, loc, opts, offset);
+                                  align, non_const_loc, opts, offset);
     }
     return ncrna_feat;
 }
@@ -2095,7 +2098,7 @@ CRef<CSeq_feat>
 CFeatureGenerator::
 SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                                             const CSeq_align& align,
-                                            CConstRef<CSeq_loc> loc,
+                                            CRef<CSeq_loc> loc,
                                             CSeq_loc_Mapper::TMapOptions opts,
                                             TSeqPos &offset)
 {
@@ -2298,13 +2301,21 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
     }
 
     if (mapped_loc && feature_on_mrna->GetData().IsCdregion()) {
-        /// For CDS features, trip not to begin/end in gaps
+        /// For CDS features, trim not to begin/end in gaps
         /// Trim beginning
         CSeqVector vec(*mapped_loc, *m_scope);
         TSeqPos start_gap = 0;
         for (; vec.IsInGap(start_gap); ++start_gap);
         if (start_gap > 0) {
             offset += start_gap;
+
+            CSeq_loc orig_mapped_loc;
+
+            bool no_utr = mapped_loc->GetStart(eExtreme_Biological) == loc->GetStart(eExtreme_Biological);
+            if (no_utr) {
+                orig_mapped_loc.Assign(*mapped_loc);
+            }
+
             while (mapped_loc->SetPacked_int().Set().front()->GetLength()
                         <= start_gap)
             {
@@ -2321,10 +2332,24 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                 }
             }
             mapped_loc->SetPartialStart(true, eExtreme_Biological);
+
+            if (no_utr) {
+                loc->Assign(*loc->Subtract(*orig_mapped_loc.Subtract(*mapped_loc, 0, nullptr, nullptr), 0, nullptr, nullptr));
+                cout << MSerial_AsnText << *loc;
+
+                loc->SetPartialStart(true, eExtreme_Biological);       
+            }
         }
         TSeqPos end_gap = 0;
         for (; vec.IsInGap(vec.size() - 1 - end_gap); ++end_gap);
         if (end_gap > 0) {
+            CSeq_loc orig_mapped_loc;
+
+            bool no_utr = mapped_loc->GetStart(eExtreme_Biological) == loc->GetStart(eExtreme_Biological);
+            if (no_utr) {
+                orig_mapped_loc.Assign(*mapped_loc);
+            }
+
             while (mapped_loc->SetPacked_int().Set().back()->GetLength() <= end_gap)
             {
                 end_gap -= mapped_loc->SetPacked_int().Set().back()->GetLength();
@@ -2340,6 +2365,10 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                 }
             }
             mapped_loc->SetPartialStop(true, eExtreme_Biological);
+            if (no_utr) {
+                loc->Assign(*loc->Subtract(*orig_mapped_loc.Subtract(*mapped_loc, 0, nullptr, nullptr), 0, nullptr, nullptr));
+                loc->SetPartialStop(true, eExtreme_Biological);       
+            }
         }
     }
 
