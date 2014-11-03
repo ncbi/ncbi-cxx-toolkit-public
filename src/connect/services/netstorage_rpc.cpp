@@ -564,9 +564,12 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
 
     hello.SetString("Client", m_ClientName);
     hello.SetString("Service", m_NetStorageServiceName);
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if (app != NULL)
-        hello.SetString("Application", app->GetProgramExecutablePath());
+    {{
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app != NULL)
+            hello.SetString("Application", app->GetProgramExecutablePath());
+    }}
     hello.SetInteger("ProtocolVersion", NST_PROTOCOL_VERSION);
 
     m_Service = new SNetServiceImpl("NetStorageAPI", m_ClientName,

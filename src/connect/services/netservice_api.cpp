@@ -308,6 +308,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     auto_ptr<CConfig::TParamTree> param_tree;
 
     if (config == NULL) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         CNcbiRegistry* reg;
         if (app != NULL && (reg = &app->GetConfig()) != NULL) {
@@ -517,6 +518,7 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app == NULL) {
             NCBI_THROW_FMT(CArgException, eNoValue,
@@ -564,6 +566,7 @@ string SNetServiceImpl::MakeAuthString()
             auth += '\"';
         }
 
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app != NULL) {
             auth += " client_path=\"";

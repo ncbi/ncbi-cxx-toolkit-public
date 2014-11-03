@@ -33,6 +33,7 @@
 
 #include "grid_worker_impl.hpp"
 
+#include <corelib/ncbimtx.hpp>
 #include <connect/services/grid_worker_app.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -43,6 +44,7 @@ extern "C"
 void g_GridWorker_TermHandler(int /*sig*/)
 {
     try {
+        ncbi::CMutexGuard guard(ncbi::CNcbiApplication::GetInstanceMutex());
         ncbi::CGridWorkerApp* app = dynamic_cast<ncbi::CGridWorkerApp*>(
                 ncbi::CNcbiApplication::Instance());
         if (app) {

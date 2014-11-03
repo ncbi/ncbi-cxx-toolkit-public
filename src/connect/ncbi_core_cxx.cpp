@@ -257,6 +257,7 @@ static void s_Fini(void) THROWS_NONE
 extern "C" {
 static const char* s_GetAppName(void)
 {
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* app = CNcbiApplication::Instance();
     return app ? app->GetProgramDisplayName().c_str() : 0;
 }
@@ -338,6 +339,7 @@ static void s_InitInternal(void)
         &&  g_CORE_MT_Lock == &g_CORE_MT_Lock_default) {
         try {
             if (s_ConnectInit == eConnectInit_Intact) {
+                CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
                 CNcbiApplication* app = CNcbiApplication::Instance();
                 s_Init(app ? &app->GetConfig() : 0);
             }

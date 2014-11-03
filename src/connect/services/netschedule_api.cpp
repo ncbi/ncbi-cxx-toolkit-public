@@ -444,12 +444,15 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         auth += '\"';
     }
 
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if (app != NULL) {
-        auth += " client_version=\"";
-        auth += app->GetFullVersion().GetVersionInfo().Print();
-        auth += '\"';
-    }
+    {{
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app != NULL) {
+            auth += " client_version=\"";
+            auth += app->GetFullVersion().GetVersionInfo().Print();
+            auth += '\"';
+        }
+    }}
 
     ITERATE(SNetScheduleAPIImpl::TAuthParams, it, impl->m_AuthParams) {
         auth += it->second;

@@ -169,10 +169,13 @@ public:
                 "\nVersion: " << node.GetAppVersion() <<
                 "\nBuild date: " << node.GetBuildDate() << "\n";
 
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app)
-            os << "Executable path: " << app->GetProgramExecutablePath()
-                    << "\nPID: " << CProcess::GetCurrentPid() << "\n";
+        {{
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if (app)
+                os << "Executable path: " << app->GetProgramExecutablePath()
+                        << "\nPID: " << CProcess::GetCurrentPid() << "\n";
+        }}
 
         CNetScheduleAPI ns_api(node.GetNetScheduleAPI());
 

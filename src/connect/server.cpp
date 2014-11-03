@@ -219,6 +219,7 @@ void*
 CThreadInPool_ForServer::Main(void)
 {
     if (!m_Pool->m_ThrSuffix.empty()) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
         thr_name += m_Pool->m_ThrSuffix;
 #if defined(NCBI_OS_LINUX)  &&  defined(PR_SET_NAME)

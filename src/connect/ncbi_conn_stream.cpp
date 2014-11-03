@@ -385,6 +385,7 @@ CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
 
 static void x_SetupUserAgent(SConnNetInfo* net_info)
 {
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     CNcbiApplication* theApp = CNcbiApplication::Instance();
     if (theApp) {
         string user_agent("User-Agent: ");
