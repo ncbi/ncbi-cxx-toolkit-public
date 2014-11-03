@@ -768,9 +768,6 @@ void CFlatGatherer::x_GatherComments(void) const
 
     x_AuthorizedAccessComment(ctx);
 
-    x_MapComment(ctx);
-    x_BasemodComment(ctx);
-
     // Gather comments related to the seq-id
     x_IdComments(ctx, 
         ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
@@ -803,6 +800,9 @@ void CFlatGatherer::x_GatherComments(void) const
         x_AddComment(new CCommentItem(*firstGenAnnotSCAD, ctx));
     }
 //    x_FeatComments(ctx);
+
+    x_MapComment(ctx);
+    x_BasemodComment(ctx);
 
     x_RemoveDupComments();
     x_RemoveExcessNewlines();
