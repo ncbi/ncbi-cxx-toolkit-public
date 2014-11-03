@@ -112,6 +112,13 @@ namespace boost {
  * Checks whether given double-precision floating point value is finite
  */
 #   define finite _finite
+#elif defined(NCBI_OS_DARWIN)
+/**
+ * Define value of finite (Is Finite).
+ *
+ * Checks whether given double-precision floating point value is finite
+ */
+#   define finite isfinite
 #endif
 
 
