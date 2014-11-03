@@ -918,7 +918,7 @@ void CDB_UserHandler_Deferred::Flush(EDiagSev max_severity)
         if (ex->GetSeverity() > max_severity) {
             ex->SetSeverity(max_severity);
         }
-        if (max_severity < eDiag_Error) {
+        if (max_severity < eDiag_Error  ||  !m_SavedExceptions.empty() ) {
             try {
                 m_UltimateHandlers.PostMsg(ex.get());
             } catch (CDB_Exception& ex2) {
