@@ -571,8 +571,8 @@ int CNcbiApplogApp::Redirect()
             // Host role and location
             // (add unconditionally, users should not overwrite it via command line)
             {{
-                const char* role     = NcbiLog_GetHostRoleStr();
-                const char* location = NcbiLog_GetHostLocationStr();
+                const char* role     = NcbiLog_GetHostRole();
+                const char* location = NcbiLog_GetHostLocation();
                 if (role) {
                     s_args += string(" \"-hostrole=") + NStr::URLEncode(role) + "\"";
                 }

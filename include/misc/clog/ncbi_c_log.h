@@ -264,31 +264,6 @@ typedef struct {
 } SNcbiLog_Param;
 
 
-/** Host role.
- *
- *  @sa NcbiLog_GetHostRole
- */
-typedef enum {
-    eNcbiLog_Role_Unknown     = 0,
-    eNcbiLog_Role_Development = 1,
-    eNcbiLog_Role_IntProd     = 2,
-    eNcbiLog_Role_Try         = 3,
-    eNcbiLog_Role_QA          = 4,
-    eNcbiLog_Role_Production  = 5
-} ENcbiLog_HostRole;
-
-
-/** Host location.
- *
- *  @sa NcbiLog_GetHostLocation
- */
-typedef enum {
-    eNcbiLog_Loc_Unknown = 0,
-    eNcbiLog_Loc_Be_MD   = 1,
-    eNcbiLog_Loc_St_VA   = 2
-} ENcbiLog_HostLocation;
-
-
 /** Big integer type
 */
 #if defined(__MINGW32__)  ||  defined(__MINGW64__)
@@ -460,14 +435,12 @@ extern const char* NcbiLog_GetHostName(void);
 
 /** Get host role from /etc/ncbi/role.
  */
-extern ENcbiLog_HostRole NcbiLog_GetHostRole(void);
-extern const char*       NcbiLog_GetHostRoleStr(void);
+extern const char* NcbiLog_GetHostRole(void);
 
 
 /** Get host location from /etc/ncbi/location.
  */
-extern ENcbiLog_HostLocation NcbiLog_GetHostLocation(void);
-extern const char*           NcbiLog_GetHostLocationStr(void);
+extern const char* NcbiLog_GetHostLocation(void);
 
 
 /** Set up diagnostics destination.

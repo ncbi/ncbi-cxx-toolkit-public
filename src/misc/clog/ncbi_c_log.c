@@ -560,42 +560,9 @@ static const char* s_ReadFileString(const char* filename)
 }
 
 
-/** Get host role.
- */
-ENcbiLog_HostRole NcbiLog_GetHostRole(void)
-{
-    static ENcbiLog_HostRole role = eNcbiLog_Role_Unknown;
-    const char* s;
-
-    if (role) {
-        return role;
-    }
-    s = NcbiLog_GetHostRoleStr();
-    if (!s) {
-        return role;
-    }
-    if (strcmp(s, "development") == 0) {
-        role = eNcbiLog_Role_Development;
-    } else
-    if (strcmp(s, "intprod") == 0) {
-        role = eNcbiLog_Role_IntProd;
-    } else
-    if (strcmp(s, "try") == 0) {
-        role = eNcbiLog_Role_Try;
-    } else
-    if (strcmp(s, "qa") == 0) {
-        role = eNcbiLog_Role_QA;
-    } else
-    if (strcmp(s, "production") == 0) {
-        role = eNcbiLog_Role_Production;
-    }
-    return role;
-}
-
-
 /** Get host role string.
  */
-const char* NcbiLog_GetHostRoleStr(void)
+const char* NcbiLog_GetHostRole(void)
 {
     static const char* role = NULL;
     if ( role ) {
@@ -606,34 +573,9 @@ const char* NcbiLog_GetHostRoleStr(void)
 }
 
 
-/** Get host location.
- */
-ENcbiLog_HostLocation NcbiLog_GetHostLocation(void)
-{
-    static ENcbiLog_HostLocation location = eNcbiLog_Loc_Unknown;
-    const char* s;
-
-    if (location) {
-        return location;
-    }
-    s = NcbiLog_GetHostLocationStr();
-    if (!s) {
-        return location;
-    }
-
-    if (strcmp(s, "be-md") == 0) {
-        location = eNcbiLog_Loc_Be_MD;
-    } else
-    if (strcmp(s, "st-va") == 0) {
-        location = eNcbiLog_Loc_St_VA;
-    }
-    return location;
-}
-
-
 /** Get host location string.
  */
-const char* NcbiLog_GetHostLocationStr(void)
+const char* NcbiLog_GetHostLocation(void)
 {
     static const char* location = NULL;
     if ( location ) {
@@ -2782,7 +2724,7 @@ static size_t s_PrintReqStartExtraParams(char* dst, size_t pos)
 
     /* Add host role */
     if (!sx_Info->host_role  &&  !sx_Info->remote_logging) {
-        sx_Info->host_role = NcbiLog_GetHostRoleStr();
+        sx_Info->host_role = NcbiLog_GetHostRole();
     }
     if (sx_Info->host_role  &&  sx_Info->host_role[0]) {
         ext[ext_idx].key = "ncbi_role";
@@ -2792,7 +2734,7 @@ static size_t s_PrintReqStartExtraParams(char* dst, size_t pos)
 
     /* Add host location */
     if (!sx_Info->host_location  &&  !sx_Info->remote_logging) {
-        sx_Info->host_location = NcbiLog_GetHostLocationStr();
+        sx_Info->host_location = NcbiLog_GetHostLocation();
     }
     if (sx_Info->host_location  &&  sx_Info->host_location[0]) {
         ext[ext_idx].key = "ncbi_location";
