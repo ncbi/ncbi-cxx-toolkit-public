@@ -88,7 +88,6 @@ CWiggleReader::xGetContainingLoc()
     int count = 0;
     for (cit++; cit != m_Values.end(); ++cit) {
         ++count;
-        __debugbreak();
         CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
         CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
             cit->m_Pos + cit->m_Span));
