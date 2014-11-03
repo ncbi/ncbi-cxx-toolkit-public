@@ -133,4 +133,12 @@ SDiagMessage::SDiagMessage(EDiagSev severity, const char* buf, size_t len,
       func(func)
 {}
 
+#if 1
+DEFINE_STATIC_MUTEX(s_InstanceMutex);
+SSystemMutex&
+CNcbiApplication::GetInstanceMutex(void) {
+    return s_InstanceMutex;
+}
+#endif
+
 END_NCBI_SCOPE

@@ -459,9 +459,7 @@ public:
     };
     static string GetAppName(ENameType)
     { return string(); }
-    static SSystemMutex& GetInstanceMutex(void) {
-        return *(SSystemMutex*)Instance();
-    }
+    static SSystemMutex& GetInstanceMutex(void);
 };
 
 
