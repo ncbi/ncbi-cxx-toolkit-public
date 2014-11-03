@@ -59,6 +59,8 @@
 
 USING_NCBI_SCOPE;
 
+#define HTTP_NCBI_JSID         "NCBI-JSID"
+
 static const string kSinceTime = "ctg_time";
 
 
@@ -109,8 +111,8 @@ public:
     CCgiContext& GetCGIContext() { return m_CgiContext; }
 
     void SelectView(const string& view_name);
-    void SetCompleteResponse(CNcbiIstream& is, const string& jquery_callback);
     bool NeedRenderPage() const { return m_NeedRenderPage; }
+    void NeedRenderPage(bool value) { m_NeedRenderPage = value; }
 
 public:
     // Remove all persistent entries from cookie and self url.
@@ -253,31 +255,6 @@ void CGridCgiContext::SelectView(const string& view_name)
     m_Page.AddTagMap("STAT_VIEW", new CHTMLText("<@VIEW_" + view_name + "@>"));
 }
 
-void CGridCgiContext::SetCompleteResponse(CNcbiIstream& is,
-        const string& jquery_callback)
-{
-    m_NeedRenderPage = false;
-    if (jquery_callback.empty())
-        NcbiStreamCopy(m_CgiContext.GetResponse().out(), is);
-    else {
-        CNcbiOstream& out = m_CgiContext.GetResponse().out();
-        string header_line;
-        while (getline(is, header_line)) {
-            NStr::TruncateSpacesInPlace(header_line, NStr::eTrunc_End);
-            if (header_line.empty())
-                break;
-            if (NStr::StartsWith(header_line, "Content-Type", NStr::eNocase))
-                out << "Content-Type: text/javascript\r\n";
-            else if (!NStr::StartsWith(header_line,
-                    "Content-Length", NStr::eNocase))
-                out << header_line << "\r\n";
-        }
-        out << "\r\n" << jquery_callback << '(';
-        NcbiStreamCopy(out, is);
-        out << ')';
-    }
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Grid CGI Front-end Application
@@ -330,6 +307,10 @@ private:
         eUseRequestContent = 2
     };
 
+    // This method is called when result is available immediately
+    void OnJobDone(const string& job_key, CGridCgiContext& ctx,
+            const string& jquery_callback);
+
     // This method is called when the worker node reported a failure.
     void OnJobFailed(const string& msg, CGridCgiContext& ctx);
 
@@ -340,14 +321,13 @@ private:
     string m_DateFormat;
     string m_ElapsedTimeFormat;
     bool m_InterceptJQueryCallback;
+    bool m_AddJobIdToHeader;
 
     auto_ptr<CHTMLPage> m_Page;
     auto_ptr<CHTMLPage> m_CustomHTTPHeader;
 
     string m_HtmlTemplate;
     vector<string> m_HtmlIncs;
-
-    string  m_StrPage;
 
     string m_AffinityName;
     int m_AffinitySource;
@@ -504,6 +484,9 @@ void CCgi2RCgiApp::Init()
         "elapsed_time_format", "S");
 
     m_InterceptJQueryCallback = config.GetBool("CGI", "CORS_JQuery_Callback_Enable",
+        false, IRegistry::eReturn);
+
+    m_AddJobIdToHeader = config.GetBool(cgi2rcgi_section, "add_job_id_to_response",
         false, IRegistry::eReturn);
 }
 
@@ -801,6 +784,9 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         }
         m_Page->AddTagMap("JOB_ID", new CHTMLText(job_key));
         m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(job_key));
+        if (m_AddJobIdToHeader) {
+            m_Response->SetHeaderValue(HTTP_NCBI_JSID, job_key);
+        }
         if (phase == eRunning) {
             string progress_message;
             try {
@@ -925,35 +911,15 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     }
 
     EJobPhase phase = eTerminated;
-    bool save_result = false;
     grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
         CNetScheduleAPI::StatusToString(status));
     switch (status) {
     case CNetScheduleAPI::eDone:
         // The worker node has finished the job and the
         // result is ready to be retrieved.
-        {
-            CNcbiIstream& is = m_GridClient->GetIStream();
-
-            if (m_GridClient->GetBlobSize() > 0)
-                grid_ctx.SetCompleteResponse(is, jquery_callback);
-            else {
-                switch (m_TargetEncodeMode) {
-                case CHTMLPlainText::eHTMLEncode:
-                    m_StrPage = "<html><head><title>Empty Result</title>"
-                        "</head><body>Empty Result</body></html>";
-                    break;
-                case CHTMLPlainText::eJSONEncode:
-                    m_StrPage = "{}";
-                    break;
-                default:
-                    m_StrPage = kEmptyStr;
-                }
-                grid_ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
-            }
-        }
-        save_result = true;
+        OnJobDone(job_key, grid_ctx, jquery_callback);
         break;
+
     case CNetScheduleAPI::eFailed:
         // a job has failed
         OnJobFailed(m_GridClient->GetErrorMessage(), grid_ctx);
@@ -993,8 +959,62 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     default:
         _ASSERT(0 && "Unexpected job state");
     }
-    SetRequestId(job_key, save_result);
+    SetRequestId(job_key, status == CNetScheduleAPI::eDone);
     return phase;
+}
+
+void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
+        const string& jquery_callback)
+{
+    CNcbiIstream& is = m_GridClient->GetIStream();
+
+    if (m_GridClient->GetBlobSize() > 0) {
+        ctx.NeedRenderPage(false);
+        CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
+        bool jquery = jquery_callback.size();
+
+        // Amending HTTP header
+        string header_line;
+        while (getline(is, header_line)) {
+            NStr::TruncateSpacesInPlace(header_line, NStr::eTrunc_End);
+            if (header_line.empty())
+                break;
+            if (jquery && NStr::StartsWith(header_line, "Content-Type", NStr::eNocase))
+                out << "Content-Type: text/javascript\r\n";
+            else if (!NStr::StartsWith(header_line,
+                    "Content-Length", NStr::eNocase))
+                out << header_line << "\r\n";
+        }
+
+        if (m_AddJobIdToHeader) {
+            out << HTTP_NCBI_JSID << ": " << job_key << "\r\n";
+        }
+
+        out << "\r\n";
+        if (jquery) {
+            out << jquery_callback << '(';
+            NcbiStreamCopy(out, is);
+            out << ')';
+        } else {
+            NcbiStreamCopy(out, is);
+        }
+    } else {
+        const char* str_page;
+
+        switch (m_TargetEncodeMode) {
+        case CHTMLPlainText::eHTMLEncode:
+            str_page = "<html><head><title>Empty Result</title>"
+                "</head><body>Empty Result</body></html>";
+            break;
+        case CHTMLPlainText::eJSONEncode:
+            str_page = "{}";
+            break;
+        default:
+            str_page = "";
+        }
+
+        ctx.GetHTMLPage().SetTemplateString(str_page);
+    }
 }
 
 void CCgi2RCgiApp::OnJobFailed(const string& msg,
