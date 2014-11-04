@@ -343,7 +343,7 @@ struct SOptionDefinition {
         "progress-message", "Set job progress message.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eJobGroup),
-        "job-group", "Select jobs by job group.", {-1}},
+        JOB_GROUP_OPTION, "Select jobs by job group.", {-1}},
 
     {OPT_DEF(eSwitch, eAllJobs),
         "all-jobs", "Apply to all jobs in the queue.", {-1}},
@@ -877,6 +877,8 @@ struct SCommandDefinition {
         "Unless the '--" ANY_AFFINITY_OPTION "' option is given, a job "
         "is returned only if its affinity matches one of the specified "
         "affinities.\n\n"
+        "Job retrieval can also be restricted to the group name specified "
+        "by the '--" JOB_GROUP_OPTION "' option.\n\n"
         "If a job is acquired, its ID and attributes are printed to the "
         "standard output stream on the first and the second lines "
         "respectively, followed by the input data of the job unless the '--"
@@ -888,7 +890,8 @@ struct SCommandDefinition {
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
         {eNetSchedule, eQueue, eAffinityList, eUsePreferredAffinities,
-            eClaimNewAffinities, eAnyAffinity, eOutputFile, eWaitTimeout,
+            eClaimNewAffinities, eAnyAffinity, eJobGroup,
+            eOutputFile, eWaitTimeout,
             eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
 

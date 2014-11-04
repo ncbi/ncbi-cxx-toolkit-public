@@ -304,14 +304,6 @@ private:
 
     SNotificationTimelineEntry::TRef m_DiscoveryAction;
 
-    bool x_GetJobWithAffinityList(SNetServerImpl* server,
-            const CDeadline* timeout,
-            CNetScheduleJob& job,
-            CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
-            const string& affinity_list);
-    bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
-            const CDeadline* timeout,
-            CNetScheduleJob& job);
     SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
     bool x_PerformTimelineAction(TNotificationTimeline& timeline,
             CNetScheduleJob& job);

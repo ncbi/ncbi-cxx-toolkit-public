@@ -99,6 +99,7 @@
 #define BRIEF_OPTION "brief"
 #define WAIT_FOR_JOB_STATUS_OPTION "wait-for-job-status"
 #define WAIT_FOR_JOB_EVENT_AFTER_OPTION "wait-for-job-event-after"
+#define JOB_GROUP_OPTION "job-group"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
 #define ALL_QUEUES_OPTION "all-queues"

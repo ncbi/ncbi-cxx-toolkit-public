@@ -606,41 +606,6 @@ CMainLoopThread::~CMainLoopThread()
     }
 }
 
-bool CMainLoopThread::x_GetJobWithAffinityList(SNetServerImpl* server,
-        const CDeadline* timeout, CNetScheduleJob& job,
-        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
-        const string& affinity_list)
-{
-    string cmd(m_WorkerNode->m_NSExecutor->
-            m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-                    CNetScheduleNotificationHandler::MkBaseGETCmd(
-                            affinity_preference, affinity_list), timeout));
-
-    return m_WorkerNode->m_NSExecutor->ExecGET(server, cmd, job);
-}
-
-bool CMainLoopThread::x_GetJobWithAffinityLadder(SNetServerImpl* server,
-        const CDeadline* timeout, CNetScheduleJob& job)
-{
-    if (m_WorkerNode->m_NSExecutor->m_API->m_AffinityLadder.empty())
-        return x_GetJobWithAffinityList(server, timeout, job,
-                m_WorkerNode->m_NSExecutor->m_AffinityPreference, kEmptyStr);
-
-    list<string>::const_iterator it =
-            m_WorkerNode->m_NSExecutor->m_API->m_AffinityLadder.begin();
-
-    for (;;) {
-        string affinity_list = *it;
-        if (++it == m_WorkerNode->m_NSExecutor->m_API->m_AffinityLadder.end())
-            return x_GetJobWithAffinityList(server, timeout, job,
-                    m_WorkerNode->m_NSExecutor->m_AffinityPreference,
-                            affinity_list);
-        else if (x_GetJobWithAffinityList(server, NULL, job,
-                CNetScheduleExecutor::ePreferredAffinities, affinity_list))
-            return true;
-    }
-}
-
 SNotificationTimelineEntry*
     CMainLoopThread::x_GetTimelineEntry(SNetServerImpl* server_impl)
 {
@@ -698,7 +663,7 @@ bool CMainLoopThread::x_PerformTimelineAction(
     timeline_entry->ResetTimeout(m_WorkerNode->m_NSTimeout);
 
     try {
-        if (x_GetJobWithAffinityLadder(server,
+        if (m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
                 &timeline_entry->GetTimeout(), job)) {
             // A job has been returned; add the server to
             // m_ImmediateActions because there can be more

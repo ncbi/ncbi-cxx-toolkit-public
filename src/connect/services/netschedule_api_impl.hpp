@@ -278,6 +278,8 @@ struct SNetScheduleAPIImpl : public CObject
     list<string> m_AffinityList;
     list<string> m_AffinityLadder;
 
+    string m_JobGroup;
+
     bool m_UseEmbeddedStorage;
 
     CCompoundIDPool m_CompoundIDPool;
@@ -315,6 +317,7 @@ struct SNetScheduleExecutorImpl : public CObject
     SNetScheduleExecutorImpl(CNetScheduleAPI::TInstance ns_api_impl) :
         m_API(ns_api_impl),
         m_AffinityPreference(ns_api_impl->m_AffinityPreference),
+        m_JobGroup(ns_api_impl->m_JobGroup),
         m_WorkerNodeMode(false)
     {
         copy(ns_api_impl->m_AffinityList.begin(),
@@ -327,6 +330,14 @@ struct SNetScheduleExecutorImpl : public CObject
     string MkSETAFFCmd();
     bool ExecGET(SNetServerImpl* server,
             const string& get_cmd, CNetScheduleJob& job);
+    bool x_GetJobWithAffinityList(SNetServerImpl* server,
+            const CDeadline* timeout,
+            CNetScheduleJob& job,
+            CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+            const string& affinity_list);
+    bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
+            const CDeadline* timeout,
+            CNetScheduleJob& job);
 
     void ExecWithOrWithoutRetry(const string& job_key, const string& cmd);
 
@@ -345,6 +356,9 @@ struct SNetScheduleExecutorImpl : public CObject
 
     CFastMutex m_PreferredAffMutex;
     set<string> m_PreferredAffinities;
+
+    string m_JobGroup;
+
     bool m_WorkerNodeMode;
 };
 

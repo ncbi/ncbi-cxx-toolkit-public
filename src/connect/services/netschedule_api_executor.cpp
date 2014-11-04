@@ -256,6 +256,11 @@ void CNetScheduleExecutor::SetAffinityPreference(
     m_Impl->m_AffinityPreference = aff_pref;
 }
 
+void CNetScheduleExecutor::SetJobGroup(const string& job_group)
+{
+    m_Impl->m_JobGroup = job_group;
+}
+
 void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
         CNetServer orig_server, const string& affinity)
 {
@@ -344,6 +349,40 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
     return true;
 }
 
+bool SNetScheduleExecutorImpl::x_GetJobWithAffinityList(SNetServerImpl* server,
+        const CDeadline* timeout, CNetScheduleJob& job,
+        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+        const string& affinity_list)
+{
+    string cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
+            affinity_preference, affinity_list));
+
+    m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
+            timeout, m_JobGroup);
+
+    return ExecGET(server, cmd, job);
+}
+
+bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
+        SNetServerImpl* server, const CDeadline* timeout, CNetScheduleJob& job)
+{
+    if (m_API->m_AffinityLadder.empty())
+        return x_GetJobWithAffinityList(server, timeout, job,
+                m_AffinityPreference, kEmptyStr);
+
+    list<string>::const_iterator it = m_API->m_AffinityLadder.begin();
+
+    for (;;) {
+        string affinity_list = *it;
+        if (++it == m_API->m_AffinityLadder.end())
+            return x_GetJobWithAffinityList(server, timeout, job,
+                    m_AffinityPreference, affinity_list);
+        else if (x_GetJobWithAffinityList(server, NULL, job,
+                CNetScheduleExecutor::ePreferredAffinities, affinity_list))
+            return true;
+    }
+}
+
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
         const string& affinity_list,
         CDeadline* deadline)
@@ -351,9 +390,10 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     string base_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
             m_Impl->m_AffinityPreference, affinity_list));
 
-    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl, job,
-            m_Impl->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-                    base_cmd, deadline)))
+    string cmd(base_cmd);
+    m_Impl->m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(
+            cmd, deadline, m_Impl->m_JobGroup);
+    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl, job, cmd))
         return true;
 
     if (deadline == NULL)
@@ -362,27 +402,26 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     while (m_Impl->m_NotificationHandler.WaitForNotification(*deadline)) {
         CNetServer server;
         if (m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl,
-                &server) &&
-                g_ParseGetJobResponse(job,
-                        server.ExecWithRetry(
-                                m_Impl->m_NotificationHandler.
-                                        CmdAppendTimeoutAndClientInfo(
-                                                base_cmd, deadline),
-                                false).response)
-                ) {
-            // Notify the rest of NetSchedule servers that
-            // we are no longer listening on the UDP socket.
-            string cancel_wget_cmd("CWGET");
-            g_AppendClientIPSessionIDHitID(cancel_wget_cmd);
-            for (CNetServiceIterator it =
-                    m_Impl->m_API->m_Service.ExcludeServer(server); it; ++it)
-                (*it).ExecWithRetry(cancel_wget_cmd, false);
+                &server)) {
+            cmd.erase(base_cmd.length());
+            m_Impl->m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(
+                    cmd, deadline, m_Impl->m_JobGroup);
+            if (g_ParseGetJobResponse(job, server.ExecWithRetry(cmd,
+                        false).response)) {
+                // Notify the rest of NetSchedule servers that
+                // we are no longer listening on the UDP socket.
+                string cancel_wget_cmd("CWGET");
+                g_AppendClientIPSessionIDHitID(cancel_wget_cmd);
+                for (CNetServiceIterator it =
+                        m_Impl->m_API->m_Service.ExcludeServer(server); it; ++it)
+                    (*it).ExecWithRetry(cancel_wget_cmd, false);
 
-            // Also, if a new preferred affinity is given by
-            // the server, register it with the rest of servers.
-            m_Impl->ClaimNewPreferredAffinity(server, job.affinity);
+                // Also, if a new preferred affinity is given by
+                // the server, register it with the rest of servers.
+                m_Impl->ClaimNewPreferredAffinity(server, job.affinity);
 
-            return true;
+                return true;
+            }
         }
     }
 
@@ -445,11 +484,9 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
     return cmd;
 }
 
-string CNetScheduleNotificationHandler::CmdAppendTimeoutAndClientInfo(
-        const string& base_cmd, const CDeadline* deadline)
+void CNetScheduleNotificationHandler::CmdAppendTimeoutGroupAndClientInfo(
+        string& cmd, const CDeadline* deadline, const string& job_group)
 {
-    string cmd(base_cmd);
-
     if (deadline != NULL) {
         unsigned remaining_seconds = s_GetRemainingSeconds(*deadline);
 
@@ -462,9 +499,13 @@ string CNetScheduleNotificationHandler::CmdAppendTimeoutAndClientInfo(
         }
     }
 
-    g_AppendClientIPSessionIDHitID(cmd);
+    if (!job_group.empty()) {
+        cmd += " group=\"";
+        cmd += NStr::PrintableString(job_group);
+        cmd += '"';
+    }
 
-    return cmd;
+    g_AppendClientIPSessionIDHitID(cmd);
 }
 
 bool CNetScheduleNotificationHandler::RequestJob(

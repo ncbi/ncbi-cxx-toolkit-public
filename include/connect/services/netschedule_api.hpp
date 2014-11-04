@@ -575,7 +575,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     NCBI_NET_COMPONENT(NetScheduleExecutor);
 
     /// Affinity matching modes.
-    /// Explicitly specified affinities are always searched first.
+    ///
+    /// @note Explicitly specified affinities are always searched first.
+    ///
     enum EJobAffinityPreference {
         ePreferredAffsOrAnyJob,
         ePreferredAffinities,
@@ -585,7 +587,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     };
 
     /// Set preferred method of requesting jobs with affinities.
+    ///
     void SetAffinityPreference(EJobAffinityPreference aff_pref);
+
+    /// Retrieve jobs from the specified group only.
+    ///
+    void SetJobGroup(const string& job_group);
 
     /// Get a pending job.
     ///
@@ -1048,8 +1055,8 @@ public:
     static string MkBaseGETCmd(
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
-    string CmdAppendTimeoutAndClientInfo(const string&    base_cmd,
-                                         const CDeadline* deadline);
+    void CmdAppendTimeoutGroupAndClientInfo(string& cmd,
+            const CDeadline* deadline, const string& job_group);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
                     CNetScheduleJob& job,
                     const string& cmd);
