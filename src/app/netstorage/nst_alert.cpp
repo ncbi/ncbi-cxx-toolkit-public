@@ -43,11 +43,13 @@ struct AlertToId
 };
 
 
-const AlertToId     alertToIdMap[] = { { eConfig,      "config" },
-                                       { eReconfigure, "reconfigure" },
-                                       { ePidFile,     "pidfile" },
-                                       { eDB,          "database" },
-                                       { eAccess,      "accessdenied" } };
+const AlertToId     alertToIdMap[] = { { eStartupConfig,   "StartupConfig" },
+                                       { eReconfigure,     "Reconfigure" },
+                                       { ePidFile,         "PidFile" },
+                                       { eDB,              "Database" },
+                                       { eAccess,          "AccessDenied" },
+                                       { eConfigOutOfSync, "ConfigOutOfSync" }
+                                     };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 
@@ -64,13 +66,15 @@ CJsonNode SNSTAlertAttributes::Serialize(void) const
     alert.SetString("LastAcknowledged",
                     NST_FormatPreciseTime(m_AcknowledgedTimestamp));
     alert.SetString("User", m_User);
+    alert.SetString("Message", m_Message);
 
     return alert;
 }
 
 
 
-void CNSTAlerts::Register(enum EAlertType alert_type)
+void CNSTAlerts::Register(enum EAlertType alert_type,
+                          const string &  message)
 {
     map< enum EAlertType,
          SNSTAlertAttributes >::iterator    found;
@@ -81,12 +85,15 @@ void CNSTAlerts::Register(enum EAlertType alert_type)
         // Alert has already been there
         found->second.m_LastDetectedTimestamp = CNSTPreciseTime::Current();
         found->second.m_On = true;
+        found->second.m_Message = message;
         ++found->second.m_Count;
         return;
     }
 
     // Brand new alert
-    m_Alerts[alert_type] = SNSTAlertAttributes();
+    SNSTAlertAttributes     attrs;
+    attrs.m_Message = message;
+    m_Alerts[alert_type] = attrs;
 }
 
 

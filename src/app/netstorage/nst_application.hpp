@@ -55,7 +55,7 @@ private:
     STimeout                m_ServerAcceptTimeout;
     string                  m_CommandLine;
 
-    bool x_WritePid(void) const;
+    void x_WritePid(CNetStorageServer *  server) const;
 };
 
 #endif

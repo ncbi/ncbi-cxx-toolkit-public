@@ -43,7 +43,7 @@ GO
 -- Modify the condition below when ready for the deployment
 -- IF 1 = 0 => development
 -- IF 1 = 1 => production
-IF 1 = 1
+IF 1 = 0
 BEGIN
     IF (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')) OR
        (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')) OR

@@ -51,11 +51,12 @@ BEGIN_NCBI_SCOPE
 
 enum EAlertType {
     eUnknown = -1,
-    eConfig = 0,
+    eStartupConfig = 0,
     eReconfigure = 1,
     ePidFile = 2,
     eDB = 3,
-    eAccess = 4
+    eAccess = 4,
+    eConfigOutOfSync = 5
 };
 
 enum EAlertAckResult {
@@ -72,6 +73,7 @@ struct SNSTAlertAttributes
     bool                m_On;
     size_t              m_Count;
     string              m_User;
+    string              m_Message;
 
     SNSTAlertAttributes() :
         m_LastDetectedTimestamp(CNSTPreciseTime::Current()),
@@ -87,7 +89,8 @@ struct SNSTAlertAttributes
 class CNSTAlerts
 {
     public:
-        void Register(enum EAlertType alert_type);
+        void Register(enum EAlertType alert_type,
+                      const string &  message);
         enum EAlertAckResult Acknowledge(const string &  alert_id,
                                          const string &  user);
         enum EAlertAckResult Acknowledge(enum EAlertType alert_type,

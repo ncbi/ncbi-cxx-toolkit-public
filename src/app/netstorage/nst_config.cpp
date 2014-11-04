@@ -40,17 +40,25 @@ BEGIN_NCBI_SCOPE
 const string    g_LogPrefix = "Validating config file: ";
 
 
-static bool NSTValidateServerSection(const IRegistry &  reg);
-static bool NSTValidateDatabaseSection(const IRegistry &  reg);
-static bool NSTValidateMetadataSection(const IRegistry &  reg);
+static void NSTValidateServerSection(const IRegistry &  reg,
+                                     vector<string> &  warnings,
+                                     bool  throw_port_exception);
+static void NSTValidateDatabaseSection(const IRegistry &  reg,
+                                       vector<string> &  warnings);
+static void NSTValidateMetadataSection(const IRegistry &  reg,
+                                       vector<string> &  warnings);
 static bool NSTValidateBool(const IRegistry &  reg,
-                            const string &  section, const string &  entry);
+                            const string &  section, const string &  entry,
+                            vector<string> &  warnings);
 static bool NSTValidateInt(const IRegistry &  reg,
-                           const string &  section, const string &  entry);
+                           const string &  section, const string &  entry,
+                           vector<string> &  warnings);
 //static bool NSTValidateDouble(const IRegistry &  reg,
-//                              const string &  section, const string &  entry);
+//                              const string &  section, const string &  entry,
+//                              vector<string> &  warnings);
 static bool NSTValidateString(const IRegistry &  reg,
-                              const string &  section, const string &  entry);
+                              const string &  section, const string &  entry,
+                              vector<string> &  warnings);
 static string NSTRegValName(const string &  section, const string &  entry);
 static string NSTOutOfLimitMessage(const string &  section,
                                    const string &  entry,
@@ -58,185 +66,154 @@ static string NSTOutOfLimitMessage(const string &  section,
                                    unsigned int  high_limit);
 
 
-bool NSTValidateConfigFile(const IRegistry &  reg)
+void NSTValidateConfigFile(const IRegistry &  reg,
+                           vector<string> &  warnings,
+                           bool  throw_port_exception)
 {
-    bool    server_well_formed = NSTValidateServerSection(reg);
-    bool    database_well_formed = NSTValidateDatabaseSection(reg);
-    bool    metadata_well_formed = NSTValidateMetadataSection(reg);
-    return server_well_formed &&
-           database_well_formed &&
-           metadata_well_formed;
+    NSTValidateServerSection(reg, warnings, throw_port_exception);
+    NSTValidateDatabaseSection(reg, warnings);
+    NSTValidateMetadataSection(reg, warnings);
 }
 
 
 // Returns true if the config file is well formed
-bool NSTValidateServerSection(const IRegistry &  reg)
+void NSTValidateServerSection(const IRegistry &  reg,
+                              vector<string> &  warnings,
+                              bool  throw_port_exception)
 {
     const string    section = "server";
-    bool            well_formed = true;
 
     // port is a unique value in this section. NS must not start
     // if there is a problem with port.
-    bool    port_ok = NSTValidateInt(reg, section, "port");
-    if (port_ok) {
-        unsigned int    port_val = reg.GetInt(section, "port", 0);
-        if (port_val < port_low_limit || port_val > port_high_limit)
+    bool    ok = NSTValidateInt(reg, section, "port", warnings);
+    if (ok) {
+        int     port_val = reg.GetInt(section, "port", 0);
+        if (port_val < port_low_limit || port_val > port_high_limit) {
+            string  msg = "Invalid " + NSTRegValName(section, "port") +
+                          " value. Allowed range: " +
+                          NStr::NumericToString(port_low_limit) +
+                          " to " + NStr::NumericToString(port_high_limit);
+            if (throw_port_exception)
+                NCBI_THROW(CNetStorageServerException, eInvalidConfig, msg);
+            warnings.push_back(msg);
+        }
+    } else {
+        if (throw_port_exception)
             NCBI_THROW(CNetStorageServerException, eInvalidConfig,
                        "Invalid " + NSTRegValName(section, "port") +
-                       " value. Allowed range: " +
-                       NStr::NumericToString(port_low_limit) +
-                       " to " +
-                       NStr::NumericToString(port_high_limit));
+                       " parameter.");
     }
 
-    bool    max_conn_ok = NSTValidateInt(reg, section, "max_connections");
-    well_formed = well_formed && max_conn_ok;
-    if (max_conn_ok) {
-        unsigned int    val = reg.GetInt(section, "max_connections",
-                                         default_max_connections);
-        if (val < max_connections_low_limit ||
-            val > max_connections_high_limit) {
-            well_formed = false;
-            LOG_POST(Warning <<
+    ok = NSTValidateInt(reg, section, "max_connections", warnings);
+    if (ok) {
+        int     val = reg.GetInt(section, "max_connections",
+                                 default_max_connections);
+        if (val < int(max_connections_low_limit) ||
+            val > int(max_connections_high_limit))
+            warnings.push_back(
                      NSTOutOfLimitMessage(section, "max_connections",
                                           max_connections_low_limit,
                                           max_connections_high_limit));
-        }
     }
 
-    bool            max_threads_ok = NSTValidateInt(reg, section,
-                                                    "max_threads");
+    ok = NSTValidateInt(reg, section, "max_threads", warnings);
     unsigned int    max_threads_val = default_max_threads;
-    well_formed = well_formed && max_threads_ok;
-    if (max_threads_ok) {
-        max_threads_val = reg.GetInt(section, "max_threads",
-                                     default_max_threads);
-        if (max_threads_val < max_threads_low_limit ||
-            max_threads_val > max_threads_high_limit) {
-            well_formed = false;
-            max_threads_ok = false;
-            LOG_POST(Warning <<
+    if (ok) {
+        int     val = reg.GetInt(section, "max_threads", default_max_threads);
+        if (val < int(max_threads_low_limit) ||
+            val > int(max_threads_high_limit))
+            warnings.push_back(
                      NSTOutOfLimitMessage(section, "max_threads",
                                           max_threads_low_limit,
                                           max_threads_high_limit));
-        }
+        else
+            max_threads_val = val;
     }
 
-    bool            init_threads_ok = NSTValidateInt(reg, section,
-                                                     "init_threads");
+    ok = NSTValidateInt(reg, section, "init_threads", warnings);
     unsigned int    init_threads_val = default_init_threads;
-    well_formed = well_formed && init_threads_ok;
-    if (init_threads_ok) {
-        init_threads_val = reg.GetInt(section, "init_threads",
-                                      default_init_threads);
-        if (init_threads_val < init_threads_low_limit ||
-            init_threads_val > init_threads_high_limit) {
-            well_formed = false;
-            init_threads_ok = false;
-            LOG_POST(Warning <<
+    if (ok) {
+        int     val = reg.GetInt(section, "init_threads", default_init_threads);
+        if (val < int(init_threads_low_limit) ||
+            val > int(init_threads_high_limit))
+            warnings.push_back(
                      NSTOutOfLimitMessage(section, "init_threads",
                                           init_threads_low_limit,
                                           init_threads_high_limit));
-        }
+        else
+            init_threads_val = val;
     }
 
-    if (max_threads_ok && init_threads_ok) {
-        if (init_threads_val > max_threads_val) {
-            well_formed = false;
-            LOG_POST(Warning << g_LogPrefix << " values "
-                             << NSTRegValName(section, "max_threads") << " and "
-                             << NSTRegValName(section, "init_threads")
-                             << " break the mandatory condition "
-                                "init_threads <= max_threads");
-        }
+    if (init_threads_val > max_threads_val)
+        warnings.push_back(g_LogPrefix + " values " +
+                           NSTRegValName(section, "max_threads") + " and " +
+                           NSTRegValName(section, "init_threads") +
+                           " break the mandatory condition "
+                            "init_threads <= max_threads");
+
+
+    ok = NSTValidateInt(reg, section, "network_timeout", warnings);
+    if (ok) {
+        int     val = reg.GetInt(section, "network_timeout",
+                                 default_network_timeout);
+        if (val <= 0)
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "network_timeout") +
+                               " must be > 0");
     }
 
-
-    bool    network_timeout_ok = NSTValidateInt(reg, section,
-                                                "network_timeout");
-    well_formed = well_formed && network_timeout_ok;
-    if (network_timeout_ok) {
-        unsigned int    network_timeout_val =
-                                    reg.GetInt(section, "network_timeout",
-                                               default_network_timeout);
-        if (network_timeout_val <= 0) {
-            well_formed = false;
-            LOG_POST(Warning << g_LogPrefix << " value "
-                             << NSTRegValName(section, "network_timeout")
-                             << " must be > 0");
-        }
-    }
-
-    well_formed = well_formed &&
-                  NSTValidateBool(reg, section, "log");
-    well_formed = well_formed &&
-                  NSTValidateString(reg, section, "admin_client_name");
-
-    return well_formed;
+    NSTValidateBool(reg, section, "log", warnings);
+    NSTValidateString(reg, section, "admin_client_name", warnings);
 }
 
 
-bool NSTValidateDatabaseSection(const IRegistry &  reg)
+void NSTValidateDatabaseSection(const IRegistry &  reg,
+                                vector<string> &  warnings)
 {
     const string    section = "database";
-    bool            well_formed = true;
 
-    bool    service_ok = NSTValidateString(reg, section, "service");
-    well_formed = well_formed && service_ok;
-    if (service_ok) {
+    bool    ok = NSTValidateString(reg, section, "service", warnings);
+    if (ok) {
         string      value = reg.GetString(section, "service", "");
-        if (value.empty()) {
-            well_formed = false;
-            LOG_POST(Warning << g_LogPrefix << " value "
-                             << NSTRegValName(section, "service")
-                             << " must not be empty");
-        }
+        if (value.empty())
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "service") +
+                               " must not be empty");
     }
 
-    bool    user_name_ok = NSTValidateString(reg, section, "user_name");
-    well_formed = well_formed && user_name_ok;
-    if (user_name_ok) {
+    ok = NSTValidateString(reg, section, "user_name", warnings);
+    if (ok) {
         string      value = reg.GetString(section, "user_name", "");
-        if (value.empty()) {
-            well_formed = false;
-            LOG_POST(Warning << g_LogPrefix << " value "
-                             << NSTRegValName(section, "user_name")
-                             << " must not be empty");
-        }
+        if (value.empty())
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "user_name") +
+                               " must not be empty");
     }
 
-    bool    password_ok = NSTValidateString(reg, section, "password");
-    well_formed = well_formed && password_ok;
-    if (password_ok) {
+    ok = NSTValidateString(reg, section, "password", warnings);
+    if (ok) {
         string      value = reg.GetString(section, "password", "");
-        if (value.empty()) {
-            well_formed = false;
-            LOG_POST(Warning << g_LogPrefix << " value "
-                             << NSTRegValName(section, "password")
-                             << " must not be empty");
-        }
+        if (value.empty())
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "password") +
+                               " must not be empty");
     }
 
-    bool    database_ok = NSTValidateString(reg, section, "database");
-    well_formed = well_formed && database_ok;
-    if (database_ok) {
+    ok = NSTValidateString(reg, section, "database", warnings);
+    if (ok) {
         string      value = reg.GetString(section, "database", "");
-        if (value.empty()) {
-            well_formed = false;
-            LOG_POST(Warning << g_LogPrefix << " value "
-                             << NSTRegValName(section, "database")
-                             << " must not be empty");
-        }
+        if (value.empty())
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "database") +
+                               " must not be empty");
     }
-
-    return well_formed;
 }
 
 
-bool NSTValidateMetadataSection(const IRegistry &  reg)
+void NSTValidateMetadataSection(const IRegistry &  reg,
+                                vector<string> &  warnings)
 {
     const string    section = "metadata_conf";
-    bool            well_formed = true;
     list<string>    entries;
 
     reg.EnumerateEntries(section, &entries);
@@ -247,19 +224,15 @@ bool NSTValidateMetadataSection(const IRegistry &  reg)
         if (!NStr::StartsWith(entry, "service_name_", NStr::eCase))
             continue;
 
-        bool    entry_ok = NSTValidateString(reg, section, entry);
-        well_formed = well_formed && entry_ok;
-        if (entry_ok) {
+        bool    ok = NSTValidateString(reg, section, entry, warnings);
+        if (ok) {
             string      value = reg.GetString(section, entry, "");
-            if (value.empty()) {
-                well_formed = false;
-                LOG_POST(Warning << g_LogPrefix << " value "
-                                 << NSTRegValName(section, entry)
-                                 << " must not be empty");
-            }
+            if (value.empty())
+                warnings.push_back(g_LogPrefix + " value " +
+                                   NSTRegValName(section, entry) +
+                                   " must not be empty");
         }
     }
-    return well_formed;
 }
 
 
@@ -285,15 +258,16 @@ string NSTOutOfLimitMessage(const string &  section,
 
 // Checks that a boolean value is fine
 bool NSTValidateBool(const IRegistry &  reg,
-                     const string &  section, const string &  entry)
+                     const string &  section, const string &  entry,
+                     vector<string> &  warnings)
 {
     try {
         reg.GetBool(section, entry, false);
     }
     catch (...) {
-        LOG_POST(Warning << g_LogPrefix << "unexpected value of ["
-                         << NSTRegValName(section, entry)
-                         << ". Expected boolean value.");
+        warnings.push_back(g_LogPrefix + "unexpected value of [" +
+                           NSTRegValName(section, entry) +
+                           ". Expected boolean value.");
         return false;
     }
     return true;
@@ -302,15 +276,16 @@ bool NSTValidateBool(const IRegistry &  reg,
 
 // Checks that an integer value is fine
 bool NSTValidateInt(const IRegistry &  reg,
-                    const string &  section, const string &  entry)
+                    const string &  section, const string &  entry,
+                    vector<string> &  warnings)
 {
     try {
         reg.GetInt(section, entry, 0);
     }
     catch (...) {
-        LOG_POST(Warning << g_LogPrefix << "unexpected value of ["
-                         << NSTRegValName(section, entry)
-                         << ". Expected integer value.");
+        warnings.push_back(g_LogPrefix + "unexpected value of [" +
+                           NSTRegValName(section, entry) +
+                           ". Expected integer value.");
         return false;
     }
     return true;
@@ -338,15 +313,16 @@ bool NSTValidateDouble(const IRegistry &  reg,
 
 // Checks that a double value is fine
 bool NSTValidateString(const IRegistry &  reg,
-                       const string &  section, const string &  entry)
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings)
 {
     try {
         reg.GetString(section, entry, "");
     }
     catch (...) {
-        LOG_POST(Warning << g_LogPrefix << "unexpected value of "
-                         << NSTRegValName(section, entry)
-                         << ". Expected string value.");
+        warnings.push_back(g_LogPrefix + "unexpected value of " +
+                           NSTRegValName(section, entry) +
+                           ". Expected string value.");
         return false;
     }
     return true;

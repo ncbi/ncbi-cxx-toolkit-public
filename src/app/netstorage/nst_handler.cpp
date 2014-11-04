@@ -445,8 +445,9 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = ex.ErrCodeToHTTPStatusCode();
         error_code = ex.GetErrCode();
         error_client_message = ex.what();
-        if (error_code == CNetStorageServerException::ePrivileges)
-            m_Server->RegisterAlert(eAccess);
+
+        // Note: eAccess alert is set at the point before an exception is
+        // thrown. This is done for a clean alert message.
     }
     catch (const CNetStorageException &  ex) {
         ERR_POST(ex);
@@ -916,8 +917,9 @@ CNetStorageHandler::x_ProcessHealth(
     }
 
     if (!m_Server->IsAdminClientName(m_Client)) {
-        NCBI_THROW(CNetStorageServerException, ePrivileges,
-                   "Only administrators can request server health");
+        string      msg = "Only administrators can request server health";
+        m_Server->RegisterAlert(eAccess, msg);
+        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     }
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
@@ -940,8 +942,9 @@ CNetStorageHandler::x_ProcessAckAlert(
     }
 
     if (!m_Server->IsAdminClientName(m_Client)) {
-        NCBI_THROW(CNetStorageServerException, ePrivileges,
-                   "Only administrators can acknowledge alerts");
+        string      msg = "Only administrators can acknowledge alerts";
+        m_Server->RegisterAlert(eAccess, msg);
+        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     }
 
     if (!message.HasKey("Name"))
@@ -990,8 +993,9 @@ CNetStorageHandler::x_ProcessReconfigure(
     }
 
     if (!m_Server->IsAdminClientName(m_Client)) {
-        NCBI_THROW(CNetStorageServerException, ePrivileges,
-                   "Only administrators can reconfigure server");
+        string      msg = "Only administrators can reconfigure server";
+        m_Server->RegisterAlert(eAccess, msg);
+        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     }
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
@@ -1002,19 +1006,34 @@ CNetStorageHandler::x_ProcessReconfigure(
                                             CMetaRegistry::fReloadIfChanged);
     if (!reloaded) {
         AppendWarning(reply, eConfigNotChangedWarning,
-                      "Configuration file has not been changed, RECONFIGURE ignored");
+                      "Configuration file has not been changed, "
+                      "RECONFIGURE ignored");
         x_SendSyncMessage(reply);
         x_PrintMessageRequestStop();
         return;
     }
 
     const CNcbiRegistry &   reg = app->GetConfig();
-    bool                    well_formed = NSTValidateConfigFile(reg);
+    vector<string>          config_warnings;
+    NSTValidateConfigFile(reg, config_warnings, false);     // false -> no exc
+                                                            // on bad port
 
-    if (!well_formed) {
-        m_Server->RegisterAlert(eReconfigure);
+    if (!config_warnings.empty()) {
+        string      msg;
+        string      alert_msg;
+        for (vector<string>::const_iterator k = config_warnings.begin();
+             k != config_warnings.end(); ++k) {
+            ERR_POST(*k);
+            if (!msg.empty()) {
+                msg += "; ";
+                alert_msg += "\n";
+            }
+            msg += *k;
+            alert_msg += *k;
+        }
+        m_Server->RegisterAlert(eReconfigure, alert_msg);
         NCBI_THROW(CNetStorageServerException, eInvalidConfig,
-                   "Configuration file is not well formed");
+                   "Configuration file is not well formed; " + msg);
     }
 
 
@@ -1027,7 +1046,7 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode   server_diff = m_Server->SetParameters(params, true);
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
 
-    m_Server->AcknowledgeAlert(eConfig, "NSTAcknowledge");
+    m_Server->AcknowledgeAlert(eStartupConfig, "NSTAcknowledge");
     m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
 
     if (server_diff.IsNull() && metadata_diff.IsNull()) {
@@ -1065,8 +1084,9 @@ CNetStorageHandler::x_ProcessShutdown(
     }
 
     if (!m_Server->IsAdminClientName(m_Client)) {
-        NCBI_THROW(CNetStorageServerException, ePrivileges,
-                   "Only administrators can shutdown server");
+        string      msg = "Only administrators can shutdown server";
+        m_Server->RegisterAlert(eAccess, msg);
+        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     }
 
     if (!message.HasKey("Mode")) {

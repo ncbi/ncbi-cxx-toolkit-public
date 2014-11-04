@@ -86,7 +86,8 @@ public:
                                           const string &  user);
     enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type,
                                           const string &  user);
-    void RegisterAlert(EAlertType  alert_type);
+    void RegisterAlert(EAlertType  alert_type,
+                       const string &  messge);
     CJsonNode SerializeAlerts(void) const;
     CNSTDatabase &  GetDb(void);
 

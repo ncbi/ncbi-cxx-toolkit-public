@@ -194,9 +194,10 @@ enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(EAlertType  alert_type,
 }
 
 
-void CNetStorageServer::RegisterAlert(EAlertType  alert_type)
+void CNetStorageServer::RegisterAlert(EAlertType  alert_type,
+                                      const string &  message)
 {
-    m_Alerts.Register(alert_type);
+    m_Alerts.Register(alert_type, message);
 }
 
 

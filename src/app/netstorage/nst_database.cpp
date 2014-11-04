@@ -103,7 +103,7 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
             object_id = -1;
         return status;
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while getting next object ID");
         x_PostCheckConnection();
         throw;
     }
@@ -134,7 +134,7 @@ CNSTDatabase::ExecSP_CreateClient(
             client_id = -1;
         return status;
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while creating a client");
         x_PostCheckConnection();
         throw;
     }
@@ -160,7 +160,7 @@ CNSTDatabase::ExecSP_CreateObject(
         query.VerifyDone();
         return x_CheckStatus(query, "CreateObject");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while creating an object");
         x_PostCheckConnection();
         throw;
     }
@@ -186,7 +186,8 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
         query.VerifyDone();
         return x_CheckStatus(query, "CreateObjectWithClientID");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while creating "
+                                     "an object with client ID");
         x_PostCheckConnection();
         throw;
     }
@@ -210,7 +211,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
         query.VerifyDone();
         return x_CheckStatus(query, "UpdateObjectOnWrite");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while updating an "
+                                     "object on write");
         x_PostCheckConnection();
         throw;
     }
@@ -234,7 +236,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
         query.VerifyDone();
         return x_CheckStatus(query, "UpdateObjectOnRead");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while updating an "
+                                     "object on read");
         x_PostCheckConnection();
         throw;
     }
@@ -257,7 +260,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
         query.VerifyDone();
         return x_CheckStatus(query, "UpdateObjectOnRelocate");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while updating an "
+                                     "object on relocate");
         x_PostCheckConnection();
         throw;
     }
@@ -276,7 +280,7 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
         query.VerifyDone();
         return x_CheckStatus(query, "RemoveObject");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while removing an object");
         x_PostCheckConnection();
         throw;
     }
@@ -303,7 +307,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
         query.VerifyDone();
         return x_CheckStatus(query, "AddAttribute");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while adding an attribute");
         x_PostCheckConnection();
         throw;
     }
@@ -334,7 +338,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
             value = "";
         return status;
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while getting an attribute");
         x_PostCheckConnection();
         throw;
     }
@@ -355,7 +359,7 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
         query.VerifyDone();
         return x_CheckStatus(query, "DelAttribute");
     } catch (...) {
-        m_Server->RegisterAlert(eDB);
+        m_Server->RegisterAlert(eDB, "DB error while deleting an attribute");
         x_PostCheckConnection();
         throw;
     }
@@ -390,7 +394,7 @@ void CNSTDatabase::x_PostCheckConnection(void)
 {
     if (!m_Db->IsConnected(CDatabase::eFastCheck)) {
         m_Connected = false;
-        ERR_POST("Database connection has been lost");
+        ERR_POST(Critical << "Database connection has been lost");
         m_RestoreConnectionThread->Wakeup();
     }
 }

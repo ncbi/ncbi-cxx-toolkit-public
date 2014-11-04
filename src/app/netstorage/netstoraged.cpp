@@ -144,7 +144,9 @@ int CNetStorageDApp::Run(void)
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
-    bool    config_well_formed = NSTValidateConfigFile(reg);
+    vector<string>      config_warnings;
+    // true -> throw exception if there is a port problem
+    NSTValidateConfigFile(reg, config_warnings, true);
 
 
     // [server] section
@@ -190,10 +192,19 @@ int CNetStorageDApp::Run(void)
             .Print("info", "operating in non-daemon mode");
 
     // Save the process PID if PID is given
-    if (!x_WritePid())
-        server->RegisterAlert(ePidFile);
-    if (!config_well_formed)
-        server->RegisterAlert(eConfig);
+    x_WritePid(server.get());
+
+    if (!config_warnings.empty()) {
+        string      msg;
+        for (vector<string>::const_iterator k = config_warnings.begin();
+             k != config_warnings.end(); ++k) {
+            ERR_POST(*k);
+            if (!msg.empty())
+                msg += "\n";
+            msg += *k;
+        }
+        server->RegisterAlert(eStartupConfig, msg);
+    }
 
     // Connect to the database
     // Note: it is vitally important that the first GetDb() call is done after
@@ -263,7 +274,7 @@ CNetStorageDApp::PreparseArgs(int                argc,
 
 
 // true if the PID is written successfully
-bool CNetStorageDApp::x_WritePid(void) const
+void CNetStorageDApp::x_WritePid(CNetStorageServer *  server) const
 {
     const CArgs &   args = GetArgs();
 
@@ -273,18 +284,21 @@ bool CNetStorageDApp::x_WritePid(void) const
         string      pid_file = args[kPidFileArgName].AsString();
 
         if (pid_file == "-") {
-            LOG_POST(Warning << "PID file cannot be standard output and only "
-                                "file name is accepted. Ignore and continue.");
-            return false;
+            string      msg = "pid file cannot be standard output and only "
+                              "file name is accepted";
+            LOG_POST(Warning << msg << ". Ignore and continue.");
+            server->RegisterAlert(ePidFile, msg);
+            return;
         }
 
         // Test writeability
         if (access(pid_file.c_str(), F_OK) == 0) {
             // File exists
             if (access(pid_file.c_str(), W_OK) != 0) {
-                LOG_POST(Warning << "PID file is not writable. "
-                                    "Ignore and continue.");
-                return false;
+                string      msg = "pid file is not writable";
+                LOG_POST(Warning << msg << ". Ignore and continue.");
+                server->RegisterAlert(ePidFile, msg);
+                return;
             }
         }
 
@@ -292,15 +306,16 @@ bool CNetStorageDApp::x_WritePid(void) const
         // access is granted
         FILE *  f = fopen(pid_file.c_str(), "w");
         if (f == NULL) {
-            LOG_POST(Warning << "Error opening PID file for writing. "
-                                "Ignore and continue.");
-            return false;
+            string      msg = "error opening pid file for writing";
+            LOG_POST(Warning << msg << ". Ignore and continue.");
+            server->RegisterAlert(ePidFile, msg);
+            return;
         }
         fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
         fclose(f);
     }
 
-    return true;
+    return;
 }
 
 

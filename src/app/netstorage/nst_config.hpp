@@ -57,7 +57,9 @@ const unsigned int      max_threads_high_limit = 1000;
 
 // Validates the config file - it does LOG_POST(...) of the problems it found
 // Returns true if the config file is perfectly well formed
-bool NSTValidateConfigFile(const IRegistry &  reg);
+void NSTValidateConfigFile(const IRegistry &  reg,
+                           vector<string> &  warnings,
+                           bool  throw_port_exception);
 
 
 END_NCBI_SCOPE
