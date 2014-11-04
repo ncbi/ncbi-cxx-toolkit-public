@@ -194,13 +194,19 @@ void CImageUtil::FlipY(CImage& image)
     size_t start = 0;
     size_t end   = image.GetHeight() - 1;
 
+    void* buf = new unsigned char[scanline_size];
+
     for ( ; end > start;  --end, ++start) {
         unsigned char* start_ptr = image.SetData() + scanline_size * start;
         unsigned char* end_ptr   = image.SetData() + scanline_size * end;
-        for (size_t i = 0;  i < scanline_size;  ++i) {
-            std::swap(start_ptr[i], end_ptr[i]);
-        }
+            
+        // Swap one line at a time
+        memcpy(buf, start_ptr, scanline_size);
+        memcpy(start_ptr, end_ptr, scanline_size);
+        memcpy(end_ptr, buf, scanline_size);
     }
+
+    delete [] buf;
 }
 
 

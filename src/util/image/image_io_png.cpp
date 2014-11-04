@@ -148,9 +148,11 @@ static void s_PngWriteInit(png_structp& png_ptr,
     // set our compression quality
     switch (compress) {
     case CImageIO::eCompress_None:
+        png_set_filter(png_ptr, 0, PNG_FILTER_NONE);
         png_set_compression_level(png_ptr, Z_NO_COMPRESSION);
         break;
     case CImageIO::eCompress_Low:
+        png_set_filter(png_ptr, 0, PNG_FILTER_NONE);
         png_set_compression_level(png_ptr, Z_BEST_SPEED);
         break;
     case CImageIO::eCompress_Medium:
