@@ -971,7 +971,13 @@ void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
     if (m_GridClient->GetBlobSize() > 0) {
         ctx.NeedRenderPage(false);
         CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
-        bool jquery = jquery_callback.size();
+        bool no_jquery = jquery_callback.empty();
+
+        // No need to amend anything
+        if (no_jquery && !m_AddJobIdToHeader) {
+            NcbiStreamCopy(out, is);
+            return;
+        }
 
         // Amending HTTP header
         string header_line;
@@ -979,10 +985,12 @@ void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
             NStr::TruncateSpacesInPlace(header_line, NStr::eTrunc_End);
             if (header_line.empty())
                 break;
-            if (jquery && NStr::StartsWith(header_line, "Content-Type", NStr::eNocase))
+
+            if (no_jquery)
+                out << header_line << "\r\n";
+            else if (NStr::StartsWith(header_line, "Content-Type", NStr::eNocase))
                 out << "Content-Type: text/javascript\r\n";
-            else if (!NStr::StartsWith(header_line,
-                    "Content-Length", NStr::eNocase))
+            else if (!NStr::StartsWith(header_line, "Content-Length", NStr::eNocase))
                 out << header_line << "\r\n";
         }
 
@@ -991,12 +999,13 @@ void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
         }
 
         out << "\r\n";
-        if (jquery) {
+
+        if (no_jquery) {
+            NcbiStreamCopy(out, is);
+        } else {
             out << jquery_callback << '(';
             NcbiStreamCopy(out, is);
             out << ')';
-        } else {
-            NcbiStreamCopy(out, is);
         }
     } else {
         const char* str_page;
