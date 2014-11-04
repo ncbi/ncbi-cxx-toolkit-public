@@ -862,8 +862,9 @@ void CFastaReader::ParseTitle(
     CreateWarningsForSeqDataInTitle(lineInfo.m_sLineText,lineInfo.m_iLineNum, pMessageListener);
 
     CRef<CSeqdesc> desc(new CSeqdesc);
-    desc->SetTitle().assign(
-        lineInfo.m_sLineText.data(), lineInfo.m_sLineText.length());
+    CTempString title(lineInfo.m_sLineText.data(), lineInfo.m_sLineText.length());
+    NStr::TruncateSpacesInPlace(title);
+    desc->SetTitle().assign(title.data(), title.length());
     m_CurrentSeq->SetDescr().Set().push_back(desc);
 
     x_ApplyAllMods(*m_CurrentSeq, lineInfo.m_iLineNum, pMessageListener);
@@ -2071,6 +2072,8 @@ void CFastaReader::x_ApplyAllMods(
                 "defline");
         }
     }
+
+    NStr::TruncateSpacesInPlace(title);
 
     // remove title if empty
     if( title.empty() ) {
