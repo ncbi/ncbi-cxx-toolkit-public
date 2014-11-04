@@ -26,22 +26,19 @@ PLATF_FILE_MASKS=(   "*Linux64*"
                      "*Linux32*"
                      "*FreeBSD32*"
                      "*IntelMAC*"
-                     "*SunOSx86*"
-                     "*SunOSSparc*")
+                     "*SunOSx86*")
 declare -a PLATF_DIR_NAMES
 PLATF_DIR_NAMES=(    "Linux64"
                      "Win32"
                      "Linux32"
                      "FreeBSD32"
                      "IntelMAC"
-                     "SunOSx86"
-                     "SunOSSparc")
+                     "SunOSx86")
 declare -a PLATF_SERVERS
 PLATF_SERVERS=(      "coremake2"
                      "coremake2"
                      "coremake2"
-                     "beastie3"
-                     "coremake2"
+                     "bsdtest"
                      "coremake2"
                      "coremake2")
 declare -a PLATF_NCBI_BIN_DIRS
@@ -50,8 +47,7 @@ PLATF_NCBI_BIN_DIRS=("/net/napme02/vol/ncbi_tools/lnx64_netopt/ncbi_tools/bin/_p
                      "/net/snowman/vol/export2/lnx_netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/net/snowman/vol/osx/ncbi_tools/bin/_production/CPPCORE"
-                     "/net/snowman/vol/projects/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE"
-                     "/net/snowman/vol/projects/ncbi_tools.solaris/sparc-5.10/bin/_production/CPPCORE")
+                     "/net/snowman/vol/projects/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE")
 
 CGI_BIN_DIR="/net/iwebdev2/export/home/web/public/htdocs/ieb/ToolBox/STAT/test_stat"
 
