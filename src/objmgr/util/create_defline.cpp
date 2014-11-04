@@ -2011,6 +2011,37 @@ static inline void s_TrimMainTitle (string& str)
     }
 }
 
+// Strips all spaces in string in following manner. If the function
+// meets several spaces (spaces and tabs) in succession it replaces them
+// with one space. Strips all spaces after '(' and before ( ')' or ',' ).
+// (Code adapted from BasicCleanup.)
+static void x_CompressRunsOfSpaces (string& str)
+{
+    if (str.empty()) {
+        return;
+    }
+
+    string::iterator end = str.end();
+    string::iterator it = str.begin();
+    string::iterator new_str = it;
+    while (it != end) {
+        *new_str++ = *it;
+        if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
+            for (++it; (it != end) && (*it == ' ' || *it == '\t'); ++it) continue;
+            if ((it != end) && (*it == ')' || *it == ',') ) {
+                // this "if" protects against the case "(...bunch of spaces and tabs...)".
+                // Otherwise, the first '(' is unintentionally erased
+                if( *(new_str - 1) != '(' ) { 
+                    --new_str;
+                }
+            }
+        } else {
+            ++it;
+        }
+    }
+    str.erase(new_str, str.end());
+}
+
 void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     const CBioseq_Handle& bsh
 )
@@ -2245,7 +2276,11 @@ string CDeflineGenerator::GenerateDefline (
     // calculate suffix
     x_SetSuffix (suffix, bsh);
 
-    return prefix + m_MainTitle + suffix;
+    string final = prefix + m_MainTitle + suffix;
+
+    x_CompressRunsOfSpaces (final);
+
+    return final;
 }
 
 string CDeflineGenerator::GenerateDefline (
