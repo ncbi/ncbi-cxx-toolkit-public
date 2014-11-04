@@ -218,6 +218,7 @@ enum ENetStorageObjectCompoundIDCues {
     eNFCIDC_TTL,
     eNFCIDC_FileTrackDev,
     eNFCIDC_FileTrackQA,
+    eNFCIDC_NetStorageService,
 };
 
 /// @internal
@@ -230,6 +231,7 @@ enum ENetStorageObjectLocFields {
     fNFID_TTL               = (1 << eNFCIDC_TTL),
     fNFID_FileTrackDev      = (1 << eNFCIDC_FileTrackDev),
     fNFID_FileTrackQA       = (1 << eNFCIDC_FileTrackQA),
+    fNFID_NetStorageService = (1 << eNFCIDC_NetStorageService),
 };
 ///< @internal Bitwise OR of ENetStorageObjectLocFields
 typedef unsigned char TNetStorageObjectLocFields;
@@ -279,6 +281,19 @@ public:
     }
 
     Uint8 GetObjectID() const {return m_ObjectID;}
+
+    void SetServiceName(const string& service_name)
+    {
+        if (service_name.empty())
+            ClearFieldFlags(fNFID_NetStorageService);
+        else {
+            m_ServiceName = service_name;
+            SetFieldFlags(fNFID_NetStorageService);
+        }
+        m_Dirty = true;
+    }
+
+    string GetServiceName() const {return m_ServiceName;}
 
     Int8 GetTimestamp() const {return m_Timestamp;}
     Uint8 GetRandom() const {return m_Random;}
@@ -353,6 +368,8 @@ private:
     TNetStorageObjectLocFields m_Fields;
 
     Uint8 m_ObjectID;
+
+    string m_ServiceName;
 
     Int8 m_Timestamp;
     Uint8 m_Random;
