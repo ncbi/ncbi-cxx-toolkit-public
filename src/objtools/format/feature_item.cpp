@@ -3758,6 +3758,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     DO_QUAL(ncRNA_class);
 
+    DO_QUAL(regulatory_class);
+
     DO_QUAL(product);
 
     x_FormatQual(eFQ_prot_EC_number, "EC_number", qvec);
@@ -3837,7 +3839,6 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(mod_base);
     DO_QUAL(PCR_conditions);
     DO_QUAL(phenotype);
-    DO_QUAL(regulatory_class);
     DO_QUAL(rpt_family);
     DO_QUAL(rpt_type);
     DO_QUAL(rpt_unit);
