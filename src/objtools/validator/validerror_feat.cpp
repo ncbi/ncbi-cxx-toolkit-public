@@ -1445,6 +1445,7 @@ void CValidError_feat::ValidateCdregion (
     bool feat_is_pseudo = feat.CanGetPseudo()  &&  feat.GetPseudo();
     bool gene_is_pseudo = IsOverlappingGenePseudo(feat);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
+    bool nonsense_intron;
 
     FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
         const CGb_qual& qual = **it;
@@ -1488,8 +1489,9 @@ void CValidError_feat::ValidateCdregion (
     }
     
     bool conflict = cdregion.CanGetConflict()  &&  cdregion.GetConflict();
+    nonsense_intron = false;
     if ( !pseudo  &&  !conflict ) {
-        ValidateCdTrans(feat);
+        ValidateCdTrans(feat, nonsense_intron);
         ValidateSplice(feat);
     } else if ( conflict ) {
         ValidateCdConflict(cdregion, feat);
@@ -1590,10 +1592,14 @@ void CValidError_feat::ValidateCdregion (
     ValidateBadMRNAOverlap(feat);
     ValidateCommonCDSProduct(feat);
     ValidateCDSPartial(feat);
-    if (!feat.IsSetExcept() && DoesCDSHaveShortIntrons(feat)) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
-                 "Introns should be at least 10 nt long", feat);
+
+    if(nonsense_intron == false && !feat.IsSetExcept() &&
+       DoesCDSHaveShortIntrons(feat))
+    {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
+                "Introns should be at least 10 nt long", feat);
     }
+
 
     // look for EC number in comment
     if (feat.IsSetComment() && HasECnumberPattern(feat.GetComment())) {
@@ -2702,7 +2708,6 @@ void CValidError_feat::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_H
     const CSeq_loc& loc = feat.GetLocation();
 
     bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
-    int part_num = 0;
 
     bool ignore_mrna_partial5 = false;
     bool ignore_mrna_partial3 = false;
@@ -6648,7 +6653,8 @@ void CValidError_feat::CheckForThreeBaseNonsense (
     const CCdregion& cdr,
     TSeqPos start,
     TSeqPos stop,
-    ENa_strand strand
+    ENa_strand strand,
+    bool &nonsense_intron
 )
 
 {
@@ -6680,12 +6686,14 @@ void CValidError_feat::CheckForThreeBaseNonsense (
             sev = eDiag_Error;
         }
         PostErr (sev, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
+        nonsense_intron = true;
     }
 }
 
 void CValidError_feat::TranslateTripletIntrons (
     const CSeq_feat& feat,
-    const CCdregion& cdr
+    const CCdregion& cdr,
+    bool &nonsense_intron
 )
 
 {
@@ -6706,11 +6714,11 @@ void CValidError_feat::TranslateTripletIntrons (
             ENa_strand strand = curr.GetStrand();
             if ( strand == eNa_strand_minus ) {
                 if (last_start - stop == 4) {
-                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand);
+                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, nonsense_intron);
                 }
             } else {
                 if (start - last_stop == 4) {
-                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, last_stop + 1, start - 1, strand);
+                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, last_stop + 1, start - 1, strand, nonsense_intron);
                 }
             }
         }
@@ -6728,7 +6736,8 @@ bool CValidError_feat::ValidateCdRegionTranslation
  bool& has_errors,
  bool& other_than_mismatch,
  bool& reported_bad_start_codon,
- bool& prot_ok)
+ bool& prot_ok,
+ bool &nonsense_intron)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
         return false;
@@ -6738,7 +6747,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
         return true;
     }
 
-    TranslateTripletIntrons (feat, feat.GetData().GetCdregion());
+    TranslateTripletIntrons (feat, feat.GetData().GetCdregion(), nonsense_intron);
 
     int gc = 0;
     if ( feat.GetData().GetCdregion().IsSetCode() ) {
@@ -7280,7 +7289,8 @@ void CValidError_feat::x_CheckTranslationMismatches
 }
 
 
-void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
+void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
+                                       bool &nonsense_intron)
 {
     // bail if not CDS
     if (!feat.GetData().IsCdregion()) {
@@ -7420,7 +7430,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     bool reported_bad_start_codon = false;
 
     if (!ValidateCdRegionTranslation (feat, transl_prot, report_errors, unclassified_except, has_errors, 
-        other_than_mismatch, reported_bad_start_codon, prot_ok)) {
+        other_than_mismatch, reported_bad_start_codon, prot_ok, nonsense_intron)) {
         return;
     }
 
@@ -8245,13 +8255,13 @@ size_t CValidError_feat::x_FindStartOfGap (CBioseq_Handle bsh, int pos)
     size_t offset = 0;
 
     ITERATE (CSeq_inst::TExt::TDelta::Tdata, it, bsh.GetInst_Ext().GetDelta().Get()) {
-        int len = 0;
+        unsigned int len = 0;
         if ((*it)->IsLiteral()) {
             len = (*it)->GetLiteral().GetLength();
         } else if ((*it)->IsLoc()) {
             len = sequence::GetLength((*it)->GetLoc(), m_Scope);
         }
-        if (pos >= offset && pos < offset + len) {
+        if ((unsigned int) pos >= offset && (unsigned int) pos < offset + len) {
             return offset;
         } else {
             offset += len;
