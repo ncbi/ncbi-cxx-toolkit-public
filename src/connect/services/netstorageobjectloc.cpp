@@ -118,17 +118,17 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
 {
     CCompoundID cid = m_CompoundIDPool.FromString(object_loc);
 
-    // 1. Check the ID class.
+    // Check the ID class.
     if (cid.GetClass() != eCIC_NetStorageObjectLoc) {
         THROW_INVALID_LOC_ERROR(object_loc);
     }
 
-    // 2. Restore the storage flags.
+    // Restore the storage flags.
     CCompoundIDField field = cid.GetFirst(eCIT_Flags);
     VERIFY_FIELD_EXISTS(field);
     m_StorageFlags = (TNetStorageFlags) field.GetFlags();
 
-    // 3. Restore the field flags.
+    // Restore the field flags.
     VERIFY_FIELD_EXISTS(field = field.GetNextHomogeneous());
     m_Fields = (TNetStorageObjectLocFields) field.GetFlags();
 
@@ -137,21 +137,27 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         m_ObjectID = field.GetID();
     }
 
-    // 4. Restore file identification.
+    // Restore NetStorage service name.
+    if (m_Fields & fNFID_NetStorageService) {
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_ServiceName = field.GetString();
+    }
+
+    // Restore file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
-        // 4.1. Get the unique file key.
+        // Get the unique file key.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_UserKey = field.GetString();
-        // 4.2. Get the domain name.
+        // Get the domain name.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_AppDomain = field.GetString();
 
         x_SetUniqueKeyFromUserDefinedKey();
     } else {
-        // 4.1. Get file creation timestamp.
+        // Get file creation timestamp.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_Timestamp = field.GetTimestamp();
-        // 4.2. Get the random ID.
+        // Get the random ID.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_Random = (Uint8) field.GetRandom() << (sizeof(Uint4) * 8);
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
@@ -160,27 +166,27 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         x_SetUniqueKeyFromRandom();
     }
 
-    // 5. Restore NetCache info.
+    // Restore NetCache info.
     if (m_Fields & fNFID_NetICache) {
-        // 5.1. Get the service name.
+        // Get the service name.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_NCServiceName = field.GetServiceName();
-        // 5.2. Get the cache name.
+        // Get the cache name.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_CacheName = field.GetDatabaseName();
-        // 5.3. Get the primary NetCache server IP and port.
+        // Get the primary NetCache server IP and port.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_NetCacheIP = field.GetIPv4Address();
         m_NetCachePort = field.GetPort();
     }
 
-    // 6. If this file is cacheable, load the size of cache chunks.
+    // If this file is cacheable, load the size of cache chunks.
     if (m_StorageFlags & fNST_Cacheable) {
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_CacheChunkSize = (Uint8) field.GetInteger();
     }
 
-    // 7. Restore the TTL if it's in the key.
+    // Restore the TTL if it's in the key.
     if (m_Fields & fNFID_TTL) {
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_TTL = (Uint8) field.GetInteger();
@@ -278,46 +284,50 @@ void CNetStorageObjectLoc::x_SetUniqueKeyFromUserDefinedKey()
 
 void CNetStorageObjectLoc::x_Pack()
 {
-    // 1. Allocate a new CompoundID object.
+    // Allocate a new CompoundID object.
     CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageObjectLoc);
 
-    // 2. Save the storage flags.
+    // Save the storage flags.
     cid.AppendFlags(m_StorageFlags);
-    // 3. Remember which fields are stored.
+    // Remember which fields are stored.
     cid.AppendFlags(m_Fields);
 
-    // 4. Save file identification.
+    // Save file identification.
     if ((m_StorageFlags & fNST_NoMetaData) == 0)
         cid.AppendID(m_ObjectID);
 
+    // Save NetStorage service name.
+    if (m_Fields & fNFID_NetStorageService)
+        cid.AppendString(m_ServiceName);
+
     if (m_Fields & fNFID_KeyAndNamespace) {
-        // 4.1. Save the unique file key.
+        // Save the unique file key.
         cid.AppendString(m_UserKey);
-        // 4.2. Save the domain name.
+        // Save the domain name.
         cid.AppendString(m_AppDomain);
     } else {
-        // 4.1. Save file creation timestamp.
+        // Save file creation timestamp.
         cid.AppendTimestamp(m_Timestamp);
-        // 4.2. Save the random ID.
+        // Save the random ID.
         cid.AppendRandom(m_Random >> (sizeof(Uint4) * 8));
         cid.AppendRandom((Uint4) m_Random);
     }
 
-    // 5. (Optional) Save NetCache info.
+    // (Optional) Save NetCache info.
     if (m_Fields & fNFID_NetICache) {
-        // 5.1. Save the service name.
+        // Save the service name.
         cid.AppendServiceName(m_NCServiceName);
-        // 5.2. Save the cache name.
+        // Save the cache name.
         cid.AppendDatabaseName(m_CacheName);
-        // 5.3. Save the primary NetCache server IP and port.
+        // Save the primary NetCache server IP and port.
         cid.AppendIPv4SockAddr(m_NetCacheIP, m_NetCachePort);
     }
 
-    // 6. If this file is cacheable, save the size of cache chunks.
+    // If this file is cacheable, save the size of cache chunks.
     if (m_StorageFlags & fNST_Cacheable)
         cid.AppendInteger((Int8) m_CacheChunkSize);
 
-    // 7. Save the TTL if it's defined.
+    // Save the TTL if it's defined.
     if (m_Fields & fNFID_TTL)
         cid.AppendInteger((Int8) m_TTL);
 

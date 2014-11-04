@@ -69,6 +69,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     CJsonNode MkFileRequest(const string& request_type,
             const string& unique_key, TNetStorageFlags flags);
     void x_InitNetCacheAPI();
+    bool x_NetCacheMode(const string& object_loc);
 
     EDefaultStorage m_DefaultStorage;
 

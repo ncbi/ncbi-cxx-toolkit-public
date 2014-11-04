@@ -613,11 +613,8 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc,
         TNetStorageFlags flags)
 {
-    if (CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
-            NULL, m_CompoundIDPool)) {
-        x_InitNetCacheAPI();
+    if (x_NetCacheMode(object_loc))
         return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, object_loc);
-    }
 
     return new SNetStorageObjectRPC(this, NULL, NULL,
             SNetStorageObjectRPC::eByGeneratedID,
@@ -640,6 +637,9 @@ string SNetStorageRPC::Relocate(const string& object_loc,
 
 bool SNetStorageRPC::Exists(const string& object_loc)
 {
+    if (x_NetCacheMode(object_loc))
+        return m_NetCacheAPI.HasBlob(object_loc);
+
     CJsonNode request(MkFileRequest("EXISTS", object_loc));
 
     return Exchange(request).GetBoolean("Exists");
@@ -647,6 +647,9 @@ bool SNetStorageRPC::Exists(const string& object_loc)
 
 void SNetStorageRPC::Remove(const string& object_loc)
 {
+    if (x_NetCacheMode(object_loc))
+        return m_NetCacheAPI.Remove(object_loc);
+
     CJsonNode request(MkFileRequest("DELETE", object_loc));
 
     Exchange(request);
@@ -783,6 +786,16 @@ void SNetStorageRPC::x_InitNetCacheAPI()
         nc_api.SetDefaultParameters(nc_use_compound_id = true);
         m_NetCacheAPI = nc_api;
     }
+}
+
+bool SNetStorageRPC::x_NetCacheMode(const string& object_loc)
+{
+    if (!CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
+            NULL, m_CompoundIDPool))
+        return false;
+
+    x_InitNetCacheAPI();
+    return true;
 }
 
 CNetStorage::CNetStorage(const string& init_string,
