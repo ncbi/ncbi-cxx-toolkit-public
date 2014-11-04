@@ -748,6 +748,18 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
         	// Skip bad subject sequence
         	if(e.GetErrCode() == CBlastException::eInvalidArgument) {
         		seqblk_vec->push_back(subj);
+        		string warning = kEmptyStr;
+        		const CSeq_id *  id = subjects.GetSeqId(i);
+        		string title = subjects.GetTitle(i);
+        		if(id != NULL) {
+        			warning = id->GetSeqIdString() + " ";
+        		}
+        		warning += subjects.GetTitle(i);
+        		if(warning != kEmptyStr){
+        			warning += ": ";
+        		}
+        		warning += "Subject sequence contians no data";
+        		ERR_POST(Warning << warning);
         		continue;
         	}
         	else {
