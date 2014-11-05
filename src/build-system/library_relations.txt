@@ -407,6 +407,7 @@ gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs gpipe_common
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs biotree
+gpipe_kmer needs pathogen_connection
 gpipe_kmer needs pathogen_metadata
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
@@ -819,9 +820,12 @@ odbc_ftds64 needs tds_ftds64
 omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
+pathogen_connection needs gpipe_objutil
+pathogen_connection needs gpipe_xml
 pathogen_ctl needs bag_access
 pathogen_ctl needs gc_utils
 pathogen_ctl needs gencoll_client
+pathogen_ctl needs pathogen_connection
 pathogen_ctl needs pathogen_metadata
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
@@ -858,6 +862,7 @@ refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs $(GPIPE_GENCOLL_LIBS)
 refseq_ctl needs bacterial_pipeline_proc
+refseq_ctl needs connssl
 refseq_ctl needs gpinit_access
 remap needs $(SEQ_LIBS)
 remap needs pub
