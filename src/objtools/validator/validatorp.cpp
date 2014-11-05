@@ -398,6 +398,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_LatLonProblem,
     eErr_SEQ_DESCR_LatLonRange,
     eErr_SEQ_DESCR_LatLonValue,
+    eErr_SEQ_DESCR_LatLonCountry,
     eErr_SEQ_DESCR_BadInstitutionCode,
     eErr_SEQ_DESCR_BadCollectionCode,
     eErr_SEQ_DESCR_BadVoucherID,
