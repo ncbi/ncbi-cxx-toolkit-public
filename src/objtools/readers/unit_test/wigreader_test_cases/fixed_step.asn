@@ -42,7 +42,7 @@ Seq-annot ::= {
   },
   data seq-table {
     feat-type 0,
-    num-rows 20,
+    num-rows 10,
     columns {
       {
         header {
@@ -50,9 +50,9 @@ Seq-annot ::= {
         },
         default loc int {
           from 1499,
-          to 44998,
+          to 4498,
           id other {
-            accession "AC_000018",
+            accession "AC_000017",
             version 1
           }
         }
@@ -61,87 +61,9 @@ Seq-annot ::= {
         header {
           field-id location-id
         },
-        data id {
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000017",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          },
-          other {
-            accession "AC_000018",
-            version 1
-          }
+        default id other {
+          accession "AC_000017",
+          version 1
         }
       },
       {
@@ -158,7 +80,108 @@ Seq-annot ::= {
           3299,
           3599,
           3899,
-          4199,
+          4199
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 300
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 1, 10, 3 },
+          { 9, 10, 2 },
+          { 8, 10, 2 },
+          { 7, 10, 2 },
+          { 6, 10, 2 },
+          { 5, 10, 2 },
+          { 4, 10, 2 },
+          { 3, 10, 2 },
+          { 2, 10, 2 },
+          { 1, 10, 2 }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "fixedStep format",
+    name "fixedStep1",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "autoScale",
+          data str "off"
+        },
+        {
+          label str "db",
+          data str "db1"
+        },
+        {
+          label str "description",
+          data str "fixedStep format"
+        },
+        {
+          label str "name",
+          data str "fixedStep1"
+        },
+        {
+          label str "offset",
+          data str "11"
+        },
+        {
+          label str "type",
+          data str "wiggle_0"
+        },
+        {
+          label str "viewLimits",
+          data str "0:1000"
+        },
+        {
+          label str "visibility",
+          data str "full"
+        }
+      }
+    }
+  },
+  data seq-table {
+    feat-type 0,
+    num-rows 10,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 14999,
+          to 44998,
+          id other {
+            accession "AC_000018",
+            version 1
+          }
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id other {
+          accession "AC_000018",
+          version 1
+        }
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
           14999,
           17999,
           20999,
@@ -175,50 +198,13 @@ Seq-annot ::= {
         header {
           field-name "span"
         },
-        data int {
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000
-        }
-      },
-      {
-        header {
-          field-name "value_gap"
-        },
-        default real { 0, 10, 0 }
+        default int 3000
       },
       {
         header {
           field-name "values"
         },
         data real {
-          { 1, 10, 3 },
-          { 9, 10, 2 },
-          { 8, 10, 2 },
-          { 7, 10, 2 },
-          { 6, 10, 2 },
-          { 5, 10, 2 },
-          { 4, 10, 2 },
-          { 3, 10, 2 },
-          { 2, 10, 2 },
-          { 1, 10, 2 },
           { 1, 10, 4 },
           { 9, 10, 3 },
           { 8, 10, 3 },
@@ -278,7 +264,7 @@ Seq-annot ::= {
   },
   data seq-table {
     feat-type 0,
-    num-rows 20,
+    num-rows 10,
     columns {
       {
         header {
@@ -286,9 +272,9 @@ Seq-annot ::= {
         },
         default loc int {
           from 2499,
-          to 44998,
+          to 5498,
           id other {
-            accession "AC_000020",
+            accession "AC_000019",
             version 1
           }
         }
@@ -297,87 +283,9 @@ Seq-annot ::= {
         header {
           field-id location-id
         },
-        data id {
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000019",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          },
-          other {
-            accession "AC_000020",
-            version 1
-          }
+        default id other {
+          accession "AC_000019",
+          version 1
         }
       },
       {
@@ -394,7 +302,108 @@ Seq-annot ::= {
           4299,
           4599,
           4899,
-          5199,
+          5199
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 300
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 1001, 10, 0 },
+          { 901, 10, 0 },
+          { 801, 10, 0 },
+          { 701, 10, 0 },
+          { 601, 10, 0 },
+          { 501, 10, 0 },
+          { 401, 10, 0 },
+          { 301, 10, 0 },
+          { 201, 10, 0 },
+          { 101, 10, 0 }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "fixedStep format",
+    name "fixedStep3",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "autoScale",
+          data str "off"
+        },
+        {
+          label str "db",
+          data str "db3"
+        },
+        {
+          label str "description",
+          data str "fixedStep format"
+        },
+        {
+          label str "name",
+          data str "fixedStep3"
+        },
+        {
+          label str "offset",
+          data str "33"
+        },
+        {
+          label str "type",
+          data str "wiggle_0"
+        },
+        {
+          label str "viewLimits",
+          data str "0:1000"
+        },
+        {
+          label str "visibility",
+          data str "full"
+        }
+      }
+    }
+  },
+  data seq-table {
+    feat-type 0,
+    num-rows 10,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 14999,
+          to 44998,
+          id other {
+            accession "AC_000020",
+            version 1
+          }
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id other {
+          accession "AC_000020",
+          version 1
+        }
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
           14999,
           17999,
           20999,
@@ -411,50 +420,13 @@ Seq-annot ::= {
         header {
           field-name "span"
         },
-        data int {
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          300,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000,
-          3000
-        }
-      },
-      {
-        header {
-          field-name "value_gap"
-        },
-        default real { 0, 10, 0 }
+        default int 3000
       },
       {
         header {
           field-name "values"
         },
         data real {
-          { 1001, 10, 0 },
-          { 901, 10, 0 },
-          { 801, 10, 0 },
-          { 701, 10, 0 },
-          { 601, 10, 0 },
-          { 501, 10, 0 },
-          { 401, 10, 0 },
-          { 301, 10, 0 },
-          { 201, 10, 0 },
-          { 101, 10, 0 },
           { 10001, 10, 0 },
           { 9001, 10, 0 },
           { 8001, 10, 0 },
