@@ -840,7 +840,7 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
 
                 CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
                 if ( !syns  ||  syns->empty() ) {
-                    return false;
+                    return is_not;
                 }
                 return (syns->ContainsSynonym(other_idh) == !is_not);
             }
