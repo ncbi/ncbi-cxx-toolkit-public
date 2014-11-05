@@ -573,10 +573,10 @@ void CNetScheduleServerListener::OnInit(
                     affinity_list += *it;
                 }
             }
-
-            ns_impl->m_JobGroup = config->GetString(config_section,
-                    "job_group", CConfig::eErr_NoThrow, kEmptyStr);
         }
+
+        ns_impl->m_JobGroup = config->GetString(config_section,
+                "job_group", CConfig::eErr_NoThrow, kEmptyStr);
 
         ns_impl->m_ClientNode = config->GetString(config_section,
             "client_node", CConfig::eErr_NoThrow, kEmptyStr);

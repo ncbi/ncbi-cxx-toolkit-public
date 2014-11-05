@@ -128,6 +128,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
             NCBI_THROW(CArgException, eNoArg, "client identification required "
                     "(see the '" LOGIN_COMMAND "' command).");
         }
+
+        if (IsOptionSet(eJobGroup))
+            m_NetScheduleExecutor.SetJobGroup(m_Opts.job_group);
+
         /* FALL THROUGH */
     case eNetScheduleSubmitter:
         m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
