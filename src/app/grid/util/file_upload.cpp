@@ -52,6 +52,7 @@ public:
 
 private:
     CNetStorage m_NetStorage;
+    string m_SourceFieldName;
     EErrorMessageVerbosity m_ErrorMessageVerbosity;
 };
 
@@ -74,6 +75,10 @@ void CFileUploadApplication::Init()
                 "Missing configuration parameter ["
                 CONFIG_SECTION "]." INIT_STRING_PARAM);
     }
+
+    m_SourceFieldName = reg.Get(CONFIG_SECTION, "source_field_name");
+    if (m_SourceFieldName.empty())
+        m_SourceFieldName = "file";
 
     string error_message_verbosity(reg.Get(CONFIG_SECTION,
             ERROR_MESSAGE_VERBOSITY_PARAM));
@@ -116,7 +121,7 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
 
     CJsonNode response_json = CJsonNode::NewObjectNode();
 
-    string filename("file");
+    string filename("input data");
 
     try {
         for (;;) {
@@ -124,16 +129,19 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
 
             if (it == request.GetEntries().end()) {
                 response_json.SetBoolean("success", false);
-                response_json.SetString("msg", "No file to upload");
+                response_json.SetString("msg", "Nothing to upload");
                 break;
             }
 
-            CCgiEntry& entry(it->second);
-            filename = entry.GetFilename();
-
-            if (!filename.empty()) {
+            if (it->first == m_SourceFieldName) {
                 response_json.SetBoolean("success", true);
-                response_json.SetString("name", filename);
+
+                CCgiEntry& entry(it->second);
+
+                const string& filename_from_entry = entry.GetFilename();
+                if (!filename_from_entry.empty())
+                    response_json.SetString("name",
+                            filename = filename_from_entry);
 
                 auto_ptr<CNcbiIstream> input_stream(entry.GetValueStream());
 
