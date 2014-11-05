@@ -90,7 +90,7 @@ private:
     string  m_Service;
     string  m_DbName;
     string  m_User;
-    string  m_Password;
+    string  m_PwFile;
 
     // Application data
     CDatabase   m_Db;
@@ -130,10 +130,10 @@ void CSdbapiSimpleApp::Init(void)
     argdesc->AddPositional("db_name", "Database name",
                            CArgDescriptions::eString);
 
-    argdesc->AddPositional("user", "User name",
+    argdesc->AddPositional("user", "Database user name",
                            CArgDescriptions::eString);
 
-    argdesc->AddPositional("password", "User password",
+    argdesc->AddPositional("pw_file", "File containing database user password",
                            CArgDescriptions::eString);
 
 
@@ -177,7 +177,7 @@ void CSdbapiSimpleApp::ParseArgs(void)
     m_Service = args["service"].AsString();
     m_DbName = args["db_name"].AsString();
     m_User = args["user"].AsString();
-    m_Password = args["password"].AsString();
+    m_PwFile = args["pw_file"].AsString();
 }
 
 
@@ -189,11 +189,12 @@ void CSdbapiSimpleApp::SetupDb(void)
     // Specify connection parameters.
     // If you are inside NCBI and need to know what credentials to use,
     // email cpp-core.
-    string uri = "dbapi://" + m_User + ":" + m_Password + "@/" + m_DbName;
-    CSDB_ConnectionParam db_params(uri);
-
-    // Specify the service.
-    db_params.Set(CSDB_ConnectionParam::eService, m_Service);
+    CSDB_ConnectionParam db_params;
+    db_params
+        .Set(CSDB_ConnectionParam::eUsername,     m_User)
+        .Set(CSDB_ConnectionParam::ePasswordFile, m_PwFile)
+        .Set(CSDB_ConnectionParam::eService,      m_Service)
+        .Set(CSDB_ConnectionParam::eDatabase,     m_DbName);
 
     // Connect to the database.
     m_Db = CDatabase(db_params);
