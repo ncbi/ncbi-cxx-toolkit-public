@@ -107,6 +107,28 @@ public:
     **/
     static bool get_allow_extension_functions_leak (void);
 
+    /**
+     * This member function controls whether or not the libxslt library data
+     * will be cleaned up at exit. The default is true.
+     *
+     * @note By default the library clears all the libxslt data at exit.
+     *       However it is possible that some parts of an application interact
+     *       with libxslt directly and might call the libxml2 library cleanup
+     *       data may lead to a crash.
+     *       This member provides a workaround for the cases when multiple
+     *       parties cleanup libxslt data at exit in multithreaded applications.
+     *       It is supposed that at the beginning of the application there is
+     *       a call similar to the following:
+     *       xslt::init::library_cleanup_on_exit(false);
+     *       and it is the application responsibility to make sure that
+     *       XmlWrapp finishes xslt data handling before the other part of the
+     *       application calls xsltCleanupGlobals().
+     *
+     * @param flag True to turn on libxslt cleanup at exit, false to turn it off
+     * @author Denis Vakatov
+    **/
+    static void library_cleanup_on_exit (bool flag);
+
 private:
     init (const init&);
     init& operator= (const init&);
@@ -116,6 +138,7 @@ private:
 
     static int ms_counter;
     static bool ext_func_leak;
+    static bool do_cleanup_at_exit;
 }; // end xslt::init class
 
 // use a "nifty counter" to ensure that any source file that uses xsltwrapp

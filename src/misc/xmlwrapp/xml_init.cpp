@@ -56,6 +56,7 @@ namespace {
 }
 //####################################################################
 int xml::init::ms_counter = 0;
+bool xml::init::do_cleanup_at_exit = true;
 //####################################################################
 xml::init::init (void) {
     if ( ms_counter++ == 0 )
@@ -87,7 +88,8 @@ void xml::init::init_library() {
 }
 //####################################################################
 void xml::init::shutdown_library() {
-    xmlCleanupParser();
+    if ( do_cleanup_at_exit )
+        xmlCleanupParser();
 }
 //####################################################################
 void xml::init::indent_output (bool flag) {
@@ -108,6 +110,10 @@ void xml::init::load_external_subsets (bool flag) {
 //####################################################################
 void xml::init::validate_xml (bool flag) {
     xmlDoValidityCheckingDefaultValue = flag ? 1 : 0;
+}
+//####################################################################
+void xml::init::library_cleanup_on_exit (bool flag) {
+    do_cleanup_at_exit = flag;
 }
 //####################################################################
 namespace {

@@ -63,6 +63,7 @@ namespace {
 
 int xslt::init::ms_counter = 0;
 bool xslt::init::ext_func_leak = false;
+bool xslt::init::do_cleanup_at_exit = true;
 
 xslt::init::init (void) {
     if ( ms_counter++ == 0 )
@@ -92,7 +93,8 @@ void xslt::init::init_library() {
 }
 
 void xslt::init::shutdown_library() {
-    xsltCleanupGlobals();
+    if ( do_cleanup_at_exit )
+        xsltCleanupGlobals();
 }
 
 void xslt::init::process_xincludes (bool flag) {
@@ -105,6 +107,10 @@ void xslt::init::set_allow_extension_functions_leak (bool flag) {
 
 bool xslt::init::get_allow_extension_functions_leak (void) {
     return ext_func_leak;
+}
+
+void xslt::init::library_cleanup_on_exit (bool flag) {
+    do_cleanup_at_exit = flag;
 }
 
 namespace {

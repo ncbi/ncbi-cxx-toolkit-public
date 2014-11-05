@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -67,7 +67,7 @@ public:
     virtual ~init (void);
 
     //####################################################################
-    /** 
+    /**
      * This member function controls whether or not the XML parser should
      * add text nodes for indenting when generating XML text output from a
      * node tree. The default is true.
@@ -79,7 +79,7 @@ public:
     static void indent_output (bool flag);
 
     //####################################################################
-    /** 
+    /**
      * This member function controls whether or not the XML parser should
      * remove ignorable whitespace around XML elements. The default
      * is false.
@@ -105,7 +105,7 @@ public:
     static void substitute_entities (bool flag);
 
     //####################################################################
-    /** 
+    /**
      * This member function controls whether or not the XML parser should
      * load external (DTD) subsets while parsing. This will only affect the
      * loading of the subsets, it does not cause files to be validated. The
@@ -118,16 +118,42 @@ public:
     static void load_external_subsets (bool flag);
 
     //####################################################################
-    /** 
+    /**
      * This member function controls whether or not the XML parser should
      * validate every XML document that is parses with its DTD. The default
      * is false.
      *
-     * @return flag True to turn on validation, false to turn it off.
+     * @param flag True to turn on validation, false to turn it off.
      * @author Peter Jones
     **/
     //####################################################################
     static void validate_xml (bool flag);
+
+    //####################################################################
+    /**
+     * This member function controls whether or not the libxml2 library data
+     * will be cleaned up at exit. The default is true.
+     *
+     * @note By default the library clears all the libxml2 data at exit.
+     *       However it is possible that some parts of an application interact
+     *       with libxml2 directly and might call the libxml2 library cleanup
+     *       too. In mutithreaded applications double cleaning of the libxml2
+     *       data may lead to a crash.
+     *       This member provides a workaround for the cases when multiple
+     *       parties cleanup libxml2 data at exit in multithreaded applications.
+     *       It is supposed that at the beginning of the application there is
+     *       a call similar to the following:
+     *       xml::init::library_cleanup_on_exit(false);
+     *       and it is the application responsibility to make sure that
+     *       XmlWrapp finishes data handling before the other part of the
+     *       application calls xmlCleanupParser().
+     *
+     * @param flag True to turn on libxml2 cleanup at exit, false to turn it
+     *             off.
+     * @author Denis Vakatov
+    **/
+    //####################################################################
+    static void library_cleanup_on_exit (bool flag);
 
 private:
     init (const init&);
@@ -137,6 +163,7 @@ private:
     void shutdown_library();
 
     static int ms_counter;
+    static bool do_cleanup_at_exit;
 }; // end xml::init class
 
 } // end xml namespace
