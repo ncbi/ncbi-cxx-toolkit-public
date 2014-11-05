@@ -53,6 +53,8 @@
 
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
+
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -108,6 +110,7 @@ private:
     bool                        m_OnlyNucs;
     bool                        m_OnlyProts;
     bool                        m_DeflineOnly;
+    bool                        m_do_cleanup;
 };
 
 //  --------------------------------------------------------------------------
@@ -225,6 +228,13 @@ void CAsn2FastaApp::Init(void)
             "Quality score output file name", CArgDescriptions::eOutputFile);
     }}
 
+    // misc
+    {{
+         // cleanup
+         arg_desc->AddFlag("cleanup",
+                           "Do internal data cleanup prior to formatting");
+     }}
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -249,7 +259,6 @@ CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& argname, const stri
         // (An app-wide smart pointer should suffice.)
         os = new CNcbiOfstream(strname.c_str());
     } else {
-        const CArgs& args = GetArgs();
         if (args[argname]) {
             os = &args[argname].AsOutputFile();
         } else {
@@ -279,12 +288,14 @@ CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& argname, const stri
         }
     }
 
-    if( GetArgs()["show-mods"] ) {
+    if( args["show-mods"] ) {
         fasta_os->SetFlag(CFastaOstream::fShowModifiers);
     }
-    if( GetArgs()["width"] ) {
+    if( args["width"] ) {
         fasta_os->SetWidth( GetArgs()["width"].AsInteger() );
     }
+
+    m_do_cleanup = ( args["cleanup"]);
 
     return fasta_os.release();
 }
@@ -693,6 +704,37 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
+    const CArgs& args = GetArgs();
+
+    if ( m_do_cleanup ) {
+        CSeq_entry_EditHandle tseh = seh.GetTopLevelEntry().GetEditHandle();
+        CBioseq_set_EditHandle bseth;
+        CBioseq_EditHandle bseqh;
+        CRef<CSeq_entry> tmp_se(new CSeq_entry);
+        if ( tseh.IsSet() ) {
+            bseth = tseh.SetSet();
+            CConstRef<CBioseq_set> bset = bseth.GetCompleteObject();
+            bseth.Remove(bseth.eKeepSeq_entry);
+            tmp_se->SetSet(const_cast<CBioseq_set&>(*bset));
+        }
+        else {
+            bseqh = tseh.SetSeq();
+            CConstRef<CBioseq> bseq = bseqh.GetCompleteObject();
+            bseqh.Remove(bseqh.eKeepSeq_entry);
+            tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
+        }
+
+        CCleanup cleanup;
+        cleanup.BasicCleanup( *tmp_se );
+
+        if ( tmp_se->IsSet() ) {
+            tseh.SelectSet(bseth);
+        }
+        else {
+            tseh.SelectSeq(bseqh);
+        }
+    }
+
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
