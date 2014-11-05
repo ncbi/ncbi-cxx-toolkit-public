@@ -73,6 +73,7 @@ bool CRNA_gen::IsLegalClass() const
             "snoRNA",
             "snRNA",
             "SRP_RNA",
+            "stRNA",
             "telomerase_RNA",
             "vault_RNA",
             "Y_RNA",
