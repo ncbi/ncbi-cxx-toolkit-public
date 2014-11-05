@@ -30,7 +30,6 @@ POSTBUILD: $srcdir/scripts/projects/dbtest/post_build/copy_cgi.sh $bindir $srcdi
 Linux32-Centos : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 Linux64-Centos : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 FreeBSD32      : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
-SunOSx86       : plain : WorkShop.sh 32   --without-debug --without-mt --with-static --with-flat-makefile
 IntelMAC       : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile --with-universal=i386,x86_64
 Win32_10       : plain : static 32 ReleaseDLL
 

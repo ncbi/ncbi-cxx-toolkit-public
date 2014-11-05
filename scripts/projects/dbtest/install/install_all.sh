@@ -25,29 +25,25 @@ PLATF_FILE_MASKS=(   "*Linux64*"
                      "*Win32*"
                      "*Linux32*"
                      "*FreeBSD32*"
-                     "*IntelMAC*"
-                     "*SunOSx86*")
+                     "*IntelMAC*")
 declare -a PLATF_DIR_NAMES
 PLATF_DIR_NAMES=(    "Linux64"
                      "Win32"
                      "Linux32"
                      "FreeBSD32"
-                     "IntelMAC"
-                     "SunOSx86")
+                     "IntelMAC")
 declare -a PLATF_SERVERS
 PLATF_SERVERS=(      "coremake2"
                      "coremake2"
                      "coremake2"
                      "bsdtest"
-                     "coremake2"
                      "coremake2")
 declare -a PLATF_NCBI_BIN_DIRS
 PLATF_NCBI_BIN_DIRS=("/net/napme02/vol/ncbi_tools/lnx64_netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/net/snowman/vol/export2/win-coremake/Builds/bin"
                      "/net/snowman/vol/export2/lnx_netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/netopt/ncbi_tools/bin/_production/CPPCORE"
-                     "/net/snowman/vol/osx/ncbi_tools/bin/_production/CPPCORE"
-                     "/net/snowman/vol/projects/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE")
+                     "/net/snowman/vol/osx/ncbi_tools/bin/_production/CPPCORE")
 
 CGI_BIN_DIR="/net/iwebdev2/export/home/web/public/htdocs/ieb/ToolBox/STAT/test_stat"
 
@@ -61,7 +57,7 @@ fi
 cd "$PREPARE_DIR"
 
 
-for ((i = 0; i < 7; ++i)); do
+for ((i = 0; i < 5; ++i)); do
     echo "Deploying ${PLATF_FILE_MASKS[$i]}"
 
     PLATF_FILE="$(find . -type f -name "${PLATF_FILE_MASKS[$i]}.tar.gz" -a ! -name "*-src*")"
