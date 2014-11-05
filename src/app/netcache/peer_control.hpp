@@ -241,13 +241,13 @@ inline void
 CNCPeerControl::SetSlotsForInitSync(Uint2 cnt_slots)
 {
     m_OrigSlotsToInitSync = m_SlotsToInitSync = cnt_slots;
+    m_InitiallySynced = m_OrigSlotsToInitSync == 0;
 }
 
 inline void
 CNCPeerControl::ResetSlotsForInitSync()
 {
     SetSlotsForInitSync(m_OrigSlotsToInitSync);
-    m_InitiallySynced = false;
 }
 
 inline void

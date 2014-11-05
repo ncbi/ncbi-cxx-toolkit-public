@@ -277,8 +277,8 @@ CNCPeriodicSync::Initialize(void)
             SSyncSlotSrv* slot_srv = new SSyncSlotSrv(peer);
             slot_data->srvs.push_back(slot_srv);
         }
+        peer->SetSlotsForInitSync(Uint2(commonSlots.size()));
         if (!commonSlots.empty()) {
-            peer->SetSlotsForInitSync(Uint2(commonSlots.size()));
             CNCStat::AddSyncServer(it_peer->first);
             ++cnt_to_sync;
         }
