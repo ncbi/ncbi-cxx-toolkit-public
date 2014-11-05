@@ -727,10 +727,12 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
 
 void SNetStorageRPC::x_SetICacheNames(CJsonNode& node)
 {
-    CJsonNode icache(CJsonNode::NewObjectNode());
-    icache.SetString("ServiceName", m_NetCacheServiceName);
-    icache.SetString("CacheName", m_CacheName);
-    node.SetByKey("ICache", icache);
+    if (!m_NetCacheServiceName.empty() && !m_CacheName.empty()) {
+        CJsonNode icache(CJsonNode::NewObjectNode());
+        icache.SetString("ServiceName", m_NetCacheServiceName);
+        icache.SetString("CacheName", m_CacheName);
+        node.SetByKey("ICache", icache);
+    }
 }
 
 CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type)
