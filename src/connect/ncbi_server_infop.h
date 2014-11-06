@@ -42,9 +42,6 @@ extern "C" {
 #endif
 
 
-int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
-
-
 /* Constructors for the various types of NCBI server meta-addresses
  */
 SSERV_Info* SERV_CreateNcbidInfoEx
