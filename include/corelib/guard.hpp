@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbidbg.hpp>
+#include <corelib/ncbimisc.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -94,17 +95,34 @@ enum EEmptyGuard {
     eEmptyGuard
 };
 
+
+/// Base class for CGuard<> template.
+class NCBI_XNCBI_EXPORT CGuard_Base
+{
+public:
+    /// Exception reporting options.
+    enum EReportExceptions {
+        eReport, ///< Use ERR_POST to report exceptions.
+        eSilent  ///< Silently discard exceptions.
+    };
+
+protected:
+    static void ReportException(std::exception& ex);
+};
+
+
 template <class Resource,
           class Lock = SSimpleLock<Resource>,
-          class Unlock = SSimpleUnlock<Resource> >
-class CGuard
+          class Unlock = SSimpleUnlock<Resource>,
+          CGuard_Base::EReportExceptions ReportExceptions = CGuard_Base::eReport>
+class CGuard : public CGuard_Base
 {
 public:
     typedef Resource resource_type;
     typedef resource_type* resource_ptr;
     typedef Lock lock_type;
     typedef Unlock unlock_type;
-    typedef CGuard<Resource, Lock, Unlock> TThisType;
+    typedef CGuard<Resource, Lock, Unlock, ReportExceptions> TThisType;
 
     explicit CGuard(EEmptyGuard /*empty*/)
         {
@@ -137,8 +155,11 @@ public:
         {
             try {
                 Release();
-            } catch(std::exception& ) {
-                // catch and ignore std exceptions in destructor
+            } catch(std::exception& ex) {
+                // catch and report or ignore std exceptions in destructor
+                if (ReportExceptions == eReport) {
+                    ReportException(ex);
+                }
             }
         }
     
