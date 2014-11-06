@@ -33,10 +33,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
+#include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
+#include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#define NCBI_CONN_STREAM_EXPERIMENTAL_API 1  // Pick up MS-Win DLL linkage
+#define NCBI_CONN_STREAM_EXPERIMENTAL_API  1  // Pick up MS-Win DLL linkage
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_socket.hpp>
@@ -279,13 +280,13 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         flags |=  fSOCK_LogOn;
     }
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
+        status = HTTP_CreateTunnelEx(net_info, fHTTP_NoAutoRetry,
+                                     data, size, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
-            &&  ((flags & ~(fSOCK_LogOn | fSOCK_LogDefault))  ||  size)) {
+            &&  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault))) {
             SOCK s;
-            status = SOCK_CreateOnTopEx(sock, 0, &s,
-                                        data, size, flags);
+            status = SOCK_CreateOnTopEx(sock, 0, &s, 0, 0, flags);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -300,9 +301,14 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         if (!proxy  &&  net_info->debug_printout) {
             SConnNetInfo* x_net_info = ConnNetInfo_Clone(net_info);
             if (x_net_info) {
+                x_net_info->scheme = eURL_Unspec;
                 x_net_info->req_method = eReqMethod_Any;
+                x_net_info->firewall = 0;
                 x_net_info->stateless = 0;
                 x_net_info->lb_disable = 0;
+                strncpy0(x_net_info->host, host, sizeof(x_net_info->host) - 1);
+                x_net_info->user[0] = '\0';
+                x_net_info->pass[0] = '\0';
                 x_net_info->http_proxy_host[0] = '\0';
                 x_net_info->http_proxy_port    =   0;
                 x_net_info->http_proxy_user[0] = '\0';
