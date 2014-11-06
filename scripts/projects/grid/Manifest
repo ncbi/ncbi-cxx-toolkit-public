@@ -28,6 +28,9 @@ ETC: src/app/grid/test/test_netschedule_node.ini
 APP: grid_cli netschedule_control
 APP: netcache_control ncfetch.cgi$exe
 
+APP: file_upload.cgi$exe
+ETC: src/app/grid/util/file_upload.ini
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
