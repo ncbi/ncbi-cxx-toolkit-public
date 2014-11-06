@@ -800,11 +800,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         return s_SocketConnectorBuilder(net_info, status, &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0,
-                                        info->mode & fSERV_Secure
+                                        info  &&  (info->mode & fSERV_Secure)
                                         ? fSOCK_Secure : 0);
     }
     ConnNetInfo_DeleteUserHeader(net_info, "Host:");
-    if (info->mode & fSERV_Secure)
+    if (info  &&  (info->mode & fSERV_Secure))
         net_info->scheme = eURL_Https;
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags
