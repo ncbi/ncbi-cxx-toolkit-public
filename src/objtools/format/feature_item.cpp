@@ -2262,7 +2262,6 @@ void CFeatureItem::x_AddQualProteinId(
         if ( protId->IsGi() ) {
             gi = protId->GetGi();
             if( gi > ZERO_GI ) {
-                string prot_acc;
                 try {
                     prot_acc = GetAccessionForGi( gi, ctx.GetScope() );
                 } catch ( CException& ) {}
