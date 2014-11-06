@@ -90,19 +90,6 @@ static struct {
 };
 
 
-/* Any server is not local by default.
- */
-static unsigned char/*bool*/ s_LocalServerDefault = 0/*false*/;
-
-
-int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff)
-{
-    int/*bool*/ retval = s_LocalServerDefault;
-    s_LocalServerDefault = onoff ? 0x01/*true*/ : 0x00/*false*/;
-    return retval;
-}
-
-
 /* Attributes' lookup (by either type or tag)
  */
 static const SSERV_Attr* s_GetAttrByType(ESERV_Type type);
@@ -136,6 +123,7 @@ extern const char* SERV_ReadType(const char* str,
 
 extern char* SERV_WriteInfo(const SSERV_Info* info)
 {
+    static const char* k_NY[] = { "no", "yes" };
     char c_t[MAX_CONTENT_TYPE_LEN];    
     const SSERV_Attr* attr;
     size_t reserve;
@@ -154,10 +142,10 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         p++;
         memmove(c_t, p, strlen(p) + 1);
     } else
-        *c_t = 0;
+        *c_t = '\0';
     reserve = attr->tag_len+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+12/*flag*/ +
-        1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 1+5/*locl*/ + 1+5/*priv*/ +
-        1+7/*quorum*/ + 1+14/*rate*/ + 1+5/*sful*/ + 1+12/*time*/ + 1/*EOL*/;
+        1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 3*(1+5)/*site*/ +
+        1+14/*rate*/ + 2*(1+5)/*mode*/ + 1+12/*time*/ + 1/*EOL*/;
     /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
         char* s = str;
@@ -182,19 +170,15 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
             s  = NCBI_simple_ftoa(strcpy(s, " B=") + 3, info->coef, 2);
         if (*c_t)
             s += sprintf(s, " C=%s", c_t);
-        s += sprintf(s, " L=%s", info->locl & 1 ? "yes" : "no");
-        if (info->type != fSERV_Dns  &&  (info->locl & 0x10))
+        s += sprintf(s, " L=%s", k_NY[info->site & fSERV_Local]);
+        if (info->type != fSERV_Dns  &&  (info->site & fSERV_Private))
             s += sprintf(s, " P=yes");
-        if (info->host && info->quorum) {
-            if (info->quorum == (unsigned short)(-1))
-                s += sprintf(s, " Q=yes");
-            else
-                s += sprintf(s, " Q=%hu", info->quorum);
-        }
         s  = NCBI_simple_ftoa(strcpy(s," R=") + 3, info->rate,
                               fabs(info->rate) < 0.01 ? 3 : 2);
         if (!(info->type & fSERV_Http)  &&  info->type != fSERV_Dns)
-            s += sprintf(s, " S=%s", info->sful ? "yes" : "no");
+            s += sprintf(s, " S=%s", k_NY[info->mode & fSERV_Stateful]);
+        if (info->type != fSERV_Dns  &&  (info->mode & fSERV_Secure))
+            s += sprintf(s, "$=yes");
         s += sprintf(s, " T=%lu", (unsigned long) info->time);
     }
     return str;
@@ -205,7 +189,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                             const char* name,
                             int/*bool*/ lazy)
 {
-    int/*bool*/    coef, mime, locl, priv, quor, rate, sful, time, flag;
+    int/*bool*/    coef, mime, locl, priv, rate, sful, secu, time, flag;
     ESERV_Type     type;
     unsigned int   host;                /* network byte order       */
     unsigned short port;                /* host (native) byte order */
@@ -259,8 +243,8 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     info->host = host;
     if (port)
         info->port = port;
-    coef = mime = locl = priv = quor = rate = sful = time = flag = 0;/*false*/
-    /* continue reading server info: optional parts: ... */
+    coef = mime = locl = priv = rate = sful = secu = time = flag = 0;/*false*/
+    /* continue reading server info: optional parts... */
     while (*str  &&  isspace((unsigned char)(*str)))
         ++str;
     while (*str) {
@@ -268,7 +252,6 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             char*          e;
             int            n;
             double         d;
-            unsigned short h;
             unsigned long  t;
             char           s[4];
             EMIME_Type     mime_t;
@@ -311,10 +294,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 locl = 1;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->locl |=  0x01/*set*/;
+                        info->site |=  fSERV_Local;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->locl &= ~0x01/*clear*/;
+                        info->site &= ~fSERV_Local;
                         str += n;
                     }
                 }
@@ -325,25 +308,12 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 priv = 1;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->locl |=  0x10;/*set*/
+                        info->site |=  fSERV_Private;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->locl &= ~0x10;/*clear*/
+                        info->site &= ~fSERV_Private;
                         str += n;
                     }
-                }
-                break;
-            case 'Q':
-                if (quor  ||  type == fSERV_Firewall  ||  !info->host)
-                    break;
-                quor = 1;
-                if (sscanf(++str, "%3s%n", s, &n) >= 1
-                    &&  strcasecmp(s, "YES") == 0) {
-                    info->quorum = (unsigned short)(-1);
-                    str += n;
-                } else if (sscanf(str, "%hu%n", &h, &n) >= 1) {
-                    info->quorum = h;
-                    str += n;
                 }
                 break;
             case 'R':
@@ -363,17 +333,29 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 }
                 break;
             case 'S':
-                if (sful  ||  (type & fSERV_Http) != 0)
+                if (sful  ||  type == fSERV_Dns  ||  (type & fSERV_Http))
                     break;
                 sful = 1;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        if (type == fSERV_Dns)
-                            break; /*check only here for compatibility*/
-                        info->sful = 1/*true*/;
+                        info->mode |=  fSERV_Stateful;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->sful = 0/*false*/;
+                        info->mode &= ~fSERV_Stateful;
+                        str += n;
+                    }
+                }
+                break;
+            case '$':
+                if (secu  ||  type == fSERV_Dns)
+                    break;
+                secu = 1;
+                if (sscanf(++str, "%3s%n", s, &n) >= 1) {
+                    if (strcasecmp(s, "YES") == 0) {
+                        info->mode |=  fSERV_Secure;
+                        str += n;
+                    } else if (strcasecmp(s, "NO") == 0) {
+                        info->mode &= ~fSERV_Secure;
                         str += n;
                     }
                 }
@@ -541,20 +523,19 @@ SSERV_Info* SERV_CreateNcbidInfoEx(unsigned int   host,
 
     add += args ? strlen(args) : 0;
     if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add + 1)) != 0) {
-        info->type         = fSERV_Ncbid;
-        info->host         = host;
-        info->port         = port;
-        info->sful         = 0;
-        info->locl         = s_LocalServerDefault;
-        info->time         = 0;
-        info->coef         = 0.0;
-        info->rate         = 0.0;
-        info->mime_t       = eMIME_T_Undefined;
-        info->mime_s       = eMIME_Undefined;
-        info->mime_e       = eENCOD_None;
-        info->flag         = SERV_DEFAULT_FLAG;
+        info->type   = fSERV_Ncbid;
+        info->host   = host;
+        info->port   = port;
+        info->mode   = 0;
+        info->site   = fSERV_Local;
+        info->time   = 0;
+        info->coef   = 0.0;
+        info->rate   = 0.0;
+        info->mime_t = eMIME_T_Undefined;
+        info->mime_s = eMIME_Undefined;
+        info->mime_e = eENCOD_None;
+        info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
-        info->quorum       = 0;
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
         if (strcmp(args, "''") == 0) /* special case */
             args = 0;
@@ -610,8 +591,8 @@ SSERV_Info* SERV_CreateStandaloneInfoEx(unsigned int   host,
         info->type   = fSERV_Standalone;
         info->host   = host;
         info->port   = port;
-        info->sful   = 0;
-        info->locl   = s_LocalServerDefault;
+        info->mode   = 0;
+        info->site   = fSERV_Local;
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
@@ -620,7 +601,6 @@ SSERV_Info* SERV_CreateStandaloneInfoEx(unsigned int   host,
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
-        info->quorum = 0;
         memset(&info->u.standalone, 0, sizeof(info->u.standalone));
     }
     return info;
@@ -678,19 +658,19 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type,const char** str, size_t add)
 }
 
 
-static SSERV_Info *s_HttpGet_Read(const char** str, size_t add)
+static SSERV_Info* s_HttpGet_Read(const char** str, size_t add)
 {
     return s_HttpAny_Read(fSERV_HttpGet, str, add);
 }
 
 
-static SSERV_Info *s_HttpPost_Read(const char** str, size_t add)
+static SSERV_Info* s_HttpPost_Read(const char** str, size_t add)
 {
     return s_HttpAny_Read(fSERV_HttpPost, str, add);
 }
 
 
-static SSERV_Info *s_Http_Read(const char** str, size_t add)
+static SSERV_Info* s_Http_Read(const char** str, size_t add)
 {
     return s_HttpAny_Read(fSERV_Http, str, add);
 }
@@ -724,20 +704,19 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
         return 0;
     add += (path ? strlen(path) : 0) + 1 + (args ? strlen(args) : 0);
     if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add + 1)) != 0) {
-        info->type        = type;
-        info->host        = host;
-        info->port        = port;
-        info->sful        = 0;
-        info->locl        = s_LocalServerDefault;
-        info->time        = 0;
-        info->coef        = 0.0;
-        info->rate        = 0.0;
-        info->mime_t      = eMIME_T_Undefined;
-        info->mime_s      = eMIME_Undefined;
-        info->mime_e      = eENCOD_None;
-        info->flag        = SERV_DEFAULT_FLAG;
+        info->type   = type;
+        info->host   = host;
+        info->port   = port;
+        info->mode   = 0;
+        info->site   = fSERV_Local;
+        info->time   = 0;
+        info->coef   = 0.0;
+        info->rate   = 0.0;
+        info->mime_t = eMIME_T_Undefined;
+        info->mime_s = eMIME_Undefined;
+        info->mime_e = eENCOD_None;
+        info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
-        info->quorum      = 0;
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
         info->u.http.args = (TNCBI_Size) (info->u.http.path +
                                           (path ? strlen(path) : 0) + 1);
@@ -809,8 +788,8 @@ SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int   host,
         info->type   = fSERV_Firewall;
         info->host   = host;
         info->port   = port;
-        info->sful   = 0;
-        info->locl   = s_LocalServerDefault;
+        info->mode   = 0;
+        info->site   = fSERV_Local;
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
@@ -819,7 +798,6 @@ SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int   host,
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
-        info->quorum = 0;
         info->u.firewall.type = type;
     }
     return info;
@@ -870,8 +848,8 @@ SSERV_Info* SERV_CreateDnsInfoEx(unsigned int host, size_t add)
         info->type   = fSERV_Dns;
         info->host   = host;
         info->port   = 0;
-        info->sful   = 0;
-        info->locl   = s_LocalServerDefault;
+        info->mode   = 0;
+        info->site   = fSERV_Local;
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
@@ -880,7 +858,6 @@ SSERV_Info* SERV_CreateDnsInfoEx(unsigned int host, size_t add)
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
-        info->quorum = 0;
         memset(&info->u.dns, 0, sizeof(info->u.dns));
     }
     return info;

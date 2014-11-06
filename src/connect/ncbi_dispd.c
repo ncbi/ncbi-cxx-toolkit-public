@@ -45,7 +45,7 @@
 #endif /*fabs*/
 #define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
-#define NCBI_USE_ERRCODE_X   Connect_Dispd
+#define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 /* Lower bound of up-to-date/out-of-date ratio */
 #define DISPD_STALE_RATIO_OK  0.8
@@ -195,7 +195,7 @@ static void s_Resolve(SERV_ITER iter)
         /* ...then trigger the header callback */
         CONN_Close(conn);
     } else {
-        CORE_LOGF_X(1, eLOG_Error,
+        CORE_LOGF_X(5, eLOG_Error,
                     ("%s%s%sUnable to create auxiliary HTTP %s: %s",
                      &"["[!*iter->name], iter->name, *iter->name ? "]  " : "",
                      c              ? "connection" : "connector",
@@ -266,7 +266,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             text += sizeof(HTTP_DISP_FAILURES) - 1;
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
-            CORE_LOGF_X(2, failure ? eLOG_Warning : eLOG_Note,
+            CORE_LOGF_X(6, failure ? eLOG_Warning : eLOG_Note,
                         ("[%s]  %s", data->net_info->svc, text));
         }
 #endif /*_DEBUG && !NDEBUG*/

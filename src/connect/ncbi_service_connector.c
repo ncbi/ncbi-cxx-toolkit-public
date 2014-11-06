@@ -353,11 +353,12 @@ static SSERV_InfoCPtr s_GetNextInfo(SServiceConnector* uuu, int/*bool*/ http)
         if (info) {
             if (http) {
                 /* Skip any 'stateful_capable' or unconnectable entries here,
-                 * which might have been left behind by either a failed
-                 * stateful dispatching with a fallback to stateless HTTP mode
-                 * or a too relaxed server type selection.
+                 * which might have been left behind by either
+                 *   a/ a failed stateful dispatching that fallen back to
+                 *      stateless HTTP mode, or
+                 *   b/ a too relaxed server type selection.
                  */
-                if (info->sful  ||  info->type == fSERV_Dns)
+                if ((info->mode & fSERV_Stateful)  ||  info->type == fSERV_Dns)
                     continue;
             }
             uuu->reset = 0/*false*/;
@@ -391,32 +392,29 @@ static char* s_HostPort(const char* host, unsigned short nport)
 }
 
 
-/* Until r294766, this code used to send a ticket along with building the
- * tunnel, but for buggy proxies that ignore HTTP body as connection data
- * (and thus violate the standard), this shortcut could not be utilized;
- * so the longer multi-step sequence was introduced below, instead.
- * Cf. ncbi_conn_stream.cpp: s_SocketConnectorBuilder().
- */
 static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                                           EIO_Status*   status,
                                           const void*   data,
-                                          size_t        size)
+                                          size_t        size,
+                                          TSOCK_Flags   flags)
 {
-    CONNECTOR   c;
-    char*       hostport;
-    SOCK        sock  = 0;
     int/*bool*/ proxy = 0/*false*/;
-    TSOCK_Flags flags = (net_info->debug_printout == eDebugPrintout_Data
-                         ? fSOCK_LogOn : fSOCK_LogDefault);
+    SOCK        sock = 0;
+    char*       hostport;
+    CONNECTOR   c;
+
+    flags |= (net_info->debug_printout == eDebugPrintout_Data
+              ? fSOCK_LogOn : fSOCK_LogDefault);
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
+        *status = HTTP_CreateTunnelEx(net_info, fHTTP_NoAutoRetry,
+                                      data, size, &sock);
         assert(!sock ^ !(*status != eIO_Success));
-        if (*status == eIO_Success  &&  size) {
+        if (*status == eIO_Success
+            &&  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault))) {
             SOCK s;
-            *status = SOCK_CreateOnTopEx(sock, 0, &s,
-                                         data, size, flags);
+            *status = SOCK_CreateOnTopEx(sock, 0, &s, 0, 0, flags);
             assert(!s ^ !(*status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -427,9 +425,15 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
         if (!proxy  &&  net_info->debug_printout) {
+            net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
+            net_info->firewall = 0;
             net_info->stateless = 0;
             net_info->lb_disable = 0;
+            if (net_info->host != host)
+                strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
+            net_info->user[0] = '\0';
+            net_info->pass[0] = '\0';
             net_info->http_proxy_host[0] = '\0';
             net_info->http_proxy_port    =   0;
             net_info->http_proxy_user[0] = '\0';
@@ -528,7 +532,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     case fSERV_Standalone:
         user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
         user_header = s_AdjustNetParams(uuu->service, net_info,
-                                        eReqMethod_Post,
+                                        eReqMethod_Any,
                                         uuu->net_info->path, 0,
                                         uuu->net_info->args,
                                         user_header, info->mime_t,
@@ -631,12 +635,15 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                             info->mime_s, info->mime_e, 0);
             break;
         case fSERV_Standalone:
-            if (!net_info->stateless)
-                return s_SocketConnectorBuilder(net_info, status, 0, 0);
+            if (!net_info->stateless) {
+                return s_SocketConnectorBuilder(net_info, status, 0, 0,
+                                                info->mode & fSERV_Secure
+                                                ? fSOCK_Secure : 0);
+            }
             /* Otherwise, it will be a pass-thru connection via dispatcher */
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(uuu->service, net_info,
-                                            eReqMethod_Post, 0, 0,
+                                            eReqMethod_Any, 0, 0,
                                             0, user_header, info->mime_t,
                                             info->mime_s, info->mime_e, 0);
             but_last = 1/*true*/;
@@ -792,9 +799,13 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         net_info->port = uuu->port;
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         return s_SocketConnectorBuilder(net_info, status, &uuu->ticket,
-                                        uuu->ticket ? sizeof(uuu->ticket) : 0);
+                                        uuu->ticket ? sizeof(uuu->ticket) : 0,
+                                        info->mode & fSERV_Secure
+                                        ? fSOCK_Secure : 0);
     }
     ConnNetInfo_DeleteUserHeader(net_info, "Host:");
+    if (info->mode & fSERV_Secure)
+        net_info->scheme = eURL_Https;
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags
                                    & (fHTTP_Flushable | fHTTP_NoAutoRetry))

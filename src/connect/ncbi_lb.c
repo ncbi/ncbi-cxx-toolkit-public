@@ -81,8 +81,8 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
         status = cand->status;
         latch  = iter->host  &&  iter->host == info->host
             && (!iter->port  ||  iter->port == info->port);
-        if (latch  ||  (!fixed  &&  !iter->host  &&
-                        info->locl  &&  info->coef < 0.0)) {
+        if (latch  ||  (!fixed  &&  !iter->host  &&  info->coef < 0.0
+                        &&  (info->site & (fSERV_Local | fSERV_Private)))) {
             if (fixed < latch) {
                 fixed = latch;
                 access = point = 0.0;

@@ -116,13 +116,13 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
               (svc, iter->ismask  ||  iter->reverse_dns ? name : "", 0))) {
             continue;
         }
-        if (iter->external  &&  info->locl)
+        if (iter->external  &&  (info->site & (fSERV_Local | fSERV_Private)))
             continue;  /* external mapping for local server not allowed */
-        if (!info->host  ||  (info->locl & 0x10)) {
+        if (!info->host  ||  (info->site & fSERV_Private)) {
             unsigned int localhost = SOCK_GetLocalHostAddress(eDefault);
             if (!info->host)
                 info->host = localhost;
-            if ((info->locl & 0x10)  &&  info->host != localhost)
+            if ((info->site & fSERV_Private)  &&  info->host != localhost)
                 continue;  /* private server */
         }
         if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
@@ -130,7 +130,7 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
                 continue;  /* type doesn't match */
             if (types == fSERV_Any  &&  info->type == fSERV_Dns)
                 continue;  /* DNS entries have to be req'd explicitly */
-            if (iter->stateless && info->sful && !(info->type & fSERV_Http))
+            if (iter->stateless  &&  (info->mode & fSERV_Stateful))
                 continue;  /* skip stateful only servers */
         }
         if (!info->rate)
@@ -299,9 +299,10 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 }
                 if (!iter->ismask)
                     dns_info_seen = 1/*true*/;
-                if (iter->external  &&  temp->locl)
+                if (iter->external
+                    &&  (temp->site & (fSERV_Local | fSERV_Private))) {
                     continue; /* external mapping req'd; local server */
-                assert(!(temp->locl & 0x10)); /* no private DNS */
+                }
                 if (temp->rate > 0.0  ||  iter->ok_down) {
                     data->cand[i].status = data->cand[n].status;
                     info = temp;
