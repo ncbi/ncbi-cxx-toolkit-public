@@ -1,4 +1,5 @@
 [components]
-infrastructure  12.0
-core            12.0
-dbase           12.0
+infrastructure  15.0
+core            15.0
+dbase           15.0
+

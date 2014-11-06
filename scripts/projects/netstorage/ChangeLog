@@ -1,3 +1,10 @@
+Release 1.0.2 based on SC-15 (2014-11-06)
+
+Improvements and bug fixes:
+    * NetStorage: extend the server alerts with a text message (JIRA: CXX-5350)
+    * NetStorage: failure to restore a DB connection (JIRA: CXX-5340)
+
+
 Release 1.0.1 cloned from 1.0.0 (2014-10-27)
 
 Improvements and bug fixes:

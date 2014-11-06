@@ -29,5 +29,5 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:Release
 Linux64-Centos : Release : GCC.sh 4.8.1 --without-debug --with-mt --with-flat-makefile
 Linux64-Centos : Debug   : GCC.sh 4.8.1 --with-debug    --with-mt --with-flat-makefile
 
-# USE_COMPONENTS
+USE_COMPONENTS
 
