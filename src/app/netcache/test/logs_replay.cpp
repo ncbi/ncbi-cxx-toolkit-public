@@ -512,7 +512,8 @@ cout << "key_id = " << key_id << endl;
         }
     }
     if (!m_NC.UseNC() || (gen_key  &&  s_SelfGen)) {
-        CNetCacheKey::GenerateBlobKey(&key, s_BlobId.Add(1), "130.14.24.171", 9000, 1, s_GetRandom());
+        bool old_ver = (s_GetRandom() % 10) < 6;
+        CNetCacheKey::GenerateBlobKey(&key, s_BlobId.Add(1), "130.14.24.171", 9000, old_ver ? 1 : 3, s_GetRandom());
         CNetCacheKey::AddExtensions(key, s_NCService, 0);
     }
 
