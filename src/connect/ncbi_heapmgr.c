@@ -357,7 +357,7 @@ static const char* s_HEAP_Id(char* buf, HEAP h)
 
 
 /* Scan the heap and return a free block, whose size is the minimal to fit the
- * requested one (i.e. previous free block, if any, is smaller).  The block
+ * requested one (i.e. its previous free block, if any, is smaller).  The block
  * returned is still linked into the list of free blocks.  Iff no suitable free
  * block can be found, *size gets updated with the total free space available.
  */
@@ -666,6 +666,8 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
             /*NB: f is unlinked*/
             f = s_HEAP_Collect(heap, need);
             assert(f  &&  HEAP_ISFREE(f)  &&  need <= f->head.size);
+            if (f->head.flag & 2/*HEAP_LAST*/)
+                f->head.flag = HEAP_FREE | HEAP_LAST;
             n = 0;
         } else
             f = n = 0;
