@@ -70,7 +70,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_mucl_base("http://bccm.belspo.be/db/mucl_search_results.php?FIRSTITEM=1&LIST1=STRAIN_NUMBER&TEXT1=");
     static const string  s_nbrc_base("http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT=");
     static const string  s_ncimb_base("http://www.ncimb.com/BioloMICS.aspx?Table=NCIMBstrains&ExactMatch=T&Fields=All&Name=NCIMB%20");
-    static const string  s_nrrl_base("http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=");
+    static const string  s_nrrl_base("http://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=“");
     static const string  s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
     static const string  s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
     static const string  s_pycc_base("http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20");
