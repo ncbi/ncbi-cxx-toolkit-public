@@ -289,7 +289,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* aux. storage */
     char   str[1024];
     size_t len;
-    int    val;
+    long   val;
     double dbl;
     char*  e;
 
@@ -355,7 +355,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     errno = 0;
     if (*str  &&  (val = strtoul(str, &e, 10)) > 0  &&  !errno
         &&  !*e  &&  val < (1 << 16)) {
-        info->port = val;
+        info->port = (unsigned short) val;
     } else
         info->port = 0/*default*/;
 
@@ -374,9 +374,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         errno = 0;
         if (*str  &&  (val = strtoul(str, &e, 10)) > 0
             &&  !errno  &&  !*e  &&  val < (1 << 16)) {
-            info->http_proxy_port = val;
+            info->http_proxy_port = (unsigned short) val;
         } else
-            info->http_proxy_port =  0/*none*/;
+            info->http_proxy_port = 0/*none*/;
         /* HTTP proxy username */
         REG_VALUE(REG_CONN_HTTP_PROXY_USER, info->http_proxy_user,
                   DEF_CONN_HTTP_PROXY_USER);
@@ -1170,7 +1170,7 @@ static const char* x_ReqMethod(TReqMethod req_method, char buf[])
     default:
         break;
     }
-    return x_Num(req_method, buf);
+    return buf ? x_Num(req_method, buf) : 0;
 }
 
 
@@ -1476,21 +1476,19 @@ extern EIO_Status URL_ConnectEx
  TSOCK_Flags     flags,
  SOCK*           sock)
 {
-    static const char* kHttp[] = { " HTTP/1.0\r\n",
-                                   " HTTP/1.1\r\n" };
-    static const char  kHost[] = "Host: ";
+    static const char kHttp[][12] = { " HTTP/1.0\r\n",
+                                      " HTTP/1.1\r\n" };
     SOCK        s;
     BUF         buf;
     char*       hdr;
-    unsigned    ver;
+    const char* str;  
     SSOCK_Init  init;
+    const char* http;
     EIO_Status  status;
-    int         add_hdr;
     size_t      hdr_len;
-    char        hdr_buf[80];
     size_t      args_len;
+    char        temp[80];
     EReqMethod  x_req_meth;
-    const char* x_req_meth_str;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
 
     /* sanity check first */
@@ -1517,12 +1515,25 @@ extern EIO_Status URL_ConnectEx
         return x_URLConnectErrorReturn(s, eIO_InvalidArg);
     }
 
-    ver = req_method >= eReqMethod_v1 ? 1 : 0;
+    /* trim user_hdr */
+    while (user_hdr_len) {
+        if (!isspace((unsigned char) user_hdr[0]))
+            break;
+        ++user_hdr;
+        --user_hdr_len;
+    }
+    while (user_hdr_len) {
+        if (!isspace((unsigned char) user_hdr[user_hdr_len - 1]))
+            break;
+        --user_hdr_len;
+    }
+
+    http = kHttp[req_method < eReqMethod_v1 ? 0 : 1];
     x_req_meth = (EReqMethod)(req_method & ~eReqMethod_v1);
     /* select request method and its verbal representation */
     if (x_req_meth == eReqMethod_Any)
         x_req_meth  = content_length ? eReqMethod_Post : eReqMethod_Get;
-    else if (content_length  &&  (x_req_meth == eReqMethod_Get  ||
+    else if (content_length  &&  (x_req_meth == eReqMethod_Get   ||
                                   x_req_meth == eReqMethod_Head)) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("[URL_Connect; http%s//%s:%hu%s%s] "
@@ -1534,52 +1545,21 @@ extern EIO_Status URL_ConnectEx
         content_length = 0;
     }
 
-    switch (x_req_meth | (ver ? eReqMethod_v1 : 0)/*FIXME: to remove*/) {
-    case eReqMethod_Get:
-        x_req_meth_str = "GET ";
-        add_hdr = 1;
-        break;
-    case eReqMethod_Post:
-        x_req_meth_str = "POST ";
-        add_hdr = 1;
-        break;
-    case eReqMethod_Head:
-        x_req_meth_str = "HEAD ";
-        add_hdr = 1;
-        break;
-    case eReqMethod_Connect:
-        x_req_meth_str = "CONNECT ";
-        add_hdr = 0;
-        break;
-    default:
+    if (!(str = x_ReqMethod(x_req_meth, 0))) {
         CORE_LOGF_X(4, eLOG_Error,
                     ("[URL_Connect; http%s//%s:%hu%s%s] "
                      " Unsupported request method %s",
                      &"s"[!(flags & fSOCK_Secure)],
                      host, port, &"/"[*path == '/'], path,
-                     x_ReqMethod(req_method, hdr_buf)));
+                     x_ReqMethod(req_method, temp)));
         assert(0);
         return x_URLConnectErrorReturn(s, eIO_NotSupported);
     }
 
-    hdr_len = 0;
-    if (add_hdr) {
-        const char* temp;
-        assert(x_req_meth != eReqMethod_Connect);
-        /*FIXME: this to be moved to URL_Connect()*/
-        for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
-            if (temp != user_hdr)
-                temp++;
-            if (strncasecmp(temp, kHost, sizeof(kHost) - 2) == 0) {
-                add_hdr = 0;
-                break;
-            }
-        }
-        args_len = args ? strcspn(args, "#") : 0;
+    if (x_req_meth != eReqMethod_Connect) {
         if (!port)
             port = flags & fSOCK_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
-        else if (add_hdr)
-            hdr_len = (size_t) sprintf(hdr_buf, ":%hu", port);
+        args_len = args ? strcspn(args, "#") : 0;
     } else
         args_len = 0;
 
@@ -1587,37 +1567,30 @@ extern EIO_Status URL_ConnectEx
     errno = 0;
     /* compose HTTP header */
     if (/* METHOD <path>[?<args>] HTTP/1.x\r\n */
-        !BUF_Write(&buf, x_req_meth_str, strlen(x_req_meth_str))  ||
-        !BUF_Write(&buf, path,           strlen(path))            ||
+        !BUF_Write(&buf, str,  strlen(str))                        ||
+        !BUF_Write(&buf, " ",  1)                                  ||
+        !BUF_Write(&buf, path, strlen(path))                       ||
         (args_len
-         &&  (!BUF_Write(&buf, "?",        1)                     ||
-              !BUF_Write(&buf, args,       args_len)))            ||
-        !BUF_Write      (&buf, kHttp[ver], strlen(kHttp[ver]))    ||
-
-        (add_hdr
-         /* Host: host[:port]\r\n */
-         &&  (!BUF_Write(&buf, kHost,   sizeof(kHost) - 1)        ||
-              !BUF_Write(&buf, host,    strlen(host))             ||
-              !BUF_Write(&buf, hdr_buf, hdr_len)                  ||
-              !BUF_Write(&buf, "\r\n",  2)))                      ||
+         &&  (!BUF_Write(&buf, "?",  1)                            ||
+              !BUF_Write(&buf, args, args_len)))                   ||
+        !BUF_Write      (&buf, http, sizeof(kHttp[0]) - 1)         ||
 
         /* Content-Length: <content_length>\r\n */
-        (x_req_meth == eReqMethod_Post/*NB: HTTP/1.0 only*/  &&  !ver
-         &&  ((add_hdr
-               = sprintf(hdr_buf, "Content-Length: %lu\r\n",
-                         (unsigned long) content_length)) <= 0    ||
-              !BUF_Write(&buf, hdr_buf,  (size_t) add_hdr)))      ||
+        (x_req_meth != eReqMethod_Connect  &&  content_length
+         &&  !BUF_Write(&buf, temp, (size_t)
+                        sprintf(temp, "Content-Length: %lu\r\n",
+                                (unsigned long) content_length)))  ||
 
         /* <user_header> */
         (user_hdr_len
-         &&  !BUF_Write (&buf, user_hdr, user_hdr_len))           ||
+         &&  !BUF_Write(&buf, user_hdr, user_hdr_len))             ||
 
         /* header separator */
-        !BUF_Write(&buf, "\r\n", 2)                               ||
+        !BUF_Write(&buf, "\r\n\r\n", user_hdr_len ? 4 : 2)         ||
 
         /* tunneled data */
         (x_req_meth == eReqMethod_Connect  &&  content_length
-         &&  !BUF_Write (&buf, args,     content_length))) {
+         &&  !BUF_Write(&buf, args, content_length))) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(5, eLOG_Error, x_errno,
                           ("[URL_Connect; http%s//%s:%hu%s%s%s%.*s] "
@@ -1634,10 +1607,11 @@ extern EIO_Status URL_ConnectEx
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
                           ("[URL_Connect; http%s//%s:%hu%s%s%s%.*s] "
-                           " Cannot maintain HTTP header",
+                           " Cannot maintain HTTP header (%lu byte%s)",
                            &"s"[!(flags & fSOCK_Secure)],
                            host, port, &"/"[*path == '/'], path,
-                           &"?"[!args_len], (int) args_len, args));
+                           &"?"[!args_len], (int) args_len, args,
+                           (unsigned long) hdr_len, &"s"[hdr_len == 1]));
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
@@ -1665,11 +1639,11 @@ extern EIO_Status URL_ConnectEx
     if (status != eIO_Success) {
         assert(!*sock);
         if (status == eIO_Timeout  &&  o_timeout) {
-            sprintf(hdr_buf, "[%u.%06u]",
+            sprintf(temp, "[%u.%06u]",
                     (unsigned int)(o_timeout->sec + o_timeout->usec/1000000),
                     (unsigned int)                 (o_timeout->usec%1000000));
         } else
-            *hdr_buf = '\0';
+            *temp = '\0';
         CORE_LOGF_X(7, eLOG_Error,
                     ("[URL_Connect; http%s//%s:%hu%s%s%s%.*s] "
                      " Failed to %s: %s%s",
@@ -1677,7 +1651,7 @@ extern EIO_Status URL_ConnectEx
                      host, port, &"/"[*path == '/'], path,
                      &"?"[!args_len], (int) args_len, args,
                      s ? "use connection" : "connect",
-                     IO_StatusStr(status), hdr_buf));
+                     IO_StatusStr(status), temp));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
     return status;
@@ -1697,40 +1671,71 @@ extern SOCK URL_Connect
  int/*bool*/     encode_args,
  TSOCK_Flags     flags)
 {
-    SOCK   sock;
-    char*  temp;
-    size_t args_len;
+    static const char kHost[] = "Host: ";
+    const char* x_hdr;
+    char* x_args;
+    SOCK sock;
 
-    if (req_method >= eReqMethod_v1)
-        req_method  = (EReqMethod)((int) eReqMethod_v1 - 1)/*bad*/;
-    if (req_method != eReqMethod_Connect  &&  args  &&  encode_args
-        &&  (args_len = strcspn(args, "#")) > 0) {
-        /* URL-encode "args", if any specified */
-        size_t rd_len, wr_len;
-        size_t size = 3 * args_len;
-        if (!(temp = (char*) malloc(size + 1))) {
-            CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
-                              ("[URL_Connect]  Out of memory (%lu)",
-                               (unsigned long)(size + 1)));
-            return 0;
+    if (req_method >= eReqMethod_v1) {
+        CORE_LOG_X(9, eLOG_Error,
+                   "[URL_Connect]  Unsupported version of HTTP protocol");
+        return 0;
+    }
+
+    if (req_method != eReqMethod_Connect) {
+        size_t x_add = 1/*true*/;
+        for (x_hdr = user_hdr;  x_hdr && *x_hdr;  x_hdr = strchr(x_hdr, '\n')){
+            if (x_hdr != user_hdr)
+                x_hdr++;
+            if (strncasecmp(x_hdr, kHost, sizeof(kHost) - 2) == 0) {
+                x_add = 0/*false*/;
+                break;
+            }
         }
-        URL_Encode(args, args_len, &rd_len, temp, size, &wr_len);
-        assert(rd_len == args_len);
-        assert(wr_len <= size);
-        temp[wr_len] = '\0';
-        args = temp;
-    } else
-        temp = 0;
+        if (x_add) {
+            size_t x_len = host  &&  *host ? strlen(host) : 0; 
+            char* x_host = x_len ? (char*) malloc(x_len + 16) : 0;
+            if (x_host) {
+                memcpy(x_host, host, x_len);
+                if (port)
+                    x_len += (size_t) sprintf(x_host + x_len, ":%hu", port);
+                if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr)))
+                    x_hdr = user_hdr;
+            } else
+                x_hdr = user_hdr;
+        } else
+            x_hdr = user_hdr;
+
+        if (args  &&  encode_args  &&  (x_add = strcspn(args, "#")) > 0) {
+            /* URL-encode "args", if any specified */
+            size_t size = 3 * x_add;
+            size_t rd_len, wr_len;
+            if (!(x_args = (char*) malloc(size + 1))) {
+                CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
+                                  ("[URL_Connect]  Out of memory (%lu)",
+                                   (unsigned long)(size + 1)));
+                return 0;
+            }
+            URL_Encode(args, x_add, &rd_len, x_args, size, &wr_len);
+            assert(rd_len == x_add);
+            assert(wr_len <= size);
+            x_args[wr_len] = '\0';
+            args = x_args;
+        } else
+            x_args = 0;
+    }
 
     sock = 0;
-    verify(URL_ConnectEx(host, port, path, args,
+    verify(URL_ConnectEx(host, port, path, x_args,
                          req_method, content_length,
                          o_timeout, rw_timeout,
-                         user_hdr, 0/*cred*/, flags, &sock) == eIO_Success
+                         x_hdr, 0/*cred*/, flags, &sock) == eIO_Success
            ||  !sock);
 
-    if (temp)
-        free(temp);
+    if (x_args)
+        free(x_args);
+    if (x_hdr != user_hdr)
+        free((void*) x_hdr);
     return sock;
 }
 
@@ -1766,30 +1771,54 @@ static EIO_Status s_StripToPattern
     /* check args */
     if ( n_discarded )
         *n_discarded = 0;
-    if (!stream  ||  (pattern != 0) != (pattern_size != 0))
+    if ( !stream )
         return eIO_InvalidArg;
+    if ( !pattern_size )
+        pattern = 0;
 
     /* allocate a temporary read buffer */
-    buf_size = pattern_size << 1;
-    if (buf_size <= sizeof(x_buf)) {
+    buf_size = pattern ? pattern_size << 1 : pattern_size;
+    if (buf_size <= sizeof(x_buf)  &&  (pattern  ||  !pattern_size)) {
         buf_size  = sizeof(x_buf);
         buf = x_buf;
     } else if ( !(buf = (char*) malloc(buf_size)) )
         return eIO_Unknown;
 
     if ( !pattern ) {
-        /* read/discard until EOF */
+        /* read/discard the specified # of bytes or until EOF */
+        size_t n_count = 0;
+        char* xx_buf = buf;
         do {
-            status = io_func(stream, buf, buf_size, &n_read, eIO_Read);
-            if ( discard )
-                BUF_Write(discard, buf, n_read);
-            if ( n_discarded )
-                *n_discarded += n_read;
+            status = io_func(stream, xx_buf, buf_size, &n_read, eIO_Read);
+            if (!n_read) {
+                assert(status != eIO_Success);
+                break;
+            }
+            if (discard) {
+                if (!n_count  &&  pattern_size) {
+                    assert(buf_size == pattern_size);
+                    /* first time enqueue the entire "buf" */
+                    if (!BUF_AppendEx(discard, buf, buf_size, buf, n_read))
+                        discard = 0;
+                    else
+                        buf = 0;
+                } else if (!BUF_Write(discard, xx_buf, n_read))
+                    discard = 0;
+            }
+            n_count += n_read;
+            if (pattern_size) {
+                if (!(buf_size -= n_read))
+                    break;
+                xx_buf += n_read;
+            }
         } while (status == eIO_Success);
+        if ( n_discarded )
+            *n_discarded = n_count;
     } else {
+        assert(pattern_size); 
         n_read = 0;
         for (;;) {
-            /* read; search for the pattern; store the discarded data */
+            /* read; search for the pattern; store/count the discarded data */
             size_t x_read, n_stored;
 
             assert(n_read < pattern_size);
@@ -1797,7 +1826,7 @@ static EIO_Status s_StripToPattern
                              &x_read, eIO_Read);
             if ( !x_read ) {
                 assert(status != eIO_Success);
-                break; /*error*/
+                break;
             }
             n_stored = n_read + x_read;
 
@@ -1826,8 +1855,8 @@ static EIO_Status s_StripToPattern
             }
 
             /* pattern not found yet */
-            if ( discard )
-                BUF_Write(discard, buf + n_read, x_read);
+            if (discard  &&  !BUF_Write(discard, buf + n_read, x_read))
+                discard = 0;
             if ( n_discarded )
                 *n_discarded += x_read;
 
@@ -1840,7 +1869,7 @@ static EIO_Status s_StripToPattern
     }
 
     /* cleanup & exit */
-    if (buf != x_buf)
+    if (buf  &&  buf != x_buf)
         free(buf);
     return status;
 }
@@ -2102,9 +2131,8 @@ extern void URL_EncodeEx
             *(++dst) = *(++subst);
             *(++dst) = *(++subst);
             *dst_written += 2;
-        } else {
+        } else
             return;
-        }
     }
     assert(src == (unsigned char*) src_buf + *src_read   );
     assert(dst == (unsigned char*) dst_buf + *dst_written);
