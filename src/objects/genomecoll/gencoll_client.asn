@@ -45,8 +45,15 @@ GCClient-AttributeFlags ::= INTEGER {
     biosource(1),
     -- obsolete; do not use
     molinfo(2),
+    all (3),
     -- obsolete; do not use
     publications(4),
+
+-- assembly level flag. Only statistics will be retrieved. For use by editing GUI.
+    only-stats (32), -- 1<<5
+
+-- No stats info will be retrieved.
+    exclude-stats (512), -- 1<<9
 
 -- scaffold-flags:
 -- by default, pseudo-scaffolds are reported as submitted.
@@ -61,7 +68,16 @@ GCClient-AttributeFlags ::= INTEGER {
 -- database alignments.
 -- exclude_aligndb: report alt-loci/patches position on chromosome
 -- using placement and not using AlignDb alignments
-    exclude-aligndb (8192) -- 1<<13
+    exclude-aligndb (8192), -- 1<<13
+
+-- Only data needed by the Assemblies GUI will be retrieved.
+--  subsumes obsolete flags exclude_primary_assembly_scaffolds and only_gui_stats
+--  and excludes alignment retrieval like flag exclude_aligndb.
+    only-gui-data (16384), -- 1<<14
+
+-- If no scaffolds retrieve all wgs contigs.
+    get-wgs-contigs (32768) -- 1<<15
+
 
 }
 
