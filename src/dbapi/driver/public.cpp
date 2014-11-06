@@ -280,10 +280,10 @@ string CDBParamVariant::MakePlainName(const CTempString& name)
 //
 
 CDB_Connection::CDB_Connection(impl::CConnection* c)
+    : m_ConnImpl(c), m_HasTransaction(false)
 {
     CHECK_DRIVER_ERROR( !c, "No valid connection provided", 200001 );
 
-    m_ConnImpl = c;
     m_ConnImpl->AttachTo(this);
     m_ConnImpl->SetResultProcessor(0); // to clean up the result processor if any
 }
@@ -1254,6 +1254,7 @@ CAutoTrans::~CAutoTrans(void)
                 Commit();
             }
         }
+        m_Conn.m_HasTransaction = (curr_TranCount <= 1);
 
         // Skip commit/rollback if this transaction was previously
         // explicitly finished ...
@@ -1264,6 +1265,7 @@ CAutoTrans::~CAutoTrans(void)
 void
 CAutoTrans::BeginTransaction(void)
 {
+    m_Conn.m_HasTransaction = true;
     auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("BEGIN TRANSACTION"));
     auto_stmt->Send();
     auto_stmt->DumpResults();

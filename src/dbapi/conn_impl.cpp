@@ -216,9 +216,19 @@ CDB_Connection* CConnection::CloneCDB_Conn()
     def_params.SetParam("do_not_dispatch", "true");
     def_params.SetParam("do_not_read_conf", "true");
 
-    CDB_Connection* tmp_conn(
-            m_ds->GetDriverContext()->MakeConnection(params)
-        );
+    I_DriverContext* dctx     = m_ds->GetDriverContext();
+    CDB_Connection*  tmp_conn = dctx->MakeConnection(params);
+
+    // If the original connection was known to be in a transaction,
+    // operations using the new one could block on its completion,
+    // possibly yielding a deadlock.  In such cases, ensure that the
+    // new connection has a reasonable timeout.  (MS SQL offers a
+    // finer-grained LOCK_TIMEOUT setting, but that's not portable,
+    // even to Sybase, which is more prone to such deadlocks in the
+    // first place.)
+    if (GetCDB_Connection()->HasTransaction()  &&  dctx->GetTimeout() == 0) {
+        tmp_conn->SetTimeout(5);
+    }
 
     _TRACE("CDB_Connection " << (void*)GetCDB_Connection()
         << " cloned, new CDB_Connection: " << (void*)tmp_conn);

@@ -54,6 +54,7 @@ namespace impl
 }
 
 
+class CAutoTrans;
 template <class I> class CInterfaceHook;
 
 
@@ -300,6 +301,11 @@ public:
 
     virtual string GetDriverName(void) const;
 
+    bool HasTransaction(void) const
+    {
+        return m_HasTransaction;
+    }
+    
 public:
     // Deprecated legacy methods.
     // CXX-601
@@ -344,6 +350,7 @@ public:
 
 private:
     impl::CConnection* m_ConnImpl;
+    bool               m_HasTransaction;
 
     CDB_Connection(impl::CConnection* c);
 
@@ -359,6 +366,7 @@ private:
 
     // The constructor should be called by "I_DriverContext" only!
     friend class impl::CDriverContext;
+    friend class CAutoTrans;
     friend class CInterfaceHook<CDB_Connection>;
 };
 
