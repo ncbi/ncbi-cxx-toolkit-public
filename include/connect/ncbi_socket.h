@@ -636,9 +636,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * When a socket gets created on top of a "SOCK" handle, the original SOCK gets
  * always emptied (the underlying OS handle removed from it) upon the call
  * returns:  either the handle gets migrated to the new socket just created,
- * or it gets closed unconditionally of the fSOCK_KeepOnClose flag in the
+ * or it gets closed unconditionally by the fSOCK_KeepOnClose flag in the
  * original socket.  In either case, the original SOCK will still need
- * SOCK_Close() in the caller's code to free up the memory it occupies.
+ * SOCK_Destroy() in the caller's code to free up the memory it occupies.
  * Any secure session that may have existed in the original SOCK will have
  * been terminated (and new session may have been initiated in the new SOCK --
  * at this time the old session is not allowed to "migrate").
