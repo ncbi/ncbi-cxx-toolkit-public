@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NCBI_USE_ERRCODE_X   Connect_Sendmail
+#define NCBI_USE_ERRCODE_X   Connect_SMTP
 
 #define MX_MAGIC_COOKIE  0xBA8ADEDA
 #define MX_CRLF          "\r\n"
