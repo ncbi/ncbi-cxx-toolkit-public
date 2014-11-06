@@ -133,7 +133,9 @@ s_RegisterNewThread(SSrvThread* thr)
     if (s_ThreadMgrState == eThrMgrStarting) {
         thr->stat->ThreadStarted();
         s_ThrMgrLock.Lock();
-        _VERIFY(s_CurMgrThread == thr);
+        if (s_CurMgrThread != thr) {
+            SRV_FATAL("Invalid SrvThread state");
+        }
         s_ThreadMgrState = eThrMgrIdle;
         s_CurMgrThread = NULL;
         s_ThrMgrLock.Unlock();
@@ -249,7 +251,9 @@ s_WorkerThreadMain(void* data)
 
     if (!IsServerStopping()) {
         s_ThrMgrLock.Lock();
-        _VERIFY(s_CurMgrThread == thr  &&  s_ThreadMgrState == eThrMgrPreparesToStop);
+        if(s_CurMgrThread != thr  ||  s_ThreadMgrState != eThrMgrPreparesToStop) {
+            SRV_FATAL("Invalid WorkerThread state");
+        }
         s_ThreadMgrState = eThrMgrThreadExited;
         s_ThrMgrLock.Unlock();
     }
@@ -378,8 +382,10 @@ void
 RequestThreadRevive(SSrvThread* thr)
 {
     s_ThrMgrLock.Lock();
-    _VERIFY(thr->thread_state == eThreadLockedForStop
-            &&  s_ThreadMgrState == eThrMgrPreparesToStop);
+    if (thr->thread_state != eThreadLockedForStop ||
+        s_ThreadMgrState != eThrMgrPreparesToStop) {
+        SRV_FATAL("Invalid thread state");
+    }
     thr->thread_state = eThreadRevived;
     s_ThreadMgrState = eThrMgrIdle;
     s_CurMgrThread = NULL;

@@ -188,7 +188,15 @@ s_DoMmap(size_t size)
 #ifdef NCBI_OS_LINUX
     void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE,
                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    _VERIFY(ptr != MAP_FAILED);
+    if (ptr == MAP_FAILED) {
+        static bool reentry = false;
+        if (reentry) {
+            abort();
+        } else {
+            reentry = true;
+            SRV_FATAL("s_DoMmap failed when requesting " << size << " bytes, errno: " << errno);
+        }
+    }
     return ptr;
 #else
     return NULL;
@@ -199,7 +207,9 @@ static inline void
 s_DoUnmap(void* ptr, size_t size)
 {
 #ifdef NCBI_OS_LINUX
-    _VERIFY(munmap(ptr, size) == 0);
+    if (munmap(ptr, size) != 0) {
+        SRV_FATAL("s_DoUnmap failed, errno: " << errno);
+    }
 #endif
 }
 

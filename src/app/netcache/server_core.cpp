@@ -50,8 +50,10 @@ namespace boost
 {
 
 void
-assertion_failed(char const*, char const*, char const*, long)
+assertion_failed(char const* expr, char const* func, char const* file, long line)
 {
+    ncbi::CSrvDiagMsg().StartSrvLog(ncbi::CSrvDiagMsg::Fatal, file, line, func)
+        << "assertion_failed: " << expr;
     abort();
 }
 
@@ -75,7 +77,7 @@ string s_AppBaseName;
 static CMiniMutex s_SDListLock;
 static TShutdownList s_ShutdownList;
 
-extern Uint4 s_TotalSockets;
+//extern Uint4 s_TotalSockets;
 
 
 
@@ -121,7 +123,7 @@ TrackShuttingDown(void)
         FireAllTimers();
     }
 
-    if (SchedIsAllIdle()  &&  s_IsReadyForShutdown()  &&  s_TotalSockets == 0)
+    if (SchedIsAllIdle()  &&  s_IsReadyForShutdown()  /*&&  s_TotalSockets == 0*/)
         s_SrvState = eSrvStopping;
 
     if (s_SrvState == eSrvShuttingDownHard  &&

@@ -381,8 +381,8 @@ inline CStackTrace* Endm(void)
 
 
 #define _TRACE(msg) do {} while (0)
-#define NCBI_TROUBLE(msg) abort()
-#define _TROUBLE    abort()
+#define NCBI_TROUBLE(msg) SRV_FATAL(msg)
+#define _TROUBLE          SRV_FATAL("")
 #define Abort       abort
 
 
