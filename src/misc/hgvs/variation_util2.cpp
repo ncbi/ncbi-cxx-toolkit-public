@@ -890,10 +890,14 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
     if(   (p.IsSetStart_offset() && p.GetStart_offset() != 0)
        || (p.IsSetStop_offset()  && p.GetStop_offset()  != 0))
     {    
-        p.SetExceptions().push_back(CreateException("Can't get sequence for an offset-based location", CVariationException::eCode_seqfetch_intronic));
+        p.SetExceptions().push_back(CreateException(
+                    "Can't get sequence for an offset-based location", 
+                    CVariationException::eCode_seqfetch_intronic));
         ret = false;
     } else if(length > max_len) {
-        p.SetExceptions().push_back(CreateException("Sequence is longer than the cutoff threshold", CVariationException::eCode_seqfetch_too_long));
+        p.SetExceptions().push_back(CreateException(
+                    "Sequence is longer than the cutoff threshold", 
+                    CVariationException::eCode_seqfetch_too_long));
         ret = false;
     } else {
         try {
@@ -901,12 +905,16 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
             p.SetSeq(*literal);
 
             if(ContainsIupacNaAmbiguities(*literal)) {
-                p.SetExceptions().push_back(CreateException("Ambiguous residues in reference", CVariationException::eCode_ambiguous_sequence));
+                p.SetExceptions().push_back(CreateException(
+                            "Ambiguous residues in reference", 
+                            CVariationException::eCode_ambiguous_sequence));
             }    
             ret = true;
         } catch(CException&) { 
             //location can be invalid - SNP-5510
-            p.SetExceptions().push_back(CreateException("Cannot fetch sequence at location", CVariationException::eCode_seqfetch_invalid));
+            p.SetExceptions().push_back(CreateException(
+                        "Cannot fetch sequence at location", 
+                        CVariationException::eCode_seqfetch_invalid));
             ret = false;
         }    
     }    
@@ -920,10 +928,13 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
     if(v.IsSetPlacements()) {
 
         CConstRef<CSeq_literal> asserted_literal;
-        CConstRef<CSeq_literal> variant_literal; //will only fetch for snp/mnp cases, as ref_same_as_variant test is only applicable for these
+        CConstRef<CSeq_literal> variant_literal; 
+            // will only fetch for snp/mnp cases, 
+            // as ref_same_as_variant test is only applicable for these
 
-        //Find the asserted and variant literal for this variation 
-        //(don't look into consequence-variations that may also contain protein-specific asserted and variant sequence)
+        // Find the asserted and variant literal for this variation 
+        // (don't look into consequence-variations that may also contain 
+        // protein-specific asserted and variant sequence)
         for(CTypeConstIterator<CVariation> it(Begin(v)); it; ++it) {
             const CVariation& v2 = *it;
             if(!v2.GetData().IsInstance() || (v2.GetConsequenceParent() && &v != &v2)) {
@@ -936,7 +947,10 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
                && inst.GetDelta().front()->GetSeq().IsLiteral())
             {
                 CConstRef<CSeq_literal> literal(&inst.GetDelta().front()->GetSeq().GetLiteral());
-                if(!asserted_literal && inst.IsSetObservation() && inst.GetObservation() == CVariation_inst::eObservation_asserted) {
+                if(!asserted_literal 
+                   && inst.IsSetObservation() 
+                   && inst.GetObservation() == CVariation_inst::eObservation_asserted) 
+                {
                     asserted_literal = literal;
                 } else if(!variant_literal //note: finding the very first one; will that work always?
                           && (!inst.IsSetObservation() || inst.GetObservation() == CVariation_inst::eObservation_variant)
@@ -969,8 +983,9 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
                          && p.GetSeq().GetSeq_data().Which() == asserted_literal->GetSeq_data().Which()
                          && !p.GetSeq().GetSeq_data().Equals(asserted_literal->GetSeq_data()))))
             {
-                p.SetExceptions().push_back(CreateException("Asserted sequence is inconsistent with reference", 
-                                                            CVariationException::eCode_inconsistent_asserted_allele));
+                p.SetExceptions().push_back(CreateException(
+                            "Asserted sequence is inconsistent with reference", 
+                            CVariationException::eCode_inconsistent_asserted_allele));
                 had_exceptions = true;
             }
 
@@ -978,15 +993,18 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
                && variant_literal
                && variant_literal->Equals(p.GetSeq()))
             {
-                p.SetExceptions().push_back(CreateException("Reference sequence is the same as variant", 
-                                                            CVariationException::eCode_ref_same_as_variant));
+                p.SetExceptions().push_back(CreateException(
+                            "Reference sequence is the same as variant", 
+                            CVariationException::eCode_ref_same_as_variant));
                 had_exceptions = true;
             }
         }
     }
 
     if(v.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, 
+                          v.SetData().SetSet().SetVariations()) 
+        {
             CVariation& v2 = **it;
             had_exceptions = had_exceptions || AttachSeq(v2, max_len);
         }
@@ -1436,6 +1454,24 @@ CRef<CSeq_literal> CVariationUtil::GetLiteralAtLoc(const CSeq_loc& loc)
 }
 
 
+bool IsRightPartial(CBioseq_Handle bsh)
+{
+    ITERATE(CSeq_descr::Tdata, it, bsh.GetDescr().Get()) {
+        const CSeqdesc& desc = **it;
+        if(    !desc.IsMolinfo() 
+            || !desc.GetMolinfo().IsSetCompleteness()) 
+        {
+            continue;
+        }
+
+        return desc.GetMolinfo().GetCompleteness() == CMolInfo::eCompleteness_no_right
+            || desc.GetMolinfo().GetCompleteness() == CMolInfo::eCompleteness_no_ends;
+    }
+
+    return false;
+}
+
+
 CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
 {
     CRef<CSeq_literal> literal(new CSeq_literal);
@@ -1451,17 +1487,22 @@ CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
                 CSeqVector v(loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
 
                 if(v.IsProtein()) {
-                    //if loc extends by 1 past the end protein - we'll need to
-                    //truncate the loc to the boundaries of prot, and then add "*" manually,
-                    //as otherwise fetching seq will throw.
+                    // if loc extends by 1 past the end protein - we'll need to
+                    // truncate the loc to the boundaries of prot, and then add "*" or "X" manually,
+                    // as otherwise fetching seq will throw.
                     CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(loc, NULL));
                     if(bsh.GetInst_Length() == loc.GetStop(eExtreme_Positional)) {
+
                         CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
                         range_loc->SetInt().SetTo(bsh.GetInst_Length() - 1);
-                        CRef<CSeq_loc> truncated_loc = range_loc->Intersect(loc, 0, NULL);
-                        CRef<CSeq_literal>  literal = x_GetLiteralAtLoc(*truncated_loc);
+
+                        CRef<CSeq_literal>  literal = x_GetLiteralAtLoc(
+                                *range_loc->Intersect(loc, 0, NULL));
+
                         literal->SetLength() += 1;
-                        literal->SetSeq_data().SetNcbieaa().Set().push_back('*');
+                        literal->SetSeq_data().SetNcbieaa().Set().push_back(
+                            IsRightPartial(bsh) ? 'X' : '*');
+
                         return literal;
                     }
                 }
@@ -1737,6 +1778,10 @@ string Translate(const string& nuc_str, bool is_mito)
             prot_str,
             CSeqTranslator::fIs5PrimePartial,
             &code);
+
+    if(prot_str.size()*3 < nuc_str.size()) {
+        prot_str.push_back('X');
+    }
 
     //truncate everything past the first stop
     size_t stop_pos = prot_str.find('*');
@@ -2302,9 +2347,11 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         //This does not apply to synonymous changes where there's no change at all rather than a downstream change.
 
         common_prot_prefix_len = GetCommonPrefixLen(prot_ref_str, prot_var_str);
-        if(common_prot_prefix_len == static_cast<int>(prot_ref_str.size())) {
-            common_prot_prefix_len -= 1; //when truncating common prefx, don't want to truncate all the way 
-                                     //will leave last position as necessary
+        if(   common_prot_prefix_len > 0 
+           && common_prot_prefix_len == static_cast<int>(prot_ref_str.size())) 
+        {
+            common_prot_prefix_len -= 1; // when truncating common prefx, don't want to truncate all the way 
+                                         // will leave last position as necessary
         }
 
         prot_ref_str = prot_ref_str.substr(common_prot_prefix_len);

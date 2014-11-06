@@ -1414,3 +1414,125 @@ Variation ::= {
     }
   }
 }
+Variation ::= {
+  name "XM_005201013.1:c.401G>C",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 400,
+        strand plus,
+        id other {
+          accession "XM_005201013",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 100298892
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "C"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 133,
+                  strand plus,
+                  id other {
+                    accession "XP_005201070",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "X"
+                }
+              },
+              {
+                loc int {
+                  from 399,
+                  to 400,
+                  strand plus,
+                  id other {
+                    accession "XM_005201013",
+                    version 1
+                  },
+                  fuzz-to lim gt
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 2,
+                  seq-data iupacna "TG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect missense
+            },
+            data instance {
+              type prot-missense,
+              delta {
+                {
+                  seq literal {
+                    length 2,
+                    seq-data iupacna "TC"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1583
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+
