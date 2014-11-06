@@ -137,12 +137,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         m_ObjectID = field.GetID();
     }
 
-    // Restore NetStorage service name.
-    if (m_Fields & fNFID_NetStorageService) {
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_ServiceName = field.GetString();
-    }
-
     // Restore file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
         // Get the unique file key.
@@ -190,6 +184,12 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     if (m_Fields & fNFID_TTL) {
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_TTL = (Uint8) field.GetInteger();
+    }
+
+    // Restore NetStorage service name.
+    if (m_Fields & fNFID_NetStorageService) {
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_ServiceName = field.GetString();
     }
 }
 
@@ -296,10 +296,6 @@ void CNetStorageObjectLoc::x_Pack()
     if ((m_StorageFlags & fNST_NoMetaData) == 0)
         cid.AppendID(m_ObjectID);
 
-    // Save NetStorage service name.
-    if (m_Fields & fNFID_NetStorageService)
-        cid.AppendString(m_ServiceName);
-
     if (m_Fields & fNFID_KeyAndNamespace) {
         // Save the unique file key.
         cid.AppendString(m_UserKey);
@@ -330,6 +326,10 @@ void CNetStorageObjectLoc::x_Pack()
     // Save the TTL if it's defined.
     if (m_Fields & fNFID_TTL)
         cid.AppendInteger((Int8) m_TTL);
+
+    // Save NetStorage service name.
+    if (m_Fields & fNFID_NetStorageService)
+        cid.AppendString(m_ServiceName);
 
     // Now pack it all up.
     m_Locator = cid.ToString();
@@ -362,6 +362,9 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
             (m_StorageFlags & fNST_NoMetaData) != 0);
 
     root.SetByKey("StorageFlags", storage_flags);
+
+    if (m_Fields & fNFID_NetStorageService)
+        root.SetString("ServiceName", m_ServiceName);
 
     if ((m_StorageFlags & fNST_NoMetaData) == 0)
         root.SetInteger("ObjectID", (Int8) m_ObjectID);
