@@ -282,7 +282,7 @@ CNCActiveHandler::x_ReplaceServerConn(void)
     CNCActiveHandler* src_handler = m_Peer->GetPooledConn();
     if (src_handler) {
         if (!src_handler->m_ProcessingStarted) {
-            SRV_FATAL("src_handler in invalid state");
+            SRV_LOG(Critical, "src_handler in invalid state");
         }
         m_ProcessingStarted = true;
         m_GotAnyAnswer = src_handler->m_GotAnyAnswer;

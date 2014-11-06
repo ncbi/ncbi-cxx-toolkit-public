@@ -267,6 +267,9 @@ public:
     bool IsStuck(void) const {
         return m_Stuck;
     }
+    void SetFirst(bool f = true) {
+        m_First = f;
+    }
 
 private:
     State x_StartScanSlots(void);
@@ -328,6 +331,7 @@ private:
     bool m_DidSync;
     bool m_FinishSyncCalled;
     bool m_Stuck;
+    bool m_First;
     Uint8 m_MinNextTime;
     Uint8 m_LoopStart;
     TSyncSlotsList::const_iterator m_NextSlotIt;

@@ -145,6 +145,21 @@ CNCPeerControl::Peer(Uint8 srv_id)
     return ctrl;
 }
 
+void
+CNCPeerControl::PeerHandshake(void)
+{
+// the answer will come some time in the future
+// until that, we use backward compatible protocol
+    if (AtomicCAS(m_HostProtocol, 0, 1)) {
+        CNCActiveHandler* conn = GetBGConn();
+        if (conn) {
+            conn->AskPeerVersion();
+        } else {
+            m_HostProtocol = 0;
+        }
+    }
+}
+
 string
 CNCPeerControl::GetPeerNameOrEmpty(Uint8 srv_id)
 {
@@ -228,14 +243,7 @@ CNCPeerControl::RegisterConnSuccess(void)
         ask = m_HostProtocol == 0;
     }
     if (ask) {
-// the answer will come some time in the future
-// until that, we use backward compatible protocol
-        // ask once only
-        CNCActiveHandler* conn = GetBGConn();
-        if (conn) {
-            m_HostProtocol = 1;
-            conn->AskPeerVersion();
-        }
+        PeerHandshake();
     }
 }
 

@@ -73,10 +73,10 @@ retry:
             return eWaitWokenUp;
         case EWOULDBLOCK:
             return eValueChanged;
+        default:
+//            abort();
         case ETIMEDOUT:
             return eTimedOut;
-        default:
-            abort();
         }
     }
 

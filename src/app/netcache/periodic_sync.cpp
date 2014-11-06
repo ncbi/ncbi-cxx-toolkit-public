@@ -289,6 +289,9 @@ CNCPeriodicSync::Initialize(void)
     Uint1 cnt_syncs = CNCDistributionConf::GetCntActiveSyncs();
     for (Uint1 i = 0; i < cnt_syncs; ++i) {
         s_SyncControls.push_back(new CNCActiveSyncControl());
+        if (i == 0) {
+            s_SyncControls[0]->SetFirst();
+        }
         s_SyncControls[i]->SetRunnable();
     }
 
@@ -546,6 +549,7 @@ CNCActiveSyncControl::CNCActiveSyncControl(void)
     SetState(&Me::x_StartScanSlots);
     m_ForceInitSync = false;
     m_Stuck = false;
+    m_First = false;
 }
 
 CNCActiveSyncControl::~CNCActiveSyncControl(void) {
@@ -566,6 +570,12 @@ CNCActiveSyncControl::x_StartScanSlots(void)
             CNCPeriodicSync::ReInitialize();
         }
         return NULL;
+    }
+    if (m_First) {
+        const TNCPeerList& peers = CNCDistributionConf::GetPeers();
+        ITERATE(TNCPeerList, it_peer, peers) {
+            CNCPeerControl::Peer(it_peer->first)->PeerHandshake();
+        }
     }
     m_Stuck = false;
 

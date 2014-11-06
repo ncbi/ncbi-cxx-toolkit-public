@@ -128,6 +128,7 @@ public:
     static Uint8 GetMirrorQueueSize(Uint8 srv_id);
     static void ReadCurState(SNCStateStat& state);
 
+    void PeerHandshake(void);
     void SetSlotsForInitSync(Uint2 cnt_slots);
     void ResetSlotsForInitSync();
     void ReconfSlotsForInitSync(Uint2 cnt_slots);
