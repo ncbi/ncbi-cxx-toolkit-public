@@ -641,7 +641,8 @@ struct SCommandDefinition {
         "specified by the '--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION
         "', '--" MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
         {eOptionalObjectLoc, eObjectKey, eNamespace, ePersistent, eFastStorage,
-            eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
+            eNetStorage, eNetCache, eCache, eTTL,
+            eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 

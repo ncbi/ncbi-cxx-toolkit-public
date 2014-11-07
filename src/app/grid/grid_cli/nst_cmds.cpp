@@ -340,6 +340,10 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
     if (IsOptionSet(eTTL))
         object_loc->SetTTL(m_Opts.ttl);
 
+    if (IsOptionSet(eNetStorage) &&
+            strchr(m_Opts.nst_service.c_str(), ':') == NULL)
+        object_loc->SetServiceName(m_Opts.nst_service);
+
     PrintLine(object_loc->GetLoc());
 
     return 0;
