@@ -754,6 +754,7 @@ CAY	s	Institut de Recherche pour le Developpement (IRD)
 CAYM	s	National Trust for the Cayman Islands
 CB<AUST>	c	The CB Rhizobium Collection
 CB<CZE>	s	Jihoceske Muzeum
+CBAS	c	Bacteria Collection of Environmemt and Health (Colecao de Bacterias do Ambiente e Saude)
 CBD<ITA>	s	Collezione Ittiologica Balma-Delmastro
 CBD<USA>	c	USF Center for Biological Defense
 CBF	s	Coleccion Boliviana de Fauna
