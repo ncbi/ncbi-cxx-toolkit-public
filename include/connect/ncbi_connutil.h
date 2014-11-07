@@ -169,6 +169,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
     unsigned        http_proxy_leak:1;/* non-zero when can fallback to direct*/
+    unsigned        http_push_auth:1; /* push authorize tags even w/o 401/407*/
+    unsigned        reserved:15;
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
@@ -231,6 +233,9 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 #define REG_CONN_HTTP_PROXY_LEAK  "HTTP_PROXY_LEAK"
 #define DEF_CONN_HTTP_PROXY_LEAK  ""
+
+#define REG_CONN_HTTP_PUSH_AUTH   "HTTP_PUSH_AUTH"
+#define DEF_CONN_HTTP_PUSH_AUTH   ""
 
 #define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""

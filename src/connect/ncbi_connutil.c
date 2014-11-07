@@ -298,6 +298,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* NB: *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
+    info->reserved = 0/*MBZ*/;
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -392,6 +393,10 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->http_proxy_pass[0] = '\0';
         info->http_proxy_leak    =   0;
     }
+
+    /* push HTTP auth tags? */
+    REG_VALUE(REG_CONN_HTTP_PUSH_AUTH, str, DEF_CONN_HTTP_PUSH_AUTH);
+    info->http_push_auth = ConnNetInfo_Boolean(str);
 
     /* non-transparent CERN-like firewall proxy server? */
     REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
@@ -1334,6 +1339,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
+    s_SaveBool      (s, "http_push_auth",  info->http_push_auth);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
     s_SaveULong     (s, "max_try",         info->max_try);
     if (info->timeout) {
