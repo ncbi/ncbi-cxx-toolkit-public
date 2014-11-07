@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
+#include "ncbi_socketp.h"
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API  1  // Pick up MS-Win DLL linkage
@@ -280,13 +281,17 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         flags |=  fSOCK_LogOn;
     }
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        status = HTTP_CreateTunnelEx(net_info, fHTTP_NoAutoRetry,
-                                     data, size, &sock);
+        status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
-            &&  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault))) {
+            &&  (size  ||  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
+            SSOCK_Init init;
+            memset(&init, 0, sizeof(init));
+            init.data = data;
+            init.size = size;
+            init.cred = flags & fSOCK_Secure ? net_info->credentials : 0;
             SOCK s;
-            status = SOCK_CreateOnTopEx(sock, 0, &s, 0, 0, flags);
+            status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flags);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -324,8 +329,13 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             ConnNetInfo_Log(x_net_info, eLOG_Note, CORE_GetLOG());
             ConnNetInfo_Destroy(x_net_info);
         }
-        status = SOCK_CreateEx(host, net_info->port, timeout, &sock,
-                               data, size, flags);
+        SSOCK_Init init;
+        memset(&init, 0, sizeof(init));
+        init.data = data;
+        init.size = size;
+        init.cred = flags & fSOCK_Secure ? net_info->credentials : 0;
+        status = SOCK_CreateInternal(host, net_info->port, timeout,
+                                     &sock, &init, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
     }
     string hostport(net_info->host);
@@ -639,7 +649,7 @@ s_ServiceConnectorBuilder(const char*           service,
                           TSERV_Type            types,
                           const SConnNetInfo*   net_info,
                           const char*           user_header,
-                          const SSERVICE_Extra* params,
+                          const SSERVICE_Extra* extra,
                           const STimeout*       timeout)
 {
     AutoPtr<SConnNetInfo>
@@ -658,7 +668,7 @@ s_ServiceConnectorBuilder(const char*           service,
     CONNECTOR c = SERVICE_CreateConnectorEx(service,
                                             types,
                                             x_net_info.get(),
-                                            params);
+                                            extra);
     return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
 }
 
@@ -666,14 +676,14 @@ s_ServiceConnectorBuilder(const char*           service,
 CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          TSERV_Type            types,
                                          const SConnNetInfo*   net_info,
-                                         const SSERVICE_Extra* params,
+                                         const SSERVICE_Extra* extra,
                                          const STimeout*       timeout,
                                          size_t                buf_size)
     : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
                                                net_info,
                                                0,
-                                               params,
+                                               extra,
                                                timeout),
                      timeout, buf_size)
 {
@@ -684,14 +694,14 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          const string&         user_header,
                                          TSERV_Type            types,
-                                         const SSERVICE_Extra* params,
+                                         const SSERVICE_Extra* extra,
                                          const STimeout*       timeout,
                                          size_t                buf_size)
     : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
                                                0,
                                                user_header.c_str(),
-                                               params,
+                                               extra,
                                                timeout),
                      timeout, buf_size)
 {

@@ -34,6 +34,7 @@
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
+#include "ncbi_socketp.h"
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
 #include <ctype.h>
@@ -54,9 +55,9 @@ typedef struct SServiceConnectorTag {
     unsigned short retry;               /* Open retry count since last okay  */
     TSERV_TypeOnly types;               /* Server types w/o any specials     */
     unsigned       reset:1;             /* Non-zero if iter was just reset   */
+    SSERVICE_Extra extra;               /* Extra params as passed to ctor    */
     ticket_t       ticket;              /* Network byte order (none if zero) */
     EIO_Status     status;              /* Status of last op                 */
-    SSERVICE_Extra params;              /* Extra params as passed to ctor    */
     const char     service[1];          /* Untranslated (orig.) service name */
 } SServiceConnector;
 
@@ -131,9 +132,9 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
     EHTTP_HeaderParse   header_parse;
 
     SERV_Update(uuu->iter, header, server_error);
-    if (user_callback_enabled  &&  uuu->params.parse_header) {
+    if (user_callback_enabled  &&  uuu->extra.parse_header) {
         header_parse
-            = uuu->params.parse_header(header, uuu->params.data, server_error);
+            = uuu->extra.parse_header(header, uuu->extra.data, server_error);
         if (server_error  ||  !header_parse)
             return header_parse;
     } else {
@@ -347,8 +348,8 @@ static const char* s_AdjustNetParams(const char*    service,
 static SSERV_InfoCPtr s_GetNextInfo(SServiceConnector* uuu, int/*bool*/ http)
 {
     for (;;) {
-        SSERV_InfoCPtr info = uuu->params.get_next_info
-            ? (*uuu->params.get_next_info)(uuu->params.data, uuu->iter)
+        SSERV_InfoCPtr info = uuu->extra.get_next_info
+            ? uuu->extra.get_next_info(uuu->extra.data, uuu->iter)
             : SERV_GetNextInfo(uuu->iter);
         if (info) {
             if (http) {
@@ -392,6 +393,12 @@ static char* s_HostPort(const char* host, unsigned short nport)
 }
 
 
+/* Until r294766, this code used to send a ticket along with building the
+ * tunnel, but for buggy proxies that ignore HTTP body as connection data
+ * (and thus violate the standard), this shortcut could not be utilized;
+ * so the longer multi-step sequence was introduced below, instead.
+ * Cf. ncbi_conn_stream.cpp: s_SocketConnectorBuilder().
+ */
 static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                                           EIO_Status*   status,
                                           const void*   data,
@@ -399,8 +406,9 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                                           TSOCK_Flags   flags)
 {
     int/*bool*/ proxy = 0/*false*/;
-    SOCK        sock = 0;
+    SOCK        sock = 0, s;
     char*       hostport;
+    SSOCK_Init  init;
     CONNECTOR   c;
 
     flags |= (net_info->debug_printout == eDebugPrintout_Data
@@ -408,22 +416,43 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        *status = HTTP_CreateTunnelEx(net_info, fHTTP_NoAutoRetry,
-                                      data, size, &sock);
+        /* NB: ideally, should have pushed data:size here if proxy not buggy */
+        *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(*status != eIO_Success));
         if (*status == eIO_Success
-            &&  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault))) {
-            SOCK s;
-            *status = SOCK_CreateOnTopEx(sock, 0, &s, 0, 0, flags);
+            &&  (size  ||  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
+            /* push initial data through the proxy, as-is (i.e. clear-text) */
+            TSOCK_Flags tempf = flags;
+            if (size  &&  (flags & fSOCK_Secure))
+                tempf &= fSOCK_LogOn | fSOCK_LogDefault;
+            memset(&init, 0, sizeof(init));
+            init.data = data;
+            init.size = size;
+            init.cred = tempf & fSOCK_Secure ? net_info->credentials : 0;
+            *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
+                                                &init, tempf);
             assert(!s ^ !(*status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
+            if (*status == eIO_Success  &&  tempf != flags) {
+                init.data = 0;
+                init.size = 0;
+                init.cred = net_info->credentials;
+                *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
+                                                    &init, flags);
+                assert(!s ^ !(*status != eIO_Success));
+                SOCK_Destroy(sock);
+                sock = s;
+            }
         }
         proxy = 1/*true*/;
     }
     if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
+        TSOCK_Flags tempf = flags;
+        if (size  &&  (flags & fSOCK_Secure))
+            tempf &= fSOCK_LogOn | fSOCK_LogDefault;
         if (!proxy  &&  net_info->debug_printout) {
             net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
@@ -446,9 +475,23 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             }
             ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
         }
-        *status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
-                                data, size, flags);
+        memset(&init, 0, sizeof(init));
+        init.data = data;
+        init.size = size;
+        init.cred = tempf & fSOCK_Secure ? net_info->credentials : 0;
+        *status = SOCK_CreateInternal(host, net_info->port, net_info->timeout,
+                                      &sock, &init, tempf);
         assert(!sock ^ !(*status != eIO_Success));
+        if (*status == eIO_Success  &&  tempf != flags) {
+            init.data = 0;
+            init.size = 0;
+            init.cred = flags & fSOCK_Secure ? net_info->credentials : 0;
+            *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
+                                                &init, flags);
+            assert(!s ^ !(*status != eIO_Success));
+            SOCK_Destroy(sock);
+            sock = s;
+        }
     }
     hostport = s_HostPort(net_info->host, net_info->port);
     if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport))) {
@@ -761,7 +804,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 *status = temp;
             }
         } else {
-            /* This should only happen if we're out of memory */
+            /* can only happen if we're out of memory */
             const char* error;
             if (c) {
                 error = IO_StatusStr(temp);
@@ -807,7 +850,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     if (info  &&  (info->mode & fSERV_Secure))
         net_info->scheme = eURL_Https;
     return HTTP_CreateConnectorEx(net_info,
-                                  (uuu->params.flags
+                                  (uuu->extra.flags
                                    & (fHTTP_Flushable | fHTTP_NoAutoRetry))
                                   | fHTTP_AutoReconnect,
                                   s_ParseHeaderUCB, uuu/*user_data*/,
@@ -843,8 +886,8 @@ static EIO_Status s_Close(CONNECTOR       connector,
         status = uuu->meta.close
             ? uuu->meta.close(uuu->meta.c_close, timeout)
             : eIO_Success;
-        if (uuu->params.reset)
-            uuu->params.reset(uuu->params.data);
+        if (uuu->extra.reset)
+            uuu->extra.reset(uuu->extra.data);
         s_CloseDispatcher(uuu);
         s_Cleanup(uuu);
     } else
@@ -893,7 +936,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             break;
 
         if (uuu->net_info->firewall
-            &&  strcasecmp(uuu->iter->op->mapper, "local") != 0) {
+            &&  strcasecmp(SERV_MapperName(uuu->iter), "local") != 0) {
             info = 0;
         } else if (!(info = s_GetNextInfo(uuu, 0/*any*/)))
             break;
@@ -1022,8 +1065,8 @@ static void s_Destroy(CONNECTOR connector)
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     connector->handle = 0;
 
-    if (uuu->params.cleanup)
-        uuu->params.cleanup(uuu->params.data);
+    if (uuu->extra.cleanup)
+        uuu->extra.cleanup(uuu->extra.data);
     s_CloseDispatcher(uuu);
     s_Cleanup(uuu);
     ConnNetInfo_Destroy(uuu->net_info);
@@ -1040,7 +1083,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 (const char*           service,
  TSERV_Type            types,
  const SConnNetInfo*   net_info,
- const SSERVICE_Extra* params)
+ const SSERVICE_Extra* extra)
 {
     char*              x_service;
     CONNECTOR          ccc;
@@ -1095,9 +1138,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     }
     assert(xxx->iter);
 
-    /* finally, store all callback parameters */
-    if (params)
-        memcpy(&xxx->params, params, sizeof(xxx->params));
+    /* finally, store all callback extras */
+    if (extra)
+        memcpy(&xxx->extra, extra, sizeof(xxx->extra));
 
     /* done */
     return ccc;
