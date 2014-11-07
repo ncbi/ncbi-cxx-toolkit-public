@@ -1122,7 +1122,7 @@ CVcfReader::xProcessTrackLine(
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+    if (!xIsTrackLine(strLine)) {
         return false;
     }
     vector<string> parts;

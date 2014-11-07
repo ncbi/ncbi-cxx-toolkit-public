@@ -1038,10 +1038,12 @@ CBedReader::xReadBedRecordRaw(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    if (line == "browser"  || NStr::StartsWith(line, "browser ")) {
+    if (line == "browser"  || NStr::StartsWith(line, "browser ")
+            || NStr::StartsWith(line, "browser\t")) {
         return false;
     }
-    if (line == "track"  || NStr::StartsWith(line, "track ")) {
+    if (line == "track"  || NStr::StartsWith(line, "track ")
+            || NStr::StartsWith(line, "track\t")) {
         return false;
     }
 

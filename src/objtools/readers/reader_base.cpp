@@ -646,7 +646,10 @@ bool CReaderBase::xIsTrackLine(
     const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
-    return NStr::StartsWith(strLine, "track ");
+    if (NStr::StartsWith(strLine, "track ")) {
+        return true;
+    }
+    return NStr::StartsWith(strLine, "track\t");
 }
 
 //  ----------------------------------------------------------------------------

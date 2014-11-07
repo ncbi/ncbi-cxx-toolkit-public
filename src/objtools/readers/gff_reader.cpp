@@ -1514,7 +1514,7 @@ bool
 CGFFReader::x_IsLineUcscMetaInformation(const TStr& line)
 {
     // line starts with keyword "browser" or "track"
-    return (NStr::StartsWith(line, "browser ") || NStr::StartsWith(line, "track ") );
+    return (NStr::StartsWith(line, "browser") || NStr::StartsWith(line, "track") );
 }
     
 

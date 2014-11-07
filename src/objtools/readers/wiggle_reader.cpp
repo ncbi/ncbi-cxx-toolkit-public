@@ -1056,6 +1056,7 @@ bool CWiggleReader::xParseTrackLine(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
+    bool isTrackLine = xIsTrackLine(line);
     if (!xIsTrackLine(line)) {
         return false;
     }
