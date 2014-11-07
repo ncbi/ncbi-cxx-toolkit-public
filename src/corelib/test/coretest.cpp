@@ -930,6 +930,7 @@ class CEmpty
 
 class CSubclass : CEmpty
 {
+protected:
     int i;
 };
 

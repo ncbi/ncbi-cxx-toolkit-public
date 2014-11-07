@@ -2072,7 +2072,7 @@ static void s_TestTimeout(void)
         assert(t1.IsDefault());
         try {
             // assert(t1 != t2);
-            (t1 != t2);
+            (void)(t1 != t2);
             _TROUBLE;
         }
         catch (CTimeException&) {}
