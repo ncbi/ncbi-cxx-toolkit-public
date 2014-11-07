@@ -268,8 +268,8 @@ public:
         /// Check if value is NULL.
         bool IsNull(void) const;
 
-        /// Get Blob output stream. The existing connection is
-        /// cloned for writing blob.
+        /// Get a blob output stream, on top of a cloned connection.
+        /// The original connection should NOT have an active transaction.
         /// 
         /// NOTE: You won't be able to write a blob using this method if its
         /// value is set to NULL in the database. To use this method you should
