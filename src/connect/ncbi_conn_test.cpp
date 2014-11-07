@@ -502,8 +502,9 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
              "Checking whether NCBI services operational");
 
     CConn_ServiceStream svc(kService, fSERV_Stateless, net_info,
-                            0/*params*/, m_Timeout);
+                            0/*extra*/, m_Timeout);
     svc.SetCanceledCallback(m_Canceled);
+
     svc << kTest << NcbiEndl;
     string temp;
     svc >> temp;
@@ -1149,7 +1150,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     memset(&buf[size <<= 3], 0, 8);
     size += 8;
 
-    CConn_ServiceStream echo(kEcho, fSERV_Any, net_info, 0, m_Timeout);
+    CConn_ServiceStream echo(kEcho, fSERV_Any, net_info, 0/*xtra*/, m_Timeout);
     echo.SetCanceledCallback(m_Canceled);
 
     streamsize n = 0;
