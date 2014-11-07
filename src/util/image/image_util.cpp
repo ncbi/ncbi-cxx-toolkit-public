@@ -194,7 +194,7 @@ void CImageUtil::FlipY(CImage& image)
     size_t start = 0;
     size_t end   = image.GetHeight() - 1;
 
-    void* buf = new unsigned char[scanline_size];
+    unsigned char* buf = new unsigned char[scanline_size];
 
     for ( ; end > start;  --end, ++start) {
         unsigned char* start_ptr = image.SetData() + scanline_size * start;
