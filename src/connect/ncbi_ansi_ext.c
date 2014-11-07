@@ -178,7 +178,7 @@ char* NCBI_simple_ftoa(char* s, double f, int p)
     x = (long)(v + 0.5 / w);
     y = (long)(w * (v - x) + 0.5);
     assert(p  ||  !y);  /* with precision 0, output of "0" is empty */
-    return s + sprintf(s, "-%ld%s%.*lu" + !(f < 0.0), x, &"."[!p], p, y);
+    return s + sprintf(s, &"-%ld%s%.*lu"[!(f < 0.0)], x, &"."[!p], p, y);
 }
 
 
