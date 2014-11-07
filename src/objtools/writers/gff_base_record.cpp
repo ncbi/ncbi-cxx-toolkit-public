@@ -308,9 +308,6 @@ void CGffBaseRecord::SetStrand(
     default:
         mStrand = "+";
         break;
-    case objects::eNa_strand_unknown:
-        mStrand = ".";
-        break;
     case objects::eNa_strand_minus:
         mStrand = "-";
         break;
