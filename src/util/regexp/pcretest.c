@@ -250,7 +250,7 @@ for (;;)
     /* Read the next line by normal means, prompting if the file is stdin. */
 
       {
-      if (f == stdin) fputs(prompt, fp);
+      if (f == stdin) fputs(prompt, f);
       if (fgets((char *)here, rlen,  f) == NULL)
         return (here == start)? NULL : start;
       }
