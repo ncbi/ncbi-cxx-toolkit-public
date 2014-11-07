@@ -380,7 +380,7 @@ EIO_Status SOCK_CreateOnTopInternal(const void* handle,
                                     TSOCK_Flags flags);
 
 
-/* Addtl socket API for internal use:  if flag != 0 and host is nonexitent,
+/* Addtl socket API for internal use:  if flag != 0 and host is nonexistent,
  * return it as INADDR_NONE (-1) rather than an error.
  */
 const char* SOCK_StringToHostPortEx(const char*     str,
