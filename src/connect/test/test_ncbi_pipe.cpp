@@ -87,7 +87,7 @@ static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
     do {
         size_t cnt;
         status = pipe.Read((char*) buf + total, size - total, &cnt);
-        ERR_POST(Info << cnt << " byte(s) read from pipe"+string(":"+!cnt));
+        ERR_POST(Info << cnt << " byte(s) read from pipe"+string(&":"[!cnt]));
         if ( cnt ) {
             NcbiCerr.write((char*) buf + total, cnt);
             NcbiCerr << endl << flush;
@@ -112,7 +112,7 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
     do {
         size_t cnt;
         status = pipe.Write((char*) buf + total, size - total, &cnt);
-        ERR_POST(Info << cnt << " byte(s) written to pipe"+string(":"+!cnt));
+        ERR_POST(Info << cnt << " byte(s) written to pipe"+string(&":"[!cnt]));
         if ( cnt ) {
             NcbiCerr.write((char*) buf + total, cnt);
             NcbiCerr << endl << flush;
@@ -135,7 +135,7 @@ static string s_ReadLine(FILE* fs)
         char   buf[80];
         char*  res = fgets(buf, sizeof(buf) - 1, fs);
         size_t len = res ? strlen(res) : 0;
-        ERR_POST(Info << len << " byte(s) read from file" + string(":"+!len));
+        ERR_POST(Info << len << " byte(s) read from file" +string(&":"[!len]));
         if (!len) {
             break;
         }
@@ -188,7 +188,7 @@ static void s_WriteLine(FILE* fs, const string& str)
     const char* data = str.c_str();
     do {
         size_t cnt = fwrite(data + written, 1, size - written, fs);
-        ERR_POST(Info << cnt << " byte(s) written to file"+string(":"+!cnt));
+        ERR_POST(Info << cnt << " byte(s) written to file"+string(&":"[!cnt]));
         if (!cnt) {
             break;
         }
@@ -212,7 +212,7 @@ static void s_ReadStream(istream& ios)
         char   buf[kBufferSize];
         ios.read(buf, sizeof(buf));
         size_t cnt = (size_t) ios.gcount();
-        ERR_POST(Info << cnt << " byte(s) read from stream"+string(":"+!cnt));
+        ERR_POST(Info << cnt <<" byte(s) read from stream"+string(&":"[!cnt]));
         if (cnt) {
             NcbiCerr.write(buf, cnt);
             NcbiCerr << endl << flush;
