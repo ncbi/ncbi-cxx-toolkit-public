@@ -603,7 +603,7 @@ public:
     (const string&         service,
      TSERV_Type            types    = fSERV_Any,
      const SConnNetInfo*   net_info = 0,
-     const SSERVICE_Extra* params   = 0,
+     const SSERVICE_Extra* extra    = 0,
      const STimeout*       timeout  = kDefaultTimeout,
      size_t                buf_size = kConn_DefaultBufSize);
 
@@ -611,7 +611,7 @@ public:
     (const string&         service,
      const string&         user_header,
      TSERV_Type            types    = fSERV_Any,
-     const SSERVICE_Extra* params   = 0,
+     const SSERVICE_Extra* extra    = 0,
      const STimeout*       timeout  = kDefaultTimeout,
      size_t                buf_size = kConn_DefaultBufSize);
 };

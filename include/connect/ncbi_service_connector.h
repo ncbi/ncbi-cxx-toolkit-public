@@ -70,7 +70,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SERVICE_CreateConnectorEx
 (const char*           service,
  TSERV_Type            types,
  const SConnNetInfo*   net_info,
- const SSERVICE_Extra* params
+ const SSERVICE_Extra* extra
  );
 
 #define SERVICE_CreateConnector(service) \
