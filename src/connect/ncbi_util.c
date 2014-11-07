@@ -327,7 +327,7 @@ extern const char* NcbiMessagePlusError
     mlen += 7;
 
     if (error)
-        mlen += sprintf(buf + mlen, "%d%s", error, "," + !*descr);
+        mlen += sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
     if (release)
