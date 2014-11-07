@@ -877,7 +877,7 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
             return eIO_Unknown;
         len = 0;
         for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  i++) {
-            if (sscanf(c + len, ",%d%n" + !i, &o[i], &code) < 1)
+            if (sscanf(c + len, &",%d%n"[!i], &o[i], &code) < 1)
                 break;
             len += code;
         }

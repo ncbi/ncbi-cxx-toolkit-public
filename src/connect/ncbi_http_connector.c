@@ -1875,12 +1875,12 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ first = 1/*true*/;
         while (*s) {
-            if        (strncasecmp(s, "\nReferer:" + first, 9 - first) == 0) {
+            if        (strncasecmp(s, &"\nReferer:"[first], 9 - first) == 0) {
                 has_referer = 1/*true*/;
-            } else if (strncasecmp(s, "\nHost:" + first, 6 - first) == 0) {
+            } else if (strncasecmp(s, &"\nHost:"[first], 6 - first) == 0) {
                 has_host = 1/*true*/;
 #ifdef HAVE_LIBCONNEXT
-            } else if (strncasecmp(s, "\nCAF" + first, 4 - first) == 0
+            } else if (strncasecmp(s, &"\nCAF"[first], 4 - first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - first] == ':')) {
                 char* caftag = strndup(s + !first, strcspn(s + !first, " \t"));
                 if (caftag) {
@@ -1893,7 +1893,7 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                 }
 #endif /*HAVE_LIBCONNEXT*/
             } else if (!*has_sid
-                       &&  strncasecmp(s, "\n" HTTP_NCBI_SID + first,
+                       &&  strncasecmp(s, &"\n" HTTP_NCBI_SID[first],
                                        sizeof(HTTP_NCBI_SID) - first) == 0) {
                 *has_sid = 1/*true*/;
             }

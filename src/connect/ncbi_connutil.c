@@ -1413,7 +1413,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         assert(scheme  &&  args);
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len  = schlen;
-        len += sprintf(url + len, "://%s" + (schlen ? 0 : 3), info->host);
+        len += sprintf(url + len, &"://%s"[schlen ? 0 : 3], info->host);
         if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s",
@@ -1678,8 +1678,8 @@ extern SOCK URL_Connect
  TSOCK_Flags     flags)
 {
     static const char kHost[] = "Host: ";
-    const char* x_hdr;
-    char* x_args;
+    const char* x_hdr = user_hdr;
+    char* x_args = 0;
     SOCK sock;
 
     if (req_method >= eReqMethod_v1) {
@@ -1690,13 +1690,14 @@ extern SOCK URL_Connect
 
     if (req_method != eReqMethod_Connect) {
         size_t x_add = 1/*true*/;
-        for (x_hdr = user_hdr;  x_hdr && *x_hdr;  x_hdr = strchr(x_hdr, '\n')){
+        while (x_hdr  &&  *x_hdr) {
             if (x_hdr != user_hdr)
                 x_hdr++;
             if (strncasecmp(x_hdr, kHost, sizeof(kHost) - 2) == 0) {
                 x_add = 0/*false*/;
                 break;
             }
+            x_hdr = strchr(x_hdr, '\n');
         }
         if (x_add) {
             size_t x_len = host  &&  *host ? strlen(host) : 0; 
@@ -1707,10 +1708,8 @@ extern SOCK URL_Connect
                     x_len += (size_t) sprintf(x_host + x_len, ":%hu", port);
                 if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr)))
                     x_hdr = user_hdr;
-            } else
-                x_hdr = user_hdr;
-        } else
-            x_hdr = user_hdr;
+            }
+        }
 
         if (args  &&  encode_args  &&  (x_add = strcspn(args, "#")) > 0) {
             /* URL-encode "args", if any specified */
@@ -1720,6 +1719,8 @@ extern SOCK URL_Connect
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("[URL_Connect]  Out of memory (%lu)",
                                    (unsigned long)(size + 1)));
+                if (x_hdr != user_hdr)
+                    free((void*) x_hdr);
                 return 0;
             }
             URL_Encode(args, x_add, &rd_len, x_args, size, &wr_len);
@@ -1727,12 +1728,11 @@ extern SOCK URL_Connect
             assert(wr_len <= size);
             x_args[wr_len] = '\0';
             args = x_args;
-        } else
-            x_args = 0;
+        }
     }
 
     sock = 0;
-    verify(URL_ConnectEx(host, port, path, x_args,
+    verify(URL_ConnectEx(host, port, path, args,
                          req_method, content_length,
                          o_timeout, rw_timeout,
                          x_hdr, 0/*cred*/, flags, &sock) == eIO_Success
@@ -2365,7 +2365,7 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
         for (p = m;  mask;  p++, mask >>= 1) {
             if (mask & 1) {
                 char port[10];
-                int  k = sprintf(port, " %hu" + !len, p);
+                int  k = sprintf(port, &" %hu"[!len], p);
                 if (len + k < bufsize) {
                     memcpy(buf + len, port, k);
                     len += k;
