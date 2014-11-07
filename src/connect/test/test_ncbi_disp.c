@@ -188,9 +188,9 @@ int main(int argc, const char* argv[])
 
     value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
     CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s", kParameter,
-                          "`" + !value,
+                          &"`"[!value],
                           value ? value : "Not found",
-                          "'" + !value));
+                          &"'"[!value]));
     if (value)
         free((void*) value);
 

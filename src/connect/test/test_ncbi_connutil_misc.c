@@ -318,7 +318,7 @@ static void TEST_ConnNetInfo(void)
     ConnNetInfo_SetUserHeader(net_info, "");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
     printf("HTTP User Header after set:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(!net_info->http_user_header  &&  !str);
 
     ConnNetInfo_AppendUserHeader(net_info,
@@ -332,7 +332,7 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after append:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"
                   "T1:V1\r\n"
@@ -353,7 +353,7 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after override:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"
                   "T2:V2.1\r\n"
@@ -373,7 +373,7 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after extend:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"
                   "T2:V2.1 V2\r\n"
@@ -392,7 +392,7 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after no-op extend:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"
                   "T2:V2.1 V2\r\n"
@@ -408,7 +408,7 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after self-delete:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header, "") == 0);
 
     ConnNetInfo_SetUserHeader(net_info, 0);
@@ -416,7 +416,7 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after reset:\n%s%s%s\n",
-           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(!net_info->http_user_header);
 
     for (n = 0; n < sizeof(net_info->args); n++)
