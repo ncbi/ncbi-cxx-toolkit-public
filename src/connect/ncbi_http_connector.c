@@ -156,8 +156,9 @@ static int                   s_MessageIssued = 0;
 static FHTTP_NcbiMessageHook s_MessageHook   = 0;
 
 
-static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
-                                                  const SRetry*   retry)
+/* -1=nothing to do;  0=failure;  1=success */
+static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
+                                       ERetry          auth)
 {
     static const char kProxyAuthorization[] = "Proxy-Authorization: Basic ";
     static const char kAuthorization[]      = "Authorization: Basic ";
@@ -165,30 +166,18 @@ static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
     size_t taglen, userlen, passlen, len, n;
     const char *tag, *user, *pass;
 
-    assert(retry  &&  retry->data);
-    assert(strncasecmp(retry->data, "basic", strcspn(retry->data," \t")) == 0);
-    switch (retry->mode) {
+    switch (auth) {
     case eRetry_Authenticate:
         if (uuu->auth_done)
-            return  1/*failed*/;
-        uuu->auth_done = 1/*true*/;
-        if (uuu->net_info->scheme != eURL_Https
-            &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
-            return -1/*prohibited*/;
-        }
+            return -1/*nothing to do*/;
         tag    = kAuthorization;
         taglen = sizeof(kAuthorization) - 1;
         user   = uuu->net_info->user;
         pass   = uuu->net_info->pass;
         break;
     case eRetry_ProxyAuthenticate:
-        if (!uuu->net_info->http_proxy_host[0]  ||
-            !uuu->net_info->http_proxy_port) {
-            return -1/*prohibited*/;
-        }
-        if (uuu->proxy_auth_done)  
-            return  1/*failed*/;
-        uuu->proxy_auth_done = 1/*true*/;
+        if (uuu->proxy_auth_done)
+            return -1/*nothing to do*/;
         tag    = kProxyAuthorization;
         taglen = sizeof(kProxyAuthorization) - 1;
         user   = uuu->net_info->http_proxy_user;
@@ -196,11 +185,16 @@ static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
         break;
     default:
         assert(0);
-        return 1/*failed*/;
+        return 0/*failure*/;
     }
     assert(tag  &&  user  &&  pass);
     if (!*user)
-        return 1/*failed*/;
+        return -1/*nothing to do*/;
+
+    if (auth == eRetry_Authenticate)
+        uuu->auth_done = 1/*true*/;
+    else
+        uuu->proxy_auth_done = 1/*true*/;
     userlen = strlen(user);
     passlen = strlen(pass);
     s = buf + sizeof(buf) - passlen;
@@ -226,9 +220,40 @@ static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
     userlen -= taglen + 1;
     BASE64_Encode(s, len, &n, buf + taglen, userlen, &passlen, 0);
     if (len != n  ||  buf[taglen + passlen])
-        return 1/*failed*/;
+        return 0/*failure*/;
     memcpy(buf, tag, taglen);
-    return !ConnNetInfo_OverrideUserHeader(uuu->net_info, buf);
+    return ConnNetInfo_OverrideUserHeader(uuu->net_info, buf);
+}
+
+
+/* -1=prohibited;  0=okay;  1=failure */
+static int/*bool tri-state inverted*/ x_RetryAuth(SHttpConnector* uuu,
+                                                  const SRetry*   retry)
+{
+    int result;
+
+    assert(retry  &&  retry->data);
+    assert(strncasecmp(retry->data, "basic", strcspn(retry->data," \t")) == 0);
+    switch (retry->mode) {
+    case eRetry_Authenticate:
+        if (uuu->net_info->scheme != eURL_Https
+            &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
+            return -1/*prohibited*/;
+        }
+        break;
+    case eRetry_ProxyAuthenticate:
+        if (!uuu->net_info->http_proxy_host[0]  ||
+            !uuu->net_info->http_proxy_port) {
+            return -1/*prohibited*/;
+        }
+        break;
+    default:
+        assert(0);
+        return 1/*failed*/;
+    }
+
+    result = x_Authenticate(uuu, retry->mode);
+    return result < 0 ? 1/*failed*/ : !result/*done*/;
 }
 
 
@@ -332,7 +357,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             if (!fail) {
                 fail =
                     retry->data  &&  strncasecmp(retry->data, "basic ", 6) == 0
-                    ? x_Authorize(uuu, retry) : -2;
+                    ? x_RetryAuth(uuu, retry) : -2;
             }
             if (fail) {
                 CORE_LOGF_X(3, eLOG_Error,
@@ -549,6 +574,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 ||  (uuu->net_info->scheme != eURL_Https
                      &&  uuu->net_info->http_proxy_host[0]
                      &&  uuu->net_info->http_proxy_port)) {
+                if (uuu->net_info->http_push_auth
+                    &&  !x_Authenticate(uuu, eRetry_ProxyAuthenticate)) {
+                    status = eIO_Unknown;
+                    break;
+                }
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
                 path = s_MakePath(uuu->net_info);
@@ -588,6 +618,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 }
             } else {
                 /* Direct HTTP[S] or tunneled HTTPS */
+                if (uuu->net_info->http_push_auth
+                    &&  !x_Authenticate(uuu, eRetry_Authenticate)) {
+                    status = eIO_Unknown;
+                    break;
+                }
                 if (!uuu->skip_host  &&  !s_SetHttpHostTag(uuu->net_info)) {
                     status = eIO_Unknown;
                     break;
@@ -1922,6 +1957,10 @@ static EIO_Status s_CreateHttpConnector
     ConnNetInfo_OverrideUserHeader(xxx, user_header);
 
     if (tunnel) {
+        if (!xxx->http_proxy_host[0]  ||  !xxx->http_proxy_port) {
+            ConnNetInfo_Destroy(xxx);
+            return eIO_InvalidArg;
+        }
         xxx->req_method = eReqMethod_Connect;
         xxx->version = 0;
         xxx->path[0] = '\0';
