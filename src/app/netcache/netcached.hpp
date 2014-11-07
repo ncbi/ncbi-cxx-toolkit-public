@@ -130,10 +130,10 @@ class CNCBlobKey : public CNCBlobKeyLight,
 {
 public:
     CNCBlobKey(void);
-    bool Assign( const CTempString& cache_name,
+    void Assign( const CTempString& cache_name,
                  const CTempString& blob_key,
                  const CTempString& blob_subkey);
-    bool Assign( const CTempString& blob_key);
+    void Assign( const CTempString& blob_key);
 
 private:
     CNCBlobKey(const CNCBlobKey& another);
@@ -202,8 +202,8 @@ inline
 CNCBlobKey::CNCBlobKey(void) {
 }
 inline
-bool CNCBlobKey::Assign( const CTempString& blob_key) {
-    return Assign( CTempString(), blob_key, CTempString());
+void CNCBlobKey::Assign( const CTempString& blob_key) {
+    Assign( CTempString(), blob_key, CTempString());
 }
 
 /////////////////////////////////////////////////////////////////////////////

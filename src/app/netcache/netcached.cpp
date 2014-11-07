@@ -200,10 +200,14 @@ string CNCBlobKeyLight::KeyForLogs(void) const
     return result;
 }
 
-bool CNCBlobKey::Assign( const CTempString& cache_name,
+void CNCBlobKey::Assign( const CTempString& cache_name,
                          const CTempString& blob_key,
                          const CTempString& blob_subkey)
 {
+    if (blob_key.empty()) {
+        Clear();
+        return;
+    }
     string rawKey = blob_key;
     if (CNetCacheKey::ParseBlobKey(blob_key.data(), blob_key.size(), this)) {
         // If key is given and it's NetCache key (not ICache key) then we need
@@ -216,12 +220,11 @@ bool CNCBlobKey::Assign( const CTempString& cache_name,
     } else {
         SRV_LOG(Critical, "CNetCacheKey failed to parse blob key: " << blob_key);
         Clear();
-        return false;
+        return;
     }
     PackBlobKey(cache_name, rawKey, blob_subkey);
     UnpackBlobKey();
     SetKeyVersion(GetVersion());
-    return IsValid();
 }
 
 
