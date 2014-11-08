@@ -408,7 +408,6 @@ gpipe_jira needs gpipe_common
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs biotree
 gpipe_kmer needs pathogen_connection
-gpipe_kmer needs pathogen_metadata
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
 gpipe_meta_access needs gpipe_common
@@ -826,11 +825,9 @@ pathogen_ctl needs bag_access
 pathogen_ctl needs gc_utils
 pathogen_ctl needs gencoll_client
 pathogen_ctl needs pathogen_connection
-pathogen_ctl needs pathogen_metadata
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
-pathogen_metadata needs gpipe_objutil
-pathogen_metadata needs gpipe_xml
+pathogen_sra needs gpipe_common
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
