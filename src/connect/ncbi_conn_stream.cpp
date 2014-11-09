@@ -296,8 +296,6 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             sock = s;
         }
     } else {
-        const char* host = (net_info->firewall  &&  *net_info->proxy_host
-                            ? net_info->proxy_host : net_info->host);
         if (timeout == kDefaultTimeout)
             timeout  = net_info->timeout;
         if (net_info->debug_printout) {
@@ -308,14 +306,12 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 x_net_info->firewall = 0;
                 x_net_info->stateless = 0;
                 x_net_info->lb_disable = 0;
-                strncpy0(x_net_info->host, host, sizeof(x_net_info->host) - 1);
                 x_net_info->user[0] = '\0';
                 x_net_info->pass[0] = '\0';
                 x_net_info->http_proxy_host[0] = '\0';
                 x_net_info->http_proxy_port    =   0;
                 x_net_info->http_proxy_user[0] = '\0';
                 x_net_info->http_proxy_pass[0] = '\0';
-                x_net_info->proxy_host[0]      = '\0';
                 ConnNetInfo_SetUserHeader(x_net_info, 0);
                 if (x_net_info->http_referer) {
                     free((void*) x_net_info->http_referer);
@@ -331,7 +327,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         init.data = data;
         init.size = size;
         init.cred = net_info->credentials;
-        status = SOCK_CreateInternal(host, net_info->port, timeout,
+        status = SOCK_CreateInternal(net_info->host, net_info->port, timeout,
                                      &sock, &init, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
     }
@@ -1139,7 +1135,6 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->http_proxy_port    =   0;
                 net_info->http_proxy_user[0] = '\0';
                 net_info->http_proxy_pass[0] = '\0';
-                net_info->proxy_host[0]      = '\0';
                 net_info->max_try = 0;
                 net_info->timeout = kInfiniteTimeout;
                 ConnNetInfo_SetUserHeader(net_info.get(), 0);

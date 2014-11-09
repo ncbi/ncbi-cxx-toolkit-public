@@ -392,9 +392,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_HTTP_PUSH_AUTH, str, DEF_CONN_HTTP_PUSH_AUTH);
     info->http_push_auth = ConnNetInfo_Boolean(str);
 
-    /* non-transparent CERN-like firewall proxy server */
-    REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
-
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
     val = atoi(str);
@@ -1333,7 +1330,6 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveBool      (s, "http_push_auth",  info->http_push_auth);
-    s_SaveString    (s, "proxy_host",      info->proxy_host);
     s_SaveULong     (s, "max_try",         info->max_try);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);

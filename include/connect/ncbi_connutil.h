@@ -179,7 +179,6 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
     char            http_proxy_user[64];  /* http proxy username (if req'd)  */
     char            http_proxy_pass[64];  /* http proxy password             */
-    char            proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv*/
     unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
     const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     const char*     http_user_header; /* user header to add to HTTP request  */

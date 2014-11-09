@@ -2279,7 +2279,6 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
         xxx->info->http_proxy_port    =   0;
         xxx->info->http_proxy_user[0] = '\0';
         xxx->info->http_proxy_pass[0] = '\0';
-        xxx->info->proxy_host[0]      = '\0';
     } else
         CORE_LOG(eLOG_Critical, "fFTP_UseProxy not yet implemented");
     ConnNetInfo_SetUserHeader(xxx->info, 0);

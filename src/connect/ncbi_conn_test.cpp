@@ -706,18 +706,6 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         temp += ':';
         temp += NStr::UIntToString(net_info->http_proxy_port);
         temp += "'";
-        if (m_Firewall  &&  *net_info->proxy_host)
-            temp += ". In addition, your";
-    }
-    if (m_Firewall  &&  *net_info->proxy_host) {
-        if (!m_HttpProxy)
-            temp += "Your";
-        temp += " configuration specifies that instead of connecting directly"
-            " to NCBI addresses, a forwarding non-transparent proxy host '";
-        temp += net_info->proxy_host;
-        temp += "' should be used for all links";
-        if (m_HttpProxy)
-            temp += " (including those originating from the HTTP proxy)";
     }
     temp += '\n';
 
@@ -1020,18 +1008,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     }
                     temp += '\n';
                 }
-                if (m_Firewall  &&  *net_info->proxy_host) {
-                    temp += "Your non-transparent proxy '";
-                    temp += net_info->proxy_host;
-                    temp += "' may not be forwarding connections properly,"
-                        " please check with your network administrator"
-                        " that the proxy has been configured correctly";
-                    if (!url) {
-                        temp += ": " NCBI_FWDOC_URL;
-                        url = true;
-                    }
-                    temp += '\n';
-                }
                 temp += "The network port required for this connection to"
                     " succeed may be blocked/diverted at your firewall;";
                 if (m_Firewall) {
@@ -1218,9 +1194,8 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 } else if (m_Fwd.empty()  &&  net_info
                            &&  net_info->firewall != eFWMode_Fallback) {
                     temp += "The most likely reason for the failure is that"
-                        " your ";
-                    temp += *net_info->proxy_host ? "forwarder" : "firewall";
-                    temp += " is still blocking ports as reported above\n";
+                        " your firewall is still blocking ports as reported"
+                        " above\n";
                 } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
                     temp += "Please contact " + HELP_EMAIL + '\n';
                 SERV_Close(iter);
@@ -1236,11 +1211,6 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 temp += net_info->http_proxy_host;
                 temp += ':';
                 temp += NStr::UIntToString(net_info->http_proxy_port);
-                if ((m_Firewall  ||  net_info->firewall)
-                    &&  *net_info->proxy_host) {
-                    temp += "' and/or connection forwarder '";
-                    temp += net_info->proxy_host;
-                }
                 temp += "' may be buggy."
                     " Please see your network administrator\n";
             } else {

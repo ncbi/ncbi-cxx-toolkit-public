@@ -420,20 +420,20 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
 }
 
 
-static char* s_HostPort(size_t slack, const char* host, unsigned short aport)
+static char* s_HostPort(size_t reserve, const char* host, unsigned short xport)
 {
     size_t hostlen = strlen(host), portlen;
     char*  hostport, port[16];
  
-    if (!aport) {
+    if (!xport) {
         portlen = 1;
         port[0] = '\0';
     } else
-        portlen = (size_t) sprintf(port, ":%hu", aport) + 1;
-    hostport = (char*) malloc(slack + hostlen + portlen);
+        portlen = (size_t) sprintf(port, ":%hu", xport) + 1;
+    hostport = (char*) malloc(reserve + hostlen + portlen);
     if (hostport) {
-        memcpy(hostport + slack,   host, hostlen);
-        hostlen        += slack;
+        memcpy(hostport + reserve, host, hostlen);
+        hostlen        += reserve;
         memcpy(hostport + hostlen, port, portlen);
     }
     return hostport;
@@ -453,16 +453,6 @@ static int/*bool*/ s_SetHttpHostTag(SConnNetInfo* net_info)
     } else
         retval = 0/*failure*/;
     return retval;
-}
-
-
-static const char* s_MakePath(const SConnNetInfo* net_info)
-{
-    if (net_info->req_method == eReqMethod_Connect
-        &&  net_info->firewall  &&  *net_info->proxy_host) {
-        return s_HostPort(0, net_info->proxy_host, net_info->port);
-    }
-    return ConnNetInfo_URL(net_info);
 }
 
 
@@ -552,7 +542,6 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             if (!net_info->port)
                 net_info->port = CONN_PORT_HTTPS;
             net_info->firewall = 0/*false*/;
-            net_info->proxy_host[0] = '\0';
             ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
             status = HTTP_CreateTunnel(net_info, fHTTP_NoUpread, &sock);
             assert((status == eIO_Success) ^ !sock);
@@ -581,7 +570,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 }
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
-                path = s_MakePath(uuu->net_info);
+                path = ConnNetInfo_URL(uuu->net_info);
                 if (!path) {
                     status = eIO_Unknown;
                     break;

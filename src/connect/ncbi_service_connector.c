@@ -447,8 +447,6 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             }
         }
     } else {
-        const char* host = (net_info->firewall  &&  *net_info->proxy_host
-                            ? net_info->proxy_host : net_info->host);
         TSOCK_Flags tempf = flags;
         if (size  &&  (flags & fSOCK_Secure)) {
             tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
@@ -460,15 +458,12 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             net_info->firewall = 0;
             net_info->stateless = 0;
             net_info->lb_disable = 0;
-            if (net_info->host != host)
-                strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
             net_info->user[0] = '\0';
             net_info->pass[0] = '\0';
             net_info->http_proxy_host[0] = '\0';
             net_info->http_proxy_port    =   0;
             net_info->http_proxy_user[0] = '\0';
             net_info->http_proxy_pass[0] = '\0';
-            net_info->proxy_host[0]      = '\0';
             ConnNetInfo_SetUserHeader(net_info, 0);
             if (net_info->http_referer) {
                 free((void*) net_info->http_referer);
@@ -480,8 +475,9 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         init.data = data;
         init.size = size;
         init.cred = 0;
-        *status = SOCK_CreateInternal(host, net_info->port, net_info->timeout,
-                                      &sock, &init, tempf);
+        *status = SOCK_CreateInternal(net_info->host, net_info->port,
+                                      net_info->timeout, &sock,
+                                      &init, tempf);
         assert(!sock ^ !(*status != eIO_Success));
         if (*status == eIO_Success  &&  tempf != flags) {
             init.data = 0;
