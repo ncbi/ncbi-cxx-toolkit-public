@@ -168,9 +168,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
-    unsigned        http_proxy_leak:1;/* non-zero when can fallback to direct*/
     unsigned        http_push_auth:1; /* push authorize tags even w/o 401/407*/
-    unsigned        reserved:15;
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
@@ -319,11 +317,13 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  -- INFO FIELD --  ----- NAME -----  ---------- REMARKS/EXAMPLES ---------
  *  client_host       local host name   assigned automatically
  *  req_method        REQ_METHOD
+ *  user              USER
+ *  pass              PASS
  *  host              HOST
  *  port              PORT
  *  path              PATH
  *  args              ARGS
- *  http_proxy_host   HTTP_PROXY_HOST   if NULL http_proxy_port is set 0
+ *  http_proxy_host   HTTP_PROXY_HOST   if empty http_proxy_port is set 0
  *  http_proxy_port   HTTP_PROXY_PORT   no HTTP proxy if 0
  *  http_proxy_user   HTTP_PROXY_USER
  *  http_proxy_pass   HTTP_PROXY_PASS

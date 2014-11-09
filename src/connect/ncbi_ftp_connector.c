@@ -2274,20 +2274,19 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
     xxx->info->req_method = eReqMethod_Any;
     xxx->info->stateless = 0;
     xxx->info->lb_disable = 0;
-    xxx->info->http_proxy_leak = 0;
     if (!(flag & fFTP_UseProxy)) {
         xxx->info->http_proxy_host[0] = '\0';
         xxx->info->http_proxy_port    =   0;
         xxx->info->http_proxy_user[0] = '\0';
         xxx->info->http_proxy_pass[0] = '\0';
         xxx->info->proxy_host[0]      = '\0';
-        ConnNetInfo_SetUserHeader(xxx->info, 0);
-        if (xxx->info->http_referer) {
-            free((void*) xxx->info->http_referer);
-            xxx->info->http_referer = 0;
-        }
     } else
         CORE_LOG(eLOG_Critical, "fFTP_UseProxy not yet implemented");
+    ConnNetInfo_SetUserHeader(xxx->info, 0);
+    if (xxx->info->http_referer) {
+        free((void*) xxx->info->http_referer);
+        xxx->info->http_referer = 0;
+    }
 
     /* some uninited fields are taken care of in s_VT_Open */
     xxx->cmcb    = cmcb ? *cmcb : kNoCmcb;

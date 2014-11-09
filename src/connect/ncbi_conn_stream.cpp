@@ -271,7 +271,6 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                          TSOCK_Flags         flags)
 {
     EIO_Status status = eIO_Success;
-    bool       proxy = false;
     SOCK       sock = 0;
 
     _ASSERT(net_info);
@@ -280,7 +279,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         flags &= ~fSOCK_LogDefault;
         flags |=  fSOCK_LogOn;
     }
-    if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
+    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
@@ -289,21 +288,19 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             memset(&init, 0, sizeof(init));
             init.data = data;
             init.size = size;
-            init.cred = flags & fSOCK_Secure ? net_info->credentials : 0;
+            init.cred = net_info->credentials;
             SOCK s;
             status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flags);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
         }
-        proxy = true;
-    }
-    if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
+    } else {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
         if (timeout == kDefaultTimeout)
             timeout  = net_info->timeout;
-        if (!proxy  &&  net_info->debug_printout) {
+        if (net_info->debug_printout) {
             SConnNetInfo* x_net_info = ConnNetInfo_Clone(net_info);
             if (x_net_info) {
                 x_net_info->scheme = eURL_Unspec;
@@ -333,7 +330,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         memset(&init, 0, sizeof(init));
         init.data = data;
         init.size = size;
-        init.cred = flags & fSOCK_Secure ? net_info->credentials : 0;
+        init.cred = net_info->credentials;
         status = SOCK_CreateInternal(host, net_info->port, timeout,
                                      &sock, &init, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
@@ -1138,7 +1135,6 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->firewall = 0;
                 net_info->stateless = 0;
                 net_info->lb_disable = 0;
-                net_info->http_proxy_leak = 0;
                 net_info->http_proxy_host[0] = '\0';
                 net_info->http_proxy_port    =   0;
                 net_info->http_proxy_user[0] = '\0';

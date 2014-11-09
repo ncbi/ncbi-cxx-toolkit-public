@@ -298,7 +298,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* NB: *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
-    info->reserved = 0/*MBZ*/;
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -323,15 +322,15 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
     info->firewall = x_ParseFirewall(str, generic);
 
-    /* stateless client? */
+    /* stateless client */
     REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
     info->stateless = ConnNetInfo_Boolean(str);
 
-    /* prohibit use of the local load balancer? */
+    /* prohibit use of the local load balancer */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
     info->lb_disable = ConnNetInfo_Boolean(str);
 
-    /* turn on debug printout? */
+    /* level of debug printout */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
     if (ConnNetInfo_Boolean(str)
         ||    (*str  &&   strcasecmp(str, "some") == 0)) {
@@ -366,11 +365,10 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* args */
     REG_VALUE(REG_CONN_ARGS, info->args, DEF_CONN_ARGS);
 
-    /* HTTP proxy server? */
+    /* HTTP proxy server */
     REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
               DEF_CONN_HTTP_PROXY_HOST);
-    if (*info->http_proxy_host) {
-        /* yes, use the specified HTTP proxy server */
+    if (info->http_proxy_host[0]) {
         REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, DEF_CONN_HTTP_PROXY_PORT);
         errno = 0;
         if (*str  &&  (val = strtoul(str, &e, 10)) > 0
@@ -384,21 +382,17 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         /* HTTP proxy password */
         REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                   DEF_CONN_HTTP_PROXY_PASS);
-        /* HTTP proxy leakout */
-        REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
-        info->http_proxy_leak    =   ConnNetInfo_Boolean(str);
     } else {
         info->http_proxy_port    =   0;
         info->http_proxy_user[0] = '\0';
         info->http_proxy_pass[0] = '\0';
-        info->http_proxy_leak    =   0;
     }
 
-    /* push HTTP auth tags? */
+    /* push HTTP auth tags */
     REG_VALUE(REG_CONN_HTTP_PUSH_AUTH, str, DEF_CONN_HTTP_PUSH_AUTH);
     info->http_push_auth = ConnNetInfo_Boolean(str);
 
-    /* non-transparent CERN-like firewall proxy server? */
+    /* non-transparent CERN-like firewall proxy server */
     REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
 
     /* max. # of attempts to establish connection */
@@ -1338,7 +1332,6 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            ? "(set)" : "(ignored)"));
     } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
-    s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
     s_SaveBool      (s, "http_push_auth",  info->http_push_auth);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
     s_SaveULong     (s, "max_try",         info->max_try);

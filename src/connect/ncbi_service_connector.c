@@ -405,17 +405,16 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                                           size_t        size,
                                           TSOCK_Flags   flags)
 {
-    int/*bool*/ proxy = 0/*false*/;
-    SOCK        sock = 0, s;
-    char*       hostport;
-    SSOCK_Init  init;
-    CONNECTOR   c;
+    SOCK       sock = 0, s;
+    char*      hostport;
+    SSOCK_Init init;
+    CONNECTOR  c;
 
     flags |= (net_info->debug_printout == eDebugPrintout_Data
               ? fSOCK_LogOn : fSOCK_LogDefault);
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
-    if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
+    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
         /* NB: ideally, should have pushed data:size here if proxy not buggy */
         *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(*status != eIO_Success));
@@ -423,12 +422,14 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             &&  (size  ||  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
             /* push initial data through the proxy, as-is (i.e. clear-text) */
             TSOCK_Flags tempf = flags;
-            if (size  &&  (flags & fSOCK_Secure))
-                tempf &= fSOCK_LogOn | fSOCK_LogDefault;
+            if (size  &&  (flags & fSOCK_Secure)) {
+                tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
+                tempf &= ~fSOCK_Secure;
+            }
             memset(&init, 0, sizeof(init));
             init.data = data;
             init.size = size;
-            init.cred = tempf & fSOCK_Secure ? net_info->credentials : 0;
+            init.cred = 0;
             *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
                                                 &init, tempf);
             assert(!s ^ !(*status != eIO_Success));
@@ -445,15 +446,15 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                 sock = s;
             }
         }
-        proxy = 1/*true*/;
-    }
-    if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
+    } else {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
         TSOCK_Flags tempf = flags;
-        if (size  &&  (flags & fSOCK_Secure))
-            tempf &= fSOCK_LogOn | fSOCK_LogDefault;
-        if (!proxy  &&  net_info->debug_printout) {
+        if (size  &&  (flags & fSOCK_Secure)) {
+            tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
+            tempf &= ~fSOCK_Secure;
+        }
+        if (net_info->debug_printout) {
             net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
             net_info->firewall = 0;
@@ -478,14 +479,14 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         memset(&init, 0, sizeof(init));
         init.data = data;
         init.size = size;
-        init.cred = tempf & fSOCK_Secure ? net_info->credentials : 0;
+        init.cred = 0;
         *status = SOCK_CreateInternal(host, net_info->port, net_info->timeout,
                                       &sock, &init, tempf);
         assert(!sock ^ !(*status != eIO_Success));
         if (*status == eIO_Success  &&  tempf != flags) {
             init.data = 0;
             init.size = 0;
-            init.cred = flags & fSOCK_Secure ? net_info->credentials : 0;
+            init.cred = net_info->credentials;
             *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
                                                 &init, flags);
             assert(!s ^ !(*status != eIO_Success));

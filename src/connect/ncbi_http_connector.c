@@ -619,6 +619,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             } else {
                 /* Direct HTTP[S] or tunneled HTTPS */
                 if (uuu->net_info->http_push_auth
+                    &&  (uuu->net_info->scheme == eURL_Https
+                         ||  (uuu->flags & fHTTP_InsecureRedirect))
                     &&  !x_Authenticate(uuu, eRetry_Authenticate)) {
                     status = eIO_Unknown;
                     break;
