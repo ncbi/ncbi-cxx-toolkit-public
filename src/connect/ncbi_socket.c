@@ -4535,6 +4535,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
         }
         assert(session != SESSION_INVALID);
         x_sock->session = session;
+        x_sock->cred = cred;
     }
 
     if (x_sock->port) {
