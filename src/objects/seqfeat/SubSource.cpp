@@ -2111,10 +2111,14 @@ string CSubSource::FixSexQualifierValue (const string& value)
     const char* *end = &(sm_ValidSexQualifierTokens[max]);
 
     vector<string> good_values;
+    bool pooled = false;
 
     ITERATE(vector<string>, w, words) {
         if (NStr::Equal(*w, "and")) {
             // ok, skip it
+        } else if (NStr::EqualNocase(*w, "(pooled)") || NStr::EqualNocase(*w, "pooled")) {
+            // set pooled flag
+            pooled = true;
         } else {
             if (find(begin, end, *w) != end) {
                 if (NStr::Equal(*w, "m")) {
@@ -2144,6 +2148,9 @@ string CSubSource::FixSexQualifierValue (const string& value)
             fixed += " and";
         }
         fixed += " " + good_values[i];
+    }
+    if (pooled) {
+        fixed = "pooled " + fixed;
     }
     return fixed;
 }
