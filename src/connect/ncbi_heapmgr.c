@@ -626,27 +626,27 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
     TNCBI_Size need;
     char _id[32];
 
-    if (!heap) {
+    if (unlikely(!heap)) {
         CORE_LOG_X(6, eLOG_Warning, "Heap Alloc: NULL heap");
         return 0;
     }
     assert(!heap->base == !heap->size);
 
-    if (!heap->chunk) {
+    if (unlikely(!heap->chunk)) {
         CORE_LOGF_X(7, eLOG_Error,
                     ("Heap Alloc%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return 0;
     }
-    if (size < 1)
+    if (unlikely(size < 1))
         return 0;
 
     size += (TNCBI_Size) sizeof(SHEAP_Block);
     need  = HEAP_ALIGN(size);
 
-    if (heap->free < heap->size) {
+    if (likely(heap->free < heap->size)) {
         TNCBI_Size free = need;
-        if ((f = s_HEAP_Find(heap, &free, 0)) != 0) {
-            /*NB: f is linked, unlink*/
+        if (likely((f = s_HEAP_Find(heap, &free, 0)) != 0)) {
+            /*NB: f is still linked -- unlink*/
             n = heap->base + f->nextfree;
             if (n == f) {
                 assert(f == heap->base + heap->free);
@@ -662,33 +662,34 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
                 }
             }
             s_HEAP_Unlink(f);
-        } else if (need <= free) {
-            /*NB: f is unlinked*/
+        } else if (unlikely(need <= free)) {
+            /*NB: here f returns unlinked*/
             f = s_HEAP_Collect(heap, need);
             assert(f  &&  HEAP_ISFREE(f)  &&  need <= f->head.size);
-            if (f->head.flag & 2/*HEAP_LAST*/)
+            if (unlikely(f->head.flag & 2/*HEAP_LAST*/))
                 f->head.flag = HEAP_FREE | HEAP_LAST;
             n = 0;
         } else
             f = n = 0;
     } else
         f = n = 0;
-    if (!f) {
+    if (unlikely(!f)) {
         TNCBI_Size dsize = HEAP_EXTENT(heap->size);
         TNCBI_Size hsize = _HEAP_ALIGN_EX(dsize + need, heap->chunk);
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
             heap->resize(heap->base, hsize, heap->auxarg);
-        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
+        if (unlikely
+            (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base)) {
             CORE_LOGF_X(9, eLOG_Warning,
                         ("Heap Alloc%s: Unaligned base (0x%08lX)",
                          s_HEAP_Id(_id, heap), (long) base));
         }
-        if (!base)
+        if (unlikely(!base))
             return 0;
         dsize = hsize - dsize;
         memset(base + heap->size, 0, dsize); /* security */
         f = base + heap->last;
-        if (!heap->base) {
+        if (unlikely(!heap->base)) {
             assert(!heap->last  &&  !heap->free);
             f->head.flag = HEAP_FREE | HEAP_LAST;
             f->head.size = hsize;
@@ -697,7 +698,7 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
         } else {
             assert(base <= f  &&  f < base + heap->size  &&  HEAP_ISLAST(f));
             hsize = HEAP_BLOCKS(hsize);
-            if (!HEAP_ISFREE(f)) {
+            if (unlikely(!HEAP_ISFREE(f))) {
                 f->head.flag &= ~HEAP_LAST;
                 /* New block is at the very top of the heap */
                 heap->last = heap->size;
@@ -800,34 +801,34 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
     SHEAP_HeapBlock *b, *p;
     char _id[32];
 
-    if (!heap) {
+    if (unlikely(!heap)) {
         CORE_LOG_X(10, eLOG_Warning, "Heap Free: NULL heap");
         return;
     }
     assert(!heap->base == !heap->size);
 
-    if (!heap->chunk) {
+    if (unlikely(!heap->chunk)) {
         CORE_LOGF_X(11, eLOG_Error,
                     ("Heap Free%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return;
     }
-    if (!ptr)
+    if (unlikely(!ptr))
         return;
 
     p = 0;
     b = heap->base;
     e = b + heap->size;
-    while (b < e) {
+    while (likely(b < e)) {
         SHEAP_HeapBlock* n = HEAP_NEXT(b);
-        if (n > e) {
+        if (unlikely(n > e)) {
             CORE_LOGF_X(13, eLOG_Error,
                         ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
                          s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
                          heap->size, b->head.flag, b->head.size));
             return;
         }
-        if (&b->head == ptr) {
-            if (HEAP_ISFREE(b)) {
+        if (unlikely(&b->head == ptr)) {
+            if (unlikely(HEAP_ISFREE(b))) {
                 CORE_LOGF_X(12, eLOG_Warning,
                             ("Heap Free%s: Freeing free block @%u",
                              s_HEAP_Id(_id, heap),
@@ -851,33 +852,33 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
     SHEAP_HeapBlock *b, *p, *n;
     char _id[32];
 
-    if (!heap) {
+    if (unlikely(!heap)) {
         CORE_LOG_X(15, eLOG_Warning, "Heap Free: NULL heap");
         return;
     }
     assert(!heap->base == !heap->size);
 
-    if (!heap->chunk) {
+    if (unlikely(!heap->chunk)) {
         CORE_LOGF_X(16, eLOG_Error,
                     ("Heap Free%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return;
     }
-    if (!ptr)
+    if (unlikely(!ptr))
         return;
 
     p = (SHEAP_HeapBlock*) prev;
     b = (SHEAP_HeapBlock*) ptr;
     n = HEAP_NEXT(b);
 
-    if (!s_HEAP_fast) {
+    if (unlikely(!s_HEAP_fast)) {
         const SHEAP_HeapBlock* e = heap->base + heap->size;
-        if (b < heap->base  ||  e < n) {
+        if (unlikely(b < heap->base  ||  e < n)) {
             CORE_LOGF_X(17, eLOG_Error,
                         ("Heap Free%s: Alien block", s_HEAP_Id(_id, heap)));
             return;
         }
-        if ((!p  &&  b != heap->base)  ||
-            ( p  &&  (p < heap->base  ||  b != HEAP_NEXT(p)))) {
+        if (unlikely((!p  &&  b != heap->base)  ||
+                     ( p  &&  (p < heap->base  ||  b != HEAP_NEXT(p))))) {
             char h[40];
             if (!p  ||  p < heap->base  ||  e <= p)
                 *h = '\0';
@@ -889,7 +890,7 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
             HEAP_Free(heap, ptr);
             return;
         }
-        if (HEAP_ISFREE(b)) {
+        if (unlikely(HEAP_ISFREE(b))) {
             CORE_LOGF_X(19, eLOG_Warning,
                         ("Heap Free%s: Freeing free block @%u",
                          s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
@@ -1020,7 +1021,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     }
 
     if (HEAP_ISLAST(b)  &&
-        (n < e  ||  (heap->chunk/*RW heap*/ &&  b < heap->base + heap->last))){
+        (n < e  ||  (heap->chunk/*RW heap*/ && b < heap->base + heap->last))) {
         if (heap->chunk/*RW heap*/)
             sprintf(msg, " expected @%u", heap->last);
         else
@@ -1171,18 +1172,19 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 
 SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 {
-    if (!heap) {
+    if (unlikely(!heap)) {
         CORE_LOG_X(29, eLOG_Warning, "Heap Walk: NULL heap");
         return 0;
     }
     assert(!heap->base == !heap->size);
 
-    if (s_HEAP_fast) {
+    if (likely(s_HEAP_fast)) {
         SHEAP_HeapBlock* b;
-        if (!ptr)
+        if (unlikely(!ptr))
             return &heap->base->head;
         b = HEAP_NEXT((SHEAP_HeapBlock*) ptr);
-        return ptr < &b->head  &&  b < heap->base + heap->size ? &b->head : 0;
+        return likely(ptr < &b->head  &&  b < heap->base + heap->size)
+            ? &b->head : 0;
     }
     return s_HEAP_Walk(heap, ptr);
 }
@@ -1309,7 +1311,7 @@ int HEAP_Serial(const HEAP heap)
 
 
 /*ARGSUSED*/
-void HEAP_Options(ESwitch fast, ESwitch ignored)
+void HEAP_Options(ESwitch fast, ESwitch unused)
 {
     switch (fast) {
     case eOff:
