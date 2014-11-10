@@ -217,6 +217,9 @@ private:
 };
 
 typedef CGuard<CMiniMutex> CMiniMutexGuard;
+inline
+void CGuard_Base::ReportException(std::exception&) {
+}
 
 
 
