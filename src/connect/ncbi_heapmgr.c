@@ -741,9 +741,14 @@ static void s_HEAP_Free(HEAP             heap,
      * "flag" must keep its HEAP_LAST bit so that it can be verified. */
     unsigned int last = HEAP_ISLAST(b);
 
+    assert(p < b  &&  b < n);
+    assert((!p  ||  HEAP_NEXT(p) == b)  &&  b  &&  HEAP_NEXT(b) == n);
+    assert((!p  ||  heap->base <= p)  &&  n <= heap->base + heap->size);
+
     s_HEAP_Unlink(b);
     b->head.flag = HEAP_FREE | last;
     if (!last  &&  HEAP_ISFREE(n)) {
+        assert((n->nextfree | n->prevfree) != (TNCBI_Size)(~0));
         b->head.size += n->head.size;
         if (HEAP_ISLAST(n)) {
             last = HEAP_LAST;
@@ -766,6 +771,7 @@ static void s_HEAP_Free(HEAP             heap,
         s_HEAP_Unlink(n);
     }
     if (p  &&  HEAP_ISFREE(p)) {
+        assert((p->nextfree | p->prevfree) != (TNCBI_Size)(~0));
         p->head.size += b->head.size;
         if (last) {
             assert(!HEAP_ISLAST(p));
@@ -813,30 +819,25 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
     e = b + heap->size;
     while (b < e) {
         SHEAP_HeapBlock* n = HEAP_NEXT(b);
-        if (n <= e) {
-            if (&b->head == ptr) {
-                if (!HEAP_ISFREE(b)) {
-                    s_HEAP_Free(heap, p, b, n);
-                    return;
-                }
-                if (HEAP_ISFREE(b)) {
-                    CORE_LOGF_X(12, eLOG_Warning,
-                                ("Heap Free%s: Freeing free block @%u",
-                                 s_HEAP_Id(_id, heap),
-                                 HEAP_INDEX(b, heap->base)));
-                    return;
-                }
-            } else {
-                p = b;
-                b = n;
-                continue;
-            }
+        if (n > e) {
+            CORE_LOGF_X(13, eLOG_Error,
+                        ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
+                         s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
+                         heap->size, b->head.flag, b->head.size));
+            return;
         }
-        CORE_LOGF_X(13, eLOG_Error,
-                    ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
-                     s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
-                     heap->size, b->head.flag, b->head.size));
-        return;
+        if (&b->head == ptr) {
+            if (HEAP_ISFREE(b)) {
+                CORE_LOGF_X(12, eLOG_Warning,
+                            ("Heap Free%s: Freeing free block @%u",
+                             s_HEAP_Id(_id, heap),
+                             HEAP_INDEX(b, heap->base)));
+            } else
+                s_HEAP_Free(heap, p, b, n);
+            return;
+        }
+        p = b;
+        b = n;
     }
 
     CORE_LOGF_X(14, eLOG_Error,
