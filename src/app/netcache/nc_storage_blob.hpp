@@ -523,6 +523,7 @@ inline void
 CNCBlobAccessor::SetCurVerExpire(int expire)
 {
     m_CurData->ver_expire = expire;
+    m_CurData->dead_time = max(expire, m_CurData->dead_time);
     m_VerManager->DeadTimeChanged(m_CurData);
 }
 
@@ -531,6 +532,7 @@ CNCBlobAccessor::SetNewVerExpire(int expire)
 {
     x_CreateNewData();
     m_NewData->ver_expire = expire;
+    m_NewData->dead_time = max(expire, m_NewData->dead_time);
 }
 
 inline void
