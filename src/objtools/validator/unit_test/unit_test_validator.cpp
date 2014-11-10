@@ -15397,16 +15397,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryTranslExcept)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-    codebreak->SetLoc().SetInt().SetFrom(cds->GetLocation().GetStop(eExtreme_Biological) - 2);
-    codebreak->SetLoc().SetInt().SetTo(cds->GetLocation().GetStop(eExtreme_Biological));
-    codebreak->SetAa().SetNcbieaa('*');
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
-                               "Unexpected transl_except * at position 9 just past end of protein"));
-
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS    
 }
 
 
@@ -18630,8 +18620,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
-                              "Unexpected transl_except * at position 9 just past end of protein"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "BadComment",
                               "Feature comment indicates ambiguity in stop codon but no ambiguities are present in stop codon."));
 

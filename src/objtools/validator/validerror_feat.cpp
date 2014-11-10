@@ -7646,7 +7646,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                  feat);
                     }
                 }
-                else if(from_end <= 0)
+                else if(!NStr::Equal(except_char, "*"))
                 {
                     if(NStr::Equal(cb_trans, except_char) ||
                        !loc.IsPartialStop(eExtreme_Biological))
@@ -7654,6 +7654,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                         const CGenetic_code  *gcode;
                         CBioseq_Handle       bsh;
                         CSeqVector           vec;
+                        TSeqPos              from1;
                         string               p;
                         string               q;
                         bool                 altst;
@@ -7662,7 +7663,8 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                 feat.GetLocation(), m_Imp.GetTSE_Handle());
                         vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                         altst = false;
-                        vec.GetSeqData(from, from + 3, q);
+                        from1 = (*cbr)->GetLoc().GetStart(eExtreme_Biological);
+                        vec.GetSeqData(from1, from1 + 3, q);
 
                         if(cdregion.CanGetCode())
                             gcode = &cdregion.GetCode();
@@ -7680,6 +7682,12 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                     + " just past end of protein",
                                     feat);
                     }
+                }
+                else
+                {
+                    /*bsv
+                    Stop codon here. Needs a check for abutting tRNA feature.
+                    bsv*/
                 }
             }
         }
