@@ -963,8 +963,6 @@ void CNCPeerControl::AbortInitialSync(void)
 
 void CNCPeerControl::SetHostProtocol(Uint8 ver)
 {
-//    AtomicCAS(m_HostProtocol, 0, ver);
-    ver = max((Uint8)1, ver);
     m_HostProtocol = ver;
 }
 

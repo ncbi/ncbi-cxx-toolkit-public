@@ -369,7 +369,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
 // pre-create all peers
         const TNCPeerList& peers = CNCDistributionConf::GetPeers();
         ITERATE(TNCPeerList, p, peers) {
-            CNCPeerControl::Peer(p->first);
+            CNCPeerControl::Peer(p->first)->SetHostProtocol(0);
         }
         return true;
     }
