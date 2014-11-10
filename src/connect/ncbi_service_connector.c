@@ -405,10 +405,11 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                                           size_t        size,
                                           TSOCK_Flags   flags)
 {
-    SOCK       sock = 0, s;
-    char*      hostport;
-    SSOCK_Init init;
-    CONNECTOR  c;
+    int/*bool*/ proxy = 0/*false*/;
+    SOCK        sock = 0, s;
+    char*       hostport;
+    SSOCK_Init  init;
+    CONNECTOR   c;
 
     flags |= (net_info->debug_printout == eDebugPrintout_Data
               ? fSOCK_LogOn : fSOCK_LogDefault);
@@ -446,13 +447,15 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                 sock = s;
             }
         }
-    } else {
+        proxy = 1/*true*/;
+    }
+    if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         TSOCK_Flags tempf = flags;
         if (size  &&  (flags & fSOCK_Secure)) {
             tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
             tempf &= ~fSOCK_Secure;
         }
-        if (net_info->debug_printout) {
+        if (!proxy  &&  net_info->debug_printout) {
             net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
             net_info->firewall = 0;

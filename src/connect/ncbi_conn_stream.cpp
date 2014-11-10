@@ -271,6 +271,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                          TSOCK_Flags         flags)
 {
     EIO_Status status = eIO_Success;
+    bool       proxy = false;
     SOCK       sock = 0;
 
     _ASSERT(net_info);
@@ -295,10 +296,12 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             SOCK_Destroy(sock);
             sock = s;
         }
-    } else {
+        proxy = true;
+    }
+    if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         if (timeout == kDefaultTimeout)
             timeout  = net_info->timeout;
-        if (net_info->debug_printout) {
+        if (!proxy  &&  net_info->debug_printout) {
             SConnNetInfo* x_net_info = ConnNetInfo_Clone(net_info);
             if (x_net_info) {
                 x_net_info->scheme = eURL_Unspec;
@@ -1131,6 +1134,7 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->firewall = 0;
                 net_info->stateless = 0;
                 net_info->lb_disable = 0;
+                net_info->http_proxy_leak = 0;
                 net_info->http_proxy_host[0] = '\0';
                 net_info->http_proxy_port    =   0;
                 net_info->http_proxy_user[0] = '\0';

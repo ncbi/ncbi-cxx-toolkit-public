@@ -298,6 +298,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* NB: *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
+    info->reserved = 0/*MBZ*/;
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -382,10 +383,14 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         /* HTTP proxy password */
         REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                   DEF_CONN_HTTP_PROXY_PASS);
+        /* HTTP proxy leakout */
+        REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
+        info->http_proxy_leak    =   ConnNetInfo_Boolean(str);
     } else {
         info->http_proxy_port    =   0;
         info->http_proxy_user[0] = '\0';
         info->http_proxy_pass[0] = '\0';
+        info->http_proxy_leak    =   0;
     }
 
     /* push HTTP auth tags */
@@ -1329,7 +1334,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            ? "(set)" : "(ignored)"));
     } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
-    s_SaveBool      (s, "http_push_auth",  info->http_push_auth);
+    s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
     s_SaveULong     (s, "max_try",         info->max_try);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
@@ -1349,6 +1354,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            == eDebugPrintout_Data
                                            ? "DATA"
                                            : x_Num(info->debug_printout,buf)));
+    s_SaveBool      (s, "http_push_auth",  info->http_push_auth);
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
     if (info->credentials)

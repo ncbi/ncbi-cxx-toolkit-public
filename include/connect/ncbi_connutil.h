@@ -169,6 +169,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
     unsigned        http_push_auth:1; /* push authorize tags even w/o 401/407*/
+    unsigned        http_proxy_leak:1;/* non-zero when can fallback to direct*/
+    unsigned        reserved:15;      /* MBZ */
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
@@ -327,7 +329,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  http_proxy_user   HTTP_PROXY_USER
  *  http_proxy_pass   HTTP_PROXY_PASS
  *  http_proxy_leak   HTTP_PROXY_LEAK   1 means to also re-try w/o the proxy
- *  proxy_host        PROXY_HOST
+ *  http_push_auth    HTTP_PUSH_AUTH    Send credentials pre-emptively
  *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
  *  max_try           MAX_TRY  
  *  firewall          FIREWALL

@@ -706,6 +706,10 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         temp += ':';
         temp += NStr::UIntToString(net_info->http_proxy_port);
         temp += "'";
+        if (net_info->http_proxy_leak) {	 
+            temp += ".  If that is unsuccessful, a link bypassing the proxy"
+                " will then be attempted";
+        }
     }
     temp += '\n';
 
