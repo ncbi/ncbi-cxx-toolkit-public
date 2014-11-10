@@ -489,7 +489,10 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 inline
 int s_GetGoodDescrMask(void)
 {
-    return CSeqdesc::e_Pub | CSeqdesc::e_Comment | CSeqdesc::e_User;
+    return
+        (1<<CSeqdesc::e_Pub) |
+        (1<<CSeqdesc::e_Comment) |
+        (1<<CSeqdesc::e_User);
 }
 
 
