@@ -569,6 +569,7 @@ public:
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsGpipe(void) const { return m_IsGpipe; }
     inline bool IsGenomic(void) const { return m_IsGenomic; }
+    inline bool IsSeqSubmit(void) const { return m_IsSeqSubmit; }
     inline bool IsSmallGenomeSet(void) const { return m_IsSmallGenomeSet; }
     bool IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev);
     inline bool IsGenbank(void) const { return m_IsGB; }
@@ -793,6 +794,7 @@ private:
     bool m_IsGB;
     bool m_IsGpipe;
     bool m_IsGenomic;
+    bool m_IsSeqSubmit;
     bool m_IsSmallGenomeSet;
     bool m_FeatLocHasGI;
     bool m_ProductLocHasGI;

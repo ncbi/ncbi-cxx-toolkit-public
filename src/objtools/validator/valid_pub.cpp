@@ -1151,7 +1151,7 @@ void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
     EDiagSev sev = eDiag_Error;
 
-    if (!m_NoPubs) {
+    if (!m_NoPubs && !m_IsSeqSubmit) {
         if (seq.IsAa()) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
             if (bsh) {

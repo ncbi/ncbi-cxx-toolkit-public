@@ -238,6 +238,7 @@ void CValidError_imp::Reset(void)
     m_IsGB = false;
     m_IsGpipe = false;
     m_IsGenomic = false;
+    m_IsSeqSubmit = false;
     m_IsSmallGenomeSet = false;
     m_FeatLocHasGI = false;
     m_ProductLocHasGI = false;
@@ -1036,6 +1037,7 @@ bool CValidError_imp::Validate
     // Seq-submit has submission citationTest_Descr_LatLonValue
     if (cs) {
         m_NoPubs = false;
+        m_IsSeqSubmit = true;
     }
 
     // Get first CBioseq object pointer for PostErr below.
@@ -1351,6 +1353,8 @@ void CValidError_imp::Validate(
     if ( ss.GetData().Which() != CSeq_submit::C_Data::e_Entrys ) {
         return;
     }
+
+    m_IsSeqSubmit = true;
 
     // Get CCit_sub pointer
     const CCit_sub* cs = &ss.GetSub().GetCit();
