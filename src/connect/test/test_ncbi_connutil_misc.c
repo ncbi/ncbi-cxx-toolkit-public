@@ -489,7 +489,7 @@ static void TEST_DoubleConv(void)
         double val = NCBI_simple_atof(str, &end);
 
         assert(end  &&  !*end  &&  end == str + strlen(str));
-        if (!(end = strchr(str, '.')))
+        if (!(end = (char*) strchr(str, '.')))
             q = 0;
         else
             q = (int) strlen(str) - (int)(end - str) - 1;

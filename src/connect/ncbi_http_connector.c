@@ -553,8 +553,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             char*          http_user_header;
             const char*    host;
             unsigned short port;
-            const char*    path;
-            const char*    args;
+            char*          path;
+            char*          args;
             char*          temp;
             size_t         len;
 
@@ -584,7 +584,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         if (temp)
                             free(temp);
                         status = eIO_Unknown;
-                        free((void*) path);
+                        free(path);
                         break;
                     } else
                         args = temp;
@@ -593,8 +593,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     assert(uuu->net_info->scheme == eURL_Http);
                     if (!uuu->skip_host  &&  !s_SetHttpHostTag(uuu->net_info)){
                         status = eIO_Unknown;
-                        free((void*) path);
                         assert(!sock);
+                        free(path);
                         break;
                     }
                     if (uuu->flags & fHCC_UrlEncodeArgs) {
@@ -644,7 +644,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         if (temp)
                             free(temp);
                         if (path != uuu->net_info->path)
-                            free((void*) path);
+                            free(path);
                         status = eIO_Unknown;
                         break;
                     }
@@ -703,9 +703,9 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             }
 
             if (path != uuu->net_info->path)
-                free((void*) path);
+                free(path);
             if (args != uuu->net_info->args  &&  args)
-                free((void*) args);
+                free(args);
 
             if (sock) {
                 assert(status == eIO_Success);
