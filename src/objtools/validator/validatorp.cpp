@@ -1033,6 +1033,11 @@ bool CValidError_imp::Validate
 
     Setup(seh);
 
+    // Seq-submit has submission citationTest_Descr_LatLonValue
+    if (cs) {
+        m_NoPubs = false;
+    }
+
     // Get first CBioseq object pointer for PostErr below.
     CTypeConstIterator<CBioseq> seq(ConstBegin(*m_TSE));
     if (!seq) {
