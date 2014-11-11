@@ -347,8 +347,12 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     size_t num_underscores = 0;
                     bool bad_id_chars = false;
                     bool is_NZ = (NStr::CompareNocase(acc, 0, 3, "NZ_") == 0);
-                    size_t i = is_NZ ? 3 : 0;
+                    size_t i = 0;
                     bool letter_after_digit = false;
+
+                    if ( is_NZ ) {
+                        i = 3;
+                    }
 
                     for ( ; i < acc.length(); ++i ) {
                         if ( isupper((unsigned char) acc[i]) ) {
@@ -369,7 +373,9 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, ctx);
                     } else if ( is_NZ  &&  num_letters == 4  && 
-                        num_digits == 8  &&  num_underscores == 0 ) {
+                        ( num_digits == 8 || num_digits == 9 )  &&  num_underscores == 0 ) {
+                        // valid accession - do nothing!
+                    } else if ( is_NZ  &&  ValidateAccessionString (acc, false) == eAccessionFormat_valid ) {
                         // valid accession - do nothing!
                     } else if ( num_letters == 2  &&
                         (num_digits == 6  ||  num_digits == 8  || num_digits == 9)  &&
