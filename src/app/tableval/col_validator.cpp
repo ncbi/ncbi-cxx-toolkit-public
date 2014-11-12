@@ -284,27 +284,30 @@ DEFINE_COL_VALIDATOR(date)
        "M-D-Y", "M/D/Y",
        0
     };
-    bool bad_format(false), in_future(false);
-    CSubSource::IsCorrectDateFormat(value, bad_format, in_future);
-
-    if (bad_format)
-    for (const char** fmt = supported_formats; *fmt && bad_format; fmt++)
+    bool bad_format(true), in_future(false);
+    if (CSubSource::IsISOFormatDate(value))
     {
-       //check format
-       //cout << *fmt << endl;
-       try
-       {
-           CTime time(value, *fmt);
-           bad_format = false;
-           in_future = (time > CTime(CTime::eCurrent));
-           
-       }
-       catch (const CException& ex)
-       {
-           error = ex.GetMsg();
-           //cout << error.c_str() << endl;
-       }
+       CRef<CDate> date(CSubSource::GetDateFromISODate(value));
+       bad_format = false;
+       in_future = (date->Compare(CDate(CTime(CTime::eCurrent))) == CDate::eCompare_after);
     }
+    else
+    {
+      for (const char** fmt = supported_formats; *fmt && bad_format; fmt++)
+      {
+         try
+         {
+             CTime time(value, *fmt);
+             bad_format = false;
+             in_future = (time > CTime(CTime::eCurrent));
+         }
+         catch (const CException& ex)
+         {
+             error = ex.GetMsg();
+         }
+      }
+    }
+
     if (bad_format)
       error = "Unsupported date format";
     else
