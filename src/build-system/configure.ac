@@ -2255,6 +2255,7 @@ else
    AC_MSG_RESULT(no)
 fi
 
+AC_PATH_PROG(BASENAME, basename)
 AC_PATH_PROG(SED, sed)
 AC_PATH_PROG(TOUCH, touch, [], /bin:/usr/bin:$PATH)
 dnl AC_PATH_PROG(GREP, grep)
