@@ -103,6 +103,9 @@ if [ $status -gt 128  -a  ! -f core ]; then
 
    # Get backstrace from coredump
    if [ -f core -a -n "$NCBI_CHECK_BACK_TRACE" -a -z "$is_script" ]; then
+      printf '\n\n\n\n'
+      printf '%.s#' {1..60}
+      printf '\n\n'
       echo "--- Backtrace:" $cmd
       eval $NCBI_CHECK_BACK_TRACE $exe core
       echo
