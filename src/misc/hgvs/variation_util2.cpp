@@ -1794,22 +1794,14 @@ string Translate(const string& nuc_str, bool is_mito)
 
 CVariation_inst::EType CalcInstTypeForAA(const string& prot_ref_str, const string& prot_delta_str)
 {
-    CVariation_inst::EType inst_type;
-    if(prot_delta_str.size() == 0 && prot_ref_str.size() > 0) {
-        inst_type = CVariation_inst::eType_del;
-    } else if(prot_delta_str.size() > 0 && prot_ref_str.size() == 0) {
-        inst_type = CVariation_inst::eType_ins;
-    } else if(prot_delta_str.size() != prot_ref_str.size()) {
-        inst_type = CVariation_inst::eType_prot_other;
-    } else if(prot_ref_str == prot_delta_str) {
-        inst_type = CVariation_inst::eType_prot_silent;
-    } else if(prot_ref_str.size() > 1) {
-        inst_type = CVariation_inst::eType_prot_other;
-    } else if(NStr::Find(prot_delta_str, "*") != NPOS) {
-        inst_type = CVariation_inst::eType_prot_nonsense;
-    } else {
-        inst_type = CVariation_inst::eType_prot_missense;
-    }
+    CVariation_inst::EType inst_type = 
+        prot_delta_str.size() == 0 && prot_ref_str.size() > 0 ? CVariation_inst::eType_del
+      : prot_delta_str.size() > 0 && prot_ref_str.size() == 0 ? CVariation_inst::eType_ins
+      : prot_delta_str.size() != prot_ref_str.size()          ? CVariation_inst::eType_prot_other
+      : prot_ref_str == prot_delta_str                        ? CVariation_inst::eType_prot_silent
+      : prot_ref_str.size() > 1                               ? CVariation_inst::eType_prot_other
+      : NStr::Find(prot_delta_str, "*") != NPOS               ? CVariation_inst::eType_prot_nonsense
+      :                                                         CVariation_inst::eType_prot_missense;
     return inst_type;
 }
 
@@ -2318,6 +2310,11 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     int num_ref_codons = (nuc_ref_prefix.size() + 2) / 3;
     int num_var_codons = (nuc_var_prefix.size() + 2) / 3;
 
+
+    if(verbose) NcbiCerr << "nuc_ref_str: " << nuc_ref_str << "\n"
+                         << "nuc_var_str: " << nuc_var_str << "\n";
+
+
     if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << "\n"
                          << "prot_var_str: " << prot_var_str << "\n";
 
@@ -2356,6 +2353,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
         prot_ref_str = prot_ref_str.substr(common_prot_prefix_len);
         prot_var_str = prot_var_str.substr(common_prot_prefix_len);
+
+        if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << ":" << prot_ref_str.size() << "\n"
+                             << "prot_var_str: " << prot_var_str << ":" << prot_var_str.size() << "\n";
       
         if(frameshift_phase == 0) {
 
@@ -2381,7 +2381,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
             //Keep the frst AA in case of frameshifts
             //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  instead of NP_000483.3:p.Lys1177delfs 
             prot_ref_str.resize(min(static_cast<size_t>(1), prot_ref_str.size()));
-            prot_var_str.resize(min(static_cast<size_t>(1), prot_ref_str.size()));
+            prot_var_str.resize(min(static_cast<size_t>(1), prot_var_str.size()));
         }
 
         //adjust the protein location. 
@@ -2401,12 +2401,14 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         codons_loc = prot2nuc_mapper->Map(*prot_loc); 
         codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL));
 
-        if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << "\n"
-                             << "prot_var_str: " << prot_var_str << "\n";
+        if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << ":" << prot_ref_str.size() << "\n"
+                             << "prot_var_str: " << prot_var_str << ":" << prot_var_str.size() << "\n";
     }
 
 
-    if(verbose)  NcbiCerr << "reference codons: " << num_ref_codons << "; variant codons: " << num_var_codons << "; common prefix: " << common_prot_prefix_len << "\n";
+    if(verbose)  NcbiCerr << "reference codons: " << num_ref_codons 
+                          << "; variant codons: " << num_var_codons 
+                          << "; common prefix: " << common_prot_prefix_len << "\n";
 
 
     //if(verbose) NcbiCerr << "prot_ref  : " << prot_ref_str << "\n" << "prot_delta: " << prot_var_str << "\ntruncated prefix: " << common_prot_prefix_len << "\n Adjusted codons loc: " << MSerial_AsnText << *codons_loc;
@@ -2460,26 +2462,42 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     prot_v->SetData().SetInstance().SetType(CalcInstTypeForAA(prot_ref_str, prot_var_str));
 
-
-
     //set inst data
     CRef<CDelta_item> di(new CDelta_item);
     prot_v->SetData().SetInstance().SetDelta().push_back(di);
 
     if(prot_var_str.size() > 0) {
 
-        //Use NA alphabet instead of AA, as the dbSNP requested original codons.
-        //The downstream process can always translate this to AAs.
+        // Use NA alphabet instead of AA, as the dbSNP requested original codons.
+        // The downstream process can always translate this to AAs.
         //
-        //Note, however, that we cannot always use the original variant codons sequence, because
-        //the location may have been adjusted downstream (see comments at TruncateCommonPrefixAndSuffix).
-        //So we'll have to get this from nuc_var_str.
+        // Note, however, that we cannot always use the original variant codons sequence, because
+        // the location may have been adjusted downstream (see comments at TruncateCommonPrefixAndSuffix).
+        // So we'll have to get this from nuc_var_str.
         if(false && common_prot_prefix_len == 0) {
             di->SetSeq().Assign(v->GetData().GetInstance().GetDelta().front()->GetSeq());
         } else {
-            string adjusted_codons_str = nuc_var_str.substr(common_prot_prefix_len * 3, prot_var_str.size() * 3);
-            di->SetSeq().SetLiteral().SetLength(adjusted_codons_str.size());
-            di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set() = adjusted_codons_str;
+
+            if(verbose) NcbiCerr
+                   << "inst-type: " << prot_v->GetData().GetInstance().GetType()
+                   << "; nuc_var_len: " << nuc_var_str.size() 
+                   << "; nuc_var_str: " << nuc_var_str
+                   << "; prefix_len: " << common_prot_prefix_len * 3 
+                   << "; var_codons:" << prot_var_str.size() * 3 << "\n";
+
+            // Note: need to take min here, because common_prot_prefix_len * 3 may exceed
+            // nuc_var_str.size() due to translation of a partial codon.
+            string adjusted_codons_str = nuc_var_str.substr(
+                    min<int>(nuc_var_str.size(), common_prot_prefix_len * 3), 
+                    prot_var_str.size() * 3);
+
+            if(adjusted_codons_str.size() > 0) {
+                di->SetSeq().SetLiteral().SetLength(adjusted_codons_str.size());
+                di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set() = adjusted_codons_str;
+            } else {
+                di->SetSeq().SetThis();
+                di->SetAction(CDelta_item::eAction_del_at);
+            }
         }
 
         if(prot_ref_str.size() == 0) {
