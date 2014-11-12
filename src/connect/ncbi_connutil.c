@@ -1704,7 +1704,8 @@ extern SOCK URL_Connect
                 if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr)))
                     x_hdr = user_hdr;
             }
-        }
+        } else
+            x_hdr = user_hdr;
 
         if (args  &&  encode_args  &&  (x_add = strcspn(args, "#")) > 0) {
             /* URL-encode "args", if any specified */
