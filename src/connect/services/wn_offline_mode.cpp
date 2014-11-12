@@ -266,6 +266,9 @@ int SGridWorkerNodeImpl::OfflineRun()
         }
     }
 
+    while (!m_ThreadPool->IsEmpty())
+        SleepMilliSec(30);
+
     x_StopWorkerThreads();
 
     if (job_count == 1) {
