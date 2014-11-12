@@ -52,6 +52,11 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
     void CheckIfCanceled();
 
     void x_PrintRequestStop();
+
+    virtual void PutProgressMessage(const string& msg,
+        bool send_immediately = false);
+    virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
+    virtual void JobDelayExpiration(unsigned runtime_inc);
     virtual void x_RunJob();
 
     SGridWorkerNodeImpl* m_WorkerNode;

@@ -48,14 +48,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CWorkerNodeJobContext     --
-
-CWorkerNodeJobContext::~CWorkerNodeJobContext()
-{
-}
-
 const CNetScheduleJob& CWorkerNodeJobContext::GetJob() const
 {
     return m_Impl->m_Job;
@@ -227,33 +219,40 @@ void CWorkerNodeJobContext::RescheduleJob(
 void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
                                                bool send_immediately)
 {
-    m_Impl->CheckIfCanceled();
+    m_Impl->PutProgressMessage(msg, send_immediately);
+}
+
+void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
+                                               bool send_immediately)
+{
+    CheckIfCanceled();
     if (!send_immediately &&
-            !m_Impl->m_ProgressMsgThrottler.Approve(
-                    CRequestRateControl::eErrCode)) {
+            !m_ProgressMsgThrottler.Approve(CRequestRateControl::eErrCode)) {
         LOG_POST(Warning << "Progress message \"" <<
                 msg << "\" has been suppressed.");
         return;
     }
 
-    if (m_Impl->m_WorkerNode->m_ProgressLogRequested) {
-        LOG_POST(GetJobKey() << " progress: " <<
+    if (m_WorkerNode->m_ProgressLogRequested) {
+        LOG_POST(m_Job.job_id << " progress: " <<
                 NStr::TruncateSpaces(msg, NStr::eTrunc_End));
     }
 
     try {
-        if (m_Impl->m_Job.progress_msg.empty() ) {
-            m_Impl->m_NetScheduleExecutor.GetProgressMsg(m_Impl->m_Job);
-        }
-        if (!m_Impl->m_Job.progress_msg.empty())
-            m_Impl->m_NetCacheAPI.PutData(m_Impl->m_Job.progress_msg,
-                    msg.data(), msg.length());
-        else {
-            m_Impl->m_Job.progress_msg =
-                    m_Impl->m_NetCacheAPI.PutData(msg.data(), msg.length());
+        if (m_Job.progress_msg.empty()) {
+            m_NetScheduleExecutor.GetProgressMsg(m_Job);
 
-            m_Impl->m_NetScheduleExecutor.PutProgressMsg(m_Impl->m_Job);
+            if (m_Job.progress_msg.empty()) {
+                m_Job.progress_msg =
+                        m_NetCacheAPI.PutData(msg.data(), msg.length());
+
+                m_NetScheduleExecutor.PutProgressMsg(m_Job);
+
+                return;
+            }
         }
+
+        m_NetCacheAPI.PutData(m_Job.progress_msg, msg.data(), msg.length());
     }
     catch (exception& ex) {
         ERR_POST_X(6, "Couldn't send a progress message: " << ex.what());
@@ -262,9 +261,13 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
 
 void CWorkerNodeJobContext::JobDelayExpiration(unsigned runtime_inc)
 {
+    m_Impl->JobDelayExpiration(runtime_inc);
+}
+
+void SWorkerNodeJobContextImpl::JobDelayExpiration(unsigned runtime_inc)
+{
     try {
-        m_Impl->m_NetScheduleExecutor.JobDelayExpiration(GetJobKey(),
-                runtime_inc);
+        m_NetScheduleExecutor.JobDelayExpiration(m_Job.job_id, runtime_inc);
     }
     catch (exception& ex) {
         ERR_POST_X(8, "CWorkerNodeJobContext::JobDelayExpiration: " <<
@@ -279,23 +282,28 @@ bool CWorkerNodeJobContext::IsLogRequested() const
 
 CNetScheduleAdmin::EShutdownLevel CWorkerNodeJobContext::GetShutdownLevel()
 {
-    if (m_Impl->m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
+    return m_Impl->GetShutdownLevel();
+}
+
+CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
+{
+    if (m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
         try {
             ENetScheduleQueuePauseMode pause_mode;
-            switch (m_Impl->m_NetScheduleExecutor.GetJobStatus(GetJobKey(),
+            switch (m_NetScheduleExecutor.GetJobStatus(m_Job.job_id,
                     NULL, &pause_mode)) {
             case CNetScheduleAPI::eRunning:
                 if (pause_mode == eNSQ_WithPullback) {
-                    m_Impl->m_WorkerNode->SetJobPullbackTimer(
-                            m_Impl->m_WorkerNode->m_DefaultPullbackTimeout);
+                    m_WorkerNode->SetJobPullbackTimer(
+                            m_WorkerNode->m_DefaultPullbackTimeout);
                     LOG_POST("Pullback request from the server, "
                             "(default) pullback timeout=" <<
-                            m_Impl->m_WorkerNode->m_DefaultPullbackTimeout);
+                            m_WorkerNode->m_DefaultPullbackTimeout);
                 }
                 break;
 
             case CNetScheduleAPI::eCanceled:
-                m_Impl->x_SetCanceled();
+                x_SetCanceled();
                 /* FALL THROUGH */
 
             default:
@@ -303,12 +311,12 @@ CNetScheduleAdmin::EShutdownLevel CWorkerNodeJobContext::GetShutdownLevel()
             }
         }
         catch(exception& ex) {
-            ERR_POST("Cannot retrieve job status for " << GetJobKey() <<
+            ERR_POST("Cannot retrieve job status for " << m_Job.job_id <<
                     ": " << ex.what());
         }
 
-    if (m_Impl->m_WorkerNode->CheckForPullback(m_Impl->m_JobGeneration)) {
-        LOG_POST("Pullback timeout for " << m_Impl->m_Job.job_id);
+    if (m_WorkerNode->CheckForPullback(m_JobGeneration)) {
+        LOG_POST("Pullback timeout for " << m_Job.job_id);
         return CNetScheduleAdmin::eShutdownImmediate;
     }
 
