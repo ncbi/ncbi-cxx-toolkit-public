@@ -237,6 +237,7 @@ void CValidError_imp::Reset(void)
     m_IsGI = false;
     m_IsGB = false;
     m_IsGpipe = false;
+    m_IsLocalGeneralOnly = true;
     m_IsGenomic = false;
     m_IsSeqSubmit = false;
     m_IsSmallGenomeSet = false;
@@ -2646,6 +2647,9 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     break;
                 default:
                     break;
+            }
+            if (typ != CSeq_id::e_Local && typ != CSeq_id::e_General) {
+                m_IsLocalGeneralOnly = false;
             }
         }
     }
