@@ -1665,6 +1665,7 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
                                        flags, user_key.m_AppDomain,
                                        user_key.m_UniqueID,
                                        TFileTrack_Site::GetDefault().c_str());
+    object_loc_struct.SetServiceName(m_Service);
     g_SetNetICacheParams(object_loc_struct, icache_client);
 
     ret_val.object_key = object_loc_struct.GetUniqueKey();
@@ -1765,10 +1766,11 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
         m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
 
         return g_CreateNetStorageObject(net_storage,
+                                        m_Service,
                                         m_DBObjectID, flags);
     }
 
-    return net_storage.Create(flags);
+    return g_CreateNetStorageObject(net_storage, m_Service, flags);
 }
 
 

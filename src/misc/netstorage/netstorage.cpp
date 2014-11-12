@@ -1167,13 +1167,37 @@ CNetStorageByKey g_CreateNetStorageByKey(const string& domain_name,
 
 CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
-        Int8 object_loc,
+        const string& service_name,
+        Int8 object_id,
         TNetStorageFlags flags)
 {
     CNetStorageObject result = netstorage_api.Create(flags);
 
-    static_cast<SNetStorageObjectAPIImpl*>((SNetStorageObjectImpl*) result)->
-            m_ObjectLoc.SetObjectID((Uint8) object_loc);
+    SNetStorageObjectAPIImpl* object_impl =
+            static_cast<SNetStorageObjectAPIImpl*>(
+                    (SNetStorageObjectImpl*) result);
+
+    object_impl->m_ObjectLoc.SetObjectID((Uint8) object_id);
+
+    if (!service_name.empty())
+        object_impl->m_ObjectLoc.SetServiceName(service_name);
+
+    return result;
+}
+
+CNetStorageObject g_CreateNetStorageObject(
+        CNetStorage netstorage_api,
+        const string& service_name,
+        TNetStorageFlags flags)
+{
+    CNetStorageObject result = netstorage_api.Create(flags);
+
+    SNetStorageObjectAPIImpl* object_impl =
+            static_cast<SNetStorageObjectAPIImpl*>(
+                    (SNetStorageObjectImpl*) result);
+
+    if (!service_name.empty())
+        object_impl->m_ObjectLoc.SetServiceName(service_name);
 
     return result;
 }

@@ -99,7 +99,14 @@ CNetStorageByKey g_CreateNetStorageByKey(
 /// @internal
 CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
-        Int8 object_loc,
+        const string& service_name,
+        Int8 object_id,
+        TNetStorageFlags flags);
+
+/// @internal
+CNetStorageObject g_CreateNetStorageObject(
+        CNetStorage netstorage_api,
+        const string& service_name,
         TNetStorageFlags flags);
 
 /// @internal
