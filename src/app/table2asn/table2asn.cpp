@@ -142,8 +142,10 @@ private:
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
     int build_num = 
-#ifdef NCBI_PRODUCTION_VER
+#if defined(NCBI_PRODUCTION_VER)
     NCBI_PRODUCTION_VER
+#elif defined(NCBI_DEVELOPMENT_VER)
+    NCBI_DEVELOPMENT_VER 
 #else
     0
 #endif
