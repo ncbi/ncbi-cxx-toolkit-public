@@ -4680,9 +4680,11 @@ list<string>& NStr::Justify(const CTempString& str,
             SIZE_TYPE wlen = pos - start;
             if (!wlen)
                 break;
-            if (len + wlen + nw > width) {
+            if (width < len + nw + wlen) {
                 if (nw) {
-                    pos = start; // Will have to rescan this word again
+                    if (width < wlen  &&  len < width - len)
+                        big = true;  // Big word is coming, no space stretch 
+                    pos = start;  // Will have to rescan this word again
                     break;
                 }
                 big = true;  // Long line with a long lonely word :-/
