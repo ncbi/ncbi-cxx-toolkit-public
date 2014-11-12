@@ -1535,4 +1535,123 @@ Variation ::= {
     }
   }
 }
-
+Variation ::= {
+  name "XM_006517486.1:c.543_546delTATC",
+  description "",
+  placements {
+    {
+      loc int {
+        from 542,
+        to 545,
+        strand plus,
+        id other {
+          accession "XM_006517486",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 4,
+        seq-data iupacna "TATC"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 102639338
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 192,
+                  strand plus,
+                  id other {
+                    accession "XP_006517549",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "S"
+                }
+              },
+              {
+                loc int {
+                  from 576,
+                  to 578,
+                  strand plus,
+                  id other {
+                    accession "XM_006517486",
+                    version 1
+                  }
+                },
+                mol cdna,
+                frame 2,
+                seq {
+                  length 3,
+                  seq-data iupacna "TCT"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect frameshift
+            },
+            data instance {
+              type del,
+              delta {
+                {
+                  seq this NULL,
+                  action del-at
+                }
+              }
+            },
+            frameshift {
+              phase 2
+            },
+            so-terms {
+              1589
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 4,
+                seq-data iupacna "TATC"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
