@@ -3220,8 +3220,8 @@ string s_NStr_Join(const T& arr, const CTempString& delim)
         return kEmptyStr;
     }
 
-    string result = arr.front();
     typename T::const_iterator it = arr.begin();
+    string result = *it;
     SIZE_TYPE needed = result.size();
 
     while (++it != arr.end()) {
@@ -3259,6 +3259,19 @@ string NStr::Join(const vector<CTempString>& arr, const CTempString& delim)
 {
     return s_NStr_Join(arr, delim);
 }
+
+
+string NStr::Join(const set<string>& arr, const CTempString& delim)
+{
+    return s_NStr_Join(arr, delim);
+}
+
+
+string NStr::Join(const set<CTempString>& arr, const CTempString& delim)
+{
+    return s_NStr_Join(arr, delim);
+}
+
 
 
 enum ELanguage {

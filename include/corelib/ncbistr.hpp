@@ -43,6 +43,7 @@
 #endif
 #include <stdarg.h>
 #include <time.h>
+#include <set>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -2372,11 +2373,12 @@ public:
     /// @return 
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
-    static string Join(const list<string>& arr,      const CTempString& delim);
-    static string Join(const list<CTempString>& arr, const CTempString& delim);
-    static string Join(const vector<string>& arr,    const CTempString& delim);
-    static string Join(const vector<CTempString>& arr,
-                       const CTempString& delim);
+    static string Join(const list<string>& arr,        const CTempString& delim);
+    static string Join(const list<CTempString>& arr,   const CTempString& delim);
+    static string Join(const vector<string>& arr,      const CTempString& delim);
+    static string Join(const vector<CTempString>& arr, const CTempString& delim);
+    static string Join(const set<string>& arr,         const CTempString& delim);
+    static string Join(const set<CTempString>& arr,    const CTempString& delim);
 
 
     /// How to display printable strings.
