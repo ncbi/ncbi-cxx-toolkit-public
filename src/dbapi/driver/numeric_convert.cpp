@@ -95,15 +95,14 @@ Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num)
     int BYTE_NUM = s_NumericBytesPerPrec[precision - 1];
     Int8 my_long = 0;
 
-    if (BYTE_NUM <= 9) {
-        for (int i = 1; i < BYTE_NUM; i++) {
-            my_long = my_long*256 + cs_num[i];
+    for (int i = 1; i < BYTE_NUM; i++) {
+        if (my_long > kMax_I8 >> 8) {
+            return 0;
         }
-        if (cs_num[0] != 0) {
-            my_long*= -1;
-        }
-    } else {
-        return 0;
+        my_long = my_long*256 + cs_num[i];
+    }
+    if (cs_num[0] != 0) {
+        my_long*= -1;
     }
 
     return my_long;

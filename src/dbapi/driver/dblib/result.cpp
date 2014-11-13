@@ -1384,6 +1384,21 @@ EDB_Type CDBL_Result::GetDataType(int n)
     }
 
     DBTYPEINFO* t = Check(dbcoltypeinfo(GetCmd(), n));
+    // 2**63 ~= 9.2e18; however, Sybase returns (U)BIGINT as
+    // NUMERIC(20,0), albeit with different usertype values.
+    if (t->scale > 0  ||  t->precision > 20) {
+        return eDB_Numeric;
+    } else if (t->precision < 20) {
+        return eDB_BigInt;
+    } else {
+        switch (dbcolutype(GetCmd(), n)) {
+        case 43: // BIGINT
+        case 46: // UBIGINT
+            return eDB_BigInt;
+        default:
+            return eDB_Numeric;
+        }
+    }
     return t->scale == 0 && t->precision < 20 ? eDB_BigInt : eDB_Numeric;
 }
 

@@ -177,8 +177,17 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
     case CS_INT_TYPE:           return eDB_Int;
     case CS_LONG_TYPE:          return eDB_BigInt;
     case CS_DECIMAL_TYPE:
-    case CS_NUMERIC_TYPE:       return (fmt.scale == 0  &&  fmt.precision < 20)
-                                ? eDB_BigInt : eDB_Numeric;
+    case CS_NUMERIC_TYPE:
+        // 2**63 ~= 9.2e18; however, Sybase returns (U)BIGINT as
+        // NUMERIC(20,0), albeit with different usertype values.
+        if (fmt.scale > 0  ||  fmt.precision > 20) {
+            return eDB_Numeric;
+        } else if (fmt.precision < 20
+                   ||  fmt.usertype == 43  ||  fmt.usertype == 46) {
+            return eDB_BigInt;
+        } else {
+            return eDB_Numeric;
+        }
     case CS_FLOAT_TYPE:         return eDB_Double;
     case CS_REAL_TYPE:          return eDB_Float;
     case CS_TEXT_TYPE:          return eDB_Text;
