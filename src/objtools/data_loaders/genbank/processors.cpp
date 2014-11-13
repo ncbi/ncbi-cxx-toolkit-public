@@ -440,10 +440,22 @@ bool s_GoodDigits(CTempString s) {
 CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 {
     CSeq_id_Handle master_idh;
-    if ( idh.Which() != CSeq_id::e_Genbank &&
-         idh.Which() != CSeq_id::e_Other ) {
+
+    switch ( idh.Which() ) { // shortcut to exclude all non Textseq-id types
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Local:
+    case CSeq_id::e_Gi:
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Patent:
+    case CSeq_id::e_General:
+    case CSeq_id::e_Pdb:
         return master_idh;
+    default:
+        break;
     }
+
     CConstRef<CSeq_id> id = idh.GetSeqId();
     const CTextseq_id* text_id = id->GetTextseq_Id();
     if ( !text_id || !text_id->IsSetAccession() ) {
@@ -451,6 +463,18 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
     }
 
     CTempString acc = text_id->GetAccession();
+
+    CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+    switch ( type & CSeq_id::eAcc_division_mask ) {
+        // accepted accession types
+    case CSeq_id::eAcc_wgs:
+    case CSeq_id::eAcc_wgs_intermed:
+    case CSeq_id::eAcc_tsa:
+        break;
+    default:
+        return master_idh;
+    }
+
     bool have_nz = NStr::StartsWith(acc, "NZ_");
     SIZE_TYPE letters_pos = have_nz? 3: 0;
     SIZE_TYPE digits_pos = letters_pos+4;
@@ -470,15 +494,12 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
         return master_idh;
     }
     CSeq_id master_id;
-    CTextseq_id* master_text_id = 0;
-    if ( idh.Which() == CSeq_id::e_Genbank ) {
-        master_text_id = &master_id.SetGenbank();
-    }
-    else {
-        master_text_id = &master_id.SetOther();
-    }
+    master_id.Assign(*id);
+    CTextseq_id* master_text_id =
+        const_cast<CTextseq_id*>(master_id.GetTextseq_Id());
     string master_acc = acc.substr(0, digits_pos);
     master_acc.resize(acc.size(), '0');
+    master_text_id->Reset();
     master_text_id->SetAccession(master_acc);
     master_text_id->SetVersion(version);
     master_idh = CSeq_id_Handle::GetHandle(master_id);
