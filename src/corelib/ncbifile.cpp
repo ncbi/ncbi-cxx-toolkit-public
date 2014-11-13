@@ -4583,7 +4583,7 @@ void s_GetFileSystemInfo(const string&               path,
     }
 #  endif
 
-#  if defined(NCBI_OS_LINUX)  &&  defined(HAVE_STATFS)
+#  if (defined(NCBI_OS_LINUX) || defined(NCBI_OS_CYGWIN))  &&  defined(HAVE_STATFS)
     
     GET_STATFS_INFO;
     if (flags & fFSI_Type) {
@@ -4695,12 +4695,14 @@ void s_GetFileSystemInfo(const string&               path,
     fs_name_ptr = st.f_fstypename;
 
 #  else
+
      // Unknown UNIX OS
     #if defined(HAVE_STATVFS)
         GET_STATVFS_INFO;
     #elif defined(HAVE_STATFS)
         GET_STATFS_INFO;
     #endif
+
 #  endif
 #endif
 
