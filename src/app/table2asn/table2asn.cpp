@@ -413,9 +413,15 @@ int CTbl2AsnApp::Run(void)
     else
     if (args["Y"])
     {
-        CNcbiIfstream comments(args["Y"].AsString().c_str());
-        comments >> m_context.m_Comment;
+        CRef<ILineReader> reader(ILineReader::New(args["Y"].AsInputFile()));
+        while (!reader->AtEOF())
+        {
+            reader->ReadLine();
+            m_context.m_Comment += reader->GetCurrentLine();
+            m_context.m_Comment += " ";
+        }
     }
+    NStr::TruncateSpacesInPlace(m_context.m_Comment);
 
     m_context.m_GenomicProductSet = args["g"].AsBoolean();
     m_context.m_HandleAsSet = args["s"].AsBoolean();
