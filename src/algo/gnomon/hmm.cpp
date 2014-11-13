@@ -526,7 +526,7 @@ void CLorentz::Init(const CLength_distribution_params& from)
         m_clscore[i] = m_clscore[i+1]+m_score[i+1]*m_step;
 
     for(int i = 0; i < num; ++i)
-        m_score[i] = (m_score[i] == 0) ? BadScore() : log(m_score[i]);
+        m_score[i] = (m_score[i] == 0) ? -25 : log(m_score[i]);
 }
 
 double CLorentz::Through(int seqlen) const
