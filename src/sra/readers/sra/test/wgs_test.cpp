@@ -88,10 +88,9 @@ void CWGSTestApp::Init(void)
                             CArgDescriptions::eString,
                             "AAAA");
 
-    arg_desc->AddDefaultKey("limit_count", "LimitCount",
-                            "Number of entries to read (0 - unlimited)",
-                            CArgDescriptions::eInteger,
-                            "100");
+    arg_desc->AddOptionalKey("limit_count", "LimitCount",
+                             "Number of entries to read (0 - unlimited)",
+                             CArgDescriptions::eInteger);
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("withdrawn", "Include withdrawn sequences");
@@ -314,7 +313,10 @@ int CWGSTestApp::Run(void)
     string path = args["file"].AsString();
     bool verbose = args["verbose"];
     bool print_seq = args["print_seq"];
-    size_t limit_count = args["limit_count"].AsInteger();
+    size_t limit_count = 100;
+    if ( args["limit_count"] ) {
+        limit_count = args["limit_count"].AsInteger();
+    }
 
     CNcbiOstream& out = cout;
 
@@ -352,6 +354,9 @@ int CWGSTestApp::Run(void)
     
     bool is_scaffold;
     uint64_t row = wgs_db.ParseRow(path, &is_scaffold);
+    if ( row && !args["limit_count"] ) {
+        limit_count = 1;
+    }
 
     if ( 1 ) {
         CWGSSeqIterator::EWithdrawn withdrawn;
@@ -366,9 +371,13 @@ int CWGSTestApp::Run(void)
         // try accession
         if ( row ) {
             // print only one accession
-            limit_count = 1;
             if ( !is_scaffold ) {
-                it = CWGSSeqIterator(wgs_db, row, withdrawn);
+                if ( !args["limit_count"] ) {
+                    it = CWGSSeqIterator(wgs_db, row, withdrawn);
+                }
+                else {
+                    it = CWGSSeqIterator(wgs_db, row, row+limit_count-1, withdrawn);
+                }
                 if ( !it ) {
                     out << "No such row: "<<path
                         << NcbiEndl;

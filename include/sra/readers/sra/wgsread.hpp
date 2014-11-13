@@ -363,15 +363,26 @@ public:
     explicit
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     EWithdrawn withdrawn = eExcludeWithdrawn);
-    CWGSSeqIterator(const CWGSDb& wgs_db, uint64_t row,
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    uint64_t row,
                     EWithdrawn withdrawn = eExcludeWithdrawn);
-    CWGSSeqIterator(const CWGSDb& wgs_db, CTempString acc,
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    uint64_t first_row, uint64_t last_row,
+                    EWithdrawn withdrawn = eExcludeWithdrawn);
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    CTempString acc,
                     EWithdrawn withdrawn = eExcludeWithdrawn);
     ~CWGSSeqIterator(void);
 
     DECLARE_SAFE_BOOL_METHOD(m_CurrId < m_FirstBadId);
 
-    CWGSSeqIterator& operator++(void);
+    CWGSSeqIterator& operator++(void)
+        {
+            x_CheckValid("CWGSSeqIterator::operator++");
+            ++m_CurrId;
+            x_Settle();
+            return *this;
+        }
 
     uint64_t GetCurrentRowId(void) const {
         return m_CurrId;
@@ -445,10 +456,8 @@ protected:
         return m_Db.GetNCObject();
     }
     
-    bool x_Excluded(void) const {
-        return m_Withdrawn == eExcludeWithdrawn && *this &&
-            GetGBState() == 3 /* withdrawn */;
-    }
+    void x_Settle(void);
+    bool x_Excluded(void) const;
 
     void x_ReportInvalid(const char* method) const;
     void x_CheckValid(const char* method) const {

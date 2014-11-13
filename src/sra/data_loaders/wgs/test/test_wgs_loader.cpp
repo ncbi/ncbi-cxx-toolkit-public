@@ -809,6 +809,35 @@ BOOST_AUTO_TEST_CASE(FetchSeq17)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeq18)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("CCMW01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq19)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("CCMW01000002");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
 static const bool s_MakeFasta = 0;
 
 
