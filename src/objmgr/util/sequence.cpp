@@ -519,13 +519,21 @@ TGi GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
 {
     // Clear throw-on-error flag
     EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
-    CSeq_id acc_id(acc);
-    // Get gi only if acc a real accession.
-    if ( acc_id.GetTextseq_Id() ) {
-        CSeq_id_Handle idh = GetId(acc_id, scope, get_id_flags);
-        if ( idh.IsGi() ) {
-            return idh.GetGi();
+    try {
+        CSeq_id acc_id(acc);
+        // Get gi only if acc a real accession.
+        if ( acc_id.GetTextseq_Id() ) {
+            CSeq_id_Handle idh = GetId(acc_id, scope, get_id_flags);
+            if ( idh.IsGi() ) {
+                return idh.GetGi();
+            }
         }
+    }
+    catch (exception& e) {
+        if ( (flags & eGetId_ThrowOnError) != 0 ) {
+            throw e;
+        }
+        return ZERO_GI;
     }
     if ( (flags & eGetId_ThrowOnError) != 0 ) {
         NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
