@@ -631,6 +631,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
             default:
                 _TROUBLE;
             }
+
+            if (is_null) {
+                _ASSERT(outlen == 0);
+                _ASSERT(m_NullValue[GetCurrentItemNum()] != eIsNotNull);
+                val->AssignNULL();
+                break;
+            }
         }
         break;
     }
