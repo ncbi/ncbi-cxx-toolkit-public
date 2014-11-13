@@ -429,6 +429,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_PKG_SingleItemSet,
     eErr_SEQ_PKG_MisplacedMolInfo,
     eErr_SEQ_PKG_ImproperlyNestedSets,
+    eErr_SEQ_PKG_SeqSubmitWithWgsSet,
     eErr_SEQ_FEAT_Range,
     eErr_SEQ_FEAT_MixedStrand,
     eErr_SEQ_FEAT_SeqLocOrder,
@@ -1367,6 +1368,20 @@ void CValidError_imp::Validate(
     // Just loop thru CSeq_entrys
     FOR_EACH_SEQENTRY_ON_SEQSUBMIT (se_itr, ss) {
         const CSeq_entry& se = **se_itr;
+        if(se.IsSet())
+        {
+            const CBioseq_set &set = se.GetSet();
+            if(set.IsSetClass() &&
+               set.GetClass() == CBioseq_set::eClass_wgs_set)
+            {
+                CSeq_entry_Handle seh;
+                seh = scope->GetSeq_entryHandle(se);
+                Setup(seh);
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_SeqSubmitWithWgsSet,
+                        "File was created as a wgs-set, but should be a batch submission instead.",
+                        seh.GetCompleteSeq_entry()->GetSet());
+            }
+        }
         Validate (se, cs, scope);
     }
 }

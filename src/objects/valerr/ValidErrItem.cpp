@@ -829,6 +829,9 @@ however be referenced remotely." } },
    { eErr_SEQ_PKG_ImproperlyNestedSets,
    { "ImproperlyNestedSets",
 "A pop/phy/mut/eco/wgs set has an unexpected internal set other than nuc-prot, seg-set, or parts set." } },
+   { eErr_SEQ_PKG_SeqSubmitWithWgsSet,
+   { "SeqSubmitWithWgsSet",
+"Seq-submit file is a wgs-set instead of a batch submission." } },
 
 /* SEQ_FEAT */
 
