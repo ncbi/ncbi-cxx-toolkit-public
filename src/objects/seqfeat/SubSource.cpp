@@ -93,7 +93,9 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
 
-    if (name == "note") {
+    if ( NStr::EqualNocase(name, "note") ||
+         NStr::EqualNocase(name, "subsource-note") ||
+         NStr::EqualNocase(name, "subsrc-note")) {
         return eSubtype_other;
     } else if (vocabulary == eVocabulary_insdc) {
         // consider a table if more special cases arise.
