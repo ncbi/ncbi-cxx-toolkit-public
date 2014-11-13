@@ -180,8 +180,15 @@ enum ECompare {
     eContains,      ///< First CSeq_loc contains second
     eSame,          ///< CSeq_locs contain each other
     eOverlap,       ///< CSeq_locs overlap
-    eAbutting,      ///< Abutting seq-locs
-    eAbutAndOverlap ///< Seq-locs do both abut and overlap
+
+    /// Abutting seq-locs. The flag can be returned only by the 4-argument
+    /// version of  Compare() if fCompareAbutting flag is set in the
+    /// TCompareFlags argument.
+    eAbutting,
+    /// Seq-locs do both abut and overlap. The flag can be returned only by
+    /// the 4-argument version of  Compare() if fCompareAbutting flag is set
+    /// in the TCompareFlags argument.
+    eAbutAndOverlap
 };
 
 /// Returns the sequence::ECompare containment relationship between CSeq_locs.
