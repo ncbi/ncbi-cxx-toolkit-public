@@ -215,8 +215,92 @@ bool sx_EqualDelta(const CDelta_ext& delta1, const CDelta_ext& delta2)
     return true;
 }
 
+string sx_BinaryASN(const CSerialObject& obj)
+{
+    CNcbiOstrstream str;
+    str << MSerial_AsnBinary << obj;
+    return CNcbiOstrstreamToString(str);
+}
+
+struct PDescLess {
+    bool operator()(const CRef<CSeqdesc>& r1,
+                    const CRef<CSeqdesc>& r2) const
+        {
+            const CSeqdesc& d1 = *r1;
+            const CSeqdesc& d2 = *r2;
+            if ( d1.Which() != d2.Which() ) {
+                return d1.Which() < d2.Which();
+            }
+            return sx_BinaryASN(d1) < sx_BinaryASN(d2);
+        }
+};
+
+CRef<CSeq_descr> sx_ExtractDescr(const CBioseq_Handle& bh)
+{
+    CRef<CSeq_descr> descr(new CSeq_descr);
+    CSeq_descr::Tdata& dst = descr->Set();
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        dst.push_back(Ref(SerialClone(*it)));
+    }
+    dst.sort(PDescLess());
+    return descr;
+}
+
+class CEntryAnnots
+{
+public:
+    explicit CEntryAnnots(CRef<CSeq_entry> entry)
+        : m_Entry(entry)
+        {
+        }
+    CSeq_annot& Select(const CSeq_annot_Handle& src_annot)
+        {
+            if ( m_CurSrcAnnot != src_annot ) {
+                CRef<CSeq_annot> tmp_annot(new CSeq_annot);
+                tmp_annot->Assign(*src_annot.GetObjectCore(), eShallow);
+                tmp_annot->SetData(*new CSeq_annot::TData);
+                tmp_annot->SetData().SetLocs();
+                string key = sx_BinaryASN(*tmp_annot);
+                if ( !m_Annots.count(key) ) {
+                    m_Annots[key] = tmp_annot;
+                    m_Entry->SetSet().SetAnnot().push_back(tmp_annot);
+                }
+                m_CurSrcAnnot = src_annot;
+                m_CurDstAnnot = m_Annots[key];
+            }
+            return *m_CurDstAnnot;
+        }
+
+private:
+    CRef<CSeq_entry> m_Entry;
+    CSeq_annot_Handle m_CurSrcAnnot;
+    CRef<CSeq_annot> m_CurDstAnnot;
+    map<string, CRef<CSeq_annot> > m_Annots;
+};
+
+CRef<CSeq_entry> sx_ExtractAnnot(const CBioseq_Handle& bh)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set();
+
+    CFeat_CI feat_it(bh);
+    if ( feat_it ) {
+        CEntryAnnots annots(entry);
+        for ( ; feat_it; ++feat_it ) {
+            CSeq_annot& dst_annot = annots.Select(feat_it.GetAnnot());
+            dst_annot.SetData().SetFtable()
+                .push_back(Ref(SerialClone(feat_it->GetOriginalFeature())));
+        }
+    }
+    return entry;
+}
+
 bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
 {
+    CRef<CSeq_descr> descr1 = sx_ExtractDescr(bh1);
+    CRef<CSeq_descr> descr2 = sx_ExtractDescr(bh2);
+    CRef<CSeq_entry> annot1 = sx_ExtractAnnot(bh1);
+    CRef<CSeq_entry> annot2 = sx_ExtractAnnot(bh2);
     CConstRef<CBioseq> seq1 = bh1.GetCompleteBioseq();
     CConstRef<CBioseq> seq2 = bh2.GetCompleteBioseq();
     if ( seq1->Equals(*seq2) ) {
@@ -228,6 +312,10 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     CRef<CSeq_id> gen2 = sx_ExtractGeneralId(*nseq2);
     CRef<CDelta_ext> delta1 = sx_ExtractDelta(*nseq1);
     CRef<CDelta_ext> delta2 = sx_ExtractDelta(*nseq2);
+    nseq1->ResetDescr();
+    nseq2->ResetDescr();
+    nseq1->ResetAnnot();
+    nseq2->ResetAnnot();
     if ( !nseq1->Equals(*nseq2) ) {
         NcbiCout << "Sequences do not match:\n"
                  << "Seq1: " << MSerial_AsnText << *seq1
@@ -237,6 +325,8 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     bool has_delta_error = false;
     bool has_id_error = false;
     bool report_id_error = false;
+    bool has_descr_error = false;
+    bool has_annot_error = false;
     if ( !delta1 != !delta2 ) {
         has_delta_error = true;
     }
@@ -256,7 +346,15 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
             report_id_error = true;
         }
     }
-    if ( !has_delta_error && !has_id_error ) {
+    if ( !descr1->Equals(*descr2) ) {
+        has_descr_error = true;
+    }
+    if ( !annot1->Equals(*annot2) ) {
+        has_annot_error = true;
+    }
+    bool has_error =
+        has_delta_error || has_id_error || has_descr_error || has_annot_error;
+    if ( !has_error ) {
         return true;
     }
     if ( has_delta_error ) {
@@ -293,7 +391,17 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
             NcbiCout << MSerial_AsnText << *gen2;
         }
     }
-    return !has_delta_error && !has_id_error;
+    if ( has_descr_error ) {
+        NcbiCout << "Descriptors do no match:\n";
+        NcbiCout << "Descr1: " << MSerial_AsnText << *descr1;
+        NcbiCout << "Descr2: " << MSerial_AsnText << *descr2;
+    }
+    if ( has_annot_error ) {
+        NcbiCout << "Annotations do no match:\n";
+        NcbiCout << "Annot1: " << MSerial_AsnText << *annot1;
+        NcbiCout << "Annot2: " << MSerial_AsnText << *annot2;
+    }
+    return !has_error;
 }
 
 bool sx_EqualToGB(const CBioseq_Handle& bh)
@@ -346,6 +454,48 @@ void sx_CheckSeq(CScope& scope,
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(bh);
     BOOST_CHECK_EQUAL(bh.GetState(), 0);
+}
+
+void sx_ReportState(const CBioseq_Handle& bsh, const CSeq_id_Handle& idh)
+{
+    if ( !bsh ) {
+        cerr << "failed to find sequence: " << idh << endl;
+        CBioseq_Handle::TBioseqStateFlags flags = bsh.GetState();
+        if (flags & CBioseq_Handle::fState_suppress_temp) {
+            cerr << "  suppressed temporarily" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_suppress_perm) {
+            cerr << "  suppressed permanently" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_suppress) {
+            cerr << "  suppressed" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_dead) {
+            cerr << "  dead" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_confidential) {
+            cerr << "  confidential" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_withdrawn) {
+            cerr << "  withdrawn" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_no_data) {
+            cerr << "  no data" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_conflict) {
+            cerr << "  conflict" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_not_found) {
+            cerr << "  not found" << endl;
+        }
+        if (flags & CBioseq_Handle::fState_other_error) {
+            cerr << "  other error" << endl;
+        }
+    }
+    else {
+        cerr << "found sequence: " << idh << endl;
+        //cerr << MSerial_AsnText << *bsh.GetCompleteBioseq();
+    }
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq1)
@@ -617,46 +767,45 @@ BOOST_AUTO_TEST_CASE(FetchSeq15)
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("gb|ABBA01000001.1|");
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
-    if ( !bsh ) {
-        cerr << "failed to find sequence: " << idh << endl;
-        CBioseq_Handle::TBioseqStateFlags flags = bsh.GetState();
-        if (flags & CBioseq_Handle::fState_suppress_temp) {
-            cerr << "  suppressed temporarily" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_suppress_perm) {
-            cerr << "  suppressed permanently" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_suppress) {
-            cerr << "  suppressed" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_dead) {
-            cerr << "  dead" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_confidential) {
-            cerr << "  confidential" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_withdrawn) {
-            cerr << "  withdrawn" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_no_data) {
-            cerr << "  no data" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_conflict) {
-            cerr << "  conflict" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_not_found) {
-            cerr << "  not found" << endl;
-        }
-        if (flags & CBioseq_Handle::fState_other_error) {
-            cerr << "  other error" << endl;
-        }
-    }
-    else {
-        cerr << "found sequence: " << idh << endl;
-        //cerr << MSerial_AsnText << *bsh.GetCompleteBioseq();
-    }
+    sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
     BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq16)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("JRAS01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq17)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AVCP010000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Title, 1));
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Molinfo, 1));
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Source, 1));
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Create_date, 1));
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Update_date, 1));
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Pub, 2));
+    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_User, 2));
 }
 
 

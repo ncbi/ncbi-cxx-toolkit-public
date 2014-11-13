@@ -153,17 +153,9 @@ public:
         return m_MasterDescr;
     }
 
-    enum EDescrFilter {
-        eDescrNoFilter,
-        eDescrDefaultFilter
-    };
-    static bool IsGoodMasterDesc(const CSeqdesc& descr,
-                                 EDescrFilter filter = eDescrDefaultFilter);
     void ResetMasterDescr(void);
-    void SetMasterDescr(const TMasterDescr& descr,
-                        EDescrFilter filter = eDescrDefaultFilter);
-
-    bool LoadMasterDescr(EDescrFilter filter = eDescrDefaultFilter);
+    void SetMasterDescr(const TMasterDescr& descr, int filter);
+    bool LoadMasterDescr(int filter);
 
     // get GI range of nucleotide sequences
     pair<TGi, TGi> GetNucGiRange(void);
@@ -254,7 +246,7 @@ protected:
 
 protected:
     void x_InitIdParams(void);
-    void x_LoadMasterDescr(const CVDBTable& table, EDescrFilter filter);
+    void x_LoadMasterDescr(const CVDBTable& table, int filter);
 
 private:
     CVDBMgr m_Mgr;
@@ -335,15 +327,28 @@ public:
     }
 
     enum EDescrFilter {
-        eDescrNoFilter      = CWGSDb_Impl::eDescrNoFilter,
-        eDescrDefaultFilter = CWGSDb_Impl::eDescrDefaultFilter
+        eDescrNoFilter,
+        eDescrDefaultFilter
     };
     // load master descriptors from VDB metadata (if any)
     // doesn't try to load if master descriptors already set
     // returns true if descriptors are set at the end, or false if not
-    bool LoadMasterDescr(EDescrFilter filter = eDescrDefaultFilter) {
-        return GetNCObject().LoadMasterDescr(CWGSDb_Impl::EDescrFilter(filter));
+    bool LoadMasterDescr(EDescrFilter filter = eDescrDefaultFilter) const {
+        return GetNCObject().LoadMasterDescr(filter);
     }
+    // set master descriptors
+    typedef list< CRef<CSeqdesc> > TMasterDescr;
+    void SetMasterDescr(const TMasterDescr& descr,
+                        EDescrFilter filter = eDescrDefaultFilter) const {
+        GetNCObject().SetMasterDescr(descr, filter);
+    }
+    enum EDescrType {
+        eDescr_skip,
+        eDescr_default,
+        eDescr_force
+    };
+    // return type of master descriptor propagation
+    static EDescrType GetMasterDescrType(const CSeqdesc& desc);
 };
 
 

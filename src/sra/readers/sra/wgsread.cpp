@@ -428,7 +428,7 @@ void CWGSDb_Impl::ResetMasterDescr(void)
 }
 
 
-bool CWGSDb_Impl::LoadMasterDescr(EDescrFilter filter)
+bool CWGSDb_Impl::LoadMasterDescr(int filter)
 {
     if ( !IsSetMasterDescr() &&
          NCBI_PARAM_TYPE(WGS, MASTER_DESCR)::GetDefault() ) {
@@ -441,7 +441,7 @@ bool CWGSDb_Impl::LoadMasterDescr(EDescrFilter filter)
 
 
 void CWGSDb_Impl::x_LoadMasterDescr(const CVDBTable& table,
-                                    EDescrFilter filter)
+                                    int filter)
 {
     CKMetadata meta(table);
     CKMDataNode node(meta, "MASTER", CKMDataNode::eMissingIgnore);
@@ -466,43 +466,47 @@ void CWGSDb_Impl::x_LoadMasterDescr(const CVDBTable& table,
 }
 
 
-bool CWGSDb_Impl::IsGoodMasterDesc(const CSeqdesc& desc, EDescrFilter filter)
+CWGSDb::EDescrType
+CWGSDb::GetMasterDescrType(const CSeqdesc& desc)
 {
-    if ( filter == eDescrNoFilter ) {
-        return true;
-    }
-    else if ( desc.Which() == CSeqdesc::e_Pub ||
-              desc.Which() == CSeqdesc::e_Comment ||
-              desc.Which() == CSeqdesc::e_Source ) {
-        return true;
-    }
-    else if ( desc.Which() == CSeqdesc::e_User ) {
-        const CObject_id& type = desc.GetUser().GetType();
-        if ( type.Which() == CObject_id::e_Str ) {
-            const string& name = type.GetStr();
+    switch ( desc.Which() ) {
+    case CSeqdesc::e_Pub:
+    case CSeqdesc::e_Comment:
+        return eDescr_force;
+    case CSeqdesc::e_Source:
+    case CSeqdesc::e_Molinfo:
+    case CSeqdesc::e_Create_date:
+    case CSeqdesc::e_Update_date:
+        return eDescr_default;
+    case CSeqdesc::e_User:
+        if ( desc.GetUser().GetType().IsStr() ) {
+            // only specific user objects are passed from WGS master
+            const string& name = desc.GetUser().GetType().GetStr();
             if ( name == "DBLink" ||
                  name == "GenomeProjectsDB" ||
                  name == "StructuredComment" ||
                  name == "FeatureFetchPolicy" ) {
-                return true;
+                return eDescr_force;
             }
         }
+        return eDescr_skip;
+    default:
+        return eDescr_skip;
     }
-    return false;
 }
 
 
 void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
-                                 EDescrFilter filter)
+                                 int filter)
 {
-    if ( filter != eDescrNoFilter ) {
+    if ( filter == CWGSDb::eDescrDefaultFilter ) {
         TMasterDescr descr2;
         ITERATE ( CSeq_descr::Tdata, it, descr ) {
-            if ( IsGoodMasterDesc(**it, filter) ) {
+            if ( CWGSDb::GetMasterDescrType(**it) != CWGSDb::eDescr_skip ) {
                 descr2.push_back(Ref(SerialClone(**it)));
             }
         }
-        SetMasterDescr(descr2, eDescrNoFilter);
+        SetMasterDescr(descr2, CWGSDb::eDescrNoFilter);
         return;
     }
     m_MasterDescr = descr;
@@ -931,17 +935,16 @@ CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(void) const
         }
     }
     if ( !GetDb().GetMasterDescr().empty() ) {
-        bool has_source = false;
+        unsigned type_mask = 0;
         ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
             const CSeqdesc& desc = **it;
-            if ( desc.IsSource() ) {
-                has_source = true;
-                break;
-            }
+            type_mask |= 1 << desc.Which();
         }
         ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
-            if ( has_source && (*it)->IsSource() ) {
-                // omit master 'source' if contig already has one
+            const CSeqdesc& desc = **it;
+            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
+                 (type_mask & (1 << desc.Which())) ) {
+                // omit master descr if contig already has one of that type
                 continue;
             }
             ret->Set().push_back(*it);

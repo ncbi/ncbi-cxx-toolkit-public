@@ -610,7 +610,7 @@ void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
 
 void CWGSFileInfo::x_InitMasterDescr(void)
 {
-    if ( m_WGSDb->LoadMasterDescr() ) {
+    if ( m_WGSDb.LoadMasterDescr() ) {
         // loaded descriptors from metadata
         return;
     }
@@ -634,7 +634,7 @@ void CWGSFileInfo::x_InitMasterDescr(void)
             continue;
         }
         if ( bs_info->IsSetDescr() ) {
-            m_WGSDb->SetMasterDescr(bs_info->GetDescr().Get());
+            m_WGSDb.SetMasterDescr(bs_info->GetDescr().Get());
         }
         break;
     }
