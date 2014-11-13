@@ -1061,7 +1061,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             string num_str = token.substr(prev_start, pos - prev_start);
             double this_val = NStr::StringToDouble (num_str);
             if (token.c_str()[pos + 1] == '\'') {
-                if (num_sep == 2) {
+                if (num_sep > 2) {
                     // already found seconds
                     return "";
                 }
@@ -1109,8 +1109,12 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     }
     if (num_sep > 0 && !last_is_sep) {
         // if there have been separators, but the last value is not a separator,
-        // this is a bad format
-        return "";
+        if (num_sep == 2 && !seen_period) {
+            // if we have seen minutes but not seconds we'll treat this last value as seconds
+        } else {
+            // otherwise this is a bad format
+            return "";
+        }
     }
 
     if (prev_start == 0) {
