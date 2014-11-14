@@ -216,6 +216,10 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     icache_impl->m_ICacheCmdPrefix = "IC(";
     icache_impl->m_ICacheCmdPrefix.append(icache_impl->m_CacheName);
     icache_impl->m_ICacheCmdPrefix.append(") ");
+
+    icache_impl->m_DefaultParameters.SetTryAllServers(
+            config->GetBool(config_section,
+                    "try_all_servers", CConfig::eErr_NoThrow, false));
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
@@ -289,6 +293,11 @@ CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
             return selected_server.ExecWithRetry(cmd,
                     multiline_output, conn_listener);
         }
+        catch (CNetCacheException& ex) {
+            if (ex.GetErrCode() != CNetCacheException::eBlobNotFound ||
+                    !parameters->GetTryAllServers())
+                throw;
+        }
         catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
                 ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
@@ -297,22 +306,27 @@ CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
         }
     }
 
-    for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
+    CNetServiceIterator it = m_Service.Iterate();
+
+    for (;;) {
         try {
             m_DefaultParameters.SetServerToUse(*it);
             return (*it).ExecWithRetry(cmd, multiline_output, conn_listener);
         }
+        catch (CNetCacheException& ex) {
+            if (ex.GetErrCode() != CNetCacheException::eBlobNotFound ||
+                    !parameters->GetTryAllServers() ||
+                    !++it)
+                throw;
+        }
         catch (CNetSrvConnException& ex) {
-            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
-                ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
+            if ((ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
+                    ex.GetErrCode() != CNetSrvConnException::eServerThrottle) ||
+                    !++it)
                 throw;
             ERR_POST(ex.what());
         }
     }
-
-    NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-        "Couldn't find any available servers for the " +
-            m_Service.GetServiceName() + " service.");
 }
 
 void CNetICacheClient::RegisterSession(unsigned pid)

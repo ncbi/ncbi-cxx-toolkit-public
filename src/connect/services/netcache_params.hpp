@@ -61,6 +61,7 @@ public:
         eDP_MaxBlobAge = 1 << 7,
         eDP_ActualBlobAgePtr = 1 << 8,
         eDP_UseCompoundID = 1 << 9,
+        eDP_TryAllServers = 1 << 10,
     };
     typedef unsigned TDefinedParameters;
 
@@ -80,7 +81,8 @@ public:
         m_ServerCheckHint(true),
         m_MaxBlobAge(0),
         m_ActualBlobAgePtr(NULL),
-        m_UseCompoundID(false)
+        m_UseCompoundID(false),
+        m_TryAllServers(false)
     {
     }
 
@@ -146,6 +148,12 @@ public:
         m_UseCompoundID = use_compound_id;
     }
 
+    void SetTryAllServers(bool try_all_servers)
+    {
+        m_DefinedParameters |= eDP_TryAllServers;
+        m_TryAllServers = try_all_servers;
+    }
+
     unsigned GetTTL() const;
     CNetCacheAPI::ECachingMode GetCachingMode() const;
     CNetCacheAPI::EMirroringMode GetMirroringMode() const;
@@ -156,6 +164,7 @@ public:
     unsigned GetMaxBlobAge() const;
     unsigned* GetActualBlobAgePtr() const;
     bool GetUseCompoundID() const;
+    bool GetTryAllServers() const;
 
     static bool StringToBool(const string& bool_str,
             bool default_value = false);
@@ -174,6 +183,7 @@ private:
     unsigned m_MaxBlobAge;
     unsigned* m_ActualBlobAgePtr;
     bool m_UseCompoundID;
+    bool m_TryAllServers;
 };
 
 /* @} */

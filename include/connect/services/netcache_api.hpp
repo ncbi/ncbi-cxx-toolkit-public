@@ -103,6 +103,11 @@ BEGIN_NCBI_SCOPE
 /// @see CNetCacheAPI::TUseCompoundID
 #define nc_use_compound_id CNetCacheAPI::TUseCompoundID()
 
+/// Whether to run a request through all NetCache servers in the
+/// ICache service in an attempt to find the blob.
+/// @see CNetCacheAPI::TTryAllServers
+#define nc_try_all_servers CNetCacheAPI::TTryAllServers()
+
 /* @} */
 
 /** @addtogroup NetCacheClient
@@ -205,6 +210,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         eNPT_MaxBlobAge,
         eNPT_ActualBlobAgePtr,
         eNPT_UseCompoundID,
+        eNPT_TryAllServers,
     };
 
     /// Override defaults used by this object.
@@ -545,6 +551,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///     nc_use_compound_id = true
     /// @see nc_use_compound_id
     typedef CNamedParameter<bool, eNPT_UseCompoundID> TUseCompoundID;
+
+    /// Named parameter type to define whether to run a request through all
+    /// NetCache servers in the ICache service in an attempt to find the blob.
+    /// This type of parameter can be defined through the
+    /// nc_try_all_servers macro substitution, for example:
+    ///     nc_try_all_servers = true
+    /// @see nc_try_all_servers
+    typedef CNamedParameter<bool, eNPT_TryAllServers> TTryAllServers;
 
     /// @deprecated Please use PutData(key, buf, size, optional) instead.
     NCBI_DEPRECATED string PutData(const string& key,

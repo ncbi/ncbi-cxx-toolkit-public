@@ -194,10 +194,12 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
         if (m_APIClass == eNetCacheAPI) {
             PrintBlobMeta(CNetCacheKey(m_Opts.id, m_CompoundIDPool));
 
-            output = m_NetCacheAPI.GetBlobInfo(m_Opts.id);
+            output = m_NetCacheAPI.GetBlobInfo(m_Opts.id,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers));
         } else {
             output = m_NetICacheClient.GetBlobInfo(m_Opts.icache_key.key,
-                m_Opts.icache_key.version, m_Opts.icache_key.subkey);
+                m_Opts.icache_key.version, m_Opts.icache_key.subkey,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers));
 
             PrintSelectedICacheServer();
         }
@@ -247,7 +249,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             reader.reset(m_NetCacheAPI.GetReader(
                 m_Opts.id,
                 &blob_size,
-                nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                nc_try_all_servers = IsOptionSet(eTryAllServers))));
             break;
         case OPTION_N(0): /* use offset */
             reader.reset(m_NetCacheAPI.GetPartReader(
@@ -255,14 +258,16 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 m_Opts.offset,
                 m_Opts.size,
                 &blob_size,
-                nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                nc_try_all_servers = IsOptionSet(eTryAllServers))));
             break;
         case OPTION_N(1): /* use password */
             reader.reset(m_NetCacheAPI.GetReader(
                     m_Opts.id,
                     &blob_size,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                    nc_blob_password = m_Opts.password)));
+                    nc_blob_password = m_Opts.password,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers))));
             break;
         case OPTION_N(1) | OPTION_N(0): /* use password and offset */
             reader.reset(m_NetCacheAPI.GetPartReader(
@@ -271,7 +276,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     m_Opts.size,
                     &blob_size,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                    nc_blob_password = m_Opts.password)));
+                    nc_blob_password = m_Opts.password,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers))));
         }
     } else {
         bool version_is_defined = true;
@@ -287,7 +293,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
                     NULL,
-                    nc_caching_mode = CNetCacheAPI::eCaching_Disable) :
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers))) :
                 m_NetICacheClient.GetReadStream(
                     m_Opts.icache_key.key,
                     m_Opts.icache_key.subkey,
@@ -302,7 +309,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 m_Opts.offset,
                 m_Opts.size,
                 NULL,
-                nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                nc_try_all_servers = IsOptionSet(eTryAllServers))));
             break;
         case OPTION_N(1): /* use password */
             reader.reset(m_NetICacheClient.GetReadStream(
@@ -311,7 +319,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     m_Opts.icache_key.subkey,
                     NULL,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                    nc_blob_password = m_Opts.password)));
+                    nc_blob_password = m_Opts.password,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers))));
             break;
         case OPTION_N(1) | OPTION_N(0): /* use password and offset */
             reader.reset(m_NetICacheClient.GetReadStreamPart(
@@ -322,7 +331,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     m_Opts.size,
                     NULL,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                    nc_blob_password = m_Opts.password)));
+                    nc_blob_password = m_Opts.password,
+                    nc_try_all_servers = IsOptionSet(eTryAllServers))));
         }
         if (!version_is_defined)
             NcbiCerr << "Blob version: " <<

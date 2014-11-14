@@ -69,6 +69,8 @@ void CNetCacheAPIParameters::LoadNamedParameters(
             SetActualBlobAgePtr(Get<unsigned*>(optional));
         else if (optional->Is(CNetCacheAPI::eNPT_UseCompoundID))
             SetUseCompoundID(Get<bool>(optional));
+        else if (optional->Is(CNetCacheAPI::eNPT_TryAllServers))
+            SetTryAllServers(Get<bool>(optional));
 }
 
 void CNetCacheAPIParameters::SetTTL(unsigned blob_ttl)
@@ -188,6 +190,11 @@ unsigned* CNetCacheAPIParameters::GetActualBlobAgePtr() const
 bool CNetCacheAPIParameters::GetUseCompoundID() const
 {
     NETCACHE_API_GET_PARAM_IMPL(UseCompoundID);
+}
+
+bool CNetCacheAPIParameters::GetTryAllServers() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(TryAllServers);
 }
 
 bool CNetCacheAPIParameters::StringToBool(const string& bool_str,
