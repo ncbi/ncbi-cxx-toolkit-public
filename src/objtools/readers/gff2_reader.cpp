@@ -793,9 +793,12 @@ bool CGff2Reader::x_FeatureSetXref(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    string strParent;
     list<string> parents;
-    if (!record.GetAttribute("Parent", parents)) {
+    const string& parent = pFeature->GetNamedQual("Parent");
+    if (!parent.empty()) {
+        parents.push_back(parent);
+    }
+    if (parents.empty()  &&  !record.GetAttribute("Parent", parents)) {
         return true;
     }
     for (list<string>::const_iterator cit = parents.begin(); cit != parents.end();

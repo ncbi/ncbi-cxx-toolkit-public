@@ -121,11 +121,12 @@ protected:
         CRef<CSeq_annot>,
         IMessageListener*);
 
-    virtual bool xAnnotPostProcess(
-        CRef<CSeq_annot>);
-
     virtual bool xVerifyCdsParents(
         const CGff2Record&);
+
+    virtual bool xFeatureSetXrefParent(
+        const string&,
+        CRef<CSeq_feat>);
 
     virtual bool xReadInit();
 

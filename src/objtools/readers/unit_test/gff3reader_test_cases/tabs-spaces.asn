@@ -223,7 +223,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mRNA00002"
+          id local str "mRNA00001"
         }
       }
     },
@@ -269,47 +269,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mRNA00001"
-        }
-      }
-    },
-    {
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 1200,
-          to 1499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 4999,
-          to 5499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 6999,
-          to 7599,
-          strand plus,
-          id local str "ctg123"
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds00002"
-        },
-        {
-          qual "Parent",
-          val "mRNA00002,mRNA00003"
-        }
-      },
-      xref {
-        {
-          id local str "mRNA00003"
+          id local str "mRNA00002"
         }
       }
     },
@@ -350,6 +310,46 @@ Seq-annot ::= {
       xref {
         {
           id local str "mRNA00002"
+        }
+      }
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1200,
+          to 1499,
+          strand plus,
+          id local str "ctg123"
+        },
+        int {
+          from 4999,
+          to 5499,
+          strand plus,
+          id local str "ctg123"
+        },
+        int {
+          from 6999,
+          to 7599,
+          strand plus,
+          id local str "ctg123"
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds00002"
+        },
+        {
+          qual "Parent",
+          val "mRNA00002,mRNA00003"
+        }
+      },
+      xref {
+        {
+          id local str "mRNA00003"
         }
       }
     }

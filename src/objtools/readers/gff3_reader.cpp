@@ -245,26 +245,61 @@ bool CGff3Reader::xUpdateAnnotCds(
             }
         }
     }
+
     string id;
     if (record.GetAttribute("ID", id)) {
-        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
-        if (it != m_MapIdToFeature.end()) {
-            return record.UpdateFeature(m_iFlags, it->second);
+        string strParents;
+        if (record.GetAttribute("Parent", strParents)) {
+            list<string> parents;
+            NStr::Split(strParents, ",", parents);
+            for (list<string>::const_iterator cit = parents.begin();
+                    cit != parents.end();
+                    ++cit) {
+                string cdsId = id + ":" + *cit;
+                IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
+                if (it != m_MapIdToFeature.end()) {
+                    //cerr << "Updating " << cdsId << endl;
+                    record.UpdateFeature(m_iFlags, it->second);
+                    continue;
+                }
+                //cerr << "Adding " << cdsId << endl;
+                if (!record.InitializeFeature(m_iFlags, pFeature)) {
+                    return false;
+                }
+                if (!xFeatureSetXrefParent(*cit, pFeature)) {
+                    return false;
+                }
+                if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
+                    return false;
+                }
+                if (! cdsId.empty()) {
+                    m_MapIdToFeature[cdsId] = pFeature;
+                }
+                pFeature.Reset(new CSeq_feat);
+            }
+            return true;
         }
     }
+    return false;
+}
 
-    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xFeatureSetXrefParent(
+    const string& parent,
+    CRef<CSeq_feat> pFeature)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CFeat_id> pFeatId(new CFeat_id);
+    pFeatId->SetLocal().SetStr(parent);
+    IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
+    if (it == m_MapIdToFeature.end()) {
         return false;
     }
-    if (!x_FeatureSetXref(record, pFeature)) {
-        return false;
-    }
-    if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
-        return false;
-    }
-    if ( !id.empty() ) {
-        m_MapIdToFeature[ id ] = pFeature;
-    }
+    CRef<CSeq_feat> pParent = it->second;
+    pParent->SetId(*pFeatId);
+    CRef< CSeqFeatXref > pXref(new CSeqFeatXref);
+    pXref->SetId(*pFeatId);  
+    pFeature->SetXref().push_back(pXref);
     return true;
 }
 
@@ -318,50 +353,6 @@ bool CGff3Reader::x_AddFeatureToAnnot(
 //  ----------------------------------------------------------------------------
 {
     pAnnot->SetData().SetFtable().push_back( pFeature ) ;
-    return true;
-}
-
-//  ============================================================================
-bool CGff3Reader::xAnnotPostProcess(
-    CRef<CSeq_annot> pAnnot)
-//  ============================================================================
-{
-    typedef list< CRef< CSeq_feat > > FTABLE;
-    typedef FTABLE::iterator FEATIT;
-    typedef vector< CRef< CSeqFeatXref > > XREFS;
-    typedef XREFS::iterator XREFIT;
-
-    CSeq_annot& annot = *pAnnot;
-    if (!annot.GetData().IsFtable()) {
-        return true; //don't mess up alignments!!!
-    }
-    FTABLE& ftable = annot.SetData().SetFtable();
-    for (FEATIT it = ftable.begin(); it != ftable.end(); ++it) {
-        CSeq_feat& feat = **it;
-        if (!feat.GetData().IsCdregion()  ||  feat.GetXref().size() <= 1) {
-            continue;
-        }
-
-        XREFS& xrefs = feat.SetXref();
-        while (xrefs.size() > 1) {
-            //turn each CDS with multiple parent xrefs into a set of
-            // CDSs each with a single parent xref
-
-            //select xref to slice out
-            XREFIT xit = xrefs.begin()+1;
- 
-           //create new feature
-            CRef<CSeq_feat> pNew(new CSeq_feat);
-            pNew->Assign(feat);
-            pNew->SetXref().clear();
-            pNew->SetXref().push_back(*xit);
-            //newFeats.push_back(pNew);
-            ftable.insert(it, pNew);
-
-            //remove the spliced out xref
-            xrefs.erase(xit);
-        }
-    }
     return true;
 }
 
