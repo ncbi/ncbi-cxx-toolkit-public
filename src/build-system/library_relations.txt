@@ -43,6 +43,8 @@ Xpm needs3party $(ORIG_LIBS)
 Xpm needs3party X11
 access needs xser
 accnmap needs dbapi
+ads needs $(SEQ_LIBS)
+ads needs pub
 affy needs3party $(CURL_LIBS)
 affy needs3party $(DL_LIBS)
 affy needs3party $(ORIG_LIBS)
