@@ -217,9 +217,10 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     icache_impl->m_ICacheCmdPrefix.append(icache_impl->m_CacheName);
     icache_impl->m_ICacheCmdPrefix.append(") ");
 
-    icache_impl->m_DefaultParameters.SetTryAllServers(
-            config->GetBool(config_section,
-                    "try_all_servers", CConfig::eErr_NoThrow, false));
+    if (config != NULL)
+        icache_impl->m_DefaultParameters.SetTryAllServers(
+                config->GetBool(config_section,
+                        "try_all_servers", CConfig::eErr_NoThrow, false));
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
