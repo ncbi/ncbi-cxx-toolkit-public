@@ -468,79 +468,93 @@ int CAsn2FlatApp::Run(void)
         //  Straight through processing: Read a seq_entry, then process
         //  a seq_entry:
         //
-        CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
-        if ( !seh ) {
-            NCBI_THROW(CException, eUnknown,
-                       "Unable to construct Seq-entry object" );
+        while ( !is->EndOfData() ) {
+            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
+            if ( !seh ) {
+                NCBI_THROW(CException, eUnknown,
+                           "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry(seh);
+            m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-        HandleSeqEntry(seh);
     }
     else if ( asn_type == "bioseq" ) {
         //
         //  Read object as a bioseq, wrap it into a seq_entry, then process
         //  the wrapped bioseq as a seq_entry:
         //
-        CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(*is);
-        if ( !seh ) {
-            NCBI_THROW(CException, eUnknown,
-                       "Unable to construct Seq-entry object" );
+        while ( !is->EndOfData() ) {
+            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(*is);
+            if ( !seh ) {
+                NCBI_THROW(CException, eUnknown,
+                           "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry(seh);
+            m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-        HandleSeqEntry(seh);
     }
     else if ( asn_type == "bioseq-set" ) {
         //
         //  Read object as a bioseq_set, wrap it into a seq_entry, then
         //  process the wrapped bioseq_set as a seq_entry:
         //
-        CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(*is);
-        if ( !seh ) {
-            NCBI_THROW(CException, eUnknown,
-                       "Unable to construct Seq-entry object" );
+        while ( !is->EndOfData() ) {
+            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(*is);
+            if ( !seh ) {
+                NCBI_THROW(CException, eUnknown,
+                           "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry(seh);
+            m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-        HandleSeqEntry(seh);
     }
     else if ( asn_type == "seq-submit" ) {
-        HandleSeqSubmit( *is );
+        while ( !is->EndOfData() ) {
+            HandleSeqSubmit( *is );
+        }
     }
     else if ( asn_type == "any" ) {
         //
         //  Try the first four in turn:
         //
-        string strNextTypeName = is->PeekNextTypeName();
+        while ( !is->EndOfData() ) {
+            string strNextTypeName = is->PeekNextTypeName();
 
-        CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
-        if ( !seh ) {
-            is->Close();
-            is.reset( x_OpenIStream( args ) );
-            seh = ObtainSeqEntryFromBioseqSet(*is);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
             if ( !seh ) {
                 is->Close();
                 is.reset( x_OpenIStream( args ) );
-                seh = ObtainSeqEntryFromBioseq(*is);
+                seh = ObtainSeqEntryFromBioseqSet(*is);
                 if ( !seh ) {
                     is->Close();
                     is.reset( x_OpenIStream( args ) );
-                    CRef<CSeq_submit> sub(new CSeq_submit);
-                    *is >> *sub;
-                    if (sub->IsSetSub()  &&  sub->IsSetData()) {
-                        CRef<CScope> scope(new CScope(*m_Objmgr));
-                        scope->AddDefaults();
-                        if ( m_do_cleanup ) {
-                            CCleanup cleanup;
-                            cleanup.BasicCleanup( *sub );
+                    seh = ObtainSeqEntryFromBioseq(*is);
+                    if ( !seh ) {
+                        is->Close();
+                        is.reset( x_OpenIStream( args ) );
+                        CRef<CSeq_submit> sub(new CSeq_submit);
+                        *is >> *sub;
+                        if (sub->IsSetSub()  &&  sub->IsSetData()) {
+                            CRef<CScope> scope(new CScope(*m_Objmgr));
+                            scope->AddDefaults();
+                            if ( m_do_cleanup ) {
+                                CCleanup cleanup;
+                                cleanup.BasicCleanup( *sub );
+                            }
+                            m_FFGenerator->Generate(*sub, *scope, *m_Os);
+                            return 0;
+                        } else {
+                            NCBI_THROW(
+                                       CException, eUnknown,
+                                       "Unable to construct Seq-entry object"
+                                      );
                         }
-                        m_FFGenerator->Generate(*sub, *scope, *m_Os);
-                        return 0;
-                    } else {
-                        NCBI_THROW(
-                                   CException, eUnknown,
-                                   "Unable to construct Seq-entry object"
-                                  );
                     }
                 }
             }
+            HandleSeqEntry(seh);
+            m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-        HandleSeqEntry(seh);
     }
 
     return 0;
