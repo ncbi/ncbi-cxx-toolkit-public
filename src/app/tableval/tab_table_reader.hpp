@@ -83,6 +83,7 @@ private:
     vector<bool>   m_required_cols;
     vector<bool>   m_ignored_cols;
     vector<bool>   m_unique_cols;
+    vector< set<string> > m_require_one_cols;
 
     vector< map<string, int> > m_unique_values;
 

@@ -98,31 +98,24 @@ bool CTabDelimitedValidator::_CheckHeader(const string& discouraged, const vecto
         }
     }
 
+    m_require_one_cols.resize(require_one.size());
     ITERATE(vector<string>, it, require_one)
     {
-        vector<string> require_one_cols;
-        NStr::Tokenize(*it, ",", require_one_cols);
+        set<string>& require_one_cols = m_require_one_cols[it - require_one.begin()];
+        vector<string> cols;
+        NStr::Tokenize(*it, ",", cols);
         int found(0);
-        ITERATE(vector<string>, it_col, require_one_cols)
+        ITERATE(vector<string>, it_col, cols)
         {
+            require_one_cols.insert(*it_col);
             if (find(m_col_defs.begin(), m_col_defs.end(), *it_col) != m_col_defs.end())
             {
                 found++;
             }
         }
-        switch (found)
+        if (found == 0)
         {
-            case 0:
-                _ReportError(0, "Not found any of require-one columns", *it);
-                columns_ok = false;
-                break;
-            case 1:
-                // good;
-                break;
-            default:
-                _ReportError(0, "Found several of require-one columns", *it);
-                columns_ok = false;
-                break;
+           _ReportError(0, "Not found any of require-one columns", *it);
         }
     }
 
@@ -324,6 +317,31 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
             if (values.size() > m_col_defs.size())
                 _ReportError(m_col_defs.size(), "To many values", "");
 
+            ITERATE(vector< set<string> >, req_one_it, m_require_one_cols)
+            {     
+                int count = 0;
+                for (size_t i=0; i<m_col_defs.size(); i++)
+                {                    
+                    if (i<values.size() && !values[i].empty())
+                    {
+                        if (req_one_it->find(m_col_defs[i]) != req_one_it->end())
+                        {
+                            count++;
+                            if (count>1)
+                            {
+                                string colname = NStr::Join(*req_one_it, ",");
+                                _ReportError(i, "Several of require-one columns specified", colname);
+                            }
+                        }
+                    }
+                }
+                if (count==0)
+                {
+                    string colname = NStr::Join(*req_one_it, ",");
+                    _ReportError(-1, "None of require-one columns specified", colname);
+                }
+            }
+
             for (size_t i=0; i<m_col_defs.size(); i++)
             {
                 if (i>=values.size() || values[i].empty())
@@ -352,7 +370,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                     }
                     
                 }
-            }
+            } // iterate over cols
         }
     }
 }
