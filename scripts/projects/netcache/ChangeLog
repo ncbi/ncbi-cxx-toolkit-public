@@ -79,4 +79,8 @@ version 6.8.1
 Changed the way periodic sync is made to lower priority of initial sync and to sync all available servers for a given slot.
 Added report of peer servers state.
 
+November 13, 2014
+version 6.8.2
+Implemented peer to peer handshake and blob filtering when communicating with other NC servers - to avoid sending to old servers data which they do not understand.
+Implemented recovery in several problem scenarios to avoid crashes; modified mechanism of termination on unrecoverable errors to post log messages which explain the problem.
 
