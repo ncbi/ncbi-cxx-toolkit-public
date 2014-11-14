@@ -375,6 +375,9 @@ int CWGSTestApp::Run(void)
                 if ( !args["limit_count"] ) {
                     it = CWGSSeqIterator(wgs_db, row, withdrawn);
                 }
+                else if ( limit_count == 0 ) {
+                    it = CWGSSeqIterator(wgs_db, row, kMax_UI8, withdrawn);
+                }
                 else {
                     it = CWGSSeqIterator(wgs_db, row, row+limit_count-1, withdrawn);
                 }
@@ -389,7 +392,7 @@ int CWGSTestApp::Run(void)
             it = CWGSSeqIterator(wgs_db, withdrawn);
         }
         size_t count = 0;
-        for ( ; limit_count && it; ++it ) {
+        for ( ; it; ++it ) {
             out << it.GetAccession()<<'.'<<it.GetAccVersion();
             if ( it.HasGi() ) {
                 out << " gi: "<<it.GetGi();
@@ -415,7 +418,7 @@ int CWGSTestApp::Run(void)
                 ERR_POST(Fatal<<"Different Seq-data at " << pos << ": " <<
                          MSerial_AsnText << *seq1 << MSerial_AsnText << *seq2);
             }
-            if ( ++count >= limit_count ) {
+            if ( limit_count && ++count >= limit_count ) {
                 break;
             }
         }
@@ -521,12 +524,12 @@ int CWGSTestApp::Run(void)
             it = CWGSScaffoldIterator(wgs_db);
         }
         size_t count = 0;
-        for ( ; limit_count && it; ++it ) {
+        for ( ; it; ++it ) {
             out << it.GetScaffoldName() << '\n';
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
             }
-            if ( ++count >= limit_count ) {
+            if ( limit_count && ++count >= limit_count ) {
                 break;
             }
         }

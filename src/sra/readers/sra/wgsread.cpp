@@ -685,7 +685,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
     if ( first_row > m_CurrId ) {
         m_CurrId = first_row;
     }
-    if ( last_row+1 < m_FirstBadId ) {
+    if ( last_row+1 > last_row && last_row+1 < m_FirstBadId ) {
         m_FirstBadId = last_row+1;
     }
     x_Settle();
