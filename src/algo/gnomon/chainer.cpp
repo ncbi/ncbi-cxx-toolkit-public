@@ -277,7 +277,7 @@ public:
     bool HarborsNested(const CChain& other_chain, bool check_in_holes) const;
     bool HarborsNested(const CGene& other_gene, bool check_in_holes) const;
 
-    bool HasTrustedEvidence() const;
+    bool HasTrustedEvidence(TOrigAligns& orig_aligns) const;
 
     TContained m_members;
     int m_polya_cap_right_hard_limit;
@@ -303,7 +303,7 @@ public:
     typedef list<CGeneModel>::const_iterator TConstIt;
     TSignedSeqRange Limits() const { return m_limits; }
     TSignedSeqRange RealCdsLimits() const { return m_real_cds_limits; }
-    bool IsAlternative(const CChain& a) const;
+    bool IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const;
     bool IsAllowedAlternative(const ncbi::gnomon::CGeneModel&, int maxcomposite) const;
     void Insert(CChain& a);
     double MaxScore() const { return m_maxscore; }
@@ -479,7 +479,7 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
     return true;
 }
 
-bool CGene::IsAlternative(const CChain& a) const
+bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
 {
     _ASSERT( size()>0 );
 
@@ -542,13 +542,13 @@ bool CGene::IsAlternative(const CChain& a) const
 
         bool gene_has_trusted = false;
         ITERATE(CGene, it, *this) {
-            if((*it)->HasTrustedEvidence()) {
+            if((*it)->HasTrustedEvidence(orig_aligns)) {
                 gene_has_trusted = true;
                 break;
             }
         }
 
-        if(has_common_cds || (has_common_splice && (!gene_has_trusted || !a.HasTrustedEvidence()))) // separate trusted genes with similar splices if they don't have common cds
+        if(has_common_cds || (has_common_splice && (!gene_has_trusted || !a.HasTrustedEvidence(orig_aligns)))) // separate trusted genes with similar splices if they don't have common cds
             return true;
         else
             return false;
@@ -684,7 +684,7 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
     if(!gene.Limits().IntersectingWith(algn.Limits()))             // don't overlap
         return eOtherGene;
     
-    if(gene.IsAlternative(algn)) {   // has common splice or common CDS
+    if(gene.IsAlternative(algn, orig_aligns)) {   // has common splice or common CDS
 
         if(gene.IsAllowedAlternative(algn, composite) && algn_good_enough_to_be_annotation) {
             if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()) {                   // trusted gene
@@ -703,14 +703,14 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
     }
 
     if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation)) {    // gene is nested in align's intron (could be partial)
-        if(gene_good_enough_to_be_annotation || algn.HasTrustedEvidence())
+        if(gene_good_enough_to_be_annotation || algn.HasTrustedEvidence(orig_aligns))
             return eExternal;
         else
             return eNotCompatible;
     }
 
     if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation)) {   // algn is nested in gene (could be partial)
-        if(algn_good_enough_to_be_annotation || algn.HasTrustedEvidence())
+        if(algn_good_enough_to_be_annotation || algn.HasTrustedEvidence(orig_aligns))
             return eNested;
         else
             return eNotCompatible;
@@ -846,7 +846,7 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                         CChain a = algn;
                         a.Clip(a.RealCdsLimits(), CAlignModel::eRemoveExons);
                         ITERATE(list<list<CGene>::iterator>, k, included_in) {
-                            if(!(*k)->IsAlternative(a)) {
+                            if(!(*k)->IsAlternative(a, orig_aligns)) {
                                 cds_overlap = false;
                                 break;
                             }
@@ -2626,7 +2626,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
         double ms = GoodCDNAScore(chain);
 
-        bool has_trusted = chain.HasTrustedEvidence();
+        bool has_trusted = chain.HasTrustedEvidence(orig_aligns);
 
         if(!has_trusted)
             RemovePoorCds(chain,ms);
@@ -3458,10 +3458,14 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
     }  
 }
 
-bool CChain::HasTrustedEvidence() const {
+bool CChain::HasTrustedEvidence(TOrigAligns& orig_aligns) const {
     ITERATE (TContained, i, m_members) {
-        if(!(*i)->m_align->TrustedProt().empty() || (!(*i)->m_align->TrustedmRNA().empty() && (*i)->m_cds_info->ProtReadingFrame().NotEmpty()))
-            return true;
+        const CGeneModel* align = (*i)->m_align;
+        if(!align->TrustedProt().empty() || (!align->TrustedmRNA().empty() && (*i)->m_cds_info->ProtReadingFrame().NotEmpty())) {
+            CAlignModel* orig_align = orig_aligns[align->ID()];
+            if(align->AlignLen() > 0.5*orig_align->TargetLen())
+                return true;
+        }
     }
 
     return false;
