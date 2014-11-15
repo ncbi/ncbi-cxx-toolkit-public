@@ -360,6 +360,11 @@ gnutls needs3party hogweed
 gnutls needs3party nettle
 gp_python_attr needs $(GPIPE_COMMON_LIBS)
 gp_python_attr needs3party $(PYTHON_LIBS)
+gpcgi needs $(SDBAPI_LIB)
+gpcgi needs xcgi
+gpcgi needs xconnect
+gpcgi needs xmlwrapp
+gpcgi needs xregexp
 gpexec_query needs gpipe_common
 gpexec_query needs monitor_buildrun
 gpg-error needs3party $(ORIG_LIBS)
