@@ -337,8 +337,56 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
 
     CAlignMap amap = align.GetAlignMap();
     TSignedSeqRange old_limits = align.Limits();
-    bool snap_to_codons = align.Type()&CAlignModel::eProt; 
 
+    if(align.Type()&CGeneModel::eNotForChaining) {
+        TSignedSeqRange tlim = align.TranscriptLimits();
+        int not_aligned_left = tlim.GetFrom();
+        int not_aligned_right = align.TargetLen()-1-tlim.GetTo();
+        if(align.Orientation() == eMinus)
+            swap(not_aligned_left,not_aligned_right);
+
+        if(not_aligned_left > 30) {
+            int l = align.Limits().GetFrom();
+            int ie = 0;
+            while(l < align.Limits().GetTo() && m_coverage[l-m_left_end] < clip_threshold*cov) {
+                if(l < align.Exons()[ie].GetTo())
+                    ++l;
+                else
+                    l = align.Exons()[++ie].GetFrom();
+            }
+            if(l != align.Limits().GetFrom()) {
+                TSignedSeqRange seg = amap.ShrinkToRealPoints(TSignedSeqRange(l,align.Limits().GetTo()), false);
+                if(seg.Empty() || amap.FShiftedLen(seg,false) < END_PART_LENGTH) {
+                    align.ClearExons();
+                    return;
+                } else {
+                    align.Clip(seg,CGeneModel::eRemoveExons);
+                }
+            }
+        }
+
+        if(not_aligned_right > 30) {
+            int r = align.Limits().GetTo();
+            int ie = align.Exons().size()-1;
+            while(r > align.Limits().GetFrom() && m_coverage[r-m_left_end] < clip_threshold*cov) {
+                if(r > align.Exons()[ie].GetFrom())
+                    --r;
+                else
+                    r = align.Exons()[--ie].GetTo();
+            }
+            if(r != align.Limits().GetTo()) {
+                TSignedSeqRange seg = amap.ShrinkToRealPoints(TSignedSeqRange(align.Limits().GetFrom(),r), false);
+                if(seg.Empty() || amap.FShiftedLen(seg,false) < END_PART_LENGTH) {
+                    align.ClearExons();
+                    return;
+                } else {
+                    align.Clip(seg,CGeneModel::eRemoveExons);
+                }
+            }
+        }
+    }
+
+    bool snap_to_codons = align.Type()&CAlignModel::eProt; 
     bool keepdoing = true;
     while(keepdoing) {
         keepdoing = false;
@@ -1174,7 +1222,7 @@ void CAlignCollapser::FilterAlignments() {
             }
         }
 
-        if(!align.Exons().empty() && !(align.Status()&CGeneModel::eGapFiller))
+        if(!align.Exons().empty())
             ClipNotSupportedFlanks(align, clip_threshold);
 
         if(align.Exons().empty() || (!good_alignment && !(align.Type()&CGeneModel::eNotForChaining)) || !AlignmentIsSupportedBySR(align, m_coverage, minsingleexpression, m_left_end)) {
@@ -1470,12 +1518,16 @@ bool CAlignCollapser::CheckAndInsert(const CAlignModel& align, TAlignModelCluste
 struct LeftAndLongFirstOrderForAligns
 {
     bool operator() (TAlignModelList::const_iterator a, TAlignModelList::const_iterator b) {  // left and long first
-        if(a->Limits() == b->Limits())
-            return a->TargetAccession() < b->TargetAccession();
-        else if(a->Limits().GetFrom() !=  b->Limits().GetFrom())
+        if(a->Limits() == b->Limits()) {
+            if(a->Ident() != b->Ident())
+                return a->Ident() > b->Ident();
+            else
+                return a->TargetAccession() < b->TargetAccession();
+        } else if(a->Limits().GetFrom() !=  b->Limits().GetFrom()) {
             return a->Limits().GetFrom() <  b->Limits().GetFrom();
-        else
+        } else {
             return a->Limits().GetTo() >  b->Limits().GetTo();
+        }
     }
 }; 
 
@@ -1950,6 +2002,7 @@ void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& tr
     }
 }
 
+#define MAX_DIST_TO_FLANK_GAP 10000
 CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlignModel& align, int fill) {
 
     CGeneModel editedmodel = align;
@@ -1984,7 +2037,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
 
     if(!left_seq.empty() && (fill&efill_left) != 0) {
         TIntMap::iterator ig = m_genomic_gaps_len.lower_bound(align.Limits().GetFrom());
-        if(ig != m_genomic_gaps_len.begin() && (--ig)->first > align.Limits().GetFrom()-10000) {  // there is gap on left
+        if(ig != m_genomic_gaps_len.begin() && (--ig)->first > align.Limits().GetFrom()-MAX_DIST_TO_FLANK_GAP) {  // there is gap on left
             transcript_exons.push_back(left_texon);
             editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, left_seq, left_src);
  
@@ -2032,7 +2085,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
 
     if(!right_seq.empty() && (fill&efill_right) != 0) {
         TIntMap::iterator ig = m_genomic_gaps_len.upper_bound(align.Limits().GetTo());
-        if(ig != m_genomic_gaps_len.end() && ig->first < align.Limits().GetTo()+10000) {  // there is gap on right
+        if(ig != m_genomic_gaps_len.end() && ig->first < align.Limits().GetTo()+MAX_DIST_TO_FLANK_GAP) {  // there is gap on right
             transcript_exons.push_back(right_texon);
             editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, right_seq, right_src);
                     
