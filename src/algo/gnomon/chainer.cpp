@@ -6365,7 +6365,7 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
 
     bool snap_to_codons = ((a.Type() & CAlignModel::eProt)!=0);      
     TSignedSeqPos left  = a.Limits().GetFrom();
-    if ((a.Type() & CAlignModel::eProt)==0 || !a.LeftComplete()) {
+    if ((a.Exons().size() > 1 && !a.Exons().front().m_ssplice) || (a.Type() & CAlignModel::eProt)==0 || !a.LeftComplete()) {
         for(unsigned int i = 0; i < a.Exons().size()-1; ++i) {
             if(EffectiveExonLength(a.Exons()[i], alignmap, snap_to_codons) >= minex) {
                 break;
@@ -6380,7 +6380,7 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
     }
 
     TSignedSeqPos right = a.Limits().GetTo();
-    if ((a.Type() & CAlignModel::eProt)==0 || !a.RightComplete()) {
+    if ((a.Exons().size() > 1 && !a.Exons().back().m_fsplice) || (a.Type() & CAlignModel::eProt)==0 || !a.RightComplete()) {
         for(unsigned int i = a.Exons().size()-1; i > 0; --i) {
             if(EffectiveExonLength(a.Exons()[i], alignmap, snap_to_codons) >= minex) {
                 break;
