@@ -37,6 +37,11 @@
 #include <objects/macro/String_location.hpp>
 #include <objects/macro/Word_substitution.hpp>
 #include <objects/macro/Word_substitution_set.hpp>
+#include <objects/macro/Suspect_rule.hpp>
+#include <objects/macro/Replace_rule.hpp>
+#include <objects/macro/Replace_func.hpp>
+#include <objects/macro/Simple_replace.hpp>
+#include <objects/macro/Search_func.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
@@ -333,3 +338,22 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2048)
 
     BOOST_CHECK_EQUAL(s.Match("cytochrome b gene"), true);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2093)
+{
+    CSuspect_rule rule;
+
+    rule.SetFind().SetString_constraint().SetMatch_text("localisation");
+    rule.SetFind().SetString_constraint().SetMatch_location(eString_location_contains);
+    rule.SetReplace().SetReplace_func().SetSimple_replace().SetReplace("localization");
+    rule.SetReplace().SetReplace_func().SetSimple_replace().SetWhole_string(false);
+    rule.SetReplace().SetReplace_func().SetSimple_replace().SetWeasel_to_putative(false);
+    rule.SetReplace().SetMove_to_note(false);
+
+    string original = "Localisation of periplasmic protein complexes";
+    BOOST_CHECK_EQUAL(rule.GetFind().Match(original), true);
+    BOOST_CHECK_EQUAL(rule.ApplyToString(original), true);
+    BOOST_CHECK_EQUAL(original, "localization of periplasmic protein complexes");
+}
+
