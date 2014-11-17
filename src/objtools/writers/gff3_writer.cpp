@@ -1098,24 +1098,31 @@ bool CGff3Writer::xWriteFeatureTrna(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const string rnaId = xNextTrnaId();
-    CRef<CGffFeatureRecord> pParent( new CGffFeatureRecord(rnaId) );
-    if (!this->xAssignFeature(*pParent, fc, mf)) {
-        return false;
-    }
-    xAssignFeatureAttributeParentGene(*pParent, fc, mf);
-    TSeqPos seqlength = 0;
-    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
-        seqlength = fc.BioseqHandle().GetInst().GetLength();
-    if (!xWriteFeatureRecords( *pParent, mf.GetLocation(), seqlength ) ) {
-        return false;
-    }
 
-    CRef<CGffFeatureRecord> pRna(new CGffFeatureRecord(rnaId));
+    const string rnaId = xNextTrnaId();
+
+    CRef<CGffFeatureRecord> pRna( new CGffFeatureRecord(rnaId) );
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
+	}
+
+
+    if(sIsTransspliced(mf)){    
+        xAssignFeatureAttributeParentGene(*pRna, fc, mf);
+        TSeqPos seqlength = 0;
+        if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
+            seqlength = fc.BioseqHandle().GetInst().GetLength();
+
+        if (!xWriteFeatureRecords( *pRna, mf.GetLocation(), seqlength ) ) {
+            return false;
+        }
+    }else{
+        if(!xWriteRecord(*pRna)){
+            return false;
+        }
     }
-    const CSeq_loc& PackedInt = pRna->Location();
+
+	const CSeq_loc& PackedInt = pRna->Location();
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
