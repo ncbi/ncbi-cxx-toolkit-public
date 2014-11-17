@@ -61,7 +61,7 @@ static const char* s_HttpHeaderNames[] = {
 };
 
 
-// Reserved headers can not be set manually.
+// Reserved headers cannot be set manually.
 static const char* kReservedHeaders[]  = {
     "NCBI-SID",
     "NCBI-PHID"
@@ -347,10 +347,10 @@ static Int8 s_SimpleRand(Int8 range)
 
 string CHttpFormData::CreateBoundary(void)
 {
-    static const char* kBoundaryChars =
+    static const char   kBoundaryChars[] =
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
-    static const size_t kBoundaryCharsLen = strlen(kBoundaryChars);
-    static const int kBoundaryLen = 32;
+    static const size_t kBoundaryCharsLen = sizeof(kBoundaryChars) - 1;
+    static const int    kBoundaryLen = 32;
 
     string boundary;
     for (int i = 0; i < kBoundaryLen; ++i) {
@@ -449,9 +449,9 @@ bool CHttpFormData::IsEmpty(void) const
 //
 
 
-CHttpResponse::CHttpResponse(CHttpSession& session,
-                             const CUrl&   url,
-                             CHttpStreamRef&  stream)
+CHttpResponse::CHttpResponse(CHttpSession&   session,
+                             const CUrl&     url,
+                             CHttpStreamRef& stream)
     : m_Session(&session),
       m_Url(url),
       m_Location(url),
@@ -490,8 +490,7 @@ CNcbiIstream& CHttpResponse::ErrorStream(void) const
 
 bool CHttpResponse::CanGetContentStream(void) const
 {
-    if (m_StatusCode >= 200  &&  m_StatusCode < 300) return true;
-    return false;
+    return 200 <= m_StatusCode  &&  m_StatusCode < 300;
 }
 
 
@@ -531,19 +530,21 @@ void CHttpResponse::x_ParseHeader(const char* header)
 
 unsigned short SGetHttpDefaultRetries::operator()(void) const
 {
-    #define STR(s) #s
+#define _STR(s)  #s
+#define  STR(s)  _STR(s)
     char buf[16];
     ConnNetInfo_GetValue(0, REG_CONN_MAX_TRY, buf, sizeof(buf), STR(DEF_CONN_MAX_TRY));
+#undef   STR
+#undef  _STR
     unsigned short maxtry = atoi(buf);
     return maxtry ? maxtry - 1 : 0;
 }
 
 
 inline
-unsigned short RetriesToMaxtry(unsigned short retries)
+unsigned short x_RetriesToMaxtry(unsigned short retries)
 {
-    retries++;
-    return retries ? retries : retries - 1;
+    return ++retries ? retries : retries - 1;
 }
 
 
@@ -635,7 +636,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         ConnNetInfo_SetTimeout(connnetinfo, g_CTimeoutToSTimeout(m_Timeout, sto));
     }
     if ( !m_Retries.IsNull() ) {
-        connnetinfo->max_try = RetriesToMaxtry(m_Retries);
+        connnetinfo->max_try = x_RetriesToMaxtry(m_Retries);
     }
 
     m_Stream.Reset(new TStreamRef);
@@ -673,8 +674,8 @@ void CHttpRequest::x_AddCookieHeader(const CUrl& url)
 // CConn_HttpStream callback for header parsing.
 // user_data must contain CHttpRequest*.
 EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
-                                              void*       user_data,
-                                              int         server_error)
+                                               void*       user_data,
+                                               int         server_error)
 {
     if ( !user_data ) return eHTTP_HeaderContinue;
     CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
