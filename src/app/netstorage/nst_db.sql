@@ -43,7 +43,7 @@ GO
 -- Modify the condition below when ready for the deployment
 -- IF 1 = 0 => development
 -- IF 1 = 1 => production
-IF 1 = 0
+IF 1 = 1
 BEGIN
     IF (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')) OR
        (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')) OR
@@ -736,6 +736,7 @@ GO
 CREATE PROCEDURE GetAttribute
     @object_key     VARCHAR(256),
     @attr_name      VARCHAR(256),
+    @need_update    INT,
     @attr_value     VARCHAR(1024) OUT
 AS
 BEGIN
@@ -786,14 +787,17 @@ BEGIN
             RETURN -3               -- attribute value is not found
         END
 
-        -- Update attribute timestamp for the existing object
-        UPDATE Objects SET tm_attr_read = GETDATE() WHERE object_id = @object_id
-        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
-
-        IF @error != 0 OR @row_count = 0
+        IF @need_update != 0
         BEGIN
-            ROLLBACK TRANSACTION
-            RETURN 1
+            -- Update attribute timestamp for the existing object
+            UPDATE Objects SET tm_attr_read = GETDATE() WHERE object_id = @object_id
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+            IF @error != 0 OR @row_count = 0
+            BEGIN
+                ROLLBACK TRANSACTION
+                RETURN 1
+            END
         END
 
     END TRY
