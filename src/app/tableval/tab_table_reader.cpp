@@ -327,11 +327,6 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                         if (req_one_it->find(m_col_defs[i]) != req_one_it->end())
                         {
                             count++;
-                            if (count>1)
-                            {
-                                string colname = NStr::Join(*req_one_it, ",");
-                                _ReportError(i, "Several of require-one columns specified", colname);
-                            }
                         }
                     }
                 }

@@ -340,7 +340,8 @@ DEFINE_COL_VALIDATOR(country)
 
 DEFINE_COL_VALIDATOR(boolean)
 {
-    if (value != "TRUE")
+    if (value != "TRUE" &&
+        value != "true")
        error = "Can have TRUE only";
 
     return false;
