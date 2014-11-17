@@ -53,32 +53,58 @@ class NetStorageConsole:
     def __init__( self, host_, port_ ):
         # Initialize the command map
         self.__commandMap = {
-             '?':              self.printCommandList,
-             'help':           self.printCommandList,
-             'hello':          self.sendHello,
-             'bye':            self.sendBye,
-             'info':           self.sendInfo,
-             'configuration':  self.sendConfiguration,
-             'shutdown':       self.sendShutdown,
-             'getclientsinfo': self.sendGetClientsInfo,
-             'getobjectinfo':  self.sendGetObjectInfo,
-             'getattr':        self.sendGetAttr,
-             'delattr':        self.sendDelAttr,
-             'setattr':        self.sendSetAttr,
-             'no-type':        self.sendNoType,
-             'no-dict':        self.sendNoDictionary,
-             'create':         self.create,
-             'upload':         self.upload,
-             'delete':         self.delete,
-             'download':       self.download,
-             'exists':         self.exists,
-             'getsize':        self.getsize,
-             'relocate':       self.relocate,
-             'health':         self.health,
-             'reconfigure':    self.reconfigure,
-             'ackalert':       self.ackalert,
-             'getmetadatainfo':self.getMetadataInfo,
-             'junk':           self.sendJunk,
+             '?':              [ self.printCommandList,
+                                 "prints the list of commands" ],
+             'help':           [ self.printHelp,
+                                 "prints the list of commands or help for an individual one" ],
+             'hello':          [ self.sendHello,
+                                 "sends HELLO message; [client name] [service name] [metadata option]" ],
+             'bye':            [ self.sendBye,
+                                 "sends BYE message; no arguments" ],
+             'info':           [ self.sendInfo,
+                                 "sends INFO message; no arguments" ],
+             'configuration':  [ self.sendConfiguration,
+                                 "sends CONFIGURATION message; no arguments" ],
+             'shutdown':       [ self.sendShutdown,
+                                 "sends SHUTDOWN message; [how: soft (default), hard]" ],
+             'getclientsinfo': [ self.sendGetClientsInfo,
+                                 "sends GETCLIENTSINFO message; no arguments" ],
+             'getobjectinfo':  [ self.sendGetObjectInfo,
+                                 "sends GETOBJECTINFO message; <object locator>" ],
+             'getattr':        [ self.sendGetAttr,
+                                 "sends GETATTR message; <object locator> <attribute name>" ],
+             'delattr':        [ self.sendDelAttr,
+                                 "sends DELATTR message; <object locator> <attribute name>" ],
+             'setattr':        [ self.sendSetAttr,
+                                 "sends SETATTR message; <object locator> <attribute name> <attribute value>" ],
+             'no-type':        [ self.sendNoType,
+                                 "sends a malformed message without a type" ],
+             'no-dict':        [ self.sendNoDictionary,
+                                 "sends a malformed non-dictionary message" ],
+             'create':         [ self.create,
+                                 "sends CREATE message; <file name> [the rest of the message, e.g. flags]" ],
+             'upload':         [ self.upload,
+                                 "sends WRITE message; <object locator> <file name>" ],
+             'delete':         [ self.delete,
+                                 "sends DELETE message; <object locator>" ],
+             'download':       [ self.download,
+                                 "sends READ message; <object locator>" ],
+             'exists':         [ self.exists,
+                                 "sends EXISTS message; <object locator>" ],
+             'getsize':        [ self.getsize,
+                                 "sends GETSIZE message; <object locator>" ],
+             'relocate':       [ self.relocate,
+                                 "sends RELOCATE message; <object locator> <new location flags>" ],
+             'health':         [ self.health,
+                                 "sends HEALTH message; no arguments" ],
+             'reconfigure':    [ self.reconfigure,
+                                 "sends RECONFIGURE message; no arguments" ],
+             'ackalert':       [ self.ackalert,
+                                 "sends ACKALERT message; <alert name> <user>" ],
+             'getmetadatainfo':[ self.getMetadataInfo,
+                                 "sends GETMETADATAINFO message; no arguments" ],
+             'junk':           [ self.sendJunk,
+                                 "sends an unterminated malformed message" ],
            }
 
         self.__commandSN = 0
@@ -153,14 +179,10 @@ class NetStorageConsole:
     def pickProcessor( self, command ):
         " Picks the command from the map "
         if command in self.__commandMap:
-            return self.__commandMap[ command.lower() ]
+            return self.__commandMap[ command.lower() ][ 0 ]
 
         # Try to find candidates
-        candidates = []
-        for key in self.__commandMap.keys():
-            if key.startswith( command.lower() ):
-                candidates.append( [ key, self.__commandMap[ key ] ] )
-
+        candidates = self.getCandidates( command )
         if len( candidates ) == 0:
             print "The command '" + command + "' is not supported. " + \
                   "Type'help' to get the list of supported commands"
@@ -177,7 +199,13 @@ class NetStorageConsole:
               "' is ambiguous. Candidates are: " + names
         return None
 
-
+    def getCandidates( self, cmd ):
+        " provides a list of candidates "
+        candidates = []
+        for key in self.__commandMap.keys():
+            if key.startswith( cmd.lower() ):
+                candidates.append( [ key, self.__commandMap[ key ][ 0 ] ] )
+        return candidates
 
     @staticmethod
     def splitArguments( cmdLine ):
@@ -248,14 +276,12 @@ class NetStorageConsole:
             argument += cmdLine[ index ]
             index += 1
 
-
         if argument != "":
             result.append( argument )
 
         if expectQuote or expectDblQuote:
             raise Exception( "No closing quotation" )
         return result
-
 
     def printCommandList( self, arguments ):
         " Prints the available commands "
@@ -264,29 +290,57 @@ class NetStorageConsole:
             print key
         return
 
+    def printHelp( self, arguments ):
+        " Provides a list of commands or a help message for a certain command "
+        if len( arguments ) == 0:
+            self.printCommandList( [] )
+            return
+        if len( arguments ) > 1:
+            print "Too many arguments. 0 or 1 (command name) arguments are accepted"
+            return
+
+        command  = arguments[ 0 ]
+        candidates = self.getCandidates( command )
+        if len( candidates ) == 0:
+            print "Cannot find any commands like '" + command + "'"
+            self.printCommandList( [] )
+            return
+
+        for candidate in candidates:
+            key = candidate[ 0 ]
+            print key + ": " + self.__commandMap[ key ][ 1 ]
+        return
+
     def sendHello( self, arguments ):
         " Sends the HELLO message "
-        if len( arguments ) > 2:
+        if len( arguments ) > 3:
             print "The 'hello' command accepts 0 or 1 argument (client name) " \
-                  "or 2 arguments (client name and service name)"
+                  "or 2 arguments (+ service name) " \
+                  "or 3 arguments (+ metadata option)"
             return
 
         client = "nstconsole - debugging NetStorage console"
-        service = "no-service"
+        message = { 'Type':         'HELLO',
+                    'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
+                    'ClientIP':     hostIP,
+                    'Application':  'test/nstconsole.py',
+                    'Ticket':       'No ticket at all' }
+
         if len( arguments ) == 1:
             client = arguments[ 0 ]
         if len( arguments ) == 2:
             client = arguments[ 0 ]
             service = arguments[ 1 ]
+            message[ "Service" ] = service
+        if len( arguments ) == 3:
+            client = arguments[ 0 ]
+            service = arguments[ 1 ]
+            metadataOption = arguments[ 2 ]
+            message[ "Service" ] = service
+            message[ "Metadata" ] = metadataOption
+        message[ "Client" ] = client
 
-        message = { 'Type':         'HELLO',
-                    'SessionID':    SESSIONID,
-                    'ncbi_phid':    NCBI_PHID,
-                    'ClientIP':     hostIP,
-                    'Client':       client,
-                    'Service':      service,
-                    'Application':  'test/nstconsole.py',
-                    'Ticket':       'No ticket at all' }
         self.exchange( message )
         return
 
@@ -416,7 +470,6 @@ class NetStorageConsole:
                     'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         if len( arguments ) > 1:
-            print "are we there yet?", ' '.join( arguments[ 1 : ] )
             message.update( json.loads( ' '.join( arguments[ 1 : ] ) ) )
 
         response = self.exchange( message )
@@ -711,9 +764,9 @@ class NetStorageConsole:
 
 
     def ackalert( self, arguments ):
-        " Sends ACLALERT message "
+        " Sends ACKALERT message "
         if len( arguments ) != 2:
-            print "Exactly two argument are required: alert name and the user "
+            print "Exactly two argument are required: alert name and the user"
             return
 
         alertName = arguments[ 0 ]
