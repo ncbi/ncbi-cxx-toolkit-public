@@ -41,6 +41,7 @@ USING_NCBI_SCOPE;
 
 
 CNSTClient::CNSTClient() :
+    m_MetadataOption(eMetadataUnknown),
     m_Type(0),
     m_Addr(0),
     m_RegistrationTime(CNSTPreciseTime::Current()),
@@ -84,6 +85,7 @@ CJsonNode  CNSTClient::serialize(void) const
     client.SetInteger("ObjectsRelocated", m_NumberOfObjectsRelocated);
     client.SetInteger("ObjectsDeleted", m_NumberOfObjectsDeleted);
     client.SetInteger("SocketErrors", m_NumberOfSockErrors);
+    client.SetString("MetadataOption", g_MetadataOptionToId(m_MetadataOption));
 
     return client;
 }
@@ -130,6 +132,7 @@ void  CNSTClientRegistry::Touch(const string &  client,
                                 const string &  applications,
                                 const string &  ticket,
                                 const string &  service,
+                                EMetadataOption metadata_option,
                                 unsigned int    peer_address)
 {
     if (client.empty())
@@ -145,6 +148,7 @@ void  CNSTClientRegistry::Touch(const string &  client,
         found->second.SetTicket(ticket);
         found->second.SetService(service);
         found->second.SetPeerAddress(peer_address);
+        found->second.SetMetadataOption(metadata_option);
         return;
     }
 
@@ -153,6 +157,7 @@ void  CNSTClientRegistry::Touch(const string &  client,
     new_client.SetTicket(ticket);
     new_client.SetService(service);
     new_client.SetPeerAddress(peer_address);
+    new_client.SetMetadataOption(metadata_option);
     m_Clients[client] = new_client;
 }
 

@@ -92,7 +92,7 @@ public:
     CNSTDatabase &  GetDb(void);
 
     // Metainfo support
-    bool NeedMetadata(const string &  service) const;
+    bool InMetadataServices(const string &  service) const;
     CJsonNode ReadMetadataConfiguration(const IRegistry &  reg);
     CJsonNode serializeMetadataInfo(void) const;
 

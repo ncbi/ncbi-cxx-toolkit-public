@@ -39,6 +39,7 @@
 #include <connect/services/json_over_uttp.hpp>
 
 #include "nst_precise_time.hpp"
+#include "nst_metadata_options.hpp"
 
 
 
@@ -81,6 +82,8 @@ class CNSTClient
         { m_Ticket = ticket; }
         void SetService(const string &  service)
         { m_Service = service; }
+        void SetMetadataOption(EMetadataOption  val)
+        { m_MetadataOption = val; }
         void SetPeerAddress(unsigned int  peer_address)
         { m_Addr = peer_address; }
         void  AddBytesWritten(size_t  count)
@@ -105,6 +108,7 @@ class CNSTClient
         string          m_Application;    // Absolute exec path
         string          m_Ticket;         // Optional auth ticket
         string          m_Service;        // Optional service
+        EMetadataOption m_MetadataOption; // Metadata option after HELLO
 
         unsigned int    m_Type;           // bit mask of ENSTClientType
         unsigned int    m_Addr;           // Client peer address
@@ -138,6 +142,7 @@ class CNSTClientRegistry
                     const string &  applications,
                     const string &  ticket,
                     const string &  service,
+                    EMetadataOption metadataOption,
                     unsigned int    peer_address);
         void  Touch(const string &  client);
         void  RegisterSocketWriteError(const string &  client);

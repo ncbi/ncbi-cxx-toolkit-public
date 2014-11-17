@@ -92,11 +92,12 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
       m_WriteBuffer(NULL),
       m_JSONWriter(m_UTTPWriter),
       m_DataMessageSN(-1),
-      m_NeedMetaInfo(false),
+      m_MetadataOption(eMetadataNotSpecified),
       m_DBClientID(-1),
       m_ObjectSize(0),
       m_ByeReceived(false),
-      m_FirstMessage(true)
+      m_FirstMessage(true),
+      m_WriteCreateNeedMetaDBUpdate(false)
 {
     m_ReadBuffer = new char[ kReadBufferSize ];
     try {
@@ -502,8 +503,8 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         m_ObjectSize += data_size;
     }
     catch (const std::exception &  ex) {
-        string  message = "Error writing into " + m_ObjectBeingWritten.GetLoc() +
-                          ": " + ex.what();
+        string  message = "Error writing into " +
+                          m_ObjectBeingWritten.GetLoc() + ": " + ex.what();
         ERR_POST(message);
 
         // Send response message with an error
@@ -540,7 +541,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
         return;
     }
 
-    if (m_NeedMetaInfo) {
+    if (m_WriteCreateNeedMetaDBUpdate) {
         // Update of the meta DB is required. It differs depending it was an
         // object creation or writing into an existing one.
         string object_loc = m_ObjectBeingWritten.GetLoc();
@@ -573,9 +574,9 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             } catch (...) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 CJsonNode   response = CreateErrorResponseMessage(
-                                            m_DataMessageSN,
-                                            CNetStorageServerException::eUnknownError,
-                                            "Unknown metadata information DB error");
+                                    m_DataMessageSN,
+                                    CNetStorageServerException::eUnknownError,
+                                    "Unknown metadata information DB error");
                 x_SendSyncMessage(response);
                 ERR_POST("Unknown metadata information DB error");
                 x_PrintMessageRequestStop();
@@ -667,18 +668,21 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
             if (status != eIO_Success) {
                 // Error writing to the socket.
                 // Log what we can.
-                string  report = "Error writing message to the client. "
-                                 "Peer: " +  GetSocket().GetPeerAddress() + ". "
-                                 "Socket write error status: " + IO_StatusStr(status) + ". "
-                                 "Written bytes: " + NStr::NumericToString(bytes_written) + ". "
-                                 "Message begins with: ";
+                string  report =
+                    "Error writing message to the client. "
+                    "Peer: " +  GetSocket().GetPeerAddress() + ". "
+                    "Socket write error status: " + IO_StatusStr(status) + ". "
+                    "Written bytes: " + NStr::NumericToString(bytes_written) +
+                    ". Message begins with: ";
 
                 if (output_buffer_size > 32) {
                     CTempString     buffer_head(output_buffer, 32);
-                    report += NStr::PrintableString(buffer_head) + " (TRUNCATED)";
+                    report += NStr::PrintableString(buffer_head) +
+                              " (TRUNCATED)";
                 }
                 else {
-                    CTempString     buffer_head(output_buffer, output_buffer_size);
+                    CTempString     buffer_head(output_buffer,
+                                                output_buffer_size);
                     report += NStr::PrintableString(buffer_head);
                 }
 
@@ -689,7 +693,8 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
                         m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
                     if (m_CmdContext.NotNull()) {
                         if (m_CmdContext->GetRequestStatus() == eStatus_OK)
-                            m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+                            m_CmdContext->SetRequestStatus(
+                                                        eStatus_SocketIOError);
                     }
                 }
 
@@ -841,18 +846,16 @@ CNetStorageHandler::x_ProcessHello(
         application = message.GetString("Application");
     if (message.HasKey("Ticket"))
         ticket = message.GetString("Ticket");
-    if (message.HasKey("Service")) {
+    if (message.HasKey("Service"))
         m_Service = NStr::TruncateSpaces(message.GetString("Service"));
-        m_NeedMetaInfo = m_Server->NeedMetadata(m_Service);
-    }
-    else {
+    else
         m_Service = "";
-        m_NeedMetaInfo = false;
-    }
+    m_MetadataOption = x_ConvertMetadataArgument(message);
 
     // Memorize the client in the registry
     m_ClientRegistry.Touch(m_Client, application,
-                           ticket, m_Service, x_GetPeerAddress());
+                           ticket, m_Service, m_MetadataOption,
+                           x_GetPeerAddress());
 
     // Send success response
     x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
@@ -958,9 +961,10 @@ CNetStorageHandler::x_ProcessAckAlert(
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
-    EAlertAckResult     ack_result = m_Server->AcknowledgeAlert(message.GetString("Name"),
-                                                                message.GetString("User"));
-    CJsonNode           reply = CreateResponseMessage(common_args.m_SerialNumber);
+    EAlertAckResult ack_result = m_Server->AcknowledgeAlert(
+                                                    message.GetString("Name"),
+                                                    message.GetString("User"));
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     switch (ack_result) {
         case eAcknowledged:
             // No warning needed, everything is fine
@@ -1000,9 +1004,10 @@ CNetStorageHandler::x_ProcessReconfigure(
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
-    CJsonNode               reply = CreateResponseMessage(common_args.m_SerialNumber);
-    CNcbiApplication *      app = CNcbiApplication::Instance();
-    bool                    reloaded = app->ReloadConfig(
+    CJsonNode           reply = CreateResponseMessage(
+                                            common_args.m_SerialNumber);
+    CNcbiApplication *  app = CNcbiApplication::Instance();
+    bool                reloaded = app->ReloadConfig(
                                             CMetaRegistry::fReloadIfChanged);
     if (!reloaded) {
         AppendWarning(reply, eConfigNotChangedWarning,
@@ -1188,17 +1193,24 @@ CNetStorageHandler::x_ProcessGetAttr(
                    "GETATTR message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (!m_NeedMetaInfo)
+    if (m_MetadataOption == eMetadataDisabled)
         NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
-                   "Client service is not configured for meta info");
+                   "DB access is restricted in HELLO");
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired)
+        x_ValidateWriteMetaDBAccess(message);
+
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
     SObjectID   object_id = x_GetObjectKey(message);
     string      value;
     int         status = m_Server->GetDb().ExecSP_GetAttribute(
-                                            object_id.object_key,
-                                            attr_name, value);
+                                        object_id.object_key, attr_name,
+                                        m_MetadataOption != eMetadataMonitoring,
+                                        value);
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     if (status == 0) {
@@ -1253,9 +1265,13 @@ CNetStorageHandler::x_ProcessSetAttr(
                    "SETATTR message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (!m_NeedMetaInfo)
+    if (m_MetadataOption == eMetadataDisabled ||
+        m_MetadataOption == eMetadataMonitoring)
         NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
-                   "Client service is not configured for meta info");
+                   "State changing operations are restricted in HELLO");
+
+    // The only options left are NotSpecified and Required
+    x_ValidateWriteMetaDBAccess(message);
 
     m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
@@ -1294,9 +1310,13 @@ CNetStorageHandler::x_ProcessDelAttr(
                    "DELATTR message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (!m_NeedMetaInfo)
+    if (m_MetadataOption == eMetadataDisabled ||
+        m_MetadataOption == eMetadataMonitoring)
         NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
-                   "Client service is not configured for meta info");
+                   "State changing operations are restricted in HELLO");
+
+    // The only options left are NotSpecified and Required
+    x_ValidateWriteMetaDBAccess(message);
 
     m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
@@ -1336,14 +1356,27 @@ CNetStorageHandler::x_ProcessCreate(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
     TNetStorageFlags    flags = ExtractStorageFlags(message);
     SICacheSettings     icache_settings = ExtractICacheSettings(message);
 
     x_CheckICacheSettings(icache_settings);
 
-    if (m_NeedMetaInfo) {
+    // The DB update depends on the command flags, on the HELLO
+    // metadata option and may depend on the HELLO service
+    m_WriteCreateNeedMetaDBUpdate = x_DetectMetaDBNeedOnCreate(flags);
+
+    if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    } else {
+        // No need metadata decision could be made basing not on the command
+        // flags but basing on the HELLO parameters so make sure the flag is
+        // set properly to reflect the decision
+        flags |= fNST_NoMetaData;
     }
 
     // Create the object stream depending on settings
@@ -1386,7 +1419,17 @@ CNetStorageHandler::x_ProcessWrite(
                    "WRITE message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (m_NeedMetaInfo) {
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    // If it was eMetadataDisabled then updates are not required
+    m_WriteCreateNeedMetaDBUpdate = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        m_WriteCreateNeedMetaDBUpdate = x_DetectMetaDBNeedUpdate(message);
+
+    if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
     }
@@ -1431,7 +1474,15 @@ CNetStorageHandler::x_ProcessRead(
                    "READ message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (m_NeedMetaInfo) {
+    // For eMetadataMonitoring and eMetadataDisabled there must be no updates
+    // in the meta info DB
+    bool    need_meta_db_update = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message);
+
+
+    if (need_meta_db_update) {
         // Meta information is required so check the DB
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
     }
@@ -1479,7 +1530,7 @@ CNetStorageHandler::x_ProcessRead(
     if (x_SendOverUTTP() != eIO_Success)
         return;
 
-    if (m_NeedMetaInfo) {
+    if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRead(
                 object_id.object_key,
                 object_id.object_loc, total_bytes, m_DBClientID);
@@ -1503,10 +1554,20 @@ CNetStorageHandler::x_ProcessDelete(
                    "DELETE message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    // If it was eMetadataDisabled then updates are not required
+    bool        need_meta_db_update = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message);
+
     SObjectID       object_id = x_GetObjectKey(message);
     int             status = 0;
 
-    if (m_NeedMetaInfo) {
+    if (need_meta_db_update) {
         // Meta information is required so delete from the DB first
         status = m_Server->GetDb().ExecSP_RemoveObject(object_id.object_key);
     }
@@ -1519,7 +1580,7 @@ CNetStorageHandler::x_ProcessDelete(
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    if (m_NeedMetaInfo && status == -1) {
+    if (need_meta_db_update && status == -1) {
         // Stored procedure return -1 if the object is not found in the meta DB
         AppendWarning(reply, eObjectNotFoundWarning,
                       "Object not found in meta info DB");
@@ -1544,6 +1605,17 @@ CNetStorageHandler::x_ProcessRelocate(
                    "NewLocation argument is not found");
     }
 
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    // If it was eMetadataDisabled then updates are not required
+    bool        need_meta_db_update = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message);
+
+
     CJsonNode           new_location = message.GetByKey("NewLocation");
     TNetStorageFlags    new_location_flags = ExtractStorageFlags(new_location);
     SICacheSettings     new_location_icache_settings =
@@ -1551,7 +1623,7 @@ CNetStorageHandler::x_ProcessRelocate(
 
     x_CheckICacheSettings(new_location_icache_settings);
 
-    if (m_NeedMetaInfo) {
+    if (need_meta_db_update) {
         // Meta information is required so check the DB
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
     }
@@ -1562,7 +1634,7 @@ CNetStorageHandler::x_ProcessRelocate(
     string          new_object_loc = net_storage.Relocate(object_id.object_loc,
                                                           new_location_flags);
 
-    if (m_NeedMetaInfo) {
+    if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
                                     object_id.object_key,
                                     object_id.object_loc,
@@ -1683,7 +1755,7 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
 
 
 void
-CNetStorageHandler::x_CheckNonAnonymousClient(void)
+CNetStorageHandler::x_CheckNonAnonymousClient(void) const
 {
     if (m_Client.empty()) {
         NCBI_THROW(CNetStorageServerException, eHelloRequired,
@@ -1694,7 +1766,7 @@ CNetStorageHandler::x_CheckNonAnonymousClient(void)
 
 
 void
-CNetStorageHandler::x_CheckObjectLoc(const string &  object_loc)
+CNetStorageHandler::x_CheckObjectLoc(const string &  object_loc) const
 {
     if (object_loc.empty()) {
         NCBI_THROW(CNetStorageServerException, eInvalidArgument,
@@ -1762,15 +1834,16 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
         net_storage = g_CreateNetStorage(icache_client, 0);
     }
 
-    if (m_NeedMetaInfo) {
-        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
-
-        return g_CreateNetStorageObject(net_storage,
-                                        m_Service,
-                                        m_DBObjectID, flags);
+    if ((flags & fNST_NoMetaData) != 0) {
+        // Metadata is not required
+        g_CreateNetStorageObject(net_storage, m_Service, flags);
     }
 
-    return g_CreateNetStorageObject(net_storage, m_Service, flags);
+    // Metadata is required, so get the new object id first
+    m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
+    return g_CreateNetStorageObject(net_storage,
+                                    m_Service,
+                                    m_DBObjectID, flags);
 }
 
 
@@ -1799,3 +1872,150 @@ CNetStorageHandler::x_SendOverUTTP()
 
     return eIO_Success;
 }
+
+
+
+EMetadataOption
+CNetStorageHandler::x_ConvertMetadataArgument(const CJsonNode &  message) const
+{
+    if (!message.HasKey("Metadata"))
+        return eMetadataNotSpecified;
+
+    string  value = message.GetString("Metadata");
+    value = NStr::TruncateSpaces(value);
+    value = NStr::ToLower(value);
+    EMetadataOption result = g_IdToMetadataOption(value);
+
+    if (result == eMetadataUnknown) {
+        vector<string>      valid = g_GetSupportedMetadataOptions();
+        string              message = "Optional field 'Metadata' value is not "
+                                      "recognized. Supported values are: ";
+        for (vector<string>::const_iterator  k = valid.begin();
+             k != valid.end(); ++k) {
+            if (k != valid.begin())
+                message += ", ";
+            message += *k;
+        }
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument, message);
+    }
+
+    if (result == eMetadataRequired) {
+        if (!m_Server->InMetadataServices(m_Service))
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Invalid metadata option. It cannot be required for not "
+                       "configured service");
+    }
+    return result;
+}
+
+
+void
+CNetStorageHandler::x_ValidateWriteMetaDBAccess(
+                                            const CJsonNode &  message) const
+{
+    if (message.HasKey("ObjectLoc")) {
+        // Object locator has a metadata flag and a service name
+        string  object_loc = message.GetString("ObjectLoc");
+        x_CheckObjectLoc(object_loc);
+
+        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                object_loc);
+
+        string  service = object_loc_struct.GetServiceName();
+        bool    no_metadata = (object_loc_struct.GetStorageFlags() &
+                               fNST_NoMetaData) != 0;
+
+        if (no_metadata)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "DB access requested for an object which was created "
+                       "with no metadata flag");
+
+        if (!m_Server->InMetadataServices(service))
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service from the object locator is not in the list of "
+                       "configured services anymore. DB access declined.");
+    }
+
+    // Here: it is a user key, so there is no knowledge of the service and
+    // metadata request from the object identifier
+    if (m_MetadataOption == eMetadataRequired) {
+        // The service list could be reconfigured on the fly
+        if (!m_Server->InMetadataServices(m_Service))
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO is not in the list of "
+                       "configured services anymore. DB access declined.");
+        return;
+    }
+
+    if (!m_Server->InMetadataServices(m_Service))
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "DB access requested for a not configured service");
+}
+
+
+
+// Detects if the meta information DB should be updated
+bool
+CNetStorageHandler::x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const
+{
+    if (message.HasKey("ObjectLoc")) {
+        // Object locator has a metadata flag and a service name
+        string  object_loc = message.GetString("ObjectLoc");
+        x_CheckObjectLoc(object_loc);
+
+        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                object_loc);
+
+        string  service = object_loc_struct.GetServiceName();
+        bool    no_metadata = (object_loc_struct.GetStorageFlags() &
+                              fNST_NoMetaData) != 0;
+
+        if (no_metadata)
+            return false;
+
+        if (m_MetadataOption == eMetadataNotSpecified)
+            return m_Server->InMetadataServices(service);
+
+        // This is the eMetadataRequired option: the check below is needed
+        // because the list of services could be reconfigured on the fly
+        if (!m_Server->InMetadataServices(service))
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service from the object locator is not in the list of "
+                       "configured services anymore. DB access declined.");
+        return true;
+    }
+
+    // Here: it is a user key, so there is no knowledge of the service and
+    // metadata request from the object identifier
+    if (m_MetadataOption == eMetadataRequired) {
+        // The service list could be reconfigured on the fly
+        if (!m_Server->InMetadataServices(m_Service))
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO is not in the list of "
+                       "configured services anymore. DB access declined.");
+        return true;
+    }
+
+    return m_Server->InMetadataServices(m_Service);
+}
+
+
+bool
+CNetStorageHandler::x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags) const
+{
+    if ((flags & fNST_NoMetaData) != 0)
+        return false;
+    if (m_MetadataOption == eMetadataRequired) {
+        // The services could be reconfigured on the fly so the presence of the
+        // service in the list of configured must be done here again
+        if (!m_Server->InMetadataServices(m_Service))
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO is not in the list of "
+                       "configured services anymore. DB access declined.");
+        return true;
+    }
+    if (m_MetadataOption == eMetadataDisabled)
+        return false;
+    return m_Server->InMetadataServices(m_Service);
+}
+

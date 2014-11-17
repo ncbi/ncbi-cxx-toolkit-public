@@ -91,6 +91,7 @@ public:
                              Int8  client_id);
     int  ExecSP_GetAttribute(const string &  object_key,
                              const string &  attr_name,
+                             bool            need_update,
                              string &        value);
     int  ExecSP_DelAttribute(const string &  object_key,
                              const string &  attr_name);

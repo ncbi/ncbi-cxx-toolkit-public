@@ -317,6 +317,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
 int
 CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
                                   const string &  attr_name,
+                                  bool            need_update,
                                   string &        value)
 {
     x_PreCheckConnection();
@@ -326,6 +327,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
         query.SetParameter("@attr_name", attr_name);
+        query.SetParameter("@need_update", need_update);
         query.SetParameter("@attr_value", "", eSDB_String, eSP_InOut);
 
         query.ExecuteSP("GetAttribute");

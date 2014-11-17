@@ -217,7 +217,7 @@ CNSTDatabase &  CNetStorageServer::GetDb(void)
 }
 
 
-bool  CNetStorageServer::NeedMetadata(const string &  service) const
+bool  CNetStorageServer::InMetadataServices(const string &  service) const
 {
     set<string>::const_iterator     found;
     CFastMutexGuard                 guard(m_MetadataServicesLock);

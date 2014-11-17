@@ -40,6 +40,7 @@
 #include <connect/services/netstorage.hpp>
 
 #include "nst_clients.hpp"
+#include "nst_metadata_options.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -79,12 +80,13 @@ public:
     // Additional statuses can be taken from
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     enum EHTTPStatus {
-        eStatus_OK                  = 200, // Command is ok and execution is good
+        eStatus_OK                  = 200, // Command is ok and execution
+                                           // is good
 
         eStatus_BadRequest          = 400, // Command is incorrect
         eStatus_NotFound            = 404, // Object is not found
-        eStatus_Inactive            = 408, // Connection was closed due to inactivity
-                                           // timeout
+        eStatus_Inactive            = 408, // Connection was closed due to
+                                           // inactivity timeout
         eStatus_Probe               = 444, // Routine test from systems
         eStatus_SocketIOError       = 499, // Error writing to socket
 
@@ -156,7 +158,7 @@ private:
     // Asynchronous write support
     CNetStorageObject       m_ObjectBeingWritten;
     Int8                    m_DataMessageSN;
-    bool                    m_NeedMetaInfo;
+    EMetadataOption         m_MetadataOption;
     bool                    m_CreateRequest;
     Int8                    m_DBClientID;
     Int8                    m_DBObjectID;
@@ -165,6 +167,7 @@ private:
 private:
     bool                    m_ByeReceived;
     bool                    m_FirstMessage;
+    bool                    m_WriteCreateNeedMetaDBUpdate;
 
     typedef void (CNetStorageHandler::*FProcessor)(
                                 const CJsonNode &,
@@ -224,8 +227,8 @@ private:
 
 private:
     SObjectID x_GetObjectKey(const CJsonNode &  message);
-    void x_CheckNonAnonymousClient(void);
-    void x_CheckObjectLoc(const string &  object_loc);
+    void x_CheckNonAnonymousClient(void) const;
+    void x_CheckObjectLoc(const string &  object_loc) const;
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
     void x_CheckUserKey(const SUserKey &  user_key);
     void x_GetStorageParams(const CJsonNode &   message,
@@ -235,8 +238,11 @@ private:
     CNetStorageObject x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags);
-
     EIO_Status x_SendOverUTTP();
+    EMetadataOption x_ConvertMetadataArgument(const CJsonNode &  message) const;
+    void x_ValidateWriteMetaDBAccess(const CJsonNode &  message) const;
+    bool x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const;
+    bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags) const;
 }; // CNetStorageHandler
 
 
