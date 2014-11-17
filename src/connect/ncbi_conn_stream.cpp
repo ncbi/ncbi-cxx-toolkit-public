@@ -417,6 +417,7 @@ struct Deleter<SConnNetInfo>
 
 static CConn_IOStream::TConn_Pair
 s_HttpConnectorBuilder(const SConnNetInfo* net_info,
+                       EReqMethod          method,
                        const char*         url,
                        const char*         host,
                        unsigned short      port,
@@ -437,6 +438,14 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     if (!x_net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream():  Out of memory");
+    }
+    if (method/*!= eReqMethod_Any*/) {
+        if (method < eReqMethod_v1)
+            x_net_info->req_method = method;
+        else if (method & ~eReqMethod_v1)
+            x_net_info->req_method = method;
+        else
+            x_net_info->version = 1;
     }
     if (url  &&  !ConnNetInfo_ParseURL(x_net_info.get(), url)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
@@ -489,6 +498,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            eReqMethod_Any,
                                             0,
                                             host.c_str(),
                                             port,
@@ -514,6 +524,34 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            eReqMethod_Any,
+                                            url.c_str(),
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            x_ParseHeader,
+                                            this,
+                                            0,
+                                            0,
+                                            flags,
+                                            timeout),
+                     timeout, buf_size),
+      m_UserParseHeader(0), m_UserData(0), m_UserAdjust(0), m_UserCleanup(0),
+      m_Code(0)
+{
+    return;
+}
+
+
+CConn_HttpStream::CConn_HttpStream(const string&   url,
+                                   EReqMethod      method,
+                                   THTTP_Flags     flags,
+                                   const STimeout* timeout,
+                                   size_t          buf_size)
+    : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            method,
                                             url.c_str(),
                                             0,
                                             0,
@@ -545,6 +583,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    const STimeout*     timeout,
                                    size_t              buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
+                                            eReqMethod_Any,
                                             url.c_str(),
                                             0,
                                             0,
@@ -576,6 +615,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    const STimeout*     timeout,
                                    size_t              buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
+                                            eReqMethod_Any,
                                             0,
                                             0,
                                             0,

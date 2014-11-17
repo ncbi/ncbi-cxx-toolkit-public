@@ -525,6 +525,14 @@ public:
 
     CConn_HttpStream
     (const string&       url,
+     EReqMethod          method,
+     THTTP_Flags         flags        = fHTTP_AutoReconnect,
+     const STimeout*     timeout      = kDefaultTimeout,
+     size_t              buf_size     = kConn_DefaultBufSize
+     );
+
+    CConn_HttpStream
+    (const string&       url,
      const SConnNetInfo* net_info,
      const string&       user_header  = kEmptyStr,
      FHTTP_ParseHeader   parse_header = 0,
