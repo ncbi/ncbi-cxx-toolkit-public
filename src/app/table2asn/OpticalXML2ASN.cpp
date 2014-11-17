@@ -344,34 +344,7 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
         CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, context.m_strain));
         biosource.SetOrg().SetOrgname().SetMod().push_back(strain);
     }
-    /* Alternative - no rule on selecting one that needed
-    CTaxon1::TNameList sn;
-    if (taxon.GetTypeMaterial(m_taxid, sn) && sn.size()) {
-    ITERATE (CTaxon1::TNameList, it, sn) {
-    CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, *it));
-    bs->SetOrg().SetOrgname().SetMod().push_back(strain);
-    }
-    }
-    */
-    //CRef<COrgMod> oldlin(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage"));
-    //bs->SetOrg().SetOrgname().SetMod().push_back(oldlin);
 
-    if (biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname())
-    {
-        string title = biosource.GetOrg().GetTaxname();
-        if (!context.m_strain.empty() && !NStr::EndsWith(title, context.m_strain))
-            title += " " + context.m_strain;
-        if (m_genome == CBioSource::eGenome_chromosome)
-            title += " chromosome";
-        else if (m_genome == CBioSource::eGenome_plasmid)
-            title += " plasmid";
-        if (!enzyme.empty())
-            title += " " + enzyme;
-        title += " whole genome map";
-
-        CAutoAddDesc title_desc(SD, CSeqdesc::e_Title);
-        title_desc.Set().SetTitle(title);
-    }
 }
 
 }
