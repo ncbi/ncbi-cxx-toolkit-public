@@ -595,8 +595,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                   "End of shown range", CArgDescriptions::eInteger);
 
          // strand
-         arg_desc->AddDefaultKey("count", "Count", "Number of runs",
-                                 CArgDescriptions::eInteger, "1");
+         arg_desc->AddOptionalKey("strand", "Strand",
+                                  "1 (plus) or 2 (minus)", CArgDescriptions::eInteger);
 
          // accession to extract
 
@@ -614,6 +614,10 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                            "Do not perform data cleanup prior to formatting");
          // remote
          arg_desc->AddFlag("gbload", "Use GenBank data loader");
+
+         // repetition
+         arg_desc->AddDefaultKey("count", "Count", "Number of runs",
+                                 CArgDescriptions::eInteger, "1");
      }}
 }
 

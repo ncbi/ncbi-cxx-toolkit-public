@@ -95,6 +95,7 @@ private:
     TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args);
     TSeqPos x_GetFrom(const CArgs& args);
     TSeqPos x_GetTo  (const CArgs& args);
+    ENa_strand x_GetStrand(const CArgs& args);
     void x_GetLocation(const CSeq_entry_Handle& entry,
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
@@ -194,131 +195,7 @@ void CAsn2FlatApp::Init(void)
          arg_desc->AddFlag("p", "Propagate top descriptors");
      }}
 
-#if 0
-    // report
-    {{
-         arg_desc->SetCurrentGroup("Formatting Options");
-         // format (default: genbank)
-         arg_desc->AddDefaultKey("format", "Format",
-                                 "Output format",
-                                 CArgDescriptions::eString, "genbank");
-         arg_desc->SetConstraint("format",
-                                 &(*new CArgAllow_Strings,
-                                   "genbank", "embl", "ddbj", "gbseq", "ftable", "gff", "gff3"));
-
-         // mode (default: dump)
-         arg_desc->AddDefaultKey("mode", "Mode",
-                                 "Restriction level",
-                                 CArgDescriptions::eString, "gbench");
-         arg_desc->SetConstraint("mode",
-                                 &(*new CArgAllow_Strings, "release", "entrez", "gbench", "dump"));
-
-         // style (default: normal)
-         arg_desc->AddDefaultKey("style", "Style",
-                                 "Formatting style",
-                                 CArgDescriptions::eString, "normal");
-         arg_desc->SetConstraint("style",
-                                 &(*new CArgAllow_Strings, "normal", "segment", "master", "contig"));
-
-         // flags (default: 0)
-         arg_desc->AddDefaultKey("flags", "Flags",
-                                 "Flags controlling flat file output.  The value is the bitwise OR (logical addition) of:\n"
-                                 "         1 - show HTML report\n"
-                                 "         2 - show contig features\n"
-                                 "         4 - show contig sources\n"
-                                 "         8 - show far translations\n"
-                                 "        16 - show translations if there are no products\n"
-                                 "        32 - always translate CDS\n"
-                                 "        64 - show only near features\n"
-                                 "       128 - show far features on segs\n"
-                                 "       256 - copy CDS feature from cDNA\n"
-                                 "       512 - copy gene to cDNA\n"
-                                 "      1024 - show contig in master\n"
-                                 "      2048 - hide imported features\n"
-                                 "      4096 - hide remote imported features\n"
-                                 "      8192 - hide SNP features\n"
-                                 "     16384 - hide exon features\n"
-                                 "     32768 - hide intron features\n"
-                                 "     65536 - hide misc features\n"
-                                 "    131072 - hide CDS product features\n"
-                                 "    262144 - hide CDD features\n"
-                                 "    542288 - show transcript sequence\n"
-                                 "   1048576 - show peptides\n"
-                                 "   2097152 - hide GeneRIFs\n"
-                                 "   4194304 - show only GeneRIFs\n"
-                                 "   8388608 - show only the latest GeneRIFs\n"
-                                 "  16777216 - show contig and sequence\n"
-                                 "  33554432 - hide source features\n"
-                                 "  67108864 - show feature table references\n"
-                                 " 134217728 - use the old feature sort order\n"
-                                 " 268435456 - hide gap features\n"
-                                 " 536870912 - do not translate the CDS\n"
-                                 "1073741824 - show javascript sequence spans",
-
-                                 CArgDescriptions::eInteger, "0");
-
-         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST",
-             "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
-             "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
-             CArgDescriptions::eString );
-         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST",
-             "Use this to skip certain parts of the flatfile (e.g. '-skipblocks sequence,origin').  "
-             "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
-             CArgDescriptions::eString );
-         // don't allow both because it's not really clear what the user intended.
-         arg_desc->SetDependency("showblocks", CArgDescriptions::eExcludes, "skipblocks");
-
-         arg_desc->AddFlag("demo-genbank-callback",
-             "When set (and genbank mode is used), this program will demonstrate the use of "
-             "genbank callbacks via a very simple callback that just prints its output to stderr, then "
-             "prints some statistics.  To demonstrate halting of flatfile generation, the genbank callback "
-             "will halt flatfile generation if it encounters an item with the words 'HALT TEST'.  To demonstrate skipping a block, it will skip blocks with the words 'SKIP TEST' in them.  Also, blocks with the words 'MODIFY TEST' in them will have the text 'MODIFY TEST' turned into 'WAS MODIFIED TEST'.");
-
-         arg_desc->AddFlag("no-external",
-                           "Disable all external annotation sources");
-
-         arg_desc->AddFlag("resolve-all",
-                           "Resolves all, e.g. for contigs.");
-
-         arg_desc->AddFlag("show-flags",
-                           "Describe the current flag set in ENUM terms");
-
-         // view (default: nucleotide)
-         arg_desc->AddDefaultKey("view", "View", "View",
-                                 CArgDescriptions::eString, "nuc");
-         arg_desc->SetConstraint("view",
-                                 &(*new CArgAllow_Strings, "all", "prot", "nuc"));
-
-         // from
-         arg_desc->AddOptionalKey("from", "From",
-                                  "Begining of shown range", CArgDescriptions::eInteger);
-
-         // to
-         arg_desc->AddOptionalKey("to", "To",
-                                  "End of shown range", CArgDescriptions::eInteger);
-
-         // strand
-         arg_desc->AddDefaultKey("count", "Count", "Number of runs",
-                                 CArgDescriptions::eInteger, "1");
-
-         // accession to extract
-
-         // html
-         arg_desc->AddFlag("html", "Produce HTML output");
-     }}
-
-    // misc
-    {{
-         // cleanup
-         arg_desc->AddFlag("cleanup",
-                           "Do internal data cleanup prior to formatting");
-         // no-cleanup
-         arg_desc->AddFlag("nocleanup",
-                           "Do not perform data cleanup prior to formatting");
-         // remote
-         arg_desc->AddFlag("gbload", "Use GenBank data loader");
-     }}
-#endif
+    // in flat_file_config.cpp
     CFlatFileConfig::AddArgumentDescriptions(*arg_desc);
 
      // debugging options
@@ -708,7 +585,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         if ( flatfile_os == NULL ) continue;
 
         // generate flat file
-        if ( args["from"]  ||  args["to"] ) {
+        if ( args["from"]  ||  args["to"]  ||  args["strand"] ) {
             CSeq_loc loc;
             x_GetLocation( seh, args, loc );
             m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
@@ -983,6 +860,11 @@ TSeqPos CAsn2FlatApp::x_GetTo(const CArgs& args)
         CRange<TSeqPos>::GetWholeTo();
 }
 
+ENa_strand CAsn2FlatApp::x_GetStrand(const CArgs& args)
+{
+    return static_cast<ENa_strand>(args["strand"].AsInteger());
+}
+
 
 void CAsn2FlatApp::x_GetLocation
 (const CSeq_entry_Handle& entry,
@@ -999,6 +881,10 @@ void CAsn2FlatApp::x_GetLocation
     TSeqPos length = h.GetInst_Length();
     TSeqPos from   = x_GetFrom(args);
     TSeqPos to     = min(x_GetTo(args), length-1);
+    ENa_strand strand = eNa_strand_unknown;
+    if ( args["strand"] ) {
+        strand = x_GetStrand(args);
+    }
 
     if ( from == CRange<TSeqPos>::GetWholeFrom()  &&  to == length ) {
         // whole
@@ -1008,6 +894,9 @@ void CAsn2FlatApp::x_GetLocation
         loc.SetInt().SetId().Assign(*h.GetSeqId());
         loc.SetInt().SetFrom(from);
         loc.SetInt().SetTo(to);
+        if ( strand > 0 ) {
+            loc.SetInt().SetStrand(strand);
+        }
     }
 }
 
