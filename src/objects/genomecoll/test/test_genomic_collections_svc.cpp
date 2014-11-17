@@ -43,6 +43,8 @@
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
 #include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
+#include <objects/genomecoll/GCClient_AssemblySequenceI.hpp>
+#include <objects/genomecoll/GCClient_AssembliesForSequ.hpp>
 #include <sstream>
 
 USING_NCBI_SCOPE;
@@ -81,7 +83,7 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
 
     argDesc->AddKey("request", "request",
                             "Type of request", CArgDescriptions::eString);
-    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-best-assembly"));
+    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-best-assembly","get-all-assemblies"));
     
     argDesc->AddOptionalKey("url", "Url",
                             "URL to genemic collections service.cgi", CArgDescriptions::eString);
@@ -210,7 +212,7 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
         req.SetScaf_flags(args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none);
         req.SetComponent_flags(args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none);
     }
-    else if(request == "get-best-assembly")
+    else if(request == "get-best-assembly" || request == "get-all-assemblies")
     {
         CGCClient_FindBestAssemblyRequest& req = gc_request.SetGet_best_assembly();
         NStr::Split(args["acc"].AsString(), ",", req.SetSeq_id_acc());
@@ -320,11 +322,32 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
         }
         else if(request == "get-best-assembly")
         {
-            string acc = args["acc"].AsString();
+            list<string> acc;
+            NStr::Split(args["acc"].AsString(), ",", acc);
+
             int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_any;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
-            CRef<CGCClient_AssemblyInfo> reply(cli->FindBestAssembly(acc, filter, sort));
+            if(acc.size() == 1)
+            {
+                CRef<CGCClient_AssemblyInfo> reply(cli->FindBestAssembly(acc.front(), filter, sort));
+                ostr << *reply;
+            }
+            else
+            {
+                CRef<CGCClient_AssemblySequenceInfo> reply(cli->FindBestAssembly(acc, filter, sort));
+                ostr << *reply;
+            }
+        }
+        else if(request == "get-all-assemblies")
+        {
+            list<string> acc;
+            NStr::Split(args["acc"].AsString(), ",", acc);
+
+            int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_any;
+            int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
+
+            CRef<CGCClient_AssembliesForSequences> reply(cli->FindAllAssemblies(acc, filter, sort));
             ostr << *reply;
         }
     } catch (CException& ex) {
