@@ -1785,7 +1785,7 @@ public:
     ///   TRUE if stopwatch is "running", FALSE otherwise.
     /// @sa
     ///   Start, Stop
-    bool IsRunning(void);
+    bool IsRunning(void) const;
 
     /// Set the current stopwatch time format.
     ///
@@ -2618,7 +2618,7 @@ double CStopWatch::Restart(void)
 }
 
 inline
-bool CStopWatch::IsRunning(void)
+bool CStopWatch::IsRunning(void) const
 {
     return m_State == eStart;
 }
