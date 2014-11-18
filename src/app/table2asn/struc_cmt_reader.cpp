@@ -43,7 +43,12 @@
 #include <util/line_reader.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_ci.hpp>
+
 #include "struc_cmt_reader.hpp"
+#include "table2asn_context.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -195,42 +200,89 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
     }
 }
 
-void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSeq_entry& container)
+void CStructuredCommentsReader::ApplyAllQualifiers(const vector<string>& cols, const vector<string>& values, CBioseq& bioseq)
+{
+    for (size_t i=0; i<values.size() && i<cols.size(); i++)
+    {
+        if (!values[i].empty())
+        {
+            // apply structure comment
+            AddSourceQualifier(bioseq, cols[i], values[i]);
+        }
+    }
+}
+
+void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSeq_entry& entry,
+    const string& opt_map_filename)
 {
     vector<string> cols;
 
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_EditHandle h_entry = scope.AddTopLevelSeqEntry(entry).GetEditHandle();
+        
+    size_t filename_id = string::npos;
     while (!reader.AtEOF())
     {
         reader.ReadLine();
         // First line is a collumn definitions
         CTempString current = reader.GetCurrentLine();
+
         if (reader.GetLineNumber() == 1)
         {
             NStr::Tokenize(current, "\t", cols);
+            if (!opt_map_filename.empty())
+            {
+                ITERATE(vector<string>, it, cols)
+                {
+                    if (*it == "id" ||
+                        *it == "seqid" ||
+                        NStr::CompareNocase(*it, "Filename") == 0 ||
+                        NStr::CompareNocase(*it, "File name") == 0)
+                    {
+                        filename_id = (it - cols.begin());
+                        break;
+                    }
+                }
+            }
             continue;
         }
 
-        if (!current.empty())
+        if (current.empty())
+            continue;
+
+        // Each line except first is a set of values, first collumn is a sequence id
+        vector<string> values;
+        NStr::Tokenize(current, "\t", values);
+        string id;
+
+        if (opt_map_filename.empty())
         {
-            // Each line except first is a set of values, first collumn is a sequence id
-            vector<string> values;
-            NStr::Tokenize(current, "\t", values);
-            if (!values[0].empty())
+            id = values[0];
+        }
+        else
+        {
+            if (filename_id < values.size())
+                id = values[filename_id];
+        }
+
+        if (id.empty())
+        {
+            // apply for all sequences
+            for (CBioseq_CI bioseq_it(h_entry); bioseq_it; ++bioseq_it)
             {
-                // try to find destination sequence
-                CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
-                CBioseq* dest = FindObjectById(container, id);
-                if (dest)
-                {
-                    for (size_t i=1; i<values.size(); i++)
-                    {
-                        if (!values[i].empty())
-                        {
-                            // apply structure comment
-                            AddSourceQualifier(*dest, cols[i], values[i]);
-                        }
-                    }
-                }
+                CBioseq* dest = (CBioseq*)bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
+                ApplyAllQualifiers(cols, values, *dest);
+            }               
+        }
+        else
+        {
+            // try to find destination sequence
+            CSeq_id seq_id(values[0], CSeq_id::fParse_AnyLocal);
+            //CBioseq* dest = FindObjectById(entry, id);
+            CBioseq_Handle b_handle = scope.GetBioseqHandle(seq_id);
+            if (b_handle && b_handle.GetEditHandle())
+            {
+                ApplyAllQualifiers(cols, values, *(CBioseq*)b_handle.GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
             }
         }
     }
@@ -238,10 +290,19 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 
 void CStructuredCommentsReader::AddSourceQualifier(CBioseq& container, const string& name, const string& value)
 {
-    CSourceModParser mod;
-    mod.ParseTitle("[" + name + "=" + value + "]", CConstRef<CSeq_id>(container.GetFirstId()));
+    if (name == "ft-url" ||
+        name == "ft-map")
+        CTable2AsnContext::AddUserTrack(container.SetDescr(), "FileTrack", "Map-FileTrackURL", value);
+    else
+    if (name == "ft-mod")
+        CTable2AsnContext::AddUserTrack(container.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", value);
+    else
+    {
+        CSourceModParser mod;
+        mod.ParseTitle("[" + name + "=" + value + "]", CConstRef<CSeq_id>(container.GetFirstId()));
 
-    mod.ApplyAllMods(container);
+        mod.ApplyAllMods(container);
+    }
 }
 
 CStructuredComments::CStructuredComments(objects::CSeq_entry& container)

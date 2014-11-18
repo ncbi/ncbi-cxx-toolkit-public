@@ -38,7 +38,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/feat_ci.hpp>
 
-#include <objmgr/object_manager.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -210,7 +209,7 @@ CTable2AsnContext::~CTable2AsnContext()
 {
 }
 
-void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const string& lbl, const string& data) const
+void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const string& lbl, const string& data)
 {
     if (data.empty())
         return;

@@ -1,0 +1,7 @@
+#-i test1.fsa
+#-i test2.fsa -s
+-i wgs-715.fsa -s
+-i wgs-715.fsa -s -t wgs-715.sbt
+-i sqd-2042.fsa -s
+-i sqd-2045.sqn -gaps-min 10 -l paired-ends
+-i sqd-2066.sqn -gaps-min 10 -l paired-ends

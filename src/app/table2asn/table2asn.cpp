@@ -118,7 +118,7 @@ private:
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessSecretFiles(CSeq_entry& result);
     void ProcessTBLFile(const string& pathname, CSeq_entry& result);
-    void ProcessSRCFile(const string& pathname, CSeq_entry& result);
+    void ProcessSRCFile(const string& pathname, CSeq_entry& result, const string& opt_map_xml);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
     void ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows);
@@ -988,7 +988,7 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
 
     ProcessTBLFile(name + ".tbl", result);
     ProcessTBLFile(m_context.m_single_table5_file, result);
-    ProcessSRCFile(name + ".src", result);
+    ProcessSRCFile(name + ".src", result, ext == ".xml"? (name+".xml") : "");
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
     ProcessCMTFile(name + ".cmt", result, m_context.m_flipped_struc_cmt);
@@ -1010,7 +1010,7 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
     feature_reader.ReadFeatureTable(result, *reader);
 }
 
-void CTbl2AsnApp::ProcessSRCFile(const string& pathname, CSeq_entry& result)
+void CTbl2AsnApp::ProcessSRCFile(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
 {
     CFile file(pathname);
     if (!file.Exists()) return;
@@ -1018,7 +1018,7 @@ void CTbl2AsnApp::ProcessSRCFile(const string& pathname, CSeq_entry& result)
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
     CStructuredCommentsReader cmt_reader(m_logger);
-    cmt_reader.ProcessSourceQualifiers(*reader, result);
+    cmt_reader.ProcessSourceQualifiers(*reader, result, opt_map_xml);
 }
 
 void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)

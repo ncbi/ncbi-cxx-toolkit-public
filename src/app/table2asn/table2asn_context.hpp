@@ -100,7 +100,8 @@ public:
     CTable2AsnContext();
     ~CTable2AsnContext();
 
-    void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
+    static
+    void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data);
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
     void ApplySourceQualifiers(CSerialObject& obj, const string& src_qualifiers) const;
     void ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj, const string& src_qualifiers) const;
