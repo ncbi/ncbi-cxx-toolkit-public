@@ -100,6 +100,15 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+unsigned int CGff3Reader::msGenericIdCounter = 0;
+
+//  ----------------------------------------------------------------------------
+string CGff3Reader::xNextGenericId()
+//  ----------------------------------------------------------------------------
+{
+    return string("generic") + NStr::IntToString(msGenericIdCounter++);
+}
+
 //  ----------------------------------------------------------------------------
 string CGff3ReadRecord::x_NormalizedAttributeKey(
     const string& strRawKey )
@@ -247,38 +256,39 @@ bool CGff3Reader::xUpdateAnnotCds(
     }
 
     string id;
-    if (record.GetAttribute("ID", id)) {
-        string strParents;
-        if (record.GetAttribute("Parent", strParents)) {
-            list<string> parents;
-            NStr::Split(strParents, ",", parents);
-            for (list<string>::const_iterator cit = parents.begin();
-                    cit != parents.end();
-                    ++cit) {
-                string cdsId = id + ":" + *cit;
-                IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
-                if (it != m_MapIdToFeature.end()) {
-                    //cerr << "Updating " << cdsId << endl;
-                    record.UpdateFeature(m_iFlags, it->second);
-                    continue;
-                }
-                //cerr << "Adding " << cdsId << endl;
-                if (!record.InitializeFeature(m_iFlags, pFeature)) {
-                    return false;
-                }
-                if (!xFeatureSetXrefParent(*cit, pFeature)) {
-                    return false;
-                }
-                if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
-                    return false;
-                }
-                if (! cdsId.empty()) {
-                    m_MapIdToFeature[cdsId] = pFeature;
-                }
-                pFeature.Reset(new CSeq_feat);
+    if (!record.GetAttribute("ID", id)) {
+        id = xNextGenericId();
+    }
+    string strParents;
+    if (record.GetAttribute("Parent", strParents)) {
+        list<string> parents;
+        NStr::Split(strParents, ",", parents);
+        for (list<string>::const_iterator cit = parents.begin();
+                cit != parents.end();
+                ++cit) {
+            string cdsId = id + ":" + *cit;
+            IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
+            if (it != m_MapIdToFeature.end()) {
+                //cerr << "Updating " << cdsId << endl;
+                record.UpdateFeature(m_iFlags, it->second);
+                continue;
             }
-            return true;
+            //cerr << "Adding " << cdsId << endl;
+            if (!record.InitializeFeature(m_iFlags, pFeature)) {
+                return false;
+            }
+            if (!xFeatureSetXrefParent(*cit, pFeature)) {
+                return false;
+            }
+            if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
+                return false;
+            }
+            if (! cdsId.empty()) {
+                m_MapIdToFeature[cdsId] = pFeature;
+            }
+            pFeature.Reset(new CSeq_feat);
         }
+        return true;
     }
     return false;
 }

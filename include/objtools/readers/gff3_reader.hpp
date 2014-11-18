@@ -130,8 +130,11 @@ protected:
 
     virtual bool xReadInit();
 
+    string xNextGenericId();
+
     // Data:
     map<string, string> mCdsParentMap;
+    static unsigned int msGenericIdCounter;
 };
 
 END_SCOPE(objects)
