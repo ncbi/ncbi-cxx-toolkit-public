@@ -41,6 +41,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <map>
 #include <list>
+#include <insdc/sra.h>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
@@ -209,6 +210,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
         DECLARE_VDB_COLUMN_AS_STRING(NAME);
+        DECLARE_VDB_COLUMN_AS(INSDC_read_filter, READ_FILTER);
     };
     friend struct SSeqTableCursor;
 
@@ -633,6 +635,8 @@ public:
     }
 
     bool IsTechnicalRead(void) const;
+
+    INSDC_read_filter GetReadFilter(void) const;
 
     // returns current read range inside spot
     typedef COpenRange<TSeqPos> TOpenRange;

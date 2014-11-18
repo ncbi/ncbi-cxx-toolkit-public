@@ -183,7 +183,8 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
       INIT_OPTIONAL_VDB_COLUMN(PRIMARY_ALIGNMENT_ID),
       INIT_VDB_COLUMN(TRIM_LEN),
       INIT_VDB_COLUMN(TRIM_START),
-      INIT_OPTIONAL_VDB_COLUMN(NAME)
+      INIT_OPTIONAL_VDB_COLUMN(NAME),
+      INIT_OPTIONAL_VDB_COLUMN_BACKUP(READ_FILTER, RD_FILTER)
 {
 }
 
@@ -200,7 +201,8 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CCSraDb_Impl& db)
       INIT_OPTIONAL_VDB_COLUMN(PRIMARY_ALIGNMENT_ID),
       INIT_VDB_COLUMN(TRIM_LEN),
       INIT_VDB_COLUMN(TRIM_START),
-      INIT_OPTIONAL_VDB_COLUMN(NAME)
+      INIT_OPTIONAL_VDB_COLUMN(NAME),
+      INIT_OPTIONAL_VDB_COLUMN_BACKUP(READ_FILTER, RD_FILTER)
 {
 }
 
@@ -216,7 +218,8 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(PRIMARY_ALIGNMENT_ID),
       INIT_VDB_COLUMN(TRIM_LEN),
       INIT_VDB_COLUMN(TRIM_START),
-      INIT_OPTIONAL_VDB_COLUMN(NAME)
+      INIT_OPTIONAL_VDB_COLUMN(NAME),
+      INIT_OPTIONAL_VDB_COLUMN_BACKUP(READ_FILTER, RD_FILTER)
 {
 }
 
@@ -1668,6 +1671,15 @@ bool CCSraShortReadIterator::IsTechnicalRead(void) const
     INSDC_read_type type = m_Seq->READ_TYPE(m_SpotId)[m_ReadId-1];
     return (type & (SRA_READ_TYPE_TECHNICAL | SRA_READ_TYPE_BIOLOGICAL)) ==
         SRA_READ_TYPE_TECHNICAL;
+}
+
+
+INSDC_read_filter CCSraShortReadIterator::GetReadFilter(void) const
+{
+    if ( !m_Seq->m_READ_FILTER ) {
+        return SRA_READ_FILTER_PASS;
+    }
+    return m_Seq->READ_FILTER(m_SpotId)[m_ReadId-1];
 }
 
 

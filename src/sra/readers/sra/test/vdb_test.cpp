@@ -1012,6 +1012,7 @@ int CCSRATestApp::Run(void)
         if ( args["scan_reads"] ) {
             int count = args["limit_count"].AsInteger();
             Uint8 scanned = 0, clipped = 0;
+            Uint8 rejected = 0, duplicate = 0, hidden = 0;
             Uint8 start_id = args["start_id"]? args["start_id"].AsInteger(): 1;
             Uint8 spot_id = 0;
             Uint4 read_id = 0;
@@ -1025,12 +1026,27 @@ int CCSRATestApp::Run(void)
                 }
                 if ( verbose ) {
                     out << "Short read "<<it.GetSpotId()<<"."<<it.GetReadId()
-                        << " of "<<it.GetMateCount() << " mate(s)."
-                        << '\n';
+                        << " of "<<it.GetMateCount() << " mate(s).";
+                    if ( it.GetReadFilter() != SRA_READ_FILTER_PASS ) {
+                        static const char* const filter_name[] = {
+                            "good",
+                            "Poor sequence quality",
+                            "PCR duplicate",
+                            "Hidden"
+                        };
+                        out << " " << filter_name[it.GetReadFilter()];
+                    }
+                    out << '\n';
                 }
                 ++scanned;
                 if ( it.HasClippingInfo() ) {
                     ++clipped;
+                }
+                switch ( it.GetReadFilter() ) {
+                case SRA_READ_FILTER_REJECT: ++rejected; break;
+                case SRA_READ_FILTER_CRITERIA: ++duplicate; break;
+                case SRA_READ_FILTER_REDACTED: ++hidden; break;
+                default: break;
                 }
                 CRef<CBioseq> seq = it.GetShortBioseq(flags);
                 if ( print_objects ) {
@@ -1046,6 +1062,15 @@ int CCSRATestApp::Run(void)
             CRef<CBioseq> seq = it.GetShortBioseq(flags);
             out << "First: " << MSerial_AsnText << *seq;
             out << "Clipped: "<<clipped<<"/"<<scanned<<" = "<<100.*clipped/scanned<<"%" << endl;
+            if ( rejected ) {
+                out << "Rejected: "<<rejected<<"/"<<scanned<<" = "<<100.*rejected/scanned<<"%" << endl;
+            }
+            if ( duplicate ) {
+                out << "Duplicate: "<<duplicate<<"/"<<scanned<<" = "<<100.*duplicate/scanned<<"%" << endl;
+            }
+            if ( hidden ) {
+                out << "Hidden: "<<hidden<<"/"<<scanned<<" = "<<100.*hidden/scanned<<"%" << endl;
+            }
         }
     }
 
