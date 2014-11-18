@@ -1051,9 +1051,3 @@ E2664FDB930219C0A9BF3CBBC98FAFF820A808015417E35CFF20A4F4020100FF022BA7F219FDF9
     }
   }
 }
-                Warning:
-Problem:        General parsing error
-Line:           0
-FeatureName:    File twocomments.fsa contains multiple sequences
-
-
