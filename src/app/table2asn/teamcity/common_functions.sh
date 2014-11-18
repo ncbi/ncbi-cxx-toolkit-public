@@ -37,10 +37,10 @@ EOF
 
 function create_output_file()
 {
-   local args="$1"
+   local args=$1
    local result=$2
 
-   (cd test-cases && $table2asn $args -r "$tmp_folder" -o - | sed -r -e 's/(    tool "table2asn 1\.0\.).*/\10"/' > $result)
+   (cd test-cases && echo "$table2asn $args -r $tmp_folder -o - "| bash | sed -r -e 's/(    tool "table2asn 1\.0\.).*/\10"/' > $result)
 }
 
 function compare_with_golden_file()
@@ -122,7 +122,7 @@ while read args
 do
     local t2asn_args="$args"
 
-    local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),]+/-/g' -e 's/--/-/g'` 
+    local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\"]+/-/g' -e 's/--/-/g'` 
 #    local test_name=`echo "$t2asn_args" | sed -e 's/^-i //' -e 's/[&=]/-/g' -e 's/--/-/g' -e 's/ /_/g'` 
     local test_name=$fname
 

@@ -5,3 +5,5 @@
 -i sqd-2042.fsa -s
 -i sqd-2045.sqn -gaps-min 10 -l paired-ends
 -i sqd-2066.sqn -gaps-min 10 -l paired-ends
+-i tc1.fsa -s -y "This is comment"
+-i tc1.fsa -s -Y comment.file
