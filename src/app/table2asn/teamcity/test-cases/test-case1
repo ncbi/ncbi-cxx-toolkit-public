@@ -7,3 +7,6 @@
 -i sqd-2066.sqn -gaps-min 10 -l paired-ends
 -i tc1.fsa -s -y "This is comment"
 -i tc1.fsa -s -Y comment.file
+#-i ABNIH1.xml -t ABNIH.sbt -ft-url "http://www.google.com"
+-i testallpep2.fsa -s
+-i twocomments.fsa

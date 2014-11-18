@@ -122,7 +122,8 @@ while read args
 do
     local t2asn_args="$args"
 
-    local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\"]+/-/g' -e 's/--/-/g'` 
+    local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\:\/"]+/-/g' -e 's/--/-/g'` 
+    #fname=${fname:0:20}
 #    local test_name=`echo "$t2asn_args" | sed -e 's/^-i //' -e 's/[&=]/-/g' -e 's/--/-/g' -e 's/ /_/g'` 
     local test_name=$fname
 
