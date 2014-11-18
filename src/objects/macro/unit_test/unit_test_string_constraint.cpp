@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2048)
 
     BOOST_CHECK_EQUAL(s.Match("cytochrome b gene"), true);
     BOOST_CHECK_EQUAL(s.Match("cytochrome b partial"), true);
-
+    BOOST_CHECK_EQUAL(s.Match("cytb"), false);
 }
 
 
@@ -357,6 +357,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2093)
     BOOST_CHECK_EQUAL(rule.GetFind().Match(original), true);
     BOOST_CHECK_EQUAL(rule.ApplyToString(original), true);
     BOOST_CHECK_EQUAL(original, "localization of periplasmic protein complexes");
+
 }
 
 
@@ -374,7 +375,6 @@ BOOST_AUTO_TEST_CASE(Test_CytochromeOxidase)
     subst1->SetSynonyms().push_back("cytochrome oxidase I gene");
     subst1->SetSynonyms().push_back("cytochrome oxidase I");
     subst1->SetSynonyms().push_back("cytochrome subunit I");
-    //subst1->SetSynonyms().push_back("cytochrome oxidase subunit I");
     subst1->SetCase_sensitive(false);
     subst1->SetWhole_word(false);
 
@@ -388,6 +388,9 @@ BOOST_AUTO_TEST_CASE(Test_CytochromeOxidase)
     
     CRef<CWord_substitution> subst3(new CWord_substitution());
     subst3->SetWord("gene");
+    /* Instead of having subst2, we can add the line below to subst3, the effect is the same
+     * subst3->SetSynonyms().push_back(kEmptyStr);
+     */
     subst3->SetSynonyms().push_back("sequence");
     subst3->SetSynonyms().push_back("partial");
     subst3->SetSynonyms().push_back("complete");
@@ -412,7 +415,7 @@ BOOST_AUTO_TEST_CASE(Test_CytochromeOxidase)
     s.SetIs_all_punct(false);
     s.SetIgnore_weasel(false);
     
-    NcbiCout << MSerial_AsnText << s;
+    //NcbiCout << MSerial_AsnText << s;
 
     BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I"), true);
     BOOST_CHECK_EQUAL(s.Match("cytochrome oxydase subunit I"), true);
@@ -448,9 +451,25 @@ BOOST_AUTO_TEST_CASE(Test_AntigenGene)
     s.SetIs_all_punct(false);
     s.SetIgnore_weasel(false);
     
-    NcbiCout << MSerial_AsnText << s;
-
     BOOST_CHECK_EQUAL(s.Match("MHC CLASS II ANTIGEN gene"), true);
     BOOST_CHECK_EQUAL(s.Match("MHC class II antigen gene"), true);
+}
 
+BOOST_AUTO_TEST_CASE(Test_Upper_LowerCases)
+{
+    CString_constraint s;
+    s.SetIs_all_caps(true);
+
+    BOOST_CHECK_EQUAL(s.Match("MHC CLASS ii ANTIGEN gene"), false);
+    BOOST_CHECK_EQUAL(s.Match("ANTIGEN"), true);
+    BOOST_CHECK_EQUAL(s.Match("ANTIGEN GENE"), true);
+    BOOST_CHECK_EQUAL(s.Match("CLASS: ANTIGEN"), true);
+
+    s.SetIs_all_caps(false);
+    s.SetIs_all_lower(true);
+
+    BOOST_CHECK_EQUAL(s.Match("MHC CLASS ii ANTIGEN gene"), false);
+    BOOST_CHECK_EQUAL(s.Match("antigen"), true);
+    BOOST_CHECK_EQUAL(s.Match("antigen gene"), true);
+    BOOST_CHECK_EQUAL(s.Match("class: antigen!"), true);
 }

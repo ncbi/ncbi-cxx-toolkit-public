@@ -66,26 +66,18 @@ bool CString_constraint :: Empty() const
    }
 };
 
-bool  CString_constraint :: x_IsAllCaps(const string& str) const
+bool CString_constraint :: x_IsAllCaps(const string& str) const
 {
-  string up_str = str;
-  if (up_str.find_first_not_of (m_alpha_str) != string::npos) {
-     return false;
-  }
-  up_str = NStr::ToUpper(up_str);
-  if (up_str == str) return true;
-  else return false;
+  string up_str(str);
+  NStr::ToUpper(up_str);
+  return NStr::EqualCase(up_str, str);
 };
 
 bool CString_constraint :: x_IsAllLowerCase(const string& str) const
 {
-  string low_str = str;
-  if (low_str.find_first_not_of (m_alpha_str) != string::npos) {
-     return false;
-  }
-  low_str = NStr::ToLower(low_str);
-  if (low_str == str) return true;
-  else return false;
+  string low_str(str);
+  NStr::ToLower(low_str);
+  return NStr::EqualCase(low_str, str);
 };
 
 bool CString_constraint :: x_IsAllPunctuation(const string& str) const
