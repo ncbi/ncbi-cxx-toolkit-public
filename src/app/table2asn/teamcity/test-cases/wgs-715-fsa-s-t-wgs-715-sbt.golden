@@ -51,7 +51,7 @@ Seq-submit ::= {
       }
     },
     subtype new,
-    tool "table2asn 1.0.20141117"
+    tool "table2asn 1.0.0"
   },
   data entrys {
     set {
