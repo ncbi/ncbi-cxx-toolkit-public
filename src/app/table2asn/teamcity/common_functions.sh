@@ -123,7 +123,8 @@ do
     local t2asn_args="$args"
 
     local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),]+/-/g' -e 's/--/-/g'` 
-    local test_name=`echo "$t2asn_args" | sed -e 's/^-i //' -e 's/[&=]/-/g' -e 's/--/-/g'` 
+#    local test_name=`echo "$t2asn_args" | sed -e 's/^-i //' -e 's/[&=]/-/g' -e 's/--/-/g' -e 's/ /_/g'` 
+    local test_name=$fname
 
     local golden_file=$fname.golden
     local current_file=$tmp_folder/$fname.new
