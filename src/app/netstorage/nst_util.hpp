@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistl.hpp>
+#include <vector>
 
 
 BEGIN_NCBI_SCOPE
