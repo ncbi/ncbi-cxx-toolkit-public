@@ -384,8 +384,9 @@ CDBConnectionFactory::MakeDBConnection(
                                             // cur_conn_attr,
                                             cur_params);
 
-            } catch(const CDB_Exception& ex) {
-                m_Errors.push_back(ex.Clone());
+            } catch (CDB_Exception& ex) {
+                // m_Errors.push_back(ex.Clone());
+                opening_ctx.handlers.PostMsg(&ex);
                 if (params.GetConnValidator()) {
                     opening_ctx.conn_status
                         = params.GetConnValidator()->ValidateException(ex);
@@ -542,8 +543,9 @@ CDBConnectionFactory::DispatchServerName(
                 t_con = MakeValidConnection(ctx,
                                             // curr_conn_attr,
                                             cur_params);
-            } catch(const CDB_Exception& ex) {
-                m_Errors.push_back(ex.Clone());
+            } catch (CDB_Exception& ex) {
+                // m_Errors.push_back(ex.Clone());
+                ctx.handlers.PostMsg(&ex);
                 if (params.GetConnValidator()) {
                     ctx.conn_status
                         = params.GetConnValidator()->ValidateException(ex);
@@ -630,13 +632,14 @@ CDBConnectionFactory::MakeValidConnection(
                 ctx.handlers.PostMsg(&ex);
                 return NULL;
             }
-        } catch (const CDB_Exception& ex) {
+        } catch (CDB_Exception& ex) {
             if (params.GetConnValidator().NotNull()) {
                 ctx.conn_status
                     = params.GetConnValidator()->ValidateException(ex);
             }
             if (ctx.conn_status != IConnValidator::eValidConn) {
-                m_Errors.push_back(ex.Clone());
+                // m_Errors.push_back(ex.Clone());
+                ctx.handlers.PostMsg(&ex);
                 return NULL;
             }
         } catch (const CException& ex) {
