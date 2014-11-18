@@ -526,6 +526,7 @@ public:
     CConn_HttpStream
     (const string&       url,
      EReqMethod          method,
+     const string&       user_header  = kEmptyStr,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      size_t              buf_size     = kConn_DefaultBufSize
