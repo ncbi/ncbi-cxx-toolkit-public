@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
         }
 #else
-        CORE_LOG(eLOG_Warning, "SSL requested but may be not supported");
+        CORE_LOG(eLOG_Warning, "SSL requested but may not be supported");
 #endif /*HAVE_LIBGNUTLS*/
     }
 
