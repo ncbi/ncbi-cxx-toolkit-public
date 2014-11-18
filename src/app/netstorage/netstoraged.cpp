@@ -57,6 +57,7 @@
 #include "nst_server.hpp"
 #include "nst_application.hpp"
 #include "nst_config.hpp"
+#include "nst_util.hpp"
 
 
 
@@ -206,6 +207,21 @@ int CNetStorageDApp::Run(void)
         server->RegisterAlert(eStartupConfig, msg);
     }
 
+    // Calculate the config file checksum and memorize it
+    vector<string>  config_checksum_warnings;
+    string          config_checksum = NST_GetConfigFileChecksum(
+                                GetConfigPath(), config_checksum_warnings);
+    if (config_checksum_warnings.empty()) {
+        server->SetRAMConfigFileChecksum(config_checksum);
+        server->SetDiskConfigFileChecksum(config_checksum);
+    } else {
+        for (vector<string>::const_iterator
+                k = config_checksum_warnings.begin();
+                k != config_checksum_warnings.end(); ++k)
+            ERR_POST(*k);
+    }
+
+
     // Connect to the database
     // Note: it is vitally important that the first GetDb() call is done after
     // the daemonization. The first GetDb() creates the database object which
@@ -221,6 +237,10 @@ int CNetStorageDApp::Run(void)
     } catch (...) {
         ERR_POST("Unknown exception while connecting to the database");
     }
+
+    // Start auxiliary threads
+    server->RunServiceThread();
+
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;
@@ -251,6 +271,10 @@ int CNetStorageDApp::Run(void)
     } catch (...) {
         ERR_POST(Critical << "Unknown exception in the server run loop");
     }
+
+
+    // Stop auxiliary threads
+    server->StopServiceThread();
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server stopped" << NcbiEndl;

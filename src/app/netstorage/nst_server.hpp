@@ -46,6 +46,8 @@
 BEGIN_NCBI_SCOPE
 
 
+class CNetStorageServiceThread;
+
 
 class CNetStorageServer : public CServer
 {
@@ -79,6 +81,14 @@ public:
     { return m_CommandLine; }
     CCompoundIDPool GetCompoundIDPool(void) const
     { return m_CompoundIDPool; }
+    string GetRAMConfigFileChecksum(void) const
+    { return m_RAMConfigFileChecksum; }
+    string GetDiskConfigFileChecksum(void) const
+    { return m_DiskConfigFileChecksum; }
+    void SetDiskConfigFileChecksum(const string &  checksum)
+    { m_DiskConfigFileChecksum = checksum; }
+    void SetRAMConfigFileChecksum(const string &  checksum)
+    { m_RAMConfigFileChecksum = checksum; }
 
     bool IsAdminClientName(const string &  name) const;
 
@@ -95,6 +105,9 @@ public:
     bool InMetadataServices(const string &  service) const;
     CJsonNode ReadMetadataConfiguration(const IRegistry &  reg);
     CJsonNode serializeMetadataInfo(void) const;
+
+    void RunServiceThread(void);
+    void StopServiceThread(void);
 
     static CNetStorageServer *  GetInstance(void);
 
@@ -124,6 +137,12 @@ private:
     // Metadata services support
     mutable CFastMutex          m_MetadataServicesLock;
     set<string>                 m_MetadataServices;
+
+    string                      m_RAMConfigFileChecksum;
+    string                      m_DiskConfigFileChecksum;
+
+    CRef<CNetStorageServiceThread>
+                                m_ServiceThread;
 
 private:
     string  x_GenerateGUID(void) const;

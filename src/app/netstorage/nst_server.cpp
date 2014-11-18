@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "nst_server.hpp"
+#include "nst_service_thread.hpp"
 
 
 
@@ -282,6 +283,25 @@ CNetStorageServer::serializeMetadataInfo(void) const
     for (k = m_MetadataServices.begin(); k != m_MetadataServices.end(); ++k)
         services.AppendString(*k);
     return services;
+}
+
+
+void
+CNetStorageServer::RunServiceThread(void)
+{
+    m_ServiceThread.Reset(new CNetStorageServiceThread(*this));
+    m_ServiceThread->Run();
+}
+
+
+void
+CNetStorageServer::StopServiceThread(void)
+{
+    if (!m_ServiceThread.Empty()) {
+        m_ServiceThread->RequestStop();
+        m_ServiceThread->Join();
+        m_ServiceThread.Reset(0);
+    }
 }
 
 

@@ -49,6 +49,7 @@
 #include "nst_application.hpp"
 #include "nst_warning.hpp"
 #include "nst_config.hpp"
+#include "nst_util.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -1018,6 +1019,20 @@ CNetStorageHandler::x_ProcessReconfigure(
         return;
     }
 
+    // Update the config file checksum in memory
+    vector<string>  config_checksum_warnings;
+    string          config_checksum = NST_GetConfigFileChecksum(
+                            app->GetConfigPath(), config_checksum_warnings);
+    if (config_checksum_warnings.empty()) {
+        m_Server->SetRAMConfigFileChecksum(config_checksum);
+        m_Server->SetDiskConfigFileChecksum(config_checksum);
+    } else {
+        for (vector<string>::const_iterator
+                k = config_checksum_warnings.begin();
+                k != config_checksum_warnings.end(); ++k)
+            ERR_POST(*k);
+    }
+
     const CNcbiRegistry &   reg = app->GetConfig();
     vector<string>          config_warnings;
     NSTValidateConfigFile(reg, config_warnings, false);     // false -> no exc
@@ -1051,7 +1066,6 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode   server_diff = m_Server->SetParameters(params, true);
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
 
-    m_Server->AcknowledgeAlert(eStartupConfig, "NSTAcknowledge");
     m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
 
     if (server_diff.IsNull() && metadata_diff.IsNull()) {
