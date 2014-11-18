@@ -2278,6 +2278,12 @@ string CDeflineGenerator::GenerateDefline (
 
     string final = prefix + m_MainTitle + suffix;
 
+    pos = final.find (" ,");
+    if (pos != NPOS) {
+        final [pos] = ',';
+        final [pos+1] = ' ';
+    }
+
     x_CompressRunsOfSpaces (final);
 
     return final;
