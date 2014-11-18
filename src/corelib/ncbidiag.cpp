@@ -4606,7 +4606,9 @@ string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
             const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
             if (enc[1] != 0  ||  enc[0] != *c) {
                 NCBI_THROW(CCoreException, eInvalidArg,
-                    "Invalid char in extra args name: " + string(src));
+                    "Invalid char in extra args name, pos=" +
+                    NStr::NumericToString(c - src.begin()) +
+                    ": " + string(src));
             }
         }
         return src;
