@@ -234,7 +234,12 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
         return true;
     }
     if (str.length() == 0) {
-        return false;
+        // special case: can continue if the next character is a space, might have words to ignore
+        if (isspace(pattern[0])) {
+            return x_PartialCompare(str, pattern.substr(1), ' ', match_len);
+        } else {
+            return false;
+        }
     }
     if (GetIgnore_space()) {
         if (isspace(Uint1(str[0]))) {

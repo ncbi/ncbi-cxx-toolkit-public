@@ -337,6 +337,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2048)
     s.SetIgnore_weasel(false);
 
     BOOST_CHECK_EQUAL(s.Match("cytochrome b gene"), true);
+    BOOST_CHECK_EQUAL(s.Match("cytochrome b partial"), true);
+
 }
 
 
@@ -357,3 +359,98 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2093)
     BOOST_CHECK_EQUAL(original, "localization of periplasmic protein complexes");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_CytochromeOxidase)
+{
+    CString_constraint s;
+    s.SetMatch_text("cytochrome oxidase subunit I gene");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef<CWord_substitution> subst1(new CWord_substitution());
+    subst1->SetWord("cytochrome oxidase subunit I gene");
+    subst1->SetSynonyms().push_back("cytochrome oxidase I gene");
+    subst1->SetSynonyms().push_back("cytochrome oxidase I");
+    subst1->SetSynonyms().push_back("cytochrome subunit I");
+    //subst1->SetSynonyms().push_back("cytochrome oxidase subunit I");
+    subst1->SetCase_sensitive(false);
+    subst1->SetWhole_word(false);
+
+    s.SetIgnore_words().Set().push_back(subst1);
+
+    CRef<CWord_substitution> subst2(new CWord_substitution());
+    subst2->SetWord("gene");
+    subst2->SetCase_sensitive(false);
+    subst2->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst2);
+    
+    CRef<CWord_substitution> subst3(new CWord_substitution());
+    subst3->SetWord("gene");
+    subst3->SetSynonyms().push_back("sequence");
+    subst3->SetSynonyms().push_back("partial");
+    subst3->SetSynonyms().push_back("complete");
+    subst3->SetSynonyms().push_back("region");
+    subst3->SetSynonyms().push_back("partial sequence");
+    subst3->SetSynonyms().push_back("complete sequence");
+    subst3->SetCase_sensitive(false);
+    subst3->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst3);
+    
+    CRef<CWord_substitution> subst4(new CWord_substitution());
+    subst4->SetWord("oxidase");
+    subst4->SetSynonyms().push_back("oxydase");
+    subst4->SetCase_sensitive(false);
+    subst4->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst4);
+    
+    s.SetWhole_word(false);
+    s.SetNot_present(false);
+    s.SetIs_all_caps(false);
+    s.SetIs_all_lower(false);
+    s.SetIs_all_punct(false);
+    s.SetIgnore_weasel(false);
+    
+    NcbiCout << MSerial_AsnText << s;
+
+    BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I"), true);
+    BOOST_CHECK_EQUAL(s.Match("cytochrome oxydase subunit I"), true);
+    BOOST_CHECK_EQUAL(s.Match("cytochrome oxydase subunit I gene"), true);
+}
+
+BOOST_AUTO_TEST_CASE(Test_AntigenGene)
+{
+    CString_constraint s;
+    s.SetMatch_text("MHC CLASS II ANTIGEN gene");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef<CWord_substitution> subst2(new CWord_substitution());
+    subst2->SetWord("gene");
+    subst2->SetSynonyms().push_back("sequence");
+    subst2->SetSynonyms().push_back("partial");
+    subst2->SetSynonyms().push_back("complete");
+    subst2->SetSynonyms().push_back("region");
+    subst2->SetSynonyms().push_back("partial sequence");
+    subst2->SetSynonyms().push_back("complete sequence");
+    subst2->SetCase_sensitive(false);
+    subst2->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst2);
+
+    
+    s.SetWhole_word(false);
+    s.SetNot_present(false);
+    s.SetIs_all_caps(false);
+    s.SetIs_all_lower(false);
+    s.SetIs_all_punct(false);
+    s.SetIgnore_weasel(false);
+    
+    NcbiCout << MSerial_AsnText << s;
+
+    BOOST_CHECK_EQUAL(s.Match("MHC CLASS II ANTIGEN gene"), true);
+    BOOST_CHECK_EQUAL(s.Match("MHC class II antigen gene"), true);
+
+}

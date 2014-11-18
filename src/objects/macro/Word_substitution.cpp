@@ -92,6 +92,11 @@ vector<size_t> CWord_substitution :: GetMatchLens(const string& text, const stri
                 match_lens.push_back(len);            
             }
         }
+    } else {
+        // word is optional, but don't skip it if it's already in the text
+        if (!NStr::StartsWith(text, GetWord(), GetCase_sensitive() ? NStr::eCase : NStr::eNocase)) {
+            match_lens.push_back(0);
+        }
     }
     return match_lens;
 }
