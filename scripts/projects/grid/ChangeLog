@@ -1,3 +1,28 @@
+2014-11-18 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* remote_cgi, remote_app: implicit affinity specification
+	* grid_cli: support for NetStorage object attributes
+	* remote_cgi, remote_app: NetCache parameters in NetSchedule servers
+	* ncfetch.cgi: now works with NetStorage objects
+	* remote_cgi, remote_app: new "offline" mode for development and testing
+	* remote_cgi, remote_app: suspend (pause)/resume functionality
+	* remote_cgi, remote_app: option to fail jobs without further retries
+	* all applications: support for page hit IDs
+	* remote_cgi, remote_app: can limit the number of parallel jobs per user
+	* cgi2rcgi: support for JSONP
+	* grid_cli: new option --try-all-servers to find an ICache blob
+	* all applications: support for blob keys used by NetCache in HTTP mode
+	* grid_cli: new option to cancel only the pending jobs
+	* remote_cgi, remote_app: support for job groups
+	* grid_cli reconf: new option --mirror to reconfigure NC mirrors on the fly
+	* cgi2rcgi: new option add_job_id_to_response=true (the real CGI response)
+
+	* all applications: mention relevant blob and job keys in error messages
+
+	* remote_cgi, remote_app: fix for omission of standby/penalized NS servers
+	* grid_cli: fix for dynamic queue creation
+	* remote_cgi, remote_app: fix for timeout on Windows due to large job output
+
 2013-12-11 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* grid_cli: support for NetStorage architecture.
