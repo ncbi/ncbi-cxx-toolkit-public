@@ -118,7 +118,7 @@ const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncb
 
 
 /// Regular expression to check lines of raw logs.
-const char*  kApplogRegexp = "^\\d{5}/\\d{3}/\\d{4}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4}/\\d{4} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
+const char*  kApplogRegexp = "^\\d{5,}/\\d{3,}/\\d{4,}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4,}/\\d{4,} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
 
 // Base position of the application name in the string if time format have milliseconds
 // (3 digits after seconds). It will be increased if necessary.
