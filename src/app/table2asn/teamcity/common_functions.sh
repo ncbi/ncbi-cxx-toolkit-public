@@ -40,7 +40,7 @@ function create_output_file()
    local args=$1
    local result=$2
 
-   (cd test-cases && echo "$table2asn $args -r $tmp_folder -o - "| bash | sed -r -e 's/(    tool "table2asn 1\.0\.).*/\10"/' > $result)
+   (cd test-cases && echo "$table2asn $args -r $tmp_folder -o - "| bash | sed -r -e 's/(    tool "table2asn 1\.0\.).*/\10"/' > $result || true)
 }
 
 function compare_with_golden_file()
