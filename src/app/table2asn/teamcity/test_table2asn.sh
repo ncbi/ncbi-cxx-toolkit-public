@@ -4,14 +4,15 @@ set -o errexit
 set -o pipefail
 #set -x
 
-table2asn="$1"
-tmp_folder="$2"
-diff_folder="$3"
-debug="$4"
+TEST_TOOL_NAME="$1"
+TEST_TOOL_PATH="$2"
+tmp_folder="$3"
+diff_folder="$4"
+debug="$5"
 
-if [ -z "$table2asn" -o -z "$tmp_folder" -o -z "$diff_folder" ]
+if [ -z "$TEST_TOOL_NAME" -o -z "$TEST_TOOL_PATH" -o -z "$tmp_folder" -o -z "$diff_folder" ]
 then
-    echo "usage: $0 <binary-path> <tmp-directory>i <diff-folder>"
+    echo "usage: $0 <tool-name> <binary-path> <tmp-directory>i <diff-folder>"
     exit 1
 fi
 
@@ -36,6 +37,8 @@ if [ -z "$script_folder" ]; then
 fi
 
 . $script_folder/common_functions.sh
+. $script_folder/${TEST_TOOL_NAME}_functions.sh
+
 input_folder=$script_folder/test-cases
 
 mkdir -p "$tmp_folder"

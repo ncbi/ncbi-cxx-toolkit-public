@@ -35,48 +35,18 @@ tc_failed()
 EOF
 }
 
-CONVERT_CREATE_DATE="
-/^ +create-date std \{/b edit_year
-/^ +date std \{/b edit_year
-b
-:edit_year
-n
-/^ +year 201[456]/b edit_date
-b
-:edit_date
-s/year [0-9]+/year 2014/
-n
-s/month [0-9]+/month 2/
-n
-s/day [0-9]+/day 1/
-b
-"
-
-CONVERT_TOOL_VERSION="s/(    tool \\\"table2asn 1\.0\.).*/\10\\\"/"
-
-function create_output_file()
-{
-   local args=$1
-   local result=$2
-
-   (cd test-cases && echo "$table2asn $args -r $tmp_folder -o - "| bash | sed -r \
-      -e "$CONVERT_TOOL_VERSION" \
-      -e "$CONVERT_CREATE_DATE" \
-    > $result || true)
-}
-
 function compare_with_golden_file()
 {
    local golden_file=$1
    local current_file=$2
-   local t2asn_args=$3
+   local tool_args=$3
    local test_name=$4
    local suite_name=$5
    local debug_opts=$6
    
    echo $1 $2 $3 $4 $5 $6
 
-   create_output_file "$t2asn_args" $2
+   create_output_file "$tool_args" $2
 
    local gold_size=`stat -c %s $golden_file`
    local current_size=`stat -c %s $current_file`
@@ -117,7 +87,7 @@ function compare_with_golden_file()
    
    tc_start_suite "$suite_name"
    tc_start "$test_name"
-   echo "Invoking table2asn with: $t2asn_args"
+   echo "Invoking $TEST_TOOL_NAME with: $tool_args"
    
    echo "diff $golden_file($gold_size) $current_file($current_size)"
    if [ -n "$failure" ]; then
@@ -142,11 +112,10 @@ function  unit_test_compare_to_previous()
 sed -e 's/\#.*//' -e '/^\s*$/d' < "$input_folder/$input_file" |
 while read args
 do
-    local t2asn_args="$args"
+    local tool_args="$args"
 
-    local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\:\/"]+/-/g' -e 's/--/-/g'` 
-    #fname=${fname:0:20}
-#    local test_name=`echo "$t2asn_args" | sed -e 's/^-i //' -e 's/[&=]/-/g' -e 's/--/-/g' -e 's/ /_/g'` 
+    #local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\:\/"]+/-/g' -e 's/--/-/g'` 
+    local fname=`make_test_name "$tool_args"`
     local test_name=$fname
 
     local golden_file=$fname.golden
@@ -154,9 +123,9 @@ do
 
     if [ -f test-cases/$golden_file ]
     then
-       compare_with_golden_file test-cases/$golden_file $current_file "$t2asn_args" $test_name "unit_test_compare_to_previous"
+       compare_with_golden_file test-cases/$golden_file $current_file "$tool_args" $test_name "unit_test_compare_to_previous"
     else
-       create_output_file "$t2asn_args" $golden_file
+       create_output_file "$tool_args" $golden_file
     fi
 
 done
