@@ -52,8 +52,8 @@ Seq-submit ::= {
       },
       date std {
         year 2014,
-        month 11,
-        day 18
+        month 2,
+        day 1
       }
     },
     subtype new,

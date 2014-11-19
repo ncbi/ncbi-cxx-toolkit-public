@@ -61,8 +61,8 @@ Seq-submit ::= {
       },
       date std {
         year 2014,
-        month 8,
-        day 4
+        month 2,
+        day 1
       }
     },
     subtype new,
@@ -75,7 +75,7 @@ Seq-submit ::= {
         update-date std {
           year 2014,
           month 11,
-          day 18
+          day 19
         }
       },
       seq-set {
@@ -128,8 +128,8 @@ Seq-submit ::= {
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -1153,8 +1153,8 @@ FE80C2F40039F6CC0B100029E01B3F10A338331008BE0CF821FFC0C143F0043DC84FAF3F8752D3
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -1943,8 +1943,8 @@ C00C024FB43C4C06FF80F00EA3BC0C638257E230C8E088C0AA78002BAFECF37FC1820231800927
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -2275,8 +2275,8 @@ BE73265FD55935454AF3CBC1C305E7FFF12778F1D41AF3C316730C377A8C5BFBCA5CC5C13C5517
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -5489,8 +5489,8 @@ AAGCGGTAGAAAGGACAAAAGAAAGTCAAAAAGAAGTAGAAACACTTGCAAGCAAT"
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -5777,8 +5777,8 @@ CATCGTATGCCAACTTTGCCTTTTTATCCCCATTTTCTATTCCTTTTCTGATGTCTCTCATGT"
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -6115,8 +6115,8 @@ GAAAAGGTTTTAAACTTTCTAAAGAAACAAGCTAAGAAGCTGTTTCATACATAAGCGT"
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {
@@ -6215,8 +6215,8 @@ E3031B27F820C83F416780C3C0B4B8E0CCF84F20FA02F221C07D50808843D7A2017F003A207EC0
             },
             create-date std {
               year 2014,
-              month 8,
-              day 4
+              month 2,
+              day 1
             }
           },
           inst {

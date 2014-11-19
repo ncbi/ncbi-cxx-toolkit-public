@@ -31,8 +31,8 @@ Seq-entry ::= set {
         comment "This is  multiline comment",
         create-date std {
           year 2014,
-          month 11,
-          day 18
+          month 2,
+          day 1
         }
       },
       inst {
@@ -79,8 +79,8 @@ D0AEEB69B77428'H
         comment "This is  multiline comment",
         create-date std {
           year 2014,
-          month 11,
-          day 18
+          month 2,
+          day 1
         }
       },
       inst {

@@ -35,12 +35,34 @@ tc_failed()
 EOF
 }
 
+CONVERT_CREATE_DATE="
+/^ +create-date std \{/b edit_year
+/^ +date std \{/b edit_year
+b
+:edit_year
+n
+/^ +year 201[456]/b edit_date
+b
+:edit_date
+s/year [0-9]+/year 2014/
+n
+s/month [0-9]+/month 2/
+n
+s/day [0-9]+/day 1/
+b
+"
+
+CONVERT_TOOL_VERSION="s/(    tool \\\"table2asn 1\.0\.).*/\10\\\"/"
+
 function create_output_file()
 {
    local args=$1
    local result=$2
 
-   (cd test-cases && echo "$table2asn $args -r $tmp_folder -o - "| bash | sed -r -e 's/(    tool "table2asn 1\.0\.).*/\10"/' > $result || true)
+   (cd test-cases && echo "$table2asn $args -r $tmp_folder -o - "| bash | sed -r \
+      -e "$CONVERT_TOOL_VERSION" \
+      -e "$CONVERT_CREATE_DATE" \
+    > $result || true)
 }
 
 function compare_with_golden_file()
