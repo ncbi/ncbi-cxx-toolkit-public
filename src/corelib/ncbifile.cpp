@@ -1547,8 +1547,12 @@ bool CDirEntry::StringToMode(const CTempString& mode,
 void CDirEntry::GetUmask(TMode* user_mode, TMode* group_mode, 
                          TMode* other_mode, TSpecialModeBits* special)
 {
+#ifdef HAVE_GETUMASK
+    mode_t mode = getumask();
+#else
     mode_t mode = umask(0);
     umask(mode);
+#endif //HAVE_GETUMASK
     ModeFromModeT(mode, user_mode, group_mode, other_mode, special);
 }
 
