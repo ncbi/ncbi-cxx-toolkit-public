@@ -938,7 +938,7 @@ void CFastaReader::CheckDataLine(
     }
     // warn if more than a certain percentage is ambiguous nucleotides
     const static size_t kWarnPercentAmbiguous = 40; // e.g. "40" means "40%"
-    const size_t percent_ambig = (ambig_nuc * 100) / good;
+    const size_t percent_ambig = (good == 0)?100:((ambig_nuc * 100) / good);
     if( len > 3 && percent_ambig > kWarnPercentAmbiguous ) {
         FASTA_WARNING(LineNumber(), 
             "FASTA-Reader: First data line in seq is about "

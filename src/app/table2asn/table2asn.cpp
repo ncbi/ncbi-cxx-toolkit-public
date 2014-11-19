@@ -69,6 +69,7 @@
 #include <common/ncbi_source_ver.h>
 
 #include "table2asn_validator.hpp"
+#include <objtools/readers/fasta_exception.hpp>
 
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
 
@@ -651,7 +652,29 @@ int CTbl2AsnApp::Run(void)
             }
         }
     }
-    catch (CException& e)
+    catch (const CBadResiduesException& e)
+    {
+        int line = 0;
+        ILineError::TVecOfLines lines;
+        if (e.GetBadResiduePositions().m_BadIndexMap.size() == 1)
+        {
+            line = e.GetBadResiduePositions().m_BadIndexMap.begin()->first;
+        }
+        else
+        {
+            lines.reserve(e.GetBadResiduePositions().m_BadIndexMap.size());
+            ITERATE(CBadResiduesException::SBadResiduePositions::TBadIndexMap, it, e.GetBadResiduePositions().m_BadIndexMap)
+            {
+                lines.push_back(it->first);
+            }
+        }
+        auto_ptr<CLineError> le(
+            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
+            e.GetBadResiduePositions().m_SeqId->AsFastaString(),
+            line, "", "", "", e.GetMsg(), lines));
+        m_logger->PutError(*le);
+    }
+    catch (const CException& e)
     {
         m_logger->PutError(*auto_ptr<CLineError>(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
