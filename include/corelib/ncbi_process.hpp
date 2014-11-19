@@ -354,6 +354,9 @@ public:
     //  file pointers (and sometimes descriptors) clobbered up.
     static TPid Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
 
+    /// This operator is particularly convenient for logging.
+    friend CNcbiOstream& operator<< (CNcbiOstream&, const CProcess&);
+
 private:
 #if defined NCBI_THREAD_PID_WORKAROUND
     // Flags for internal x_GetPid()
@@ -377,6 +380,13 @@ private:
     intptr_t     m_Process;  ///< Process identifier.
     EProcessType m_Type;     ///< Type of process identifier.
 };
+
+
+inline
+CNcbiOstream& operator<< (CNcbiOstream& io, const CProcess& obj)
+{
+    return io << obj.m_Process << '(' << obj.m_Type << ')';
+}
 
 
 

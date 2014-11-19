@@ -48,6 +48,203 @@
 
 BEGIN_NCBI_SCOPE
 
+// This class is responsibe for the whole process of reaping child processes
+class CRemoteAppReaper
+{
+    // Context holds all data that is shared between Manager and Collector.
+    // Also, it actually implements both these actors
+    class CContext
+    {
+    public:
+        CContext(int s, int m)
+            : sleep(s > 1 ? s : 1), // Sleep at least one second between reaps
+              max_attempts(m),
+              stop(false)
+        {}
+
+        bool Enabled() const { return max_attempts > 0; }
+
+        CPipe::IProcessWatcher::EAction ManagerImpl(TProcessHandle);
+        void CollectorImpl();
+
+        void CollectorImplStop()
+        {
+            CMutexGuard guard(lock);
+            stop = true;
+            cond.SignalSome();
+        }
+
+    private:
+        // A record for a child process
+        struct SChild
+        {
+            CProcess process;
+            int attempts;
+
+            SChild(TProcessHandle handle) : process(handle), attempts(0) {}
+        };
+
+        typedef list<SChild> TChildren;
+        typedef TChildren::iterator TChildren_I;
+
+        bool FillBacklog(TChildren_I&);
+
+        CMutex lock;
+        CConditionVariable cond;
+        TChildren children;
+        TChildren backlog;
+        const unsigned sleep;
+        const int max_attempts;
+        bool stop;
+    };
+
+    // Collector (thread) waits/kills child processes
+    class CCollector : public CThread
+    {
+    public:
+        CCollector(CContext& context)
+            : m_Context(context)
+        {
+            if (m_Context.Enabled()) {
+                Run();
+            }
+        }
+
+        ~CCollector()
+        {
+            if (m_Context.Enabled()) {
+                m_Context.CollectorImplStop();
+                Join();
+            }
+        }
+
+    private:
+        // This is the only method called in a different thread
+        void* Main(void) { m_Context.CollectorImpl(); return NULL; }
+
+        CContext& m_Context;
+    };
+
+public:
+    // Manager gives work (a pid/handle of a child process) to Collector
+    class CManager
+    {
+    public:
+        CPipe::IProcessWatcher::EAction operator()(TProcessHandle handle)
+        {
+            return m_Context.ManagerImpl(handle);
+        }
+
+    private:
+        CManager(CContext& context) : m_Context(context) {}
+
+        CContext& m_Context;
+
+        friend class CRemoteAppReaper;
+    };
+
+    CRemoteAppReaper(int sleep, int max_attempts);
+
+    CManager& GetManager() { return m_Manager; }
+
+private:
+    CContext m_Context;
+    CManager m_Manager;
+    auto_ptr<CCollector> m_Collector;
+};
+
+CPipe::IProcessWatcher::EAction CRemoteAppReaper::CContext::ManagerImpl(
+        TProcessHandle handle)
+{
+    if (Enabled()) {
+        CMutexGuard guard(lock);
+        children.push_back(handle);
+        cond.SignalSome();
+        return CPipe::IProcessWatcher::eExit;
+    }
+
+    return CPipe::IProcessWatcher::eStop;
+}
+
+void CRemoteAppReaper::CContext::CollectorImpl()
+{
+    CProcess::CExitInfo exitinfo;
+
+    for (;;) {
+        TChildren_I backlog_end = backlog.end();
+
+        // If stop was requested
+        if (!FillBacklog(backlog_end)) {
+            return;
+        }
+
+        // Wait/kill child processes from the backlog
+        TChildren_I it = backlog.begin();
+        while (it != backlog_end) {
+            bool done = it->process.Wait(0, &exitinfo) != -1 ||
+                exitinfo.IsExited() || exitinfo.IsSignaled();
+
+            if (done) {
+                // Log a message for those that had failed to be killed
+                if (it->attempts) {
+                    LOG_POST(Warning << "Successfully waited for a process: " <<
+                            it->process);
+                }
+            } else if (it->attempts++) {
+                // Give up if there are too many attempts to wait for a process
+                if (it->attempts > max_attempts) {
+                    done = true;
+                    ERR_POST("Give up waiting for a process: " <<
+                            it->process);
+                }
+            } else if (it->process.KillGroup()) {
+                done = true;
+            } else {
+                LOG_POST(Warning << "Failed to kill a process: " <<
+                        it->process << ", will wait for it");
+            }
+
+            if (done) {
+                backlog.erase(it++);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+bool CRemoteAppReaper::CContext::FillBacklog(TChildren_I& backlog_end)
+{
+    CMutexGuard guard(lock);
+
+    while (!stop) {
+        // If there are some new child processes to wait for
+        if (!children.empty()) {
+            // Move them to the backlog, these only will be processed this time
+            backlog_end = backlog.begin();
+            backlog.splice(backlog_end, children);
+            return true;
+
+        // If there is nothing to do, wait for a signal
+        } else if (backlog.empty()) {
+            while (!cond.WaitForSignal(lock));
+
+        // No backlog processing if there is a signal
+        } else if (!cond.WaitForSignal(lock, sleep)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts)
+    : m_Context(sleep, max_attempts),
+      m_Manager(m_Context),
+      m_Collector(new CCollector(m_Context))
+{
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
@@ -163,11 +360,16 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         const string& s = *it;
          m_AddedEnv[s] = reg.GetString("env_set", s, "");
     }
+
+    int sleep = reg.GetInt(sec_name,
+            "sleep_between_reap_attempts", 60, 0, IRegistry::eReturn);
+    int max_attempts = reg.GetInt(sec_name,
+            "max_reap_attempts_after_kill", 60, 0, IRegistry::eReturn);
+    m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts));
 }
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-
 bool CanExecRemoteApp(const CFile& file)
 {
     CDirEntry::TMode user_mode  = 0;
@@ -214,25 +416,32 @@ struct STmpDirGuard
 class CPipeProcessWatcher_Base : public CPipe::IProcessWatcher
 {
 public:
-    CPipeProcessWatcher_Base(int max_app_running_time)
-        : m_MaxAppRunningTime(max_app_running_time)
+    CPipeProcessWatcher_Base(int max_app_running_time,
+            CRemoteAppReaper::CManager &process_manager)
+        : m_ProcessManager(process_manager),
+          m_MaxAppRunningTime(max_app_running_time)
+
     {
         if (max_app_running_time > 0)
             m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));
     }
 
-    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle /*pid*/)
+    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
     {
         if (m_MaxAppRunningTime > 0 && m_RunningTime->Elapsed() >
                 (double) m_MaxAppRunningTime) {
             ERR_POST("Job run time exceeded "
                      << m_MaxAppRunningTime
-                     <<" seconds, stopping the child");
-            return CPipe::IProcessWatcher::eStop;
+                     <<" seconds, stopping the child: " << pid);
+            return m_ProcessManager(pid);
         }
 
         return CPipe::IProcessWatcher::eContinue;
     }
+
+protected:
+    CRemoteAppReaper::CManager& m_ProcessManager;
+
 private:
     auto_ptr<CStopWatch> m_RunningTime;
     int m_MaxAppRunningTime;
@@ -243,6 +452,29 @@ private:
 class CRAMonitor
 {
 public:
+    // The exit code of the monitor program is interpreted as follows
+    // (any exit code not listed below is treated as eInternalError)
+    enum EResult {
+        // The job is running as expected.
+        // The monitor's stdout is interpreted as a job progress message.
+        // The stderr goes to the log file if logging is enabled.
+        eJobRunning = 0,
+        // The monitor detected an inconsistency with the job run;
+        // the job must be returned back to the queue.
+        // The monitor's stderr goes to the log file
+        // regardless of whether logging is enabled or not.
+        eJobToReturn = 1,
+        // The job must be failed.
+        // The monitor's stdout is interpreted as the error message;
+        // stderr goes to the log file regardless of whether
+        // logging is enabled or not.
+        eJobFailed = 2,
+        // There's a problem with the monitor application itself.
+        // The job continues to run and the monitor's stderr goes
+        // to the log file unconditionally.
+        eInternalError = 3,
+    };
+
     CRAMonitor(const string& app, const char* const* env,
         int max_app_running_time) :
         m_App(app),
@@ -251,9 +483,10 @@ public:
     {
     }
 
-    int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err)
+    int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err,
+            CRemoteAppReaper::CManager &process_manager)
     {
-        CPipeProcessWatcher_Base callback(m_MaxAppRunningTime);
+        CPipeProcessWatcher_Base callback(m_MaxAppRunningTime, process_manager);
         CNcbiStrstream in;
         int exit_value;
         CPipe::EFinish ret = CPipe::eCanceled;
@@ -271,9 +504,8 @@ public:
         catch (...) {
             err << "Unknown error";
         }
-        if (ret != CPipe::eDone || exit_value > 2)
-            return 3;
-        return exit_value;
+
+        return ret != CPipe::eDone ? eInternalError : exit_value;
     }
 
 private:
@@ -290,8 +522,9 @@ public:
     CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
                    int max_app_running_time,
                    int keep_alive_period,
-                   const string& job_wdir)
-        : CPipeProcessWatcher_Base(max_app_running_time),
+                   const string& job_wdir,
+                   CRemoteAppReaper::CManager &process_manager)
+        : CPipeProcessWatcher_Base(max_app_running_time, process_manager),
           m_JobContext(job_context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL), m_JobWDir(job_wdir)
     {
@@ -350,8 +583,8 @@ public:
             args.push_back("-jwdir");
             args.push_back(m_JobWDir);
 
-            switch (m_Monitor->Run(args, out, err)) {
-            case 0:
+            switch (m_Monitor->Run(args, out, err, m_ProcessManager)) {
+            case CRAMonitor::eJobRunning:
                 {
                     bool non_empty_output = !IsOssEmpty(out);
                     if (non_empty_output) {
@@ -363,11 +596,11 @@ public:
                         x_Log("exited with zero return code", err);
                 }
                 break;
-            case 1:
+            case CRAMonitor::eJobToReturn:
                 m_JobContext.ReturnJob();
                 x_Log("job is returned", err);
                 return CPipe::IProcessWatcher::eStop;
-            case 2:
+            case CRAMonitor::eJobFailed:
                 {
                     x_Log("job failed", err);
                     string errmsg;
@@ -554,7 +787,8 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         CPipeProcessWatcher callback(job_context,
             max_app_run_time,
             m_KeepAlivePeriod,
-            working_dir);
+            working_dir,
+            m_Reaper->GetManager());
 
         auto_ptr<CRAMonitor> ra_monitor;
         if (!m_MonitorAppPath.empty() && m_MonitorPeriod > 0) {

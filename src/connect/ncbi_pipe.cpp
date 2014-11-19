@@ -232,6 +232,7 @@ public:
     CPipe::TChildPollMask Poll(CPipe::TChildPollMask mask,
                                const STimeout* timeout) const;
     TProcessHandle GetProcessHandle(void) const { return m_ProcHandle; }
+    void Release(void) { x_Clear(); }
 
 private:
     // Clear object state.
@@ -903,6 +904,7 @@ public:
     CPipe::TChildPollMask Poll(CPipe::TChildPollMask mask,
                                const STimeout* timeout) const;
     TProcessHandle GetProcessHandle(void) const { return m_Pid; }
+    void Release(void) { x_Clear(); }
 
 private:
     // Clear object state.
@@ -2047,7 +2049,16 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
             }
             if (!CProcess(pid).IsAlive())
                 break;
-            if (watcher && watcher->Watch(pid) != IProcessWatcher::eContinue) {
+            if (watcher) {
+                switch (watcher->Watch(pid)) {
+                case IProcessWatcher::eExit:
+                    if (pipe.m_PipeHandle) pipe.m_PipeHandle->Release();
+                    return eCanceled;
+                case IProcessWatcher::eContinue:
+                    continue;
+                }
+
+                // IProcessWatcher::eStop
                 pipe.SetTimeout(eIO_Close, &ktm);
                 finish = eCanceled;
                 break;

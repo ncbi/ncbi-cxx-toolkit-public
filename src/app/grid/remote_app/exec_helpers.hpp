@@ -45,6 +45,7 @@ bool CanExecRemoteApp(const CFile& file);
 
 class IRegistry;
 class CWorkerNodeJobContext;
+class CRemoteAppReaper;
 
 class CRemoteAppLauncher
 {
@@ -104,6 +105,8 @@ private:
     TEnvMap m_AddedEnv;
     list<string> m_ExcludeEnv;
     list<string> m_IncludeEnv;
+
+    auto_ptr<CRemoteAppReaper> m_Reaper;
 };
 
 END_NCBI_SCOPE

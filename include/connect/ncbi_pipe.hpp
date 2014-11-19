@@ -395,7 +395,8 @@ public:
         /// after the Watch() method has returned.
         enum EAction {
             eContinue, ///< Continue running
-            eStop      ///< Kill the child process and exit
+            eStop,     ///< Kill the child process and exit
+            eExit      ///< Exit without waiting for the child process
         };
         virtual ~IProcessWatcher();
 
