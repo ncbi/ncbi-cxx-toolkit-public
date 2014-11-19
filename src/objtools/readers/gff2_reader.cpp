@@ -367,7 +367,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  information:
     //
     if ( it != annots.end() ) {
-        if ( ! x_UpdateAnnotFeature( *pRecord, *it ) ) {
+        if ( ! x_UpdateAnnotFeature( *pRecord, *it, pEC ) ) {
             return false;
         }
     }
@@ -378,7 +378,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     //
     else {
         CRef< CSeq_annot > pAnnot( new CSeq_annot );
-        if ( ! x_InitAnnot( *pRecord, pAnnot ) ) {
+        if ( ! x_InitAnnot( *pRecord, pAnnot, pEC ) ) {
             return false;
         }
         CSeq_annot::TData::TFtable& table = pAnnot->SetData().SetFtable();
@@ -526,7 +526,8 @@ bool CGff2Reader::x_ParseTrackLineGff(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_InitAnnot(
     const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
+    CRef< CSeq_annot > pAnnot,
+    IMessageListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     CRef< CAnnot_id > pAnnotId( new CAnnot_id );
@@ -557,7 +558,7 @@ bool CGff2Reader::x_InitAnnot(
     }
     else {
         pAnnot->SetData().SetFtable();
-        return x_UpdateAnnotFeature( gff, pAnnot );
+        return x_UpdateAnnotFeature( gff, pAnnot, pEC );
     }
 }
 

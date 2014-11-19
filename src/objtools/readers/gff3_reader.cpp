@@ -278,7 +278,14 @@ bool CGff3Reader::xUpdateAnnotCds(
                 return false;
             }
             if (!xFeatureSetXrefParent(*cit, pFeature)) {
-                return false;
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Warning,
+                    0,
+                    "Bad data line: CDS record with bad parent assignment.",
+                    ILineError::eProblem_MissingContext) );
+                pErr->SetLineNumber(m_uLineNumber);
+                ProcessError(*pErr, pEC);
             }
             if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
                 return false;
