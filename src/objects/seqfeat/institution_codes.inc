@@ -342,7 +342,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BACP	s	CEFYBO, Unidad Botanica",
 "BAE	s	Willis Museum and Art Gallery",
 "BAF	s	Universidad de Buenos Aires, Facultad de Farmacia y Bioquimica",
-"BAFC	s	Universidad de Buenos Aires, Departamento de Ciencias Biologicas",
+"BAFC	sc	Universidad de Buenos Aires, Departamento de Ciencias Biologicas",
 "BAG	s	Ministry of Agriculture",
 "BAH<BRZ>	s	Empresa Baiana de Desenvolvimento Agricola",
 "BAH<GRM>	s	Biologische Anstalt Helgoland Marine Station",
