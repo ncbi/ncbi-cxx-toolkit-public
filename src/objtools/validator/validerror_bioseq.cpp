@@ -4909,6 +4909,8 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                         if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
                             if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                                 // ignore in genomic gpipe sequence
+                            } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
+                                // ignore pseudo feature
                             } else {
                                 PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                                     parterr[i] + ": " + parterrs[j] + 
@@ -4919,10 +4921,14 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                 CSeqdesc_CI diter (m_CurrentHandle, CSeqdesc::e_Molinfo);
                                 if (diter && diter->GetMolinfo().IsSetBiomol()
                                     && diter->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                                        parterr[i] + ": " + parterrs[j] + 
-                                        " (but is at consensus splice site, but is on an mRNA that is already spliced)",
-                                        *(feat.GetSeq_feat()));
+                                    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+                                        // ignore pseudo feature
+                                    } else {
+                                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                                            parterr[i] + ": " + parterrs[j] +
+                                            " (but is at consensus splice site, but is on an mRNA that is already spliced)",
+                                            *(feat.GetSeq_feat()));
+                                    }
                                 }
                             }
                         }
