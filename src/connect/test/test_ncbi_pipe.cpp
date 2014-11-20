@@ -35,6 +35,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
@@ -519,15 +520,16 @@ int main(int argc, const char* argv[])
     {
         ERR_POST(Info << "--- CPipe unidirectional test (1) ---");
         // Outputs a multiplication table
-        const int X = 22;
-        const int Y = 222;
-        const int N = test_num == ePipeRead ? 0 : 1;
-        const int FROM  = Y * N + 1;
-        const int TO = Y * (N + 1);
-        const int LENGTH = log(X * TO) / log(10) + 2;
-        for (int i = FROM; i <= TO; ++i) {
-            for (int j = 1; j <= X; ++j) {
-                cout << setw(LENGTH) << i * j;
+        const int kXMax = 22;
+        const int kYChunk = 222;
+
+        const int kStep = test_num == ePipeRead ? 0 : 1;
+        const int kYFrom  = kYChunk * kStep + 1;
+        const int kYTo = kYChunk * (kStep + 1);
+        const int kLength = ::log10(kXMax * kYTo) + 2;
+        for (int i = kYFrom; i <= kYTo; ++i) {
+            for (int j = 1; j <= kXMax; ++j) {
+                cout << setw(kLength) << i * j;
             }
             cout << endl;
         }
