@@ -253,7 +253,7 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
         match_len++;
         return x_PartialCompare(str.substr(1), pattern.substr(1), str[0], match_len);
     } else if ((!IsSetCase_sensitive() || !GetCase_sensitive()) &&
-               tolower(str[0]) == tolower(pattern[0])) {
+               tolower(Uint1(str[0])) == tolower(Uint1(pattern[0]))) {
         match_len++;
         return x_PartialCompare(str.substr(1), pattern.substr(1), str[0], match_len);
     }
