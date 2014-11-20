@@ -51,13 +51,70 @@
 BEGIN_NCBI_SCOPE
 
 
+// Forward declarations for shortcut functions.
+class CHttpResponse;
+class CHttpHeaders;
+
+
+// Default retries value.
+struct SGetHttpDefaultRetries
+{
+    unsigned short operator()(void) const;
+};
+
+/// Nullable retries for CHttpRequest
+typedef CNullable<unsigned short, SGetHttpDefaultRetries> THttpRetries;
+
+
+/// Shortcut for GET request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Get()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpGet(const CUrl&     url,
+                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries    retries = null);
+
+/// Shortcut for GET request with custom headers. Each request uses a separate
+/// session, no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Get()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpGet(const CUrl&         url,
+                        const CHttpHeaders& headers,
+                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries        retries = null);
+
+/// Shortcut for POST request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Post()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPost(const CUrl&     url,
+                         CTempString     data,
+                         CTempString     content_type = kEmptyStr,
+                         const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                         THttpRetries    retries = null);
+
+/// Shortcut for POST request with custom headers. Each request uses a separate
+/// session, no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Post()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPost(const CUrl&         url,
+                         const CHttpHeaders& headers,
+                         CTempString         data,
+                         CTempString         content_type = kEmptyStr,
+                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                         THttpRetries        retries = null);
+
 class CHttpSession;
 
 
 class NCBI_XCONNECT_EXPORT CHttpHeaders : public CObject
 {
 public:
+    /// Create empty headers list.
     CHttpHeaders(void) {}
+
+    /// Initialize list from the HTTP header (multiline "name: value" pairs).
+    CHttpHeaders(const CTempString& headers);
 
     /// Some standard HTTP headers.
     enum EHeaderName {
@@ -155,7 +212,7 @@ private:
 public:
     /// Parse headers from the string (usually provided by a stream callback).
     /// The new headers are added to the existing ones.
-    void ParseHttpHeader(const char* header);
+    void ParseHttpHeader(const CTempString& headers);
 
     /// Get all headers as a single string as required by CConn_HttpStream.
     /// Each header line is terminated by a single HTTP_EOL.
@@ -370,13 +427,6 @@ private:
 };
 
 
-struct SGetHttpDefaultRetries
-{
-    unsigned short operator()(void) const;
-};
-
-typedef CNullable<unsigned short, SGetHttpDefaultRetries> THttpRetries;
-
 /// HTTP request
 class NCBI_XCONNECT_EXPORT CHttpRequest
 {
@@ -529,25 +579,6 @@ private:
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
 };
-
-
-/// Shortcut for GET request. Each request uses a separate session,
-/// no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Get()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpGet(const CUrl&     url,
-                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
-                        THttpRetries    retries = null);
-
-/// Shortcut for POST request. Each request uses a separate session,
-/// no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Post()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpPost(const CUrl&     url,
-                         CTempString     data,
-                         CTempString     content_type = kEmptyStr,
-                         const CTimeout& timeout = CTimeout(CTimeout::eDefault),
-                         THttpRetries    retries = null);
 
 
 /////////////////////////////////////////////////////////////////////////////

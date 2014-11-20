@@ -72,6 +72,12 @@ static const CHttpHeaders::THeaderValues kEmptyValues;
 static const char kHttpHeaderDelimiter = ':';
 
 
+CHttpHeaders::CHttpHeaders(const CTempString& headers)
+{
+    ParseHttpHeader(headers);
+}
+
+
 const char* CHttpHeaders::GetHeaderName(EHeaderName name)
 {
     _ASSERT(size_t(name) < sizeof(s_HttpHeaderNames)/sizeof(s_HttpHeaderNames[0]));
@@ -143,10 +149,10 @@ void CHttpHeaders::ClearAll(void)
 }
 
 
-void CHttpHeaders::ParseHttpHeader(const char* header)
+void CHttpHeaders::ParseHttpHeader(const CTempString& headers)
 {
     list<string> lines;
-    NStr::Split(header, HTTP_EOL, lines);
+    NStr::Split(headers, HTTP_EOL, lines);
 
     string name, value;
     ITERATE(list<string>, line, lines) {
@@ -821,8 +827,21 @@ CHttpResponse g_HttpGet(const CUrl&     url,
                         const CTimeout& timeout,
                         THttpRetries    retries)
 {
+    return g_HttpGet(url, CHttpHeaders(), timeout, retries);
+}
+
+
+CHttpResponse g_HttpGet(const CUrl&         url,
+                        const CHttpHeaders& headers,
+                        const CTimeout&     timeout,
+                        THttpRetries        retries)
+{
     CRef<CHttpSession> session(new CHttpSession);
-    return session->Get(url, timeout, retries);
+    CHttpRequest req = session->NewRequest(url, CHttpSession::eGet);
+    req.SetTimeout(timeout);
+    req.SetRetries(retries);
+    req.Headers().Merge(headers);
+    return req.Execute();
 }
 
 
@@ -832,8 +851,34 @@ CHttpResponse g_HttpPost(const CUrl&     url,
                          const CTimeout& timeout,
                          THttpRetries    retries)
 {
+    return g_HttpPost(url, CHttpHeaders(), data, content_type, timeout, retries);
+}
+
+
+CHttpResponse g_HttpPost(const CUrl&         url,
+                         const CHttpHeaders& headers,
+                         CTempString         data,
+                         CTempString         content_type,
+                         const CTimeout&     timeout,
+                         THttpRetries        retries)
+{
     CRef<CHttpSession> session(new CHttpSession);
-    return session->Post(url, data, content_type, timeout, retries);
+    CHttpRequest req = session->NewRequest(url, CHttpSession::ePost);
+    req.SetTimeout(timeout);
+    req.SetRetries(retries);
+    req.Headers().Merge(headers);
+
+    if ( content_type.empty() ) {
+        content_type = headers.HasValue(CHttpHeaders::eContentType) ?
+            headers.GetValue(CHttpHeaders::eContentType)
+            : kContentType_FormUrlEnc;
+    }
+    req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    if ( !data.empty() ) {
+        req.ContentStream() << data;
+    }
+
+    return req.Execute();
 }
 
 
