@@ -696,6 +696,23 @@ bool CReader::LoadStates(CReaderRequestResult& result,
         if ( lock.IsLoaded() ) {
             CReadDispatcher::SetBlobState(i, result, ids, loaded, ret);
         }
+        if ( loaded[i] ) {
+            continue;
+        }
+        CFixedBlob_ids blob_ids = lock.GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+            if ( it->Matches(fBlobHasCore, 0) ) {
+                CLoadLockBlobState state_lock(result, *it->GetBlob_id());
+                if ( !state_lock.IsLoaded() ) {
+                    m_Dispatcher->LoadBlobState(result, *it->GetBlob_id());
+                }
+                if ( state_lock.IsLoaded() ) {
+                    ret[i] = state_lock.GetBlobState();
+                    loaded[i] = true;
+                    break;
+                }
+            }
+        }
     }
     return true;
 }

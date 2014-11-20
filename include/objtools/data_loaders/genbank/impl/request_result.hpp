@@ -80,9 +80,12 @@ public:
     typedef TList::const_reference const_reference;
     typedef TList::const_iterator const_iterator;
 
-    explicit CFixedSeq_ids(TState state = 0);
-    explicit CFixedSeq_ids(const TList& list, TState state = 0);
-    CFixedSeq_ids(ENcbiOwnership ownership, TList& list, TState state = 0);
+    enum {
+        kUnknownState = -256
+    };
+    explicit CFixedSeq_ids(TState state = kUnknownState);
+    explicit CFixedSeq_ids(const TList& list, TState state = kUnknownState);
+    CFixedSeq_ids(ENcbiOwnership ownership, TList& list, TState state = kUnknownState);
 
     const TList& Get(void) const
         {
@@ -208,9 +211,12 @@ public:
     typedef TList::const_reference const_reference;
     typedef TList::const_iterator const_iterator;
 
-    explicit CFixedBlob_ids(TState state = 0);
-    explicit CFixedBlob_ids(const TList& list, TState state = 0);
-    CFixedBlob_ids(ENcbiOwnership ownership, TList& list, TState state = 0);
+    enum {
+        kUnknownState = -256
+    };
+    explicit CFixedBlob_ids(TState state = kUnknownState);
+    explicit CFixedBlob_ids(const TList& list, TState state = kUnknownState);
+    CFixedBlob_ids(ENcbiOwnership ownership, TList& list, TState state = kUnknownState);
 
     TState GetState(void) const
         {

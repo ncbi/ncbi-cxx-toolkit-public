@@ -880,7 +880,10 @@ int CGBDataLoader::GetSequenceState(const CSeq_id_Handle& sih)
     CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         if ( it->Matches(fBlobHasCore, 0) ) {
-            return blob_ids.GetState();
+            CFixedBlob_ids::TState state = blob_ids.GetState();
+            if ( state != CFixedBlob_ids::kUnknownState ) {
+                return blob_ids.GetState();
+            }
         }
     }
     return kNotFound;

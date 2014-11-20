@@ -1613,9 +1613,12 @@ bool CReadDispatcher::SetBlobState(size_t i,
         CFixedBlob_ids blob_ids = lock.GetBlob_ids();
         ITERATE ( CFixedBlob_ids, it, blob_ids ) {
             if ( it->Matches(fBlobHasCore, 0) ) {
-                ret[i] = lock.GetState();
-                loaded[i] = true;
-                return true;
+                CFixedBlob_ids::TState state = lock.GetState();
+                if ( state != CFixedBlob_ids::kUnknownState ) {
+                    ret[i] = lock.GetState();
+                    loaded[i] = true;
+                    return true;
+                }
             }
         }
         if ( lock.GetState() & CBioseq_Handle::fState_no_data ) {
