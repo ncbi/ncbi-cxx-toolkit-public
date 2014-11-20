@@ -112,17 +112,41 @@ public:
     CProcess(TProcessHandle process, EProcessType type = eHandle);
 #endif
 
+    /// Get type of stored process identifier.
+    /// @note
+    ///   On Windows process identifiers and process handles are different.
+    ///   On UNIX handle/pid are the same and GetHandle()/GetPid() return
+    ///   the same value.
+    EProcessType GetType(void) const { return m_Type; }
+
+    /// Get stored process handle.
+    /// @sa
+    ///   GetCurrentHandle
+    TProcessHandle GetHandle(void) const { return (TProcessHandle)m_Process; }
+
+    /// Get stored process identifier (pid).
+    /// @sa
+    ///   GetCurrentPid
+    TPid GetPid(void) const { return (TPid)m_Process; }
+
     /// Get process handle for the current process (esp. on Windows).
-    /// On UNIX returns the same that GetCurrentPid() does.
+    /// @note
+    ///   On Windows process identifiers and process handles are different.
+    ///   On UNIX handle/pid are the same and GetCurrentHandle()/GetCurrentPid()
+    ///   return the same value.
     /// @sa
     ///   GetCurrentPid
     static TProcessHandle GetCurrentHandle(void);
 
     /// Get process identifier for the current process.
-    static TPid           GetCurrentPid(void);
+    /// @sa
+    ///   GetCurrentHandle
+    static TPid GetCurrentPid(void);
 
     /// Get process identifier for the parent of the current process.
-    static TPid           GetParentPid(void);
+    /// @sa
+    ///   GetCurrentPid
+    static TPid GetParentPid(void);
 
     /// Check for process existence.
     ///
@@ -353,11 +377,6 @@ public:
     /// in case of an error.  So that calling process can find the standard
     //  file pointers (and sometimes descriptors) clobbered up.
     static TPid Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
-
-    /// Get stored process identifier of the object
-    /// @sa
-    ///   GetCurrentHandle
-    TProcessHandle GetHandle(void) const { return (TProcessHandle)m_Process; }
 
 private:
 #if defined NCBI_THREAD_PID_WORKAROUND
