@@ -128,21 +128,39 @@ const char kFormatEscapeSymbol = '$';
 //      CTime::IsValid
 //      CTime::Set*() methods
 
-#define CHECK_RANGE(value, what, min, max) \
+#define CHECK_RANGE_EXCEPTION(value, what, min, max) \
     if ( value < min  ||  value > max ) {  \
         NCBI_THROW(CTimeException, eArgument, \
-                   what " value '" + \
-                   NStr::Int8ToString((Int8)value) + "' is out of range"); \
+                    what " value '" + \
+                    NStr::Int8ToString((Int8)value) + "' is out of range"); \
     }
 
-#define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "Year", 1583, kMax_Int)
-#define CHECK_RANGE_MONTH(value) CHECK_RANGE(value, "Month", 1, 12)
-#define CHECK_RANGE_DAY(value)   CHECK_RANGE(value, "Day", 1, 31)
-#define CHECK_RANGE_HOUR(value)  CHECK_RANGE(value, "Hour", 0, 23)
-#define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "Minute", 0, 59)
-#define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "Second", 0, 61)
-#define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "Nanosecond", 0, \
-                                             kNanoSecondsPerSecond - 1)
+#define CHECK_RANGE2(value, what, min, max, err_action) \
+    if ( value < min  ||  value > max ) {  \
+        if ( err_action == eErr_Throw ) { \
+            NCBI_THROW(CTimeException, eArgument, \
+                       what " value '" + \
+                       NStr::Int8ToString((Int8)value) + "' is out of range"); \
+        } else { return false; } \
+    }
+
+#define CHECK_RANGE_YEAR(value)       CHECK_RANGE_EXCEPTION(value, "Year", 1583, kMax_Int)
+#define CHECK_RANGE_MONTH(value)      CHECK_RANGE_EXCEPTION(value, "Month", 1, 12)
+#define CHECK_RANGE_DAY(value)        CHECK_RANGE_EXCEPTION(value, "Day", 1, 31)
+#define CHECK_RANGE_HOUR(value)       CHECK_RANGE_EXCEPTION(value, "Hour", 0, 23)
+#define CHECK_RANGE_MIN(value)        CHECK_RANGE_EXCEPTION(value, "Minute", 0, 59)
+#define CHECK_RANGE_SEC(value)        CHECK_RANGE_EXCEPTION(value, "Second", 0, 61)
+#define CHECK_RANGE_NSEC(value)       CHECK_RANGE_EXCEPTION(value, "Nanosecond", 0, \
+                                                            kNanoSecondsPerSecond - 1)
+
+#define CHECK_RANGE2_YEAR(value, err)  CHECK_RANGE2(value, "Year", 1583, kMax_Int, err)
+#define CHECK_RANGE2_MONTH(value, err) CHECK_RANGE2(value, "Month", 1, 12, err)
+#define CHECK_RANGE2_DAY(value, err)   CHECK_RANGE2(value, "Day", 1, 31, err)
+#define CHECK_RANGE2_HOUR(value, err)  CHECK_RANGE2(value, "Hour", 0, 23, err)
+#define CHECK_RANGE2_MIN(value, err)   CHECK_RANGE2(value, "Minute", 0, 59, err)
+#define CHECK_RANGE2_SEC(value, err)   CHECK_RANGE2(value, "Second", 0, 61, err)
+#define CHECK_RANGE2_NSEC(value, err)  CHECK_RANGE2(value, "Nanosecond", 0, \
+                                                    kNanoSecondsPerSecond - 1, err)
 
 
 //============================================================================
@@ -409,12 +427,29 @@ CTime::CTime(int year, int yearDayNumber,
 }
 
 
-void CTime::x_Init(const string& str, const CTimeFormat& format)
+// Helper macro for x_Init() errors
+#define X_INIT_ERROR(type, msg) \
+    if (err_action == eErr_Throw) { \
+        NCBI_THROW(CTimeException, type, msg); \
+    } else { \
+        return false; \
+    }
+
+bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_action)
 {
     Clear();
+
+    // Special case, always create empty CTime object if str is empty, ignoring format.
+    // See IsEmpty().
     if ( str.empty() ) {
-        return;
+        return true;
     }
+
+    // Use guard against accidental exceptions from other parts of API or NStr::,
+    // we do best to avoid exceptions if requested, but it is not alway possible
+    // to control all calling code from here, so just to be safe...
+    try {
+
     // For partially defined times use default values
     bool is_year_present  = false;
     bool is_month_present = false;
@@ -435,9 +470,10 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     };
     EHourFormat hour_format = e24;
     bool is_12hour = false;
-
     int weekday = -1;
+
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
+
         // Skip space symbols in format string
         if ( isspace((unsigned char)(*fff)) ) {
             continue;
@@ -453,9 +489,9 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             is_format_symbol = false;
         }
         // Skip space symbols in time string
-        while ( isspace((unsigned char)(*sss)) )
+        while ( isspace((unsigned char)(*sss)) ) {
             sss++;
-
+        }
         // Non-format symbols
         if (strchr(kFormatSymbolsTime, *fff) == 0) {
             if (*fff == *sss) {
@@ -596,7 +632,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         // Set time part
         switch ( *fff ) {
         case 'Y':
-            CHECK_RANGE_YEAR(value);
+            CHECK_RANGE2_YEAR(value, err_action);
             m_Data.year = (unsigned int)value;
             is_year_present = true;
             break;
@@ -606,60 +642,60 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             } else if (value >= 50  &&  value < 100) {
                 value += 1900;
             }
-            CHECK_RANGE_YEAR(value);
+            CHECK_RANGE2_YEAR(value, err_action);
             m_Data.year = (unsigned int)value;
             is_year_present = true;
             break;
         case 'M':
-            CHECK_RANGE_MONTH(value);
+            CHECK_RANGE2_MONTH(value, err_action);
             m_Data.month = (unsigned char)value;
             is_month_present = true;
             break;
         case 'D':
         case 'd':
-            CHECK_RANGE_DAY(value);
+            CHECK_RANGE2_DAY(value, err_action);
             m_Data.day = (unsigned char)value;
             is_day_present = true;
             break;
         case 'h':
-            CHECK_RANGE_HOUR(value);
+            CHECK_RANGE2_HOUR(value, err_action);
             m_Data.hour = (unsigned char)value;
             is_time_present = true;
             break;
         case 'H':
-            CHECK_RANGE_HOUR(value);
+            CHECK_RANGE2_HOUR(value, err_action);
             m_Data.hour = (unsigned char)value % 12;
             is_12hour = true;
             is_time_present = true;
             break;
         case 'm':
-            CHECK_RANGE_MIN(value);
+            CHECK_RANGE2_MIN(value, err_action);
             m_Data.min = (unsigned char)value;
             is_time_present = true;
             break;
         case 's':
-            CHECK_RANGE_SEC(value);
+            CHECK_RANGE2_SEC(value, err_action);
             m_Data.sec = (unsigned char)value;
             is_time_present = true;
             break;
         case 'l':
-            CHECK_RANGE_NSEC((Int8)value * 1000000);
+            CHECK_RANGE2_NSEC((Int8)value * 1000000, err_action);
             m_Data.nanosec = (Int4)value * 1000000;
             is_time_present = true;
             break;
         case 'r':
-            CHECK_RANGE_NSEC((Int8)value * 1000);
+            CHECK_RANGE2_NSEC((Int8)value * 1000, err_action);
             m_Data.nanosec = (Int4)value * 1000;
             is_time_present = true;
             break;
         case 'S':
-            CHECK_RANGE_NSEC(value);
+            CHECK_RANGE2_NSEC(value, err_action);
             m_Data.nanosec = (Int4)value;
             is_time_present = true;
             break;
         case 'g':
         case 'G':
-            CHECK_RANGE_SEC(value);
+            CHECK_RANGE2_SEC(value, err_action);
             m_Data.sec = (unsigned char)value;
             if ( *sss == '.' ) {
                 sss++;
@@ -678,7 +714,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
                 for (;  n < 9;  n++) {
                     value *= 10;
                 }
-                CHECK_RANGE_NSEC(value);
+                CHECK_RANGE2_NSEC(value, err_action);
                 m_Data.nanosec = (Int4)value;
                 // Ignore extra digits
                 while ( isdigit((unsigned char)(*sss)) ) {
@@ -687,9 +723,9 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             }
             is_time_present = true;
             break;
+
         default:
-            NCBI_THROW(CTimeException, eFormat,
-                       "Format '" + fmt + "' is incorrect");
+            X_INIT_ERROR(eFormat, "Format '" + fmt + "' is incorrect");
         }
     }
 
@@ -698,26 +734,23 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         m_Data.hour += 12;
     }
 
-    while ( isspace((unsigned char)(*sss)) )
+    while ( isspace((unsigned char)(*sss)) ) {
         sss++;
-
+    }
     if (*fff != '\0'  &&  
         !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
-        NCBI_THROW(CTimeException, eFormat, 
-                   "Time string '" + str +
-                   "' is too short for time format '" + fmt + "'");
+        X_INIT_ERROR(eFormat, "Time string '" + str + 
+                              "' is too short for time format '" + fmt + "'");
     }
     if (*sss != '\0'  &&  
         !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
-        NCBI_THROW(CTimeException, eFormat,
-                   "Time string '" + str +
-                   "' is too long for time format '" + fmt + "'");
+        X_INIT_ERROR(eFormat, "Time string '" + str +
+                              "' is too long for time format '" + fmt + "'");
     }
     if (*fff != '\0'  &&  *sss != '\0'  && 
         ((format.GetFlags() & CTimeFormat::fMatch_Weak) == CTimeFormat::fMatch_Weak)) {
-            NCBI_THROW(CTimeException, eFormat, 
-                "Time string '" + str +
-                "' do not match time format '" + fmt + "'");
+        X_INIT_ERROR(eFormat, "Time string '" + str +
+                              "' do not match time format '" + fmt + "'");
     }
 
     // For partially defined times use default values
@@ -770,18 +803,26 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
 
     // Check on errors for weekday
     if (weekday != -1  &&  weekday != DayOfWeek()) {
-        NCBI_THROW(CTimeException, eConvert,
-                   "Invalid day of week " + NStr::IntToString(weekday));
+        X_INIT_ERROR(eConvert, "Invalid day of week " + NStr::IntToString(weekday));
     }
     // Validate time value
     if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eConvert,
-                   "Unable to convert string '" + str + "' to CTime");
+        X_INIT_ERROR(eConvert, "Unable to convert string '" + str + "' to CTime");
     }
     // Adjust time to GMT time (see 'z' format symbol above)
     if ( adjust_needed ) {
         AddSecond(-adjust_tz, CTime::eIgnoreDaylight);
     }
+
+    // see 'try' at the beginning of the method
+    } catch (CException&) {
+        if (err_action == eErr_Throw) {
+            throw;
+        } else {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -861,6 +902,13 @@ CTime::CTime(const string& str, const CTimeFormat& fmt,
     } else {
         x_Init(str, fmt);
     }
+}
+
+
+bool CTime::ValidateString(const string& str, const CTimeFormat& fmt)
+{
+    CTime t;
+    return t.x_Init(str, fmt.IsEmpty() ? GetFormat() : fmt,  eErr_NoThrow);
 }
 
 
@@ -1501,6 +1549,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Data.sec         = t->tm_sec;
     CHECK_RANGE_NSEC(ns);
     m_Data.nanosec     = (Int4)ns;
+
     return *this;
 }
 
@@ -2242,7 +2291,6 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             }
             break;  // error: non-matching non-format symbols
         }
-
 
         // Sign: if specified that the time span is negative
         if (f == '-') {

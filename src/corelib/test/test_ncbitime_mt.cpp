@@ -243,6 +243,7 @@ static void s_TestFormats(void)
             CTime::SetFormat(fmt);
             string t2_str = t2;
             assert(t1_str.compare(t2_str) == 0);
+            assert(CTime::ValidateString(t1_str, fmt));
         }
     }
 
@@ -338,7 +339,7 @@ static void s_TestFormats(void)
         }}
     }}
 
-    // Partialy defined time
+    // Partially defined time
     {{
         string s;
         {{  // Y
@@ -396,35 +397,30 @@ static void s_TestFormats(void)
         try {
             CTime t("2001/2 00:00", "Y/M h:m");
             _TROUBLE; // day is not defined
-            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2 00:00", "Y/D h:m");
             _TROUBLE; // month is not defined
-            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2", "Y/D");
             _TROUBLE; // month is not defined
-            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001 00:00", "Y h:m");
             _TROUBLE; // month and day are not defined
-            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2 00:00", "M h:m");
             _TROUBLE; // year and day are not defined
-            assert(t.IsValid());
         }
         catch (CTimeException&) {}
     }}
@@ -458,13 +454,11 @@ static void s_TestFormats(void)
             try {
                 CTime t("2001", "Y/M/D");
                 _TROUBLE;  // by default used strict format matching
-                assert(t.IsValid());
             }
             catch (CTimeException&) {}
             try {
                 CTime t("2001/01/02", "Y");
                 _TROUBLE;  // by default used strict format matching
-                assert(t.IsValid());
             }
             catch (CTimeException&) {}
         }}

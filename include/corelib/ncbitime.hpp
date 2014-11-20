@@ -669,6 +669,7 @@ public:
     /// Return time as string using the format returned by GetFormat().
     operator string(void) const;
 
+
     //
     // Get various components of time.
     //
@@ -732,6 +733,7 @@ public:
     /// @sa
     ///   MilliSecond, MicroSecond
     long NanoSecond(void) const;
+
 
     //
     // Set various components of time.
@@ -976,6 +978,7 @@ public:
     /// @sa ERoundPrecision, Round
     CTime& Truncate(ERoundPrecision precision = eRound_Day);
 
+
     //
     // Add/subtract time span
     //
@@ -994,6 +997,7 @@ public:
 
     /// Operator to subtract times.
     CTimeSpan operator- (const CTime& t) const;
+
 
     //
     // Time comparison ('>' means "later", '<' means "earlier")
@@ -1016,6 +1020,7 @@ public:
 
     /// Operator to test if time is earlier or equal.
     bool operator<= (const CTime& t) const;
+
 
     //
     // Time difference
@@ -1042,6 +1047,7 @@ public:
     /// Difference in nanoseconds from specified time.
     CTimeSpan DiffTimeSpan(const CTime& t) const;
 
+
     //
     // Checks
     //
@@ -1063,6 +1069,22 @@ public:
 
     /// Is time GMT time?
     bool IsGmtTime   (void) const;
+
+    /// Validate if string match time format.
+    ///
+    /// @param str
+    ///   String representation of time.
+    /// @param fmt
+    ///   Format that is used to check time string. Default value of kEmptyStr,
+    ///   implies the format, that was previously setup using SetFormat()
+    ///   method, or default one.
+    /// @return
+    ///   TRUE if CTime can be initialized from "str" using format "fmt",
+    ///   FALSE otherwise.
+    /// @sa
+    ///   CTimeFormat
+    static bool ValidateString(const string& str, const CTimeFormat& fmt = kEmptyStr);
+
 
     //
     // Timezone functions
@@ -1119,8 +1141,15 @@ public:
     string TimeZoneName(void);
 
 private:
+    /// Defines how to behave on error
+    enum EErrAction {
+        eErr_Throw,    ///< Throw an exception on error
+        eErr_NoThrow   ///< Return default value on error
+    };
+
     /// Helper method to set time value from string "str" using format "fmt".
-    void x_Init(const string& str, const CTimeFormat& fmt);
+    bool x_Init(const string& str, const CTimeFormat& fmt,
+                EErrAction err_action = eErr_Throw);
 
     /// Helper method to set time from 'time_t' -- If "t" not specified,
     /// then set to current time.
