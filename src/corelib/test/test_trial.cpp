@@ -40,6 +40,7 @@ inline int NCBI_isascii(C c) NCBI_CTYPEFAKEBODY
 #endif
 #define isascii NCBI_isascii
 
+/*
 inline int NCBI_isblank(unsigned char c) { return isblank(c); }
 inline int NCBI_isblank(int           c) { return isblank(c); }
 template<class C>
@@ -48,6 +49,7 @@ inline int NCBI_isblank(C c) NCBI_CTYPEFAKEBODY
 # undef  isblank
 #endif
 #define isblank NCBI_isblank
+*/
 
 inline int NCBI_iscntrl(unsigned char c) { return iscntrl(c); }
 inline int NCBI_iscntrl(int           c) { return iscntrl(c); }
