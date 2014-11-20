@@ -116,6 +116,9 @@ namespace {
                 m_text(text)
             { }
 
+        // parent has no-throw dtor, so we must too
+        ~SOutMessage() throw() { }
+
         const string m_file_or_accn_basename;
         const string m_level;
         const string m_code;
