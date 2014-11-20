@@ -72,12 +72,6 @@ static const CHttpHeaders::THeaderValues kEmptyValues;
 static const char kHttpHeaderDelimiter = ':';
 
 
-CHttpHeaders::CHttpHeaders(const CTempString& headers)
-{
-    ParseHttpHeader(headers);
-}
-
-
 const char* CHttpHeaders::GetHeaderName(EHeaderName name)
 {
     _ASSERT(size_t(name) < sizeof(s_HttpHeaderNames)/sizeof(s_HttpHeaderNames[0]));

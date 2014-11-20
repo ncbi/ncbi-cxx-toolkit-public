@@ -113,9 +113,6 @@ public:
     /// Create empty headers list.
     CHttpHeaders(void) {}
 
-    /// Initialize list from the HTTP header (multiline "name: value" pairs).
-    CHttpHeaders(const CTempString& headers);
-
     /// Some standard HTTP headers.
     enum EHeaderName {
         eCacheControl = 0,
