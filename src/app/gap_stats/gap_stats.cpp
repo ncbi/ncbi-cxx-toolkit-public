@@ -90,14 +90,111 @@ namespace {
         const string m_end_str;
     };
 
-    /// When thrown, these represent messages that
-    /// can be shown right to the user.  Other exceptions
-    /// caught by CGapStatsApplication::Run should
-    /// _not_ be shown to the user.
-    class UserMessageError : public std::runtime_error {
+    /// Holds information about an issue that occurred that
+    /// we need to output as a message.
+    ///
+    /// Normally this would be printed via WriteAsXML
+    /// or WriteAsText, but
+    /// this can be thrown to indicate that we're giving
+    /// up on a given file or accn.
+    struct SOutMessage : public std::runtime_error {
     public:
-        UserMessageError(const string & msg) : std::runtime_error(msg) { }
+        const static string kErrorStr;
+        const static string kFatalStr;
+
+        SOutMessage(
+            const string & file_or_accn,
+            const string & level,
+            const string & code,
+            const string & text) :
+                std::runtime_error(
+                    x_CalcWhat(file_or_accn, level, code, text)),
+                m_file_or_accn_basename(
+                    x_CalcFileBaseNameOrAccn(file_or_accn)),
+                m_level(level),
+                m_code(code),
+                m_text(text)
+            { }
+
+        const string m_file_or_accn_basename;
+        const string m_level;
+        const string m_code;
+        const string m_text;
+
+        void WriteAsXML(CNcbiOstream & out_strm) const;
+        void WriteAsText(CNcbiOstream & out_strm) const;
+
+    private:
+        static string x_CalcFileBaseNameOrAccn(
+            const string & file_or_accn);
+
+        static string x_CalcWhat(
+            const string & file_or_accn,
+            const string & level,
+            const string & code,
+            const string & text);
     };
+
+    const string SOutMessage::kErrorStr("ERROR");
+    const string SOutMessage::kFatalStr("FATAL");
+
+    void SOutMessage::WriteAsXML(CNcbiOstream & out_strm) const
+    {
+        xml::document expn_doc("message");
+        xml::node & expn_root_node = expn_doc.get_root_node();
+
+        xml::attributes & expn_root_attribs =
+            expn_root_node.get_attributes();
+        if( ! m_file_or_accn_basename.empty() ) {
+            expn_root_attribs.insert(
+                "file_or_accn", m_file_or_accn_basename.c_str());
+        }
+        expn_root_attribs.insert("severity", m_level.c_str());
+        expn_root_attribs.insert("code", m_code.c_str());
+
+        expn_root_node.set_content(m_text.c_str());
+
+        expn_doc.save_to_stream(out_strm, xml::save_op_no_decl);
+    }
+
+    void SOutMessage::WriteAsText(CNcbiOstream & out_strm) const
+    {
+        out_strm << what() << endl;
+    }
+
+    string SOutMessage::x_CalcFileBaseNameOrAccn(
+        const string & file_or_accn)
+    {
+        CFile maybe_file(file_or_accn);
+        if( maybe_file.IsFile() ) {
+            // if file, return basename
+            return maybe_file.GetName();
+        } else {
+            // if accn, return as-is
+            return file_or_accn;
+        }
+    }
+
+    string SOutMessage::x_CalcWhat(
+        const string & file_or_accn,
+        const string & level,
+        const string & code,
+        const string & text)
+    {
+        // build answer here
+        CNcbiOstrstream answer_str_strm;
+
+        const string file_or_accn_basename =
+            x_CalcFileBaseNameOrAccn(file_or_accn);
+
+        answer_str_strm << level << ": [" << code << "] ";
+        if( ! file_or_accn_basename.empty() ) {
+            answer_str_strm << file_or_accn_basename << ": ";
+        }
+        answer_str_strm << text;
+
+        return CNcbiOstrstreamToString(answer_str_strm);
+    }
 
 }
 
@@ -141,6 +238,8 @@ private:
     void x_PrintSeqsForGapLengths(void);
     void x_PrintHistogram(Uint8 num_bins,
         CHistogramBinning::EHistAlgo eHistAlgo);
+    void x_PrintOutMessage(
+        const SOutMessage &out_message, CNcbiOstream & out_strm) const;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -156,7 +255,7 @@ CGapStatsApplication::CGapStatsApplication(void) :
         CFastaReader::fLetterGaps),
     m_eOutFormat(eOutFormat_ASCIITable)
 {
-    SetVersion(CVersionInfo(1, 0, 0));
+    SetVersion(CVersionInfo(2, 0, 0));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -281,44 +380,34 @@ int CGapStatsApplication::Run(void)
     } else if( "xml" == sOutFormat ) {
         m_eOutFormat = eOutFormat_XML;
         // outermost XML node to hold everything.  Use AutoPtr to be
-        // sure it's printed at the end
+        // sure the closing tag is printed at the end.
         pResultBeginEndStr.reset(
             new CBeginEndStrRAII("<result>", "</result>"));
     } else {
         _TROUBLE;
     }
 
-    // of course, these are only used if there was an exception
-    string exception_type;
-    string exception_text;
+    // of course, this is only used if there was an exception
+    AutoPtr<SOutMessage> p_out_message;
 
     try {
         // almost all work happens in RunNoCatch
         return RunNoCatch();
-    } catch (const UserMessageError & ex ) {
-        exception_type = "user_message_error";
-        exception_text = ex.what();
     } catch (const std::exception & ex ) {
-        exception_type = "internal_exception";
-        exception_text = ex.what();
+        p_out_message.reset(
+            new SOutMessage(
+                kEmptyStr, SOutMessage::kFatalStr,
+                "INTERNAL_ERROR", ex.what()));
     } catch(...) {
-        exception_type = "internal_exception";
-        exception_text = "---UNKNOWN EXCEPTION TYPE---";
+        p_out_message.reset(
+            new SOutMessage(
+                kEmptyStr, SOutMessage::kFatalStr,
+                "INTERNAL_ERROR", "(---UNKNOWN INTERNAL ERROR TYPE---)"));
     }
 
     // if we're here, there was a fatal exception, which we now output
-    if( m_eOutFormat == eOutFormat_XML ) {
-        xml::document expn_doc(exception_type.c_str());
-        xml::node & expn_root_node = expn_doc.get_root_node();
-        expn_root_node.set_content(exception_text.c_str());
-
-        // yes, cout not cerr because everything should go to cout
-        expn_doc.save_to_stream(cout, xml::save_op_no_decl);
-    } else if ( m_eOutFormat == eOutFormat_ASCIITable ) {
-        cout << exception_type << ": " << exception_text << endl;
-    } else {
-        _TROUBLE;
-    }
+    _ASSERT(p_out_message);
+    x_PrintOutMessage(*p_out_message, cout);
 
     // failure
     return 1;
@@ -347,6 +436,7 @@ int CGapStatsApplication::RunNoCatch(void)
     } else if( sMol == "any" ) {
         m_MolFilter = CSeq_inst::eMol_not_set;
     } else {
+        // shouldn't happen
         NCBI_USER_THROW_FMT("Unsupported mol: " << sMol);
     }
 
@@ -356,6 +446,7 @@ int CGapStatsApplication::RunNoCatch(void)
     } else if( sAssumeMol == "aa" ) {
         m_fFastaFlags |= CFastaReader::fAssumeProt;
     } else {
+        // shouldn't happen
         NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
     }
 
@@ -363,7 +454,28 @@ int CGapStatsApplication::RunNoCatch(void)
     // load given data into m_gapAnalysis
     // (Note that extra-arg indexing is 1-based )
     for(size_t ii = 1; ii <= args.GetNExtra(); ++ii ) {
-        x_ReadFileOrAccn(args[ii].AsString());
+        const string sFileOrAccn = args[ii].AsString();
+        try {
+            x_ReadFileOrAccn(sFileOrAccn);
+        } catch(const SOutMessage & out_message) {
+            // a thrown SOutMessage indicates we give up on this file_or_accn.
+            // (Note that a non-thrown SOutMessage would just be printed
+            // but would not halt processing of the file_or_accn)
+            x_PrintOutMessage(out_message, cout);
+        } catch(...) {
+            // Unexpected exceptions make us give up without processing
+            // further files-or-accns.
+            
+            // print a message in case higher-up catch clauses are
+            // unable to determine the file-or-accn under which this
+            // occurred
+            SOutMessage out_message(
+                sFileOrAccn, SOutMessage::kFatalStr,
+                "INTERNAL_ERROR", "Unexpected exception");
+            x_PrintOutMessage(out_message, cout);
+
+            throw;
+        }
     }
 
     // summary view is always shown
@@ -378,6 +490,7 @@ int CGapStatsApplication::RunNoCatch(void)
         } else if( "num_gaps" == sSortOn ) {
             eSort = CGapAnalysis::eSortGapLength_NumGaps;
         } else {
+            // shouldn't happen
             NCBI_USER_THROW_FMT("Unsupported sort-on: " << sSortOn);
         }
 
@@ -402,6 +515,7 @@ int CGapStatsApplication::RunNoCatch(void)
         } else if( "even_bins" == sHistAlgo ) {
             eHistAlgo = CHistogramBinning::eHistAlgo_TryForSameNumDataInEachBin;
         } else {
+            // shouldn't happen
             NCBI_USER_THROW_FMT("Histogram algorithm not supported yet: " 
                 << sHistAlgo );
         }
@@ -469,7 +583,11 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
             break;
         }
         default:
-            throw UserMessageError(
+
+            throw SOutMessage(
+                sFileOrAccn,
+                SOutMessage::kErrorStr,
+                "UNSUPPORTED_FORMAT",
                 FORMAT("This format is not yet supported: "
                        << format_guesser.GetFormatName(eFormat)));
         }
@@ -487,9 +605,13 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
                 if( ! pSeqSubmit->IsEntrys() ||
                     pSeqSubmit->GetData().GetEntrys().size() != 1 ) 
                 {
-                    throw UserMessageError(
+                    throw SOutMessage(
+                        sFileOrAccn,
+                        SOutMessage::kErrorStr,
+                        "SEQ_SUBMIT_MULTIPLE_SEQ_ENTRIES",
                         FORMAT(
-                            "Only Seq-submits with exactly one Seq-entry "
+                            "Only Seq-submits with exactly "
+                            "one Seq-entry "
                             "inside are supported."));
                 }
                 pSeqEntry = *pSeqSubmit->SetData().SetEntrys().begin();
@@ -523,21 +645,36 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         } 
             
         if( ! pSeqEntry ) {
-            throw UserMessageError(
-                FORMAT("One or more files is an invalid format or is an "
-                       "unsupported object type: "
-                       << CFile(sFileOrAccn).GetName()));
+            throw SOutMessage(
+                sFileOrAccn,
+                SOutMessage::kErrorStr,
+                "INVALID_FORMAT_OR_BAD_OBJ_TYPE",
+                FORMAT("Invalid ASN.1 or unsupported object type"));
         }
 
         entry_h = x_GetScope()->AddTopLevelSeqEntry(*pSeqEntry);
     } else {
+
         // fall back on trying to load it as an accession
-        CRef<CSeq_id> pSeqId( new CSeq_id(sFileOrAccn) );
+        CRef<CSeq_id> pSeqId;
+        try {
+            pSeqId.Reset( new CSeq_id(sFileOrAccn) );
+        } catch(const CException & ex) {
+            // malformed seq-id
+            throw SOutMessage(
+                sFileOrAccn,
+                SOutMessage::kErrorStr,
+                "BAD_ACCESSION",
+                FORMAT("Invalid accession"));
+        }
+        
         CBioseq_Handle bioseq_h = x_GetScope()->GetBioseqHandle(*pSeqId);
         if( ! bioseq_h ) {
-            throw UserMessageError(
-                FORMAT("This accession could not be found: " <<
-                       MSerial_AsnText << *pSeqId ));
+            throw SOutMessage(
+                sFileOrAccn,
+                SOutMessage::kErrorStr,
+                "ACCESSION_NOT_FOUND",
+                FORMAT("Accession could not be found"));
         }
         entry_h = bioseq_h.GetParentEntry();
     }
@@ -763,6 +900,23 @@ void CGapStatsApplication::x_PrintHistogram(
             table_printer << start << '-' << end << CellEnd();
             table_printer << num_appearances << CellEnd();
         }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/// x_PrintOutMessage
+
+void CGapStatsApplication::x_PrintOutMessage(
+    const SOutMessage &out_message, CNcbiOstream & out_strm) const
+{
+    if( m_eOutFormat == eOutFormat_XML ) {
+        // yes, cout not cerr because everything should go to cout
+        out_message.WriteAsXML(out_strm);
+    } else if ( m_eOutFormat == eOutFormat_ASCIITable ) {
+        // yes, cout not cerr because everything should go to cout
+        out_message.WriteAsText(out_strm);
+    } else {
+        _TROUBLE;
     }
 }
 
