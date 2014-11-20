@@ -244,11 +244,19 @@ void CTest::Init(void)
 }
 
 
+enum ETestCase {
+    ePipeRead,
+    ePipeWrite,
+    ePipe,
+    eStreamRead,
+    eStream,
+    eFlagsOnClose
+};
+
 int CTest::Run(void)
 {
     const string&  app = GetArguments().GetProgramName();
 
-    string         cmd;
     string         str;
     vector<string> args;
     char           buf[kBufferSize];
@@ -267,7 +275,7 @@ int CTest::Run(void)
     CPipe pipe;
     const CPipe::TCreateFlags share = CPipe::fStdErr_Share;
 
-    static const STimeout iotimeout = {3, 0};
+    static const STimeout iotimeout = {5, 0};
 
     assert(pipe.SetTimeout(eIO_Read,  &iotimeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &iotimeout) == eIO_Success);
@@ -279,19 +287,11 @@ int CTest::Run(void)
     assert(pipe.Open("blahblahblah", args) != eIO_Success);
 
 
-#if defined(NCBI_OS_UNIX)
-    cmd = "ls";
-    args.push_back("-l");
-#elif defined (NCBI_OS_MSWIN)
-    cmd = GetEnvironment().Get("COMSPEC");
-    args.push_back("/c");
-    args.push_back("dir *.*");
-#endif
-
-
     // Unidirectional pipe (read from pipe)
+    args.clear();
+    args.push_back(NStr::IntToString(ePipeRead));
     ERR_POST(Info << "TEST:  Unidirectional pipe read");
-    assert(pipe.Open(cmd.c_str(), args,
+    assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdIn_Close | share) == eIO_Success);
 
     assert(pipe.SetReadHandle(CPipe::eStdIn) == eIO_InvalidArg);
@@ -312,24 +312,26 @@ int CTest::Run(void)
     status = pipe.Close(&exitcode);
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
-    assert(status == eIO_Success  &&  exitcode == 0);
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
     // Unidirectional pipe (read from iostream)
+    args.clear();
+    args.push_back(NStr::IntToString(eStreamRead));
     ERR_POST(Info << "TEST:  Unidirectional stream read");
-    CConn_PipeStream ios(cmd.c_str(), args,
+    CConn_PipeStream ios(app.c_str(), args,
                          CPipe::fStdIn_Close | share, 0, &iotimeout);
     s_ReadStream(ios);
 
     status = ios.GetPipe().Close(&exitcode);
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
-    assert(status == eIO_Success  &&  exitcode == 0);
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
     // Unidirectional pipe (write to pipe)
     args.clear();
-    args.push_back("1");
+    args.push_back(NStr::IntToString(ePipeWrite));
     ERR_POST(Info << "TEST:  Unidirectional pipe write");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdOut_Close | share) == eIO_Success);
@@ -350,7 +352,7 @@ int CTest::Run(void)
 
     // Bidirectional pipe (pipe)
     args.clear();
-    args.push_back("2");
+    args.push_back(NStr::IntToString(ePipe));
     ERR_POST(Info << "TEST:  Bidirectional pipe");
     assert(pipe.Open(app.c_str(), args, share) == eIO_Success);
 
@@ -380,7 +382,7 @@ int CTest::Run(void)
 
     // Bidirectional pipe (iostream)
     args.clear();
-    args.push_back("3");
+    args.push_back(NStr::IntToString(eStream));
     ERR_POST(Info << "TEST:  Bidirectional stream");
     CConn_PipeStream ps(app.c_str(), args, share, 0, &iotimeout);
 
@@ -410,7 +412,7 @@ int CTest::Run(void)
 
     // f*OnClose flags tests
     args.clear();
-    args.push_back("4");
+    args.push_back(NStr::IntToString(eFlagsOnClose));
 
     ERR_POST(Info << "TEST:  Checking timeout");
     assert(pipe.Open(app.c_str(), args,
@@ -511,18 +513,39 @@ int main(int argc, const char* argv[])
     int test_num = NStr::StringToInt(argv[1]);
 
     switch ( test_num ) {
-    // Spawned process for unidirectional test
-    case 1:
+    // Spawned process for unidirectional test (writes to pipe)
+    case ePipeRead:
+    case eStreamRead:
     {
-        ERR_POST(Info << "--- CPipe unidirectional test ---");
+        ERR_POST(Info << "--- CPipe unidirectional test (1) ---");
+        // Outputs a multiplication table
+        const int X = 22;
+        const int Y = 222;
+        const int N = test_num == ePipeRead ? 0 : 1;
+        const int FROM  = Y * N + 1;
+        const int TO = Y * (N + 1);
+        const int LENGTH = log(X * TO) / log(10) + 2;
+        for (int i = FROM; i <= TO; ++i) {
+            for (int j = 1; j <= X; ++j) {
+                cout << setw(LENGTH) << i * j;
+            }
+            cout << endl;
+        }
+        ERR_POST(Info << "--- CPipe unidirectional test (1) done ---");
+        exit(kTestResult);
+    }
+    // Spawned process for unidirectional test (reads from pipe)
+    case ePipeWrite:
+    {
+        ERR_POST(Info << "--- CPipe unidirectional test (2) ---");
         string command = s_ReadLine(stdin);
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
-        ERR_POST(Info << "--- CPipe unidirectional test done ---");
+        ERR_POST(Info << "--- CPipe unidirectional test (2) done ---");
         exit(kTestResult);
     }
     // Spawned process for bidirectional test (direct from pipe)
-    case 2:
+    case ePipe:
     {
         ERR_POST(Info << "--- CPipe bidirectional test (pipe) ---");
         string command = s_ReadLine(stdin);
@@ -532,7 +555,7 @@ int main(int argc, const char* argv[])
         exit(kTestResult);
     }
     // Spawned process for bidirectional test (iostream)
-    case 3:
+    case eStream:
     {
         ERR_POST(Info << "--- CPipe bidirectional test (iostream) ---");
         for (int i = 5; i <= 10; ++i) {
@@ -546,7 +569,7 @@ int main(int argc, const char* argv[])
         exit(kTestResult);
     }
     // Test for fKeepOnClose && fKillOnClose flags
-    case 4:
+    case eFlagsOnClose:
     {
 #ifdef NCBI_OS_UNIX
         // Ignore pipe signals, convert them to errors
