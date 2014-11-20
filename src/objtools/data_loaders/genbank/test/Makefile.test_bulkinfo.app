@@ -3,7 +3,7 @@
 #################################
 
 APP = test_bulkinfo
-SRC = test_bulkinfo
+SRC = test_bulkinfo bulkinfo_tester
 LIB = xobjutil $(OBJMGR_LIBS) ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC)
 
 LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

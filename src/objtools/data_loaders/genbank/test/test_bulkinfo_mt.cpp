@@ -35,27 +35,24 @@
 #include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
 #include <util/random_gen.hpp>
-
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/util/sequence.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
-#include <util/checksum.hpp>
+
+#include "bulkinfo_tester.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
 
-BEGIN_NCBI_SCOPE
-using namespace objects;
-using namespace sequence;
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 const int g_gi_from = 156000;
-const int g_gi_to   = 157000;
+const int g_gi_to   = 156500;
 const int g_acc_from = 1;
 
 
@@ -73,48 +70,21 @@ public:
     virtual bool TestApp_Exit(void);
 
     virtual bool Thread_Run(int idx);
+    bool RunPass(void);
 
     typedef vector<CSeq_id_Handle> TIds;
     bool ProcessBlock(const TIds& ids) const;
-
-    template<class Data>
-    void Display(size_t i,
-                 const TIds& ids,
-                 const char* name,
-                 const Data& gis,
-                 const Data& gis2,
-                 const Data& gisv) const;
-
-    typedef CScope::TGIs TGis;
-    typedef vector<CSeq_id_Handle> TAccs;
-    typedef vector<string> TLabels;
-    typedef vector<int> TTaxIds;
-    typedef vector<int> THashes;
-    typedef vector<TSeqPos> TLengths;
-    typedef vector<CSeq_inst::TMol> TTypes;
-    typedef vector<CBioseq_Handle::TBioseqStateFlags> TStates;
 
     CRandom::TValue m_Seed;
     size_t m_RunCount;
     size_t m_RunSize;
     TIds m_Ids;
-    enum EBulkType {
-        eBulk_gi,
-        eBulk_acc,
-        eBulk_label,
-        eBulk_taxid,
-        eBulk_hash,
-        eBulk_length,
-        eBulk_type,
-        eBulk_state
-    };
-    EBulkType m_Type;
+    IBulkTester::EBulkType m_Type;
     bool m_Verbose;
     bool m_Sort;
     bool m_Single;
     bool m_Verify;
     CScope::EForceLoad m_ForceLoad;
-    CScope::EForceLabelLoad m_ForceLabelLoad;
     mutable CAtomicCounter m_ErrorCount;
 };
 
@@ -232,32 +202,30 @@ bool CTestApplication::TestApp_Init(void)
             g_gi_from << " to " << g_gi_to << ")..." << NcbiEndl;
     }
     if ( args["type"].AsString() == "gi" ) {
-        m_Type = eBulk_gi;
+        m_Type = IBulkTester::eBulk_gi;
     }
     else if ( args["type"].AsString() == "acc" ) {
-        m_Type = eBulk_acc;
+        m_Type = IBulkTester::eBulk_acc;
     }
     else if ( args["type"].AsString() == "label" ) {
-        m_Type = eBulk_label;
+        m_Type = IBulkTester::eBulk_label;
     }
     else if ( args["type"].AsString() == "taxid" ) {
-        m_Type = eBulk_taxid;
+        m_Type = IBulkTester::eBulk_taxid;
     }
     else if ( args["type"].AsString() == "hash" ) {
-        m_Type = eBulk_hash;
+        m_Type = IBulkTester::eBulk_hash;
     }
     else if ( args["type"].AsString() == "length" ) {
-        m_Type = eBulk_length;
+        m_Type = IBulkTester::eBulk_length;
     }
     else if ( args["type"].AsString() == "type" ) {
-        m_Type = eBulk_type;
+        m_Type = IBulkTester::eBulk_type;
     }
     else if ( args["type"].AsString() == "state" ) {
-        m_Type = eBulk_state;
+        m_Type = IBulkTester::eBulk_state;
     }
     m_ForceLoad = args["no-force"]? CScope::eNoForceLoad: CScope::eForceLoad;
-    m_ForceLabelLoad = args["no-force"]?
-        CScope::eNoForceLabelLoad: CScope::eForceLabelLoad;
     m_Verbose = args["verbose"];
     m_Sort = args["sort"];
     m_Single = args["single"];
@@ -299,33 +267,6 @@ CRef<CScope> s_MakeScope(void)
 }
 
 
-template<class Data>
-void CTestApplication::Display(size_t i,
-                               const TIds& ids,
-                               const char* name,
-                               const Data& gis,
-                               const Data& gis2,
-                               const Data& gisv) const
-{
-    if ( gis.empty() ) {
-        return;
-    }
-    if ( !m_Verbose && gis2[i] == gis[i] && gisv[i] == gis[i] ) {
-        return;
-    }
-    DEFINE_STATIC_FAST_MUTEX(mutex);
-    CFastMutexGuard guard(mutex);
-    cout << name<<"("<<ids[i]<<") -> "<<gis[i];
-    if ( !m_Single && gis2[i] != gis[i] ) {
-        cout << " single: "<<gis2[i];
-    }
-    if ( m_Verify && gisv[i] != gis[i] ) {
-        cout << " extra: "<<gisv[i];
-    }
-    cout << endl;
-}
-
-
 bool CTestApplication::Thread_Run(int thread_id)
 {
     vector<CSeq_id_Handle> ids;
@@ -348,230 +289,43 @@ bool CTestApplication::Thread_Run(int thread_id)
 }
 
 
-int GetHash(const CBioseq_Handle& bh)
-{
-    CChecksum sum(CChecksum::eCRC32INSD);
-    CSeqVector sv = bh.GetSeqVector(bh.eCoding_Iupac);
-    ITERATE ( CSeqVector, i, sv ) {
-        char c = *i;
-        sum.AddChars(&c, 1);
-    }
-    return sum.GetChecksum();
-}
-
-
 bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids) const
 {
-    size_t count = ids.size();
-
-    TGis gis, gis2, gisv;
-    TAccs accs, accs2, accsv;
-    TLabels labels, labels2, labelsv;
-    TTaxIds taxids, taxids2, taxidsv;
-    THashes hashes, hashes2, hashesv;
-    TLengths lengths, lengths2, lengthsv;
-    TTypes types, types2, typesv;
-    TStates states, states2, statesv;
-
-    if ( !m_Single ) {
+    AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
+    data->SetParams(ids, m_ForceLoad);
+    {{
         CRef<CScope> scope = s_MakeScope();
-        switch ( m_Type ) {
-        case eBulk_gi:
-            gis = scope->GetGis(ids, m_ForceLoad);
-            break;
-        case eBulk_acc:
-            accs = scope->GetAccVers(ids, m_ForceLoad);
-            break;
-        case eBulk_label:
-            labels = scope->GetLabels(ids, m_ForceLoad);
-            break;
-        case eBulk_taxid:
-            taxids = scope->GetTaxIds(ids, m_ForceLoad);
-            break;
-        case eBulk_hash:
-            hashes = scope->GetSequenceHashes(ids);
-            break;
-        case eBulk_length:
-            lengths = scope->GetSequenceLengths(ids, m_ForceLoad);
-            break;
-        case eBulk_type:
-            types = scope->GetSequenceTypes(ids, m_ForceLoad);
-            break;
-        case eBulk_state:
-            states = scope->GetSequenceStates(ids, m_ForceLoad);
-            break;
+        if ( m_Single ) {
+            data->LoadSingle(*scope);
         }
-        for ( size_t i = 0; i < count; ++i ) {
-            _ASSERT(!scope->GetBioseqHandle(ids[i], CScope::eGetBioseq_Loaded));
+        else {
+            data->LoadBulk(*scope);
         }
-    }
-
-    {
-        CRef<CScope> scope = s_MakeScope();
-
-        switch ( m_Type ) {
-        case eBulk_gi:    gis2.resize(count); break;
-        case eBulk_acc:   accs2.resize(count); break;
-        case eBulk_label: labels2.resize(count); break;
-        case eBulk_taxid: taxids2.resize(count); break;
-        case eBulk_hash:  hashes2.resize(count); break;
-        case eBulk_length: lengths2.resize(count); break;
-        case eBulk_type:  types2.resize(count); break;
-        case eBulk_state: states2.resize(count); break;
+        ITERATE ( TIds, it, ids ) {
+            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
         }
-        for ( size_t i = 0; i < count; ++i ) {
-            switch ( m_Type ) {
-            case eBulk_gi:
-                gis2[i] = scope->GetGi(ids[i]);
-                break;
-            case eBulk_acc:
-                accs2[i] = scope->GetAccVer(ids[i]);
-                break;
-            case eBulk_label:
-                labels2[i] = scope->GetLabel(ids[i], m_ForceLabelLoad);
-                break;
-            case eBulk_taxid:
-                taxids2[i] = scope->GetTaxId(ids[i], m_ForceLoad);
-                break;
-            case eBulk_hash:
-                hashes2[i] = scope->GetSequenceHash(ids[i]);
-                break;
-            case eBulk_length:
-                lengths2[i] = scope->GetSequenceLength(ids[i], m_ForceLoad);
-                break;
-            case eBulk_type:
-                types2[i] = scope->GetSequenceType(ids[i], m_ForceLoad);
-                break;
-            case eBulk_state:
-                states2[i] = scope->GetSequenceState(ids[i], m_ForceLoad);
-                break;
-            }
-        }
-        for ( size_t i = 0; i < count; ++i ) {
-            _ASSERT(!scope->GetBioseqHandle(ids[i], CScope::eGetBioseq_Loaded));
-        }
-    }
-
-    if ( m_Single ) {
-        switch ( m_Type ) {
-        case eBulk_gi:    gis = gis2; break;
-        case eBulk_acc:   accs = accs2; break;
-        case eBulk_label: labels = labels2; break;
-        case eBulk_taxid: taxids = taxids2; break;
-        case eBulk_hash:  hashes = hashes2; break;
-        case eBulk_length: lengths = lengths2; break;
-        case eBulk_type:  types = types2; break;
-        case eBulk_state: states = states2; break;
-        }
-    }
-
+    }}
+    vector<bool> errors;
     if ( m_Verify ) {
         CRef<CScope> scope = s_MakeScope();
-
-        switch ( m_Type ) {
-        case eBulk_gi:    gisv.resize(count); break;
-        case eBulk_acc:   accsv.resize(count); break;
-        case eBulk_label: labelsv.resize(count); break;
-        case eBulk_taxid: taxidsv.resize(count); break;
-        case eBulk_hash:  hashesv.resize(count); break;
-        case eBulk_length: lengthsv.resize(count); break;
-        case eBulk_type:  typesv.resize(count); break;
-        case eBulk_state: statesv.resize(count); break;
-        }
-        for ( size_t i = 0; i < count; ++i ) {
-            CBioseq_Handle h = scope->GetBioseqHandle(ids[i]);
-            switch ( m_Type ) {
-            case eBulk_gi:
-                if ( h ) {
-                    CSeq_id_Handle id = GetId(h, eGetId_ForceGi);
-                    if ( id && id.IsGi() ) {
-                        gisv[i] = id.GetGi();
-                    }
-                }
-                break;
-            case eBulk_acc:
-                if ( h ) {
-                    accsv[i] = GetId(h, eGetId_ForceAcc);
-                }
-                break;
-            case eBulk_label:
-                if ( h ) {
-                    labelsv[i] = GetLabel(h.GetId());
-                }
-                break;
-            case eBulk_taxid:
-                taxidsv[i] = (h? GetTaxId(h): 0);
-                break;
-            case eBulk_hash:
-                hashesv[i] = (h? GetHash(h): 0);
-                break;
-            case eBulk_length:
-                lengthsv[i] = (h? h.GetBioseqLength():
-                               kInvalidSeqPos);
-                break;
-            case eBulk_type:
-                typesv[i] = (h? h.GetSequenceType():
-                             CSeq_inst::eMol_not_set);
-                break;
-            case eBulk_state:
-                statesv[i] = h.GetState();
-                break;
-            }
-            if ( h ) {
-                scope->RemoveFromHistory(h);
+        data->LoadVerify(*scope);
+        errors = data->GetErrors();
+    }
+    if ( m_Verbose ) {
+        data->Display(cout, m_Verify);
+    }
+    bool ok = find(errors.begin(), errors.end(), true) == errors.end();
+    if ( !ok ) {
+        CMutexGuard guard(IBulkTester::sm_DisplayMutex);
+        cerr << "Errors in "<<data->GetType()<<":\n";
+        for ( size_t i = 0; i < ids.size(); ++i ) {
+            if ( errors[i] ) {
+                data->Display(cerr, i, true);
             }
         }
     }
-    else {
-        switch ( m_Type ) {
-        case eBulk_gi:    gisv = gis2; break;
-        case eBulk_acc:   accsv = accs2; break;
-        case eBulk_label: labelsv = labels2; break;
-        case eBulk_taxid: taxidsv = taxids2; break;
-        case eBulk_hash:  hashesv = hashes2; break;
-        case eBulk_length: lengthsv = lengths2; break;
-        case eBulk_type:  typesv = types2; break;
-        case eBulk_state: statesv = states2; break;
-        }
-    }
-
-    for ( size_t i = 0; i < count; ++i ) {
-        Display(i, ids, "gi", gis, gis2, gisv);
-        Display(i, ids, "acc", accs, accs2, accsv);
-        Display(i, ids, "label", labels, labels2, labelsv);
-        Display(i, ids, "taxid", taxids, taxids2, taxidsv);
-        Display(i, ids, "hash", hashes, hashes2, hashesv);
-        Display(i, ids, "length", lengths, lengths2, lengthsv);
-        Display(i, ids, "type", types, types2, typesv);
-        Display(i, ids, "state", states, states2, statesv);
-    }
-
-    switch ( m_Type ) {
-    case eBulk_gi:    _ASSERT(gis == gis2); break;
-    case eBulk_acc:   _ASSERT(accs == accs2); break;
-    case eBulk_label: _ASSERT(labels == labels2); break;
-    case eBulk_taxid: _ASSERT(taxids == taxids2); break;
-    case eBulk_hash:  _ASSERT(hashes == hashes2); break;
-    case eBulk_length: _ASSERT(lengths == lengths2); break;
-    case eBulk_type:  _ASSERT(types == types2); break;
-    case eBulk_state: _ASSERT(states == states2); break;
-    }
-    switch ( m_Type ) {
-    case eBulk_gi:    _ASSERT(gis == gisv); break;
-    case eBulk_acc:   _ASSERT(accs == accsv); break;
-    case eBulk_label: _ASSERT(labels == labelsv); break;
-    case eBulk_taxid: _ASSERT(taxids == taxidsv); break;
-    case eBulk_hash:  _ASSERT(hashes == hashesv); break;
-    case eBulk_length: _ASSERT(lengths == lengthsv); break;
-    case eBulk_type:  _ASSERT(types == typesv); break;
-    case eBulk_state: _ASSERT(states == statesv); break;
-    }
-    return true;
+    return ok;
 }
-
-
-END_NCBI_SCOPE
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -579,8 +333,6 @@ END_NCBI_SCOPE
 //  MAIN
 //
 
-
-USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
