@@ -188,20 +188,20 @@ void CRemoteAppReaper::CContext::CollectorImpl()
                 // Log a message for those that had failed to be killed
                 if (it->attempts) {
                     LOG_POST(Warning << "Successfully waited for a process: " <<
-                            it->process);
+                            it->process.GetHandle());
                 }
             } else if (it->attempts++) {
                 // Give up if there are too many attempts to wait for a process
                 if (it->attempts > max_attempts) {
                     done = true;
                     ERR_POST("Give up waiting for a process: " <<
-                            it->process);
+                            it->process.GetHandle());
                 }
             } else if (it->process.KillGroup()) {
                 done = true;
             } else {
                 LOG_POST(Warning << "Failed to kill a process: " <<
-                        it->process << ", will wait for it");
+                        it->process.GetHandle() << ", will wait for it");
             }
 
             if (done) {
