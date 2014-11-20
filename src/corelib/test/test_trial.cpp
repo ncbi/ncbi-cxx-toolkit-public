@@ -6,6 +6,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <cctype>
 
 #define NCBI_CTYPEFAKEBODY \
   { return See_the_standard_on_proper_argument_type_for_ctype_macros(c); }
