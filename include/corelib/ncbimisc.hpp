@@ -54,7 +54,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbidbg.hpp>
 
-#if !defined(HAVE_NULLPTR)
+#if !defined(HAVE_NULLPTR)  &&  !defined(nullptr)
 #  define nullptr NULL
 #endif
 
