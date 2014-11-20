@@ -1907,6 +1907,20 @@ void CValidError_feat::ValidateIntron (
 
     const CSeq_loc& loc = feat.GetLocation();
 
+    int num_intervals = 0;
+    for (CSeq_loc_CI curr(loc); curr; ++curr) {
+        num_intervals++;
+    }
+    if ( num_intervals > 1 ) {
+        EDiagSev sev = eDiag_Error;
+        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+            sev = eDiag_Warning;
+        }
+        PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
+                 "An intron should not have multiple intervals",
+                  feat);
+    }
+
     bool partial5 = loc.IsPartialStart(eExtreme_Biological);
     bool partial3 = loc.IsPartialStop(eExtreme_Biological);
     if (partial5 && partial3) {

@@ -516,6 +516,7 @@ enum EErrType {
     eErr_SEQ_FEAT_BadComment,
     eErr_SEQ_FEAT_NonsenseIntron,
     eErr_SEQ_FEAT_InconsistentPseudogeneValue,
+    eErr_SEQ_FEAT_MultiIntervalIntron,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,

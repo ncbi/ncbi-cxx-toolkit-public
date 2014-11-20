@@ -1603,6 +1603,9 @@ same id type" } },
    { eErr_SEQ_FEAT_InconsistentPseudogeneValue,
    { "InconsistentPseudogeneValue",
 "Pseudogene qualifiers do not match between a CDS or mRNA and the parent gene." } },
+   { eErr_SEQ_FEAT_MultiIntervalIntron,
+   { "MultiIntervalIntron",
+"Introns should only have a single interval." } },
 
 /* SEQ_ALIGN */
 
