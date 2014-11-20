@@ -74,8 +74,8 @@ Seq-submit ::= {
       descr {
         update-date std {
           year 2014,
-          month 11,
-          day 19
+          month 2,
+          day 1
         }
       },
       seq-set {

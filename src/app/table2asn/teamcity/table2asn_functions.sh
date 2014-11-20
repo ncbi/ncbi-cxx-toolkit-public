@@ -2,6 +2,7 @@
 
 CONVERT_CREATE_DATE="
 /^ +create-date std \{/b edit_year
+/^ +update-date std \{/b edit_year
 /^ +date std \{/b edit_year
 b
 :edit_year
