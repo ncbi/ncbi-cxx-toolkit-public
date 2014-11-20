@@ -204,7 +204,8 @@ public:
         eDbtagType_MedGen,
         eDbtagType_CGD,
         eDbtagType_Assembly,
-        eDbtagType_GenBank
+        eDbtagType_GenBank,
+        eDbtagType_BioSample
     };
 
     enum EDbtagGroup {

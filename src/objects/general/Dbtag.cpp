@@ -176,6 +176,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "BEEBASE", CDbtag::eDbtagType_BEEBASE },
     { "BioProject", CDbtag::eDbtagType_BioProject },
+    { "BioSample", CDbtag::eDbtagType_BioSample },
     { "CCDS", CDbtag::eDbtagType_CCDS },
     { "CGNC", CDbtag::eDbtagType_CGNC },
     { "CloneID", CDbtag::eDbtagType_CloneID },
@@ -663,6 +664,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" },
     { CDbtag::eDbtagType_BEEBASE, "http://hymenopteragenome.org/cgi-bin/gb2/gbrowse/bee_genome45/?name=" },
     { CDbtag::eDbtagType_NASONIABASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
+    { CDbtag::eDbtagType_BioProject, "http://www.ncbi.nlm.nih.gov/bioproject/" },
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
     { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" },
@@ -672,6 +674,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_CGD, "http://www.candidagenome.org/cgi-bin/locus.pl?locus=" },
     { CDbtag::eDbtagType_Assembly, "http://www.ncbi.nlm.nih.gov/assembly/" },
     { CDbtag::eDbtagType_GenBank, "http://www.ncbi.nlm.nih.gov/nuccore/" },
+    { CDbtag::eDbtagType_BioSample, "http://www.ncbi.nlm.nih.gov/biosample/" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
