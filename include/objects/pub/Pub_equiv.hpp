@@ -63,6 +63,9 @@ public:
     bool GetLabel(string* label, TLabelFlags flags = 0,
                   ELabelVersion version = eLabel_DefaultVersion) const;
 
+    bool SameCitation(const CPub_equiv& other) const;
+    bool SameCitation(const CPub& pub) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CPub_equiv(const CPub_equiv& value);

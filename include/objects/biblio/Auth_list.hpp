@@ -65,6 +65,7 @@ public:
     size_t GetNameCount(void) const;
 
     void ConvertMlToStandard(void);
+    bool SameCitation(const CAuth_list& other) const;
 
 protected:
     bool GetLabelV1(string* label, TLabelFlags flags) const;

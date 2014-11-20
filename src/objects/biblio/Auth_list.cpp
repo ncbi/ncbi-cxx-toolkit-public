@@ -251,6 +251,89 @@ void CAuth_list::ConvertMlToStandard(void)
 }
 
 
+string s_GetAuthorMatchString(const CAuthor& auth)
+{
+    string comp = "";
+    if (!auth.IsSetName()) {
+        return comp;
+    }
+
+    if (auth.GetName().IsName()) {
+        if (auth.GetName().GetName().IsSetLast()) {
+            comp = auth.GetName().GetName().GetLast();
+        }
+    } else if (auth.GetName().IsConsortium()) {
+        comp = auth.GetName().GetConsortium();
+    } else if (auth.GetName().IsStr()) {
+        comp = auth.GetName().GetStr();
+    }
+    return comp;
+}
+
+
+bool s_AuthorMatch(const CAuthor& auth1, const CAuthor& auth2)
+{
+    string comp1 = s_GetAuthorMatchString(auth1);
+    string comp2 = s_GetAuthorMatchString(auth2);
+    return NStr::EqualNocase(comp1, comp2);
+}
+
+
+vector<string> GetAuthorMatchStrings(const CAuth_list::TNames& names)
+{
+    vector<string> list;
+
+    if (names.IsStd()) {
+        ITERATE(CAuth_list::TNames::TStd, it, names.GetStd()) {
+            list.push_back(s_GetAuthorMatchString(**it));
+        }
+    } else if (names.IsStr()) {
+        ITERATE(CAuth_list::TNames::TStr, it, names.GetStr()) {
+            list.push_back(*it);
+        }
+    }
+    return list;
+}
+
+
+bool CAuth_list::SameCitation(const CAuth_list& other) const
+{
+    if (!IsSetNames() && !other.IsSetNames()) {
+        return true;
+    } else if (!IsSetNames() || !other.IsSetNames()) {
+        return false;
+    } else if (GetNames().Which() == CAuth_list::TNames::e_not_set &&
+               other.GetNames().Which() == CAuth_list::TNames::e_not_set) {
+        return true;
+    } else if (GetNames().Which() != CAuth_list::TNames::e_Std && 
+               GetNames().Which() != CAuth_list::TNames::e_Str) {
+        return false;
+    } else if (other.GetNames().Which() != CAuth_list::TNames::e_Std &&
+               other.GetNames().Which() != CAuth_list::TNames::e_Str) {
+        return false;
+    }              
+
+    bool match = true;
+    vector<string> match_str1 = GetAuthorMatchStrings(GetNames());
+    vector<string> match_str2 = GetAuthorMatchStrings(other.GetNames());
+
+    vector<string>::iterator it1 = match_str1.begin();
+    vector<string>::iterator it2 = match_str2.begin();
+    while (it1 != match_str1.end() && it2 != match_str2.end()) {
+        if (!NStr::EqualNocase(*it1, *it2)) {
+            match = false;
+        }
+        it1++;
+        it2++;
+    }
+    if (it1 != match_str1.end() || it2 != match_str2.end()) {
+        match = false;
+    }
+
+    return match;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

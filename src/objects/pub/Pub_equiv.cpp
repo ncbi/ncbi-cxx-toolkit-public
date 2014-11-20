@@ -113,6 +113,36 @@ bool CPub_equiv::GetLabel(string* label, TLabelFlags flags,
 }
 
 
+bool CPub_equiv::SameCitation(const CPub& pub) const
+{
+    ITERATE(CPub_equiv::Tdata, it1, Get()) {
+        if ((*it1)->SameCitation(pub)) {
+            return true;
+        } else if ((*it1)->Which() == pub.Which()) {
+            return false;
+        }
+    }
+    return false;
+}
+
+
+bool CPub_equiv::SameCitation(const CPub_equiv& other) const
+{
+    ITERATE(CPub_equiv::Tdata, it1, Get()) {
+        ITERATE(CPub_equiv::Tdata, it2, other.Get()) {
+            if ((*it1)->SameCitation(**it2)) {
+                return true;
+            } else if ((*it1)->Which() == (*it2)->Which()) {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

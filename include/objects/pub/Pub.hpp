@@ -100,6 +100,8 @@ public:
     void GetTitles(
         TOneTitleRefVec & out_title,
         size_t iMaxToGet = std::numeric_limits<std::size_t>::max() ) const;
+    
+    bool SameCitation(const CPub& other) const;
 
 protected:
   
