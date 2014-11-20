@@ -7004,6 +7004,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZMK<NOR>	s	Zoological Musem, Kristiania",
 "ZMKR	s	Koenigsberg Zoologisches Museum",
 "ZMKU	s	Kiev Zoological Museum",
+"ZMKU<THA>	s	Zoological Museum, Kasetsart University",
 "ZML	s	St Petersburg State University",
 "ZMLP	s	University of Punjab",
 "ZMLU	s	Lunds Universitet, Zoologiska Institutionen",
