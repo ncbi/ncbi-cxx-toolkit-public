@@ -526,7 +526,7 @@ int main(int argc, const char* argv[])
         const int kStep = test_num == ePipeRead ? 0 : 1;
         const int kYFrom  = kYChunk * kStep + 1;
         const int kYTo = kYChunk * (kStep + 1);
-        const int kLength = ::log10(kXMax * kYTo) + 2;
+        const int kLength = (int)::log10((double)kXMax * kYTo) + 2;
         for (int i = kYFrom; i <= kYTo; ++i) {
             for (int j = 1; j <= kXMax; ++j) {
                 cout << setw(kLength) << i * j;
