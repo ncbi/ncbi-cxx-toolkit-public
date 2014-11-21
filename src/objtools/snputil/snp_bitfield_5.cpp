@@ -87,9 +87,6 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
         case CSnpBitfield::eIsSuspect:
             ret = (m_listBytes[11] & BIT_7); // on byte 11 (F9), bit 7
             break;
-        case CSnpBitfield::eTGPValidated:
-            ret = (m_listBytes[8] & BIT_6); // on byte 8 (F6), bit 6
-            break;
         case CSnpBitfield::eTGPPhase1:
             ret = (m_listBytes[8] & BIT_5); // on byte 8 (F6), bit 5
             break;
@@ -113,6 +110,30 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
             break;
         case CSnpBitfield::eGMAF0dot01:
             ret = (m_listBytes[6] & BIT_5); // on byte 6 (F4), bit 5
+            break;
+        case CSnpBitfield::eTGPPhase3:
+            ret = (m_listBytes[8] & BIT_6); // on byte 8 (F6), bit 6
+            break;
+        case CSnpBitfield::eTGPPhase1NotPhase3:
+            ret = (m_listBytes[8] & (BIT_5 | BIT_6)) == 0x10; // on byte 8 (F6), 	bit-5, not bit-6
+            break;
+        case CSnpBitfield::eTGPPhase3NotPhase1:
+            ret = (m_listBytes[8] & (BIT_5 | BIT_6)) == 0x20; // on byte 8 (F6), 	bit-6, not bit-5
+            break;
+        case CSnpBitfield::eTGPPhase3OrPhase1:
+            ret = (m_listBytes[8] & (BIT_5 | BIT_6)); // on byte 8 (F6), 	bit-5 or bit-6
+            break;
+        case CSnpBitfield::eTGPNeitherPhase3NorPhase1:
+            ret = !(m_listBytes[8] & (BIT_5 | BIT_6)); // on byte 8 (F6), 	neither bit-5 nor bit-6
+            break;
+        case CSnpBitfield::eTGPUniquePhase3:
+            ret = (m_listBytes[8] & (BIT_2 | BIT_5 | BIT_6)) == 0x20; // on byte 8 (F6), bit-6 AND (not bit-2) AND (not bit 5)
+            break;
+        case CSnpBitfield::eTGPNovelInPhase3:
+            ret = (m_listBytes[8] & (BIT_2 |  BIT_6)) == 0x20; // on byte 8 (F6), bit-6 AND (not bit-2)
+            break;
+        case CSnpBitfield::eTGPBit7:
+            ret = (m_listBytes[8] & (BIT_7)); // on byte 8 (F6), bit-7
             break;
         // all other values inherited from V4
         default:
