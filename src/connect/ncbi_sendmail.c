@@ -412,9 +412,9 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
 static size_t s_FromSize(const SSendMailInfo* info)
 {
     const char* at, *dot;
-    size_t len = strlen(info->from);
+    size_t len = *info->from ? strlen(info->from) : 0;
 
-    if (!*info->from  ||  !(info->mx_options & fSendMail_StripNonFQDNHost))
+    if (!len  ||  !(info->mx_options & fSendMail_StripNonFQDNHost))
         return len;
     if (!(at = (const char*) memchr(info->from, '@', len))
         ||  at == info->from + len - 1) {
