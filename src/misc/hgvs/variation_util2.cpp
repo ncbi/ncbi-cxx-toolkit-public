@@ -128,13 +128,54 @@ TSeqPos CVariationUtil::s_GetLength(const CVariantPlacement& p, CScope* scope)
     return ncbi::sequence::GetLength(p.GetLoc(), scope) + stop_offset - start_offset;
 }
 
+// verify that exon_anchor_pos is represented in biostarts or biostops 
+// depending on the sign of offset_pos
+bool ValidExonTerminal(
+        const set<TSeqPos>& exon_biostarts, 
+        const set<TSeqPos>& exon_biostops, 
+        TSeqPos exon_anchor_pos,
+        int offset_pos)
+{
+    const set<TSeqPos>& exon_terminals = offset_pos < 0 ?
+                        exon_biostarts 
+                      : exon_biostops; //VAR-1379
 
+    return offset_pos != 0 
+        && exon_terminals.find(exon_anchor_pos) != exon_terminals.end();
+}
+
+bool ValidExonTerminals(
+        const set<TSeqPos>& exon_biostarts, 
+        const set<TSeqPos>& exon_biostops, 
+        const CVariantPlacement& p)
+{
+    int sign = sequence::GetStrand(p.GetLoc(), NULL) == eNa_strand_minus ? -1 : 1;
+
+    // if offset's sign is consistent with location's strand, we expect to find
+    // the anchor in exon-stops, otherwise in exon-starts. //VAR-1379
+
+    bool start_ok = !p.IsSetStart_offset() || ValidExonTerminal(
+                exon_biostarts, 
+                exon_biostops,
+                sequence::GetStart(p.GetLoc(), NULL, eExtreme_Biological),
+                p.GetStart_offset() * sign);
+
+    bool stop_ok = !p.IsSetStop_offset() || ValidExonTerminal(
+                exon_biostarts, 
+                exon_biostops,
+                sequence::GetStop(p.GetLoc(), NULL, eExtreme_Biological),
+                p.GetStop_offset() * sign);
+
+    return start_ok && stop_ok;
+}
+ 
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p)
 {
     const CSeq_id* id = p.GetLoc().GetId();
     if(!id  
        || !(p.IsSetStart_offset() || p.IsSetStop_offset())
-       || !(p.IsSetMol() && (p.GetMol() == CVariantPlacement::eMol_cdna || p.GetMol() == CVariantPlacement::eMol_rna)))
+       || !(p.IsSetMol() && (   p.GetMol() == CVariantPlacement::eMol_cdna 
+                             || p.GetMol() == CVariantPlacement::eMol_rna)))
     {
         return eNotApplicable;
     }
@@ -143,31 +184,16 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlac
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
     CBioseq_Handle bsh = m_scope->GetBioseqHandle(*id);
     
-    set<TSeqPos> exon_terminal_pts;
+    set<TSeqPos> exon_biostarts, exon_biostops;
     for(CFeat_CI ci(bsh, sel); ci; ++ci) {
         const CMappedFeat& mf = *ci;
-        exon_terminal_pts.insert(sequence::GetStart(mf.GetLocation(), NULL));
-        exon_terminal_pts.insert(sequence::GetStop(mf.GetLocation(), NULL));
-    }
-    if(exon_terminal_pts.size() == 0) {
-        return eNotApplicable;
+        exon_biostarts.insert( sequence::GetStart( mf.GetLocation(), NULL));
+        exon_biostops.insert(  sequence::GetStop(  mf.GetLocation(), NULL));
     }
 
-    if(p.IsSetStart_offset()) {
-        TSeqPos pos = sequence::GetStart(p.GetLoc(), NULL, eExtreme_Biological);
-        if(exon_terminal_pts.find(pos) == exon_terminal_pts.end()) {
-            return eFail;
-        }
-    }
-
-    if(p.IsSetStop_offset()) {
-        TSeqPos pos = sequence::GetStop(p.GetLoc(), NULL, eExtreme_Biological);
-        if(exon_terminal_pts.find(pos) == exon_terminal_pts.end()) {
-            return eFail;
-        }
-    }
-
-    return ePass;
+    return exon_biostarts.empty() && exon_biostops.empty()      ? eNotApplicable
+         : ValidExonTerminals(exon_biostarts, exon_biostops, p) ? ePass
+         :                                                        eFail;
 }
 
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln)
@@ -182,32 +208,19 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlac
         return eNotApplicable;
     }
 
-    set<TSeqPos> exon_terminal_pts;
+    set<TSeqPos> exon_biostarts, exon_biostops;
     ITERATE(CSpliced_seg::TExons, it, aln.GetSegs().GetSpliced().GetExons()) {
         const CSpliced_exon& exon = **it;
-        exon_terminal_pts.insert(exon.GetProduct_start().IsNucpos() ?
-                                     exon.GetProduct_start().GetNucpos() :
-                                     exon.GetProduct_start().GetProtpos().GetAmin());
-        exon_terminal_pts.insert(exon.GetProduct_end().IsNucpos() ?
-                                     exon.GetProduct_end().GetNucpos() :
-                                     exon.GetProduct_end().GetProtpos().GetAmin());
+        exon_biostarts.insert(exon.GetProduct_start().IsNucpos() ?
+                              exon.GetProduct_start().GetNucpos() :
+                              exon.GetProduct_start().GetProtpos().GetAmin());
+
+        exon_biostops.insert(exon.GetProduct_end().IsNucpos() ?
+                             exon.GetProduct_end().GetNucpos() :
+                             exon.GetProduct_end().GetProtpos().GetAmin());
     }
 
-    if(p.IsSetStart_offset()) {
-        TSeqPos pos = sequence::GetStart(p.GetLoc(), NULL, eExtreme_Biological);
-        if(exon_terminal_pts.find(pos) == exon_terminal_pts.end()) {
-            return eFail;
-        }
-    }
-
-    if(p.IsSetStop_offset()) {
-        TSeqPos pos = sequence::GetStop(p.GetLoc(), NULL, eExtreme_Biological);
-        if(exon_terminal_pts.find(pos) == exon_terminal_pts.end()) {
-            return eFail;
-        }
-    }
-
-    return ePass;
+    return ValidExonTerminals(exon_biostarts, exon_biostops, p) ? ePass : eFail;
 }
 
 void SwapLtGtFuzz(CInt_fuzz& fuzz)
