@@ -970,15 +970,15 @@ string GetAcceptor(const objects::CSpliced_exon& exon) {
 //returns true for GT/AG, GC/AG AND AT/AC        
 bool IsConsSplice(const string& donor, const string acc) {
     if(donor.length()<2 || acc.length()<2) return false;
-    if(toupper(acc.c_str()[0]) != 'A') return false;
-    switch(toupper(acc.c_str()[1])) {
+    if(toupper(Uchar(acc.c_str()[0])) != 'A') return false;
+    switch(toupper(Uchar(acc.c_str()[1]))) {
     case 'C':
-        if( toupper(donor.c_str()[0] == 'A') && toupper(donor.c_str()[1] == 'T') ) return true;
+        if( toupper(Uchar(donor.c_str()[0])) == 'A' && toupper(Uchar(donor.c_str()[1])) == 'T' ) return true;
         else return false;
         break;
     case 'G':
-        if( toupper(donor.c_str()[0] == 'G') ) {
-            char don2 = toupper(donor.c_str()[1]);
+        if( toupper(Uchar(donor.c_str()[0])) == 'G' ) {
+            char don2 = toupper(Uchar(donor.c_str()[1]));
             if(don2 == 'T' || don2 == 'C') return true;
         }
         return false;
