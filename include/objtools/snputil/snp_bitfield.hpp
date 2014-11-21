@@ -186,7 +186,7 @@ public:
         eTGP2009Pilot                   = eTGP2009Pilot_depr,
         eTGP2010Pilot_depr              = 50,   // deprecated in V5 -- TGP 2010 pilot (phases 1, 2, 3) -- obsolete
         eTGP2010Pilot                   = eTGP2010Pilot_depr,
-        eTGPValidated                   = 51,   // TGP_validated (for subset that passed positive second platform validation)
+        eTGPValidated_depr              = 51,   // deprecated, replaced with eTGPPhase3 (was: TGP_validated (for subset that passed positive second platform validation))
         eTGP2010Production_depr         = 52,   // deprecated in V5 -- TGP 2010 production (for data created and released prior to ASHG) -- obsolete
         eTGP2010Production              = eTGP2010Production_depr,
 		eTGPPhase1						= 53,	// TGP Phase 1 (include June interim phase 1)
@@ -206,8 +206,23 @@ public:
 		// F4 Allele Frequency
 		eGMAF0dot01                     = 61,   // GMAF>=0.01(Global population Minor Allele Frequency. Population includes all samples in TGP(1000Genome project).
 
+		// F6 Phase 3, reuses eTGPValidated
+		eTGPPhase3                      = eTGPValidated_depr,
+
+		// F6 various Phase 3 bit combinations with other bits (SNP-7076)
+		eTGPPhase1NotPhase3             = 62,    // In Phase 1, not in phase 3,	bit-5, not bit-6
+		eTGPPhase3NotPhase1             = 63,    // In Phase 3, not in phase 1,	bit-6, not bit-5
+		eTGPPhase3OrPhase1              = 64,    // Union In Phase 1 and in phase 3, bit-5 or bit-6
+		eTGPNeitherPhase3NorPhase1      = 65,    // Not in phase 1 nor phase 3	neither, bit-5 nor bit-6
+		eTGPUniquePhase3                = 66,    // Unique only to 1000G phase 3,	bit-6 AND (not bit-2) AND (not bit 5)
+		eTGPNovelInPhase3               = 67,    // Novel 1000G submission present in Phase 3,	bit-6 AND (not bit-2)
+
+		// F6 bit 7, not named but reserved for future use
+		eTGPBit7                        = 68,
+
+
 		/// Add additional properties here.
-		ePropertyV5Last                 = eGMAF0dot01
+		ePropertyV5Last                 = eTGPBit7
     };
 
     // A SNP can only be one class of variation
