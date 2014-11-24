@@ -672,7 +672,7 @@ public:
                               int base = 10);
 
 // +++ will be deleted soon
-private:
+//private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(long value, TNumToStringFlags flags = 0,
@@ -719,7 +719,7 @@ public:
                             int               base  = 10);
 
 // +++ will be deleted soon
-private:
+//private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, long value, 
@@ -768,7 +768,7 @@ public:
                                int               base  = 10);
 
 // +++ will be deleted soon
-private:
+//private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(unsigned long     value,
@@ -819,7 +819,7 @@ public:
                              int               base  = 10);
 
 // +++ will be deleted soon
-private:
+//private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, unsigned long value,
