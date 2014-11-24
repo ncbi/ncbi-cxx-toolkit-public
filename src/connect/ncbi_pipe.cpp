@@ -2051,11 +2051,13 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                 break;
             if (watcher) {
                 switch (watcher->Watch(pid)) {
+                case IProcessWatcher::eContinue:
+                    continue;
+                case IProcessWatcher::eStop:
+                    break;
                 case IProcessWatcher::eExit:
                     if (pipe.m_PipeHandle) pipe.m_PipeHandle->Release();
                     return eCanceled;
-                case IProcessWatcher::eContinue:
-                    continue;
                 }
 
                 // IProcessWatcher::eStop
