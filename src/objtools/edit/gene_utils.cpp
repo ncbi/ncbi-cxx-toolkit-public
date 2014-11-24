@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
+#include <objtools/edit/gene_utils.hpp> // need to add this in order to make export work
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
