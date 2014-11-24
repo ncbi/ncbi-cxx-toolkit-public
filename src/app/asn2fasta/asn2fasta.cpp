@@ -461,7 +461,6 @@ int CAsn2FastaApp::Run(void)
                 known_types.insert(CBioseq_set::GetTypeInfo());
                 known_types.insert(CBioseq::GetTypeInfo());
 
-                size_t streampos = is->GetStreamPos();
                 while (!is->EndOfData()) {
                     matching_types = is->GuessDataType(known_types);
                     if (matching_types.empty()) {
@@ -486,7 +485,6 @@ int CAsn2FastaApp::Run(void)
                     HandleSeqEntry(seh);
                     m_Scope->RemoveTopLevelSeqEntry(seh);
                     m_Scope->ResetHistory();
-                    streampos = is->GetStreamPos();
                 }
             }
         }
