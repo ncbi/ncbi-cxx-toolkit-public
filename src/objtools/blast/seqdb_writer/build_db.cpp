@@ -1020,21 +1020,23 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_FoundMatchingMasks(false)
 {
     s_CreateDirectories(dbname);
+    const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
     
-    m_LogFile << "New DB name:   " << dbname << endl;
+    m_LogFile << "New DB name:   " << output_dbname << endl;
     m_LogFile << "New DB title:  " << title << endl;
     const string mol_type(is_protein ? "Protein" : "Nucleotide");
     m_LogFile << "Sequence type: " << mol_type << endl;
-    if (DeleteBlastDb(dbname, ParseMoleculeTypeString(mol_type))) {
-        m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+    if (DeleteBlastDb(output_dbname, ParseMoleculeTypeString(mol_type))) {
+        m_LogFile << "Deleted existing " << mol_type 
+            << " BLAST database named " << output_dbname << endl;
     }
     
     CWriteDB::ESeqType seqtype =
         (is_protein ? CWriteDB::eProtein : CWriteDB::eNucleotide);
     
-    m_OutputDb.Reset(new CWriteDB(dbname,
+    m_OutputDb.Reset(new CWriteDB(output_dbname,
                                   seqtype,
                                   title,
                                   indexing,
@@ -1066,15 +1068,17 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_FoundMatchingMasks(false)
 {
     s_CreateDirectories(dbname);
+    const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
     
-    m_LogFile << "New DB name:   " << dbname << endl;
+    m_LogFile << "New DB name:   " << output_dbname << endl;
     m_LogFile << "New DB title:  " << title << endl;
     const string mol_type(is_protein ? "Protein" : "Nucleotide");
     m_LogFile << "Sequence type: " << mol_type << endl;
-    if (DeleteBlastDb(dbname, ParseMoleculeTypeString(mol_type))) {
-        m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+    if (DeleteBlastDb(output_dbname, ParseMoleculeTypeString(mol_type))) {
+        m_LogFile << "Deleted existing " << mol_type 
+            << " BLAST database named " << output_dbname << endl;
     }
     
     CWriteDB::ESeqType seqtype =
@@ -1084,7 +1088,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                ? CWriteDB::eSparseIndex
                                : CWriteDB::eDefault);
     
-    m_OutputDb.Reset(new CWriteDB(dbname,
+    m_OutputDb.Reset(new CWriteDB(output_dbname,
                                   seqtype,
                                   title,
                                   ix,
