@@ -187,6 +187,7 @@ public:
         eTGP2010Pilot_depr              = 50,   // deprecated in V5 -- TGP 2010 pilot (phases 1, 2, 3) -- obsolete
         eTGP2010Pilot                   = eTGP2010Pilot_depr,
         eTGPValidated_depr              = 51,   // deprecated, replaced with eTGPPhase3 (was: TGP_validated (for subset that passed positive second platform validation))
+        eTGPValidated                   = eTGPValidated_depr,   // deprecated, replaced with eTGPPhase3 (was: TGP_validated (for subset that passed positive second platform validation))
         eTGP2010Production_depr         = 52,   // deprecated in V5 -- TGP 2010 production (for data created and released prior to ASHG) -- obsolete
         eTGP2010Production              = eTGP2010Production_depr,
 		eTGPPhase1						= 53,	// TGP Phase 1 (include June interim phase 1)
