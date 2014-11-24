@@ -1466,6 +1466,51 @@ bool CBioSource::RemoveOrgMod(int subtype)
 }
 
 
+#define MAKE_COMMON_INT(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
+
+CRef<CBioSource> CBioSource::MakeCommon( const CBioSource& other) const
+{
+    if (!IsSetOrg() || !other.IsSetOrg()) {
+        return CRef<CBioSource>(NULL);
+    }
+
+    CRef<COrg_ref> common_org = GetOrg().MakeCommon(other.GetOrg());
+    if (!common_org) {
+        return CRef<CBioSource>(NULL);
+    }
+
+    CRef<CBioSource> common_src(new CBioSource());
+    common_src->SetOrg().Assign(*common_org);
+
+    // copy common subtypes
+    if (IsSetSubtype() && other.IsSetSubtype()) {
+        ITERATE(TSubtype, it1, GetSubtype()) {
+            bool found = false;
+            ITERATE(TSubtype, it2, other.GetSubtype()) {
+                if ((*it1)->Equals(**it2)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                CRef<CSubSource> add(new CSubSource());
+                add->Assign(**it1);
+                common_src->SetSubtype().push_back(add);
+            }
+        }
+    }
+
+    MAKE_COMMON_INT((*this), other, (*common_src), Genome);
+    MAKE_COMMON_INT((*this), other, (*common_src), Origin);
+    
+    if (IsSetPcr_primers() && other.IsSetPcr_primers() && GetPcr_primers().Equals(other.GetPcr_primers())) {
+        common_src->SetPcr_primers().Assign(GetPcr_primers());
+    }
+
+    return common_src;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

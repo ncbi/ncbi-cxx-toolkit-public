@@ -193,6 +193,57 @@ void COrgName::SetUncultured( bool bUncultured )
     }
 }
 
+
+#define MAKE_COMMON(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && NStr::Equal(o1.Get##Field(), o2.Get##Field())) o3.Set##Field(o1.Get##Field());
+#define MAKE_COMMON_INT(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
+
+CRef<COrgName> COrgName::MakeCommon(const COrgName& other) const
+{
+    bool any = false;
+    CRef<COrgName> common(new COrgName());
+
+    // name
+    if (IsSetName() && other.IsSetName() && GetName().Equals(other.GetName())) {
+        common->SetName().Assign(GetName());
+        any = true;
+    }
+
+    // mod
+    if (IsSetMod() && other.IsSetMod()) {
+        ITERATE(TMod, it1, GetMod()) {
+            bool found = false;
+            ITERATE(TMod, it2, other.GetMod()) {
+                if ((*it1)->Equals(**it2)) {
+                    found = true;
+                }
+            }
+            if (found) {
+                CRef<COrgMod> add(new COrgMod());
+                add->Assign(**it1);
+                common->SetMod().push_back(add);
+                any = true;
+            }
+        }
+    }
+
+    MAKE_COMMON((*this), other, (*common), Attrib);
+    MAKE_COMMON((*this), other, (*common), Lineage);
+    MAKE_COMMON((*this), other, (*common), Div);
+    MAKE_COMMON_INT((*this), other, (*common), Gcode);
+    MAKE_COMMON_INT((*this), other, (*common), Mgcode);
+    MAKE_COMMON_INT((*this), other, (*common), Pgcode);
+    if (common->IsSetAttrib() || common->IsSetLineage() || common->IsSetDiv() ||
+        common->IsSetGcode() || common->IsSetMgcode() || common->IsSetPgcode()) {
+        any = true;
+    }
+
+    if (!any) {
+        common.Reset(NULL);
+    }
+    return common;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

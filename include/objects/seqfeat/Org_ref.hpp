@@ -87,6 +87,8 @@ public:
     bool IsVarietyValid(const string& variety) const;
     bool HasValidVariety() const;
     bool IsSubspeciesValid(const string& subspecies) const;
+
+    CRef<COrg_ref> MakeCommon(const COrg_ref& other) const;
     
 private:
     // Prohibit copy constructor and assignment operator

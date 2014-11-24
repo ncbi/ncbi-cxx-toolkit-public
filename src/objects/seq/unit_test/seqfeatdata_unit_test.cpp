@@ -38,6 +38,9 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_art.hpp>
@@ -133,6 +136,8 @@ BOOST_AUTO_TEST_CASE(s_TestSubtypeMaps)
     // also be tested.
     NCBITEST_CHECK( ! s_TestSubtype(CSeqFeatData::eSubtype_max) );
     NCBITEST_CHECK( ! s_TestSubtype(CSeqFeatData::eSubtype_any) );
+
+    BOOST_CHECK_EQUAL( CSeqFeatData::SubtypeNameToValue("Gene"), CSeqFeatData::eSubtype_gene);
 }
 
 
@@ -751,4 +756,153 @@ BOOST_AUTO_TEST_CASE(Test_PubEquiv_SameCitation)
     pmid1->SetPmid().Set(4);
     eq1->Set().push_back(pmid1);
     BOOST_CHECK_EQUAL(eq1->SameCitation(*eq2), false);
+}
+
+
+#define CHECK_COMMON_FIELD(o1,o2,c,Field,val1,val2) \
+    o1->Set##Field(val1); \
+    o2->Reset##Field(); \
+    c = o1->MakeCommon(*o2); \
+    BOOST_CHECK_EQUAL(c->IsSet##Field(), false); \
+    o2->Set##Field(val2); \
+    c = o1->MakeCommon(*o2); \
+    BOOST_CHECK_EQUAL(c->IsSet##Field(), false); \
+    o2->Set##Field(val1); \
+    c = o1->MakeCommon(*o2); \
+    BOOST_CHECK_EQUAL(c->IsSet##Field(), true); \
+    BOOST_CHECK_EQUAL(c->Get##Field(), o1->Get##Field());
+    
+
+BOOST_AUTO_TEST_CASE(Test_OrgName_MakeCommon)
+{
+    CRef<COrgName> on1(new COrgName());
+    CRef<COrgName> on2(new COrgName());
+    CRef<COrgName> common = on1->MakeCommon(*on2);
+    if (common) {
+        BOOST_ASSERT("common OrgName should not have been created");
+    }
+
+    on1->SetDiv("bacteria");
+    common = on1->MakeCommon(*on2);
+    if (common) {
+        BOOST_ASSERT("common OrgName should not have been created");
+    }
+    on2->SetDiv("archaea");
+    common = on1->MakeCommon(*on2);
+    if (common) {
+        BOOST_ASSERT("common OrgName should not have been created");
+    }
+    on2->SetDiv("bacteria");
+    common = on1->MakeCommon(*on2);
+    BOOST_CHECK_EQUAL(common->GetDiv(), "bacteria");
+
+    // one orgmod on 1, no orgmods on 2, should not add orgmods to common
+    CRef<COrgMod> m1(new COrgMod());
+    m1->SetSubtype(COrgMod::eSubtype_acronym);
+    m1->SetSubname("x");
+    on1->SetMod().push_back(m1);
+    common = on1->MakeCommon(*on2);
+    BOOST_CHECK_EQUAL(common->IsSetMod(), false);
+    // one orgmod on 1, one orgmods on 2 of different type, should not add orgmods to common
+    CRef<COrgMod> m2(new COrgMod());
+    m2->SetSubtype(COrgMod::eSubtype_anamorph);
+    m2->SetSubname("x");
+    on2->SetMod().push_back(m2);
+
+    common = on1->MakeCommon(*on2);
+    BOOST_CHECK_EQUAL(common->IsSetMod(), false);
+    // same orgmod on both, should add
+    m2->SetSubtype(COrgMod::eSubtype_acronym);
+    common = on1->MakeCommon(*on2);
+    BOOST_CHECK_EQUAL(common->IsSetMod(), true);
+    BOOST_CHECK_EQUAL(common->GetMod().size(), 1);
+    BOOST_CHECK_EQUAL(common->GetMod().front()->Equals(*m2), true);
+
+    CHECK_COMMON_FIELD(on1,on2,common,Attrib,"x","y");
+    CHECK_COMMON_FIELD(on1,on2,common,Lineage,"x","y");
+    CHECK_COMMON_FIELD(on1,on2,common,Gcode,1,2);
+    CHECK_COMMON_FIELD(on1,on2,common,Mgcode,3,4);
+    CHECK_COMMON_FIELD(on1,on2,common,Pgcode,5,6);
+
+}
+
+
+#define CHECK_COMMON_STRING_LIST(o1,o2,c,Field,val1,val2) \
+    o1->Set##Field().push_back(val1); \
+    c = o1->MakeCommon(*o2); \
+    BOOST_CHECK_EQUAL(c->IsSet##Field(), false); \
+    o2->Set##Field().push_back(val2); \
+    c = o1->MakeCommon(*o2); \
+    BOOST_CHECK_EQUAL(c->IsSet##Field(), false); \
+    o2->Set##Field().push_back(val1); \
+    c = o1->MakeCommon(*o2); \
+    BOOST_CHECK_EQUAL(c->IsSet##Field(), true); \
+    BOOST_CHECK_EQUAL(c->Get##Field().size(), 1); \
+    BOOST_CHECK_EQUAL(c->Get##Field().front(), val1);
+
+BOOST_AUTO_TEST_CASE(Test_OrgRef_MakeCommon)
+{
+    CRef<COrg_ref> org1(new COrg_ref());
+    CRef<COrg_ref> org2(new COrg_ref());
+    CRef<COrg_ref> common = org1->MakeCommon(*org2);
+    if (common) {
+        BOOST_ASSERT("common OrgRef should not have been created");
+    }
+    org1->SetTaxId(1);
+    org2->SetTaxId(2);
+    common = org1->MakeCommon(*org2);
+    if (common) {
+        BOOST_ASSERT("common OrgRef should not have been created");
+    }
+
+    org2->SetTaxId(1);
+    common = org1->MakeCommon(*org2);
+    BOOST_CHECK_EQUAL(common->GetTaxId(), 1);
+    BOOST_CHECK_EQUAL(common->IsSetTaxname(), false);
+
+    CHECK_COMMON_FIELD(org1,org2,common,Taxname,"A","B");
+    CHECK_COMMON_FIELD(org1,org2,common,Common,"A","B");
+
+    CHECK_COMMON_STRING_LIST(org1,org2,common,Mod,"a","b");
+    CHECK_COMMON_STRING_LIST(org1,org2,common,Syn,"a","b");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BioSource_MakeCommon)
+{
+    CRef<CBioSource> src1(new CBioSource());
+    CRef<CBioSource> src2(new CBioSource());
+    CRef<CBioSource> common = src1->MakeCommon(*src2);
+    if (common) {
+        BOOST_ASSERT("common BioSource should not have been created");
+    }
+
+    src1->SetOrg().SetTaxId(1);
+    src2->SetOrg().SetTaxId(1);
+    common = src1->MakeCommon(*src2);
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), 1);
+
+    CRef<CSubSource> s1(new CSubSource());
+    s1->SetSubtype(CSubSource::eSubtype_altitude);
+    s1->SetName("x");
+    src1->SetSubtype().push_back(s1);
+    common = src1->MakeCommon(*src2);
+    BOOST_CHECK_EQUAL(common->IsSetSubtype(), false);
+
+    CRef<CSubSource> s2(new CSubSource());
+    s2->SetSubtype(CSubSource::eSubtype_altitude);
+    s2->SetName("y");
+    src2->SetSubtype().push_back(s2);
+    common = src1->MakeCommon(*src2);
+    BOOST_CHECK_EQUAL(common->IsSetSubtype(), false);
+
+    s2->SetName("x");
+    common = src1->MakeCommon(*src2);
+    BOOST_CHECK_EQUAL(common->IsSetSubtype(), true);
+    BOOST_CHECK_EQUAL(common->GetSubtype().size(), 1);
+    BOOST_CHECK_EQUAL(common->GetSubtype().front()->Equals(*s2), true);
+
+    CHECK_COMMON_FIELD(src1,src2,common,Genome,CBioSource::eGenome_apicoplast,CBioSource::eGenome_chloroplast);
+    CHECK_COMMON_FIELD(src1,src2,common,Origin,CBioSource::eOrigin_artificial,CBioSource::eOrigin_mut);
 }

@@ -72,6 +72,8 @@ public:
     bool IsUncultured() const;
     void SetUncultured( bool bUncultured );
 
+    CRef<COrgName> MakeCommon(const COrgName& other) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     COrgName(const COrgName& value);

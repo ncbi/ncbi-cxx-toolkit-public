@@ -135,6 +135,8 @@ public:
     bool RemoveSubSource(int subtype);
     bool RemoveOrgMod(int subtype);
 
+    CRef<CBioSource> MakeCommon( const CBioSource& other) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);

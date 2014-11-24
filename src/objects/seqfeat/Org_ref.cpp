@@ -254,6 +254,87 @@ bool COrg_ref::IsSubspeciesValid(const string& subspecies) const
 }
 
 
+#define MAKE_COMMON(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && NStr::Equal(o1.Get##Field(), o2.Get##Field())) o3.Set##Field(o1.Get##Field());
+
+void s_MakeCommonStringList(const list< string >& list1, const list< string >& list2, list< string >& list3)
+{
+    ITERATE(list< string >, it1, list1) {
+        bool found = false;
+        ITERATE(list< string >, it2, list2) {
+            if (NStr::Equal(*it1, *it2)) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            list3.push_back(*it1);
+        }
+    }
+}
+
+
+CRef<COrg_ref> COrg_ref::MakeCommon(const COrg_ref& other) const
+{
+    int taxid1 = GetTaxId();
+    int taxid2 = other.GetTaxId();
+    if (taxid1 != taxid2) {
+        return CRef<COrg_ref>(NULL);
+    }
+
+    CRef<COrg_ref> common(new COrg_ref());
+    if (Equals(other)) {
+        common->Assign(*this);
+    } else {
+        MAKE_COMMON((*this), other, (*common), Taxname);
+        MAKE_COMMON((*this), other, (*common), Common);
+
+        // common mods
+        if (IsSetMod() && other.IsSetMod()) {
+            s_MakeCommonStringList(GetMod(), other.GetMod(), common->SetMod());
+            if (common->GetMod().empty()) {
+                common->ResetMod();
+            }
+        }
+
+        // common synonyms
+        if (IsSetSyn() && other.IsSetSyn()) {
+            s_MakeCommonStringList(GetSyn(), other.GetSyn(), common->SetSyn());
+            if (common->GetSyn().empty()) {
+                common->ResetSyn();
+            }
+        }
+
+        // common dbtags
+        if (IsSetDb() && other.IsSetDb()) {
+            ITERATE(TDb, it1, GetDb()) {
+                bool found = false;
+                ITERATE(TDb, it2, GetDb()) {
+                    if ((*it1)->Equals(**it2)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    CRef<CDbtag> add(new CDbtag());
+                    add->Assign(**it1);
+                    common->SetDb().push_back(add);
+                }
+            }
+        }
+
+        // common orgname
+        if (IsSetOrgname() && other.IsSetOrgname()) {
+            CRef<COrgName> orgname = GetOrgname().MakeCommon(other.GetOrgname());
+            if (orgname) {
+                common->SetOrgname().Assign(*orgname);
+            }
+        }
+    }
+
+    return common;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
