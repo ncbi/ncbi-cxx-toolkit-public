@@ -86,6 +86,10 @@ NCBI_PARAM_DEF_EX(bool, CSRA, PATH_IN_ID, true,
                   eParam_NoThread, CSRA_PATH_IN_ID);
 
 
+NCBI_PARAM_DECL(bool, CSRA, READ_FILTER_IN_ALIGN_EXT);
+NCBI_PARAM_DEF(bool, CSRA, READ_FILTER_IN_ALIGN_EXT, true);
+
+
 static bool s_GetExplicitMateInfoParam(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(CSRA, EXPLICIT_MATE_INFO)> s_Value;
@@ -117,6 +121,13 @@ static bool s_GetClipByQuality(void)
 static bool s_GetPathInId(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(CSRA, PATH_IN_ID)> s_Value;
+    return s_Value->Get();
+}
+
+
+static bool s_GetReadFilterInAlignExt(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA, READ_FILTER_IN_ALIGN_EXT)> s_Value;
     return s_Value->Get();
 }
 
@@ -166,7 +177,8 @@ CCSraDb_Impl::SAlnTableCursor::SAlnTableCursor(const CVDB& db,
       INIT_VDB_COLUMN(MATE_ALIGN_ID),
       INIT_VDB_COLUMN(QUALITY),
       INIT_VDB_COLUMN(SPOT_GROUP),
-      INIT_OPTIONAL_VDB_COLUMN(NAME)
+      INIT_OPTIONAL_VDB_COLUMN(NAME),
+      INIT_OPTIONAL_VDB_COLUMN_BACKUP(READ_FILTER, RD_FILTER)
 {
 }
 
@@ -895,6 +907,15 @@ CTempString CCSraAlignIterator::GetName(void) const
 }
 
 
+INSDC_read_filter CCSraAlignIterator::GetReadFilter(void) const
+{
+    if ( !m_Aln->m_READ_FILTER ) {
+        return SRA_READ_FILTER_PASS;
+    }
+    return m_Aln->READ_FILTER(*m_AlnRowCur);
+}
+
+
 CTempString CCSraAlignIterator::GetCIGAR(void) const
 {
     return *CVDBStringValue(m_Aln->CIGAR_SHORT(*m_AlnRowCur));
@@ -1251,6 +1272,26 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
             MakeFullMismatch(field.SetData().SetStr(), cigar, mismatch);
         }
         align->SetExt().push_back(obj);
+    }
+
+    if ( s_GetReadFilterInAlignExt() ) {
+        INSDC_read_filter filter = GetReadFilter();
+        if ( filter > SRA_READ_FILTER_PASS &&
+             filter <= SRA_READ_FILTER_REDACTED ) {
+            if ( !m_ReadFilterIndicator[filter] ) {
+                static const char* const value[4] = {
+                    "Good",
+                    "Poor sequence quality",
+                    "PCR duplicate",
+                    "Hidden"
+                };
+                CRef<CUser_object> obj(new CUser_object);
+                obj->SetType().SetStr(value[filter]);
+                obj->SetData();
+                m_ReadFilterIndicator[filter] = obj;
+            }
+            align->SetExt().push_back(m_ReadFilterIndicator[filter]);
+        }
     }
 
     if ( IsSecondary() ) {

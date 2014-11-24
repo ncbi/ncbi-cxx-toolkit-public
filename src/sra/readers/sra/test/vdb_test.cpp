@@ -777,6 +777,15 @@ int CCSRATestApp::Run(void)
                         }
                         out << "\n    CIGAR: "<<it.GetCIGARLong();
                         out << "\n mismatch: "<<it.GetMismatchRaw();
+                        if ( it.GetReadFilter() != SRA_READ_FILTER_PASS ) {
+                            static const char* const filter_name[] = {
+                                "good",
+                                "Poor sequence quality",
+                                "PCR duplicate",
+                                "Hidden"
+                            };
+                            out << " " << filter_name[it.GetReadFilter()];
+                        }
                         out << NcbiEndl;
                     }
                     if ( make_seq_annot ) {

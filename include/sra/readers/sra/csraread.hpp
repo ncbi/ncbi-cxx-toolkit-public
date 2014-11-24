@@ -189,6 +189,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
         DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
         DECLARE_VDB_COLUMN_AS_STRING(NAME);
+        DECLARE_VDB_COLUMN_AS(INSDC_read_filter, READ_FILTER);
     };
 
     // SSeqTableCursor is helper accessor structure for sequence table
@@ -442,6 +443,8 @@ public:
     bool IsSetName(void) const;
     CTempString GetName(void) const;
 
+    INSDC_read_filter GetReadFilter(void) const;
+
     CTempString GetCIGAR(void) const;
     // returns long form of CIGAR
     CTempString GetCIGARLong(void) const;
@@ -538,6 +541,7 @@ private:
     mutable TUserFieldCache m_UserFieldCacheCigar;
     mutable TUserFieldCache m_UserFieldCacheMismatch;
     mutable CRef<CUser_object> m_SecondaryIndicator;
+    mutable CRef<CUser_object> m_ReadFilterIndicator[4];
 };
 
 
