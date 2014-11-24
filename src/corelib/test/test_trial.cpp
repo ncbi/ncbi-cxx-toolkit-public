@@ -7,6 +7,10 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
+#if defined(NCBI_STRICT_CTYPE_ARGS) && !defined(isalpha)
+# undef NCBI_STRICT_CTYPE_ARGS
+#endif
+
 #ifndef NCBI_STRICT_CTYPE_ARGS
 
 #include <cctype>
