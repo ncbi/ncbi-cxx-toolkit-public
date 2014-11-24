@@ -681,7 +681,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributePartial(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype subtype = mf.GetData().GetSubtype();
     if (mf.IsSetPartial()) {
         if (mf.GetPartial() == true) {
             SetAttribute("partial", "true");
