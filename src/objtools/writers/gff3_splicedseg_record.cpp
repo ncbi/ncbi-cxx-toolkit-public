@@ -220,11 +220,10 @@ bool CGffSplicedSegRecord::xSetScores(
 //  ----------------------------------------------------------------------------
 {
     _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
-    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
 
     if (align.IsSetScore()) {
         typedef vector<CRef<CScore> > SCORES;
-
+        
         const SCORES& scores = align.GetScore();
         for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); ++cit) {
             SetScore(**cit);
