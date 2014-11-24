@@ -6,103 +6,43 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+
+#if 1
+
 #include <cctype>
 
-#define NCBI_CTYPEFAKEBODY \
-  { return See_the_standard_on_proper_argument_type_for_ctype_macros(c); }
+#define NCBI_DEFINE_CTYPE_FUNC(ncbi_name, name)           \
+inline int ncbi_name(int c) { return name(c); }           \
+inline int ncbi_name(char c) { return name(Uchar(c)); }   \
+inline int ncbi_name(unsigned char c) { return name(c); } \
+template<class C> inline int ncbi_name(C c)               \
+{ return See_the_standard_on_proper_argument_type_for_ctype_functions(c); }
 
-inline int NCBI_isalpha(unsigned char c) { return isalpha(c); }
-inline int NCBI_isalpha(int           c) { return isalpha(c); }
-template<class C>
-inline int NCBI_isalpha(C c) NCBI_CTYPEFAKEBODY
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isalpha, isalpha)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isalnum, isalnum)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isascii, isascii)
+//NCBI_DEFINE_CTYPE_FUNC(NCBI_isblank, isblank)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_iscntrl, iscntrl)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isdigit, isdigit)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isgraph, isgraph)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_islower, islower)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isprint, isprint)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_ispunct, ispunct)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isspace, isspace)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isupper, isupper)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_isxdigit, isxdigit)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_toascii, toascii)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_tolower, tolower)
+NCBI_DEFINE_CTYPE_FUNC(NCBI_toupper, toupper)
 
-inline int NCBI_isalnum(unsigned char c) { return isalnum(c); }
-inline int NCBI_isalnum(int           c) { return isalnum(c); }
-template<class C>
-inline int NCBI_isalnum(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isascii(unsigned char c) { return isascii(c); }
-inline int NCBI_isascii(int           c) { return isascii(c); }
-template<class C>
-inline int NCBI_isascii(C c) NCBI_CTYPEFAKEBODY
-
-/*
-inline int NCBI_isblank(unsigned char c) { return isblank(c); }
-inline int NCBI_isblank(int           c) { return isblank(c); }
-template<class C>
-inline int NCBI_isblank(C c) NCBI_CTYPEFAKEBODY
-*/
-
-inline int NCBI_iscntrl(unsigned char c) { return iscntrl(c); }
-inline int NCBI_iscntrl(int           c) { return iscntrl(c); }
-template<class C>
-inline int NCBI_iscntrl(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isdigit(unsigned char c) { return isdigit(c); }
-inline int NCBI_isdigit(int           c) { return isdigit(c); }
-template<class C>
-inline int NCBI_isdigit(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isgraph(unsigned char c) { return isgraph(c); }
-inline int NCBI_isgraph(int           c) { return isgraph(c); }
-template<class C>
-inline int NCBI_isgraph(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_islower(unsigned char c) { return islower(c); }
-inline int NCBI_islower(int           c) { return islower(c); }
-template<class C>
-inline int NCBI_islower(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isprint(unsigned char c) { return isprint(c); }
-inline int NCBI_isprint(int           c) { return isprint(c); }
-template<class C>
-inline int NCBI_isprint(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_ispunct(unsigned char c) { return ispunct(c); }
-inline int NCBI_ispunct(int           c) { return ispunct(c); }
-template<class C>
-inline int NCBI_ispunct(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isspace(unsigned char c) { return isspace(c); }
-inline int NCBI_isspace(int           c) { return isspace(c); }
-template<class C>
-inline int NCBI_isspace(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isupper(unsigned char c) { return isupper(c); }
-inline int NCBI_isupper(int           c) { return isupper(c); }
-template<class C>
-inline int NCBI_isupper(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_isxdigit(unsigned char c) { return isxdigit(c); }
-inline int NCBI_isxdigit(int           c) { return isxdigit(c); }
-template<class C>
-inline int NCBI_isxdigit(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_toascii(unsigned char c) { return toascii(c); }
-inline int NCBI_toascii(int           c) { return toascii(c); }
-template<class C>
-inline int NCBI_toascii(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_tolower(unsigned char c) { return tolower(c); }
-inline int NCBI_tolower(int           c) { return tolower(c); }
-template<class C>
-inline int NCBI_tolower(C c) NCBI_CTYPEFAKEBODY
-
-inline int NCBI_toupper(unsigned char c) { return toupper(c); }
-inline int NCBI_toupper(int           c) { return toupper(c); }
-template<class C>
-inline int NCBI_toupper(C c) NCBI_CTYPEFAKEBODY
-
-#undef NCBI_CTYPEFAKEBODY
+#undef NCBI_DEFINE_CTYPE_FUNC
 
 BEGIN_STD_NAMESPACE;
 
 using ::NCBI_isalpha;
 using ::NCBI_isalnum;
 using ::NCBI_isascii;
-/*
-using ::NCBI_isblank;
-*/
+//using ::NCBI_isblank;
 using ::NCBI_iscntrl;
 using ::NCBI_isdigit;
 using ::NCBI_isgraph;
@@ -200,6 +140,8 @@ END_STD_NAMESPACE;
 #endif
 #define toupper NCBI_toupper
 
+#endif
+
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
 #endif
@@ -256,6 +198,22 @@ public:
 
 int CTestApplication::Run(void)
 {
+    NcbiCout << "isupper(int('A')) = " << isupper(int('A')) << NcbiEndl;
+    NcbiCout << "isupper(Uchar('A')) = " << isupper(Uchar('A')) << NcbiEndl;
+    NcbiCout << "isupper('A') = " << isupper('A') << NcbiEndl;
+    _ASSERT(isupper(int('A')));
+    _ASSERT(isupper(Uchar('A')));
+    _ASSERT(isupper('A'));
+    _ASSERT(std::isupper(int('A')));
+    _ASSERT(std::isupper(Uchar('A')));
+    _ASSERT(std::isupper('A'));
+    _ASSERT(::isupper(int('A')));
+    _ASSERT(::isupper(Uchar('A')));
+    _ASSERT(::isupper('A'));
+    _ASSERT(toupper('A') == 'A');
+    _ASSERT(std::toupper('A') == 'A');
+    _ASSERT(::toupper('A') == 'A');
+    //_ASSERT(::toupper('A'=='A'));
     NcbiCout << "Passed" << NcbiEndl;
     return 0;
 }
