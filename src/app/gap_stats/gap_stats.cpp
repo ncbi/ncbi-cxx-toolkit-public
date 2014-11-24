@@ -258,7 +258,7 @@ CGapStatsApplication::CGapStatsApplication(void) :
         CFastaReader::fLetterGaps),
     m_eOutFormat(eOutFormat_ASCIITable)
 {
-    SetVersion(CVersionInfo(2, 0, 0));
+    SetVersion(CVersionInfo(2, 0, 1));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -662,13 +662,13 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         CRef<CSeq_id> pSeqId;
         try {
             pSeqId.Reset( new CSeq_id(sFileOrAccn) );
-        } catch(const CException & ex) {
+        } catch(const CSeqIdException & ex) {
             // malformed seq-id
             throw SOutMessage(
                 sFileOrAccn,
                 SOutMessage::kErrorStr,
                 "BAD_ACCESSION",
-                FORMAT("Invalid accession"));
+                FORMAT(ex.what()));
         }
         
         CBioseq_Handle bioseq_h = x_GetScope()->GetBioseqHandle(*pSeqId);
