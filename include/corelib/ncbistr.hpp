@@ -670,6 +670,9 @@ public:
 
     static string IntToString(unsigned int value, TNumToStringFlags flags = 0,
                               int base = 10);
+
+// +++ will be deleted soon
+private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(long value, TNumToStringFlags flags = 0,
@@ -688,7 +691,8 @@ public:
     static string IntToString(Uint8 value, TNumToStringFlags flags = 0,
                               int base = 10);
 #endif
-
+// --- will be deleted soon
+public:
 
     /// Convert int to string.
     ///
@@ -713,6 +717,9 @@ public:
     static void IntToString(string& out_str, unsigned int value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
+
+// +++ will be deleted soon
+private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, long value, 
@@ -735,6 +742,8 @@ public:
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
 #endif
+// --- will be deleted soon
+public:
 
     /// Convert UInt to string.
     ///
@@ -757,6 +766,9 @@ public:
     static string UIntToString(int               value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
+
+// +++ will be deleted soon
+private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(unsigned long     value,
@@ -779,6 +791,8 @@ public:
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
 #endif
+// --- will be deleted soon
+public:
 
     /// Convert UInt to string.
     ///
@@ -803,6 +817,9 @@ public:
     static void UIntToString(string& out_str, int value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
+
+// +++ will be deleted soon
+private:
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, unsigned long value,
@@ -825,6 +842,8 @@ public:
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
 #endif
+// --- will be deleted soon
+public:
 
     /// Convert Int to string.
     ///
