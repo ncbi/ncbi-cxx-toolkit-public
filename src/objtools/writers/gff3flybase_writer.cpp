@@ -49,19 +49,6 @@ USING_SCOPE(objects);
 #define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
 //  ----------------------------------------------------------------------------
-static CConstRef<CSeq_id> s_GetSourceId(
-    const CSeq_id& id, CScope& scope )
-//  ----------------------------------------------------------------------------
-{
-    try {
-        return sequence::GetId(id, scope, sequence::eGetId_Best).GetSeqId();
-    }
-    catch (CException&) {
-    }
-    return CConstRef<CSeq_id>(&id);
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
