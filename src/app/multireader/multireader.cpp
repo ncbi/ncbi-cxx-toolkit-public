@@ -835,10 +835,6 @@ void CMultiReaderApp::xProcessGvf(
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        const CSeq_annot& annot = **cit;
-        const list< CRef< CSeq_feat > >& ftable = annot.GetData().GetFtable();
-        const CSeq_feat& feat = *(ftable.front());
-        const CVariation_ref& varref = feat.GetData().GetVariation();
         xWriteObject(args, **cit, ostr);
     }
 }
