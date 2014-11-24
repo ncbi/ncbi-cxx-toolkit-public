@@ -443,8 +443,6 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
-const int kSat_BlobError = -1;
-
 bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id)
 {
