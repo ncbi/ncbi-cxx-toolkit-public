@@ -34,10 +34,6 @@
 
 #include <objtools/validator/valid_cmdargs.hpp>
 
-namespace {
-    const size_t kMb (1u << 20);
-}
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)

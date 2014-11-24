@@ -686,12 +686,6 @@ string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scop
     string content_label = CValidErrorFormat::GetFeatureContentLabel(ft, scope);
     desc += content_label;
 
-    // Calculate sequence offset
-    TSeqPos offset = 0;
-    if (ft.IsSetLocation()) {
-        offset = ft.GetLocation().GetStart(eExtreme_Positional);
-    }
-
     // Add feature ID part of label (if present)
     string feature_id = "";
     if (ft.IsSetId()) {
@@ -838,9 +832,7 @@ string CValidErrorFormat::GetDescriptorLabel(const CSeqdesc& ds, const CSeq_entr
     desc += content;
 
     desc += " ";
-   int version = 0;
-   const string& accession = GetAccessionFromObjects(&ds, &ctx, *scope, &version);
-   if (ctx.IsSeq()) {
+    if (ctx.IsSeq()) {
         AppendBioseqLabel(desc, ctx.GetSeq(), suppress_context);
     } else {
         desc += CValidErrorFormat::GetBioseqSetLabel(ctx.GetSet(), scope, suppress_context);
