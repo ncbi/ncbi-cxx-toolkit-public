@@ -129,33 +129,45 @@ public:
     /// @sa SetFormat, AsString
     enum EFlags {
         /// Use single characters as format symbols.
-        fFormat_Simple     = (1 << 0),
+        fFormat_Simple       = (1 << 0),
         /// Specify each format symbol with a preceding symbol '$'.
         /// This can be useful if your format string includes output characters
         /// that otherwise can be treated as format symbols.
         /// To include symbol '$' use '$$'.
-        fFormat_Ncbi       = (1 << 1),
+        fFormat_Ncbi         = (1 << 1),
+
+        // Time string parsing flags
 
         /// A time string should strictly match the format string.
-        fMatch_Strict      = (1 << 5),       ///< eg "Y" and "1997"
+        fMatch_Strict        = (1 << 5),       ///< eg "Y" and "1997"
         /// A time/format string can have extra trailing format symbols,
         /// that do not have matching symbols in the time string.
-        /// Corresponding time components will be initialized by default
+        /// Any missed time components will be initialized by default
         /// in the time object.
-        fMatch_ShortTime   = (1 << 6),       ///< eg "Y/M/D h:m:s" and "1997"
-        fMatch_ShortFormat = (1 << 7),       ///< eg "Y" and "1997/07/16"
+        fMatch_ShortTime     = (1 << 6),       ///< eg "Y/M/D h:m:s" and "1997"
+        fMatch_ShortFormat   = (1 << 7),       ///< eg "Y" and "1997/07/16"
         /// Combination of both modes above.
         /// Note that it matches until time or format string have symbols.
         /// It not allow unprocessed symbols left in both time and format
         /// strings at the same time.
-        fMatch_Weak        = fMatch_ShortTime | fMatch_ShortFormat,
+        fMatch_Weak          = fMatch_ShortTime | fMatch_ShortFormat,
+        /// Changes default behavior to ignore all white spaces in time
+        /// and format strings on the matching step (CTime only).
+        /// Make sure that:
+        ///  - if fields in the format string are separated by one or more
+        ///    white spaces, then the fields in the parsed string also must
+        ///    be separated by one or more spaces;
+        ///  - if fields in the format string are adjacent, then the fields
+        ///    in the parsed string also must be adjacent.
+        fMatch_ObserveSpaces = (1 << 8),
+
         /// Default flags
-        fDefault           = fFormat_Simple | fMatch_Strict,
+        fDefault             = fFormat_Simple | fMatch_Strict,
 
         /// "Enum"s, used for backward compatibility. Please use flags instead.
-        eNcbiSimple        = fFormat_Simple,
-        eNcbi              = fFormat_Ncbi,
-        eDefault           = fDefault
+        eNcbiSimple          = fFormat_Simple,
+        eNcbi                = fFormat_Ncbi,
+        eDefault             = fDefault
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 

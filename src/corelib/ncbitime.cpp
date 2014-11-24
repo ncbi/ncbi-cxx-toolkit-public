@@ -472,14 +472,14 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     bool is_12hour = false;
     int weekday = -1;
 
+    // Used to check white spaces for fMatch_ObserveSpaces
+    bool is_observe_spaces = ((format.GetFlags() & CTimeFormat::fMatch_ObserveSpaces) != 0);
+    bool is_format_space = false;
+
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
-        // Skip space symbols in format string
-        if ( isspace((unsigned char)(*fff)) ) {
-            continue;
-        }
         // Skip preceding symbols for some formats
-        if ( !is_format_symbol ) {
+        if (!is_format_symbol) {
             if ( *fff == kFormatEscapeSymbol )  {
                 is_format_symbol = true;
                 continue;
@@ -488,10 +488,30 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         if ( is_escaped ) {
             is_format_symbol = false;
         }
-        // Skip space symbols in time string
-        while ( isspace((unsigned char)(*sss)) ) {
-            sss++;
-        }
+
+        // White space processing
+        {{
+            // Skip space symbols in the format string
+            if (isspace((unsigned char)(*fff))) {
+                is_format_space = true;
+                continue;
+            }
+            if (isspace((unsigned char)(*sss))) {
+                if (is_observe_spaces  &&  !is_format_space) {
+                    break;  // error: non-matching spaces
+                }
+                // Skip space symbols in the time string
+                while (isspace((unsigned char)(*sss))) {
+                    sss++;
+                }
+            } else {
+                if (is_observe_spaces  &&  is_format_space) {
+                    break;  // error: non-matching spaces
+                }
+            }
+            is_format_space = false;
+        }}
+
         // Non-format symbols
         if (strchr(kFormatSymbolsTime, *fff) == 0) {
             if (*fff == *sss) {
@@ -734,9 +754,19 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         m_Data.hour += 12;
     }
 
-    while ( isspace((unsigned char)(*sss)) ) {
-        sss++;
+    // Skip all remaining white spaces in the string
+    if (isspace((unsigned char)(*sss))) {
+        if (!is_observe_spaces  ||  is_format_space) {
+            // Skip space symbols in the time string
+            while (isspace((unsigned char)(*sss))) {
+                sss++;
+            }
+        }
     }
+    // else {
+    //     error: non-matching spaces -- processed below
+    // }
+
     if (*fff != '\0'  &&  
         !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
         X_INIT_ERROR(eFormat, "Time string '" + str + 

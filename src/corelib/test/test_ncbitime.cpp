@@ -710,30 +710,35 @@ static void s_TestFormats(void)
         try {
             CTime t("2001/2 00:00", "Y/M h:m");
             _TROUBLE; // day is not defined
+            t.Clear();
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2 00:00", "Y/D h:m");
             _TROUBLE; // month is not defined
+            t.Clear();
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2", "Y/D");
             _TROUBLE; // month is not defined
+            t.Clear();
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001 00:00", "Y h:m");
             _TROUBLE; // month and day are not defined
+            t.Clear();
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2 00:00", "M h:m");
             _TROUBLE; // year and day are not defined
+            t.Clear();
         }
         catch (CTimeException&) {}
     }}
@@ -778,14 +783,50 @@ static void s_TestFormats(void)
             try {
                 CTime t("2001", "Y/M/D");
                 _TROUBLE;  // by default used strict format matching
+                t.Clear();
             }
             catch (CTimeException&) {}
             try {
                 CTime t("2001/01/02", "Y");
                 _TROUBLE;  // by default used strict format matching
+                t.Clear();
             }
             catch (CTimeException&) {}
         }}
+    }}
+
+    // fMatch_ObserveSpaces flag
+    {{
+        CTimeFormat::EFlags flags = (CTimeFormat::EFlags)(CTimeFormat::fDefault | 
+                                                          CTimeFormat::fMatch_ObserveSpaces);
+        // default behavior -- ignore spaces
+        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("MDY")) );
+        assert(  CTime::ValidateString("  01 01\n2001 ", CTimeFormat("MDY")) );
+
+        // with fMatch_ObserveSpaces
+        assert(  CTime::ValidateString("01/01/2001",     CTimeFormat("M/D/Y",   flags)) );
+        assert(  CTime::ValidateString("01012001",       CTimeFormat("MDY",     flags)) );
+        assert( !CTime::ValidateString("01 01 2001",     CTimeFormat("MDY",     flags)) );
+        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("M D Y",   flags)) );
+        assert( !CTime::ValidateString(" 01 01 2001",    CTimeFormat("M D Y",   flags)) );
+        assert( !CTime::ValidateString("01 01 2001 ",    CTimeFormat("M D Y",   flags)) );
+        assert(  CTime::ValidateString("01  01  2001",   CTimeFormat("M D Y",   flags)) );
+        assert( !CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y",   flags)) );
+        assert(  CTime::ValidateString("01\n01\t2001",   CTimeFormat("M D Y",   flags)) );
+        assert(  CTime::ValidateString("01\n  01\t2001", CTimeFormat("M D Y",   flags)) );
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y ",  flags)) );
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y  ", flags)) );
+        assert(  CTime::ValidateString(" 0101 2001",     CTimeFormat(" MD Y",   flags)) );
+        assert( !CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y",   flags)) );
+        assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y ",  flags)) );
+        
+        // in combination with "short" flags
+        assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y",   
+                                                         CTimeFormat::fMatch_ObserveSpaces |
+                                                         CTimeFormat::fMatch_ShortFormat)) );
+        assert(  CTime::ValidateString("01/01/2001",     CTimeFormat("M/D/Y ",   
+                                                         CTimeFormat::fMatch_ObserveSpaces |
+                                                         CTimeFormat::fMatch_ShortTime)) );
     }}
 
     // SetFormat/AsString with flag parameter test
