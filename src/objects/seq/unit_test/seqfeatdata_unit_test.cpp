@@ -237,7 +237,7 @@ CRef<CAuth_list> s_SetAuthList(CPub& pub)
             rval.Reset(&(pub.SetMan().SetCit().SetAuthors()));
             break;
         default:
-            rval = false;
+            rval = null;
             break;
     }
     return rval;
