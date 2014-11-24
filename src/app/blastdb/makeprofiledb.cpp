@@ -32,10 +32,6 @@
  * This is the successor to formatrpsdb from the C toolkit
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimisc.hpp>
