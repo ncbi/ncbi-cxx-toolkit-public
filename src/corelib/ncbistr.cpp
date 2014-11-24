@@ -1162,7 +1162,7 @@ static double s_StringToDouble(const char* str, size_t size,
     // Because strtod() may just skip such symbols.
     if (!(flags & NStr::fAllowLeadingSymbols)) {
         char c = str[pos];
-        if ( !isdigit((unsigned int)c)  &&  !s_IsDecimalPoint(c,flags)  &&  c != '-'  &&  c != '+') {
+        if ( !isdigit((unsigned char)c)  &&  !s_IsDecimalPoint(c,flags)  &&  c != '-'  &&  c != '+') {
             S2N_CONVERT_ERROR_INVAL(double);
         }
     }
@@ -4042,8 +4042,10 @@ string NStr::ShellEncode(const string& str)
     // Aesthetic issue: Most people are not familiar with the BASH-only
     //     quoting style. Avoid it as much as possible.
 
-    if (find_if(str.begin(),str.end(),not1(ptr_fun(::isprint))) != str.end()) {
-        return "$'" + NStr::PrintableString(str) + "'";
+    ITERATE ( string, it, str ) {
+        if ( isprint(Uchar(*it)) ) {
+            return "$'" + NStr::PrintableString(str) + "'";
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////
