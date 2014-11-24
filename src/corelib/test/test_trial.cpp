@@ -7,7 +7,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
-#if 1
+#ifndef NCBI_STRICT_CTYPE_ARGS
 
 #include <cctype>
 
@@ -142,6 +142,14 @@ END_STD_NAMESPACE;
 
 #endif
 
+//#ifdef NCBI_STRICT_CTYPE_ARGS
+# undef isprint
+# undef isspace
+# undef ispunct
+# undef isupper
+# undef toupper
+//#endif
+
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
 #endif
@@ -184,6 +192,10 @@ END_STD_NAMESPACE;
 #include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
 
+#define isupper NCBI_isupper
+#define isspace NCBI_isspace
+#define ispunct NCBI_ispunct
+#define tolower NCBI_tolower
 
 #include <common/test_assert.h>  /* This header must go last */
 

@@ -40,6 +40,13 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
+#ifdef NCBI_STRICT_CTYPE_ARGS
+# undef isprint
+# undef isspace
+# undef ispunct
+# undef toupper
+#endif
+
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
 #endif
