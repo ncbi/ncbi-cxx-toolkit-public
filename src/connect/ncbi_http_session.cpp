@@ -821,7 +821,8 @@ CHttpResponse g_HttpGet(const CUrl&     url,
                         const CTimeout& timeout,
                         THttpRetries    retries)
 {
-    return g_HttpGet(url, CHttpHeaders(), timeout, retries);
+    CHttpHeaders hdr;
+    return g_HttpGet(url, hdr, timeout, retries);
 }
 
 
@@ -845,7 +846,8 @@ CHttpResponse g_HttpPost(const CUrl&     url,
                          const CTimeout& timeout,
                          THttpRetries    retries)
 {
-    return g_HttpPost(url, CHttpHeaders(), data, content_type, timeout, retries);
+    CHttpHeaders hdr;
+    return g_HttpPost(url, hdr, data, content_type, timeout, retries);
 }
 
 
