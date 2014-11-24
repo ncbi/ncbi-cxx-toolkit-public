@@ -517,6 +517,15 @@ CSeqFeatData::SubtypeNameToValue(const string & sName)
 
     TFeatMap::const_iterator find_iter =
         sm_FeatKeys.find(sName.c_str());
+    if (find_iter == sm_FeatKeys.end()) {
+        find_iter = sm_FeatKeys.begin();
+        while (find_iter != sm_FeatKeys.end()) {
+            if (NStr::EqualNocase(find_iter->first, sName)) {
+                break;
+            }
+            find_iter++;
+        }
+    }
     if( find_iter == sm_FeatKeys.end() ) {
         return eSubtype_bad;
     }
