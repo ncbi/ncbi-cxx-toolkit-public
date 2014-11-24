@@ -29,7 +29,9 @@ internal/portal
 internal/snp
 internal/txserver
 misc
-objects
+objects$
+objects/[a-z0-9_]*$
+objects/genomecoll/test
 objmgr
 objtools
 serial
@@ -112,9 +114,6 @@ util
 -misc.*/demo
 -misc.*/test
 -misc.*/unit_test
--objects.*/demo
--objects.*/test
--objects.*/unit_test
 -objmgr.*/demo
 -objmgr.*/test
 -objmgr.*/unit_test
