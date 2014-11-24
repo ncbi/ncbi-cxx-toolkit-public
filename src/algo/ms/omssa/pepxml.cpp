@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
 
-const double PROTON_MASS = 1.007276466;
+// const double PROTON_MASS = 1.007276466;
 const double HYDROGEN_MASS = 1.00794;
 const double OH_MASS = 17.00734;
 
