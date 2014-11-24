@@ -381,7 +381,6 @@ bool CGff2Reader::x_ParseFeatureGff(
         if ( ! x_InitAnnot( *pRecord, pAnnot, pEC ) ) {
             return false;
         }
-        CSeq_annot::TData::TFtable& table = pAnnot->SetData().SetFtable();
         annots.push_back( pAnnot );      
     }
  
