@@ -2518,7 +2518,7 @@ bool CGff3Writer::xWriteFeatureRecords(
         return xWriteRecord(record);
     }//<<
     list<CRef<CSeq_interval> >::const_iterator it;
-    string totIntervals = string("/") + NStr::IntToString(sublocs.size());
+    string totIntervals = string("/") + NStr::NumericToString(sublocs.size());
     unsigned int curInterval = 1;
     for (it = sublocs.begin(); it != sublocs.end(); ++it) {
         const CSeq_interval& subint = **it;

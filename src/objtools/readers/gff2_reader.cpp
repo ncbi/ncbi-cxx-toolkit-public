@@ -639,13 +639,11 @@ bool CGff2Reader::xAlignmentSetSegment(
     
     string gapInfo;
     vector<string> gapParts;
-    if (gff.GetAttribute("Gap", gapInfo)) 
-    {
+    if (gff.GetAttribute("Gap", gapInfo)) {
         NStr::Tokenize(gapInfo, " ", gapParts);
     }
-    else
-    {
-        gapParts.push_back(string("M") + NStr::IntToString(gff.SeqStop()-gff.SeqStart()+1));
+    else {
+        gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
     }
     int gapCount = gapParts.size();
 
