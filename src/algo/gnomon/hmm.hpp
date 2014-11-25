@@ -123,7 +123,7 @@ template<int order> class CWAM_Donor : public CTerminal
 {
     public:
     ~CWAM_Donor() {}
-    static string class_id() { return "WAM_Donor_"+NStr::IntToString(order); }
+    static string class_id() { return "WAM_Donor_"+NStr::NumericToString(order); }
         CWAM_Donor(const objects::CGnomon_param::C_Param& from);
         double Score(const CEResidueVec& seq, int i) const;
     
@@ -134,7 +134,7 @@ template<int order> class CWAM_Donor : public CTerminal
 template<int order> class CWAM_Acceptor : public CTerminal
 {
     public:
-    static string class_id() { return "WAM_Acceptor_"+NStr::IntToString(order); }
+    static string class_id() { return "WAM_Acceptor_"+NStr::NumericToString(order); }
         CWAM_Acceptor(const objects::CGnomon_param::C_Param& from);
     ~CWAM_Acceptor() {}
         double Score(const CEResidueVec& seq, int i) const;
@@ -179,7 +179,7 @@ class CCodingRegion : public CInputModel
 template<int order> class CMC3_CodingRegion : public CCodingRegion
 {
     public:
-    static string class_id() { return "MC3_CodingRegion_"+NStr::IntToString(order); }
+    static string class_id() { return "MC3_CodingRegion_"+NStr::NumericToString(order); }
         CMC3_CodingRegion(const objects::CGnomon_param::C_Param& from);
     ~CMC3_CodingRegion() {}
         double Score(const CEResidueVec& seq, int i, int codonshift) const;
@@ -199,7 +199,7 @@ class CNonCodingRegion : public CInputModel
 template<int order> class CMC_NonCodingRegion : public CNonCodingRegion
 {
     public:
-    static string class_id() { return "MC_NonCodingRegion_"+NStr::IntToString(order); }
+    static string class_id() { return "MC_NonCodingRegion_"+NStr::NumericToString(order); }
         CMC_NonCodingRegion(const objects::CGnomon_param::C_Param& from);
     ~CMC_NonCodingRegion() {}
         double Score(const CEResidueVec& seq, int i) const;

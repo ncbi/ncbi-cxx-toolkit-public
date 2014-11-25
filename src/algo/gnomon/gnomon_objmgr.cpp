@@ -64,7 +64,7 @@ void debug()
 
 Int8 GetModelId(const CSeq_align& seq_align)
 {
-    return seq_align.GetId().back()->GetId();
+    return CIdHandler::GetId(*seq_align.GetId().back());
 }
 
 CAlignModel::CAlignModel(const CSeq_align& seq_align) :

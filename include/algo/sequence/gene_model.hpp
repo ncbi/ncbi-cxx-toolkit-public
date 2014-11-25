@@ -126,7 +126,7 @@ public:
     CRef<objects::CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
                              objects::CSeq_annot& annot,
                              objects::CBioseq_set& seqs,
-                             int gene_id = 0,
+                             Int8 gene_id = 0,
                              const objects::CSeq_feat* cdregion_on_mrna = NULL);
 
     void ConvertAlignToAnnot(const list< CRef<objects::CSeq_align> > &aligns,

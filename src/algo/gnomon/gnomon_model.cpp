@@ -1400,13 +1400,13 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
         rec.type = v[2];
         rec.start = -1;
         if(v[3] != "-")
-            rec.start = NStr::StringToUInt(v[3])-1;
+            rec.start = NStr::StringToNumeric<int>(v[3])-1;
         rec.end = -1;
         if(v[4] != "-")
-            rec.end = NStr::StringToUInt(v[4])-1;
-        rec.score = v[5]==dot?BadScore():NStr::StringToDouble(v[5]);
+            rec.end = NStr::StringToNumeric<int>(v[4])-1;
+        rec.score = v[5]==dot?BadScore():NStr::StringToNumeric<double>(v[5]);
         rec.strand = v[6][0];
-        rec.phase = v[7]==dot?-1:NStr::StringToInt(v[7]);
+        rec.phase = v[7]==dot?-1:NStr::StringToNumeric<int>(v[7]);
     } catch (...) {
         return InputError(is);
     }
@@ -1417,13 +1417,13 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
         string key, value;
         if (NStr::SplitInTwo(attributes[i], "=", key, value) && !value.empty()) {
             if (key == "model") {
-                rec.model = NStr::StringToInt8(value);
+                rec.model = NStr::StringToNumeric<Int8>(value);
                 model_id_present = true;
             } else if(key == "Target") {
                 vector<string> tt;
                 NStr::Tokenize(value, " \t", tt);
-                rec.tstart = NStr::StringToUInt(tt[1])-1;
-                rec.tend = NStr::StringToUInt(tt[2])-1;
+                rec.tstart = NStr::StringToNumeric<int>(tt[1])-1;
+                rec.tend = NStr::StringToNumeric<int>(tt[2])-1;
                 if(tt.size() > 3 && tt[3] == "-")
                     rec.tstrand = '-';
                 rec.attributes[key] = tt[0];
@@ -1441,9 +1441,9 @@ string BuildGFF3Gap(int& prev_pos, int pos, bool is_ins, int len, const string& 
 {
     string gap;
     if (prev_pos < pos)
-        gap += " M"+NStr::IntToString(pos-prev_pos);
+        gap += " M"+NStr::NumericToString(pos-prev_pos);
     if(is_ins || seq.empty()) {
-        gap += string(" ")+(is_ins?"D":"I")+NStr::IntToString(len);
+        gap += string(" ")+(is_ins?"D":"I")+NStr::NumericToString(len);
     } else {
         gap += string(" ")+"I"+seq;
     }
@@ -1470,7 +1470,7 @@ string BuildGFF3Gap(int start, int end, const TInDels& indels)
     if (!gap.empty()) {
         gap.erase(0,1);
         if (prev_pos < end+1)
-            gap += " M"+NStr::IntToString(end+1-prev_pos);
+            gap += " M"+NStr::NumericToString(end+1-prev_pos);
     }
 
     return gap;
@@ -1484,7 +1484,7 @@ void readGFF3Gap(const string& gap, int start, int end, insert_iterator<TInDels>
     NStr::Tokenize(gap, " ", operations);
     TSignedSeqPos loc = start;
     ITERATE(vector<string>, o, operations) {
-        int len = NStr::StringToInt(*o,NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols);
+        int len = NStr::StringToNumeric<int>(*o,NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols);
         if ((*o)[0] == 'M') {
             loc += len;
         } else if ((*o)[0] == 'D') {
@@ -1514,18 +1514,18 @@ string CGeneModel::TypeToString(int type)
 
 void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 {
-    attributes["ID"] = NStr::Int8ToString(a.ID());
+    attributes["ID"] = NStr::NumericToString(a.ID());
     if (a.GeneID()!=0)
-        attributes["Parent"] = "gene"+NStr::IntToString(a.GeneID());
+        attributes["Parent"] = "gene"+NStr::NumericToString(a.GeneID());
     if (a.RankInGene()!=0)
-        attributes["rankInGene"] = NStr::IntToString(a.RankInGene());
+        attributes["rankInGene"] = NStr::NumericToString(a.RankInGene());
 
     ITERATE(CSupportInfoSet, i, a.Support()) {
         attributes["support"] += ",";
         if(i->IsCore()) 
             attributes["support"] += "*";
         
-        attributes["support"] += NStr::Int8ToString(i->GetId());
+        attributes["support"] += NStr::NumericToString(i->GetId());
     }
     attributes["support"].erase(0,1);
 
@@ -1544,7 +1544,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     attributes["TrustedmRNA"] = NStr::Join(tm,",");
 
     if(a.TargetLen() > 0)
-        attributes["TargetLen"] = NStr::IntToString(a.TargetLen());  
+        attributes["TargetLen"] = NStr::NumericToString(a.TargetLen());  
 
     if(a.Ident() > 0)
         attributes["Ident"] = NStr::DoubleToString(a.Ident());  
@@ -1596,11 +1596,11 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         bool tCoords = false;
 
         if(start.NotEmpty() && (start.GetFrom() != maxcdslim.GetFrom() && start.GetTo() != maxcdslim.GetTo())) {
-            attributes["maxCDS"] = NStr::IntToString(maxcdslim.GetFrom()+1)+" "+NStr::IntToString(maxcdslim.GetTo()+1);
+            attributes["maxCDS"] = NStr::NumericToString(maxcdslim.GetFrom()+1)+" "+NStr::NumericToString(maxcdslim.GetTo()+1);
             tCoords = true;
         }
         if(protcds.NotEmpty() && protcds != rf) {
-            attributes["protCDS"] = NStr::IntToString(protcds.GetFrom()+1)+" "+NStr::IntToString(protcds.GetTo()  +1);
+            attributes["protCDS"] = NStr::NumericToString(protcds.GetFrom()+1)+" "+NStr::NumericToString(protcds.GetTo()  +1);
             tCoords = true;
         }
         if(cds_info.HasStart()) {
@@ -1626,7 +1626,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 
         ITERATE(vector<TSignedSeqRange>, s, cds_info.PStops()) {
             TSignedSeqRange pstop = *s;            
-            attributes["pstop"] += ","+NStr::IntToString(pstop.GetFrom()+1)+" "+NStr::IntToString(pstop.GetTo()+1);
+            attributes["pstop"] += ","+NStr::NumericToString(pstop.GetFrom()+1)+" "+NStr::NumericToString(pstop.GetTo()+1);
             tCoords = true;
         }
         attributes["pstop"].erase(0,1);
@@ -1644,7 +1644,7 @@ TSignedSeqRange StringToRange(const string& s)
 {
     string start, stop;
     NStr::SplitInTwo(s, " ", start, stop);
-    return TSignedSeqRange(NStr::StringToInt(start)-1,NStr::StringToInt(stop)-1);
+    return TSignedSeqRange(NStr::StringToNumeric<TSignedSeqPos>(start)-1,NStr::StringToNumeric<TSignedSeqPos>(stop)-1);
 }
 
 void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
@@ -1687,9 +1687,9 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     }
 
     if (NStr::StartsWith(attributes["Parent"],"gene"))
-        a.SetGeneID(NStr::StringToInt(attributes["Parent"],NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols));
+        a.SetGeneID(NStr::StringToNumeric<Int8>(attributes["Parent"],NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols));
     if (!attributes["rankInGene"].empty()) {
-        a.SetRankInGene(NStr::StringToInt(attributes["rankInGene"]));
+        a.SetRankInGene(NStr::StringToNumeric<int>(attributes["rankInGene"]));
     }
 
     if (!attributes["Target"].empty()) {
@@ -1714,7 +1714,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         NStr::Tokenize(attributes["support"], ",", support);
         ITERATE(vector<string>, s, support) {
             bool core = (*s)[0] == '*';
-            Int8 id = NStr::StringToInt8(core ? s->substr(1) : *s);
+            Int8 id = NStr::StringToNumeric<Int8>(core ? s->substr(1) : *s);
             a.AddSupport(CSupportInfo(id, core));
         }
     }
@@ -1734,10 +1734,10 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     a.SetComment(attributes["note"]);
     
     if (!attributes["Ident"].empty())
-        a.SetIdent(NStr::StringToDouble(attributes["Ident"]));
+        a.SetIdent(NStr::StringToNumeric<double>(attributes["Ident"]));
     
     if (!attributes["Weight"].empty())
-        a.SetWeight(NStr::StringToDouble(attributes["Weight"]));
+        a.SetWeight(NStr::StringToNumeric<double>(attributes["Weight"]));
     
     if (!attributes["protein_hit"].empty())
         a.ProteinHit() = attributes["protein_hit"];
@@ -1856,7 +1856,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
     int part = 0;
     vector<SGFFrec> exons,cdss;
 
-    templ.attributes["Parent"] = NStr::Int8ToString(a.ID());
+    templ.attributes["Parent"] = NStr::NumericToString(a.ID());
     SGFFrec exon = templ;
     exon.type = "exon";
     SGFFrec cds = templ;
@@ -1891,7 +1891,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
             exon.end = -1;
             exon.attributes["Seq"] = e->m_seq;
             if(e->m_source.m_range.NotEmpty()) {
-                exon.attributes["Source"] = e->m_source.m_acc + ":"+NStr::IntToString(e->m_source.m_range.GetFrom()+1) + ":"+NStr::IntToString(e->m_source.m_range.GetTo()+1) + ":";
+                exon.attributes["Source"] = e->m_source.m_acc + ":"+NStr::NumericToString(e->m_source.m_range.GetFrom()+1) + ":"+NStr::NumericToString(e->m_source.m_range.GetTo()+1) + ":";
                 if(e->m_source.m_strand == ePlus)
                     exon.attributes["Source"] += "+";
                 else
@@ -1902,7 +1902,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
         string targetid = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
         
         TSignedSeqRange transcript_exon = a.TranscriptExon(i);
-        string target = " "+NStr::IntToString(transcript_exon.GetFrom()+1)+" "+NStr::IntToString(transcript_exon.GetTo()+1);
+        string target = " "+NStr::NumericToString(transcript_exon.GetFrom()+1)+" "+NStr::NumericToString(transcript_exon.GetTo()+1);
         if((a.Status() & CGeneModel::eReversed)!=0) {
             target += " -";
         } else {
@@ -1946,7 +1946,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
                 cds.start = cds_limits.GetFrom();
                 cds.end = cds_limits.GetTo();
             }
-            string ctarget = " "+NStr::IntToString(tcds.GetFrom()+1)+" "+NStr::IntToString(tcds.GetTo()+1);
+            string ctarget = " "+NStr::NumericToString(tcds.GetFrom()+1)+" "+NStr::NumericToString(tcds.GetTo()+1);
             if((a.Status() & CGeneModel::eReversed)!=0) {
                 ctarget += " -";
             } else {
@@ -1960,7 +1960,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
             string suffix;
             if (!a.Continuous()) {
                 SGFFrec rec = templ;
-                suffix= "."+NStr::IntToString(++part);
+                suffix= "."+NStr::NumericToString(++part);
                 if(exons.front().start >= 0) {
                     rec.start = exons.front().start;
                 } else {
@@ -2096,7 +2096,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 
             double eident = 0;
             if(!r->attributes["Ident"].empty()) {
-                eident = NStr::StringToDouble(r->attributes["Ident"]);
+                eident = NStr::StringToNumeric<double>(r->attributes["Ident"]);
             }
             
             if(r->start >= 0 && r->end >= 0)
@@ -2108,8 +2108,8 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
                     NStr::Tokenize(r->attributes["Source"], ":", v);
                     _ASSERT((int)v.size() == 4);
                     src.m_acc = v[0];
-                    src.m_range.SetFrom(NStr::StringToInt(v[1])-1);
-                    src.m_range.SetTo(NStr::StringToInt(v[2])-1);
+                    src.m_range.SetFrom(NStr::StringToNumeric<TSignedSeqPos>(v[1])-1);
+                    src.m_range.SetTo(NStr::StringToNumeric<TSignedSeqPos>(v[2])-1);
                     if(v[3] == "+")
                         src.m_strand = ePlus;
                     else
@@ -2162,7 +2162,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     sort(indels.begin(),indels.end());
     CAlignMap amap;
     if(!transcript_exons.empty())
-        amap = CAlignMap(a.Exons(), transcript_exons, indels, a.Orientation(), NStr::StringToInt(attributes["TargetLen"]));
+        amap = CAlignMap(a.Exons(), transcript_exons, indels, a.Orientation(), NStr::StringToNumeric<int>(attributes["TargetLen"]));
     else
         amap = CAlignMap(a.Exons(), indels, a.Strand());
 

@@ -37,6 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+class CObject_id;
 class CSeq_id;
 class CScope;
 END_SCOPE(objects)
@@ -56,6 +57,10 @@ public:
     static CRef<CSeq_id> GnomonProtein(Int8 id);
 
     CConstRef<CSeq_id> ToCanonical(const CSeq_id& id) const;
+
+    static bool IsId(const CObject_id& obj);
+    static Int8 GetId(const CObject_id& obj);
+    static void SetId(CObject_id& obj, Int8 value);
 
 private:
     CScope& m_Scope;

@@ -218,7 +218,7 @@ CFeatureGenerator::CleanAlignment(const CSeq_align& align_in)
 CRef<CSeq_feat> CFeatureGenerator::ConvertAlignToAnnot(const CSeq_align& align,
                                             CSeq_annot& annot,
                                             CBioseq_set& seqs,
-                                            int gene_id,
+                                            Int8 gene_id,
                                             const CSeq_feat* cdregion)
 {
     return m_impl->ConvertAlignToAnnot(align, annot, seqs, gene_id, cdregion, false);
@@ -761,7 +761,7 @@ CFeatureGenerator::
 SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                                      CSeq_annot& annot,
                                      CBioseq_set& seqs,
-                                     int gene_id,
+                                     Int8 gene_id,
                                      const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                      bool call_on_align_list)
 {
@@ -1770,7 +1770,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                                      const CBioseq_Handle& handle,
                                      SMapper& mapper,
                                      CRef<CSeq_loc> loc,
-                                     const CSeq_id& genomic_id, int gene_id)
+                                     const CSeq_id& genomic_id, Int8 gene_id)
 {
     if (m_flags & fCreateGene) {
         CFeat_CI feat_iter;
@@ -1780,7 +1780,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
         bool update_existing_gene = gene_feat;
         string gene_id_str = "gene.";
         if (gene_id) {
-            gene_id_str += NStr::IntToString(gene_id);
+            gene_id_str += NStr::NumericToString(gene_id);
         }
 
         if (!update_existing_gene) {
@@ -3932,7 +3932,7 @@ CFeatureGenerator::
 SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
                                      CSeq_annot& annot,
                                      CBioseq_set& seqs,
-                                     int gene_id,
+                                     Int8 gene_id,
                                      const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                      bool call_on_align_list)
 {

@@ -2417,9 +2417,9 @@ string GetLinkedIdsForMember(const SChainMember& mi) {
         mal.push_back(right);
     }
     sort(mal.begin(),mal.end(),GenomeOrderD());
-    string note = string(NStr::Int8ToString(mi.m_align->ID()));
+    string note = string(NStr::NumericToString(mi.m_align->ID()));
     ITERATE(vector<const SChainMember*>, imal, mal) {
-        note = note+" "+NStr::Int8ToString((*imal)->m_align->ID());
+        note = note+" "+NStr::NumericToString((*imal)->m_align->ID());
     }
     return note;
 }

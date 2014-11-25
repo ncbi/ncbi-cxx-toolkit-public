@@ -133,9 +133,9 @@ private:
     CSeq_annot::C_Data::TFtable* feature_table;
     CSeq_annot::C_Data::TAlign*  model_alignments;
     CSeq_annot::C_Data::TFtable* internal_feature_table;
-    set<int> models_in_internal_feature_table;
+    set<Int8> models_in_internal_feature_table;
 
-    typedef map<int,CRef<CSeq_feat> > TGeneMap;
+    typedef map<Int8,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;
     IEvidence& evidence;
 
@@ -422,7 +422,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
 
          CRef<CAnnot_id> annot_id(new CAnnot_id);
          annot_id->SetGeneral().SetDb("GNOMON");
-         annot_id->SetGeneral().SetTag().SetId(md.model.ID());
+         CIdHandler::SetId(annot_id->SetGeneral().SetTag(), md.model.ID());
          seq_annot->SetId().push_back(annot_id);
      }}
     
@@ -688,7 +688,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
     CRef<CSeq_feat> feature(new CSeq_feat);
 
     CRef<CObject_id> obj_id( new CObject_id() );
-    obj_id->SetId(model.ID());
+    CIdHandler::SetId(*obj_id, model.ID());
     CRef<CFeat_id> feat_id( new CFeat_id() );
     feat_id->SetLocal(*obj_id);
     feature->SetIds().push_back(feat_id);
@@ -800,7 +800,7 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
     CRef< CSeq_align > seq_align( new CSeq_align );
 
     CRef<CObject_id> id(new CObject_id());
-    id->SetId(model.ID());
+    CIdHandler::SetId(*id, model.ID());
     seq_align->SetId().push_back(id);
 
     seq_align->SetType(CSeq_align::eType_partial);
@@ -1144,24 +1144,24 @@ CAlignModel* RestoreModelFromPublicMrnaFeature(const CSeq_feat_Handle& feat)
     _ASSERT(mrna->IsNa());
 
     const CSeq_align& align = *mrna->GetInst().GetHist().GetAssembly().front();
-
-    Int8 id = GetModelId(align);
+    const CObject_id& obj_id = *align.GetId().back();
 
     CFeat_CI cds_feat(mrna_handle);
     while (cds_feat && !cds_feat->GetOriginalFeature().GetData().IsCdregion())
         ++cds_feat;
 
     const CTSE_Handle& tse_handle = feat.GetAnnot().GetTSE_Handle();
-    CSeq_feat_Handle feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Rna, id);
-    if (!feat_handle)
-        feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, id);
+    CSeq_feat_Handle feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Rna, obj_id);
+    if (!feat_handle) {
+        feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, obj_id);
+    }
 
     return RestoreModel(feat_handle, *cds_feat, align);
 }
 
 CAlignModel* RestoreModelFromInternalGnomonFeature(const CSeq_feat_Handle& feat)
 {
-    int id = feat.GetOriginalSeq_feat()->GetIds().front()->GetLocal().GetId();
+    Int8 id = CIdHandler::GetId(feat.GetOriginalSeq_feat()->GetIds().front()->GetLocal());
 
     CScope& scope = feat.GetScope();
     CConstRef<CSeq_id> mrna_seq_id = CIdHandler::GnomonMRNA(id);
@@ -1190,10 +1190,10 @@ bool IsGnomonConstructed(const CSeq_align& seq_align)
     return false;
 }
 
-void ExtractSupportModels(int model_id,
+void ExtractSupportModels(Int8 model_id,
                           TAlignModelList& evidence_models, list<CRef<CSeq_align> >& evidence_alignments,
                           CSeq_entry_Handle seq_entry_handle, map<string, CRef<CSeq_annot> >& seq_annot_map,
-                          set<int>& processed_ids)
+                          set<Int8>& processed_ids)
 {
     map<string, CRef<CSeq_annot> >::iterator annot = seq_annot_map.find("Evidence for "+CIdHandler::ToString(*CIdHandler::GnomonMRNA(model_id)));
     if (annot == seq_annot_map.end())
@@ -1203,17 +1203,17 @@ void ExtractSupportModels(int model_id,
 
     NON_CONST_ITERATE (CSeq_annot::TData::TAlign, align_ci, aligns) {
         CSeq_align& seq_align = **align_ci;
-        int id = seq_align.GetId().back()->GetId();
-
+        const CObject_id& obj_id = *seq_align.GetId().back();
+        Int8 id = CIdHandler::GetId(obj_id);
         if (!processed_ids.insert(id).second) // already there
             continue;
 
         const CTSE_Handle& tse_handle = seq_entry_handle.GetTSE_Handle();
-        CSeq_feat_Handle feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Rna, id);
+        CSeq_feat_Handle feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Rna, obj_id);
         if (!feat_handle)
-            feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, id);
+            feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, obj_id);
 
-        CSeq_feat_Handle cds_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, "cds."+NStr::IntToString(id));
+        CSeq_feat_Handle cds_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, "cds."+NStr::NumericToString(id));
         if(!cds_handle)
             cds_handle = feat_handle;
 
@@ -1279,7 +1279,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
         contig = CIdHandler::ToString(*feat_ci->GetLocation().GetId());
     }
 
-    set<int> processed_ids;
+    set<Int8> processed_ids;
     for (; feat_ci; ++feat_ci) {
         auto_ptr<CAlignModel> model( RestoreModelFromPublicMrnaFeature(feat_ci->GetSeq_feat_Handle()) );
         model_list.push_back(*model);
@@ -1290,7 +1290,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
 
     CFeat_CI internal_feat_ci(scope.GetSeq_annotHandle(*internal_feature_table));
     for (; internal_feat_ci; ++internal_feat_ci) {
-        int id = internal_feat_ci->GetOriginalFeature().GetIds().front()->GetLocal().GetId();
+        Int8 id = CIdHandler::GetId(internal_feat_ci->GetOriginalFeature().GetIds().front()->GetLocal());
         if (processed_ids.find(id) != processed_ids.end()) // already there
             continue;
         auto_ptr<CAlignModel> model( RestoreModelFromInternalGnomonFeature(internal_feat_ci->GetSeq_feat_Handle()) );

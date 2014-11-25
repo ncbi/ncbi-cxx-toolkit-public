@@ -433,8 +433,8 @@ public:
 
     void SetType(int t) { m_type = t; }
     int Type() const { return m_type; }
-    int GeneID() const { return m_geneid; }
-    void SetGeneID(int id) { m_geneid = id; }
+    Int8 GeneID() const { return m_geneid; }
+    void SetGeneID(Int8 id) { m_geneid = id; }
     int RankInGene() const { return m_rank_in_gene; }
     void SetRankInGene(int rank) { m_rank_in_gene = rank; }
     Int8 ID() const { return m_id; }
@@ -564,7 +564,7 @@ private:
     CCDSInfo m_cds_info;
     bool CdsInvariant(bool check_start_stop = true) const;
 
-    int m_geneid;
+    Int8 m_geneid;
     int m_rank_in_gene;
     CSupportInfoSet m_support;
     string m_protein_hit;

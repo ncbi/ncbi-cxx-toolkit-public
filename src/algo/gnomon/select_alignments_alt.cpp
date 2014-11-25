@@ -56,6 +56,7 @@ bool CModelCompare::CanBeConnectedIntoOne(const CGeneModel& a, const CGeneModel&
     return false;
 }
 
+
 size_t CModelCompare::CountCommonSplices(const CGeneModel& a, const CGeneModel& b) {
     size_t commonspl = 0;
     if(a.Strand() != b.Strand() || !a.IntersectingWith(b)) return commonspl;
@@ -70,6 +71,7 @@ size_t CModelCompare::CountCommonSplices(const CGeneModel& a, const CGeneModel& 
 
     return commonspl;
 }
+
 
 bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tolerance)
 {
@@ -129,6 +131,7 @@ bool CModelCompare::BadOverlapTest(const CGeneModel& a, const CGeneModel& b) {  
         return CountCommonSplices(a,b) > 0;
 }
 
+
 bool CModelCompare::RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn, bool check_in_holes) {
     for(int i = 1; i < (int)algn.Exons().size(); ++i) {
         if(check_in_holes || (algn.Exons()[i-1].m_ssplice && algn.Exons()[i].m_fsplice)) {
@@ -139,6 +142,7 @@ bool CModelCompare::RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& alg
     }
     return false;
 }
+
 
 bool CModelCompare::HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel& b) {
     if(a.Strand() != b.Strand() || !a.IntersectingWith(b)) return false;
@@ -160,6 +164,27 @@ bool CModelCompare::HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel
     }
 
     return false;
+}
+
+
+void CGeneSelector::FilterGenes(TGeneModelList& chains, TGeneModelList& bad_aligns,
+                                TGeneModelList& dest)
+{
+    ITERATE(TGeneModelList, it, chains) {
+        if(it->Status()&CGeneModel::eSkipped) {
+            bad_aligns.push_back(*it);
+        } else {
+            dest.push_back(*it);
+        }
+    }
+}
+
+
+TGeneModelList CGeneSelector::FilterGenes(TGeneModelList& chains, TGeneModelList& bad_aligns)
+{
+    TGeneModelList models;
+    FilterGenes(chains, bad_aligns, models);
+    return models;
 }
 
 
@@ -186,6 +211,22 @@ TGeneModelList CGeneSelector::SelectGenes(TGeneModelList& chains, TGeneModelList
     return models;
 }
 
+
+void CGeneSelector::RenumGenes(TGeneModelList& models, Int8& gennum, Int8 geninc)
+{
+    Int8 maxgeneid= gennum-geninc;
+    NON_CONST_ITERATE(TGeneModelList, it, models) {
+        if (it->GeneID()==0)
+            continue;
+        Int8 geneid = gennum+(it->GeneID()-1)*geninc;
+        it->SetGeneID(geneid);
+        if (maxgeneid < geneid)
+            maxgeneid = geneid;
+    }
+    gennum = maxgeneid+geninc;
+}
+
+
 void CGeneSelector::RenumGenes(TGeneModelList& models, int& gennum, int geninc)
 {
     int maxgeneid= gennum-geninc;
@@ -199,6 +240,7 @@ void CGeneSelector::RenumGenes(TGeneModelList& models, int& gennum, int geninc)
     }
     gennum = maxgeneid+geninc;
 }
+
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE

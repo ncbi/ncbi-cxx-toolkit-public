@@ -33,6 +33,9 @@
 
 #include <algo/gnomon/id_handler.hpp>
 
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -74,13 +77,55 @@ CRef<CSeq_id> CIdHandler::ToSeq_id(const string& str)
 
 CRef<CSeq_id> CIdHandler::GnomonMRNA(Int8 id)
 {
-    return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::Int8ToString(id) + ".m"));
+    CRef<CSeq_id> result(new CSeq_id);
+    CSeq_id::TGeneral& gnl = result->SetGeneral();
+    gnl.SetDb("GNOMON");
+    gnl.SetTag().SetStr(NStr::NumericToString(id) + ".m");
+    return result;
 }
 
 CRef<CSeq_id> CIdHandler::GnomonProtein(Int8 id)
 {
-    return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::Int8ToString(id) + ".p"));
+    CRef<CSeq_id> result(new CSeq_id);
+    CSeq_id::TGeneral& gnl = result->SetGeneral();
+    gnl.SetDb("GNOMON");
+    gnl.SetTag().SetStr(NStr::NumericToString(id) + ".p");
+    return result;
 }
+
+bool CIdHandler::IsId(const CObject_id& obj)
+{
+    Int8 id;
+    switch (obj.GetIdType(id)) {
+    case CObject_id::e_not_set:
+        return false;
+    default:
+        return true;
+    }
+}
+
+Int8 CIdHandler::GetId(const CObject_id& obj)
+{
+    Int8 id;
+    switch (obj.GetIdType(id)) {
+    case CObject_id::e_not_set:
+        NCBI_THROW(CException, eUnknown, "No integral ID for object ID");
+    default:
+        ;
+    }
+    return id;
+}
+
+void CIdHandler::SetId(CObject_id& obj, Int8 value)
+{
+    if (value >= numeric_limits<CObject_id::TId>::min()  &&
+        value <= numeric_limits<CObject_id::TId>::max()) {
+        obj.SetId(static_cast<CObject_id::TId>(value));
+    } else {
+        obj.SetStr(NStr::NumericToString(value));
+    }
+}
+
 
 string GetDNASequence(CConstRef<objects::CSeq_id> id, CScope& scope) 
 {

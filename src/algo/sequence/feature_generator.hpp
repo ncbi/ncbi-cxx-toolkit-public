@@ -75,7 +75,7 @@ struct CFeatureGenerator::SImplementation {
     bool m_is_gnomon;
     bool m_is_best_refseq;
 
-    typedef map<int,CRef<CSeq_feat> > TGeneMap;
+    typedef map<Int8,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;
 
     void StitchSmallHoles(objects::CSeq_align& align);
@@ -89,7 +89,7 @@ struct CFeatureGenerator::SImplementation {
     CRef<CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
                              objects::CSeq_annot& annot,
                              objects::CBioseq_set& seqs,
-                             int gene_id, const objects::CSeq_feat* cdregion,
+                             Int8 gene_id, const objects::CSeq_feat* cdregion,
                              bool call_on_align_list);
     void ConvertAlignToAnnot(const list< CRef<objects::CSeq_align> > &aligns,
                              objects::CSeq_annot &annot,
@@ -190,7 +190,7 @@ private:
                              SMapper& mapper,
                              CRef<CSeq_loc> loc,
                              const CSeq_id& genomic_id,
-                             int gene_id = 0);
+                             Int8 gene_id = 0);
     CRef<CSeq_feat> x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                                        CRef<objects::CSeq_feat> cds_feat_on_transcribed_mrna,
                                        list<CRef<CSeq_loc> >& transcribed_mrna_seqloc_refs,
@@ -252,7 +252,7 @@ private:
     CRef<CSeq_feat>ConvertMixedAlignToAnnot(const CSeq_align& input_align,
                                             CSeq_annot& annot,
                                             CBioseq_set& seqs,
-                                            int gene_id,
+                                            Int8 gene_id,
                                             const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                             bool call_on_align_list);
 
