@@ -197,8 +197,6 @@ bool CString_constraint :: x_IsWholeWordMatch(const string& start, size_t found,
 
 bool CString_constraint :: x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const
 {
-    bool matches = true;
-
     // check for synonyms to skip
     if (IsSetIgnore_words()) {
         ITERATE(CWord_substitution_set::Tdata, word, GetIgnore_words().Get()) {
