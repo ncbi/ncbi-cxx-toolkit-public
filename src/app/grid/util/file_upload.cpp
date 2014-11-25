@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <connect/services/netstorage.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
@@ -56,6 +57,7 @@ private:
     EErrorMessageVerbosity m_ErrorMessageVerbosity;
 };
 
+#define GRID_APP_NAME "file_upload.cgi"
 #define CONFIG_SECTION "file_upload"
 #define INIT_STRING_PARAM "destination"
 #define ERROR_MESSAGE_VERBOSITY_PARAM "error_message"
@@ -219,5 +221,10 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, char** argv)
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
+    SetSplitLogFile(true);
+    GetDiagContext().SetOldPostFormat(false);
+
     return CFileUploadApplication().AppMain(argc, argv, 0, eDS_Default);
 }
