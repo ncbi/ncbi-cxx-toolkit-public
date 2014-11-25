@@ -57,7 +57,7 @@ void DPApp::Init(void)
 
 static inline unsigned int ScreenResidueCharacter(char original)
 {
-    unsigned int ch = (unsigned int) toupper((unsigned int) original);
+    int ch = toupper((unsigned char) original);
     switch (ch) {
         case 'A': case 'R': case 'N': case 'D': case 'C':
         case 'Q': case 'E': case 'G': case 'H': case 'I':
