@@ -1966,7 +1966,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey(kArgLineLength, "line_length",
     		                "Line length for formatting alignments\n"
     						"Not applicable for outfmt > 4\n"
-    		   			    "Default = `"+ NStr::IntToString(align_format::kDfltLineLength) + "'",
+    		   			    "Default = `"+ NStr::NumericToString(align_format::kDfltLineLength) + "'",
     		                CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgLineLength,
                            new CArgAllowValuesGreaterThanOrEqual(1));
