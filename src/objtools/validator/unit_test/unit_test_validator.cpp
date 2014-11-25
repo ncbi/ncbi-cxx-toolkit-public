@@ -17961,7 +17961,8 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "");
 
-    to_fix = "9.93°N and 78.12°E";
+    string degree = "\xB0";
+    to_fix = "9.93" + degree + "N and 78.12" + degree + "E";
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
 
