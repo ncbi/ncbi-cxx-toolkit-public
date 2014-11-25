@@ -8,12 +8,27 @@ class CTestApplication : public CNcbiApplication
 {
 public:
     virtual int Run(void);
+
+    bool GoodProgram(const string& check_program_name) const;
 };
 
 
 int CTestApplication::Run(void)
 {
-    const string check_program_name = "test_trial";
+    bool ok = true;
+    if ( !GoodProgram("test_trial") ) {
+        ok = false;
+    }
+    if ( GoodProgram("test_trial_fail") ) {
+        ok = false;
+    }
+    NcbiCout << (ok? "Passed.": "Failed!") << NcbiEndl;
+    return ok? 0: 1;
+}
+
+
+bool CTestApplication::GoodProgram(const string& check_program_name) const
+{
     string path = GetProgramExecutablePath();
     if ( path.empty() ) {
 #if defined(NCBI_OS_MSWIN)
@@ -27,16 +42,14 @@ int CTestApplication::Run(void)
         CDirEntry::SplitPath(path, &dir, &base, &ext);
         path = CDirEntry::MakePath(dir, check_program_name, ext);
     }
-    NcbiCout << "Checking existence of program: " << path << NcbiEndl;
+    NcbiCout << "Looking for program: " << path << NcbiEndl;
     if ( CDirEntry(path).Exists() ) {
         NcbiCout << "Program file found." << NcbiEndl;
-        NcbiCout << "Passed" << NcbiEndl;
-        return 0;
+        return true;
     }
     else {
-        NcbiCout << "Cannot find the program!" << NcbiEndl;
-        NcbiCout << "Failed" << NcbiEndl;
-        return 1;
+        NcbiCout << "Cannot find the program." << NcbiEndl;
+        return false;
     }
 }
 
