@@ -7,25 +7,18 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
-#if defined(NCBI_STRICT_CTYPE_ARGS) && !defined(isalpha)
-# undef NCBI_STRICT_CTYPE_ARGS
-#endif
-
-#ifndef NCBI_STRICT_CTYPE_ARGS
+#if !(defined(NCBI_STRICT_CTYPE_ARGS) && (defined(isalpha) || defined(NCBI_STRICT_CTYPE_ARGS_ACTIVE)))
 
 #include <cctype>
 
-#define NCBI_DEFINE_CTYPE_FUNC(ncbi_name, name)           \
-inline int ncbi_name(int c) { return name(c); }           \
-inline int ncbi_name(char c) { return name(Uchar(c)); }   \
-inline int ncbi_name(unsigned char c) { return name(c); } \
-template<class C> inline int ncbi_name(C c)               \
-{ return See_the_standard_on_proper_argument_type_for_ctype_functions(c); }
+#define NCBI_DEFINE_CTYPE_FUNC(ncbi_name, name)                         \
+    inline int name(Uchar c) { return name(int(c)); }                   \
+    inline int name(char c) { return name(Uchar(c)); }                  \
+    template<class C> inline int name(C c)                              \
+    { return See_the_standard_on_proper_argument_type_for_ctype_functions(c); }
 
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isalpha, isalpha)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isalnum, isalnum)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isascii, isascii)
-//NCBI_DEFINE_CTYPE_FUNC(NCBI_isblank, isblank)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_iscntrl, iscntrl)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isdigit, isdigit)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isgraph, isgraph)
@@ -35,124 +28,16 @@ NCBI_DEFINE_CTYPE_FUNC(NCBI_ispunct, ispunct)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isspace, isspace)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isupper, isupper)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_isxdigit, isxdigit)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_toascii, toascii)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_tolower, tolower)
 NCBI_DEFINE_CTYPE_FUNC(NCBI_toupper, toupper)
+//NCBI_DEFINE_CTYPE_FUNC(NCBI_isblank, isblank)
+//NCBI_DEFINE_CTYPE_FUNC(NCBI_isascii, isascii)
+//NCBI_DEFINE_CTYPE_FUNC(NCBI_toascii, toascii)
 
 #undef NCBI_DEFINE_CTYPE_FUNC
 
-BEGIN_STD_NAMESPACE;
-
-using ::NCBI_isalpha;
-using ::NCBI_isalnum;
-using ::NCBI_isascii;
-//using ::NCBI_isblank;
-using ::NCBI_iscntrl;
-using ::NCBI_isdigit;
-using ::NCBI_isgraph;
-using ::NCBI_islower;
-using ::NCBI_isprint;
-using ::NCBI_ispunct;
-using ::NCBI_isspace;
-using ::NCBI_isupper;
-using ::NCBI_isxdigit;
-using ::NCBI_toascii;
-using ::NCBI_tolower;
-using ::NCBI_toupper;
-
-END_STD_NAMESPACE;
-
-#ifdef isalpha
-# undef  isalpha
-#endif
-#define isalpha NCBI_isalpha
-
-#ifdef isalnum
-# undef  isalnum
-#endif
-#define isalnum NCBI_isalnum
-
-#ifdef isascii
-# undef  isascii
-#endif
-#define isascii NCBI_isascii
-
-/*
-#ifdef isblank
-# undef  isblank
-#endif
-#define isblank NCBI_isblank
-*/
-
-#ifdef iscntrl
-# undef  iscntrl
-#endif
-#define iscntrl NCBI_iscntrl
-
-#ifdef isdigit
-# undef  isdigit
-#endif
-#define isdigit NCBI_isdigit
-
-#ifdef isgraph
-# undef  isgraph
-#endif
-#define isgraph NCBI_isgraph
-
-#ifdef islower
-# undef  islower
-#endif
-#define islower NCBI_islower
-
-#ifdef isprint
-# undef  isprint
-#endif
-#define isprint NCBI_isprint
-
-#ifdef ispunct
-# undef  ispunct
-#endif
-#define ispunct NCBI_ispunct
-
-#ifdef isspace
-# undef  isspace
-#endif
-#define isspace NCBI_isspace
-
-#ifdef isupper
-# undef  isupper
-#endif
-#define isupper NCBI_isupper
-
-#ifdef isxdigit
-# undef  isxdigit
-#endif
-#define isxdigit NCBI_isxdigit
-
-#ifdef toascii
-# undef  toascii
-#endif
-#define toascii NCBI_toascii
-
-#ifdef tolower
-# undef  tolower
-#endif
-#define tolower NCBI_tolower
-
-#ifdef toupper
-# undef  toupper
-#endif
-#define toupper NCBI_toupper
-
 #endif
 
-//#ifdef NCBI_STRICT_CTYPE_ARGS
-# undef isprint
-# undef isspace
-# undef ispunct
-# undef isupper
-# undef toupper
-//#endif
 
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
@@ -196,10 +81,6 @@ END_STD_NAMESPACE;
 #include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
 
-#define isupper NCBI_isupper
-#define isspace NCBI_isspace
-#define ispunct NCBI_ispunct
-#define tolower NCBI_tolower
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -229,7 +110,9 @@ int CTestApplication::Run(void)
     _ASSERT(toupper('A') == 'A');
     _ASSERT(std::toupper('A') == 'A');
     _ASSERT(::toupper('A') == 'A');
-    //_ASSERT(::toupper('A'=='A'));
+#if 0 // should fail
+    _ASSERT(::toupper('A'=='A'));
+#endif
     NcbiCout << "Passed" << NcbiEndl;
     return 0;
 }
