@@ -790,7 +790,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
             }
             isfound = true;
             if ( !out.get()  ||  !out->is_open() ) {
-                if (isdigit((unsigned int)current_module[0])) {
+                if (isdigit((unsigned char)current_module[0])) {
                     current_module.insert(current_module.begin(),'x');
                 }
                 filename = Path(path, current_module + "_module.hpp");
@@ -875,7 +875,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
             }
             isfound = true;
             if ( !out.get()  ||  !out->is_open()) {
-                if (isdigit((unsigned int)current_module[0])) {
+                if (isdigit((unsigned char)current_module[0])) {
                     current_module.insert(current_module.begin(),'x');
                 }
                 filename = Path(path, current_module + "_module.cpp");
