@@ -101,11 +101,10 @@ void NS_ValidateServerSection(const IRegistry &  reg,
             warnings.push_back(msg);
         }
     } else {
-        string  msg = "Invalid " + NS_RegValName(section, "port") +
-                      " parameter.";
         if (throw_port_exception)
-            NCBI_THROW(CNetScheduleException, eInvalidParameter, msg);
-        warnings.push_back(msg);
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Invalid " + NS_RegValName(section, "port") +
+                       " parameter.");
     }
 
     ok = NS_ValidateBool(reg, section, "reinit", warnings);

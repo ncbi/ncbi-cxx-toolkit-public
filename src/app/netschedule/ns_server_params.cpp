@@ -30,6 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <connect/services/netschedule_api.hpp>
+#include <corelib/request_ctx.hpp>
 #include "ns_server_params.hpp"
 #include "ns_ini_params.hpp"
 
@@ -42,6 +44,99 @@ USING_NCBI_SCOPE;
     reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
 #define GetDoubleNoErr(name, dflt) \
     reg.GetDouble(sname, name, dflt, 0, IRegistry::eReturn)
+
+
+#if defined(_DEBUG) && !defined(NDEBUG)
+void SErrorEmulatorParameter::ReadInt(const IRegistry &  reg,
+                                      const string &     section,
+                                      const string &     param_name)
+{
+    x_ReadCommon(reg, section, param_name);
+    if (!value.empty())
+        as_int = NStr::StringToInt(value);
+}
+
+void SErrorEmulatorParameter::ReadDouble(const IRegistry &  reg,
+                                         const string &     section,
+                                         const string &     param_name)
+{
+    x_ReadCommon(reg, section, param_name);
+    if (!value.empty())
+        as_double = NStr::StringToDouble(value);
+}
+
+void SErrorEmulatorParameter::ReadBool(const IRegistry &  reg,
+                                       const string &     section,
+                                       const string &     param_name)
+{
+    x_ReadCommon(reg, section, param_name);
+    if (!value.empty())
+        as_bool = NStr::StringToBool(value);
+}
+
+void SErrorEmulatorParameter::x_ReadCommon(const IRegistry &  reg,
+                                           const string &     section,
+                                           const string &     param_name)
+{
+    string      reg_value = reg.GetString(section, param_name, "");
+    reg_value = NStr::TruncateSpaces(reg_value);
+    if (reg_value.empty())
+        return;
+
+    list<string>    parts;
+    NStr::Split(reg_value, " ", parts);
+    size_t          parts_count = parts.size();
+
+    if (parts_count != 1 && parts_count != 2)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Unexpected format of the [" + section + "]/" +
+                   param_name + " parameter. Expected: F:Ff [Fb-Fe]");
+
+    if (parts_count == 2) {
+        // Need to read the range
+        list<string>    range_parts;
+        NStr::Split(parts.back(), "-", range_parts);
+
+        if (range_parts.size() != 2)
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Unexpected range format of the [" + section + "]/" +
+                       param_name + " parameter. Expected: Fb-Fe");
+        range_begin = NStr::StringToULong(range_parts.front());
+        range_end = NStr::StringToULong(range_parts.back());
+
+        if (range_end < range_begin)
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Incorrect range specification for [" + section + "]/" +
+                       param_name + " parameter. "
+                       "End value must be >= begin value.");
+    }
+
+    // Read frequency
+    list<string>    val_freq_parts;
+    NStr::Split(parts.front(), ":", val_freq_parts);
+    if (val_freq_parts.size() != 2)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Unexpected value and frequence format of the [" +
+                   section + "]/" + param_name + " parameter. Expected: F:Ff");
+
+    frequency = NStr::StringToUInt(val_freq_parts.back());
+    value = val_freq_parts.front();
+}
+
+bool SErrorEmulatorParameter::IsActive(void) const
+{
+    if (frequency == 0)
+        return false;
+
+    Uint8   request_id = CDiagContext::GetRequestContext().GetRequestID();
+    if (request_id < range_begin)
+        return false;
+    if (request_id > range_end)
+        return false;
+
+    return (request_id - range_begin) % frequency == 0;
+}
+#endif
 
 
 
@@ -118,7 +213,37 @@ void SNS_Parameters::Read(const IRegistry &  reg)
 
     admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
     admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
+
+    #if defined(_DEBUG) && !defined(NDEBUG)
+    ReadErrorEmulatorSection(reg);
+    #endif
 }
+
+
+#if defined(_DEBUG) && !defined(NDEBUG)
+void SNS_Parameters::ReadErrorEmulatorSection(const IRegistry &  reg)
+{
+    debug_fd_count.ReadInt(reg, "error_emulator", "fd_report");
+    if (!debug_fd_count.value.empty() && debug_fd_count.as_int < 0)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Unexpected value of the [error_emulator]/fd_report "
+                   " parameter. It must be >= 0");
+    debug_mem_count.ReadInt(reg, "error_emulator", "mem_report");
+    if (!debug_mem_count.value.empty() && debug_mem_count.as_int < 0)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Unexpected value of the [error_emulator]/mem_report "
+                   " parameter. It must be >= 0");
+    debug_write_delay.ReadDouble(reg, "error_emulator", "delay");
+    if (!debug_write_delay.value.empty() && debug_write_delay.as_double < 0.0)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Unexpected value of the [error_emulator]/delay "
+                   " parameter. It must be >= 0");
+    debug_conn_drop_before_write.ReadBool(reg, "error_emulator",
+                                          "drop_before_reply");
+    debug_conn_drop_after_write.ReadBool(reg, "error_emulator",
+                                         "drop_after_reply");
+}
+#endif
 
 
 void SNS_Parameters::x_CheckAffinityGarbageCollectorSettings(void)

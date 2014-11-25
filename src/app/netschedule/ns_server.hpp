@@ -280,6 +280,27 @@ private:
 private:
     string x_GenerateGUID(void) const;
     string x_SetAdminClientNames(const string &  client_names);
+
+#if defined(_DEBUG) && !defined(NDEBUG)
+private:
+    SErrorEmulatorParameter     debug_fd_count;
+    SErrorEmulatorParameter     debug_mem_count;
+    SErrorEmulatorParameter     debug_write_delay;
+    SErrorEmulatorParameter     debug_conn_drop_before_write;
+    SErrorEmulatorParameter     debug_conn_drop_after_write;
+
+public:
+    SErrorEmulatorParameter  GetDebugFDCount(void) const
+    { return debug_fd_count; }
+    SErrorEmulatorParameter  GetDebugMemCount(void) const
+    { return debug_mem_count; }
+    SErrorEmulatorParameter  GetDebugWriteDelay(void) const
+    { return debug_write_delay; }
+    SErrorEmulatorParameter  GetDebugConnDropBeforeWrite(void) const
+    { return debug_conn_drop_before_write; }
+    SErrorEmulatorParameter  GetDebugConnDropAfterWrite(void) const
+    { return debug_conn_drop_after_write; }
+#endif
 };
 
 

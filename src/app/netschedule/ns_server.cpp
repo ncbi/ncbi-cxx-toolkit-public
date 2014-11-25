@@ -194,6 +194,14 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     if (!what_changed.empty())
         what_changed += "}";
 
+    #if defined(_DEBUG) && !defined(NDEBUG)
+    debug_fd_count = params.debug_fd_count;
+    debug_mem_count = params.debug_mem_count;
+    debug_write_delay = params.debug_write_delay;
+    debug_conn_drop_before_write = params.debug_conn_drop_before_write;
+    debug_conn_drop_after_write = params.debug_conn_drop_after_write;
+    #endif
+
     if (limited)
         return what_changed;
 

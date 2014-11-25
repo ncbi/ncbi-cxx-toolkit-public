@@ -812,11 +812,46 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
     memcpy(m_MsgBuffer, msg.data(), msg_size);
     m_MsgBuffer[required_size-1] = '\n';
 
+    #if defined(_DEBUG) && !defined(NDEBUG)
+    if (m_ConnContext.NotNull()) {
+        SErrorEmulatorParameter     err_emul = m_Server->GetDebugWriteDelay();
+        if (err_emul.IsActive()) {
+            if (err_emul.as_double > 0.0) {
+                CNSPreciseTime      delay(err_emul.as_double);
+
+                // Non signal safe but good enough for error simulation
+                nanosleep(&delay, NULL);
+            }
+        }
+
+        err_emul = m_Server->GetDebugConnDropBeforeWrite();
+        if (err_emul.IsActive()) {
+            if (err_emul.as_bool) {
+                m_Server->CloseConnection(&GetSocket());
+                return eIO_Closed;
+            }
+        }
+    }
+    #endif
+
     // Write to the socket as a single transaction
     size_t     written;
     EIO_Status result = GetSocket().Write(m_MsgBuffer, required_size, &written);
-    if (result == eIO_Success)
+    if (result == eIO_Success) {
+        #if defined(_DEBUG) && !defined(NDEBUG)
+        if (m_ConnContext.NotNull()) {
+            SErrorEmulatorParameter     err_emul =
+                                        m_Server->GetDebugConnDropAfterWrite();
+            if (err_emul.IsActive()) {
+                if (err_emul.as_bool) {
+                    m_Server->CloseConnection(&GetSocket());
+                    return eIO_Closed;
+                }
+            }
+        }
+        #endif
         return result;
+    }
 
     // There was an error of writing into a socket, so rollback the action if
     // necessary and close the connection
@@ -2995,6 +3030,21 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
     int         proc_fd_used = GetProcessFDCount(&proc_fd_soft_limit,
                                                  &proc_fd_hard_limit);
     int         proc_thread_count = GetProcessThreadCount();
+
+    #if defined(_DEBUG) && !defined(NDEBUG)
+    if (m_CmdContext.NotNull()) {
+        SErrorEmulatorParameter  err_emul = m_Server->GetDebugFDCount();
+
+        if (err_emul.IsActive())
+            if (err_emul.as_int >= 0)
+                proc_fd_used = err_emul.as_int;
+
+        err_emul = m_Server->GetDebugMemCount();
+        if (err_emul.IsActive())
+            if (err_emul.as_int >= 0)
+                mem_used_total = err_emul.as_int;
+    }
+    #endif
 
     string      reply =
                     "OK:pid=" +

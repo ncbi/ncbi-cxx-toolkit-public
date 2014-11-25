@@ -40,6 +40,52 @@
 BEGIN_NCBI_SCOPE
 
 
+
+#if defined(_DEBUG) && !defined(NDEBUG)
+// error emulator parameters use the following format:
+// F:Ff  Fb-Fe
+// F is a value (int, bool, double, etc)
+// Ff is a frequency (int)
+// Fb-Fe is a range of request number when it fails (integers or infinitum)
+struct SErrorEmulatorParameter
+{
+    string      value;      // Could be int, bool or double, so here it is a
+                            // generic string as read from the config file
+    int         as_int;     // 'value' as int
+    double      as_double;  // 'value' as double
+    bool        as_bool;    // 'value' as bool
+
+    unsigned int    frequency;  // frequency with which the corresponding event
+                                // is emulated
+    Uint4           range_begin;
+    Uint4           range_end;
+
+    void ReadInt(const IRegistry &  reg,
+                 const string &     section,
+                 const string &     param_name);
+    void ReadDouble(const IRegistry &  reg,
+                    const string &     section,
+                    const string &     param_name);
+    void ReadBool(const IRegistry &  reg,
+                  const string &     section,
+                  const string &     param_name);
+
+    SErrorEmulatorParameter() :
+        value(""), as_int(-1), as_double(0.0), as_bool(false), frequency(1),
+        range_begin(0), range_end(4294967295)
+    {}
+
+    bool IsActive(void) const;
+
+    private:
+        void x_ReadCommon(const IRegistry &  reg,
+                          const string &     section,
+                          const string &     param_name);
+};
+#endif
+
+
+
 // Parameters for server
 struct SNS_Parameters : SServer_Parameters
 {
@@ -79,6 +125,24 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    affinity_dirt_percentage;
 
     void Read(const IRegistry &  reg);
+
+    #if defined(_DEBUG) && !defined(NDEBUG)
+    SErrorEmulatorParameter     debug_fd_count;     // # of used FDs
+                                                    //  instead the real FDs
+    SErrorEmulatorParameter     debug_mem_count;    // # of used memory bytes
+                                                    //  instead the real value
+    SErrorEmulatorParameter     debug_write_delay;  // delay before write
+                                                    //  into socket
+
+    // connection drops before writing into the client socket
+    SErrorEmulatorParameter     debug_conn_drop_before_write;
+
+    // connection drops before writing into the client socket
+    SErrorEmulatorParameter     debug_conn_drop_after_write;
+
+    void ReadErrorEmulatorSection(const IRegistry &  reg);
+    #endif
+
 
     private:
         void x_CheckAffinityGarbageCollectorSettings(void);
