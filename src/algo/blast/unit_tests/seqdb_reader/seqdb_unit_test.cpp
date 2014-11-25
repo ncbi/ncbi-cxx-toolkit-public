@@ -827,46 +827,11 @@ BOOST_AUTO_TEST_CASE(NrAndSwissProt)
     BOOST_REQUIRE(nr_tlen == nr_vlen);
 
     BOOST_REQUIRE(nr_seqs >  sp_seqs);
-    BOOST_REQUIRE(nr_oids == sp_oids);
+    BOOST_REQUIRE(nr_oids != sp_oids);
     BOOST_REQUIRE(nr_tlen >  sp_tlen);
-    BOOST_REQUIRE(nr_vlen == sp_vlen);
+    BOOST_REQUIRE(nr_vlen != sp_vlen);
 
     BOOST_REQUIRE(nr.GetMaxLength() >= sp.GetMaxLength());
-
-    Uint4 sp_cnt = 1;
-    Uint4 nr_cnt = 1;
-
-    CSeqDBIter nr_iter = nr.Begin();
-    CSeqDBIter sp_iter = sp.Begin();
-
-    for(Uint4 i = 0; i<10000; i++) {
-        while (nr_iter.GetOID() < sp_iter.GetOID()) {
-            ++ nr_iter;
-            ++ nr_cnt;
-        }
-
-        BOOST_REQUIRE_EQUAL(nr_iter.GetOID(),    sp_iter.GetOID());
-        BOOST_REQUIRE_EQUAL(nr_iter.GetLength(), sp_iter.GetLength());
-
-        Uint4 nr_hash = s_BufHash(nr_iter.GetData(), nr_iter.GetLength());
-        Uint4 sp_hash = s_BufHash(nr_iter.GetData(), nr_iter.GetLength());
-
-        BOOST_REQUIRE_EQUAL(nr_hash, sp_hash);
-
-        ++ sp_iter;
-        ++ sp_cnt;
-
-        // Without this test, the loop will break because it
-        // iterates past the end of swissprot.
-
-        if (! sp_iter) {
-            break;
-        }
-    }
-
-    // If the first 10000 sequences in nr are all in sp, something is up.
-
-    BOOST_REQUIRE(nr_cnt > sp_cnt);
 }
 
 BOOST_AUTO_TEST_CASE(TranslateIdents)
@@ -4120,17 +4085,17 @@ BOOST_AUTO_TEST_CASE(OidAndGiLists)
     SDbSumInfo ac_sum(ac);
     SDbSumInfo sc_sum(sc);
 
-    BOOST_REQUIRE_EQUAL((string) nr_sum.CompareSelf(), "=A=B=C=a=b=c");
-    BOOST_REQUIRE_EQUAL((string) sp_sum.CompareSelf(), "+A+B=C+a+b=c");
-    BOOST_REQUIRE_EQUAL((string) ac_sum.CompareSelf(), "+A+B=C+a+b=c");
-    BOOST_REQUIRE_EQUAL((string) sc_sum.CompareSelf(), "+A+B=C+a+b=c");
+    BOOST_CHECK_EQUAL((string) nr_sum.CompareSelf(), "=A=B=C=a=b=c");
+    BOOST_CHECK_EQUAL((string) sp_sum.CompareSelf(), "=A=B=C=a=b=c");
+    BOOST_CHECK_EQUAL((string) ac_sum.CompareSelf(), "+A+B=C+a+b=c");
+    BOOST_CHECK_EQUAL((string) sc_sum.CompareSelf(), "+A+B=C+a+b=c");
 
-    BOOST_REQUIRE_EQUAL((string) nr_sum.Compare(sp_sum), "=T+F+M=t+f+m");
-    BOOST_REQUIRE_EQUAL((string) nr_sum.Compare(ac_sum), "=T+F+M=t+f+m");
-    BOOST_REQUIRE_EQUAL((string) nr_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    BOOST_CHECK_EQUAL((string) nr_sum.Compare(sp_sum), "+T+F+M+t+f+m");
+    BOOST_CHECK_EQUAL((string) nr_sum.Compare(ac_sum), "=T+F+M=t+f+m");
+    BOOST_CHECK_EQUAL((string) nr_sum.Compare(sc_sum), "+T+F+M+t+f+m");
 
-    BOOST_REQUIRE_EQUAL((string) sp_sum.Compare(sc_sum), "=T+F+M=t+f+m");
-    BOOST_REQUIRE_EQUAL((string) ac_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    BOOST_CHECK_EQUAL((string) sp_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    BOOST_CHECK_EQUAL((string) ac_sum.Compare(sc_sum), "+T+F+M+t+f+m");
 }
 
 BOOST_AUTO_TEST_CASE(DeltaSequenceHash)
