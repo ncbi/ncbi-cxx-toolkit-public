@@ -453,7 +453,6 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
 
     CArgs args = GetArgs();
 
-    bool any_changes = false;
 	if (args["basic"] || !args["nocleanup"]) {
         CCleanup cleanup;
         cleanup.SetScope(scope);
@@ -470,7 +469,6 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
 				    ITERATE(vector<string>, vit, changes_str) {
 					    printf ("%s\n", (*vit).c_str());
 				    }
-				    any_changes = true;
 				}
 			}
 			catch (CException& e) {
@@ -490,7 +488,6 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
 				    ITERATE(vector<string>, vit, changes_str) {
 					    printf ("%s\n", (*vit).c_str());
 				    }
-				    any_changes = true;
 				}
 			}
 			catch (CException& e) {
