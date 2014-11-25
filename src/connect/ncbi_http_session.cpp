@@ -865,11 +865,19 @@ CHttpResponse g_HttpPost(const CUrl&         url,
     req.Headers().Merge(headers);
 
     if ( content_type.empty() ) {
-        content_type = headers.HasValue(CHttpHeaders::eContentType) ?
-            headers.GetValue(CHttpHeaders::eContentType)
-            : kContentType_FormUrlEnc;
+        if ( headers.HasValue(CHttpHeaders::eContentType) ) {
+            req.Headers().SetValue(CHttpHeaders::eContentType,
+                headers.GetValue(CHttpHeaders::eContentType));
+        }
+        else {
+            req.Headers().SetValue(CHttpHeaders::eContentType,
+            kContentType_FormUrlEnc);
+        }
     }
-    req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    else {
+        req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    }
+
     if ( !data.empty() ) {
         req.ContentStream() << data;
     }
