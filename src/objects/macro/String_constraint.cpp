@@ -656,7 +656,7 @@ bool CString_constraint::x_ReplaceContains(string& val, const string& replace) c
     while (offset < val.length()) {
         size_t match_len = 0;
         if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
-                                    val.c_str()[offset - 1],
+                                    offset == 0 ? 0 : val.c_str()[offset - 1],
                                     &match_len)) {
             val = val.substr(0, offset) + replace + val.substr(offset + match_len);
             rval = true;
