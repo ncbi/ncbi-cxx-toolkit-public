@@ -2528,7 +2528,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         prot_v->SetVariant_prop().SetEffect(
             CVariantProperties::eEffect_frameshift
           | (      prot_v->IsSetVariant_prop() 
-                && prot_v->GetVariant_prop().GetEffect() 
+                && prot_v->GetVariant_prop().IsSetEffect() 
              ? prot_v->GetVariant_prop().GetEffect() : 0));
 
         prot_v->SetFrameshift().SetPhase(frameshift_phase);
