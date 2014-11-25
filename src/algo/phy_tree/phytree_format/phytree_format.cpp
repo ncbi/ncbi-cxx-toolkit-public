@@ -945,7 +945,6 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                     // mark sequence of type, unless the node represents query
                     else if(linkoutDB) {
                         int seqLinkout = linkoutDB->GetLinkout(*seqids[seq_number],"");
-                        int linkoutType;
                         string nodeInfo,bgColor;
                         if(seqLinkout & eFromType) {
                             bgColor = linkotTypeToBGColor[eFromType];
