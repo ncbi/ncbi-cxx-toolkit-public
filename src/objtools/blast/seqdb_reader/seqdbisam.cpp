@@ -1322,7 +1322,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         string id;
         
         try {
-            CSeq_id seqid(acc);
+            CSeq_id seqid(acc, CSeq_id::fParse_RawText | CSeq_id::fParse_AnyLocal);
             id = seqid.AsFastaString();
         }
         catch(CSeqIdException &) {
