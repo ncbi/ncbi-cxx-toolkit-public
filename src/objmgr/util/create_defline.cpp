@@ -1833,8 +1833,12 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     string clnbuf;
     vector<CTempString> clnvec;
     CTextJoiner<14, CTempString> joiner;
+    bool is_chromosome, is_plasmid;
 
     joiner.Add(m_Taxname);
+
+    is_plasmid = (m_Genome == NCBI_GENOME(plasmid));
+    is_chromosome = (m_Genome == NCBI_GENOME(chromosome));
 
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
@@ -1844,6 +1848,13 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     }
     if (! m_Chromosome.empty()) {
         joiner.Add(" chromosome ").Add(m_Chromosome);
+    } else if (is_chromosome) {
+        joiner.Add(" chromosome");
+    }
+    if (! m_Plasmid.empty()) {
+        joiner.Add(" plasmid ").Add(m_Plasmid);
+    } else if (is_plasmid) {
+        joiner.Add(" plasmid");
     }
 
     if (! m_rEnzyme.empty()) {
