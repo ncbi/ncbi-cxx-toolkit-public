@@ -88,7 +88,7 @@ USING_SCOPE(validator);
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
 #include "process_seqvector.hpp"
-#include "process_title.hpp"
+#include "process_title.hpp"        // NCBI_FAKE_WARNING
 #include "process_validate.hpp"
 #include "presenter.hpp"
 #include "presenter_releasefile.hpp"
