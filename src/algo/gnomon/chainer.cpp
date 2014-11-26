@@ -6042,18 +6042,32 @@ TInDels CGnomonAnnotator_Base::GetGenomicGaps(const TGeneModelList& models){
     int len = right-left+1;
     TIVec exons(len,0);
     ITERATE(TGeneModelList, i, models) {
-        ITERATE(CGeneModel::TExons, e, i->Exons()) {
+        int numex = i->Exons().size();
+        const CModelExon* preve = 0;
+        for(int ie = 0; ie < numex; ++ie) {
+            const CModelExon* e = &(i->Exons()[ie]);
+            const CModelExon* nexte = 0;
+            if(ie < numex-1) {
+                nexte = &(i->Exons()[ie+1]);
+                if(nexte->Limits().Empty()) {
+                    if(ie < numex-2)
+                        nexte = &(i->Exons()[ie+2]);
+                    else
+                        nexte = 0;
+                }
+            }
             if(e->Limits().NotEmpty()) {
                 int a = e->GetFrom();
-                if(e->m_fsplice)
+                if(e->m_fsplice && (preve == 0 || preve->GetTo()+5 < a))
                     a = max(left,a-2);
                 int b = e->GetTo();
-                if(e->m_ssplice)
+                if(e->m_ssplice && (nexte == 0 || nexte->GetFrom()-5 > b))
                     b = min(right,b+2);
                 for(int p = a; p <= b; ++p) {  // block all exons and their splices 
                     _ASSERT(p-left >= 0 && p-left < len);
                     exons[p-left] = 1;
                 }
+                preve = e;
             }
         }
     }
