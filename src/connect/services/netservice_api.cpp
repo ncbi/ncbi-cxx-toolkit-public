@@ -1169,4 +1169,47 @@ CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
     return result;
 }
 
+namespace {
+    class CDummyServerConnectionListener : public INetServerConnectionListener
+    {
+    public:
+        virtual CRef<INetServerProperties> AllocServerProperties()
+        {
+            return CRef<INetServerProperties>(new INetServerProperties);
+        }
+        virtual CConfig* LoadConfigFromAltSource(CObject* /*api_impl*/,
+                string* /*new_section_name*/)
+        {
+            return NULL;
+        }
+        virtual void OnInit(CObject* /*api_impl*/,
+                CConfig* /*config*/, const string& /*config_section*/)
+        {
+        }
+        virtual void OnConnected(CNetServerConnection& /*connection*/)
+        {
+        }
+        virtual void OnError(const string& /*err_msg*/, CNetServer& /*server*/)
+        {
+        }
+        virtual void OnWarning(const string& /*warn_msg*/,
+                CNetServer& /*server*/)
+        {
+        }
+    };
+}
+
+CNetService g_DiscoverService(const string& service_name,
+        const string& client_name)
+{
+    CNetService service(new SNetServiceImpl("Discovery", client_name,
+            new CDummyServerConnectionListener));
+
+    static const char* const config_section[] = {"discovery", NULL};
+
+    service->Init(NULL, service_name, NULL, kEmptyStr, config_section);
+
+    return service;
+}
+
 END_NCBI_SCOPE

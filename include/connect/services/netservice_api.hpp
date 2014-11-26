@@ -170,11 +170,19 @@ public:
     virtual ~IExecToJson() {}
 };
 
+/// This function is for use by the grid_cli utility only.
+/// @internal
 extern NCBI_XCONNECT_EXPORT
 CJsonNode g_ExecToJson(IExecToJson& exec_to_json,
         CNetService service,
         CNetService::EServiceType service_type,
         CNetService::EIterationMode iteration_mode = CNetService::eSortByLoad);
+
+/// This function is for use by the grid_cli utility only.
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+CNetService g_DiscoverService(const string& service_name,
+        const string& client_name);
 
 END_NCBI_SCOPE
 
