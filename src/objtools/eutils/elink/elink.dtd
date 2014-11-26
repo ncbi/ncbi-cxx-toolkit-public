@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="Windows-1252"?>
 <!--    
                 This is the Current DTD for Entrez eLink
 $Id$
@@ -81,8 +82,26 @@ $Id$
 
 
 <!-- Common -->
-<!ELEMENT	LinkSet		(DbFrom, 
-				((IdList?, ((ERROR?, LinkSetDb)*  |  (LinkSetDbHistory*, WebEnv))) | IdUrlList | IdCheckList | ERROR), ERROR?  
-				)>
+<!ELEMENT LinkSet (
+    DbFrom, (
+        (LinkSetDb+, (ERROR, LinkSetDb?)*)|
+        (ERROR, (
+            (LinkSetDb+,(ERROR, LinkSetDb?)*)|
+            (ERROR?)
+          )
+        )|
+        (IdList, (
+          (LinkSetDbHistory+, WebEnv,ERROR?)|
+          (WebEnv, ERROR?)|
+          (ERROR)|
+          (LinkSetDb+,(ERROR, LinkSetDb?)*)
+          )?
+        )|
+        (LinkSetDbHistory+, WebEnv, ERROR?)|
+        (WebEnv, ERROR?)|
+        (IdUrlList, ERROR?)|
+        (IdCheckList, ERROR?)
+    )?
+)>
 
 <!ELEMENT	eLinkResult	(LinkSet*, ERROR?)>
