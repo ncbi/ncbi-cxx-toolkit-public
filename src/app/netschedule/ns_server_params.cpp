@@ -224,12 +224,12 @@ void SNS_Parameters::Read(const IRegistry &  reg)
 void SNS_Parameters::ReadErrorEmulatorSection(const IRegistry &  reg)
 {
     debug_fd_count.ReadInt(reg, "error_emulator", "fd_report");
-    if (!debug_fd_count.value.empty() && debug_fd_count.as_int < 0)
+    if (!debug_fd_count.value.empty() && debug_fd_count.as_int < -1)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unexpected value of the [error_emulator]/fd_report "
                    " parameter. It must be >= 0");
     debug_mem_count.ReadInt(reg, "error_emulator", "mem_report");
-    if (!debug_mem_count.value.empty() && debug_mem_count.as_int < 0)
+    if (!debug_mem_count.value.empty() && debug_mem_count.as_int < -1)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unexpected value of the [error_emulator]/mem_report "
                    " parameter. It must be >= 0");
