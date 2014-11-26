@@ -702,8 +702,6 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
-    const CArgs& args = GetArgs();
-
     if ( m_do_cleanup ) {
         CSeq_entry_EditHandle tseh = seh.GetTopLevelEntry().GetEditHandle();
         CBioseq_set_EditHandle bseth;
