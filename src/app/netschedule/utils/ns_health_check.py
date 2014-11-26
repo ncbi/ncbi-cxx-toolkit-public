@@ -15,12 +15,24 @@ from optparse import OptionParser
 from random import randrange
 from time import sleep
 
-OLD_MODE = True
+
+
+# Defines three script modes
+class ScriptMode:
+    LBSMD220 = 1
+    LBSMD222_OLD_CLIENT = 2
+    LBSMD222 = 3
+
+
+SCRIPT_MODE = ScriptMode.LBSMD220
+
 MAX_OLD_MODE_VALUE = 99
 
+
 BASE_SUPPRESS_CODE = 100
-BASE_DOWN_CODE = 105
+BASE_DOWN_CODE = 106
 BASE_NO_ACTION_ALERT_CODE = 111
+STANDBY_CODE = 121
 
 VERBOSE = False
 COMMUNICATION_TIMEOUT = 1
@@ -276,15 +288,15 @@ def main():
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_SUPPRESS_CODE + 1,
-                      "Error connecting to server: timeout" ) )
+                     "Error connecting to server: timeout" ) )
     except Exception, exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_SUPPRESS_CODE + 2,
-                "Error connecting to server: " + str( exc ) ) )
+                     "Error connecting to server: " + str( exc ) ) )
     except:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_SUPPRESS_CODE + 3,
-                "Unknown check script error at the login stage" ) )
+                     "Unknown check script error at the login stage" ) )
 
 
     canSetClientData = False
@@ -366,7 +378,7 @@ def main():
                 log( BASE_SUPPRESS_CODE + 4,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except NSShuttingDown, exc:
-        return log( BASE_SUPPRESS_CODE,
+        return log( BASE_DOWN_CODE,
                     "(service " + serviceName + ") " + str( exc ) )
     except NSAccessDenied, exc:
         return log( BASE_NO_ACTION_ALERT_CODE + 4,
@@ -698,8 +710,8 @@ if __name__ == "__main__":
 
     printVerbose( "Return code: " + str( returnValue ) )
 
-    if OLD_MODE:
-        printVerbose( "Old mode is ON. Adjusting return value. Was: " +
+    if SCRIPT_MODE == ScriptMode.LBSMD220:
+        printVerbose( "ScriptMode.LBSMD220 is ON. Adjusting return value. Was: " +
                       str( returnValue ) )
         if returnValue >= BASE_SUPPRESS_CODE and \
             returnValue <= (BASE_SUPPRESS_CODE + 5):
@@ -715,5 +727,16 @@ if __name__ == "__main__":
             returnValue = MAX_OLD_MODE_VALUE
 
         printVerbose( "Adjusted to: " + str( returnValue ) )
+    elif SCRIPT_MODE == ScriptMode.LBSMD222_OLD_CLIENT:
+        printVerbose( "ScriptMode.LBSMD222_OLD_CLIENT is ON. "
+                      "Adjusting return value. Was: " +
+                      str( returnValue ) )
+        if returnValue >= BASE_SUPPRESS_CODE and \
+            returnValue <= (BASE_SUPPRESS_CODE + 5):
+            returnValue = STANDBY_CODE
+
+        printVerbose( "Adjusted to: " + str( returnValue ) )
+
 
     sys.exit( returnValue )
+
