@@ -133,9 +133,9 @@ protected:
     virtual void x_AddQuals(CBioseqContext& ctx) = 0;
     virtual void x_FormatQuals(CFlatFeature& ff) const = 0;
 
-    CMappedFeat         m_Feat;
-    CConstRef<CSeq_loc> m_Loc;
+    CMappedFeat              m_Feat;
     CRef<feature::CFeatTree> m_Feat_Tree;
+    CConstRef<CSeq_loc>      m_Loc;
 };
 
 

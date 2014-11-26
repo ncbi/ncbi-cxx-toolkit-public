@@ -962,7 +962,7 @@ CFeatureItemBase::CFeatureItemBase
  CBioseqContext& ctx,
  CRef<feature::CFeatTree> ftree,
  const CSeq_loc* loc) :
-    m_Feat(feat), CFlatItem(&ctx), m_Feat_Tree(ftree), m_Loc(loc ? loc :
+    CFlatItem(&ctx), m_Feat(feat), m_Feat_Tree(ftree), m_Loc(loc ? loc :
                                          (feat ? &feat.GetLocation() : NULL))
 {
     if (m_Feat) {
