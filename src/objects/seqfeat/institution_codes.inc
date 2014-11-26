@@ -4088,6 +4088,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MZAF	s	Museo Zoologico dell'Accademia dei Fisiocritici",
 "MZB	s	Museum Zoologicum Bogoriense",
 "MZB:Amp	s	Museum Zoologicum Bogoriense, Amphibian Collection",
+"MZB:Ornith	s	Museum Zoologicum Bogoriense, Ornithology Collection",
 "MZBL	s	Museo de Zoologica",
 "MZBS	s	Museo Zoologia",
 "MZCP	s	Universidade de Coimbra",
