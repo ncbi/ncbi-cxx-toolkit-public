@@ -407,7 +407,12 @@ struct SOptionDefinition {
         JOB_OUTPUT_DIR_OPTION, "Job output directory.", {-1}},
 
     {OPT_DEF(eSwitch, eDumpCGIEnv),
-        "dump-cgi-env", "Dump CGI environment prepared by cgi2rcgi.", {-1}},
+        "dump-cgi-env", "For remote_cgi jobs, print the CGI environment "
+            "variables saved by cgi2rcgi as a part of job input.", {-1}},
+
+    {OPT_DEF(eSwitch, eDumpCGIStdIn),
+        "dump-cgi-stdin", "For remote_cgi jobs, dump the standard "
+            "input saved by cgi2rcgi as a part of job input.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eAggregationInterval),
         "aggregation-interval", "NetCache: specify the statistics "
@@ -1023,8 +1028,9 @@ struct SCommandDefinition {
         "job input can be preserved for later re-run in debugging or "
         "testing environment. Job output can also be preserved to compare "
         "it with \"reference\" runs.",
-        {eID, eQueue, eJobInputDir, eJobOutputDir, eDumpCGIEnv, eCompatMode,
-            eLoginToken, eAuth, eClientNode, eClientSession,
+        {eID, eQueue, eJobInputDir, eJobOutputDir,
+            eDumpCGIEnv, eDumpCGIStdIn, eOutputFile,
+            eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,

@@ -56,7 +56,7 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
         return 3;
     }
 
-    if (IsOptionSet(eDumpCGIEnv)) {
+    if (IsOptionSet(eDumpCGIEnv) || IsOptionSet(eDumpCGIStdIn)) {
         auto_ptr<CNcbiIstream> input_stream(new CRStream(
                 new CStringOrBlobStorageReader(job.input, m_NetCacheAPI), 0, 0,
                     CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
@@ -68,7 +68,8 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
         try {
             request.reset(new CCgiRequest(*input_stream,
                 CCgiRequest::fIgnoreQueryString |
-                CCgiRequest::fDoNotParseContent));
+                CCgiRequest::fDoNotParseContent |
+                CCgiRequest::fSaveRequestContent));
         }
         catch (CException& e) {
             fprintf(stderr, GRID_APP_NAME
@@ -77,15 +78,22 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
             return 3;
         }
 
-        const CNcbiEnvironment& env(request->GetEnvironment());
+        if (IsOptionSet(eDumpCGIEnv)) {
+            const CNcbiEnvironment& env(request->GetEnvironment());
 
-        list<string> var_names;
+            list<string> var_names;
 
-        env.Enumerate(var_names);
+            env.Enumerate(var_names);
 
-        ITERATE(list<string>, var, var_names) {
-            printf("%s=%s\n", var->c_str(), env.Get(*var).c_str());
+            ITERATE(list<string>, var, var_names) {
+                fprintf(m_Opts.output_stream, "%s=\"%s\"\n", var->c_str(),
+                        NStr::PrintableString(env.Get(*var)).c_str());
+            }
         }
+
+        if (IsOptionSet(eDumpCGIStdIn))
+            fwrite(request->GetContent().c_str(), 1,
+                    request->GetContent().length(), m_Opts.output_stream);
     }
 
     CNetScheduleJobSerializer job_serializer(job, m_CompoundIDPool);

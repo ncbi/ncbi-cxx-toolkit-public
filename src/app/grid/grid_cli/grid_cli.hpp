@@ -240,6 +240,7 @@ enum EOption {
     eJobInputDir,
     eJobOutputDir,
     eDumpCGIEnv,
+    eDumpCGIStdIn,
     eAggregationInterval,
     ePreviousInterval,
     eFileTrackSite,
