@@ -296,6 +296,7 @@ public:
     string GetServiceName() const {return m_ServiceName;}
 
     Int8 GetTimestamp() const {return m_Timestamp;}
+    CTime GetCreationTime() const {return CTime(m_Timestamp);}
     Uint8 GetRandom() const {return m_Random;}
 
     string GetAppDomain() const {return m_AppDomain;}
