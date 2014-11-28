@@ -431,6 +431,12 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eMirror),
         "mirror", "NetCache: reconfigure mirroring.", {-1}},
 
+    {OPT_DEF(ePositionalArgument, eServiceName), "SERVICE_NAME", NULL, {-1}},
+
+    {OPT_DEF(eSwitch, eNoDNSLookup),
+        "no-dns-lookup", "Disable reverse DNS lookup "
+            "for the server IP addresses.", {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -1147,6 +1153,12 @@ struct SCommandDefinition {
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Discover,
+        "discover|lbsm", "Perform service name resolution using LBSM.",
+        "Query LBSM for the specified service name and print IPv4 socket "
+        "addresses and rates of the servers in that service.",
+        {eServiceName, eNoDNSLookup, -1}},
+
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Exec,
         "exec", "Execute an arbitrary command on one or more servers.",
         "This command is intended for testing and debugging purposes."
@@ -1542,6 +1554,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eFileTrackAPIKey:
                 TFileTrack_APIKey::SetDefault(opt_value);
+                break;
+            case eServiceName:
+                m_Opts.service_name = opt_value;
                 break;
             case eDebugHTTP:
                 // Setup error posting

@@ -567,6 +567,126 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
     }
 }
 
+namespace {
+    class CAdjustableTableColumn {
+    public:
+        enum {
+            fAlignRight = 1,
+            fLastColumn = 2
+        };
+        CAdjustableTableColumn(unsigned min_width = 0,
+                unsigned spacing = 1,
+                unsigned mode = 0) :
+            m_Width(min_width),
+            m_Spacing(spacing),
+            m_Mode(mode)
+        {
+        }
+        void AddCell(const string& text)
+        {
+            if (m_Width < text.length())
+                m_Width = text.length();
+            m_Cells.push_back(text);
+        }
+        void PrintCell(size_t row)
+        {
+            switch (m_Mode & (fAlignRight | fLastColumn)) {
+            default:
+                printf("%-*s", m_Width + m_Spacing, m_Cells[row].c_str());
+                break;
+            case fAlignRight:
+                printf("%*s%*s", m_Width, m_Cells[row].c_str(), m_Spacing, "");
+                break;
+            case fLastColumn:
+                printf("%s\n", m_Cells[row].c_str());
+                break;
+            case fAlignRight | fLastColumn:
+                printf("%*s\n", m_Width, m_Cells[row].c_str());
+            }
+        }
+        void PrintRule()
+        {
+            const static char eight_dashes[] = "--------";
+
+            unsigned width = m_Width;
+            while (width > 8) {
+                printf("%s", eight_dashes);
+                width -= 8;
+            }
+
+            if ((m_Mode & fLastColumn) == 0)
+                printf("%-*.*s", width + m_Spacing, width, eight_dashes);
+            else
+                printf("%.*s\n", width, eight_dashes);
+        }
+        size_t GetHeight() const {return m_Cells.size();}
+
+    private:
+        unsigned m_Width;
+        unsigned m_Spacing;
+        unsigned m_Mode;
+        vector<string> m_Cells;
+    };
+}
+
+#define NCBI_DOMAIN ".ncbi.nlm.nih.gov"
+
+int CGridCommandLineInterfaceApp::Cmd_Discover()
+{
+    CNetService service = g_DiscoverService(m_Opts.service_name, m_Opts.auth);
+
+    CAdjustableTableColumn ipv4_column(0, 2);
+    ipv4_column.AddCell("IPv4 Address");
+
+    CAdjustableTableColumn hostname_column(0, 2);
+    if (!IsOptionSet(eNoDNSLookup))
+        hostname_column.AddCell("Hostname");
+
+    CAdjustableTableColumn port_column(0, 2,
+            CAdjustableTableColumn::fAlignRight);
+    port_column.AddCell("Port");
+
+    CAdjustableTableColumn rating_column(7, 0,
+            CAdjustableTableColumn::fAlignRight |
+            CAdjustableTableColumn::fLastColumn);
+    rating_column.AddCell("Rating");
+
+    for (CNetServiceIterator it =
+            service.Iterate(CNetService::eIncludePenalized); it; ++it) {
+        CNetServer server(it.GetServer());
+        unsigned ipv4 = server.GetHost();
+        string ipv4_str = CSocketAPI::ntoa(ipv4);
+        ipv4_column.AddCell(ipv4_str);
+        if (!IsOptionSet(eNoDNSLookup)) {
+            string hostname = CSocketAPI::gethostbyaddr(ipv4, eOff);
+            if (hostname.empty() || hostname == ipv4_str)
+                hostname = "***DNS lookup failed***";
+            else if (NStr::EndsWith(hostname, NCBI_DOMAIN))
+                hostname.erase(hostname.length() - (sizeof(NCBI_DOMAIN) - 1));
+            hostname_column.AddCell(hostname);
+        }
+        port_column.AddCell(NStr::UIntToString(server.GetPort()));
+        rating_column.AddCell(NStr::DoubleToString(it.GetRate(), 3));
+    }
+
+    for (unsigned row = 0; row < ipv4_column.GetHeight(); ++row) {
+        ipv4_column.PrintCell(row);
+        if (!IsOptionSet(eNoDNSLookup))
+            hostname_column.PrintCell(row);
+        port_column.PrintCell(row);
+        rating_column.PrintCell(row);
+        if (row == 0) {
+            ipv4_column.PrintRule();
+            if (!IsOptionSet(eNoDNSLookup))
+                hostname_column.PrintRule();
+            port_column.PrintRule();
+            rating_column.PrintRule();
+        }
+    }
+
+    return 0;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_Exec()
 {
     SetUp_AdminCmd(eAdminCmdWithSideEffects);

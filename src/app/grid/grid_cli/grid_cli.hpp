@@ -245,6 +245,8 @@ enum EOption {
     eFileTrackSite,
     eFileTrackAPIKey,
     eMirror,
+    eServiceName,
+    eNoDNSLookup,
 
     eExtendedOptionDelimiter,
 
@@ -337,6 +339,7 @@ private:
         TNetStorageFlags netstorage_flags;
         string attr_name;
         string attr_value;
+        string service_name;
 
         struct SICacheBlobKey {
             string key;
@@ -489,6 +492,7 @@ public:
     int Cmd_Suspend();
     int Cmd_Resume();
     int Cmd_Shutdown();
+    int Cmd_Discover();
     int Cmd_Exec();
     int Cmd_Automate();
 
