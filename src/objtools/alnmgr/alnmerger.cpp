@@ -1183,6 +1183,8 @@ CAlnMixMerger::x_CreateDenseg()
     starts.resize(num, -1);
     strands.resize(num, eNa_strand_minus);
 
+    vector<bool> row_empty(numrows, true);
+
     // ids
     numrow = 0;
     ITERATE(TSeqs, row_i, m_Rows) {
@@ -1191,6 +1193,7 @@ CAlnMixMerger::x_CreateDenseg()
 
     int offset = 0;
     numseg = 0;
+
     ITERATE(CAlnMixSegments::TSegments,
             seg_i,
             m_AlnMixSegments->m_Segments) {
@@ -1203,6 +1206,10 @@ CAlnMixMerger::x_CreateDenseg()
                 (*seg_i)->m_StartIts) {
             starts[offset + start_its_i->first->m_RowIdx] =
                 start_its_i->second->first;
+
+            if (start_its_i->second->first != -1) {
+                row_empty[start_its_i->first->m_RowIdx] = false;
+            }
         }
 
         // strands
@@ -1219,18 +1226,41 @@ CAlnMixMerger::x_CreateDenseg()
         x_SetTaskCompleted(numseg);
     }
 
+
     // widths
+    CDense_seg::TWidths*  widths = NULL;
     if (m_AlnMixMatches->m_ContainsNA  &&  m_AlnMixMatches->m_ContainsAA  || 
         m_AlnMixMatches->m_AddFlags & CAlnMixMatches::fForceTranslation) {
-        CDense_seg::TWidths&  widths  = m_DS->SetWidths();
-        widths.resize(numrows);
+        widths = &m_DS->SetWidths();
+        widths->resize(numrows);
         numrow = 0;
         ITERATE (TSeqs, row_i, m_Rows) {
-            widths[numrow++] = (*row_i)->m_Width;
+            (*widths)[numrow++] = (*row_i)->m_Width;
         }
     }
+
+    //remove empty rows
+    for(int row = numrows-1; row >=0; --row) {
+        if (row_empty[row]) {
+            ids.erase(ids.begin()+row);
+            if (widths) {
+                widths->erase(widths->begin()+row);
+            }
+            for (int i = (numsegs-1)*numrows + row; i > 0; i -= numrows) {
+                starts.erase(starts.begin()+i);
+                strands.erase(strands.begin()+i);
+            }
+            --numrows;
+        }
+    }
+    m_DS->SetDim(numrows);
+
 #if _DEBUG
-    m_DS->Validate(true);
+    try {
+        m_DS->Validate(true);
+    } catch (...) {
+        _ASSERT(false);
+    }
 #endif    
 }
 
