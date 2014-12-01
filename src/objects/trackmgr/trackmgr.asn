@@ -85,7 +85,8 @@ TMgr-DTrackId ::= Dbtag
 TMgr-SwitchTrackContextRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     new-genome-context TMgr-GenomeContext,
-    current-dtrack-ids SET OF TMgr-DTrackId
+    current-dtrack-ids SET OF TMgr-DTrackId,
+    annotation-release-number INTEGER OPTIONAL
 }
 
 TMgr-SwitchTrackContextReply ::= SEQUENCE {
