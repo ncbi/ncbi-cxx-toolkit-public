@@ -831,6 +831,28 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
                 return eIO_Closed;
             }
         }
+
+        err_emul = m_Server->GetDebugReplyWithGarbage();
+        if (err_emul.IsActive()) {
+            if (err_emul.as_bool) {
+                string      value = m_Server->GetDebugGarbage();
+
+                msg_size = value.size();
+                while (msg_size >= 1 && msg[msg_size-1] == '\n')
+                    --msg_size;
+                required_size = msg_size + 1;
+
+                if (required_size > m_MsgBufferSize) {
+                    delete [] m_MsgBuffer;
+                    while (required_size > m_MsgBufferSize)
+                        m_MsgBufferSize += kMessageBufferIncrement;
+                    m_MsgBuffer = new char[m_MsgBufferSize];
+                }
+
+                memcpy(m_MsgBuffer, value.c_str(), msg_size);
+                m_MsgBuffer[required_size-1] = '\n';
+            }
+        }
     }
     #endif
 

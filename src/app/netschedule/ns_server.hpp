@@ -288,6 +288,8 @@ private:
     SErrorEmulatorParameter     debug_write_delay;
     SErrorEmulatorParameter     debug_conn_drop_before_write;
     SErrorEmulatorParameter     debug_conn_drop_after_write;
+    SErrorEmulatorParameter     debug_reply_with_garbage;
+    string                      debug_garbage;
 
 public:
     SErrorEmulatorParameter  GetDebugFDCount(void) const
@@ -300,6 +302,10 @@ public:
     { return debug_conn_drop_before_write; }
     SErrorEmulatorParameter  GetDebugConnDropAfterWrite(void) const
     { return debug_conn_drop_after_write; }
+    SErrorEmulatorParameter  GetDebugReplyWithGarbage(void) const
+    { return debug_reply_with_garbage; }
+    string                   GetDebugGarbage(void) const
+    { return debug_garbage; }
 #endif
 };
 

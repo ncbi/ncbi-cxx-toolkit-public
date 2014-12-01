@@ -114,12 +114,14 @@ void SErrorEmulatorParameter::x_ReadCommon(const IRegistry &  reg,
     // Read frequency
     list<string>    val_freq_parts;
     NStr::Split(parts.front(), ":", val_freq_parts);
-    if (val_freq_parts.size() != 2)
+    if (val_freq_parts.size() != 1 && val_freq_parts.size() != 2)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unexpected value and frequence format of the [" +
                    section + "]/" + param_name + " parameter. Expected: F:Ff");
-
-    frequency = NStr::StringToUInt(val_freq_parts.back());
+    else if (val_freq_parts.size() == 1)
+        frequency = 1;  // default
+    else
+        frequency = NStr::StringToUInt(val_freq_parts.back());
     value = val_freq_parts.front();
 }
 
@@ -242,6 +244,12 @@ void SNS_Parameters::ReadErrorEmulatorSection(const IRegistry &  reg)
                                           "drop_before_reply");
     debug_conn_drop_after_write.ReadBool(reg, "error_emulator",
                                          "drop_after_reply");
+    debug_reply_with_garbage.ReadBool(reg, "error_emulator",
+                                      "reply_with_garbage");
+
+    debug_garbage = reg.GetString("error_emulator", "garbage_data",
+                                  "please define [error_emulator]/garbage_data "
+                                  "parameter value");
 }
 #endif
 

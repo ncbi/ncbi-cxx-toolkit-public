@@ -200,6 +200,8 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     debug_write_delay = params.debug_write_delay;
     debug_conn_drop_before_write = params.debug_conn_drop_before_write;
     debug_conn_drop_after_write = params.debug_conn_drop_after_write;
+    debug_reply_with_garbage = params.debug_reply_with_garbage;
+    debug_garbage = params.debug_garbage;
     #endif
 
     if (limited)

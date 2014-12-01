@@ -140,6 +140,10 @@ struct SNS_Parameters : SServer_Parameters
     // connection drops before writing into the client socket
     SErrorEmulatorParameter     debug_conn_drop_after_write;
 
+    // to send a specified garbage instead of the real response
+    SErrorEmulatorParameter     debug_reply_with_garbage;
+    string                      debug_garbage;
+
     void ReadErrorEmulatorSection(const IRegistry &  reg);
     #endif
 
