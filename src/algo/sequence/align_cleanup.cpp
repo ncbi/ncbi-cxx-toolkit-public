@@ -150,14 +150,26 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
             TSignedSeqPos start_0 = seg.GetStarts()[j * max_rows + 0];
             TSignedSeqPos start_1 = seg.GetStarts()[j * max_rows + row];
 
-            if (start_0 < 0  &&  start_1 < 0) {
-                /// segment is entirely gapped
+            if ((start_0 < 0  &&  start_1 < 0) // segment is entirely gapped
+                || (segs==0 && (start_0 < 0  ||  start_1 < 0)) // gapped segment at the beginning
+                ) {
                 continue;
             }
             new_seg->SetLens().push_back(seg.GetLens()[j]);
             new_seg->SetStarts().push_back(start_0);
             new_seg->SetStarts().push_back(start_1);
+            new_seg->SetStrands().push_back(seg.GetStrands()[j * max_rows + 0]);
+            new_seg->SetStrands().push_back(seg.GetStrands()[j * max_rows + row]);
+            
             ++segs;
+        }
+
+        while (segs && (new_seg->SetStarts()[segs*2-2] < 0 || new_seg->SetStarts()[segs*2-1] < 0)) {
+            // gapped segment at the end
+            --segs;
+            new_seg->SetLens().resize(segs);
+            new_seg->SetStarts().resize(segs*2);
+            new_seg->SetStrands().resize(segs*2);
         }
 
         /// set the number of segments
@@ -460,6 +472,7 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                 for ( ; it != iter->second.end();  ++it) {
                     pos_strand.push_back(*it);
                 }
+                --it; // prevent enclosing loop to increment past end
             }
         }
 
