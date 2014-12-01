@@ -186,12 +186,13 @@ bool CSrcChkApp::xTryProcessIdFile(
         NStr::TruncateSpacesInPlace(id);
         CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
         CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-        if (!bsh) {
-            return false;
+        if (bsh) {
+            vecBsh.push_back(bsh);
         }
-        vecBsh.push_back(bsh);
     }
-    if (!m_pWriter->WriteBioseqHandles(vecBsh, desiredFields, *pOs, m_pErrors)) {
+
+
+    if (vecBsh.empty() || !m_pWriter->WriteBioseqHandles(vecBsh, desiredFields, *pOs, m_pErrors)) {
         return false;
     }
     return true;
