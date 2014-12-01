@@ -83,7 +83,7 @@ public:
 
 NCBI_XOBJEDIT_EXPORT bool DoesObjectMatchFieldConstraint (const CObject& object, const string& field_name, CRef<CStringConstraint> string_constraint, CRef<CScope> scope);
 NCBI_XOBJEDIT_EXPORT bool DoesApplyObjectMatchFieldConstraint (const CApplyObject& object, const string& field_name, CRef<CStringConstraint> string_constraint);
-
+NCBI_XOBJEDIT_EXPORT vector<CConstRef<CSeq_feat> > GetRelatedFeatures(const CSeq_feat& obj_feat, CSeqFeatData::ESubtype constraint_type, CRef<CScope> scope);
 
 static const string kFieldTypeSeqId = "SeqId";
 const string kDefinitionLineLabel = "Definition Line";

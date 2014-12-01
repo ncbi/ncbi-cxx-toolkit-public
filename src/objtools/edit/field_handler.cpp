@@ -40,6 +40,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/edit/field_handler.hpp>
 #include <objtools/edit/dblink_field.hpp>
 #include <objtools/edit/gb_block_field.hpp>
@@ -195,6 +196,99 @@ bool DoesApplyObjectMatchFieldConstraint (const CApplyObject& object, const stri
     return string_constraint->DoesListMatch(val_list);
 }
 
+static vector<CConstRef<CSeq_feat> > s_GetProtFeatures(CBioseq_Handle p_bsh, CSeqFeatData::ESubtype constraint_type)
+{
+    vector<CConstRef<CSeq_feat> > feat_list;
+    if (p_bsh) {
+        CFeat_CI f(p_bsh, constraint_type);
+        while (f) {
+            CConstRef<CSeq_feat> object;
+            object.Reset(f->GetOriginalSeq_feat());
+            feat_list.push_back(object);
+            ++f;
+        }
+    }
+    return feat_list;
+}
+
+
+vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSeqFeatData::ESubtype constraint_type, CRef<CScope> scope)
+{
+    vector<CConstRef<CSeq_feat> > feat_list;
+
+    CSeqFeatData::ESubtype obj_type = obj_feat.GetData().GetSubtype();
+
+    // is one feature type a protein and the other not?
+    bool obj_is_prot = (CSeqFeatData::GetTypeFromSubtype(obj_type) == CSeqFeatData::e_Prot);
+    bool constraint_is_prot = (CSeqFeatData::GetTypeFromSubtype(constraint_type) == CSeqFeatData::e_Prot);               
+    if (obj_is_prot && constraint_is_prot) {
+        // find feature anywhere on protein sequence
+        CBioseq_Handle p_bsh = scope->GetBioseqHandle(obj_feat.GetLocation());
+        feat_list = s_GetProtFeatures(p_bsh, constraint_type);
+    } else if (obj_is_prot && !constraint_is_prot) {
+        // use coding region for starting point of overlap comparison
+        CBioseq_Handle p_bsh = scope->GetBioseqHandle(obj_feat.GetLocation());
+        const CSeq_feat* cds = sequence::GetCDSForProduct(p_bsh);
+        if (cds) {
+            if (CSeqFeatData::GetTypeFromSubtype(constraint_type) == CSeqFeatData::e_Cdregion) {
+                feat_list.push_back(CConstRef<CSeq_feat>(cds));
+            } else {
+                feat_list = GetRelatedFeatures(*cds, constraint_type, scope);
+            }
+        }                      
+    } else if (!obj_is_prot && constraint_is_prot) {
+        // examine objects on protein sequence
+        // need to find coding region for obj_feat
+        if (obj_type == CSeqFeatData::eSubtype_cdregion) {
+            CBioseq_Handle p_bsh = scope->GetBioseqHandle(obj_feat.GetProduct());
+            feat_list = s_GetProtFeatures(p_bsh, constraint_type);
+        } else if (obj_type == CSeqFeatData::eSubtype_mRNA) {
+            const CSeq_feat* cds = sequence::GetBestCdsForMrna(obj_feat, *scope);
+            if (cds) {
+                feat_list = GetRelatedFeatures(*cds, constraint_type, scope);
+            }                    
+        } else if (obj_type == CSeqFeatData::eSubtype_gene) {
+            sequence::TFeatScores scores;
+            sequence::GetOverlappingFeatures (obj_feat.GetLocation(), 
+                                              CSeqFeatData::e_Cdregion, 
+                                              CSeqFeatData::eSubtype_cdregion, 
+                                              sequence::eOverlap_Contained, 
+                                              scores, *scope);
+            ITERATE (sequence::TFeatScores, it, scores) {
+                vector<CConstRef<CSeq_feat> > this_list = GetRelatedFeatures(*(it->second), constraint_type, scope);
+                feat_list.insert(feat_list.end(), this_list.begin(), this_list.end());
+            }
+        }
+    } else {
+        // neither is a protein
+        if (constraint_type == CSeqFeatData::eSubtype_gene) {
+            CConstRef<CSeq_feat> f = sequence::GetOverlappingGene(obj_feat.GetLocation(), *scope);
+            if (f) {
+                feat_list.push_back(f);
+            }
+        } else if (obj_type == CSeqFeatData::eSubtype_gene) {
+            sequence::TFeatScores scores;
+            sequence::GetOverlappingFeatures (obj_feat.GetLocation(), 
+                                              CSeqFeatData::GetTypeFromSubtype(constraint_type), 
+                                              constraint_type, 
+                                              sequence::eOverlap_Contained, 
+                                              scores, *scope);            
+            ITERATE (sequence::TFeatScores, it, scores) {
+                feat_list.push_back(it->second);
+            }
+        } else if (obj_type == CSeqFeatData::eSubtype_cdregion
+            && constraint_type == CSeqFeatData::eSubtype_mRNA) {
+            CConstRef<CSeq_feat> f = sequence::GetBestMrnaForCds(obj_feat, *scope);
+            if (f) {
+                feat_list.push_back(f);
+            }
+        } else if (constraint_type == CSeqFeatData::eSubtype_any || constraint_type == obj_type) {
+            CConstRef<CSeq_feat> f(&obj_feat);
+            feat_list.push_back(f);
+        }
+    }
+    return feat_list;
+}
 
 END_SCOPE(edit)
 END_SCOPE(objects)
