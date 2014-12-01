@@ -37,6 +37,8 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
+#include <util/md5.hpp>
+
 USING_NCBI_SCOPE;
 
 enum EErrorMessageVerbosity {
@@ -52,6 +54,18 @@ public:
     int  ProcessRequest(CCgiContext& ctx);
 
 private:
+    struct SContext
+    {
+        CJsonNode json;
+        string file;
+
+        SContext(const string& f) : json(CJsonNode::NewObjectNode()), file(f) {}
+    };
+
+    template <class What>
+    void Error(SContext&, const What&, const string&) const;
+    void Copy(SContext&, CCgiEntry&);
+
     CNetStorage m_NetStorage;
     string m_SourceFieldName;
     EErrorMessageVerbosity m_ErrorMessageVerbosity;
@@ -106,12 +120,79 @@ void CFileUploadApplication::Init()
     m_NetStorage = CNetStorage(init_string);
 }
 
-static string s_MakeLogRef()
+template <class What>
+void CFileUploadApplication::Error(SContext& ctx, const What& what,
+        const string& msg = kEmptyStr) const
 {
-    CCompoundID logref = CCompoundIDPool().NewID(eCIC_GenericID);
-    logref.AppendCurrentTime();
-    logref.AppendRandom();
-    return logref.ToString();
+    ctx.json.SetBoolean("success", false);
+
+    string err_msg("Error while uploading ");
+    err_msg.append(ctx.file);
+    err_msg.append(": ", 2);
+
+    if (m_ErrorMessageVerbosity != eEMV_LogRef) {
+        ERR_POST(err_msg << what);
+        err_msg += msg;
+    } else {
+        CCompoundID id = CCompoundIDPool().NewID(eCIC_GenericID);
+        id.AppendCurrentTime();
+        id.AppendRandom();
+        const string& logref = id.ToString();
+
+        ERR_POST('[' << logref << "] " << err_msg << what);
+        GetDiagContext().Extra().Print("logref", logref);
+
+        if (msg.empty()) {
+            err_msg += logref;
+        } else {
+            err_msg += msg + " [" + logref + ']';
+        }
+    }
+
+    ctx.json.SetString("msg", err_msg);
+}
+
+void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
+{
+    const string& filename_from_entry = entry.GetFilename();
+    if (!filename_from_entry.empty()) {
+        ctx.json.SetString("name", ctx.file = filename_from_entry);
+    }
+
+    auto_ptr<IReader> reader(entry.GetValueReader());
+    CNetStorageObject netstorage_object = m_NetStorage.Create();
+    IEmbeddedStreamWriter& writer(netstorage_object.GetWriter());
+
+    char buf[16384];
+    CMD5 sum;
+    for (;;) {
+        size_t read = 0;
+        ERW_Result read_result = reader->Read(buf, sizeof(buf), &read);
+
+        if (read_result != eRW_Success && read_result != eRW_Eof) {
+            Error(ctx, g_RW_ResultToString(read_result));
+            return;
+        }
+
+        sum.Update(buf, read);
+
+        size_t written = 0;
+        for (const char *ptr = buf; read > 0; read -= written) {
+            ERW_Result write_result = writer.Write(ptr, read, &written);
+
+            if (write_result != eRW_Success) {
+                Error(ctx, g_RW_ResultToString(write_result));
+                return;
+            }
+        }
+
+        if (read_result == eRW_Eof) {
+            ctx.json.SetBoolean("success", true);
+            ctx.json.SetString("key", netstorage_object.GetLoc());
+            ctx.json.SetString("md5", sum.GetHexSum());
+            return;
+        }
+    }
 }
 
 int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
@@ -120,101 +201,55 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
     CCgiResponse& response = ctx.GetResponse();
 
     response.SetContentType("application/json");
-
-    CJsonNode response_json = CJsonNode::NewObjectNode();
-
-    string filename("input data");
+    SContext app_ctx("input data");
 
     try {
         for (;;) {
             TCgiEntriesI it = request.GetNextEntry();
 
             if (it == request.GetEntries().end()) {
-                response_json.SetBoolean("success", false);
-                response_json.SetString("msg", "Nothing to upload");
+                app_ctx.json.SetBoolean("success", false);
+                app_ctx.json.SetString("msg", "Nothing to upload");
                 break;
             }
 
             if (it->first == m_SourceFieldName) {
-                response_json.SetBoolean("success", true);
-
-                CCgiEntry& entry(it->second);
-
-                const string& filename_from_entry = entry.GetFilename();
-                if (!filename_from_entry.empty())
-                    response_json.SetString("name",
-                            filename = filename_from_entry);
-
-                auto_ptr<CNcbiIstream> input_stream(entry.GetValueStream());
-
-                CNetStorageObject netstorage_object = m_NetStorage.Create();
-
-                CWStream output_stream(&netstorage_object.GetWriter(), 0, 0,
-                        CRWStreambuf::fLeakExceptions);
-
-                NcbiStreamCopy(output_stream, *input_stream);
-
-                netstorage_object.Close();
-
-                response_json.SetString("key", netstorage_object.GetLoc());
-
+                Copy(app_ctx, it->second);
                 break;
             }
         }
     }
     catch (CException& e) {
-        response_json.SetBoolean("success", false);
+        string msg;
 
-        string err_msg("Error while uploading ");
-        err_msg.append(filename);
-        err_msg.append(": ", 2);
-
-        if (m_ErrorMessageVerbosity != eEMV_LogRef) {
-            ERR_POST(err_msg << e);
-
-            response_json.SetString("msg", err_msg +
-                    (m_ErrorMessageVerbosity == eEMV_Verbose ?
-                            e.ReportAll() : e.GetMsg()));
-        } else {
-            string logref(s_MakeLogRef());
-
-            ERR_POST('[' << logref << "] " << err_msg << e);
-            GetDiagContext().Extra().Print("logref", logref);
-
-            const char* err_code = e.GetErrCodeString();
-            if (*err_code == 'e')
-                ++err_code;
-            string error_details(err_code);
-            error_details.append(" [", 2);
-            error_details.append(logref);
-            error_details.append(1, ']');
-
-            response_json.SetString("msg", err_msg + error_details);
+        switch (m_ErrorMessageVerbosity) {
+            case eEMV_Verbose:
+                msg = e.ReportAll();
+                break;
+            case eEMV_Terse:
+                msg = e.GetMsg();
+                break;
+            default:
+            {
+                const char* err_code = e.GetErrCodeString();
+                if (*err_code == 'e')
+                    ++err_code;
+                msg = err_code;
+            }
         }
+
+        Error(app_ctx, e, msg);
     }
     catch (exception& e) {
-        response_json.SetBoolean("success", false);
-
-        string err_msg("Error while uploading ");
-        err_msg.append(filename);
-        err_msg.append(": ", 2);
-
-        if (m_ErrorMessageVerbosity != eEMV_LogRef) {
-            ERR_POST(err_msg << e.what());
-
-            response_json.SetString("msg", err_msg + e.what());
+        if (m_ErrorMessageVerbosity == eEMV_LogRef) {
+            Error(app_ctx, e.what());
         } else {
-            string logref(s_MakeLogRef());
-
-            ERR_POST('[' << logref << "] " << err_msg << e.what());
-            GetDiagContext().Extra().Print("logref", logref);
-
-            response_json.SetString("msg", err_msg + logref);
+            Error(app_ctx, e.what(), e.what());
         }
     }
 
     response.WriteHeader();
-    response.out() << response_json.Repr();
+    response.out() << app_ctx.json.Repr();
 
     return 0;
 }
