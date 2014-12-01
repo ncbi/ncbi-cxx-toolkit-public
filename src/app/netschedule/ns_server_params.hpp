@@ -36,6 +36,7 @@
 #include <connect/server.hpp>
 
 #include <string>
+#include <limits>
 
 BEGIN_NCBI_SCOPE
 
@@ -72,7 +73,7 @@ struct SErrorEmulatorParameter
 
     SErrorEmulatorParameter() :
         value(""), as_int(-1), as_double(0.0), as_bool(false), frequency(1),
-        range_begin(0), range_end(4294967295)
+        range_begin(0), range_end(numeric_limits<Uint4>::max())
     {}
 
     bool IsActive(void) const;
