@@ -2015,6 +2015,35 @@ CTempString CWGSScaffoldIterator::GetScaffoldName(void) const
 }
 
 
+bool CWGSScaffoldIterator::HasSeq_descr(void) const
+{
+    x_CheckValid("CWGSScaffoldIterator::HasSeq_descr");
+
+    return !GetDb().GetMasterDescr().empty();
+}
+
+
+CRef<CSeq_descr> CWGSScaffoldIterator::GetSeq_descr(void) const
+{
+    x_CheckValid("CWGSScaffoldIterator::GetSeq_descr");
+
+    CRef<CSeq_descr> ret(new CSeq_descr);
+    if ( !GetDb().GetMasterDescr().empty() ) {
+        unsigned type_mask = 0;
+        ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
+            const CSeqdesc& desc = **it;
+            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
+                 (type_mask & (1 << desc.Which())) ) {
+                // omit master descr if contig already has one of that type
+                continue;
+            }
+            ret->Set().push_back(*it);
+        }
+    }
+    return ret;
+}
+
+
 TSeqPos CWGSScaffoldIterator::GetSeqLength(void) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetSeqLength");
@@ -2094,6 +2123,9 @@ CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(void) const
 
     CRef<CBioseq> ret(new CBioseq());
     GetIds(ret->SetId());
+    if ( HasSeq_descr() ) {
+        ret->SetDescr(*GetSeq_descr());
+    }
     ret->SetInst(*GetSeq_inst());
     return ret;
 }

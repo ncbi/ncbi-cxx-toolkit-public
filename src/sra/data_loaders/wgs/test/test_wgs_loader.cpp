@@ -150,6 +150,21 @@ CRef<CDelta_ext> sx_ExtractDelta(CBioseq& seq)
             ext.Reset();
         }
     }
+    else if ( inst.IsSetSeq_data() ) {
+        CRef<CDelta_seq> ext(new CDelta_seq);
+        ext->SetLiteral().SetLength(inst.GetLength());
+        ext->SetLiteral().SetSeq_data(inst.SetSeq_data());
+        delta = new CDelta_ext();
+        delta->Set().push_back(ext);
+        inst.ResetSeq_data();
+        if ( inst.GetRepr() == CSeq_inst::eRepr_raw ) {
+            inst.SetRepr(CSeq_inst::eRepr_delta);
+            inst.SetExt();
+        }
+    }
+    if ( inst.IsSetStrand() && inst.GetStrand() == CSeq_inst::eStrand_ds ) {
+        inst.ResetStrand();
+    }
     return delta;
 }
 
@@ -498,6 +513,15 @@ void sx_ReportState(const CBioseq_Handle& bsh, const CSeq_id_Handle& idh)
     }
 }
 
+int sx_GetDescCount(const CBioseq_Handle& bh, CSeqdesc::E_Choice type)
+{
+    int ret = 0;
+    for ( CSeqdesc_CI it(bh, type, 1); it; ++it ) {
+        ++ret;
+    }
+    return ret;
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeq1)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
@@ -514,8 +538,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Molinfo, 1));
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
 
@@ -535,8 +559,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Molinfo, 1));
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
 
@@ -556,8 +580,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Molinfo, 1));
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq4)
@@ -619,8 +643,9 @@ BOOST_AUTO_TEST_CASE(FetchSeq7)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Molinfo, 1));
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK(sx_EqualToGB(bh));
 }
 
 
@@ -640,8 +665,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq8)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq9)
@@ -660,8 +685,9 @@ BOOST_AUTO_TEST_CASE(FetchSeq9)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
+    //BOOST_CHECK(sx_EqualToGB(bh)); no in GB
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq10)
@@ -695,8 +721,9 @@ BOOST_AUTO_TEST_CASE(FetchSeq11)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    //BOOST_CHECK(sx_EqualToGB(bh)); circular
 }
 
 
@@ -716,8 +743,9 @@ BOOST_AUTO_TEST_CASE(FetchSeq12)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
+    //BOOST_CHECK(sx_EqualToGB(bh)); circular
 }
 
 
@@ -737,8 +765,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq13)
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(CSeqdesc_CI(bh, CSeqdesc::e_Pub, 1));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
 }
 
 
@@ -799,13 +827,13 @@ BOOST_AUTO_TEST_CASE(FetchSeq17)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Title, 1));
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Molinfo, 1));
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Source, 1));
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Create_date, 1));
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Update_date, 1));
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_Pub, 2));
-    BOOST_CHECK(CSeqdesc_CI(bsh, CSeqdesc::e_User, 2));
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Title), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Source), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Create_date), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Update_date), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_User), 2);
 }
 
 

@@ -507,6 +507,9 @@ public:
 
     void GetIds(CBioseq::TId& ids) const;
 
+    bool HasSeq_descr(void) const;
+    CRef<CSeq_descr> GetSeq_descr(void) const;
+
     TSeqPos GetSeqLength(void) const;
 
     CRef<CSeq_inst> GetSeq_inst(void) const;
