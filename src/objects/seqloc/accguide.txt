@@ -533,6 +533,7 @@ special  CAD67963-CAD67964  embl_tpa_prot
 special  CAD67985           embl_tpa_prot
 special  CAD68170-CAD68171  embl_tpa_prot
 special  CAD71139           embl_tpa_prot
+special  CAD79639           embl_tpa_prot
 special  CAD79708           embl_tpa_prot
 special  CAD80155-CAD80157  embl_tpa_prot
 special  CAD80167           embl_tpa_prot
@@ -9605,4 +9606,4 @@ special  CDK08089-CDK12444  embl_tpa_prot
 special  CDM98735-CDM98850  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CEA09918-CZZ99999  unreserved_prot
+#special CEJ98612-CZZ99999  unreserved_prot
