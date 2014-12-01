@@ -179,6 +179,11 @@ int CTestGenomicCollectionsSvcApplication::Run(void)
     const CArgs& args = GetArgs();
     CNcbiOstream& ostr = args["o"].AsOutputFile();
     
+    if(args["f"] && NStr::FindNoCase(args["f"].AsString(),"XML") != NPOS)
+        ostr << MSerial_Xml;
+    else
+        ostr << MSerial_AsnText;
+
     int retVal = 1;
     if(!args["cgi"]) {
         retVal = RunUsingClient(args, ostr);
@@ -219,6 +224,7 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
         if(args["-filter"])   req.SetFilter(args["-filter"].AsInteger());
         if(args["-sort"]  )   req.SetSort(args["-sort"].AsInteger());
         if(args["-limit"] )   req.SetAssembly_return_limit(args["-limit"].AsInteger());
+        else if(request == "get-best-assembly")   req.SetAssembly_return_limit(1);
     }
 }
 
@@ -269,9 +275,27 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
         
         CGCClientResponse reply;
         objOutStream >> MSerial_AsnBinary >> reply;
-        cout << "\nCGI Response:\n" << MSerial_AsnText << reply << endl;
+
+        if(reply.IsGet_assembly())
+            ostr << reply.GetGet_assembly();
+        else if(reply.IsGet_best_assembly())
+        {
+            if(args["request"].AsString() == "get-best-assembly")
+            {
+                if(request.GetGet_best_assembly().GetSeq_id_acc().size() > 1)
+                    ostr << *reply.GetGet_best_assembly().GetAssemblies().front();
+                else
+                    ostr << reply.GetGet_best_assembly().GetAssemblies().front()->GetAssembly();
+            }
+            else
+                ostr << reply.GetGet_best_assembly();
+        }
+        else if(reply.IsGet_chrtype_valid())
+            ostr << reply.GetGet_chrtype_valid();
+        else
+            ostr << reply;
     }
-    cout << "ErrStream:" << errStr.str() << "\n <<< end ErrStream" << endl;
+    cout << "ErrStream>>>\n" << errStr.str() << "\n<<< end ErrStream" << endl;
     
     return exitCode;
 }
@@ -288,11 +312,6 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
                     new CGenomicCollectionsService());
 
     LOG_POST("testing genomic collections cgi.");
-
-    if(args["f"] && NStr::FindNoCase(args["f"].AsString(),"XML") != NPOS)
-        ostr << MSerial_Xml;
-    else
-        ostr << MSerial_AsnText;
 
     string request = args["request"].AsString();
     
