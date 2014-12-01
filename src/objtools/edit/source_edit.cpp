@@ -36,6 +36,12 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/taxon3/Taxon3_request.hpp>
+#include <objects/taxon3/T3Request.hpp>
+#include <objects/taxon3/SequenceOfInt.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
+#include <objects/taxon3/T3Reply.hpp>
+#include <objects/taxon3/taxon3.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -96,6 +102,49 @@ bool RemoveTaxId( objects::CBioSource& src )
         }
     }
     return erased;
+}
+
+
+CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2)
+{ 
+    CRef<CBioSource> common(NULL);
+
+    if (!src1.IsSetOrg() || !src2.IsSetOrg()) {
+        return common;
+    }
+    int taxid1 = src1.GetOrg().GetTaxId();
+    int taxid2 = src2.GetOrg().GetTaxId();
+    if (taxid1 == 0 || taxid2 == 0) {
+        return common;
+    } else if (taxid1 == taxid2) {
+        common = src1.MakeCommon(src2);
+    } else {
+        CRef<CT3Request> rq(new CT3Request());
+        rq->SetJoin().Set().push_back(taxid1);
+        rq->SetJoin().Set().push_back(taxid2);
+        CTaxon3_request request;
+        request.SetRequest().push_back(rq);
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendRequest(request);
+        if (reply) {
+            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+            while (reply_it != reply->GetReply().end()) {
+                if ((*reply_it)->IsData() 
+                    && (*reply_it)->GetData().GetOrg().IsSetTaxname()) {
+                    bool is_species_level = false, force_consult = false, has_nucleomorphs = false;
+                    (*reply_it)->GetData().GetTaxFlags (is_species_level, force_consult, has_nucleomorphs);
+                    if (is_species_level) {
+                        common.Reset(new CBioSource());
+                        common->SetOrg().Assign((*reply_it)->GetData().GetOrg());
+                    }
+                    break;
+                }
+                ++reply_it;
+            }
+        }
+    }
+    return common;
 }
 
 

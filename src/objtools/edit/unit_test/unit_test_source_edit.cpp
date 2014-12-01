@@ -53,6 +53,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objects/seqfeat/seqfeat_macros.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
@@ -261,6 +263,64 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFunctions)
     BOOST_CHECK_EQUAL(str_test, string("Guinea-Bissau"));
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2100)
+{
+    CRef<CBioSource> src1(new CBioSource());
+    CRef<CBioSource> src2(new CBioSource());
+
+    CRef<CBioSource> common = edit::MakeCommonBioSource(*src1, *src2);
+    // fail because no org-refs set
+    BOOST_CHECK(!common);
+
+    // TaxIds are same, drop non-common attributes
+    src1->SetOrg().SetTaxname("Pneumocystis carinii");
+    CRef<CDbtag> tag(new CDbtag());
+    tag->SetDb("taxon");
+    tag->SetTag().SetId(142052);
+    src1->SetOrg().SetDb().push_back(tag);
+    CRef<COrgMod> mod(new COrgMod());
+    mod->SetSubtype(COrgMod::eSubtype_forma_specialis);
+    mod->SetSubname("rattus-tertii");
+    src1->SetOrg().SetOrgname().SetMod().push_back(mod);
+
+    src2->Assign(*src1);
+
+    src1->SetGenome(CBioSource::eGenome_apicoplast);
+    src2->SetGenome(CBioSource::eGenome_chloroplast);
+
+    common = edit::MakeCommonBioSource(*src1, *src2);
+    BOOST_CHECK(common);
+    BOOST_CHECK(common->GetOrg().Equals(src1->GetOrg()));
+    BOOST_CHECK(!common->IsSetGenome());
+
+    // TaxIds are different but species-level same
+    src2->SetOrg().SetDb().front()->SetTag().SetId(142053);
+    src2->SetOrg().SetOrgname().SetMod().front()->SetSubname("rattus-quarti");
+    common = edit::MakeCommonBioSource(*src1, *src2);
+    BOOST_CHECK(common);
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Pneumocystis carinii");
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), 4754);
+
+    // Tax IDs not species level same
+
+    src2->SetOrg().SetDb().front()->SetTag().SetId(1069680);
+    src2->SetOrg().SetTaxname("Pneumocystis murina B123");
+    src2->SetOrg().SetOrgname().ResetMod();
+    CRef<COrgMod> strain(new COrgMod());
+    strain->SetSubtype(COrgMod::eSubtype_strain);
+    strain->SetSubname("B123");
+    src2->SetOrg().SetOrgname().SetMod().push_back(strain);
+    CRef<COrgMod> subsp(new COrgMod());
+    subsp->SetSubtype(COrgMod::eSubtype_sub_species);
+    subsp->SetSubname("B123");
+    src2->SetOrg().SetOrgname().SetMod().push_back(subsp);
+    common = edit::MakeCommonBioSource(*src1, *src2);
+    BOOST_CHECK(!common);
+
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -44,6 +44,7 @@ BEGIN_SCOPE(edit)
 NCBI_XOBJEDIT_EXPORT bool CleanupForTaxnameChange( objects::CBioSource& src );
 NCBI_XOBJEDIT_EXPORT bool RemoveOldName( objects::CBioSource& src );
 NCBI_XOBJEDIT_EXPORT bool RemoveTaxId( objects::CBioSource& src );
+NCBI_XOBJEDIT_EXPORT CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2);
 
 END_SCOPE(edit)
 END_SCOPE(objects)
