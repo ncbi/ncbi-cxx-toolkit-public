@@ -192,13 +192,19 @@ TToken XSDLexer::LookupLexeme(void)
                 char ctest = Char(sp_count);
                 if (!isspace((unsigned char)ctest)) {
                     if (ctest == '=') {
+                        AddChars(sp_count-1);
                         space = false;
                     }
                     break;
                 }
             }
         }
-        if (att && (c == cOpen)) {
+        if (att && !space && cOpen == '\0') {
+            if (c != '\"' && c != '\'') {
+                LexerError("No opening quote in attribute");
+            }
+            cOpen = c;
+        } else if (att && (c == cOpen)) {
             AddChar();
             if (strncmp(CurrentTokenStart(),"xmlns",5)==0) {
                 return K_XMLNS;
@@ -210,12 +216,10 @@ TToken XSDLexer::LookupLexeme(void)
             }
         }
         if (c == '=') {
-            att = true;
-            AddChar();
-            cOpen = c = Char();
-            if (c != '\"' && c != '\'') {
-                LexerError("No opening quote in attribute");
+            if (att) {
+                LexerError("Invalid format of an attribute");
             }
+            att = true;
         }
         AddChar();
     }

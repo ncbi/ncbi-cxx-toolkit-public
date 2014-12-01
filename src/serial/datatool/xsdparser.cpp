@@ -160,6 +160,7 @@ TToken XSDParser::GetNextToken(void)
             ParseError("Unexpected data", "attribute (name=\"value\")");
         }
         NStr::TruncateSpacesInPlace(str1);
+        NStr::TruncateSpacesInPlace(data2);
 // attribute
         data = str1;
         if (NStr::SplitInTwo(data, ":", str1, str2)) {
