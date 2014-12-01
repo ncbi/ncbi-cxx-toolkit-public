@@ -1305,8 +1305,8 @@ private:
 class CScore_TblastnScore : public CScoreLookup::IScore
 {
 public:
-    CScore_TblastnScore(const string& matrix)
-        : m_Matrix(matrix)
+    CScore_TblastnScore(CScoreLookup &lookup)
+    : m_ScoreLookup(lookup)
     {
     }
 
@@ -1342,170 +1342,13 @@ public:
                        "valid only for protein spliced-seg alignments");
         }
 
-        CSeq_id_Handle prot_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
-        CSeq_id_Handle genomic_idh =
-            CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
-
-        ENa_strand strand = align.GetSeqStrand(1);
-        CBioseq_Handle prot_bsh = scope->GetBioseqHandle(prot_idh);
-        CBioseq_Handle genomic_bsh = scope->GetBioseqHandle(genomic_idh);
-        CSeqVector prot_vec   (prot_bsh,    CBioseq_Handle::eCoding_Iupac);
-
-        int gcode = 1;
-        try {
-            gcode = sequence::GetOrg_ref(genomic_bsh).GetGcode();
-        }
-        catch (CException&) {
-            // use the default genetic code
-        }
-
-        const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
-
-        int state = 0;
-        int offs = 0;
-        int score = 0;
-
-        const SNCBIPackedScoreMatrix* packed_mtx =
-            NCBISM_GetStandardMatrix(m_Matrix.c_str());
-        if (packed_mtx == NULL) {
-            NCBI_THROW(CException, eUnknown,
-                       "unknown scoring matrix: " + m_Matrix);
-        }
-        SNCBIFullScoreMatrix full_matrix;
-        NCBISM_Unpack(packed_mtx, &full_matrix);
-
-        //LOG_POST(Error << "align: " << prot_idh << " x " << genomic_idh);
-
-        CSeq_align sub_align;
-        sub_align.Assign(align);
-
-        int gap_count = 0;
-        int gap_bases = 0;
-        int num_positives = 0;
-        int num_negatives = 0;
-        int num_match = 0;
-        int num_mismatch = 0;
-        ITERATE (CSpliced_seg::TExons, it,
-                 align.GetSegs().GetSpliced().GetExons()) {
-            CRef<CSpliced_exon> exon = *it;
-            sub_align.SetSegs().SetSpliced().SetExons().clear();
-            sub_align.SetSegs().SetSpliced().SetExons().push_back(exon);
-
-            CRef<CPairwiseAln> aln = CreatePairwiseAlnFromSeqAlign(sub_align);
-
-            CPairwiseAln::const_iterator prev = aln->end();
-            ITERATE (CPairwiseAln, range_it, *aln) {
-
-                // handle gaps
-                if (prev != aln->end()) {
-                    int q_gap = range_it->GetFirstFrom() - prev->GetFirstTo() - 1;
-                    int s_gap =
-                        (strand == eNa_strand_minus ?
-                         prev->GetSecondFrom() - range_it->GetSecondTo() - 1 :
-                         range_it->GetSecondFrom() - prev->GetSecondTo() - 1);
-
-                    // check if this range is in the list of known introns
-                    ++gap_count;
-                    gap_bases += abs(q_gap - s_gap);
-
-                    /**
-                    LOG_POST(Error
-                             << "  q_gap=" << q_gap
-                             << "  s_gap=" << s_gap);
-                             **/
-                }
-                prev = range_it;
-
-                CRange<int> q_range = range_it->GetFirstRange();
-                CRange<int> s_range = range_it->GetSecondRange();
-
-                int s_start = s_range.GetFrom();
-                int s_end   = s_range.GetTo();
-                int q_pos   = q_range.GetFrom();
-
-                int new_offs = q_pos % 3;
-                for ( ;  offs != new_offs;  offs = (offs + 1) % 3) {
-                    state = tbl.NextCodonState(state, 'N');
-                }
-
-                // first range is in nucleotide coordinates...
-                /**
-                LOG_POST(Error << "  range: "
-                         << range_it->GetFirstFrom() << ".."
-                         << range_it->GetFirstTo() << " x "
-                         << range_it->GetSecondFrom() << ".."
-                         << range_it->GetSecondTo() << " ("
-                         << (range_it->IsReversed() ? "-" : "+") << ")"
-
-                         << "  qspan=" << (int)(range_it->GetLength() / 3)
-                         << " / " << range_it->GetLength() % 3
-                        );
-                        **/
-
-                CRef<CSeq_loc> loc =
-                    genomic_bsh.GetRangeSeq_loc(s_start, s_end, strand);
-                CSeqVector genomic_vec(*loc, *scope, CBioseq_Handle::eCoding_Iupac);
-                CSeqVector_CI vec_it(genomic_vec);
-
-                for ( ;  s_start <= s_end;  ++s_start, ++q_pos, ++vec_it) {
-                    state = tbl.NextCodonState(state, *vec_it);
-                    if (offs % 3 == 2) {
-                        unsigned char prot = prot_vec[(int)(q_pos / 3)];
-                        unsigned char xlate = tbl.GetCodonResidue(state);
-
-                        int this_score = full_matrix.s[prot][xlate];
-
-                        num_match += (prot == xlate);
-                        num_mismatch += (prot != xlate);
-                        num_positives += (this_score > 0);
-                        num_negatives += (this_score <= 0);
-                        score += this_score;
-
-                        /**
-                        LOG_POST(Error
-                                 << "  q_pos=" << q_pos
-                                 << "  s_pos=" << s_start
-                                 << "  prot_idx=" << (int)(q_pos / 3)
-                                 << "  prot=" << prot
-                                 << "  xlate=" << xlate
-                                 << "  score=" << score
-                                 << (this_score < 0 ? "  negative" : "")
-                                 << (prot != xlate ? "  mismatch" : ""));
-                                 **/
-                    }
-
-                    offs = (offs + 1) % 3;
-                }
-            }
-        }
-
-        // adjust score for gaps
-        // HACK: this isn't exactly correct; it overestimates scores because we
-        // don't have full accounting of composition based statistics, etc.
-        // It's close enough, though
-        /**
-        LOG_POST(Error
-                 << "  raw score = " << score
-                 << "  gap openings = " << gap_count
-                 << "  gap bases = " << gap_bases
-                 << "  positives = " << num_positives << '(' << num_positives*3 << ')'
-                 << "  negatives = " << num_negatives << '(' << num_negatives*3 << ')'
-                 << "  match = " << num_match << '(' << num_match*3 << ')'
-                 << "  mismatch = " << num_mismatch << '(' << num_mismatch*3 << ')'
-                 << "  gap bases = " << gap_bases
-                 << "  score = "
-                 << score - (int)(gap_count * 11 + gap_bases * 0.33));
-                 **/
-
-        score -=
-            gap_count * 11 /* gap open cost */
-            + gap_bases * 0.33 /* gap extend cost */;
+        int score = m_ScoreLookup.GetBlastScore(*scope, align);
 
         return score;
     }
 
 private:
-    string m_Matrix;
+    CScoreLookup &m_ScoreLookup;
 };
 
 
@@ -1858,7 +1701,7 @@ void CScoreLookup::x_Init()
     m_Scores.insert
         (TScoreDictionary::value_type
          ("prosplign_tblastn_score",
-          CIRef<IScore>(new CScore_TblastnScore("BLOSUM62" /* HACK: no user choice */))));
+          CIRef<IScore>(new CScore_TblastnScore(*this))));
 
     m_Scores.insert
         (TScoreDictionary::value_type

@@ -36,6 +36,7 @@
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_encoding.h>
 
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/general/User_object.hpp>
@@ -44,8 +45,15 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 
 #include <util/sequtil/sequtil_manip.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objtools/alnmgr/pairwise_aln.hpp>
+#include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/aln_generators.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -157,10 +165,33 @@ CScoreBuilder::~CScoreBuilder()
     m_ScoreBlk = BlastScoreBlkFree(m_ScoreBlk);
 }
 
+int CScoreBuilder::GetBlastScore(CScope& scope,
+                                 const CSeq_align& align)
+{
+    if (align.CheckNumRows() != 2) {
+    NCBI_THROW(CSeqalignException, eUnsupported,
+               "CScoreBuilder::GetBlastScore(): "
+               "only two-row alignments are supported");
+    }
+    if (align.GetSegs().IsDenseg() ) {
+        return GetBlastScoreDenseg(scope, align);
+    }
+    if (align.GetSegs().IsStd() ) {
+        return GetBlastScoreStd(scope, align);
+    }
+    if (align.GetSegs().IsSpliced() ) {
+        return GetBlastScoreSpliced(scope, align);
+    }
+    NCBI_THROW(CSeqalignException, eUnsupported,
+               "CScoreBuilder::GetBlastScore(): " +
+               align.GetSegs().SelectionName(align.GetSegs().Which())
+               +" is not supported");
+    return 0;
+}
 
 static const unsigned char reverse_4na[16] = {0, 8, 4, 0, 2, 0, 0, 0, 1};
 
-int CScoreBuilder::GetBlastScore(CScope& scope,
+int CScoreBuilder::GetBlastScoreDenseg(CScope& scope,
                                  const CSeq_align& align)
 {
     if ( !align.GetSegs().IsDenseg() ) {
@@ -282,15 +313,217 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
             computed_score /= 2;
     }
     else {
-        NCBI_THROW(CSeqalignException, eUnsupported,
-                    "pairwise alignment contains unsupported "
-                    "or mismatched molecule types");
+        const CSeq_align* align_ptr = &align;
+
+        auto_ptr<CSeq_align> swapped_align_ptr;
+        if (mol2 == CSeq_inst::eMol_aa) {
+            swapped_align_ptr.reset(new CSeq_align);
+            swapped_align_ptr->Assign(align);
+            swapped_align_ptr->SwapRows(0,1);
+            align_ptr = swapped_align_ptr.get();
+        }
+        list<CRef<CPairwiseAln> > pairs;
+
+        TAlnSeqIdIRef id1(new CAlnSeqId(align_ptr->GetSeq_id(0)));
+        id1->SetBaseWidth(3);
+        TAlnSeqIdIRef id2(new CAlnSeqId(align_ptr->GetSeq_id(1)));
+        CRef<CPairwiseAln> pairwise(new CPairwiseAln(id1, id2));
+        TAlnSeqIdVec ids;
+        ids.push_back(id1); ids.push_back(id2);
+        ConvertSeqAlignToPairwiseAln(*pairwise, *align_ptr, 0, 1, CAlnUserOptions::eBothDirections, &ids);
+
+        pairs.push_back(pairwise);
+
+        return GetBlastScoreProtToNucl(scope, *align_ptr, pairs);
     }
 
     computed_score = max(0, computed_score);
     return computed_score;
 }
 
+int CScoreBuilder::GetBlastScoreStd(CScope& scope,
+                                 const CSeq_align& align)
+{
+    CSeq_id_Handle bsh1 = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+    CSeq_id_Handle bsh2 = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+
+    CSeq_inst::TMol mol1 = scope.GetBioseqHandle(bsh1).GetSequenceType();
+    CSeq_inst::TMol mol2 = scope.GetBioseqHandle(bsh2).GetSequenceType();
+
+    if (mol1 == mol2) {
+        CRef<CSeq_align> new_align =
+            ConvertSeq_align(align,
+                 CSeq_align::TSegs::e_Denseg,
+                 -1,
+                 &scope);
+        return GetBlastScoreDenseg(scope, *new_align);
+    }
+
+    const CSeq_align* align_ptr = &align;
+
+    auto_ptr<CSeq_align> swapped_align_ptr;
+    if (CSeq_inst::IsNa(mol1)) {
+        swapped_align_ptr.reset(new CSeq_align);
+        swapped_align_ptr->Assign(align);
+        swapped_align_ptr->SwapRows(0,1);
+        align_ptr = swapped_align_ptr.get();
+    }
+
+    list<CRef<CPairwiseAln> > pairs;
+    CRef<CPairwiseAln> aln = CreatePairwiseAlnFromSeqAlign(*align_ptr);
+    pairs.push_back(aln);
+
+    return GetBlastScoreProtToNucl(scope, *align_ptr, pairs);
+}
+
+int CScoreBuilder::GetBlastScoreSpliced(CScope& scope,
+                                 const CSeq_align& align)
+{
+        // check assumptions:
+        //
+        if ( align.GetSegs().GetSpliced().GetProduct_type() !=
+             CSpliced_seg::eProduct_type_protein) {
+            NCBI_THROW(CSeqalignException, eUnsupported,
+                       "CScore_TblastnScore: "
+                       "valid only for protein spliced-seg alignments");
+        }
+
+        list<CRef<CPairwiseAln> > pairs;
+        CSeq_align sub_align;
+        sub_align.Assign(align);
+
+        ITERATE (CSpliced_seg::TExons, it,
+                 align.GetSegs().GetSpliced().GetExons()) {
+            CRef<CSpliced_exon> exon = *it;
+            sub_align.SetSegs().SetSpliced().SetExons().clear();
+            sub_align.SetSegs().SetSpliced().SetExons().push_back(exon);
+
+            CRef<CPairwiseAln> aln = CreatePairwiseAlnFromSeqAlign(sub_align);
+            pairs.push_back(aln);
+        }
+        return GetBlastScoreProtToNucl(scope, align, pairs);
+}
+
+int CScoreBuilder::GetBlastScoreProtToNucl(CScope& scope,
+                                           const CSeq_align& align,
+                                           list<CRef<CPairwiseAln> >& pairs)
+{
+    CSeq_id_Handle prot_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+    CSeq_id_Handle genomic_idh =
+        CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+
+    ENa_strand strand = align.GetSeqStrand(1);
+    CBioseq_Handle prot_bsh = scope.GetBioseqHandle(prot_idh);
+    CBioseq_Handle genomic_bsh = scope.GetBioseqHandle(genomic_idh);
+    CSeqVector prot_vec   (prot_bsh);
+
+    int gcode = 1;
+    try {
+        gcode = sequence::GetOrg_ref(genomic_bsh).GetGcode();
+    }
+    catch (CException&) {
+        // use the default genetic code
+    }
+
+    const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
+
+    int state = 0;
+    int offs = 0;
+    int score = 1;
+
+    if (m_ScoreBlk == NULL) {
+        CRef<CBlastOptionsHandle>
+            options(CBlastOptionsFactory::Create(blast::eTblastn));
+        x_Initialize(*options);
+    }
+    Int4 **matrix = m_ScoreBlk->matrix->data;
+
+//         int num_positives = 0;
+//         int num_negatives = 0;
+//         int num_match = 0;
+//         int num_mismatch = 0;
+    ITERATE (list<CRef<CPairwiseAln> >, it, pairs) {
+        CRef<CPairwiseAln> aln = *it;
+
+        int this_pair_score = -1;
+        list<int> gaps;
+        CPairwiseAln::const_iterator prev = aln->end();
+        ITERATE (CPairwiseAln, range_it, *aln) {
+
+            // handle gaps
+            if (prev != aln->end()) {
+                int q_gap = range_it->GetFirstFrom() - prev->GetFirstTo() - 1;
+                int s_gap =
+                    (strand == eNa_strand_minus ?
+                     prev->GetSecondFrom() - range_it->GetSecondTo() - 1 :
+                     range_it->GetSecondFrom() - prev->GetSecondTo() - 1);
+
+                // check if this range is in the list of known introns
+
+                int gap = abs(q_gap - s_gap);
+                gaps.push_back(gap);
+            }
+            prev = range_it;
+
+            CRange<int> q_range = range_it->GetFirstRange();
+            CRange<int> s_range = range_it->GetSecondRange();
+
+            int s_start = s_range.GetFrom();
+            int s_end   = s_range.GetTo();
+            int q_pos   = q_range.GetFrom();
+
+            int new_offs = q_pos % 3;
+            for ( ;  offs != new_offs;  offs = (offs + 1) % 3) {
+                state = tbl.NextCodonState(state, 'N');
+            }
+
+            // first range is in nucleotide coordinates...
+
+            CRef<CSeq_loc> loc =
+                genomic_bsh.GetRangeSeq_loc(s_start, s_end, strand);
+            CSeqVector genomic_vec(*loc, scope, CBioseq_Handle::eCoding_Iupac);
+            CSeqVector_CI vec_it(genomic_vec);
+
+            for ( ;  s_start <= s_end;  ++s_start, ++q_pos, ++vec_it) {
+                state = tbl.NextCodonState(state, *vec_it);
+                if (offs % 3 == 2) {
+                    Uint1 prot = prot_vec[(int)(q_pos / 3)];
+                    Uint1 xlate = AMINOACID_TO_NCBISTDAA[(unsigned)tbl.GetCodonResidue(state)];
+
+                    int this_score = matrix[prot][xlate];
+
+//                         num_match += (prot == xlate);
+//                         num_mismatch += (prot != xlate);
+//                         num_positives += (this_score > 0);
+//                         num_negatives += (this_score <= 0);
+                    this_pair_score += this_score;
+                }
+
+                offs = (offs + 1) % 3;
+            }
+        }
+
+        // adjust score for gaps
+        // HACK: this isn't exactly correct; it overestimates scores because we
+        // don't have full accounting of composition based statistics, etc.
+        // It's close enough, though
+        gaps.sort();
+
+        ITERATE(list<int>, gap_bases, gaps) {
+            int new_score = this_pair_score - m_GapOpen - (*gap_bases/3) * m_GapExtend;
+            // do not score huge gaps - they are between hits gaps
+            if (new_score > 0 ) {
+                this_pair_score = new_score;
+            } else {
+                this_pair_score -= 1;
+            }
+        }
+
+        score += this_pair_score;
+    }
+
+    return score;
+}
 
 double CScoreBuilder::GetBlastBitScore(CScope& scope,
                                        const CSeq_align& align)

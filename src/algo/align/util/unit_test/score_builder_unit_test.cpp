@@ -58,9 +58,13 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 #include <algo/align/util/score_builder.hpp>
+#include <algo/align/util/score_lookup.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+
+#include <serial/serial.hpp>
+#include <serial/objistr.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -568,3 +572,251 @@ TVAVFRLPANKSGMAVSHSTAKSVTKAPVSLRQPNPAEGNWETF\"\
   }\
 }\
 ";
+
+BOOST_AUTO_TEST_CASE(Test_GetBlastScore)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+      type partial, \
+      dim 2, \
+      segs denseg { \
+        dim 2, \
+        numseg 3, \
+        ids { \
+          gi 446828913, \
+          gi 16763395 \
+        }, \
+        starts { \
+          0, 0, \
+          44, -1, \
+          56, 44 \
+        }, \
+        lens { \
+          44, \
+          12, \
+          213 \
+        }, \
+        strands { \
+          unknown, unknown, \
+          unknown, unknown, \
+          unknown, unknown \
+    } } } \
+Seq-align ::= { \
+      type partial, \
+      dim 2, \
+      segs denseg { \
+        dim 2, \
+        numseg 3, \
+        ids { \
+          gi 446828913, \
+          gi 16763390 \
+        }, \
+        starts { \
+          0, 5755, \
+          44, -1, \
+          56, 5116 \
+        }, \
+        lens { \
+          44, \
+          12, \
+          213 \
+        }, \
+        strands { \
+          unknown, minus, \
+          unknown, minus, \
+          unknown, minus \
+    } } } \
+Seq-align ::= { \
+      type partial, \
+      dim 2, \
+      segs std { \
+        { \
+          dim 2, \
+          ids { \
+            gi 446828913, \
+            gi 16763395 \
+          }, \
+          loc { \
+            int { \
+              from 0, to 43, \
+              strand unknown, \
+              id gi 446828913 \
+            }, \
+            int { \
+              from 0, to 43, \
+              strand unknown, \
+              id gi 16763395 \
+        } } }, \
+        { \
+          dim 2, \
+          ids { \
+            gi 446828913, \
+            gi 16763395 \
+          }, \
+          loc { \
+            int { \
+              from 44, to 55, \
+              strand unknown, \
+              id gi 446828913 \
+            }, \
+            empty gi 16763395 \
+        } }, \
+        { \
+          dim 2, \
+          ids { \
+            gi 446828913, \
+            gi 16763395 \
+          }, \
+          loc { \
+            int { \
+              from 56, to 268, \
+              strand unknown, \
+              id gi 446828913 \
+            }, \
+            int { \
+              from 44, to 256, \
+              strand unknown, \
+              id gi 16763395 \
+    } } } } } \
+Seq-align ::= { \
+      type partial, \
+      dim 2, \
+      segs std { \
+        { \
+          dim 2, \
+          ids { \
+            gi 446828913, \
+            gi 16763390 \
+          }, \
+          loc { \
+            int { \
+              from 0, to 43, \
+              strand unknown, \
+              id gi 446828913 \
+            }, \
+            int { \
+              from 5755, to 5886, \
+              strand minus, \
+              id gi 16763390 \
+        } } }, \
+        { \
+          dim 2, \
+          ids { \
+            gi 446828913, \
+            gi 16763390 \
+          }, \
+          loc { \
+            int { \
+              from 44, to 55, \
+              strand unknown, \
+              id gi 446828913 \
+            }, \
+            empty gi 16763390 \
+        } }, \
+        { \
+          dim 2, \
+          ids { \
+            gi 446828913, \
+            gi 16763390 \
+          }, \
+          loc { \
+            int { \
+              from 56, to 268, \
+              strand unknown, \
+              id gi 446828913 \
+            }, \
+            int { \
+              from 5116, to 5754, \
+              strand minus, \
+              id gi 16763390 \
+    } } } } } \
+Seq-align ::= { \
+  type global, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 446828913, \
+    genomic-id gi 16763390, \
+    genomic-strand minus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 0, frame 1 \
+        }, \
+        product-end protpos { \
+          amin 268, frame 3 \
+        }, \
+        genomic-start 5116, \
+        genomic-end 5886, \
+        parts { \
+          match 3, \
+          diag 120, \
+          product-ins 36, \
+          diag 648 \
+        }, \
+        partial FALSE \
+      } \
+    }, \
+    product-length 269 \
+  } \
+} \
+";
+
+    int expected_score = 1301;
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+
+    //dense-seg
+    *istr >> align;
+    {{
+    CScoreBuilder score_builder(blast::eBlastp);
+    int dense_seg_score = score_builder.GetBlastScore(*scope, align);
+    BOOST_CHECK_EQUAL(dense_seg_score, expected_score);
+    }}
+
+    //dense-seg protein-to-nucleotide
+    *istr >> align;
+    {{
+    CScoreBuilder score_builder(blast::eBlastp);
+    int dense_seg_p2n_score = score_builder.GetBlastScore(*scope, align);
+    BOOST_CHECK_EQUAL(dense_seg_p2n_score, expected_score);
+    }}
+
+    //std-seg protein-to-protein
+    *istr >> align;
+    {{
+    CScoreBuilder score_builder(blast::eTblastn);
+    int std_seg_p2p_score = score_builder.GetBlastScore(*scope, align);
+    BOOST_CHECK_EQUAL(std_seg_p2p_score, expected_score);
+    }}
+
+    //std-seg protein-to-nucleotide
+    *istr >> align;
+    {{
+    CScoreBuilder score_builder(blast::eTblastn);
+    int std_seg_p2n_score = score_builder.GetBlastScore(*scope, align);
+    BOOST_CHECK_EQUAL(std_seg_p2n_score, expected_score);
+    }}
+
+    //spliced-seg
+    *istr >> align;
+    {{
+    CScoreBuilder score_builder(blast::eTblastn);
+    int spliced_seg_score = score_builder.GetBlastScore(*scope, align);
+    BOOST_CHECK_EQUAL(spliced_seg_score, expected_score);
+
+    CScoreLookup lu;
+    lu.SetScope(*scope);
+    int prosplign_tblastn_score = lu.GetScore(align, "prosplign_tblastn_score");
+    BOOST_CHECK_EQUAL(prosplign_tblastn_score, expected_score);
+    }}
+}

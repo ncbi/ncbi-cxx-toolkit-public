@@ -42,6 +42,8 @@ struct BlastScoreBlk; // C structure
 
 BEGIN_NCBI_SCOPE
 
+class CPairwiseAln;
+
 BEGIN_SCOPE(blast)
     class CBlastOptionsHandle;
 END_SCOPE(blast)
@@ -148,6 +150,12 @@ private:
     Int8 m_EffectiveSearchSpace;
 
     void x_Initialize(blast::CBlastOptionsHandle& options);
+
+    int GetBlastScoreDenseg (CScope& scope, const CSeq_align& align);
+    int GetBlastScoreStd    (CScope& scope, const CSeq_align& align);
+    int GetBlastScoreSpliced(CScope& scope, const CSeq_align& align);
+    int GetBlastScoreProtToNucl(CScope& scope, const CSeq_align& align,
+                                list<CRef<CPairwiseAln> >& pairs);
 
 protected:
     struct BlastScoreBlk *GetBlastScoreBlkPtr()
