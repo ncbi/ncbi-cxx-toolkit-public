@@ -114,6 +114,9 @@ public:
     bool NeedRenderPage() const { return m_NeedRenderPage; }
     void NeedRenderPage(bool value) { m_NeedRenderPage = value; }
 
+    string& GetJobKey() { return m_JobKey; }
+    string& GetJqueryCallback() { return m_JqueryCallback; }
+
 public:
     // Remove all persistent entries from cookie and self url.
     void Clear();
@@ -128,6 +131,8 @@ private:
     TCgiEntries                   m_ParsedQueryString;
     TPersistentEntries            m_PersistentEntries;
     string                        m_ProgressMsg;
+    string                        m_JobKey;
+    string                        m_JqueryCallback;
     bool                          m_NeedRenderPage;
 };
 
@@ -290,8 +295,8 @@ private:
         eTerminated
     };
 
-    EJobPhase x_CheckJobStatus(CGridCgiContext& grid_ctx,
-            const string& jquery_callback);
+    EJobPhase x_CheckJobStatus(CGridCgiContext&);
+    EJobPhase x_CheckJobStatus(CGridCgiContext&, CNetScheduleAPI::EJobStatus);
 
     int m_RefreshDelay;
     int m_FirstDelay;
@@ -308,8 +313,7 @@ private:
     };
 
     // This method is called when result is available immediately
-    void OnJobDone(const string& job_key, CGridCgiContext& ctx,
-            const string& jquery_callback);
+    void OnJobDone(CGridCgiContext&);
 
     // This method is called when the worker node reported a failure.
     void OnJobFailed(const string& msg, CGridCgiContext& ctx);
@@ -606,8 +610,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     m_CustomHTTPHeader->SetTemplateString("<@CUSTOM_HTTP_HEADER@>");
     CGridCgiContext grid_ctx(*m_Page, *m_CustomHTTPHeader, ctx);
 
-    string job_key(kEmptyStr);
-    grid_ctx.PullUpPersistentEntry("job_key", job_key);
+    grid_ctx.PullUpPersistentEntry("job_key", grid_ctx.GetJobKey());
     grid_ctx.PullUpPersistentEntry("Cancel");
 
     grid_ctx.LoadQueryStringTags(m_TargetEncodeMode);
@@ -615,13 +618,11 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     m_NetScheduleAPI.UpdateAuthString();
 
     try {
-        string jquery_callback;
-
         if (m_InterceptJQueryCallback) {
             TCgiEntries& entries = request.GetEntries();
             TCgiEntries::iterator jquery_callback_it = entries.find("callback");
             if (jquery_callback_it != entries.end()) {
-                jquery_callback = jquery_callback_it->second;
+                grid_ctx.GetJqueryCallback() = jquery_callback_it->second;
                 entries.erase(jquery_callback_it);
                 string query_string_param(
                         CCgiRequest::GetPropertyName(eCgi_QueryString));
@@ -639,10 +640,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         grid_ctx.PullUpPersistentEntry(kSinceTime);
 
         try {
-            if (!job_key.empty()) {
+            if (!grid_ctx.GetJobKey().empty()) {
                 GetDiagContext().Extra().Print("ctg_poll", "true");
 
-                phase = x_CheckJobStatus(grid_ctx, jquery_callback);
+                phase = x_CheckJobStatus(grid_ctx);
 
                 if (phase == eTerminated)
                     grid_ctx.Clear();
@@ -651,7 +652,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     // via the user interface(HTML).
                     if (GetArgs()["Cancel"] ||
                             !grid_ctx.GetPersistentEntryValue("Cancel").empty())
-                        m_GridClient->CancelJob(job_key);
+                        m_GridClient->CancelJob(grid_ctx.GetJobKey());
 
                     DefineRefreshTags(grid_ctx.GetSelfURL(), m_RefreshDelay);
                 }
@@ -700,10 +701,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
                     CNetScheduleJob& job(m_GridClient->GetJob());
 
-                    job_key = job.job_id;
+                    grid_ctx.GetJobKey() = job.job_id;
 
-                    grid_ctx.DefinePersistentEntry("job_key", job_key);
-                    GetDiagContext().Extra().Print("job_key", job_key);
+                    grid_ctx.DefinePersistentEntry("job_key", grid_ctx.GetJobKey());
+                    GetDiagContext().Extra().Print("job_key", grid_ctx.GetJobKey());
 
                     switch (status) {
                     case CNetScheduleAPI::ePending:
@@ -715,7 +716,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                         break;
 
                     default:
-                        phase = x_CheckJobStatus(grid_ctx, jquery_callback);
+                        phase = x_CheckJobStatus(grid_ctx, status);
                     }
 
                     if (phase != eTerminated) {
@@ -782,10 +783,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             m_Page->AddTagMap("ELAPSED_TIME",
                          new CHTMLText(ts.AsString(m_ElapsedTimeFormat)));
         }
-        m_Page->AddTagMap("JOB_ID", new CHTMLText(job_key));
-        m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(job_key));
+        m_Page->AddTagMap("JOB_ID", new CHTMLText(grid_ctx.GetJobKey()));
+        m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(grid_ctx.GetJobKey()));
         if (m_AddJobIdToHeader) {
-            m_Response->SetHeaderValue(HTTP_NCBI_JSID, job_key);
+            m_Response->SetHeaderValue(HTTP_NCBI_JSID, grid_ctx.GetJobKey());
         }
         if (phase == eRunning) {
             string progress_message;
@@ -794,7 +795,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             }
             catch (CException& e) {
                 ERR_POST("Could not retrieve progress message for " <<
-                        job_key << ": " << e);
+                        grid_ctx.GetJobKey() << ": " << e);
             }
             grid_ctx.SetJobProgressMessage(progress_message);
             grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",
@@ -866,22 +867,23 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 
 
 CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
-        CGridCgiContext& grid_ctx, const string& jquery_callback)
+        CGridCgiContext& grid_ctx)
 {
-    string job_key = grid_ctx.GetPersistentEntryValue("job_key");
+    grid_ctx.GetJobKey() = grid_ctx.GetPersistentEntryValue("job_key");
 
-    m_GridClient->SetJobKey(job_key);
+    m_GridClient->SetJobKey(grid_ctx.GetJobKey());
 
     CNetScheduleAPI::EJobStatus status;
     try {
         status = m_GridClient->GetStatus();
     }
     catch (CNetSrvConnException& e) {
-        LOG_POST("Failed to retrieve job status for " << job_key << ": " << e);
+        LOG_POST("Failed to retrieve job status for " <<
+                grid_ctx.GetJobKey() << ": " << e);
 
         CNetService service(m_NetScheduleAPI.GetService());
 
-        CNetScheduleKey key(job_key, m_NetScheduleAPI.GetCompoundIDPool());
+        CNetScheduleKey key(grid_ctx.GetJobKey(), m_NetScheduleAPI.GetCompoundIDPool());
 
         CNetServer bad_server(service.GetServer(key.host, key.port));
 
@@ -910,6 +912,12 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         }
     }
 
+    return x_CheckJobStatus(grid_ctx, status);
+}
+
+CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
+        CGridCgiContext& grid_ctx, CNetScheduleAPI::EJobStatus status)
+{
     EJobPhase phase = eTerminated;
     grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
         CNetScheduleAPI::StatusToString(status));
@@ -917,7 +925,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     case CNetScheduleAPI::eDone:
         // The worker node has finished the job and the
         // result is ready to be retrieved.
-        OnJobDone(job_key, grid_ctx, jquery_callback);
+        OnJobDone(grid_ctx);
         break;
 
     case CNetScheduleAPI::eFailed:
@@ -959,19 +967,18 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     default:
         _ASSERT(0 && "Unexpected job state");
     }
-    SetRequestId(job_key, status == CNetScheduleAPI::eDone);
+    SetRequestId(grid_ctx.GetJobKey(), status == CNetScheduleAPI::eDone);
     return phase;
 }
 
-void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
-        const string& jquery_callback)
+void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
 {
     CNcbiIstream& is = m_GridClient->GetIStream();
 
     if (m_GridClient->GetBlobSize() > 0) {
         ctx.NeedRenderPage(false);
         CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
-        bool no_jquery = jquery_callback.empty();
+        bool no_jquery = ctx.GetJqueryCallback().empty();
 
         // No need to amend anything
         if (no_jquery && !m_AddJobIdToHeader) {
@@ -995,7 +1002,7 @@ void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
         }
 
         if (m_AddJobIdToHeader) {
-            out << HTTP_NCBI_JSID << ": " << job_key << "\r\n";
+            out << HTTP_NCBI_JSID << ": " << ctx.GetJobKey() << "\r\n";
         }
 
         out << "\r\n";
@@ -1003,7 +1010,7 @@ void CCgi2RCgiApp::OnJobDone(const string& job_key, CGridCgiContext& ctx,
         if (no_jquery) {
             NcbiStreamCopy(out, is);
         } else {
-            out << jquery_callback << '(';
+            out << ctx.GetJqueryCallback() << '(';
             NcbiStreamCopy(out, is);
             out << ')';
         }
