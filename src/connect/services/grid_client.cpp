@@ -139,9 +139,10 @@ string CGridClient::Submit(const string& affinity)
 CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
 {
     CloseStream();
-
+    CNetScheduleAPI::EJobStatus status =
+            GetNetScheduleSubmitter().SubmitJobAndWait(m_Job, wait_time);
     m_JobDetailsRead = true;
-    return GetNetScheduleSubmitter().SubmitJobAndWait(m_Job, wait_time);
+    return status;
 }
 
 //////////////////////////////////////////////////////////
