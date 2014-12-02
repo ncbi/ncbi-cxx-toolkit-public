@@ -31,7 +31,6 @@ GMC needs xgridcgi
 GMU needs $(COMPRESS_LIBS)
 GMU needs geoauth
 OSMesa includes3party $(OPENGL_LIBS)
-OSMesa needs3party $(DL_LIBS)
 OSMesa needs3party $(ORIG_LIBS)
 VDBUtils needs bdbasncli
 VDBUtils needs ncbi_xloader_csra
@@ -48,7 +47,6 @@ ads needs $(SEQ_LIBS)
 ads needs pub
 affy needs3party $(CURL_LIBS)
 affy needs3party $(ORIG_LIBS)
-affy needs3party $(RT_LIBS)
 affy needs3party $(XERCES_LIBS)
 agp_lookup needs gc_utils
 agp_lookup needs xhtml
@@ -108,7 +106,6 @@ bag_access needs gpipe_common
 bag_access needs pub
 bamread needs $(SRA_LIBS)
 bamread needs seqset
-bamread needs3party $(RT_LIBS)
 bamread needs3party $(SRA_SDK_SYSLIBS)
 basic_sample_lib needs xncbi
 bdb needs xutil
@@ -215,7 +212,6 @@ ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(Z_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
-curl needs3party $(RT_LIBS)
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
 dbapi_driver needs xncbi
@@ -692,7 +688,6 @@ ncbi includes connect
 ncbi includes tables
 ncbi needs3party $(ORIG_LIBS)
 ncbi-vdb-read needs3party $(ORIG_LIBS)
-ncbi-vdb-read needs3party $(RT_LIBS)
 ncbi-vdb-read needs3party $(SRA_SDK_SYSLIBS)
 ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
@@ -729,7 +724,6 @@ ncbi_xloader_cdd needs xconnect
 ncbi_xloader_cdd needs3party $(DL_LIBS)
 ncbi_xloader_csra needs $(SOBJMGR_LIBS)
 ncbi_xloader_csra needs $(SRAREAD_LIBS)
-ncbi_xloader_csra needs3party $(RT_LIBS)
 ncbi_xloader_csra needs3party $(SRA_SDK_SYSLIBS)
 ncbi_xloader_genbank needs ncbi_xreader_cache
 ncbi_xloader_genbank needs ncbi_xreader_id1
@@ -742,18 +736,15 @@ ncbi_xloader_patcher needs $(SOBJMGR_LIBS)
 ncbi_xloader_patcher needs3party $(DL_LIBS)
 ncbi_xloader_sra needs $(SOBJMGR_LIBS)
 ncbi_xloader_sra needs $(SRAREAD_LIBS)
-ncbi_xloader_sra needs3party $(RT_LIBS)
 ncbi_xloader_sra needs3party $(SRA_SDK_SYSLIBS)
 ncbi_xloader_trace needs $(SOBJMGR_LIBS)
 ncbi_xloader_trace needs id1cli
 ncbi_xloader_trace needs3party $(DL_LIBS)
 ncbi_xloader_vdbgraph needs $(SOBJMGR_LIBS)
 ncbi_xloader_vdbgraph needs $(SRAREAD_LIBS)
-ncbi_xloader_vdbgraph needs3party $(RT_LIBS)
 ncbi_xloader_vdbgraph needs3party $(SRA_SDK_SYSLIBS)
 ncbi_xloader_wgs needs $(SOBJMGR_LIBS)
 ncbi_xloader_wgs needs $(SRAREAD_LIBS)
-ncbi_xloader_wgs needs3party $(RT_LIBS)
 ncbi_xloader_wgs needs3party $(SRA_SDK_SYSLIBS)
 ncbi_xreader needs $(COMPRESS_LIBS)
 ncbi_xreader needs $(SOBJMGR_LIBS)
@@ -942,7 +933,6 @@ sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
 sraread needs $(SRA_LIBS)
 sraread needs seqset
-sraread needs3party $(RT_LIBS)
 sraread needs3party $(SRA_SDK_SYSLIBS)
 ssl needs $(Z_LIB)
 ssl needs3party $(DL_LIBS)
@@ -1063,7 +1053,6 @@ variation_utils needs variation
 variation_utils needs xobjutil
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs $(SRA_LIBS)
-vdb2blast needs3party $(RT_LIBS)
 vdb2blast needs3party $(SRA_SDK_SYSLIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
@@ -1191,7 +1180,6 @@ xalan-c needs3party $(CURL_LIBS)
 xalan-c needs3party $(DL_LIBS)
 xalan-c needs3party $(ICU_LIBS)
 xalan-c needs3party $(ORIG_LIBS)
-xalan-c needs3party $(RT_LIBS)
 xalan-c needs3party $(XERCES_LIBS)
 xalanMsg needs3party $(ORIG_LIBS)
 xalgoalignnw needs $(SEQ_LIBS)
@@ -1288,7 +1276,6 @@ xdiscrepancy_report needs xmlwrapp
 xdiscrepancy_report needs xvalidate
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(ORIG_LIBS)
-xerces-c needs3party $(RT_LIBS)
 xfcgi includes xcgi
 xfcgi needs3party $(FASTCGI_LIBS)
 xformat needs gbseq
@@ -1423,7 +1410,6 @@ xslt_sablotron needs3party $(SABLOT_LIBS)
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
-xslt_xalan needs3party $(RT_LIBS)
 xslt_xalan needs3party $(XALAN_LIBS)
 xslt_xalan needs3party $(XERCES_LIBS)
 xsmall_assembly needs gcaccess_utils
