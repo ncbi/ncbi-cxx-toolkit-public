@@ -140,6 +140,7 @@ CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
 {
     CloseStream();
 
+    m_JobDetailsRead = true;
     return GetNetScheduleSubmitter().SubmitJobAndWait(m_Job, wait_time);
 }
 
