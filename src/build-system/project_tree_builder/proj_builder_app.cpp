@@ -2640,7 +2640,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 }
                 map<string, set<string> >  lib3Precedes;
                 CSymResolver::StripSuffix(f_name);
-                if (third_list.empty()) {
+                if (third_list.empty() && m_GraphDepPrecedes.find(f_name) == m_GraphDepPrecedes.end()) {
                     m_GraphDepPrecedes[f_name] = set<string>();
                 }
                 ITERATE(list<string>, t, third_list) {
