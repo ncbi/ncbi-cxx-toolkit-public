@@ -11,28 +11,28 @@
 
 #include <cctype>
 
-#define NCBI_DEFINE_CTYPE_FUNC(ncbi_name, name)                         \
+#define NCBI_DEFINE_CTYPE_FUNC(name)                                    \
     inline int name(Uchar c) { return name(int(c)); }                   \
     inline int name(char c) { return name(Uchar(c)); }                  \
     template<class C> inline int name(C c)                              \
     { return See_the_standard_on_proper_argument_type_for_ctype_functions(c); }
 
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isalpha, isalpha)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isalnum, isalnum)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_iscntrl, iscntrl)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isdigit, isdigit)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isgraph, isgraph)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_islower, islower)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isprint, isprint)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_ispunct, ispunct)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isspace, isspace)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isupper, isupper)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_isxdigit, isxdigit)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_tolower, tolower)
-NCBI_DEFINE_CTYPE_FUNC(NCBI_toupper, toupper)
-//NCBI_DEFINE_CTYPE_FUNC(NCBI_isblank, isblank)
-//NCBI_DEFINE_CTYPE_FUNC(NCBI_isascii, isascii)
-//NCBI_DEFINE_CTYPE_FUNC(NCBI_toascii, toascii)
+NCBI_DEFINE_CTYPE_FUNC(isalpha)
+NCBI_DEFINE_CTYPE_FUNC(isalnum)
+NCBI_DEFINE_CTYPE_FUNC(iscntrl)
+NCBI_DEFINE_CTYPE_FUNC(isdigit)
+NCBI_DEFINE_CTYPE_FUNC(isgraph)
+NCBI_DEFINE_CTYPE_FUNC(islower)
+NCBI_DEFINE_CTYPE_FUNC(isprint)
+NCBI_DEFINE_CTYPE_FUNC(ispunct)
+NCBI_DEFINE_CTYPE_FUNC(isspace)
+NCBI_DEFINE_CTYPE_FUNC(isupper)
+NCBI_DEFINE_CTYPE_FUNC(isxdigit)
+NCBI_DEFINE_CTYPE_FUNC(tolower)
+NCBI_DEFINE_CTYPE_FUNC(toupper)
+//NCBI_DEFINE_CTYPE_FUNC(isblank)
+//NCBI_DEFINE_CTYPE_FUNC(isascii)
+//NCBI_DEFINE_CTYPE_FUNC(toascii)
 
 #undef NCBI_DEFINE_CTYPE_FUNC
 
