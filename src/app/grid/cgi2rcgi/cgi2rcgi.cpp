@@ -642,6 +642,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         try {
             if (!grid_ctx.GetJobKey().empty()) {
                 GetDiagContext().Extra().Print("ctg_poll", "true");
+                m_GridClient->SetJobKey(grid_ctx.GetJobKey());
 
                 phase = x_CheckJobStatus(grid_ctx);
 
@@ -869,10 +870,6 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         CGridCgiContext& grid_ctx)
 {
-    grid_ctx.GetJobKey() = grid_ctx.GetPersistentEntryValue("job_key");
-
-    m_GridClient->SetJobKey(grid_ctx.GetJobKey());
-
     CNetScheduleAPI::EJobStatus status;
     try {
         status = m_GridClient->GetStatus();
