@@ -187,9 +187,18 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
         }
 
         if (read_result == eRW_Eof) {
+            string md5(sum.GetHexSum());
+            netstorage_object.Close();
+
             ctx.json.SetBoolean("success", true);
             ctx.json.SetString("key", netstorage_object.GetLoc());
-            ctx.json.SetString("md5", sum.GetHexSum());
+            ctx.json.SetString("md5", md5);
+
+            // Ignore exceptions if the underlying storage does not support attributes
+            try {
+                netstorage_object.SetAttribute("md5", md5);
+            }
+            catch (CNetStorageException&) {}
             return;
         }
     }
