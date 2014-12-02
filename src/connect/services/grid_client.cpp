@@ -272,6 +272,7 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
     } else {
         x_RenewAllJobBlobs(job_exptime);
     }
+    m_JobDetailsRead = true;
     return status;
 }
 
