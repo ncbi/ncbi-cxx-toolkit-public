@@ -299,6 +299,7 @@ public:
     CTime GetCreationTime() const {return CTime(m_Timestamp);}
     Uint8 GetRandom() const {return m_Random;}
 
+    bool HasUserKey() const {return (m_Fields & fNFID_KeyAndNamespace) != 0;}
     string GetAppDomain() const {return m_AppDomain;}
     string GetUserKey() const {return m_UserKey;}
 
