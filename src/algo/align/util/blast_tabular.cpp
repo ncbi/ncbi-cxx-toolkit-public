@@ -156,12 +156,17 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     }
 
     /// Assign the scores
+    
 
     double score;
     if(seq_align.GetNamedScore("bit_score", score) == false) {
         score = 2.f * aln_len;
     }
     SetScore(float(score));
+
+    int raw_score = (int)score;//wrong, but better than 0
+    seq_align.GetNamedScore("score", raw_score);
+    SetRawScore((TCoord)raw_score);
 
     double matches;
     if(seq_align.GetNamedScore("num_ident", matches) == false) {
@@ -242,6 +247,7 @@ CBlastTabular::CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
 
     m_EValue = 0;
     m_Score = 2 * matches;
+    m_RawScore =  2 * matches; 
 }
 
 namespace {
@@ -384,6 +390,20 @@ CBlastTabular::TCoord CBlastTabular::GetGaps(void) const
 
 
 
+void CBlastTabular::SetRawScore(TCoord score)
+{
+    m_RawScore = score;
+}
+
+
+
+CBlastTabular::TCoord CBlastTabular::GetRawScore(void) const
+{
+    return m_RawScore;
+}
+
+
+
 void CBlastTabular::SetEValue(double EValue)
 {
     m_EValue = EValue;
@@ -457,6 +477,7 @@ void CBlastTabular::x_PartialDeserialize(const char* m8)
         m_Identity = float(identity100 / 100.0);
         m_EValue = evalue;
         m_Score = float(score);
+        m_RawScore = (TCoord)score;//wrong, but better than 0
 
         if(a > 0 && b > 0 && c > 0 && d > 0) {
 
@@ -550,6 +571,7 @@ void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
         SetGaps(gaps);
         SetLength(matches + mismatches + indels);
         SetScore(GetScore() * matches / double(matches_old));
+        SetRawScore( ( GetRawScore() * matches ) / matches_old);
 #endif
 
         const TCoord trlen_old = s_RunLengthDecode(GetTranscript()).size();
@@ -560,6 +582,7 @@ void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
         SetGaps(TCoord(kq*GetGaps()));
         SetLength(trlen_new);
         SetScore(kq*GetScore());
+        SetRawScore((TCoord)(kq*GetRawScore()));
     }
     else {
         const TCoord query_span_old = GetQuerySpan();
@@ -570,6 +593,7 @@ void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
         SetGaps(TCoord(kq*GetGaps()));
         SetLength(TCoord(kq*GetLength()));
         SetScore(kq*GetScore());
+        SetRawScore((TCoord)(kq*GetRawScore()));
     }
 }
 

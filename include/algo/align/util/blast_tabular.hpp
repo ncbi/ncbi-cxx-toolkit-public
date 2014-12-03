@@ -73,13 +73,16 @@ public:
     void   SetGaps(TCoord gaps);
     TCoord GetGaps(void) const;
 
+    void   SetRawScore(TCoord score);
+    TCoord GetRawScore(void) const;
+
     void   SetEValue(double evalue);
     double GetEValue(void) const;
 
     void   SetIdentity(float identity);
     float  GetIdentity(void) const;
 
-    void   SetScore(float evalue);
+    void   SetScore(float score);
     float  GetScore(void) const;
 
     virtual void Modify(Uint1 where, TCoord new_pos);
@@ -88,7 +91,8 @@ protected:
     
     TCoord  m_Length;     // length of the alignment           
     TCoord  m_Mismatches; // number of mismatches              
-    TCoord  m_Gaps;       // number of gap openings            
+    TCoord  m_Gaps;       // number of gap openings
+    TCoord  m_RawScore;   // blast score
     double  m_EValue;     // e-Value                           
     float   m_Identity;   // Percent identity (ranging from 0 to 1)
     float   m_Score;      // bit score
