@@ -961,10 +961,11 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * then return eIO_Timeout.
  *
  * Both eIO_ReadPlain and eIO_ReadPeek return eIO_Success iff some data have
- * been read (perhaps within the time allowance specified by eIO_Read timeout).
- * Both mothods return any other code when no data at all were available.
- * eIO_ReadPersist differs from the other two methods as it can return an
- * error condition even if some data were actually obtained from the socket.
+ * been actually read (within the time allotted by the eIO_Read timeout).
+ * Both methods return any other code when no data at all were available.
+ * In that respect, eIO_ReadPersist differs from the other two methods as it
+ * can return an error condition even if some (but not all) data were actually
+ * obtained from the socket.
  *
  * Hence, as the *rule of thumb*, an application should always check the number
  * of read bytes BEFORE checking the return status, which merely advises as to
@@ -976,13 +977,13 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  *   eIO_Read[Persist] -- discard up to "size" bytes from internal buffer
  *                        and socket (check "*n_read" to know how many).
  *
- * @note  "Read" and "peek" methods differ:  if "read" is
- *        performed and not enough but only some data available immediately
- *        from the internal buffer, then the call still completes with
- *        eIO_Success status.  For "peek", if not all requested data were
- *        available, the real I/O occurs to pick up additional data (if any)
- *        from the system.  Keep this difference in mind when programming
- *        loops that heavily use "peek"s without "read"s.
+ * @note  "Read" and "peek" methods differ:  when "read" is performed and not
+ *        enough but only some data are available immediately from the internal
+ *        buffer, then the call still completes with the eIO_Success status.
+ *        For "peek", if not all requested data were available right away, the
+ *        real I/O occurs to try to pick up additional data from the system.
+ *        Keep this difference in mind when programming loops that heavily use
+ *        "peek"s without "read"s.
  * @note  If on input "size" == 0, then "*n_read" is set to 0,
  *        and the return value can be either of eIO_Success, eIO_Closed or
  *        eIO_Unknown depending on connection status of the socket.
