@@ -1428,8 +1428,12 @@ void SChainMember::AddToContained(TContained& contained, TMemberPtrSet& included
         for(int c = 0; c < (int)mbr->m_contained->size(); ++c) {
             SChainMember* mi = (*mbr->m_contained)[c];
             if(c < mbr->m_identical_count) {
-                contained.push_back(mi);                  //action
-            } else if(included_in_list.insert(mi).second) {
+                if(included_in_list.insert(mi).second) {
+                    contained.push_back(mi);                  //action  
+                    if(mi->m_copy != 0) 
+                        included_in_list.insert(mi->m_copy->begin(),mi->m_copy->end());
+                }
+            } else if(included_in_list.find(mi) == included_in_list.end()) {
                 not_visited.push_back(mi);                //store for future
             }
         }
@@ -3329,13 +3333,18 @@ void CChainer::CChainerImpl::CombineCompatibleChains(TChainList& chains) {
                         continue;
                 }
 
-                set<CGeneModel*> support;
+                TMemberPtrSet support;
                 ITERATE(TContained, i, itt->m_members) {
-                    support.insert((*i)->m_align);
+                    support.insert(*i);
+                    if((*i)->m_copy != 0)
+                        support.insert((*i)->m_copy->begin(),(*i)->m_copy->end());
                 }
                 ITERATE(TContained, i, jtt->m_members) {
-                    if(support.insert((*i)->m_align).second)
+                    if(support.insert(*i).second) {
                         itt->m_members.push_back(*i);
+                        if((*i)->m_copy != 0)
+                            support.insert((*i)->m_copy->begin(),(*i)->m_copy->end());
+                    }
                 }
                 sort(itt->m_members.begin(),itt->m_members.end(),GenomeOrderD());
                 itt->CalculateSupportAndWeightFromMembers();
