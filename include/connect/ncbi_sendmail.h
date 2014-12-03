@@ -86,14 +86,14 @@ typedef struct {
 
 /** Initialize SSendMailInfo structure, setting:
  *   'cc', 'bcc', 'header' to NULL (means no recipients/additional headers);
- *   'from' filled out using either the provided (non-empty) user name
- *          or the name of the current user if discovered, 'anonymous'
- *          otherwise, and host in the form: username@hostname; may be later
- *          reset by the application to "" for sending no-return messages
- *          (aka MAILER-DAEMON messages);
+ *   'from' filled out with a return address using either the provided
+ *          (non-empty) user name or the name of the current user if
+ *          discoverable ("anonymous" otherwise), and the host, in the form:
+ *          "username@hostname";  that may later be reset by the application
+ *          to "" for sending no-return messages (aka MAILER-DAEMON messages);
  *   'mx_*' filled out in accordance with some hard-coded defaults, which are
- *          very NCBI-specific; an outside application is likely to choose and
- *          use different values (at least for mx_host).
+ *          rather NCBI-specific;  an outside application is likely to choose
+ *          and use different values (at least for 'mx_host').
  *          The mx_... fields can be configured via the registry file at
  *          [CONN]MX_HOST, [CONN]MX_PORT, and [CONN]MX_TIMEOUT, as well as
  *          through their process environment equivalents (which have higher
@@ -105,16 +105,16 @@ typedef struct {
  *  A pointer to the structure to initialize
  * @param from
  *  Return address pattern to use in 'info->from' as the following:
- *  * "user@host" or "user" is copied verbatim;
+ *  * "user@host" or "user" is copied verbatim (as-is);
  *  * "user@" is appended with the local host name;
- *  * "@host" is prepended with the user name according to the "user" argument;
- *  * "@" is replaced with an empty string (no-return message);
+ *  * "@host" is prepended with the user name according to the 'user' argument;
+ *  * "@"     is replaced with an empty string (for no-return messages);
  *  * "" or NULL cause to generate both the user and the host parts.
  * @param user
- *  Which username to use when auto-generating (otherwise ignored)
+ *  Which username to use when auto-generating (ignored otherwise)
  * @return
  *  Return value equals the argument 'info' passed in.
- * @note It is allowed to pre-fill "'info->from' (of the 'info' being inited)
+ * @note It is allowed to pre-fill 'info->from' (of the 'info' being inited)
  *       with one of the above patterns, and pass it as the 'from' parameter.
  * @note Unlike the username part of the return address, the hostname part is
  *       never truncated but dropped altogether if it does not fit.
@@ -153,9 +153,9 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
  *  SendMailInfo_InitEx, CORE_SendMailEx
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
-(const char*          to,
- const char*          subject,
- const char*          body
+(const char* to,
+ const char* subject,
+ const char* body
  );
 
 /** Send a message as in CORE_SendMail() but by explicitly specifying all
