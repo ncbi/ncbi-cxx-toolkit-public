@@ -36,8 +36,7 @@
 /// "old" C++ stream libraries.
 
 
-#include <corelib/ncbitype.h>
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbictype.hpp>
 
 
 /// Determine which iostream library to use, include appropriate

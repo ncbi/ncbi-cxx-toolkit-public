@@ -43,18 +43,11 @@
 #  include <sys/types.h>
 #endif
 
-#include <cctype>
-
-#include <corelib/ncbitype.h>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbidbg.hpp>
 
 #if !defined(HAVE_NULLPTR)  &&  !defined(nullptr)
 #  define nullptr NULL
-#endif
-
-#if !defined(NCBI_NO_STRICT_CTYPE_ARGS)
-#  define NCBI_STRICT_CTYPE_ARGS
 #endif
 
 
@@ -805,48 +798,6 @@ extern char* strdup(const char* str);
 #endif
 
 
-
-// ctype hacks
-//
-
-#ifdef NCBI_STRICT_CTYPE_ARGS
-
-# define NCBI_STRICT_CTYPE_ARGS_ACTIVE
-
-END_NCBI_NAMESPACE;
-
-BEGIN_STD_NAMESPACE;
-
-#define NCBI_DEFINE_CTYPE_FUNC(name)                                    \
-    inline int name(Uchar c) { return name(int(c)); }                   \
-    inline int name(char c) { return name(Uchar(c)); }                  \
-    template<class C> inline int name(C c)                              \
-    { return See_the_standard_on_proper_argument_type_for_ctype_functions(c); }
-
-NCBI_DEFINE_CTYPE_FUNC(isalpha)
-NCBI_DEFINE_CTYPE_FUNC(isalnum)
-NCBI_DEFINE_CTYPE_FUNC(iscntrl)
-NCBI_DEFINE_CTYPE_FUNC(isdigit)
-NCBI_DEFINE_CTYPE_FUNC(isgraph)
-NCBI_DEFINE_CTYPE_FUNC(islower)
-NCBI_DEFINE_CTYPE_FUNC(isprint)
-NCBI_DEFINE_CTYPE_FUNC(ispunct)
-NCBI_DEFINE_CTYPE_FUNC(isspace)
-NCBI_DEFINE_CTYPE_FUNC(isupper)
-NCBI_DEFINE_CTYPE_FUNC(isxdigit)
-NCBI_DEFINE_CTYPE_FUNC(tolower)
-NCBI_DEFINE_CTYPE_FUNC(toupper)
-//NCBI_DEFINE_CTYPE_FUNC(isblank)
-//NCBI_DEFINE_CTYPE_FUNC(isascii)
-//NCBI_DEFINE_CTYPE_FUNC(toascii)
-
-#undef NCBI_DEFINE_CTYPE_FUNC
-
-END_STD_NAMESPACE;
-
-BEGIN_NCBI_NAMESPACE;
-
-#endif // NCBI_STRICT_CTYPE_ARGS
 
 //  ITERATE
 //  NON_CONST_ITERATE
