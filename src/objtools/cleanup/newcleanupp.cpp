@@ -311,7 +311,7 @@ void CNewCleanup_imp::BasicCleanupSeqEntryHandle (
     CRef<CSeq_entry> new_seq_entry( new CSeq_entry );
     new_seq_entry->Assign( *seh.GetCompleteSeq_entry() );
 
-    CSeq_entry_EditHandle edit_handle( seh );
+    CSeq_entry_EditHandle edit_handle = seh.GetEditHandle();
 
     BasicCleanupSeqEntry( *new_seq_entry );
 
@@ -332,7 +332,7 @@ void CNewCleanup_imp::BasicCleanupBioseqHandle (
     CRef<CBioseq> new_bioseq( new CBioseq );
     new_bioseq->Assign( *bsh.GetCompleteBioseq() );
 
-    CBioseq_EditHandle edit_handle( bsh );
+    CBioseq_EditHandle edit_handle = bsh.GetEditHandle();
 
     BasicCleanupBioseq( *new_bioseq );
 
@@ -351,7 +351,8 @@ void CNewCleanup_imp::BasicCleanupBioseqHandle (
     edit_handle.SetInst( new_bioseq->SetInst() );
     while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bsh.GetCompleteBioseq(), Annot ) )  {
         CSeq_annot_CI annot_ci( bsh );
-        CSeq_annot_EditHandle( *annot_ci ).Remove();
+        CSeq_annot_EditHandle a = annot_ci->GetEditHandle();
+        a.Remove();
     }
     EDIT_EACH_SEQANNOT_ON_BIOSEQ( annot_iter, *new_bioseq ) {
         edit_handle.AttachAnnot( **annot_iter );
@@ -367,7 +368,7 @@ void CNewCleanup_imp::BasicCleanupBioseqSetHandle (
     CRef<CBioseq_set> new_bioseq_set( new CBioseq_set );
     new_bioseq_set->Assign( *bssh.GetCompleteBioseq_set() );
 
-    CBioseq_set_EditHandle edit_handle( bssh );
+    CBioseq_set_EditHandle edit_handle = bssh.GetEditHandle();
 
     BasicCleanupBioseqSet( *new_bioseq_set );
 
@@ -391,7 +392,8 @@ void CNewCleanup_imp::BasicCleanupBioseqSetHandle (
 
     while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bssh.GetCompleteBioseq_set(), Seq_set ) )  {
         CSeq_entry_CI entry_ci( bssh );
-        CSeq_entry_EditHandle( *entry_ci ).Remove();
+        CSeq_entry_EditHandle edit = entry_ci->GetEditHandle();
+        edit.Remove();
     }
     EDIT_EACH_SEQENTRY_ON_SEQSET( entry_iter, *new_bioseq_set ) {
         edit_handle.AttachEntry( **entry_iter );
@@ -400,7 +402,8 @@ void CNewCleanup_imp::BasicCleanupBioseqSetHandle (
     // copy annot field
     while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bssh.GetCompleteBioseq_set(), Annot ) )  {
         CSeq_annot_CI annot_ci( bssh );
-        CSeq_annot_EditHandle( *annot_ci ).Remove();
+        CSeq_annot_EditHandle edit = annot_ci->GetEditHandle();
+        edit.Remove();
     }
     EDIT_EACH_SEQANNOT_ON_SEQSET( annot_iter, *new_bioseq_set ) {
         edit_handle.AttachAnnot( **annot_iter );
@@ -416,7 +419,7 @@ void CNewCleanup_imp::BasicCleanupSeqAnnotHandle (
     CRef<CSeq_annot> new_seq_annot( new CSeq_annot );
     new_seq_annot->Assign( *sah.GetCompleteSeq_annot() );
 
-    CSeq_annot_EditHandle edit_handle( sah );
+    CSeq_annot_EditHandle edit_handle = sah.GetEditHandle();
 
     BasicCleanupSeqAnnot( *new_seq_annot );
 
@@ -10293,7 +10296,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
     CRef<CSeq_entry> new_seq_entry( new CSeq_entry );
     new_seq_entry->Assign( *seh.GetCompleteSeq_entry() );
 
-    CSeq_entry_EditHandle edit_handle( seh );
+    CSeq_entry_EditHandle edit_handle = seh.GetEditHandle();
 
     ExtendedCleanupSeqEntry( *new_seq_entry );
 
