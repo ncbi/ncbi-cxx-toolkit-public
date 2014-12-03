@@ -109,6 +109,7 @@ protected:
 
     virtual bool xGather(CBioseq_Handle, const FIELDS&, IMessageListener* =0);
     virtual bool xGatherId(CBioseq_Handle, IMessageListener* =0);
+    virtual bool xGatherGi(CBioseq_Handle, IMessageListener* =0);
     virtual bool xHandleSourceField(const CBioSource&, const string&, IMessageListener* =0);
 
     virtual bool xGatherTaxname(const CBioSource&, IMessageListener* =0);

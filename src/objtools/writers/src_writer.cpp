@@ -58,6 +58,7 @@ CSrcWriter::HANDLERMAP CSrcWriter::sHandlerMap;
 //  Default Fields:
 //  ----------------------------------------------------------------------------
 static const string arrDefaultFields[] = {
+    "gi",
     "taxid",
     "div",
     "genome",
@@ -232,13 +233,25 @@ bool CSrcWriter::xGather(
 {
     // for each of biosources we may create individual record
     // with the same ID
+    
+    bool hasGi = ( find(desiredFields.begin(),desiredFields.end(),"gi") != desiredFields.end() ); 
+
     for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
         if (!xGatherId(bsh)) {
             return false;
         }
+        if (hasGi) {
+            if (!xGatherGi(bsh)) {
+                return false;
+            }
+        }
+
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
+            if (*cit == "gi") {
+                continue;
+            }
             if (!xHandleSourceField(src, *cit)) {
                 return false;
             }
@@ -260,6 +273,31 @@ bool CSrcWriter::xGatherId(
     string label;
     bsh.GetSeqId()->GetLabel(&label, CSeq_id::eContent);
     xAppendColumnValue(colName, label);
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CSrcWriter::xGatherGi(
+    CBioseq_Handle bsh,
+    IMessageListener*)
+//  ----------------------------------------------------------------------------
+
+{
+    static const string colName = "gi";
+
+    
+    ITERATE( CBioseq_Handle::TId, it, bsh.GetId() ){
+        if( it->IsGi() ){
+	    string label;
+	    it->GetSeqId()->GetLabel(&label, CSeq_id::eContent);
+            const string displayName = "gi";
+            const string defaultValue = "";
+            xPrepareTableColumn(colName, displayName, defaultValue);
+            xAppendColumnValue(colName, label);
+            return true;
+        }
+    }
     return true;
 }
 
@@ -712,6 +750,10 @@ bool CSrcWriter::ValidateFields(
 {
     for (FIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
         string field = *cit;
+        if (field == "id" || field == "gi") {
+          return true;
+        }
+
         HANDLERMAP::const_iterator fit = sHandlerMap.find(field);
         if (fit == sHandlerMap.end()) {
             CSrcError* pE = CSrcError::Create(
