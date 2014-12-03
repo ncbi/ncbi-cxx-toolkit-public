@@ -361,11 +361,8 @@ string CGtfRecord::x_GenericTranscriptId(
 //  ============================================================================
 {
     static unsigned int uId = 1;
-    string strTranscriptId = string( "unknown_transcript_" ) + 
-        NStr::UIntToString( uId );
-    if ( mapped_feat.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
-        uId++;
-    }
+    string strTranscriptId = string("unknown_transcript_") + 
+        NStr::UIntToString(uId++);
     return strTranscriptId;
 }
 
