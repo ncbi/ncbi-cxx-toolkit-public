@@ -1,0 +1,7 @@
+# $Id$
+
+%.gz: %
+	gzip -Nf $<
+
+%.bz2: %
+	bzip2 -f $<

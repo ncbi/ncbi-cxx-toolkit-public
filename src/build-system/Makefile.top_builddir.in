@@ -32,7 +32,7 @@ include ./Makefile.meta
 #
 
 compress_tests:
-	$(abs_top_srcdir)/scripts/common/impl/compress_tests.sh \
+	+$(abs_top_srcdir)/scripts/common/impl/compress_tests.sh \
 	     --$(DEBUG_SFX) ../bin
 
 sfi=$(abs_top_srcdir)/scripts/common/impl/strip_for_install.sh

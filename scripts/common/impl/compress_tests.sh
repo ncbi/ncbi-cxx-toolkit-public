@@ -5,7 +5,7 @@ case "$1" in
     *         ) def_compress_others= ;;
 esac
 
-compress='gzip -Nf'
+ext='.gz'
 
 ws='[ 	]' # Contains a space and a tab.
 if [ -f ../../build_info ] \
@@ -13,7 +13,7 @@ if [ -f ../../build_info ] \
         &&  grep "^$ws*CODEBASE$ws*=$ws*PRODUCTION$ws*\$" ../../build_info \
         &&  bzip2 --version </dev/null) >/dev/null 2>&1; then
     # Some bzip2 releases still try to compress stdin with --version(!)
-    compress='bzip2 -f'
+    ext='.bz2'
 fi
 
 for dir in "$@"; do
@@ -25,6 +25,7 @@ for dir in "$@"; do
             *       ) compress_others=no  ;;
         esac
     fi
+    targets=''
     for f in $dir/*; do
         [ -f "$f" ]  ||  continue
         case "`basename $f`" in
@@ -35,14 +36,18 @@ for dir in "$@"; do
                 ;;
             *test* | *demo* | *sample* \
                 | net*che*_c* | ns_*remote_job* | save_to_nc )
-                $compress $f
+                targets="$targets `basename $f`$ext"
                 ;;
             *blast* | datatool | gbench* | id1_fetch | idwwwget | lbsmc \
                 | one2all )
                 ;;
             *)
-                test "$compress_others" = "no" || $compress $f
+                test "$compress_others" = "no"  ||  \
+                    targets="$targets `basename $f`$ext"
                 ;;
         esac
     done
+    ${MAKE-make} -C $dir \
+       -f `dirname $0`/../../../src/build-system/Makefile.compress_tests \
+       $targets
 done
