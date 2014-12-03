@@ -211,7 +211,12 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
                     } else {
                         this_prev_char = prev_char;
                     }
-                    if (x_PartialCompare(str.substr(*len), pattern.substr(word_len), this_prev_char, this_match)) {
+                    bool require_end = false;
+                    if (GetMatch_location() == eString_location_equals || GetMatch_location() == eString_location_ends) {
+                        require_end = true;
+                    }
+                    if (x_PartialCompare(str.substr(*len), pattern.substr(word_len), this_prev_char, this_match) &&
+                        (!require_end || this_match == str.substr(*len).length())) {
                         match_len += *len;
                         match_len += this_match;                        
                         return true;

@@ -473,3 +473,113 @@ BOOST_AUTO_TEST_CASE(Test_Upper_LowerCases)
     BOOST_CHECK_EQUAL(s.Match("antigen gene"), true);
     BOOST_CHECK_EQUAL(s.Match("class: antigen!"), true);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_NADH_dehydrogenase)
+{
+    CString_constraint s;
+    s.SetMatch_text("NADH dehydrogenase subunit 1 gene");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef<CWord_substitution> subst1(new CWord_substitution());
+    subst1->SetWord("NADH dehydrogenase subunit 1 gene");
+    subst1->SetSynonyms().push_back("NADH dehydrogenase subunit 1");
+    subst1->SetSynonyms().push_back("NADH dehydrogenase 1 gene");
+    subst1->SetSynonyms().push_back("NADH dehydrogenase 1");
+    subst1->SetSynonyms().push_back("NADH dehydrogenase subunit 1 protein");
+    subst1->SetSynonyms().push_back("NADH dehydrogenase 1 protein");
+    subst1->SetCase_sensitive(false);
+    subst1->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst1);
+
+    CRef<CWord_substitution> subst2(new CWord_substitution());
+    subst2->SetWord("1");
+    subst2->SetSynonyms().push_back("one");
+    subst2->SetCase_sensitive(false);
+    subst2->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst2);
+
+    CRef<CWord_substitution> subst3(new CWord_substitution());
+    subst3->SetWord("gene");
+    subst3->SetSynonyms().push_back("sequence");
+    subst3->SetSynonyms().push_back("partial");
+    subst3->SetSynonyms().push_back("complete");
+    subst3->SetSynonyms().push_back("region");
+    subst3->SetSynonyms().push_back("partial sequence");
+    subst3->SetSynonyms().push_back("complete sequence");
+    subst3->SetCase_sensitive(false);
+    subst3->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst3);
+
+    s.SetWhole_word(false);
+    s.SetNot_present(false);
+    s.SetIs_all_caps(false);
+    s.SetIs_all_lower(false);
+    s.SetIs_all_punct(false);
+    s.SetIgnore_weasel(false);
+
+    NcbiCout << MSerial_AsnText << s;
+
+    // this one fails
+    BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit one"), false);
+
+    // these four work
+    BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit one sequence"), true);
+    BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit 1 gene"), true);
+    BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit 2 gene"), false);
+    BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit sequence"), false);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Beta_actinGene)
+{
+    CString_constraint s;
+    s.SetMatch_text("beta-actin gene");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef<CWord_substitution> subst1(new CWord_substitution());
+    subst1->SetWord("beta-actin gene");
+    subst1->SetSynonyms().push_back("beta-actin");
+    subst1->SetSynonyms().push_back("beta actin");
+    subst1->SetSynonyms().push_back("beta actin gene");
+    subst1->SetSynonyms().push_back("beta_actin");
+    subst1->SetSynonyms().push_back("beta_actin gene");
+    subst1->SetCase_sensitive(false);
+    subst1->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst1);
+
+    CRef<CWord_substitution> subst2(new CWord_substitution());
+    subst2->SetWord("gene");
+    subst2->SetSynonyms().push_back("sequence");
+    subst2->SetSynonyms().push_back("partial");
+    subst2->SetSynonyms().push_back("complete");
+    subst2->SetSynonyms().push_back("region");
+    subst2->SetSynonyms().push_back("partial sequence");
+    subst2->SetSynonyms().push_back("complete sequence");
+    subst2->SetCase_sensitive(false);
+    subst2->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst2);
+
+    s.SetWhole_word(false);
+    s.SetNot_present(false);
+    s.SetIs_all_caps(false);
+    s.SetIs_all_lower(false);
+    s.SetIs_all_punct(false);
+    s.SetIgnore_weasel(false);
+
+    NcbiCout << MSerial_AsnText << s;
+
+    // this one works
+    BOOST_CHECK_EQUAL(s.Match("beta actin"), true);
+
+    // these two fail
+    BOOST_CHECK_EQUAL(s.Match("beta-actin gene"), true);
+    BOOST_CHECK_EQUAL(s.Match("beta_actin sequence"), true);
+}
