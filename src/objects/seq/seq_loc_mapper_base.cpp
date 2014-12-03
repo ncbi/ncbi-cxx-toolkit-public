@@ -3370,6 +3370,7 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
     switch ( m_MergeFlag ) {
     case eMergeContained:
     case eMergeAll:
+    case eMergeBySeg:
         {
             // Merging will be done later, while constructing the mapped
             // seq-loc. Now just add new range in the right order.
@@ -3399,7 +3400,6 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
             break;
         }
     case eMergeAbutting:
-    case eMergeBySeg:
     default:
         {
             // Some special processing is required.
@@ -3596,8 +3596,11 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
             TSeqPos from = kInvalidSeqPos;
             TSeqPos to = kInvalidSeqPos;
             TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+            int group = -1;
             // Some merge flags require the ranges to be sorted.
-            if (m_MergeFlag == eMergeContained  || m_MergeFlag == eMergeAll) {
+            if (m_MergeFlag == eMergeContained  ||
+                m_MergeFlag == eMergeAll  ||
+                m_MergeFlag == eMergeBySeg) {
                 id_it->second[str].sort();
             }
             // Iterate mapped ranges.
@@ -3620,42 +3623,46 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                     from = rg_it->range.GetFrom();
                     to = rg_it->range.GetTo();
                     fuzz = rg_it->fuzz;
+                    group = rg_it->group;
                     continue;
                 }
-                // Merge abutting ranges. The ranges are sorted by 'from',
-                // so we need to check only one end.
-                if (m_MergeFlag == eMergeAbutting) {
-                    if (rg_it->range.GetFrom() == to + 1) {
-                        to = rg_it->range.GetTo();
-                        fuzz.second = rg_it->fuzz.second;
-                        continue;
-                    }
-                }
-                // Merge contained ranges
-                if (m_MergeFlag == eMergeContained) {
-                    // Ignore interval completely covered by another one.
-                    // Check only 'to', since the ranges are sorted by 'from'.
-                    if (rg_it->range.GetTo() <= to) {
-                        continue;
-                    }
-                    // If the old range is contaied in the new one, adjust
-                    // its 'to'.
-                    if (rg_it->range.GetFrom() == from) {
-                        to = rg_it->range.GetTo();
-                        fuzz.second = rg_it->fuzz.second;
-                        continue;
-                    }
-                }
-                // Merge all overlapping ranges.
-                if (m_MergeFlag == eMergeAll) {
-                    if (rg_it->range.GetFrom() <= to + 1) {
-                        if (rg_it->range.GetTo() > to) {
+                if (m_MergeFlag != eMergeBySeg  ||  rg_it->group == group) {
+                    // Merge abutting ranges. The ranges are sorted by 'from',
+                    // so we need to check only one end.
+                    if (m_MergeFlag == eMergeAbutting) {
+                        if (rg_it->range.GetFrom() == to + 1) {
                             to = rg_it->range.GetTo();
                             fuzz.second = rg_it->fuzz.second;
+                            continue;
                         }
-                        continue;
+                    }
+                    // Merge contained ranges
+                    if (m_MergeFlag == eMergeContained) {
+                        // Ignore interval completely covered by another one.
+                        // Check only 'to', since the ranges are sorted by 'from'.
+                        if (rg_it->range.GetTo() <= to) {
+                            continue;
+                        }
+                        // If the old range is contaied in the new one, adjust
+                        // its 'to'.
+                        if (rg_it->range.GetFrom() == from) {
+                            to = rg_it->range.GetTo();
+                            fuzz.second = rg_it->fuzz.second;
+                            continue;
+                        }
+                    }
+                    // Merge all overlapping ranges.
+                    if (m_MergeFlag == eMergeAll  ||  m_MergeFlag == eMergeBySeg) {
+                        if (rg_it->range.GetFrom() <= to + 1) {
+                            if (rg_it->range.GetTo() > to) {
+                                to = rg_it->range.GetTo();
+                                fuzz.second = rg_it->fuzz.second;
+                            }
+                            continue;
+                        }
                     }
                 }
+
                 // No merging happened - store the previous interval
                 // or point.
                 if ( x_ReverseRangeOrder(str) ) {
@@ -3671,6 +3678,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                 from = rg_it->range.GetFrom();
                 to = rg_it->range.GetTo();
                 fuzz = rg_it->fuzz;
+                group = rg_it->group;
             }
             // If there were only empty ranges, do not try to add them as points.
             if (from == kInvalidSeqPos  &&  to == kInvalidSeqPos) {

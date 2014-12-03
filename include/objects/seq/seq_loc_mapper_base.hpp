@@ -358,10 +358,6 @@ public:
     /// target row of the alignment. Any other ID is mapped to the
     /// target one. Only the first row matching target ID is used,
     /// all other rows are considered source.
-    /// If the alignment is a spliced-seg, the merging is set to
-    /// 'merge by segment' automatically to merge mapped locations
-    /// by exon.
-    /// @sa SetMergeBySeg
     CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
                          const CSeq_id&         to_id,
                          TMapOptions            opts = 0,
@@ -369,10 +365,6 @@ public:
     /// Sparse alignments require special row indexing since each
     /// row contains two seq-ids. Use options to specify mapping
     /// direction.
-    /// If the alignment is a spliced-seg, the merging is set to
-    /// 'merge by segment' automatically to merge mapped locations
-    /// by exon.
-    /// @sa SetMergeBySeg
     CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
                          size_t                 to_row,
                          TMapOptions            opts = 0,
@@ -399,7 +391,6 @@ public:
     CSeq_loc_Mapper_Base& SetMergeAbutting(void);
     /// Merge only intervals from the same group. Group is created
     /// for each exon, dense-diag, std-seg and disc sub-alignment.
-    /// For spliced segs this mode is turned on by default.
     CSeq_loc_Mapper_Base& SetMergeBySeg(void);
     /// Merge intervals only if one is completely covered by another
     CSeq_loc_Mapper_Base& SetMergeContained(void);
@@ -636,7 +627,7 @@ private:
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
         eMergeContained, // merge if one range is contained in another
-        eMergeBySeg,     // merge ranges by mapping group (e.g. by exon)
+        eMergeBySeg,     // merge abutting and overlapping ranges by mapping group
         eMergeAll        // merge both abutting and overlapping intervals
     };
     enum EGapFlags {
