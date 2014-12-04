@@ -238,6 +238,62 @@ Checks:
 - the server reply status is OK and there is info about two clients; one of the
   clients name is 'client_1' while the others is 'client_2'
 
+7.3a Get clients metadata option info
+Prerequisites:
+- Configured service is s
+Steps:
+- start server
+- send HELLO with Client 'me' and Service s and metadata option Required
+- send GETCLIENTSINFO
+
+Checks:
+- the client 'me' metadata option is Required
+
+
+7.3b Get clients metadata option info
+Prerequisites:
+- Configured service is s
+Steps:
+- start server
+- send HELLO with Client 'me' and Service NotConfigured and metadata option Required
+
+Checks:
+- the server reports an error
+
+
+7.3c Get clients metadata option info
+Prerequisites:
+- Configured service is s
+Steps:
+- start server
+- send HELLO with Client 'me' and Service s and metadata option Disabled
+- send GETCLIENTSINFO
+
+Checks:
+- the client 'me' metadata option is Disabled
+
+
+7.3d Get clients metadata option info
+Prerequisites:
+- Configured service is s
+Steps:
+- start server
+- send HELLO with Client 'me' and Service s and metadata option Monitoring
+- send GETCLIENTSINFO
+
+Checks:
+- the client 'me' metadata option is Monitoring
+
+7.3e Get clients metadata option info
+Prerequisites:
+- Configured service is s
+Steps:
+- start server
+- send HELLO with Client 'me' and Service s and no metadata option
+- send GETCLIENTSINFO
+
+Checks:
+- the client 'me' metadata option is NotSpecified
 
 
 8. GETOBJECTINFO
@@ -599,10 +655,82 @@ Checks:
 
 
 15. GETATTR
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service K and Client me and no metadata option
+- send GETATTR
+
+Checks:
+- the server reports error
 
 
+15.1 GETATTR for not existing object
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service s and Client me and no metadata option
+- send GETATTR for non existing user key identified object
+
+Checks:
+- the server reports NetStorageObjectNotFound
+
+15.2 GETATTR for not exising attribute
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service s and Client me and metadata option Required
+- send GETATTR for existing object and non existing attributes
+
+Checks:
+- the server reports Attribute Not Found
+
+15.3
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service s and Client me and metadata option Monitoring
+- send GETATTR for existing object and existing attribute
+
+Checks:
+- the attribute value matches the expected
 
 
 16. SETATTR
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service s and Client me and metadata option Disabled
+- send SETATTR
 
+Checks:
+- the server reports an error
+
+16.1 SETATTR
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service s and Client me and metadata option Monitoring
+- send SETATTR
+
+Checks:
+- the server reports an error
+
+16.2 SETATTR
+Prerequisites:
+- Configured service s
+Steps:
+- Say HELLO with Service s and Client me and metadata option Required
+- send SETATTR for an existing object (A)
+- send SETATTR for the same object and the same attribute (B) with a different
+  value
+
+Checks:
+- (A) the attribute value matches the expected
+- (B) the attribute value matches the expected
+- (A) check the attribute read/write timestamps after each access
+
+
+
+17. Object expiration
 
