@@ -2389,6 +2389,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HUT<PER>	s	Herbarium Truxillense, Universidad Nacional de La Libertad-Trujillo",
 "HUTB	s	Hainan University",
 "HUTM	s	Hunan Academy of Traditional Chinese Medicine and Pharmacy",
+"HUTPL	s	Universidad Tecnica Particular De Loja",
 "HVR	s	Universidade de Tras-os-Montes e Alto Douro",
 "HWA	s	Southwest Agricultural University, Department of Biological Basic Courses",
 "HWB	s	Harrow School, Biology Department",
