@@ -365,7 +365,7 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
                               const char proto_error[])
 {
     char c;
-    while ((c = *to++) != 0) {
+    while ((c = *to++) != '\0') {
         char   quote = 0;
         size_t k = 0;
         if (isspace((unsigned char) c))
