@@ -1683,6 +1683,9 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             CTSE_LoadLock& lock = setter.GetTSE_LoadLock();
             lock->GetSplitInfo().SetSplitVersion(split_version);
             CSplitParser::Attach(*lock, *split_info);
+            if ( result.GetAddWGSMasterDescr() ) {
+                AddWGSMaster(setter);
+            }
             setter.SetLoaded();
         }
 
