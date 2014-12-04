@@ -68,7 +68,8 @@ extern "C" {
 #  ifdef isnan
 #    undef isnan
 #  endif
-#  if __cplusplus >= 201103L  &&  defined(_GLIBCXX_CONSTEXPR)
+#  if __cplusplus >= 201103L  &&  defined(_GLIBCXX_CONSTEXPR)  \
+    &&  !defined(__MIC__)
 #    define ISNAN_CONSTEXPR _GLIBCXX_CONSTEXPR
 #  else
 #    define ISNAN_CONSTEXPR
