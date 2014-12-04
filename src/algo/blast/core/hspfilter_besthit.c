@@ -284,8 +284,8 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
 
       /* See if new hit A is bad */
       bad = FALSE;
-      for (p=best_list[qid]; p &&   p->end < end;   p=p->next);
-      for (                ; p && p->begin < begin; p=p->next) {
+      for (p=best_list[qid]; p &&   p->end <= end;   p=p->next);
+      for (                ; p && p->begin <= begin; p=p->next) {
          /* check conditions */
          lenB   = p->len;
          scoreB = p->hsp->score;
