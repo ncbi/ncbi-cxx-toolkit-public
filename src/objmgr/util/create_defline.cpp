@@ -1856,6 +1856,9 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     } else if (is_plasmid) {
         joiner.Add(" plasmid");
     }
+    if (! m_Isolate.empty()) {
+        joiner.Add(" isolate ").Add(m_Isolate);
+    }
 
     if (! m_rEnzyme.empty()) {
         joiner.Add(", ").Add(m_rEnzyme).Add(" whole genome map");
