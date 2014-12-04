@@ -63,7 +63,7 @@ private:
     };
 
     template <class What>
-    void Error(SContext&, const What&, const string&) const;
+    void Error(SContext&, const What&, const string& = kEmptyStr) const;
     void Copy(SContext&, CCgiEntry&);
 
     CNetStorage m_NetStorage;
@@ -122,7 +122,7 @@ void CFileUploadApplication::Init()
 
 template <class What>
 void CFileUploadApplication::Error(SContext& ctx, const What& what,
-        const string& msg = kEmptyStr) const
+        const string& msg) const
 {
     ctx.json.SetBoolean("success", false);
 
@@ -187,6 +187,7 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
         }
 
         if (read_result == eRW_Eof) {
+            netstorage_object.Close();
             ctx.json.SetBoolean("success", true);
             ctx.json.SetString("key", netstorage_object.GetLoc());
             ctx.json.SetString("md5", sum.GetHexSum());
