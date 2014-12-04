@@ -43,28 +43,31 @@ class CNetStorageServerException : public CException
 {
     public:
         enum EErrCode {
-            eInvalidArgument        = 1001,
-            eMandatoryFieldsMissed  = 1002,
-            eHelloRequired          = 1003,
-            eInvalidMessageType     = 1004,
-            eInvalidIncomingMessage = 1005,
-            ePrivileges             = 1006,
-            eInvalidMessageHeader   = 1007,
-            eShuttingDown           = 1008,
-            eMessageAfterBye        = 1009,
-            eStorageError           = 1010,
-            eWriteError             = 1011,
-            eReadError              = 1012,
-            eInternalError          = 1013,
-            eObjectNotFound         = 1014,
-            eAttributeNotFound      = 1015,
-            eAttributeValueNotFound = 1016,
-            eDatabaseError          = 1017,
-            eInvalidConfig          = 1018,
-            eInvalidMetaInfoRequest = 1019,     // Meta info involving operation
-                                                // requested while the service
-                                                // is not configured for meta
-            eUnknownError           = 1020
+            eInvalidArgument                    = 1001,
+            eMandatoryFieldsMissed              = 1002,
+            eHelloRequired                      = 1003,
+            eInvalidMessageType                 = 1004,
+            eInvalidIncomingMessage             = 1005,
+            ePrivileges                         = 1006,
+            eInvalidMessageHeader               = 1007,
+            eShuttingDown                       = 1008,
+            eMessageAfterBye                    = 1009,
+            eStorageError                       = 1010,
+            eWriteError                         = 1011,
+            eReadError                          = 1012,
+            eInternalError                      = 1013,
+            eNetStorageObjectNotFound           = 1014,
+            eNetStorageAttributeNotFound        = 1015,
+            eNetStorageAttributeValueNotFound   = 1016,
+            eNetStorageObjectExpired            = 1017,
+            eDatabaseError                      = 1018,
+            eInvalidConfig                      = 1019,
+            eRemoteObjectNotFound               = 1020,
+
+            // Meta info involving operation requested while the service
+            // is not configured for meta or HELLO metadata option conflict
+            eInvalidMetaInfoRequest             = 1021,
+            eUnknownError                       = 1022
         };
         virtual const char *  GetErrCodeString(void) const;
         unsigned int ErrCodeToHTTPStatusCode(void) const;

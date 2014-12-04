@@ -224,6 +224,8 @@ private:
                          const SCommonRequestArguments &  common_args);
     void x_ProcessGetSize(const CJsonNode &                 message,
                           const SCommonRequestArguments &  common_args);
+    void x_ProcessSetTTL(const CJsonNode &                 message,
+                         const SCommonRequestArguments &  common_args);
 
 private:
     SObjectID x_GetObjectKey(const CJsonNode &  message);
@@ -243,6 +245,10 @@ private:
     void x_ValidateWriteMetaDBAccess(const CJsonNode &  message) const;
     bool x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const;
     bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags) const;
+    bool x_DetectMetaDBNeedOnGetObjectInfo(const CJsonNode & message) const;
+    void x_CheckObjectExpiration(const string &  object_key,
+                                 bool            db_exception,
+                                 CJsonNode &     reply);
 }; // CNetStorageHandler
 
 

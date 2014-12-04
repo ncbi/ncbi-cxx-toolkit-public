@@ -51,9 +51,13 @@ BEGIN
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'DelAttribute')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'AddAttribute')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'RemoveObject')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'SetObjectExpiration')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetObjectExpiration')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetObjectFixedAttributes')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnRelocate')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnRead')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWrite')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateUserKeyObjectOnWrite')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObject')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithClientID')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClient')) OR
@@ -62,6 +66,7 @@ BEGIN
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'AttrValues')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Versions')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes'))
     BEGIN
         RAISERROR( 'Do not run the script on existing database', 11, 1 )
@@ -84,12 +89,20 @@ IF EXISTS (SELECT * FROM sysobjects WHERE name = 'AddAttribute')
     DROP PROCEDURE AddAttribute
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'RemoveObject')
     DROP PROCEDURE RemoveObject
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'SetObjectExpiration')
+    DROP PROCEDURE SetObjectExpiration
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetObjectExpiration')
+    DROP PROCEDURE GetObjectExpiration
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetObjectFixedAttributes')
+    DROP PROCEDURE GetObjectFixedAttributes
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnRelocate')
     DROP PROCEDURE UpdateObjectOnRelocate
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnRead')
     DROP PROCEDURE UpdateObjectOnRead
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWrite')
     DROP PROCEDURE UpdateObjectOnWrite
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateUserKeyObjectOnWrite')
+    DROP PROCEDURE UpdateUserKeyObjectOnWrite
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObject')
     DROP PROCEDURE CreateObject
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithClientID')
@@ -104,12 +117,38 @@ IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')
     DROP TABLE Objects
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')
     DROP TABLE Clients
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Versions')
+    DROP TABLE Versions
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes')
     DROP TABLE Attributes
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'ObjectIdGen')
     DROP TABLE ObjectIdGen
 GO
 
+
+-- Create versions table which can hold versions of various components
+-- For the time being it stores only one record with the DB structure version
+-- Later on other components could be added.
+CREATE TABLE Versions
+(
+    version_id      BIGINT NOT NULL IDENTITY (1, 1),
+    name            VARCHAR(256) NOT NULL,
+    version         INT NOT NULL,
+    description     VARCHAR(512) NULL
+)
+GO
+
+ALTER TABLE Versions ADD CONSTRAINT
+PK_Versions PRIMARY KEY CLUSTERED ( version_id )
+GO
+
+ALTER TABLE Versions ADD CONSTRAINT
+IX_Versions_name UNIQUE NONCLUSTERED ( name )
+
+-- The initial DB structure version is 1
+INSERT INTO Versions ( name, version, description )
+VALUES ( 'db_structure', 1, 'Database structure' )
+GO
 
 
 -- Create the Clients table
@@ -160,6 +199,7 @@ CREATE TABLE Objects
     tm_read         DATETIME NULL,
     tm_attr_write   DATETIME NULL,
     tm_attr_read    DATETIME NULL,
+    tm_expiration   DATETIME NULL,
     size            BIGINT NULL                 -- might be NULL because meta info could be
                                                 -- switched on after the object was created or read
 )
@@ -282,49 +322,13 @@ END
 GO
 
 
-CREATE PROCEDURE CreateObject
-    @object_id      BIGINT,
-    @object_key     VARCHAR(256),
-    @object_loc     VARCHAR(256),
-    @object_size    BIGINT,
-    @client_name    VARCHAR(256)
-AS
-BEGIN
-    BEGIN TRY
-        DECLARE @row_count  INT
-        DECLARE @error      INT
-
-        INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
-        VALUES (@object_id,
-                @object_key,
-                @object_loc,
-                (SELECT client_id FROM Clients WHERE name = @client_name),
-                GETDATE(),
-                @object_size)
-        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
-
-        IF @error != 0 OR @row_count = 0
-            RETURN 1
-        RETURN 0
-    END TRY
-    BEGIN CATCH
-        DECLARE @error_message  NVARCHAR(4000) = ERROR_MESSAGE()
-        DECLARE @error_severity INT = ERROR_SEVERITY()
-        DECLARE @error_state    INT = ERROR_STATE()
-
-        RAISERROR( @error_message, @error_severity, @error_state )
-        RETURN 1
-    END CATCH
-END
-GO
-
-
 CREATE PROCEDURE CreateObjectWithClientID
-    @object_id      BIGINT,
-    @object_key     VARCHAR(256),
-    @object_loc     VARCHAR(256),
-    @object_size    BIGINT,
-    @client_id      BIGINT
+    @object_id          BIGINT,
+    @object_key         VARCHAR(256),
+    @object_create_tm   DATETIME,
+    @object_loc         VARCHAR(256),
+    @object_size        BIGINT,
+    @client_id          BIGINT
 AS
 BEGIN
     BEGIN TRY
@@ -332,7 +336,7 @@ BEGIN
         DECLARE @error      INT
 
         INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
-        VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
+        VALUES (@object_id, @object_key, @object_loc, @client_id, @object_create_tm, @object_size)
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0 OR @row_count = 0
@@ -364,8 +368,11 @@ BEGIN
 
         DECLARE @row_count  INT
         DECLARE @error      INT
+        DECLARE @current_time   DATETIME
 
-        UPDATE Objects SET size = @object_size, tm_write = GETDATE() WHERE object_key = @object_key
+        SET @current_time = GETDATE()
+
+        UPDATE Objects SET size = @object_size, tm_write = @current_time WHERE object_key = @object_key
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0
@@ -387,13 +394,107 @@ BEGIN
             END
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, size)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @object_size)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
+            END
+        END
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+
+        DECLARE @error_message  NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state    INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+-- The procedure is triggered for the objects which are written with the user
+-- keys. For such objects there is no preceding CREATE command so a record
+-- may or may not exist in the Objects table.
+-- If the record does not exist it should be created.
+-- If it exists then special steps must be done depending on the expiration_tm
+-- value. If the time is expired then it should be reset (set to NULL). If not
+-- expired then no changes should appear.
+CREATE PROCEDURE UpdateUserKeyObjectOnWrite
+    @object_key     VARCHAR(256),
+    @object_loc     VARCHAR(256),
+    @object_size    BIGINT,
+    @client_id      BIGINT
+AS
+BEGIN
+    BEGIN TRANSACTION
+    BEGIN TRY
+
+        DECLARE @row_count      INT
+        DECLARE @error          INT
+        DECLARE @current_time   DATETIME
+
+        SET @current_time = GETDATE()
+
+        UPDATE Objects SET size = @object_size, tm_write = @current_time WHERE object_key = @object_key
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+
+        IF @row_count = 0       -- object is not found; create it
+        BEGIN
+            DECLARE @object_id  BIGINT
+            DECLARE @ret_code   BIGINT
+            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT
+
+            IF @ret_code != 0
+            BEGIN
+                ROLLBACK TRANSACTION
+                RETURN 1
+            END
+
+            -- For the user key objects creation time is set as well
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, tm_write, size)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @current_time, @object_size)
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+            IF @error != 0 OR @row_count = 0
+            BEGIN
+                ROLLBACK TRANSACTION
+                RETURN 1
+            END
+        END
+        ELSE                    -- object is found; tm_write updated; see if expiration should be updated too
+        BEGIN
+            DECLARE @expiration     DATETIME
+
+            SELECT @expiration = tm_expiration FROM Objects WHERE object_key = @object_key
+            IF @expiration IS NOT NULL
+            BEGIN
+                IF @expiration < @current_time
+                BEGIN
+                    -- the object is expired, so the expiration must be reset
+                    UPDATE Objects SET tm_expiration = NULL WHERE object_key = @object_key
+                    SELECT @error = @@ERROR
+
+                    IF @error != 0
+                    BEGIN
+                        ROLLBACK TRANSACTION
+                        RETURN 1
+                    END
+                END
             END
         END
     END TRY
@@ -577,9 +678,131 @@ END
 GO
 
 
+CREATE PROCEDURE GetObjectFixedAttributes
+    @object_key     VARCHAR(256),
+    @expiration     DATETIME OUT,
+    @creation       DATETIME OUT
+AS
+BEGIN
+    DECLARE @object_id      BIGINT = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+        SELECT @object_id = object_id FROM Objects WHERE object_key = @object_key
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+        IF @object_id IS NULL
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN -1               -- object is not found
+        END
+
+        SELECT @expiration = tm_expiration, @creation = tm_create FROM Objects WHERE object_key = @object_key
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+CREATE PROCEDURE GetObjectExpiration
+    @object_key     VARCHAR(256),
+    @expiration     DATETIME OUT
+AS
+BEGIN
+    DECLARE @object_id      BIGINT = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+        SELECT @object_id = object_id FROM Objects WHERE object_key = @object_key
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+        IF @object_id IS NULL
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN -1               -- object is not found
+        END
+
+        SELECT @expiration = tm_expiration FROM Objects WHERE object_key = @object_key
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+CREATE PROCEDURE SetObjectExpiration
+    @object_key     VARCHAR(256),
+    @expiration     DATETIME
+AS
+BEGIN
+    DECLARE @object_id      BIGINT = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+        SELECT @object_id = object_id FROM Objects WHERE object_key = @object_key
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+        IF @object_id IS NULL
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN -1               -- object is not found
+        END
+
+        UPDATE Objects SET tm_expiration = @expiration WHERE object_key = @object_key
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
 CREATE PROCEDURE AddAttribute
     @object_key     VARCHAR(256),
-    @object_loc     VARCHAR(256),
     @attr_name      VARCHAR(256),
     @attr_value     VARCHAR(1024),
     @client_id      BIGINT
@@ -602,34 +825,16 @@ BEGIN
         END
         IF @object_id IS NULL       -- object is not found; create it
         BEGIN
-            DECLARE @ret_code   BIGINT
-            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT
-
-            IF @ret_code != 0
-            BEGIN
-                ROLLBACK TRANSACTION
-                RETURN 1
-            END
-
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_attr_write)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE())
-            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
-
-            IF @error != 0 OR @row_count = 0
-            BEGIN
-                ROLLBACK TRANSACTION
-                RETURN 1
-            END
+            ROLLBACK TRANSACTION
+            return -1
         END
-        ELSE
+
+        -- Update attribute timestamp for the existing object
+        UPDATE Objects SET tm_attr_write = GETDATE() WHERE object_key = @object_key
+        IF @@ERROR != 0
         BEGIN
-            -- Update attribute timestamp for the existing object
-            UPDATE Objects SET tm_attr_write = GETDATE() WHERE object_key = @object_key
-            IF @@ERROR != 0
-            BEGIN
-                ROLLBACK TRANSACTION
-                RETURN 1
-            END
+            ROLLBACK TRANSACTION
+            RETURN 1
         END
 
         -- Get the attribute ID

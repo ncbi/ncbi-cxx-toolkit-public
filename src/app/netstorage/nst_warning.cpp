@@ -57,6 +57,8 @@ string GetWarningCodeString(EWarningCode  code)
             return "eObjectNotFoundWarning";
         case eConfigNotChangedWarning:
             return "eConfigNotChangedWarning";
+        case eRemoteObjectInfoWarning:
+            return "eRemoteObjectInfoWarning";
         default:
             return "UnknownNetStorageWarning";
     }

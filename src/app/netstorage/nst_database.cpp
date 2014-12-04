@@ -31,6 +31,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/services/json_over_uttp.hpp>
+#include <connect/services/netstorage.hpp>
+#include <connect/services/netstorage_impl.hpp>
 #include "nst_database.hpp"
 #include "nst_exception.hpp"
 #include "nst_application.hpp"
@@ -142,32 +144,6 @@ CNSTDatabase::ExecSP_CreateClient(
 
 
 int
-CNSTDatabase::ExecSP_CreateObject(
-            Int8  object_id, const string &  object_key,
-            const string &  object_loc, Int8  size,
-            const string &  client_name)
-{
-    x_PreCheckConnection();
-    try {
-        CQuery      query = x_NewQuery();
-        query.SetParameter("@object_id", object_id);
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_loc", object_loc);
-        query.SetParameter("@object_size", size);
-        query.SetParameter("@client_name", client_name);
-
-        query.ExecuteSP("CreateObject");
-        query.VerifyDone();
-        return x_CheckStatus(query, "CreateObject");
-    } catch (...) {
-        m_Server->RegisterAlert(eDB, "DB error while creating an object");
-        x_PostCheckConnection();
-        throw;
-    }
-}
-
-
-int
 CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
@@ -175,9 +151,14 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
 {
     x_PreCheckConnection();
     try {
-        CQuery      query = x_NewQuery();
+        CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                  object_loc);
+        CQuery                  query = x_NewQuery();
+
         query.SetParameter("@object_id", object_id);
         query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_create_tm",
+                           object_loc_struct.GetCreationTime());
         query.SetParameter("@object_loc", object_loc);
         query.SetParameter("@object_size", size);
         query.SetParameter("@client_id", client_id);
@@ -212,6 +193,31 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
         return x_CheckStatus(query, "UpdateObjectOnWrite");
     } catch (...) {
         m_Server->RegisterAlert(eDB, "DB error while updating an "
+                                     "object on write");
+        x_PostCheckConnection();
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
+            const string &  object_key,
+            const string &  object_loc, Int8  size, Int8  client_id)
+{
+    x_PreCheckConnection();
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@object_size", size);
+        query.SetParameter("@client_id", client_id);
+
+        query.ExecuteSP("UpdateUserKeyObjectOnWrite");
+        query.VerifyDone();
+        return x_CheckStatus(query, "UpdateUserKeyObjectOnWrite");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB, "DB error while updating a user key "
                                      "object on write");
         x_PostCheckConnection();
         throw;
@@ -288,8 +294,29 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
 
 
 int
+CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
+                                   const CTime &   expiration)
+{
+    x_PreCheckConnection();
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@expiration", expiration);
+
+        query.ExecuteSP("SetObjectExpiration");
+        query.VerifyDone();
+        return x_CheckStatus(query, "SetObjectExpiration");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB, "DB error while "
+                                     "setting an object expiration");
+        x_PostCheckConnection();
+        throw;
+    }
+}
+
+
+int
 CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
-                                  const string &  object_loc,
                                   const string &  attr_name,
                                   const string &  attr_value,
                                   Int8  client_id)
@@ -298,7 +325,6 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_loc", object_loc);
         query.SetParameter("@attr_name", attr_name);
         query.SetParameter("@attr_value", attr_value);
         query.SetParameter("@client_id", client_id);
@@ -362,6 +388,78 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
         return x_CheckStatus(query, "DelAttribute");
     } catch (...) {
         m_Server->RegisterAlert(eDB, "DB error while deleting an attribute");
+        x_PostCheckConnection();
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
+                                              TNSTDBValue<CTime> &  expiration,
+                                              TNSTDBValue<CTime> &  creation)
+{
+    x_PreCheckConnection();
+
+    int     status;
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@expiration", expiration.m_Value,
+                                          eSDB_DateTime, eSP_InOut);
+        query.SetParameter("@creation", creation.m_Value,
+                                        eSDB_DateTime, eSP_InOut);
+
+        query.ExecuteSP("GetObjectFixedAttributes");
+        query.VerifyDone();
+        status = x_CheckStatus(query, "GetObjectFixedAttributes");
+
+        if (status == 0) {
+            expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
+            if (!expiration.m_IsNull)
+                expiration.m_Value = query.GetParameter("@expiration").
+                                                                AsDateTime();
+            creation.m_IsNull = query.GetParameter("@creation").IsNull();
+            if (!creation.m_IsNull)
+                creation.m_Value = query.GetParameter("@creation").
+                                                                AsDateTime();
+        }
+        return status;
+    } catch (...) {
+        m_Server->RegisterAlert(eDB, "DB error while getting an attribute");
+        x_PostCheckConnection();
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
+                                         TNSTDBValue<CTime> &  expiration)
+{
+    x_PreCheckConnection();
+
+    int     status;
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@expiration", expiration.m_Value,
+                                          eSDB_DateTime, eSP_InOut);
+
+        query.ExecuteSP("GetObjectExpiration");
+        query.VerifyDone();
+        status = x_CheckStatus(query, "GetObjectExpiration");
+
+        if (status == 0) {
+            expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
+            if (!expiration.m_IsNull)
+                expiration.m_Value = query.GetParameter("@expiration").
+                                                                AsDateTime();
+        }
+        return status;
+    } catch (...) {
+        m_Server->RegisterAlert(eDB, "DB error while getting an object "
+                                     "expiration time");
         x_PostCheckConnection();
         throw;
     }

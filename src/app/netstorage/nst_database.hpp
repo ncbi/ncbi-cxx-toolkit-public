@@ -55,6 +55,13 @@ struct SDbAccessInfo
 };
 
 
+template <typename ValueType> struct TNSTDBValue
+{
+    bool        m_IsNull;
+    ValueType   m_Value;
+};
+
+
 class CNSTDatabase
 {
 public:
@@ -66,15 +73,14 @@ public:
     int  ExecSP_GetNextObjectID(Int8 &  object_id);
     int  ExecSP_CreateClient(const string &  client,
                              Int8 &  client_id);
-    int  ExecSP_CreateObject(
-            Int8  object_id, const string &  object_key,
-            const string &  object_loc, Int8  size,
-            const string &  client_name);
     int  ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id);
     int  ExecSP_UpdateObjectOnWrite(
+            const string &  object_key,
+            const string &  object_loc, Int8  size, Int8  client_id);
+    int  ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id);
     int  ExecSP_UpdateObjectOnRead(
@@ -84,8 +90,9 @@ public:
             const string &  object_key,
             const string &  object_loc, Int8  client_id);
     int  ExecSP_RemoveObject(const string &  object_key);
+    int  ExecSP_SetExpiration(const string &  object_key,
+                              const CTime &   expiration);
     int  ExecSP_AddAttribute(const string &  object_key,
-                             const string &  object_loc,
                              const string &  attr_name,
                              const string &  attr_value,
                              Int8  client_id);
@@ -95,6 +102,11 @@ public:
                              string &        value);
     int  ExecSP_DelAttribute(const string &  object_key,
                              const string &  attr_name);
+    int  ExecSP_GetObjectFixedAttributes(const string &        object_key,
+                                         TNSTDBValue<CTime> &  expiration,
+                                         TNSTDBValue<CTime> &  creation);
+    int  ExecSP_GetObjectExpiration(const string &        object_key,
+                                    TNSTDBValue<CTime> &  expiration);
 
 private:
     void x_ReadDbAccessInfo(void);
