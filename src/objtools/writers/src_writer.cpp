@@ -75,6 +75,28 @@ const size_t countDefaultFields = sizeof(arrDefaultFields)/sizeof(string);
 const CSrcWriter::FIELDS CSrcWriter::sDefaultFields(
     arrDefaultFields, arrDefaultFields + countDefaultFields);
 
+
+//  ----------------------------------------------------------------------------
+//  All Possible Fields:
+//  ----------------------------------------------------------------------------
+static const string arrAllFields[] = {
+    "gi",
+    "taxid",
+    "div",
+    "genome",
+    "lineage",
+    "orgmod",
+    "origin",
+    "pcr-primers",
+    "subtype",
+    "taxname",
+    "org.common",
+};
+const size_t countAllFields = sizeof(arrAllFields)/sizeof(string);
+
+const CSrcWriter::FIELDS CSrcWriter::sAllFields(
+    arrAllFields, arrAllFields + countAllFields);
+
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::WriteBioseqHandle( 
     CBioseq_Handle bsh,

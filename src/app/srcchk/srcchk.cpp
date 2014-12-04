@@ -100,6 +100,7 @@ void CSrcChkApp::Init()
             "List of fields", CArgDescriptions::eString );
         arg_desc->AddOptionalKey("F", "FieldsFile",
             "File of fields", CArgDescriptions::eInputFile );
+        arg_desc->AddFlag("all-fields", "List all fields");
     }}
     // output
     {{ 
@@ -204,6 +205,10 @@ bool CSrcChkApp::xGetDesiredFields(
     CSrcWriter::FIELDS& fields)
 //  -----------------------------------------------------------------------------
 {
+    if (args["all-fields"]) {
+      fields.assign(
+        CSrcWriter::sAllFields.begin(), CSrcWriter::sAllFields.end());
+    }
     if (args["f"]) {
         string fieldString = args["f"].AsString();
         NStr::Tokenize(fieldString, ",", fields);
@@ -242,6 +247,8 @@ bool CSrcChkApp::xGetDesiredFields(
         }
         return CSrcWriter::ValidateFields(fields, m_pErrors);
     }
+
+
     fields.assign(
         CSrcWriter::sDefaultFields.begin(), CSrcWriter::sDefaultFields.end());
     return true;

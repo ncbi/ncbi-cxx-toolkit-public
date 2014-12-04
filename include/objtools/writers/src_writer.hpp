@@ -139,6 +139,7 @@ protected:
 
 public:
     static const FIELDS sDefaultFields;
+	static const FIELDS sAllFields;
 
 protected:
     static HANDLERMAP sHandlerMap;
