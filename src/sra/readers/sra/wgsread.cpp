@@ -209,7 +209,8 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDB& db)
       INIT_VDB_COLUMN(COMPONENT_START),
       INIT_VDB_COLUMN(COMPONENT_LEN),
       INIT_VDB_COLUMN(COMPONENT_PROPS),
-      INIT_OPTIONAL_VDB_COLUMN(COMPONENT_LINKAGE)
+      INIT_OPTIONAL_VDB_COLUMN(COMPONENT_LINKAGE),
+      INIT_OPTIONAL_VDB_COLUMN(CIRCULAR)
 {
 }
 
@@ -2070,6 +2071,14 @@ TSeqPos CWGSScaffoldIterator::GetSeqLength(void) const
 }
 
 
+bool CWGSScaffoldIterator::IsCircular(void) const
+{
+    x_CheckValid("CWGSScaffoldIterator::IsCircular");
+
+    return m_Scf->m_CIRCULAR && *m_Scf->CIRCULAR(m_CurrId);
+}
+
+
 CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(void) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetSeq_inst");
@@ -2077,6 +2086,9 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(void) const
     CRef<CSeq_inst> inst(new CSeq_inst);
     TSeqPos length = 0;
     inst->SetMol(CSeq_inst::eMol_dna);
+    if ( IsCircular() ) {
+        inst->SetTopology(CSeq_inst::eTopology_circular);
+    }
     inst->SetStrand(CSeq_inst::eStrand_ds);
     inst->SetRepr(CSeq_inst::eRepr_delta);
     int id_ind = 0;

@@ -217,6 +217,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, COMPONENT_LEN);
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, COMPONENT_PROPS);
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, COMPONENT_LINKAGE);
+        DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
     };
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
@@ -514,6 +515,8 @@ public:
     CRef<CSeq_descr> GetSeq_descr(void) const;
 
     TSeqPos GetSeqLength(void) const;
+
+    bool IsCircular(void) const;
 
     CRef<CSeq_inst> GetSeq_inst(void) const;
 
