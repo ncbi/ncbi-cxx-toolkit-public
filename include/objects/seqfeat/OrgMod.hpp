@@ -73,6 +73,10 @@ public:
     static string GetSubtypeName(TSubtype stype,
                                  EVocabulary vocabulary = eVocabulary_raw);
 
+    // returns false if GetSubtypeName is expected to throw an exception. True otherwise.
+    static bool IsValidSubtypeName(const string& str, 
+                                   EVocabulary vocabulary = eVocabulary_raw);
+
     static bool IsDiscouraged(const TSubtype stype);
 
     /// This indicates if the given Org-mod subtype is supposed to hold an 

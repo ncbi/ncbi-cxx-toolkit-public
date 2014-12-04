@@ -78,6 +78,26 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
 }
 
 
+bool COrgMod::IsValidSubtypeName(const string& str, 
+                                 EVocabulary vocabulary)
+{
+    string name = NStr::TruncateSpaces(str);
+    NStr::ToLower(name);
+    replace(name.begin(), name.end(), '_', '-');
+    replace(name.begin(), name.end(), ' ', '-');
+
+    if (name == "note") {
+        return true;
+    } else if (vocabulary == eVocabulary_insdc) {
+        if (name == "host" || name == "sub-strain") {
+            return true;
+        }
+    }
+
+    return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
+}
+
+
 string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
 {
     if (stype == eSubtype_other) {

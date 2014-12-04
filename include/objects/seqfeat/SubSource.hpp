@@ -87,6 +87,10 @@ public:
     static string GetSubtypeName(CSubSource::TSubtype stype,
                                  EVocabulary vocabulary = eVocabulary_raw);
 
+    // tests whether GetSubtypeName is expected to throw an exception
+    static bool IsValidSubtypeName(const string& str,
+                                   EVocabulary vocabulary = eVocabulary_raw);              
+
 	  // identify whether subsource value should be blank
 	  static bool NeedsNoText (const TSubtype& subtype);
 
