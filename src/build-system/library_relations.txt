@@ -809,13 +809,11 @@ ncbiobj needs3party $(NCBI_C_ncbi)
 ncbiprs needs3party ctutils
 ncbiprs needs3party ncbiindx
 ncbiprs needs3party ncbimla
-ncbiprs needs3party ncbitool
-ncbiprs needs3party objtax1
+ncbiprs needs3party ncbitxc2
 ncbiprsn needs3party ctutils
 ncbiprsn needs3party ncbiindx
 ncbiprsn needs3party ncbimla
-ncbiprsn needs3party ncbitool
-ncbiprsn needs3party objtax1
+ncbiprsn needs3party ncbitxc2
 ncbispel needs3party netcli
 ncbitax needs3party ncbiobj
 ncbitax needs3party netcli
@@ -855,7 +853,6 @@ pathogen_ctl needs gencoll_client
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
-pathogen_sra needs gpipe_common
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
