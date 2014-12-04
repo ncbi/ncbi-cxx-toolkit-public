@@ -751,7 +751,7 @@ bool CSrcWriter::ValidateFields(
     for (FIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
         string field = *cit;
         if (field == "id" || field == "gi") {
-          return true;
+            continue;
         }
 
         HANDLERMAP::const_iterator fit = sHandlerMap.find(field);
