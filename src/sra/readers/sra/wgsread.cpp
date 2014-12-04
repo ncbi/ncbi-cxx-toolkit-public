@@ -194,7 +194,8 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
       INIT_OPTIONAL_VDB_COLUMN(GAP_LEN),
       INIT_OPTIONAL_VDB_COLUMN(GAP_PROPS),
       INIT_OPTIONAL_VDB_COLUMN(GAP_LINKAGE),
-      INIT_OPTIONAL_VDB_COLUMN(QUALITY)
+      INIT_OPTIONAL_VDB_COLUMN(QUALITY),
+      INIT_OPTIONAL_VDB_COLUMN(CIRCULAR)
 {
 }
 
@@ -1068,6 +1069,14 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
 }
 
 
+bool CWGSSeqIterator::IsCircular(void) const
+{
+    x_CheckValid("CWGSSeqIterator::IsCircular");
+
+    return m_Seq->m_CIRCULAR && *m_Seq->CIRCULAR(m_CurrId);
+}
+
+
 enum
 {
     NCBI_WGS_gap_linkage_linked                      = 1, // linkage exists
@@ -1706,7 +1715,7 @@ void sx_AddDelta(const CSeq_id& id,
     const TSeqPos kSplit2naSize = kChunk2naSize+kChunk2naSize/4;
 
     // max size of gap segment
-    const TSeqPos kMinGapSize = 20;
+    const TSeqPos kMinGapSize = gaps_start? kInvalidSeqPos: 20;
     const TSeqPos kMaxGapSize = 200;
     // size of gap segment if its actual size is unknown
     const TSeqPos kUnknownGapSize = 100;
@@ -1798,6 +1807,9 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
     TSeqPos length = GetSeqLength();
     inst->SetLength(length);
     inst->SetMol(CSeq_inst::eMol_dna);
+    if ( IsCircular() ) {
+        inst->SetTopology(CSeq_inst::eTopology_circular);
+    }
     if ( length == 0 ) {
         inst->SetRepr(CSeq_inst::eRepr_not_set);
         return inst;
@@ -1818,9 +1830,9 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
         const NCBI_WGS_gap_linkage* gaps_linkage = 0;
         if ( m_Seq->m_GAP_START ) {
             CVDBValueFor<INSDC_coord_one> start = m_Seq->GAP_START(m_CurrId);
+            gaps_start = start.data();
             if ( start.size() ) {
                 gaps_count = start.size();
-                gaps_start = start.data();
                 CVDBValueFor<INSDC_coord_len> len =
                     m_Seq->GAP_LEN(m_CurrId);
                 CVDBValueFor<NCBI_WGS_component_props> props =

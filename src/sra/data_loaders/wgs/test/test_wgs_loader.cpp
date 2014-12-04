@@ -216,14 +216,23 @@ bool sx_EqualDelta(const CDelta_ext& delta1, const CDelta_ext& delta2)
     CSeqVector sv1 = bh1.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
     CSeqVector sv2 = bh2.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
     if ( sv1.size() != sv2.size() ) {
+        NcbiCout << "Lengths are different: "
+                 << sv1.size() << " != " << sv2.size()
+                 << NcbiEndl;
         return false;
     }
     for ( CSeqVector_CI it1 = sv1.begin(), it2 = sv2.begin();
           it1 && it2; ++it1, ++it2 ) {
         if ( it1.IsInGap() != it2.IsInGap() ) {
+            NcbiCout << "Gaps are different @ "<<it1.GetPos()<<": "
+                     << it1.IsInGap() << " != " << it2.IsInGap()
+                     << NcbiEndl;
             return false;
         }
         if ( *it1 != *it2 ) {
+            NcbiCout << "Bases are different @ "<<it1.GetPos()<<": "
+                     << int(*it1) << " != " << int(*it2)
+                     << NcbiEndl;
             return false;
         }
     }
@@ -723,7 +732,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq11)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
-    //BOOST_CHECK(sx_EqualToGB(bh)); circular
+    BOOST_CHECK(sx_EqualToGB(bh));
 }
 
 
@@ -745,7 +754,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq12)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
-    //BOOST_CHECK(sx_EqualToGB(bh)); circular
+    BOOST_CHECK(sx_EqualToGB(bh));
 }
 
 

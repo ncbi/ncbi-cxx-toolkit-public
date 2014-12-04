@@ -200,6 +200,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, GAP_PROPS);
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, GAP_LINKAGE);
         DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
+        DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
     };
 
     // SSeqTableCursor is helper accessor structure for SCAFFOLD table
@@ -444,6 +445,8 @@ public:
                          TFlags flags = fDefaultFlags) const;
 
     NCBI_gb_state GetGBState(void) const;
+
+    bool IsCircular(void) const;
 
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
