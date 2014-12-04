@@ -151,16 +151,13 @@ public:
         /// It not allow unprocessed symbols left in both time and format
         /// strings at the same time.
         fMatch_Weak          = fMatch_ShortTime | fMatch_ShortFormat,
-        /// Changes default behavior to ignore all white spaces in time
-        /// and format strings on the matching step (CTime only).
-        /// Make sure that:
-        ///  - if fields in the format string are separated by one or more
-        ///    white spaces, then the fields in the parsed string also must
-        ///    be separated by one or more spaces;
-        ///  - if fields in the format string are adjacent, then the fields
-        ///    in the parsed string also must be adjacent.
-        fMatch_ObserveSpaces = (1 << 8),
-
+        /// Ignore all white spaces in the time and format strings
+        /// on the matching/parsing step (CTime only).
+        /// Use it for backward compatibility with old code only. 
+        /// Don't recommended to use, can lead to odd results and incorrect
+        /// time on parsing some time strings.
+        fMatch_IgnoreSpaces  = (1 << 8),
+        
         /// Default flags
         fDefault             = fFormat_Simple | fMatch_Strict,
 

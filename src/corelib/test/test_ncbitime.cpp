@@ -795,38 +795,66 @@ static void s_TestFormats(void)
         }}
     }}
 
-    // fMatch_ObserveSpaces flag
+    // Observing spaces by default. Make sure that:
+    //  - if fields in the format string are separated by one or more
+    //    white spaces, then the fields in the parsed string also must
+    //    be separated by one or more spaces;
+    //  - if fields in the format string are adjacent, then the fields
+    //    in the parsed string also must be adjacent.
+    //
+    // fMatch_IgnoreSpaces changes default behavior to backward-compatible.
+    //
+    // JIRA: CXX-5422
     {{
-        CTimeFormat::EFlags flags = (CTimeFormat::EFlags)(CTimeFormat::fDefault | 
-                                                          CTimeFormat::fMatch_ObserveSpaces);
-        // default behavior -- ignore spaces
-        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("MDY")) );
-        assert(  CTime::ValidateString("  01 01\n2001 ", CTimeFormat("MDY")) );
+        CTimeFormat::EFlags ign = (CTimeFormat::EFlags)(CTimeFormat::fDefault | 
+                                                        CTimeFormat::fMatch_IgnoreSpaces);
 
-        // with fMatch_ObserveSpaces
-        assert(  CTime::ValidateString("01/01/2001",     CTimeFormat("M/D/Y",   flags)) );
-        assert(  CTime::ValidateString("01012001",       CTimeFormat("MDY",     flags)) );
-        assert( !CTime::ValidateString("01 01 2001",     CTimeFormat("MDY",     flags)) );
-        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("M D Y",   flags)) );
-        assert( !CTime::ValidateString(" 01 01 2001",    CTimeFormat("M D Y",   flags)) );
-        assert( !CTime::ValidateString("01 01 2001 ",    CTimeFormat("M D Y",   flags)) );
-        assert(  CTime::ValidateString("01  01  2001",   CTimeFormat("M D Y",   flags)) );
-        assert( !CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y",   flags)) );
-        assert(  CTime::ValidateString("01\n01\t2001",   CTimeFormat("M D Y",   flags)) );
-        assert(  CTime::ValidateString("01\n  01\t2001", CTimeFormat("M D Y",   flags)) );
-        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y ",  flags)) );
-        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y  ", flags)) );
-        assert(  CTime::ValidateString(" 0101 2001",     CTimeFormat(" MD Y",   flags)) );
-        assert( !CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y",   flags)) );
-        assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y ",  flags)) );
+        // default flags
+        assert(  CTime::ValidateString("01/01/2001",     CTimeFormat("M/D/Y")   ));
+        assert(! CTime::ValidateString("01/01/2001   ",  CTimeFormat("M/D/Y")   ));
+        assert(  CTime::ValidateString("01/01/2001   ",  CTimeFormat("M/D/Y ")  ));
+        assert(  CTime::ValidateString("01012001",       CTimeFormat("MDY")     ));
+        assert( !CTime::ValidateString("01 01 2001",     CTimeFormat("MDY")     ));
+        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("M D Y")   ));
+        assert( !CTime::ValidateString(" 01 01 2001",    CTimeFormat("M D Y")   ));
+        assert( !CTime::ValidateString("01 01 2001 ",    CTimeFormat("M D Y")   ));
+        assert(  CTime::ValidateString("01  01  2001",   CTimeFormat("M D Y")   ));
+        assert( !CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y")   ));
+        assert(  CTime::ValidateString("01\n01\t2001",   CTimeFormat("M D Y")   ));
+        assert(  CTime::ValidateString("01\n  01\t2001", CTimeFormat("M D Y")   ));
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y ")  ));
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y  ") ));
+        assert(  CTime::ValidateString(" 0101 2001",     CTimeFormat(" MD Y")   ));
+        assert(  CTime::ValidateString("   0101 2001",   CTimeFormat(" MD Y")   ));
+        assert( !CTime::ValidateString("   0101 2001  ", CTimeFormat("MDY")     ));
+        assert( !CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y")   ));
+        assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y ")  ));
         
-        // in combination with "short" flags
+        // "short" flags
         assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y",   
-                                                         CTimeFormat::fMatch_ObserveSpaces |
-                                                         CTimeFormat::fMatch_ShortFormat)) );
+                                                         CTimeFormat::fMatch_ShortFormat)));
         assert(  CTime::ValidateString("01/01/2001",     CTimeFormat("M/D/Y ",   
-                                                         CTimeFormat::fMatch_ObserveSpaces |
-                                                         CTimeFormat::fMatch_ShortTime)) );
+                                                         CTimeFormat::fMatch_ShortTime)));
+        // fMatch_IgnoreSpaces -- all valid
+        assert(  CTime::ValidateString("01/01/2001",     CTimeFormat("M/D/Y",  ign) ));
+        assert(  CTime::ValidateString("01/01/2001   ",  CTimeFormat("M/D/Y",  ign) ));
+        assert(  CTime::ValidateString("01/01/2001   ",  CTimeFormat("M/D/Y ", ign) ));
+        assert(  CTime::ValidateString("01012001",       CTimeFormat("MDY",    ign) ));
+        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("MDY",    ign) ));
+        assert(  CTime::ValidateString("01 01 2001",     CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString(" 01 01 2001",    CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString("01 01 2001 ",    CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString("01  01  2001",   CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString("01\n01\t2001",   CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString("01\n  01\t2001", CTimeFormat("M D Y",  ign) ));
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y ", ign) ));
+        assert(  CTime::ValidateString("01  01  2001  ", CTimeFormat("M D Y  ",ign) ));
+        assert(  CTime::ValidateString(" 0101 2001",     CTimeFormat(" MD Y",  ign) ));
+        assert(  CTime::ValidateString("   0101 2001",   CTimeFormat(" MD Y",  ign) ));
+        assert(  CTime::ValidateString("   0101 2001  ", CTimeFormat("MDY",    ign) ));
+        assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y",  ign) ));
+        assert(  CTime::ValidateString("01/01/2001\n\n", CTimeFormat("M/D/Y ", ign) ));
     }}
 
     // SetFormat/AsString with flag parameter test
