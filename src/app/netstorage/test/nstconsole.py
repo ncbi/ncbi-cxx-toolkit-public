@@ -105,6 +105,8 @@ class NetStorageConsole:
                                  "sends GETMETADATAINFO message; no arguments" ],
              'junk':           [ self.sendJunk,
                                  "sends an unterminated malformed message" ],
+             'setttl':         [ self.sendSetttl,
+                                 "sends SETTTL message; <object locator> <ttl in secs>" ],
            }
 
         self.__commandSN = 0
@@ -803,6 +805,28 @@ class NetStorageConsole:
                     'ObjectLoc':    objectLoc,
                     'AttrName':     attrName,
                     'AttrValue':    attrValue }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
+    def sendSetttl( self, arguments ):
+        " Sends SETTTL message "
+        if len( arguments ) != 2:
+            print "Exactly 2 arguments are required: locator " \
+                  "and ttl in seconds"
+            return
+
+        objectLoc = arguments[ 0 ]
+        ttl = int( arguments[ 1 ] )
+
+        message = { 'Type':         'SETTTL',
+                    'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
+                    'ClientIP':     hostIP,
+                    'ObjectLoc':    objectLoc,
+                    'TTL':          ttl }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
