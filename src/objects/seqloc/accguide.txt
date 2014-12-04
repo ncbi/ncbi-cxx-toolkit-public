@@ -85,6 +85,12 @@ version  1 # of file format
 4+8   L???  gb_wgs_nuc
 4+9   L???  gb_wgs_nuc
 4+10  L???  gb_wgs_nuc
+4+8   M???  gb_wgs_nuc
+4+9   M???  gb_wgs_nuc
+4+10  M???  gb_wgs_nuc
+4+8   N???  gb_wgs_nuc
+4+9   N???  gb_wgs_nuc
+4+10  N???  gb_wgs_nuc
 
 # Mass sequence Genome for Annotation
 5+7   A???? ddbj_other_nuc
