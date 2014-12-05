@@ -84,46 +84,75 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("CURRENT: <%s>", info.from));
 
 #if 1
+    strcpy(info.from, "@");
+    SendMailInfo_InitEx(&info, info.from, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("@ - <%s>", info.from));
+    assert(!*info.from);
+
     strcpy(val, "@");
     SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
     CORE_LOGF(eLOG_Note, ("@ - <%s>", info.from));
+    assert(!*info.from);
 
     strcpy(info.from, "user0");
     SendMailInfo_InitEx(&info, info.from, eCORE_UsernameCurrent);
     CORE_LOGF(eLOG_Note, ("user0 - <%s>", info.from));
+    assert(strcmp(info.from, "user0") == 0);
 
-    strcpy(info.from, "user1@");
+    strcpy(val, "user1");
+    SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("user1 - <%s>", info.from));
+    assert(strcmp(info.from, "user1") == 0);
+
+    strcpy(info.from, "user2@");
     SendMailInfo_InitEx(&info, info.from, eCORE_UsernameCurrent);
-    CORE_LOGF(eLOG_Note, ("user1@ - <%s>", info.from));
+    CORE_LOGF(eLOG_Note, ("user2@ - <%s>", info.from));
+    assert(strncmp(info.from, "user2@", 6) == 0);
 
-    strcpy(val, "@host2.net");
+    strcpy(val, "user3@");
+    SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("user3@ - <%s>", info.from));
+    assert(strncmp(info.from, "user3@", 6) == 0);
+ 
+    strcpy(info.from, "@host4.net");
+    SendMailInfo_InitEx(&info, info.from, eCORE_UsernameLogin);
+    CORE_LOGF(eLOG_Note, ("@host4.net - <%s>", info.from));
+    assert(*info.from != '@' && !strcmp(strchr(info.from, '@'), "@host4.net"));
+
+    strcpy(val, "@host5.net");
     SendMailInfo_InitEx(&info, val, eCORE_UsernameLogin);
-    CORE_LOGF(eLOG_Note, ("@host2.net - <%s>", info.from));
+    CORE_LOGF(eLOG_Note, ("@host5.net - <%s>", info.from));
+    assert(*info.from != '@' && !strcmp(strchr(info.from, '@'), "@host5.net"));
 
-    strcpy(val, "user3@host3.net");
-    SendMailInfo_InitEx(&info, val, eCORE_UsernameReal);
-    CORE_LOGF(eLOG_Note, ("user3@host3.net - <%s>", info.from));
-
-    strcpy(info.from, "user4@host4.net");
+    strcpy(info.from, "user6@host6.net");
     SendMailInfo_InitEx(&info, info.from, eCORE_UsernameReal);
-    CORE_LOGF(eLOG_Note, ("user4@host4.net - <%s>", info.from));
+    CORE_LOGF(eLOG_Note, ("user6@host6.net - <%s>", info.from));
+    assert(strcmp(info.from, "user6@host6.net") == 0);
+
+    strcpy(val, "user7@host7.net");
+    SendMailInfo_InitEx(&info, val, eCORE_UsernameReal);
+    CORE_LOGF(eLOG_Note, ("user7@host7.net - <%s>", info.from));
+    assert(strcmp(info.from, "user7@host7.net") == 0);
 
     SendMailInfo_InitEx(&info, 0, eCORE_UsernameReal);
     CORE_LOGF(eLOG_Note, ("NULL - <%s>", info.from));
+    assert(info.from[0]  &&  info.from[0] != '@'  &&  strchr(info.from, '@'));
 
     if ((huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)) != 0) {
 
-        strcpy(huge_body, "user5@");
+        strcpy(huge_body, "user8@");
         for (n = 0;  n < TEST_HUGE_BODY_SIZE - 6;  n++)
             huge_body[n + 6] = "abcdefghijklmnopqrstuvwxyz."[rand() % 27];
         huge_body[TEST_HUGE_BODY_SIZE - 1] = '\0';
         SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameCurrent);
-        CORE_LOGF(eLOG_Note, ("HUGE user5@host - <%s>", info.from));
+        CORE_LOGF(eLOG_Note, ("HUGE user8@host - <%s>", info.from));
+        assert(strcmp(info.from, "user8") == 0);
 
         SendMailInfo_InitEx(&info, huge_body + 5, eCORE_UsernameLogin);
-        CORE_LOGF(eLOG_Note, ("HUGE @host - <%s>", info.from));
+        CORE_LOGF(eLOG_Note, ("HUGE @hostA - <%s>", info.from));
+        assert(!strchr(info.from, '@'));
 
-        huge_body[4] = '6';
+        huge_body[4] = 'B';
         huge_body[5] = '_';
         for (n = 6;  n < sizeof(info.from) + 1;  n++) {
             if (huge_body[n] == '.')
@@ -131,22 +160,30 @@ int main(int argc, const char* argv[])
         }
         huge_body[sizeof(info.from) + 1] = '@';
         SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameReal);
-        CORE_LOGF(eLOG_Note, ("HUGE user6 - <%s>", info.from));
+        CORE_LOGF(eLOG_Note, ("HUGE userB - <%s>", info.from));
+        assert(strncmp(info.from, huge_body, sizeof(info.from) - 1) == 0);
+        assert(strlen(info.from) == sizeof(info.from) - 1);
+        assert(!strchr(info.from, '@'));
 
-        huge_body[4] = '7';
+        huge_body[4] = 'C';
         huge_body[sizeof(info.from) - 10]  = '@';
         SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameReal);
-        CORE_LOGF(eLOG_Note, ("LONG user7 - <%s>", info.from));
+        CORE_LOGF(eLOG_Note, ("LONG userC - <%s>", info.from));
+        assert(strncmp(info.from, huge_body, sizeof(info.from) - 10) == 0);
+        assert(strlen(info.from) == sizeof(info.from) - 10);
+        assert(!strchr(info.from, '@'));
 
-        memcpy(huge_body + sizeof(info.from) - 10, "user8", 5);
+        memcpy(huge_body + sizeof(info.from) - 10, "userD", 5);
         huge_body[sizeof(info.from) << 1] = '\0';
         SendMailInfo_InitEx(&info, huge_body + sizeof(info.from) - 10,
                             eCORE_UsernameReal);
-        CORE_LOGF(eLOG_Note, ("LONG user8 - <%s>", info.from));
+        CORE_LOGF(eLOG_Note, ("LONG userD - <%s>", info.from));
+        assert(strncmp(info.from, "userD", 5) == 0);
 
         SendMailInfo_InitEx(&info, huge_body + sizeof(info.from) + 1,
                             eCORE_UsernameReal);
-        CORE_LOGF(eLOG_Note, ("LONG @host - <%s>", info.from));
+        CORE_LOGF(eLOG_Note, ("LONG @hostE - <%s>", info.from));
+        assert(!strchr(info.from, '@'));
 
         free(huge_body);
     }

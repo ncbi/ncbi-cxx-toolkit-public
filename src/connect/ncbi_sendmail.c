@@ -201,15 +201,12 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
             /* "user@[host]" */
             if (buf != from) {
                 len = (size_t)(at - from);
-                if (at[1]) {
-                    /* "user@host" */
-                    if (len < size) {
-                        size_t tmp = len + strlen(at);
-                        if (tmp < size)
-                            len = tmp;
-                    } else
-                        len = size - 1;
-                } /* else "user@" */
+                if (len < size) {
+                    size_t tmp = len + strlen(at);
+                    if (tmp < size)
+                        len = tmp;
+                } else
+                    len = size - 1;
                 strncpy0(buf, from, len);
             }
             if (*++at)
@@ -236,7 +233,7 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
             strncpy0(buf, "anonymous", size - 1);
         len = strlen(buf);
     } else
-        len = strlen(buf) - 1;
+        len = strlen(buf) - 1/*'@'*/;
     size -= len;
     buf  += len;
     if (!at  ||  !*at) {
