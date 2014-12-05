@@ -70,7 +70,7 @@ class NCBI_XOBJWRITE_EXPORT CSrcWriter:
 public:
     typedef map<string, int> COLUMNMAP;
     typedef vector<string> FIELDS;
-    typedef bool (CSrcWriter::*HANDLER)(const CBioSource&, IMessageListener*);
+    typedef bool (CSrcWriter::*HANDLER)(const CBioSource&, const string&, IMessageListener*);
     typedef map<string, CSrcWriter::HANDLER> HANDLERMAP;
 
 public:
@@ -108,21 +108,24 @@ protected:
     void xInit();
 
     virtual bool xGather(CBioseq_Handle, const FIELDS&, IMessageListener* =0);
-    virtual bool xGatherId(CBioseq_Handle, IMessageListener* =0);
+    virtual bool xGatherId(CBioseq_Handle, IMessageListener* =0); 
     virtual bool xGatherGi(CBioseq_Handle, IMessageListener* =0);
     virtual bool xHandleSourceField(const CBioSource&, const string&, IMessageListener* =0);
 
-    virtual bool xGatherTaxname(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherDivision(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherGenome(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherOrigin(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherSubtype(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherOrgMod(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherOrgCommon(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherOrgnameLineage(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherPcrPrimers(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherDb(const CBioSource&, IMessageListener* =0);
-    virtual bool xGatherTaxonId(const CBioSource&, IMessageListener* =0);
+
+    virtual bool xGatherTaxname(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherDivision(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherGenome(const CBioSource&, const string&,  IMessageListener* =0);
+    virtual bool xGatherOrigin(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherSubtypeFeat(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherSubtypeAll(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherOrgModFeat(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherOrgModAll(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherOrgCommon(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherOrgnameLineage(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherPcrPrimers(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherDb(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherTaxonId(const CBioSource&, const string&, IMessageListener* =0);
 
     virtual bool xFormatTabDelimited(CNcbiOstream&);
 
@@ -139,7 +142,7 @@ protected:
 
 public:
     static const FIELDS sDefaultFields;
-	static const FIELDS sAllFields;
+    static const FIELDS sAllFields;
 
 protected:
     static HANDLERMAP sHandlerMap;

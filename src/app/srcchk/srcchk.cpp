@@ -206,9 +206,11 @@ bool CSrcChkApp::xGetDesiredFields(
 //  -----------------------------------------------------------------------------
 {
     if (args["all-fields"]) {
-      fields.assign(
-        CSrcWriter::sAllFields.begin(), CSrcWriter::sAllFields.end());
+        fields.assign(
+            CSrcWriter::sAllFields.begin(), CSrcWriter::sAllFields.end());
+        return true;
     }
+
     if (args["f"]) {
         string fieldString = args["f"].AsString();
         NStr::Tokenize(fieldString, ",", fields);
