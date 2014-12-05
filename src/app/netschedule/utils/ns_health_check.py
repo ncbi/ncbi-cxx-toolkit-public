@@ -16,29 +16,29 @@ from random import randrange
 from time import sleep
 
 
-
 # Defines three script modes
 class ScriptMode:
-    LBSMD220 = 1
-    LBSMD222_OLD_CLIENT = 2
-    LBSMD222 = 3
+    LBSMD222_OLD_CLIENT = 1
+    LBSMD222 = 2
 
 
-SCRIPT_MODE = ScriptMode.LBSMD220
+SCRIPT_MODE = ScriptMode.LBSMD222_OLD_CLIENT
 
 MAX_OLD_MODE_VALUE = 99
 
+BASE_RESERVE_CODE = 100
+BASE_DOWN_CODE = 111
+BASE_NO_ACTION_ALERT_CODE = 211
+BASE_STANDBY_CODE = 200
+NO_CHANGE_CODE = 123
 
-BASE_SUPPRESS_CODE = 100
-BASE_DOWN_CODE = 106
-BASE_NO_ACTION_ALERT_CODE = 111
-STANDBY_CODE = 121
 
 VERBOSE = False
 COMMUNICATION_TIMEOUT = 1
 DYNAMIC_QUEUE_TO_TEST = "LBSMDTestQueue"
 CLIENT_NODE = "health_check"
 OTHER_CLIENT_DELAY = 1.0
+
 
 MEMORY_LIMIT = 90       # Percentage of used
 FD_LIMIT = 50           # At least 50 fds must be still available
@@ -59,51 +59,25 @@ if VERBOSE_LOG_FILE is not None:
         LOG_FILE = None
 
 
-def getTimestamp():
-    " Provides the current timestamp "
-    now = datetime.datetime.now()
-
-    year = str( now.year )
-
-    month = str( now.month )
-    if now.month <= 9:
-        month = "0" + month
-
-    day = str( now.day )
-    if now.day <= 9:
-        day = "0" + day
-
-    hour = str( now.hour )
-    if now.hour <= 9:
-        hour = "0" + hour
-
-    minute = str( now.minute )
-    if now.minute <= 9:
-        minute = "0" + minute
-
-    second = str( now.second )
-    if now.second <= 9:
-        second = "0" + second
-
-    return year + "-" + month + "-" + day + " " + \
-           hour + ":" + minute + ":" + second
 
 def printVerbose( msg ):
     " Prints stdout message conditionally "
+    timestamp = datetime.datetime.now().strftime( '%m-%d-%y %H:%M:%S' )
     if LOG_FILE is not None:
         try:
-            LOG_FILE.write( getTimestamp() + " " + msg + "\n" )
+            LOG_FILE.write( timestamp + " " + msg + "\n" )
             LOG_FILE.flush()
         except:
             pass
 
     if VERBOSE:
-        print getTimestamp() + " " + msg
+        print timestamp + " " + msg
     return
 
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
-    print >> sys.stderr, "NetSchedule check script. " + msg
+    timestamp = datetime.datetime.now().strftime( '%m-%d-%y %H:%M:%S' )
+    print >> sys.stderr, timestamp + " NetSchedule check script. " + msg
     return
 
 class UnexpectedNSResponse( Exception ):
@@ -223,9 +197,27 @@ if len( sys.argv ) >= 4:
         pass
 
 
+def adjustReturnCode( code ):
+    " Adjusts the return code depending on the current script mode "
+
+    if SCRIPT_MODE == ScriptMode.LBSMD222_OLD_CLIENT:
+        printVerbose( "ScriptMode.LBSMD222_OLD_CLIENT is ON. "
+                      "Adjusting return value. Was: " +
+                      str( code ) )
+        if code >= BASE_RESERVE_CODE and \
+           code <= (BASE_RESERVE_CODE + 10):
+            code += BASE_STANDBY_CODE - BASE_RESERVE_CODE
+
+        printVerbose( "Adjusted to: " + str( code ) )
+
+    # Otherwise no adjustments required
+    return code
+
+
 def log( code, message ):
     " Logs if it was not the last check return code "
-    if str( code ) != str( LAST_EXIT_CODE ):
+    adjustedCode = adjustReturnCode( code )
+    if str( adjustedCode ) != str( LAST_EXIT_CODE ):
         printStderr( message )
     return code
 
@@ -287,15 +279,15 @@ def main():
         nsConnect.login()
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 1,
+                log( BASE_RESERVE_CODE + 1,
                      "Error connecting to server: timeout" ) )
     except Exception, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 2,
+                log( BASE_RESERVE_CODE + 2,
                      "Error connecting to server: " + str( exc ) ) )
     except:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 3,
+                log( BASE_RESERVE_CODE + 3,
                      "Unknown check script error at the login stage" ) )
 
 
@@ -305,7 +297,7 @@ def main():
     try:
         # Check the server state. It could be in a drained shutdown
         if isInDrainedShutdown( nsConnect ):
-            return BASE_SUPPRESS_CODE
+            return BASE_RESERVE_CODE
 
         serverVersion = getServerVersion( nsConnect )
         if serverVersion >= StrictVersion( '4.17.0' ):
@@ -367,15 +359,15 @@ def main():
 
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 1,
+                log( BASE_RESERVE_CODE + 1,
                      "(service " + serviceName + ") communication timeout" ) )
     except UnexpectedNSResponse, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 4,
+                log( BASE_RESERVE_CODE + 4,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except NSError, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 4,
+                log( BASE_RESERVE_CODE + 4,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except NSShuttingDown, exc:
         return log( BASE_DOWN_CODE,
@@ -385,15 +377,15 @@ def main():
                     "(service " + serviceName + ") " + str( exc ) )
     except NSStaticCheckError, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 5,
+                log( BASE_RESERVE_CODE + 5,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except Exception, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 2,
+                log( BASE_RESERVE_CODE + 2,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 3,
+                log( BASE_RESERVE_CODE + 3,
                      "(service " + serviceName + ") Unknown check script error" ) )
 
     # Everything is fine
@@ -438,7 +430,7 @@ def calcPenalty( execTime ):
 def pickPenaltyValue( lastCheckExitCode, calculatedCode ):
     " Provides a new value for the returned penalty "
     if lastCheckExitCode is None:
-        lastCheckExitCode = BASE_SUPPRESS_CODE      # By default the previous
+        lastCheckExitCode = BASE_RESERVE_CODE      # By default the previous
                                                     # return code is 100
 
     # No intersection => the calculated value
@@ -709,34 +701,10 @@ if __name__ == "__main__":
 
 
     printVerbose( "Return code: " + str( returnValue ) )
+    returnValue = adjustReturnCode( returnValue )
 
-    if SCRIPT_MODE == ScriptMode.LBSMD220:
-        printVerbose( "ScriptMode.LBSMD220 is ON. Adjusting return value. Was: " +
-                      str( returnValue ) )
-        if returnValue >= BASE_SUPPRESS_CODE and \
-            returnValue <= (BASE_SUPPRESS_CODE + 5):
-            returnValue = 99
-        elif returnValue >= BASE_NO_ACTION_ALERT_CODE and \
-            returnValue <= (BASE_NO_ACTION_ALERT_CODE + 4):
-            returnValue = 0
-        elif returnValue >= BASE_DOWN_CODE and \
-            returnValue <= (BASE_DOWN_CODE + 4):
-            returnValue = 100
-
-        if returnValue == 100:
-            returnValue = MAX_OLD_MODE_VALUE
-
-        printVerbose( "Adjusted to: " + str( returnValue ) )
-    elif SCRIPT_MODE == ScriptMode.LBSMD222_OLD_CLIENT:
-        printVerbose( "ScriptMode.LBSMD222_OLD_CLIENT is ON. "
-                      "Adjusting return value. Was: " +
-                      str( returnValue ) )
-        if returnValue >= BASE_SUPPRESS_CODE and \
-            returnValue <= (BASE_SUPPRESS_CODE + 5):
-            returnValue = STANDBY_CODE
-
-        printVerbose( "Adjusted to: " + str( returnValue ) )
-
+    if str( LAST_EXIT_CODE ) == str( returnValue ):
+        returnValue = NO_CHANGE_CODE
 
     sys.exit( returnValue )
 
