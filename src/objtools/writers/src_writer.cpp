@@ -238,7 +238,7 @@ CSrcWriter::HANDLER CSrcWriter::xGetHandler(
     if (COrgMod::IsValidSubtypeName(fieldName, COrgMod::eVocabulary_insdc)) {
         return &CSrcWriter::xGatherOrgModFeat;
     }
-    if  (COrgMod::IsValidSubtypeName(fieldName, COrgMod::eVocabulary_insdc)) {
+    if (CSubSource::IsValidSubtypeName(fieldName, CSubSource::eVocabulary_insdc)) {
         return &CSrcWriter::xGatherSubtypeFeat;
     }
     return 0;
@@ -465,6 +465,7 @@ bool CSrcWriter::xGatherSubtypeFeat(
     IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
+
 	
     if ( !src.IsSetSubtype() ) {
         return true;
@@ -487,12 +488,13 @@ bool CSrcWriter::xGatherSubtypeFeat(
         key = "subsource.note";
     }
 
+
     for (SUBSOURCES::const_iterator cit = subsources.begin();
         cit != subsources.end(); ++cit) {
     
         const CSubSource& subsrc = **cit;
         if (subsrc.GetSubtype() != subtype) {
-	    continue;
+            continue;
         }
 
         INDEXCOUNTER::iterator it = indexCounter.find(key);
@@ -617,7 +619,7 @@ bool CSrcWriter::xGatherOrgModFeat(
         }
 
         string value = orgmod.GetSubname();
-	xPrepareTableColumn(key, key, "");
+        xPrepareTableColumn(key, key, "");
         xAppendColumnValue(key, value);
     }
     return true;
