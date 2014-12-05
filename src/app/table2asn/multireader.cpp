@@ -653,23 +653,29 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
     }
 
     // incorporate any Seqdesc's that follow in the file
-    if (sType != CSeqdesc::GetTypeInfo()->GetName())
-       sType = pObjIstrm->ReadFileHeader();
-
-    while (sType == CSeqdesc::GetTypeInfo()->GetName()) {
-        CRef<CSeqdesc> desc(new CSeqdesc);
-        pObjIstrm->Read(ObjectInfo(*desc), CObjectIStream::eNoFileHeader);
-
-        if  (context.m_entry_template.Empty())
-            context.m_entry_template.Reset(new CSeq_entry);
-
-        context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
-
-        try {
+    if (!pObjIstrm->EndOfData())
+    {
+        if (sType != CSeqdesc::GetTypeInfo()->GetName())
             sType = pObjIstrm->ReadFileHeader();
-        }
-        catch(CEofException& eof) {
-            break;
+
+        while (sType == CSeqdesc::GetTypeInfo()->GetName()) {
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            pObjIstrm->Read(ObjectInfo(*desc), CObjectIStream::eNoFileHeader);
+
+            if  (context.m_entry_template.Empty())
+                context.m_entry_template.Reset(new CSeq_entry);
+
+            context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
+
+            if (pObjIstrm->EndOfData())
+                break;
+
+            try {
+                sType = pObjIstrm->ReadFileHeader();
+            }
+            catch(CEofException& eof) {
+                break;
+            }
         }
     }
 

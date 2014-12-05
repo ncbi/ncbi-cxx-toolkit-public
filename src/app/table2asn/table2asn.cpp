@@ -563,15 +563,6 @@ int CTbl2AsnApp::Run(void)
     if (args["k"])
         m_context.m_find_open_read_frame = args["k"].AsString();
 
-    if (args["t"])
-    {
-        m_reader->LoadTemplate(m_context, args["t"].AsString());
-    }
-    if (args["D"])
-    {
-        m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
-    }
-
     if (args["H"])
     {
         try
@@ -633,6 +624,37 @@ int CTbl2AsnApp::Run(void)
 
     try
     {
+        if (args["t"])
+        {
+            m_reader->LoadTemplate(m_context, args["t"].AsString());
+        }
+    }
+    catch (const CException& ex)
+    {
+        m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
+            "", 0, "", "", "",
+            "Error loading template file")));
+    }
+
+    try
+    {
+        if (args["D"])
+        {
+            m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
+        }
+    }
+    catch (const CException& ex)
+    {
+        m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
+            "", 0, "", "", "",
+            "Error loading descriptors file")));
+    }
+
+    if (m_logger->Count() == 0)
+    try
+    {
     // Designate where do we get input: single file or a folder or folder structure
         if ( args["p"] )
         {
@@ -687,6 +709,7 @@ int CTbl2AsnApp::Run(void)
     else
     {
         m_logger->Dump();
+        //m_logger->DumpAsXML(NcbiCout);
 
         int errors = m_logger->LevelCount(eDiag_Critical) +
                      m_logger->LevelCount(eDiag_Error) +
