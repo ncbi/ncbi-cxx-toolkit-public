@@ -2349,7 +2349,7 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
     size_t len, n;
     unsigned int m;
 
-    assert(mode  &&  buf  &&  bufsize > 1);
+    assert(buf  &&  bufsize > 1);
     switch (mode) {
     case eFWMode_Legacy:
         *buf = '\0';
