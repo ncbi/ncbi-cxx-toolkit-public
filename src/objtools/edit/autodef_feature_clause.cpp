@@ -77,6 +77,12 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
         m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene());
         if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
             m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
+            if (!NStr::StartsWith(m_AlleleName, m_GeneName, NStr::eNocase)) {
+                if (!NStr::StartsWith(m_AlleleName, "-")) {
+                    m_AlleleName = "-" + m_AlleleName;
+                }
+                m_AlleleName = m_GeneName + m_AlleleName;
+            }
         }
         if (m_MainFeat.CanGetPseudo() && m_MainFeat.GetPseudo()) {
             m_GeneIsPseudo = true;

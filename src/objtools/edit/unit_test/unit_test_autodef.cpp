@@ -864,5 +864,20 @@ BOOST_AUTO_TEST_CASE(Test_GB_3679)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3848)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature (cds1);
+    gene1->SetData().SetGene().SetLocus("gltB");
+    gene1->SetData().SetGene().SetAllele("16");
+    unit_test_util::AddFeat(gene1, nuc);
+
+    AddTitle(nuc, "Sebaea microphylla fake protein name (gltB) gene, gltB-16 allele, complete cds.");
+    CheckDeflineMatches(entry, true);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
