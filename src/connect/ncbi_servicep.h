@@ -38,16 +38,29 @@
 #include <connect/ncbi_service.h>
 
 
-/* CAUTION:  There may be other states not classified by the macros below! */
-#define SERV_IsDown(i)        ((i)->time  &&  (i)->time != NCBI_TIME_INFINITE \
-                               &&  (i)->rate == 0.0)
-#define SERV_IsActive(i)      ((i)->time  &&  (i)->time != NCBI_TIME_INFINITE \
-                               &&  (i)->rate >  0.0)
-#define SERV_IsStandby(i)     ((i)->time  &&  (i)->time != NCBI_TIME_INFINITE \
-                               &&  (i)->rate != 0.0                           \
-                               &&  fabs((i)->rate) < LBSM_STANDBY_THRESHOLD)
-#define SERV_IsSuppressed(i)  ((i)->time  &&  (i)->time != NCBI_TIME_INFINITE \
-                               &&  (i)->rate <  0.0)
+/* Order:
+   R>0 T>0    Up
+   R<0 T>0    Standby
+   R>0 T=0    Reserved
+   R>0 T=INF  Suppressed
+   R<0 T=INF  Standby+Suppressed
+   R<0 T=0    Reserved+Suppressed
+   R=0 T>0    Down
+   R=0 T=INF  Down+Suppressed
+   R=0 T=0    Off (unseen)
+*/
+
+
+/* SERV_IfSuppressed() can be applied to any of the SERV_Is*() macros below */
+#define SERV_IfSuppressed(i)  (  (i)->time == NCBI_TIME_INFINITE   ||  \
+                               (!(i)->time  &&      (i)->rate < 0.0))
+#define SERV_IsActive(i)      (  (i)->time  &&      (i)->rate > 0.0)
+#define SERV_IsStandby(i)     (  (i)->time  &&      (i)->rate < 0.0)
+#define SERV_IsReserved(i)    ( !(i)->time  &&      (i)->rate)
+#define SERV_IsDown(i)        (                    !(i)->rate)
+
+/* Thus, SERV_IsUp() can be defined as follows */
+#define SERV_IsUp(i)          (SERV_IsActive(i)  &&  !SERV_IfSuppressed(i))
 
 
 #ifdef __cplusplus
@@ -89,8 +102,9 @@ struct SSERV_IterTag {
     unsigned     stateless:1; /*                          ..SERV_*() calls.. */
     unsigned      external:1; /* whether this is an external request         */
     unsigned int   localhost; /* local host address if known                 */
-    size_t            n_skip; /* actual number of servers in the array       */
-    size_t            a_skip; /* number of allocated slots in the array      */
+    size_t            o_skip; /* original number of servers passed in "skip" */
+    size_t            n_skip; /* actual number of servers in the skip array  */
+    size_t            a_skip; /* number of allocated slots in the skip array */
     SSERV_InfoCPtr*     skip; /* servers to skip (always w/names)            */
     SSERV_InfoCPtr      last; /* last server info taken out, points into skip*/
     const char*          arg; /* argument to match;  the original pointer!   */
@@ -108,7 +122,7 @@ struct SSERV_IterTag {
 extern NCBI_XCONNECT_EXPORT ESwitch SERV_DoFastOpens(ESwitch on);
 
 
-/* Modified "fast track" routine for obtaining of a server info in one-shot.
+/* Modified "fast track" routine for obtaining a server info in one-shot.
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
  *
  * CAUTION: Unlike the 'service' parameter, for performance reasons 'arg'
@@ -201,30 +215,30 @@ char* SERV_Print
 /* Same as SERV_Penalize() but can specify penalty hold time.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
-(SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
- double               fine,          /* fine from range [0=min..100=max] (%%)*/
- TNCBI_Time           time           /* for how long to keep the penalty, sec*/
+(SERV_ITER  iter,                    /* handle obtained via 'SERV_Open*' call*/
+ double     fine,                    /* fine from range [0=min..100=max] (%%)*/
+ TNCBI_Time time                     /* for how long to keep the penalty, sec*/
  );
 
 
-/* Get name of underlying service mapper.
+/* Get a name of the underlying service mapper.
  */
 extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
 
 
-/* Get the final service name, using CONN_SERVICE_NAME_service environment
- * variable, then (if not found) registry section [service] and a key
+/* Get the final service name, using service_CONN_SERVICE_NAME environment
+ * variable(s), then (if not found) registry section [service] and a key
  * CONN_SERVICE_NAME.  Return the resultant name (perhaps, an exact copy of
- * "service" if no override name has been found in environment/registry), which
- * is to be 'free()'d by the caller when no longer needed.
+ * "service" if no override name has been found in the environment/registry),
+ * which is to be 'free()'d by the caller when no longer needed.
  * Return NULL on error.
- * NOTE:  This procedure can detect simple cyclical redefinitions, and
- * is limited to a search depth of 8.
+ * NOTE:  This procedure can detect simple cyclic redefinitions, and is limited
+ * to a search depth of 8.
  */
 char* SERV_ServiceName(const char* service);
 
 
-void SERV_InitFirewallMode(void);
+void SERV_InitFirewallPorts(void);
 
 
 int/*bool*/ SERV_AddFirewallPort
