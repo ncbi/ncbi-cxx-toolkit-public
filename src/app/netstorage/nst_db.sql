@@ -681,7 +681,11 @@ GO
 CREATE PROCEDURE GetObjectFixedAttributes
     @object_key     VARCHAR(256),
     @expiration     DATETIME OUT,
-    @creation       DATETIME OUT
+    @creation       DATETIME OUT,
+    @obj_read       DATETIME OUT,
+    @obj_write      DATETIME OUT,
+    @attr_read      DATETIME OUT,
+    @attr_write     DATETIME OUT
 AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL
@@ -700,7 +704,10 @@ BEGIN
             RETURN -1               -- object is not found
         END
 
-        SELECT @expiration = tm_expiration, @creation = tm_create FROM Objects WHERE object_key = @object_key
+        SELECT @expiration = tm_expiration, @creation = tm_create,
+               @obj_read = tm_read, @obj_write = tm_write,
+               @attr_read = tm_attr_read, @attr_write = tm_attr_write
+               FROM Objects WHERE object_key = @object_key
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION

@@ -397,7 +397,12 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
 int
 CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                               TNSTDBValue<CTime> &  expiration,
-                                              TNSTDBValue<CTime> &  creation)
+                                              TNSTDBValue<CTime> &  creation,
+                                              TNSTDBValue<CTime> &  obj_read,
+                                              TNSTDBValue<CTime> &  obj_write,
+                                              TNSTDBValue<CTime> &  attr_read,
+                                              TNSTDBValue<CTime> &  attr_write
+                                              )
 {
     x_PreCheckConnection();
 
@@ -409,6 +414,14 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                           eSDB_DateTime, eSP_InOut);
         query.SetParameter("@creation", creation.m_Value,
                                         eSDB_DateTime, eSP_InOut);
+        query.SetParameter("@obj_read", obj_read.m_Value,
+                                        eSDB_DateTime, eSP_InOut);
+        query.SetParameter("@obj_write", obj_write.m_Value,
+                                         eSDB_DateTime, eSP_InOut);
+        query.SetParameter("@attr_read", attr_read.m_Value,
+                                         eSDB_DateTime, eSP_InOut);
+        query.SetParameter("@attr_write", attr_write.m_Value,
+                                          eSDB_DateTime, eSP_InOut);
 
         query.ExecuteSP("GetObjectFixedAttributes");
         query.VerifyDone();
@@ -422,6 +435,22 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
             creation.m_IsNull = query.GetParameter("@creation").IsNull();
             if (!creation.m_IsNull)
                 creation.m_Value = query.GetParameter("@creation").
+                                                                AsDateTime();
+            obj_read.m_IsNull = query.GetParameter("@obj_read").IsNull();
+            if (!obj_read.m_IsNull)
+                obj_read.m_Value = query.GetParameter("@obj_read").
+                                                                AsDateTime();
+            obj_write.m_IsNull = query.GetParameter("@obj_write").IsNull();
+            if (!obj_write.m_IsNull)
+                obj_write.m_Value = query.GetParameter("@obj_write").
+                                                                AsDateTime();
+            attr_read.m_IsNull = query.GetParameter("@attr_read").IsNull();
+            if (!attr_read.m_IsNull)
+                attr_read.m_Value = query.GetParameter("@attr_read").
+                                                                AsDateTime();
+            attr_write.m_IsNull = query.GetParameter("@attr_write").IsNull();
+            if (!attr_write.m_IsNull)
+                attr_write.m_Value = query.GetParameter("@attr_write").
                                                                 AsDateTime();
         }
         return status;

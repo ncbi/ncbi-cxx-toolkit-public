@@ -104,7 +104,11 @@ public:
                              const string &  attr_name);
     int  ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                          TNSTDBValue<CTime> &  expiration,
-                                         TNSTDBValue<CTime> &  creation);
+                                         TNSTDBValue<CTime> &  creation,
+                                         TNSTDBValue<CTime> &  obj_read,
+                                         TNSTDBValue<CTime> &  obj_write,
+                                         TNSTDBValue<CTime> &  attr_read,
+                                         TNSTDBValue<CTime> &  attr_write);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
                                     TNSTDBValue<CTime> &  expiration);
 
