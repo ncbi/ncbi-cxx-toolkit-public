@@ -61,7 +61,8 @@ CConnectPolicyApp::RunSample(void)
         CConnValidatorCoR conn_validator;
 
         // Combine validators.
-        conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("tempdb")));
+        conn_validator.Push
+	  (CRef<IConnValidator>(new CTrivialConnValidator("tempdb", 0)));
         conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("DBAPI_Sample")));
 
         for (int i = 0; i < 20; ++i) {
