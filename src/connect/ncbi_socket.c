@@ -2798,7 +2798,7 @@ static EIO_Status s_WritePending(SOCK, const struct timeval*, int, int);
  * read.  Return other (error) code if an error/EOF occurred (zero bytes read).
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves.)
- * NB:  peek = {-1=upread, 0=read, 1=peek}
+ * NB:  peek = {-1=upread(!buf && !size), 0=read, 1=peek}
  */
 static EIO_Status s_Read_(SOCK    sock,
                           void*   buf,
@@ -2858,18 +2858,24 @@ static EIO_Status s_Read_(SOCK    sock,
         size_t n_todo;
         char*  x_buf;
 
-        if (!buf/*internal upread/skipping*/  ||
-            ((n_todo = size - *n_read) < sizeof(xx_buf))) {
-            n_todo   = sizeof(xx_buf);
-            x_buf    =        xx_buf;
+        if (!buf/*internal upread/skipping*/  &&  peek) {
+            n_todo = sizeof(xx_buf);
+            x_buf  = (char*) malloc(sizeof(xx_buf));
+            if (!x_buf)
+                x_buf = xx_buf;
+        } else if (!buf  ||  (n_todo = size - *n_read) < sizeof(xx_buf)) {
+            n_todo  = sizeof(xx_buf);
+            x_buf   =        xx_buf;
         } else
-            x_buf    = (char*) buf + *n_read;
+            x_buf   = (char*) buf + *n_read;
 
         if (sock->session) {
             int error;
             FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
             assert(sock->session != SESSION_INVALID);
             if (!sslread) {
+                if (!buf  &&  x_buf != xx_buf)
+                    free(x_buf);
                 status = eIO_NotSupported;
                 break/*error*/;
             }
@@ -2888,6 +2894,8 @@ static EIO_Status s_Read_(SOCK    sock,
             }
 
             if (status == eIO_Closed  &&  !sock->eof) {
+                if (!buf  &&  x_buf != xx_buf)
+                    free(x_buf);
                 sock->r_status = eIO_Closed;
                 sock->eof = 1/*true*/;
                 break/*bad error*/;
@@ -2897,9 +2905,14 @@ static EIO_Status s_Read_(SOCK    sock,
             status = s_Recv(sock, x_buf, n_todo, &x_read, 0);
             assert(status == eIO_Success  ||  !x_read);
         }
-        if (status != eIO_Success)
+        if (status != eIO_Success) {
+            if (!buf  &&  x_buf != xx_buf)
+                free(x_buf);
             break/*error*/;
+        }
         if (!x_read) {
+            if (!buf  &&  x_buf != xx_buf)
+                free(x_buf);
             status = eIO_Closed;
             break/*EOF*/;
         }
@@ -2907,6 +2920,7 @@ static EIO_Status s_Read_(SOCK    sock,
 
         if (x_read < n_todo)
             done = 1/*true*/;
+
         if (buf  ||  size) {
             n_todo = size - *n_read;
             if (n_todo > x_read)
@@ -2914,20 +2928,33 @@ static EIO_Status s_Read_(SOCK    sock,
             if (buf  &&  x_buf == xx_buf)
                 memcpy((char*) buf + *n_read, x_buf, n_todo);
         } else
-            n_todo = x_read;
+            assert(peek < 0);
 
         if (peek  ||  x_read > n_todo) {
             /* store the newly read/excess data in the internal input buffer */
-            if (!BUF_Write(&sock->r_buf,
-                           peek ? x_buf  : x_buf  + n_todo,
-                           peek ? x_read : x_read - n_todo)) {
+            if (buf  ||  x_buf == xx_buf  ||  x_read < sizeof(xx_buf)/2) {
+                sock->eof = !BUF_Write (&sock->r_buf,
+                                        peek ? x_buf  : x_buf  + n_todo,
+                                        peek ? x_read : x_read - n_todo);
+                if (!buf  &&  x_buf != xx_buf)
+                    free(x_buf);
+            } else {
+                assert(peek);
+                sock->eof = !BUF_AppendEx(&sock->r_buf,
+                                          x_buf, sizeof(xx_buf),
+                                          x_buf, x_read);
+                if (sock->eof)
+                    free(x_buf);
+            }
+            if (sock->eof) {
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("%s[SOCK::Read] "
                                    " Cannot save unread data",
                                    s_ID(sock, xx_buf)));
-                sock->eof      = 1/*failure*/;
-                sock->r_status = eIO_Closed;
+                sock->r_status = eIO_Closed/*failure*/;
                 status = eIO_Unknown;
+                if (!buf  &&  peek)
+                    x_read = 0;
             }
             if (x_read > n_todo)
                 x_read = n_todo;
