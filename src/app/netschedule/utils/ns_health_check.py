@@ -486,12 +486,9 @@ def getClientData( nsConnect ):
                     if len( parts ) not in [ 3, 4 ]:
                         return None, None
                     verb = parts[ 0 ]
-                    timestamp = parts[ 1 ] + " " + parts[ 2 ]
-                    if '.' in timestamp:
-                        tsFormat = "%Y-%m-%d %H:%M:%S.%f"
-                    else:
-                        tsFormat = "%Y-%m-%d %H:%M:%S"
-                    tm = datetime.datetime.strptime( timestamp, tsFormat )
+                    tm = datetime.datetime.strptime(
+                            parts[ 1 ] + " " + parts[ 2 ],
+                            "%Y-%m-%d %H:%M:%S.%f" )
                     if len( parts ) == 3:
                         # No value, only a verb and a timestamp
                         # START 2014-10-06 14:51:49.242633
@@ -505,7 +502,7 @@ def getClientData( nsConnect ):
 
 def setClientData( nsConnect, verb, value = None ):
     " Sets the client data unconditionally "
-    data = verb + " " + str( datetime.datetime.now() )
+    data = verb + " " + datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S.%f" )
     if value is not None:
         data += " " + str( value )
     printVerbose( "Setting client data: " + data )
