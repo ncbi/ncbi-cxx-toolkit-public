@@ -818,12 +818,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                          error  &&  *error ? ": " : "", error ? error : ""));
             assert(!uuu->host);
         }
-        if (!uuu->host) {
-            /* No connection info returned */
-            if (*status == eIO_Success)
-                *status  = eIO_Unknown;
-            return 0;
-        }
         if (uuu->host == (unsigned int)(-1)) {
             assert(!info  ||  info->type == fSERV_Firewall);
             assert(!net_info->stateless);
@@ -831,14 +825,19 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             /* Fallback to try to use stateless mode instead */
             return s_Open(uuu, timeout, info, net_info, status);
         }
-        SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
-        if ((net_info->firewall & eFWMode_Adaptive)
+        if (!(uuu->host & uuu->port)) {
+            /* no connection info found */
+            if (*status == eIO_Success)
+                *status  = eIO_Unknown;
+            return 0;
+        }
+        if (net_info->firewall == eFWMode_Fallback
             &&  !SERV_IsFirewallPort(uuu->port)) {
-            CORE_LOGF_X(9, net_info->firewall == eFWMode_Fallback
-                        ? eLOG_Warning : eLOG_Trace,
+            CORE_LOGF_X(9, eLOG_Warning,
                         ("[%s]  Firewall port :%hu is not in the fallback set",
                          uuu->service, uuu->port));
         }
+        SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         net_info->port = uuu->port;
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         return s_SocketConnectorBuilder(net_info, status, &uuu->ticket,

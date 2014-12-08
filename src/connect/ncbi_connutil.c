@@ -264,9 +264,9 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
         unsigned short port;
         if (sscanf(str, "%hu%n", &port, &n) < 1  ||  !port)
             break;
-        str += n;
         if (generic)
             SERV_AddFirewallPort(port);
+        str += n;
         if (!*(str += strspn(str, " \t")))
             return eFWMode_Fallback;
     }
@@ -2308,7 +2308,7 @@ extern int/*bool*/ MIME_ParseContentTypeEx
 }
 
 
-void SERV_InitFirewallMode(void)
+void SERV_InitFirewallPorts(void)
 {
     memset(s_FWPorts, 0, sizeof(s_FWPorts));
 }
@@ -2316,8 +2316,11 @@ void SERV_InitFirewallMode(void)
 
 int/*bool*/ SERV_AddFirewallPort(unsigned short port)
 {
-    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
-    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
+    unsigned int n, m;
+    if (!port--)
+        return 0/*false*/;
+    n = port / (sizeof(s_FWPorts[0]) << 3);
+    m = port % (sizeof(s_FWPorts[0]) << 3);
     if ((size_t) n < SizeOf(s_FWPorts)) {
         s_FWPorts[n] |= (TNCBI_BigCount) 1 << m;
         return 1/*true*/;
@@ -2328,10 +2331,13 @@ int/*bool*/ SERV_AddFirewallPort(unsigned short port)
 
 int/*bool*/ SERV_IsFirewallPort(unsigned short port)
 {
-    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
-    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
-    if ((size_t) n < SizeOf(s_FWPorts)
-        &&  (s_FWPorts[n] & ((TNCBI_BigCount) 1 << m))) {
+    unsigned int n, m;
+    if (!port--)
+        return 0/*false*/;
+    n = port / (sizeof(s_FWPorts[0]) << 3);
+    m = port % (sizeof(s_FWPorts[0]) << 3);
+    if ((size_t) n < SizeOf(s_FWPorts)  &&
+        s_FWPorts[n] & ((TNCBI_BigCount) 1 << m)) {
         return 1/*true*/;
     }
     return 0/*false*/;
@@ -2343,7 +2349,7 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
     size_t len, n;
     unsigned int m;
 
-    assert(buf  &&  bufsize > 1);
+    assert(mode  &&  buf  &&  bufsize > 1);
     switch (mode) {
     case eFWMode_Legacy:
         *buf = '\0';
@@ -2358,7 +2364,7 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
     for (n = m = 0; n < SizeOf(s_FWPorts); ++n, m += sizeof(s_FWPorts[0])<<3) {
         unsigned short p;
         TNCBI_BigCount mask = s_FWPorts[n];
-        for (p = m;  mask;  p++, mask >>= 1) {
+        for (p = m + 1;  mask;  ++p, mask >>= 1) {
             if (mask & 1) {
                 char port[10];
                 int  k = sprintf(port, &" %hu"[!len], p);
@@ -2366,8 +2372,6 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
                     memcpy(buf + len, port, k);
                     len += k;
                 }
-                if (!p)
-                    break;
             }
         }
     }
