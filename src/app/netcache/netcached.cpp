@@ -217,14 +217,14 @@ void CNCBlobKey::Assign( const CTempString& cache_name,
         if (cache_name.empty() && HasExtensions()) {
             rawKey = StripKeyExtensions();
         }
-    } else {
+    } else if (cache_name.empty()) {
         SRV_LOG(Critical, "CNetCacheKey failed to parse blob key: " << blob_key);
         Clear();
         return;
     }
     PackBlobKey(cache_name, rawKey, blob_subkey);
     UnpackBlobKey();
-    SetKeyVersion(GetVersion());
+    SetKeyVersion(max((unsigned int)1,GetVersion()));
 }
 
 

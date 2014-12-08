@@ -753,7 +753,7 @@ Uint4
 CNCDistributionConf::GetMainSrvIP(const CNCBlobKey& key)
 {
     try {
-        if (key.GetVersion() == 3) {
+        if (key.KeyVersion() == 3) {
             Uint4 alias = key.GetHostPortCRC32();
             return (alias == s_SelfAlias) ? s_SelfIP :
                 CNCPeerControl::FindIPbyAlias(alias);
