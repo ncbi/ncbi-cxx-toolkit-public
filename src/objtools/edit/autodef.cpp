@@ -311,146 +311,6 @@ string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
 }
 
 
-#if 0
-CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last) 
-{
-    string product_name = "";
-    string gene_name = "";
-    
-
-    string::size_type pos = NStr::Find(comment, "(");
-    if (pos == NCBI_NS_STD::string::npos) {
-        return NULL;
-    }
-    product_name = comment.substr(0, pos);
-    comment = comment.substr (pos + 1);
-    pos = NStr::Find(comment, ")");
-    if (pos == NCBI_NS_STD::string::npos) {
-        return NULL;
-    }
-    gene_name = comment.substr (0, pos);
-
-    NStr::TruncateSpacesInPlace(product_name);
-    NStr::TruncateSpacesInPlace(gene_name);
-    
-    if (NStr::StartsWith (product_name, "tRNA-")) {
-        /* tRNA name must start with "tRNA-" and be followed by one uppercase letter and
-         * two lowercase letters.
-         */
-        if (product_name.length() < 8
-            || !isalpha(product_name.c_str()[5]) || !isupper(product_name.c_str()[5])
-            || !isalpha(product_name.c_str()[6]) || !islower(product_name.c_str()[6])
-            || !isalpha(product_name.c_str()[7]) || !islower(product_name.c_str()[7])) {
-            return NULL;
-        }
-
-        /* gene name must be in parentheses, start with letters "trn",
-         * and end with one uppercase letter.
-         */    
-        if (gene_name.length() < 4
-            || !NStr::StartsWith(gene_name, "trn" )
-            || !isalpha(gene_name.c_str()[3])
-            || !isupper(gene_name.c_str()[3])) {
-            return NULL;
-        }
-    }
-    if (NStr::IsBlank (product_name) || NStr::IsBlank (gene_name)) {
-        return NULL;
-    }
-         
-    return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last);
-
-}        
-
-
-const int kParsedTrnaGene = 1;
-const int kParsedTrnaSpacer = 2;
-
-
-vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags)
-{
-    string::size_type pos;
-    vector<CAutoDefFeatureClause *> clause_list;
-
-    clause_list.clear();
-    pos = NStr::Find (comment, " and ");
-    // insert comma for parsing
-    if (pos != NCBI_NS_STD::string::npos && pos > 0 && !NStr::StartsWith (comment.substr(pos - 1), ",")) {
-        comment = comment.substr(0, pos - 1) + "," + comment.substr(pos);
-    }
-
-    vector<string> parts;
-    NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims );
-    if ( parts.empty() ) {
-        return clause_list;
-    }
-
-    if (parts.size() == 1 && NStr::Find (parts[0], "intergenic spacer") != NCBI_NS_STD::string::npos) {
-        clause_list.push_back (new CAutoDefIntergenicSpacerClause (bh, cf, mapped_loc, parts[0]));
-        return clause_list;
-    }
-    
-    bool bad_phrase = false;
-    bool names_correct = true;
-    int last_type = 0;
-
-
-    CAutoDefParsedtRNAClause *gene = NULL;
-
-    for (size_t j = 0; j < parts.size() && names_correct && !bad_phrase; j++) {
-        NStr::TruncateSpacesInPlace(parts[j]);
-        if (NStr::StartsWith (parts[j], "and ")) {
-            parts[j] = parts[j].substr(4);
-        }
-        if (NStr::EndsWith (parts[j], " intergenic spacer")) {
-            // must be a spacer
-            string spacer_description = parts[j].substr(0, parts[j].length() - 18);
-            CAutoDefFeatureClause *spacer = new CAutoDefParsedIntergenicSpacerClause(bh, cf, mapped_loc, spacer_description, j == 0, j == parts.size() - 1);
-            if (spacer == NULL) {
-                bad_phrase = true;
-            } else {
-                if (last_type == kParsedTrnaGene) {
-                    // spacer names and gene names must agree
-                    string gene_name = gene->GetGeneName();
-                    string description = spacer->GetDescription();
-                    if (!NStr::StartsWith (description, gene_name + "-")) {
-                        names_correct = false;
-                    }
-                }
-                spacer->SetSuppressLocusTag(suppress_locus_tags);
-                clause_list.push_back (spacer);
-                last_type = kParsedTrnaSpacer;
-            }
-        } else {
-            gene = x_tRNAClauseFromNote(bh, cf, mapped_loc, parts[j], j == 0, j == parts.size() - 1);
-            if (gene == NULL) {
-                bad_phrase = true;
-            } else {
-                // must alternate between genes and spacers
-                if (last_type == kParsedTrnaSpacer) {
-                    // spacer names and gene names must agree
-                    string gene_name = gene->GetGeneName();
-                    if (!NStr::EndsWith (parts[j - 1], "-" + gene_name + " intergenic spacer")) {
-                        names_correct = false;
-                    }
-                }
-                gene->SetSuppressLocusTag(suppress_locus_tags);
-                clause_list.push_back (gene);
-                last_type = kParsedTrnaGene;
-            }
-        }
-    }
-
-    if (bad_phrase || !names_correct) {
-        for (size_t i = 0; i < clause_list.size(); i++) {
-            delete clause_list[i];
-        }
-        clause_list.clear();
-    }
-    return clause_list;
-}
-#endif
-
 bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
     CSeqFeatData::ESubtype subtype = cf.GetData().GetSubtype();
@@ -646,6 +506,48 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         return false;
     }
 }
+
+
+bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+{
+    if (cf.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
+        !cf.IsSetComment()) {
+        return false;
+    }
+
+    string comment = cf.GetComment();
+    if (NStr::StartsWith(comment, "contains ")) {
+        comment = comment.substr(9);
+    }
+
+    size_t pos = NStr::Find(comment, " and ");
+    if (pos == string::npos) {
+        return false;
+    }
+    string trna_str = comment.substr(0, pos);
+    string other_str = comment.substr(pos + 5);
+
+    CAutoDefParsedClause* other = NULL;
+    if (NStr::Equal(other_str, "control region") ||
+        NStr::Equal(other_str, "D-loop")) {
+        // create a clause of the appropriate type
+        other = new CAutoDefParsedClause(bh, cf, mapped_loc, false, true);  
+        other->SetTypeword(other_str);
+        other->SetTypewordFirst(false);
+    } else {
+        return false;
+    }
+
+    CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, trna_str, true, false);
+    if (!trna) {
+        return false;
+    }
+
+    main_clause.AddSubclause(trna);
+    main_clause.AddSubclause(other);
+    return true;
+}
+
 
 void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh)
 {
@@ -908,9 +810,14 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 						delete new_clause;
 						new_clause = NULL;
 					}
-        } else if (subtype == CSeqFeatData::eSubtype_misc_feature && x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
-  				delete new_clause;
-	  			new_clause = NULL;
+                } else if (subtype == CSeqFeatData::eSubtype_misc_feature &&
+                           x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
+  				    delete new_clause;
+	  			    new_clause = NULL;
+                } else if (subtype == CSeqFeatData::eSubtype_misc_feature &&
+                           x_AddtRNAAndOther(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
+                    delete new_clause;
+                    new_clause = NULL;
 				} else if (new_clause->IsIntergenicSpacer()) {
 					delete new_clause;
 					x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);

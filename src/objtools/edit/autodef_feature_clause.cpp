@@ -701,7 +701,6 @@ bool CAutoDefFeatureClause::IsIntergenicSpacer()
 
 string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref)
 {
-#if 1
     if (gref.IsSuppressed()) {
         return "";
     } else if (gref.CanGetLocus() && !NStr::IsBlank(gref.GetLocus())) {
@@ -709,27 +708,6 @@ string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref)
     } else {
         return "";
     }
-#else
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_gene
-        || m_MainFeat.GetData().GetGene().IsSuppressed()) {
-        return "";
-    } else if (m_MainFeat.GetData().GetGene().CanGetLocus()
-               && !NStr::IsBlank(m_MainFeat.GetData().GetGene().GetLocus())) {
-        return m_MainFeat.GetData().GetGene().GetLocus();
-    } else if (!m_SuppressLocusTag
-               && m_MainFeat.GetData().GetGene().CanGetLocus_tag()
-               && !NStr::IsBlank(m_MainFeat.GetData().GetGene().GetLocus_tag())) {
-        return m_MainFeat.GetData().GetGene().GetLocus_tag();
-    } else if (m_MainFeat.GetData().GetGene().CanGetDesc()
-               && !NStr::IsBlank(m_MainFeat.GetData().GetGene().GetDesc())) {
-        return m_MainFeat.GetData().GetGene().GetDesc();
-    } else if (m_MainFeat.GetData().GetGene().CanGetSyn()
-               && m_MainFeat.GetData().GetGene().IsSetSyn()) {
-        return m_MainFeat.GetData().GetGene().GetSyn().front();
-    } else {
-        return "";
-    }
-#endif        
 }
 
 

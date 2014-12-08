@@ -879,5 +879,17 @@ BOOST_AUTO_TEST_CASE(Test_GB_3848)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2075)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(seq);
+    misc->SetComment("contains tRNA-Pro and control region");
+    misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddTitle(seq, "Sebaea microphylla tRNA-Pro gene and control region, partial sequence.");
+    CheckDeflineMatches(seq, true);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -160,21 +160,17 @@ private:
     string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
-    vector<CAutoDefFeatureClause *> x_GetIntergenicSpacerClauseList
-        (string comment, CBioseq_Handle bh, const CSeq_feat& cf,
-         const CSeq_loc& mapped_loc, bool suppress_locus_tags);
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
                                        const CSeq_feat& cf,
                                        const CSeq_loc& mapped_loc,
                                        CAutoDefFeatureClause_Base& main_clause,
                                        bool suppress_locus_tags);
-    CAutoDefParsedtRNAClause* x_tRNAClauseFromNote(CBioseq_Handle bh,
-                                                   const CSeq_feat& cf,
-                                                   const CSeq_loc& mapped_loc,
-                                                   string comment,
-                                                   bool is_first,
-                                                   bool is_last);
     bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
+                              const CSeq_feat& cf,
+                              const CSeq_loc& mapped_loc,
+                              CAutoDefFeatureClause_Base& main_clause,
+                              bool suppress_locus_tags);
+    bool x_AddtRNAAndOther(CBioseq_Handle bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,
                               CAutoDefFeatureClause_Base& main_clause,
