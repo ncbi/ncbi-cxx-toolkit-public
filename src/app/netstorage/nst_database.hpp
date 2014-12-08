@@ -108,7 +108,9 @@ public:
                                          TNSTDBValue<CTime> &  obj_read,
                                          TNSTDBValue<CTime> &  obj_write,
                                          TNSTDBValue<CTime> &  attr_read,
-                                         TNSTDBValue<CTime> &  attr_write);
+                                         TNSTDBValue<CTime> &  attr_write,
+                                         TNSTDBValue<Int8> &   read_count,
+                                         TNSTDBValue<Int8> &   write_count);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
                                     TNSTDBValue<CTime> &  expiration);
 

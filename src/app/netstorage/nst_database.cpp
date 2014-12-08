@@ -401,7 +401,9 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                               TNSTDBValue<CTime> &  obj_read,
                                               TNSTDBValue<CTime> &  obj_write,
                                               TNSTDBValue<CTime> &  attr_read,
-                                              TNSTDBValue<CTime> &  attr_write
+                                              TNSTDBValue<CTime> &  attr_write,
+                                              TNSTDBValue<Int8> &   read_count,
+                                              TNSTDBValue<Int8> &   write_count
                                               )
 {
     x_PreCheckConnection();
@@ -422,6 +424,10 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                          eSDB_DateTime, eSP_InOut);
         query.SetParameter("@attr_write", attr_write.m_Value,
                                           eSDB_DateTime, eSP_InOut);
+        query.SetParameter("@read_cnt", read_count.m_Value,
+                                        eSDB_Int8, eSP_InOut);
+        query.SetParameter("@write_cnt", write_count.m_Value,
+                                         eSDB_Int8, eSP_InOut);
 
         query.ExecuteSP("GetObjectFixedAttributes");
         query.VerifyDone();
@@ -452,6 +458,14 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
             if (!attr_write.m_IsNull)
                 attr_write.m_Value = query.GetParameter("@attr_write").
                                                                 AsDateTime();
+            read_count.m_IsNull = query.GetParameter("@read_cnt").IsNull();
+            if (!read_count.m_IsNull)
+                read_count.m_Value = query.GetParameter("@read_cnt").
+                                                                AsInt8();
+            write_count.m_IsNull = query.GetParameter("@write_cnt").IsNull();
+            if (!write_count.m_IsNull)
+                write_count.m_Value = query.GetParameter("@write_cnt").
+                                                                AsInt8();
         }
         return status;
     } catch (...) {

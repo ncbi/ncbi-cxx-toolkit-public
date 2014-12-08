@@ -200,8 +200,11 @@ CREATE TABLE Objects
     tm_attr_write   DATETIME NULL,
     tm_attr_read    DATETIME NULL,
     tm_expiration   DATETIME NULL,
-    size            BIGINT NULL                 -- might be NULL because meta info could be
+    size            BIGINT NULL,                -- might be NULL because meta info could be
                                                 -- switched on after the object was created or read
+    read_count      BIGINT NOT NULL,            -- number of times the object was read except of
+                                                -- when monitoring metadata option was used
+    write_count     BIGINT NOT NULL             -- number of times the object was written
 )
 GO
 
@@ -335,8 +338,8 @@ BEGIN
         DECLARE @row_count  INT
         DECLARE @error      INT
 
-        INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
-        VALUES (@object_id, @object_key, @object_loc, @client_id, @object_create_tm, @object_size)
+        INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size, read_count, write_count)
+        VALUES (@object_id, @object_key, @object_loc, @client_id, @object_create_tm, @object_size, 0, 1)
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0 OR @row_count = 0
@@ -372,7 +375,8 @@ BEGIN
 
         SET @current_time = GETDATE()
 
-        UPDATE Objects SET size = @object_size, tm_write = @current_time WHERE object_key = @object_key
+        UPDATE Objects SET size = @object_size, tm_write = @current_time,
+                           write_count = write_count + 1 WHERE object_key = @object_key
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0
@@ -393,8 +397,8 @@ BEGIN
                 RETURN 1
             END
 
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, size)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @object_size)
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, size, read_count, write_count)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @object_size, 0, 1)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
@@ -444,7 +448,8 @@ BEGIN
 
         SET @current_time = GETDATE()
 
-        UPDATE Objects SET size = @object_size, tm_write = @current_time WHERE object_key = @object_key
+        UPDATE Objects SET size = @object_size, tm_write = @current_time,
+                           write_count = write_count + 1 WHERE object_key = @object_key
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0
@@ -466,8 +471,8 @@ BEGIN
             END
 
             -- For the user key objects creation time is set as well
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, tm_write, size)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @current_time, @object_size)
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, tm_write, size, read_count, write_count)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @current_time, @object_size, 0, 1)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
@@ -486,7 +491,7 @@ BEGIN
                 IF @expiration < @current_time
                 BEGIN
                     -- the object is expired, so the expiration must be reset
-                    UPDATE Objects SET tm_expiration = NULL WHERE object_key = @object_key
+                    UPDATE Objects SET tm_expiration = NULL, read_count = 0, write_count = 1 WHERE object_key = @object_key
                     SELECT @error = @@ERROR
 
                     IF @error != 0
@@ -528,7 +533,7 @@ BEGIN
         DECLARE @row_count  INT
         DECLARE @error      INT
 
-        UPDATE Objects SET tm_read = GETDATE() WHERE object_key = @object_key
+        UPDATE Objects SET tm_read = GETDATE(), read_count = read_count + 1 WHERE object_key = @object_key
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0
@@ -549,8 +554,8 @@ BEGIN
                 RETURN 1
             END
 
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_read, size)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_read, size, read_count, write_count)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size, 1, 0)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
@@ -685,7 +690,9 @@ CREATE PROCEDURE GetObjectFixedAttributes
     @obj_read       DATETIME OUT,
     @obj_write      DATETIME OUT,
     @attr_read      DATETIME OUT,
-    @attr_write     DATETIME OUT
+    @attr_write     DATETIME OUT,
+    @read_cnt       BIGINT OUT,
+    @write_cnt      BIGINT OUT
 AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL
@@ -706,7 +713,8 @@ BEGIN
 
         SELECT @expiration = tm_expiration, @creation = tm_create,
                @obj_read = tm_read, @obj_write = tm_write,
-               @attr_read = tm_attr_read, @attr_write = tm_attr_write
+               @attr_read = tm_attr_read, @attr_write = tm_attr_write,
+               @read_cnt = read_count, @write_cnt = write_count
                FROM Objects WHERE object_key = @object_key
     END TRY
     BEGIN CATCH

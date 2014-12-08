@@ -1188,12 +1188,15 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             TNSTDBValue<CTime>  obj_write;
             TNSTDBValue<CTime>  attr_read;
             TNSTDBValue<CTime>  attr_write;
+            TNSTDBValue<Int8>   read_count;
+            TNSTDBValue<Int8>   write_count;
             int                 status = m_Server->GetDb().
                                             ExecSP_GetObjectFixedAttributes(
                                                 object_id.object_key,
                                                 expiration, creation,
                                                 obj_read, obj_write,
-                                                attr_read, attr_write);
+                                                attr_read, attr_write,
+                                                read_count, write_count);
 
             if (status != 0) {
                 // The record in the meta DB for the object is not found
@@ -1203,6 +1206,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 reply.SetString("ObjectWriteTime", "NoMetadataFound");
                 reply.SetString("AttrReadTime", "NoMetadataFound");
                 reply.SetString("AttrWriteTime", "NoMetadataFound");
+                reply.SetString("ObjectReadCount", "NoMetadataFound");
+                reply.SetString("ObjectWriteCount", "NoMetadataFound");
             } else {
                 // The record in the meta DB for the object is found
                 if (expiration.m_IsNull)
@@ -1241,6 +1246,16 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 else
                     reply.SetString("AttrWriteTime",
                                     attr_write.m_Value.AsString());
+                if (read_count.m_IsNull)
+                    reply.SetString("ObjectReadCount", "NotSet");
+                else
+                    reply.SetString("ObjectReadCount",
+                                    NStr::NumericToString(read_count.m_Value));
+                if (write_count.m_IsNull)
+                    reply.SetString("ObjectWriteCount", "NotSet");
+                else
+                    reply.SetString("ObjectWriteCount",
+                                    NStr::NumericToString(write_count.m_Value));
             }
         } catch (const CNetStorageServerException &  ex) {
             if (ex.GetErrCode() == CNetStorageServerException::
@@ -1254,6 +1269,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("ObjectWriteTime", "MetadataAccessWarning");
             reply.SetString("AttrReadTime", "MetadataAccessWarning");
             reply.SetString("AttrWriteTime", "MetadataAccessWarning");
+            reply.SetString("ObjectReadCount", "MetadataAccessWarning");
+            reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
             AppendWarning(reply, eDatabaseWarning, ex.what());
         } catch (const exception &  ex) {
             reply.SetString("ExpirationTime", "MetadataAccessWarning");
@@ -1262,6 +1279,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("ObjectWriteTime", "MetadataAccessWarning");
             reply.SetString("AttrReadTime", "MetadataAccessWarning");
             reply.SetString("AttrWriteTime", "MetadataAccessWarning");
+            reply.SetString("ObjectReadCount", "MetadataAccessWarning");
+            reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
             AppendWarning(reply, eDatabaseWarning, "Error while getting an "
                           "object expiration and creation time: " +
                           string(ex.what()));
@@ -1272,6 +1291,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("ObjectWriteTime", "MetadataAccessWarning");
             reply.SetString("AttrReadTime", "MetadataAccessWarning");
             reply.SetString("AttrWriteTime", "MetadataAccessWarning");
+            reply.SetString("ObjectReadCount", "MetadataAccessWarning");
+            reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
             AppendWarning(reply, eDatabaseWarning, "Unknown error while "
                           "getting an object expiration and creation time");
         }
@@ -1282,6 +1303,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
         reply.SetString("ObjectWriteTime", "NoMetadataAccess");
         reply.SetString("AttrReadTime", "NoMetadataAccess");
         reply.SetString("AttrWriteTime", "NoMetadataAccess");
+        reply.SetString("ObjectReadCount", "NoMetadataAccess");
+        reply.SetString("ObjectWriteCount", "NoMetadataAccess");
     }
 
 
