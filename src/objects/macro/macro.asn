@@ -41,7 +41,9 @@ String-constraint ::= SEQUENCE {
     is-all-caps BOOLEAN DEFAULT FALSE ,
     is-all-lower BOOLEAN DEFAULT FALSE ,
     is-all-punct BOOLEAN DEFAULT FALSE ,
-    ignore-weasel BOOLEAN DEFAULT FALSE }
+    ignore-weasel BOOLEAN DEFAULT FALSE ,
+    is-first-cap BOOLEAN DEFAULT FALSE ,
+    is-first-each-cap BOOLEAN DEFAULT FALSE }
 
 String-constraint-set ::= SET OF String-constraint
 
@@ -183,7 +185,8 @@ Macro-feature-type ::= ENUMERATED {
     oriT (91) ,
     ncRNA (92) ,
     tmRNA (93) ,
-    mobile-element (94) }
+    mobile-element (94) ,
+    regulatory (95) }
 
 Feat-qual-legal ::= ENUMERATED {
     allele (1) ,
