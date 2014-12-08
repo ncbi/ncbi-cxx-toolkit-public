@@ -485,18 +485,19 @@ def getClientData( nsConnect ):
                     parts = data.split( ' ' )
                     if len( parts ) not in [ 3, 4 ]:
                         return None, None
+                    verb = parts[ 0 ]
+                    timestamp = parts[ 1 ] + " " + parts[ 2 ]
+                    if '.' in timestamp:
+                        tsFormat = "%Y-%m-%d %H:%M:%S.%f"
+                    else:
+                        tsFormat = "%Y-%m-%d %H:%M:%S"
+                    tm = datetime.datetime.strptime( timestamp, tsFormat )
                     if len( parts ) == 3:
                         # No value, only a verb and a timestamp
                         # START 2014-10-06 14:51:49.242633
-                        verb = parts[ 0 ]
-                        tm = datetime.datetime.strptime( parts[ 1 ] + " " + parts[ 2 ],
-                                                         "%Y-%m-%d %H:%M:%S.%f" )
                         return verb, tm, None
                     # A verb, a timestamp and a value
                     # DONE 2014-10-06 14:51:49.242633 14
-                    verb = parts[ 0 ]
-                    tm = datetime.datetime.strptime( parts[ 1 ] + " " + parts[ 2 ],
-                                                     "%Y-%m-%d %H:%M:%S.%f" )
                     value = int( parts[ 3 ] )
                     return verb, tm, value
                 return None, None, None
