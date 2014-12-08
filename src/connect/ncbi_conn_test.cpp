@@ -258,12 +258,13 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         const char*  host;
         const char* vhost;
     } kTests[] = {
+        // 0. NCBI default
+        { "",                           0                      }, // NCBI
         // 1. External server(s)
         { "www.google.com",             0                      },
         //    NB: Google's public DNS (also @8.8.8.8), responds at :80 as well
         { "8.8.4.4",                    "www.google.com"       },
-        // 2. NCBI servers
-        { "www.ncbi.nlm.nih.gov",       0                      }, // NCBI
+        // 2. NCBI servers, explicitly
         { "www.be-md.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI main
         { "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI colo
         { "130.14.29.110",              "www.ncbi.nlm.nih.gov" }, // NCBI main
@@ -296,7 +297,8 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     for (size_t n = 0;  n < sizeof(kTests) / sizeof(kTests[0]);  ++n) {
         char user_header[80];
         _ASSERT(::strlen(kTests[n].host) < sizeof(net_info->host) - 1);
-        ::strcpy(net_info->host, kTests[n].host);
+        if (kTests[n].host[0])
+            ::strcpy(net_info->host, kTests[n].host);
         if (kTests[n].vhost) {
             _ASSERT(::strlen(kTests[n].vhost) + 6 < sizeof(user_header) - 1);
             ::sprintf(user_header, "Host: %s", kTests[n].vhost);
@@ -322,6 +324,10 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
             }
             EIO_Status readst = CONN_Wait(conn, eIO_Read, &kTimeSlice);
             if (readst > eIO_Timeout) {
+                if (readst == eIO_Interrupt) {
+                    status  = eIO_Interrupt;
+                    break;
+                }
                 if (status < readst  &&  (*h)->GetStatusCode() != 404)
                     status = readst;
                 VECTOR_ERASE(h, http);
@@ -358,7 +364,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 ? ':' + NStr::UIntToString(net_info->port)
                 : kEmptyStr);
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
-    CConn_HttpStream http("http://" + host + port + "/Service/index.html",
+    CConn_HttpStream http("/Service/index.html",
                           net_info, kEmptyStr/*user_header*/, s_AnyHeader,
                           auxdata, s_Adjust, s_Cleanup, 0/*flags*/, m_Timeout);
     http.SetCanceledCallback(m_Canceled);
@@ -578,8 +584,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 
 EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
 {
-    static const char kFWDUrl[] =
-        "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/fwd_check.cgi";
+    static const char kFWDUrl[] = "/IEB/ToolBox/NETWORK/fwd_check.cgi";
 
     char fwdurl[128];
     if (!ConnNetInfo_GetValue(0, "FWD_URL", fwdurl, sizeof(fwdurl), kFWDUrl))
@@ -826,7 +831,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         net_info->timeout = m_Timeout;
     }
 
-    SERV_InitFirewallMode();
+    SERV_InitFirewallPorts();
 
     PreCheck(eFirewallConnections, 0/*main*/, temp);
 
@@ -950,8 +955,11 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             size_t k;
             switch (cp->status) {
             case eIO_Success:
-                if (n  &&  (net_info->firewall & eFWMode_Adaptive))
-                    SERV_AddFirewallPort(cp->port);
+                if (n  &&  (net_info->firewall & eFWMode_Adaptive)
+                    &&  !SERV_AddFirewallPort(cp->port)) {
+                    m_CheckPoint = "Invalid firewall port";
+                    cp->status = eIO_Unknown;
+                }
                 break;
             case eIO_Timeout:
                 m_CheckPoint = "Connection timed out";
@@ -1075,8 +1083,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 NCBI_FWDOC_URL;
         }
     } else {
-        if (m_Firewall)
-            SERV_AddFirewallPort(0);
         temp = "All " + string(m_Firewall
                                ? "firewall port(s)"
                                : "service entry point(s)") + " checked OK";
@@ -1349,7 +1355,7 @@ EIO_Status CConnTest::x_CheckTrap(string* reason)
 bool CConnTest::IsNcbiInhouseClient(void)
 {
     static const STimeout kFast = { 2, 0 };
-    CConn_HttpStream http("http://www.ncbi.nlm.nih.gov/Service/getenv.cgi",
+    CConn_HttpStream http("/Service/getenv.cgi",
                           fHTTP_KeepHeader | fHTTP_NoAutoRetry, &kFast);
     char line[1024];
     if (!http  ||  !http.getline(line, sizeof(line)))
