@@ -189,6 +189,7 @@ int main(int argc, const char* argv[])
     }
 #endif
 
+#if 0
     if (argc > 1) {
         CORE_LOG(eLOG_Note, "Special test requested");
         SendMailInfo_InitEx(&info, "@", eCORE_UsernameCurrent);
@@ -214,6 +215,7 @@ int main(int argc, const char* argv[])
             CORE_LOG_ERRNO(eLOG_Error, errno, "Test failed");
         return 0;
     }
+#endif
 
 #if 0
     {
@@ -262,7 +264,7 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Skipping CORE_SendMail tests");
 #endif
 
-#if 1
+    if (argc > 1) {
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Testing CORE_SendMailEx");
 
     SendMailInfo_Init(&info);
@@ -407,9 +409,8 @@ int main(int argc, const char* argv[])
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
-#else
+    } else
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Skipping CORE_SendMailEx tests");
-#endif
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
