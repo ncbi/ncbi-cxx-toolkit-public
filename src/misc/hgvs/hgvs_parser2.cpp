@@ -1394,12 +1394,15 @@ CRef<CVariation> CHgvsParser::x_nuc_subst(TIterator const& i, const CContext& co
 
     ++it;//skip ">"
 
-    CRef<CSeq_literal> seq_to = x_raw_seq_or_len(it, context);
+    CRef<CSeq_literal> seq_to = x_raw_seq(it, context);
     TDelta delta(new TDelta::TObjectType);
     delta->SetSeq().SetLiteral(*seq_to);
     var_inst.SetDelta().push_back(delta);
 
-    var_inst.SetType(GetDelInsSubtype(CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL), seq_to->GetLength()));
+    var_inst.SetType(
+            GetDelInsSubtype(
+                CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL), 
+                seq_to->GetLength()));
 
     return vr;
 }

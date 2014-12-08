@@ -637,7 +637,7 @@ protected:
 
                 no_change      = !raw_seq >> ch_p('=');
 
-                nuc_subst       = (!raw_seq) >> ch_p('>') >> raw_seq_or_len;
+                nuc_subst       = (!raw_seq) >> ch_p('>') >> raw_seq;
                     //According to the spec, substitution is exactly one base to the left and to the right of ">" (otherwise a delins)
                     //In reality, the submitters don't follow the spec and express delins as substitution,
                     //e.g. NM_000051:c.2077_2098>G or NM_000051:c.2077_2098AC>GTA.
