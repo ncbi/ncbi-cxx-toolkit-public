@@ -704,6 +704,7 @@ public:
     int TargetLen() const { return m_alignmap.TargetLen(); }
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
+    TInDels GetInDelsWithoutMismatches(bool fs_only) const;
     int PolyALen() const;
     CRef<objects::CSeq_align> MakeSeqAlign(const string& contig) const;   // should be used for alignments only; for chains and models will produce a Splign alignment of mRNA
 
@@ -850,6 +851,8 @@ list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
     for(unsigned int i = 1; i < algn.Exons().size(); ++i) {
         if (!algn.Exons()[i-1].m_ssplice || !algn.Exons()[i].m_fsplice) {
             Model m = algn;
+            m.Status() &= ~CGeneModel::ePolyA;
+            m.Status() &= ~CGeneModel::eCap;
             m.Clip(TSignedSeqRange(left,algn.Exons()[i-1].GetTo()),CGeneModel::eRemoveExons);
             if(!parts.empty() && settrimflags) {
                 parts.back().Status() &= ~CGeneModel::eRightTrimmed;
@@ -862,11 +865,26 @@ list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
     if(!parts.empty()) {
         Model m = algn;
         m.Clip(TSignedSeqRange(left,algn.Limits().GetTo()),CGeneModel::eRemoveExons);
+        m.Status() &= ~CGeneModel::ePolyA;
+        m.Status() &= ~CGeneModel::eCap;
         if(settrimflags) {
             parts.back().Status() &= ~CGeneModel::eRightTrimmed;
             m.Status() &= ~CGeneModel::eLeftTrimmed;
         }
         parts.push_back(m);
+
+        if(algn.Status()&CGeneModel::ePolyA) {
+            if(algn.Strand() == ePlus)
+                parts.back().Status() |= CGeneModel::ePolyA;
+            else
+                parts.front().Status() |= CGeneModel::ePolyA;
+        }
+        if(algn.Status()&CGeneModel::eCap) {
+            if(algn.Strand() == ePlus)
+                parts.front().Status() |= CGeneModel::eCap;
+            else
+                parts.back().Status() |= CGeneModel::eCap;
+        }
     }
 
     return parts;
