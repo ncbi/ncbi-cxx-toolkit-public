@@ -543,6 +543,27 @@ void CNetStorageHandler::x_SendWriteConfirmation()
         return;
     }
 
+    try {
+        m_ObjectBeingWritten.Close();
+    }
+    catch (const CException &  ex) {
+        x_SetCmdRequestStatus(eStatus_ServerError);
+
+        string  message = "Error while finalizing " +
+                          m_ObjectBeingWritten.GetLoc() + ": " + ex.GetMsg();
+        ERR_POST(message);
+        x_PrintMessageRequestStop();
+
+        CJsonNode   response = CreateErrorResponseMessage(
+                                    m_DataMessageSN,
+                                    CNetStorageServerException::eWriteError,
+                                    message);
+        x_SendSyncMessage(response);
+        m_ObjectBeingWritten = NULL;
+        m_DataMessageSN = -1;
+        return;
+    }
+
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Update of the meta DB is required. It differs depending it was an
         // object creation or writing into an existing one.
