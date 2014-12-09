@@ -1306,6 +1306,7 @@ START_SUBTYPE(attenuator)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1346,6 +1347,7 @@ START_SUBTYPE(CAAT_signal)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1458,6 +1460,7 @@ START_SUBTYPE(enhancer)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1503,6 +1506,7 @@ START_SUBTYPE(GC_signal)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1848,6 +1852,7 @@ START_SUBTYPE(polyA_signal)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1955,6 +1960,7 @@ START_SUBTYPE(promoter)
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
     ADD_QUAL(pseudogene);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1996,6 +2002,7 @@ START_SUBTYPE(RBS)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2265,6 +2272,7 @@ START_SUBTYPE(TATA_signal)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -2283,6 +2291,7 @@ START_SUBTYPE(terminator)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2490,6 +2499,7 @@ START_SUBTYPE(10_signal)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2509,6 +2519,7 @@ START_SUBTYPE(35_signal)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
