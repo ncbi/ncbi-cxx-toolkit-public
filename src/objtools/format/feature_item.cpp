@@ -1044,6 +1044,25 @@ string CFeatureItem::GetKey(void) const
         }
     }
 
+    if (type == CSeqFeatData::e_Imp) {
+        switch ( subtype ) {
+        case CSeqFeatData::eSubtype_enhancer:
+        case CSeqFeatData::eSubtype_promoter:
+        case CSeqFeatData::eSubtype_CAAT_signal:
+        case CSeqFeatData::eSubtype_TATA_signal:
+        case CSeqFeatData::eSubtype_35_signal:
+        case CSeqFeatData::eSubtype_10_signal:
+        case CSeqFeatData::eSubtype_GC_signal:
+        case CSeqFeatData::eSubtype_RBS:
+        case CSeqFeatData::eSubtype_polyA_signal:
+        case CSeqFeatData::eSubtype_attenuator:
+        case CSeqFeatData::eSubtype_terminator:
+            return "regulatory";
+        default:
+            break;
+        }
+    }
+
     return CFeatureItemBase::GetKey();
 }
 
@@ -1122,6 +1141,53 @@ void CFeatureItem::x_AddQualOperon(
                 x_AddQual(eFQ_operon, new CFlatStringQVal(operon_name));
             }
         }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsRegulatoryClass(
+    CBioseqContext& ctx,
+    CSeqFeatData::ESubtype subtype )
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT( m_Feat.GetData().IsImp() );
+
+    switch ( subtype ) {
+    case CSeqFeatData::eSubtype_enhancer:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("enhancer"));
+        break;
+    case CSeqFeatData::eSubtype_promoter:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("promoter"));
+        break;
+    case CSeqFeatData::eSubtype_CAAT_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("CAAT_signal"));
+        break;
+    case CSeqFeatData::eSubtype_TATA_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("TATA_box"));
+        break;
+    case CSeqFeatData::eSubtype_35_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("minus_35_signal"));
+        break;
+    case CSeqFeatData::eSubtype_10_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("minus_10_signal"));
+        break;
+    case CSeqFeatData::eSubtype_GC_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("GC_signal"));
+        break;
+    case CSeqFeatData::eSubtype_RBS:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("ribosome_binding_site"));
+        break;
+    case CSeqFeatData::eSubtype_polyA_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("polyA_signal_sequence"));
+        break;
+    case CSeqFeatData::eSubtype_attenuator:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("attenuator"));
+        break;
+    case CSeqFeatData::eSubtype_terminator:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("terminator"));
+        break;
+    default:
+        break;
     }
 }
 
@@ -1674,6 +1740,11 @@ void CFeatureItem::x_AddQuals(
     x_AddQualPseudo( ctx, type, subtype, pseudo );
     x_AddQualSeqfeatNote(ctx);
     x_AddQualsGb( ctx );
+
+    // dynamic mapping of old features to regulatory with regulatory_class qualifier
+    if ( type == CSeqFeatData::e_Imp ) {
+       x_AddQualsRegulatoryClass ( ctx, subtype );
+    }
 
     // cleanup (drop illegal quals, duplicate information etc.)
     x_CleanQuals( gene_ref );
@@ -3637,6 +3708,10 @@ void CFeatureItem::x_ImportQuals(
 
             break;
 
+        case eFQ_regulatory_class:
+            x_AddRegulatoryClassQual(val, check_qual_syntax);
+            break;
+
         default:
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
@@ -3725,6 +3800,54 @@ void CFeatureItem::x_AddRptTypeQual(
         if ( ! check_qual_syntax || s_IsValidRptType( *it ) ) {
             x_AddQual( eFQ_rpt_type, new CFlatStringQVal( *it, CFormatQual::eUnquoted ) );
         }
+    }
+}
+
+
+static bool s_IsValidRegulatoryClass(const string& type)
+{
+    static const char* const kValidClasses[] = {
+        "attenuator",
+        "CAAT_signal",
+        "enhancer",
+        "enhancer_blocking_element",
+        "GC_signal",
+        "imprinting_control_region",
+        "insulator",
+        "locus_control_region",
+        "minus_10_signal",
+        "minus_35_signal",
+        "other",
+        "polyA_signal_sequence",
+        "promoter",
+        "response_element",
+        "ribosome_binding_site",
+        "silencer",
+        "TATA_box",
+        "terminator"
+    };
+    typedef CStaticArraySet<string, PNocase> TValidRegClass;
+    DEFINE_STATIC_ARRAY_MAP(TValidRegClass, valid_types, kValidClasses);
+
+    return valid_types.find(type) != valid_types.end();
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddRegulatoryClassQual(
+    const string& regulatory_class, 
+    bool check_qual_syntax
+)
+//  ----------------------------------------------------------------------------
+{
+    if (regulatory_class.empty()) {
+        return;
+    }
+    
+    if ( ! check_qual_syntax || s_IsValidRegulatoryClass( regulatory_class ) ) {
+        x_AddQual( eFQ_regulatory_class, new CFlatStringQVal(regulatory_class));
+    } else {
+        x_AddQual( eFQ_regulatory_class, new CFlatStringQVal("other"));
+        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(regulatory_class));
     }
 }
 
