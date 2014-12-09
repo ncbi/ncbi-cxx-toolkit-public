@@ -923,7 +923,7 @@ void CTbl2AsnApp::ProcessOneFile()
                 if (result == 0)
                 {
                     string discr_filename = m_context.ReplaceFileExt(".dr");
-                    file.open(discr_filename);
+                    file.open(discr_filename.c_str());
                     result = &file;
                 }
                 val.ReportErrors(errors, *result);
