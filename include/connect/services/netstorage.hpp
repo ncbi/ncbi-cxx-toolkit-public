@@ -192,9 +192,16 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     ///
     void Read(string* data);
 
-    /// Get a reference to the IReader interface, which then can be
-    /// fed to a CRStream object to turn it into an std::istream.
-    /// Make sure the CRWStreambuf::fOwnReader flag is NOT used.
+    /// Get a reference to the IReader interface for reading the data
+    /// stream of this object.
+    ///
+    /// The returned reference can be fed to a CRStream object to turn
+    /// it into an std::istream. In this case, please make sure the
+    /// CRWStreambuf::fOwnReader flag is NOT used. It is, however,
+    /// better to use the GetRWStream() method for this purpose.
+    ///
+    /// @see GetRWStream()
+    ///
     IReader& GetReader();
 
     /// Check if the last Read() has hit EOF
@@ -221,10 +228,27 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     ///
     void Write(const void* buffer, size_t buf_size);
 
-    /// Get a reference to the IWriter interface, which then can be
-    /// fed to a CWStream object to turn it into an std::ostream.
-    /// Make sure the CRWStreambuf::fOwnWriter flag is NOT used.
+    /// Get a reference to the IWriter interface for storing data into
+    /// this object.
+    ///
+    /// The returned reference can be fed to a CWStream object to turn
+    /// it into an std::ostream. In this case, please make sure the
+    /// CRWStreambuf::fOwnWriter flag is NOT used. It is, however,
+    /// better to use the GetRWStream() method for this purpose.
+    ///
+    /// @note The IEmbeddedStreamWriter::Close() method must be
+    /// explicitly called in order to catch the errors that may
+    /// happen during object finalization.
+    ///
+    /// @see GetRWStream()
+    ///
     IEmbeddedStreamWriter& GetWriter();
+
+    /// Get an iostream instance for reading the data stream of this
+    /// NetStorage object as well as storing data into this object.
+    /// The returned iostream object must be deleted by the caller.
+    ///
+    CNcbiIostream* GetRWStream();
 
     /// Write string to the object (starting at the current position)
     ///

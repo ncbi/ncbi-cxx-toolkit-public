@@ -37,6 +37,8 @@
 #include "compound_id.hpp"
 #include "netcache_api.hpp"
 
+#include <corelib/rwstream.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /// @internal
@@ -68,6 +70,18 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
+};
+
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectRWStream : public CRWStream
+{
+    SNetStorageObjectRWStream(SNetStorageObjectImpl* nst_object) :
+        CRWStream(nst_object, nst_object, /*buf_size*/ 0, /*buf*/ NULL,
+            CRWStreambuf::fLeakExceptions),
+        m_NetStorageObject(nst_object)
+    {
+    }
+
+    CNetStorageObject m_NetStorageObject;
 };
 
 inline string CNetStorageObject::GetLoc()
@@ -110,6 +124,11 @@ inline void CNetStorageObject::Write(const string& data)
 inline IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
 {
     return m_Impl->GetWriter();
+}
+
+inline CNcbiIostream* CNetStorageObject::GetRWStream()
+{
+    return new SNetStorageObjectRWStream(m_Impl);
 }
 
 inline Uint8 CNetStorageObject::GetSize()

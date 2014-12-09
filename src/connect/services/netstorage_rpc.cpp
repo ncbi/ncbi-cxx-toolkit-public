@@ -287,7 +287,7 @@ static void s_TrapErrors(const CJsonNode& request,
                         request.GetString("Type") << " "
                 "on NetStorage server " <<
                         sock->GetPeerAddress() << ". "
-                "Server returned " << errors << '.');
+                "Server returned " << errors);
 
         if (file_not_found) {
             NCBI_THROW_FMT(CNetStorageException, eNotExists, err_msg);
