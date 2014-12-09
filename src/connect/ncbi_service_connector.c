@@ -825,7 +825,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             /* Fallback to try to use stateless mode instead */
             return s_Open(uuu, timeout, info, net_info, status);
         }
-        if (!uuu->host  ||  !uuu->port)) {
+        if (!uuu->host  ||  !uuu->port) {
             /* no connection info found */
             if (*status == eIO_Success)
                 *status  = eIO_Unknown;
