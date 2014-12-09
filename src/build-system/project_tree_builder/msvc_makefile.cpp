@@ -259,7 +259,10 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
         name += "dll.";
         break;
     case CProjKey::eMsvc:
-        name += "msvcproj.";
+        if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eMsvcWin32 ||
+            CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eMsvcX64) {
+            name += "msvcproj.";
+        }
         break;
     case CProjKey::eDataSpec:
         name += "dataspec.";

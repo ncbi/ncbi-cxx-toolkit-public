@@ -202,7 +202,8 @@ void CMacProjectGenerator::Generate(const string& solution)
                 AddString( *dataspec_dependencies, proj_dependency);
             }
             if (prj.m_ProjType != CProjKey::eLib && prj.m_ProjType != CProjKey::eDll &&
-                prj.m_ProjType != CProjKey::eApp && prj.m_ProjType != CProjKey::eDataSpec) {
+                prj.m_ProjType != CProjKey::eApp && prj.m_ProjType != CProjKey::eDataSpec &&
+                prj.m_ProjType != CProjKey::eMsvc) {
                 continue;
             }
             if (add_composite) {
@@ -817,7 +818,7 @@ string CMacProjectGenerator::CreateProjectBuildPhase(
     const CProjItem& prj,
     CDict& dict_objects, CRef<CArray>& build_files)
 {
-    if (prj.m_ProjType == CProjKey::eDataSpec) {
+    if (prj.m_ProjType == CProjKey::eDataSpec || prj.m_ProjType == CProjKey::eMsvc) {
         return kEmptyStr;
     }
 #if USE_VERBOSE_NAMES
@@ -921,14 +922,14 @@ string CMacProjectGenerator::CreateProjectTarget(
         }
     }
     AddArray(  *dict_target, "dependencies", dependencies);
-    if (prj.m_ProjType == CProjKey::eDataSpec) {
+    if (prj.m_ProjType == CProjKey::eDataSpec || prj.m_ProjType == CProjKey::eMsvc) {
         AddString( *dict_target, "isa", "PBXAggregateTarget");
     } else {
         AddString( *dict_target, "isa", "PBXNativeTarget");
     }
     AddString( *dict_target, "name", target_name);
     AddString( *dict_target, "productName", target_name);
-    if (prj.m_ProjType != CProjKey::eDataSpec) {
+    if (prj.m_ProjType != CProjKey::eDataSpec && prj.m_ProjType != CProjKey::eMsvc) {
         AddString( *dict_target, "productReference", product_id);
         AddString( *dict_target, "productType", product_type);
     }
@@ -1174,7 +1175,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
     }
-    if (prj.m_ProjType != CProjKey::eDataSpec) {
+    if (prj.m_ProjType != CProjKey::eDataSpec && prj.m_ProjType != CProjKey::eMsvc) {
         AddString( *settings, "MACH_O_TYPE", GetMachOType(prj));
     }
 
@@ -1219,7 +1220,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     }
 
     AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
-    if (prj.m_ProjType == CProjKey::eDataSpec) {
+    if (prj.m_ProjType == CProjKey::eDataSpec || prj.m_ProjType == CProjKey::eMsvc) {
         return;
     }
 

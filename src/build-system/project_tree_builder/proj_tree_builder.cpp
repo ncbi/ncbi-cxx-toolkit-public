@@ -116,7 +116,9 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
     string fname_dll = CDirEntry::ConcatPath(base_dir, fname + ".dll");
     string fname_msvc= CDirEntry::ConcatPath(base_dir, fname);
     string fname_msvc2(fname_msvc);
-    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eMsvcWin32 ||
+        CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eMsvcX64) {
         fname_msvc += ".msvcproj";
     } else {
         fname_msvc2 += ".in";
@@ -214,11 +216,13 @@ bool SMakeProjectT::IsMakeAppFile(const string& name)
 }
 
 
+/*
 bool SMakeProjectT::IsUserProjFile(const string& name)
 {
     return NStr::StartsWith(name, "Makefile")  &&  
 	       NStr::EndsWith(name, ".msvcproj");
 }
+*/
 
 
 void SMakeProjectT::DoResolveDefs(CSymResolver& resolver, 
@@ -674,6 +678,8 @@ void SMakeProjectT::AnalyzeMakeIn
 
     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         p = makein_contents.m_Contents.find("UNIX_PROJ");
+    } else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode) {
+        p = makein_contents.m_Contents.find("XCODE_PROJ");
     } else {
         p = makein_contents.m_Contents.find("MSVC_PROJ");
     }
@@ -712,7 +718,7 @@ string SMakeProjectT::CreateMakeAppLibFileName
             if (!CDirEntry( CDirEntry::ConcatPath(base_dir,fname)).Exists()) {
                 fname += ".in";
             }
-        } else {
+        } else if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eXCode) {
             fname += ".msvcproj";
         }
         break;
@@ -2237,7 +2243,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         proj_id = proj_name;
     } else {
-        k = m->second.m_Contents.find("MSVC_PROJ");
+        bool is_xcode = CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode;
+        k = m->second.m_Contents.find(is_xcode ? "XCODE_PROJ" : "MSVC_PROJ");
         if (k == m->second.m_Contents.end()  ||  
                                                k->second.empty()) {
 
@@ -2269,7 +2276,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
 
     string vcproj_file;
     list<string> sources;
-    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix &&
+        CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eXCode) {
         // VCPROJ - will map to src
         string vcproj_key("VCPROJ");
         if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
@@ -2614,7 +2622,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         if ( process_projects ) {
         string userproj[] = {"UNIX_PROJ","EXPENDABLE_UNIX_PROJ", ""};
         if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
-            userproj[0] = "MSVC_PROJ";
+            bool is_xcode = CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode;
+            userproj[0] = is_xcode ? "XCODE_PROJ" : "MSVC_PROJ";
             userproj[1] = "";
         }
         EMakeFileType usertype[] = {eMakeType_Undefined,eMakeType_Expendable};
@@ -2634,7 +2643,10 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                             s_WriteBuildOrder(dir_name,"Makefile." + *i + ".in");
                         }
                     } else {
-                        string mkname("Makefile." + *i + ".msvcproj");
+                        string mkname("Makefile." + *i);
+                        if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eXCode) {
+                            mkname += ".msvcproj";
+                        }
                         userprojects[mkname] = max(maketype, usertype[j]);
                         if (get_order) {
                             s_WriteBuildOrder(dir_name,mkname);
