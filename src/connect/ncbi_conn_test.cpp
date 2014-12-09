@@ -334,7 +334,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
                 continue;
             }
         }
-    } while (!deadline.IsExpired());
+    } while (status != eIO_Interrupt  &&  !deadline.IsExpired());
 
     if (status == eIO_Success  &&  http.size())
         status  = eIO_Timeout;
