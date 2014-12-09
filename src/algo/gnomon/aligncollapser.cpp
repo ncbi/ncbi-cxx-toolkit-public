@@ -806,6 +806,551 @@ struct GenomicGapsOrder {
     }
 };
 
+#define MISM_PENALTY 10
+#define INDEL_PENALTY 20
+#define EXTRA_CUT 5
+#define BIG_NOT_ALIGNED 20
+void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& trans) const {
+
+    string transcript = trans;   // transcript as it appears on the genome
+    if(align.Orientation() == eMinus)
+        ReverseComplement(transcript.begin(),transcript.end());
+
+    int tlen = align.TargetLen();
+    _ASSERT(tlen == (int)transcript.size());
+
+    //expand not splices exons if identical
+    CGeneModel::TExons exons = align.Exons();
+    vector<TSignedSeqRange> transcript_exons;
+    transcript_exons.reserve(exons.size());
+    for(int ie = 0; ie < (int)exons.size(); ++ie) {
+        transcript_exons.push_back(align.TranscriptExon(ie));
+    }
+    if(align.Orientation() == eMinus) {
+        for(int ie = 0; ie < (int)exons.size(); ++ie) {
+            TSignedSeqRange& te = transcript_exons[ie];
+            te = TSignedSeqRange(tlen-1-te.GetTo(),tlen-1-te.GetFrom());
+        }
+    }
+    for(int ie = 0; ie < (int)exons.size(); ++ie) {
+        if(!exons[ie].m_fsplice) {
+            int glim = (ie > 0) ? exons[ie-1].GetTo() : -1;
+            int tlim = (ie > 0) ? transcript_exons[ie-1].GetTo() : -1;
+            int g = exons[ie].GetFrom();
+            int t = transcript_exons[ie].GetFrom();
+            while(g > glim+1 && t > tlim+1 && transcript[t-1] == m_contig[g-1]) {
+                --t;
+                --g;
+            }
+            if(g < exons[ie].GetFrom()) {
+                exons[ie].AddFrom(g-exons[ie].GetFrom());
+                exons[ie].m_fsplice_sig.clear();
+                transcript_exons[ie].SetFrom(t);
+            }
+        }
+        if(!exons[ie].m_ssplice) {
+            int glim = (ie+1 < (int)exons.size()) ? exons[ie+1].GetFrom() : m_contig.size();
+            int tlim = (ie+1 < (int)exons.size()) ? transcript_exons[ie+1].GetFrom() : transcript.size();
+            int g = exons[ie].GetTo();
+            int t = transcript_exons[ie].GetTo();
+            while(g < glim-1 && t < tlim-1 && transcript[t+1] == m_contig[g+1]) {
+                ++t;
+                ++g;
+            }
+            if(g > exons[ie].GetTo()) {
+                exons[ie].AddTo(g-exons[ie].GetTo());
+                exons[ie].m_ssplice_sig.clear();
+                transcript_exons[ie].SetTo(t);
+            }
+        }
+    }
+
+    CAlignMap amap(exons,transcript_exons, align.GetInDels(false), ePlus, tlen);
+
+    CGeneModel editedmodel = align;
+    editedmodel.ClearExons();  // empty alignment with all atributes
+    vector<TSignedSeqRange> edited_transcript_exons;
+
+    for (int piece_begin = 0; piece_begin < (int)exons.size(); ++piece_begin) {
+        _ASSERT( !align.Exons()[piece_begin].m_fsplice );
+        int piece_end = piece_begin;
+        for( ; align.Exons()[piece_end].m_ssplice; ++piece_end);
+        _ASSERT(piece_end < (int)align.Exons().size());
+
+        TInDels all_indels = align.GetInDels(exons[piece_begin].GetFrom(), exons[piece_end].GetTo(), false);   // possibly include mismatches as insertion/deletion pairs
+        TInDels indels;   // indels without mismatches
+        for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
+            TInDels::iterator next = i+1;
+            int mism = 0;
+            if(next != all_indels.end())
+                mism = i->IsMismatch(*next);
+            if(mism > 0) {  // mismatch pair and possibly indel
+                if(i->Len() > mism)
+                    indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
+                else if(next->Len() > mism)
+                    indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
+                i = next;
+            } else {
+                indels.push_back(*i);
+            }
+        }
+        TInDels::const_iterator indl = indels.begin();
+
+        string tseq;
+        string gseq;
+        TIVec exons_to_align;
+        int tp = transcript_exons[piece_begin].GetFrom();
+        for(int ie = piece_begin; ie <= piece_end; ++ie) {
+            int gp = exons[ie].GetFrom();
+            while(gp <= exons[ie].GetTo()) {
+                if(indl == indels.end() || indl->Loc() != gp) {
+                    tseq.push_back(transcript[tp++]);
+                    gseq.push_back(m_contig[gp++]);
+                } else if(indl->IsDeletion()) {
+                    tseq += transcript.substr(tp,indl->Len());
+                    gseq.insert(gseq.end(),indl->Len(),'-');
+                    tp += indl->Len();
+                    ++indl;
+                } else {
+                    tseq.insert(tseq.end(),indl->Len(),'-');
+                    gseq += m_contig.substr(gp,indl->Len());
+                    gp += indl->Len(); 
+                    ++indl;
+                }
+            }
+            if(indl != indels.end() && indl->Loc() == gp) {   // deletion at the end of exon
+                _ASSERT(indl->IsDeletion());
+                tseq += transcript.substr(tp,indl->Len());
+                gseq.insert(gseq.end(), indl->Len(), '-');
+                tp += indl->Len();
+                ++indl;
+            }
+            exons_to_align.push_back(gseq.size()-1);
+        }
+        _ASSERT(tseq.size() == gseq.size() && indl == indels.end());
+
+        TIVec score(tseq.size());
+        for(int i = 0; i < (int)score.size(); ++i) {
+            if(tseq[i] == gseq[i])
+                score[i] = 1;
+            else if(tseq[i] == '-' || gseq[i] == '-')
+                score[i] = -INDEL_PENALTY;
+            else
+                score[i] = -MISM_PENALTY;
+            if(i > 0)
+                score[i] += score[i-1];
+            score[i] = max(0,score[i]);
+        }
+
+        int align_right = max_element(score.begin(),score.end())-score.begin();
+        if(score[align_right] > 0) {  // there is at least one match
+            int align_left = align_right;
+            while(align_left > 0 && score[align_left-1] > 0)
+                --align_left;
+
+            int agaps = count(tseq.begin(), tseq.begin()+align_left, '-');
+            int bgaps = count(tseq.begin(), tseq.begin()+align_right, '-');
+            TSignedSeqRange trange(transcript_exons[piece_begin].GetFrom()+align_left-agaps, transcript_exons[piece_begin].GetFrom()+align_right-bgaps);
+
+            TSignedSeqRange grange = amap.MapRangeEditedToOrig(trange, false);
+            _ASSERT(grange.NotEmpty());
+            
+            int pb = piece_begin;
+            while(exons[pb].GetTo() < grange.GetFrom())
+                ++pb;
+            int pe = piece_end;
+            while(exons[pe].GetFrom() > grange.GetTo())
+                --pe;
+
+            double lident = 0;
+            int len = 0;
+            for(int i = align_left; i <= min(align_right,exons_to_align[pb-piece_begin]); ++i) {
+                ++len;
+                if(tseq[i] == gseq[i])
+                    ++lident;
+            }
+            lident /= len;
+
+            double rident = 0;
+            len = 0;
+            for(int i = align_right; i >= (pe > 0 ? exons_to_align[pe-1-piece_begin]+1 : align_left); --i) {
+                ++len;
+                if(tseq[i] == gseq[i])
+                    ++rident;
+            }
+            rident /= len;
+
+            //find splices if possible
+            string lsplice_sig;
+            string rsplice_sig;
+            if(!(align.Status()&CGeneModel::eUnknownOrientation)) {
+                int distance_to_lgap = -1;
+                TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(grange.GetFrom());
+                if(igap != m_genomic_gaps_len.begin()) {
+                    --igap;
+                    distance_to_lgap = grange.GetFrom()-(igap->first+igap->second);
+                }
+                if(distance_to_lgap == 0) { // ubutting gap      
+                    lsplice_sig = "NN";
+                } else if(trange.GetFrom() > BIG_NOT_ALIGNED) {
+                    string splice = (align.Strand() == ePlus) ? "AG" : "AC";
+                    for(int p = max(0,grange.GetFrom()-2); p <= min(grange.GetFrom()+EXTRA_CUT,exons[pb].GetTo()-MISM_PENALTY)-2; ++p) {
+                        if(m_contig[p] == splice[0] && m_contig[p+1] == splice[1]) {
+                            trange.SetFrom(trange.GetFrom()+ p+2-grange.GetFrom());
+                            grange.SetFrom(p+2);
+                            lsplice_sig = splice;
+                            if(align.Strand() == eMinus)
+                                ReverseComplement(lsplice_sig.begin(),lsplice_sig.end());
+                            break;
+                        }
+                    }
+                }
+                
+                int distance_to_rgap = -1;
+                igap = m_genomic_gaps_len.lower_bound(grange.GetTo());
+                if(igap != m_genomic_gaps_len.end())
+                    distance_to_rgap = igap->first-grange.GetTo()-1;
+                if(distance_to_rgap == 0) { // ubutting gap      
+                    rsplice_sig = "NN";
+                } else if(tlen-trange.GetTo()-1 > BIG_NOT_ALIGNED) {
+                    string splice = (align.Strand() == ePlus) ? "GT" : "CT";
+                    for(int p = min((int)m_contig.size()-1,grange.GetTo()+2); p >= max(grange.GetTo()-EXTRA_CUT,exons[pe].GetFrom()+MISM_PENALTY)+2; --p) {
+                        if(m_contig[p-1] == splice[0] && m_contig[p] == splice[1]) {
+                            trange.SetTo(trange.GetTo()-grange.GetTo()+p-2);
+                            grange.SetTo(p-2);
+                            rsplice_sig = splice;
+                            if(align.Strand() == eMinus)
+                                ReverseComplement(rsplice_sig.begin(),rsplice_sig.end());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for( int ie = pb; ie <= pe; ++ie) {
+                string fs = exons[ie].m_fsplice_sig;
+                int gleft = exons[ie].GetFrom();
+                int tleft = transcript_exons[ie].GetFrom();
+                string ss = exons[ie].m_ssplice_sig;
+                int gright = exons[ie].GetTo();
+                int tright = transcript_exons[ie].GetTo();
+                double ident = exons[ie].m_ident;
+                if(ie == pb) {
+                    gleft = grange.GetFrom();
+                    tleft = trange.GetFrom();
+                    fs = lsplice_sig;
+                    ident = lident;
+                }
+                if(ie == pe) {
+                    gright = grange.GetTo();
+                    tright = trange.GetTo();
+                    ss = rsplice_sig;
+                    ident = rident;
+                }
+                editedmodel.AddExon(TSignedSeqRange(gleft,gright),fs, ss, ident);
+                edited_transcript_exons.push_back(TSignedSeqRange(tleft,tright));
+            }
+            editedmodel.AddHole();
+        }
+        piece_begin = piece_end;
+    }
+    
+    if(align.Orientation() == eMinus) {
+        for(int ie = 0; ie < (int)edited_transcript_exons.size(); ++ie) {
+            TSignedSeqRange& te = edited_transcript_exons[ie];
+            te = TSignedSeqRange(tlen-1-te.GetTo(),tlen-1-te.GetFrom());
+        }
+    }
+    CAlignMap editedamap(editedmodel.Exons(),edited_transcript_exons, align.GetInDels(false), align.Orientation(), tlen);
+    CAlignModel editedalign(editedmodel, editedamap);
+    editedalign.SetTargetId(*align.GetTargetId());
+
+    align = editedalign;
+}
+
+
+#define CHECK_LENGTH 10
+#define CLOSE_GAP 5
+void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& transcript, bool right_edge) const {
+
+    if(align.Exons()[ie].Limits().GetLength() < CHECK_LENGTH)
+        return;
+    if(align.Status()&CGeneModel::ePolyA) {
+        if(ie == 0 && align.Strand() == eMinus && !right_edge)
+            return;
+        if(ie == (int)align.Exons().size()-1 && align.Strand() == ePlus && right_edge)
+            return;
+    }
+
+    TSignedSeqRange texon = align.TranscriptExon(ie);
+    TSignedSeqRange tgap;
+    if((ie == 0 && !right_edge && align.Orientation() == ePlus) || (ie == (int)align.Exons().size()-1 && right_edge && align.Orientation() == eMinus)) {  // 5p not aligned
+        tgap.SetFrom(0);
+        tgap.SetTo(texon.GetFrom()-1);
+    } else if((ie == 0 && !right_edge && align.Orientation() == eMinus) || (ie == (int)align.Exons().size()-1 && right_edge && align.Orientation() == ePlus)) { // 3p not aligned
+        tgap.SetFrom(texon.GetTo()+1);
+        tgap.SetTo(align.TargetLen()-1);
+    } else {  // hole
+        if(right_edge)
+            tgap = align.GetAlignMap().MapRangeOrigToEdited(TSignedSeqRange(align.Exons()[ie].GetTo(),align.Exons()[ie+1].GetFrom()), false);
+        else
+            tgap = align.GetAlignMap().MapRangeOrigToEdited(TSignedSeqRange(align.Exons()[ie-1].GetTo(),align.Exons()[ie].GetFrom()), false);
+
+        tgap.SetFrom(tgap.GetFrom()+1);
+        tgap.SetTo(tgap.GetTo()-1);
+    }
+
+
+    //transcript sequence for exon+not aligned
+    string tseq = transcript.substr((texon+tgap).GetFrom(),(texon+tgap).GetLength());
+    if(align.Orientation() == eMinus)
+        ReverseComplement(tseq.begin(),tseq.end());   // tseq in genome direction (gap is on 'right/left' side)
+
+    int direction = right_edge ? 1 : -1;
+    int gedge = right_edge ? align.Exons()[ie].GetTo() : align.Exons()[ie].GetFrom();  // last aligned base before gap in genome coordinates
+    int tedge = right_edge ? texon.GetLength()-1 : tgap.GetLength();                   // last aligned base before gap in tseq coordinates
+
+    //expand if identical
+    int gleftlim = 0;
+    if(!right_edge && ie > 0)
+        gleftlim = align.Exons()[ie-1].GetTo()+1;
+    int grightlim = m_contig.length()-1;
+    if(right_edge && ie < (int)align.Exons().size()-1)
+        grightlim = align.Exons()[ie+1].GetFrom()-1;
+    while(gedge+direction >= gleftlim && gedge+direction <= grightlim && 
+          tedge+direction >= 0 && tedge+direction < (int)tseq.length() && 
+          tseq[tedge+direction] == m_contig[gedge+direction]) {
+        gedge += direction;
+        tedge += direction;
+    }
+
+    // cut not aligned transceipt sequence
+    int not_aligned_length = tseq.length();
+    if(right_edge)
+        tseq = tseq.substr(0,tedge+1);
+    else
+        tseq = tseq.substr(tedge);
+    not_aligned_length -= tseq.length();
+
+    int gleft = min(gedge,align.Exons()[ie].GetFrom());
+    int gright = max(gedge,align.Exons()[ie].GetTo());
+    string gseq = m_contig.substr(gleft,gright-gleft+1);
+    
+    //insert indels into both sequences
+    TInDels all_indels = align.GetAlignMap().GetInDels(false);   // possibly include mismatches as insertion/deletion pairs
+
+    TInDels indels;   // indels without mismatches
+    for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
+        TInDels::iterator next = i+1;
+        int mism = 0;
+        if(next != all_indels.end())
+            mism = i->IsMismatch(*next);
+        if(mism > 0) {  // mismatch pair and possibly indel
+            if(i->Len() > mism)
+                indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
+            else if(next->Len() > mism)
+                indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
+            i = next;
+        } else {
+            indels.push_back(*i);
+        }
+    }
+
+    TInDels::const_iterator indl = indels.end();
+    ITERATE(TInDels, i, indels) {
+        if(i->Loc() < align.Exons()[ie].GetFrom())
+            continue;
+        if(i->IsDeletion() && i->Loc() == align.Exons()[ie].GetFrom() && !align.Exons()[ie].m_fsplice)
+            continue;
+
+        indl = i;
+        break;
+    }
+    int gp = 0;
+    int tp = 0;
+    for(int i = gleft; i <= gright && indl != indels.end(); ++i) {
+        if(indl->Loc() == i) {
+            if(indl->IsDeletion()) {
+                gseq.insert(gp, indl->Len(), '#');
+                gp += indl->Len();
+                tp += indl->Len();
+            } else {
+                tseq.insert(tp, indl->Len(), '#');
+            }
+            ++indl;
+        } 
+
+        ++gp;
+        ++tp;        
+    }
+    if(indl != indels.end() && indl->Loc() == gright+1 && indl->IsDeletion()) {   // deletion at the end of exon
+        gseq.insert(gp, indl->Len(), '#');
+    }
+    _ASSERT(gseq.length() == tseq.length() && gseq.length() >= CHECK_LENGTH);
+
+
+    //trim mismatches
+    int mismatches = 0;
+    if(right_edge) {  // reverse sequences for easy counting
+        reverse(gseq.begin(),gseq.end());
+        reverse(tseq.begin(),tseq.end());
+    }
+    for(int i = 0; i < CHECK_LENGTH; ++i) {
+        if(gseq[i] != tseq[i])
+            ++mismatches;
+    }
+    while(mismatches > 0 && gseq.length() > CHECK_LENGTH) {
+        if(gseq[0] != '#')
+            gedge -= direction;
+        if(tseq[0] != '#')
+            ++not_aligned_length;
+        if(gseq[0] != tseq[0])
+            --mismatches;
+        if(gseq[CHECK_LENGTH] != tseq[CHECK_LENGTH])
+            ++mismatches;
+        gseq.erase(gseq.begin());
+        tseq.erase(tseq.begin());
+    }
+
+    if(mismatches == 0) {  
+        int distance_to_gap = -1;
+        if(right_edge) {
+            TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(gedge);
+            if(igap != m_genomic_gaps_len.end())
+                distance_to_gap = igap->first-gedge-1;
+        } else {
+            TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(gedge);
+            if(igap != m_genomic_gaps_len.begin()) {
+                --igap;
+                distance_to_gap = gedge-(igap->first+igap->second);
+            }
+        }
+
+
+        double ident = 0.;
+        for(int i = 0; i < (int)gseq.length(); ++i) {
+            if(gseq[i] == tseq[i])
+                ++ident;
+        }
+        ident /= gseq.length();
+
+        //find splice if possible
+        string splice_sig;
+        if(distance_to_gap == 0) { // ubutting gap      
+            splice_sig = "NN";
+        } else if(distance_to_gap > CLOSE_GAP && not_aligned_length > BIG_NOT_ALIGNED) {
+            int extracut = 0; 
+            string splice, splice2;
+            if(right_edge) {
+                splice = (align.Strand() == ePlus) ? "GT" : "CT";
+                if(align.Status()&CGeneModel::eUnknownOrientation)
+                    splice2 = (align.Strand() == ePlus) ? "CT" : "GT";
+            } else {
+                splice = (align.Strand() == ePlus) ? "AG" : "AC";
+                if(align.Status()&CGeneModel::eUnknownOrientation)
+                    splice2 = (align.Strand() == ePlus) ? "AC" : "AG";
+            }
+
+            string spl;
+            while(gseq.length() > CHECK_LENGTH && extracut < EXTRA_CUT && gseq[CHECK_LENGTH] == tseq[CHECK_LENGTH]) {
+                spl = m_contig.substr(min(gedge+1,gedge+2*direction),2);
+                if(spl == splice || spl == splice2)
+                    break;
+
+                gedge -= direction;
+                ++extracut;
+                gseq.erase(gseq.begin());
+                tseq.erase(tseq.begin());
+            }
+
+            if(spl == splice || spl == splice2) {
+                if(align.Strand() == eMinus)
+                    ReverseComplement(spl.begin(),spl.end());
+                splice_sig = spl;
+
+                ident = 0.;
+                for(int i = 0; i < (int)gseq.length(); ++i) {
+                    if(gseq[i] == tseq[i])
+                        ++ident;
+                }
+                ident /= gseq.length();
+            } else {                           // didn't find splice - reverse extracut
+                gedge += extracut*direction;   // gseq and tseq are invalid after this point !!!!
+            }
+        }
+        
+        CGeneModel editedmodel = align;
+        editedmodel.ClearExons();  // empty alignment with all atributes
+        vector<TSignedSeqRange> transcript_exons;
+        
+        for(int i = 0; i < (int)align.Exons().size(); ++i) {
+            TSignedSeqRange te = align.TranscriptExon(i);
+            const CModelExon& e = align.Exons()[i];
+            if(i == ie) {
+                if(right_edge) {
+                    editedmodel.AddExon(TSignedSeqRange(e.GetFrom(),gedge),e.m_fsplice_sig, splice_sig, ident);
+                    if(gedge < e.GetTo()) { // clip
+                        te = align.GetAlignMap().MapRangeOrigToEdited(editedmodel.Exons().back().Limits(), align.Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint, CAlignMap::eSinglePoint);
+                        _ASSERT(te.NotEmpty());
+                    } else if(gedge > e.GetTo()) { // expansion
+                        int delta = gedge-e.GetTo();
+                        if(align.Orientation() == ePlus)
+                            te.SetTo(te.GetTo()+delta);
+                        else
+                            te.SetFrom(te.GetFrom()-delta);
+                    }
+                } else {
+                    editedmodel.AddExon(TSignedSeqRange(gedge,e.GetTo()), splice_sig, e.m_ssplice_sig, ident);
+                    if(gedge > e.GetFrom()) { // clip
+                        te = align.GetAlignMap().MapRangeOrigToEdited(editedmodel.Exons().back().Limits(), CAlignMap::eSinglePoint, align.Exons()[i].m_ssplice ? CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
+                        _ASSERT(te.NotEmpty());
+                    } else if(gedge < e.GetFrom()) { // expansion
+                        int delta = e.GetFrom()-gedge;
+                        if(align.Orientation() == ePlus)
+                            te.SetFrom(te.GetFrom()-delta);
+                        else
+                            te.SetTo(te.GetTo()+delta);
+                    }
+                }
+            } else {
+                editedmodel.AddExon(e.Limits(), e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
+            }
+            transcript_exons.push_back(te);
+
+            if(i < (int)align.Exons().size()-1 && (!align.Exons()[i].m_ssplice || !align.Exons()[i+1].m_fsplice))
+                editedmodel.AddHole();
+        }
+
+        CAlignMap editedamap(editedmodel.Exons(), transcript_exons, all_indels, align.Orientation(), align.GetAlignMap().TargetLen());
+        CAlignModel editedalign(editedmodel, editedamap);
+        editedalign.SetTargetId(*align.GetTargetId());
+
+        align = editedalign;
+    }
+}
+
+
+int TotalFrameShift(const TInDels& indels, int a, int b) {
+    int fs = 0;
+    ITERATE(TInDels, indl, indels) {
+        if(!indl->IntersectingWith(a, b))
+            continue;
+        if(indl->IsInsertion())
+            fs += indl->Len();
+        else
+            fs -= indl->Len();
+    }
+    
+    return fs%3;
+}
+
+
+
+int TotalFrameShift(const TInDels& indels, TSignedSeqRange range = TSignedSeqRange::GetWhole()) {
+
+    return TotalFrameShift(indels, range.GetFrom(), range.GetTo());
+}
+
 
 
 void CAlignCollapser::FilterAlignments() {
@@ -1054,10 +1599,10 @@ void CAlignCollapser::FilterAlignments() {
   
     //splices which should not be crossed
     double mincrossexpression = args["sharp-boundary"].AsDouble();
-    vector<int> left_plus(len,right_end);       // closest left + strand splice 'on the right' from the current position
-    vector<int> left_minus(len,right_end);      // closest left - strand splice 'on the right' from the current position
-    vector<int> right_plus(len,m_left_end);       // closest right + strand splice 'on the left' from the current position
-    vector<int> right_minus(len,m_left_end);      // closest right - strand splice 'on the left' from the current position
+    TIVec left_plus(len,right_end);       // closest left + strand splice 'on the right' from the current position
+    TIVec left_minus(len,right_end);      // closest left - strand splice 'on the right' from the current position
+    TIVec right_plus(len,m_left_end);       // closest right + strand splice 'on the left' from the current position
+    TIVec right_minus(len,m_left_end);      // closest right - strand splice 'on the left' from the current position
     ITERATE(TAlignIntrons, it, m_align_introns) {
         const SIntron& intron = it->first;
         int a = intron.m_range.GetFrom();
@@ -1239,26 +1784,34 @@ void CAlignCollapser::FilterAlignments() {
             align.Status() |= CGeneModel::eChangedByFilter;  
     }
 
-    //clean self species cDNA edges
+    TIVec self_coverage(len,0);
+
+    //clean self species cDNA edges and calculate self coverage
     for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
         TAlignModelList::iterator i = it++;
         CAlignModel& align = *i;
 
         if(align.Status()&CGeneModel::eGapFiller) {
             string transcript = GetDNASequence(align.GetTargetId(),*m_scope);
-            for(int ie = 0; ie < (int)align.Exons().size(); ++ie) {
-                if(!align.Exons()[ie].m_fsplice) {
-                    CleanExonEdge(ie, align, transcript, false);
-                }
-                if(!align.Exons()[ie].m_ssplice) {
-                    CleanExonEdge(ie, align, transcript, true);
-                }
-            } 
-        }
-    }
-    
 
-#define MIN_EXON 30      
+            CleanSelfTranscript(align, transcript);
+
+            ITERATE(CGeneModel::TExons, ie, align.Exons()) {
+                int a = max(m_left_end, ie->GetFrom()); // TSA could be slightly extended in the area without alignments
+                int b = min(right_end, ie->GetTo());
+                for(int p = a; p <= b; ++p) {
+                    ++self_coverage[p-m_left_end];
+                }
+            }
+        }
+    }    
+
+    typedef pair<TSignedSeqRange,TInDels> TGapEnd;
+    set<TGapEnd> right_gends;   //rightmost exon befor gap
+    set<TGapEnd> left_gends;    // leftmost exon before gap
+
+#define MIN_EXON 10
+#define DESIRED_CHUNK 100      
     //cut NotForChaining and fill gaps
     for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
         TAlignModelList::iterator i = it++;
@@ -1270,6 +1823,12 @@ void CAlignCollapser::FilterAlignments() {
             continue;
         } 
 
+        ITERATE(CGeneModel::TExons, ie, align.Exons()) {
+            TInDels fs = align.GetInDels(ie->GetFrom(), ie->GetTo(), true);
+            left_gends.insert(TGapEnd(ie->Limits(),fs));
+            right_gends.insert(TGapEnd(ie->Limits(),fs));
+        }
+        
         if(!(align.Type()&CGeneModel::eNotForChaining)) {
             CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(align, efill_left|efill_right|efill_middle);
             if(editedalign.Exons().size() > align.Exons().size()) {
@@ -1277,74 +1836,101 @@ void CAlignCollapser::FilterAlignments() {
                 m_aligns_for_filtering_only.erase(i);
             }
         } else {
-            if(align.Exons().front().Limits().GetLength() > MIN_EXON/2) {
+            align.Status() &= ~CGeneModel::ePolyA;
+            align.Status() &= ~CGeneModel::eCap;
+            if(align.Exons().front().Limits().GetLength() > MIN_EXON) {
                 CAlignModel a = align;
-                TSignedSeqRange l;
-                if(align.Exons().front().m_ssplice)
-                    l = a.Exons().front().Limits();
-                else if(align.Exons().front().Limits().GetLength() > MIN_EXON)
-                    l = TSignedSeqRange(a.Exons().front().GetFrom(),(a.Exons().front().GetFrom()+a.Exons().front().GetTo())/2-1);
+
+                TSignedSeqRange l = a.Exons().front().Limits();
+                int len = l.GetLength();
+                if(!align.Exons().front().m_ssplice && len > DESIRED_CHUNK) {
+                    l.SetTo(l.GetFrom()+DESIRED_CHUNK-1);
+                    len = DESIRED_CHUNK;
+                }
+                for(int ie = 0; len < DESIRED_CHUNK && a.Exons()[ie].m_ssplice && a.Exons()[ie+1].m_ssplice; ++ie) {
+                    l.SetTo(a.Exons()[ie+1].GetTo());
+                    len += a.Exons()[ie+1].Limits().GetLength();
+                }
                 if(l.NotEmpty())
                     l = a.GetAlignMap().ShrinkToRealPoints(l, false);
                 if(l.NotEmpty()) {
                     a.Clip(l, CGeneModel::eRemoveExons);
                     CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_left);
-                    if(editedalign.Exons().size() > 1)
+                    if(editedalign.Exons().size() > a.Exons().size()) {
                         m_aligns_for_filtering_only.push_front(editedalign);
+                    }
                 }
             }
 
             for(int ie = 0; ie < (int)align.Exons().size()-1; ++ie) {
                 if((!align.Exons()[ie].m_ssplice || !align.Exons()[ie+1].m_fsplice) && 
-                   align.Exons()[ie].Limits().GetLength() > MIN_EXON/2 && align.Exons()[ie+1].Limits().GetLength() > MIN_EXON/2) {
+                   align.Exons()[ie].Limits().GetLength() > MIN_EXON && align.Exons()[ie+1].Limits().GetLength() > MIN_EXON) {
                     CAlignModel a = align;
-                    int left = -1;
-                    int right = -1;
 
-                    if(a.Exons()[ie].m_fsplice)
-                        left = a.Exons()[ie].GetFrom();
-                    else if(align.Exons()[ie].Limits().GetLength() > MIN_EXON)
-                        left = (a.Exons()[ie].GetFrom()+a.Exons()[ie].GetTo())/2+1;
-
-                    if(a.Exons()[ie+1].m_ssplice)
-                        right = a.Exons()[ie+1].GetTo();
-                    else if(a.Exons()[ie+1].Limits().GetLength() > MIN_EXON)
-                        right = (a.Exons()[ie+1].GetFrom()+a.Exons()[ie+1].GetTo())/2-1;
-
+                    int left = a.Exons()[ie].GetFrom();
+                    int len = a.Exons()[ie].Limits().GetLength();
+                    if(!a.Exons()[ie].m_fsplice && len > DESIRED_CHUNK) {
+                        left = a.Exons()[ie].GetTo()-DESIRED_CHUNK+1;
+                        len = DESIRED_CHUNK;
+                    }
+                    for(int iie = ie; len < DESIRED_CHUNK && a.Exons()[iie].m_fsplice && a.Exons()[iie-1].m_fsplice; --iie) {
+                        left = a.Exons()[iie-1].GetFrom();
+                        len += a.Exons()[iie-1].Limits().GetLength();
+                    }
+                    int right = a.Exons()[ie+1].GetTo();
+                    len = a.Exons()[ie+1].Limits().GetLength();
+                    if(!a.Exons()[ie+1].m_ssplice && len > DESIRED_CHUNK) {
+                        right = a.Exons()[ie+1].GetFrom()+DESIRED_CHUNK-1;
+                        len = DESIRED_CHUNK;
+                    }
+                    for(int iie = ie+1; len < DESIRED_CHUNK && a.Exons()[iie].m_ssplice && a.Exons()[iie+1].m_ssplice; ++iie) {
+                        right = a.Exons()[iie+1].GetTo();
+                        len += a.Exons()[iie+1].Limits().GetLength();
+                    }                    
                     if(left >= 0 && right >= 0) {
                         TSignedSeqRange l(left, right);
                         l = a.GetAlignMap().ShrinkToRealPoints(l, false);
                         if(l.NotEmpty()) {
                             a.Clip(l, CGeneModel::eRemoveExons);
                             CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_middle);
-                            if(editedalign.Exons().size() > 2)
+                            if(editedalign.Exons().size() >  a.Exons().size()) {
                                 m_aligns_for_filtering_only.push_front(editedalign);
+                            }
                         }
                     }
                 }
            }
 
-            if(align.Exons().back().Limits().GetLength() > MIN_EXON/2) {
+            if(align.Exons().back().Limits().GetLength() > MIN_EXON) {
                 CAlignModel a = align;
-                TSignedSeqRange l;
-                if(align.Exons().back().m_fsplice)
-                    l = align.Exons().back().Limits();
-                else if(align.Exons().back().Limits().GetLength() > MIN_EXON)
-                    l = TSignedSeqRange((a.Exons().back().GetFrom()+a.Exons().back().GetTo())/2+1, a.Exons().back().GetTo());
 
+                TSignedSeqRange l = a.Exons().back().Limits();
+                int len = l.GetLength();
+                if(!align.Exons().back().m_fsplice && len > DESIRED_CHUNK) {
+                    l.SetFrom(a.Exons().back().GetTo()-DESIRED_CHUNK+1);
+                    len = DESIRED_CHUNK;          
+                }
+                for(int ie = (int)a.Exons().size()-1; len < DESIRED_CHUNK && a.Exons()[ie].m_fsplice && a.Exons()[ie-1].m_fsplice; --ie) {
+                    l.SetFrom(a.Exons()[ie-1].GetFrom());
+                    len += a.Exons()[ie-1].Limits().GetLength();
+                }
                 if(l.NotEmpty())
                     l = a.GetAlignMap().ShrinkToRealPoints(l, false);
                 if(l.NotEmpty()) {
                     a.Clip(l, CGeneModel::eRemoveExons);
                     CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_right);
-                    if(editedalign.Exons().size() > 1)
+                    if(editedalign.Exons().size() > a.Exons().size()) {
                         m_aligns_for_filtering_only.push_front(editedalign);
+                    }
                 }
             }
 
             m_aligns_for_filtering_only.erase(i);
         }
     }
+
+    enum EnpPoint { eRightPlus = 1, eRightMinus = 2, eLeftPlus = 4, eLeftMinus = 8};
+    vector<unsigned char> end_status(len, 0);
 
     //include gap's boundaries in no cross splices
     ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
@@ -1353,20 +1939,32 @@ void CAlignCollapser::FilterAlignments() {
             if(align.Exons()[ie].Limits().Empty()) {
                 if(ie > 0) {
                     int a = align.Exons()[ie-1].GetTo();
-                    if(a <= right_end) {   // TSA could be slightly extended in the area without alignmnets
-                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus)
-                            left_plus[a-m_left_end] = a;
-                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus)
-                            left_minus[a-m_left_end] = a;
+                    int al = a-m_left_end;
+                    //                    if(a < right_end && self_coverage[al+1] == 0) {   // TSA could be slightly extended in the area without alignments; include only at drop
+                    if(a < right_end) {
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) {
+                            left_plus[al] = a;
+                            end_status[al] |= eLeftPlus;
+                        }
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus) {
+                            left_minus[al] = a;
+                            end_status[al] |= eLeftMinus;
+                        }
                     }
                 }
                 if(ie < (int)align.Exons().size()-1) {
                     int b = align.Exons()[ie+1].GetFrom();
-                    if(b >= m_left_end) {   // TSA could be slightly extended in the area without alignmnets
-                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus)
-                            right_plus[b-m_left_end] = b;
-                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus)
-                            right_minus[b-m_left_end] = b;
+                    int bl = b-m_left_end;
+                    //                    if(b > m_left_end && self_coverage[bl-1] == 0) {   // TSA could be slightly extended in the area without alignments; include only at drop
+                    if(b > m_left_end) {
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) {
+                            right_plus[bl] = b;
+                            end_status[bl] |= eRightPlus;
+                        }
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus) {
+                            right_minus[bl] = b;
+                            end_status[bl] |= eRightMinus;
+                        }
                     }
                 }
             }
@@ -1381,6 +1979,11 @@ void CAlignCollapser::FilterAlignments() {
         left_plus[i] = min(left_plus[i],left_plus[i+1]);
         left_minus[i] = min(left_minus[i],left_minus[i+1]);
     }
+
+
+#define FS_FUZZ 10
+#define MAX_CLIP 200
+#define SMALL_CLIP 30
 
     //trim 3'/5' exons crossing splices (including hole boundaries)
     for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
@@ -1413,10 +2016,44 @@ void CAlignCollapser::FilterAlignments() {
                     int l = e.GetFrom();
                     int r = e.GetTo();
                     int new_l = l;
-                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && right_plus[r-m_left_end] > l+trim) // crosses right plus splice            
+
+                    TIVec* rights = 0;
+                    EnpPoint endp;
+                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && right_plus[r-m_left_end] > l+trim) { // crosses right plus splice            
                         new_l = right_plus[r-m_left_end];
-                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && right_minus[r-m_left_end] > l+trim) // crosses right minus splice         
+                        rights = &right_plus;
+                        endp = eRightPlus;
+                    }
+                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && right_minus[r-m_left_end] > l+trim) { // crosses right minus splice         
                         new_l = right_minus[r-m_left_end];
+                        rights = &right_minus;
+                        endp = eRightMinus;
+                    }
+
+                    if(new_l != l && (end_status[new_l-m_left_end]&endp) && (align.Type()&CAlignModel::eProt)) {
+                        // try to extend
+                        while(new_l-l > MAX_CLIP  && (end_status[new_l-m_left_end]&endp))
+                            new_l = max(l,(*rights)[new_l-1-m_left_end]);
+                        TInDels pindels = align.GetInDels(true);
+                        int firstclip = new_l;
+                        for(int putativel = new_l; (new_l > l+SMALL_CLIP || TotalFrameShift(pindels, l, new_l)) && (end_status[new_l-m_left_end]&endp) && new_l == putativel; ) {
+                            putativel = max(l,(*rights)[new_l-1-m_left_end]);
+                            for(set<TGapEnd>::iterator ig = left_gends.begin(); ig != left_gends.end(); ++ig) {
+                                if(ig->first.GetFrom() <= putativel && ig->first.GetTo() >= firstclip) {
+                                    int prot_fs = TotalFrameShift(pindels, putativel, firstclip+FS_FUZZ);
+                                    int tsa_fs = TotalFrameShift(ig->second, putativel-FS_FUZZ, firstclip);
+                                    if(prot_fs == tsa_fs)
+                                        new_l = putativel;
+                                }
+                            }
+                        }
+                        //check if undertrimmed
+                        if(end_status[new_l-m_left_end]&endp) {
+                            for(int i = 0; i < (int)pindels.size() && pindels[i].Loc() <= new_l+FS_FUZZ; ++i) 
+                                new_l = max(new_l,pindels[i].Loc());
+                        }
+                    }
+
                     if(new_l != l) {
                         _ASSERT(new_l <= r);
                         if((align.Type()&CGeneModel::eEST) && (int)align.Exons().size() == 1) {
@@ -1451,10 +2088,44 @@ void CAlignCollapser::FilterAlignments() {
                     int l = e.GetFrom();
                     int r = e.GetTo();
                     int new_r = r;
-                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && left_plus[l-m_left_end] < r-trim) // crosses left plus splice              
+
+                    TIVec* lefts = 0;
+                    EnpPoint endp;
+                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && left_plus[l-m_left_end] < r-trim) { // crosses left plus splice              
                         new_r = left_plus[l-m_left_end];
-                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && left_minus[l-m_left_end] < r-trim) // crosses left minus splice               
+                        lefts = &left_plus;
+                        endp= eLeftPlus;
+                    }
+                    if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && left_minus[l-m_left_end] < r-trim) { // crosses left minus splice               
                         new_r = left_minus[l-m_left_end];
+                        lefts = &left_minus;
+                        endp= eLeftMinus;
+                    }
+
+                    if(new_r != r && (end_status[new_r-m_left_end]&endp) && (align.Type()&CAlignModel::eProt)) {
+                        // try to extend
+                        while(r-new_r >  MAX_CLIP  && (end_status[new_r-m_left_end]&endp))
+                            new_r = min(r,(*lefts)[new_r+1-m_left_end]);
+                        TInDels pindels = align.GetInDels(true);
+                        int firstclip = new_r;
+                        for(int putativer = new_r; (new_r < r-SMALL_CLIP || TotalFrameShift(pindels, new_r, r))   && (end_status[new_r-m_left_end]&endp) && new_r == putativer; ) {
+                            putativer = min(r,(*lefts)[new_r+1-m_left_end]);
+                            for(set<TGapEnd>::iterator ig = right_gends.begin(); ig != right_gends.end(); ++ig) {
+                                if(ig->first.GetFrom() <= firstclip && ig->first.GetTo() >= putativer) {
+                                    int prot_fs = TotalFrameShift(pindels, firstclip-FS_FUZZ, putativer);
+                                    int tsa_fs = TotalFrameShift(ig->second, firstclip, putativer+FS_FUZZ);
+                                    if(prot_fs == tsa_fs)
+                                        new_r = putativer;
+                                }
+                            }
+                        }
+                        //check if undertrimmed
+                        if(end_status[new_r-m_left_end]&endp) {
+                            for(int i = pindels.size()-1; i >= 0 && pindels[i].Loc() >= new_r-FS_FUZZ; --i) 
+                                new_r = min(new_r,pindels[i].Loc()-1);
+                        }
+                   }
+
                     if(new_r != r) {
                         _ASSERT(new_r >= l);
                         if((align.Type()&CGeneModel::eEST) && (int)align.Exons().size() == 1) {
@@ -1739,268 +2410,6 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
     cerr << "After collapsing: " << total << " alignments" << endl;
 }
 
-#define CHECK_LENGTH 10
-#define CLOSE_GAP 5
-#define BIG_NOT_ALIGNED 20
-#define EXTRA_CUT 5
-
-void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& transcript, bool right_edge) const {
-
-    if(align.Exons()[ie].Limits().GetLength() < CHECK_LENGTH)
-        return;
-    if(align.Status()&CGeneModel::ePolyA) {
-        if(ie == 0 && align.Strand() == eMinus && !right_edge)
-            return;
-        if(ie == (int)align.Exons().size()-1 && align.Strand() == ePlus && right_edge)
-            return;
-    }
-
-    TSignedSeqRange texon = align.TranscriptExon(ie);
-    TSignedSeqRange tgap;
-    if((ie == 0 && !right_edge && align.Orientation() == ePlus) || (ie == (int)align.Exons().size()-1 && right_edge && align.Orientation() == eMinus)) {  // 5p not aligned
-        tgap.SetFrom(0);
-        tgap.SetTo(texon.GetFrom()-1);
-    } else if((ie == 0 && !right_edge && align.Orientation() == eMinus) || (ie == (int)align.Exons().size()-1 && right_edge && align.Orientation() == ePlus)) { // 3p not aligned
-        tgap.SetFrom(texon.GetTo()+1);
-        tgap.SetTo(align.TargetLen()-1);
-    } else {  // hole
-        if(right_edge)
-            tgap = align.GetAlignMap().MapRangeOrigToEdited(TSignedSeqRange(align.Exons()[ie].GetTo(),align.Exons()[ie+1].GetFrom()), false);
-        else
-            tgap = align.GetAlignMap().MapRangeOrigToEdited(TSignedSeqRange(align.Exons()[ie-1].GetTo(),align.Exons()[ie].GetFrom()), false);
-
-        tgap.SetFrom(tgap.GetFrom()+1);
-        tgap.SetTo(tgap.GetTo()-1);
-    }
-
-
-    //transcript sequence for exon+not aligned
-    string tseq = transcript.substr((texon+tgap).GetFrom(),(texon+tgap).GetLength());
-    if(align.Orientation() == eMinus)
-        ReverseComplement(tseq.begin(),tseq.end());   // tseq in genome direction (gap is on 'right/left' side)
-
-    int direction = right_edge ? 1 : -1;
-    int gedge = right_edge ? align.Exons()[ie].GetTo() : align.Exons()[ie].GetFrom();  // last aligned base before gap in genome coordinates
-    int tedge = right_edge ? texon.GetLength()-1 : tgap.GetLength();                   // last aligned base before gap in tseq coordinates
-
-    //expand if identical
-    int gleftlim = 0;
-    if(!right_edge && ie > 0)
-        gleftlim = align.Exons()[ie-1].GetTo()+1;
-    int grightlim = m_contig.length()-1;
-    if(right_edge && ie < (int)align.Exons().size()-1)
-        grightlim = align.Exons()[ie+1].GetFrom()-1;
-    while(gedge+direction >= gleftlim && gedge+direction <= grightlim && 
-          tedge+direction >= 0 && tedge+direction < (int)tseq.length() && 
-          tseq[tedge+direction] == m_contig[gedge+direction]) {
-        gedge += direction;
-        tedge += direction;
-    }
-
-    // cut not aligned transceipt sequence
-    int not_aligned_length = tseq.length();
-    if(right_edge)
-        tseq = tseq.substr(0,tedge+1);
-    else
-        tseq = tseq.substr(tedge);
-    not_aligned_length -= tseq.length();
-
-    int gleft = min(gedge,align.Exons()[ie].GetFrom());
-    int gright = max(gedge,align.Exons()[ie].GetTo());
-    string gseq = m_contig.substr(gleft,gright-gleft+1);
-    
-    //insert indels into both sequences
-    TInDels all_indels = align.GetAlignMap().GetInDels(false);   // possibly include mismatches as insertion/deletion pairs
-
-    TInDels indels;   // indels without mismatches
-    for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
-        TInDels::iterator next = i+1;
-        int mism = 0;
-        if(next != all_indels.end())
-            mism = i->IsMismatch(*next);
-        if(mism > 0) {  // mismatch pair and possibly indel
-            if(i->Len() > mism)
-                indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
-            else if(next->Len() > mism)
-                indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
-            i = next;
-        } else {
-            indels.push_back(*i);
-        }
-    }
-
-    TInDels::const_iterator indl = indels.end();
-    ITERATE(TInDels, i, indels) {
-        if(i->Loc() < align.Exons()[ie].GetFrom())
-            continue;
-        if(i->IsDeletion() && i->Loc() == align.Exons()[ie].GetFrom() && !align.Exons()[ie].m_fsplice)
-            continue;
-
-        indl = i;
-        break;
-    }
-    int gp = 0;
-    int tp = 0;
-    for(int i = gleft; i <= gright && indl != indels.end(); ++i) {
-        if(indl->Loc() == i) {
-            if(indl->IsDeletion()) {
-                gseq.insert(gp, indl->Len(), '#');
-                gp += indl->Len();
-                tp += indl->Len();
-            } else {
-                tseq.insert(tp, indl->Len(), '#');
-            }
-            ++indl;
-        } 
-
-        ++gp;
-        ++tp;        
-    }
-    if(indl != indels.end() && indl->Loc() == gright+1 && indl->IsDeletion()) {   // deletion at the end of exon
-        gseq.insert(gp, indl->Len(), '#');
-    }
-    _ASSERT(gseq.length() == tseq.length() && gseq.length() >= CHECK_LENGTH);
-
-
-    //trim mismatches
-    int mismatches = 0;
-    if(right_edge) {  // reverse sequences for easy counting
-        reverse(gseq.begin(),gseq.end());
-        reverse(tseq.begin(),tseq.end());
-    }
-    for(int i = 0; i < CHECK_LENGTH; ++i) {
-        if(gseq[i] != tseq[i])
-            ++mismatches;
-    }
-    while(mismatches > 0 && gseq.length() > CHECK_LENGTH) {
-        if(gseq[0] != '#')
-            gedge -= direction;
-        if(tseq[0] != '#')
-            ++not_aligned_length;
-        if(gseq[0] != tseq[0])
-            --mismatches;
-        if(gseq[CHECK_LENGTH] != tseq[CHECK_LENGTH])
-            ++mismatches;
-        gseq.erase(gseq.begin());
-        tseq.erase(tseq.begin());
-    }
-
-    if(mismatches == 0) {  
-        int distance_to_gap = -1;
-        if(right_edge) {
-            TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(gedge);
-            if(igap != m_genomic_gaps_len.end())
-                distance_to_gap = igap->first-gedge-1;
-        } else {
-            TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(gedge);
-            if(igap != m_genomic_gaps_len.begin()) {
-                --igap;
-                distance_to_gap = gedge-(igap->first+igap->second);
-            }
-        }
-
-
-        double ident = 0.;
-        for(int i = 0; i < (int)gseq.length(); ++i) {
-            if(gseq[i] == tseq[i])
-                ++ident;
-        }
-        ident /= gseq.length();
-
-        //find splice if possible
-        string splice_sig;
-        if(distance_to_gap == 0) { // ubutting gap      
-            splice_sig = "NN";
-        } else if(distance_to_gap > CLOSE_GAP && not_aligned_length > BIG_NOT_ALIGNED) {
-            int extracut = 0; 
-            string splice, splice2;
-            if(right_edge) {
-                splice = (align.Strand() == ePlus) ? "GT" : "CT";
-                if(align.Status()&CGeneModel::eUnknownOrientation)
-                    splice2 = (align.Strand() == ePlus) ? "CT" : "GT";
-            } else {
-                splice = (align.Strand() == ePlus) ? "AG" : "AC";
-                if(align.Status()&CGeneModel::eUnknownOrientation)
-                    splice2 = (align.Strand() == ePlus) ? "AC" : "AG";
-            }
-
-            string spl;
-            while(gseq.length() > CHECK_LENGTH && extracut < EXTRA_CUT && gseq[CHECK_LENGTH] == tseq[CHECK_LENGTH]) {
-                spl = m_contig.substr(min(gedge+1,gedge+2*direction),2);
-                if(spl == splice || spl == splice2)
-                    break;
-
-                gedge -= direction;
-                ++extracut;
-                gseq.erase(gseq.begin());
-                tseq.erase(tseq.begin());
-            }
-
-            if(spl == splice || spl == splice2) {
-                if(align.Strand() == eMinus)
-                    ReverseComplement(spl.begin(),spl.end());
-                splice_sig = spl;
-
-                ident = 0.;
-                for(int i = 0; i < (int)gseq.length(); ++i) {
-                    if(gseq[i] == tseq[i])
-                        ++ident;
-                }
-                ident /= gseq.length();
-            } else {                           // didn't find splice - reverse extracut
-                gedge += extracut*direction;   // gseq and tseq are invalid after this point !!!!
-            }
-        }
-        
-        CGeneModel editedmodel = align;
-        editedmodel.ClearExons();  // empty alignment with all atributes
-        vector<TSignedSeqRange> transcript_exons;
-        
-        for(int i = 0; i < (int)align.Exons().size(); ++i) {
-            TSignedSeqRange te = align.TranscriptExon(i);
-            const CModelExon& e = align.Exons()[i];
-            if(i == ie) {
-                if(right_edge) {
-                    editedmodel.AddExon(TSignedSeqRange(e.GetFrom(),gedge),e.m_fsplice_sig, splice_sig, ident);
-                    if(gedge < e.GetTo()) { // clip
-                        te = align.GetAlignMap().MapRangeOrigToEdited(editedmodel.Exons().back().Limits(), align.Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint, CAlignMap::eSinglePoint);
-                        _ASSERT(te.NotEmpty());
-                    } else if(gedge > e.GetTo()) { // expansion
-                        int delta = gedge-e.GetTo();
-                        if(align.Orientation() == ePlus)
-                            te.SetTo(te.GetTo()+delta);
-                        else
-                            te.SetFrom(te.GetFrom()-delta);
-                    }
-                } else {
-                    editedmodel.AddExon(TSignedSeqRange(gedge,e.GetTo()), splice_sig, e.m_ssplice_sig, ident);
-                    if(gedge > e.GetFrom()) { // clip
-                        te = align.GetAlignMap().MapRangeOrigToEdited(editedmodel.Exons().back().Limits(), CAlignMap::eSinglePoint, align.Exons()[i].m_ssplice ? CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
-                        _ASSERT(te.NotEmpty());
-                    } else if(gedge < e.GetFrom()) { // expansion
-                        int delta = e.GetFrom()-gedge;
-                        if(align.Orientation() == ePlus)
-                            te.SetFrom(te.GetFrom()-delta);
-                        else
-                            te.SetTo(te.GetTo()+delta);
-                    }
-                }
-            } else {
-                editedmodel.AddExon(e.Limits(), e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
-            }
-            transcript_exons.push_back(te);
-
-            if(i < (int)align.Exons().size()-1 && (!align.Exons()[i].m_ssplice || !align.Exons()[i+1].m_fsplice))
-                editedmodel.AddHole();
-        }
-
-        CAlignMap editedamap(editedmodel.Exons(), transcript_exons, all_indels, align.Orientation(), align.GetAlignMap().TargetLen());
-        CAlignModel editedalign(editedmodel, editedamap);
-        editedalign.SetTargetId(*align.GetTargetId());
-
-        align = editedalign;
-    }
-}
 
 #define MAX_DIST_TO_FLANK_GAP 10000
 CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlignModel& align, int fill) {

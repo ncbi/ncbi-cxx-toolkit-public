@@ -140,6 +140,7 @@ private:
         efill_right = 2, 
         efill_middle = 4
     };
+    void CleanSelfTranscript(CAlignModel& align, const string& trans) const;
     void CleanExonEdge(int ie, CAlignModel& align, const string& transcript, bool right_edge) const; 
     CAlignModel FillGapsInAlignmentAndAddToGenomicGaps(const CAlignModel& align, int fill);
     bool CheckAndInsert(const CAlignModel& align, TAlignModelClusterSet& clsset) const;
