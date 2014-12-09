@@ -599,6 +599,8 @@ SMatrix::SMatrix(string name) { // matrix for proteins
 
 double Entropy(const string& seq) {
     int length = seq.size();
+    if(length == 0)
+        return 0;
     double tA = 1.e-8;
     double tC = 1.e-8;
     double tG = 1.e-8;

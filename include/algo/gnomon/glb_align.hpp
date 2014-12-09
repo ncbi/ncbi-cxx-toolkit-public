@@ -63,10 +63,62 @@ public:
         else
             m_elements.front().m_len += el.m_len;
     }
+    void PushBack(const SElement& el) {
+        if(el.m_type == 'M') {
+            m_qto += el.m_len;
+            m_sto += el.m_len;
+        } else if(el.m_type == 'D')
+            m_sto += el.m_len;
+        else
+            m_qto += el.m_len;
+            
+        if(m_elements.empty() || m_elements.back().m_type != el.m_type)
+            m_elements.push_back(el);
+        else
+            m_elements.back().m_len += el.m_len;
+    }
     string CigarString(int qstart, int qlen) const {
         string cigar;
         ITERATE(list<SElement>, i, m_elements)
             cigar += NStr::IntToString(i->m_len)+i->m_type;
+
+        int missingstart = qstart+m_qfrom;
+        if(missingstart > 0)
+            cigar = NStr::IntToString(missingstart)+"S"+cigar;
+        int missingend = qlen-1-m_qto-qstart;
+        if(missingend > 0)
+            cigar += NStr::IntToString(missingend)+"S";
+
+        return cigar;
+    }
+    string DetailedCigarString(int qstart, int qlen, const  char* query, const  char* subject) const {
+        string cigar;
+        query += m_qfrom;
+        subject += m_sfrom;
+        ITERATE(list<SElement>, i, m_elements) {
+            if(i->m_type == 'M') {
+                bool is_match = *query == *subject;
+                int len = 0;
+                for(int l = 0; l < i->m_len; ++l) {
+                    if((*query == *subject) == is_match) {
+                        ++len;
+                    } else {
+                        cigar += NStr::IntToString(len)+ (is_match ? "=" : "X"); 
+                        is_match = !is_match;
+                        len = 1;
+                    }
+                    ++query;
+                    ++subject;
+                }
+                cigar += NStr::IntToString(len)+ (is_match ? "=" : "X"); 
+            } else if(i->m_type == 'D') {
+                cigar += NStr::IntToString(i->m_len)+i->m_type;
+                subject += i->m_len;
+            } else {
+                cigar += NStr::IntToString(i->m_len)+i->m_type;
+                query += i->m_len;
+            }
+        }
 
         int missingstart = qstart+m_qfrom;
         if(missingstart > 0)
@@ -123,6 +175,30 @@ public:
 
         return matches;
     }
+    int Distance(const  char* query, const  char* subject) const {
+        int dist = 0;
+        query += m_qfrom;
+        subject += m_sfrom;
+        ITERATE(list<SElement>, i, m_elements) {
+            if(i->m_type == 'M') {
+                for(int l = 0; l < i->m_len; ++l) {
+                    if(*query != *subject)
+                        ++dist;
+                    ++query;
+                    ++subject;
+                }
+            } else if(i->m_type == 'D') {
+                subject += i->m_len;
+                dist += i->m_len;
+            } else {
+                query += i->m_len;
+                dist += i->m_len;
+            }
+        }
+
+        return dist;
+    }
+
 
 private:
     list<SElement> m_elements;
