@@ -624,11 +624,11 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
         } else {
             if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
-                MyExons()[i-1].m_ssplice_sig.clear();
+                //                MyExons()[i-1].m_ssplice_sig.clear();
            }
             if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
-                MyExons()[i+1].m_fsplice_sig.clear();
+                //                MyExons()[i+1].m_fsplice_sig.clear();
             }
             MyExons().erase( MyExons().begin()+i);
             --i;
@@ -684,14 +684,14 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
     for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
         TSignedSeqRange clip = e->Limits() & clip_limits;
         if (clip.NotEmpty()) {
-            if(e->GetFrom() <= clip_limits.GetFrom()) {
+            if(e->GetFrom() <= clip_limits.GetFrom())
                 e->m_fsplice = false;
+            if(e->GetFrom() < clip_limits.GetFrom())
                 e->m_fsplice_sig.clear(); 	 
-            }
-            if(e->GetTo() >= clip_limits.GetTo()) {
+            if(e->GetTo() >= clip_limits.GetTo())
                 e->m_ssplice = false;
+            if(e->GetTo() > clip_limits.GetTo())
                 e->m_ssplice_sig.clear(); 	 
-            }
 
             e++->Limits() = clip;
         } else if (mode == eRemoveExons)
@@ -702,9 +702,9 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
 
     if (Exons().size()>0) {
         MyExons().front().m_fsplice = false;
-        MyExons().front().m_fsplice_sig.clear();
+        //        MyExons().front().m_fsplice_sig.clear();
         MyExons().back().m_ssplice = false;
-        MyExons().back().m_ssplice_sig.clear();
+        //        MyExons().back().m_ssplice_sig.clear();
     }
 
     RecalculateLimits();
@@ -1271,6 +1271,28 @@ TInDels CAlignModel::GetInDels(bool fs_only) const {
     }
 
     return selected_indels;
+}
+
+TInDels CAlignModel::GetInDelsWithoutMismatches(bool fs_only) const {
+    TInDels all_indels = GetInDels(false);   // possibly include mismatches as insertion/deletion pairs
+    TInDels indels;   // indels without mismatches
+    for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
+        TInDels::iterator next = i+1;
+        int mism = 0;
+        if(next != all_indels.end())
+            mism = i->IsMismatch(*next);
+        if(mism > 0) {  // mismatch pair and possibly indel
+            if(i->Len() > mism && (!fs_only || (i->Len()-mism)%3))
+                indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
+            else if(next->Len() > mism && (!fs_only || (next->Len()-mism)%3))
+                indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
+            i = next;
+        } else if(i->Len()%3) {
+            indels.push_back(*i);
+        }
+    }
+
+    return indels;
 }
 
 
