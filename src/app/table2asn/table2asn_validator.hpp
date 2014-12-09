@@ -8,17 +8,16 @@ namespace objects
     class CSeq_entry;
     class CBioseq;
     class CSeq_entry_Handle;
+    class CValidError;
 };
 
 class CTable2AsnValidator
 {
 public:
-    void Validate(objects::CSeq_entry_Handle& handle);
+    CConstRef<objects::CValidError> Validate(objects::CSeq_entry_Handle& handle);
+    CConstRef<objects::CValidError> Validate(const CSerialObject& object);
     void Cleanup(objects::CSeq_entry& entry);
-    void LinkCDSmRNAbyLabelAndLocation(objects::CBioseq_set& bioseq);
-    void LinkCDSmRNAbyLabelAndLocation(objects::CBioseq& bioseq);
-    void LinkCDSmRNAbyLabelAndLocation(objects::CSeq_entry& bioseq);
-    void LinkCDSmRNAbyLabelAndLocation(objects::CBioseq::TAnnot& annot);
+    void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
 };
 
 END_NCBI_SCOPE

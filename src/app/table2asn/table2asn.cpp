@@ -64,6 +64,7 @@
 #include <objects/seq/Seq_gap.hpp>
 
 #include <objtools/edit/seq_entry_edit.hpp>
+#include <objects/valerr/ValidError.hpp>
 
 #include <objtools/readers/message_listener.hpp>
 #include <common/ncbi_source_ver.h>
@@ -442,12 +443,14 @@ int CTbl2AsnApp::Run(void)
         m_context.m_master_genome_flag = args["M"].AsString();
         m_context.m_remove_unnec_xref = true;
         m_context.m_delay_genprodset = true;
+        m_context.m_GenomicProductSet = false;
+        m_context.m_HandleAsSet = true;
     }
 
     m_context.m_asn1_suffix = args["out-suffix"].AsString();
 
-    if (m_context.m_delay_genprodset)
-        m_context.m_GenomicProductSet = true;
+    //if (m_context.m_delay_genprodset)
+    //    m_context.m_GenomicProductSet = false;
 
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
@@ -622,6 +625,11 @@ int CTbl2AsnApp::Run(void)
             outputdir.Create();
     }
 
+    if (args["Z"])
+    {
+        m_context.m_discrepancy_file = &args["Z"].AsOutputFile();
+    }
+
     try
     {
         if (args["t"])
@@ -629,7 +637,7 @@ int CTbl2AsnApp::Run(void)
             m_reader->LoadTemplate(m_context, args["t"].AsString());
         }
     }
-    catch (const CException& ex)
+    catch (const CException&)
     {
         m_logger->PutError(*auto_ptr<CLineError>(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
@@ -644,7 +652,7 @@ int CTbl2AsnApp::Run(void)
             m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
         }
     }
-    catch (const CException& ex)
+    catch (const CException&)
     {
         m_logger->PutError(*auto_ptr<CLineError>(
             CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
@@ -864,12 +872,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         validator.Cleanup(*entry);
     }
 
-#ifdef USE_SCOPE
-    if (!m_context.m_validate.empty())
-      validator.Validate(entry_edit_handle);
-#endif
-
-
 }
 
 string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
@@ -908,6 +910,26 @@ void CTbl2AsnApp::ProcessOneFile()
     {
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
+
+        if (!IsDryRun() && 
+            !(m_context.m_master_genome_flag.empty() && m_context.m_validate.empty()))
+        {
+            CTable2AsnValidator val;
+            CConstRef<CValidError> errors = val.Validate(*obj);
+            if (errors.NotEmpty())
+            {
+                CNcbiOstream* result = m_context.m_discrepancy_file;
+                CNcbiOfstream file;
+                if (result == 0)
+                {
+                    string discr_filename = m_context.ReplaceFileExt(".dr");
+                    file.open(discr_filename);
+                    result = &file;
+                }
+                val.ReportErrors(errors, *result);
+            }
+        }
+
         if (!IsDryRun() && obj.NotEmpty())
         {
             const CSerialObject* to_write = obj;

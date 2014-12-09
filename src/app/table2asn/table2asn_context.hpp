@@ -62,7 +62,7 @@ public:
     bool   W;
     bool   m_save_bioseq_set;
     string c;
-    string ZOutFile;
+    CNcbiOstream* m_discrepancy_file;
     string zOufFile;
     string X;
     string m_master_genome_flag;
@@ -147,6 +147,9 @@ public:
 
     CRef<objects::CScope>      m_scope;
     CRef<objects::CObjectManager> m_ObjMgr;
+
+    string ReplaceFileExt(const string& newext) const;
+
 private:
 };
 

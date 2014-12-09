@@ -181,6 +181,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_copy_genid_to_note(false),
     m_remove_unnec_xref(false),
     m_save_bioseq_set(false),
+    m_discrepancy_file(0),
     m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
     m_RemoteTaxonomyLookup(false),
@@ -693,4 +694,13 @@ void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
     AddUserTrack(entry.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", m_ft_url_mod);
 }
 
+string CTable2AsnContext::ReplaceFileExt(const string& newext) const
+{
+    string dir;
+    string base;
+    string ext;
+    CDirEntry::SplitPath(m_current_file, &dir, &base, &ext);
+
+    return m_ResultsDirectory + base + newext;
+}
 END_NCBI_SCOPE
