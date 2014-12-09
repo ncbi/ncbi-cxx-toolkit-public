@@ -110,15 +110,17 @@ CJsonNode CNetStorageObjectInfo::GetStorageSpecificInfo() const
 string CNetStorageObjectInfo::GetNFSPathname() const
 {
     try {
-        return m_Impl->m_StorageSpecificInfo.GetString("path");
+        if (m_Impl->m_StorageSpecificInfo)
+            return m_Impl->m_StorageSpecificInfo.GetString("path");
     }
     catch (CJsonException& e) {
         if (e.GetErrCode() != CJsonException::eKeyNotFound)
             throw;
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot retrieve NFS path information for '" <<
-                m_Impl->m_ObjectLoc << '\'');
     }
+
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+            "Cannot retrieve NFS path information for '" <<
+            m_Impl->m_ObjectLoc << '\'');
 }
 
 CJsonNode CNetStorageObjectInfo::ToJSON()
