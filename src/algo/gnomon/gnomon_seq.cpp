@@ -642,6 +642,8 @@ template
 void CAlignMap::EditedSequence<CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence, bool includeholes) const;
 template
 void CAlignMap::EditedSequence<CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence, bool includeholes) const;
+template
+void CAlignMap::EditedSequence<string>(const string& original_sequence, string& edited_sequence, bool includeholes) const;
 
 
 TSignedSeqRange CAlignMap::ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons) const {
