@@ -392,6 +392,7 @@ gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs xalgoalignutil
 gpipe_an_base needs gencoll_client
 gpipe_an_base needs gpinit
+gpipe_an_base needs gpinit_access
 gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
@@ -1328,6 +1329,7 @@ xgpp_console_access needs xgpp_console_commands
 xgpp_console_commands needs gpipe_common
 xgpp_console_commands needs xgpp_console
 xgpsubmit needs gc_load_utils
+xgpsubmit needs gpinit_access
 xgpsubmit needs gpinit_utils
 xgpsubmit needs gpipe_asn_cleanup
 xgpsubmit needs grid_wrapper
