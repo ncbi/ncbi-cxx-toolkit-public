@@ -428,6 +428,31 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
         }
     }
 
+    for(int prev_exon = -1; prev_exon < (int)align.Exons().size()-1; ++prev_exon) {
+        int piece_begin = prev_exon+1;
+        if(align.Exons()[piece_begin].m_fsplice)
+            continue;
+        int piece_end = piece_begin;
+        for( ; piece_end < (int)align.Exons().size() && align.Exons()[piece_end].m_ssplice; ++piece_end);
+        int a = align.Exons()[piece_begin].GetFrom();
+        int b = align.Exons()[piece_end].GetTo();
+        if(amap.FShiftedLen(a, b, false) < END_PART_LENGTH) {
+            if(a == align.Limits().GetFrom() && b == align.Limits().GetTo()) {
+                align.ClearExons();
+                return;
+            } else if(a == align.Limits().GetFrom()) {
+                TSignedSeqRange seg(align.Exons()[piece_end+1].GetFrom(),align.Limits().GetTo());
+                align.Clip(seg, CGeneModel::eRemoveExons);
+            } else if(b == align.Limits().GetTo()) {
+                TSignedSeqRange seg(align.Limits().GetFrom(),align.Exons()[piece_begin-1].GetTo());
+                align.Clip(seg, CGeneModel::eRemoveExons);
+            } else {
+                TSignedSeqRange seg(a, b);
+                align.CutExons(seg);
+            }
+        }
+    }
+
     if((align.Status()&CGeneModel::ePolyA) && 
        ((align.Strand() == ePlus && align.Limits().GetTo() != old_limits.GetTo()) || 
         (align.Strand() == eMinus && align.Limits().GetFrom() != old_limits.GetFrom()))) {  // clipped polyA
