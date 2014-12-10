@@ -55,14 +55,24 @@ USING_SCOPE(objects);
 
 // Retrieve a list of interval-by-interval accounting within an alignment
 //
+
+static void s_UpdateSpans(const TSeqRange &query_range,
+                          const TSeqRange &subject_range,
+                          CAlignCompare::SAlignment& align_info)
+{
+     align_info.spans[subject_range] = query_range;
+     align_info.query_spans += query_range;
+     align_info.subject_spans += subject_range;
+}
+
 static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
-                                         CAlignCompare::TAlignmentSpans& spans)
+                                         CAlignCompare::SAlignment& align_info)
 {
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Disc:
         ITERATE (CSeq_align::TSegs::TDisc::Tdata, it,
                  align.GetSegs().GetDisc().Get()) {
-            s_GetAlignmentSpans_Interval(**it, spans);
+            s_GetAlignmentSpans_Interval(**it, align_info);
         }
         break;
 
@@ -77,8 +87,9 @@ static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
              ConvertSeqAlignToPairwiseAln(pw, align, 0, 1);
              ITERATE (CPairwiseAln, it, pw) {
                  const CPairwiseAln::TAlignRange& r = *it;
-                 spans[TSeqRange(r.GetSecondFrom(), r.GetSecondTo())] =
-                     TSeqRange(r.GetFirstFrom(), r.GetFirstTo());
+                 s_UpdateSpans(TSeqRange(r.GetFirstFrom(), r.GetFirstTo()),
+                               TSeqRange(r.GetSecondFrom(), r.GetSecondTo()),
+                               align_info);
              }
          }}
         break;
@@ -88,18 +99,18 @@ static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
 // Retrieve a list of exon-by-exon accounting within an alignment
 //
 static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
-                                     CAlignCompare::TAlignmentSpans& spans)
+                                     CAlignCompare::SAlignment &align_info)
 {
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
-        spans[align.GetSeqRange(1)] = align.GetSeqRange(0);
+        s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info);
         break;
 
     case CSeq_align::TSegs::e_Disc:
         /* UNTESTED */
         ITERATE (CSeq_align::TSegs::TDisc::Tdata, it,
                  align.GetSegs().GetDisc().Get()) {
-            spans[(*it)->GetSeqRange(1)] = (*it)->GetSeqRange(0);
+            s_UpdateSpans((*it)->GetSeqRange(0), (*it)->GetSeqRange(1), align_info);
         }
         break;
 
@@ -107,8 +118,8 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
         /* UNTESTED */
         ITERATE (CSeq_align::TSegs::TStd, it, align.GetSegs().GetStd()) {
             const CStd_seg& seg = **it;
-            spans[seg.GetLoc()[1]->GetTotalRange()] =
-                seg.GetLoc()[0]->GetTotalRange();
+            s_UpdateSpans(seg.GetLoc()[0]->GetTotalRange(),
+                          seg.GetLoc()[1]->GetTotalRange(), align_info);
         }
         break;
 
@@ -120,7 +131,7 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
             TSeqRange product;
             product.SetFrom(exon.GetProduct_start().AsSeqPos());
             product.SetTo(exon.GetProduct_end().AsSeqPos());
-            spans[genomic] = product;
+            s_UpdateSpans(product, genomic, align_info);
         }
         break;
 
@@ -135,7 +146,7 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
 // meaningful only for Spliced-seg alignments
 //
 static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
-                                       CAlignCompare::TAlignmentSpans& spans)
+                                       CAlignCompare::SAlignment &align_info)
 {
     if (!align.GetSegs().IsSpliced() ||
         !align.GetSegs().GetSpliced().CanGetProduct_strand() ||
@@ -160,7 +171,7 @@ static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
             TSeqRange product;
             product.SetFrom(last_exon->GetProduct_end().AsSeqPos());
             product.SetTo(exon->GetProduct_start().AsSeqPos());
-            spans[genomic] = product;
+            s_UpdateSpans(product, genomic, align_info);
         }
         last_exon = exon;
     }
@@ -170,9 +181,9 @@ static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
 // Retrieve a list of total range spans for an alignment
 //
 static void s_GetAlignmentSpans_Span(const CSeq_align& align,
-                                     CAlignCompare::TAlignmentSpans& spans)
+                                     CAlignCompare::SAlignment &align_info)
 {
-    spans[align.GetSeqRange(1)] = align.GetSeqRange(0);
+    s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info);
 }
 
 struct SComparison
@@ -262,26 +273,34 @@ SComparison::SComparison(const CAlignCompare::TAlignmentSpans& first,
 
 struct SAlignment_PtrLess
 {
+    bool compare_query;
+    bool compare_subject;
+
+    SAlignment_PtrLess(CAlignCompare::ERowComparison row = CAlignCompare::e_Both)
+    : compare_query(row != CAlignCompare::e_Subject)
+    , compare_subject(row != CAlignCompare::e_Query)
+    {}
+
     bool operator()(const CAlignCompare::SAlignment *ptr1,
                     const CAlignCompare::SAlignment *ptr2) const
     {
         const CAlignCompare::SAlignment& k1 = *ptr1;
         const CAlignCompare::SAlignment& k2 = *ptr2;
 
-        if (k1.query < k2.query)                    { return true; }
-        if (k2.query < k1.query)                    { return false; }
-        if (k1.subject < k2.subject)                { return true; }
-        if (k2.subject < k1.subject)                { return false; }
+        if (compare_query && k1.query < k2.query)                    { return true; }
+        if (compare_query && k2.query < k1.query)                    { return false; }
+        if (compare_subject && k1.subject < k2.subject)                { return true; }
+        if (compare_subject && k2.subject < k1.subject)                { return false; }
 
-        if (k1.query_strand < k2.query_strand)      { return true; }
-        if (k2.query_strand < k1.query_strand)      { return false; }
-        if (k1.subject_strand < k2.subject_strand)  { return true; }
-        if (k2.subject_strand < k1.subject_strand)  { return false; }
+        if (compare_query && k1.query_strand < k2.query_strand)      { return true; }
+        if (compare_query && k2.query_strand < k1.query_strand)      { return false; }
+        if (compare_subject && k1.subject_strand < k2.subject_strand)  { return true; }
+        if (compare_subject && k2.subject_strand < k1.subject_strand)  { return false; }
 
-        if (k1.subject_range < k2.subject_range)    { return true; }
-        if (k2.subject_range < k1.subject_range)    { return false; }
-        if (k1.query_range < k2.query_range)        { return true; }
-        if (k2.query_range < k1.query_range)        { return false; }
+        if (compare_subject && k1.subject_range < k2.subject_range)    { return true; }
+        if (compare_subject && k2.subject_range < k1.subject_range)    { return false; }
+        if (compare_query && k1.query_range < k2.query_range)        { return true; }
+        if (compare_query && k2.query_range < k1.query_range)        { return false; }
 
         return ptr1 < ptr2;
     }
@@ -294,16 +313,14 @@ typedef pair<TPtrPair, SComparison> TComp;
 struct SComp_Less
 {
     bool strict_compare;
+    CAlignCompare::ERowComparison row;
 
-    SComp_Less()
-        : strict_compare(false)
-    {
-    }
-
-    SComp_Less(bool strict)
+    SComp_Less(bool strict = false, CAlignCompare::ERowComparison r = CAlignCompare::e_Both)
         : strict_compare(strict)
+        , row(r)
     {
     }
+
     bool operator()(const TComp& c1, const TComp& c2) const
     {
         // strict comparison amounts to placing all identical pairs either before
@@ -330,18 +347,23 @@ struct SComp_Less
             }
         }
 
-        if (c1.first.first->subject_range < c2.first.first->subject_range) {
-            return false;
+        if (row != CAlignCompare::e_Query) {
+            if (c1.first.first->subject_range < c2.first.first->subject_range)
+            {
+                return false;
+            }
+            if (c2.first.first->subject_range < c1.first.first->subject_range)
+            {
+                return true;
+            }
         }
-        if (c2.first.first->subject_range < c1.first.first->subject_range) {
-            return true;
-        }
-        return c1.first.second->query_range < c2.first.second->query_range;
+        return row != CAlignCompare::e_Subject &&
+               c1.first.second->query_range < c2.first.second->query_range;
     }
 };
 
 CAlignCompare::SAlignment::
-SAlignment(int s, const CRef<CSeq_align> &al, EMode mode)
+SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row)
 : source_set(s)
 , query(CSeq_id_Handle::GetHandle(al->GetSeq_id(0)))
 , subject(CSeq_id_Handle::GetHandle(al->GetSeq_id(1)))
@@ -355,20 +377,29 @@ SAlignment(int s, const CRef<CSeq_align> &al, EMode mode)
     try {
         switch (mode) {
         case e_Interval:
-            s_GetAlignmentSpans_Interval(*align, spans);
+            s_GetAlignmentSpans_Interval(*align, *this);
             break;
 
         case e_Exon:
-            s_GetAlignmentSpans_Exon(*align, spans);
+            s_GetAlignmentSpans_Exon(*align, *this);
             break;
 
         case e_Span:
-            s_GetAlignmentSpans_Span(*align, spans);
+            s_GetAlignmentSpans_Span(*align, *this);
             break;
 
         case e_Intron:
-            s_GetAlignmentSpans_Intron(*align, spans);
+            s_GetAlignmentSpans_Intron(*align, *this);
             break;
+        }
+
+        if (row != e_Both) {
+            spans.clear();
+            ITERATE (CRangeCollection<TSeqPos>, range_it,
+                     row == e_Query ? query_spans : subject_spans)
+            {
+                spans[*range_it] = *range_it;
+            }
         }
     }
     catch (CException& e) {
@@ -393,11 +424,14 @@ int CAlignCompare::x_DetermineNextGroupSet()
             m_NextSet2Group.push_back(x_NextAlignment(2));
         }
     }
-    if (m_NextSet1Group.front()->query != m_NextSet2Group.front()->query) {
+    if (m_Row != e_Subject &&
+        m_NextSet1Group.front()->query != m_NextSet2Group.front()->query)
+    {
         return m_NextSet1Group.front()->query.GetSeqId()->AsFastaString()
              < m_NextSet2Group.front()->query.GetSeqId()->AsFastaString()
              ? 1 : 2;
-    } else if (m_NextSet1Group.front()->subject !=
+    } else if (m_Row != e_Query &&
+               m_NextSet1Group.front()->subject !=
                m_NextSet2Group.front()->subject)
     {
         return m_NextSet1Group.front()->subject.GetSeqId()->AsFastaString()
@@ -462,12 +496,12 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
 
     default:
     {{
-        TAlignPtrSet set1_aligns;
+        TAlignPtrSet set1_aligns(m_Row);
         NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet1Group)
         {
             set1_aligns.insert(&**it);
         }
-        TAlignPtrSet set2_aligns;
+        TAlignPtrSet set2_aligns(m_Row);
         NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet2Group)
         {
             set2_aligns.insert(&**it);
@@ -481,7 +515,7 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                                                         (*set2_it)->spans)));
             }
         }
-        std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict));
+        std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict, m_Row));
 
         typedef pair<TAlignPtrSet, EMatchLevel> TAlignGroup;
 
@@ -521,10 +555,11 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                     /// Neither alignemnts was encountered before, so create
                     /// new group
                     list<TAlignGroup>::iterator new_group =
-                        groups.insert(groups.end(), TAlignGroup());
+                        groups.insert(groups.end(),
+                            TAlignGroup(TAlignPtrSet(m_Row),
+                                        it->first.first->match_level));
                     new_group->first.insert(it->first.first);
                     new_group->first.insert(it->first.second);
-                    new_group->second = it->first.first->match_level;
                     group_map[it->first.first] = new_group;
                     group_map[it->first.second] = new_group;
                     ++(is_equivalent ? m_CountEquivGroups
