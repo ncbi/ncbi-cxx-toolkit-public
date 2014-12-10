@@ -3161,9 +3161,14 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     }
 
     CDiagHandler* new_handler = GetDiagHandler();
-    if ( new_handler ) {
-        log_set = log_set  &&  new_handler->GetLogName() != old_log_name;
+    // Flush collected messages to the log if either its name has changed
+    // or log file truncation is enabled.
+    if (log_set  &&  new_handler  &&  new_handler->GetLogName() == old_log_name) {
+        bool is_file = dynamic_cast<CFileHandleDiagHandler*>(new_handler)  ||
+            dynamic_cast<CFileDiagHandler*>(new_handler);
+        log_set = log_set  &&  is_file  &&  GetLogTruncate();
     }
+
     if (collect == eDCM_Flush) {
         // Flush and discard
         if ( log_set  &&  new_handler ) {
@@ -3222,16 +3227,10 @@ EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Warning;
 EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
                                                   // to be set on first request
 
-static const TDiagPostFlags s_OldDefaultPostFlags =
-    eDPF_Prefix | eDPF_Severity | eDPF_ErrorID | 
+static const TDiagPostFlags s_DefaultPostFlags =
+    eDPF_Prefix | eDPF_Severity | eDPF_ErrorID |
     eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation |
     eDPF_ErrCodeUseSeverity;
-static const TDiagPostFlags s_NewDefaultPostFlags =
-    s_OldDefaultPostFlags |
-#if defined(NCBI_THREADS)
-    eDPF_TID | eDPF_SerialNo_Thread |
-#endif
-    eDPF_PID | eDPF_SerialNo;
 static TDiagPostFlags s_PostFlags = 0;
 static bool s_DiagPostFlagsInitialized = false;
 
@@ -3239,8 +3238,7 @@ inline
 TDiagPostFlags& CDiagBuffer::sx_GetPostFlags(void)
 {
     if (!s_DiagPostFlagsInitialized) {
-        s_PostFlags = TOldPostFormatParam::GetDefault() ?
-            s_OldDefaultPostFlags : s_NewDefaultPostFlags;
+        s_PostFlags = s_DefaultPostFlags;
         s_DiagPostFlagsInitialized = true;
     }
     return s_PostFlags;
