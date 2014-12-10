@@ -69,6 +69,8 @@ class NCBI_XOBJWRITE_EXPORT CSrcWriter:
 {    
 public:
     typedef map<string, int> COLUMNMAP;
+    typedef map<string, string> NAMEMAP;
+    typedef list<string> NAMELIST;
     typedef vector<string> FIELDS;
     typedef bool (CSrcWriter::*HANDLER)(const CBioSource&, const string&, IMessageListener*);
     typedef map<string, CSrcWriter::HANDLER> HANDLERMAP;
@@ -103,7 +105,9 @@ public:
     static bool ValidateFields(
         const FIELDS& fields,
         IMessageListener* = 0);
-
+    
+    static FIELDS GetOrderedFieldNames();
+  
 protected:
     void xInit();
 
@@ -118,34 +122,38 @@ protected:
     virtual bool xGatherGenome(const CBioSource&, const string&,  IMessageListener* =0);
     virtual bool xGatherOrigin(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherSubtypeFeat(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherSubtypeAll(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherOrgModFeat(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherOrgModAll(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherOrgCommon(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherOrgnameLineage(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherPcrPrimers(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherDb(const CBioSource&, const string&, IMessageListener* =0);
     virtual bool xGatherTaxonId(const CBioSource&, const string&, IMessageListener* =0);
 
-    virtual bool xFormatTabDelimited(CNcbiOstream&);
+    virtual bool xFormatTabDelimited(const FIELDS&, CNcbiOstream&);
 
     static HANDLER xGetHandler(const string&);
     static string xPrimerSetNames(const CPCRPrimerSet&);
     static string xPrimerSetSequences(const CPCRPrimerSet&);
     static bool xIsSubsourceTypeSuppressed(CSubSource::TSubtype);
     static bool xIsOrgmodTypeSuppressed(COrgMod::TSubtype);
+    static NAMELIST xGetOrgModSubtypeNames();
+    static NAMELIST xGetSubSourceSubtypeNames();
+    static string xCompressFieldName(const string&);
+    static FIELDS xProcessFieldNames(const FIELDS&);
+ 
 
     void xPrepareTableColumn(const string&, const string&, const string& ="");
     void xAppendColumnValue(const string&, const string&);
     bool xValueNeedsQuoting(const string&);
     string xDequotedValue(const string&);
+    string xGetColStub(const string&);
 
 public:
     static const FIELDS sDefaultFields;
-    static const FIELDS sAllFields;
 
 protected:
     static HANDLERMAP sHandlerMap;
+    static NAMEMAP sFieldnameToColname;
     CRef<CSeq_table> mSrcTable;
     COLUMNMAP mColnameToIndex;
     unsigned int mFlags;

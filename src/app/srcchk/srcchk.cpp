@@ -206,8 +206,7 @@ bool CSrcChkApp::xGetDesiredFields(
 //  -----------------------------------------------------------------------------
 {
     if (args["all-fields"]) {
-        fields.assign(
-            CSrcWriter::sAllFields.begin(), CSrcWriter::sAllFields.end());
+        fields = CSrcWriter::GetOrderedFieldNames();
         return true;
     }
 
