@@ -220,7 +220,7 @@ CCigar VariBandAlign(const  char* query, int querylen, const  char* subject, int
 struct SMatrix
 {
 	SMatrix(int match, int mismatch);  // matrix for DNA
-    SMatrix(string name);  // matrix for proteins
+    SMatrix();                         // matrix for proteins blosum62
 	
 	char matrix[256][256];
 };
