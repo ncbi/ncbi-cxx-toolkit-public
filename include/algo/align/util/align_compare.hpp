@@ -36,6 +36,8 @@
 
 #include <algo/align/util/align_source.hpp>
 
+#include <util/range_coll.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -53,6 +55,8 @@ public:
     enum EMode { e_Interval, e_Exon, e_Span, e_Intron };
 
     enum EMatchLevel {e_Equiv, e_Overlap, e_NoMatch};
+
+    enum ERowComparison {e_Query, e_Subject, e_Both};
 
     //////////////////////////////////////////////////////////////////////////////
     //
@@ -74,22 +78,26 @@ public:
     
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
+        CRangeCollection<TSeqPos> query_spans;
+        CRangeCollection<TSeqPos> subject_spans;
 
         EMatchLevel      match_level;
 
-        SAlignment(int s, const CRef<CSeq_align> &al, EMode mode);
+        SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row);
     };
     
     CAlignCompare(IAlignSource &set1,
                   IAlignSource &set2,
                   EMode mode = e_Interval,
                   bool strict = false,
-                  bool ignore_not_present = false)
+                  bool ignore_not_present = false,
+                  ERowComparison row = e_Both)
     : m_Set1(set1)
     , m_Set2(set2)
     , m_Mode(mode)
     , m_Strict(strict)
     , m_IgnoreNotPresent(ignore_not_present)
+    , m_Row(row)
     , m_CountSet1(0)
     , m_CountSet2(0)
     , m_CountEquivSet1(0)
@@ -128,6 +136,7 @@ private:
     EMode m_Mode;
     bool m_Strict;
     bool m_IgnoreNotPresent;
+    ERowComparison m_Row;
 
     size_t m_CountSet1;
     size_t m_CountSet2;
@@ -155,7 +164,7 @@ private:
     {
         ++(set == 1 ? m_CountSet1 : m_CountSet2);
         return new SAlignment(set, (set == 1 ? m_Set1 : m_Set2).GetNext(),
-                              m_Mode);
+                              m_Mode, m_Row);
     }
 
     void x_GetCurrentGroup(int set);
