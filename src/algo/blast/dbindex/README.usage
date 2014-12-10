@@ -58,7 +58,7 @@ input. 'makembindex' accepts the following command line options:
 -old_style_index [true/false]
 
 If set to 'true', the old style index is generated; otherwose the
-new style index is generated. Default value is 'true'.
+new style index is generated. Default value is 'false'.
 
 -input <string>
 
