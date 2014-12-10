@@ -106,6 +106,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "IRD", CDbtag::eDbtagType_IRD },
     { "ISD", CDbtag::eDbtagType_ISD },
     { "ISFinder", CDbtag::eDbtagType_ISFinder },
+    { "ISHAM-ITS", CDbtag::eDbtagType_ISHAM_ITS },
     { "InterPro", CDbtag::eDbtagType_Interpro },
     { "InterimID", CDbtag::eDbtagType_InterimID },
     { "IntrepidBio", CDbtag::eDbtagType_IntrepidBio },
@@ -212,6 +213,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     { "IKMC", CDbtag::eDbtagType_IKMC },
     { "IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA },
     { "IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM },
+    { "ISHAM-ITS", CDbtag::eDbtagType_ISHAM_ITS },
     { "JCM", CDbtag::eDbtagType_JCM },
     { "MGI", CDbtag::eDbtagType_MGI },
     { "MycoBank", CDbtag::eDbtagType_MycoBank },
@@ -675,6 +677,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_Assembly, "http://www.ncbi.nlm.nih.gov/assembly/" },
     { CDbtag::eDbtagType_GenBank, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_BioSample, "http://www.ncbi.nlm.nih.gov/biosample/" },
+    { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&Rec=" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
@@ -962,6 +965,12 @@ string CDbtag::GetUrl(const string & genus,
         }
         break;
             
+
+    case eDbtagType_ISHAM_ITS:
+        if (NStr::StartsWith(tag, "MITS", NStr::eNocase)) {
+            tag = tag.substr(4);
+        }
+        break;
 
     default:
         break;

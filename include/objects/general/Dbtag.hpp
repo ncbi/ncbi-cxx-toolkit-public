@@ -205,7 +205,8 @@ public:
         eDbtagType_CGD,
         eDbtagType_Assembly,
         eDbtagType_GenBank,
-        eDbtagType_BioSample
+        eDbtagType_BioSample,
+        eDbtagType_ISHAM_ITS
     };
 
     enum EDbtagGroup {
