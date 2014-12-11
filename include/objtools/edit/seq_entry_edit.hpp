@@ -35,6 +35,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Linkage_evidence.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -92,6 +93,12 @@ void AddBioseqToBioseq(const CBioseq_Handle& to, const CBioseq_Handle& add);
 NCBI_XOBJEDIT_EXPORT
 void AddBioseqToBioseqSet(const CBioseq_set_Handle& bsst, const CBioseq_Handle& seq);
 
+
+/// Create a Seq-entry from a Seq-submit
+/// @param submit
+///   Seq-submit to create Seq-entry from
+NCBI_XOBJEDIT_EXPORT
+CRef<CSeq_entry> SeqEntryFromSeqSubmit(const CSeq_submit& submit);
 
 /// Split a Seq-entry, where the second part holds the given bioseqs.
 /// There are various complex rules here that may not be obvious at first glance.

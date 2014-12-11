@@ -32,7 +32,10 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/pub/Pub.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -521,6 +524,74 @@ void AddBioseqToBioseqSet(const CBioseq_set_Handle& set, const CBioseq_Handle& s
         break;
     }
 }
+
+
+bool AddSeqdescToSeqEntryRecursively(CSeq_entry& entry, CSeqdesc& desc)
+{
+    bool rval = false;
+    if (entry.IsSeq()) {
+        CRef<CSeqdesc> d(new CSeqdesc());
+        d->Assign(desc);
+        entry.SetSeq().SetDescr().Set().push_back(d);
+        rval = true;
+    } else if (entry.IsSet()) {
+        if (entry.GetSet().IsSetClass() && 
+            (entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot ||
+             entry.GetSet().GetClass() == CBioseq_set::eClass_segset)) {
+            CRef<CSeqdesc> d(new CSeqdesc());
+            d->Assign(desc);
+            entry.SetSet().SetDescr().Set().push_back(d);
+            rval = true;
+        } else if (entry.GetSet().IsSetSeq_set()) {
+            NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set()) {
+                rval |= AddSeqdescToSeqEntryRecursively(**it, desc);
+            }
+            if (!rval) {
+                CRef<CSeqdesc> d(new CSeqdesc());
+                d->Assign(desc);
+                entry.SetSet().SetDescr().Set().push_back(d);
+                rval = true;
+            }
+        }
+    }
+    return rval;
+}
+
+
+CRef<CSeq_entry> SeqEntryFromSeqSubmit(const CSeq_submit& submit)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    if (!submit.IsEntrys() || submit.GetData().GetEntrys().size() == 0) {
+        return CRef<CSeq_entry>(NULL);
+    }
+
+    // Copy Seq-entry data from Seq-submit to new Seq-entry
+    if (submit.GetData().GetEntrys().size() > 1) {
+        entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+        ITERATE(CSeq_submit::TData::TEntrys, it, submit.GetData().GetEntrys()) {
+            CRef<CSeq_entry> e(new CSeq_entry());
+            e->Assign(**it);
+            entry->SetSet().SetSeq_set().push_back(e);
+        }
+    } else {
+        entry->Assign(*(submit.GetData().GetEntrys().front()));
+    }
+
+    // Create cit-sub pub for Seq-entry
+    if (submit.IsSetSub() && submit.GetSub().IsSetCit()) {
+        CRef<CPub> pub(new CPub());
+        pub->SetSub().Assign(submit.GetSub().GetCit());
+        CRef<CSeqdesc> pdesc(new CSeqdesc());
+        pdesc->SetPub().SetPub().Set().push_back(pub);
+        if (entry->IsSeq()) {
+            entry->SetSeq().SetDescr().Set().push_back(pdesc);
+        } else {
+            AddSeqdescToSeqEntryRecursively(*entry, *pdesc);
+        }
+    }
+    return entry;
+}
+
 
 static bool s_IsSingletonSet(
     const CBioseq_set_Handle & bioseq_set )
@@ -2922,6 +2993,9 @@ void SortSeqDescr(CSeq_entry& entry)
         SortSeqDescr((**it));
     }
 }
+
+
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

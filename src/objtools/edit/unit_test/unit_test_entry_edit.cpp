@@ -1407,6 +1407,18 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SeqEntryFromSeqSubmit)
+{
+    CRef<CSeq_submit> submit(new CSeq_submit());
+    CRef<CSeq_entry> wrapped = unit_test_util::BuildGoodSeq();
+    submit->SetData().SetEntrys().push_back(wrapped);
+    submit->SetSub().SetCit().SetAuthors().SetNames().SetStd().push_back(unit_test_util::BuildGoodAuthor());
+
+    CRef<CSeq_entry> entry = edit::SeqEntryFromSeqSubmit(*submit);
+    BOOST_CHECK_EQUAL(entry->IsSeq(), true);
+    BOOST_CHECK_EQUAL(entry->GetSeq().GetDescr().Get().size(), wrapped->GetSeq().GetDescr().Get().size() + 1);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
