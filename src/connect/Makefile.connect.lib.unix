@@ -6,6 +6,10 @@
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   strcspn=connutil ftp_connector http_connector lbsmd local server_info version
   $(strcspn:%=ncbi_%.o): %.o: $(srcdir)/%.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcspn $< -o $@ \
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) \
+	    -fno-builtin-strcspn -fno-builtin-strspn $< -o $@ $(CC_FILTER)
+
+  ncbi_service.o: $(srcdir)/ncbi_service.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strpbrk $< -o $@ \
 	    $(CC_FILTER)
 endif
