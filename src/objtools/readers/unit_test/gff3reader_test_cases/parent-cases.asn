@@ -39,11 +39,6 @@ Seq-annot ::= {
           qual "Parent",
           val "gene00001"
         }
-      },
-      xref {
-        {
-          id local str "gene00001"
-        }
       }
     },
     {
@@ -89,7 +84,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene00001"
+          id local str "cds00001"
         }
       }
     },
@@ -136,7 +131,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene00001"
+          id local str "cds00001"
+        },
+        {
+          id local str "cds00002"
         }
       }
     },
@@ -177,7 +175,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene00001"
+          id local str "cds00002"
         }
       }
     },
@@ -206,11 +204,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene00001"
+          id local str "cds00003"
         }
       }
     },
     {
+      id local str "cds00001",
       data cdregion {
         frame one
       },
@@ -257,6 +256,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local str "cds00001",
       data cdregion {
         frame one
       },
@@ -303,6 +303,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local str "cds00002",
       data cdregion {
         frame one
       },
@@ -343,6 +344,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local str "cds00002",
       data cdregion {
         frame one
       },
@@ -383,6 +385,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local str "cds00003",
       data cdregion {
         frame one
       },

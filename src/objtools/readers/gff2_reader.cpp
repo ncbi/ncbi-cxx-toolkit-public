@@ -585,9 +585,6 @@ bool CGff2Reader::x_UpdateAnnotFeature(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
-    if (!x_FeatureSetXref(gff, pFeature)) {
-        return false;
-    }
     if (!x_AddFeatureToAnnot( pFeature, pAnnot )) {
         return false;
     }
@@ -781,38 +778,6 @@ bool CGff2Reader::x_FeatureSetId(
     string strId;
     if ( record.GetAttribute( "ID", strId ) ) {
         pFeature->SetId().SetLocal().SetStr( strId );
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetXref(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    list<string> parents;
-    const string& parent = pFeature->GetNamedQual("Parent");
-    if (!parent.empty()) {
-        parents.push_back(parent);
-    }
-    if (parents.empty()  &&  !record.GetAttribute("Parent", parents)) {
-        return true;
-    }
-    for (list<string>::const_iterator cit = parents.begin(); cit != parents.end();
-            ++cit) {
-        CRef<CFeat_id> pFeatId(new CFeat_id);
-        pFeatId->SetLocal().SetStr(*cit);
-        IdToFeatureMap::iterator it = m_MapIdToFeature.find(*cit);
-        if (it == m_MapIdToFeature.end()) {
-            //return false;
-			continue;
-        }
-        CRef<CSeq_feat> pParent = it->second;
-        pParent->SetId(*pFeatId);
-        CRef< CSeqFeatXref > pXref(new CSeqFeatXref);
-        pXref->SetId(*pFeatId);  
-        pFeature->SetXref().push_back(pXref);
     }
     return true;
 }

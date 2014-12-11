@@ -303,20 +303,28 @@ bool CGff3Reader::xUpdateAnnotCds(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xFeatureSetXrefParent(
     const string& parent,
-    CRef<CSeq_feat> pFeature)
+    CRef<CSeq_feat> pChild)
 //  ----------------------------------------------------------------------------
 {
-    CRef<CFeat_id> pFeatId(new CFeat_id);
-    pFeatId->SetLocal().SetStr(parent);
     IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
     if (it == m_MapIdToFeature.end()) {
         return false;
     }
     CRef<CSeq_feat> pParent = it->second;
-    pParent->SetId(*pFeatId);
-    CRef< CSeqFeatXref > pXref(new CSeqFeatXref);
-    pXref->SetId(*pFeatId);  
-    pFeature->SetXref().push_back(pXref);
+
+    //xref child->parent
+    CRef<CFeat_id> pParentId(new CFeat_id);
+    pParentId->Assign(pParent->GetId());
+    CRef<CSeqFeatXref> pParentXref(new CSeqFeatXref);
+    pParentXref->SetId(*pParentId);  
+    pChild->SetXref().push_back(pParentXref);
+
+    //xref parent->child
+    CRef<CFeat_id> pChildId(new CFeat_id);
+    pChildId->Assign(pChild->GetId());
+    CRef<CSeqFeatXref> pChildXref(new CSeqFeatXref);
+    pChildXref->SetId(*pChildId);
+    pParent->SetXref().push_back(pChildXref);
     return true;
 }
 
@@ -337,9 +345,6 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     }
 
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
-        return false;
-    }
-    if (!x_FeatureSetXref(record, pFeature)) {
         return false;
     }
     if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {

@@ -173,10 +173,6 @@ public:
         const CGff2Record&,
         CRef< CSeq_feat > );
 
-    virtual bool x_FeatureSetXref(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
     bool x_FeatureSetQualifiers(
         const CGff2Record&,
         CRef< CSeq_feat > );

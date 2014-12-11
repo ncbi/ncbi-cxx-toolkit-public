@@ -473,6 +473,13 @@ bool CGff2Record::x_MigrateId(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
+    string featIdStr;
+    if (!GetAttribute("ID", featIdStr)) {
+        return true;
+    }
+    CRef<CFeat_id> pFeatId(new CFeat_id);
+    pFeatId->SetLocal().SetStr(featIdStr);
+    pFeature->SetId(*pFeatId);
     return true;
 }
 
