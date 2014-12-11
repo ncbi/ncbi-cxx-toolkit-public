@@ -59,21 +59,22 @@ USING_SCOPE(objects);
 
 static void s_UpdateSpans(const TSeqRange &query_range,
                           const TSeqRange &subject_range,
-                          CAlignCompare::SAlignment& align_info)
+                          CAlignCompare::SAlignment& align_info,
+                          CAlignCompare::ERowComparison row)
 {
-     align_info.spans[subject_range] = query_range;
-     align_info.query_spans += query_range;
-     align_info.subject_spans += subject_range;
+     align_info.spans[row == CAlignCompare::e_Query ? query_range : subject_range] =
+         row == CAlignCompare::e_Subject ? subject_range : query_range;
 }
 
 static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
-                                         CAlignCompare::SAlignment& align_info)
+                                         CAlignCompare::SAlignment& align_info,
+                                         CAlignCompare::ERowComparison row)
 {
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Disc:
         ITERATE (CSeq_align::TSegs::TDisc::Tdata, it,
                  align.GetSegs().GetDisc().Get()) {
-            s_GetAlignmentSpans_Interval(**it, align_info);
+            s_GetAlignmentSpans_Interval(**it, align_info, row);
         }
         break;
 
@@ -90,7 +91,7 @@ static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
                  const CPairwiseAln::TAlignRange& r = *it;
                  s_UpdateSpans(TSeqRange(r.GetFirstFrom(), r.GetFirstTo()),
                                TSeqRange(r.GetSecondFrom(), r.GetSecondTo()),
-                               align_info);
+                               align_info, row);
              }
          }}
         break;
@@ -175,18 +176,19 @@ static void s_GetAlignmentMismatches(const CSeq_align& align,
 // Retrieve a list of exon-by-exon accounting within an alignment
 //
 static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
-                                     CAlignCompare::SAlignment &align_info)
+                                     CAlignCompare::SAlignment &align_info,
+                                     CAlignCompare::ERowComparison row)
 {
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
-        s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info);
+        s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info, row);
         break;
 
     case CSeq_align::TSegs::e_Disc:
         /* UNTESTED */
         ITERATE (CSeq_align::TSegs::TDisc::Tdata, it,
                  align.GetSegs().GetDisc().Get()) {
-            s_UpdateSpans((*it)->GetSeqRange(0), (*it)->GetSeqRange(1), align_info);
+            s_UpdateSpans((*it)->GetSeqRange(0), (*it)->GetSeqRange(1), align_info, row);
         }
         break;
 
@@ -195,7 +197,7 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
         ITERATE (CSeq_align::TSegs::TStd, it, align.GetSegs().GetStd()) {
             const CStd_seg& seg = **it;
             s_UpdateSpans(seg.GetLoc()[0]->GetTotalRange(),
-                          seg.GetLoc()[1]->GetTotalRange(), align_info);
+                          seg.GetLoc()[1]->GetTotalRange(), align_info, row);
         }
         break;
 
@@ -207,7 +209,7 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
             TSeqRange product;
             product.SetFrom(exon.GetProduct_start().AsSeqPos());
             product.SetTo(exon.GetProduct_end().AsSeqPos());
-            s_UpdateSpans(product, genomic, align_info);
+            s_UpdateSpans(product, genomic, align_info, row);
         }
         break;
 
@@ -222,7 +224,8 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
 // meaningful only for Spliced-seg alignments
 //
 static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
-                                       CAlignCompare::SAlignment &align_info)
+                                       CAlignCompare::SAlignment &align_info,
+                                       CAlignCompare::ERowComparison row)
 {
     if (!align.GetSegs().IsSpliced() ||
         !align.GetSegs().GetSpliced().CanGetProduct_strand() ||
@@ -247,7 +250,7 @@ static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
             TSeqRange product;
             product.SetFrom(last_exon->GetProduct_end().AsSeqPos());
             product.SetTo(exon->GetProduct_start().AsSeqPos());
-            s_UpdateSpans(product, genomic, align_info);
+            s_UpdateSpans(product, genomic, align_info, row);
         }
         last_exon = exon;
     }
@@ -257,9 +260,10 @@ static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
 // Retrieve a list of total range spans for an alignment
 //
 static void s_GetAlignmentSpans_Span(const CSeq_align& align,
-                                     CAlignCompare::SAlignment &align_info)
+                                     CAlignCompare::SAlignment &align_info,
+                                     CAlignCompare::ERowComparison row)
 {
-    s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info);
+    s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info, row);
 }
 
 struct SComparison
@@ -459,29 +463,20 @@ SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row)
             // fall through
 
         case e_Interval:
-            s_GetAlignmentSpans_Interval(*align, *this);
+            s_GetAlignmentSpans_Interval(*align, *this, row);
             break;
 
         case e_Exon:
-            s_GetAlignmentSpans_Exon(*align, *this);
+            s_GetAlignmentSpans_Exon(*align, *this, row);
             break;
 
         case e_Span:
-            s_GetAlignmentSpans_Span(*align, *this);
+            s_GetAlignmentSpans_Span(*align, *this, row);
             break;
 
         case e_Intron:
-            s_GetAlignmentSpans_Intron(*align, *this);
+            s_GetAlignmentSpans_Intron(*align, *this, row);
             break;
-        }
-
-        if (row != e_Both) {
-            spans.clear();
-            ITERATE (CRangeCollection<TSeqPos>, range_it,
-                     row == e_Query ? query_spans : subject_spans)
-            {
-                spans[*range_it] = *range_it;
-            }
         }
     }
     catch (CException& e) {

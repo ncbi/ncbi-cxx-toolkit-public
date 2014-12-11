@@ -78,9 +78,7 @@ public:
     
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
-        CRangeCollection<TSeqPos> query_spans;
         CRangeCollection<TSeqPos> query_mismatches;
-        CRangeCollection<TSeqPos> subject_spans;
         CRangeCollection<TSeqPos> subject_mismatches;
 
         EMatchLevel      match_level;
