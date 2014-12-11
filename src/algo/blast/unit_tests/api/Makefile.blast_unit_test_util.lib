@@ -7,7 +7,7 @@ SRC = test_objmgr blast_test_util
 LIB_OR_DLL = lib
 
 CFLAGS   = $(FAST_CFLAGS) 
-CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS) -I$(srcdir)/../../api
+CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I$(srcdir)/../../api
 CXXFLAGS = $(FAST_CXXFLAGS) 
 
 ASN_DEP = blastdb xnetblast
