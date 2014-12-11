@@ -88,6 +88,11 @@ private:
     bool x_IsAllCaps(const string& str) const;
     bool x_IsAllLowerCase(const string& str) const;
     bool x_IsAllPunctuation(const string& str) const;
+    // Checks whether the first letter of the first word is capitalized
+    bool x_IsFirstCap(const string& str) const;
+    // Checks whether the first letter of each word is capitalized
+    bool x_IsFirstEachCap(const string& str) const;
+        
     bool x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const;
     bool x_AdvancedStringCompare(const string& str, 
                                 const string& str_match, 

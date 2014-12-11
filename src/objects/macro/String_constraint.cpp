@@ -55,30 +55,32 @@ CString_constraint::~CString_constraint(void)
 
 bool CString_constraint :: Empty() const
 {
-   if (GetIs_all_caps() || GetIs_all_lower() || GetIs_all_punct()) {
+   if (GetIs_all_caps() ||
+       GetIs_all_lower() ||
+       GetIs_all_punct() ||
+       GetIs_first_cap() ||
+       GetIs_first_each_cap()) {
       return false;
-   }
-   else if (!CanGetMatch_text() || GetMatch_text().empty()) {
+   } else if (!CanGetMatch_text() || NStr::IsBlank(GetMatch_text())) {
         return true;
    }
-   else {
-      return false;
-   }
-};
+
+   return false;
+}
 
 bool CString_constraint :: x_IsAllCaps(const string& str) const
 {
   string up_str(str);
   NStr::ToUpper(up_str);
   return NStr::EqualCase(up_str, str);
-};
+}
 
 bool CString_constraint :: x_IsAllLowerCase(const string& str) const
 {
   string low_str(str);
   NStr::ToLower(low_str);
   return NStr::EqualCase(low_str, str);
-};
+}
 
 bool CString_constraint :: x_IsAllPunctuation(const string& str) const
 {
@@ -86,7 +88,48 @@ bool CString_constraint :: x_IsAllPunctuation(const string& str) const
      if (!ispunct(Uint1(str[i]))) return false;
    }
    return true;
-};
+}
+
+bool CString_constraint :: x_IsFirstCap(const string& str) const
+{
+    // ignore punctuation and spaces at the beginning of the phrase
+    string::const_iterator it = str.begin();
+    bool found(false);
+    while (it != str.end() && !found) {
+        if (isalpha( (unsigned char) (*it)))
+            found = true;
+        else 
+            ++it;
+    }
+
+    if (found) {
+        return isalpha( (unsigned char) (*it) ) && isupper( (unsigned char) (*it) );
+    }
+    return false;
+}
+
+bool CString_constraint :: x_IsFirstEachCap(const string& str) const
+{
+    bool first(true);
+    bool rval(true);
+    for (size_t i = 0; i < str.size() && rval; ++i) {
+        if (isalpha( (unsigned char) str[i])) {
+            if (first) {
+                rval = rval && isupper( (unsigned char) str[i] );
+                first = false;
+            } 
+        } else if ( str[i] == '-' ){
+            // hyphenated words are considered as one composed word
+            if ((i > 0 && !isalpha( (unsigned char) str[i - 1])) || 
+                (i + 1 < str.size() && !isalpha( (unsigned char) str[i + 1] ))) 
+                first = true;
+        } else {
+            first = true;
+        }
+    }
+    return rval;
+}
+
 
 static const string weasels[] = {
   "candidate",
@@ -370,10 +413,9 @@ bool CString_constraint :: x_StringIsPositiveAllDigits(const string& str) const
    if (str.find_first_not_of(m_digit_str) != string::npos) {
       return false;
    }
-   else {
-      return true;
-   }
-};
+
+   return true;
+}
 
 bool CString_constraint :: x_IsStringInSpan(const string& str, const string& first, const string& second) const
 {
@@ -510,148 +552,115 @@ bool CString_constraint :: x_IsStringInSpanInList (const string& str, const stri
 
 bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) const
 {
-  bool rval = false;
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
 
-  string this_str(str);
-  if (str.empty()) {
-     return false;
-  }
-  if (Empty()) {
-    rval = true;
-  }
-  else {
+    bool rval(false);
+    if (Empty()) {
+        rval = true;
+    }
+    
+    string this_str(str);
     if (GetIgnore_weasel()) {
-         this_str = x_SkipWeasel(str);
+        this_str = x_SkipWeasel(str);
     }
     if (GetIs_all_caps() && !x_IsAllCaps(this_str)) {
-         rval = false;
-    }
-    else if (GetIs_all_lower() && !x_IsAllLowerCase(this_str)) {
-               rval = false;
-    }
-    else if (GetIs_all_punct() && !x_IsAllPunctuation(this_str)) {
-               rval = false;
-    }
-    else {
-      string tmp_match = CanGetMatch_text()? GetMatch_text() : kEmptyStr;
-      if (GetIgnore_weasel()) {
-         tmp_match = x_SkipWeasel(tmp_match);
-      }
-      if ((GetMatch_location() != eString_location_inlist) 
-                && CanGetIgnore_words()){
-          rval = x_AdvancedStringMatch(str, tmp_match);
-      }
-      else {
-        string search(this_str), pattern(tmp_match);
-        bool ig_space = GetIgnore_space();
-        bool ig_punct = GetIgnore_punct();
-        if ( (GetMatch_location() != eString_location_inlist)
-                 && (ig_space || ig_punct)) {
-          search = x_StripUnimportantCharacters(search, ig_space, ig_punct);
-          pattern = x_StripUnimportantCharacters(pattern, ig_space, ig_punct);
-        } 
+        rval = false;
+    } else if (GetIs_all_lower() && !x_IsAllLowerCase(this_str)) {
+        rval = false;
+    } else if (GetIs_all_punct() && !x_IsAllPunctuation(this_str)) {
+        rval = false;
+    } else if (GetIs_first_cap() && !x_IsFirstCap(this_str)) {
+        rval = false;
+    } else if (GetIs_first_each_cap() && !x_IsFirstEachCap(this_str)) {
+        rval = false;
+    } else {
+      
+        string tmp_match = CanGetMatch_text() ? GetMatch_text() : kEmptyStr;
+        if (GetIgnore_weasel()) {
+            tmp_match = x_SkipWeasel(tmp_match);
+        }
+        if (GetMatch_location() != eString_location_inlist && CanGetIgnore_words()){
+            rval = x_AdvancedStringMatch(str, tmp_match);
+        } else {
+            string search(this_str), pattern(tmp_match);
+            if ( GetMatch_location() != eString_location_inlist && (GetIgnore_space() || GetIgnore_punct())) {
+              search = x_StripUnimportantCharacters(search, GetIgnore_space(), GetIgnore_punct());
+              pattern = x_StripUnimportantCharacters(pattern, GetIgnore_space(), GetIgnore_punct());
+            } 
+            
+            NStr::ECase case_sens = GetCase_sensitive() ? NStr::eCase : NStr::eNocase;
+            SIZE_TYPE pFound;
+            if (NStr::IsBlank(pattern)) {
+                pFound = 0;
+            } else {
+                pFound = NStr::Find(search, pattern, 0, NPOS, NStr::eFirst, case_sens);
+            }
 
-        size_t pFound;
-        if (pattern.empty()) {
-          pFound = false;
-        }
-        else {
-           pFound = GetCase_sensitive()?
-                    search.find(pattern) : NStr::FindNoCase(search, pattern);
-        }
-        switch (GetMatch_location()) 
-        {
-          case eString_location_contains:
-            if (string::npos == pFound) {
-               rval = false;
-            }
-            else if (GetWhole_word()) {
-                rval = x_IsWholeWordMatch (search, pFound, pattern.size());
-                while (!rval && pFound != string::npos) {
-	          pFound = GetCase_sensitive() ?
-                              search.find(pattern, pFound+1):
-                                NStr::FindNoCase(search, pattern, pFound+1);
-                  rval = (pFound != string::npos)? 
-                           x_IsWholeWordMatch(search, pFound, pattern.size()):
-                            false;
+            switch (GetMatch_location()) {
+            case eString_location_contains:
+                if (pFound == NPOS) {
+                    rval = false;
+                } else if (GetWhole_word()) {
+                    rval = x_IsWholeWordMatch (search, pFound, pattern.size());
+                    while (!rval && pFound != NPOS) {
+                        pFound = NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst, case_sens);
+                        rval = (pFound != NPOS) ? x_IsWholeWordMatch(search, pFound, pattern.size()) : false;
+                    }
+                } else {
+                    rval = true;
                 }
-            }
-            else {
-                 rval = true;
-            }
-            break;
-          case eString_location_starts:
-            if (!pFound) {
-              rval = GetWhole_word() ?
-                         x_IsWholeWordMatch (search, pFound, pattern.size()):
-                         true;
-            }
-            break;
-          case eString_location_ends:
-            while (pFound != string::npos && !rval) {
-              if ( (pFound + pattern.size()) == search.size()) {
-                rval = GetWhole_word()? 
-                         x_IsWholeWordMatch (search, pFound, pattern.size()) : 
-                         true;
-                /* stop the search, we're at the end of the string */
-                pFound = string::npos;
-              }
-              else {
-  	              pFound = GetCase_sensitive() ?
-                           search.find(pattern, pFound+1):
-                              NStr::FindNoCase(search, pattern, pFound+1);
-              }
-            }
-            break;
-          case eString_location_equals:
-            if (GetCase_sensitive() && (search == pattern) ) {
-               rval= true; 
-            }
-            else if (!GetCase_sensitive() 
-                        && NStr::EqualNocase(search, pattern) ) {
-                  rval = true;
-            }
-            break;
-          case eString_location_inlist:
-            pFound = GetCase_sensitive()?
-                       pattern.find(search) : NStr::FindNoCase(pattern, search);
-            if (pFound == string::npos) {
-                  rval = false;
-            }
-            else {
-              rval = x_IsWholeWordMatch(pattern, pFound, search.size(), true);
-              while (!rval && pFound != string::npos) {
-                pFound = GetCase_sensitive() ?
-                         CTempString(pattern).substr(pFound + 1).find(search):
-                         NStr::FindNoCase(
-                             CTempString(pattern).substr(pFound + 1), search);
-                if (pFound != string::npos) {
-                  rval = x_IsWholeWordMatch(pattern, pFound, str.size(),true);
+                break;
+            case eString_location_starts:
+                if (!pFound) {
+                    rval = GetWhole_word() ? x_IsWholeWordMatch (search, pFound, pattern.size()) : true;
                 }
-              }
-            }
-            if (!rval) {
-              /* look for spans */
-              rval = x_IsStringInSpanInList (search, pattern);
-            }
+                break;
+            case eString_location_ends:
+                while (pFound != NPOS && !rval) {
+                    if ( (pFound + pattern.size()) == search.size()) {
+                        rval = GetWhole_word() ? x_IsWholeWordMatch (search, pFound, pattern.size()) : true;
+                        /* stop the search, we're at the end of the string */
+                        pFound = NPOS;
+                    } else {
+                        pFound = NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst, case_sens);
+                    }
+                }
+                break;
+            case eString_location_equals:
+                rval = NStr::Equal(search, pattern, case_sens);
+                break;
+            case eString_location_inlist:
+                pFound = NStr::Find(pattern, search, 0, NPOS, NStr::eFirst, case_sens);
+                if (pFound == NPOS) {
+                    rval = false;
+                } else {
+                    rval = x_IsWholeWordMatch(pattern, pFound, search.size(), true);
+                    while (!rval && pFound != NPOS) {
+                        pFound = NStr::Find(pattern.substr(pFound + 1), search, 0, NPOS, NStr::eFirst, case_sens);
+                        if (pFound != NPOS) {
+                            rval = x_IsWholeWordMatch(pattern, pFound, str.size(), true);
+                        }
+                    }
+                }
+                if (!rval) {
+                /* look for spans */
+                rval = x_IsStringInSpanInList (search, pattern);
+                }
             break;
+            }
         }
-      }
     }
-  }
-  return rval;
-};
+
+    return rval;
+}
 
 bool CString_constraint :: Match(const string& str) const
 {
   bool rval = x_DoesSingleStringMatchConstraint (str);
-  if (GetNot_present()) { 
-     return (!rval);
-  }
-  else {
-     return rval;
-  }
-};
+  return GetNot_present() ? (!rval) : rval;
+}
 
 bool CString_constraint::x_ReplaceContains(string& val, const string& replace) const
 {
@@ -733,7 +742,6 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
 
 /* Original file checksum: lines: 57, chars: 1744, CRC32: 7f791d1c */
