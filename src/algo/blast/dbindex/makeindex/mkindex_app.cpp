@@ -76,9 +76,11 @@ void CMkIndexApplication::Init()
     arg_desc->AddDefaultKey(
             "verbosity", "reporting_level", "how much to report",
             CArgDescriptions::eString, "normal" );
-    arg_desc->AddDefaultKey(
-            "iformat", "input_format", "type of input used",
-            CArgDescriptions::eString, "fasta" );
+    arg_desc->AddOptionalKey(
+            "iformat", "input_format", 
+            "type of input used (default is \"blastdb\" for new style index, "
+            "\"fasta\" for old style index)",
+            CArgDescriptions::eString );
     arg_desc->AddDefaultKey(
             "legacy", "use_legacy_index_format",
             "use legacy (0-terminated offset lists) dbindex format",
@@ -210,7 +212,13 @@ int CMkIndexApplication::Run()
     string odir_name( CFile( ofname_base ).GetDir() );
     */
     CSequenceIStream * seqstream = 0;
-    string iformat = GetArgs()["iformat"].AsString();
+    string iformat( GetArgs()["iformat"] ? GetArgs()["iformat"].AsString()
+                                         : old_style ? "fasta" : "blastdb" );
+
+    if( !old_style && iformat == "fasta" ) {
+        ERR_POST( Error << "new style index requires input format 'blastdb'" );
+        exit( 1 );
+    }
 
     if( iformat == "fasta" ) {
         if( GetArgs()["db_mask"] ) {
@@ -255,11 +263,6 @@ int CMkIndexApplication::Run()
             GetArgs()["db_mask"] && 
             GetArgs()["db_mask"].AsString() != "" ) {
         ERR_POST( Error << "option 'db_mask' requires input format 'blastdb'" );
-        exit( 1 );
-    }
-
-    if( !old_style && iformat == "fasta" ) {
-        ERR_POST( Error << "new style index requires input format 'blastdb'" );
         exit( 1 );
     }
 
