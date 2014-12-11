@@ -36,7 +36,6 @@
 #include <algo/blast/core/blast_def.h>
 #include <vector>
 
-#undef NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING

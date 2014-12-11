@@ -1,0 +1,14 @@
+# $Id$
+
+WATCHERS = camacho madden fongah2
+
+LIB = seqalign_util
+SRC = seqalign_cmp seqalign_set_convert
+LIB_OR_DLL = lib
+
+CFLAGS   = $(FAST_CFLAGS) 
+CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS) 
+
+ASN_DEP = blastdb xnetblast
+REQUIRES = objects
