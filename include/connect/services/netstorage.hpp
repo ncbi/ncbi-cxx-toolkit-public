@@ -92,7 +92,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
     /// Construct a CNetStorageObjectInfo object.
     CNetStorageObjectInfo(const string& object_loc,
             ENetStorageObjectLocation location,
-            const CNetStorageObjectLoc& object_loc_struct,
+            const CNetStorageObjectLoc* object_loc_struct,
             Uint8 object_size,
             CJsonNode::TInstance storage_specific_info);
 
@@ -118,7 +118,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
 
     /// Return object size in bytes.
     /// @note Valid only if GetLocation() != eNFL_NotFound.
-    Uint8 GetSize();
+    Uint8 GetSize() const;
 
     /// Return a JSON object containing storage-specific information
     /// about the object.
@@ -303,6 +303,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     ///  A CNetStorageObjectInfo object. If the object is not found, a
     ///  valid object is returned, which returns eNFL_NotFound for
     ///  GetLocation().
+    ///
+    /// @throw CNetStorageException on error
     ///
     /// @see CNetStorageObjectInfo
     ///

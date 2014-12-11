@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include "netstorage_direct_nc.hpp"
-#include "netstorageobjectinfo.hpp"
 #include "netcache_api_impl.hpp"
 
 #include <connect/services/netstorage_admin.hpp>
@@ -249,13 +248,13 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
                 (Uint8) size_node.AsInteger() :
                 m_NetCacheAPI.GetBlobSize(m_BlobKey);
 
-        return new SNetStorageObjectInfoImpl(m_BlobKey,
+        return CNetStorageObjectInfo(m_BlobKey,
                 eNFL_NetCache, NULL, blob_size, blob_info);
     }
     catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
-        return new SNetStorageObjectInfoImpl(m_BlobKey,
+        return CNetStorageObjectInfo(m_BlobKey,
                 eNFL_NotFound, NULL, 0, NULL);
     }
 }

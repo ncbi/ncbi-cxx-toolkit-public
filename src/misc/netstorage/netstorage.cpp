@@ -712,7 +712,7 @@ bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
                             m_ObjectLoc.GetUniqueKey(), 0, kEmptyStr);
 
             *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
-                    eNFL_NetCache, m_ObjectLoc, blob_size, blob_info);
+                    eNFL_NetCache, &m_ObjectLoc, blob_size, blob_info);
 
             m_CurrentLocation = eNFL_NetCache;
             return true;
@@ -733,7 +733,7 @@ bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
                 file_size = (Uint8) size_node.AsInteger();
 
             *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
-                    eNFL_FileTrack, m_ObjectLoc, file_size, file_info_node);
+                    eNFL_FileTrack, &m_ObjectLoc, file_size, file_info_node);
 
             m_CurrentLocation = eNFL_FileTrack;
             return true;
@@ -774,7 +774,7 @@ CNetStorageObjectInfo SNetStorageObjectAPIImpl::GetInfo()
     }
 
     return CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
-            eNFL_NotFound, m_ObjectLoc, 0, NULL);
+            eNFL_NotFound, &m_ObjectLoc, 0, NULL);
 }
 
 bool SNetStorageObjectAPIImpl::x_ExistsAtLocation(

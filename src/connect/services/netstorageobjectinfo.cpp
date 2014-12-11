@@ -31,14 +31,28 @@
  */
 
 #include <ncbi_pch.hpp>
-
-#include "netstorageobjectinfo.hpp"
+#include <connect/services/netstorage.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 static const char* s_NCTimeFormat = "M/D/Y h:m:s.r";
 static const char* s_ISO8601TimeFormat = "Y-M-DTh:m:s.r";
+
+struct SNetStorageObjectInfoImpl : public CObject
+{
+    SNetStorageObjectInfoImpl(const string& object_loc,
+            ENetStorageObjectLocation location,
+            CJsonNode::TInstance object_loc_info,
+            Uint8 file_size,
+            CJsonNode::TInstance storage_specific_info);
+
+    string m_ObjectLoc;
+    ENetStorageObjectLocation m_Location;
+    CJsonNode m_ObjectLocInfo;
+    Uint8 m_FileSize;
+    CJsonNode m_StorageSpecificInfo;
+};
 
 SNetStorageObjectInfoImpl::SNetStorageObjectInfoImpl(const string& object_loc,
         ENetStorageObjectLocation location,
@@ -55,10 +69,11 @@ SNetStorageObjectInfoImpl::SNetStorageObjectInfoImpl(const string& object_loc,
 
 CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
         ENetStorageObjectLocation location,
-        const CNetStorageObjectLoc& object_loc_struct,
+        const CNetStorageObjectLoc* object_loc_struct,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info) :
     m_Impl(new SNetStorageObjectInfoImpl(object_loc, location,
-            object_loc_struct.ToJSON(), file_size, storage_specific_info))
+            object_loc_struct ? object_loc_struct->ToJSON() : CJsonNode(),
+            file_size, storage_specific_info))
 {
 }
 
@@ -97,7 +112,7 @@ CTime CNetStorageObjectInfo::GetCreationTime() const
     return CTime();
 }
 
-Uint8 CNetStorageObjectInfo::GetSize()
+Uint8 CNetStorageObjectInfo::GetSize() const
 {
     return m_Impl->m_FileSize;
 }
