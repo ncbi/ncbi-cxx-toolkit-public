@@ -6,7 +6,7 @@ function create_output_file()
    local result=$2
 
    (cd test-cases && echo "$TEST_TOOL_PATH $args -o - "| bash  \
-    > $result)
+    > $result 2>&1 ) || echo "$TEST_TOOL_PATH" "returned non-zero exit code"
 }
 
 function make_test_name()
