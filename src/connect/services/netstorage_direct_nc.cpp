@@ -128,9 +128,10 @@ ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
 
 ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
 {
-    if (m_State != eReading)
-        x_InitReader();
-
+    if (m_State != eReading) {
+        *count = 0;
+        return eRW_Success;
+    }
     return m_NetCacheReader->PendingCount(count);
 }
 
