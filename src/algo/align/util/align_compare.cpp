@@ -38,6 +38,7 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -93,6 +94,81 @@ static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
              }
          }}
         break;
+    }
+}
+
+static void s_GetAlignmentMismatches(const CSeq_align& align,
+                                     CAlignCompare::SAlignment& align_info,
+                                     CAlignCompare::ERowComparison row)
+{
+    if (!align.GetSegs().IsSpliced()) {
+        NCBI_THROW(CException, eUnknown,
+                   "full comparison supported only for Spliced-seg alignments");
+    }
+
+    bool is_product_minus = align.GetSegs().GetSpliced().IsSetProduct_strand() &&
+                            align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus;
+    bool is_genomic_minus = align.GetSegs().GetSpliced().IsSetGenomic_strand() &&
+                            align.GetSegs().GetSpliced().GetGenomic_strand() == eNa_strand_minus;
+    ITERATE (CSpliced_seg::TExons, it, align.GetSegs().GetSpliced().GetExons())
+    {
+        const CSpliced_exon& exon = **it;
+        if (!exon.IsSetParts()) {
+            continue;
+        }
+        int product_dir = is_product_minus ||
+                          (exon.IsSetProduct_strand() &&
+                           exon.GetProduct_strand() == eNa_strand_minus)
+                           ? -1 : 1;
+        TSeqPos product_pos = (product_dir == -1 ? exon.GetProduct_start()
+                                                 : exon.GetProduct_end())
+                              . AsSeqPos();
+        int genomic_dir = is_genomic_minus ||
+                          (exon.IsSetGenomic_strand() &&
+                           exon.GetGenomic_strand() == eNa_strand_minus)
+                           ? -1 : 1;
+        TSeqPos genomic_pos = genomic_dir == -1 ? exon.GetGenomic_start()
+                                                : exon.GetGenomic_end();
+        ITERATE (CSpliced_exon::TParts, part_it, exon.GetParts()) {
+            switch ((*part_it)->Which()) {
+                case CSpliced_exon_chunk::e_Mismatch:
+                    if (row != CAlignCompare::e_Subject) {
+                        TSeqPos product_mismatch_end = product_pos +
+                              product_dir * ((*part_it)->GetMismatch()-1);
+                        align_info.query_mismatches += TSeqRange(
+                            min(product_pos,product_mismatch_end),
+                            max(product_pos,product_mismatch_end));
+
+                    }
+                    if (row != CAlignCompare::e_Query) {
+                        TSeqPos genomic_mismatch_end = genomic_pos +
+                              genomic_dir * ((*part_it)->GetMismatch()-1);
+                        align_info.subject_mismatches += TSeqRange(
+                            min(genomic_pos,genomic_mismatch_end),
+                            max(genomic_pos,genomic_mismatch_end));
+                    }
+                    product_pos += product_dir * (*part_it)->GetMismatch();
+                    genomic_pos += genomic_dir * (*part_it)->GetMismatch();
+                    break;
+
+                case CSpliced_exon_chunk::e_Match:
+                    product_pos += product_dir * (*part_it)->GetMatch();
+                    genomic_pos += genomic_dir * (*part_it)->GetMatch();
+                    break;
+
+                case CSpliced_exon_chunk::e_Product_ins:
+                    product_pos += product_dir * (*part_it)->GetProduct_ins();
+                    break;
+
+                case CSpliced_exon_chunk::e_Genomic_ins:
+                    genomic_pos += genomic_dir * (*part_it)->GetGenomic_ins();
+                    break;
+
+                default:
+                    NCBI_THROW(CException, eUnknown,
+                               "Unsupported exon part");
+            }
+        }
     }
 }
 
@@ -188,8 +264,8 @@ static void s_GetAlignmentSpans_Span(const CSeq_align& align,
 
 struct SComparison
 {
-    SComparison(const CAlignCompare::TAlignmentSpans& first,
-                const CAlignCompare::TAlignmentSpans& second);
+    SComparison(const CAlignCompare::SAlignment& first,
+                const CAlignCompare::SAlignment& second);
 
     size_t spans_in_common;
     size_t spans_overlap;
@@ -204,8 +280,8 @@ struct SComparison
 // SComparison constructor does the hard work of verifying that two sets of alignment
 // span ranges actually overlap, and determines by how much
 //
-SComparison::SComparison(const CAlignCompare::TAlignmentSpans& first,
-                         const CAlignCompare::TAlignmentSpans& second)
+SComparison::SComparison(const CAlignCompare::SAlignment& first,
+                         const CAlignCompare::SAlignment& second)
 {
     spans_in_common = 0;
     spans_overlap = 0;
@@ -216,9 +292,9 @@ SComparison::SComparison(const CAlignCompare::TAlignmentSpans& first,
     float sum_a = 0;
     float sum_b = 0;
 
-    CAlignCompare::TAlignmentSpans::const_iterator first_it = first.begin();
-    CAlignCompare::TAlignmentSpans::const_iterator second_it = second.begin();
-    for ( ;  first_it != first.end()  &&  second_it != second.end();  ) {
+    CAlignCompare::TAlignmentSpans::const_iterator first_it = first.spans.begin();
+    CAlignCompare::TAlignmentSpans::const_iterator second_it = second.spans.begin();
+    for ( ;  first_it != first.spans.end()  &&  second_it != second.spans.end();  ) {
         if (*first_it == *second_it) {
             TSeqPos intersecting_len = first_it->first.GetLength();
             dot += float(intersecting_len) * float(intersecting_len);
@@ -258,12 +334,14 @@ SComparison::SComparison(const CAlignCompare::TAlignmentSpans& first,
             }
         }
     }
-    is_equivalent = spans_in_common == first.size() &&
-                    spans_in_common == second.size();
-    for ( ;  first_it != first.end();  ++first_it, ++spans_unique_first) {
+    is_equivalent = spans_in_common == first.spans.size() &&
+                    spans_in_common == second.spans.size() &&
+                    first.query_mismatches == second.query_mismatches &&
+                    first.subject_mismatches == second.subject_mismatches;
+    for ( ;  first_it != first.spans.end();  ++first_it, ++spans_unique_first) {
         sum_a += first_it->first.GetLength() * first_it->first.GetLength();
     }
-    for ( ;  second_it != second.end();  ++second_it, ++spans_unique_second) {
+    for ( ;  second_it != second.spans.end();  ++second_it, ++spans_unique_second) {
         sum_b += second_it->first.GetLength() * second_it->first.GetLength();
     }
 
@@ -376,6 +454,10 @@ SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row)
 {
     try {
         switch (mode) {
+        case e_Full:
+            s_GetAlignmentMismatches(*align, *this, row);
+            // fall through
+
         case e_Interval:
             s_GetAlignmentSpans_Interval(*align, *this);
             break;
@@ -511,8 +593,7 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
         ITERATE (TAlignPtrSet, set1_it, set1_aligns) {
             ITERATE (TAlignPtrSet, set2_it, set2_aligns) {
                 comparisons.push_back(TComp(TPtrPair(*set1_it, *set2_it),
-                                            SComparison((*set1_it)->spans,
-                                                        (*set2_it)->spans)));
+                                            SComparison(**set1_it, **set2_it)));
             }
         }
         std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict, m_Row));

@@ -52,7 +52,7 @@ public:
     
     typedef map<TSeqRange, TSeqRange> TAlignmentSpans;
 
-    enum EMode { e_Interval, e_Exon, e_Span, e_Intron };
+    enum EMode { e_Interval, e_Exon, e_Span, e_Intron, e_Full };
 
     enum EMatchLevel {e_Equiv, e_Overlap, e_NoMatch};
 
@@ -79,7 +79,9 @@ public:
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
         CRangeCollection<TSeqPos> query_spans;
+        CRangeCollection<TSeqPos> query_mismatches;
         CRangeCollection<TSeqPos> subject_spans;
+        CRangeCollection<TSeqPos> subject_mismatches;
 
         EMatchLevel      match_level;
 
