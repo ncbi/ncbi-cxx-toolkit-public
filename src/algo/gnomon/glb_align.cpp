@@ -602,7 +602,7 @@ SMatrix::SMatrix() { // matrix for proteins
     for(int i = 0; i < num; ++i) {
         char c = aa[i];
         for(int j = 0; j < num; ++j) {
-            int score = scores[num*(j-1)+i];
+            int score = scores[num*j+i];
             char d = aa[j];
             matrix[(int)c][(int)d] = score;
             matrix[(int)tolower(c)][(int)tolower(d)] = score;
