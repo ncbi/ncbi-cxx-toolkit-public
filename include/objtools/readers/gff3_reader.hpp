@@ -74,6 +74,12 @@ public:
     //  object management:
     //
 public:
+    enum {
+        //range 12..23
+        fGeneXrefs = (0x1 << 12),
+    };
+    typedef unsigned int TReaderFlags;
+
     CGff3Reader(
         unsigned int uFlags,
         const string& name = "",

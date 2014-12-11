@@ -422,8 +422,13 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddFlag(
         "genbank",
         "clean up output for genbank submission",
-        true );
+        true);
         
+    arg_desc->AddFlag(
+        "gene-xrefs",
+        "generate parent-child xrefs involving genes",
+        true);
+
     arg_desc->AddDefaultKey(
         "locus-tag-prefix", 
         "STRING",
@@ -1090,6 +1095,15 @@ void CMultiReaderApp::xSetFlags(
         }
         break;
            
+    case CFormatGuess::eGff3:
+        if ( args["gene-xrefs"] ) {
+            m_iFlags |= CGff3Reader::fGeneXrefs;
+        }
+        if ( args["genbank"] ) {
+            m_iFlags |= CGff3Reader::fGeneXrefs;
+        }
+        break;
+
     default:
         break;
     }
