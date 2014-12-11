@@ -64,7 +64,8 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
     replace(name.begin(), name.end(), '_', '-');
     replace(name.begin(), name.end(), ' ', '-');
     
-    if (name == "note") {
+    if (name == "note" ||
+        NStr::EqualNocase(name, "orgmod-note")) {
         return eSubtype_other;
     } else if (vocabulary == eVocabulary_insdc) {
         if (name == "host") {
