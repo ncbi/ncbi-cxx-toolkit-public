@@ -1029,10 +1029,12 @@ void CValidError_bioseq::ValidateBioseqContext(
             if (nbsh) {
                 CSeqdesc_CI desc( nbsh, CSeqdesc::e_Molinfo );
                 const CMolInfo* mi = desc ? &(desc->GetMolinfo()) : 0;
-                CMolInfo::TTech tech = mi->IsSetTech() ? 
-                    mi->GetTech() : CMolInfo::eTech_unknown;
-                if (tech == CMolInfo::eTech_wgs) {
-                    sev = eDiag_Critical;
+                if (mi) {
+                    CMolInfo::TTech tech = mi->IsSetTech() ?
+                        mi->GetTech() : CMolInfo::eTech_unknown;
+                    if (tech == CMolInfo::eTech_wgs) {
+                        sev = eDiag_Critical;
+                    }
                 }
             }
         }
