@@ -1872,9 +1872,13 @@ void CAlignCollapser::FilterAlignments() {
                     l.SetTo(l.GetFrom()+DESIRED_CHUNK-1);
                     len = DESIRED_CHUNK;
                 }
-                for(int ie = 0; len < DESIRED_CHUNK && a.Exons()[ie].m_ssplice && a.Exons()[ie+1].m_ssplice; ++ie) {
-                    l.SetTo(a.Exons()[ie+1].GetTo());
-                    len += a.Exons()[ie+1].Limits().GetLength();
+                for(int ie = 0; len < DESIRED_CHUNK-2*MIN_EXON && a.Exons()[ie].m_ssplice; ++ie) {
+                    if(a.Exons()[ie+1].m_ssplice) {
+                        l.SetTo(a.Exons()[ie+1].GetTo());
+                        len += a.Exons()[ie+1].Limits().GetLength();
+                    } else {
+                        l.SetTo(min(a.Exons()[ie+1].GetTo(),a.Exons()[ie+1].GetFrom()+DESIRED_CHUNK-len-1));
+                    }
                 }
                 if(l.NotEmpty())
                     l = a.GetAlignMap().ShrinkToRealPoints(l, false);
@@ -1898,9 +1902,13 @@ void CAlignCollapser::FilterAlignments() {
                         left = a.Exons()[ie].GetTo()-DESIRED_CHUNK+1;
                         len = DESIRED_CHUNK;
                     }
-                    for(int iie = ie; len < DESIRED_CHUNK && a.Exons()[iie].m_fsplice && a.Exons()[iie-1].m_fsplice; --iie) {
-                        left = a.Exons()[iie-1].GetFrom();
-                        len += a.Exons()[iie-1].Limits().GetLength();
+                    for(int iie = ie; len < DESIRED_CHUNK-2*MIN_EXON && a.Exons()[iie].m_fsplice; --iie) {
+                        if(a.Exons()[iie-1].m_fsplice) {
+                            left = a.Exons()[iie-1].GetFrom();
+                            len += a.Exons()[iie-1].Limits().GetLength();
+                        } else {
+                            left = max(a.Exons()[iie-1].GetFrom(),a.Exons()[iie-1].GetTo()-DESIRED_CHUNK+len+1);
+                        }
                     }
                     int right = a.Exons()[ie+1].GetTo();
                     len = a.Exons()[ie+1].Limits().GetLength();
@@ -1908,9 +1916,13 @@ void CAlignCollapser::FilterAlignments() {
                         right = a.Exons()[ie+1].GetFrom()+DESIRED_CHUNK-1;
                         len = DESIRED_CHUNK;
                     }
-                    for(int iie = ie+1; len < DESIRED_CHUNK && a.Exons()[iie].m_ssplice && a.Exons()[iie+1].m_ssplice; ++iie) {
-                        right = a.Exons()[iie+1].GetTo();
-                        len += a.Exons()[iie+1].Limits().GetLength();
+                    for(int iie = ie+1; len < DESIRED_CHUNK-2*MIN_EXON && a.Exons()[iie].m_ssplice; ++iie) {
+                        if(a.Exons()[iie+1].m_ssplice) {
+                            right = a.Exons()[iie+1].GetTo();
+                            len += a.Exons()[iie+1].Limits().GetLength();
+                        } else {
+                            right = min(a.Exons()[iie+1].GetTo(),a.Exons()[iie+1].GetFrom()+DESIRED_CHUNK-len-1);
+                        }
                     }                    
                     if(left >= 0 && right >= 0) {
                         TSignedSeqRange l(left, right);
@@ -1935,9 +1947,13 @@ void CAlignCollapser::FilterAlignments() {
                     l.SetFrom(a.Exons().back().GetTo()-DESIRED_CHUNK+1);
                     len = DESIRED_CHUNK;          
                 }
-                for(int ie = (int)a.Exons().size()-1; len < DESIRED_CHUNK && a.Exons()[ie].m_fsplice && a.Exons()[ie-1].m_fsplice; --ie) {
-                    l.SetFrom(a.Exons()[ie-1].GetFrom());
-                    len += a.Exons()[ie-1].Limits().GetLength();
+                for(int ie = (int)a.Exons().size()-1; len < DESIRED_CHUNK-2*MIN_EXON && a.Exons()[ie].m_fsplice; --ie) {
+                    if(a.Exons()[ie-1].m_fsplice) {
+                        l.SetFrom(a.Exons()[ie-1].GetFrom());
+                        len += a.Exons()[ie-1].Limits().GetLength();
+                    } else {
+                        l.SetFrom(max(a.Exons()[ie-1].GetFrom(),a.Exons()[ie-1].GetTo()-DESIRED_CHUNK+len+1));
+                    }
                 }
                 if(l.NotEmpty())
                     l = a.GetAlignMap().ShrinkToRealPoints(l, false);
