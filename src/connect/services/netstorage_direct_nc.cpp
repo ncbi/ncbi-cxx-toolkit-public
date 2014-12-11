@@ -129,10 +129,9 @@ ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
 
 ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
 {
-    if (m_State != eReading) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "The blob is not being read; no pending data");
-    }
+    if (m_State != eReading)
+        x_InitReader();
+
     return m_NetCacheReader->PendingCount(count);
 }
 
