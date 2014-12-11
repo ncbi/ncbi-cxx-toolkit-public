@@ -37,6 +37,7 @@
 #include <algo/gnomon/chainer.hpp>
 #include <algo/gnomon/id_handler.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
+#include <algo/gnomon/glb_align.hpp>
 
 #include <util/sequtil/sequtil_manip.hpp>
 
@@ -270,7 +271,7 @@ public:
     void ClipChain(TSignedSeqRange limits);
 
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, const SMinScor& minscor);
-    void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
+    void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor, CScope& scope, SMatrix& matrix, const CResidueVec& contig);
     void SetBestPlacement(TOrigAligns& orig_aligns);
     void SetConsistentCoverage();
 
@@ -3247,12 +3248,19 @@ void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
         }
     }    
 
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+
+    SMatrix matrix;
+
+    const CResidueVec& contig = m_gnomon->GetSeq();
+
     NON_CONST_ITERATE(TChainList, it, chains) {
         CChain& chain = *it;
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.SetOpenForPartialyAlignedProteins(prot_complet);
         chain.SetConfirmedStartStopForCompleteProteins(prot_complet, minscor);
-        chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
+        chain.CollectTrustedmRNAsProts(orig_aligns, minscor, scope, matrix, contig);
         chain.SetBestPlacement(orig_aligns);
         chain.SetConsistentCoverage();
         if(chain.Continuous() && chain.Exons().size() > 1) {
@@ -4677,12 +4685,12 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
     }
 }
 
-void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor)
+void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor, CScope& scope, SMatrix& delta, const CResidueVec& contig)
 {
     ClearTrustedmRNA();
     ClearTrustedProt();
 
-    if(ConfirmedStart() && ConfirmedStop()) {
+    if(HasStart() && HasStop()) {
         typedef map<Int8, int> Tint8int;
         Tint8int palignedlen;
         ITERATE(TContained, i, m_members) {
@@ -4693,10 +4701,37 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
                     InsertTrustedmRNA(*(*i)->m_align->TrustedmRNA().begin());                                      // could be only one 'part'
             }
         }
-        ITERATE(Tint8int, i, palignedlen) {
-            CAlignModel* orig_align = orig_aligns[i->first];
-            if((Continuous() && i->second > 0.8*orig_align->TargetLen()) || i->second > minscor.m_minprotfrac*orig_align->TargetLen())                                 // well aligned trusted protein
-                InsertTrustedProt(*orig_align->TrustedProt().begin());
+        if(ConfirmedStart() && ConfirmedStop()) {
+            ITERATE(Tint8int, i, palignedlen) {
+                CAlignModel* orig_align = orig_aligns[i->first];
+                if((Continuous() && i->second > 0.8*orig_align->TargetLen()) || i->second > minscor.m_minprotfrac*orig_align->TargetLen())                                 // well aligned trusted protein
+                    InsertTrustedProt(*orig_align->TrustedProt().begin());
+            }
+        }
+
+        if(Continuous() && TrustedmRNA().empty() && TrustedProt().empty() && !palignedlen.empty()) {
+            TSignedSeqRange cds = RealCdsLimits();
+            int gap_cds = 0;
+            ITERATE(CGeneModel::TExons, ie, Exons()) {
+                if(ie->m_fsplice_sig == "XX" || ie->m_ssplice_sig == "XX")
+                    gap_cds += (cds&ie->Limits()).GetLength();
+            }
+
+            if(gap_cds > 0) {            
+                string mprotein = GetProtein(contig);
+                ITERATE(Tint8int, i, palignedlen) {
+                    CAlignModel* orig_align = orig_aligns[i->first];
+                    if(i->second+gap_cds > 0.8*orig_align->TargetLen()) { //realign proteins if close enough
+                        CSeqVector protein_seqvec(scope.GetBioseqHandle(*orig_align->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+                        string tprotein(protein_seqvec.begin(),protein_seqvec.end());
+                        CCigar cigar = LclAlign(mprotein.c_str(), mprotein.size(), tprotein.c_str(), tprotein.size(), 10, 1, delta.matrix);
+                        if(cigar.SubjectRange().GetLength() > 0.8*tprotein.size()) {
+                            InsertTrustedProt(*orig_align->TrustedProt().begin());
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 }
