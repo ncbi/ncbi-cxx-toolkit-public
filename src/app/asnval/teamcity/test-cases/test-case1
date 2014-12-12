@@ -7,4 +7,4 @@
 -i GB-3513.sqn
 -i SQD-1475.sqn
 -i asnfail_all.sqn
-#-i reject.sqn
+-i reject.sqn
