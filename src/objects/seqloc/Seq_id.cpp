@@ -1015,7 +1015,8 @@ CSeq_id::EAccessionInfo
 CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
 {
     SIZE_TYPE digit_pos = main_acc.find_first_of(kDigits),
-        main_size = main_acc.size(), scaffold_flag_len = 0;
+        main_size = main_acc.size();
+    char flag_char = '\0';
     if (digit_pos == NPOS) {
         return eAcc_unknown;
     } else {
@@ -1066,11 +1067,12 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
                 // followed in some rare cases by a tag such as :PDB=...
                 return eAcc_prf;
             } else if (digit_pos >= 4  &&  non_dig_pos == digit_pos + 2
-                       &&  main_acc[non_dig_pos] == 'S'
-                       &&  main_size - non_dig_pos >= 6
+                       &&  main_size - non_dig_pos >= 6  &&  main_acc[3] != '_'
+                       &&  (main_acc[non_dig_pos] == 'S'
+                            ||  main_acc[non_dig_pos] == 'P')
                        &&  (main_acc.find_first_not_of
                             (kDigits, non_dig_pos + 1) == NPOS)) {
-                scaffold_flag_len = 1;
+                flag_char = main_acc[non_dig_pos];
             } else {
                 return eAcc_unknown;
             }
@@ -1090,9 +1092,30 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
         s_Guide->Reset(new SAccGuide);
     }
 
-    SIZE_TYPE digit_count = main_size - digit_pos - scaffold_flag_len;
+    SIZE_TYPE flag_len = (flag_char == '\0') ? 0 : 1;
+    SIZE_TYPE digit_count = main_size - digit_pos - flag_len;
     EAccessionInfo ai
         = (*s_Guide)->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
+    if (flag_char == 'P') {
+        switch (ai & eAcc_division_mask) {
+        case eAcc_targeted:
+        case eAcc_wgs:
+        // case eAcc_wgs_intermed:
+            ai = EAccessionInfo((ai & eAcc_type_mask) | eAcc_wgs | fAcc_prot);
+            break;
+        case eAcc_tsa:
+            ai = EAccessionInfo((ai & eAcc_type_mask) | eAcc_tsa | fAcc_prot);
+            break;
+        default:
+            ERR_POST_X(11,
+                       Warning << main_acc
+                       << ": Protein flag found with unexpected division "
+                       << ((ai & eAcc_division_mask) >> 8));
+            ai = EAccessionInfo((ai & (eAcc_type_mask | eAcc_division_mask))
+                                | fAcc_prot);
+            break;
+        }
+    }
     switch (ai & eAcc_division_mask) {
     case eAcc_targeted:
     case eAcc_tsa:
@@ -1100,7 +1123,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
     case eAcc_wgs_intermed:
         if (digit_pos >= 4
             &&  (main_acc.find_first_not_of
-                 ("0", digit_pos /* + scaffold_flag_len */ + 2) == NPOS)) {
+                 ("0", digit_pos /* + flag_len */ + 2) == NPOS)) {
             return EAccessionInfo(ai | fAcc_master);
         }
     default:

@@ -181,6 +181,15 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
                       CSeq_id::eAcc_ddbj_wgs_nuc);
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA01S000093000")));
 
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("BABA01P000093"),
+                      CSeq_id::eAcc_ddbj_wgs_prot);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("HAHA01P234567"),
+                      CSeq_id::eAcc_embl_tsa_prot);
+    // Kxxx is specifically gb_targeted_nuc, but we gloss over that
+    // distinction for proteins at the moment.
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("KUKU01P234567"),
+                      CSeq_id::eAcc_gb_wgs_prot);
+    
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("MAP_12345")));
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("MAP_123456"),
                       CSeq_id::eAcc_gb_optical_map);
@@ -293,6 +302,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGpipeAcc)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456789.1")));
     BOOST_CHECK(id->IsGpipe());
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_12S3456789")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_12P3456789")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromNatAcc)
