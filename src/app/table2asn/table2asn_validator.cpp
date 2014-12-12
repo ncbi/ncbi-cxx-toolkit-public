@@ -12,18 +12,28 @@
 
 #include "table2asn_validator.hpp"
 
-
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-CConstRef<CValidError> CTable2AsnValidator::Validate(CSeq_entry_Handle& handle)
+namespace {
+
+static const string str_sev[] = {
+    "INFO", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
+};
+
+static const string s_none = "NONE";
+
+static const string& s_GetSeverityLabel (EDiagSev sev)
 {
-    validator::CValidator validator(handle.GetScope().GetObjectManager());
+    if (sev < 0 || sev > eDiagSevMax) {
+        return s_none;
+    }
 
-    return validator.Validate(handle);
-
+    return str_sev[sev];
 }
+
+} // end anonymous namespace
 
 void CTable2AsnValidator::Cleanup(CSeq_entry& entry)
 {
@@ -31,7 +41,7 @@ void CTable2AsnValidator::Cleanup(CSeq_entry& entry)
     cleanup.BasicCleanup(entry, 0);
 }
 
-CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object)
+CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object, Uint4 opts)
 {
     CScope scope(*CObjectManager::GetInstance());
     validator::CValidator validator(scope.GetObjectManager());
@@ -40,7 +50,7 @@ CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object
     {
         const CSeq_entry& entry = (const CSeq_entry&)object;
         CSeq_entry_Handle top_se = scope.AddTopLevelSeqEntry(entry);
-        return validator.Validate(top_se);
+        return validator.Validate(top_se, opts);
     }
     if (CSeq_submit::GetTypeInfo() == object.GetThisTypeInfo())
     {
@@ -49,14 +59,21 @@ CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object
         {
             scope.AddTopLevelSeqEntry(**it);
         }
-        return validator.Validate(submit, &scope);
+        return validator.Validate(submit, &scope, opts);
     }
     return CConstRef<CValidError>();
 }
 
-void CTable2AsnValidator::ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out)
+void CTable2AsnValidator::ReportErrors(CConstRef<CValidError> errors, CNcbiOstream& out)
 {
-  out << MSerial_AsnText << *errors;
+    ITERATE(CValidError::TErrs, it, errors->GetErrs())
+    {
+        const CValidErrItem& item = **it;
+        out << s_GetSeverityLabel(item.GetSeverity())
+               << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
+               << item.GetMsg() << " " << item.GetObjDesc() << endl;
+    }
+    //out << MSerial_AsnText << *errors;
 }
 
 END_NCBI_SCOPE

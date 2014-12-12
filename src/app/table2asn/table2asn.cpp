@@ -65,6 +65,7 @@
 
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <objects/valerr/ValidError.hpp>
+#include <objtools/validator/validator.hpp>
 
 #include <objtools/readers/message_listener.hpp>
 #include <common/ncbi_source_ver.h>
@@ -914,19 +915,15 @@ void CTbl2AsnApp::ProcessOneFile()
         if (!IsDryRun() && 
             !(m_context.m_master_genome_flag.empty() && m_context.m_validate.empty()))
         {
+            Uint4 validator_opts = 0;
+            //validator_opts |= validator::CValidator::eVal_indexer_version;
+
             CTable2AsnValidator val;
-            CConstRef<CValidError> errors = val.Validate(*obj);
+            CConstRef<CValidError> errors = val.Validate(*obj, validator_opts);
             if (errors.NotEmpty())
             {
-                CNcbiOstream* result = m_context.m_discrepancy_file;
-                CNcbiOfstream file;
-                if (result == 0)
-                {
-                    string discr_filename = m_context.ReplaceFileExt(".dr");
-                    file.open(discr_filename.c_str());
-                    result = &file;
-                }
-                val.ReportErrors(errors, *result);
+                CNcbiOfstream file(m_context.ReplaceFileExt(".val"));
+                val.ReportErrors(errors, file);
             }
         }
 

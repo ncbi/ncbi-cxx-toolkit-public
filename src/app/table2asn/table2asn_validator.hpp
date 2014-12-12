@@ -14,8 +14,7 @@ namespace objects
 class CTable2AsnValidator
 {
 public:
-    CConstRef<objects::CValidError> Validate(objects::CSeq_entry_Handle& handle);
-    CConstRef<objects::CValidError> Validate(const CSerialObject& object);
+    CConstRef<objects::CValidError> Validate(const CSerialObject& object, Uint4 opts);
     void Cleanup(objects::CSeq_entry& entry);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
 };
