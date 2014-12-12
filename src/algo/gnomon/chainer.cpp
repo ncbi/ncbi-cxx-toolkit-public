@@ -4207,6 +4207,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
 #define MIN_UTR_EXON 15
 #define COVERAGE_DROP 0.1
 #define COVERAGE_BUMP 3
+#define SMALL_GAP_UTR 100
 
 void CChain::ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& gnomon)
 {
@@ -4298,6 +4299,23 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& 
         if(align.Type() == CGeneModel::emRNA || align.Type() == CGeneModel::eEST || align.Type() == CGeneModel::eNotForChaining) {   //OK to clip protein in UTR
             for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
                 longseq_coverage[i] += align.Weight();
+        }
+    }
+
+    //don't save short gap utrs
+    TSignedSeqRange cds = GetCdsInfo().Cds();
+    if(Exons().front().m_ssplice_sig == "XX" && (cds&Exons().front().Limits()).Empty() && Exons().front().Limits().GetLength() < SMALL_GAP_UTR) {
+        TSignedSeqRange texon = TranscriptExon(0);
+        for(int i = texon.GetFrom(); i <= texon.GetTo(); ++i) {
+            coverage[i] = 0;
+            longseq_coverage[i] = 0;
+        }
+    }
+    if(Exons().back().m_fsplice_sig == "XX" && (cds&Exons().back().Limits()).Empty() && Exons().back().Limits().GetLength() < SMALL_GAP_UTR) {
+        TSignedSeqRange texon = TranscriptExon(Exons().size()-1);
+        for(int i = texon.GetFrom(); i <= texon.GetTo(); ++i) {
+            coverage[i] = 0;
+            longseq_coverage[i] = 0;
         }
     }
 
