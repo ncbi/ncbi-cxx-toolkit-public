@@ -104,7 +104,9 @@ public:
     ///
     CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                       ELabelType lbl_type = eSeqId,
-                      bool mark_query_node = true);
+                      bool mark_query_node = true,
+                      ILinkoutDB* linkoutDB = NULL,
+                      int linkoutType = 0);
                       
         
 
