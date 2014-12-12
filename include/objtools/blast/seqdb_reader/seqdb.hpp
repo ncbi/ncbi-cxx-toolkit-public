@@ -40,6 +40,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <objtools/blast/seqdb_reader/seqdbblob.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
@@ -909,12 +910,17 @@ public:
     /// @return
     ///   eOidList in enumeration case, or eOidRange in begin/end range case.
     EOidListType
-    GetNextOIDChunk(int         & begin_chunk,       // out
-                    int         & end_chunk,         // out
-                    int         oid_size,            // in
-                    vector<int> & oid_list,          // out
-                    int         * oid_state = NULL); // in+out
-
+    GetNextOIDChunk(
+            int&                     begin_chunk,       // out
+            int&                     end_chunk,         // out
+            int                      oid_size,          // in
+            vector<int>&             oid_list,          // out
+            int*                     oid_state = NULL,  // in+out
+            int                      nucl_code = -1,    // in, default -1
+            ESeqDBAllocType          strategy = eAtlas, // in, default eAtlas
+            SSeqDBSlice*             region = NULL,     // in, default NULL
+            CSeqDB::TSequenceRanges* masks = NULL       // in, default NULL
+    );
     /// Resets this object's internal chunk bookmark, which is used when the
     /// oid_state argument to GetNextOIDChunk is NULL. This allows for several
     /// iterations to be performed over the same CSeqDB object

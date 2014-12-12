@@ -418,6 +418,8 @@ public:
     ///   If non-null, the offset range to get.
     /// @param strategy
     ///   Selects which function is used to allocate the buffer.
+    /// @param masks
+    ///   Defaults to NULL if not specified.
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
@@ -578,6 +580,13 @@ public:
     /// otherwise not be modified by the calling code (except that it can
     /// be reset to zero to restart the iteration).  For the normal case of
     /// one iteration per program, this parameter can be omitted.
+    /// If ambiguous nucleotide sequences are to be supported,
+    /// the following four parameters can be used in the same manner as
+    /// method GetAmbigSeq.
+    /// - nucl_code (if -1, following parameters are ignored)
+    /// - strategy
+    /// - region
+    /// - masks
     /// @param begin_chunk
     ///   First included oid (if eOidRange is returned).
     /// @param end_chunk
@@ -588,14 +597,38 @@ public:
     ///   Empty list to be filled if eOidList is returned.
     /// @param oid_state
     ///   Optional address of a state variable (for concurrent iterations).
+    /// @param nucl_code
+    ///   For ambiguous sequences, specifies ambiguities format.
+    ///   Acceptable values are:
+    ///   kSeqDBNuclBlastNA8 = 1
+    ///   kSeqDBNuclNcbiNA8  = 0
+    ///   neither            = -1 (don't use ambiguities)
+    ///   Defaults to -1 (neither) if not specified.
+    /// @param strategy
+    ///   Selects which function is used to allocate the buffer.
+    ///   Ignored if nucl_code == -1.
+    ///   Defaults to eAtlas if not specified.
+    /// @param region
+    ///   If non-null, the offset range to get.
+    ///   Ignored if nucl_code == -1.
+    ///   Defaults to NULL if not specified.
+    /// @param masks
+    ///   Ignored if nucl_code == -1.
+    ///   Defaults to NULL if not specified.
     /// @return
     ///   eOidList in enumeration case, or eOidRange in begin/end range case.
     CSeqDB::EOidListType
-    GetNextOIDChunk(int         & begin_chunk,
-                    int         & end_chunk,
-                    int         oid_size,
-                    vector<int> & oid_list,
-                    int         * oid_state);
+    GetNextOIDChunk(
+            int&                     begin_chunk,
+            int&                     end_chunk,
+            int                      oid_size,
+            vector<int>&             oid_list,
+            int*                     oid_state,
+            int                      nucl_code = -1, // neither Blast nor Ncbi
+            ESeqDBAllocType          strategy  = eAtlas,
+            SSeqDBSlice*             region    = NULL,
+            CSeqDB::TSequenceRanges* masks     = NULL
+    );
 
     /// Restart chunk iteration at the beginning of the database.
     void ResetInternalChunkBookmark();
@@ -1434,14 +1467,53 @@ private:
     mutable vector<SSeqResBuffer *> m_CachedSeqs;
 
     /// Fill up the buffer
-    void x_FillSeqBuffer(SSeqResBuffer * buffer, int oid, CSeqDBLockHold &locked) const;
+    void x_FillSeqBuffer(
+            SSeqResBuffer*  buffer,
+            int             oid,
+            CSeqDBLockHold& locked
+    ) const;
 
     /// Get sequence from buffer
-    int x_GetSeqBuffer(SSeqResBuffer * buffer, int oid, const char ** seq) const;
+    int x_GetSeqBuffer(
+            SSeqResBuffer*  buffer,
+            int             oid,
+            const char**    seq
+    ) const;
 
     /// Return sequence to buffer
-    void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
+    void x_RetSeqBuffer(
+            SSeqResBuffer*  buffer,
+            CSeqDBLockHold& locked
+    ) const;
 
+    /// Fill up the buffer
+    void x_FillAmbigSeqBuffer(
+            SSeqResBuffer*           buffer,
+            int                      oid,
+            int                      nucl_code,
+            ESeqDBAllocType          alloc_type,
+            SSeqDBSlice*             region,
+            CSeqDB::TSequenceRanges* masks,
+            CSeqDBLockHold&          locked,
+            bool                     nothrow = false
+    ) const;
+
+    /// Get sequence data from buffer
+    int x_GetAmbigSeqBuffer(
+            SSeqResBuffer*           buffer,
+            int                      oid,
+            char**                   seq,
+            int                      nucl_code,
+            ESeqDBAllocType          alloc_type,
+            SSeqDBSlice*             region,
+            CSeqDB::TSequenceRanges* masks
+    ) const;
+
+    /// Return sequence data to buffer
+    void x_RetAmbigSeqBuffer(
+            SSeqResBuffer* buffer,
+            CSeqDBLockHold& locked
+    ) const;
 };
 
 END_NCBI_SCOPE

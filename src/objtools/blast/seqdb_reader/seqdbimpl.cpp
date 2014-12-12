@@ -302,11 +302,17 @@ bool CSeqDBImpl::x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked)
 }
 
 CSeqDB::EOidListType
-CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
-                            int         & end_chunk,   // out
-                            int         oid_size,      // in
-                            vector<int> & oid_list,    // out
-                            int         * state_obj)   // in+out
+CSeqDBImpl::GetNextOIDChunk(
+        int&                     begin_chunk,   // out
+        int&                     end_chunk,     // out
+        int                      oid_size,      // in
+        vector<int>&             oid_list,      // out
+        int*                     state_obj,     // in+out
+        int                      nucl_code,     // in, default -1
+        ESeqDBAllocType          strategy,      // in, default eAtlas
+        SSeqDBSlice*             region,        // in, default NULL
+        CSeqDB::TSequenceRanges* masks          // in, default NULL
+)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -339,7 +345,20 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     // fill the cache for all sequence in mmaped slice
     if (m_NumThreads) {
         SSeqResBuffer * buffer = m_CachedSeqs[cacheID];
-        x_FillSeqBuffer(buffer, begin_chunk, locked);
+        if (m_SeqType == 'n'  &&  nucl_code != -1) {
+            x_FillAmbigSeqBuffer(
+                    buffer,
+                    begin_chunk,
+                    nucl_code,
+                    strategy,
+                    region,
+                    masks,
+                    locked,
+                    true    // nothrow
+            );
+        } else {
+            x_FillSeqBuffer(buffer, begin_chunk, locked);
+        }
         end_chunk = begin_chunk + buffer->results.size();
     } else {
         end_chunk = begin_chunk + oid_size;
@@ -648,6 +667,16 @@ void CSeqDBImpl::RetAmbigSeq(const char ** buffer) const
     // This returns an allocated object.
 
     CSeqDBLockHold locked(m_Atlas);
+
+    if (m_NumThreads) {
+        int cacheID = x_GetCacheID(locked);
+        (m_CachedSeqs[cacheID]->checked_out)--;
+        *buffer = 0;
+        return;
+    }
+
+    // This returns a reference to part of a memory mapped region.
+
     m_Atlas.Lock(locked);
 
     m_Atlas.RetRegion(*buffer);
@@ -770,6 +799,115 @@ CRef<CSeq_data> CSeqDBImpl::GetSeqData(int     oid,
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
+void CSeqDBImpl::x_RetAmbigSeqBuffer(
+        SSeqResBuffer* buffer,
+        CSeqDBLockHold& locked
+) const
+{
+    // Yes, I know this is "returning void".  If someone in the future
+    // changes x_RetSeqBuffer and this method to return something else,
+    // at least they don't have to remember to add "return" to the next line.
+    return x_RetSeqBuffer(buffer, locked);
+}
+
+int CSeqDBImpl::x_GetAmbigSeqBuffer(
+        SSeqResBuffer*           buffer,
+        int                      oid,
+        char**                   seq,
+        int                      nucl_code,
+        ESeqDBAllocType          alloc_type,
+        SSeqDBSlice*             region,
+        CSeqDB::TSequenceRanges* masks
+) const
+{
+    // Search local cache for oid
+    Uint4 index = oid - buffer->oid_start;
+    if (index < buffer->results.size()) {
+        (buffer->checked_out)++;
+        *seq = const_cast<char*>(buffer->results[index].address);
+        return buffer->results[index].length;
+    }
+
+    // Not in cache, fill the cache
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    x_FillAmbigSeqBuffer(
+            buffer,
+            oid,
+            nucl_code,
+            alloc_type,
+            region,
+            masks,
+            locked
+    );
+    (buffer->checked_out)++;
+    *seq = const_cast<char*>(buffer->results[0].address);
+    return buffer->results[0].length;
+}
+
+void CSeqDBImpl::x_FillAmbigSeqBuffer(
+        SSeqResBuffer*           buffer,
+        int                      oid,
+        int                      nucl_code,
+        ESeqDBAllocType          alloc_type,
+        SSeqDBSlice*             region,
+        CSeqDB::TSequenceRanges* masks,
+        CSeqDBLockHold&          locked,
+        bool                     nothrow
+) const
+{
+    // Must lock the atlas
+    m_Atlas.Lock(locked);
+
+    // clear the buffer first
+    x_RetAmbigSeqBuffer(buffer, locked);
+
+    buffer->oid_start = oid;
+    Int4 vol_oid = 0;
+
+    // Get all sequences within the lease
+    if (const CSeqDBVol* vol = m_VolSet.FindVol(oid, vol_oid)) {
+        SSeqRes res;
+        char* seq;
+        Int8 tot_length = m_Atlas.GetSliceSize() / (4 * m_NumThreads) + 1;
+
+        res.length = vol->GetAmbigSeq(
+                vol_oid++,
+                &seq,
+                nucl_code,
+                alloc_type,
+                region,
+                masks,
+                locked,
+                nothrow
+        );
+        if (res.length < 0) return;
+        // must return at least one sequence
+        do {
+            tot_length -= res.length;
+            res.address = seq;
+            buffer->results.push_back(res);
+            res.length = vol->GetAmbigSeq(
+                    vol_oid++,
+                    &seq,
+                    nucl_code,
+                    alloc_type,
+                    region,
+                    masks,
+                    locked,
+                    nothrow
+            );
+        } while (res.length >= 0  &&  tot_length >= res.length);
+
+        if (res.length >= 0) {
+            m_Atlas.RetRegion(seq);
+        }
+        return;
+    }
+
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
+}
+
 int CSeqDBImpl::GetAmbigSeq(int               oid,
                             char           ** buffer,
                             int               nucl_code,
@@ -778,20 +916,36 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
                             CSeqDB::TSequenceRanges * masks) const
 {
     CHECK_MARKER();
+
     CSeqDBLockHold locked(m_Atlas);
+
+    if (m_NumThreads) {
+        int cacheID = x_GetCacheID(locked);
+        return x_GetAmbigSeqBuffer(
+                m_CachedSeqs[cacheID],
+                oid,
+                buffer,
+                nucl_code,
+                alloc_type,
+                region,
+                masks
+        );
+    }
 
     m_Atlas.Lock(locked);
     m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetAmbigSeq(vol_oid,
-                                buffer,
-                                nucl_code,
-                                alloc_type,
-                                region,
-                                masks,
-                                locked);
+        return vol->GetAmbigSeq(
+                vol_oid,
+                buffer,
+                nucl_code,
+                alloc_type,
+                region,
+                masks,
+                locked
+        );
     }
 
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
