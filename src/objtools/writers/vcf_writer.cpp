@@ -868,7 +868,6 @@ bool CVcfWriter::x_WriteFeatureGenotypeData(
         return true;
     }
 
-    feature::CFeatTree ftree = context.FeatTree();
     CConstRef<CUser_field> pFormat = mf.GetExt().GetFieldRef("format");
     const CUser_field_Base::C_Data::TStrs& labels = pFormat->GetData().GetStrs();
     m_Os << "\t" << NStr::Join(labels, ":");
