@@ -922,7 +922,7 @@ void CTbl2AsnApp::ProcessOneFile()
             CConstRef<CValidError> errors = val.Validate(*obj, validator_opts);
             if (errors.NotEmpty())
             {
-                CNcbiOfstream file(m_context.ReplaceFileExt(".val"));
+                CNcbiOfstream file(m_context.ReplaceFileExt(".val").c_str());
                 val.ReportErrors(errors, file);
             }
         }
