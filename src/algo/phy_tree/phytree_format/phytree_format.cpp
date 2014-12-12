@@ -73,21 +73,25 @@ const string CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat = "sequence_from_ver
 
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                                      ELabelType label_type,
-                                     bool mark_query_node)
+                                     bool mark_query_node,
+                                     ILinkoutDB* linkoutDB,
+                                     int linkoutType)
                                      
 {
     x_Init();
-
+    m_LinkoutDB = linkoutDB;
+    m_LinkoutType = linkoutType;
     CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
     vector<int> mark_leaves;
     if (mark_query_node) {
         mark_leaves.push_back(0);
-    }
+    }    
     x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
-                       m_BlastNameColorMap);
-                       
+                       m_BlastNameColorMap,
+                       m_LinkoutDB,
+                       m_LinkoutType);                     
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
