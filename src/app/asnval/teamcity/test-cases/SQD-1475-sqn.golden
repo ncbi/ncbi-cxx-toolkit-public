@@ -1,4 +1,3 @@
-SQD-1475.sqn
 ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is missing environmental sample subsource DESCRIPTOR: BioSrc: sediment metagenome BIOSEQ: lcl|contig1: raw, dna len= 574
 ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is missing environmental sample subsource DESCRIPTOR: BioSrc: sediment metagenome BIOSEQ: lcl|contig2: raw, dna len= 441
 ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is missing environmental sample subsource DESCRIPTOR: BioSrc: sediment metagenome BIOSEQ: lcl|contig3: raw, dna len= 715
@@ -10037,6 +10036,4 @@ ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is m
 ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is missing environmental sample subsource DESCRIPTOR: BioSrc: sediment metagenome BIOSEQ: lcl|contig9998: raw, dna len= 404
 ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is missing environmental sample subsource DESCRIPTOR: BioSrc: sediment metagenome BIOSEQ: lcl|contig9999: raw, dna len= 415
 ERROR: valid [SEQ_DESCR.BioSourceInconsistency] BioSource with ENV division is missing environmental sample subsource DESCRIPTOR: BioSrc: sediment metagenome BIOSEQ: lcl|contig10000: raw, dna len= 425
-Finished in 3 seconds
-Longest processing time 3 seconds on 
-Total number of records 1
+end-of-file

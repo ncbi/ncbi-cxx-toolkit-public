@@ -39,14 +39,14 @@ function compare_with_golden_file()
 {
    local golden_file=$1
    local current_file=$2
-   local tool_args=$3
-   local test_name=$4
-   local suite_name=$5
-   local debug_opts=$6
+   local tool_args=$4
+   local test_name=$5
+   local suite_name=$6
+   local debug_opts=$7
    
-   echo $1 $2 $3 $4 $5 $6
+   echo $1 $2 $3 $4 $5 $6 $7
 
-   create_output_file "$tool_args" $2
+   create_output_file "$tool_args" $2 $3
 
    local gold_size=`stat -c %s $golden_file`
    local current_size=`stat -c %s $current_file`
@@ -120,12 +120,13 @@ do
 
     local golden_file=$fname.golden
     local current_file=$tmp_folder/$fname.new
+    local cerr_file=$tmp_folder/$fname.cerr
 
     if [ -f test-cases/$golden_file ]
     then
-       compare_with_golden_file test-cases/$golden_file $current_file "$tool_args" $test_name "unit_test_compare_to_previous"
+       compare_with_golden_file test-cases/$golden_file $current_file $cerr_file "$tool_args" $test_name "unit_test_compare_to_previous"
     else
-       create_output_file "$tool_args" $golden_file
+       create_output_file "$tool_args" $golden_file $cerr_file
     fi
 
 done

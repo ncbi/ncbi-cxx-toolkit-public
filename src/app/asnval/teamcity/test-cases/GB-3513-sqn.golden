@@ -1,0 +1,8 @@
+ERROR: valid [SEQ_FEAT.TransLen] Given protein length [152] does not match translation length [1] FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+ERROR: valid [SEQ_FEAT.PartialProblem] Got stop codon, but 3'end is labeled partial FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+ERROR: valid [SEQ_FEAT.InvalidForType] Invalid feature for a protein Bioseq. FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+REJECT: valid [SEQ_FEAT.Range] Location: SeqLoc [lcl|Dta_2_5:c>309-213] out of range FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+ERROR: valid [SEQ_FEAT.CdTransFail] Unable to translate FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+ERROR: valid [SEQ_FEAT.MissingCDSproduct] Expected CDS product absent FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
