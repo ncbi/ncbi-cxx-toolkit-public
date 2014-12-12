@@ -627,15 +627,25 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     CRef<CSeq_entry> se(new CSeq_entry);
 
     try {
-        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);    
     }
-    catch (CException& e) {
+    catch (const CException& e) {
         ERR_POST(Error << e);
         ReportReadFailure();
         CRef<CValidError> errors(new CValidError());
         return errors;
     }
 
+    try
+    {
+        return ProcessSeqEntry(*se);
+    }
+    catch (const CObjMgrException& om_ex)
+    {        
+        if (om_ex.GetErrCode() == CObjMgrException::eAddDataError)
+          se->ReassignConflictingIds();
+    }
+    // try again
     return ProcessSeqEntry(*se);
 }
 
