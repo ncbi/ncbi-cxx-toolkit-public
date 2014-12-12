@@ -138,6 +138,9 @@ blast needs tables
 blast_app_util needs $(BLAST_INPUT_LIBS)
 blast_app_util needs $(BLAST_LIBS)
 blast_services needs xnetblastcli
+blast_unit_test_util needs $(BLAST_LIBS)
+blast_unit_test_util needs $(OBJMGR_LIBS)
+blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blastapi needs3party blast
 blastapi needs3party ncbitool
 blastdb needs $(SEQ_LIBS)
@@ -914,6 +917,8 @@ sdncbiauth needs xmyncbi
 seq needs pub
 seq needs seqcode
 seq needs sequtil
+seqalign_util needs $(SEQ_LIBS)
+seqalign_util needs pub
 seqcode needs xser
 seqdb needs $(SOBJMGR_LIBS)
 seqdb needs blastdb
