@@ -4476,12 +4476,14 @@ void s_GetDiskSpace_PANFS(const string&               path,
                    string("Cannot get extended information for PANFS mount ") +
                    path);
     }
+#if 0
     // Only version 1 is now supported
     if (panfs.struct_version != 1) {
         NCBI_THROW(CFileErrnoException, eFileSystemInfo,
                    string("Unsupported version of PANFS extended information ") +
                    NStr::NumericToString(panfs.struct_version));
     }
+#endif
     // Compute disk space
     if (panfs.volume_hard_quota_bytes > 0) {
         if (panfs.volume_hard_quota_bytes >= panfs.volume_live_bytes_used) {
@@ -4590,7 +4592,7 @@ void s_GetFileSystemInfo(const string&               path,
 #  if (defined(NCBI_OS_LINUX) || defined(NCBI_OS_CYGWIN))  &&  defined(HAVE_STATFS)
     
     GET_STATFS_INFO;
-    if (flags & fFSI_Type) {
+    if (flags & (fFSI_Type | fFSI_DiskSpace)) {
         switch (st.f_type) {
             case 0xADF5:      info->fs_type = CFileUtil::eADFS;     break;
             case 0xADFF:      info->fs_type = CFileUtil::eAFFS;     break;
