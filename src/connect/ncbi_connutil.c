@@ -336,8 +336,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     if (ConnNetInfo_Boolean(str)
         ||    (*str  &&   strcasecmp(str, "some") == 0)) {
         info->debug_printout = eDebugPrintout_Some;
-    } else if (*str  &&  (strcasecmp(str, "all")  == 0  ||
-                          strcasecmp(str, "data") == 0)) {
+    } else if (*str  &&  (strcasecmp(str, "data") == 0  ||
+                          strcasecmp(str, "all")  == 0)) {
         info->debug_printout = eDebugPrintout_Data;
     } else
         info->debug_printout = eDebugPrintout_None;
