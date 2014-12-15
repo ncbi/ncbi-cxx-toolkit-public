@@ -1042,6 +1042,89 @@ void AdjustCDSFrameForStartChange(CCdregion& cds, int change)
     cds.SetFrame((CCdregion::EFrame)new_frame);
 }
 
+bool ApplyCDSFrame::s_SetCDSFrame(CSeq_feat& cds, ECdsFrame frame_type, CScope& scope)
+{
+    if (!cds.IsSetData() || !cds.GetData().IsCdregion())
+        return false;
+
+    CCdregion::TFrame orig_frame = CCdregion::eFrame_not_set;
+    if (cds.GetData().GetCdregion().IsSetFrame()) {
+        orig_frame = cds.GetData().GetCdregion().GetFrame();
+    }
+    // retrieve the new frame
+    CCdregion::TFrame new_frame = orig_frame;
+    switch (frame_type) {
+    case eNotSet:
+        break;
+    case eBest:
+        new_frame = CSeqTranslator::FindBestFrame(cds, scope);
+        break;
+    case eMatch:
+        new_frame = s_FindMatchingFrame(cds, scope);
+        break;
+    }
+
+    bool modified = false;
+    if (orig_frame != new_frame) {
+        cds.SetData().SetCdregion().SetFrame(new_frame);
+        modified = true;
+    }
+    return modified;
+}
+
+CCdregion::TFrame ApplyCDSFrame::s_FindMatchingFrame(const CSeq_feat& cds, CScope& scope)
+{
+    CCdregion::TFrame new_frame = CCdregion::eFrame_not_set;
+    //return the frame that matches the protein sequence if it can find one
+    if (!cds.IsSetData() || !cds.GetData().IsCdregion() || !cds.IsSetLocation() || !cds.IsSetProduct()) {
+        return new_frame;
+    }
+
+    // get the protein sequence
+    CBioseq_Handle product = scope.GetBioseqHandle(cds.GetProduct());
+    if (!product || !product.IsProtein()) {
+        return new_frame;
+    }
+
+    // obtaining the original protein sequence
+    CSeqVector prot_vec = product.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
+    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
+    string orig_prot_seq;
+    prot_vec.GetSeqData(0, prot_vec.size(), orig_prot_seq);
+    if (NStr::IsBlank(orig_prot_seq)) {
+        return new_frame;
+    }
+
+    CRef<CSeq_feat> tmp_cds(new CSeq_feat);
+    tmp_cds->Assign(cds);
+    for (int enumI = CCdregion::eFrame_one; enumI < CCdregion::eFrame_three + 1; ++enumI) {
+        CCdregion::EFrame fr = (CCdregion::EFrame) (enumI);
+        tmp_cds->SetData().SetCdregion().SetFrame(fr);
+    
+        string new_prot_seq;
+        CSeqTranslator::Translate(*tmp_cds, scope, new_prot_seq);
+        if (NStr::EndsWith(new_prot_seq, '*'))
+            new_prot_seq.erase(new_prot_seq.end() - 1);
+        if (NStr::EqualNocase(new_prot_seq, orig_prot_seq)) {
+            new_frame = fr;
+            break;
+        }
+    }
+
+    return new_frame;
+}
+
+ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
+{
+    ECdsFrame frame = eNotSet;
+    if (NStr::EqualNocase(name, "best")) {
+        frame = eBest;
+    } else if (NStr::EqualNocase(name, "match")) {
+        frame = eMatch;
+    }
+    return frame;
+}
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

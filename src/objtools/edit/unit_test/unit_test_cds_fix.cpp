@@ -126,7 +126,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-
+extern const char* sc_TestEntry;
 
 
 NCBITEST_INIT_TREE()
@@ -764,7 +764,130 @@ BOOST_AUTO_TEST_CASE(Test_SuspectRule)
     BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
 }
 
+BOOST_AUTO_TEST_CASE(Test_FindMatchingFrame)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry);
+         istr >> MSerial_AsnText >> entry;
+    }}
 
+    CRef<CSeq_feat> cds = entry.SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    BOOST_CHECK_EQUAL(edit::ApplyCDSFrame::s_FindMatchingFrame(*cds, scope), CCdregion::eFrame_one);
+    cds->SetLocation().SetInt().SetFrom(13);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    BOOST_CHECK_EQUAL(edit::ApplyCDSFrame::s_FindMatchingFrame(*cds, scope), CCdregion::eFrame_two);
+    cds->SetLocation().SetInt().SetFrom(12);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    BOOST_CHECK_EQUAL(edit::ApplyCDSFrame::s_FindMatchingFrame(*cds, scope), CCdregion::eFrame_three);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+const char* sc_TestEntry ="\
+Seq-entry ::= set {\
+  class nuc-prot,\
+  seq-set {\
+    seq {\
+      id {\
+        genbank {\
+          name \"AF010144\",\
+          accession \"AF010144\",\
+          version 1\
+        },\
+        gi 3002526\
+      },\
+      inst {\
+        repr raw,\
+        mol rna,\
+        length 1442,\
+        seq-data iupacna \"TTTTTTTTTTTGAGATGGAGTTTTCGCTCTTGTTGCCCAGGCTGGAGTGCAA\
+TGGCGCAATCTCAGCTCACCGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCCAGTAGCTGG\
+GATTACAGGCATGTGCACCCACGCTCGGCTAATTTTGTATTTTTTTTTAGTAGAGATGGAGTTTCTCCATGTTGGTCA\
+GGCTGGTCTCGAACTCCCGACCTCAGATGATCCCTCCGTCTCGGCCTCCCAAAGTGCTAGATACAGGACTGGCCACCA\
+TGCCCGGCTCTGCCTGGCTAATTTTTGTGGTAGAAACAGGGTTTCACTGATGTGCCCAAGCTGGTCTCCTGAGCTCAA\
+GCAGTCCACCTGCCTCAGCCTCCCAAAGTGCTGGGATTACAGGCGTGCAGCCGTGCCTGGCCTTTTTATTTTATTTTT\
+TTTAAGACACAGGTGTCCCACTCTTACCCAGGATGAAGTGCAGTGGTGTGATCACAGCTCACTGCAGCCTTCAACTCC\
+TGAGATCAAGCATCCTCCTGCCTCAGCCTCCCAAGTAGCTGGGACCAAAGACATGCACCACTACACCTGGCTAATTTT\
+TATTTTTATTTTTAATTTTTTGAGACAGAGTCTCAACTCTGTCACCCAGGCTGGAGTGCAGTGGCGCAATCTTGGCTC\
+ACTGCAACCTCTGCCTCCCGGGTTCAAGTTATTCTCCTGCCCCAGCCTCCTGAGTAGCTGGGACTACAGGCGCCCACC\
+ACGCCTAGCTAATTTTTTTGTATTTTTAGTAGAGATGGGGTTCACCATGTTCGCCAGGTTGATCTTGATCTCTGGACC\
+TTGTGATCTGCCTGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCACGCCCGGCTTATTTTTAATTT\
+TTGTTTGTTTGAAATGGAATCTCACTCTGTTACCCAGGCTGGAGTGCAATGGCCAAATCTCGGCTCACTGCAACCTCT\
+GCCTCCCGGGCTCAAGCGATTCTCCTGTCTCAGCCTCCCAAGCAGCTGGGATTACGGGCACCTGCCACCACACCCCGC\
+TAATTTTTGTATTTTCATTAGAGGCGGGGTTTCACCATATTTGTCAGGCTGGTCTCAAACTCCTGACCTCAGGTGACC\
+CACCTGCCTCAGCCTTCCAAAGTGCTGGGATTACAGGCGTGAGCCACCTCACCCAGCCGGCTAATTTAGATAAAAAAA\
+TATGTAGCAATGGGGGGTCTTGCTATGTTGCCCAGGCTGGTCTCAAACTTCTGGCTTCATGCAATCCTTCCAAATGAG\
+CCACAACACCCAGCCAGTCACATTTTTTAAACAGTTACATCTTTATTTTAGTATACTAGAAAGTAATACAATAAACAT\
+GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
+      }\
+    },\
+    seq {\
+      id {\
+        genbank {\
+          accession \"AAC08737\",\
+          version 1\
+        },\
+        gi 3002527\
+      },\
+      inst {\
+        repr raw,\
+        mol aa,\
+        length 375,\
+        topology not-set,\
+        seq-data ncbieaa \"MEFSLLLPRLECNGAISAHRNLRLPGSSDSPASASPVAGITGMCTHARLILY\
+FFLVEMEFLHVGQAGLELPTSDDPSVSASQSARYRTGHHARLCLANFCGRNRVSLMCPSWSPELKQSTCLSLPKCWDY\
+RRAAVPGLFILFFLRHRCPTLTQDEVQWCDHSSLQPSTPEIKHPPASASQVAGTKDMHHYTWLIFIFIFNFLRQSLNS\
+VTQAGVQWRNLGSLQPLPPGFKLFSCPSLLSSWDYRRPPRLANFFVFLVEMGFTMFARLILISGPCDLPASASQSAGI\
+TGVSHHARLIFNFCLFEMESHSVTQAGVQWPNLGSLQPLPPGLKRFSCLSLPSSWDYGHLPPHPANFCIFIRGGVSPY\
+LSGWSQTPDLR\"\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data prot {\
+                name {\
+                  \"neuronal thread protein AD7c-NTP\"\
+                }\
+              },\
+              location int {\
+                from 0,\
+                to 374,\
+                strand plus,\
+                id gi 3002527\
+              }\
+            }\
+          }\
+        }\
+      }\
+    }\
+  },\
+  annot {\
+    {\
+      data ftable {\
+        {\
+          data cdregion {\
+            frame two,\
+            code {\
+              id 1\
+            }\
+          },\
+          product whole gi 3002527,\
+          location int {\
+            from 14,\
+            to 1141,\
+            strand plus,\
+            id gi 3002526\
+          }\
+        }\
+      }\
+    }\
+  }\
+}";
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

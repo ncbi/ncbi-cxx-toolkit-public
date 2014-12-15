@@ -36,6 +36,7 @@
 
 #include <objmgr/scope.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +60,22 @@ NCBI_XOBJEDIT_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle 
 NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT void AdjustCDSFrameForStartChange(CCdregion& cds, int change);
+
+class NCBI_XOBJEDIT_EXPORT ApplyCDSFrame
+{
+public:
+    enum ECdsFrame {
+        eNotSet,
+        eBest,  // choose the frame that produces the longest sequence of aas before a stop codon is produced
+        eMatch  // choose the frame that matches the protein sequence if it can find one
+    };
+
+    ~ApplyCDSFrame() {}
+    static bool s_SetCDSFrame(CSeq_feat& cds, ECdsFrame frame_type, CScope& scope);
+    static CCdregion::TFrame s_FindMatchingFrame(const CSeq_feat& cds, CScope& scope);
+    static ECdsFrame s_GetFrameFromName(const string& name);
+};
+
 
 
 END_SCOPE(edit)
