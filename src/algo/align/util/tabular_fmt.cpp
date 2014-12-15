@@ -866,7 +866,7 @@ void CTabularFormatter_BestPlacementGroup::Print(CNcbiOstream& ostr,
     if (align.IsSetExt()) {
         ITERATE (CSeq_align::TExt, i, align.GetExt()) {
             const CUser_object& obj = **i;
-            if (obj.GetType().IsStr()  &&
+            if (!obj.GetType().IsStr()  ||
                 obj.GetType().GetStr() != "placement_data") {
                 continue;
             }
@@ -1551,18 +1551,41 @@ void CTabularFormatter_Cigar::Print(CNcbiOstream& ostr,
 
 //////////////////////////////////////////////////////////////////////////////
 
-CTabularFormatter_AsmUnit::CTabularFormatter_AsmUnit(int row, CConstRef<CGC_Assembly> gencoll)
-: m_Row(row), m_Gencoll(gencoll)
+CTabularFormatter_AssemblyInfo::
+CTabularFormatter_AssemblyInfo(int row, EAssemblyType type, EInfo info)
+: m_Row(row), m_Type(type), m_Info(info)
 {
 }
 
-void CTabularFormatter_AsmUnit::PrintHelpText(CNcbiOstream& ostr) const
+void CTabularFormatter_AssemblyInfo::SetGencoll(CConstRef<CGC_Assembly> gencoll)
 {
-    ostr << "Assembly unit of ";
+    m_Gencoll = gencoll;
+}
+
+
+void CTabularFormatter_AssemblyInfo::PrintHelpText(CNcbiOstream& ostr) const
+{
+    switch (m_Info) {
+    case eName:
+        ostr << "Name of ";
+        break;
+    case eAccession:
+        ostr << "Accession of ";
+        break;
+    case eChainId:
+        ostr << "Chain id of ";
+        break;
+    case eChromosome:
+        ostr << "Chromosome containing ";
+        break;
+    }
+    if (m_Info != eChromosome) {
+        ostr << (m_Type == eFull ? "full assembly" : "assembly unit") << " of ";
+    }
     if (m_Row == 0) {
         ostr << "query";
     } else if (m_Row == 1) {
-        ostr << "sequence";
+        ostr << "subject";
     } else {
         NCBI_THROW(CException, eUnknown,
                    "only pairwise alignments are supported");
@@ -1570,21 +1593,79 @@ void CTabularFormatter_AsmUnit::PrintHelpText(CNcbiOstream& ostr) const
     ostr << " sequence";
 }
 
-void CTabularFormatter_AsmUnit::PrintHeader(CNcbiOstream& ostr) const
+void CTabularFormatter_AssemblyInfo::PrintHeader(CNcbiOstream& ostr) const
 {
     if (m_Row == 0) {
-        ostr << "qasmunit";
+        ostr << "q";
     } else if (m_Row == 1) {
-        ostr << "sasmunit";
+        ostr << "s";
     } else {
         NCBI_THROW(CException, eUnknown,
                    "only pairwise alignments are supported");
     }
+    if (m_Info != eChromosome) {
+        ostr << (m_Type == eFull ? "fullasm" : "asmunit");
+    }
+    switch (m_Info) {
+    case eName:
+        break;
+    case eAccession:
+        ostr << "acc";
+        break;
+    case eChainId:
+        ostr << "chain";
+        break;
+    case eChromosome:
+        ostr << "chromosome";
+        break;
+    }
 }
 
-void CTabularFormatter_AsmUnit::Print(CNcbiOstream& ostr,
+void CTabularFormatter_AssemblyInfo::Print(CNcbiOstream& ostr,
                                       const CSeq_align& align)
 {
+    if (m_Row == 1 && align.IsSetExt())
+    {
+        /// For the subject sequence, the information may be stored in teh
+        /// alignment as a User-obejct
+        ITERATE (CSeq_align::TExt, i, align.GetExt()) {
+            const CUser_object& obj = **i;
+            if (!obj.GetType().IsStr()  ||
+                obj.GetType().GetStr() != "Assembly Info") {
+                continue;
+            }
+
+            switch (m_Info) {
+            case eName:
+                ostr << obj.GetField(m_Type == eFull
+                            ? "Assembly Name" : "Assembly Unit Name")
+                                      .GetData().GetStr();
+                return;
+
+            case eAccession:
+                ostr << obj.GetField(m_Type == eFull
+                            ? "Assembly Accession" : "Assembly Unit Accession")
+                                      .GetData().GetStr();
+                return;
+
+            case eChainId:
+                if (m_Type == eUnit) {
+                    ostr << obj.GetField("GenColl Chain").GetData().GetInt();
+                    return;
+                }
+                break;
+
+            case eChromosome:
+                if (obj.HasField("Chromosome")) {
+                    ostr << obj.GetField("Chromosome").GetData().GetStr();
+                } else {
+                    ostr << "NA";
+                }
+                return;
+            }
+        }
+    }
+
     if(!m_Gencoll) {
         return;
     }
@@ -1599,76 +1680,56 @@ void CTabularFormatter_AsmUnit::Print(CNcbiOstream& ostr,
         return;
     }
 
-    CConstRef<CGC_AssemblyUnit> Unit;
-    Unit = Seq->GetAssemblyUnit();
-    if(!Unit) {
-        return;
+    CConstRef<CGC_Assembly> Assm;
+    if (m_Info != eChromosome) {
+        if (m_Type == eFull) {
+            Assm = Seq->GetFullAssembly();
+        } else {
+            CConstRef<CGC_AssemblyUnit> Unit = Seq->GetAssemblyUnit();
+            if (Unit) {
+                CGC_Assembly *unit_assm = new CGC_Assembly();
+                unit_assm->SetUnit(const_cast<CGC_AssemblyUnit &>(*Unit));
+                Assm.Reset(unit_assm);
+            }
+        }
+        if(!Assm) {
+            return;
+        }
     }
 
-    if(Unit->CanGetDesc() && Unit->GetDesc().CanGetName())
-        ostr << Unit->GetDesc().GetName();
+    switch (m_Info) {
+    case eName:
+        ostr << Assm->GetName();
+        break;
+
+    case eAccession:
+        ostr << Assm->GetAccession();
+        break;
+
+    case eChainId:
+        {{
+             string accession = Assm->GetAccession();
+             size_t chain_start = accession.find_first_of("123456789");
+             size_t chain_end = accession.find('.');
+             ostr << accession.substr(chain_start, chain_end-chain_start);
+        }}
+        break;
+
+    case eChromosome:
+        {{
+            CConstRef<CGC_Sequence> top_level = Seq->GetTopLevelParent();
+            if (top_level && top_level->HasRole(eGC_SequenceRole_chromosome) &&
+                top_level->GetReplicon() &&
+                top_level->GetReplicon()->IsSetName())
+            {
+                ostr << top_level->GetReplicon()->GetName();
+            } else {
+                ostr << "NA";
+            }
+        }}
+        break;
+    }
 }
-
-//////////////////////////////////////////////////////////////////////////////
-
-CTabularFormatter_FullAsm::CTabularFormatter_FullAsm(int row, CConstRef<CGC_Assembly> gencoll)
-: m_Row(row), m_Gencoll(gencoll)
-{
-}
-
-void CTabularFormatter_FullAsm::PrintHelpText(CNcbiOstream& ostr) const
-{
-    ostr << "Full Assembly of ";
-    if (m_Row == 0) {
-        ostr << "query";
-    } else if (m_Row == 1) {
-        ostr << "sequence";
-    } else {
-        NCBI_THROW(CException, eUnknown,
-                   "only pairwise alignments are supported");
-    }
-    ostr << " sequence";
-}
-
-void CTabularFormatter_FullAsm::PrintHeader(CNcbiOstream& ostr) const
-{
-    if (m_Row == 0) {
-        ostr << "qfullasm";
-    } else if (m_Row == 1) {
-        ostr << "sfullasm";
-    } else {
-        NCBI_THROW(CException, eUnknown,
-                   "only pairwise alignments are supported");
-    }
-}
-
-void CTabularFormatter_FullAsm::Print(CNcbiOstream& ostr,
-                                      const CSeq_align& align)
-{
-    if(!m_Gencoll) {
-        return;
-    }
-    
-    CConstRef<CGC_Sequence> Seq;
-    CGC_Assembly::TSequenceList SeqList;
-    m_Gencoll->Find(CSeq_id_Handle::GetHandle(align.GetSeq_id(m_Row)), SeqList);
-    if(!SeqList.empty())
-        Seq = SeqList.front();
-
-    if(!Seq) {
-        return;
-    }
-
-    CConstRef<CGC_Assembly> FullAsm;
-    FullAsm = Seq->GetFullAssembly();
-    if(!FullAsm) {
-        return;
-    }
-
-    ostr << FullAsm->GetName();
-}
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -2005,14 +2066,55 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_Cigar);
     formatter.RegisterField("btop",
             new CTabularFormatter_Traceback);
+    formatter.RegisterField("qasmunit", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eName));
+    formatter.RegisterField("sasmunit", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eName));
+    formatter.RegisterField("qfullasm", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eFull,
+                                   CTabularFormatter_AssemblyInfo::eName));
+    formatter.RegisterField("sfullasm", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eFull,
+                                   CTabularFormatter_AssemblyInfo::eName));
+    formatter.RegisterField("qasmunitacc", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eAccession));
+    formatter.RegisterField("sasmunitacc", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eAccession));
+    formatter.RegisterField("qfullasmacc", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eFull,
+                                   CTabularFormatter_AssemblyInfo::eAccession));
+    formatter.RegisterField("sfullasmacc", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eFull,
+                                   CTabularFormatter_AssemblyInfo::eAccession));
+    formatter.RegisterField("qasmunitchain", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eChainId));
+    formatter.RegisterField("sasmunitchain", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eChainId));
+    formatter.RegisterField("qfullasmchain", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eFull,
+                                   CTabularFormatter_AssemblyInfo::eChainId));
+    formatter.RegisterField("sfullasmchain", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eFull,
+                                   CTabularFormatter_AssemblyInfo::eChainId));
+    formatter.RegisterField("qchromosome", new CTabularFormatter_AssemblyInfo(0,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eChromosome));
+    formatter.RegisterField("schromosome", new CTabularFormatter_AssemblyInfo(1,
+                                   CTabularFormatter_AssemblyInfo::eUnit,
+                                   CTabularFormatter_AssemblyInfo::eChromosome));
 }
 
 void CTabularFormatter::SetGencoll(CConstRef<CGC_Assembly> gencoll)
 {
-    RegisterField("qasmunit", new CTabularFormatter_AsmUnit(0, gencoll));
-    RegisterField("sasmunit", new CTabularFormatter_AsmUnit(1, gencoll));
-    RegisterField("qfullasm", new CTabularFormatter_FullAsm(0, gencoll));
-    RegisterField("sfullasm", new CTabularFormatter_FullAsm(1, gencoll));
+    NON_CONST_ITERATE (TFormatterMap, formatter_it, m_FormatterMap) {
+        formatter_it->second->SetGencoll(gencoll);
+    }
     RegisterField("qpatchtype", new CTabularFormatter_PatchType(0, gencoll));
     RegisterField("spatchtype", new CTabularFormatter_PatchType(1, gencoll));
     RegisterField("qnearestgap", new CTabularFormatter_NearestGap(0, gencoll));

@@ -59,6 +59,8 @@ public:
         virtual ~IFormatter() {}
         void SetScoreLookup(objects::CScoreLookup *scores)
             { m_Scores = scores; }
+        virtual void SetGencoll(CConstRef<objects::CGC_Assembly> gencoll)
+            {}
         virtual void PrintHelpText(CNcbiOstream& ostr) const = 0;
         virtual void PrintHeader(CNcbiOstream& ostr) const = 0;
         virtual void Print(CNcbiOstream& ostr,
@@ -72,7 +74,7 @@ public:
 
     CTabularFormatter(CNcbiOstream& ostr, objects::CScoreLookup &scores);
     void SetFormat(const string& format);
-    
+
     void SetGencoll(CConstRef<objects::CGC_Assembly> gencoll);
 
     void RegisterField(const string &field_name, IFormatter* field_formatter)
@@ -581,31 +583,24 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 // CGC_AssemblyUnit.desc.name
-class CTabularFormatter_AsmUnit : public CTabularFormatter::IFormatter
+class CTabularFormatter_AssemblyInfo : public CTabularFormatter::IFormatter
 {
 public:
-    CTabularFormatter_AsmUnit(int row, CConstRef<objects::CGC_Assembly> gencoll);
-    void PrintHelpText(CNcbiOstream& ostr) const;
-    void PrintHeader(CNcbiOstream& ostr) const;
-    void Print(CNcbiOstream& ostr,
-               const objects::CSeq_align& align);
-private:
-    int m_Row;
-    CConstRef<objects::CGC_Assembly> m_Gencoll;
-};
+    enum EAssemblyType { eFull, eUnit };
+    enum EInfo { eName, eAccession, eChainId, eChromosome };
 
-/////////////////////////////////////////////////////////////////////////////
-// CGC_Assembly::GetName()
-class CTabularFormatter_FullAsm : public CTabularFormatter::IFormatter
-{
-public:
-    CTabularFormatter_FullAsm(int row, CConstRef<objects::CGC_Assembly> gencoll);
+    CTabularFormatter_AssemblyInfo(int row, EAssemblyType type, EInfo info);
+
+    virtual void SetGencoll(CConstRef<objects::CGC_Assembly> gencoll);
+
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
                const objects::CSeq_align& align);
 private:
     int m_Row;
+    EAssemblyType m_Type;
+    EInfo m_Info;
     CConstRef<objects::CGC_Assembly> m_Gencoll;
 };
 
