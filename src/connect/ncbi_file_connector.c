@@ -140,7 +140,7 @@ static EIO_Status s_VT_Open
 
     /* open file for output */
     if (xxx->ofname) {
-        switch ( xxx->attr.w_mode ) {
+        switch (xxx->attr.w_mode) {
         case eFCM_Truncate:
             mode = "wb";
             break;
