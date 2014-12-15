@@ -395,7 +395,7 @@ struct SAlignment_PtrLess
         if (k2.subject < k1.subject)                { return false; }
 
         if (k1.scores < k2.scores)                  { return true; }
-        if (k2.scores < k1.scores)                  { return true; }
+        if (k2.scores < k1.scores)                  { return false; }
 
         if (k1.query_strand < k2.query_strand)      { return true; }
         if (k2.query_strand < k1.query_strand)      { return false; }
