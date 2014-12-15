@@ -138,15 +138,21 @@ bool CAutoDefFeatureClause::IsInsertionSequence()
 }
 
 
-bool CAutoDefFeatureClause::IsControlRegion()
+bool CAutoDefFeatureClause::IsControlRegion (const CSeq_feat& feat)
 {
-    if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature
-        && m_MainFeat.CanGetComment()
-        && NStr::StartsWith(m_MainFeat.GetComment(), "control region")) {
+    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature
+        && feat.CanGetComment()
+        && NStr::StartsWith(feat.GetComment(), "control region")) {
         return true;
     } else {
         return false;
     }
+}
+
+
+bool CAutoDefFeatureClause::IsControlRegion()
+{
+    return IsControlRegion(m_MainFeat);
 }
 
 
@@ -167,12 +173,18 @@ bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature ()
 
 bool CAutoDefFeatureClause::IsGeneCluster ()
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature
-        || !m_MainFeat.CanGetComment()) {
+    return IsGeneCluster (m_MainFeat);
+}
+
+
+bool CAutoDefFeatureClause::IsGeneCluster (const CSeq_feat& feat)
+{
+    if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature
+        || !feat.CanGetComment()) {
         return false;
     }
     
-    string comment = m_MainFeat.GetComment();
+    string comment = feat.GetComment();
     if (NStr::Find(comment, "gene cluster") != string::npos 
         || NStr::Find(comment, "gene locus") != string::npos) {
         return true;
@@ -192,7 +204,6 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_gene
         || subtype == CSeqFeatData::eSubtype_mRNA
         || subtype == CSeqFeatData::eSubtype_operon
-        || subtype == CSeqFeatData::eSubtype_promoter
         || subtype == CSeqFeatData::eSubtype_exon
         || subtype == CSeqFeatData::eSubtype_intron
         || subtype == CSeqFeatData::eSubtype_rRNA
@@ -208,6 +219,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || IsIntergenicSpacer()
         || IsEndogenousVirusSourceFeature()
         || IsSatelliteClause()
+        || IsPromoter()
         || IsGeneCluster()) {
         return true;
     } else {
@@ -509,10 +521,10 @@ string s_tRNAGeneFromProduct (string product)
 }
 
 
-CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last) 
+bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, string& product_name)
 {
-    string product_name = "";
-    string gene_name = "";
+    product_name = "";
+    gene_name = "";
     
     if (NStr::EndsWith (comment, " gene")) {
         comment = comment.substr (0, comment.length() - 5);
@@ -548,7 +560,7 @@ CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_fea
             || !isalpha(product_name.c_str()[5]) || !isupper(product_name.c_str()[5])
             || !isalpha(product_name.c_str()[6]) || !islower(product_name.c_str()[6])
             || !isalpha(product_name.c_str()[7]) || !islower(product_name.c_str()[7])) {
-            return NULL;
+            return false;
         }
 
         /* if present, gene name must start with letters "trn",
@@ -559,28 +571,48 @@ CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_fea
                 || !NStr::StartsWith(gene_name, "trn" )
                 || !isalpha(gene_name.c_str()[3])
                 || !isupper(gene_name.c_str()[3]))) {
-            return NULL;
+            return false;
         }
     }
     if (NStr::IsBlank (product_name)) {
+        return false;
+    }
+    return true;
+}
+
+
+CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last) 
+{
+    string product_name = "";
+    string gene_name = "";
+    if (!CAutoDefParsedtRNAClause::ParseString(comment, gene_name, product_name))  {
         return NULL;
     }
          
     return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last);
-
 }        
 
 
 const int kParsedTrnaGene = 1;
 const int kParsedTrnaSpacer = 2;
 
-
-vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags)
+vector<string> GetIntergenicSpacerClausePhrases(string comment)
 {
-    string::size_type pos;
-    vector<CAutoDefFeatureClause *> clause_list;
+    vector<string> clause_list;
 
     clause_list.clear();
+
+    if (NStr::StartsWith (comment, "contains ")) {
+        comment = comment.substr (9);
+    }
+    if (NStr::StartsWith (comment, "may contain ")) {
+        comment = comment.substr (12);
+    }
+    string::size_type pos = NStr::Find(comment, ";");
+    if (pos != NCBI_NS_STD::string::npos) {
+        comment = comment.substr(0, pos);
+    }
+
     pos = NStr::Find (comment, " and ");
     // insert comma for parsing
     if (pos != NCBI_NS_STD::string::npos && pos > 0 && !NStr::StartsWith (comment.substr(pos - 1), ",")) {
@@ -594,7 +626,7 @@ vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, C
     }
 
     if (parts.size() == 1 && NStr::Find (parts[0], "intergenic spacer") != NCBI_NS_STD::string::npos) {
-        clause_list.push_back (new CAutoDefIntergenicSpacerClause (bh, cf, mapped_loc, parts[0]));
+        clause_list.push_back (parts[0]);
         return clause_list;
     }
     
@@ -602,8 +634,8 @@ vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, C
     bool names_correct = true;
     int last_type = 0;
 
-
-    CAutoDefParsedtRNAClause *gene = NULL;
+    string last_gene_name = "";
+    string last_product = "";
 
     for (size_t j = 0; j < parts.size() && names_correct && !bad_phrase; j++) {
         NStr::TruncateSpacesInPlace(parts[j]);
@@ -613,55 +645,96 @@ vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, C
         if (NStr::EndsWith (parts[j], " intergenic spacer")) {
             // must be a spacer
             string spacer_description = parts[j].substr(0, parts[j].length() - 18);
-            CAutoDefFeatureClause *spacer = new CAutoDefParsedIntergenicSpacerClause(bh, cf, mapped_loc, spacer_description, j == 0, j == parts.size() - 1);
-            if (spacer == NULL) {
-                bad_phrase = true;
-            } else {
-                if (last_type == kParsedTrnaGene) {
-                    // spacer names and gene names must agree
-                    string gene_name = gene->GetGeneName();
-                    if (NStr::IsBlank (gene_name)) {
-                        gene_name = s_tRNAGeneFromProduct (gene->GetProductName());
-                    }
-                    string description = spacer->GetDescription();
-                    if (!NStr::StartsWith (description, gene_name + "-")) {
-                        names_correct = false;
-                    }
+            clause_list.push_back(parts[j]);
+            if (last_type == kParsedTrnaGene) {
+                // spacer names and gene names must agree
+                if (NStr::IsBlank (last_gene_name)) {
+                    last_gene_name = s_tRNAGeneFromProduct (last_product);
                 }
-                spacer->SetSuppressLocusTag(suppress_locus_tags);
-                clause_list.push_back (spacer);
-                last_type = kParsedTrnaSpacer;
+                if (!NStr::StartsWith (spacer_description, last_gene_name + "-")) {
+                    names_correct = false;
+                }
             }
+            last_type = kParsedTrnaSpacer;
         } else {
-            gene = s_tRNAClauseFromNote(bh, cf, mapped_loc, parts[j], j == 0, j == parts.size() - 1);
-            if (gene == NULL) {
+            string gene_name = "";
+            string product_name = "";
+            if (!CAutoDefParsedtRNAClause::ParseString(parts[j], gene_name, product_name)) {
                 bad_phrase = true;
             } else {
                 // must alternate between genes and spacers
                 if (last_type == kParsedTrnaSpacer) {
                     // spacer names and gene names must agree
-                    string gene_name = gene->GetGeneName();
                     if (NStr::IsBlank (gene_name)) {
-                        gene_name = s_tRNAGeneFromProduct (gene->GetProductName());
+                        gene_name = s_tRNAGeneFromProduct (product_name);
                     }
                     if (!NStr::EndsWith (parts[j - 1], "-" + gene_name + " intergenic spacer")) {
                         names_correct = false;
                     }
-                }
-                gene->SetSuppressLocusTag(suppress_locus_tags);
-                clause_list.push_back (gene);
+                }                
+                clause_list.push_back (parts[j]);
                 last_type = kParsedTrnaGene;
+                last_gene_name = gene_name;
+                last_product = product_name;
             }
         }
     }
-
     if (bad_phrase || !names_correct) {
-        for (size_t i = 0; i < clause_list.size(); i++) {
-            delete clause_list[i];
-        }
         clause_list.clear();
     }
     return clause_list;
+}
+
+
+vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags)
+{
+    vector<CAutoDefFeatureClause *> clause_list;
+
+    clause_list.clear();
+
+    vector<string> parts = GetIntergenicSpacerClausePhrases(comment);
+    if (parts.empty()) {
+        return clause_list;
+    }
+
+    for (size_t j = 0; j < parts.size(); j++) {
+        size_t pos = NStr::Find(parts[j], "intergenic spacer");
+        if (pos != string::npos) {
+            string spacer_description = parts[j].substr(0, pos);
+            NStr::TruncateSpacesInPlace(spacer_description);
+            CAutoDefFeatureClause *spacer = 
+                  new CAutoDefParsedIntergenicSpacerClause(bh, 
+                                                           cf,
+                                                           mapped_loc,
+                                                           spacer_description, 
+                                                           j == 0, 
+                                                           j == parts.size() - 1);
+            clause_list.push_back (spacer);
+        } else {
+            CAutoDefFeatureClause *gene = s_tRNAClauseFromNote(bh, cf, mapped_loc, parts[j], j == 0, j == parts.size() - 1);
+            clause_list.push_back(gene);
+        }
+    }
+
+    return clause_list;
+}
+
+
+bool CAutoDefFeatureClause::IsIntergenicSpacer (const CSeq_feat& feat)
+{
+    CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
+    if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
+        || !feat.IsSetComment()) {
+        return false;
+    }
+    string comment = feat.GetComment();
+
+    vector<string> parts = GetIntergenicSpacerClausePhrases(comment);
+    if (parts.size() > 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -950,11 +1023,36 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
 
 bool CAutoDefFeatureClause::IsSatelliteClause() 
 {
-    if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_repeat_region
-		&& !NStr::IsBlank (m_MainFeat.GetNamedQual("satellite"))) {
+    return IsSatellite(m_MainFeat);
+}
+
+
+bool CAutoDefFeatureClause::IsSatellite(const CSeq_feat& feat)
+{
+    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_repeat_region
+		&& !NStr::IsBlank (feat.GetNamedQual("satellite"))) {
         return true;
     }
     return false;
+}
+
+
+bool CAutoDefFeatureClause::IsPromoter()
+{
+    return IsPromoter(m_MainFeat);
+}
+
+
+bool CAutoDefFeatureClause::IsPromoter(const CSeq_feat& feat)
+{
+    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_promoter) {
+        return true;
+    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_regulatory &&
+        NStr::Equal(feat.GetNamedQual("regulatory_class"), "promoter")) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -981,7 +1079,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
     }
     
     if (IsSatelliteClause() 
-        || subtype == CSeqFeatData::eSubtype_promoter 
+        || IsPromoter() 
         || subtype == CSeqFeatData::eSubtype_exon
         || subtype == CSeqFeatData::eSubtype_intron
         || subtype == CSeqFeatData::eSubtype_5UTR
@@ -1305,7 +1403,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
             || parent_clause->IsGeneCluster()) {
             ok_to_group = true;
         }
-    } else if (subtype == CSeqFeatData::eSubtype_promoter) {
+    } else if (IsPromoter()) {
         if (parent_subtype == CSeqFeatData::eSubtype_cdregion
             || parent_subtype == CSeqFeatData::eSubtype_mRNA
             || parent_subtype == CSeqFeatData::eSubtype_gene
@@ -1387,7 +1485,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base 
                    || (parent_clause->IsGeneCluster() && gene_cluster_opp_strand)) {
             return true;
         }
-    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_promoter
+    } else if (IsPromoter()
                && parent_clause->SameStrand(*m_ClauseLocation)) {
         unsigned int promoter_stop = sequence::GetStop(*m_ClauseLocation, &(m_BH.GetScope()), eExtreme_Biological);
         unsigned int parent_start = sequence::GetStart(*(parent_clause->GetLocation()), &(m_BH.GetScope()), eExtreme_Biological);
@@ -2042,8 +2140,6 @@ bool CAutoDefFakePromoterClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base
 
     return ok_to_group;
 }
-
-
 
 
 END_SCOPE(objects)

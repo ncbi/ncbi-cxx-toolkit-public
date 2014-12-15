@@ -59,6 +59,13 @@ public:
     virtual bool IsNoncodingProductFeat();
     virtual bool IsIntergenicSpacer();
     virtual bool IsSatelliteClause();
+    virtual bool IsPromoter();
+    static bool IsSatellite(const CSeq_feat& feat);
+    static bool IsPromoter(const CSeq_feat& feat);
+    static bool IsGeneCluster (const CSeq_feat& feat);
+    static bool IsIntergenicSpacer (const CSeq_feat& feat);
+    static bool IsControlRegion (const CSeq_feat& feat);
+
     
     // functions for comparing locations
     virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
@@ -120,7 +127,6 @@ protected:
 };
 
 
-
 class NCBI_XOBJEDIT_EXPORT CAutoDefMobileElementClause : public CAutoDefFeatureClause
 {
 public:    
@@ -150,6 +156,7 @@ public:
     ~CAutoDefPromoterClause();
   
     virtual void Label();  
+    virtual bool IsPromoter() { return true; }
 };
 
 
@@ -186,6 +193,8 @@ public:
     ~CAutoDefParsedtRNAClause();
 
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_tRNA; }
+    virtual bool IsIntergenicSpacer() { return false; }
+    static bool ParseString(string comment, string& gene_name, string& product_name);
 };
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefParsedIntergenicSpacerClause : public CAutoDefIntergenicSpacerClause
@@ -236,6 +245,7 @@ public:
     ~CAutoDefFakePromoterClause();
 
     virtual void Label();
+    virtual bool IsPromoter() { return true; }
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_promoter; };
     
     virtual bool IsRecognizedFeature() { return false; };

@@ -891,5 +891,28 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2075)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2115)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> promoter = unit_test_util::AddMiscFeature(seq);
+    promoter->ResetComment();
+    promoter->SetData().SetImp().SetKey("regulatory");
+    CRef<CGb_qual> q(new CGb_qual());
+    q->SetQual("regulatory_class");
+    q->SetVal("promoter");
+    promoter->SetQual().push_back(q);
+    AddTitle(seq, "Sebaea microphylla promoter region.");
+    CheckDeflineMatches(seq, true);
+
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (promoter);
+    gene->SetData().SetGene().SetLocus("chs");
+    unit_test_util::AddFeat(gene, seq);
+
+    AddTitle(seq, "Sebaea microphylla chs gene, promoter region.");
+    CheckDeflineMatches(seq, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
