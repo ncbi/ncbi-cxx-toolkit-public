@@ -133,3 +133,38 @@ done
 
 }
 
+function unit_test_compare_to_old_tool()
+{
+   local input_folder=$1
+   local input_file=$2
+#   local input=$3
+#   local args=$4
+
+sed -e 's/\#.*//' -e '/^\s*$/d' < "$input_folder/$input_file" |
+while read args
+do
+
+    local old_tool_args="$args"
+    local tool_args="$args"
+
+    #local fname=`echo "$t2asn_args" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\:\/"]+/-/g' -e 's/--/-/g'` 
+    local fname=`make_test_name "$tool_args"`
+    local test_name=$fname
+
+    #local golden_file=$fname.golden
+    local cerr_file=$tmp_folder/$fname.cerr
+
+    local orig_file=$tmp_folder/$test_name.orig
+    local current_file=$tmp_folder/$test_name.new
+
+#    if [ "$debug" == "debug" -a -f $orig_file ]; then
+#      unset ps_args
+#    else
+      run_old_tool "$old_tool_args" $orig_file $cerr_file $debug_opts
+#    fi
+
+    compare_with_golden_file $orig_file $current_file $cerr_file "$tool_args" $test_name "unit_test_compare_to_old_tool" $debug_opts
+
+done
+
+}

@@ -2,7 +2,7 @@
 
 set -o errexit
 set -o pipefail
-set -x
+#set -x
 
 TEST_TOOL_NAME="$1"
 TEST_TOOL_PATH="$2"
@@ -45,3 +45,4 @@ mkdir -p "$tmp_folder"
 mkdir -p "$diff_folder"
 
 unit_test_compare_to_previous test-cases test-case1
+unit_test_compare_to_old_tool test-cases test-case1
