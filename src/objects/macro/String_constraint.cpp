@@ -94,16 +94,15 @@ bool CString_constraint :: x_IsFirstCap(const string& str) const
 {
     // ignore punctuation and spaces at the beginning of the phrase
     string::const_iterator it = str.begin();
-    bool found(false);
-    while (it != str.end() && !found) {
-        if (isalpha( (unsigned char) (*it)))
-            found = true;
-        else 
-            ++it;
+    while (it != str.end() && !isalpha((unsigned char) (*it))) {
+    if (isdigit( (unsigned char) (*it))) {
+        return false;
+    }
+        ++it;
     }
 
-    if (found) {
-        return isalpha( (unsigned char) (*it) ) && isupper( (unsigned char) (*it) );
+    if (it != str.end()) {
+        return isalpha((unsigned char) (*it)) && isupper((unsigned char) (*it));
     }
     return false;
 }
@@ -123,6 +122,10 @@ bool CString_constraint :: x_IsFirstEachCap(const string& str) const
             if ((i > 0 && !isalpha( (unsigned char) str[i - 1])) || 
                 (i + 1 < str.size() && !isalpha( (unsigned char) str[i + 1] ))) 
                 first = true;
+        } else if (isdigit( (unsigned char) str[i])){
+            if (i + 1 < str.size() && isalpha( (unsigned char) str[i + 1])) {
+                rval = false;
+            }
         } else {
             first = true;
         }
@@ -658,8 +661,8 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
 
 bool CString_constraint :: Match(const string& str) const
 {
-  bool rval = x_DoesSingleStringMatchConstraint (str);
-  return GetNot_present() ? (!rval) : rval;
+    bool rval = x_DoesSingleStringMatchConstraint (str);
+    return GetNot_present() ? (!rval) : rval;
 }
 
 bool CString_constraint::x_ReplaceContains(string& val, const string& replace) const

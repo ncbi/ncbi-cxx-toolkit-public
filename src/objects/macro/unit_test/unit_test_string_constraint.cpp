@@ -335,6 +335,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2048)
     s.SetIs_all_lower(false);
     s.SetIs_all_punct(false);
     s.SetIgnore_weasel(false);
+    
+    //NcbiCout << MSerial_AsnText << s;
 
     BOOST_CHECK_EQUAL(s.Match("cytochrome b gene"), true);
     BOOST_CHECK_EQUAL(s.Match("cytochrome b partial"), true);
@@ -521,8 +523,6 @@ BOOST_AUTO_TEST_CASE(Test_NADH_dehydrogenase)
     s.SetIs_all_punct(false);
     s.SetIgnore_weasel(false);
 
-    //NcbiCout << MSerial_AsnText << s;
-
     BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit one sequence"), true);
     BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit 1 gene"), true);
     BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit one"), false);
@@ -577,7 +577,7 @@ BOOST_AUTO_TEST_CASE(Test_Beta_actinGene)
 BOOST_AUTO_TEST_CASE(Test_FirstCaps)
 {
     CString_constraint s;
-    s.SetIs_first_cap();
+    s.SetIs_first_cap(true);
 
     BOOST_CHECK_EQUAL(s.Match(""), false);
     BOOST_CHECK_EQUAL(s.Match("beta actin"), false);
@@ -587,9 +587,11 @@ BOOST_AUTO_TEST_CASE(Test_FirstCaps)
     BOOST_CHECK_EQUAL(s.Match("Beta-actin Gene"), true);
     BOOST_CHECK_EQUAL(s.Match("?Beta_Actin Gene"), true);
     BOOST_CHECK_EQUAL(s.Match("  Beta actin"), true);
-    
+    BOOST_CHECK_EQUAL(s.Match("4"), false);
+    BOOST_CHECK_EQUAL(s.Match("-12Beta"), false);
+
     s.SetIs_first_cap(false);
-    s.SetIs_first_each_cap();
+    s.SetIs_first_each_cap(true);
 
     BOOST_CHECK_EQUAL(s.Match(""), false);
     BOOST_CHECK_EQUAL(s.Match("beta actin"), false);
@@ -602,5 +604,7 @@ BOOST_AUTO_TEST_CASE(Test_FirstCaps)
     BOOST_CHECK_EQUAL(s.Match("-Beta-actin Gene"), true);
     BOOST_CHECK_EQUAL(s.Match("?Beta_Actin Gene"), true);
     BOOST_CHECK_EQUAL(s.Match(" BETA ACTIN"), true);
-
+    BOOST_CHECK_EQUAL(s.Match("12 Ribosomal RNA"), true);
+    BOOST_CHECK_EQUAL(s.Match("12R Ribosomal RNA"), false); //!!
+    BOOST_CHECK_EQUAL(s.Match("12r Ribosomal RNA"), false); //!!
 }
