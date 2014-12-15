@@ -170,20 +170,51 @@ typedef struct SConnectionTag {
 } SConnection;
 
 
+static size_t x_CB2IDX(ECONN_Callback type)
+{
+    size_t idx;
+    switch (type) {
+    case eCONN_OnClose:
+        idx = 0;
+        break;
+    case eCONN_OnRead:
+        idx = 1;
+        break;
+    case eCONN_OnWrite:
+        idx = 2;
+        break;
+    case eCONN_OnFlush:
+        idx = 3;
+        break;
+    case eCONN_OnTimeout:
+        idx = 4;
+        break;
+    case eCONN_OnOpen:
+        idx = 5;
+        break;
+    default:
+        idx = CONN_N_CALLBACKS;
+        break;
+    }
+    return idx;
+}
+
+
 static EIO_Status x_Callback(CONN conn, ECONN_Callback type, unsigned int flag)
 {
-    EIO_Status     status;
+    size_t         idx = x_CB2IDX(type);
     FCONN_Callback func;
     void*          data;
+    EIO_Status     status;
 
     assert(!flag  ||  (type == eCONN_OnTimeout
                        &&  (flag | eIO_ReadWrite) == eIO_ReadWrite));
-    assert(conn  &&  (int) type >= 0  &&  (int) type < CONN_N_CALLBACKS);
+    assert(conn  &&  idx < CONN_N_CALLBACKS);
     if (conn->state == eCONN_Unusable)
         return eIO_Closed;
-    if (!(func = conn->cb[type].func))
+    if (!(func = conn->cb[idx].func))
         return type == eCONN_OnTimeout ? eIO_Timeout : eIO_Success;
-    data = conn->cb[type].data;
+    data = conn->cb[idx].data;
     status = (*func)(conn, (TCONN_Callback) type | flag, data);
     if (status == eIO_Interrupt)
         conn->state = eCONN_Cancel;
@@ -305,7 +336,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
 
 static EIO_Status s_Open(CONN conn)
 {
-    const STimeout* timeout;
+    const STimeout* timeout = 0;
     EIO_Status      status;
 
     switch (conn->state) {
@@ -319,28 +350,35 @@ static EIO_Status s_Open(CONN conn)
         break;
     }
     assert(conn->state == eCONN_Closed  &&  conn->meta.list);
+    conn->r_pos = 0;
+    conn->w_pos = 0;
 
-    /* call current connector's "OPEN" method */
     if (conn->meta.open) {
-        timeout = (conn->o_timeout == kDefaultTimeout
-                   ? conn->meta.default_timeout
-                   : conn->o_timeout);
-        status = conn->meta.open(conn->meta.c_open, timeout);
-    } else {
-        status = eIO_NotSupported;
-        timeout = 0/*dummy*/;
-    }
-
+        /* call current connector's "OPEN" method */
+        int/*bool*/ nocb = !conn->cb[x_CB2IDX(eCONN_OnOpen)].func;
+        if ((status = x_Callback(conn, eCONN_OnOpen, 0)) == eIO_Success) {
+            timeout = (conn->o_timeout == kDefaultTimeout
+                       ? conn->meta.default_timeout
+                       : conn->o_timeout);
+            status = conn->meta.open(conn->meta.c_open, timeout);
+            /* OnTimeout gets called only if OnOpen was there */
+            if (status == eIO_Timeout  &&  !nocb) {
+                status  = x_Callback(conn, eCONN_OnTimeout, eIO_Open);
+                if (status == eIO_Success)
+                    status  = eIO_Timeout;
+            }
+        }
+    } else
+        status  = eIO_NotSupported;
     if (status == eIO_Success) {
-        conn->r_pos    = 0;
-        conn->w_pos    = 0;
         conn->flags   &= ~fCONN_Flush;
         conn->r_status = eIO_Success;
         conn->w_status = eIO_Success;
         conn->state    = eCONN_Open;
     } else {
         CONN_LOG(5, Open, eLOG_Error, "Failed to open connection");
-        conn->state    = eCONN_Bad;
+        if (conn->state == eCONN_Closed)
+            conn->state  = eCONN_Bad;
     }
     return status;
 }
@@ -1082,23 +1120,23 @@ extern EIO_Status CONN_SetCallback
  const SCONN_Callback* newcb,
  SCONN_Callback*       oldcb)
 {
-    int i;
+    size_t idx;
 
     CONN_NOT_NULL(28, SetCallback);
-
-    if ((i = (int) type) >= CONN_N_CALLBACKS) {
+    
+    if ((idx = x_CB2IDX(type)) >= CONN_N_CALLBACKS) {
         static const STimeout* timeout = 0/*dummy*/;
         char errbuf[80];
-        sprintf(errbuf, "Unknown callback type #%u", (unsigned int) i);
+        sprintf(errbuf, "Unknown callback type #%u", (unsigned int) type);
         CONN_LOG_EX(29, SetCallback, eLOG_Error, errbuf, eIO_InvalidArg);
         return eIO_InvalidArg;
     }
 
     /* NB: oldcb and newcb may point to the same address */
     if (newcb  ||  oldcb) {
-        SCONN_Callback cb = conn->cb[i];
+        SCONN_Callback cb = conn->cb[idx];
         if (newcb)
-            conn->cb[i] = *newcb;
+            conn->cb[idx] = *newcb;
         if (oldcb)
             *oldcb = cb;
     }

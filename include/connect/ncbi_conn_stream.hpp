@@ -106,11 +106,11 @@ const size_t kConn_DefaultBufSize = 4096;
 /// (default), which means that any input attempt first flushes any pending
 /// output from the internal buffers.
 ///
-/// @note CConn_IOStream implementation utilizes the eCONN_OnClose callback
+/// @note CConn_IOStream implementation utilizes some connection callbacks
 ///       on the underlying CONN object.  Care must be taken when intercepting
-///       the callback using the native CONN API.
+///       the callbacks using the native CONN API.
 /// @sa
-///   CONN_SetCallback, eCONN_OnClose
+///   CONN_SetCallback
 
 class NCBI_XCONNECT_EXPORT CConn_IOStream : public            CNcbiIostream,
                                             virtual protected CConnIniter
@@ -248,7 +248,7 @@ private:
     CConn_Streambuf*      m_CSb;
 
     // Cancellation
-    SCONN_Callback        m_CB[3];
+    SCONN_Callback        m_CB[4];
     CConstIRef<ICanceled> m_Canceled;
     static EIO_Status x_IsCanceled(CONN conn, TCONN_Callback type, void* data);
 

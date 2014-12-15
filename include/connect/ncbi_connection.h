@@ -339,16 +339,17 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
 
 
 /** Set user callback function to be invoked upon an event specified by the
- * callback type.  Note that the callback function is always called prior
+ * callback type.  Note that the callback function gets always called prior
  * to the event to happen, e.g. the eCONN_OnClose callback is called when
  * the connection is about to close, but has not yet been closed.
  * @par
- * The callback function is supplied with 3 arguments: the connection handle,
+ * The callback function is supplied with 3 arguments:  the connection handle,
  * a type of event (except for eCONN_OnTimeout), and a user data (specified
  * when the callback was set).
- * When eCONN_OnTimeout callback occurs, the callback type eCONN_OnTimeout
- * gets OR'ed with I/O direction, which timed out (eIO_Read, eIO_Write, or
- * both when flushing), then passed in as the type argument.
+ * When eCONN_OnTimeout callback occurs, the callback type eCONN_OnTimeout gets
+ * OR'ed with I/O direction, which has timed out:  eIO_Open (when opening),
+ * eIO_Read, eIO_Write, or both (when flushing), then passed in the "type"
+ * argument.
  * @par
  * CONN_SetCallback() stores previous callback in "old_cb" (if it is not NULL).
  * @par
@@ -356,8 +357,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * or the connection becomes closed.
  * @par
  * This also means that if a callback is intercepted and then relayed to an old
- * handler, the interceptor may not assume the callback remains set, and must
- * reinstate itself upon each upcall of the old handler (in general).
+ * handler, the interceptor may not always assume the callback remains set, and
+ * so in general must reinstate itself upon each upcall of the old handler.
  * @par
  * Normally, callback would return eIO_Success and let the operation continue;
  * non-eIO_Success return value causes it to be returned to the caller level
@@ -368,8 +369,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * fail with eIO_Interrupt.
  * @note  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
  * connection closure (but the error code is still passed through to the user).
- * @note  by returning eIO_Success, eCONN_OnTimeout can restart the I/O that
- * has timed out.
+ * @note  by returning eIO_Success, eCONN_OnTimeout restarts the I/O that
+ * has timed out (except for open).
+ * @note  eCONN_OnTimeout for connection open is only called if eCONN_OnOpen
+ * was also set for that connection.
  * @sa
  *  CONN_Read, CONN_Write, CONN_Close
  */
@@ -378,9 +381,10 @@ typedef enum {
     eCONN_OnRead    = 1,  /**< Read from connector is about to occur         */
     eCONN_OnWrite   = 2,  /**< Write to connector is about to occur          */
     eCONN_OnFlush   = 3,  /**< About to be flushed (NB: == eIO_ReadWrite)    */
-    eCONN_OnTimeout = 4   /**< Connector I/O has timed out                   */
+    eCONN_OnTimeout = 4,  /**< Connector I/O has timed out                   */
+    eCONN_OnOpen    = 8   /**< Call prior to open (NB: "conn" still closed)  */
 } ECONN_Callback;
-#define CONN_N_CALLBACKS  5
+#define CONN_N_CALLBACKS  6
 
 typedef unsigned int TCONN_Callback;  /* Bitwise ECONN_Callback for time-out */
 

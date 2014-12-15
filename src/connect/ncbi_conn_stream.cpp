@@ -180,13 +180,15 @@ EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
         memset(&cb, 0, sizeof(cb));
         cb.func = (FCONN_Callback) x_IsCanceled;
         cb.data = this;
-        CONN_SetCallback(conn, eCONN_OnRead,  &cb,      isset ? 0 : &m_CB[0]);
-        CONN_SetCallback(conn, eCONN_OnWrite, &cb,      isset ? 0 : &m_CB[1]);
-        CONN_SetCallback(conn, eCONN_OnFlush, &cb,      isset ? 0 : &m_CB[2]);
+        CONN_SetCallback(conn, eCONN_OnOpen,  &cb,      isset ? 0 : &m_CB[0]);
+        CONN_SetCallback(conn, eCONN_OnRead,  &cb,      isset ? 0 : &m_CB[1]);
+        CONN_SetCallback(conn, eCONN_OnWrite, &cb,      isset ? 0 : &m_CB[2]);
+        CONN_SetCallback(conn, eCONN_OnFlush, &cb,      isset ? 0 : &m_CB[3]);
     } else if (isset) {
-        CONN_SetCallback(conn, eCONN_OnFlush, &m_CB[2], 0);
-        CONN_SetCallback(conn, eCONN_OnWrite, &m_CB[1], 0);
-        CONN_SetCallback(conn, eCONN_OnRead,  &m_CB[0], 0);
+        CONN_SetCallback(conn, eCONN_OnFlush, &m_CB[3], 0);
+        CONN_SetCallback(conn, eCONN_OnWrite, &m_CB[2], 0);
+        CONN_SetCallback(conn, eCONN_OnRead,  &m_CB[1], 0);
+        CONN_SetCallback(conn, eCONN_OnOpen,  &m_CB[0], 0);
         m_Canceled = 0;
     }
 
@@ -202,11 +204,12 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
     CConn_IOStream* io = reinterpret_cast<CConn_IOStream*>(data);
     if (/* io && */ io->m_Canceled.NotNull()  &&  io->m_Canceled->IsCanceled())
         return eIO_Interrupt;
-    int n = (int) type - (int) eCONN_OnRead;
-    _ASSERT(n >= 0  &&  (size_t) n < sizeof(io->m_CB) / sizeof(io->m_CB[0]));
-    _ASSERT((n == 0  &&  type == eCONN_OnRead)   ||
-            (n == 1  &&  type == eCONN_OnWrite)  ||
-            (n == 2  &&  type == eCONN_OnFlush));
+    int n = (int) type & (int) eIO_ReadWrite;
+    _ASSERT(0 <= n  &&  (size_t) n < sizeof(io->m_CB) / sizeof(io->m_CB[0]));
+    _ASSERT((n == 0  &&  type == eCONN_OnOpen)   ||
+            (n == 1  &&  type == eCONN_OnRead)   ||
+            (n == 2  &&  type == eCONN_OnWrite)  ||
+            (n == 3  &&  type == eCONN_OnFlush));
     if (!io->m_CB[n].func)
         return eIO_Success;
     return io->m_CB[n].func(conn, type, io->m_CB[n].data);
