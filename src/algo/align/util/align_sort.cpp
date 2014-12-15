@@ -41,6 +41,7 @@
 #include <objects/general/Object_id.hpp>
 
 #include <algo/align/util/align_sort.hpp>
+#include <algo/align/util/algo_align_util_exceptions.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -150,7 +151,15 @@ CAlignSort::SAlignExtractor::operator()(const CSeq_align& align)
             /// assume it is a score
             CScoreLookup lookup;
             lookup.SetScope(*scope);
-            item.second = lookup.GetScore(align, *iter);
+            try {
+                item.second = lookup.GetScore(align, *iter);
+            } catch (CAlgoAlignUtilException &e) {
+                /// If score not found, keep value at 0, so all alignments
+                /// without this score will be in one group
+                if (e.GetErrCode() != CAlgoAlignUtilException::eScoreNotFound) {
+                    throw;
+                }
+            }
         }
         key.items.push_back(item);
     }
