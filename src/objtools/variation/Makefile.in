@@ -7,7 +7,7 @@ REQUIRES = objects
 LIB_PROJ = variation_utils
 EXPENDABLE_SUB_PROJ = test
 
-WATCHERS = filippov
+WATCHERS = filippov holmesbr
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

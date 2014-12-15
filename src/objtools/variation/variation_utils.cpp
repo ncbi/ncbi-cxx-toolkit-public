@@ -1093,6 +1093,9 @@ bool CVariationNormalizationLeft::ProcessShift(
     int& rotation_counter, 
     const CVariation_inst::TType type ) //both deletion and insertion are treated the same here)
 {
+    if(common_repeat_unit_allele.empty())
+        return false;
+
     ERR_POST(Trace << "Initial pos: (" << sep.left << "," << sep.right <<")");
     //For both insertion and deletion, we want to review
     // the context just upstream of the event.
@@ -1101,14 +1104,15 @@ bool CVariationNormalizationLeft::ProcessShift(
         five_prime_last_nt = GetSeq(sep.left-1,1,seqvec);
     
     ERR_POST(Trace << "Compare at pos-1: " << sep.left-1 << " the nt " 
-        << five_prime_last_nt << " to the back of compact: " << common_repeat_unit_allele.back());
+        << five_prime_last_nt << " to the back of compact: " << common_repeat_unit_allele);
 
     bool did_rotate = false;
-    while(common_repeat_unit_allele.back() == five_prime_last_nt.front() ) {
+    while( !five_prime_last_nt.empty()
+        && (*common_repeat_unit_allele.rbegin() == *five_prime_last_nt.begin()) ) {
         
         ERR_POST(Trace << "We had a match, therefore rotate: " << 
-            common_repeat_unit_allele.back() << " off (" <<
-            five_prime_last_nt.front() << " @ left pos: " <<
+            *common_repeat_unit_allele.rbegin() << " off (" <<
+            *five_prime_last_nt.begin() << " @ left pos: " <<
             sep.left-1 <<")");
 
         did_rotate = true;
@@ -1128,8 +1132,8 @@ bool CVariationNormalizationLeft::ProcessShift(
         five_prime_last_nt = GetSeq(sep.left-1,1,seqvec);
 
         ERR_POST(Trace << "Will: " << 
-            common_repeat_unit_allele.back() << " and " <<
-            five_prime_last_nt.front() << " match?  Taken from position n-1: " <<
+            *common_repeat_unit_allele.rbegin() << " and " <<
+            *five_prime_last_nt.begin() << " match?  Taken from position n-1: " <<
             sep.left-1);
 
     }
@@ -1148,6 +1152,9 @@ bool CVariationNormalizationRight::ProcessShift(
 {
     ERR_POST(Trace << "Initial pos: (" << sep.left << "," << sep.right <<")");
     
+    if(compact_allele.empty())
+        return false;
+
     //For both insertion and deletion, we want to review
     // the context just upstream of the event.
     string three_prime_first_nt;
@@ -1165,15 +1172,17 @@ bool CVariationNormalizationRight::ProcessShift(
 
     ERR_POST(Trace << "Compare at left pos: " << sep.left << " and right pos " 
         << sep.right << " nt " << three_prime_first_nt << 
-        " to the front of compact: " << compact_allele.front());
+        " to the front of compact: " << *compact_allele.begin());
 
     bool did_rotate = false;
-    while(compact_allele.front() == three_prime_first_nt.front()  ) {
+    while( !three_prime_first_nt.empty() 
+        && (*compact_allele.begin() == *three_prime_first_nt.begin())  ) {
         ERR_POST(Trace << "Match and rotate: " << 
-            compact_allele.front() << " " <<
-            three_prime_first_nt.front() << " @ right pos: " <<
+            *compact_allele.begin() << " " <<
+            *three_prime_first_nt.begin() << " @ right pos: " <<
             sep.right);
 
+        did_rotate = true;
         rotation_counter++;
         Rotate(compact_allele);
         sep.right++;
@@ -1186,7 +1195,6 @@ bool CVariationNormalizationRight::ProcessShift(
             if (sep.right+1 >=0 && sep.right+2 < GetSeqSize(seqvec))
                 three_prime_first_nt = GetSeq(sep.right+1,1,seqvec);
         }
-        did_rotate = true;
     }
 
     ERR_POST(Trace << "We have moved to position: " << sep.left 
