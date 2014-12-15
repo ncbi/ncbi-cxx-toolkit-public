@@ -276,3 +276,9 @@ Added support of 64bits architectures on XCode
 October 30, 2014
 version 3.12.1
 Corrected to allow projects which use, but not require, absent 3rd party libraries.
+
+December 15,2014
+version 3.13.0
+Fixed errors in library dependency graph loading.
+Added support of external scripts on XCode.
+
