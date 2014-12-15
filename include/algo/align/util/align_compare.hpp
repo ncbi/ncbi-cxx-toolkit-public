@@ -96,6 +96,7 @@ public:
         CRangeCollection<TSeqPos> query_mismatches;
         CRangeCollection<TSeqPos> subject_mismatches;
 
+        vector<const SAlignment *> matched_alignments;
         EMatchLevel      match_level;
 
         SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,

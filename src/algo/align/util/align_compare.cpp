@@ -713,6 +713,24 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
             }
         }
 
+        ITERATE (list<TAlignGroup>, group_it, groups) {
+            if (group_it->second == e_NoMatch) {
+                continue;
+            }
+            ITERATE (TAlignPtrSet, align1_it, group_it->first) {
+                if ((*align1_it)->source_set != 1) {
+                    continue;
+                }
+                ITERATE (TAlignPtrSet, align2_it, group_it->first) {
+                    if ((*align2_it)->source_set != 2) {
+                        continue;
+                    }
+                    (*align1_it)->matched_alignments.push_back(*align2_it);
+                    (*align2_it)->matched_alignments.push_back(*align1_it);
+                }
+            }
+        }
+
         /// Add remaining alignments, for which no match was found, in order
         /// of their appearance in alignment comparisons
         m_CountOnlySet1 += set1_aligns.size();
