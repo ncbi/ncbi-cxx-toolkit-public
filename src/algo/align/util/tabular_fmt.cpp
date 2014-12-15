@@ -1643,14 +1643,22 @@ void CTabularFormatter_AssemblyInfo::Print(CNcbiOstream& ostr,
                 return;
 
             case eAccession:
-                ostr << obj.GetField(m_Type == eFull
-                            ? "Assembly Accession" : "Assembly Unit Accession")
-                                      .GetData().GetStr();
+                if (obj.HasField("Assembly Accession")) {
+                    ostr << obj.GetField(m_Type == eFull
+                                ? "Assembly Accession" : "Assembly Unit Accession")
+                                          .GetData().GetStr();
+                } else {
+                    ostr << "NA";
+                }
                 return;
 
             case eChainId:
                 if (m_Type == eUnit) {
-                    ostr << obj.GetField("GenColl Chain").GetData().GetInt();
+                    if (obj.HasField("GenColl Chain")) {
+                        ostr << obj.GetField("GenColl Chain").GetData().GetInt();
+                    } else {
+                        ostr << "NA";
+                    }
                     return;
                 }
                 break;
