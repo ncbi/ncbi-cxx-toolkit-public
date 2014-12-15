@@ -33,6 +33,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -526,30 +527,63 @@ void AddBioseqToBioseqSet(const CBioseq_set_Handle& set, const CBioseq_Handle& s
 }
 
 
+bool IsSeqDescInList(const CSeqdesc& desc, const CSeq_descr& set)
+{
+    ITERATE(CSeq_descr::Tdata, it, set.Get()) {
+        if ((*it)->Equals(desc)) {
+            return true;
+        } else if ((*it)->IsPub() &&
+                   desc.IsPub() &&
+                   (*it)->GetPub().GetPub().SameCitation(desc.GetPub().GetPub())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void AddSeqdescToSeqDescr(const CSeqdesc& desc, CSeq_descr& seq_descr)
+{
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->Assign(desc);
+    seq_descr.Set().push_back(d);
+}
+
+
+void AddSeqdescToBioseq(const CSeqdesc& desc, CBioseq& seq)
+{
+    if (!seq.IsSetDescr() || !IsSeqDescInList(desc, seq.GetDescr())) {
+        AddSeqdescToSeqDescr(desc, seq.SetDescr());
+    }
+}
+
+
+void AddSeqdescToBioseqSet(const CSeqdesc& desc, CBioseq_set& set)
+{
+    if (!set.IsSetDescr() || !IsSeqDescInList(desc, set.GetDescr())) {
+        AddSeqdescToSeqDescr(desc, set.SetDescr());
+    }
+}
+
+
 bool AddSeqdescToSeqEntryRecursively(CSeq_entry& entry, CSeqdesc& desc)
 {
     bool rval = false;
     if (entry.IsSeq()) {
-        CRef<CSeqdesc> d(new CSeqdesc());
-        d->Assign(desc);
-        entry.SetSeq().SetDescr().Set().push_back(d);
+        AddSeqdescToBioseq(desc, entry.SetSeq());
         rval = true;
     } else if (entry.IsSet()) {
         if (entry.GetSet().IsSetClass() && 
             (entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot ||
              entry.GetSet().GetClass() == CBioseq_set::eClass_segset)) {
-            CRef<CSeqdesc> d(new CSeqdesc());
-            d->Assign(desc);
-            entry.SetSet().SetDescr().Set().push_back(d);
+            AddSeqdescToBioseqSet(desc, entry.SetSet());
             rval = true;
         } else if (entry.GetSet().IsSetSeq_set()) {
             NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set()) {
                 rval |= AddSeqdescToSeqEntryRecursively(**it, desc);
             }
             if (!rval) {
-                CRef<CSeqdesc> d(new CSeqdesc());
-                d->Assign(desc);
-                entry.SetSet().SetDescr().Set().push_back(d);
+                AddSeqdescToBioseqSet(desc, entry.SetSet());
                 rval = true;
             }
         }
@@ -584,7 +618,7 @@ CRef<CSeq_entry> SeqEntryFromSeqSubmit(const CSeq_submit& submit)
         CRef<CSeqdesc> pdesc(new CSeqdesc());
         pdesc->SetPub().SetPub().Set().push_back(pub);
         if (entry->IsSeq()) {
-            entry->SetSeq().SetDescr().Set().push_back(pdesc);
+            AddSeqdescToBioseq(*pdesc, entry->SetSeq());
         } else {
             AddSeqdescToSeqEntryRecursively(*entry, *pdesc);
         }

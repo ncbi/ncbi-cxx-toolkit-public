@@ -1417,6 +1417,23 @@ BOOST_AUTO_TEST_CASE(Test_SeqEntryFromSeqSubmit)
     CRef<CSeq_entry> entry = edit::SeqEntryFromSeqSubmit(*submit);
     BOOST_CHECK_EQUAL(entry->IsSeq(), true);
     BOOST_CHECK_EQUAL(entry->GetSeq().GetDescr().Get().size(), wrapped->GetSeq().GetDescr().Get().size() + 1);
+
+    // try again with cit-sub pub already there
+    submit->SetData().SetEntrys().front()->Assign(*entry);
+    entry = edit::SeqEntryFromSeqSubmit(*submit);
+    BOOST_CHECK_EQUAL(entry->GetSeq().GetDescr().Get().size(), submit->GetData().GetEntrys().front()->GetSeq().GetDescr().Get().size());
+
+    wrapped = unit_test_util::BuildGoodNucProtSet();
+    submit->SetData().SetEntrys().front()->Assign(*wrapped);
+
+    entry = edit::SeqEntryFromSeqSubmit(*submit);
+    BOOST_CHECK_EQUAL(entry->IsSet(), true);
+    BOOST_CHECK_EQUAL(entry->GetSet().GetDescr().Get().size(), wrapped->GetSet().GetDescr().Get().size() + 1);
+    // try again with cit-sub pub already there
+    submit->SetData().SetEntrys().front()->Assign(*entry);
+    entry = edit::SeqEntryFromSeqSubmit(*submit);
+    BOOST_CHECK_EQUAL(entry->GetSet().GetDescr().Get().size(), submit->GetData().GetEntrys().front()->GetSet().GetDescr().Get().size());
+
 }
 
 
