@@ -58,6 +58,19 @@ public:
 
     enum ERowComparison {e_Query, e_Subject, e_Both};
 
+    /// Optional list of disambiguiting scores; alignments can only be compared
+    /// if they are equal in these scores. The scores are divided into two groups:
+    /// - scores in the first list are required to appear in all alignments, and
+    ///   input is required to be sorted by these scores.
+    /// - scores in the second set are optional.
+    /// -- If two alignmens on both sides both have the score set, they must
+    ///    have equal value to be compared.
+    /// -- Alignments without the score, or with a 0 value, may be compared to
+    ///    alignments that do have the score set.
+    typedef pair< vector<int>, vector<int> > TDisambiguatingScoreValues;
+
+    typedef pair< vector<string>, vector<string> > TDisambiguatingScoreList;
+
     //////////////////////////////////////////////////////////////////////////////
     //
     // struct defining all information needed to store a single alignment
@@ -75,6 +88,8 @@ public:
     
         TSeqRange        query_range;
         TSeqRange        subject_range;
+
+        TDisambiguatingScoreValues scores;
     
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
@@ -83,7 +98,10 @@ public:
 
         EMatchLevel      match_level;
 
-        SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row);
+        SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
+                   const TDisambiguatingScoreList &score_list);
+
+        int CompareGroup(const SAlignment &o, bool strict_only) const;
     };
     
     CAlignCompare(IAlignSource &set1,
@@ -91,13 +109,15 @@ public:
                   EMode mode = e_Interval,
                   bool strict = false,
                   bool ignore_not_present = false,
-                  ERowComparison row = e_Both)
+                  ERowComparison row = e_Both,
+                  const TDisambiguatingScoreList &scores = TDisambiguatingScoreList())
     : m_Set1(set1)
     , m_Set2(set2)
     , m_Mode(mode)
     , m_Strict(strict)
     , m_IgnoreNotPresent(ignore_not_present)
     , m_Row(row)
+    , m_DisambiguitingScores(scores)
     , m_CountSet1(0)
     , m_CountSet2(0)
     , m_CountEquivSet1(0)
@@ -137,6 +157,7 @@ private:
     bool m_Strict;
     bool m_IgnoreNotPresent;
     ERowComparison m_Row;
+    TDisambiguatingScoreList m_DisambiguitingScores;
 
     size_t m_CountSet1;
     size_t m_CountSet2;
@@ -164,7 +185,7 @@ private:
     {
         ++(set == 1 ? m_CountSet1 : m_CountSet2);
         return new SAlignment(set, (set == 1 ? m_Set1 : m_Set2).GetNext(),
-                              m_Mode, m_Row);
+                              m_Mode, m_Row, m_DisambiguitingScores);
     }
 
     void x_GetCurrentGroup(int set);

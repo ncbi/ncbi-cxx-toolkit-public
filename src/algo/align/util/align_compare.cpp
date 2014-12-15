@@ -47,6 +47,8 @@
 #include <objtools/alnmgr/aln_converters.hpp>
 
 #include <algo/align/util/align_compare.hpp>
+#include <algo/align/util/score_lookup.hpp>
+#include <algo/align/util/algo_align_util_exceptions.hpp>
 
 #include <cmath>
 
@@ -266,6 +268,26 @@ static void s_GetAlignmentSpans_Span(const CSeq_align& align,
     s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info, row);
 }
 
+static void s_PopulateDisambiguitingScores(const CSeq_align &align, 
+                                           const vector<string> &score_list, 
+                                           vector<int> &scores,
+                                           bool required)
+{
+    CScoreLookup lookup;
+    ITERATE (vector<string>, it, score_list) {
+        int value = 0;
+        try {
+            value = lookup.GetScore(align, *it);
+        } catch(CAlgoAlignUtilException &e) {
+            /// If scores are not required, use value of 0 for scores that were not found
+            if (required || e.GetErrCode() != CAlgoAlignUtilException::eScoreNotFound) {
+                throw;
+            }
+        }
+        scores.push_back(value);
+    }
+}
+
 struct SComparison
 {
     SComparison(const CAlignCompare::SAlignment& first,
@@ -286,11 +308,17 @@ struct SComparison
 //
 SComparison::SComparison(const CAlignCompare::SAlignment& first,
                          const CAlignCompare::SAlignment& second)
+: spans_in_common(0)
+, spans_overlap(0)
+, spans_unique_first(0)
+, spans_unique_second(0)
+, is_equivalent(false)
+, overlap(0)
 {
-    spans_in_common = 0;
-    spans_overlap = 0;
-    spans_unique_first = 0;
-    spans_unique_second = 0;
+    if (first.CompareGroup(second, false) != 0) {
+        /// Alignments have different disambiguiting score values, can't be compared
+        return;
+    }
 
     float dot = 0;
     float sum_a = 0;
@@ -355,34 +383,29 @@ SComparison::SComparison(const CAlignCompare::SAlignment& first,
 
 struct SAlignment_PtrLess
 {
-    bool compare_query;
-    bool compare_subject;
-
-    SAlignment_PtrLess(CAlignCompare::ERowComparison row = CAlignCompare::e_Both)
-    : compare_query(row != CAlignCompare::e_Subject)
-    , compare_subject(row != CAlignCompare::e_Query)
-    {}
-
     bool operator()(const CAlignCompare::SAlignment *ptr1,
                     const CAlignCompare::SAlignment *ptr2) const
     {
         const CAlignCompare::SAlignment& k1 = *ptr1;
         const CAlignCompare::SAlignment& k2 = *ptr2;
 
-        if (compare_query && k1.query < k2.query)                    { return true; }
-        if (compare_query && k2.query < k1.query)                    { return false; }
-        if (compare_subject && k1.subject < k2.subject)                { return true; }
-        if (compare_subject && k2.subject < k1.subject)                { return false; }
+        if (k1.query < k2.query)                    { return true; }
+        if (k2.query < k1.query)                    { return false; }
+        if (k1.subject < k2.subject)                { return true; }
+        if (k2.subject < k1.subject)                { return false; }
 
-        if (compare_query && k1.query_strand < k2.query_strand)      { return true; }
-        if (compare_query && k2.query_strand < k1.query_strand)      { return false; }
-        if (compare_subject && k1.subject_strand < k2.subject_strand)  { return true; }
-        if (compare_subject && k2.subject_strand < k1.subject_strand)  { return false; }
+        if (k1.scores < k2.scores)                  { return true; }
+        if (k2.scores < k1.scores)                  { return true; }
 
-        if (compare_subject && k1.subject_range < k2.subject_range)    { return true; }
-        if (compare_subject && k2.subject_range < k1.subject_range)    { return false; }
-        if (compare_query && k1.query_range < k2.query_range)        { return true; }
-        if (compare_query && k2.query_range < k1.query_range)        { return false; }
+        if (k1.query_strand < k2.query_strand)      { return true; }
+        if (k2.query_strand < k1.query_strand)      { return false; }
+        if (k1.subject_strand < k2.subject_strand)  { return true; }
+        if (k2.subject_strand < k1.subject_strand)  { return false; }
+
+        if (k1.subject_range < k2.subject_range)    { return true; }
+        if (k2.subject_range < k1.subject_range)    { return false; }
+        if (k1.query_range < k2.query_range)        { return true; }
+        if (k2.query_range < k1.query_range)        { return false; }
 
         return ptr1 < ptr2;
     }
@@ -395,11 +418,9 @@ typedef pair<TPtrPair, SComparison> TComp;
 struct SComp_Less
 {
     bool strict_compare;
-    CAlignCompare::ERowComparison row;
 
-    SComp_Less(bool strict = false, CAlignCompare::ERowComparison r = CAlignCompare::e_Both)
+    SComp_Less(bool strict = false)
         : strict_compare(strict)
-        , row(r)
     {
     }
 
@@ -429,34 +450,40 @@ struct SComp_Less
             }
         }
 
-        if (row != CAlignCompare::e_Query) {
-            if (c1.first.first->subject_range < c2.first.first->subject_range)
-            {
-                return false;
-            }
-            if (c2.first.first->subject_range < c1.first.first->subject_range)
-            {
-                return true;
-            }
+        if (c1.first.first->subject_range < c2.first.first->subject_range)
+        {
+            return false;
         }
-        return row != CAlignCompare::e_Subject &&
-               c1.first.second->query_range < c2.first.second->query_range;
+        if (c2.first.first->subject_range < c1.first.first->subject_range)
+        {
+            return true;
+        }
+        return c1.first.second->query_range < c2.first.second->query_range;
     }
 };
 
 CAlignCompare::SAlignment::
-SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row)
+SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
+                  const TDisambiguatingScoreList &score_list)
 : source_set(s)
-, query(CSeq_id_Handle::GetHandle(al->GetSeq_id(0)))
-, subject(CSeq_id_Handle::GetHandle(al->GetSeq_id(1)))
-, query_strand(al->GetSeqStrand(0))
-, subject_strand(al->GetSeqStrand(1))
-, query_range(al->GetSeqRange(0))
-, subject_range(al->GetSeqRange(1))
+, query_strand(eNa_strand_unknown)
+, subject_strand(eNa_strand_unknown)
 , align(al)
 , match_level(CAlignCompare::e_NoMatch)
 {
+    if (row != e_Subject) {
+        query = CSeq_id_Handle::GetHandle(align->GetSeq_id(0));
+        query_strand = align->GetSeqStrand(0);
+        query_range = align->GetSeqRange(0);
+    }
+    if (row != e_Query) {
+        subject = CSeq_id_Handle::GetHandle(align->GetSeq_id(1));
+        subject_strand = align->GetSeqStrand(1);
+        subject_range = align->GetSeqRange(1);
+    }
     try {
+        s_PopulateDisambiguitingScores(*align, score_list.first, scores.first, true);
+        s_PopulateDisambiguitingScores(*align, score_list.second, scores.second, false);
         switch (mode) {
         case e_Full:
             s_GetAlignmentMismatches(*align, *this, row);
@@ -485,6 +512,32 @@ SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row)
     }
 }
 
+int CAlignCompare::SAlignment::
+CompareGroup(const SAlignment &o, bool strict_only) const
+{
+    if (query.AsString() < o.query.AsString()) { return -1; }
+    if (o.query.AsString() < query.AsString()) { return 1; }
+
+    if (subject.AsString() < o.subject.AsString()) { return -1; }
+    if (o.subject.AsString() < subject.AsString()) { return 1; }
+
+    if (scores.first < o.scores.first) { return -1; }
+    if (o.scores.first < scores.first) { return 1; }
+
+    if (strict_only) {
+        return 0;
+    }
+
+    for (unsigned score_index = 0; score_index < scores.second.size(); ++score_index) {
+        if (scores.second[score_index] && o.scores.second[score_index]) {
+            if (scores.second[score_index] < o.scores.second[score_index]) { return -1; }
+            if (o.scores.second[score_index] < scores.second[score_index]) { return 1; }
+        }
+    }
+
+    return 0;
+}
+
 int CAlignCompare::x_DetermineNextGroupSet()
 {
     if (m_NextSet1Group.empty()) {
@@ -501,19 +554,12 @@ int CAlignCompare::x_DetermineNextGroupSet()
             m_NextSet2Group.push_back(x_NextAlignment(2));
         }
     }
-    if (m_Row != e_Subject &&
-        m_NextSet1Group.front()->query != m_NextSet2Group.front()->query)
-    {
-        return m_NextSet1Group.front()->query.GetSeqId()->AsFastaString()
-             < m_NextSet2Group.front()->query.GetSeqId()->AsFastaString()
-             ? 1 : 2;
-    } else if (m_Row != e_Query &&
-               m_NextSet1Group.front()->subject !=
-               m_NextSet2Group.front()->subject)
-    {
-        return m_NextSet1Group.front()->subject.GetSeqId()->AsFastaString()
-             < m_NextSet2Group.front()->subject.GetSeqId()->AsFastaString()
-             ? 1 : 2;
+    int compare_group = m_NextSet1Group.front()
+                      ->CompareGroup(*m_NextSet2Group.front(), true);
+    if (compare_group < 0) {
+        return 1;
+    } else if (compare_group > 0) {
+        return 2;
     } else {
         return 3;
     }
@@ -530,9 +576,7 @@ void CAlignCompare::x_GetCurrentGroup(int set)
     current_group.splice(current_group.end(), next_group);
     while (!source.EndOfData() && next_group.empty()) {
         AutoPtr<SAlignment> align = x_NextAlignment(set);
-        if (current_group.empty() ||
-            (align->query == current_group.front()->query &&
-             align->subject == current_group.front()->subject))
+        if (current_group.empty() || align->CompareGroup(*current_group.front(), true) == 0)
         {
             current_group.push_back(align);
         } else {
@@ -573,12 +617,12 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
 
     default:
     {{
-        TAlignPtrSet set1_aligns(m_Row);
+        TAlignPtrSet set1_aligns;
         NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet1Group)
         {
             set1_aligns.insert(&**it);
         }
-        TAlignPtrSet set2_aligns(m_Row);
+        TAlignPtrSet set2_aligns;
         NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet2Group)
         {
             set2_aligns.insert(&**it);
@@ -591,7 +635,7 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                                             SComparison(**set1_it, **set2_it)));
             }
         }
-        std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict, m_Row));
+        std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict));
 
         typedef pair<TAlignPtrSet, EMatchLevel> TAlignGroup;
 
@@ -631,11 +675,10 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                     /// Neither alignemnts was encountered before, so create
                     /// new group
                     list<TAlignGroup>::iterator new_group =
-                        groups.insert(groups.end(),
-                            TAlignGroup(TAlignPtrSet(m_Row),
-                                        it->first.first->match_level));
+                        groups.insert(groups.end(), TAlignGroup());
                     new_group->first.insert(it->first.first);
                     new_group->first.insert(it->first.second);
+                    new_group->second = it->first.first->match_level;
                     group_map[it->first.first] = new_group;
                     group_map[it->first.second] = new_group;
                     ++(is_equivalent ? m_CountEquivGroups
@@ -671,7 +714,7 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
         }
 
         /// Add remaining alignments, for which no match was found, in order
-        /// of their appearance in alignment6 comparisons
+        /// of their appearance in alignment comparisons
         m_CountOnlySet1 += set1_aligns.size();
         m_CountOnlySet2 += set2_aligns.size();
         ITERATE (vector<TComp>, comp_it, comparisons) {
