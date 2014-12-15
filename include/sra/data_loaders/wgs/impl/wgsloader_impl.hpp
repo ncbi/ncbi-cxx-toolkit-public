@@ -70,14 +70,28 @@ public:
             }
         DECLARE_OPERATOR_BOOL_REF(file);
 
+        bool IsContig(void) const {
+            return seq_type == '\0';
+        }
+        bool IsScaffold(void) const {
+            return seq_type == 'S';
+        }
+        bool IsProtein(void) const {
+            return seq_type == 'P';
+        }
+
+        CWGSSeqIterator GetContigIterator(void) const;
+        CWGSScaffoldIterator GetScaffoldIterator(void) const;
+        CWGSProteinIterator GetProteinIterator(void) const;
+
+        bool IsValidRowId(void) const;
+
         CConstRef<CWGSFileInfo> file;
         Uint8 row_id;
         char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
         bool has_version;
         int version;
     };
-
-    bool IsValidRowId(const SAccFileInfo& info, SIZE_TYPE row_digits) const;
 
     bool IsCorrectVersion(const SAccFileInfo& info) const;
 
@@ -96,6 +110,10 @@ public:
                   CTSE_LoadLock& load_lock) const;
     void LoadChunk(const CWGSBlobId& blob_id,
                    CTSE_Chunk_Info& chunk) const;
+
+    CWGSSeqIterator GetContigIterator(const CWGSBlobId& blob_id) const;
+    CWGSScaffoldIterator GetScaffoldIterator(const CWGSBlobId& blob_id) const;
+    CWGSProteinIterator GetProteinIterator(const CWGSBlobId& blob_id) const;
 
 protected:
     friend class CWGSDataLoader_Impl;
@@ -118,11 +136,9 @@ public:
     CConstRef<CWGSFileInfo> GetWGSFile(const string& acc);
 
     CConstRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
-    CWGSFileInfo::SAccFileInfo GetFileInfo(const string& acc);
-    CWGSFileInfo::SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
-
-    CWGSSeqIterator GetSeqIterator(const CSeq_id_Handle& id,
-                                   CWGSScaffoldIterator* iter2_ptr = 0);
+    typedef CWGSFileInfo::SAccFileInfo SAccFileInfo;
+    SAccFileInfo GetFileInfo(const string& acc);
+    SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,

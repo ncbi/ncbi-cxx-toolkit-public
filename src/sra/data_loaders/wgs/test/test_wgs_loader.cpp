@@ -109,6 +109,20 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type)
     return om;
 }
 
+CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type,
+                               const string& wgs_file)
+{
+    CRef<CObjectManager> om = sx_GetEmptyOM();
+    s_master_descr_type = master_descr_type;
+    CWGSDataLoader* wgsloader = dynamic_cast<CWGSDataLoader*>
+        (CWGSDataLoader::RegisterInObjectManager(*om,
+                                                 "",
+                                                 vector<string>(1, wgs_file),
+                                                 CObjectManager::eDefault, 88).GetLoader());
+    wgsloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
+    return om;
+}
+
 CBioseq_Handle sx_LoadFromGB(const CBioseq_Handle& bh)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -678,6 +692,27 @@ BOOST_AUTO_TEST_CASE(FetchSeq8)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
 }
 
+BOOST_AUTO_TEST_CASE(FetchSeq8_2)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    string id = "ALWZ02S4870253";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    if ( 0 ) {
+        NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
+    }
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_not_set), 10);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 3);
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeq9)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
@@ -696,6 +731,28 @@ BOOST_AUTO_TEST_CASE(FetchSeq9)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
+    //BOOST_CHECK(sx_EqualToGB(bh)); no in GB
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeq9_2)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    string id = "ALWZ020000001";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    if ( 0 ) {
+        NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
+    }
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_not_set), 10);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 3);
     //BOOST_CHECK(sx_EqualToGB(bh)); no in GB
 }
 
@@ -875,6 +932,80 @@ BOOST_AUTO_TEST_CASE(FetchSeq19)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeq20)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("GAAA01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
+const char* s_ProteinFile = 
+                    "/net/snowman/vol/export2/dondosha/SVN64/trunk/internal/c++/src/internal/ID/WGS/XXXX01";
+
+BOOST_AUTO_TEST_CASE(FetchSeq21)
+{
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AXXX01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 14);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 4);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq22)
+{
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AXXX01S000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq23)
+{
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AXXX01P000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 9);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+}
+
+
 static const bool s_MakeFasta = 0;
 
 
@@ -927,7 +1058,7 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
     CScope::TIds ids;
     {{
         CVDBMgr mgr;
-        CWGSDb wgs_db(mgr, "ALWZ01");
+        CWGSDb wgs_db(mgr, "ALWZ02");
         size_t limit_count = 30000, start_row = 1, count = 0;
         for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
             ++count;

@@ -64,6 +64,7 @@ class CUser_field;
 class CWGSSeqIterator;
 class CWGSScaffoldIterator;
 class CWGSGiIterator;
+class CWGSProteinIterator;
 
 
 class NCBI_SRAREAD_EXPORT CWGSGiResolver
@@ -124,25 +125,59 @@ public:
     static string NormalizePathOrAccession(CTempString path_or_acc,
                                            CTempString vol_path = CTempString());
 
+    enum ERowType {
+        eRowType_contig   = 0,
+        eRowType_scaffold = 'S',
+        eRowType_protein  = 'P'
+    };
+    typedef char TRowType;
+    enum EAllowRowType {
+        fAllowRowType_contig   = 1<<0,
+        fAllowRowType_scaffold = 1<<1,
+        fAllowRowType_protein  = 1<<2
+    };
+    typedef int TAllowRowType;
+    // parse row id from accession
+    // returns (row, accession_type) pair
+    // row will be 0 if accession is in wrong format
+    pair<uint64_t, TRowType> ParseRowType(CTempString acc,
+                                          TAllowRowType allow) const;
     // parse row id from accession
     // returns 0 if accession is in wrong format
     // if is_scaffold flag pointer is not null, then scaffold ids are also
     // accepted and the flag is set appropriately
-    uint64_t ParseRow(CTempString acc, bool* is_scaffold = 0) const;
+    uint64_t ParseRow(CTempString acc, bool* is_scaffold) const;
+    // parse contig row id from accession
+    // returns 0 if accession is in wrong format
+    uint64_t ParseContigRow(CTempString acc) const {
+        return ParseRowType(acc, fAllowRowType_contig).first;
+    }
     // parse scaffold row id from accession
     // returns 0 if accession is in wrong format
     uint64_t ParseScaffoldRow(CTempString acc) const {
-        bool is_scaffold;
-        uint64_t row = ParseRow(acc, &is_scaffold);
-        return is_scaffold? row: 0;
+        return ParseRowType(acc, fAllowRowType_scaffold).first;
+    }
+    // parse protein row id from accession
+    // returns 0 if accession is in wrong format
+    uint64_t ParseProteinRow(CTempString acc) const {
+        return ParseRowType(acc, fAllowRowType_protein).first;
     }
     SIZE_TYPE GetIdRowDigits(void) const {
         return m_IdRowDigits;
     }
 
+    bool IsTSA(void) const;
+
+    CRef<CSeq_id> GetGeneralSeq_id(CTempString tag) const;
+    CRef<CSeq_id> GetAccSeq_id(CTempString acc,
+                               int version) const;
+    CRef<CSeq_id> GetAccSeq_id(ERowType type,
+                               uint64_t row_id,
+                               int version) const;
     CRef<CSeq_id> GetMasterSeq_id(void) const;
     CRef<CSeq_id> GetContigSeq_id(uint64_t row_id) const;
     CRef<CSeq_id> GetScaffoldSeq_id(uint64_t row_id) const;
+    CRef<CSeq_id> GetProteinSeq_id(uint64_t row_id) const;
 
     typedef list< CRef<CSeqdesc> > TMasterDescr;
 
@@ -173,6 +208,7 @@ protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
     friend class CWGSGiIterator;
+    friend class CWGSProteinIterator;
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
     struct SSeqTableCursor : public CObject {
@@ -231,10 +267,30 @@ protected:
         DECLARE_VDB_COLUMN_AS(uint64_t, PROT_ROW_ID);
     };
 
+    // SProtTableCursor is helper accessor structure for optional PROTEIN table
+    struct SProtTableCursor : public CObject {
+        SProtTableCursor(const CVDB& db);
+
+        CVDBTable m_Table;
+        CVDBCursor m_Cursor;
+
+        DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
+        DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
+        DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
+        DECLARE_VDB_COLUMN_AS_STRING(DESCR);
+        DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
+        DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
+        DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
+        DECLARE_VDB_COLUMN_AS_STRING(TITLE);
+        DECLARE_VDB_COLUMN_AS(NCBI_gi, REF_GI);
+    };
+
     // get table accessor object for exclusive access
     CRef<SSeqTableCursor> Seq(void);
     CRef<SScfTableCursor> Scf(void);
     CRef<SIdxTableCursor> Idx(void);
+    CRef<SProtTableCursor> Prot(void);
     // return table accessor object for reuse
     void Put(CRef<SSeqTableCursor>& curs) {
         m_Seq.Put(curs);
@@ -244,6 +300,9 @@ protected:
     }
     void Put(CRef<SIdxTableCursor>& curs) {
         m_Idx.Put(curs);
+    }
+    void Put(CRef<SProtTableCursor>& curs) {
+        m_Prot.Put(curs);
     }
 
 protected:
@@ -262,6 +321,7 @@ private:
     CVDBObjectCache<SSeqTableCursor> m_Seq;
     CVDBObjectCache<SScfTableCursor> m_Scf;
     CVDBObjectCache<SIdxTableCursor> m_Idx;
+    CVDBObjectCache<SProtTableCursor> m_Prot;
 
     bool m_IsSetMasterDescr;
     TMasterDescr m_MasterDescr;
@@ -297,13 +357,24 @@ public:
     // returns 0 if accession is in wrong format
     // if is_scaffold flag pointer is not null, then scaffold ids are also
     // accepted and the flag is set appropriately
+    NCBI_DEPRECATED
     uint64_t ParseRow(CTempString acc, bool* is_scaffold = 0) const {
         return GetObject().ParseRow(acc, is_scaffold);
+    }
+    // parse contig row id from accession
+    // returns 0 if accession is in wrong format
+    uint64_t ParseContigRow(CTempString acc) const {
+        return GetObject().ParseContigRow(acc);
     }
     // parse scaffold row id from accession
     // returns 0 if accession is in wrong format
     uint64_t ParseScaffoldRow(CTempString acc) const {
         return GetObject().ParseScaffoldRow(acc);
+    }
+    // parse protein row id from accession
+    // returns 0 if accession is in wrong format
+    uint64_t ParseProteinRow(CTempString acc) const {
+        return GetObject().ParseProteinRow(acc);
     }
 
     // get GI range of nucleotide sequences
@@ -506,6 +577,7 @@ public:
 
     CTempString GetAccession(void) const;
     CRef<CSeq_id> GetAccSeq_id(void) const;
+    CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetScaffoldName(void) const;
 
@@ -596,6 +668,76 @@ private:
     TGi m_CurrGi, m_FirstBadGi;
     uint64_t m_CurrRowId;
     ESeqType m_CurrSeqType, m_FilterSeqType;
+};
+
+
+class NCBI_SRAREAD_EXPORT CWGSProteinIterator
+{
+public:
+    CWGSProteinIterator(void);
+    explicit CWGSProteinIterator(const CWGSDb& wgs_db);
+    CWGSProteinIterator(const CWGSDb& wgs_db, uint64_t row);
+    CWGSProteinIterator(const CWGSDb& wgs_db, CTempString acc);
+    ~CWGSProteinIterator(void);
+
+    DECLARE_SAFE_BOOL_METHOD(m_CurrId < m_FirstBadId);
+
+    CWGSProteinIterator& operator++(void) {
+        ++m_CurrId;
+        return *this;
+    }
+
+    uint64_t GetCurrentRowId(void) const {
+        return m_CurrId;
+    }
+    uint64_t GetFirstBadRowId(void) const {
+        return m_FirstBadId;
+    }
+    uint64_t GetLastRowId(void) const {
+        return GetFirstBadRowId() - 1;
+    }
+
+    CTempString GetAccession(void) const;
+    int GetAccVersion(void) const;
+    CRef<CSeq_id> GetAccSeq_id(void) const;
+    CRef<CSeq_id> GetGeneralSeq_id(void) const;
+
+    CTempString GetProteinName(void) const;
+
+    void GetIds(CBioseq::TId& ids) const;
+    CSeq_id::TGi GetRefGi(void) const;
+
+    TSeqPos GetSeqLength(void) const;
+
+    bool HasSeq_descr(void) const;
+    CRef<CSeq_descr> GetSeq_descr(void) const;
+
+    bool HasAnnotSet(void) const;
+    typedef CBioseq::TAnnot TAnnotSet;
+    void GetAnnotSet(TAnnotSet& annot_set) const;
+
+    CRef<CSeq_inst> GetSeq_inst(void) const;
+
+    CRef<CBioseq> GetBioseq(void) const;
+
+protected:
+    void x_Init(const CWGSDb& wgs_db);
+
+    CWGSDb_Impl& GetDb(void) const {
+        return m_Db.GetNCObject();
+    }
+    
+    void x_ReportInvalid(const char* method) const;
+    void x_CheckValid(const char* method) const {
+        if ( !*this ) {
+            x_ReportInvalid(method);
+        }
+    }
+
+private:
+    CWGSDb m_Db;
+    CRef<CWGSDb_Impl::SProtTableCursor> m_Prot; // VDB scaffold table accessor
+    uint64_t m_CurrId, m_FirstBadId;
 };
 
 

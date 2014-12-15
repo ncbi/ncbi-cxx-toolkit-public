@@ -352,8 +352,21 @@ int CWGSTestApp::Run(void)
         }
     }
     
-    bool is_scaffold;
-    uint64_t row = wgs_db.ParseRow(path, &is_scaffold);
+    bool is_component = false, is_scaffold = false, is_protein = false;
+    uint64_t row = wgs_db.ParseContigRow(path);
+    if ( row ) {
+        is_component = true;
+    }
+    if ( !row ) {
+        if ( (row = wgs_db.ParseScaffoldRow(path)) ) {
+            is_scaffold = true;
+        }
+    }
+    if ( !row ) {
+        if ( (row = wgs_db.ParseProteinRow(path)) ) {
+            is_protein = true;
+        }
+    }
     if ( row && !args["limit_count"] ) {
         limit_count = 1;
     }
@@ -371,7 +384,7 @@ int CWGSTestApp::Run(void)
         // try accession
         if ( row ) {
             // print only one accession
-            if ( !is_scaffold ) {
+            if ( is_component ) {
                 if ( !args["limit_count"] ) {
                     it = CWGSSeqIterator(wgs_db, row, withdrawn);
                 }
@@ -526,6 +539,32 @@ int CWGSTestApp::Run(void)
         size_t count = 0;
         for ( ; it; ++it ) {
             out << it.GetScaffoldName() << '\n';
+            if ( print_seq ) {
+                out << MSerial_AsnText << *it.GetBioseq();
+            }
+            if ( limit_count && ++count >= limit_count ) {
+                break;
+            }
+        }
+    }
+
+    if ( 1 ) {
+        CWGSProteinIterator it;
+        if ( row ) {
+            if ( is_protein ) {
+                it = CWGSProteinIterator(wgs_db, row);
+                if ( !it ) {
+                    out << "No such protein row: "<<path
+                        << NcbiEndl;
+                }
+            }
+        }
+        else {
+            it = CWGSProteinIterator(wgs_db);
+        }
+        size_t count = 0;
+        for ( ; it; ++it ) {
+            out << it.GetProteinName() << '\n';
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
             }

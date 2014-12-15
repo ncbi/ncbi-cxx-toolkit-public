@@ -316,8 +316,11 @@ void CVDBTable::Init(const CVDB& db, const char* table_name)
     DECLARE_SDK_GUARD();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
         *x_InitPtr() = 0;
-        if ( GetRCObject(rc) == rcParam &&
-             GetRCState(rc) == rcNotFound ) {
+        RCState rc_state = GetRCState(rc);
+        int rc_object = GetRCObject(rc);
+        if ( rc_state == rcNotFound &&
+             (rc_object == rcParam ||
+              rc_object == rcPath) ) {
             // missing table in the DB
             NCBI_THROW3(CSraException, eNotFoundTable,
                         "Cannot open VDB table", rc, table_name);

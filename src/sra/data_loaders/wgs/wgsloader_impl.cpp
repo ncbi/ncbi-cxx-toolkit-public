@@ -299,9 +299,11 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc)
     }
     if ( CConstRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
         SIZE_TYPE row_digits = acc.size() - row_pos;
-        if ( info->IsValidRowId(ret, row_digits) ) {
+        if ( info->m_WGSDb->GetIdRowDigits() == row_digits ) {
             ret.file = info;
-            return ret;
+            if ( !ret.IsValidRowId() ) {
+                ret.file = 0;
+            }
         }
     }
     return ret;
@@ -396,27 +398,55 @@ CRef<CWGSBlobId> CWGSDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 
 
 CWGSSeqIterator
-CWGSDataLoader_Impl::GetSeqIterator(const CSeq_id_Handle& idh,
-                                    CWGSScaffoldIterator* iter2_ptr)
+CWGSFileInfo::SAccFileInfo::GetContigIterator(void) const
 {
-    // return blob-id of blob with sequence
-    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
-        if ( info.seq_type == 'S' ) {
-            if ( iter2_ptr ) {
-                *iter2_ptr = CWGSScaffoldIterator(info.file->GetDb(),
-                                                  info.row_id);
-            }
-            return CWGSSeqIterator();
-        }
-        else if ( info.seq_type == 'P' ) {
-            ERR_POST("CWGSDataLoader: proteins aren't supported");
-        }
-        else {
-            return CWGSSeqIterator(info.file->GetDb(), info.row_id,
-                                   CWGSSeqIterator::eIncludeWithdrawn);
-        }
-    }
-    return CWGSSeqIterator();
+    _ASSERT(IsContig() && row_id != 0);
+    return CWGSSeqIterator(file->GetDb(), row_id,
+                           CWGSSeqIterator::eIncludeWithdrawn);
+}
+
+
+CWGSScaffoldIterator
+CWGSFileInfo::SAccFileInfo::GetScaffoldIterator(void) const
+{
+    _ASSERT(IsScaffold() && row_id != 0);
+    return CWGSScaffoldIterator(file->GetDb(), row_id);
+}
+
+
+CWGSProteinIterator
+CWGSFileInfo::SAccFileInfo::GetProteinIterator(void) const
+{
+    _ASSERT(IsProtein() && row_id != 0);
+    return CWGSProteinIterator(file->GetDb(), row_id);
+}
+
+
+CWGSSeqIterator
+CWGSFileInfo::GetContigIterator(const CWGSBlobId& blob_id) const
+{
+    _ASSERT(blob_id.m_SeqType == '\0');
+    _ASSERT(blob_id.m_RowId);
+    return CWGSSeqIterator(GetDb(), blob_id.m_RowId,
+                           CWGSSeqIterator::eIncludeWithdrawn);
+}
+
+
+CWGSScaffoldIterator
+CWGSFileInfo::GetScaffoldIterator(const CWGSBlobId& blob_id) const
+{
+    _ASSERT(blob_id.m_SeqType == 'S');
+    _ASSERT(blob_id.m_RowId);
+    return CWGSScaffoldIterator(GetDb(), blob_id.m_RowId);
+}
+
+
+CWGSProteinIterator
+CWGSFileInfo::GetProteinIterator(const CWGSBlobId& blob_id) const
+{
+    _ASSERT(blob_id.m_SeqType == 'P');
+    _ASSERT(blob_id.m_RowId);
+    return CWGSProteinIterator(GetDb(), blob_id.m_RowId);
 }
 
 
@@ -481,12 +511,18 @@ void CWGSDataLoader_Impl::LoadChunk(const CWGSBlobId& blob_id,
 void CWGSDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     CBioseq::TId ids2;
-    CWGSScaffoldIterator it2;
-    if ( CWGSSeqIterator it = GetSeqIterator(idh, &it2) ) {
-        it.GetIds(ids2);
-    }
-    else if ( it2 ) {
-        it2.GetIds(ids2);
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        switch ( info.seq_type ) {
+        case 'S':
+            info.GetScaffoldIterator().GetIds(ids2);
+            break;
+        case 'P':
+            info.GetProteinIterator().GetIds(ids2);
+            break;
+        default:
+            info.GetContigIterator().GetIds(ids2);
+            break;
+        }
     }
     ITERATE ( CBioseq::TId, it2, ids2 ) {
         ids.push_back(CSeq_id_Handle::GetHandle(**it2));
@@ -496,14 +532,26 @@ void CWGSDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 
 CSeq_id_Handle CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
-    CWGSScaffoldIterator it2;
-    if ( CWGSSeqIterator it = GetSeqIterator(idh, &it2) ) {
-        if ( CRef<CSeq_id> acc_id = it.GetAccSeq_id() ) {
-            return CSeq_id_Handle::GetHandle(*acc_id);
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        CRef<CSeq_id> acc_id;
+        switch ( info.seq_type ) {
+        case 'S':
+            if ( CWGSScaffoldIterator it = info.GetScaffoldIterator() ) {
+                acc_id = it.GetAccSeq_id();
+            }
+            break;
+        case 'P':
+            if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
+                acc_id = it.GetAccSeq_id();
+            }
+            break;
+        default:
+            if ( CWGSSeqIterator it = info.GetContigIterator() ) {
+                acc_id = it.GetAccSeq_id();
+            }
+            break;
         }
-    }
-    else if ( it2 ) {
-        if ( CRef<CSeq_id> acc_id = it2.GetAccSeq_id() ) {
+        if ( acc_id ) {
             return CSeq_id_Handle::GetHandle(*acc_id);
         }
     }
@@ -513,9 +561,13 @@ CSeq_id_Handle CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 
 TGi CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
-    if ( CWGSSeqIterator it = GetSeqIterator(idh) ) {
-        if ( it.HasGi() ) {
-            return it.GetGi();
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        if ( info.IsContig() ) {
+            if ( CWGSSeqIterator it = info.GetContigIterator() ) {
+                if ( it.HasGi() ) {
+                    return it.GetGi();
+                }
+            }
         }
     }
     return ZERO_GI;
@@ -524,15 +576,18 @@ TGi CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 
 int CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
-    CWGSScaffoldIterator it2;
-    if ( CWGSSeqIterator it = GetSeqIterator(idh, &it2) ) {
-        if ( it.HasTaxId() ) {
-            return it.GetTaxId();
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        if ( info.IsContig() ) {
+            if ( CWGSSeqIterator it = info.GetContigIterator() ) {
+                if ( it.HasTaxId() ) {
+                    return it.GetTaxId();
+                }
+                return 0; // taxid is not defined
+            }
         }
-        return 0; // taxid is not defined
-    }
-    else if ( it2 ) {
-        return 0; // taxid is not defined
+        else if ( info.IsValidRowId() ) {
+            return 0; // taxid is not defined
+        }
     }
     return -1; // sequence is unknown
 }
@@ -540,12 +595,24 @@ int CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 
 TSeqPos CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 {
-    CWGSScaffoldIterator it2;
-    if ( CWGSSeqIterator it = GetSeqIterator(idh, &it2) ) {
-        return it.GetSeqLength();
-    }
-    else if ( it2 ) {
-        return it2.GetSeqLength();
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        switch ( info.seq_type ) {
+        case 'S':
+            if ( CWGSScaffoldIterator it = info.GetScaffoldIterator() ) {
+                return it.GetSeqLength();
+            }
+            break;
+        case 'P':
+            if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
+                return it.GetSeqLength();
+            }
+            break;
+        default:
+            if ( CWGSSeqIterator it = info.GetContigIterator() ) {
+                return it.GetSeqLength();
+            }
+            break;
+        }
     }
     return kInvalidSeqPos;
 }
@@ -641,23 +708,19 @@ void CWGSFileInfo::x_InitMasterDescr(void)
 }
 
 
-bool CWGSFileInfo::IsValidRowId(const SAccFileInfo& info,
-                                SIZE_TYPE row_digits) const
+bool CWGSFileInfo::SAccFileInfo::IsValidRowId(void) const
 {
-    if ( info.row_id == 0 || m_WGSDb->GetIdRowDigits() != row_digits ) {
+    if ( row_id == 0 ) {
         return false;
     }
-    if ( info.seq_type == 'S' ) {
-        CWGSScaffoldIterator it(m_WGSDb);
-        return info.row_id < it.GetFirstBadRowId();
+    if ( IsScaffold() ) {
+        return GetScaffoldIterator();
     }
-    else if ( info.seq_type == 'P' ) {
-        ERR_POST("CWGSDataLoader: proteins aren't supported");
-        return false;
+    else if ( IsProtein() ) {
+        return GetProteinIterator();
     }
     else {
-        CWGSSeqIterator it(m_WGSDb, CWGSSeqIterator::eIncludeWithdrawn);
-        return info.row_id < it.GetFirstBadRowId();
+        return GetContigIterator();
     }
 }
 
@@ -667,18 +730,13 @@ bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info) const
     if ( info.row_id == 0 ) {
         return false;
     }
-    if ( info.seq_type == 'S' ) {
-        // scaffolds can have only version 1
-        return info.version == 1;
-    }
-    else if ( info.seq_type == 'P' ) {
-        ERR_POST("CWGSDataLoader: proteins aren't supported");
-        return false;
+    if ( info.IsContig() ) {
+        CWGSSeqIterator iter = info.GetContigIterator();
+        return iter && info.version == iter.GetAccVersion();
     }
     else {
-        CWGSSeqIterator iter(m_WGSDb, info.row_id,
-                             CWGSSeqIterator::eIncludeWithdrawn);
-        return iter && info.version == iter.GetAccVersion();
+        // scaffolds and proteins can have only version 1
+        return info.version == 1;
     }
 }
 
@@ -703,15 +761,13 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
     if ( !load_lock.IsLoaded() ) {
         CRef<CBioseq> seq;
         if ( blob_id.m_SeqType == 'S' ) {
-            CWGSScaffoldIterator it(GetDb(), blob_id.m_RowId);
-            seq = it.GetBioseq();
+            seq = GetScaffoldIterator(blob_id).GetBioseq();
         }
         else if ( blob_id.m_SeqType == 'P' ) {
-            ERR_POST("CWGSDataLoader: proteins aren't supported");
+            seq = GetProteinIterator(blob_id).GetBioseq();
         }
         else {
-            CWGSSeqIterator it(GetDb(), blob_id.m_RowId,
-                               CWGSSeqIterator::eIncludeWithdrawn);
+            CWGSSeqIterator it = GetContigIterator(blob_id);
             if ( it ) {
                 CBioseq_Handle::TBioseqStateFlags state = 0;
                 if ( NCBI_gb_state gb_state = it.GetGBState() ) {
