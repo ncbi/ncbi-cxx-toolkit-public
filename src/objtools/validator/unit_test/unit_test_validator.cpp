@@ -669,6 +669,7 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoMolInfoFound", "No Mol-info applies to this Bioseq"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "LocusTagProblem", "Gene locus and locus_tag 'foo' match"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record."));
+    expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Info, "MissingPubInfo", "No submission citation anywhere on this entire record."));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record."));
 
     CConstRef<CValidError> eval = validator.Validate(seh, options);
@@ -4080,6 +4081,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoPubFound",
                               "No publications anywhere on this entire record."));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "MissingPubInfo",
+                              "No submission citation anywhere on this entire record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4091,8 +4094,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     id_suppress->SetGpipe().SetAccession("AY123456");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetId().push_back(id_suppress);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Info, "MissingPubInfo",
+                              "No submission citation anywhere on this entire record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
     // make GPS - will suppress pub errors, although introduce gps erros
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSet().SetSeq_set().front()->SetSeq().SetId().pop_back();
@@ -4104,6 +4112,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, 
                               "GenomicProductPackagingProblem", 
                               "Protein bioseq should be product of CDS feature on contig, but is not"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "MissingPubInfo",
+                              "No submission citation anywhere on this entire record."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -8785,59 +8795,69 @@ BOOST_AUTO_TEST_CASE(Test_Generic_BadDate)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
-    CRef<CAuthor> author = unit_test_util::BuildGoodAuthor();
-    CRef<CPub> pub(new CPub());
-    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
-    pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
-    CRef<CSeqdesc> desc(new CSeqdesc());
-    desc->SetPub().SetPub().Set().push_back(pub);
-    entry->SetDescr().Set().push_back(desc);
-    
+    // find sub pub and other pub
+    CRef<CPub> subpub(NULL);
+    CRef<CPub> otherpub(NULL);
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsPub()) {
+            if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {
+                subpub = (*it)->SetPub().SetPub().Set().front();
+            } else {
+                otherpub = (*it)->SetPub().SetPub().Set().front();
+            }
+        }
+    }
+
     STANDARD_SETUP
 
-    pub->SetSub().SetDate().SetStr("?");
+    subpub->SetSub().SetDate().SetStr("?");
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDate",
                               "Submission citation date has error - BAD_STR"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    pub->SetSub().SetDate().SetStd().SetYear(0);
+    subpub->SetSub().SetDate().SetStd().SetYear(0);
     expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_YEAR");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    pub->SetSub().SetDate().SetStd().SetYear(2009);
-    pub->SetSub().SetDate().SetStd().SetMonth(13);
+    subpub->SetSub().SetDate().SetStd().SetYear(2009);
+    subpub->SetSub().SetDate().SetStd().SetMonth(13);
     expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_MONTH");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    pub->SetSub().SetDate().SetStd().SetYear(2009);
-    pub->SetSub().SetDate().SetStd().SetMonth(12);
-    pub->SetSub().SetDate().SetStd().SetDay(32);
+    subpub->SetSub().SetDate().SetStd().SetYear(2009);
+    subpub->SetSub().SetDate().SetStd().SetMonth(12);
+    subpub->SetSub().SetDate().SetStd().SetDay(32);
     expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_DAY");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    MakeBadSeasonDate(pub->SetSub().SetDate());
+    MakeBadSeasonDate(subpub->SetSub().SetDate());
     expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_SEASON");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    subpub->Assign(*(unit_test_util::BuildGoodCitSubPub()));
 
-    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
-    pub->SetGen().SetTitle("gen title");
-    MakeBadSeasonDate(pub->SetGen().SetDate());
+    CRef<CAuthor> author = unit_test_util::BuildGoodAuthor();
+    CRef<CPub> gen(new CPub());
+    gen->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    gen->SetGen().SetTitle("gen title");
+    MakeBadSeasonDate(gen->SetGen().SetDate());
+    otherpub->Assign(*gen);
     expected_errors[0]->SetErrMsg("Publication date has error - BAD_SEASON");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    desc->SetPub().SetPub().Set().pop_back();
-    pub = unit_test_util::BuildGoodArticlePub();
-    desc->SetPub().SetPub().Set().push_back(pub);
-    MakeBadSeasonDate(pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate());
+    otherpub->Assign(*(unit_test_util::BuildGoodArticlePub()));
+    MakeBadSeasonDate(otherpub->SetArticle().SetFrom().SetJournal().SetImp().SetDate());
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    
+    otherpub->Assign(*(unit_test_util::BuildGoodArticlePub()));
+   
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    entry->SetDescr().Set().push_back(desc);
     MakeBadSeasonDate(desc->SetCreate_date());
     expected_errors[0]->SetErrMsg("Create date has error - BAD_SEASON");
     eval = validator.Validate(seh, options);
@@ -9307,7 +9327,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NoCdRegionPtr)
 
     CRef<CSeq_entry> pentry = unit_test_util::BuildGoodProtSeq();
     EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (it, pentry->SetSeq()) {
-        if ((*it)->IsSource()) {
+        if ((*it)->IsSource() || (*it)->IsPub()) {
             ERASE_DESCRIPTOR_ON_BIOSEQ(it, pentry->SetSeq());
         }
     }
@@ -9363,7 +9383,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_entry> nentry2 = unit_test_util::BuildGoodSeq();
     EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (it, nentry2->SetSeq()) {
-        if ((*it)->IsSource()) {
+        if ((*it)->IsSource() || (*it)->IsPub()) {
             ERASE_DESCRIPTOR_ON_BIOSEQ(it, nentry2->SetSeq());
         }
     }
@@ -9485,7 +9505,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_SegSetNotParts)
 BOOST_AUTO_TEST_CASE(Test_PKG_SegSetMixedBioseqs)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    entry->SetSet().SetSeq_set().push_back(unit_test_util::BuildGoodProtSeq());
+    CRef<CSeq_entry> prot = unit_test_util::BuildGoodProtSeq();
+    unit_test_util::RemoveDescriptorType(prot, CSeqdesc::e_Pub);
+    entry->SetSet().SetSeq_set().push_back(prot);
 
     STANDARD_SETUP
 
@@ -9524,7 +9546,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_PartsSetHasSets)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
     CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
-    parts_set->SetSet().SetSeq_set().push_back(unit_test_util::BuildGoodNucProtSet());
+    CRef<CSeq_entry> np = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::RemoveDescriptorType(np, CSeqdesc::e_Pub);
+    parts_set->SetSet().SetSeq_set().push_back(np);
 
     STANDARD_SETUP
 
@@ -19174,3 +19198,42 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2036)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_146)
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    unit_test_util::RemoveDescriptorType (e1, CSeqdesc::e_Pub);
+    CRef<CSeq_entry> e2 = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::RemoveDescriptorType (e2, CSeqdesc::e_Pub);
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_phy_set);
+    entry->SetSet().SetSeq_set().push_back(e1);
+    entry->SetSet().SetSeq_set().push_back(e2);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", 
+                                                 eDiag_Error, 
+                                                 "NoPubFound", 
+                                                 "No publications anywhere on this entire record."));
+    expected_errors.push_back(new CExpectedError("good", 
+                                                 eDiag_Info, 
+                                                 "MissingPubInfo",
+                                                 "No submission citation anywhere on this entire record."));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    options |= CValidator::eVal_genome_submission;
+    expected_errors[1]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    unit_test_util::AddGoodPub(entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+

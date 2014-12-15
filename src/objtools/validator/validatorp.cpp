@@ -215,6 +215,7 @@ void CValidError_imp::Reset(void)
     m_TSE = 0;
     m_IsStandaloneAnnot = false;
     m_NoPubs = false;
+    m_NoCitSubPubs = false;
     m_NoBioSource = false;
     m_IsGPS = false;
     m_IsGED = false;
@@ -2553,6 +2554,11 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     // If no Pubs/BioSource in CSeq_entry, post only one error
     CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
     m_NoPubs = !pub;
+    while (pub && !pub->IsSub()) {
+        pub++;
+    }
+    m_NoCitSubPubs = !pub;
+
     CTypeConstIterator<CBioSource> src(ConstBegin(*m_TSE));
     m_NoBioSource = !src;
     

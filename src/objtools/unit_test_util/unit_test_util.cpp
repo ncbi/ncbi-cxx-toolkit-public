@@ -167,6 +167,15 @@ void AddGoodPub (CRef<objects::CSeq_entry> entry)
     } else if (entry->IsSet()) {
         entry->SetSet().SetDescr().Set().push_back(pdesc);
     }
+
+    CRef<objects::CSeqdesc> pdesc2 = BuildGoodPubSeqdesc();
+    pdesc2->SetPub().SetPub().Set().front()->Assign(*BuildGoodCitSubPub());
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetDescr().Set().push_back(pdesc2);
+    } else if (entry->IsSet()) {
+        entry->SetSet().SetDescr().Set().push_back(pdesc2);
+    }
+
 }
 
 
@@ -966,6 +975,17 @@ CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::CAuthor> author, int serial
 }
 
 
+CRef<objects::CPub> BuildGoodCitSubPub()
+{
+    CRef<objects::CPub> pub(new objects::CPub());
+    CRef<objects::CAuthor> author = BuildGoodAuthor();
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetSub().SetAuthors().SetAffil().SetStd().SetAffil("A Major University");
+    pub->SetSub().SetAuthors().SetAffil().SetStd().SetSub("Maryland");
+    pub->SetSub().SetAuthors().SetAffil().SetStd().SetCountry("USA");
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    return pub;
+}
 
 
 void MakeSeqLong(objects::CBioseq& seq)
@@ -1719,11 +1739,12 @@ CRef<objects::CSeq_entry> BuildGoodSegSet(void)
 
     segset->SetSet().SetSeq_set().push_back(parts_set);
 
-    CRef<objects::CSeqdesc> pdesc(new objects::CSeqdesc());
-    CRef<objects::CPub> pub(new objects::CPub());
-    pub->SetPmid((objects::CPub::TPmid)1);
-    pdesc->SetPub().SetPub().Set().push_back(pub);
-    segset->SetDescr().Set().push_back(pdesc);
+//    CRef<objects::CSeqdesc> pdesc(new objects::CSeqdesc());
+//    CRef<objects::CPub> pub(new objects::CPub());
+//    pub->SetPmid((objects::CPub::TPmid)1);
+//    pdesc->SetPub().SetPub().Set().push_back(pub);
+//    segset->SetDescr().Set().push_back(pdesc);
+    AddGoodPub(segset);
     CRef<objects::CSeqdesc> odesc(new objects::CSeqdesc());
     odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
     odesc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");

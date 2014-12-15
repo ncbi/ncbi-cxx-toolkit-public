@@ -772,6 +772,7 @@ private:
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;
     bool m_NoPubs;                  // Suppress no pub error if true
+    bool m_NoCitSubPubs;            // Suppress no cit-sub pub error if true
     bool m_NoBioSource;             // Suppress no organism error if true
     bool m_IsGPS;
     bool m_IsGED;

@@ -1254,6 +1254,10 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
             }
         } 
     }
+    if ( m_NoCitSubPubs && !cs ) {
+        PostErr(m_genomeSubmission ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubInfo, 
+            "No submission citation anywhere on this entire record.", se);
+    }
 }
 
 
