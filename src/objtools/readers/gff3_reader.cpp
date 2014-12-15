@@ -188,18 +188,15 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 {
     CRef< CSeq_feat > pFeature(new CSeq_feat);
 
-    string type = NStr::ToLower(record.Type());
-    if (type == "exon"  ||  type == "five_prime_utr"  ||  type == "three_prime_utr") {
+    string type = record.Type();
+    if (type == "exon"  ||  type == "five_prime_UTR"  ||  type == "three_prime_UTR") {
         return xUpdateAnnotExon(record, pFeature, pAnnot, pEC);
     }
-    if (type == "cds") {
+    if (type == "CDS"  ||  type == "cds") {
         return xUpdateAnnotCds(record, pFeature, pAnnot, pEC);
     }
     if (type == "gene") {
         return xUpdateAnnotGene(record, pFeature, pAnnot, pEC);
-    }
-    if (type == "mrna") {
-        return xUpdateAnnotMrna(record, pFeature, pAnnot, pEC);
     }
     return xUpdateAnnotGeneric(record, pFeature, pAnnot, pEC);
 }
@@ -272,13 +269,15 @@ bool CGff3Reader::xUpdateAnnotCds(
             string cdsId = id + ":" + *cit;
             IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
             if (it != m_MapIdToFeature.end()) {
+                //cerr << "Updating " << cdsId << endl;
                 record.UpdateFeature(m_iFlags, it->second);
                 continue;
             }
+            //cerr << "Adding " << cdsId << endl;
             if (!record.InitializeFeature(m_iFlags, pFeature)) {
                 return false;
             }
-            if (!xFeatureSetXrefCdsRna(*cit, pFeature)) {
+            if (!xFeatureSetXrefParent(*cit, pFeature)) {
                 AutoPtr<CObjReaderLineException> pErr(
                     CObjReaderLineException::Create(
                     eDiag_Warning,
@@ -302,25 +301,7 @@ bool CGff3Reader::xUpdateAnnotCds(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::xFeatureSetXrefCdsGene(
-    const string& parent,
-    CRef<CSeq_feat> pChild)
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::xFeatureSetXrefRnaGene(
-    const string& parent,
-    CRef<CSeq_feat> pChild)
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::xFeatureSetXrefCdsRna(
+bool CGff3Reader::xFeatureSetXrefParent(
     const string& parent,
     CRef<CSeq_feat> pChild)
 //  ----------------------------------------------------------------------------
@@ -366,45 +347,6 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
-        return false;
-    }
-    string strId;
-    if ( record.GetAttribute("ID", strId)) {
-        m_MapIdToFeature[strId] = pFeature;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::xUpdateAnnotMrna(
-    const CGff2Record& record,
-    CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    string id;
-    if (record.GetAttribute("ID", id)) {
-        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
-        if (it != m_MapIdToFeature.end()) {
-            return record.UpdateFeature(m_iFlags, it->second);
-        }
-    }
-
-    if (!record.InitializeFeature(m_iFlags, pFeature)) {
-        return false;
-    }
-    string parentsStr;
-    if (m_iFlags | fGeneXrefs  &&  record.GetAttribute("Parent", parentsStr)) {
-        list<string> parents;
-        NStr::Split(parentsStr, ",", parents);
-        for (list<string>::const_iterator cit = parents.begin();
-                cit != parents.end();
-                ++cit) {
-        }
-    }
-
     if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
         return false;
     }
