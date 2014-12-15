@@ -2555,7 +2555,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
     m_NoPubs = !pub;
     while (pub && !pub->IsSub()) {
-        pub++;
+        ++pub;
     }
     m_NoCitSubPubs = !pub;
 
