@@ -795,7 +795,10 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                     ConnNetInfo_Create(m_ServiceName.c_str());
 
                 srv_it = SERV_OpenP(m_ServiceName.c_str(),
-                    fSERV_Standalone | fSERV_IncludeSuppressed,
+                        fSERV_Standalone |
+                        fSERV_IncludeStandby |
+                        fSERV_IncludeReserved |
+                        fSERV_IncludeSuppressed,
                     SERV_LOCALHOST, 0, 0.0, net_info, NULL, 0, 0 /*false*/,
                     m_ServerPool->m_LBSMAffinityName.c_str(),
                     m_ServerPool->m_LBSMAffinityValue);
