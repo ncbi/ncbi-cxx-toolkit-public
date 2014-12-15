@@ -635,7 +635,12 @@ CDB_Object* CTL_RowResult::GetItemInternal(
             if (is_null) {
                 _ASSERT(outlen == 0);
                 _ASSERT(m_NullValue[GetCurrentItemNum()] != eIsNotNull);
-                val->AssignNULL();
+                // Conditional, so as to preserve existing values in
+                // eAppendLOB mode.  (No explicit mode check needed, per
+                // the conditional call to Truncate above.)
+                if (val->Size() == 0) {
+                    val->AssignNULL();
+                }
                 break;
             }
         }
