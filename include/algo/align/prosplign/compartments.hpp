@@ -60,6 +60,12 @@ public:
         eScore
     };
     EMaximizing m_Maximizing;
+    enum ESubjectMol {
+        eGuess,
+        eNucleicAcid, 
+        eAminoAcid
+    };
+    ESubjectMol m_SubjectMol;
 
     static const double default_CompartmentPenalty;
     static const double default_MinCompartmentIdty;
@@ -68,6 +74,7 @@ public:
     static const bool   default_ByCoverage = true;
     static const int    default_MaxIntron;
     static const EMaximizing default_Maximizing = default_ByCoverage?eCoverage:eIdentity;
+    static const ESubjectMol default_SubjectMol = eGuess;
     static const char* s_scoreNames[];
 };
 

@@ -228,7 +228,19 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
 
     THitRefs hitrefs;
 
-    bool is_protein_subject = double(orig_hitrefs.front()->GetSubjSpan())/orig_hitrefs.front()->GetQuerySpan() < 2;
+    bool is_protein_subject;
+
+    if (compart_options.m_SubjectMol != CCompartOptions::eGuess) {
+        is_protein_subject = compart_options.m_SubjectMol == CCompartOptions::eAminoAcid;
+    } else {
+        double max_subj_query_ratio = 0;
+        ITERATE(THitRefs, it, orig_hitrefs) {
+            const CBlastTabular& hit = **it;
+            double subj_query_ratio = double(hit.GetSubjSpan())/hit.GetQuerySpan();
+            max_subj_query_ratio = max(max_subj_query_ratio, subj_query_ratio);
+        }
+        is_protein_subject = max_subj_query_ratio < 2;
+    }
 
     ITERATE(THitRefs, it, orig_hitrefs) {
         THitRef hitref(new THit(**it));
@@ -479,6 +491,16 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
 
     argdescr->SetDependency("by_coverage", CArgDescriptions::eExcludes,
                             "maximize");
+
+    argdescr->AddDefaultKey
+        ("subj-mol",
+         "type",
+         "subject molecule type",
+         CArgDescriptions::eString,
+         "guess");
+
+    argdescr->SetConstraint("subj-mol", &(*new CArgAllow_Strings, "guess", "na", "aa"));
+
 }
 
 CCompartOptions::CCompartOptions(const CArgs& args) :
@@ -504,6 +526,13 @@ CCompartOptions::CCompartOptions(const CArgs& args) :
             m_ByCoverage = default_ByCoverage;
         }
         m_Maximizing = m_ByCoverage ? eCoverage : eIdentity;
+    }
+
+    m_SubjectMol = default_SubjectMol;
+    if (args["subj-mol"].AsString() == "na") {
+        m_SubjectMol = eNucleicAcid;
+    } else     if (args["subj-mol"].AsString() == "aa") {
+        m_SubjectMol = eAminoAcid;
     }
 }
 
