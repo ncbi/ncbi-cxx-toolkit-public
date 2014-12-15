@@ -315,6 +315,9 @@ bool CBedReader::xParseFeatureThreeFeatFormat(
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    if (fields[3] == "uc010nzm.1") {
+        cerr << endl;
+    }
     if (!xAppendFeatureChrom(fields, annot, baseId, pEC)) {
         return false;
     }
@@ -511,6 +514,11 @@ void CBedReader::xSetFeatureLocationThick(
     const vector<string>& fields)
 //  ----------------------------------------------------------------------------
 {
+    //note:
+    // BED follows inconsistent location semantics.
+    // while columns 2 and 3 specify a half open interval [first_in, first_out),
+    // columns 7 and 8 specify a closed interval [first_in, last_in].
+    //
     CRef<CSeq_loc> location(new CSeq_loc);
     int from, to;
     from = to = -1;
@@ -528,7 +536,7 @@ void CBedReader::xSetFeatureLocationThick(
         pErr->Throw();
     }
     try {
-        to = NStr::StringToInt(fields[7])-1;
+        to = NStr::StringToInt(fields[7]);
     }
     catch (std::exception&) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -538,6 +546,7 @@ void CBedReader::xSetFeatureLocationThick(
             "Invalid data line: Bad \"ThickStop\" value.") );
         pErr->Throw();
     }
+
     if (from == to) {
         location->SetPnt().SetPoint(from);
     }
