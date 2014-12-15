@@ -81,6 +81,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectRWStream : public CRWStream
     {
     }
 
+    virtual ~SNetStorageObjectRWStream();
+
     CNetStorageObject m_NetStorageObject;
 };
 
