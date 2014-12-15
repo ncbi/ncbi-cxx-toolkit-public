@@ -1,0 +1,26 @@
+ 1.asn |  Insert T between G and C - no change 
+ 2.asn |  Inserting a second T, left of the original first T, as pos 2338230 (0-based) 
+ 3.asn |  Inserting a second T, right of the original first T, as pos 2338230 (0-based) 
+ 4.asn |  Insertion of a triplet repeat that creates an interval that is not a multiple of the lenght 
+ 5.asn |  Insertion is out-of-sync with the repeat, and cannot be shifted 
+ 6.asn |  Insertion will alter the allele, as it shifts (GCT to TGC)
+ 7.asn |  This is a deletion of a C, in a run of 5 C's 
+ 8.asn |  Long insert with only terminal G swapping ends 
+ 9.asn |  Deletion of a triplet repeat that is shiftable left and right 
+ 10.asn | No change - Deletion of a C at 5' end 
+ 11.asn | Insertiong of 'GCGGGGG' between G and C 
+ 12.asn | Insertiong of TGGGAGG between two G's 
+ 13.asn | Inserting 21nt sequence (C..A) between C and A - Does not shift 
+ 14.asn | This insertion should not shift, as it is out of sync with the context 
+ 15.asn | This SNP inserts one T almost at the beginning of a streatch of T's 
+ 16.asn | Insert two T's almost at the beginning of a stretch of T's 
+ 17.asn | Insert three T's almost at the beginning of a stretch of T's 
+ 18.asn |  Shift only left by 26 nts 
+ 19.asn | Shift only left by 26 nts 
+ 20.asn | VAR-1191 - Deletion - Shift left and alter allele 
+ 21.asn | VAR-1248 - No shift - the two alleles cannot both shift (ACAA and CAA) 
+ 22.asn | VAR-1248 - counter example that should shift , having two SeqFeats - 3nt/6nt insert 
+ 23.asn | SNP-7277 - Insertion one nt to the right of repeat and should not shift
+ 24.asn | SNP-7277 - Same as 24.asn, but moved over one, and should shift 
+ 25.asn | Input is 6.asn (insertion), already fully shifted
+ 26.asn | Input is 20.asn (deletion), already fully shifted

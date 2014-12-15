@@ -1,0 +1,48 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbSNP",
+          tag str "rs6"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "GCT"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 10689132,
+        id other {
+          accession "NT_005612",
+          version 16
+        }
+      }
+    }
+  }
+}

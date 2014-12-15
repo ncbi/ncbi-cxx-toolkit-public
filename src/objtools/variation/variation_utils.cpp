@@ -69,23 +69,41 @@
 
 #include <objtools/variation/variation_utils.hpp>
 
+bool x_CheckForFirstNTSeq(const CVariation_inst& inst)
+{
+    if(    inst.IsSetDelta() 
+        && !inst.GetDelta().empty() 
+        && inst.GetDelta().front()->IsSetSeq() 
+        && inst.GetDelta().front()->GetSeq().IsLiteral()
+        && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+        && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna() 
+        )
+        return true;
+
+    return false;
+}
+
 void CVariationUtilities::CorrectRefAllele(CRef<CVariation>& v, CScope& scope)
 {
     string old_ref;
     string new_ref;
-    for (CVariation::TData::TSet::TVariations::iterator v1 = v->SetData().SetSet().SetVariations().begin(); v1 != v->SetData().SetSet().SetVariations().end(); ++v1)
-        for (CVariation::TData::TSet::TVariations::iterator inst = (*v1)->SetData().SetSet().SetVariations().begin(); inst != (*v1)->SetData().SetSet().SetVariations().end(); ++inst)
-            if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna() 
-                && (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity
-                )
+
+    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it, v->SetData().SetSet().SetVariations()) {
+        CVariation& var = **var_it;
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it2, var.SetData().SetSet().SetVariations()) {
+            CVariation& var2 = **var_it2;
+            if(!var2.IsSetData() || !var2.GetData().IsInstance())
+                continue;
+
+            CVariation_inst& inst = var2.SetData().SetInstance();
+            if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity) 
             {
-                old_ref = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                old_ref = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
                 new_ref = GetRefAlleleFromVP(v->SetData().SetSet().SetVariations().front()->SetPlacements().front(), scope, old_ref.length());
-                (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(new_ref);
+                inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(new_ref);
             }
+        }
+    }
 
     v->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set(new_ref);
     v->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetLength(new_ref.length());
@@ -116,53 +134,48 @@ void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, const string& new
     string old_ref;
     if (!vr.IsSetData() || !vr.GetData().IsSet() || !vr.GetData().GetSet().IsSetVariations())
         NCBI_THROW(CException, eUnknown, "Set of Variation-inst is not set in input Seq-annot");
-    for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
-    {
-        if (!(*inst)->IsSetData() || !(*inst)->GetData().IsInstance())
-            NCBI_THROW(CException, eUnknown, "Variation-inst is not set in input Seq-annot");
-        if (
-             (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity && 
-            (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-        {
-            old_ref  = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-            (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(new_ref);
+
+    NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.SetData().SetSet().SetVariations()) {
+        CVariation_ref& vref = **vref_it;
+        if(!vref.IsSetData() || !vref.GetData().IsInstance())
+            continue;
+
+        CVariation_inst& inst = vref.SetData().SetInstance();
+        if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity) {
+            old_ref  = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+            inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(new_ref);
         }
     }
     if (old_ref.empty())
         NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-annot");
+
     FixAlleles(vr,old_ref,new_ref);
 }
 
 void CVariationUtilities::FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) 
 {
     if (old_ref == new_ref) return;
-    int type = CVariation_inst::eType_snv;
+    CVariation_inst::TType type = CVariation_inst::eType_snv;
     bool add_old_ref = true;
-    for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
-    {
-        if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-        {
-            string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-            if (!(
-                    (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
-                    ))
-            {
-                type = (*inst)->SetData().SetInstance().SetType();
-                if (old_ref  == a) add_old_ref = false;
-                if (new_ref == a)
-                {
-                    (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(old_ref);
-                    add_old_ref = false;
-                }
-            }
+    NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.SetData().SetSet().SetVariations()) {
+        CVariation_ref& vref = **vref_it;
+        if(!vref.IsSetData() || !vref.GetData().IsInstance())
+            continue;
 
+        CVariation_inst& inst = vref.SetData().SetInstance();
+        if(x_CheckForFirstNTSeq(inst) && inst.GetType() != CVariation_inst::eType_identity) {
+            string allele = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+            type = inst.SetType();
+            if (old_ref  == allele) {
+                add_old_ref = false;
+            }
+            if (new_ref == allele)
+            {
+                inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(old_ref);
+                add_old_ref = false;
+            }
         }
+
     }
     if (add_old_ref)
     {
@@ -227,29 +240,32 @@ string CVariationUtilities::GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope)
 void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string new_ref) 
 {
     if (old_ref == new_ref) return;
-    for (CVariation::TData::TSet::TVariations::iterator v1 = v->SetData().SetSet().SetVariations().begin(); v1 != v->SetData().SetSet().SetVariations().end(); ++v1)
-    {
-        int type = CVariation_inst::eType_snv;
+    ERR_POST(Trace << "old: " << old_ref << " new: " << new_ref);
+    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it, v->SetData().SetSet().SetVariations()) {
         bool add_old_ref = true;
-        for (CVariation::TData::TSet::TVariations::iterator inst = (*v1)->SetData().SetSet().SetVariations().begin(); inst != (*v1)->SetData().SetSet().SetVariations().end(); ++inst)
-        {
-            if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-            {
-                string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                if (! (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity )
-                {
-                    type = (*inst)->SetData().SetInstance().SetType();
-                    if (old_ref  == a) add_old_ref = false;
-                    if (new_ref == a)
-                    {
-                        (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(old_ref);
-                        add_old_ref = false;
-                    }
+        CVariation_inst::TType type = CVariation_inst::eType_snv;
+
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it2, (*var_it)->SetData().SetSet().SetVariations()) {
+            CVariation& var2 = **var_it2;
+            if(!var2.IsSetData() || !var2.GetData().IsInstance())
+                continue;
+
+            CVariation_inst& inst = var2.SetData().SetInstance();
+            if(x_CheckForFirstNTSeq(inst) && inst.GetType() != CVariation_inst::eType_identity) {
+
+                string allele = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+
+                ERR_POST(Trace << "And the allele is: " << allele);
+
+                type = inst.SetType();
+                if (old_ref  == allele) {
+                    add_old_ref = false;
                 }
-                
+                if (new_ref == allele)
+                {
+                    inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(old_ref);
+                    add_old_ref = false;
+                }
             }
         }
 
@@ -267,10 +283,9 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
             inst->SetDelta().push_back(item);
             CRef<CVariation> leaf(new CVariation);
             leaf->SetData().SetInstance().Assign(*inst);
-            (*v1)->SetData().SetSet().SetVariations().push_back(leaf);
+            (*var_it)->SetData().SetSet().SetVariations().push_back(leaf);
         }
     }
-
 }
 
 bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope)
@@ -287,16 +302,14 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wron
         if (!vr.IsSetData() || !vr.GetData().IsSet() || !vr.GetData().GetSet().IsSetVariations())
             NCBI_THROW(CException, eUnknown, "Set of Variation-inst is not set in input Seq-feat");
 
-        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
-        {
-            if ((*inst)->IsSetData() && (*inst)->GetData().IsInstance() && 
-                (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity && 
-                (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-            {
-                wrong_ref  = (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get(); 
+        ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.GetData().GetSet().GetVariations()) {
+            const CVariation_ref& vref = **vref_it;
+            if(!vref.IsSetData() || !vref.GetData().IsInstance())
+                continue;
+
+            const CVariation_inst& inst = vref.GetData().GetInstance();
+            if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity) {
+                wrong_ref  = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get(); 
                 found_allele_in_inst = true;
             }
         }
@@ -317,17 +330,25 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wron
         return (wrong_ref == correct_ref);
 }
 
-int CVariationUtilities::GetVariationType(const CVariation_ref& vr)
+CVariation_inst::TType
+    CVariationUtilities::GetVariationType(const CVariation_ref& vr)
 {
+    if(!vr.IsSetData()) {
+        return CVariation_inst::eType_unknown;
+    }
+
     set<int> types;
     switch(vr.GetData().Which())
     {
-    case  CVariation_Base::C_Data::e_Instance : return vr.GetData().GetInstance().GetType(); break;
-    case  CVariation_Base::C_Data::e_Set : 
-        ITERATE(CVariation_ref::TData::TSet::TVariations, inst, vr.GetData().GetSet().GetVariations())
-        {
-            if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance() && (*inst)->GetData().GetInstance().GetType() != CVariation_inst::eType_identity)
-                types.insert( (*inst)->GetData().GetInstance().GetType() );
+    case  CVariation_ref::C_Data::e_Instance : return vr.GetData().GetInstance().GetType(); break;
+    case  CVariation_ref::C_Data::e_Set : 
+        ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.GetData().GetSet().GetVariations()) {
+            const CVariation_ref& vref = **vref_it;
+            if ( vref.IsSetData() 
+                && vref.GetData().IsInstance() 
+                && vref.GetData().GetInstance().GetType() != CVariation_inst::eType_identity)
+
+                    types.insert( vref.GetData().GetInstance().GetType() );
         }
         break;
     default: break;            
@@ -341,6 +362,43 @@ int CVariationUtilities::GetVariationType(const CVariation_ref& vr)
     return  CVariation_inst::eType_other;
 }
 
+CVariation_inst::TType
+    CVariationUtilities::GetVariationType(const CVariation& var)
+{
+    LOG_POST(Trace << MSerial_AsnText << var);
+    if(!var.IsSetData()) {
+        return CVariation_inst::eType_unknown;
+    }
+
+    set<CVariation_inst::TType> types;
+    switch(var.GetData().Which()) {
+    case CVariation::C_Data::e_Instance:
+        types.insert(var.GetData().GetInstance().GetType());
+        break;
+    case CVariation::C_Data::e_Set:
+        if(!var.GetData().GetSet().IsSetVariations())
+            break;
+
+        //Iterate through the alleles
+        ITERATE(CVariation::TData::TSet::TVariations, var_it, var.GetData().GetSet().GetVariations()) {
+            const CVariation& var2 = **var_it;
+            CVariation_inst::TType type = GetVariationType(var2);
+            if(type != CVariation_inst::eType_identity)
+                types.insert(type);
+        }
+        break;
+    default: 
+        break;
+    }
+
+    if (types.empty())
+        return  CVariation_inst::eType_unknown;
+    if (types.size() == 1)
+        return *types.begin();
+
+    return  CVariation_inst::eType_other;
+}
+
 void CVariationUtilities::GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt)
 {
     ref.clear();
@@ -348,36 +406,29 @@ void CVariationUtilities::GetVariationRefAlt(const CVariation_ref& vr, string &r
     switch (vr.GetData().Which())
     {
     case  CVariation_Base::C_Data::e_Set :
-        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst_it = vr.GetData().GetSet().GetVariations().begin(); inst_it != vr.GetData().GetSet().GetVariations().end(); ++inst_it)
-            if ( (*inst_it)->IsSetData() && (*inst_it)->GetData().IsInstance())
-            {
-                const CVariation_inst &inst = (*inst_it)->GetData().GetInstance();
-                int type = inst.GetType();
-                if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
-                    && inst.GetDelta().front()->GetSeq().IsLiteral() 
-                    && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                    && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+        ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.GetData().GetSet().GetVariations()) {
+            const CVariation_ref& vref = **vref_it;
+            if(!vref.IsSetData() || !vref.GetData().IsInstance())
+                continue;
+
+            const CVariation_inst& inst = vref.GetData().GetInstance();
+            if(x_CheckForFirstNTSeq(inst) ) {
+                string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                if (!a.empty())
                 {
-                    string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                    if (!a.empty())
-                    {
-                        if (type == CVariation_inst::eType_identity )
-                            ref = a;
-                        else if (type != CVariation_inst::eType_del) 
-                            alt.push_back(a);
-                    }
+                    if (inst.GetType() == CVariation_inst::eType_identity )
+                        ref = a;
+                    else if (inst.GetType() != CVariation_inst::eType_del) 
+                        alt.push_back(a);
                 }
             }
+        }
         break;
     case  CVariation_Base::C_Data::e_Instance :
     {
         const CVariation_inst &inst = vr.GetData().GetInstance();
-        int type = inst.GetType();
-        if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
-            && inst.GetDelta().front()->GetSeq().IsLiteral() 
-            && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-            && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-        {
+        const CVariation_inst::TType type = inst.GetType();
+        if (x_CheckForFirstNTSeq(inst)) {
             string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
             if (!a.empty())
             {
@@ -406,12 +457,8 @@ void CVariationUtilities::GetVariationRefAlt(const CVariation& v, string &ref,  
             if ( (*var2)->IsSetData() && (*var2)->GetData().IsInstance())
             {
                 const CVariation_inst &inst = (*var2)->GetData().GetInstance();
-                int type = inst.GetType();
-                if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
-                    && inst.GetDelta().front()->GetSeq().IsLiteral() 
-                    && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                    && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-                {
+                const CVariation_inst::TType type = inst.GetType();
+                if (x_CheckForFirstNTSeq(inst)) {
                     string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
                     if (!a.empty())
                     {
@@ -427,12 +474,8 @@ void CVariationUtilities::GetVariationRefAlt(const CVariation& v, string &ref,  
     case  CVariation_Base::C_Data::e_Instance :
         {
             const CVariation_inst &inst = v.GetData().GetInstance();
-            int type = inst.GetType();
-            if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
-                && inst.GetDelta().front()->GetSeq().IsLiteral() 
-                && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-            {
+            const CVariation_inst::TType type = inst.GetType();
+            if(x_CheckForFirstNTSeq(inst)) {
                 string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
                 if (!a.empty())
                 {
@@ -448,45 +491,34 @@ void CVariationUtilities::GetVariationRefAlt(const CVariation& v, string &ref,  
     }           
 }
 
-bool CVariationUtilities::CommonRepeatUnit(string alt1, string alt2)
-{
 
-    string repSubStr1 = x_RepeatedSubstring(alt1);
-    string repSubStr2 = x_RepeatedSubstring(alt2);
-
-    return repSubStr1 == repSubStr2;
-}
-
-
-bool CVariationUtilities::CommonRepeatUnit(const CVariation_ref& vr)
+string CVariationUtilities::GetCommonRepeatUnit(const CVariation_ref& vr)
 {
     string ref;
     vector<string> alts;
+    set<string> crus;
     CVariationUtilities::GetVariationRefAlt(vr,ref,alts);
-
-    for(SIZE_TYPE ii = 0; ii< alts.size(); ii++) {
-        for(SIZE_TYPE jj = ii+1; jj< alts.size(); jj++) {
-            if(!CVariationUtilities::CommonRepeatUnit(alts[ii], alts[jj]))
-                return false;
-        }
+    ITERATE(vector<string>, alt_it, alts) {
+        crus.insert(RepeatedSubstring(*alt_it));
     }
-    return true;
+    if(crus.size() != 1)
+        return kEmptyStr;
+    return *crus.begin();
 }
 
 
-bool CVariationUtilities::CommonRepeatUnit(const CVariation& v)
+string CVariationUtilities::GetCommonRepeatUnit(const CVariation& v)
 {
     string ref;
     vector<string> alts;
+    set<string> crus;
     CVariationUtilities::GetVariationRefAlt(v,ref,alts);
-
-    for(SIZE_TYPE ii = 0; ii< alts.size(); ii++) {
-        for(SIZE_TYPE jj = ii+1; jj< alts.size(); jj++) {
-            if(!CVariationUtilities::CommonRepeatUnit(alts[ii], alts[jj]))
-                return false;
-        }
+    ITERATE(vector<string>, alt_it, alts) {
+        crus.insert(RepeatedSubstring(*alt_it));
     }
-    return true;
+    if(crus.size() != 1)
+        return kEmptyStr;
+    return *crus.begin();
 }
 
 
@@ -509,7 +541,7 @@ bool CVariationUtilities::x_isBaseRepeatingUnit(
 }
 
 
-string CVariationUtilities::x_RepeatedSubstring(const string &str) 
+string CVariationUtilities::RepeatedSubstring(const string &str) 
 {
     for(vector<string>::size_type ii=1; ii <= str.length() / 2 ; ++ii) {
 
@@ -526,44 +558,11 @@ string CVariationUtilities::x_RepeatedSubstring(const string &str)
 }
 
 
-
 // Variation Normalization
-CCache<string,CRef<CSeqVector> > CVariationNormalization_base_cache::m_cache(CCACHE_SIZE);
+CCache<string,CRef<CSeqVector> > CSeqVectorCache::m_cache(CCACHE_SIZE);
 
-void CVariationNormalization_base_cache::x_rotate_left(string &v)
-{
-    // simple rotation to the left
-    std::rotate(v.begin(), v.begin() + 1, v.end());
-}
 
-void CVariationNormalization_base_cache::x_rotate_right(string &v)
-{
-    // simple rotation to the right
-    std::rotate(v.rbegin(), v.rbegin() + 1, v.rend());
-}
-
-string CVariationNormalization_base_cache::x_CompactifySeq(string a)
-{
-    string result = a;
-    for (unsigned int i=1; i<= a.size() / 2; i++)
-        if (a.size() % i == 0)
-        {
-            int k = a.size() / i;
-            string b = a.substr(0,i);
-            string c;
-            for (int j=0; j < k; j++)
-                c += b;
-            if (c == a)
-            {
-                result = b;
-                break;
-            }
-
-        }
-    return result;
-}
-
-CRef<CSeqVector> CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, const CSeq_id &seq_id, ENa_strand strand)
+CRef<CSeqVector> CSeqVectorCache::PrefetchSequence(CScope &scope, const CSeq_id &seq_id, ENa_strand strand)
 {
     string accession;
     seq_id.GetLabel(&accession);
@@ -590,7 +589,7 @@ CRef<CSeqVector> CVariationNormalization_base_cache::x_PrefetchSequence(CScope &
     return seqvec_ref;
 }
 
-string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, CSeqVector &seqvec)
+string CSeqVectorCache::GetSeq(int pos, int length, CSeqVector &seqvec)
 {
     _ASSERT(!seqvec.empty());   
 
@@ -599,159 +598,212 @@ string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, CSeqVec
     return seq;
 }
 
-int CVariationNormalization_base_cache::x_GetSeqSize(CSeqVector &seqvec)
+TSeqPos CSeqVectorCache::GetSeqSize(CSeqVector &seqvec)
 {
     return seqvec.size();
 } 
 
 template<class T>
-void CVariationNormalization_base<T>::x_Shift(CVariation& v_orig, CScope &scope)
+void CVariationNormalization_base<T>::RotateLeft(string &v)
 {
-    CRef<CVariation> v = Ref(&v_orig);
-    if (!v_orig.IsSetPlacements() && v_orig.IsSetData() && v_orig.GetData().IsSet() && v_orig.GetData().GetSet().IsSetVariations()) 
-        v = v_orig.SetData().SetSet().SetVariations().front();
+    // simple rotation to the left
+    std::rotate(v.begin(), v.begin() + 1, v.end());
+}
 
-    for (CVariation::TPlacements::iterator ivp =  v->SetPlacements().begin(); ivp != v->SetPlacements().end(); ++ivp)
-    {
-        CVariantPlacement & vp = **ivp;
-        if (!vp.IsSetLoc()) continue;
+template<class T>
+void CVariationNormalization_base<T>::RotateRight(string &v)
+{
+    // simple rotation to the right
+    std::rotate(v.rbegin(), v.rbegin() + 1, v.rend());
+}
 
-        const CSeq_id &seq_id = *vp.GetLoc().GetId();
+template<class T>
+void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &scope)
+{
+    if (variation.IsSetPlacements() 
+        || !variation.IsSetData() 
+        || !variation.GetData().IsSet() 
+        || !variation.GetData().GetSet().IsSetVariations()) 
+        return;
+        
+    //Each Variation object iterated here will either:
+    // 1. Contains 1 Variation object (with its placement), 
+    //          and its data is a single instance 
+    // 2. Contains 1 Variation object (with its placement),
+    //          and its data is a set of instances
+    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it, variation.SetData().SetSet().SetVariations()) {
+        CVariation& var = **var_it;
 
-        SEndPosition end_positions(
-            vp.GetLoc().GetStart(eExtreme_Positional),
-            vp.GetLoc().GetStop(eExtreme_Positional), -1, -1);
+        ERR_POST(Trace << "Outside Variation data set: " << MSerial_AsnText << var);
 
-        string ref;
-        if (vp.IsSetSeq() && vp.GetSeq().IsSetSeq_data() && vp.GetSeq().GetSeq_data().IsIupacna()) 
-            ref = vp.SetSeq().SetSeq_data().SetIupacna().Set();
+        if( !var.IsSetData() )
+            continue;
+        
+        const CVariation_inst::TType& type = CVariationUtilities::GetVariationType(var);
+        
+        //Only insertion and deletion can shift
+        //All insertions and deletions are set type
+        if(    type != CVariation_inst::eType_ins 
+            && type != CVariation_inst::eType_del) {
+                continue;
+        }
 
-        bool is_deletion = false;
-        CRef<CSeq_literal> ref_seqliteral;
-        int type;              
-        ENa_strand strand = eNa_strand_unknown;
-        if (vp.GetLoc().IsSetStrand())
-            strand = vp.GetLoc().GetStrand();
-        CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
-        if (v->IsSetData())
+        //Correct SeqLoc interval *around* the insertion
+        // to point *after* the insertion.
+        // Placements are stored in the first variation in the Set.
+        CVariantPlacement& vp = *var.SetPlacements().front(); 
+        CSeq_loc& loc = vp.SetLoc();
+
+        SEndPosition sep(loc.GetStart(eExtreme_Positional),
+            loc.GetStop(eExtreme_Positional));
+
+
+        // If variant is already left shifted, convert to left-shifted form
+        if(CVariationNormalization::isFullyShifted(var))
         {
-            list<SEndPosition> end_pos_list;
-            switch (v->SetData().Which())
+            string ref;
+            vector<string> alts;
+            CVariationUtilities::GetVariationRefAlt(var, ref,  alts);
+            TSeqPos deletion_size = ref.size();
+            ResetFullyShifted(var, loc, sep, type, deletion_size);
+            ERR_POST(Trace << "Reset full shifted var" << MSerial_AsnText << var);
+        }
+
+
+        if(type == CVariation_inst::eType_ins
+            && loc.IsInt()) {
+                x_ConvertIntervalToPoint(loc,
+                    loc.GetStop(eExtreme_Positional));
+                sep.left = loc.GetStop(eExtreme_Positional);
+        }
+
+
+        const CSeq_id& seq_id = *vp.GetLoc().GetId();
+        ENa_strand strand = eNa_strand_unknown;
+        if (loc.IsSetStrand())
+            strand = loc.GetStrand();
+        
+        CRef<CSeqVector> seqvec = PrefetchSequence(scope,seq_id,strand);
+
+        if(type == CVariation_inst::eType_ins) {
+            
+            string common_repeat_unit_allele = 
+                CVariationUtilities::GetCommonRepeatUnit(var);
+
+            ERR_POST(Trace << "Common Repeat Unit: " << common_repeat_unit_allele);
+
+            //There are multiple alleles here.  Need to work through
+            // the set.
+            if( common_repeat_unit_allele == kEmptyStr)
             {
-            case  CVariation_Base::C_Data::e_Instance : 
-                x_ProcessInstance(v->SetData().SetInstance(),vp.SetLoc(),
-                    is_deletion,ref_seqliteral,ref,end_positions,*seqvec,type);
+                continue;
+            }
+
+            int rotation_counter=0;
+            //This alters SeqLoc and the compact'ed allele
+            if(!ProcessShift(common_repeat_unit_allele, sep, 
+                *seqvec, rotation_counter, CVariation_inst::eType_ins)) {
+                    continue;
+            }
+
+
+            ERR_POST(Trace << "This particular allele shifted to the left: " << 
+                rotation_counter << " and the common repeat unit is now: " << 
+                common_repeat_unit_allele);
+
+            //allele size doesn't matter for insertions, only deletions
+            const int allele_size = 0;
+            ModifyLocation(loc, sep, CVariation_inst::eType_ins, allele_size);
+
+            SetShiftFlag(var);
+
+
+            //alleles are sometimes here, or can be instance
+            switch(var.GetData().Which()) {
+            case CVariation::TData::C_Data::e_Instance:
+                {
+                    CVariation_inst& inst = var.SetData().SetInstance();
+
+                    string allele = inst.GetDelta().front()->GetSeq()
+                        .GetLiteral().GetSeq_data().GetIupacna().Get();
+
+                    for(int ii=0; ii<rotation_counter; ++ii) {
+                        Rotate(allele);
+                    }
+
+                    inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
+                }
+
                 break;
-            case  CVariation_Base::C_Data::e_Set :
-
-                //are alleles compatible with shifting (must have common basic repeat unit)
-                if( ! CVariationUtilities::CommonRepeatUnit(*v) )
+            case CVariation::TData::C_Data::e_Set:
                 {
-                    return;
+                    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it2, var.SetData().SetSet().SetVariations()) {
+                        CVariation& var2 = **var_it2;
+                        if(!var2.IsSetData() || !var2.GetData().IsInstance())
+                            continue;
+
+                        CVariation_inst& inst = var2.SetData().SetInstance();
+
+                        string allele = inst.GetDelta().front()->GetSeq()
+                            .GetLiteral().GetSeq_data().GetIupacna().Get();
+
+                        for(int ii=0; ii<rotation_counter; ++ii) {
+                            Rotate(allele);
+                        }
+
+                        inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
+                    }
                 }
-
-
-                NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var2, v->SetData().SetSet().SetVariations())
-                {
-                    SEndPosition tmp(end_positions);
-
-                    if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance())
-                        x_ProcessInstance((*var2)->SetData().SetInstance(),vp.SetLoc(),is_deletion,ref_seqliteral,ref,tmp,*seqvec,type);
-
-                    end_pos_list.push_back(tmp);
-
-                }
-                //Check, are all things in the list idenitcal?
-                end_pos_list.unique();
-                if(end_pos_list.size() != 1 )
-                {
-                    //The alleles are too different to shift.  They end up in different places
-                    //Should be caught by 'CommonRepeatUnit' above.
-                    return;
-                }
-
-                end_positions = end_pos_list.front();
-
-
                 break;
             default: break;
             }
-        }
-        if (!ref.empty() && is_deletion)
-        {
-            // use VarPlacement seq literal over derived seq literal
-            if (vp.IsSetSeq() && vp.GetSeq().IsSetSeq_data() && vp.GetSeq().GetSeq_data().IsIupacna()) 
-                ref_seqliteral = Ref(&vp.SetSeq());
 
-            x_ModifyDeleltionLocation(vp.SetLoc(), end_positions, ref, *ref_seqliteral, *seqvec, type);
-        }
-
-    }
-}
-
-
-//Either called per Variation placement
-// or called per SeqFeat
-template<class T>
-void CVariationNormalization_base<T>::x_ModifyDeleltionLocation(
-    CSeq_loc& loc, SEndPosition& sep, string& ref, CSeq_literal& ref_seqliteral, CSeqVector& seqvec, int type)
-{
-    int pos = sep.right - ref.size() + 1;
-    const bool found = x_ProcessShift(ref, sep.left ,pos, seqvec, type);
-    if(!found) return;
-
-    sep.right = pos + ref.size()-1;
-
-    sep.CorrectNewPositions();
-    if( sep.HasBadPositions() )     
-        return;    
-
-
-    x_ModifyLocation(loc,ref_seqliteral,ref,sep.left,sep.right,type);
-
-}
-
-template<class T>
-void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  
-            CRef<CSeq_literal>& ref_seqliteral, string &ref, SEndPosition& sep,
-            CSeqVector &seqvec, int &rtype)
-{
-    int type = inst.SetType();
-    if (type != CVariation_inst::eType_identity)
-        rtype = type;
-    if (type == CVariation_inst::eType_del)
-        is_deletion = true;
-    if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
-        && inst.GetDelta().front()->GetSeq().IsLiteral() && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-        && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-    {
-        string a = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-        if (type == CVariation_inst::eType_identity )//&& inst.IsSetObservation() && inst.GetObservation() == CVariation_inst::eObservation_reference)
-        {
-            ref = a;
-            ref_seqliteral = Ref(&inst.SetDelta().front()->SetSeq().SetLiteral());
-        }
-        if (!a.empty() && type == CVariation_inst::eType_ins) 
-        {
-            string compact = x_CompactifySeq(a);
-            string orig_compact = compact;
-            const bool found = x_ProcessShift(compact, sep.left, sep.right, seqvec,type);
-            if (found)
-            {
-                while (orig_compact != compact)
-                {
-                    x_rotate_left(a);
-                    x_rotate_left(orig_compact);
-                }
-                sep.CorrectNewPositions();
-                if(sep.HasBadPositions())
-                    return;
-
-                x_ModifyLocation(loc,inst.SetDelta().front()->SetSeq().SetLiteral(),a,sep.left,sep.right,type);
+        } else if(type == CVariation_inst::eType_del) {
+            //Should be exactly two variation objects for deletions:
+            //  the ref and the alt.
+            if(var.GetData().GetSet().GetVariations().size() != 2) {
+                ERR_POST(Error << "Malformed deletion Variation Ref with more than 2 'alleles'");
+                return;
             }
+
+            string ref_allele;
+            CRef<CSeq_literal> ref_literal;
+            NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it, var.SetData().SetSet().SetVariations()) {
+                CVariation& var = **var_it;
+                if(!var.IsSetData() || !var.SetData().IsInstance())
+                    continue;
+
+                CVariation_inst& inst = var.SetData().SetInstance();
+                if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity ) {
+                    ref_allele  = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                    ref_literal = Ref(&inst.SetDelta().front()->SetSeq().SetLiteral());
+                }
+            }
+
+
+            int rotation_counter = 0;
+            const bool found = ProcessShift(ref_allele, 
+                sep, 
+                *seqvec, rotation_counter, type);
+            if(!found) 
+                return;
+
+
+            //Set the reference allele now that it is rotated
+            ref_literal->SetSeq_data().SetIupacna().Set(ref_allele);
+
+            //Alter the SeqLoc
+            ModifyLocation(loc,
+                sep, CVariation_inst::eType_del,
+                ref_allele.size());
+
+            SetShiftFlag(var);
+
         }
+
     }
 }
+
 
 template<class T>
 void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
@@ -759,9 +811,10 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
 	if (!annot.IsSetData() || !annot.GetData().IsFtable())
 		NCBI_THROW(CException, eUnknown, "Ftable is not set in input Seq-annot");
 
-	CSeq_annot::TData::TFtable ftable = annot.SetData().SetFtable();
-	for (CSeq_annot::TData::TFtable::iterator ifeat = ftable.begin(); ifeat != ftable.end(); ++ifeat)
-		x_Shift(**ifeat, scope);
+    NON_CONST_ITERATE(CSeq_annot::TData::TFtable, feat_it, 
+        annot.SetData().SetFtable()) {
+        x_Shift(**feat_it, scope);
+    }
 }
 
 template<class T>
@@ -772,399 +825,668 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
 		!feat.IsSetData()               || 
 		!feat.GetData().IsVariation()   || 
 		!feat.GetData().GetVariation().IsSetData()) return;
+    CVariation_ref& vref = feat.SetData().SetVariation();
+    CVariation_inst::TType type = CVariationUtilities::GetVariationType(vref);
+
+    //only insertion and deletion can shift
+    if( type != CVariation_inst::eType_ins 
+        && type != CVariation_inst::eType_del) {
+            return;
+    }
+
+    CSeq_loc& featloc = feat.SetLocation();
+    //Correct SeqLoc interval *around* the insertion
+    // to point *after* the insertion.
+
+    SEndPosition sep(
+        featloc.GetStart(eExtreme_Positional),
+        featloc.GetStop(eExtreme_Positional));
+
+
+    // If variant is already left shifted, convert to left-shifted form
+    if(CVariationNormalization::isFullyShifted(feat))
+    {
+        string ref;
+        vector<string> alts;
+        CVariationUtilities::GetVariationRefAlt(vref, ref,  alts);
+        TSeqPos deletion_size = ref.size();
+        ResetFullyShifted(feat, featloc, sep, type, deletion_size);
+        ERR_POST(Trace << "Reset full shifted feat" << MSerial_AsnText << feat);
+    }
+
+    // HGVS parser produces interval insertion around the insertion site
+    // Convert to standard form of ins-before a point.
+    if(type == CVariation_inst::eType_ins
+        && featloc.IsInt()) {
+
+            x_ConvertIntervalToPoint(featloc,
+                featloc.GetStop(eExtreme_Positional));
+
+            sep.left = featloc.GetStop(eExtreme_Positional);
+    }
+
+
 
 	const CSeq_id &seq_id = *feat.GetLocation().GetId();
-    SEndPosition end_positions(
-        feat.GetLocation().GetStart(eExtreme_Positional),
-        feat.GetLocation().GetStop(eExtreme_Positional), -1, -1);
 	
-    bool is_deletion = false;
-	string ref;
-	CRef<CSeq_literal> ref_seqliteral;
-	
-    int type;
 	ENa_strand strand = eNa_strand_unknown;
 	if (feat.GetLocation().IsSetStrand())
 		strand = feat.GetLocation().GetStrand();
 
 	CRef<CSeqVector> seqvec ;
 	try {
-		seqvec = x_PrefetchSequence(scope,seq_id,strand);
+		seqvec = PrefetchSequence(scope,seq_id,strand);
 		ERR_POST(Trace << "Prefetch success for : " << seq_id.AsFastaString());
 	} catch(CException& e) {
 		ERR_POST(Error << "Prefetch failed for " << seq_id.AsFastaString() );
 		ERR_POST(Error << e.ReportAll());
 		return;
 	}
+    
+    if(type == CVariation_inst::eType_ins) {
+        //insertion can be set or instance (see test cases 1.asn and 11.asn)
+        string common_repeat_unit_allele = 
+            CVariationUtilities::GetCommonRepeatUnit(vref);
 
-	//CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+        //Insertions are sets (identity + ins-before insertion)
 
-	CVariation_ref& vr = feat.SetData().SetVariation();
+        //Is each allele contain a common repeat unit?
+        if( common_repeat_unit_allele == kEmptyStr )
+        {
+            LOG_POST(Trace << "No common repeat unit among alts");
+            return;
+        }
 
-	try {
-        list<SEndPosition> end_pos_list;
-		switch(vr.GetData().Which())
-		{
-		case  CVariation_Base::C_Data::e_Instance : 
-            x_ProcessInstance(vr.SetData().SetInstance(),feat.SetLocation(),is_deletion,ref_seqliteral,ref, end_positions, *seqvec,type); break;
-		case  CVariation_Base::C_Data::e_Set : 
+        //This alters SeqLoc and the compact'ed allele
+        int rotation_counter=0;
+        if(!ProcessShift(common_repeat_unit_allele, sep, 
+            *seqvec, rotation_counter, CVariation_inst::eType_ins))
+            return;
 
-            //are alleles compatible with shifting (must have common basic repeat unit)
-            if( ! CVariationUtilities::CommonRepeatUnit(vr) )
+        ERR_POST(Trace << "This particular allele shifted to the left: " << 
+            rotation_counter << " and the common repeat unit is now: " << 
+            common_repeat_unit_allele);
+
+        //allele size doesn't matter for insertions, only deletions
+        const int allele_size = 0;
+        ModifyLocation(featloc, sep, CVariation_inst::eType_ins, allele_size);
+        
+        SetShiftFlag(feat);
+        
+
+        //Apply rotation to each allele, in either set or instances:
+        switch(vref.GetData().Which()) {
+        case CVariation_ref::C_Data::e_Instance:
             {
-                return;
+                CVariation_inst& inst = vref.SetData().SetInstance();
+                string allele = inst.GetDelta().front()->GetSeq()
+                    .GetLiteral().GetSeq_data().GetIupacna().Get();
+
+                for(int ii=0; ii<rotation_counter; ++ii) {
+                    Rotate(allele);
+                    LOG_POST(Trace << "Rotate allele : " << ii << " : " << allele);
+                }
+
+                inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
             }
-
-                        
-            NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, inst, vr.SetData().SetSet().SetVariations())
-			{
-
-                SEndPosition tmp(end_positions);
-
-				if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
-					x_ProcessInstance((*inst)->SetData().SetInstance(),feat.SetLocation(),is_deletion,ref_seqliteral,ref,tmp,*seqvec,type);
-
-                end_pos_list.push_back(tmp);
-			}
-            //Check, are all things in the list idenitcal?
-            end_pos_list.unique();
-            if(end_pos_list.size() != 1 )
+            break;
+        case CVariation_ref::C_Data::e_Set:
             {
-                //The alleles are too different to shift.  They end up in different places
-                //Should be caught by 'CommonRepeatUnit' above.
-                return;
+                NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vref.SetData().SetSet().SetVariations())
+                {
+                    CVariation_ref& vref2 = **vref_it;
+
+                    if(!vref2.IsSetData() || !vref2.GetData().IsInstance())
+                        continue;
+
+                    CVariation_inst& inst = vref2.SetData().SetInstance();
+
+                    string allele = inst.GetDelta().front()->GetSeq()
+                        .GetLiteral().GetSeq_data().GetIupacna().Get();
+
+                    for(int ii=0; ii<rotation_counter; ++ii) {
+                        Rotate(allele);
+                        LOG_POST(Trace << "Rotate allele : " << ii << " : " << allele);
+                    }
+
+                    inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
+                }
             }
+            break;
+        default: break;
+        }
+    } else if(type == CVariation_inst::eType_del) {
+        //Should be exactly two variation objects for deletions:
+        //  the ref and the alt.
+        if(vref.GetData().GetSet().GetVariations().size() != 2) {
+            ERR_POST(Error << "Malformed deletion Variation Ref with more than 2 'alleles'");
+            return;
+        }
 
-            end_positions = end_pos_list.front();
+        string ref_allele;
+        CRef<CSeq_literal> ref_literal;
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vref.SetData().SetSet().SetVariations()) {
+            CVariation_ref& vref = **vref_it;
+            if(!vref.IsSetData() || !vref.SetData().IsInstance())
+                continue;
 
+            CVariation_inst& inst = vref.SetData().SetInstance();
+            if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity ) {
+                ref_allele  = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                ref_literal = Ref(&inst.SetDelta().front()->SetSeq().SetLiteral());
+            }
+        }
 
-			break;
-		default: break;            
-		}
-	} catch(CException &e) {
-		ERR_POST(Error << "Exception while shifting: " << e.ReportAll() << ".  Continuing on" << Endm);
-		//Ideally this would make it into the service msg'ing system.
-		return;
+        //why no common repeat unit?
+        // a. nothing common about it.le
+        int rotation_counter = 0;
+        const bool found = ProcessShift(ref_allele, 
+            sep, *seqvec, rotation_counter, type);
+
+        if(!found) 
+            return;
+
+        //Set the reference allele now that it is rotated
+        ref_literal->SetSeq_data().SetIupacna().Set(ref_allele);
+        
+        //Alter the SeqLoc
+        ModifyLocation(featloc, sep,
+            CVariation_inst::eType_del, ref_allele.size());
+
+        SetShiftFlag(feat);
 	}
 
-    //Special handling for deletion
-	if (!ref.empty() && is_deletion)
-	{
-        x_ModifyDeleltionLocation(feat.SetLocation(), end_positions, ref, *ref_seqliteral, *seqvec, type);
-	}
+    LOG_POST(Trace << "Shifted SeqFeat: " << MSerial_AsnText << feat);
 }
 
+/// Only invoked through full-shift
 template<class T>
-bool CVariationNormalization_base<T>::x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type)
+bool CVariationNormalization_base<T>::x_IsShiftable(const CSeq_loc &loc, 
+    const string &allele, CScope &scope, CVariation_inst::TType type)
 {
     if (type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del)
-        NCBI_THROW(CException, eUnknown, "Only insertions or deletions can currently be processed");
+        return false;
 
-    if (ref.empty())
-        NCBI_THROW(CException, eUnknown, "Submitted allele is empty");
+    if (allele.empty())
+        return false;
 
     const CSeq_id &seq_id = *loc.GetId();
 
     SEndPosition end_positions(
         loc.GetStart(eExtreme_Positional),
-        loc.GetStop(eExtreme_Positional), -1, -1);
-
-    end_positions.CorrectNewPositions();
+        loc.GetStop(eExtreme_Positional));
 
 
     ENa_strand strand = eNa_strand_unknown;
     if (loc.IsSetStrand())
         strand = loc.GetStrand();
-    CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+    CRef<CSeqVector> seqvec = PrefetchSequence(scope,seq_id,strand);
 
 
+    int rotation_counter=0; //unused
+    bool isShifted = false;
     if (type == CVariation_inst::eType_del)
     {
-        int pos = end_positions.right - ref.size() + 1;
-        x_ProcessShift(ref, end_positions.new_left,pos,*seqvec,type);
-        end_positions.new_right = pos + ref.size()-1;
+        string tmp_allele = allele;
+        isShifted = ProcessShift(tmp_allele, 
+            end_positions,
+            *seqvec, rotation_counter, type);
     }
     else
     {  
-        string compact = x_CompactifySeq(ref);
-        string orig_compact = compact;
-        x_ProcessShift(compact, end_positions.new_left ,end_positions.new_right,*seqvec,type);
-        while (orig_compact != compact)
-        {
-            x_rotate_left(ref);
-            x_rotate_left(orig_compact);
-        }
+        //insertion type
+        string compact = CVariationUtilities::RepeatedSubstring(allele);
+        isShifted = ProcessShift(compact,
+            end_positions,
+            *seqvec, rotation_counter, type);
     }
-
-    bool isShifted = (end_positions.new_left != end_positions.left) || 
-                     (end_positions.new_right != end_positions.right);
-    
-    x_ExpandLocation(loc, end_positions.new_left , end_positions.new_right);
 
     return isShifted;
 }
 
 template<class T>
-void CVariationNormalization_base<T>::x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right) 
+void CVariationNormalization_base<T>::x_ConvertIntervalToPoint(CSeq_loc &loc, int pos)
 {
-    if (pos_left == pos_right)
+    CRef<CSeq_point> pnt(new CSeq_point);
+    pnt->SetPoint(pos);
+    if (loc.GetInt().IsSetStrand())
+        pnt->SetStrand( loc.GetInt().GetStrand() );
+    pnt->SetId().Assign(loc.GetInt().GetId());
+    loc.SetPnt().Assign(*pnt);
+}
+
+
+template<class T>
+void CVariationNormalization_base<T>::x_ConvertPointToInterval(CSeq_loc &loc, 
+    int pos_left, int pos_right)
+{
+    CRef<CSeq_interval> interval(new CSeq_interval);
+    interval->SetFrom(pos_left);
+    interval->SetTo(pos_right);
+    if (loc.GetPnt().IsSetStrand())
+        interval->SetStrand( loc.GetPnt().GetStrand() );
+    interval->SetId().Assign(loc.GetPnt().GetId());
+    loc.SetInt().Assign(*interval);
+}
+
+
+/***********************************************************
+ Does the last nt in compact match the last 5' end of the insert?
+ INSERTIONS:
+ NNNNNA ----- GNNNNNN <-- Name the A here 'five_prime_last_nt'
+ ins:   NNNNA
+ Rotate, while true.
+ Position is the 'G' above *iff* the variant is normalized to SeqPnt.
+ DELETIONS:
+ NNNNNGGGCNNNNNNN
+ del   GG
+ NNNNNG--CNNNNNNN should become: (G here is five_prime_last_nt)
+ NNNNN--GCNNNNNNN
+ Position is the first deleted nt.
+ compact_allele is the removed allele
+ Rotate while true.
+**************************************************************/
+bool CVariationNormalizationLeft::ProcessShift(
+    string& common_repeat_unit_allele, 
+    SEndPosition& sep,
+    CSeqVector& seqvec, 
+    int& rotation_counter, 
+    const CVariation_inst::TType type ) //both deletion and insertion are treated the same here)
+{
+    ERR_POST(Trace << "Initial pos: (" << sep.left << "," << sep.right <<")");
+    //For both insertion and deletion, we want to review
+    // the context just upstream of the event.
+    string five_prime_last_nt;
+    if (sep.left-1 >=0 && sep.left < GetSeqSize(seqvec))
+        five_prime_last_nt = GetSeq(sep.left-1,1,seqvec);
+    
+    ERR_POST(Trace << "Compare at pos-1: " << sep.left-1 << " the nt " 
+        << five_prime_last_nt << " to the back of compact: " << common_repeat_unit_allele.back());
+
+    bool did_rotate = false;
+    while(common_repeat_unit_allele.back() == five_prime_last_nt.front() ) {
+        
+        ERR_POST(Trace << "We had a match, therefore rotate: " << 
+            common_repeat_unit_allele.back() << " off (" <<
+            five_prime_last_nt.front() << " @ left pos: " <<
+            sep.left-1 <<")");
+
+        did_rotate = true;
+        rotation_counter++;
+        Rotate(common_repeat_unit_allele);
+        sep.left--;
+        sep.right--;
+
+        ERR_POST(Trace << "Rotation info: " << rotation_counter << " : " << common_repeat_unit_allele);
+
+
+        if (sep.left-1 <0 || sep.left >= GetSeqSize(seqvec)) {
+            //beyond end of sequence
+            break;
+        }
+
+        five_prime_last_nt = GetSeq(sep.left-1,1,seqvec);
+
+        ERR_POST(Trace << "Will: " << 
+            common_repeat_unit_allele.back() << " and " <<
+            five_prime_last_nt.front() << " match?  Taken from position n-1: " <<
+            sep.left-1);
+
+    }
+
+    ERR_POST(Trace << "We have moved to position: " << sep.left 
+        << " and allele: " << common_repeat_unit_allele);
+
+    return did_rotate;
+}
+
+bool CVariationNormalizationRight::ProcessShift(
+    string& compact_allele, SEndPosition& sep,
+    CSeqVector& seqvec, 
+    int& rotation_counter, 
+    const CVariation_inst::TType type)
+{
+    ERR_POST(Trace << "Initial pos: (" << sep.left << "," << sep.right <<")");
+    
+    //For both insertion and deletion, we want to review
+    // the context just upstream of the event.
+    string three_prime_first_nt;
+    if(type == CVariation_inst::eType_ins) {
+        if (sep.left >=0 && sep.left+1 < GetSeqSize(seqvec))
+            three_prime_first_nt = GetSeq(sep.left,1,seqvec);
+    } else if(type == CVariation_inst::eType_del) {
+        if (sep.right+1 >=0 && sep.right+2 < GetSeqSize(seqvec))
+            three_prime_first_nt = GetSeq(sep.right+1,1,seqvec);
+    } else {
+        ERR_POST(Error << "Neither insertion nor deletion.  Rather:" << type
+            << Endm);
+        return false;
+    }
+
+    ERR_POST(Trace << "Compare at left pos: " << sep.left << " and right pos " 
+        << sep.right << " nt " << three_prime_first_nt << 
+        " to the front of compact: " << compact_allele.front());
+
+    bool did_rotate = false;
+    while(compact_allele.front() == three_prime_first_nt.front()  ) {
+        ERR_POST(Trace << "Match and rotate: " << 
+            compact_allele.front() << " " <<
+            three_prime_first_nt.front() << " @ right pos: " <<
+            sep.right);
+
+        rotation_counter++;
+        Rotate(compact_allele);
+        sep.right++;
+        sep.left++;
+        //copy of above code
+        if(type == CVariation_inst::eType_ins) {
+            if (sep.left >=0 && sep.left+1 < GetSeqSize(seqvec))
+                three_prime_first_nt = GetSeq(sep.left,1,seqvec);
+        } else if(type == CVariation_inst::eType_del) {
+            if (sep.right+1 >=0 && sep.right+2 < GetSeqSize(seqvec))
+                three_prime_first_nt = GetSeq(sep.right+1,1,seqvec);
+        }
+        did_rotate = true;
+    }
+
+    ERR_POST(Trace << "We have moved to position: " << sep.left 
+        << " and right position: " << sep.right << " and allele: " << compact_allele);
+
+    return did_rotate;
+}
+
+
+void CVariationNormalizationLeft::ModifyLocation(CSeq_loc &loc, 
+    SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size)
+{
+    if(type == CVariation_inst::eType_del && sep.left != sep.right) {
+        if (loc.IsInt()) {
+            loc.SetInt().SetFrom(sep.left);
+            loc.SetInt().SetTo(sep.right);
+        } else {
+            x_ConvertPointToInterval(loc,sep.left,sep.right);
+        }
+    } else {
+        // all other types (just insertion) + single point deletions
+        if (loc.IsInt())
+            x_ConvertIntervalToPoint(loc,sep.left);
+        else
+            loc.SetPnt().SetPoint(sep.left); 
+    }
+}
+
+void CVariationNormalizationRight::ModifyLocation(CSeq_loc &loc, 
+    SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size) // identical to the left point
+{
+    if(type == CVariation_inst::eType_del && sep.left != sep.right) {
+        if (loc.IsInt()) {
+            loc.SetInt().SetFrom(sep.left);
+            loc.SetInt().SetTo(sep.right);
+        } else {
+            x_ConvertPointToInterval(loc,sep.left,sep.right);
+        }
+    } else {
+        // all other types (just insertion) + single point deletions
+        if (loc.IsInt())
+            x_ConvertIntervalToPoint(loc,sep.right);
+        else
+            loc.SetPnt().SetPoint(sep.right); 
+    }
+}
+
+void CVariationNormalizationInt::ModifyLocation(CSeq_loc &loc, 
+    SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size ) 
+{
+    if (sep.left == sep.right)
     {
         if (loc.IsPnt())
-            loc.SetPnt().SetPoint(pos_left);
+            loc.SetPnt().SetPoint(sep.left );
         else
-        {
-            CSeq_point pnt;
-            pnt.SetPoint(pos_left);
-            if (loc.GetInt().IsSetStrand())
-                pnt.SetStrand( loc.GetInt().GetStrand() );
-            pnt.SetId().Assign(loc.GetInt().GetId());
-            loc.SetPnt().Assign(pnt);
-        }
+            x_ConvertIntervalToPoint(loc, sep.left );
     }
     else
     {
         if (loc.IsInt())
         {
-            loc.SetInt().SetFrom(pos_left);
-            loc.SetInt().SetTo(pos_right);
+            loc.SetInt().SetFrom(sep.left );
+            loc.SetInt().SetTo(sep.right);
+        }
+        else
+            x_ConvertPointToInterval(loc, sep.left , sep.right);
+    }
+
+}
+
+void CVariationNormalizationLeftInt::ModifyLocation( CSeq_loc &loc, 
+    SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size )
+{
+    if (type == CVariation_inst::eType_ins && sep.left > 0)
+    {
+        if (loc.IsPnt())
+        {
+            x_ConvertPointToInterval(loc, sep.left-1, sep.left);
         }
         else
         {
-            CSeq_interval interval;
-            interval.SetFrom(pos_left);
-            interval.SetTo(pos_right);
-            if (loc.GetPnt().IsSetStrand())
-                interval.SetStrand( loc.GetPnt().GetStrand() );
-            interval.SetId().Assign(loc.GetPnt().GetId());
-            loc.SetInt().Assign(interval);
+            loc.SetInt().SetFrom(sep.left-1);
+            loc.SetInt().SetTo(sep.left); 
         }
     }
-}
-
-bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right, CSeqVector &seqvec, int type)
-{
-    string orig_a = a;
-    int length = a.size();
-    int orig_pos = pos;
-    bool found_left = false;
-
-    string b;
-    if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-        b = x_GetSeq(pos,length,seqvec);
-    if (type == CVariation_inst::eType_ins)
+    else  if (type == CVariation_inst::eType_del)
     {
-        while (a != b && pos >= orig_pos - length) // Should be >= here in contrast to the right shifting because the insertion can be after the sequence.
+        if (deletion_size == 1)
         {
-            pos--;
-            x_rotate_right(a);
-            if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-                b = x_GetSeq(pos,length,seqvec);
+            if (loc.IsPnt())
+                loc.SetPnt().SetPoint(sep.left);
+            else
+                x_ConvertIntervalToPoint(loc,sep.left);
         }
-    }
-    if (a != b) 
-    {
-        pos = orig_pos;
-        a = orig_a;
-        return false;
-    }   
-
-    while (pos >= 0 && pos+length < x_GetSeqSize(seqvec))
-    {
-        pos--; 
-        x_rotate_right(a);
-        string b;
-        if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-            b = x_GetSeq(pos,length,seqvec);
-        if (a != b) 
+        else
         {
-            pos++;
-            x_rotate_left(a);
-            found_left = true;
-            break;
+            if (loc.IsPnt())
+                x_ConvertPointToInterval(loc,sep.left,sep.left+deletion_size-1);
+            else
+            {
+                loc.SetInt().SetFrom(sep.left);
+                loc.SetInt().SetTo(sep.left+deletion_size-1); 
+            }
         }
-    }
-    if (!found_left)    // I don't really see how this could happen.
-        pos = orig_pos;
-    if (pos == orig_pos) return false;
-    return found_left;                         
-}
 
-void CVariationNormalizationLeft::x_ModifyLocation(CSeq_loc &loc, CSeq_literal& literal, string a, int pos, int pos_right, int type)
-{
-    if (loc.IsInt())
-    {
-        CSeq_point pnt;
-        pnt.SetPoint(pos);
-        if (loc.GetInt().IsSetStrand())
-            pnt.SetStrand( loc.GetInt().GetStrand() );
-        pnt.SetId().Assign(loc.GetInt().GetId());
-        loc.SetPnt().Assign(pnt);
     }
     else
-        loc.SetPnt().SetPoint(pos); 
-    literal.SetSeq_data().SetIupacna().Set(a);
+        CVariationNormalizationLeft::ModifyLocation(loc,sep,type,deletion_size);
 }
 
-bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int &pos, CSeqVector &seqvec, int type) // pos here should already point to the beginning of the seq to be inserted or deleted
-{
-    string orig_a = a;
-    int orig_pos = pos;
-    int length = a.size(); 
 
-    string b;
-    if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-        b = x_GetSeq(pos,length,seqvec);
-    if (type == CVariation_inst::eType_ins)
-    {
-        while (a != b && pos > orig_pos - length)
-        {
-            pos--;
-            x_rotate_right(a);
-            if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-                b = x_GetSeq(pos,length,seqvec);
-        }
-    }
-    if (a != b) 
-    {
-        pos = orig_pos;
-        a = orig_a;
+void CVariationNormalizationInt::Rotate(string& v)
+{
+    RotateRight(v);
+}
+
+void CVariationNormalizationLeftInt::Rotate(string& v)
+{
+    RotateRight(v);
+}
+
+void CVariationNormalizationLeft::Rotate(string& v)
+{
+    RotateRight(v);
+}
+
+void CVariationNormalizationRight::Rotate(string& v)
+{
+    RotateLeft(v);
+}
+
+void CVariationNormalizationInt::SetShiftFlag(CVariation& var)
+{
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("Variation Normalization");
+    var.SetExt().push_back(uo);
+
+    uo->AddField("Fully Shifted", true);
+}
+
+void CVariationNormalizationInt::SetShiftFlag(CSeq_feat& feat)
+{
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("Variation Normalization");
+    feat.SetExts().push_back(uo);
+
+    uo->AddField("Fully Shifted", true);
+}
+
+
+bool 
+    CVariationNormalization::isFullyShifted(const CVariation& var) 
+{
+    if( !var.IsSetExt())
         return false;
-    }
 
-    bool found_right = false;
-    while (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-    {
-        pos++; 
-        x_rotate_left(a);
-        string b;
-        if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
-            b = x_GetSeq(pos,length,seqvec);
-        if (a != b) 
-        {
-            pos--;
-            x_rotate_right(a);
-            found_right = true;
-            break;
+    ITERATE(CVariation::TExt, ext_it, var.GetExt()) {
+        const CUser_object& uo = **ext_it;
+
+        if(!uo.GetType().IsStr() 
+            || uo.GetType().GetStr() != "Variation Normalization")
+            continue;
+
+        CConstRef<CUser_field> uf = uo.GetFieldRef("Fully Shifted");
+
+        if(   uf.NotEmpty()
+            && uf->GetData().IsBool()
+            && uf->GetData().IsBool()){
+
+                return true;
         }
     }
-    if (!found_right)     // doesn't seem possible to happen
-        pos = orig_pos;
-    if (type == CVariation_inst::eType_ins)
-        pos += a.size();
-    //if (pos == orig_pos) return false;
-    return found_right;                         
+    return false;
 }
 
-void CVariationNormalizationRight::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos, int type) // identical to the left point
+bool 
+    CVariationNormalization::isFullyShifted(const CSeq_feat& feat) 
 {
-    if (loc.IsInt())
-    {
-        CSeq_point pnt;
-        pnt.SetPoint(pos);
-        if (loc.GetInt().IsSetStrand())
-            pnt.SetStrand( loc.GetInt().GetStrand() );
-        pnt.SetId().Assign(loc.GetInt().GetId());
-        loc.SetPnt().Assign(pnt);
+    if( !feat.IsSetExts())
+        return false;
+
+    ITERATE(CVariation::TExt, ext_it, feat.GetExts()) {
+        const CUser_object& uo = **ext_it;
+        if(!uo.GetType().IsStr() 
+            || uo.GetType().GetStr() != "Variation Normalization")
+            continue;
+
+        CConstRef<CUser_field> uf = uo.GetFieldRef("Fully Shifted");
+
+        if(   uf.NotEmpty()
+           && uf->GetData().IsBool()
+           && uf->GetData().IsBool()){
+            
+               return true;
+        }
     }
-    else
-        loc.SetPnt().SetPoint(pos); 
-    literal.SetSeq_data().SetIupacna().Set(a);
+    return false;
 }
 
-void CVariationNormalizationInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type) 
-{
-    x_ExpandLocation(loc, pos_left, pos_right);
-    literal.SetSeq_data().SetIupacna().Set(a);
+bool isVarNormType(const CRef<CUser_object>& uo) {
+    if(!uo->GetType().IsStr() 
+        || uo->GetType().GetStr() != "Variation Normalization")
+        return false;
+    return true;
 }
 
-bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type)
+template<class T>
+void
+    CVariationNormalization_base<T>::ResetFullyShifted(CVariation& var,
+        CSeq_loc &loc, SEndPosition& sep, const CVariation_inst::TType type, 
+        const TSeqPos& deletion_size)
 {
-    string a_left = a;
-    bool found_left = CVariationNormalizationLeft::x_ProcessShift(a_left, pos_left, pos_right,seqvec,type);
-    bool found_right = CVariationNormalizationRight::x_ProcessShift(a, pos_left, pos_right,seqvec,type);
-    a = a_left;
+
+    if(type == CVariation_inst::eType_ins) {
+        sep.right = sep.left;
+    } else if(type == CVariation_inst::eType_del) {
+        sep.right = sep.left + deletion_size -1;
+    }
+
+    CVariationNormalizationLeft::ModifyLocation(loc, sep, 
+        type, deletion_size);
+
+    //delete from list the VArNormTypes
+    var.SetExt().remove_if( isVarNormType );
+    if(var.GetExt().size() == 0)
+        var.ResetExt();
+
+}
+template<class T>
+void
+    CVariationNormalization_base<T>::ResetFullyShifted(CSeq_feat& feat,
+    CSeq_loc &loc, SEndPosition& sep, const CVariation_inst::TType type, 
+    const TSeqPos& deletion_size)
+{
+
+    //must determine deletion size from alt
+
+    if(type == CVariation_inst::eType_ins) {
+        sep.right = sep.left;
+    } else if(type == CVariation_inst::eType_del) {
+        sep.right = sep.left + deletion_size -1;
+    }
+
+    CVariationNormalizationLeft::ModifyLocation(loc, sep, 
+        type, deletion_size);
+
+    //delete from list the VArNormTypes
+    feat.SetExts().remove_if( isVarNormType );
+    if(feat.GetExts().size() == 0)
+        feat.ResetExts();
+}
+
+bool CVariationNormalizationInt::ProcessShift(string &common_repeat_unit_allele, 
+    SEndPosition& sep, CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type)
+{
+    // First, shift left, and find out:
+    //  The new left
+    //  The rotation counter (and new CRU).
+    string common_repeat_unit_allele_tmp = common_repeat_unit_allele;
+    
+    SEndPosition sep_tmp(sep.left, sep.right);
+    bool found_left = CVariationNormalizationLeft::ProcessShift(
+        common_repeat_unit_allele, sep_tmp,
+        seqvec,rotation_counter,type);
+    // Second, shift the original data right, and find out:
+    //  The new right
+    int ignored_counter=0;
+    bool found_right = CVariationNormalizationRight::ProcessShift(
+        common_repeat_unit_allele_tmp, sep,
+        seqvec,ignored_counter,type);
+    
+    //Overwrite right shifting influence on left position:
+    sep.left = sep_tmp.left;
+    LOG_POST(Trace << "Sep: " << sep.left << " " << sep.right);
     return found_left | found_right;
 }
 
 
-bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type)
+bool CVariationNormalizationLeftInt::ProcessShift(string &common_repeat_unit_allele,
+    SEndPosition& sep, CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type)
 {
-    int orig_pos_left = pos_left;
-    string orig_a = a;
-    bool r = CVariationNormalizationLeft::x_ProcessShift(a,pos_left,pos_right,seqvec,type);
+    TSeqPos orig_pos_left = sep.left;
+    string orig_common_repeat_unit_allele = common_repeat_unit_allele;
+    bool shifted = CVariationNormalizationLeft::ProcessShift(
+        common_repeat_unit_allele,sep,
+        seqvec,rotation_counter,type);
     if (type == CVariation_inst::eType_ins)
     {
-        if (!r)
+        if (!shifted)
         {
-            pos_left = orig_pos_left;
-            a = orig_a;
+            sep.left = orig_pos_left;
+            common_repeat_unit_allele = orig_common_repeat_unit_allele;
         }
-        r = true;
+        //override to true, so that the location will be modified.
+        shifted = true;
     }
-    pos_right = pos_left;
-    return r;
+    sep.right = sep.left ; 
+    return shifted;
 }
 
-void CVariationNormalizationLeftInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type)
-{
-    if (type == CVariation_inst::eType_ins && pos_left > 0)
-    {
-        if (loc.IsPnt())
-        {
-            CSeq_interval interval;
-            interval.SetFrom(pos_left-1);
-            interval.SetTo(pos_left);
-            if (loc.GetPnt().IsSetStrand())
-                interval.SetStrand( loc.GetPnt().GetStrand() );
-            interval.SetId().Assign(loc.GetPnt().GetId());
-            loc.SetInt().Assign(interval);
-        }
-        else
-        {
-            loc.SetInt().SetFrom(pos_left-1);
-            loc.SetInt().SetTo(pos_left); 
-        }
-        literal.SetSeq_data().SetIupacna().Set(a);
-    }
-    else  if (type == CVariation_inst::eType_del)
-    {
-        if (a.size() == 1)
-        {
-            if (loc.IsPnt())
-                loc.SetPnt().SetPoint(pos_left);
-            else
-            {
-                CSeq_point pnt;
-                pnt.SetPoint(pos_left);
-                if (loc.GetInt().IsSetStrand())
-                    pnt.SetStrand( loc.GetInt().GetStrand() );
-                pnt.SetId().Assign(loc.GetInt().GetId());
-                loc.SetPnt().Assign(pnt);
-            }
-        }
-        else
-        {
-            if (loc.IsPnt())
-            {
-                CSeq_interval interval;
-                interval.SetFrom(pos_left);
-                interval.SetTo(pos_left+a.size()-1);
-                if (loc.GetPnt().IsSetStrand())
-                    interval.SetStrand( loc.GetPnt().GetStrand() );
-                interval.SetId().Assign(loc.GetPnt().GetId());
-                loc.SetInt().Assign(interval);
-            }
-            else
-            {
-                loc.SetInt().SetFrom(pos_left);
-                loc.SetInt().SetTo(pos_left+a.size()-1); 
-            }
-        }
-        literal.SetSeq_data().SetIupacna().Set(a);
-    }
-    else
-        CVariationNormalizationLeft::x_ModifyLocation(loc,literal,a, pos_left, pos_right,type);
-}
 
 
 
@@ -1204,9 +1526,9 @@ void CVariationNormalization::NormalizeAmbiguousVars(CVariation& var, CScope &sc
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope)
+void CVariationNormalization::NormalizeAmbiguousVars(CSeq_annot& annot, CScope &scope)
 {
-    CVariationNormalizationInt::x_Shift(var,scope);
+    CVariationNormalizationInt::x_Shift(annot,scope);
 }
 
 void CVariationNormalization::NormalizeAmbiguousVars(CSeq_feat& feat, CScope &scope)
@@ -1220,9 +1542,9 @@ void CVariationNormalization::AlterToVarLoc(CVariation& var, CScope& scope)
     CVariationNormalizationLeftInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVarLoc(CSeq_annot& var, CScope& scope)
+void CVariationNormalization::AlterToVarLoc(CSeq_annot& annot, CScope& scope)
 {
-    CVariationNormalizationLeftInt::x_Shift(var,scope);
+    CVariationNormalizationLeftInt::x_Shift(annot,scope);
 }
 
 void CVariationNormalization::AlterToVarLoc(CSeq_feat& feat, CScope& scope)
@@ -1230,12 +1552,14 @@ void CVariationNormalization::AlterToVarLoc(CSeq_feat& feat, CScope& scope)
     CVariationNormalizationLeftInt::x_Shift(feat,scope);
 }
 
-bool CVariationNormalization::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
+bool CVariationNormalization::IsShiftable(const CSeq_loc &loc, 
+    const string &allele, CScope &scope, CVariation_inst::TType type)
 {
-    return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
+    return CVariationNormalizationInt::x_IsShiftable(loc,allele,scope,type);
 }
 
-void CVariationNormalization::NormalizeVariation(CVariation& var, ETargetContext target_ctxt, CScope& scope)
+void CVariationNormalization::NormalizeVariation(CVariation& var, 
+    ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
@@ -1246,13 +1570,13 @@ void CVariationNormalization::NormalizeVariation(CVariation& var, ETargetContext
     }
 }
 
-void CVariationNormalization::NormalizeVariation(CSeq_annot& var, ETargetContext target_ctxt, CScope& scope)
+void CVariationNormalization::NormalizeVariation(CSeq_annot& annot, ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
-    case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
-    case eHGVS : AlterToHGVSVar(var,scope); break;
-    case eVCF : AlterToVCFVar(var,scope); break;
-    case eVarLoc : AlterToVarLoc(var,scope); break;
+    case eDbSnp : NormalizeAmbiguousVars(annot,scope); break;
+    case eHGVS : AlterToHGVSVar(annot,scope); break;
+    case eVCF : AlterToVCFVar(annot,scope); break;
+    case eVarLoc : AlterToVarLoc(annot,scope); break;
     default :  NCBI_THROW(CException, eUnknown, "Unknown context");
     }
 }

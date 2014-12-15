@@ -1,0 +1,41 @@
+Variation ::= {
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 10689125,
+              id other {
+                accession "NT_005612",
+                version 16
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TGC"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0
