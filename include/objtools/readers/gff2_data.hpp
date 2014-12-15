@@ -50,6 +50,8 @@ public:
     CGff2Record();
     virtual ~CGff2Record();
 
+    static string NextId();
+
     //
     //  Input/output:
     //
@@ -192,7 +194,6 @@ protected:
     TFrame* m_pePhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
-
 };
 
 END_objects_SCOPE

@@ -180,6 +180,14 @@ CGff2Record::~CGff2Record()
     delete m_pePhase; 
 };
 
+//  -----------------------------------------------------------------------------
+string CGff2Record::NextId()
+//  -----------------------------------------------------------------------------
+{
+    static size_t nextId(0);
+    return string("local-id:")+NStr::NumericToString(++nextId);
+}
+
 void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& in_line)
 {
     columns.clear();
@@ -475,7 +483,7 @@ bool CGff2Record::x_MigrateId(
 {
     string featIdStr;
     if (!GetAttribute("ID", featIdStr)) {
-        return true;
+        featIdStr = NextId();
     }
     CRef<CFeat_id> pFeatId(new CFeat_id);
     pFeatId->SetLocal().SetStr(featIdStr);
