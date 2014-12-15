@@ -127,10 +127,24 @@ protected:
         CRef<CSeq_annot>,
         IMessageListener*);
 
+    virtual bool xUpdateAnnotMrna(
+        const CGff2Record&,
+        CRef<CSeq_feat>,
+        CRef<CSeq_annot>,
+        IMessageListener*);
+
     virtual bool xVerifyCdsParents(
         const CGff2Record&);
 
-    virtual bool xFeatureSetXrefParent(
+    virtual bool xFeatureSetXrefCdsRna(
+        const string&,
+        CRef<CSeq_feat>);
+
+    virtual bool xFeatureSetXrefCdsGene(
+        const string&,
+        CRef<CSeq_feat>);
+
+    virtual bool xFeatureSetXrefRnaGene(
         const string&,
         CRef<CSeq_feat>);
 
