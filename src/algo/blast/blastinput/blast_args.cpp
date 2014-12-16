@@ -2332,7 +2332,7 @@ CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             CArgDescriptions::eBoolean, NStr::BoolToString(kDfltArgUseIndex));
     arg_desc.AddOptionalKey(
             kArgIndexName, "string",
-            "MegaBLAST database index name",
+            "MegaBLAST database index name (deprecated; use only for old style indices)",
             CArgDescriptions::eString );
     arg_desc.SetCurrentGroup( "" );
 }

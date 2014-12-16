@@ -130,9 +130,12 @@ This option should be used to specify an index file name prefix
 different from the name of the BLAST database. This option can
 be useful if the index is in a non-standard location, or if multiple
 indices exist for the same database, e.g. for using different
-types of masking.
+types of masking. 
 
 This options should not be used with new style indices. New style
-indexing always tries to find index files at location of 
+indexing always tries to find index files at the location of 
 corresponding the BLAST database.
+
+It is important that the index used matches the blast database.
+Otherwise blastn may crash or produce bogus results.
 
