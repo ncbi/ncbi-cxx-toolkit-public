@@ -845,8 +845,12 @@ void SNetStorageObjectAPIImpl::Remove()
             LOG_POST(Trace << e);
         }
 
-    if (m_CurrentLocation == eNFL_Unknown ||
-            m_CurrentLocation == eNFL_NetCache)
+    switch (m_CurrentLocation) {
+    case eNFL_Unknown:
+        if (!SetNetICacheClient())
+            break;
+        /* FALL THROUGH */
+    case eNFL_NetCache:
         try {
             m_NetICacheClient.RemoveBlob(m_ObjectLoc.GetUniqueKey(), 0,
                     kEmptyStr, nc_server_to_use = GetNetCacheServer());
@@ -854,6 +858,7 @@ void SNetStorageObjectAPIImpl::Remove()
         catch (CException& e) {
             LOG_POST(Trace << e);
         }
+    }
 
     m_CurrentLocation = eNFL_NotFound;
 }
