@@ -94,7 +94,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,    312,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet, 313,   4);
 
 /** Make one identifier from 2 parts */
-#define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix) prefix##postfix
+#define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix)  prefix##postfix
 
 /** Return value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
  *
@@ -108,7 +108,8 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet, 313,   4);
  *
  * @sa NCBI_DEFINE_ERRCODE_X
  */
-#define NCBI_C_ERRCODE_X   NCBI_C_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
+#define NCBI_C_ERRCODE_X                        \
+    NCBI_C_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
 
 
 extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
@@ -307,9 +308,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ g_CORE_RegistrySET
  *  Random generator seeding support
  */
 
-extern NCBI_XCONNECT_EXPORT int   g_NCBI_ConnectRandomSeed;
-extern NCBI_XCONNECT_EXPORT int   g_NCBI_ConnectSrandAddend(void);
-#define NCBI_CONNECT_SRAND_ADDEND g_NCBI_ConnectSrandAddend()
+extern NCBI_XCONNECT_EXPORT int    g_NCBI_ConnectRandomSeed;
+extern NCBI_XCONNECT_EXPORT int    g_NCBI_ConnectSrandAddend(void);
+#define NCBI_CONNECT_SRAND_ADDEND  g_NCBI_ConnectSrandAddend()
 
 
 /******************************************************************************
