@@ -98,13 +98,15 @@ public:
     typedef vector<CQueryParseTree::TNode*>                   TContextStack;
     
 public:
-    CQueryParserEnv(const char* query_str, CQueryParseTree& qtree)
+    CQueryParserEnv(const char* query_str, CQueryParseTree& qtree, unsigned line = 0, unsigned linePos = 0)
     : m_QTree(qtree),
       m_Query(query_str),
       m_Ptr(query_str),
       m_QueryTree(0),
       m_Verbose(false),
       m_Case(CQueryParseTree::eCaseInsensitive),
+      m_Line(line),
+      m_LinePos(linePos),
       m_ParseTolerance(CQueryParseTree::eSyntaxCheck),
       m_InNode(0),
 //      m_SelectNode(0),
@@ -112,7 +114,6 @@ public:
       m_Functions(0)
     {
         m_QueryLen = ::strlen(m_Query);
-        m_Line = m_LinePos = 0;
     }
 
     ~CQueryParserEnv()
@@ -364,9 +365,11 @@ void CQueryParseTree::Parse(const char*           query_str,
                             ECase                 case_sense,
                             ESyntaxCheck          syntax_check,
                             bool                  verbose,
-                            const TFunctionNames& functions)
+                            const TFunctionNames& functions,
+                            unsigned              line,
+                            unsigned              linePos)
 {
-    CQueryParserEnv env(query_str, *this);
+    CQueryParserEnv env(query_str, *this, line, linePos);
 
 #ifdef _DEBUG
     CMutexGuard guard(CNcbiApplication::GetInstanceMutex());

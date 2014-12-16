@@ -309,7 +309,9 @@ public:
                ECase         case_sense        = eCaseInsensitive,
                ESyntaxCheck  syntax_check      = eSyntaxCheck,
                bool          verbose           = false,
-               const TFunctionNames& functions =  TFunctionNames(0));
+               const TFunctionNames& functions =  TFunctionNames(0),
+               unsigned     line               = 0,
+               unsigned     linePos            = 0);
 
     
     /// Replace current query tree with the new one.
