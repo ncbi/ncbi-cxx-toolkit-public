@@ -6732,6 +6732,10 @@ BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
     host = "Homo sapiens; sex: female";
 	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, host);
+
+    host = "HUMAN";
+    hostfix = FixSpecificHost(host);
+    BOOST_CHECK_EQUAL(hostfix, "Homo sapiens");
 }
 
 

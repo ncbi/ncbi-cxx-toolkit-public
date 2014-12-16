@@ -2024,7 +2024,11 @@ string FixSpecificHost(const string& val)
 	if (NStr::IsBlank(val)) {
 		return hostfix;
 	}
+
     NStr::TruncateSpacesInPlace(hostfix);
+
+    hostfix = COrgMod::FixHost(hostfix);
+
     string errormsg;
     if (IsSpecificHostValid(hostfix, errormsg)) {
         return hostfix;
