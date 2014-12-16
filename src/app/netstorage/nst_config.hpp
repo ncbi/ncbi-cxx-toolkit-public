@@ -33,6 +33,10 @@
  */
 
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
+
+#include "nst_database.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -55,12 +59,14 @@ const unsigned int      max_threads_low_limit = 1;
 const unsigned int      max_threads_high_limit = 1000;
 
 
+
 // Validates the config file - it does LOG_POST(...) of the problems it found
 // Returns true if the config file is perfectly well formed
 void NSTValidateConfigFile(const IRegistry &  reg,
                            vector<string> &  warnings,
                            bool  throw_port_exception);
-
+TNSTDBValue<CTimeSpan>  ReadTimeSpan(const string &  reg_value,
+                                     bool  allow_infinity);
 
 END_NCBI_SCOPE
 

@@ -65,7 +65,7 @@ void CNSTClient::Touch(void)
 }
 
 
-CJsonNode  CNSTClient::serialize(void) const
+CJsonNode  CNSTClient::Serialize(void) const
 {
     CJsonNode       client(CJsonNode::NewObjectNode());
 
@@ -122,8 +122,9 @@ CNSTClientRegistry::CNSTClientRegistry()
 {}
 
 
-size_t CNSTClientRegistry::size(void) const
+size_t CNSTClientRegistry::Size(void) const
 {
+    CMutexGuard     guard(m_Lock);
     return m_Clients.size();
 }
 
@@ -290,14 +291,14 @@ void  CNSTClientRegistry::AddObjectsDeleted(const string &  client,
 }
 
 
-CJsonNode  CNSTClientRegistry::serialize(void) const
+CJsonNode  CNSTClientRegistry::Serialize(void) const
 {
     CJsonNode       clients(CJsonNode::NewArrayNode());
     CMutexGuard     guard(m_Lock);
 
     for (map<string, CNSTClient>::const_iterator  k = m_Clients.begin();
          k != m_Clients.end(); ++k) {
-        CJsonNode   single_client(k->second.serialize());
+        CJsonNode   single_client(k->second.Serialize());
 
         single_client.SetString("Name", k->first);
         clients.Append(single_client);

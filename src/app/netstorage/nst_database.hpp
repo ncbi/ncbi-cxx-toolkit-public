@@ -59,6 +59,11 @@ template <typename ValueType> struct TNSTDBValue
 {
     bool        m_IsNull;
     ValueType   m_Value;
+
+    bool operator==(const TNSTDBValue<ValueType> &  other) const
+    { return (m_IsNull == other.m_IsNull) && (m_Value == other.m_Value); }
+    bool operator!=(const TNSTDBValue<ValueType> &  other) const
+    { return !this->operator==(other); }
 };
 
 
@@ -76,22 +81,31 @@ public:
     int  ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
-            Int8  client_id);
+            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl);
     int  ExecSP_UpdateObjectOnWrite(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id);
+            const string &  object_loc, Int8  size, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_write,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id);
+            const string &  object_loc, Int8  size, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_write,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateObjectOnRead(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id);
+            const string &  object_loc, Int8  size, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_read,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id);
     int  ExecSP_RemoveObject(const string &  object_key);
     int  ExecSP_SetExpiration(const string &  object_key,
-                              const CTime &   expiration);
+                              const TNSTDBValue<CTimeSpan> &  ttl);
     int  ExecSP_AddAttribute(const string &  object_key,
                              const string &  attr_name,
                              const string &  attr_value,
@@ -122,6 +136,12 @@ private:
     void x_PostCheckConnection(void);
     int  x_CheckStatus(CQuery &  query,
                        const string &  procedure);
+    void x_CalculateExpiration(const CTime &  current_time,
+                               const TNSTDBValue<CTimeSpan> &  ttl,
+                               const CTimeSpan &  prolong,
+                               const TNSTDBValue<CTime> &  object_expiration,
+                               TNSTDBValue<CTime> &  exp_record_found,
+                               TNSTDBValue<CTime> &  exp_record_not_found);
 
 private:
     SDbAccessInfo                   m_DbAccessInfo;

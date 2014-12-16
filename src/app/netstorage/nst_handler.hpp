@@ -41,6 +41,8 @@
 
 #include "nst_clients.hpp"
 #include "nst_metadata_options.hpp"
+#include "nst_database.hpp"
+#include "nst_service_parameters.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -160,9 +162,12 @@ private:
     Int8                    m_DataMessageSN;
     EMetadataOption         m_MetadataOption;
     bool                    m_CreateRequest;
+    TNSTDBValue<CTimeSpan>  m_CreateTTL;
     Int8                    m_DBClientID;
     Int8                    m_DBObjectID;
     Int8                    m_ObjectSize;
+    CNSTServiceProperties   m_WriteServiceProps;
+    TNSTDBValue<CTime>      m_WriteObjectExpiration;
 
 private:
     bool                    m_ByeReceived;
@@ -224,8 +229,8 @@ private:
                          const SCommonRequestArguments &  common_args);
     void x_ProcessGetSize(const CJsonNode &                 message,
                           const SCommonRequestArguments &  common_args);
-    void x_ProcessSetTTL(const CJsonNode &                 message,
-                         const SCommonRequestArguments &  common_args);
+    void x_ProcessSetExpTime(const CJsonNode &                 message,
+                             const SCommonRequestArguments &  common_args);
 
 private:
     SObjectID x_GetObjectKey(const CJsonNode &  message);
@@ -243,12 +248,13 @@ private:
     EIO_Status x_SendOverUTTP();
     EMetadataOption x_ConvertMetadataArgument(const CJsonNode &  message) const;
     void x_ValidateWriteMetaDBAccess(const CJsonNode &  message) const;
-    bool x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const;
-    bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags) const;
+    bool x_DetectMetaDBNeedUpdate(const CJsonNode &  message,
+                                  CNSTServiceProperties &  props) const;
+    bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags);
     bool x_DetectMetaDBNeedOnGetObjectInfo(const CJsonNode & message) const;
-    void x_CheckObjectExpiration(const string &  object_key,
-                                 bool            db_exception,
-                                 CJsonNode &     reply);
+    TNSTDBValue<CTime> x_CheckObjectExpiration(const string &  object_key,
+                                               bool            db_exception,
+                                               CJsonNode &     reply);
 }; // CNetStorageHandler
 
 

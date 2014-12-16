@@ -81,7 +81,7 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "RELOCATE",       & CNetStorageHandler::x_ProcessRelocate },
     { "EXISTS",         & CNetStorageHandler::x_ProcessExists },
     { "GETSIZE",        & CNetStorageHandler::x_ProcessGetSize },
-    { "SETTTL",         & CNetStorageHandler::x_ProcessSetTTL },
+    { "SETEXPTIME",     & CNetStorageHandler::x_ProcessSetExpTime },
     { "",               NULL }
 };
 
@@ -579,7 +579,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             try {
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
                         m_DBObjectID, object_loc_struct.GetUniqueKey(),
-                        object_loc, m_ObjectSize, m_DBClientID);
+                        object_loc, m_ObjectSize, m_DBClientID, m_CreateTTL);
             } catch (const CException &  ex) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 CJsonNode   response = CreateErrorResponseMessage(
@@ -614,11 +614,17 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 if (object_loc_struct.HasUserKey()) {
                     m_Server->GetDb().ExecSP_UpdateUserKeyObjectOnWrite(
                                         object_loc_struct.GetUniqueKey(),
-                                        object_loc, m_ObjectSize, m_DBClientID);
+                                        object_loc, m_ObjectSize, m_DBClientID,
+                                        m_WriteServiceProps.GetTTL(),
+                                        m_WriteServiceProps.GetProlongOnWrite(),
+                                        m_WriteObjectExpiration);
                 } else {
                     m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
                                         object_loc_struct.GetUniqueKey(),
-                                        object_loc, m_ObjectSize, m_DBClientID);
+                                        object_loc, m_ObjectSize, m_DBClientID,
+                                        m_WriteServiceProps.GetTTL(),
+                                        m_WriteServiceProps.GetProlongOnWrite(),
+                                        m_WriteObjectExpiration);
                 }
             } catch (const CException &  ex) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
@@ -1168,7 +1174,7 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    reply.SetByKey("Clients", m_ClientRegistry.serialize());
+    reply.SetByKey("Clients", m_ClientRegistry.Serialize());
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
@@ -1183,7 +1189,7 @@ CNetStorageHandler::x_ProcessGetMetadataInfo(
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    reply.SetByKey("Services", m_Server->serializeMetadataInfo());
+    reply.SetByKey("Services", m_Server->SerializeMetadataInfo());
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
@@ -1636,17 +1642,21 @@ CNetStorageHandler::x_ProcessWrite(
     m_WriteCreateNeedMetaDBUpdate = false;
     if (m_MetadataOption == eMetadataRequired ||
         m_MetadataOption == eMetadataNotSpecified)
-        m_WriteCreateNeedMetaDBUpdate = x_DetectMetaDBNeedUpdate(message);
+        m_WriteCreateNeedMetaDBUpdate = x_DetectMetaDBNeedUpdate(
+                                                message, m_WriteServiceProps);
 
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
     }
 
-    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID       object_id = x_GetObjectKey(message);
+    CJsonNode           reply = CreateResponseMessage(
+                                                common_args.m_SerialNumber);
+    SObjectID           object_id = x_GetObjectKey(message);
+    TNSTDBValue<CTime>  object_expiration;
     if (m_WriteCreateNeedMetaDBUpdate)
-        x_CheckObjectExpiration(object_id.object_key, true, reply);
+        m_WriteObjectExpiration = x_CheckObjectExpiration(object_id.object_key,
+                                                          true, reply);
 
     CNetStorage     net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
@@ -1688,10 +1698,12 @@ CNetStorageHandler::x_ProcessRead(
 
     // For eMetadataMonitoring and eMetadataDisabled there must be no updates
     // in the meta info DB
-    bool    need_meta_db_update = false;
+    bool                    need_meta_db_update = false;
+    CNSTServiceProperties   service_properties;
     if (m_MetadataOption == eMetadataRequired ||
         m_MetadataOption == eMetadataNotSpecified)
-        need_meta_db_update = x_DetectMetaDBNeedUpdate(message);
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
+                                                       service_properties);
 
 
     if (need_meta_db_update) {
@@ -1699,10 +1711,13 @@ CNetStorageHandler::x_ProcessRead(
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
     }
 
-    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID       object_id = x_GetObjectKey(message);
+    CJsonNode           reply = CreateResponseMessage(
+                                                common_args.m_SerialNumber);
+    SObjectID           object_id = x_GetObjectKey(message);
+    TNSTDBValue<CTime>  object_expiration;
     if (need_meta_db_update)
-        x_CheckObjectExpiration(object_id.object_key, true, reply);
+        object_expiration = x_CheckObjectExpiration(object_id.object_key,
+                                                    true, reply);
     else if (m_MetadataOption == eMetadataMonitoring)
         x_CheckObjectExpiration(object_id.object_key, false, reply);
 
@@ -1751,7 +1766,11 @@ CNetStorageHandler::x_ProcessRead(
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRead(
                 object_id.object_key,
-                object_id.object_loc, total_bytes, m_DBClientID);
+                object_id.object_loc, total_bytes, m_DBClientID,
+                service_properties.GetTTL(),
+                service_properties.GetProlongOnRead(),
+                object_expiration
+                );
     }
 
     x_SendSyncMessage(reply);
@@ -1776,11 +1795,14 @@ CNetStorageHandler::x_ProcessDelete(
         NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
                    "State changing operations are restricted in HELLO");
 
+    CNSTServiceProperties       service_properties;
+
     // If it was eMetadataDisabled then updates are not required
     bool        need_meta_db_update = false;
     if (m_MetadataOption == eMetadataRequired ||
         m_MetadataOption == eMetadataNotSpecified)
-        need_meta_db_update = x_DetectMetaDBNeedUpdate(message);
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
+                                                       service_properties);
 
     SObjectID       object_id = x_GetObjectKey(message);
     int             status = 0;
@@ -1827,11 +1849,14 @@ CNetStorageHandler::x_ProcessRelocate(
         NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
                    "State changing operations are restricted in HELLO");
 
+    CNSTServiceProperties       service_properties;
+
     // If it was eMetadataDisabled then updates are not required
     bool        need_meta_db_update = false;
     if (m_MetadataOption == eMetadataRequired ||
         m_MetadataOption == eMetadataNotSpecified)
-        need_meta_db_update = x_DetectMetaDBNeedUpdate(message);
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
+                                                       service_properties);
 
 
     CJsonNode           new_location = message.GetByKey("NewLocation");
@@ -1932,7 +1957,7 @@ CNetStorageHandler::x_ProcessGetSize(
 
 
 void
-CNetStorageHandler::x_ProcessSetTTL(
+CNetStorageHandler::x_ProcessSetExpTime(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
@@ -1943,14 +1968,31 @@ CNetStorageHandler::x_ProcessSetTTL(
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'TTL' is missed");
 
-    long    ttl = message.GetInteger("TTL");
-    if (ttl <= 0)
-        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "TTL must be > 0");
+    string                  arg_val = message.GetString("TTL");
+    TNSTDBValue<CTimeSpan>  ttl;
+
+    ttl.m_IsNull = NStr::EqualNocase(arg_val, "infinity");
+
+    if (!ttl.m_IsNull) {
+        try {
+            CTimeFormat     format("dTh:m:s");
+            ttl.m_Value = CTimeSpan(arg_val, format);
+        } catch (const exception &  ex) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "TTL format is not recognized: " + string(ex.what()));
+        } catch (...) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "TTL format is not recognized");
+        }
+
+        if (ttl.m_Value.GetSign() == eNegative || ttl.m_Value.IsEmpty())
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "TTL must be > 0");
+    }
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
-                   "SETTTL message must have ObjectLoc or UserKey. "
+                   "SETEXPTIME message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
     if (m_MetadataOption == eMetadataDisabled ||
@@ -1967,12 +2009,9 @@ CNetStorageHandler::x_ProcessSetTTL(
 
     m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
-    CTime       new_expiration(CTime::eCurrent);
-    new_expiration.AddSecond(ttl);
-
     // The SP will throw an exception if an error occured
     int         status = m_Server->GetDb().ExecSP_SetExpiration(
-                                object_id.object_key, new_expiration);
+                                object_id.object_key, ttl);
     if (status == -1) {
         // Object is not found
         NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
@@ -2247,7 +2286,9 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
 
 // Detects if the meta information DB should be updated
 bool
-CNetStorageHandler::x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const
+CNetStorageHandler::x_DetectMetaDBNeedUpdate(
+                                    const CJsonNode &  message,
+                                    CNSTServiceProperties &  props) const
 {
     if (message.HasKey("ObjectLoc")) {
         // Object locator has a metadata flag and a service name
@@ -2265,12 +2306,15 @@ CNetStorageHandler::x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const
         string  service = object_loc_struct.GetServiceName();
         if (service.empty())
             service = m_Service;
+
+        bool    service_configured = m_Server->GetServiceProperties(service,
+                                                                    props);
         if (m_MetadataOption == eMetadataNotSpecified)
-            return m_Server->InMetadataServices(service);
+            return service_configured;
 
         // This is the eMetadataRequired option: the check below is needed
         // because the list of services could be reconfigured on the fly
-        if (!m_Server->InMetadataServices(service))
+        if (!service_configured)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
                        "Service from the object locator is not in the list of "
                        "configured services anymore. DB access declined.");
@@ -2279,36 +2323,42 @@ CNetStorageHandler::x_DetectMetaDBNeedUpdate(const CJsonNode &  message) const
 
     // Here: it is a user key, so there is no knowledge of the service and
     // metadata request from the object identifier
+    bool    service_configured = m_Server->GetServiceProperties(m_Service,
+                                                                props);
     if (m_MetadataOption == eMetadataRequired) {
         // The service list could be reconfigured on the fly
-        if (!m_Server->InMetadataServices(m_Service))
+        if (!service_configured)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
                        "Service provided in HELLO is not in the list of "
                        "configured services anymore. DB access declined.");
         return true;
     }
 
-    return m_Server->InMetadataServices(m_Service);
+    return service_configured;
 }
 
 
 bool
-CNetStorageHandler::x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags) const
+CNetStorageHandler::x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags)
 {
     if ((flags & fNST_NoMetaData) != 0)
         return false;
+    if (m_MetadataOption == eMetadataDisabled)
+        return false;
+
+    bool    service_configured = m_Server->GetServiceTTL(m_Service,
+                                                         m_CreateTTL);
     if (m_MetadataOption == eMetadataRequired) {
         // The services could be reconfigured on the fly so the presence of the
         // service in the list of configured must be done here again
-        if (!m_Server->InMetadataServices(m_Service))
+        if (!service_configured)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Service provided in HELLO is not in the list of "
+                       "Service provided in HELLO (" + m_Service +
+                       ") is not in the list of "
                        "configured services anymore. DB access declined.");
         return true;
     }
-    if (m_MetadataOption == eMetadataDisabled)
-        return false;
-    return m_Server->InMetadataServices(m_Service);
+    return service_configured;
 }
 
 
@@ -2347,7 +2397,7 @@ CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
 
 // The function is called when it was decided that the DB should be accessed.
 // The function throws an exception if the object is expired.
-void
+TNSTDBValue<CTime>
 CNetStorageHandler::x_CheckObjectExpiration(const string &  object_key,
                                             bool            db_exception,
                                             CJsonNode &     reply)
@@ -2362,30 +2412,32 @@ CNetStorageHandler::x_CheckObjectExpiration(const string &  object_key,
         if (db_exception)
             throw;
         AppendWarning(reply, eDatabaseWarning, ex.what());
-        return;
+        return expiration;
     } catch (const exception &  ex) {
         if (db_exception)
             throw;
         AppendWarning(reply, eDatabaseWarning, "Error while getting an "
                       "object expiration time: " + string(ex.what()));
-        return;
+        return expiration;
     } catch (...) {
         if (db_exception)
             throw;
         AppendWarning(reply, eDatabaseWarning, "Unknown error while "
                       "getting an object expiration time");
-        return;
+        return expiration;
     }
 
     if (status != 0)
-        return;     // The only option here is that the object is not found
+        return expiration;      // The only option here is that the
+                                // object is not found
 
     if (expiration.m_IsNull)
-        return;     // Expiration is not available
+        return expiration;      // Expiration is not available
 
     // The object TTL is found
     if (expiration.m_Value < CurrentTime())
         NCBI_THROW(CNetStorageServerException,
                    eNetStorageObjectExpired, "Object expired");
+    return expiration;
 }
 

@@ -102,7 +102,7 @@ class CNSTClient
         { m_NumberOfObjectsDeleted += count; }
 
         void Touch(void);
-        CJsonNode  serialize(void) const;
+        CJsonNode  Serialize(void) const;
 
     private:
         string          m_Application;    // Absolute exec path
@@ -137,7 +137,7 @@ class CNSTClientRegistry
     public:
         CNSTClientRegistry();
 
-        size_t  size(void) const;
+        size_t  Size(void) const;
         void  Touch(const string &  client,
                     const string &  applications,
                     const string &  ticket,
@@ -156,7 +156,7 @@ class CNSTClientRegistry
         void  AddObjectsRelocated(const string &  client, size_t  count);
         void  AddObjectsDeleted(const string &  client, size_t  count);
 
-        CJsonNode serialize(void) const;
+        CJsonNode Serialize(void) const;
 
     private:
         map< string, CNSTClient >   m_Clients;  // All the server clients

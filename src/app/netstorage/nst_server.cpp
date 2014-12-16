@@ -113,8 +113,8 @@ CNetStorageServer::SetParameters(
     if (m_Log != params.log) {
         CJsonNode   values = CJsonNode::NewObjectNode();
 
-        values.SetByKey("old", CJsonNode::NewBooleanNode(m_Log));
-        values.SetByKey("old", CJsonNode::NewBooleanNode(params.log));
+        values.SetByKey("Old", CJsonNode::NewBooleanNode(m_Log));
+        values.SetByKey("Nld", CJsonNode::NewBooleanNode(params.log));
         diff.SetByKey("log", values);
 
         m_Log = params.log;
@@ -220,69 +220,54 @@ CNSTDatabase &  CNetStorageServer::GetDb(void)
 
 bool  CNetStorageServer::InMetadataServices(const string &  service) const
 {
-    set<string>::const_iterator     found;
-    CFastMutexGuard                 guard(m_MetadataServicesLock);
+    return m_MetadataServiceRegistry.IsKnown(service);
+}
 
-    found = m_MetadataServices.find(service);
-    return found != m_MetadataServices.end();
+
+bool  CNetStorageServer::GetServiceTTL(const string &            service,
+                                       TNSTDBValue<CTimeSpan> &  ttl) const
+{
+    return m_MetadataServiceRegistry.GetTTL(service, ttl);
+}
+
+
+bool
+CNetStorageServer::GetServiceProlongOnRead(const string &  service,
+                                           CTimeSpan &  prolong_on_read) const
+{
+    return m_MetadataServiceRegistry.GetProlongOnRead(service, prolong_on_read);
+}
+
+
+bool
+CNetStorageServer::GetServiceProlongOnWrite(const string &  service,
+                                            CTimeSpan &  prolong_on_write) const
+{
+    return m_MetadataServiceRegistry.GetProlongOnWrite(service,
+                                                       prolong_on_write);
+}
+
+
+bool
+CNetStorageServer::GetServiceProperties(const string &  service,
+                              CNSTServiceProperties &  service_props) const
+{
+    return m_MetadataServiceRegistry.GetServiceProperties(service,
+                                                          service_props);
 }
 
 
 CJsonNode
 CNetStorageServer::ReadMetadataConfiguration(const IRegistry &  reg)
 {
-    const string    section = "metadata_conf";
-    set<string>     new_services;
-    list<string>    entries;
-
-    reg.EnumerateEntries(section, &entries);
-    for (list<string>::const_iterator  k = entries.begin();
-         k != entries.end(); ++k) {
-        string      entry = *k;
-
-        if (!NStr::StartsWith(entry, "service_name_", NStr::eCase))
-            continue;
-
-        string      value = reg.GetString(section, entry, "");
-        if (!value.empty())
-            new_services.insert(value);
-    }
-
-    vector<string>      added;
-    vector<string>      deleted;
-    {
-        CFastMutexGuard     guard(m_MetadataServicesLock);
-
-        // Compare the new and the old set of services
-        set_difference(new_services.begin(), new_services.end(),
-                       m_MetadataServices.begin(), m_MetadataServices.end(),
-                       inserter(added, added.begin()));
-        set_difference(m_MetadataServices.begin(), m_MetadataServices.end(),
-                       new_services.begin(), new_services.end(),
-                       inserter(deleted, deleted.begin()));
-
-        m_MetadataServices = new_services;
-    }
-
-    if (added.empty() && deleted.empty())
-        return CJsonNode::NewNullNode();
-
-    CJsonNode       diff = CJsonNode::NewObjectNode();
-    diff.SetByKey("services", x_diffInJson(added, deleted));
-    return diff;
+    return m_MetadataServiceRegistry.ReadConfiguration(reg);
 }
 
 
 CJsonNode
-CNetStorageServer::serializeMetadataInfo(void) const
+CNetStorageServer::SerializeMetadataInfo(void) const
 {
-    CJsonNode                   services = CJsonNode::NewArrayNode();
-    set<string>::const_iterator k;
-    CFastMutexGuard             guard(m_MetadataServicesLock);
-
-    for (k = m_MetadataServices.begin(); k != m_MetadataServices.end(); ++k)
-        services.AppendString(*k);
-    return services;
+    return m_MetadataServiceRegistry.Serialize();
 }
 
 
@@ -316,7 +301,7 @@ CNetStorageServer::x_diffInJson(const vector<string> &  added,
         for (vector<string>::const_iterator  k = added.begin();
                 k != added.end(); ++k)
             add_node.AppendString(*k);
-        diff.SetByKey("added", add_node);
+        diff.SetByKey("Added", add_node);
     }
 
     if (!deleted.empty()) {
@@ -324,7 +309,7 @@ CNetStorageServer::x_diffInJson(const vector<string> &  added,
         for (vector<string>::const_iterator  k = deleted.begin();
                 k != deleted.end(); ++k)
             del_node.AppendString(*k);
-        diff.SetByKey("deleted", del_node);
+        diff.SetByKey("Deleted", del_node);
     }
 
     return diff;

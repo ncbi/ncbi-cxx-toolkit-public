@@ -41,6 +41,7 @@
 #include "nst_precise_time.hpp"
 #include "nst_alert.hpp"
 #include "nst_database.hpp"
+#include "nst_service_parameters.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -103,8 +104,16 @@ public:
 
     // Metainfo support
     bool InMetadataServices(const string &  service) const;
+    bool GetServiceTTL(const string &            service,
+                       TNSTDBValue<CTimeSpan> &  ttl) const;
+    bool GetServiceProlongOnRead(const string &  service,
+                                 CTimeSpan &     prolong_on_read) const;
+    bool GetServiceProlongOnWrite(const string &  service,
+                                  CTimeSpan &     prolong_on_write) const;
+    bool GetServiceProperties(const string &  service,
+                              CNSTServiceProperties &  service_props) const;
     CJsonNode ReadMetadataConfiguration(const IRegistry &  reg);
-    CJsonNode serializeMetadataInfo(void) const;
+    CJsonNode SerializeMetadataInfo(void) const;
 
     void RunServiceThread(void);
     void StopServiceThread(void);
@@ -135,8 +144,7 @@ private:
     set<string>                 m_AdminClientNames;
 
     // Metadata services support
-    mutable CFastMutex          m_MetadataServicesLock;
-    set<string>                 m_MetadataServices;
+    CNSTServiceRegistry         m_MetadataServiceRegistry;
 
     string                      m_RAMConfigFileChecksum;
     string                      m_DiskConfigFileChecksum;

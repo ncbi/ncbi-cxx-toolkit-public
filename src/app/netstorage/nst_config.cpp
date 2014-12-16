@@ -46,7 +46,19 @@ static void NSTValidateServerSection(const IRegistry &  reg,
 static void NSTValidateDatabaseSection(const IRegistry &  reg,
                                        vector<string> &  warnings);
 static void NSTValidateMetadataSection(const IRegistry &  reg,
-                                       vector<string> &  warnings);
+                                       vector<string> &  warnings,
+                                       list<string> &  services);
+static void NSTValidateServiceReferences(const IRegistry &  reg,
+                                         const list<string> &  services,
+                                         vector<string> &  warnings);
+static void NSTValidateProlongValue(const IRegistry &  reg,
+                                    const string &  section,
+                                    const string &  entry,
+                                    vector<string> &  warnings);
+static void NSTValidateTTLValue(const IRegistry &  reg,
+                                const string &  section,
+                                const string &  entry,
+                                vector<string> &  warnings);
 static bool NSTValidateBool(const IRegistry &  reg,
                             const string &  section, const string &  entry,
                             vector<string> &  warnings);
@@ -72,7 +84,10 @@ void NSTValidateConfigFile(const IRegistry &  reg,
 {
     NSTValidateServerSection(reg, warnings, throw_port_exception);
     NSTValidateDatabaseSection(reg, warnings);
-    NSTValidateMetadataSection(reg, warnings);
+
+    list<string>    services;
+    NSTValidateMetadataSection(reg, warnings, services);
+    NSTValidateServiceReferences(reg, services, warnings);
 }
 
 
@@ -211,26 +226,104 @@ void NSTValidateDatabaseSection(const IRegistry &  reg,
 
 
 void NSTValidateMetadataSection(const IRegistry &  reg,
-                                vector<string> &  warnings)
+                                vector<string> &  warnings,
+                                list<string> &  services)
 {
     const string    section = "metadata_conf";
-    list<string>    entries;
+    bool            ok = NSTValidateString(reg, section, "services", warnings);
 
-    reg.EnumerateEntries(section, &entries);
-    for (list<string>::const_iterator  k = entries.begin();
-         k != entries.end(); ++k) {
-        string      entry = *k;
+    if (ok)
+        NStr::Split(reg.GetString(section, "services", ""), " \t\r\n\v\f,",
+                    services);
 
-        if (!NStr::StartsWith(entry, "service_name_", NStr::eCase))
+    NSTValidateTTLValue(reg, section, "ttl", warnings);
+    NSTValidateProlongValue(reg, section, "prolong_on_read", warnings);
+    NSTValidateProlongValue(reg, section, "prolong_on_write", warnings);
+}
+
+
+// Checks that the configuration file does not refer to any of the
+// not configured service
+void NSTValidateServiceReferences(const IRegistry &  reg,
+                                  const list<string> &  services,
+                                  vector<string> &  warnings)
+{
+    list<string>    sections;
+    reg.EnumerateSections(&sections);
+
+    const string    prefix = "service_";
+    for (list<string>::const_iterator  k = sections.begin();
+         k != sections.end(); ++k) {
+        if (!NStr::StartsWith(*k, prefix))
             continue;
 
-        bool    ok = NSTValidateString(reg, section, entry, warnings);
-        if (ok) {
-            string      value = reg.GetString(section, entry, "");
-            if (value.empty())
-                warnings.push_back(g_LogPrefix + " value " +
-                                   NSTRegValName(section, entry) +
-                                   " must not be empty");
+        string      service(k->c_str() + prefix.size());
+        if (service.empty()) {
+            warnings.push_back("Section [service_] does not have "
+                               "a service name.");
+            continue;
+        }
+
+        if (find(services.begin(),
+                 services.end(), service) == services.end()) {
+            warnings.push_back("Section [service_" + service +
+                               "] refers to a not configured service.");
+            continue;
+        }
+
+        string  section = "service_" + service;
+        NSTValidateTTLValue(reg, section, "ttl", warnings);
+        NSTValidateProlongValue(reg, section, "prolong_on_read", warnings);
+        NSTValidateProlongValue(reg, section, "prolong_on_write", warnings);
+    }
+}
+
+
+void NSTValidateProlongValue(const IRegistry &  reg,
+                             const string &  section,
+                             const string &  entry,
+                             vector<string> &  warnings)
+{
+    bool            ok = NSTValidateString(reg, section, entry, warnings);
+    if (ok) {
+        string      value = reg.GetString(section, entry, "");
+        if (!value.empty()) {
+            try {
+                ReadTimeSpan(value, false);  // no infinity
+            } catch (const exception &  ex) {
+                warnings.push_back("Exception while validating " +
+                        NSTRegValName(section, entry) +
+                        " value: " + ex.what());
+            } catch (...) {
+                warnings.push_back("Unknown exception while validating " +
+                        NSTRegValName(section, entry) +
+                        " value: " + value + ". It must be "
+                        " in a recognizable format.");
+            }
+        }
+    }
+}
+
+
+void NSTValidateTTLValue(const IRegistry &  reg,
+                         const string &  section,
+                         const string &  entry,
+                         vector<string> &  warnings)
+{
+    bool            ok = NSTValidateString(reg, section, entry, warnings);
+    if (ok) {
+        string      value = reg.GetString(section, entry, "");
+        try {
+            ReadTimeSpan(value, true);  // Allow infinity
+        } catch (const exception &  ex) {
+            warnings.push_back("Exception while validating " +
+                               NSTRegValName(section, entry) +
+                               " value: " + ex.what());
+        } catch (...) {
+            warnings.push_back("Unknown exception while validating " +
+                               NSTRegValName(section, entry) +
+                               " value: " + value + ". It must be "
+                               "'infinity' or a recognizable format.");
         }
     }
 }
@@ -327,6 +420,25 @@ bool NSTValidateString(const IRegistry &  reg,
     }
     return true;
 }
+
+
+TNSTDBValue<CTimeSpan>  ReadTimeSpan(const string &  reg_value,
+                                     bool  allow_infinity)
+{
+    TNSTDBValue<CTimeSpan>      result;
+
+    if (allow_infinity) {
+        if (NStr::EqualNocase(reg_value, "infinity") || reg_value.empty()) {
+            result.m_IsNull = true;
+            return result;
+        }
+    }
+
+    result.m_IsNull = false;
+    result.m_Value = CTimeSpan(NStr::StringToDouble(reg_value));
+    return result;
+}
+
 
 END_NCBI_SCOPE
 

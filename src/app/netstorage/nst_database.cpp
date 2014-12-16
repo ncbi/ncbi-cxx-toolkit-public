@@ -147,7 +147,7 @@ int
 CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
-            Int8  client_id)
+            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl)
 {
     x_PreCheckConnection();
     try {
@@ -162,6 +162,12 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
         query.SetParameter("@object_loc", object_loc);
         query.SetParameter("@object_size", size);
         query.SetParameter("@client_id", client_id);
+
+        if (ttl.m_IsNull)
+            query.SetNullParameter("@object_expiration", eSDB_DateTime);
+        else
+            query.SetParameter("@object_expiration",
+                               CTime(CTime::eCurrent) + ttl.m_Value);
 
         query.ExecuteSP("CreateObjectWithClientID");
         query.VerifyDone();
@@ -178,8 +184,22 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
 int
 CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id)
+            const string &  object_loc, Int8  size, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_write,
+            const TNSTDBValue<CTime> &  object_expiration)
 {
+    // Calculate separate expirations for two cases:
+    // - record is found
+    // - record is not found
+    // It is easier to do in C++ than in MS SQL stored procedure
+    CTime                   current_time(CTime::eCurrent);
+    TNSTDBValue<CTime>      exp_record_found;
+    TNSTDBValue<CTime>      exp_record_not_found;
+    x_CalculateExpiration(current_time, ttl, prolong_on_write,
+                          object_expiration,
+                          exp_record_found, exp_record_not_found);
+
     x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
@@ -187,6 +207,20 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
         query.SetParameter("@object_loc", object_loc);
         query.SetParameter("@object_size", size);
         query.SetParameter("@client_id", client_id);
+        query.SetParameter("@current_time", current_time);
+
+        if (exp_record_found.m_IsNull)
+            query.SetNullParameter("@object_exp_if_found",
+                                   eSDB_DateTime);
+        else
+            query.SetParameter("@object_exp_if_found",
+                               exp_record_found.m_Value);
+        if (exp_record_not_found.m_IsNull)
+            query.SetNullParameter("@object_exp_if_not_found",
+                                   eSDB_DateTime);
+        else
+            query.SetParameter("@object_exp_if_not_found",
+                               exp_record_not_found.m_Value);
 
         query.ExecuteSP("UpdateObjectOnWrite");
         query.VerifyDone();
@@ -203,8 +237,21 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
 int
 CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id)
+            const string &  object_loc, Int8  size, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_write,
+            const TNSTDBValue<CTime> &  object_expiration)
 {
+    // Calculate separate expirations for two cases:
+    // - record is found
+    // - record is not found
+    // It is easier to do in C++ than in MS SQL stored procedure
+    CTime                   current_time(CTime::eCurrent);
+    TNSTDBValue<CTime>      exp_record_found;
+    TNSTDBValue<CTime>      exp_record_not_found;
+    x_CalculateExpiration(current_time, ttl, prolong_on_write, object_expiration,
+                          exp_record_found, exp_record_not_found);
+
     x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
@@ -212,6 +259,20 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
         query.SetParameter("@object_loc", object_loc);
         query.SetParameter("@object_size", size);
         query.SetParameter("@client_id", client_id);
+        query.SetParameter("@current_time", current_time);
+
+        if (exp_record_found.m_IsNull)
+            query.SetNullParameter("@object_exp_if_found",
+                                   eSDB_DateTime);
+        else
+            query.SetParameter("@object_exp_if_found",
+                               exp_record_found.m_Value);
+        if (exp_record_not_found.m_IsNull)
+            query.SetNullParameter("@object_exp_if_not_found",
+                                   eSDB_DateTime);
+        else
+            query.SetParameter("@object_exp_if_not_found",
+                               exp_record_not_found.m_Value);
 
         query.ExecuteSP("UpdateUserKeyObjectOnWrite");
         query.VerifyDone();
@@ -228,8 +289,21 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
 int
 CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id)
+            const string &  object_loc, Int8  size, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_read,
+            const TNSTDBValue<CTime> &  object_expiration)
 {
+    // Calculate separate expirations for two cases:
+    // - record is found
+    // - record is not found
+    // It is easier to do in C++ than in MS SQL stored procedure
+    CTime                   current_time(CTime::eCurrent);
+    TNSTDBValue<CTime>      exp_record_found;
+    TNSTDBValue<CTime>      exp_record_not_found;
+    x_CalculateExpiration(current_time, ttl, prolong_on_read, object_expiration,
+                          exp_record_found, exp_record_not_found);
+
     x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
@@ -237,6 +311,20 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
         query.SetParameter("@object_loc", object_loc);
         query.SetParameter("@object_size", size);
         query.SetParameter("@client_id", client_id);
+        query.SetParameter("@current_time", current_time);
+
+        if (exp_record_found.m_IsNull)
+            query.SetNullParameter("@object_exp_if_found",
+                                   eSDB_DateTime);
+        else
+            query.SetParameter("@object_exp_if_found",
+                               exp_record_found.m_Value);
+        if (exp_record_not_found.m_IsNull)
+            query.SetNullParameter("@object_exp_if_not_found",
+                                   eSDB_DateTime);
+        else
+            query.SetParameter("@object_exp_if_not_found",
+                               exp_record_not_found.m_Value);
 
         query.ExecuteSP("UpdateObjectOnRead");
         query.VerifyDone();
@@ -295,13 +383,18 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
 
 int
 CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
-                                   const CTime &   expiration)
+                                   const TNSTDBValue<CTimeSpan> &  ttl)
 {
     x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
-        query.SetParameter("@expiration", expiration);
+
+        if (ttl.m_IsNull)
+            query.SetNullParameter("@expiration", eSDB_DateTime);
+        else
+            query.SetParameter("@expiration", CTime(CTime::eCurrent) +
+                                              ttl.m_Value);
 
         query.ExecuteSP("SetObjectExpiration");
         query.VerifyDone();
@@ -587,6 +680,54 @@ void  CNSTDatabase::x_CreateDatabase(void)
 
     CSDB_ConnectionParam    db_params(uri);
     m_Db = new CDatabase(db_params);
+}
+
+
+// Calculates the new object expiration for two cases:
+// - object is found in the DB
+// - object is not found in the DB (and thus should be created)
+void
+CNSTDatabase::x_CalculateExpiration(
+                            const CTime &  current_time,
+                            const TNSTDBValue<CTimeSpan> &  ttl,
+                            const CTimeSpan &  prolong,
+                            const TNSTDBValue<CTime> &  object_expiration,
+                            TNSTDBValue<CTime> &  exp_record_found,
+                            TNSTDBValue<CTime> &  exp_record_not_found)
+{
+    if (prolong.IsEmpty()) {
+        if (object_expiration.m_IsNull) {
+            exp_record_found.m_IsNull = true;
+            if (ttl.m_IsNull)
+                exp_record_not_found.m_IsNull = true;
+            else {
+                exp_record_not_found.m_IsNull = false;
+                exp_record_not_found.m_Value = current_time + ttl.m_Value;
+            }
+        } else {
+            exp_record_found.m_IsNull = false;
+            exp_record_found.m_Value = object_expiration.m_Value;
+        }
+    } else {
+        if (object_expiration.m_IsNull) {
+            exp_record_found.m_IsNull = true;
+            if (ttl.m_IsNull)
+                exp_record_not_found.m_IsNull = true;
+            else {
+                exp_record_not_found.m_IsNull = false;
+                if (ttl.m_Value > prolong)
+                    exp_record_not_found.m_Value = current_time + ttl.m_Value;
+                else
+                    exp_record_not_found.m_Value = current_time + prolong;
+            }
+        } else {
+            exp_record_found.m_IsNull = false;
+            if (object_expiration.m_Value > current_time + prolong)
+                exp_record_found.m_Value = object_expiration.m_Value;
+            else
+                exp_record_found.m_Value = current_time + prolong;
+        }
+    }
 }
 
 END_NCBI_SCOPE

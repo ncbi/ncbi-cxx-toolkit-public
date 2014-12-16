@@ -81,8 +81,10 @@ class NetStorageConsole:
                                  "sends a malformed message without a type" ],
              'no-dict':        [ self.sendNoDictionary,
                                  "sends a malformed non-dictionary message" ],
-             'create':         [ self.create,
-                                 "sends CREATE message; <file name> [the rest of the message, e.g. flags]" ],
+             'createft':       [ self.sendCreateOnFT,
+                                 "sends CREATE message which creates an object on FileTrack; <file name>" ],
+             'createnc':       [ self.sendCreateOnNC,
+                                 "sends CREATE message which creates an object on NetCache; <file name>" ],
              'upload':         [ self.upload,
                                  "sends WRITE message; <object locator> <file name>" ],
              'delete':         [ self.delete,
@@ -105,8 +107,8 @@ class NetStorageConsole:
                                  "sends GETMETADATAINFO message; no arguments" ],
              'junk':           [ self.sendJunk,
                                  "sends an unterminated malformed message" ],
-             'setttl':         [ self.sendSetttl,
-                                 "sends SETTTL message; <object locator> <ttl in secs>" ],
+             'setexp':         [ self.sendSetexp,
+                                 "sends SETEXPTIME message; <object locator> <ttl in secs or infinity>" ],
            }
 
         self.__commandSN = 0
@@ -448,10 +450,10 @@ class NetStorageConsole:
         self.printMessage( "Message from server", response )
         return
 
-    def create( self, arguments ):
+    def __create( self, arguments, storage ):
         " Sends the create command "
-        if len( arguments ) < 1:
-            print "At least one argument is required "
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
             return
 
         fileName = arguments[ 0 ]
@@ -471,8 +473,13 @@ class NetStorageConsole:
                     'SessionID':    SESSIONID,
                     'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
-        if len( arguments ) > 1:
-            message.update( json.loads( ' '.join( arguments[ 1 : ] ) ) )
+
+        if storage == 'FT':
+            storageFlags = { "Persistent": True, "Movable": True }
+        else:
+            storageFlags = { "Fast": True, "Movable": True }
+
+        message["StorageFlags"] = storageFlags
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -494,6 +501,14 @@ class NetStorageConsole:
         if "Status" not in response or response[ "Status" ] != "OK":
             print "Command failed, the blob has not been written [completely]"
         return
+
+    def sendCreateOnFT( self, arguments ):
+        " Create an object using the FileTrack backend. "
+        self.__create( arguments, 'FT' )
+
+    def sendCreateOnNC( self, arguments ):
+        " Create an object using the NetCache backend. "
+        self.__create( arguments, 'NC' )
 
     def upload( self, arguments ):
         " Uploads a file "
@@ -811,17 +826,17 @@ class NetStorageConsole:
             print "Command failed"
         return
 
-    def sendSetttl( self, arguments ):
-        " Sends SETTTL message "
+    def sendSetexp( self, arguments ):
+        " Sends SETEXPTIME message "
         if len( arguments ) != 2:
             print "Exactly 2 arguments are required: locator " \
                   "and ttl in seconds"
             return
 
         objectLoc = arguments[ 0 ]
-        ttl = int( arguments[ 1 ] )
+        ttl = arguments[ 1 ]
 
-        message = { 'Type':         'SETTTL',
+        message = { 'Type':         'SETEXPTIME',
                     'SessionID':    SESSIONID,
                     'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,

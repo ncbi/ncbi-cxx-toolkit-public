@@ -331,15 +331,16 @@ CREATE PROCEDURE CreateObjectWithClientID
     @object_create_tm   DATETIME,
     @object_loc         VARCHAR(256),
     @object_size        BIGINT,
-    @client_id          BIGINT
+    @client_id          BIGINT,
+    @object_expiration  DATETIME
 AS
 BEGIN
     BEGIN TRY
         DECLARE @row_count  INT
         DECLARE @error      INT
 
-        INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size, read_count, write_count)
-        VALUES (@object_id, @object_key, @object_loc, @client_id, @object_create_tm, @object_size, 0, 1)
+        INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size, tm_expiration, read_count, write_count)
+        VALUES (@object_id, @object_key, @object_loc, @client_id, @object_create_tm, @object_size, @object_expiration, 0, 1)
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0 OR @row_count = 0
@@ -360,10 +361,13 @@ GO
 
 
 CREATE PROCEDURE UpdateObjectOnWrite
-    @object_key     VARCHAR(256),
-    @object_loc     VARCHAR(256),
-    @object_size    BIGINT,
-    @client_id      BIGINT
+    @object_key                 VARCHAR(256),
+    @object_loc                 VARCHAR(256),
+    @object_size                BIGINT,
+    @client_id                  BIGINT,
+    @object_exp_if_found        DATETIME,
+    @object_exp_if_not_found    DATETIME,
+    @current_time               DATETIME
 AS
 BEGIN
     BEGIN TRANSACTION
@@ -371,11 +375,9 @@ BEGIN
 
         DECLARE @row_count  INT
         DECLARE @error      INT
-        DECLARE @current_time   DATETIME
-
-        SET @current_time = GETDATE()
 
         UPDATE Objects SET size = @object_size, tm_write = @current_time,
+                           tm_expiration = @object_exp_if_found,
                            write_count = write_count + 1 WHERE object_key = @object_key
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
@@ -397,8 +399,8 @@ BEGIN
                 RETURN 1
             END
 
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, size, read_count, write_count)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @object_size, 0, 1)
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, tm_expiration, size, read_count, write_count)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @object_exp_if_not_found, @object_size, 0, 1)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
@@ -433,10 +435,13 @@ GO
 -- value. If the time is expired then it should be reset (set to NULL). If not
 -- expired then no changes should appear.
 CREATE PROCEDURE UpdateUserKeyObjectOnWrite
-    @object_key     VARCHAR(256),
-    @object_loc     VARCHAR(256),
-    @object_size    BIGINT,
-    @client_id      BIGINT
+    @object_key                 VARCHAR(256),
+    @object_loc                 VARCHAR(256),
+    @object_size                BIGINT,
+    @client_id                  BIGINT,
+    @object_exp_if_found        DATETIME,
+    @object_exp_if_not_found    DATETIME,
+    @current_time               DATETIME
 AS
 BEGIN
     BEGIN TRANSACTION
@@ -444,9 +449,6 @@ BEGIN
 
         DECLARE @row_count      INT
         DECLARE @error          INT
-        DECLARE @current_time   DATETIME
-
-        SET @current_time = GETDATE()
 
         UPDATE Objects SET size = @object_size, tm_write = @current_time,
                            write_count = write_count + 1 WHERE object_key = @object_key
@@ -471,8 +473,8 @@ BEGIN
             END
 
             -- For the user key objects creation time is set as well
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, tm_write, size, read_count, write_count)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @current_time, @object_size, 0, 1)
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, tm_write, tm_expiration, size, read_count, write_count)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @current_time, @object_exp_if_not_found, @object_size, 0, 1)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
@@ -491,7 +493,19 @@ BEGIN
                 IF @expiration < @current_time
                 BEGIN
                     -- the object is expired, so the expiration must be reset
-                    UPDATE Objects SET tm_expiration = NULL, read_count = 0, write_count = 1 WHERE object_key = @object_key
+                    UPDATE Objects SET tm_expiration = @object_exp_if_not_found, read_count = 0, write_count = 1 WHERE object_key = @object_key
+                    SELECT @error = @@ERROR
+
+                    IF @error != 0
+                    BEGIN
+                        ROLLBACK TRANSACTION
+                        RETURN 1
+                    END
+                END
+                ELSE
+                BEGIN
+                    -- the object is not expired; expiration might need to be updated though
+                    UPDATE Objects SET tm_expiration = @object_exp_if_found WHERE object_key = @object_key
                     SELECT @error = @@ERROR
 
                     IF @error != 0
@@ -521,10 +535,13 @@ GO
 
 
 CREATE PROCEDURE UpdateObjectOnRead
-    @object_key     VARCHAR(256),
-    @object_loc     VARCHAR(256),
-    @object_size    BIGINT,
-    @client_id      BIGINT
+    @object_key                 VARCHAR(256),
+    @object_loc                 VARCHAR(256),
+    @object_size                BIGINT,
+    @client_id                  BIGINT,
+    @object_exp_if_found        DATETIME,
+    @object_exp_if_not_found    DATETIME,
+    @current_time               DATETIME
 AS
 BEGIN
     BEGIN TRANSACTION
@@ -533,7 +550,9 @@ BEGIN
         DECLARE @row_count  INT
         DECLARE @error      INT
 
-        UPDATE Objects SET tm_read = GETDATE(), read_count = read_count + 1 WHERE object_key = @object_key
+        UPDATE Objects SET tm_read = @current_time,
+                           tm_expiration = @object_exp_if_found,
+                           read_count = read_count + 1 WHERE object_key = @object_key
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
         IF @error != 0
@@ -554,8 +573,8 @@ BEGIN
                 RETURN 1
             END
 
-            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_read, size, read_count, write_count)
-            VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size, 1, 0)
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_read, tm_expiration, size, read_count, write_count)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @current_time, @object_exp_if_not_found, @object_size, 1, 1)
             SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 
             IF @error != 0 OR @row_count = 0
