@@ -632,7 +632,8 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
             *lvalp = qnode = 
                 env->QTree().CreateNode(CQueryParseNode::eLE, 0, 0,
                                         string(ptr-1, 2));
-            env->AttachToPool(qnode);            
+            env->AttachToPool(qnode);   
+            qnode->GetValue().SetLoc(line, line_pos);         
             return LE;
         } 
         if ( *ptr == '>' ) {
@@ -726,6 +727,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
                 env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0,
                                         string(ptr-1, 1));
             env->AttachToPool(qnode);
+            qnode->GetValue().SetLoc(line, line_pos);
             return EQ;
         }
         /*
@@ -749,6 +751,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
             env->QTree().CreateNode(CQueryParseNode::eRange, 0, 0,
                                     string(ptr-1, 1));
         env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
         return RANGE;
     case '(':
         {{
