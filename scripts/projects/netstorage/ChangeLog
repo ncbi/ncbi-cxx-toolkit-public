@@ -1,3 +1,14 @@
+Release 1.1.0 based on SC-15 (2014-12-16)
+
+Improvements and bug fixes:
+    * NetStorage - Blob expiration (JIRA: CXX-5484)
+    * NetStorage: add attribute timestamps to GETOBJECTINFO (JIRA: CXX-5480)
+    * NetStorage: data read/write counters per object (JIRA: CXX-5437)
+    * Expiration of NetStorage objects (JIRA: CXX-5432)
+    * NST -- Working with metadata (JIRA: CXX-5372)
+    * NetStorage: config file changes watcher (JIRA: CXX-5362)
+
+
 Release 1.0.2 based on SC-15 (2014-11-06)
 
 Improvements and bug fixes:
