@@ -2654,7 +2654,7 @@ static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s,
                s1 += esp->num[i];
                nm2 = 0;
                if (i < esp->size -1) {
-                   while (q1+1<qf && *(q1++) == *(s1++)) ++nm2;
+                   while ((q1+1<qf) && (s1+1<sf) && (*(q1++) == *(s1++))) ++nm2;
                }
                if (nm1>1 || nm2>0) s_UpdateEditScript(esp, i, nm1-1, nm2);
                q1--; s1--;
