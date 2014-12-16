@@ -3116,6 +3116,65 @@ const CSiteList* CSeqFeatData::GetSiteList()
 }
 
 
+bool CSeqFeatData::IsRegulatory(ESubtype subtype)
+{
+    bool rval = false;
+    switch (subtype) {
+        case CSeqFeatData::eSubtype_10_signal:
+        case CSeqFeatData::eSubtype_35_signal:
+        case CSeqFeatData::eSubtype_attenuator:
+        case CSeqFeatData::eSubtype_CAAT_signal:
+        case CSeqFeatData::eSubtype_enhancer:
+        case CSeqFeatData::eSubtype_promoter:
+        case CSeqFeatData::eSubtype_TATA_signal:
+        case CSeqFeatData::eSubtype_GC_signal:
+        case CSeqFeatData::eSubtype_RBS:
+        case CSeqFeatData::eSubtype_polyA_signal:
+        case CSeqFeatData::eSubtype_terminator:
+            rval = true;
+            break;
+        default:
+            rval = false;
+            break;
+    }
+    return rval;
+}
+
+
+string CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
+{
+    string rval = "";
+    switch (subtype) {
+        case CSeqFeatData::eSubtype_10_signal:
+            rval = "minus_10_signal";
+            break;
+        case CSeqFeatData::eSubtype_35_signal:
+            rval = "minus_35_signal";
+            break;
+        case CSeqFeatData::eSubtype_TATA_signal:
+            rval = "TATA_box";
+            break;
+        case CSeqFeatData::eSubtype_RBS:
+            rval = "ribosome_binding_site";
+            break;
+        case CSeqFeatData::eSubtype_polyA_signal:
+            rval = "polyA_signal_sequence";
+            break;
+        case CSeqFeatData::eSubtype_attenuator:            
+        case CSeqFeatData::eSubtype_CAAT_signal:
+        case CSeqFeatData::eSubtype_enhancer:
+        case CSeqFeatData::eSubtype_promoter:
+        case CSeqFeatData::eSubtype_GC_signal:
+        case CSeqFeatData::eSubtype_terminator:
+            rval = SubtypeValueToName(subtype);
+            break;
+        default:
+            break;
+    }
+    return rval;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 

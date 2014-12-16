@@ -906,3 +906,12 @@ BOOST_AUTO_TEST_CASE(Test_BioSource_MakeCommon)
     CHECK_COMMON_FIELD(src1,src2,common,Genome,CBioSource::eGenome_apicoplast,CBioSource::eGenome_chloroplast);
     CHECK_COMMON_FIELD(src1,src2,common,Origin,CBioSource::eOrigin_artificial,CBioSource::eOrigin_mut);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_Regulatory)
+{
+    BOOST_CHECK_EQUAL(CSeqFeatData::IsRegulatory(CSeqFeatData::eSubtype_attenuator), true);
+    BOOST_CHECK_EQUAL(CSeqFeatData::IsRegulatory(CSeqFeatData::eSubtype_cdregion), false);
+    BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_RBS), "ribosome_binding_site");
+    BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_terminator), "terminator");
+}

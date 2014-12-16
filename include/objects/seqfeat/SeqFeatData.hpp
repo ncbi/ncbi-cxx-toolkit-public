@@ -479,6 +479,9 @@ public:
     static const CBondList* GetBondList();
     static const CSiteList* GetSiteList();
 
+    static bool IsRegulatory(ESubtype subtype);
+    static string GetRegulatoryClass(ESubtype subtype);
+
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
