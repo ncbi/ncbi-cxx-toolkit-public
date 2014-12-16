@@ -574,6 +574,10 @@ void TestMapping_Denseg()
     cout << "  Nuc to prot, converted to std-seg (mixed types)" << endl;
     TestMappingSeq_align(*mapper, in);
 
+    mapper->MixedAlignsAsSpliced(true);
+    cout << "  Nuc to prot, converted to spliced-seg (mixed types)" << endl;
+    TestMappingSeq_align(*mapper, in);
+
     cout << "  Unsupported alignment - dense-seg with mixed types" << endl;
     TestMappingSeq_align_Exception(*mapper, in);
 

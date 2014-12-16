@@ -524,6 +524,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
       m_KeepNonmapping(false),
       m_CheckStrand(false),
       m_IncludeSrcLocs(false),
+      m_MixedAlignsAsSpliced(false),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -542,6 +543,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
       m_KeepNonmapping(false),
       m_CheckStrand(false),
       m_IncludeSrcLocs(false),
+      m_MixedAlignsAsSpliced(false),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(mapping_ranges),
@@ -561,6 +563,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_KeepNonmapping(false),
       m_CheckStrand(false),
       m_IncludeSrcLocs(false),
+      m_MixedAlignsAsSpliced(false),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -581,6 +584,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_KeepNonmapping(false),
       m_CheckStrand(false),
       m_IncludeSrcLocs(false),
+      m_MixedAlignsAsSpliced(false),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -602,6 +606,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_KeepNonmapping(false),
       m_CheckStrand(false),
       m_IncludeSrcLocs(false),
+      m_MixedAlignsAsSpliced(false),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -623,6 +628,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_KeepNonmapping(false),
       m_CheckStrand(false),
       m_IncludeSrcLocs(false),
+      m_MixedAlignsAsSpliced(false),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -1004,6 +1010,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         // two whole locations (one per source range), dst_it will never be
         // incremented and both source ranges will be mapped to the same
         // sequence.
+        last_src_id = src_it.GetSeq_id_Handle();
+        last_src_reverse = IsReverse(src_it.GetStrand());
         if (src_len == 0  &&  ++src_it) {
             TRange rg = src_it.GetRange();
             if ( rg.Empty() ) {
@@ -1022,9 +1030,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 last_src_reverse != IsReverse(src_it.GetStrand())) {
                 m_CurrentGroup++;
             }
-            last_src_id = src_it.GetSeq_id_Handle();
-            last_src_reverse = IsReverse(src_it.GetStrand());
         }
+        last_dst_id = dst_it.GetSeq_id_Handle();
+        last_dst_reverse = IsReverse(dst_it.GetStrand());
         if (dst_len == 0  &&  ++dst_it) {
             TRange rg = dst_it.GetRange();
             if ( rg.Empty() ) {
@@ -1043,8 +1051,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 last_dst_reverse != IsReverse(dst_it.GetStrand())) {
                 m_CurrentGroup++;
             }
-            last_dst_id = dst_it.GetSeq_id_Handle();
-            last_dst_reverse = IsReverse(dst_it.GetStrand());
         }
     }
     // Remember the direction of source and destination. This information

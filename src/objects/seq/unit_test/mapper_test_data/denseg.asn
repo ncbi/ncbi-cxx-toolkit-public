@@ -48,21 +48,6 @@ Seq-align ::= {
       },
       loc {
         int {
-          from 915,
-          to 929,
-          id gi 3
-        },
-        empty gi 6
-      }
-    },
-    {
-      dim 2,
-      ids {
-        gi 3,
-        gi 6
-      },
-      loc {
-        int {
           from 930,
           to 989,
           id gi 3
@@ -73,20 +58,53 @@ Seq-align ::= {
           id gi 6
         }
       }
+    }
+  }
+}
+
+-- Nuc to prot, converted to spliced-seg (mixed types): original
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 3,
+      gi 4
     },
-    {
-      dim 2,
-      ids {
-        gi 3,
-        gi 6
-      },
-      loc {
-        int {
-          from 990,
-          to 1004,
-          id gi 3
+    starts {
+      915,
+      15
+    },
+    lens {
+      90
+    }
+  }
+}
+-- Nuc to prot, converted to spliced-seg (mixed types): expected
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 110,
+          frame 1
         },
-        empty gi 6
+        product-end protpos {
+          amin 129,
+          frame 3
+        },
+        genomic-start 930,
+        genomic-end 989,
+        parts {
+          match 60
+        }
       }
     }
   }

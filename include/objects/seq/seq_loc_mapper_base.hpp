@@ -413,6 +413,11 @@ public:
     /// correspond to the strand of the mapping source.
     CSeq_loc_Mapper_Base& SetCheckStrand(bool value = true);
 
+    /// When set to 'true' if mapped alignment has exactly one genomic and
+    /// one protein row, convert it to spliced-seg. By default all mixed-type
+    /// alignments are converted to std-seg.
+    CSeq_loc_Mapper_Base& MixedAlignsAsSpliced(bool value = true);
+
     /// Include source ranges in the mapped location. If turned
     /// on, the resulting seq-loc will be an equiv with the
     /// first sub-loc containing the usual mapped seq-loc, and
@@ -802,6 +807,8 @@ private:
     bool                 m_CheckStrand;
     // Wether to include a source of each mapped range to the mapped seq-loc.
     bool                 m_IncludeSrcLocs;
+    // Prefer spliced-seg for mixed alignments.
+    bool                 m_MixedAlignsAsSpliced;
 
     // Mapped ranges collected from the currently parsed sub-location.
     mutable TRangesById  m_MappedLocs;
@@ -1047,6 +1054,14 @@ inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::TruncateNonmappingRanges(void)
 {
     m_KeepNonmapping = false;
+    return *this;
+}
+
+
+inline
+CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::MixedAlignsAsSpliced(bool value)
+{
+    m_MixedAlignsAsSpliced = value;
     return *this;
 }
 

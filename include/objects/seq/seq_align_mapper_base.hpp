@@ -275,6 +275,22 @@ private:
     int x_GetPartialDenseg(CRef<CSeq_align>& dst,
                            int               start_seg) const;
 
+    // Collect exons from a single sub-alignment.
+    void x_GetDstSplicedSubAlign(CSpliced_seg&                 spliced,
+                                 const CSeq_align_Mapper_Base& sub_align,
+                                 bool&                         last_exon_partial,
+                                 CSeq_id_Handle&               gen_id,
+                                 CSeq_id_Handle&               last_gen_id,
+                                 bool&                         single_gen_id,
+                                 ENa_strand&                   gen_strand,
+                                 bool&                         single_gen_str,
+                                 CSeq_id_Handle&               prod_id,
+                                 CSeq_id_Handle&               last_prod_id,
+                                 bool&                         single_prod_id,
+                                 ENa_strand&                   prod_strand,
+                                 bool&                         single_prod_str,
+                                 bool&                         partial) const;
+
     // Check if both nucs and prots are present in the segments.
     bool x_HaveMixedSeqTypes(void) const;
     // Check if each row contains only one strand.

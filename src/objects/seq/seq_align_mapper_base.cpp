@@ -1386,6 +1386,55 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
 void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
 {
     TStd& std_segs = dst->SetSegs().SetStd();
+    int non_gap_count = 0;
+
+    // Check if there are exactly two rows of different types (nuc-to-prot align).
+    // If true, collect frames from the protein row and use them later to adjust
+    // genomic locations. See CXX-5478
+    bool set_frames = true;
+    int p_row = -1;
+    vector< pair<TSeqPos, TSeqPos> > frames;
+    frames.reserve(m_Segs.size());
+    ITERATE(TSegments, seg_it, m_Segs) {
+        if (seg_it->m_Rows.size() != 2) {
+            set_frames = false;
+            break;
+        }
+        CSeq_loc_Mapper_Base::ESeqType r0_type =
+            m_LocMapper.GetSeqTypeById(seg_it->m_Rows[0].m_Id);
+        CSeq_loc_Mapper_Base::ESeqType r1_type =
+            m_LocMapper.GetSeqTypeById(seg_it->m_Rows[1].m_Id);
+        if (r0_type == r1_type) {
+            set_frames = false;
+            break;
+        }
+        if (p_row == -1) {
+            if (r0_type == CSeq_loc_Mapper_Base::eSeq_prot) {
+                p_row = 0;
+            }
+            else if (r1_type == CSeq_loc_Mapper_Base::eSeq_prot) {
+                p_row = 1;
+            }
+            else {
+                set_frames = false;
+                break;
+            }
+        }
+        _ASSERT(p_row != -1);
+        TSeqPos start = seg_it->m_Rows[p_row].m_Start;
+        TSeqPos start_frame = 0;
+        TSeqPos stop_frame = 0;
+        if (start != kInvalidSeqPos) {
+            start_frame = start % 3; // 1 or 2 bases from codon start.
+            stop_frame = (start + seg_it->m_Len) % 3;
+            if ( stop_frame ) {
+                stop_frame = 3 - stop_frame; // 1 or 2 bases from codon stop.
+            }
+        }
+        frames.push_back(pair<TSeqPos, TSeqPos>(start_frame, stop_frame));
+    }
+
+    size_t seg_n = 0;
     ITERATE(TSegments, seg_it, m_Segs) {
         // Create new std-seg for each segment.
         CRef<CStd_seg> std_seg(new CStd_seg);
@@ -1396,6 +1445,8 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
                 seg_it->m_Scores, std_seg->SetScores());
         }
         // Add rows.
+        non_gap_count = 0;
+        size_t row_n = 0;
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             // Check sequence type, set width to 3 for prots.
             int width = (m_LocMapper.GetSeqTypeById(row->m_Id) ==
@@ -1415,17 +1466,90 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
                 // Adjust coordinates according to the sequence type.
                 TSeqPos start = row->m_Start/width;
                 TSeqPos stop = (row->m_Start + seg_it->m_Len)/width;
+
+                // For pairwise mixed-type alignments indicate frames using 'alt' fuzz.
+                // See CXX-5478
+
+                if ( set_frames ) {
+                    const SAlignment_Segment::SAlignment_Row& g_row =
+                        seg_it->m_Rows[1 - p_row];
+                    TSeqPos start_frame = frames[seg_n].first;
+                    TSeqPos stop_frame = frames[seg_n].second;
+                    if ( IsReverse(g_row.m_Strand) ) {
+                        swap(start_frame, stop_frame);
+                    }
+                    if ( row_n == p_row ) {
+                        // Trim incomplete codon if genomic start can not be
+                        // adjusted properly.
+                        TSeqPos g_start = g_row.m_Start;
+                        if (g_start < start_frame) {
+                            if ( IsReverse(g_row.m_Strand) ) {
+                                stop--;
+                            }
+                            else {
+                                start++;
+                            }
+                            // Tricky case: protein row contains just one AA,
+                            // which is partial. Start must be adjusted to
+                            // remove the incomplete codon, but this makes
+                            // the whole segment empty. So, we need to drop
+                            // the genomic row too.
+                            if (start > stop) {
+                                if (p_row == 1) {
+                                    // Genomic row has been already saved.
+                                    std_seg->SetLoc().pop_back();
+                                }
+                                else {
+                                    // Skip genomic row
+                                    ++row;
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                    else {
+                        // Adjust start and stop to the start/stop of complete
+                        // codon, set fuzzes to indicate actual start/stop.
+                        if ( start_frame ) {
+                            if (start >= start_frame) {
+                                // Add 1 or 2 bases to match complete codon.
+                                loc->SetInt().SetFuzz_from().SetAlt().push_back(start);
+                                start -= start_frame;
+                            }
+                            else {
+                                // Skip the first incomplete codon.
+                                start += 3 - start_frame;
+                            }
+                        }
+                        if ( stop_frame ) {
+                            loc->SetInt().SetFuzz_to().SetAlt().push_back(stop - 1);
+                            stop += stop_frame;
+                        }
+                    }
+                }
+
                 loc->SetInt().SetFrom(start);
                 // len may be 0 after dividing by width, check it before
                 // decrementing stop.
-                loc->SetInt().SetTo(stop ? stop - 1 : 0);
+                loc->SetInt().SetTo(stop > start ? stop - 1 : stop);
                 if (row->m_IsSetStrand) {
                     loc->SetInt().SetStrand(row->m_Strand);
                 }
+                non_gap_count++;
             }
             std_seg->SetLoc().push_back(loc);
+            row_n++;
+        }
+        seg_n++;
+        // Ignore starting segments with no actually aligned sequences.
+        if (seg_it == m_Segs.begin()  &&  non_gap_count < 2) {
+            continue;
         }
         std_segs.push_back(std_seg);
+    }
+    if (non_gap_count < 2  &&  !std_segs.empty()) {
+        // Remove the last segment if there are no aligned sequences in it.
+        std_segs.pop_back();
     }
 }
 
@@ -1695,6 +1819,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
         }
 
         CSpliced_exon_chunk::E_Choice orig_ptype = seg->m_PartType;
+        if (orig_ptype == CSpliced_exon_chunk::e_not_set) {
+            orig_ptype = CSpliced_exon_chunk::e_Match;
+        }
         CSpliced_exon_chunk::E_Choice ptype = orig_ptype;
 
         // Check strands consistency
@@ -1926,21 +2053,25 @@ x_GetDstExon(CSpliced_seg&              spliced,
     }
 
     if ( IsReverse(gen_strand) ) {
-        if ( !partial_right  &&  m_OrigExon->IsSetAcceptor_before_exon() ) {
+        if ( !partial_right  &&  m_OrigExon  &&
+            m_OrigExon->IsSetAcceptor_before_exon() ) {
             exon->SetAcceptor_before_exon().Assign(
                 m_OrigExon->GetAcceptor_before_exon());
         }
-        if ( !partial_left  &&  m_OrigExon->IsSetDonor_after_exon() ) {
+        if ( !partial_left  &&  m_OrigExon  &&
+            m_OrigExon->IsSetDonor_after_exon() ) {
             exon->SetDonor_after_exon().Assign(
                 m_OrigExon->GetDonor_after_exon());
         }
     }
     else {
-        if ( !partial_left  &&  m_OrigExon->IsSetAcceptor_before_exon() ) {
+        if ( !partial_left  &&  m_OrigExon  &&
+            m_OrigExon->IsSetAcceptor_before_exon() ) {
             exon->SetAcceptor_before_exon().Assign(
                 m_OrigExon->GetAcceptor_before_exon());
         }
-        if ( !partial_right  &&  m_OrigExon->IsSetDonor_after_exon() ) {
+        if ( !partial_right  &&  m_OrigExon  &&
+            m_OrigExon->IsSetDonor_after_exon() ) {
             exon->SetDonor_after_exon().Assign(
                 m_OrigExon->GetDonor_after_exon());
         }
@@ -1983,13 +2114,86 @@ x_GetDstExon(CSpliced_seg&              spliced,
             m_SegsScores, exon->SetScores().Set());
     }
     // Copy ext from the original exon.
-    if ( m_OrigExon->IsSetExt() ) {
+    if ( m_OrigExon  &&  m_OrigExon->IsSetExt() ) {
         CloneContainer<CUser_object, CSpliced_exon::TExt, CSpliced_exon::TExt>(
             m_OrigExon->GetExt(), exon->SetExt());
     }
     // Add the new exon to the spliced-seg.
     spliced.SetExons().push_back(exon);
     return true;
+}
+
+
+void CSeq_align_Mapper_Base::x_GetDstSplicedSubAlign(
+    CSpliced_seg&                 spliced,
+    const CSeq_align_Mapper_Base& sub_align,
+    bool&                         last_exon_partial,
+    CSeq_id_Handle&               gen_id,
+    CSeq_id_Handle&               last_gen_id,
+    bool&                         single_gen_id,
+    ENa_strand&                   gen_strand,
+    bool&                         single_gen_str,
+    CSeq_id_Handle&               prod_id,
+    CSeq_id_Handle&               last_prod_id,
+    bool&                         single_prod_id,
+    ENa_strand&                   prod_strand,
+    bool&                         single_prod_str,
+    bool&                         partial) const
+{
+    TSegments::const_iterator seg = sub_align.m_Segs.begin();
+    // Convert the current sub-mapper to an exon.
+    // In some cases the exon can be split (e.g. if a gap is found in
+    // both rows). In this case 'seg' iterator will not be set to
+    // m_Segs.end() by x_GetDstExon and the next iteration will be
+    // performed.
+    while (seg != sub_align.m_Segs.end()) {
+        CSeq_id_Handle ex_gen_id;
+        CSeq_id_Handle ex_prod_id;
+        ENa_strand ex_gen_strand = eNa_strand_unknown;
+        ENa_strand ex_prod_strand = eNa_strand_unknown;
+        bool added_exon = sub_align.x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
+            ex_gen_strand, ex_prod_strand, last_exon_partial,
+            last_gen_id, last_prod_id);
+        partial = partial || last_exon_partial;
+        if (added_exon) {
+            // Check if all exons have the same ids in genomic and product
+            // rows.
+            if (ex_gen_id) {
+                last_gen_id = ex_gen_id;
+                if ( !gen_id ) {
+                    gen_id = ex_gen_id;
+                }
+                else {
+                    single_gen_id &= gen_id == ex_gen_id;
+                }
+            }
+            if (ex_prod_id) {
+                if ( !prod_id ) {
+                    prod_id = ex_prod_id;
+                }
+                else {
+                    single_prod_id &= prod_id == ex_prod_id;
+                }
+            }
+            // Check if all exons have the same strands.
+            if (ex_gen_strand != eNa_strand_unknown) {
+                single_gen_str &= (gen_strand == eNa_strand_unknown) ||
+                    (gen_strand == ex_gen_strand);
+                gen_strand = ex_gen_strand;
+            }
+            else {
+                single_gen_str &= gen_strand == eNa_strand_unknown;
+            }
+            if (ex_prod_strand != eNa_strand_unknown) {
+                single_prod_str &= (prod_strand == eNa_strand_unknown) ||
+                    (prod_strand == ex_prod_strand);
+                prod_strand = ex_prod_strand;
+            }
+            else {
+                single_prod_str &= prod_strand == eNa_strand_unknown;
+            }
+        }
+    }
 }
 
 
@@ -2010,60 +2214,32 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     bool partial = false;
     bool last_exon_partial = false;
 
-    ITERATE(TSubAligns, it, m_SubAligns) {
-        TSegments::const_iterator seg = (*it)->m_Segs.begin();
-        // Convert the current sub-mapper to an exon.
-        // In some cases the exon can be split (e.g. if a gap is found in
-        // both rows). In this case 'seg' iterator will not be set to
-        // m_Segs.end() by x_GetDstExon and the next iteration will be
-        // performed.
-        while (seg != (*it)->m_Segs.end()) {
-            CSeq_id_Handle ex_gen_id;
-            CSeq_id_Handle ex_prod_id;
-            ENa_strand ex_gen_strand = eNa_strand_unknown;
-            ENa_strand ex_prod_strand = eNa_strand_unknown;
-            bool added_exon = (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
-                ex_gen_strand, ex_prod_strand, last_exon_partial,
-                last_gen_id, last_prod_id);
-            partial = partial || last_exon_partial;
-            if (added_exon) {
-                // Check if all exons have the same ids in genomic and product
-                // rows.
-                if (ex_gen_id) {
-                    last_gen_id = ex_gen_id;
-                    if ( !gen_id ) {
-                        gen_id = ex_gen_id;
-                    }
-                    else {
-                        single_gen_id &= gen_id == ex_gen_id;
-                    }
-                }
-                if (ex_prod_id) {
-                    if ( !prod_id ) {
-                        prod_id = ex_prod_id;
-                    }
-                    else {
-                        single_prod_id &= prod_id == ex_prod_id;
-                    }
-                }
-                // Check if all exons have the same strands.
-                if (ex_gen_strand != eNa_strand_unknown) {
-                    single_gen_str &= (gen_strand == eNa_strand_unknown) ||
-                        (gen_strand == ex_gen_strand);
-                    gen_strand = ex_gen_strand;
-                }
-                else {
-                    single_gen_str &= gen_strand == eNa_strand_unknown;
-                }
-                if (ex_prod_strand != eNa_strand_unknown) {
-                    single_prod_str &= (prod_strand == eNa_strand_unknown) ||
-                        (prod_strand == ex_prod_strand);
-                    prod_strand = ex_prod_strand;
-                }
-                else {
-                    single_prod_str &= prod_strand == eNa_strand_unknown;
-                }
+    if ( m_SubAligns.empty() ) {
+        NON_CONST_ITERATE(TSegments, seg, m_Segs) {
+            SAlignment_Segment::SAlignment_Row& gen_row =
+                seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
+            SAlignment_Segment::SAlignment_Row& prod_row =
+                seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
+            // Check if rows have correct types. If not, try to swap.
+            if (m_LocMapper.GetSeqTypeById(gen_row.m_Id) != CSeq_loc_Mapper_Base::eSeq_nuc) {
+                swap(gen_row, prod_row);
             }
+        }
+        x_GetDstSplicedSubAlign(spliced, *this,
+            last_exon_partial, gen_id, last_gen_id, single_gen_id,
+            gen_strand, single_gen_str,
+            prod_id, last_prod_id, single_prod_id,
+            prod_strand, single_prod_str,
+            partial);
+    }
+    else {
+        ITERATE(TSubAligns, it, m_SubAligns) {
+            x_GetDstSplicedSubAlign(spliced, **it,
+                last_exon_partial, gen_id, last_gen_id, single_gen_id,
+                gen_strand, single_gen_str,
+                prod_id, last_prod_id, single_prod_id,
+                prod_strand, single_prod_str,
+                partial);
         }
     }
 
@@ -2261,20 +2437,22 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         }
     }
 
-    const CSpliced_seg& orig = m_OrigAlign->GetSegs().GetSpliced();
-    // Copy some values from the original alignment.
-    if ( orig.IsSetPoly_a() ) {
-        spliced.SetPoly_a(orig.GetPoly_a());
-    }
-    if ( orig.IsSetProduct_length() ) {
-        spliced.SetProduct_length(orig.GetProduct_length());
-    }
-    // Some properties can be copied only if the alignment was not
-    // truncated.
-    if (!partial  &&  orig.IsSetModifiers()) {
-        CloneContainer<CSpliced_seg_modifier,
-            CSpliced_seg::TModifiers, CSpliced_seg::TModifiers>(
-            orig.GetModifiers(), spliced.SetModifiers());
+    if ( m_OrigAlign->GetSegs().IsSpliced() ) {
+        const CSpliced_seg& orig = m_OrigAlign->GetSegs().GetSpliced();
+        // Copy some values from the original alignment.
+        if ( orig.IsSetPoly_a() ) {
+            spliced.SetPoly_a(orig.GetPoly_a());
+        }
+        if ( orig.IsSetProduct_length() ) {
+            spliced.SetProduct_length(orig.GetProduct_length());
+        }
+        // Some properties can be copied only if the alignment was not
+        // truncated.
+        if (!partial  &&  orig.IsSetModifiers()) {
+            CloneContainer<CSpliced_seg_modifier,
+                CSpliced_seg::TModifiers, CSpliced_seg::TModifiers>(
+                orig.GetModifiers(), spliced.SetModifiers());
+        }
     }
 }
 
@@ -2748,7 +2926,14 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         // Since spliced-segs are mapped in a different way (through
         // sub-mappers which return mapped exons rather than whole alignments),
         // here we should always use std-seg.
-        x_GetDstStd(dst);
+        if (m_LocMapper.m_MixedAlignsAsSpliced  &&  row_ids.size() == 2  &&
+            m_LocMapper.GetSeqTypeById(row_ids[0]) != m_LocMapper.GetSeqTypeById(row_ids[1])) {
+            // Try to use spliced-seg for mixed-type pairwise alignments.
+            x_GetDstSpliced(dst);
+        }
+        else {
+            x_GetDstStd(dst);
+        }
     }
     /*
     // Commented out as it looks to be wrong approach - it discards scores and
