@@ -435,15 +435,21 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
         return false;
 
     // check for gapfillers  
-    for(int i = 1; i < (int)front()->Exons().size(); ++i) {
-        if(front()->Exons()[i-1].m_ssplice_sig == "XX" || front()->Exons()[i].m_fsplice_sig == "XX")
-            return false;
-    }
-    for(int i = 1; i < (int)a.Exons().size(); ++i) {
-        if(a.Exons()[i-1].m_ssplice_sig == "XX" || a.Exons()[i].m_fsplice_sig == "XX")
-            return false;
-    }
 
+    vector<TSignedSeqRange> gene_gapfill_exons;
+    ITERATE(CGeneModel::TExons, e, front()->Exons()) {
+        if(e->m_fsplice_sig == "XX" || e->m_ssplice_sig == "XX")
+            gene_gapfill_exons.push_back(e->Limits());
+    }
+    vector<TSignedSeqRange> a_gapfill_exons;
+    ITERATE(CGeneModel::TExons, e, a.Exons()) {
+        if(e->m_fsplice_sig == "XX" || e->m_ssplice_sig == "XX")
+            a_gapfill_exons.push_back(e->Limits());
+    }
+    if(gene_gapfill_exons != a_gapfill_exons)
+        return false;
+
+    bool a_share_intron = false;
     ITERATE(CGene, it, *this) {
         const CGeneModel& b = **it;
         set<TSignedSeqRange> b_introns;
@@ -456,17 +462,19 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
 
         bool a_has_new_intron = false;
         for(int i = 1; i < (int)a.Exons().size(); ++i) {
-            if(a.Exons()[i-1].m_ssplice && a.Exons()[i].m_fsplice) {
+            if(a.Exons()[i-1].m_ssplice && a.Exons()[i].m_fsplice && a.Exons()[i-1].m_ssplice_sig != "XX" && a.Exons()[i].m_fsplice_sig != "XX") {
                 TSignedSeqRange intron(a.Exons()[i-1].GetTo()+1,a.Exons()[i].GetFrom()-1);
-                if(b_introns.insert(intron).second) {
+                if(b_introns.insert(intron).second)
                     a_has_new_intron = true;
-                    continue;
-                }
+                else
+                    a_share_intron = true; 
             }
         }
  
         if(a_has_new_intron) {
             continue;
+        } else if(!gene_gapfill_exons.empty()) {
+           return false; 
         } else if(a.RealCdsLimits().NotEmpty() && b.RealCdsLimits().NotEmpty() && !a.RealCdsLimits().IntersectingWith(b.RealCdsLimits()) && (!a.TrustedmRNA().empty() || !a.TrustedProt().empty())) {
 #ifdef _DEBUG 
             const_cast<CGeneModel&>(a).AddComment("Secondary CDS");
@@ -477,7 +485,7 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
         }
     }
 
-    return true;
+    return (a_share_intron || gene_gapfill_exons.empty());
 }
 
 bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
@@ -4008,7 +4016,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
             cds.SetStart(conf_start,true);
             if(stop.NotEmpty())
                 cds.SetStop(stop,confirmed_stop);
-            ITERATE(vector<TSignedSeqRange>, s, pstops) {
+            ITERATE(CCDSInfo::TPStops, s, pstops) {
                 if(Include(reading_frame, *s))
                     cds.AddPStop(*s);
             }
@@ -6165,6 +6173,7 @@ TInDels CGnomonAnnotator_Base::GetGenomicGaps(const TGeneModelList& models){
     }
 
     sort(ggaps.begin(),ggaps.end());
+    ggaps.erase( unique(ggaps.begin(),ggaps.end()), ggaps.end() );   //remove duplicates from altvariants
     return ggaps;
 }
 
