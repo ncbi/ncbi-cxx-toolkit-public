@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Dmitry Kazimirov
+ * Authors:  Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:
  *   Implementation of CNetStorageObjectInfo.
@@ -36,97 +36,228 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char* s_NCTimeFormat = "M/D/Y h:m:s.r";
-static const char* s_ISO8601TimeFormat = "Y-M-DTh:m:s.r";
-
-struct SNetStorageObjectInfoImpl : public CObject
+// Context is shared between all lazy initializers
+struct SContext
 {
-    SNetStorageObjectInfoImpl(const string& object_loc,
-            ENetStorageObjectLocation location,
-            CJsonNode::TInstance object_loc_info,
-            Uint8 file_size,
-            CJsonNode::TInstance storage_specific_info);
+    struct SData
+    {
+        ENetStorageObjectLocation loc;
+        CJsonNode loc_info;
+        Uint8 file_size;
+        CJsonNode st_info;
 
-    string m_ObjectLoc;
-    ENetStorageObjectLocation m_Location;
-    CJsonNode m_ObjectLocInfo;
-    Uint8 m_FileSize;
-    CJsonNode m_StorageSpecificInfo;
+        SData() {}
+        SData(ENetStorageObjectLocation l,
+                CJsonNode::TInstance li,
+                Uint8 fs,
+                CJsonNode::TInstance si)
+            : loc(l),
+              loc_info(li),
+              file_size(fs),
+              st_info(si)
+        {}
+    };
+
+    // Source of data
+    enum { eNothing, eData, eJson } use;
+    SData data;
+    CJsonNode json;
+
+    SContext() : use(eNothing) {}
+    SContext(const SData& d) : use(eData), data(d) {}
+    SContext(const CJsonNode& j) : use(eJson), json(j) {}
+
+    template <ENetStorageObjectLocation>
+    CTime GetTime();
 };
 
-SNetStorageObjectInfoImpl::SNetStorageObjectInfoImpl(const string& object_loc,
-        ENetStorageObjectLocation location,
-        CJsonNode::TInstance object_loc_info,
-        Uint8 file_size,
-        CJsonNode::TInstance storage_specific_info) :
-    m_ObjectLoc(object_loc),
-    m_Location(location),
-    m_ObjectLocInfo(object_loc_info),
-    m_FileSize(file_size),
-    m_StorageSpecificInfo(storage_specific_info)
+// Lazy initialization
+class CLazyInit
 {
-}
+protected:
+    CLazyInit(bool initialized = false) : m_Initialized(initialized) {}
+    virtual ~CLazyInit() {}
 
-CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
-        ENetStorageObjectLocation location,
-        const CNetStorageObjectLoc* object_loc_struct,
-        Uint8 file_size, CJsonNode::TInstance storage_specific_info) :
-    m_Impl(new SNetStorageObjectInfoImpl(object_loc, location,
-            object_loc_struct ? object_loc_struct->ToJSON() : CJsonNode(),
-            file_size, storage_specific_info))
+    void Check()
+    {
+        if (!m_Initialized) {
+            m_Initialized = true;
+            Init();
+        }
+    }
+
+private:
+    virtual void Init() = 0;
+
+    bool m_Initialized;
+};
+
+class CDataSource : protected virtual SContext, private CLazyInit
 {
-}
+public:
+    ENetStorageObjectLocation GetLocation() { Check(); return data.loc; }
+    CJsonNode GetObjectLocInfo()            { Check(); return data.loc_info; }
+    CTime GetCreationTime()                 { Check(); return m_CreationTime; }
+    Uint8 GetSize()                         { Check(); return data.file_size; }
+    CJsonNode GetStorageSpecificInfo()      { Check(); return data.st_info; }
 
-CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
-        const CJsonNode& object_info_node)
+protected:
+    CDataSource();
+
+private:
+    void Init();
+    void InitExtra();
+
+
+    CTime m_CreationTime;
+};
+
+class CJsonSource : protected virtual SContext, private CLazyInit
 {
-    const string location_str(object_info_node.GetString("Location"));
+public:
+    CJsonNode GetJSON() { Check(); return json; }
 
-    ENetStorageObjectLocation location =
-        location_str == "NetCache" ? eNFL_NetCache :
-        location_str == "FileTrack" ? eNFL_FileTrack :
-        location_str == "NotFound" ? eNFL_NotFound : eNFL_Unknown;
+protected:
+    CJsonSource() : CLazyInit(use == eJson) { Clean(); }
 
-    CJsonNode file_size_node(object_info_node.GetByKeyOrNull("Size"));
+private:
+    void Clean();
+    void Init();
+};
 
-    Uint8 file_size = file_size_node ? (Uint8) file_size_node.AsInteger() : 0;
-
-    m_Impl = new SNetStorageObjectInfoImpl(object_loc, location,
-            object_info_node.GetByKey("ObjectLocInfo"), file_size,
-            object_info_node.GetByKeyOrNull("StorageSpecificInfo"));
-}
-
-ENetStorageObjectLocation CNetStorageObjectInfo::GetLocation() const
+struct SNetStorageObjectInfoImpl : CObject, CJsonSource, CDataSource
 {
-    return m_Impl->m_Location;
-}
+    SNetStorageObjectInfoImpl(const string& loc, const SContext::SData& data)
+        : SContext(data), m_Loc(loc)
+    {}
 
-CJsonNode CNetStorageObjectInfo::GetObjectLocInfo() const
-{
-    return m_Impl->m_ObjectLocInfo;
-}
+    SNetStorageObjectInfoImpl(const string& loc, const CJsonNode& json)
+        : SContext(json), m_Loc(loc)
+    {}
 
-CTime CNetStorageObjectInfo::GetCreationTime() const
+    string GetNFSPathname();
+
+    // Convenience method to avoid using const_cast
+    typedef SNetStorageObjectInfoImpl& TSelf;
+    TSelf NonConst() const { return const_cast<TSelf>(*this); }
+
+private:
+    string m_Loc;
+};
+
+
+template <>
+CTime SContext::GetTime<eNFL_FileTrack>()
 {
-    // TODO return a valid creation time
+    const char* const kISO8601TimeFormat = "Y-M-DTh:m:s.r:z";
+
+    if (data.st_info) {
+        if (CJsonNode ctime = data.st_info.GetByKeyOrNull("ctime")) {
+            return CTime(ctime.AsString(), kISO8601TimeFormat);
+        }
+    }
+
     return CTime();
 }
 
-Uint8 CNetStorageObjectInfo::GetSize() const
+template <>
+CTime SContext::GetTime<eNFL_NetCache>()
 {
-    return m_Impl->m_FileSize;
+    const char* const kNCTimeFormat = "M/D/Y h:m:s.r";
+
+    if (data.st_info) {
+        if (CJsonNode ctime = data.st_info.GetByKeyOrNull("Write time")) {
+            return CTime(ctime.AsString(), kNCTimeFormat);
+        }
+    }
+
+    return CTime();
 }
 
-CJsonNode CNetStorageObjectInfo::GetStorageSpecificInfo() const
+CDataSource::CDataSource()
+    : CLazyInit(use == eData)
 {
-    return m_Impl->m_StorageSpecificInfo;
+    if (use == eData) {
+        InitExtra();
+    }
 }
 
-string CNetStorageObjectInfo::GetNFSPathname() const
+void CDataSource::Init()
+{
+    // Init data from JSON
+
+    _ASSERT(use == eJson);
+
+    const string loc(json.GetString("Location"));
+    CJsonNode size(json.GetByKeyOrNull("Size"));
+
+    data.loc =
+        loc == "NetCache"  ? eNFL_NetCache :
+        loc == "FileTrack" ? eNFL_FileTrack :
+        loc == "NotFound"  ? eNFL_NotFound : eNFL_Unknown;
+    data.loc_info = json.GetByKey("ObjectLocInfo");
+    data.file_size = size ? (Uint8) size.AsInteger() : 0;
+    data.st_info = json.GetByKeyOrNull("StorageSpecificInfo");
+    InitExtra();
+}
+
+void CDataSource::InitExtra()
+{
+    if (data.loc == eNFL_FileTrack) {
+        m_CreationTime = GetTime<eNFL_FileTrack>();
+    } else if (data.loc == eNFL_NetCache) {
+        m_CreationTime = GetTime<eNFL_NetCache>();
+    }
+}
+
+void CJsonSource::Clean()
+{
+    if (use == eJson) {
+        // Remove server reply
+        json.DeleteByKey("Type");
+        json.DeleteByKey("Status");
+        json.DeleteByKey("RE");
+    }
+}
+
+void CJsonSource::Init()
+{
+    // Init JSON from data
+
+    _ASSERT(use == eData);
+
+    const char* const kOutputTimeFormat = "Y-M-DTh:m:s.r";
+    json = CJsonNode::NewObjectNode();
+
+    switch (data.loc) {
+    case eNFL_NetCache:
+        json.SetString("Location", "NetCache");
+        json.SetInteger("Size", data.file_size);
+        json.SetByKey("CreationTime", CJsonNode::NewStringNode(
+                GetTime<eNFL_NetCache>().AsString(kOutputTimeFormat)));
+        break;
+    case eNFL_FileTrack:
+        json.SetString("Location", "FileTrack");
+        json.SetInteger("Size", data.file_size);
+        json.SetByKey("CreationTime", CJsonNode::NewStringNode(
+                GetTime<eNFL_FileTrack>().AsString(kOutputTimeFormat)));
+        break;
+    default:
+        json.SetString("Location", "NotFound");
+    }
+
+    if (data.loc_info)
+        json.SetByKey("ObjectLocInfo", data.loc_info);
+
+    if (data.st_info)
+        json.SetByKey("StorageSpecificInfo", data.st_info);
+}
+
+string SNetStorageObjectInfoImpl::GetNFSPathname()
 {
     try {
-        if (m_Impl->m_StorageSpecificInfo)
-            return m_Impl->m_StorageSpecificInfo.GetString("path");
+        if (CJsonNode st_info = GetStorageSpecificInfo())
+            return st_info.GetString("path");
     }
     catch (CJsonException& e) {
         if (e.GetErrCode() != CJsonException::eKeyNotFound)
@@ -134,49 +265,58 @@ string CNetStorageObjectInfo::GetNFSPathname() const
     }
 
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot retrieve NFS path information for '" <<
-            m_Impl->m_ObjectLoc << '\'');
+            "Cannot retrieve NFS path information for '" << m_Loc << '\'');
+}
+
+CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
+        ENetStorageObjectLocation location,
+        const CNetStorageObjectLoc* object_loc_struct,
+        Uint8 file_size, CJsonNode::TInstance storage_specific_info)
+    : m_Impl(new SNetStorageObjectInfoImpl(object_loc, SContext::SData(location,
+            object_loc_struct ? object_loc_struct->ToJSON() : NULL,
+            file_size, storage_specific_info)))
+{
+}
+
+CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
+        const CJsonNode& object_info_node)
+    : m_Impl(new SNetStorageObjectInfoImpl(object_loc, object_info_node))
+{
+}
+
+ENetStorageObjectLocation CNetStorageObjectInfo::GetLocation() const
+{
+    return m_Impl->NonConst().GetLocation();
+}
+
+CJsonNode CNetStorageObjectInfo::GetObjectLocInfo() const
+{
+    return m_Impl->NonConst().GetObjectLocInfo();
+}
+
+CTime CNetStorageObjectInfo::GetCreationTime() const
+{
+    return m_Impl->NonConst().GetCreationTime();
+}
+
+Uint8 CNetStorageObjectInfo::GetSize() const
+{
+    return m_Impl->NonConst().GetSize();
+}
+
+CJsonNode CNetStorageObjectInfo::GetStorageSpecificInfo() const
+{
+    return m_Impl->NonConst().GetStorageSpecificInfo();
+}
+
+string CNetStorageObjectInfo::GetNFSPathname() const
+{
+    return m_Impl->NonConst().GetNFSPathname();
 }
 
 CJsonNode CNetStorageObjectInfo::ToJSON()
 {
-    CJsonNode root(CJsonNode::NewObjectNode());
-
-    CJsonNode ctime;
-
-    switch (m_Impl->m_Location) {
-    case eNFL_Unknown:
-    case eNFL_NotFound:
-        root.SetString("Location", "NotFound");
-        break;
-    case eNFL_NetCache:
-        root.SetString("Location", "NetCache");
-        root.SetInteger("Size", (Int8) m_Impl->m_FileSize);
-        if (m_Impl->m_StorageSpecificInfo) {
-            ctime = m_Impl->m_StorageSpecificInfo.GetByKeyOrNull("Write time");
-            if (ctime)
-                ctime = CJsonNode::NewStringNode(CTime(ctime.AsString(),
-                        s_NCTimeFormat).AsString(s_ISO8601TimeFormat));
-        }
-        break;
-    case eNFL_FileTrack:
-        root.SetString("Location", "FileTrack");
-        root.SetInteger("Size", (Int8) m_Impl->m_FileSize);
-        if (m_Impl->m_StorageSpecificInfo)
-            // No time format conversion required for FileTrack.
-            ctime = m_Impl->m_StorageSpecificInfo.GetByKeyOrNull("ctime");
-    }
-
-    if (ctime)
-        root.SetByKey("CreationTime", ctime);
-
-    if (m_Impl->m_ObjectLocInfo)
-        root.SetByKey("ObjectLocInfo", m_Impl->m_ObjectLocInfo);
-
-    if (m_Impl->m_StorageSpecificInfo)
-        root.SetByKey("StorageSpecificInfo", m_Impl->m_StorageSpecificInfo);
-
-    return root;
+    return m_Impl->GetJSON();
 }
 
 END_NCBI_SCOPE
