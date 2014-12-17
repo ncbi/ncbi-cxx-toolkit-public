@@ -663,14 +663,16 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 	    pProp->SetIval1( node.GetTaxId() );
 	    pProp->SetIval2( -1 ); // Get string property by name
 	    pProp->SetSval( "orgname" );
+            CTaxon1_req  req1;
+            CTaxon1_resp resp1;
 	    
-	    req.SetGetorgprop( *pProp );
+	    req1.SetGetorgprop( *pProp );
 	    try {
-		if( m_host.SendRequest( req, resp ) ) {
-		    if( resp.IsGetorgprop() ) { 
-			if( resp.GetGetorgprop().size() > 0 ) {
+		if( m_host.SendRequest( req1, resp1 ) ) {
+		    if( resp1.IsGetorgprop() ) { 
+			if( resp1.GetGetorgprop().size() > 0 ) {
 			    CRef<CTaxon1_info> pInfo
-				= resp.GetGetorgprop().front();
+				= resp1.GetGetorgprop().front();
 			    if( pInfo->IsSetSval() && !pInfo->GetSval().empty() ) {
 				try {
  				    CObjectIStreamAsn is( pInfo->GetSval().c_str(),
