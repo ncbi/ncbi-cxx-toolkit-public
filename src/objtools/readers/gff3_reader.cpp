@@ -289,6 +289,18 @@ bool CGff3Reader::xUpdateAnnotCds(
                 pErr->SetLineNumber(m_uLineNumber);
                 ProcessError(*pErr, pEC);
             }
+            if (m_iFlags | fGeneXrefs) {
+                if (!xFeatureSetXrefGrandParent(*cit, pFeature)) {
+                    AutoPtr<CObjReaderLineException> pErr(
+                        CObjReaderLineException::Create(
+                        eDiag_Warning,
+                        0,
+                        "Bad data line: CDS record with bad parent assignment.",
+                        ILineError::eProblem_MissingContext) );
+                    pErr->SetLineNumber(m_uLineNumber);
+                    ProcessError(*pErr, pEC);
+                }
+            }
             if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
                 return false;
             }
@@ -305,9 +317,40 @@ bool CGff3Reader::xUpdateAnnotCds(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xFeatureSetXrefGrandParent(
     const string& parent,
-    CRef<CSeq_feat> pChild)
+    CRef<CSeq_feat> pFeature)
 //  ----------------------------------------------------------------------------
 {
+    IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
+    if (it == m_MapIdToFeature.end()) {
+        return false;
+    }
+    CRef<CSeq_feat> pParent = it->second;
+    const string &grandParentsStr = pParent->GetNamedQual("Parent");
+    list<string> grandParents;
+    NStr::Split(grandParentsStr, ",", grandParents);
+    for (list<string>::const_iterator gpcit = grandParents.begin();
+            gpcit != grandParents.end(); ++gpcit) {
+        const string& s = *gpcit; 
+        IdToFeatureMap::iterator gpit = m_MapIdToFeature.find(*gpcit);
+        if (gpit == m_MapIdToFeature.end()) {
+            return false;
+        }
+        CRef<CSeq_feat> pGrandParent = gpit->second;
+
+        //xref grandchild->grandparent
+        CRef<CFeat_id> pGrandParentId(new CFeat_id);
+        pGrandParentId->Assign(pGrandParent->GetId());
+        CRef<CSeqFeatXref> pGrandParentXref(new CSeqFeatXref);
+        pGrandParentXref->SetId(*pGrandParentId);  
+        pFeature->SetXref().push_back(pGrandParentXref);
+
+        //xref grandparent->grandchild
+        CRef<CFeat_id> pGrandChildId(new CFeat_id);
+        pGrandChildId->Assign(pFeature->GetId());
+        CRef<CSeqFeatXref> pGrandChildXref(new CSeqFeatXref);
+        pGrandChildXref->SetId(*pGrandChildId);
+        pGrandParent->SetXref().push_back(pGrandChildXref);
+    }
     return true;
 }
 
