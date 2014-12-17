@@ -1158,7 +1158,7 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     }
 
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
-        _ASSERT(net_info);  // otherwise ConnNetInfo_ParseURL() would fail
+        _ASSERT(net_info);  // otherwise ConnNetInfo_ParseURL() would've failed
         if (net_info->req_method == eReqMethod_Connect) {
             return new CConn_SocketStream(*net_info, 0, 0, fSOCK_LogDefault,
                                           net_info->timeout, buf_size);
