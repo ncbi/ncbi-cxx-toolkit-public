@@ -86,11 +86,11 @@ private:
     template<class T>
     void GetAlleles(T &variations, set<string>& alleles, string &ref, int *type = NULL);
 
-    bool IsVariation(AutoPtr<CObjectIStream>& oistr);
+    bool IsVariation(AutoPtr<CObjectIStream>& oinput_istream);
 
     template<class T>
-    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose);
-    void CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope);
+    int CorrectAndCompare(AutoPtr<CObjectIStream>& input_objstream, AutoPtr<CObjectIStream>& baseline_objstream, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose);
+    void CheckShiftable(AutoPtr<CObjectIStream>& input_objstream, CRef<CScope> scope);
 
     void TestFullyShifted(const CVariation& v);
     void TestFullyShifted(const CSeq_annot& v);
@@ -129,14 +129,14 @@ int CTestShiftApp::Run()
 {
 
     CArgs args = GetArgs();
-    CNcbiIstream& istr = args["i"].AsInputFile();
+    CNcbiIstream& input_istream = args["i"].AsInputFile();
     bool verbose = args["v"].AsBoolean();
     bool check = args["c"].AsBoolean();
     const string& mode = args["mode"].AsString();
 
     AutoPtr<CNcbiIstream> baseline_stream;
     if(args["b"])
-        baseline_stream.reset(new CNcbiIfstream(args["f"].AsString().c_str()));
+        baseline_stream.reset(new CNcbiIfstream(args["b"].AsString().c_str()));
 
     CVariationNormalization::ETargetContext context ;
     if(mode == "full_shift")
@@ -153,40 +153,41 @@ int CTestShiftApp::Run()
     CGBDataLoader::RegisterInObjectManager(*object_manager, NULL, CObjectManager::eDefault, 2);
     scope->AddDefaults();
 
-    AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
-    AutoPtr<CObjectIStream> var_in1(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
+    AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(input_istream, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
+    AutoPtr<CObjectIStream> input_objstream(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
 
     if (check)
     {
-        CheckShiftable(var_in1,scope);
+        CheckShiftable(input_objstream,scope);
         return 0;
     }
 
+
     AutoPtr<CDecompressIStream>	decomp_stream2;
-    AutoPtr<CObjectIStream> var_in2;
+    AutoPtr<CObjectIStream> baseline_objstream;
     if( args["b"] ) {
         decomp_stream2.reset(new CDecompressIStream(*baseline_stream, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
-        var_in2.reset(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
+        baseline_objstream.reset(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
     }
 
-    bool is_variation = IsVariation(var_in1);
+    bool is_variation = IsVariation(input_objstream);
 
     int n = 0;
-    while (!var_in1->EndOfData() )  // && !var_in2->EndOfData())
+    while (!input_objstream->EndOfData() )  // && !baseline_objstream->EndOfData())
     {
-        if( args["b"] && var_in2->EndOfData() ) 
+        if( args["b"] && baseline_objstream->EndOfData() ) 
         {
             ERR_POST(Error << "File size does not match - Fixed file is smaller" << Endm);
         }
         if (is_variation)
-            n += CorrectAndCompare<CVariation>(var_in1, var_in2, context, scope,verbose);
+            n += CorrectAndCompare<CVariation>(input_objstream, baseline_objstream, context, scope,verbose);
         else
-            n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, context, scope,verbose);
+            n += CorrectAndCompare<CSeq_annot>(input_objstream, baseline_objstream, context, scope,verbose);
     }
     if (verbose)
-        cout << endl << "Number of inconsistencies: " << n << endl;
+        NcbiCout << NcbiEndl << "Number of inconsistencies: " << n << NcbiEndl;
 
-    if( args["b"] && !var_in2->EndOfData() ) 
+    if( args["b"] && !baseline_objstream->EndOfData() ) 
         ERR_POST(Error << "File size does not match - Fixed file is larger" << Endm);
 
     
@@ -208,10 +209,9 @@ void CTestShiftApp::TestFullyShifted(const CVariation& variation)
     //          and its data is a single instance 
     // 2. Contains 1 Variation object (with its placement),
     //          and its data is a set of instances
-    ITERATE(CVariation::TData::TSet::TVariations, var_it, variation.GetData().GetSet().GetVariations()) {
-        const CVariation& var = **var_it;
-        cout << "Test Fully Shifted : " << CVariationNormalization::isFullyShifted(var) << endl;
-    }
+    // Flag is set on outer object (one per placement)
+    NcbiCout << "Test Fully Shifted : " << CVariationNormalization::isFullyShifted(variation) << NcbiEndl;
+
 }
 
 void CTestShiftApp::TestFullyShifted(const CSeq_annot& annot)
@@ -221,7 +221,7 @@ void CTestShiftApp::TestFullyShifted(const CSeq_annot& annot)
 
     ITERATE(CSeq_annot::TData::TFtable, feat_it, annot.GetData().GetFtable()) {
         const CSeq_feat& feat = **feat_it;
-        cout << "Test Fully Shifted : " << CVariationNormalization::isFullyShifted(feat) << endl;
+        NcbiCout << "Test Fully Shifted : " << CVariationNormalization::isFullyShifted(feat) << NcbiEndl;
     }
 
 }
@@ -380,7 +380,7 @@ int CTestShiftApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
     return n;
 }
 
-bool  CTestShiftApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
+bool  CTestShiftApp::IsVariation(AutoPtr<CObjectIStream>& oinput_istream)
 {
     set<TTypeInfo> matches;
     set<TTypeInfo> candidates;
@@ -388,7 +388,7 @@ bool  CTestShiftApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
     candidates.insert(CType<CSeq_annot>().GetTypeInfo());
     candidates.insert(CType<CVariation>().GetTypeInfo());
 
-    matches   = oistr->GuessDataType(candidates);
+    matches   = oinput_istream->GuessDataType(candidates);
     if(matches.size() != 1) 
     {
         string msg = "Found more than one match for this type of file.  Could not guess data type";
@@ -399,48 +399,48 @@ bool  CTestShiftApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
 }
 
 template<class T>
-int CTestShiftApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose)
+int CTestShiftApp::CorrectAndCompare(AutoPtr<CObjectIStream>& input_objstream, AutoPtr<CObjectIStream>& baseline_objstream, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose)
 {
     CRef<T> v1(new T);
     CRef<T> v2(new T);
 
-    *var_in1 >> *v1;      
+    *input_objstream >> *v1;      
     if (verbose)
     {
-        cout << endl << "Input Variation" << endl;
-        cout <<  MSerial_AsnText << *v1;
+        NcbiCout << NcbiEndl << "Input Variation" << NcbiEndl;
+        NcbiCout <<  MSerial_AsnText << *v1;
     }
     CVariationNormalization::NormalizeVariation(*v1,context,*scope);
 
     if (verbose)
     {
-        cout << endl << "Output Variation" << endl;
-        cout <<  MSerial_AsnText << *v1;
+        NcbiCout << NcbiEndl << "Output Variation" << NcbiEndl;
+        NcbiCout <<  MSerial_AsnText << *v1;
     }   
 
 
-    if(!var_in2.get()) {
-        cout <<  MSerial_AsnText << *v1;
+    if(!baseline_objstream.get()) {
+        NcbiCout <<  MSerial_AsnText << *v1;
         //Append if tagged with full shifted
         TestFullyShifted(*v1);
         return 0;
     }
 
 
-    *var_in2 >> *v2;
+    *baseline_objstream >> *v2;
     if (verbose)
     {
-        cout << endl << "Desired Variation" << endl;
-        cout <<  MSerial_AsnText << *v2;
+        NcbiCout << NcbiEndl << "Desired Variation" << NcbiEndl;
+        NcbiCout <<  MSerial_AsnText << *v2;
     }   
     int n = CompareVar(v1,v2); 
     return n;
 }
 
-void CTestShiftApp::CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope)
+void CTestShiftApp::CheckShiftable(AutoPtr<CObjectIStream>& input_objstream, CRef<CScope> scope)
 {
     CRef<CSeq_annot> v1(new CSeq_annot);
-    *var_in1 >> *v1;
+    *input_objstream >> *v1;
     for (CSeq_annot::TData::TFtable::iterator feat1 = v1->SetData().SetFtable().begin(); feat1 != v1->SetData().SetFtable().end(); ++feat1)
     {
         CVariation_ref& vr1 = (*feat1)->SetData().SetVariation();
@@ -452,9 +452,9 @@ void CTestShiftApp::CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope
             ref = *alleles.begin();
         bool r = CVariationNormalization::IsShiftable((*feat1)->GetLocation(),ref, *scope, type);
         if (r)
-            cout << "Yes" << endl;
+            NcbiCout << "Yes" << NcbiEndl;
         else
-            cout << "No" << endl;
+            NcbiCout << "No" << NcbiEndl;
     }
 
 }

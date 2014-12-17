@@ -1,0 +1,7 @@
+ 1.asn | Correct reference allele SNP
+ 2.asn | SNP with swapped alleles
+ 3.asn | SNP without reference to begin with in allele set
+ 4.asn | Fully shifted insertion (no reference to fix, as this is an insertion)
+ 5.asn | Fully shifted deletion with correct allele deleted
+ 6.asn | Fully shifted deletion, but with incorrect allele
+ 7.asn | Deletion, not shifted, with incorrect allele

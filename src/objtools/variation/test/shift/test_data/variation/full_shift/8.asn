@@ -45,17 +45,17 @@ Variation ::= {
               }
             }
           }
-        },
-        ext {
-          {
-            type str "Variation Normalization",
-            data {
-              {
-                label str "Fully Shifted",
-                data bool TRUE
-              }
-            }
-          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Variation Normalization",
+      data {
+        {
+          label str "Fully Shifted",
+          data bool TRUE
         }
       }
     }

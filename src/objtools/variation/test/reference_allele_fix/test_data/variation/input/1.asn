@@ -5,12 +5,11 @@ Variation ::= {
       {
         placements {
           {
-            loc int {
-              from 2229045,
-              to 2229056,
+            loc pnt {
+              point 68910540,
               id other {
                 accession "NC_000001",
-                version 11
+                version 10
               }
             },
             mol genomic
@@ -21,41 +20,32 @@ Variation ::= {
           variations {
             {
               data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
                 type identity,
                 delta {
                   {
                     seq literal {
-                      length 9,
-                      seq-data iupacna "TCCGACCGC"
+                      length 1,
+                      seq-data iupacna "G"
                     }
                   }
                 },
                 observation reference
               }
-            },
-            {
-              data instance {
-                type del,
-                delta {
-                  {
-                    seq this NULL,
-                    action del-at
-                  }
-                }
-              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "Variation Normalization",
-      data {
-        {
-          label str "Fully Shifted",
-          data bool TRUE
         }
       }
     }

@@ -73,7 +73,7 @@ USING_SCOPE(objects);
 using namespace std;
 
 
-class CCorrectRefAlleleApp : public CNcbiApplication 
+class CReferenceAlleleFixApp : public CNcbiApplication 
 {
 private:
     virtual void Init(void);
@@ -81,31 +81,31 @@ private:
     virtual void Exit(void);
     int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
     int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2);
-    bool IsVariation(AutoPtr<CObjectIStream>& oistr);
+    bool IsVariation(AutoPtr<CObjectIStream>& oinput_istream);
     template<class T>
-    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose);
+    int CorrectAndCompare(AutoPtr<CObjectIStream>& input_objstream, AutoPtr<CObjectIStream>& baseline_objstream, CRef<CScope> scope, bool verbose);
     void GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles);
-    void CheckReferenceAlleleInSeqFeat( AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope);
+    void CheckFeats(CObjectIStream& input_objstream, CScope& scope);
+    void CheckVars( CObjectIStream& input_objstream, CScope& scope);
 };
 
 
-void CCorrectRefAlleleApp::Init(void)
+void CReferenceAlleleFixApp::Init(void)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Correct Ref Allele in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"-",CArgDescriptions::fPreOpen);
+    arg_desc->AddOptionalKey("b", "baseline", "Baseline file",CArgDescriptions::eInputFile);
     arg_desc->AddFlag("v", "Verbose output",true);
-    arg_desc->AddFlag("c", "Check ref allele",true);
     SetupArgDescriptions(arg_desc.release());
 }
 
-void CCorrectRefAlleleApp::Exit(void)
+void CReferenceAlleleFixApp::Exit(void)
 {
 }
+    
 
-
-int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
+int CReferenceAlleleFixApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
 {
     int n = 0;
     if (v1->SetData().SetSet().SetVariations().size() !=
@@ -184,7 +184,7 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     return n;
 }
 
-void CCorrectRefAlleleApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles)
+void CReferenceAlleleFixApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles)
 {
     for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
     {
@@ -205,7 +205,7 @@ void CCorrectRefAlleleApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<s
     }
 }
 
-int CCorrectRefAlleleApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
+int CReferenceAlleleFixApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
 {
     int n = 0;
     CSeq_annot::TData::TFtable::iterator feat1, feat2;
@@ -237,7 +237,7 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
     return n;
 }
 
-bool  CCorrectRefAlleleApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
+bool  CReferenceAlleleFixApp::IsVariation(AutoPtr<CObjectIStream>& oinput_istream)
 {
     set<TTypeInfo> matches;
     set<TTypeInfo> candidates;
@@ -245,7 +245,7 @@ bool  CCorrectRefAlleleApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
     candidates.insert(CType<CSeq_annot>().GetTypeInfo());
     candidates.insert(CType<CVariation>().GetTypeInfo());
 
-    matches   = oistr->GuessDataType(candidates);
+    matches   = oinput_istream->GuessDataType(candidates);
     if(matches.size() != 1) 
     {
         string msg = "Found more than one match for this type of file.  Could not guess data type";
@@ -256,83 +256,161 @@ bool  CCorrectRefAlleleApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
 }
 
 template<class T>
-int CCorrectRefAlleleApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose)
+int CReferenceAlleleFixApp::CorrectAndCompare(AutoPtr<CObjectIStream>& input_objstream, AutoPtr<CObjectIStream>& baseline_objstream, CRef<CScope> scope, bool verbose)
 {
     CRef<T> v1(new T);
     CRef<T> v2(new T);
 
-    *var_in1 >> *v1;      
+    *input_objstream >> *v1;      
     if (verbose)
     {
-        cerr << endl << "Input Variation" << endl;
-        cerr <<  MSerial_AsnText << *v1;
+        NcbiCerr << NcbiEndl << "Input Variation" << NcbiEndl;
+        NcbiCerr <<  MSerial_AsnText << *v1;
     }
-    CVariationUtilities::CorrectRefAllele(v1,*scope);
-    *var_in2 >> *v2;
+    CVariationUtilities::CorrectRefAllele(*v1,*scope);
+    *baseline_objstream >> *v2;
     if (verbose)
     {
-        cerr << endl << "Desired Variation" << endl;
-        cerr <<  MSerial_AsnText << *v2;
+        NcbiCerr << NcbiEndl << "Desired Variation" << NcbiEndl;
+        NcbiCerr <<  MSerial_AsnText << *v2;
     }   
     if (verbose)
     {
-        cerr << endl << "Output Variation" << endl;
-        cerr <<  MSerial_AsnText << *v1;
+        NcbiCerr << NcbiEndl << "Output Variation" << NcbiEndl;
+        NcbiCerr <<  MSerial_AsnText << *v1;
     }   
     int n = CompareVar(v1,v2);
     return n;
 }
 
+void CReferenceAlleleFixApp::CheckVars( CObjectIStream& input_objstream, 
+    CScope& scope)
+{
+    CRef<CVariation> variation(new CVariation);
+    input_objstream >> *variation;
 
-void CCorrectRefAlleleApp::CheckReferenceAlleleInSeqFeat( AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope)
+    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it, variation->SetData().SetSet().SetVariations()) {
+        CVariation& var = **var_it;
+        CVariantPlacement& vp = *var.SetPlacements().front(); 
+        CSeq_loc& loc = vp.SetLoc();
+
+
+        //2. Test GetType
+        NcbiCout << "Check Variation type: " 
+            << CVariationUtilities::GetVariationType(var) << NcbiEndl;
+
+        //3 Get Ref Alt
+        string ref;
+        vector<string> alts;
+        CVariationUtilities::GetVariationRefAlt(var, ref, alts);
+        NcbiCout << "Ref/Alt : " << ref << " - " 
+            << NStr::Join(alts,",") << NcbiEndl;
+
+
+    }
+
+    //NB: This is for the whole variation
+
+    //5. Correct Ref Allele
+    CVariationUtilities::CorrectRefAllele(*variation, scope);
+    NcbiCout << MSerial_AsnText << *variation;
+
+
+
+}
+
+void CReferenceAlleleFixApp::CheckFeats( CObjectIStream& input_objstream, 
+    CScope& scope)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    *var_in1 >> *annot;
-    for (CSeq_annot::TData::TFtable::iterator feat = annot->SetData().SetFtable().begin(); feat != annot->SetData().SetFtable().end(); ++feat)
-    {
-        string input_ref,output_ref;
-        bool r = CVariationUtilities::IsReferenceCorrect(**feat,input_ref,output_ref,*scope);
-        cerr << r<<" "<<input_ref<<" "<<output_ref<<endl;
+    input_objstream >> *annot;
+    NON_CONST_ITERATE(CSeq_annot::TData::TFtable, feat_it, annot->SetData().SetFtable()) {
+        CSeq_feat& feat = **feat_it;
+        const CVariation_ref& vref = feat.GetData().GetVariation();
+
+        //1. Test IsReferenceCorrect
+        //2. TUESDAY: Problem 1 - for insertions, this doesn't make sense
+        //    as there is no 'reference', and correct ref is merely the range
+        //    of the insertion, if fully or interval shifted.
+        string asserted_ref(kEmptyStr), ref_at_location(kEmptyStr);
+        bool isCorrect = CVariationUtilities::IsReferenceCorrect(feat,asserted_ref,ref_at_location ,scope);
+        NcbiCout << "Is Reference Correct? : " << isCorrect << " . "
+            << asserted_ref << " . " << ref_at_location << NcbiEndl;
+
+        //2. Test GetType
+        NcbiCout << "Check Variation type: " 
+            << CVariationUtilities::GetVariationType(vref) << NcbiEndl;
+
+        //3 Get Ref Alt
+        string ref;
+        vector<string> alts;
+        CVariationUtilities::GetVariationRefAlt(vref, ref, alts);
+        NcbiCout << "Ref/Alt : " << ref << " - " 
+            << NStr::Join(alts,",") << NcbiEndl;
+
+        //4. Correct Ref Allele - TUES: does this make sense for insertion?
+        // it does for a deletion though!
+        CVariationUtilities::CorrectRefAllele(feat, scope);
+        NcbiCout << MSerial_AsnText << feat;
     }
 }
 
-int CCorrectRefAlleleApp::Run() 
+int CReferenceAlleleFixApp::Run() 
 {
     CArgs args = GetArgs();
-    CNcbiIstream& istr = args["i"].AsInputFile();
+    CNcbiIstream& input_istream = args["i"].AsInputFile();
     bool verbose = args["v"].AsBoolean();
-    bool check = args["c"].AsBoolean();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
     CGBDataLoader::RegisterInObjectManager(*object_manager, NULL, CObjectManager::eDefault, 2);
     scope->AddDefaults();
 
-    AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
-    AutoPtr<CObjectIStream> var_in1(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
+    AutoPtr<CObjectIStream> input_objstream(CObjectIStream::Open(eSerial_AsnText, input_istream));
+    bool is_variation = IsVariation(input_objstream);
+
+/*
     if (check)
     {
-        CheckReferenceAlleleInSeqFeat(var_in1,scope);
+        CheckFeats(input_objstream,scope);
         return 0;
     }
+*/
+    //All done if no baseline file to compare to.
+    if(!args["b"]) {
 
-    CNcbiIstream& fstr = args["f"].AsInputFile();
-    AutoPtr<CDecompressIStream>	decomp_stream2(new CDecompressIStream(fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
-    AutoPtr<CObjectIStream> var_in2(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
+        if(is_variation)
+            CheckVars(*input_objstream, *scope);
+        else
+            CheckFeats(*input_objstream, *scope);
 
-    bool is_variation = IsVariation(var_in1);
+        //Run through tests, dumping information to stdout
+        //1. IsCorrectRef -- only used here?
+        //2. CorrectRef
+        //3. GetType
+        //4. GetVarRefAlt
+        //5. GetAlleleFromLoc
+
+        return 0;
+
+    }
+    //Open up baseline, if we have it.
+    AutoPtr<CNcbiIstream> baseline_input_istreameam(new CNcbiIfstream(args["b"].AsString().c_str()));
+    AutoPtr<CObjectIStream> baseline_objstream(CObjectIStream::Open(eSerial_AsnText, *baseline_input_istreameam));
+
 
     int n = 0;
-    while (!var_in1->EndOfData() && !var_in2->EndOfData())
+    while (!input_objstream->EndOfData() && !baseline_objstream->EndOfData())
     {
         if (is_variation)
-            n += CorrectAndCompare<CVariation>(var_in1, var_in2, scope,verbose);
+            n += CorrectAndCompare<CVariation>(input_objstream, baseline_objstream, scope,verbose);
         else
-            n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, scope,verbose);
+            n += CorrectAndCompare<CSeq_annot>(input_objstream, baseline_objstream, scope,verbose);
     }
     if (verbose)
-        cerr << endl << "Number of inconsistencies: " << n << endl;
-    if (!var_in1->EndOfData() || !var_in2->EndOfData())
+        NcbiCerr << NcbiEndl << "Number of inconsistencies: " << n << NcbiEndl;
+    
+    if (!input_objstream->EndOfData() || !baseline_objstream->EndOfData())
         ERR_POST(Error << "File size does not match" << Endm);
 
     return 0;
@@ -340,8 +418,8 @@ int CCorrectRefAlleleApp::Run()
 
 int main(int argc, const char* argv[])
 {
-    CCorrectRefAlleleApp CorrectRefAlleleApp;
-    return CorrectRefAlleleApp.AppMain(argc, argv);
+    CReferenceAlleleFixApp ReferenceAlleleFixApp;
+    return ReferenceAlleleFixApp.AppMain(argc, argv);
 }
 
 
