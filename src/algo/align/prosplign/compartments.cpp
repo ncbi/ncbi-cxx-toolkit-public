@@ -127,6 +127,15 @@ double TotalScore(THitRefs& hitrefs)
     return result;
 }
 
+int TotalRawScore(THitRefs& hitrefs)
+{
+    int result = 0;
+    ITERATE(THitRefs, i, hitrefs) {
+        result += (*i)->GetRawScore();
+    }
+    return result;
+}
+
 CRef<CScore> IntScore(const string& id, int value)
 {
     CRef<CScore> result(new CScore);
@@ -171,6 +180,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
         TSeqPos qry_max = (*h)->GetQueryMax();
         double pct_identity =(*h) ->GetIdentity();
         double bit_score = (*h)->GetScore();
+        int score = (*h)->GetRawScore();
 
         subj_leftmost = min(subj_leftmost, subj_min);
         subj_rightmost = max(subj_rightmost, subj_max);
@@ -189,6 +199,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 
         std_seg->SetScores().push_back(RealScore("pct_identity",pct_identity*100));
         std_seg->SetScores().push_back(RealScore("bit_score",bit_score));
+        if(score > 0) std_seg->SetScores().push_back(IntScore("score",score));
 
         std_segs.push_back(std_seg);
     }
@@ -198,6 +209,10 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 
     CRef<CUser_object> uo(new CUser_object);
     uo->SetType().SetStr("Compart Scores");
+    int TRScore =  TotalRawScore(hitrefs);
+    if(TRScore > 0) {
+        uo->AddField("score", TRScore);
+    }
     uo->AddField("bit_score", TotalScore(hitrefs));
     uo->AddField("num_covered_aa", CountQueryCoverage(hitrefs));
     result->AddUserObject( *uo );
@@ -401,6 +416,7 @@ TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompart
         const CSeq_loc* subj_loc = NULL;
         int covered_aa = 0;
         double score = 0;
+        int raw_score = 0;
         ITERATE (CAnnot_descr::Tdata, desc_it, comp.GetDesc().Get()) {
             const CAnnotdesc& desc = **desc_it;
             if (desc.IsRegion()) {
@@ -408,13 +424,18 @@ TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompart
             } else if (desc.IsUser() && desc.GetUser().GetType().IsStr() && desc.GetUser().GetType().GetStr()=="Compart Scores") {
                 covered_aa = desc.GetUser().GetField("num_covered_aa").GetData().GetInt();
                 score = desc.GetUser().GetField("bit_score").GetData().GetReal();
+                try {
+                    raw_score = desc.GetUser().GetField("score").GetData().GetInt();
+                } catch(...) {//  score is not set in ASN
+                    raw_score = (int) score;
+                }
             }
         }
         if (subj_loc)
             results.push_back(SCompartment(subj_loc->GetStart(eExtreme_Positional),
                                            subj_loc->GetStop(eExtreme_Positional),
                                            subj_loc->GetStrand()!=eNa_strand_minus,
-                                           covered_aa, score));
+                                           covered_aa, score, raw_score));
     }
     sort(results.begin(),results.end());
 

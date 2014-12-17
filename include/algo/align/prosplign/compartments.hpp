@@ -79,14 +79,15 @@ public:
 };
 
 struct SCompartment {
-    SCompartment(int from_, int to_, bool strand_, int covered_aa_, double score_) :
-        from(from_), to(to_), strand(strand_), covered_aa(covered_aa_), score(score_) {}
+    SCompartment(int from_, int to_, bool strand_, int covered_aa_, double score_, int raw_score_) :
+        from(from_), to(to_), strand(strand_), covered_aa(covered_aa_), score(score_), raw_score(raw_score_) {}
 
     int from;
     int to;
     bool strand;
     int covered_aa;
-    double score;
+    double score; // bit score
+    int raw_score; //regular blast score
 
     bool operator< (const SCompartment& comp) const
     {
