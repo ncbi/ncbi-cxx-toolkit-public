@@ -56,6 +56,21 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
+NCBITEST_INIT_TREE()
+{
+    CNcbiEnvironment env;
+    const string& under_valgrind = env.Get("NCBI_RUN_UNDER_VALGRIND");
+    if ( !under_valgrind.empty() ) {
+        try {
+            if (NStr::StringToBool(under_valgrind)) {
+                NCBITEST_DISABLE(CheckPrimerBlastRID);
+            }
+        } catch (const exception&) {
+            ERR_POST(Warning << "Unsupported NCBI_RUN_UNDER_VALGRIND value "
+                     << under_valgrind << "; treating as false.");
+        }
+    }
+}
 
 static int 
 x_CountHits(const string & rid)
