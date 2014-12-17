@@ -461,6 +461,12 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
             error_code = CNetStorageServerException::eStorageError;
         error_client_message = ex.what();
     }
+    catch (const CException &  ex) {
+        ERR_POST(ex);
+        http_error_code = eStatus_ServerError;
+        error_code = CNetStorageServerException::eInternalError;
+        error_client_message = ex.what();
+    }
     catch (const std::exception &  ex) {
         ERR_POST("STL exception: " << ex.what());
         http_error_code = eStatus_ServerError;
