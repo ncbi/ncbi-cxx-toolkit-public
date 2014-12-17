@@ -226,21 +226,21 @@ void CJsonSource::Init()
 
     _ASSERT(use == eData);
 
-    const char* const kOutputTimeFormat = "Y-M-DTh:m:s.r";
+    const char* const kOutputTimeFormat = "M/D/Y h:m:s";
     json = CJsonNode::NewObjectNode();
 
     switch (data.loc) {
     case eNFL_NetCache:
-        json.SetString("Location", "NetCache");
-        json.SetInteger("Size", data.file_size);
         json.SetByKey("CreationTime", CJsonNode::NewStringNode(
                 GetTime<eNFL_NetCache>().AsString(kOutputTimeFormat)));
+        json.SetString("Location", "NetCache");
+        json.SetInteger("Size", data.file_size);
         break;
     case eNFL_FileTrack:
-        json.SetString("Location", "FileTrack");
-        json.SetInteger("Size", data.file_size);
         json.SetByKey("CreationTime", CJsonNode::NewStringNode(
                 GetTime<eNFL_FileTrack>().AsString(kOutputTimeFormat)));
+        json.SetString("Location", "FileTrack");
+        json.SetInteger("Size", data.file_size);
         break;
     default:
         json.SetString("Location", "NotFound");

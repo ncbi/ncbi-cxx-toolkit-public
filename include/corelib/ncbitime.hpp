@@ -587,10 +587,11 @@ public:
     ///   - P = am/pm                          (AM/PM)
     ///   - p = am/pm                          (am/pm)
     ///   - Z = timezone format                (GMT or none)
-    ///   - z = timezone shift                 ([GMT]+/-HHMM)
-    ///         -- available only on POSIX platforms
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
+    ///   following available only on POSIX platforms:
+    ///   - z = timezone shift                 ([GMT]+/-HHMM)
+    ///   - :z = timezone shift                (+/-HH:MM)
     ///
     ///   Format string can represent date/time partially, in this case
     ///   current time, or default values, will be used to amplify time

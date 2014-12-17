@@ -435,6 +435,40 @@ CTime::CTime(int year, int yearDayNumber,
         return false; \
     }
 
+// This helper takes care of parsing time with ':z' specified
+struct STzFmtParse
+{
+    STzFmtParse() : m_Active(false) {}
+
+    void fmt(const char*& f)
+    {
+        _ASSERT(f);
+        if (*f == ':') {
+            if (*++f == 'z') {
+                m_Active = true;
+            } else {
+                --f;
+            }
+        }
+    }
+
+    bool str(const char*& s)
+    {
+        _ASSERT(s);
+        if (m_Active) {
+            if (*s != ':') return false;
+
+            ++s;
+            m_Active = false;
+        }
+
+        return true;
+    }
+
+private:
+    bool m_Active;
+};
+
 bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_action)
 {
     Clear();
@@ -476,6 +510,8 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     bool is_ignore_spaces = ((format.GetFlags() & CTimeFormat::fMatch_IgnoreSpaces) != 0);
     bool is_format_space = false;
 
+    STzFmtParse tz_fmt_parse;
+
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
         // Skip preceding symbols for some formats
@@ -488,6 +524,8 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         if ( is_escaped ) {
             is_format_symbol = false;
         }
+
+        tz_fmt_parse.fmt(fff);
 
         // White space processing
         {{
@@ -613,6 +651,10 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             }
             try {
                 if ( *sss != '\0' ) {
+                    if (!tz_fmt_parse.str(sss)) {
+                        break;  // error: not matched format symbol ':'
+                    }
+
                     s = value_str;
                     for (size_t len = 2;
                          len  &&  *sss  &&  isdigit((unsigned char)(*sss));
@@ -1204,6 +1246,41 @@ CTimeFormat CTime::GetFormat(void)
     return fmt;
 }
 
+// This helper takes care of composing string with ':z' specified
+struct STzFmtMake
+{
+    typedef string::const_iterator T_CI;
+
+    STzFmtMake() : m_Active(false) {}
+
+    void fmt(string& s, T_CI i, T_CI end)
+    {
+        _ASSERT(i != end);
+        T_CI j = i + 1;
+
+        if (j != end && *j == 'z') {
+            m_Active = true;
+        } else {
+            s += ':';
+        }
+    }
+
+    bool active() const
+    {
+        return m_Active;
+    }
+
+    void str(string& s)
+    {
+        if (m_Active) {
+            s += ':';
+            m_Active = false;
+        }
+    }
+
+private:
+    bool m_Active;
+};
 
 string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 {
@@ -1248,6 +1325,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
 
+    STzFmtMake tz_fmt_make;
+
     ITERATE(string, it, fmt) {
 
         if ( !is_format_symbol ) {
@@ -1289,14 +1368,17 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   break;
         case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
+        case ':': tz_fmt_make.fmt(str, it, fmt.end());      break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
                   ERR_POST_X(5, "Format symbol 'z' is unsupported "
                                 "on this platform");
 #else
-                  str += "GMT";
-                  if (IsGmtTime()) {
-                      break;
+                  if (!tz_fmt_make.active()) {
+                      str += "GMT";
+                      if (IsGmtTime()) {
+                          break;
+                      }
                   }
                   TSeconds tz = out_tz;
                   if (out_tz == eCurrentTimeZone) {
@@ -1309,6 +1391,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   if (tz < 0) tz = -tz;
                   int tzh = int(tz / 3600);
                   s_AddZeroPadInt2(str, tzh);
+                  tz_fmt_make.str(str);
                   s_AddZeroPadInt2(str, (int)(tz - tzh * 3600) / 60);
 #endif
                   break;
