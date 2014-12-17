@@ -63,6 +63,23 @@ NCBITEST_AUTO_INIT()
     CGBDataLoader::RegisterInObjectManager(*om);
 }
 
+void check_no_overlaps(CAlignCleanup::TAligns& cleaned_aligns)
+{
+    vector<CRef<CSeq_loc> > combined_row(2); 
+    combined_row[0].Reset(new CSeq_loc);
+    combined_row[1].Reset(new CSeq_loc);
+    ITERATE (CAlignCleanup::TAligns, align, cleaned_aligns) {
+        cerr << MSerial_AsnText << **align;
+        for (int row = 0; row < 2; ++row) {
+            CRef<CSeq_loc> seq_loc = (*align)->CreateRowSeq_loc(row);
+            CRef<CSeq_loc> intersection = combined_row[row]->Intersect(*seq_loc, CSeq_loc::fStrand_Ignore, NULL);
+//            cerr << MSerial_AsnText << *seq_loc;
+            BOOST_CHECK(intersection->GetTotalRange().GetLength()==0);
+            combined_row[row]->Add(*seq_loc);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(Test1)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -170,9 +187,233 @@ Seq-align ::= { \
     CAlignCleanup::TAligns cleaned_aligns;
     cln.Cleanup(orig_aligns, cleaned_aligns, CAlignCleanup::eAlignVec);
 
-    ITERATE (CAlignCleanup::TAligns, align, cleaned_aligns) {
-        cerr << MSerial_AsnText << **align;
-    }
+    check_no_overlaps(cleaned_aligns);
 }
 
+/*
+BOOST_AUTO_TEST_CASE(TestTwoSubjects)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
 
+string buf = " \
+Seq-align ::= { \
+  type partial, \
+  dim 2, \
+  score { \
+    { \
+      id str \"score\", \
+      value int 434 \
+    } \
+  }, \
+  segs std { \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_106\" \
+        } \
+      }, \
+      loc { \
+        int { \
+          from 1, \
+          to 11, \
+          strand unknown, \
+          id gi 446035996 \
+        }, \
+        int { \
+          from 11324, \
+          to 11356, \
+          strand plus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_106\" \
+    } } } }, \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_106\" \
+        } \
+      }, \
+      loc { \
+        empty gi 446035996, \
+        int { \
+          from 11357, \
+          to 11362, \
+          strand plus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_106\" \
+    } } } }, \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_106\" \
+        } \
+      }, \
+      loc { \
+        int { \
+          from 12, \
+          to 81, \
+          strand unknown, \
+          id gi 446035996 \
+        }, \
+        int { \
+          from 11363, \
+          to 11572, \
+          strand plus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_106\" \
+    } } } }, \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_106\" \
+        } \
+      }, \
+      loc { \
+        empty gi 446035996, \
+        int { \
+          from 11573, \
+          to 11575, \
+          strand plus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_106\" \
+    } } } }, \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_106\" \
+        } \
+      }, \
+      loc { \
+        int { \
+          from 82, \
+          to 163, \
+          strand unknown, \
+          id gi 446035996 \
+        }, \
+        int { \
+          from 11576, \
+          to 11821, \
+          strand plus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_106\" \
+} } } } } } \
+Seq-align ::= { \
+  type partial, \
+  dim 2, \
+  score { \
+    { \
+      id str \"score\", \
+      value int 440 \
+    } \
+  }, \
+  segs std { \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_29\" \
+        } \
+      }, \
+      loc { \
+        int { \
+          from 3, \
+          to 80, \
+          strand unknown, \
+          id gi 446035996 \
+        }, \
+        int { \
+          from 71709, \
+          to 71942, \
+          strand minus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_29\" \
+    } } } }, \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_29\" \
+        } \
+      }, \
+      loc { \
+        empty gi 446035996, \
+        int { \
+          from 71706, \
+          to 71708, \
+          strand minus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_29\" \
+    } } } }, \
+    { \
+      dim 2, \
+      ids { \
+        gi 446035996, \
+        general { \
+          db \"PRJNA248255\", \
+          tag str \"seq_29\" \
+        } \
+      }, \
+      loc { \
+        int { \
+          from 81, \
+          to 163, \
+          strand unknown, \
+          id gi 446035996 \
+        }, \
+        int { \
+          from 71457, \
+          to 71705, \
+          strand minus, \
+          id general { \
+            db \"PRJNA248255\", \
+            tag str \"seq_29\" \
+} } } } } } \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CAlignCleanup::TAligns orig_aligns;
+    while (!istr->EndOfData()) {
+        CRef<CSeq_align> align(new CSeq_align);
+        *istr >> *align;
+        orig_aligns.push_back(align);
+    }
+
+    CAlignCleanup cln;
+    cln.SortInputsByScore(true);
+    CAlignCleanup::TAligns cleaned_aligns;
+    cln.CleanupByQuery(orig_aligns, cleaned_aligns);
+
+    check_no_overlaps(cleaned_aligns);
+}
+
+*/

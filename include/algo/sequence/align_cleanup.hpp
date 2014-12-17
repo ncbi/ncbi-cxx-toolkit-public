@@ -48,6 +48,7 @@ BEGIN_SCOPE(objects)
 class NCBI_XALGOSEQ_EXPORT CAlignCleanup
 {
 public:
+    CAlignCleanup();
     CAlignCleanup(CScope& scope);
 
     typedef list< CConstRef<CSeq_align> > TConstAligns;
@@ -62,12 +63,18 @@ public:
 
         eDefault = eAnchoredAlign
     };
+
     void Cleanup(const TAligns& aligns_in,
                  TAligns&       aligns_out,
                  EMode          mode = eDefault);
     void Cleanup(const TConstAligns& aligns_in,
                  TAligns&            aligns_out,
                  EMode               mode = eDefault);
+
+//     // select best query pieces across all subjects
+//     void CleanupByQuery(const TAligns& aligns_in,
+//                  TAligns&            aligns_out);
+
 
     /// flags
     /// these primarity affect the CAlnVec implementation

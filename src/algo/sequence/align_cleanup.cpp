@@ -204,6 +204,13 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
 
 /////////////////////////////////////////////////////////////////////////////
 
+CAlignCleanup::CAlignCleanup()
+    : m_SortByScore(true)
+    , m_PreserveRows(false)
+    , m_FillUnaligned(false)
+{
+}
+
 CAlignCleanup::CAlignCleanup(CScope& scope)
     : m_Scope(&scope)
     , m_SortByScore(true)
@@ -485,7 +492,8 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                 continue;
             }
             try {
-                CAlnMix mix(*m_Scope);
+                auto_ptr<CAlnMix> mix_ptr( m_Scope ? new CAlnMix(*m_Scope) : new CAlnMix() );
+                CAlnMix& mix = *mix_ptr;
                 CAlnMix::TAddFlags flags = 0;
                 if (iter->first.size() == 1  ||  m_PreserveRows) {
                     flags |= CAlnMix::fPreserveRows;
