@@ -399,7 +399,14 @@ int CScoreBuilder::GetBlastScoreSpliced(CScope& scope,
             sub_align.SetSegs().SetSpliced().SetExons().push_back(exon);
 
             CRef<CPairwiseAln> aln = CreatePairwiseAlnFromSeqAlign(sub_align);
-            pairs.push_back(aln);
+
+            if (exon->IsSetAcceptor_before_exon() || pairs.empty()) {
+                pairs.push_back(aln);
+            } else {
+                ITERATE(CPairwiseAln, r, *aln) {
+                    pairs.back()->push_back(*r);
+                }
+            }
         }
         return GetBlastScoreProtToNucl(scope, align, pairs);
 }
