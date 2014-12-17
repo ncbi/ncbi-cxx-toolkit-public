@@ -289,7 +289,7 @@ bool CGff3Reader::xUpdateAnnotCds(
                 pErr->SetLineNumber(m_uLineNumber);
                 ProcessError(*pErr, pEC);
             }
-            if (m_iFlags | fGeneXrefs) {
+            if (m_iFlags & fGeneXrefs) {
                 if (!xFeatureSetXrefGrandParent(*cit, pFeature)) {
                     AutoPtr<CObjReaderLineException> pErr(
                         CObjReaderLineException::Create(
@@ -431,7 +431,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
         return false;
     }
     string parentsStr;
-    if (m_iFlags | fGeneXrefs  &&  record.GetAttribute("Parent", parentsStr)) {
+    if ((m_iFlags & fGeneXrefs)  &&  record.GetAttribute("Parent", parentsStr)) {
         list<string> parents;
         NStr::Split(parentsStr, ",", parents);
         for (list<string>::const_iterator cit = parents.begin();
