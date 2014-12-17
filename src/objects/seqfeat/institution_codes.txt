@@ -672,6 +672,7 @@ BYDG	s	Technical-Agriculture Academy, Department of Botany and Ecology
 BYU	s	Monte L. Bean Life Science Museum
 BZ	s	Herbarium Bogoriense
 BZF	s	Forest Research and Development Center and Nature Conservation
+BZM	s	Museum fur Naturkunde, Berlin
 BZT	s	Biological Institute Titograd
 C	s	Botanical Museum, Natural History Museum of Denmark
 CA	s	Chicago Academy of Sciences
@@ -3598,7 +3599,7 @@ MERL	s	Instituto Argentino de Investigaciones de las Zonas Aridas (CRICYTME)
 MESA	s	Mesa State College, Biology Department
 MEUC	s	Universidad de Chile
 MEX	s	Museo de Historia Natural de la Ciudad de Mexico
-MEXU	s	Herbario Nacional, Universidad Nacional Autonoma de Mexico
+MEXU	s	Herbario Nacional de Mexico, Universidad Nacional Autonoma de Mexico
 MFA	s	Museo Provincial de Ciencias Naturales Florentino Ameghino, Seccion Botanica
 MFA-ZV-M	s	Museo Florentino Ameghino, Coleccion de Mastozoologia (Argentina)
 MFAP	s	Archaeology and Palaeontology
@@ -6049,7 +6050,7 @@ UAMZC	s	University of Arkansas, Museum Zoological Collections
 UANL	s	Universidad Autonoma de Nuevo Leon
 UARK	s	University of Arkansas
 UAS	s	Universidad Autonoma de Sinaloa
-UASB	s	University of Agricultural Sciences
+UASB	s	University of Agricultural Sciences, Bangalore
 UASC	s	Museo de Historia Natural "Noel Kempff Mercado"
 UASK	s	Ukrainian Academy of Science
 UASM	s	University of Alberta, E.H. Strickland Entomological Museum
