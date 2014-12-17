@@ -355,7 +355,6 @@ bool CVariationUtilities::x_FixAlleles(CVariation& variation, string asserted_re
 
                     ERR_POST(Trace << "And the allele is: " << allele);
 
-                    type = inst.SetType();
                     if (asserted_ref  == allele) {
                         add_asserted_ref = false;
                     }
