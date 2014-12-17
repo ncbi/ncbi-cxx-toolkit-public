@@ -471,6 +471,14 @@ public:
 
 
 
+/// Helper class to fetch HTTP status code and text
+struct SHTTP_StatusData {
+    int    code;
+    string text;
+    SHTTP_StatusData(void) : code(0), text(kEmptyStr) { }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data with an HTTP server located at the URL:
@@ -557,11 +565,14 @@ public:
      size_t              buf_size     = kConn_DefaultBufSize
      );
 
+    /// Flush the stream and fetch the response (w/o extracting any user data)
+    EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
+
     /// Get the last seen HTTP status code
-    int           GetStatusCode(void) const { return m_Code; }
+    int           GetStatusCode(void) const { return m_StatusData.code; }
 
     /// Get the last seen HTTP status text
-    const string& GetStatusText(void) const { return m_Text; }
+    const string& GetStatusText(void) const { return m_StatusData.text; }
 
 protected:
     // Chained callbacks
@@ -571,8 +582,7 @@ protected:
     FHTTP_Cleanup     m_UserCleanup;
 
     // HTTP status & text seen last
-    int               m_Code;
-    string            m_Text;
+    SHTTP_StatusData  m_StatusData;
 
 private:
     // Interceptors
@@ -623,6 +633,38 @@ public:
      const SSERVICE_Extra* extra    = 0,
      const STimeout*       timeout  = kDefaultTimeout,
      size_t                buf_size = kConn_DefaultBufSize);
+
+    /// Flush the stream and fetch the response (w/o extracting any user data)
+    EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
+
+    /// Get the last seen HTTP status code, if available
+    int           GetStatusCode(void) const { return m_StatusData.code; }
+
+    /// Get the last seen HTTP status text, if available
+    const string& GetStatusText(void) const { return m_StatusData.text; }
+
+    /// Get underlying SOCK, if available after Fetch()
+    SOCK          GetSOCK(void);
+
+protected:
+    // Chained callbacks
+    FHTTP_ParseHeader    m_UserParseHeader;
+    void*                m_UserData;
+    FSERVICE_Reset       m_UserReset;
+    FSERVICE_Cleanup     m_UserCleanup;
+    FSERVICE_GetNextInfo m_UserGetNextInfo;
+
+    SHTTP_StatusData     m_StatusData;
+
+private:
+    // Interceptors
+    static EHTTP_HeaderParse x_ParseHeader(const char* header,
+                                           void*       data,
+                                           int         code);
+    static void              x_Reset      (void*       data);
+    static void              x_Cleanup    (void*       data);
+    static const SSERV_Info* x_GetNextInfo(void*       data,
+                                           SERV_ITER   iter);
 };
 
 
