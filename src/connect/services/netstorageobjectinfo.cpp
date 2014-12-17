@@ -153,7 +153,7 @@ CTime SContext::GetTime<eNFL_FileTrack>()
 
     if (data.st_info) {
         if (CJsonNode ctime = data.st_info.GetByKeyOrNull("ctime")) {
-            return CTime(ctime.AsString(), kISO8601TimeFormat);
+            return CTime(ctime.AsString(), kISO8601TimeFormat).ToLocalTime();
         }
     }
 
