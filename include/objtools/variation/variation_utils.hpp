@@ -44,18 +44,20 @@ bool x_CheckForFirstNTSeq(const CVariation_inst& inst);
 class CVariationUtilities
 {
 public:
-    static void   CorrectRefAllele(CRef<CVariation>& v, CScope& scope);      
-    static void   CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope);
-    static void   CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
-    static void   CorrectRefAllele(CVariation_ref& var, const string& new_ref); 
-
-    static bool   IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
+    static void   CorrectRefAllele(CVariation& var, CScope& scope);      
+    static void   CorrectRefAllele(CSeq_annot& annot, CScope& scope);
+    static void   CorrectRefAllele(CSeq_feat& feat, CScope& scope);
+    
+    static bool   IsReferenceCorrect(const CSeq_feat& feat, string& asserted_ref, string& ref_at_location, CScope& scope);
 
     static CVariation_inst::TType  GetVariationType(const CVariation_ref& vr);
     static CVariation_inst::TType  GetVariationType(const CVariation& var);
+    
+    //For deletions, this returns asserted deleted sequence
+    // not the one extracted from scope (thus, no scope).
     static void   GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt);
     static void   GetVariationRefAlt(const CVariation& vr, string &ref,  vector<string> &alt);
-	static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
+
 
     //Do all alleles in variation ref have a common repeat unit
     // and thus possible to shift them.
@@ -67,9 +69,17 @@ public:
 
 
 private:
-    static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length);
-    static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
-    static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
+    static string x_GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
+    static string x_GetRefAlleleFromVP(CVariantPlacement& vp, CScope& scope, TSeqPos length);
+
+    //These return true if the reference allele was changed
+    static bool x_SetReference(CVariation_ref& var, const string& ref_at_location); 
+    static bool x_FixAlleles(CVariation& variation, string asserted_ref, string ref_at_location);
+    static bool x_FixAlleles(CVariation_ref& vr, string asserted_ref, string ref_at_location) ;
+
+    static void x_AddRefAlleleFixFlag(CVariation& var);
+    static void x_AddRefAlleleFixFlag(CSeq_feat& var);
+
     static const unsigned int MAX_LEN=1000;
 
     static bool x_isBaseRepeatingUnit(const string& candidate, const string& target);
