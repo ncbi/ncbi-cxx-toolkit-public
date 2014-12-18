@@ -1062,6 +1062,15 @@ bool ApplyCDSFrame::s_SetCDSFrame(CSeq_feat& cds, ECdsFrame frame_type, CScope& 
     case eMatch:
         new_frame = s_FindMatchingFrame(cds, scope);
         break;
+    case eOne:
+        new_frame = CCdregion::eFrame_one;
+        break;
+    case eTwo:
+        new_frame = CCdregion::eFrame_two;
+        break;
+    case eThree:
+        new_frame = CCdregion::eFrame_three;
+        break;
     }
 
     bool modified = false;
@@ -1121,6 +1130,12 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
         frame = eBest;
     } else if (NStr::EqualNocase(name, "match")) {
         frame = eMatch;
+    } else if (NStr::Equal(name, "1") || NStr::EqualNocase(name, "one")) {
+        frame = eOne;
+    } else if (NStr::Equal(name, "2") || NStr::EqualNocase(name, "two")) {
+        frame = eTwo;
+    } else if (NStr::Equal(name, "3") || NStr::EqualNocase(name, "three")) {
+        frame = eThree;
     }
     return frame;
 }

@@ -784,6 +784,14 @@ BOOST_AUTO_TEST_CASE(Test_FindMatchingFrame)
     cds->SetLocation().SetInt().SetFrom(12);
     cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
     BOOST_CHECK_EQUAL(edit::ApplyCDSFrame::s_FindMatchingFrame(*cds, scope), CCdregion::eFrame_three);
+
+    edit::ApplyCDSFrame::s_SetCDSFrame(*cds, edit::ApplyCDSFrame::eOne, scope);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_one);
+    edit::ApplyCDSFrame::s_SetCDSFrame(*cds, edit::ApplyCDSFrame::eTwo, scope);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_two);
+    edit::ApplyCDSFrame::s_SetCDSFrame(*cds, edit::ApplyCDSFrame::eThree, scope);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_three);
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////

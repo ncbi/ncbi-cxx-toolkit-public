@@ -67,7 +67,10 @@ public:
     enum ECdsFrame {
         eNotSet,
         eBest,  // choose the frame that produces the longest sequence of aas before a stop codon is produced
-        eMatch  // choose the frame that matches the protein sequence if it can find one
+        eMatch,  // choose the frame that matches the protein sequence if it can find one
+        eOne,
+        eTwo,
+        eThree
     };
 
     ~ApplyCDSFrame() {}
