@@ -2,7 +2,8 @@
 # Meta-makefile("objtools" project)
 #################################
     
-EXPENDABLE_SUB_PROJ = test-CorrectRefAllele shift
+EXPENDABLE_SUB_PROJ = reference_allele_fix \
+	shift
    
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
