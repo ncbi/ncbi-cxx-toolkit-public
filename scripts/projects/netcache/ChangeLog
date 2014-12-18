@@ -87,3 +87,7 @@ Implemented recovery in several problem scenarios to avoid crashes; modified mec
 December 08, 2014
 version 6.8.3
 Bug fix: re-enable blob keys that are not in CNetCacheKey format.
+
+December 18, 2014
+version 6.8.4
+Fixed bug in SHUTDOWN.
