@@ -55,7 +55,8 @@ static SStatusMsg s_StatusMessages[] =
         {eStatus_BadPassword, "ERR:Access denied."},
         {eStatus_NotFound, "ERR:BLOB not found."},
         {eStatus_CondFailed, "ERR:Too few data for blob"},
-        {eStatus_NoImpl, "ERR:Not implemented"}
+        {eStatus_NoImpl, "ERR:Not implemented"},
+        {eStatus_ShuttingDown, "ERR:Shutting down"}
     };
 
 

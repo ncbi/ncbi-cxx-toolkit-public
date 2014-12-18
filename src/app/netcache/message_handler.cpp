@@ -2015,9 +2015,10 @@ CNCMessageHandler::x_StartCommand(void)
 
     if (x_IsFlagSet(fNeedsSpaceAsPeer)
         && !CNCBlobStorage::AcceptWritesFromPeers()) {
-        GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
+        int sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
+        GetDiagCtx()->SetRequestStatus(sts);
         if (m_HttpMode == eNoHttp) {
-            WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+            WriteText(s_MsgForStatus[sts]).WriteText("\n");
         }
         return &CNCMessageHandler::x_FinishCommand;
     }
@@ -2101,9 +2102,10 @@ CNCMessageHandler::x_StartCommand(void)
             x_GetCurSlotServers();
             return &CNCMessageHandler::x_ProxyToNextPeer;
         }
-        GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
+        int sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
+        GetDiagCtx()->SetRequestStatus(sts);
         if (m_HttpMode == eNoHttp) {
-            WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+            WriteText(s_MsgForStatus[sts]).WriteText("\n");
         }
         return &CNCMessageHandler::x_FinishCommand;
     }
@@ -2479,7 +2481,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
         else
             CNCPeriodicSync::Cancel(m_SrvId, m_Slot, m_SyncId);
     }
-    if (x_IsFlagSet(fConfirmOnFinish)) {
+    if (x_IsFlagSet(fConfirmOnFinish) && cmd_status == eStatus_OK) {
         if (m_HttpMode == eNoHttp) {
             WriteText("OK:\n");
         } else {
@@ -3321,13 +3323,13 @@ CNCMessageHandler::x_DoCmd_Health(void)
     LOG_CURRENT_FUNCTION
     const char* health_coeff = "1";
     if (CNCBlobStorage::NeedStopWrite()) {
-        health_coeff = "0";
+        health_coeff = "0 (does not accept writes)";
     } else if (!CNCServer::IsCachingComplete()) {
-        health_coeff = "0.1";
+        health_coeff = "0.1 (caching not finished)";
     } else if (!CNCServer::IsInitiallySynced()) {
-        health_coeff = "0.5";
+        health_coeff = "0.5 (initial sync not finished)";
     } else if (CNCPeerControl::HasPeerInThrottle()) {
-        health_coeff = "0.8";
+        health_coeff = "0.8 (some peers unaccessible)";
     }
     WriteText("OK:HEALTH_COEFF=").WriteText(health_coeff).WriteText("\n");
     WriteText("OK:UP_TIME=").WriteNumber(CNCServer::GetUpTime()).WriteText("\n");
