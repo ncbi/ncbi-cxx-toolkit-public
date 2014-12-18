@@ -65,7 +65,7 @@ CTaxon2_data::x_FindProperty( const string& name )
 CTaxon2_data::TOrgProperties::const_iterator
 CTaxon2_data::x_FindPropertyConst( const string& name ) const
 {
-    NON_CONST_ITERATE( TOrgProperties, i, m_props ) {
+    ITERATE( TOrgProperties, i, m_props ) {
 	if( NStr::Equal( (*i)->GetDb(), name ) ) {
 	    return i;
 	}
