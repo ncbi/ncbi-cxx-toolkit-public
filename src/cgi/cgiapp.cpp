@@ -247,7 +247,6 @@ int CCgiApplication::Run(void)
 
         m_Context.reset( CreateContext() );
         _ASSERT(m_Context.get());
-        m_Context->CheckStatus();
 
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
@@ -259,6 +258,8 @@ int CCgiApplication::Run(void)
             ProcessHttpReferer();
             LogRequest();
 
+            m_Context->CheckStatus();
+            
             try {
                 m_Cache.reset( GetCacheStorage() );
             } catch( exception& ex ) {
