@@ -597,6 +597,13 @@ private:
 
 
 
+/// Helper class
+struct SSERVICE_CBData {
+    SSERVICE_Extra   extra;
+    SHTTP_StatusData status;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data with a named service, in a constraint that the
@@ -638,23 +645,17 @@ public:
     EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Get the last seen HTTP status code, if available
-    int           GetStatusCode(void) const { return m_StatusData.code; }
+    int           GetStatusCode(void) const { return m_CBData.status.code; }
 
     /// Get the last seen HTTP status text, if available
-    const string& GetStatusText(void) const { return m_StatusData.text; }
+    const string& GetStatusText(void) const { return m_CBData.status.text; }
 
     /// Get underlying SOCK, if available after Fetch()
     SOCK          GetSOCK(void);
 
 protected:
     // Chained callbacks
-    FHTTP_ParseHeader    m_UserParseHeader;
-    void*                m_UserData;
-    FSERVICE_Reset       m_UserReset;
-    FSERVICE_Cleanup     m_UserCleanup;
-    FSERVICE_GetNextInfo m_UserGetNextInfo;
-
-    SHTTP_StatusData     m_StatusData;
+    SSERVICE_CBData m_CBData;
 
 private:
     // Interceptors
