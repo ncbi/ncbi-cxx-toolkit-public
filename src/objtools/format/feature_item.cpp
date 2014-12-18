@@ -3865,6 +3865,9 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     CFlatFeature::TQuals& qvec = ff.SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eFQ_##x, #x, qvec)
+    DO_QUAL(ncRNA_class);
+    DO_QUAL(regulatory_class);
+
     DO_QUAL(partial);
     DO_QUAL(gene);
 
@@ -3877,10 +3880,6 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     x_FormatQual(eFQ_gene_allele, "allele", qvec);
 
     DO_QUAL(operon);
-
-    DO_QUAL(ncRNA_class);
-
-    DO_QUAL(regulatory_class);
 
     DO_QUAL(product);
 
