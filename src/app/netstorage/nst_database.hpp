@@ -116,6 +116,8 @@ public:
                              string &        value);
     int  ExecSP_DelAttribute(const string &  object_key,
                              const string &  attr_name);
+    int  ExecSP_GetAttributeNames(const string &  object_key,
+                                  vector<string> &  attr_names);
     int  ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                          TNSTDBValue<CTime> &  expiration,
                                          TNSTDBValue<CTime> &  creation,

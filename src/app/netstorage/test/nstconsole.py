@@ -71,6 +71,8 @@ class NetStorageConsole:
                                  "sends GETCLIENTSINFO message; no arguments" ],
              'getobjectinfo':  [ self.sendGetObjectInfo,
                                  "sends GETOBJECTINFO message; <object locator>" ],
+             'getattrlist':    [ self.sendGetAttrList,
+                                 "sends GETATTRLIST message; <object locator>" ],
              'getattr':        [ self.sendGetAttr,
                                  "sends GETATTR message; <object locator> <attribute name>" ],
              'delattr':        [ self.sendDelAttr,
@@ -665,6 +667,25 @@ class NetStorageConsole:
 
         objectLoc = arguments[ 0 ]
         message = { 'Type':         'GETOBJECTINFO',
+                    'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
+                    'ClientIP':     hostIP,
+                    'ObjectLoc':    objectLoc }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
+    def sendGetAttrList( self, arguments ):
+        " Sends GETATTRLIST message "
+        if len( arguments ) != 1:
+            print "Exactly 1 argument is required: locator"
+            return
+
+        objectLoc = arguments[ 0 ]
+
+        message = { 'Type':         'GETATTRLIST',
                     'SessionID':    SESSIONID,
                     'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,

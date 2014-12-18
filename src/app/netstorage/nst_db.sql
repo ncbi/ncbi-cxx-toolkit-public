@@ -47,6 +47,7 @@ IF 1 = 1
 BEGIN
     IF (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')) OR
        (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetAttributeNames')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetAttribute')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'DelAttribute')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'AddAttribute')) OR
@@ -81,6 +82,8 @@ IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')
     DROP USER netstorage_read
 IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')
     DROP USER netstorage_write
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetAttributeNames')
+    DROP PROCEDURE GetAttributeNames
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetAttribute')
     DROP PROCEDURE GetAttribute
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'DelAttribute')
@@ -956,6 +959,53 @@ BEGIN
             ROLLBACK TRANSACTION
             RETURN -3           -- attribute value is not found
         END
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+CREATE PROCEDURE GetAttributeNames
+    @object_key     VARCHAR(256)
+AS
+BEGIN
+    DECLARE @object_id      BIGINT = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+
+        -- Get the object ID
+        SELECT @object_id = object_id FROM Objects WHERE object_key = @object_key
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+        IF @object_id IS NULL
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN -1               -- object is not found
+        END
+
+        -- This is the output recordset!
+        SELECT name FROM Attributes AS a, AttrValues AS b
+                    WHERE a.attr_id = b.attr_id AND b.object_id = @object_id
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION

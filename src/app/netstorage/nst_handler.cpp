@@ -71,6 +71,7 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "GETCLIENTSINFO", & CNetStorageHandler::x_ProcessGetClientsInfo },
     { "GETMETADATAINFO",& CNetStorageHandler::x_ProcessGetMetadataInfo },
     { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
+    { "GETATTRLIST",    & CNetStorageHandler::x_ProcessGetAttrList },
     { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
     { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
     { "DELATTR",        & CNetStorageHandler::x_ProcessDelAttr },
@@ -1367,6 +1368,61 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     } catch (...) {
         AppendWarning(reply, eRemoteObjectInfoWarning,
                       "Unknown error while getting remote object info");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetAttrList(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    x_CheckNonAnonymousClient();
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETATTRLIST message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired)
+        x_ValidateWriteMetaDBAccess(message);
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    SObjectID   object_id = x_GetObjectKey(message);
+    x_CheckObjectExpiration(object_id.object_key, true, reply);
+
+    vector<string>  attr_names;
+    int             status = m_Server->GetDb().ExecSP_GetAttributeNames(
+                                        object_id.object_key,
+                                        attr_names);
+
+    if (status == 0) {
+        // Everything is fine, the attribute is found
+        CJsonNode       names(CJsonNode::NewArrayNode());
+        for (vector<string>::const_iterator  k = attr_names.begin();
+             k != attr_names.end(); ++k)
+            names.AppendString(*k);
+        reply.SetByKey("AttributeNames", names);
+    } else if (status == -1) {
+        // Object is not found
+        NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
+                   "NetStorage object is not found");
+    } else {
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown GetAttributeNames status");
     }
 
     x_SendSyncMessage(reply);

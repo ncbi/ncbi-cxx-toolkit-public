@@ -434,6 +434,35 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
 
 
 int
+CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
+                                       vector<string> &  attr_names)
+{
+    x_PreCheckConnection();
+
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+
+        query.ExecuteSP("GetAttributeNames");
+
+        // NOTE: reading result recordset must be done before getting the
+        //       status code
+        ITERATE(CQuery, qit, query.SingleSet()) {
+            attr_names.push_back(qit["name"].AsString());
+        }
+
+        query.VerifyDone();
+        return x_CheckStatus(query, "GetAttributeNames");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB,
+                                "DB error while getting a attribute names");
+        x_PostCheckConnection();
+        throw;
+    }
+}
+
+
+int
 CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
                                   const string &  attr_name,
                                   bool            need_update,
