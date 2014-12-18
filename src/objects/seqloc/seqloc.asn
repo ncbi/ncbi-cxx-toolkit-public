@@ -62,10 +62,12 @@ Giimport-id ::= SEQUENCE {
     db VisibleString OPTIONAL ,      -- dbase used in
     release VisibleString OPTIONAL } -- the release
 
-PDB-seq-id ::= SEQUENCE {
-    mol PDB-mol-id ,           -- the molecule name
-    chain INTEGER DEFAULT 32 , -- a single ASCII character, chain id
-    rel Date OPTIONAL }        -- release date, month and year
+PDB-seq-id ::= SEQUENCE {            -- set either chain or chain_id, not both
+      mol PDB-mol-id ,                    -- the molecule name
+      chain INTEGER OPTIONAL DEFAULT 32 , -- Deprecated : For single ASCII character
+                                          -- chain identifiers of pre-2015 PDB structures
+      rel Date OPTIONAL ,                 -- release date, month and year
+      chain_id VisibleString OPTIONAL }   -- chain identifier
 
 PDB-mol-id ::= VisibleString  -- name of mol, 4 chars
     
