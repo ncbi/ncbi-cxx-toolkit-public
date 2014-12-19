@@ -341,12 +341,10 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
     CNcbiOstrstream aln_out;
     m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
     if ( m_Scope ) {
-        try {
-            m_TargetId.Reset(sequence::GetId(
-                *m_TargetId, *m_Scope, sequence::eGetId_ForceAcc).
-                GetSeqId());
-        }
-        catch (CException&) {
+        CSeq_id_Handle acc_id = sequence::GetId(
+            *m_TargetId, *m_Scope, sequence::eGetId_ForceAcc);
+        if ( acc_id ) {
+            m_TargetId.Reset(acc_id.GetSeqId());
         }
     }
     StartRow();
