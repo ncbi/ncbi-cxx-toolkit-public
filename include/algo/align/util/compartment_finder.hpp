@@ -139,12 +139,29 @@ public:
                        typename THitRefs::const_iterator finish,
                        CGapInfo<THit> *gap_info = NULL);
 
+    /// Set compartment overlap behaviour. Allow compartments to overlap 
+    /// on subject. 
+    ///
+    /// @param max_overlap
+    ///    Maximum length of overlap on subject.
+    ///    0 - do not allow overlap.
+
+    void SetMaxOverlap(TCoord max_overlap) {
+        m_max_overlap = max_overlap;
+    }
+
+    /// Retrieve the default compartment overlap behaviour (no overlap).
+
+    static TCoord s_GetDefaultMaxOverlap(void) {
+        return 0;
+    }
+
     /// Set the maximum length of an intron
     ///
     /// @param intr_max
     ///    Maximum length of an intron, in base pairs.
 
-    void SetMaxIntron (TCoord intr_max) {
+    void SetMaxIntron(TCoord intr_max) {
         m_intron_max = intr_max;
     }
 
@@ -303,6 +320,7 @@ public:
 
 private:
 
+    TCoord                m_max_overlap;   //max overlap on subject for different compartments
     TCoord                m_intron_max;    // max intron size
     TCoord                m_penalty;       // penalty per compartment
     TCoord                m_MinMatches;    // min approx matches to report
@@ -417,6 +435,10 @@ public:
 
     TCoord GetMaxIntron(void) const { return m_MaxIntron; }
 
+    /// Assign the maximum length for compartments to overlap on the subject.
+
+    void   SetMaxOverlap(TCoord max_overlap) { m_MaxOverlap = max_overlap; }
+
     /// Initialize iteration over the results.
     /// Results are sorted by strand (minus first) and subj position.
     ///
@@ -499,6 +521,7 @@ private:
     TCoord m_MinMatches;
     TCoord m_MinSingletonMatches;
     TCoord m_MaxIntron;
+    TCoord m_MaxOverlap;
     bool   m_CrossFiltering;
 
     // ancillary members
@@ -551,6 +574,7 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     typename THitRefs::const_iterator finish,
                        CGapInfo<THit> *gap_info ):
 
+    m_max_overlap(s_GetDefaultMaxOverlap()),
     m_intron_max(s_GetDefaultMaxIntron()),
     m_penalty(s_GetDefaultPenalty()),
     m_MinMatches(1),
@@ -662,7 +686,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
         double best_open_score (identity*(hbox[1] - hbox[0] + 1) - m_penalty);
         int    i_best_open (-1); // each can be a start of the very first compartment
 
-        if(hbox[2] > m_hitrefs[i_bestsofar]->GetSubjMax()) {
+        if(hbox[2] + m_max_overlap > m_hitrefs[i_bestsofar]->GetSubjMax()) {
 
             const double score_open (identity*(hbox[1] - hbox[0] + 1) 
                                      + hitstatus[i_bestsofar].m_score
@@ -682,7 +706,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                                          - m_penalty);
 
                 if(score_open > best_open_score 
-                   && hbox[2] > m_hitrefs[j]->GetSubjMax())
+                   && hbox[2] + m_max_overlap > m_hitrefs[j]->GetSubjMax())
                 {
                     best_open_score = score_open;
                     i_best_open = j;
@@ -1317,6 +1341,7 @@ void CCompartmentAccessor<THit>::x_Init(TCoord  comp_penalty,
     m_MinSingletonMatches = min_singleton_matches;
     m_CrossFiltering      = cross_filter;
     m_MaxIntron           = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
+    m_MaxOverlap          = CCompartmentFinder<THit>::s_GetDefaultMaxOverlap();
 }
 
 
@@ -1374,6 +1399,7 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
         finder.SetMinMatches(m_MinMatches);
         finder.SetMinSingletonMatches(m_MinSingletonMatches);
         finder.SetMaxIntron(m_MaxIntron);
+        finder.SetMaxOverlap(m_MaxOverlap);
         finder.Run(m_CrossFiltering);
         
         // un-flip
@@ -1398,6 +1424,7 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
         finder.SetMinMatches(m_MinMatches);
         finder.SetMinSingletonMatches(m_MinSingletonMatches);
         finder.SetMaxIntron(m_MaxIntron);
+        finder.SetMaxOverlap(m_MaxOverlap);
         finder.Run(m_CrossFiltering);
         x_Copy2Pending(finder);
     }}
