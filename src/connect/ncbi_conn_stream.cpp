@@ -635,7 +635,7 @@ EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
         ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
 }
 
-// NB:  must never be upcalled (directly or indirectly from any stream ctors)
+// NB:  must never be upcalled (directly or indirectly) from any stream ctor
 //      for SHTTP_StatusData may yet be unbuilt (and the text field invalid)!
 static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
                                            SHTTP_StatusData& data)
