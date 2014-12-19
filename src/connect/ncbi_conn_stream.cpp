@@ -210,9 +210,10 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
             (n == 1  &&  type == eCONN_OnRead)   ||
             (n == 2  &&  type == eCONN_OnWrite)  ||
             (n == 3  &&  type == eCONN_OnFlush));
-    if (!io->m_CB[n].func)
-        return eIO_Success;
-    return io->m_CB[n].func(conn, type, io->m_CB[n].data);
+    return io->m_CB[n].func
+        ? io->m_CB[n].func(conn, type, io->m_CB[n].data)
+        : eIO_Success;
+
 }
 
 
@@ -398,18 +399,6 @@ CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
 }
 
 
-static void s_SetupUserAgent(SConnNetInfo* net_info)
-{
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    CNcbiApplication* theApp = CNcbiApplication::Instance();
-    if (theApp) {
-        string user_agent("User-Agent: ");
-        user_agent += theApp->GetProgramDisplayName();
-        ConnNetInfo_ExtendUserHeader(net_info, user_agent.c_str());
-    }
-}
-
-
 template<>
 struct Deleter<SConnNetInfo>
 {
@@ -479,7 +468,6 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     }
     if (user_header  &&  *user_header)
         ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
-    s_SetupUserAgent(x_net_info.get());
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
     CONNECTOR c = HTTP_CreateConnectorEx(x_net_info.get(),
@@ -639,6 +627,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 }
 
 
+// NB: see CConn_ServiceStream::Fetch()
 EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
 {
     CONN conn = GetCONN();
@@ -646,7 +635,8 @@ EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
         ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
 }
 
-
+// NB:  must never be upcalled (directly or indirectly from any stream ctors)
+//      for SHTTP_StatusData may yet be unbuilt (and the text field invalid)!
 static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
                                            SHTTP_StatusData& data)
 {
@@ -701,17 +691,17 @@ void CConn_HttpStream::x_Cleanup(void* data)
 
 
 static CConn_IOStream::TConn_Pair
-s_ServiceConnectorBuilder(const char*           service,
-                          TSERV_Type            types,
-                          const SConnNetInfo*   net_info,
-                          const char*           user_header,
-                          const SSERVICE_Extra* extra,
-                          SSERVICE_CBData*      cbdata,
-                          FSERVICE_Reset        reset,
-                          FSERVICE_Cleanup      cleanup,
-                          FSERVICE_GetNextInfo  get_next_info,
-                          FHTTP_ParseHeader     parse_header,
-                          const STimeout*       timeout)
+s_ServiceConnectorBuilder(const char*                           service,
+                          TSERV_Type                            types,
+                          const SConnNetInfo*                   net_info,
+                          const char*                           user_header,
+                          const SSERVICE_Extra*                 extra,
+                          CConn_ServiceStream::SSERVICE_CBData* cbdata,
+                          FSERVICE_Reset                        reset,
+                          FSERVICE_Cleanup                      cleanup,
+                          FSERVICE_GetNextInfo                  get_next_info,
+                          FHTTP_ParseHeader                     parse_header,
+                          const STimeout*                       timeout)
 {
     AutoPtr<SConnNetInfo>
         x_net_info(net_info ?
@@ -723,7 +713,6 @@ s_ServiceConnectorBuilder(const char*           service,
     }
     if (user_header  &&  *user_header)
         ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
-    s_SetupUserAgent(x_net_info.get());
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
     if (extra)
@@ -798,6 +787,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 }
 
 
+// NB: see CConn_HttpStream::Fetch()
 EIO_Status CConn_ServiceStream::Fetch(const STimeout* timeout)
 {
     CONN conn = GetCONN();

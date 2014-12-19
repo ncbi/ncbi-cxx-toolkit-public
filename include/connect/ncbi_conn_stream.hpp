@@ -479,6 +479,7 @@ struct SHTTP_StatusData {
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data with an HTTP server located at the URL:
@@ -597,13 +598,6 @@ private:
 
 
 
-/// Helper class
-struct SSERVICE_CBData {
-    SSERVICE_Extra   extra;
-    SHTTP_StatusData status;
-};
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data with a named service, in a constraint that the
@@ -652,6 +646,13 @@ public:
 
     /// Get underlying SOCK, if available after Fetch()
     SOCK          GetSOCK(void);
+
+public:
+    /// Helper class
+    struct SSERVICE_CBData {
+        SSERVICE_Extra   extra;
+        SHTTP_StatusData status;
+    };
 
 protected:
     // Chained callbacks
