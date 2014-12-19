@@ -1790,6 +1790,17 @@ CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CSeq_feat_Handle& feat)
 }
 
 
+const CMappedFeat& CFeatTree::GetMappedFeat(const CSeq_feat_Handle& feat) const
+{
+    TInfoMap::const_iterator it = m_InfoMap.find(feat);
+    if ( it == m_InfoMap.end() ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CFeatTree: feature not found");
+    }
+    return it->second.m_Feat;
+}
+
+
 CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
 {
     TInfoMap::iterator it = m_InfoMap.find(feat);
