@@ -678,21 +678,25 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         _ASSERT(net_info);
         switch (net_info->firewall) {
         case eFWMode_Adaptive:
-            temp += "There are also fallback connection ports such as "
+            temp += "Also, there are usually a few additional ports such as "
                 STRINGIFY(CONN_PORT_SSH) " and " STRINGIFY(CONN_PORT_HTTPS)
-                " at " NCBI_FWD_BEMD ".  They will be used if connections to"
-                " the ports in the range described above have failed\n";
+                " at " NCBI_FWD_BEMD ", which can be used if connections to"
+                " the ports in the range described above, have failed\n";
             break;
         case eFWMode_Firewall:
-            temp += "Also, your configuration explicitly forbids to use any"
-                " fallback firewall ports that may exist to improve network"
-                " connectivity\n";
+            temp += "Furthermore, your configuration explicitly forbids to use"
+                " any fallback firewall ports that may exist to improve"
+                " reliability of connection experience\n";
             break;
         case eFWMode_Fallback:
-            temp += "However, your configuration explicitly requests that only"
-                " fallback firewall ports (if any exist) are to be used for"
-                " connections: this also implies that no conventional ports"
-                " from the range above will be used\n";
+            temp += "There are usually a few backup connection ports such as "
+                STRINGIFY(CONN_PORT_SSH) " and " STRINGIFY(CONN_PORT_HTTPS)
+                " at " NCBI_FWD_BEMD ", which can be used as a failover if"
+                " connections to the port range above fail.  However, your "
+                " configuration explicitly requests that only those fallback"
+                " firewall ports (if any exist) are to be used for"
+                " connections:  this also implies that no conventional ports"
+                " from the default range will be used\n";
             break;
         default:
             temp += "Internal program error, please report!\n";
@@ -700,8 +704,8 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             break;
         }
     } else {
-        temp += "This mode may not be reliable if your site has a restrictive"
-            " firewall imposing fine-grained control over which hosts and"
+        temp += "This mode may not be reliable if your site has a restraining"
+            " firewall imposing a fine-grained control over which hosts and"
             " ports the outbound connections are allowed to use\n";
     }
     if (m_HttpProxy) {
