@@ -115,6 +115,11 @@ bdb2ez needs xser
 bdbasncli needs bdb2ez
 bdbasncli needs xconnect
 biblio needs general
+biosample needs $(SDBAPI_LIB)
+biosample needs xconnect
+biosample needs xmlwrapp
+biosample needs xregexp
+biosample needs xutil
 biotree needs general
 biotree_db needs biotree
 biotree_db needs gpipe_common
