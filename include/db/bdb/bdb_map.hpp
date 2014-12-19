@@ -359,11 +359,11 @@ public:
 
         bool operator==(const const_iterator& it)
         {
-            return is_equal(it);
+            return this->is_equal(it);
         }
         bool operator!=(const const_iterator& it)
         {
-            return !is_equal(it);
+            return !this->is_equal(it);
         }
 
     };
