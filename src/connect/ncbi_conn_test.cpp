@@ -1131,7 +1131,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     size_t size = rnd(2, (sizeof(buf) - (8 + 1)) >> 3);
 
     size_t i;
-    for (i = 1;  i < size;  i++)
+    for (i = 1;  i < size;  ++i)
         sprintf(buf + (i << 3), "%08X", (unsigned int) rand());
     memset(&buf[size <<= 3], 0, 8);
     size += 8;
