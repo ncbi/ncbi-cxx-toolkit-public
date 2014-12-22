@@ -248,7 +248,7 @@ CCDSInfo CCDSInfo::MapFromEditedToOrig(const CAlignMap& amap) const
     ITERATE(TPStops, i, PStops()) {
         TSignedSeqRange pstop = amap.MapRangeEditedToOrig(*i, false);
         if(pstop.NotEmpty())
-            new_cds.AddPStop(pstop);
+            new_cds.AddPStop(pstop, i->m_type);
         else
             return empty_cds;        
     }
@@ -285,7 +285,7 @@ CCDSInfo CCDSInfo::MapFromOrigToEdited(const CAlignMap& amap) const
     ITERATE(TPStops, i, PStops()) {
         TSignedSeqRange p = amap.MapRangeOrigToEdited(*i, false);
         _ASSERT(p.NotEmpty());
-        new_cds.AddPStop(p);
+        new_cds.AddPStop(p, i->m_type);
     }
     if(HasStart() && MaxCdsLimits().GetFrom() == Start().GetFrom()) {
         new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(Start().GetFrom()));
@@ -367,11 +367,13 @@ void CCDSInfo::Set5PrimeCdsLimit(TSignedSeqPos p)
     _ASSERT( Invariant() );
 }
 
-void CCDSInfo::AddPStop(TSignedSeqRange r)
+
+void CCDSInfo::AddPStop(TSignedSeqRange r, int type)
 {
-    m_p_stops.push_back(r);
+    m_p_stops.push_back(SPStop(r,type));
     _ASSERT( Invariant() );
 }
+
 
 void CCDSInfo::SetScore(double score, bool open)
 {
@@ -393,8 +395,8 @@ void CCDSInfo::Remap(const CRangeMapper& mapper)
         m_reading_frame_from_proteins = mapper(m_reading_frame_from_proteins, true);
     if(m_max_cds_limits.NotEmpty())
         m_max_cds_limits = mapper(m_max_cds_limits, false);
-    NON_CONST_ITERATE( vector<TSignedSeqRange>, s, m_p_stops) {
-        *s = mapper(*s, false);
+    NON_CONST_ITERATE(TPStops, s, m_p_stops) {
+        *s = SPStop(mapper(*s, false), s->m_type);
     }
     _ASSERT(Invariant());
 }
@@ -513,6 +515,19 @@ void CCDSInfo::Clear()
     m_p_stops.clear();
     SetScore( BadScore(), false );
 }
+
+bool CCDSInfo::PStop(bool includeall) const
+{ 
+    if(includeall)
+        return !m_p_stops.empty(); 
+
+    ITERATE(TPStops, stp, m_p_stops) {
+        if(stp->m_type != eGenomeNotCorrect && stp->m_type != eSelenocysteine)
+            return true;
+    }
+
+    return false;
+} 
 
 void CGeneModel::RemoveShortHolesAndRescore(const CGnomonEngine& gnomon) {
     TExons new_exons;
@@ -1646,9 +1661,16 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         if (a.FrameShifts().size()>0)                attributes["flags"] += ",Frameshifts";
         if(a.isNMD(50))                              attributes["flags"] += ",NMD";
 
-        ITERATE(vector<TSignedSeqRange>, s, cds_info.PStops()) {
-            TSignedSeqRange pstop = *s;            
+        ITERATE(CCDSInfo::TPStops, s, cds_info.PStops()) {
+            TSignedSeqRange pstop = *s;             
             attributes["pstop"] += ","+NStr::NumericToString(pstop.GetFrom()+1)+" "+NStr::NumericToString(pstop.GetTo()+1);
+            if(s->m_type == CCDSInfo::eGenomeCorrect)
+                attributes["pstop"] += " C";
+            else if(s->m_type == CCDSInfo::eGenomeNotCorrect)
+                attributes["pstop"] += " N";
+            else if(s->m_type == CCDSInfo::eSelenocysteine)
+                attributes["pstop"] += " S";
+            
             tCoords = true;
         }
         attributes["pstop"].erase(0,1);
@@ -1807,10 +1829,23 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
             vector<string> stops;
             NStr::Tokenize(attributes["pstop"], ",", stops);
             ITERATE(vector<string>, s, stops) {
-                TSignedSeqRange pstop = StringToRange(*s);
+                vector<string> parts;
+                NStr::Tokenize(*s, " ", parts);
+                TSignedSeqRange pstop = StringToRange(parts[0]+" "+parts[1]);
                 if(!tcoords)
                     pstop = a.GetAlignMap().MapRangeOrigToEdited(pstop, false);
-                cds_info.AddPStop(pstop);
+                int type = CCDSInfo::eUnknown;
+                if(parts.size() > 2) {
+                    if(parts[2] == "C")
+                        type = CCDSInfo::eGenomeCorrect;
+                    else if(parts[2] == "N")
+                        type = CCDSInfo::eGenomeNotCorrect;
+                    else if(parts[2] == "S")
+                        type = CCDSInfo::eSelenocysteine;
+                    else
+                        _ASSERT(false);
+                }
+                cds_info.AddPStop(pstop, type);
             }
         }
 

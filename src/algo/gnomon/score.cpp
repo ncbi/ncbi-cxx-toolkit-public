@@ -245,7 +245,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
                 if(hole_len <= intron_params.MinLen()) {
                     fixed = true;
                     TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
-                    cds_info.AddPStop(pstop);
+                    cds_info.AddPStop(pstop, CCDSInfo::eUnknown);
                     if(hole_len%3 != 0) {
                         align.FrameShifts().push_back(CInDelInfo((align.Exons()[i-1].GetTo()+align.Exons()[i].GetFrom())/2, hole_len%3, true));
                     }
@@ -1396,7 +1396,18 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) c
 
     FindStartsStops(model, m_data->m_ds[model.Strand()], mrna, mrnamap, starts, stops, frame, obeystart);
 
-    if(model.GetCdsInfo().ReadingFrame().Empty()) {   // we didn't know the frame before
+    CCDSInfo cds_info = model.GetCdsInfo();
+    CCDSInfo::TPStops pstops = cds_info.PStops();
+    for(int fr = 0; fr < 3; ++fr) {
+        ERASE_ITERATE(TIVec, pstp, stops[fr]) {
+            TSignedSeqRange pstop = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(*pstp,*pstp+2));
+            CCDSInfo::TPStops::iterator it = find(pstops.begin(), pstops.end(), pstop);
+            if(it != pstops.end())
+                VECTOR_ERASE(pstp, stops[fr]);
+        }
+    }
+
+    if(cds_info.ReadingFrame().Empty()) {   // we didn't know the frame before
         int mrna_len = (int)mrna.size();
 
         for(int fr = 0; fr < 3; ++fr) {
@@ -1481,7 +1492,6 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) c
     int best_start, best_stop;
     double best_score = SelectBestReadingFrame(model, mrna, mrnamap, starts, stops, frame, best_start, best_stop, extend5p);
 
-    CCDSInfo cds_info = model.GetCdsInfo();
     if(cds_info.MaxCdsLimits().NotEmpty())
         cds_info.Clear5PrimeCdsLimit();
 
@@ -1525,32 +1535,28 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) c
     cds_info.SetReadingFrame(best_reading_frame);
 
     //    cds_info.Clear5PrimeCdsLimit();
+    int upstream_stop = frame-3;
     if(has_start) {
-        int upstream_stop = -3;
-        bool found_upstream_stop = FindUpstreamStop(stops[frame],best_start,upstream_stop);
-        
         cds_info.SetStart(mrnamap.MapRangeEditedToOrig(TSignedSeqRange(best_start,best_start+2), false), confirmed_start);
 
-        if(found_upstream_stop) {
+        if(FindUpstreamStop(stops[frame],best_start,upstream_stop)) {
             int bs  = mrnamap.MapEditedToOrig(best_start);
             _ASSERT( bs >= 0 );
             cds_info.Set5PrimeCdsLimit(bs);
-        } else {
-#ifdef _DEBUG
-            for(int i = best_start; i >=0; i -= 3) {
-                _ASSERT(!IsStopCodon(&mrna[i]));
-            }
-#endif
         }
     }
 
     if ((int)mrna.size() - best_stop >=3)
         cds_info.SetStop(mrnamap.MapRangeEditedToOrig(TSignedSeqRange(best_stop,best_stop+2), false),confirmed_stop);
     
-    for(int i = best_start+3; i < best_stop; i += 3) {
+    for(int i = upstream_stop+3; i < best_stop; i += 3) {
         if(IsStopCodon(&mrna[i])) {
             TSignedSeqRange pstop = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(i,i+2), false);
-            cds_info.AddPStop(pstop);
+            int type = CCDSInfo::eUnknown;
+            CCDSInfo::TPStops::iterator it = find(pstops.begin(), pstops.end(), pstop);
+            if(it != pstops.end())
+                type = it->m_type;
+            cds_info.AddPStop(pstop, type);
         }
     }
 

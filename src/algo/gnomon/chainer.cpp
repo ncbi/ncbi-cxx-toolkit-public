@@ -100,6 +100,7 @@ private:
     void FindContainedAlignments(vector<SChainMember*>& pointers);
     void DuplicateNotOriented(CChainMembers& pointers, TGeneModelList& clust);
     void Duplicate5pendsAndShortCDSes(CChainMembers& pointers, TGeneModelList& clust);
+    void ReplicatePStops(CChainMembers& pointers);
     void ScoreCdnas(CChainMembers& pointers);
     void DuplicateUTRs(CChainMembers& pointers);
     void CalculateSpliceWeights(CChainMembers& pointers);
@@ -429,9 +430,9 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
         if(s->IsCore() && ++composite > maxcomposite) return false;
     }
 
-    if(a.PStop() || !a.FrameShifts().empty())
+    if(a.PStop(false) || !a.FrameShifts().empty())
         return false;
-    if(front()->PStop() || !front()->FrameShifts().empty())
+    if(front()->PStop(false) || !front()->FrameShifts().empty())
         return false;
 
     // check for gapfillers  
@@ -1833,6 +1834,96 @@ void CChainer::CChainerImpl::CalculateSpliceWeights(CChainMembers& pointers)
     }
 }
 
+void CChainer::CChainerImpl::ReplicatePStops(CChainMembers& pointers)
+{
+    int left = numeric_limits<int>::max();
+    int right = 0;
+    typedef vector<pair<CCDSInfo::SPStop,TSignedSeqRange> > TPstopIntron;
+    TPstopIntron pstops_with_intron_plus;
+    TPstopIntron pstops_with_intron_minus;
+    ITERATE(CChainMembers, i, pointers) {
+        SChainMember& mbr = **i;
+        CGeneModel& algn = *mbr.m_align;
+        TPstopIntron& pstops_with_intron = (algn.Strand() == ePlus) ? pstops_with_intron_plus : pstops_with_intron_minus;
+        ITERATE(CCDSInfo::TPStops, s, algn.GetCdsInfo().PStops()) {
+            if(s->m_type == CCDSInfo::eSelenocysteine || s->m_type == CCDSInfo::eGenomeNotCorrect) {
+                left = min(left,s->GetFrom());
+                right = max(right,s->GetTo());
+                if(s->GetLength() == 3) {
+                    pstops_with_intron.push_back(make_pair(*s,TSignedSeqRange(0,0)));
+                } else {
+                    for(int i = 1; i < (int)algn.Exons().size(); ++i) {
+                        TSignedSeqRange intron(algn.Exons()[i-1].GetTo(),algn.Exons()[i].GetFrom());
+                        pstops_with_intron.push_back(make_pair(*s,intron));
+                    }
+                }
+            }
+        }
+    }
+    uniq(pstops_with_intron_plus);
+    uniq(pstops_with_intron_minus);
+
+    ITERATE(CChainMembers, i, pointers) {
+        SChainMember& mbr = **i;
+        CGeneModel& algn = *mbr.m_align;
+        if(algn.Limits().GetFrom() > right || algn.Limits().GetTo() < left)
+            continue;
+        if((algn.Type()&CGeneModel::eProt) && !algn.PStop())
+            continue;
+
+        TPstopIntron& pstops_with_intron = (algn.Strand() == ePlus) ? pstops_with_intron_plus : pstops_with_intron_minus;
+        if(pstops_with_intron.empty()) 
+            continue;
+
+        if(algn.Type()&CGeneModel::eProt) {
+            CCDSInfo cds = algn.GetCdsInfo();
+            CCDSInfo::TPStops pstops = cds.PStops();
+            NON_CONST_ITERATE(CCDSInfo::TPStops, s, pstops) {
+                ITERATE(TPstopIntron, si, pstops_with_intron) {
+                    if(si->second.GetLength() == 1) {  // no split
+                        if(si->first == *s)
+                            *s = si->first;                           
+                    } else {
+                        for(int i = 1; i < (int)algn.Exons().size(); ++i) {
+                            TSignedSeqRange intron(algn.Exons()[i-1].GetTo(),algn.Exons()[i].GetFrom());
+                            if(si->second == intron && si->first == *s)
+                                *s = si->first;
+                        }
+                    }
+                }
+            }
+            cds.ClearPStops();
+            ITERATE(CCDSInfo::TPStops, s, pstops)
+                cds.AddPStop(*s);
+            algn.SetCdsInfo(cds);
+        } else {
+            CCDSInfo cds;
+            const CGeneModel::TExons& exons = algn.Exons(); 
+            ITERATE(TPstopIntron, si, pstops_with_intron) {
+                if(si->first.GetTo() < algn.Limits().GetFrom())
+                    continue;
+                if(si->first.GetFrom() > algn.Limits().GetTo())
+                    break;
+                for(int i = 0; i < (int)exons.size(); ++i) {
+                    if(Include(exons[i].Limits(),si->first.GetFrom())) {
+                        if(si->second.GetLength() == 1) {  // no split 
+                            if(si->first.GetTo() <= exons[i].GetTo())
+                                cds.AddPStop(si->first);
+                        } else {
+                            if(i < (int)exons.size()-1) {
+                                TSignedSeqRange intron(exons[i].GetTo(),exons[i+1].GetFrom());
+                                if(intron == si->second && si->first.GetTo() <= exons[i+1].GetTo())
+                                    cds.AddPStop(si->first);
+                            }
+                        }
+                    }
+                }
+            }
+            if(cds.PStop())
+                algn.SetCdsInfo(cds); 
+        }            
+    }
+}
 
 void CChainer::CChainerImpl::ScoreCdnas(CChainMembers& pointers)
 {
@@ -2542,6 +2633,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     CChainMembers allpointers(clust, orig_aligns, unmodified_aligns);
     DuplicateNotOriented(allpointers, clust);
+    ReplicatePStops(allpointers);
     ScoreCdnas(allpointers);
     Duplicate5pendsAndShortCDSes(allpointers, clust);
     DuplicateUTRs(allpointers);
@@ -5040,6 +5132,10 @@ void CChainer::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
 
 void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
 {
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    const CResidueVec& contig = m_gnomon->GetSeq();
+
     for(TGeneModelList::iterator itcl = clust.begin(); itcl != clust.end(); ) {
 
         CGeneModel& algn = *itcl;
@@ -5048,6 +5144,34 @@ void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& 
         if ((algn.Type() & CGeneModel::eProt)!=0 || algn.ConfirmedStart()) {   // this includes protein alignments and mRNA with confirmed CDSes
 
             m_gnomon->GetScore(algn);
+
+            if(algn.PStop()) {
+                CAlignMap amap = algn.GetAlignMap();
+                CAlignMap origmap = orig->GetAlignMap();
+                CResidueVec mrna;
+                amap.EditedSequence(contig, mrna);
+                CSeqVector protein_seqvec(scope.GetBioseqHandle(*orig->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+                CCDSInfo::TPStops pstops = algn.GetCdsInfo().PStops();
+                bool selenocysteine = false;
+                NON_CONST_ITERATE(CCDSInfo::TPStops, stp, pstops) {
+                    TSignedSeqRange tstop = amap.MapRangeOrigToEdited(*stp,false);
+                    if(tstop.GetLength() == 3 && mrna[tstop.GetFrom()] == 'T' && mrna[tstop.GetFrom()+1] == 'G' && mrna[tstop.GetFrom()+2] == 'A') {
+                        TSignedSeqRange ostop = origmap.MapRangeOrigToEdited(*stp,false);
+                        if(ostop.GetLength() == 3 && protein_seqvec[ostop.GetFrom()/3] == 'U') {
+                            selenocysteine = true;
+                            stp->m_type = CCDSInfo::eSelenocysteine;
+                        }
+                    }
+                }
+                if(selenocysteine) {
+                    CCDSInfo cds = algn.GetCdsInfo();
+                    cds.ClearPStops();
+                    ITERATE(CCDSInfo::TPStops, stp, pstops)
+                        cds.AddPStop(*stp);
+                    algn.SetCdsInfo(cds);
+                }
+            }
+
             double ms = GoodCDNAScore(algn);
 
             if (algn.Score() == BadScore() || (algn.Score() < ms && (algn.Type()&CGeneModel::eProt) && !(algn.Status()&CGeneModel::eBestPlacement) && orig->AlignLen() < minscor.m_minprotfrac*orig->TargetLen())) { // all mRNA with confirmed CDS and best placed or reasonably aligned proteins with known length will get through with any finite score 
@@ -5655,9 +5779,6 @@ void CChainer::SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignm
 
 void CChainer::CChainerImpl::SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignments)
 {
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-
     NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
         CAlignModel& algn = *i;
         if ((algn.Type() & CGeneModel::eProt)!=0) {
@@ -6172,8 +6293,8 @@ TInDels CGnomonAnnotator_Base::GetGenomicGaps(const TGeneModelList& models){
         }    
     }
 
-    sort(ggaps.begin(),ggaps.end());
-    ggaps.erase( unique(ggaps.begin(),ggaps.end()), ggaps.end() );   //remove duplicates from altvariants
+    uniq(ggaps);  //remove duplicates from altvariants
+
     return ggaps;
 }
 

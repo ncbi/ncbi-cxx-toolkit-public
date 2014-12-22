@@ -654,15 +654,27 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
     }
 
     NON_CONST_ITERATE(TGeneModelList, it, models) {
+        CCDSInfo cds_info = it->GetCdsInfo();
+
+        // removing fshifts in UTRs  
         TInDels fs;
-        TSignedSeqRange fullcds = it->GetCdsInfo().Start()+it->GetCdsInfo().ReadingFrame()+it->GetCdsInfo().Stop();
-        ITERATE(TInDels, i, it->FrameShifts()) {   // removing fshifts in UTRs
+        TSignedSeqRange fullcds = cds_info.Cds();
+        ITERATE(TInDels, i, it->FrameShifts()) {
             if((i->IsInsertion() && Include(fullcds,i->Loc())) ||
                (i->IsDeletion() && i->Loc() > fullcds.GetFrom() && i->Loc() <= fullcds.GetTo())) {
                 fs.push_back(*i);
             }
         }
         it->FrameShifts() = fs;
+
+        // removing pstops in UTRs
+        CCDSInfo::TPStops pstops = cds_info.PStops();
+        cds_info.ClearPStops();
+        ITERATE(CCDSInfo::TPStops, ps, pstops) {
+            if(Include(fullcds,*ps))
+                cds_info.AddPStop(*ps);
+        }
+        it->SetCdsInfo(cds_info);
 
 #ifdef _DEBUG
         {
@@ -673,11 +685,13 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
                     ++nstar;
             }
             int nstop = it->HasStop() ? 1 : 0;
-            nstop += it->GetCdsInfo().PStops().size();
-            _ASSERT(nstar == nstop);
+            ITERATE(CCDSInfo::TPStops, stp, it->GetCdsInfo().PStops()) {
+                if(stp->m_type != CCDSInfo::eSelenocysteine)
+                    ++nstop;
+            }
         }
 #endif
-        if (it->PStop() || !it->FrameShifts().empty()) {
+        if (it->PStop(false) || !it->FrameShifts().empty()) {
             it->Status() |= CGeneModel::ePseudo;
         }
         if(it->OpenCds()) {

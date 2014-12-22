@@ -298,6 +298,9 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
    if(model.PStop()) {
         CCdregion::TCode_break& code_breaks = cdregion_feature->SetData().SetCdregion().SetCode_break();
         ITERATE(CCDSInfo::TPStops,s,cds.PStops()) {
+            if(!Include(cds.Cds(),*s))
+               continue;
+
             CRef< CCode_break > code_break(new CCode_break);
             CRef<CSeq_loc> pstop;
 
@@ -309,7 +312,10 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
 
             code_break->SetLoc(*pstop);
             CRef<CCode_break::C_Aa> aa(new CCode_break::C_Aa);
-            aa->SetNcbieaa('X');
+            if(s->m_type == CCDSInfo::eSelenocysteine)
+                aa->SetNcbieaa('U');
+            else
+                aa->SetNcbieaa('X');
             code_break->SetAa(*aa);
             code_breaks.push_back(code_break);
         }

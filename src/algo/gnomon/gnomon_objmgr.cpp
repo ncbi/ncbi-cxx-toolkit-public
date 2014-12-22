@@ -449,6 +449,18 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
 
     objects::CSeqTranslator::Translate(cds_seq, prot_seq, objects::CSeqTranslator::fIs5PrimePartial);
 
+    if(PStop()) {
+        CCDSInfo cds_info = GetCdsInfo();
+        if(cds_info.IsMappedToGenome()) {
+            CAlignMap amap = GetAlignMap();
+            cds_info = cds_info.MapFromOrigToEdited(amap);
+        }
+        ITERATE(CCDSInfo::TPStops, stp, cds_info.PStops()) {
+            if(stp->m_type == CCDSInfo::eSelenocysteine) 
+                prot_seq[(stp->GetFrom()- cds_info.Cds().GetFrom())/3] = 'U';
+        }
+    }
+
     return prot_seq;
 }
 
@@ -464,6 +476,19 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence, const CGeneti
         objects::CSeqTranslator::Translate(first_triplet, first_aa, objects::CSeqTranslator::fIs5PrimePartial, gencode );
         prot_seq = first_aa+prot_seq.substr(1);
     }
+
+    if(PStop()) {
+        CCDSInfo cds_info = GetCdsInfo();
+        if(cds_info.IsMappedToGenome()) {
+            CAlignMap amap = GetAlignMap();
+            cds_info = cds_info.MapFromOrigToEdited(amap);
+        }
+        ITERATE(CCDSInfo::TPStops, stp, cds_info.PStops()) {
+            if(stp->m_type == CCDSInfo::eSelenocysteine) 
+                prot_seq[(stp->GetFrom()- cds_info.Cds().GetFrom())/3] = 'U';
+        }
+    }
+
     return prot_seq;
 }
 

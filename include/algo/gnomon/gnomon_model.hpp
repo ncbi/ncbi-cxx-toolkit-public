@@ -232,9 +232,6 @@ public:
     bool HasStop () const { return Stop().NotEmpty();  }
     bool ConfirmedStart() const { return m_confirmed_start; }  // start is confirmed by protein alignment
     bool ConfirmedStop() const { return m_confirmed_stop; }  // stop is confirmed by protein alignment
-    typedef vector<TSignedSeqRange> TPStops;
-    const TPStops& PStops() const { return m_p_stops; }
-    bool PStop() const { return !m_p_stops.empty(); }  // has premature stop(s)
     
     bool OpenCds() const { return m_open; }  // "optimal" CDS is not internal
     double Score() const { return m_score; }
@@ -244,16 +241,37 @@ public:
     void SetStop(TSignedSeqRange r, bool confirmed = false);
     void Set5PrimeCdsLimit(TSignedSeqPos p);
     void Clear5PrimeCdsLimit();
-    void AddPStop(TSignedSeqRange r);
     void SetScore(double score, bool open=false);
 
     void CombineWith(const CCDSInfo& another_cds_info);
     void Remap(const CRangeMapper& mapper);
     void Clip(TSignedSeqRange limits);
     void Clear();
-    void ClearPStops() { m_p_stops.clear(); }
 
     int Strand() const; // -1 (minus), 0 (unknown), 1 (plus)
+
+    enum EType {eSelenocysteine, eGenomeNotCorrect, eGenomeCorrect, eUnknown};
+    struct SPStop : public TSignedSeqRange {
+        SPStop(TSignedSeqRange r, int t) : TSignedSeqRange(r), m_type(t) {};
+
+        //not overloaded == is used for uniquing anf finding intervals
+        //overloaded < is used for sorting before uniquing
+        bool operator<(const SPStop& stp) const {
+            if(operator==(stp))                // == is not overloaded
+                return m_type < stp.m_type;
+            else
+                return TSignedSeqRange::operator<(stp);
+        }
+
+        int m_type;
+    };
+
+    typedef vector<SPStop> TPStops;
+    const TPStops& PStops() const { return m_p_stops; }
+    bool PStop(bool includeall = true) const;                  // has premature stop(s)
+    void AddPStop(SPStop stp) { m_p_stops.push_back(stp); _ASSERT( Invariant() ); }
+    void AddPStop(TSignedSeqRange r, int type);
+    void ClearPStops() { m_p_stops.clear(); }
 
     bool Invariant() const
     {
@@ -263,7 +281,7 @@ public:
             _ASSERT( ProtReadingFrame().Empty() && MaxCdsLimits().Empty() );
             _ASSERT( !ConfirmedStart() );
             _ASSERT( !ConfirmedStop() );
-            _ASSERT( !PStop() );
+            //            _ASSERT( !PStop() );
             _ASSERT( !OpenCds() );
             _ASSERT( Score()==BadScore() );
             return true;
@@ -301,8 +319,8 @@ public:
             _ASSERT( HasStop() );
         }
 
-        ITERATE( vector<TSignedSeqRange>, s, PStops())
-            _ASSERT( Include(ReadingFrame(), *s) );
+        //       ITERATE(TPStops, s, PStops())
+        //            _ASSERT( Include(MaxCdsLimits(), *s) );
 #endif
 
         return true;
@@ -491,7 +509,7 @@ public:
     }
 
     bool OpenCds() const { return m_cds_info.OpenCds(); }  // "optimal" CDS is not internal
-    bool PStop() const { return m_cds_info.PStop(); }  // has premature stop(s)
+    bool PStop(bool includeall = true) const { return m_cds_info.PStop(includeall); }  // has premature stop(s)
     
     bool ConfirmedStart() const { return m_cds_info.ConfirmedStart(); }  // start is confirmed by protein alignment
     bool ConfirmedStop() const { return m_cds_info.ConfirmedStop(); }  // stop is confirmed by protein alignment
