@@ -100,9 +100,12 @@ static void s_CreateThirdPartyLibsInstallMakefile
         site.GetLibInfo(lib, config, &lib_info);
         if ( !lib_info.m_LibPath.empty() ) {
             string bin_dir = lib_info.m_LibPath;
+            string bin_path = lib_info.m_BinPath;
+            if (bin_path.empty()) {
+                bin_path = site.GetThirdPartyLibsBinSubDir();
+            }
             bin_dir = 
-                CDirEntry::ConcatPath(bin_dir, 
-                                      site.GetThirdPartyLibsBinSubDir());
+                CDirEntry::ConcatPath(bin_dir, bin_path);
             bin_dir = CDirEntry::NormalizePath(bin_dir);
             if ( CDirEntry(bin_dir).Exists() ) {
                 //

@@ -341,6 +341,8 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
         libinfo->m_LibPath    = ToOSPath(
             ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config),false));
+        libinfo->m_BinPath    = ToOSPath(
+            ProcessMacros(GetOpt(m_Registry, section, "BINPATH", config),false));
 
         string libs_str = GetOpt(m_Registry, section, "LIB", config);
         NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);

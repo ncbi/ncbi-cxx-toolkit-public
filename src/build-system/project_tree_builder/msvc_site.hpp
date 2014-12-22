@@ -50,6 +50,7 @@ struct SLibInfo
     list<string> m_IncludeDir;
     list<string> m_LibDefines;
     string       m_LibPath;
+    string       m_BinPath;
     list<string> m_Libs;
     list<string> m_StdLibs;
     list<string> m_Macro;
@@ -68,6 +69,7 @@ struct SLibInfo
         m_IncludeDir = info.m_IncludeDir;
         m_LibDefines = info.m_LibDefines;
         m_LibPath = info.m_LibPath;
+        m_BinPath = info.m_BinPath;
         m_Libs = info.m_Libs;
         m_StdLibs = info.m_StdLibs;
         m_Macro = info.m_Macro;
@@ -81,6 +83,7 @@ struct SLibInfo
         m_IncludeDir = info.m_IncludeDir;
         m_LibDefines = info.m_LibDefines;
         m_LibPath = info.m_LibPath;
+        m_BinPath = info.m_BinPath;
         m_Libs = info.m_Libs;
         m_StdLibs = info.m_StdLibs;
         m_Macro = info.m_Macro;
@@ -95,6 +98,7 @@ struct SLibInfo
                m_IncludeDir.empty() &&
                m_LibDefines.empty() &&
                m_LibPath.empty()    && 
+               m_BinPath.empty()    && 
                m_Libs.empty()       &&
                m_StdLibs.empty()    &&
                m_Macro.empty()      &&
@@ -106,6 +110,7 @@ struct SLibInfo
         m_IncludeDir.clear();
         m_LibDefines.clear();
         m_LibPath.erase();
+        m_BinPath.erase();
         m_Libs.clear();
         m_StdLibs.clear();
         m_Macro.clear();
