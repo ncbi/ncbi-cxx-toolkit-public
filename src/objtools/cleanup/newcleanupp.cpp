@@ -2789,6 +2789,21 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
             feat.SetQual().push_back( satellite_qual );
         }
 
+        CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
+        if (CSeqFeatData::IsRegulatory(subtype)) {
+            string regulatory_class = CSeqFeatData::GetRegulatoryClass(subtype);
+            if (!NStr::IsBlank(regulatory_class)) {
+                SET_FIELD(imf, Key, "regulatory");
+                ChangeMade(CCleanupChange::eChangeKeywords);
+
+                CRef<CGb_qual> regulatory_class_qual( new CGb_qual );
+                regulatory_class_qual->SetQual("regulatory_class");
+                regulatory_class_qual->SetVal( regulatory_class );
+
+                feat.SetQual().push_back( regulatory_class_qual );
+            }
+        }
+
         if( key == "repeat_region" && ! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
             string val;
             if( FIELD_IS_SET(feat, Comment) ) {
@@ -3259,20 +3274,20 @@ const char *s_FindImpFeatType( const CImp_feat &imp )
 {
     // keep sorted in ASCII-betical order
     static const char *allowed_types[] = { 
-        "-10_signal",     "-35_signal",   "3'UTR",          "3'clip",       "5'UTR",          
-        "5'clip",         "CAAT_signal",  "CDS",            "C_region",     "D-loop",         
-        "D_segment",      "GC_signal",    "Import",         "J_segment",    "LTR",            
-        "N_region",       "RBS",          "STS",            "S_region",     "Site-ref",       
-        "TATA_signal",    "V_region",     "V_segment",      "allele",       "attenuator",     
-        "centromere",     "conflict",     "enhancer",       "exon",         "gap",            
-        "iDNA",           "intron",       "mat_peptide",    "misc_RNA",     "misc_binding",   
-        "misc_difference","misc_feature", "misc_recomb",    "misc_signal",  "misc_structure", 
-        "mobile_element", "modified_base","mutation",       "old_sequence", "operon",         
-        "oriT",           "polyA_signal", "polyA_site",     "precursor_RNA","prim_transcript",
-        "primer_bind",    "promoter",     "protein_bind",   "rep_origin",   "repeat_region",  
-        "repeat_unit",    "satellite",    "sig_peptide",    "source",       "stem_loop",      
-        "telomere",       "terminator",   "transit_peptide","unsure",       "variation",      
-        "virion"
+        "-10_signal",     "-35_signal",   "3'UTR",          "3'clip",         "5'UTR",          
+        "5'clip",         "CAAT_signal",  "CDS",            "C_region",       "D-loop",         
+        "D_segment",      "GC_signal",    "Import",         "J_segment",      "LTR",            
+        "N_region",       "RBS",          "STS",            "S_region",       "Site-ref",       
+        "TATA_signal",    "V_region",     "V_segment",      "allele",         "attenuator",     
+        "centromere",     "conflict",     "enhancer",       "exon",           "gap",            
+        "iDNA",           "intron",       "mat_peptide",    "misc_RNA",       "misc_binding",   
+        "misc_difference","misc_feature", "misc_recomb",    "misc_signal",    "misc_structure", 
+        "mobile_element", "modified_base","mutation",       "old_sequence",   "operon",         
+        "oriT",           "polyA_signal", "polyA_site",     "precursor_RNA",  "prim_transcript",
+        "primer_bind",    "promoter",     "protein_bind",   "regulatory",     "rep_origin",
+        "repeat_region",  "repeat_unit",  "satellite",      "sig_peptide",    "source",
+        "stem_loop",      "telomere",     "terminator",     "transit_peptide","unsure",
+        "variation",      "virion"
     };
     static const int kAllowedTypesNumElems = ( sizeof(allowed_types) / sizeof(allowed_types[0]));
 
