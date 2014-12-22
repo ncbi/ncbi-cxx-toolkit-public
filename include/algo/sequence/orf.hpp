@@ -56,6 +56,7 @@ public:
     typedef vector<TRange>  TRangeVec;
     typedef vector< CRef<objects::CSeq_loc> > TLocVec;
 
+    static const size_t k_default_max_seq_gap = 30;
 
     /// Find all ORFs in both orientations that
     /// are at least min_length_bp long.
@@ -63,26 +64,31 @@ public:
     /// seq must be in iupac.
     /// If allowable_starts is empty (the default), any sense codon can begin
     /// an ORF.  Otherwise, only codons in allowable_starts can do so.
+    /// Do not allow more than max_seq_gap consecutive N-or-gap bases in an ORF
     static void FindOrfs(const string& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1,
                          const vector<string>& allowable_starts = vector<string>(),
-                         bool longest_orfs = true);
+                         bool longest_orfs = true,
+                         size_t max_seq_gap = k_default_max_seq_gap);
 
     static void FindOrfs(const vector<char>& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1,
                          const vector<string>& allowable_starts = vector<string>(),
-                         bool longest_orfs = true);
+                         bool longest_orfs = true,
+                         size_t max_seq_gap = k_default_max_seq_gap);
 
     static void FindOrfs(const objects::CSeqVector& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1,
                          const vector<string>& allowable_starts = vector<string>(),
-                         bool longest_orfs = true);
+                         bool longest_orfs = true,
+                         size_t max_seq_gap = k_default_max_seq_gap);
+
 
     /// Specifically find ORFS with a strong Kozak signal that are upstream of
     /// cds_start. Separately report uORFS overlapping cds start and uORFs of
@@ -94,7 +100,8 @@ public:
                          TLocVec& non_overlap_results,
                          unsigned int min_length_bp = 3,
                          unsigned int non_overlap_min_length_bp = 105,
-                         int genetic_code = 1);
+                         int genetic_code = 1,
+                         size_t max_seq_gap = k_default_max_seq_gap);
 
     /**
     /// This version returns an annot full of CDS features.
