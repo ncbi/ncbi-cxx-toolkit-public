@@ -54,6 +54,7 @@ public:
     int    m_MaxExtent;
     bool   m_ByCoverage;
     int    m_MaxIntron;
+    int    m_MaxOverlap;
     enum EMaximizing {
         eCoverage = 0,
         eIdentity,
@@ -73,6 +74,7 @@ public:
     static const int    default_MaxExtent = 500;
     static const bool   default_ByCoverage = true;
     static const int    default_MaxIntron;
+    static const int    default_MaxOverlap;
     static const EMaximizing default_Maximizing = default_ByCoverage?eCoverage:eIdentity;
     static const ESubjectMol default_SubjectMol = eGuess;
     static const char* s_scoreNames[];
