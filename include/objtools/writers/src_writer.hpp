@@ -106,7 +106,6 @@ public:
         const FIELDS& fields,
         IMessageListener* = 0);
     
-    static FIELDS GetOrderedFieldNames();
   
 protected:
     void xInit();
@@ -114,6 +113,7 @@ protected:
     virtual bool xGather(CBioseq_Handle, const FIELDS&, IMessageListener* =0);
     virtual bool xGatherId(CBioseq_Handle, IMessageListener* =0); 
     virtual bool xGatherGi(CBioseq_Handle, IMessageListener* =0);
+    virtual bool xGatherDefline(CBioseq_Handle, IMessageListener* =0);
     virtual bool xHandleSourceField(const CBioSource&, const string&, IMessageListener* =0);
 
 
@@ -130,7 +130,8 @@ protected:
     virtual bool xGatherTaxonId(const CBioSource&, const string&, IMessageListener* =0);
 
     virtual bool xFormatTabDelimited(const FIELDS&, CNcbiOstream&);
-
+     
+    static FIELDS xGetOrderedFieldNames();
     static HANDLER xGetHandler(const string&);
     static string xPrimerSetNames(const CPCRPrimerSet&);
     static string xPrimerSetSequences(const CPCRPrimerSet&);
@@ -150,6 +151,7 @@ protected:
 
 public:
     static const FIELDS sDefaultFields;
+    static const FIELDS sAllFields;
 
 protected:
     static HANDLERMAP sHandlerMap;

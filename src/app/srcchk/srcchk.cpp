@@ -206,7 +206,7 @@ bool CSrcChkApp::xGetDesiredFields(
 //  -----------------------------------------------------------------------------
 {
     if (args["all-fields"]) {
-        fields = CSrcWriter::GetOrderedFieldNames();
+        fields = CSrcWriter::sAllFields;
         return true;
     }
 
@@ -301,5 +301,5 @@ USING_NCBI_SCOPE;
 int main(int argc, const char** argv)
 //  ===========================================================================
 {
-	return CSrcChkApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CSrcChkApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
