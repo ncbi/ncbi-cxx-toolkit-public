@@ -524,8 +524,9 @@ string s_tRNAGeneFromProduct (string product)
 bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, string& product_name)
 {
     product_name = "";
-    gene_name = "";
-    
+    gene_name = "";    
+
+    NStr::TruncateSpacesInPlace(comment);
     if (NStr::EndsWith (comment, " gene")) {
         comment = comment.substr (0, comment.length() - 5);
     } else if (NStr::EndsWith (comment, " genes")) {

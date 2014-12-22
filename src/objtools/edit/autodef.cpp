@@ -538,12 +538,29 @@ bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const C
         return false;
     }
 
-    CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, trna_str, true, false);
-    if (!trna) {
-        return false;
+    vector<string> trna_str_list;
+    NStr::Tokenize(trna_str, ",", trna_str_list);
+    vector<CAutoDefParsedtRNAClause*> trna_clause_list;
+    bool is_first = true;
+    ITERATE(vector<string>, it, trna_str_list) {
+        if (!NStr::IsBlank(*it)) {
+            CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, *it, is_first, false);
+            if (trna) {
+                trna_clause_list.push_back(trna);
+            } else {
+                ITERATE(vector<CAutoDefParsedtRNAClause*>, tc, trna_clause_list) {
+                    delete(*tc);
+                }
+                delete other;
+                return false;
+            }
+            is_first = false;
+        }
     }
 
-    main_clause.AddSubclause(trna);
+    ITERATE(vector<CAutoDefParsedtRNAClause*>, it, trna_clause_list) {
+        main_clause.AddSubclause(*it);
+    }
     main_clause.AddSubclause(other);
     return true;
 }

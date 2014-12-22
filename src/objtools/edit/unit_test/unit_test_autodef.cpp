@@ -945,5 +945,22 @@ gene, partial sequence.");
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2118)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    misc1->SetComment("contains tRNA-Thr, tRNA-Pro, and control region");
+    misc1->SetLocation().SetInt().SetFrom(0);
+    misc1->SetLocation().SetInt().SetTo(15);
+    misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc1->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(seq, "Sebaea microphylla tRNA-Thr gene, partial sequence; \
+tRNA-Pro gene, complete sequence; and control region, partial sequence.");
+    CheckDeflineMatches(seq, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
