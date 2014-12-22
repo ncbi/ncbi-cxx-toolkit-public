@@ -865,9 +865,10 @@ static void s_TestFormats(void)
         assert(s.compare("02/10/2003 20:40:30") == 0);
         s = t.AsString("MDY $M/$D/$Y $h:$m:$s hms");
         assert(s.compare("02102003 $02/$10/$2003 $20:$40:$30 204030") == 0);
-        s = t.AsString(CTimeFormat("MDY $M/$D/$Y $h:$m:$s hms",
-                                   CTimeFormat::eNcbi));
+        s = t.AsString(CTimeFormat("MDY $M/$D/$Y $h:$m:$s hms", CTimeFormat::eNcbi));
         assert(s.compare("MDY 02/10/2003 20:40:30 hms") == 0);
+        s = t.AsString(CTimeFormat("$YY $MM $dd $hh $mm $ss", CTimeFormat::eNcbi));
+        assert(s.compare("2003Y 02M 10d 20h 40m 30s") == 0);
     }}
 
     // CTimeFormat::GetPredefined() test
@@ -1352,19 +1353,115 @@ static void s_TestTimeSpan(void)
     // SetFormat/AsString with flag parameter test
     {{
         CTimeSpan t(123.456);
-        {{
-            string s = t.AsString("S.n");
-            assert(s.compare("123.456000000") == 0);
-        }}
-        {{
-            string s = t.AsString("$S.$n");
-            assert(s.compare("$123.$456000000") == 0);
-        }}
-        {{
-            string s = t.AsString(CTimeFormat("$S.$n", CTimeFormat::eNcbi));
-            assert(s.compare("123.456000000") == 0);
-        }}
+        string s;
+        s = t.AsString("S.n");
+        assert(s.compare("123.456000000") == 0);
+        s = t.AsString("$S.$n");
+        assert(s.compare("$123.$456000000") == 0);
+        s = t.AsString(CTimeFormat("$S.$n", CTimeFormat::eNcbi));
+        assert(s.compare("123.456000000") == 0);
+        s = t.AsString(CTimeFormat("$mm $ss", CTimeFormat::eNcbi));
+        assert(s.compare("02m 03s") == 0);
     }}
+}
+
+
+
+//============================================================================
+//
+// TestTimeSpan -- AssignFromSmartString()
+// Cases not covered by converting strings produced by AsSmartString().
+//
+//============================================================================
+
+static void s_TestTimeSpan_AssignFromSmartString(void)
+{
+    struct STest {
+        const char* str;
+        CTimeSpan   result;
+    };
+
+    static const STest s_Test[] = {
+        { "",                CTimeSpan()              },
+        { " ",               CTimeSpan()              },
+        { "\t",              CTimeSpan()              },
+        { "\t ",             CTimeSpan()              },
+        { "1s",              CTimeSpan(0,  0,  0,  1) },
+        { "44s",             CTimeSpan(0,  0,  0, 44) },
+        { "35m",             CTimeSpan(0,  0, 35,  0) }, 
+        { "1d 13h 35m 44s",  CTimeSpan(1, 13, 35, 44) }, 
+        { "1d13h35m44s",     CTimeSpan(1, 13, 35, 44) }, 
+        { "13h 35m 44s",     CTimeSpan(0, 13, 35, 44) }, 
+        { "35m 44s",         CTimeSpan(0,  0, 35, 44) }, 
+        { "1d 13h 35m",      CTimeSpan(1, 13, 35,  0) }, 
+        { "13h 35m",         CTimeSpan(0, 13, 35,  0) }, 
+        { "1d 44s",          CTimeSpan(1,  0,  0, 44) }, 
+        { "1d 13h",          CTimeSpan(1, 13,  0,  0) }, 
+        { "1d 35m 44s",      CTimeSpan(1,  0, 35, 44) }, 
+        { "1 day 35m 3.4s",  CTimeSpan(1,  0, 35,  3, 400000000) }, 
+        { "1d 35m 44s 3ms",  CTimeSpan(1,  0, 35, 44,   3000000) }, 
+        { "2mo 13h",         CTimeSpan(2*(long)kAverageSecondsPerMonth + 13*3600L, 0) }, 
+        { "2y 1 nanosecond", CTimeSpan(2*(long)kAverageSecondsPerYear, 1) },
+
+        // fractional values
+        { "0.2ns",           CTimeSpan(0,  0,  0,  0,         0) },   // fraction of ns - rounding
+        { "1.2ns",           CTimeSpan(0,  0,  0,  0,         1) },   // fraction of ns - rounding
+        { "1.6ns",           CTimeSpan(0,  0,  0,  0,         2) },   // fraction of ns - rounding
+        { "1.2ms",           CTimeSpan(0,  0,  0,  0,   1200000) },
+        { "1.2us",           CTimeSpan(0,  0,  0,  0,      1200) },
+        { "1.2s",            CTimeSpan(0,  0,  0,  1, 200000000) },
+        { "1.003s",          CTimeSpan(0,  0,  0,  1,   3000000) },
+        { "1.000004s",       CTimeSpan(0,  0,  0,  1,      4000) },
+        { "1.000000005s",    CTimeSpan(0,  0,  0,  1,         5) },
+        { "0.000000001s",    CTimeSpan(0,  0,  0,  0,         1) },
+        { "1.s",             CTimeSpan(0,  0,  0,  1) },
+        { "1.5m",            CTimeSpan(0,  0,  0, 90) },
+        { "1.2h",            CTimeSpan(0,  1, 12,  0) },
+        { "1.25h",           CTimeSpan(0,  1, 15,  0) },
+        { "2.3d",            CTimeSpan(  2,  7, 12, 0) },  // 24*2 + 7.2 hours
+        { "1.2mo",           CTimeSpan((long)kAverageSecondsPerMonth*12/10) },
+        { "1.5mo 1.8d",      CTimeSpan((long)kAverageSecondsPerMonth*15/10 + 43*3600L + 12*60L) },  // 1.8d = 1d + 19.2h = 43h 12m
+        { "1.2y",            CTimeSpan((long)kAverageSecondsPerYear*12/10) },
+        { "2.3y",            CTimeSpan((long)kAverageSecondsPerYear*23/10) },
+        { "1y 3.2s",         CTimeSpan((long)kAverageSecondsPerYear + 3, 200000000) },
+        { " 1y3.2s ",        CTimeSpan((long)kAverageSecondsPerYear + 3, 200000000) },
+
+        // stopper
+        { NULL, CTimeSpan() }
+    };
+
+    CTimeSpan ts;
+
+    for (int i = 0; s_Test[i].str;  i++) {
+        ts.AssignFromSmartString(s_Test[i].str);
+#if 0
+        assert(ts == s_Test[i].result);
+#else
+        if (ts != s_Test[i].result) {
+            cout << i << ".  " << s_Test[i].str << " != " << s_Test[i].result.AsString() << endl;
+        }
+#endif
+    }
+
+    // Tests that throw exceptions
+    static const STest s_Test_Ex[] = {
+        { "1",        CTimeSpan() },   // no time specifier
+        { "s",        CTimeSpan() },   // no value
+        { "2k",       CTimeSpan() },   // unknown specifier
+        { "1d 2d",    CTimeSpan() },   // repetitions not allowed 
+        { "1day 2d",  CTimeSpan() },   // repetitions not allowed 
+        { "1.2s 3ns", CTimeSpan() },   // implicit repetitions not allowed 
+        { "1..2s",    CTimeSpan() },   // double ..
+        // stopper
+        { NULL,       CTimeSpan() }
+    };
+    for (int i = 0; s_Test_Ex[i].str; i++) {
+        try {
+            ts.AssignFromSmartString(s_Test_Ex[i].str);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+    }
 }
 
 
@@ -1377,556 +1474,594 @@ static void s_TestTimeSpan(void)
 
 static void s_TestTimeSpan_AsSmartString(void)
 {
+    typedef CTimeSpan TS;
     struct STest {
-        CTimeSpan                        timespan;
-        CTimeSpan::ESmartStringPrecision precision;
-        ERound                           rounding;
-        CTimeSpan::ESmartStringZeroMode  zeromode;
-        const char*                      result;
+        TS                    timespan;
+        TS::TSmartStringFlags flags;
+        const char*           res_full;
+        const char*           res_short;
     };
 
-    // Shortcode for testing in smart mode -- (sec,ns) constructor only
-    #define SMART_STR_TEST(round, sec, nanosec, result) \
-            { CTimeSpan(sec, nanosec), CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_SkipZero,   result }, \
-            { CTimeSpan(sec, nanosec), CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_NoSkipZero, result }
-    // Same, but for an timespan object
-    #define SMART_STR_TEST_TS(round, ts, result) \
-            { ts, CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_SkipZero,   result }, \
-            { ts, CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_NoSkipZero, result }
+    // Short code for testing in smart mode -- (sec,ns) constructor only
+    #define SMART_STR_TEST(round, sec, nanosec, res_full, res_short) \
+            { TS(sec, nanosec), TS::fSS_Smart | round | TS::fSS_SkipZero,   res_full, res_short }
+    
+    //  Shorten some common flags combinations
+    TS::TSmartStringFlags fTN = TS::fSS_Trunc | TS::fSS_NoSkipZero;
+    TS::TSmartStringFlags fTS = TS::fSS_Trunc | TS::fSS_SkipZero;
+    TS::TSmartStringFlags fRN = TS::fSS_Round | TS::fSS_NoSkipZero;
+    TS::TSmartStringFlags fRS = TS::fSS_Round | TS::fSS_SkipZero;
 
     static const STest s_Test[] = {
 
         // Smart mode for timespans < 1 min (CXX-4101)
+        { TS( 0,          0), fTS, "0 seconds",         "0s"     },
+        { TS( 1,          0), fTS, "1 second",          "1s"     },
+        { TS( 1,    1000000), fTS, "1 second",          "1s"     },
+        { TS( 0,        999), fTS, "999 nanoseconds",   "999ns"  },
+        { TS( 0,       1000), fTS, "1 microsecond",     "1us"    },
+        { TS( 0,    1000000), fTS, "1 millisecond",     "1ms"    },
+        { TS( 0,  100000000), fTS, "100 milliseconds",  "100ms"  },
+        { TS( 0, 1000000001), fTS, "1 second",          "1s"     },
+        { TS(59,  900000000), fTS, "59.9 seconds",      "59.9s"  },
+        { TS(12,   41000000), fTS, "12 seconds",        "12s"    },
+        { TS(12,  341000000), fTS, "12.3 seconds",      "12.3s"  },
+        { TS( 1,  234100000), fTS, "1.23 seconds",      "1.23s"  },
+        { TS( 0,  123410000), fTS, "123 milliseconds",  "123ms"  },
+        { TS( 0,   12341000), fTS, "12.3 milliseconds", "12.3ms" },
+        { TS( 0,    1234100), fTS, "1.23 milliseconds", "1.23ms" },
+        { TS( 0,     123410), fTS, "123 microseconds",  "123us"  },
+        { TS( 0,      12341), fTS, "12.3 microseconds", "12.3us" },
+        { TS( 0,       1234), fTS, "1.23 microseconds", "1.23us" },
+        { TS( 0,        123), fTS, "123 nanoseconds",   "123ns"  },
+        { TS( 0,         12), fTS, "12 nanoseconds",    "12ns"   },
+        { TS( 0,  999000000), fTS, "999 milliseconds",  "999ms"  },
+        { TS( 0,  999500000), fTS, "999 milliseconds",  "999ms"  },
+        { TS( 0,     999000), fTS, "999 microseconds",  "999us"  },
+        { TS( 0,     999500), fTS, "999 microseconds",  "999us"  },
 
-        SMART_STR_TEST(eTrunc,  0,          0,  "0 seconds" ),
-        SMART_STR_TEST(eTrunc,  1,          0,  "1 second" ),
-        SMART_STR_TEST(eTrunc,  1,    1000000,  "1 second" ),
-        SMART_STR_TEST(eTrunc,  0,        999,  "999 nanoseconds" ),
-        SMART_STR_TEST(eTrunc,  0,       1000,  "1 microsecond" ),
-        SMART_STR_TEST(eTrunc,  0,    1000000,  "1 millisecond" ),
-        SMART_STR_TEST(eTrunc,  0,  100000000,  "100 milliseconds" ),
-        SMART_STR_TEST(eTrunc,  0, 1000000001,  "1 second" ),
-        SMART_STR_TEST(eTrunc, 59,  900000000,  "59.9 seconds" ),
-        SMART_STR_TEST(eTrunc, 12,   41000000,  "12 seconds" ),
-        SMART_STR_TEST(eTrunc, 12,  341000000,  "12.3 seconds" ),
-        SMART_STR_TEST(eTrunc,  1,  234100000,  "1.23 seconds" ),
-        SMART_STR_TEST(eTrunc,  0,  123410000,  "123 milliseconds" ),
-        SMART_STR_TEST(eTrunc,  0,   12341000,  "12.3 milliseconds" ),
-        SMART_STR_TEST(eTrunc,  0,    1234100,  "1.23 milliseconds" ),
-        SMART_STR_TEST(eTrunc,  0,     123410,  "123 microseconds" ),
-        SMART_STR_TEST(eTrunc,  0,      12341,  "12.3 microseconds" ),
-        SMART_STR_TEST(eTrunc,  0,       1234,  "1.23 microseconds" ),
-        SMART_STR_TEST(eTrunc,  0,        123,  "123 nanoseconds" ),
-        SMART_STR_TEST(eTrunc,  0,         12,  "12 nanoseconds" ),
-        SMART_STR_TEST(eTrunc,  0,  999000000,  "999 milliseconds" ),
-        SMART_STR_TEST(eTrunc,  0,  999500000,  "999 milliseconds" ),
-        SMART_STR_TEST(eTrunc,  0,     999000,  "999 microseconds" ),
-        SMART_STR_TEST(eTrunc,  0,     999500,  "999 microseconds" ),
-
-        SMART_STR_TEST(eRound,  0,          0,  "0 seconds" ),
-        SMART_STR_TEST(eRound,  1,          0,  "1 second" ),
-        SMART_STR_TEST(eRound,  1,    1000000,  "1 second" ),
-        SMART_STR_TEST(eRound,  0,        999,  "999 nanoseconds" ),
-        SMART_STR_TEST(eRound,  0,       1000,  "1 microsecond" ),
-        SMART_STR_TEST(eRound,  0,    1000000,  "1 millisecond" ),
-        SMART_STR_TEST(eRound,  0,  100000000,  "100 milliseconds" ),
-        SMART_STR_TEST(eRound,  0, 1000000001,  "1 second" ),
-        SMART_STR_TEST(eRound, 59,  940000000,  "59.9 seconds" ),
-        SMART_STR_TEST(eRound, 59,  950000000,  "1 minute" ),
-        SMART_STR_TEST(eRound, 12,   50000000,  "12.1 seconds" ),
-        SMART_STR_TEST(eRound, 12,  341000000,  "12.3 seconds" ),
-        SMART_STR_TEST(eRound, 12,  351000000,  "12.4 seconds" ),
-        SMART_STR_TEST(eRound,  1,  234100000,  "1.23 seconds" ),
-        SMART_STR_TEST(eRound,  1,  235100000,  "1.24 seconds" ),
-        SMART_STR_TEST(eRound,  0,  123410000,  "123 milliseconds" ),
-        SMART_STR_TEST(eRound,  0,  123510000,  "124 milliseconds" ),
-        SMART_STR_TEST(eRound,  0,   12341000,  "12.3 milliseconds" ),
-        SMART_STR_TEST(eRound,  0,    1234100,  "1.23 milliseconds" ),
-        SMART_STR_TEST(eRound,  0,     123410,  "123 microseconds" ),
-        SMART_STR_TEST(eRound,  0,      12341,  "12.3 microseconds" ),
-        SMART_STR_TEST(eRound,  0,       1234,  "1.23 microseconds" ),
-        SMART_STR_TEST(eRound,  0,        123,  "123 nanoseconds" ),
-        SMART_STR_TEST(eRound,  0,         12,  "12 nanoseconds" ),
-        SMART_STR_TEST(eRound,  0,  999000000,  "999 milliseconds" ),
-        SMART_STR_TEST(eRound,  0,  999500000,  "1 second" ),
-        SMART_STR_TEST(eRound,  0,     999000,  "999 microseconds" ),
-        SMART_STR_TEST(eRound,  0,     999500,  "1 millisecond" ),
+        { TS( 0,          0), fRS, "0 seconds",         "0s"     },
+        { TS( 1,          0), fRS, "1 second",          "1s"     },
+        { TS( 1,    1000000), fRS, "1 second",          "1s"     },
+        { TS( 0,        999), fRS, "999 nanoseconds",   "999ns"  },
+        { TS( 0,       1000), fRS, "1 microsecond",     "1us"    },
+        { TS( 0,    1000000), fRS, "1 millisecond",     "1ms"    },
+        { TS( 0,  100000000), fRS, "100 milliseconds",  "100ms"  },
+        { TS( 0, 1000000001), fRS, "1 second",          "1s"     },
+        { TS(59,  940000000), fRS, "59.9 seconds",      "59.9s"  },
+        { TS(59,  950000000), fRS, "1 minute",          "1m"     },
+        { TS(12,   50000000), fRS, "12.1 seconds",      "12.1s"  },
+        { TS(12,  341000000), fRS, "12.3 seconds",      "12.3s"  },
+        { TS(12,  351000000), fRS, "12.4 seconds",      "12.4s"  },
+        { TS( 1,  234100000), fRS, "1.23 seconds",      "1.23s"  },
+        { TS( 1,  235100000), fRS, "1.24 seconds",      "1.24s"  },
+        { TS( 0,  123410000), fRS, "123 milliseconds",  "123ms"  },
+        { TS( 0,  123510000), fRS, "124 milliseconds",  "124ms"  },
+        { TS( 0,   12341000), fRS, "12.3 milliseconds", "12.3ms" },
+        { TS( 0,    1234100), fRS, "1.23 milliseconds", "1.23ms" },
+        { TS( 0,     123410), fRS, "123 microseconds",  "123us"  },
+        { TS( 0,      12341), fRS, "12.3 microseconds", "12.3us" },
+        { TS( 0,       1234), fRS, "1.23 microseconds", "1.23us" },
+        { TS( 0,        123), fRS, "123 nanoseconds",   "123ns"  },
+        { TS( 0,         12), fRS, "12 nanoseconds",    "12ns"   },
+        { TS( 0,  999000000), fRS, "999 milliseconds",  "999ms"  },
+        { TS( 0,  999500000), fRS, "1 second",          "1s"     },
+        { TS( 0,     999000), fRS, "999 microseconds",  "999us"  },
+        { TS( 0,     999500), fRS, "1 millisecond",     "1ms"    },
 
         // Smart mode for timespans >= 1 min
+        { TS(   60,         0), fTS, "1 minute",              "1m"      },
+        { TS(   61,         0), fTS, "1 minute 1 second",     "1m 1s"   },
+        { TS(  119, 900000000), fTS, "1 minute 59 seconds",   "1m 59s"  },
+        { TS(  600,         0), fTS, "10 minutes",            "10m"     },
+        { TS(  629,         0), fTS, "10 minutes 29 seconds", "10m 29s" },
+        { TS( 3599, 900000000), fTS, "59 minutes 59 seconds", "59m 59s" },
+        { TS( 3600,         0), fTS, "1 hour",                "1h"      },
+        { TS(36000,         0), fTS, "10 hours",              "10h"     },
+        { TS(36059,         0), fTS, "10 hours",              "10h"     },
+        { TS(86400,         0), fTS, "1 day",                 "1d"      },
 
-        SMART_STR_TEST( eTrunc,    60,         0, "1 minute" ),
-        SMART_STR_TEST( eTrunc,    61,         0, "1 minute 1 second" ),
-        SMART_STR_TEST( eTrunc,   119, 900000000, "1 minute 59 seconds" ),
-        SMART_STR_TEST( eTrunc,   600,         0, "10 minutes" ),
-        SMART_STR_TEST( eTrunc,   629,         0, "10 minutes 29 seconds" ),
-        SMART_STR_TEST( eTrunc,  3599, 900000000, "59 minutes 59 seconds" ),
-        SMART_STR_TEST( eTrunc,  3600,         0, "1 hour" ),
-        SMART_STR_TEST( eTrunc, 36000,         0, "10 hours" ),
-        SMART_STR_TEST( eTrunc, 36059,         0, "10 hours" ),
-        SMART_STR_TEST( eTrunc, 86400,         0, "1 day" ),
+        { TS(   60,         0), fRS, "1 minute",              "1m"      },
+        { TS(   61,         0), fRS, "1 minute 1 second",     "1m 1s"   },
+        { TS(  119, 900000000), fRS, "2 minutes",             "2m"      },
+        { TS(  600,         0), fRS, "10 minutes",            "10m"     },
+        { TS(  629,         0), fRS, "10 minutes 29 seconds", "10m 29s" },
+        { TS( 3599, 900000000), fRS, "1 hour",                "1h"      },
+        { TS( 3600,         0), fRS, "1 hour",                "1h"      },
+        { TS(36000,         0), fRS, "10 hours",              "10h"     },
+        { TS(36059,         0), fRS, "10 hours 1 minute",     "10h 1m"  },
+        { TS(86400,         0), fRS, "1 day",                 "1d"      },
 
-        SMART_STR_TEST( eRound,    60,         0, "1 minute" ),
-        SMART_STR_TEST( eRound,    61,         0, "1 minute 1 second" ),
-        SMART_STR_TEST( eRound,   119, 900000000, "2 minutes" ),
-        SMART_STR_TEST( eRound,   600,         0, "10 minutes" ),
-        SMART_STR_TEST( eRound,   629,         0, "10 minutes 29 seconds" ),
-        SMART_STR_TEST( eRound,  3599, 900000000, "1 hour" ),
-        SMART_STR_TEST( eRound,  3600,         0, "1 hour" ),
-        SMART_STR_TEST( eRound, 36000,         0, "10 hours" ),
-        SMART_STR_TEST( eRound, 36059,         0, "10 hours 1 minute" ),
-        SMART_STR_TEST( eRound, 86400,         0, "1 day" ),
+        { TS(29,23,59,1,0),                    fTS,  "29 days 23 hours", "29d 23h" },
+        { TS(29,23,59,1,0),                    fRS,  "30 days",          "30d"     },
+        { TS((long)kAverageSecondsPerMonth-1), fTS,  "30 days 10 hours", "30d 10h" },
+        { TS((long)kAverageSecondsPerMonth-1), fRS,  "1 month",          "1mo"     },
+        { TS((long)kAverageSecondsPerMonth),   fTS,  "1 month",          "1mo"     },
+        { TS((long)kAverageSecondsPerMonth),   fRS,  "1 month",          "1mo"     },
+        { TS((long)kAverageSecondsPerMonth+1), fTS,  "1 month",          "1mo" },
+        { TS((long)kAverageSecondsPerMonth+1), fRS,  "1 month",          "1mo" },
+        { TS(559,0,59,41,900500),              fTS,  "1 year 6 months",  "1y 6mo"  },
+        { TS(559,0,59,41,900500),              fRS,  "1 year 6 months",  "1y 6mo"  },
 
-        SMART_STR_TEST_TS( eTrunc, CTimeSpan(29,23,59,1,0),       "29 days 23 hours" ),
-        SMART_STR_TEST_TS( eRound, CTimeSpan(29,23,59,1,0),       "1 month" ),
-        SMART_STR_TEST_TS( eTrunc, CTimeSpan(559,0,59,41,900500), "1 year 6 months"),
-        SMART_STR_TEST_TS( eRound, CTimeSpan(559,0,59,41,900500), "1 year 6 months"),
 
         // zero time span
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 minutes" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
+        { TS(0,0), fTN | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(0,0), fTN | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(0,0), fTN | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(0,0), fTN | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(0,0), fTN | TS::fSS_Second,      "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Millisecond, "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Microsecond, "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Nanosecond,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision1,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision2,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision3,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision4,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision5,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision6,  "0 seconds", "0s"  },
+        { TS(0,0), fTN | TS::fSS_Precision7,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(0,0), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(0,0), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(0,0), fTS | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(0,0), fTS | TS::fSS_Second,      "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Millisecond, "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Microsecond, "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Nanosecond,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision1,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision2,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision3,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision4,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision5,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision6,  "0 seconds", "0s"  },
+        { TS(0,0), fTS | TS::fSS_Precision7,  "0 seconds", "0s"  },
 
         // 1 second
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 minutes" },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { TS(1,0), fTN | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(1,0), fTN | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(1,0), fTN | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(1,0), fTN | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(1,0), fTN | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Millisecond, "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Microsecond, "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Nanosecond,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision1,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision2,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision3,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision4,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision5,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision6,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Precision7,  "1 second",  "1s"  },
+        { TS(1,0), fTN | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(1,0), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(1,0), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(1,0), fTS | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(1,0), fTS | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Millisecond, "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Microsecond, "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Nanosecond,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision1,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision2,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision3,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision4,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision5,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision6,  "1 second",  "1s"  },
+        { TS(1,0), fTS | TS::fSS_Precision7,  "1 second",  "1s"  },
 
         // 1 second 1 millisecond
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 minutes" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1 millisecond" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1000 microseconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1000000 nanoseconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1 millisecond" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1000 microseconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1000000 nanoseconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { TS(1,1000000), fTN | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(1,1000000), fTN | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(1,1000000), fTN | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(1,1000000), fTN | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(1,1000000), fTN | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Millisecond, "1 second 1 millisecond", "1s 1ms" },
+        { TS(1,1000000), fTN | TS::fSS_Microsecond, "1 second 1000 microseconds", "1s 1000us" },
+        { TS(1,1000000), fTN | TS::fSS_Nanosecond,  "1 second 1000000 nanoseconds", "1s 1000000ns" },
+        { TS(1,1000000), fTN | TS::fSS_Precision1,  "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Precision2,  "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Precision3,  "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Precision4,  "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Precision5,  "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Precision6,  "1 second",  "1s"  },
+        { TS(1,1000000), fTN | TS::fSS_Precision7,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(1,1000000), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(1,1000000), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(1,1000000), fTS | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(1,1000000), fTS | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Millisecond, "1 second 1 millisecond", "1s 1ms" },
+        { TS(1,1000000), fTS | TS::fSS_Microsecond, "1 second 1000 microseconds", "1s 1000us" },
+        { TS(1,1000000), fTS | TS::fSS_Nanosecond,  "1 second 1000000 nanoseconds", "1s 1000000ns" },
+        { TS(1,1000000), fTS | TS::fSS_Precision1,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Precision2,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Precision3,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Precision4,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Precision5,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Precision6,  "1 second",  "1s"  },
+        { TS(1,1000000), fTS | TS::fSS_Precision7,  "1 second",  "1s"  },
 
         // 1 minute 1 second
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"   },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"   },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
+        { TS(61,0), fTN | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(61,0), fTN | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(61,0), fTN | TS::fSS_Day,         "0 days",   "0d"  },
+        { TS(61,0), fTN | TS::fSS_Minute,      "1 minute", "1m"  },
+        { TS(61,0), fTN | TS::fSS_Second,      "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Millisecond, "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Microsecond, "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Nanosecond,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Precision1,  "1 minute", "1m"  },
+        { TS(61,0), fTN | TS::fSS_Precision2,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Precision3,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Precision4,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Precision5,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Precision6,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTN | TS::fSS_Precision7,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(61,0), fTS | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(61,0), fTS | TS::fSS_Day,         "0 days",   "0d"  },
+        { TS(61,0), fTS | TS::fSS_Minute,      "1 minute", "1m"  },
+        { TS(61,0), fTS | TS::fSS_Second,      "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Millisecond, "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Microsecond, "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Nanosecond,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Precision1,  "1 minute", "1m"  },
+        { TS(61,0), fTS | TS::fSS_Precision2,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Precision3,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Precision4,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Precision5,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Precision6,  "1 minute 1 second", "1m 1s" },
+        { TS(61,0), fTS | TS::fSS_Precision7,  "1 minute 1 second", "1m 1s" },
 
         // 999 nanoseconds
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "999 nanoseconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Millisecond, eRound, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Microsecond, eRound, CTimeSpan::eSSZ_SkipZero,   "1 microsecond" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Nanosecond,  eRound, CTimeSpan::eSSZ_SkipZero,   "999 nanoseconds" },
+        { TS(0,999), fTS | TS::fSS_Year,        "0 years",         "0y"    },
+        { TS(0,999), fTS | TS::fSS_Month,       "0 months",        "0mo"   },
+        { TS(0,999), fTS | TS::fSS_Day,         "0 days",          "0d"    },
+        { TS(0,999), fTS | TS::fSS_Minute,      "0 minutes",       "0m"    },
+        { TS(0,999), fTS | TS::fSS_Second,      "0 seconds",       "0s"    },
+        { TS(0,999), fTS | TS::fSS_Millisecond, "0 seconds",       "0s"    },
+        { TS(0,999), fTS | TS::fSS_Microsecond, "0 seconds",       "0s"    },
+        { TS(0,999), fTS | TS::fSS_Nanosecond,  "999 nanoseconds", "999ns" },
+        { TS(0,999), fRS | TS::fSS_Millisecond, "0 seconds",       "0s"    },
+        { TS(0,999), fRS | TS::fSS_Microsecond, "1 microsecond",   "1us"   },
+        { TS(0,999), fRS | TS::fSS_Nanosecond,  "999 nanoseconds", "999ns" },
 
         // 1000 nanoseconds
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 years"   },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 months"  },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 days"    },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 minutes" },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 seconds" },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 seconds" },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,  "1 microsecond" },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,  "1000 nanoseconds" },
+        { TS(0,1000), fTS | TS::fSS_Year,        "0 years",          "0y"  },
+        { TS(0,1000), fTS | TS::fSS_Month,       "0 months",         "0mo" },
+        { TS(0,1000), fTS | TS::fSS_Day,         "0 days",           "0d"  },
+        { TS(0,1000), fTS | TS::fSS_Minute,      "0 minutes",        "0m"  },
+        { TS(0,1000), fTS | TS::fSS_Second,      "0 seconds",        "0s"  },
+        { TS(0,1000), fTS | TS::fSS_Millisecond, "0 seconds",        "0s"  },
+        { TS(0,1000), fTS | TS::fSS_Microsecond, "1 microsecond",    "1us" },
+        { TS(0,1000), fTS | TS::fSS_Nanosecond,  "1000 nanoseconds", "1000ns" },
 
         // 1,000,000 nanoseconds
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero, "0 years"   },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero, "0 months"  },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero, "0 days"    },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 minutes" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 seconds" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "1 millisecond" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "1000 microseconds" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero, "1000000 nanoseconds" },
+        { TS(0,1000000), fTS | TS::fSS_Year,        "0 years",       "0y"  },
+        { TS(0,1000000), fTS | TS::fSS_Month,       "0 months",      "0mo" },
+        { TS(0,1000000), fTS | TS::fSS_Day,         "0 days",        "0d"  },
+        { TS(0,1000000), fTS | TS::fSS_Minute,      "0 minutes",     "0m"  },
+        { TS(0,1000000), fTS | TS::fSS_Second,      "0 seconds",     "0s"  },
+        { TS(0,1000000), fTS | TS::fSS_Millisecond, "1 millisecond", "1ms" },
+        { TS(0,1000000), fTS | TS::fSS_Microsecond, "1000 microseconds", "1000us" },
+        { TS(0,1000000), fTS | TS::fSS_Nanosecond,  "1000000 nanoseconds", "1000000ns" },
 
         // 100,000,000 nanoseconds
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero, "0 years"   },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero, "0 months"  },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero, "0 days"    },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 minutes" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 seconds" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "100 milliseconds" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "100000 microseconds" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero, "100000000 nanoseconds" },
+        { TS(0,100000000), fTS | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(0,100000000), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(0,100000000), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(0,100000000), fTS | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(0,100000000), fTS | TS::fSS_Second,      "0 seconds", "0s"  },
+        { TS(0,100000000), fTS | TS::fSS_Millisecond, "100 milliseconds", "100ms" },
+        { TS(0,100000000), fTS | TS::fSS_Microsecond, "100000 microseconds", "100000us" },
+        { TS(0,100000000), fTS | TS::fSS_Nanosecond,  "100000000 nanoseconds", "100000000ns" },
 
         // 1,000,000,000 nanoseconds
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { TS(0,1000000000), fTN | TS::fSS_Millisecond, "1 second",  "1s"  },
+        { TS(0,1000000000), fTN | TS::fSS_Microsecond, "1 second",  "1s"  },
+        { TS(0,1000000000), fTN | TS::fSS_Nanosecond,  "1 second",  "1s"  },
+        { TS(0,1000000000), fTS | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(0,1000000000), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(0,1000000000), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(0,1000000000), fTS | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(0,1000000000), fTS | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(0,1000000000), fTS | TS::fSS_Millisecond, "1 second",  "1s"  },
+        { TS(0,1000000000), fTS | TS::fSS_Microsecond, "1 second",  "1s"  },
+        { TS(0,1000000000), fTS | TS::fSS_Nanosecond,  "1 second",  "1s"  },
 
         // 1,000,000,001 nanoseconds
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1 nanosecond" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1 nanosecond" },
+        { TS(0,1000000001), fTN | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(0,1000000001), fTN | TS::fSS_Millisecond, "1 second",  "1s"  },
+        { TS(0,1000000001), fTN | TS::fSS_Microsecond, "1 second",  "1s"  },
+        { TS(0,1000000001), fTN | TS::fSS_Nanosecond,  "1 second 1 nanosecond", "1s 1ns" },
+        { TS(0,1000000001), fTS | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(0,1000000001), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(0,1000000001), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(0,1000000001), fTS | TS::fSS_Minute,      "0 minutes", "0m"  },
+        { TS(0,1000000001), fTS | TS::fSS_Second,      "1 second",  "1s"  },
+        { TS(0,1000000001), fTS | TS::fSS_Millisecond, "1 second",  "1s"  },
+        { TS(0,1000000001), fTS | TS::fSS_Microsecond, "1 second",  "1s"  },
+        { TS(0,1000000001), fTS | TS::fSS_Nanosecond,  "1 second 1 nanosecond", "1s 1ns" },
 
 #if (SIZEOF_LONG == 8)
         // 10,000,000,000 nanoseconds
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"    },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"   },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"     },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes"  },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTN | TS::fSS_Smart,       "10 seconds", "10s" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Smart,       "10 seconds", "10s" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Year,        "0 years",    "0y"  },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Month,       "0 months",   "0mo" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Day,         "0 days",     "0d"  },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Minute,      "0 minutes",  "0m"  },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Second,      "10 seconds", "10s" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Millisecond, "10 seconds", "10s" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Microsecond, "10 seconds", "10s" },
+        { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Nanosecond,  "10 seconds", "10s" },
 #endif
 
         // 60 second
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
+        { TS(60,0), fTN | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(60,0), fTN | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(60,0), fTN | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(60,0), fTN | TS::fSS_Minute,      "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Second,      "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Millisecond, "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Microsecond, "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Nanosecond,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision1,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision2,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision3,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision4,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision5,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision6,  "1 minute",  "1m"  },
+        { TS(60,0), fTN | TS::fSS_Precision7,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Year,        "0 years",   "0y"  },
+        { TS(60,0), fTS | TS::fSS_Month,       "0 months",  "0mo" },
+        { TS(60,0), fTS | TS::fSS_Day,         "0 days",    "0d"  },
+        { TS(60,0), fTS | TS::fSS_Minute,      "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Second,      "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Millisecond, "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Microsecond, "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Nanosecond,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision1,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision2,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision3,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision4,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision5,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision6,  "1 minute",  "1m"  },
+        { TS(60,0), fTS | TS::fSS_Precision7,  "1 minute",  "1m"  },
 
         // 600 seconds
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"    },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"   },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"     },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"    },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"   },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"     },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
+        { TS(600,0), fTN | TS::fSS_Year,        "0 years",    "0y"  },
+        { TS(600,0), fTN | TS::fSS_Month,       "0 months",   "0mo" },
+        { TS(600,0), fTN | TS::fSS_Day,         "0 days",     "0d"  },
+        { TS(600,0), fTN | TS::fSS_Minute,      "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Second,      "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Millisecond, "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Microsecond, "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Nanosecond,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision1,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision2,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision3,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision4,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision5,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision6,  "10 minutes", "10m" },
+        { TS(600,0), fTN | TS::fSS_Precision7,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Year,        "0 years",    "0y"  },
+        { TS(600,0), fTS | TS::fSS_Month,       "0 months",   "0mo" },
+        { TS(600,0), fTS | TS::fSS_Day,         "0 days",     "0d"  },
+        { TS(600,0), fTS | TS::fSS_Minute,      "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Second,      "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Millisecond, "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Microsecond, "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Nanosecond,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision1,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision2,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision3,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision4,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision5,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision6,  "10 minutes", "10m" },
+        { TS(600,0), fTS | TS::fSS_Precision7,  "10 minutes", "10m" },
 
         // 3600 seconds
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
+        { TS(3600,0), fTN | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(3600,0), fTN | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(3600,0), fTN | TS::fSS_Day,         "0 days",   "0d"  },
+        { TS(3600,0), fTN | TS::fSS_Minute,      "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Second,      "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Millisecond, "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Microsecond, "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Nanosecond,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision1,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision2,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision3,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision4,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision5,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision6,  "1 hour",   "1h"  },
+        { TS(3600,0), fTN | TS::fSS_Precision7,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(3600,0), fTS | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(3600,0), fTS | TS::fSS_Day,         "0 days",   "0d"  },
+        { TS(3600,0), fTS | TS::fSS_Minute,      "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Second,      "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Millisecond, "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Microsecond, "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Nanosecond,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision1,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision2,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision3,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision4,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision5,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision6,  "1 hour",   "1h"  },
+        { TS(3600,0), fTS | TS::fSS_Precision7,  "1 hour",   "1h"  },
 
         // 36000 seconds
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"   },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"   },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
+        { TS(36000,0), fTN | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(36000,0), fTN | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(36000,0), fTN | TS::fSS_Day,         "0 days",   "0d"  },
+        { TS(36000,0), fTN | TS::fSS_Minute,      "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Second,      "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Millisecond, "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Microsecond, "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Nanosecond,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision1,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision2,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision3,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision4,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision5,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision6,  "10 hours", "10h" },
+        { TS(36000,0), fTN | TS::fSS_Precision7,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(36000,0), fTS | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(36000,0), fTS | TS::fSS_Day,         "0 days",   "0d"  },
+        { TS(36000,0), fTS | TS::fSS_Minute,      "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Second,      "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Millisecond, "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Microsecond, "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Nanosecond,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision1,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision2,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision3,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision4,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision5,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision6,  "10 hours", "10h" },
+        { TS(36000,0), fTS | TS::fSS_Precision7,  "10 hours", "10h" },
 
         // 86400 seconds
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
+        { TS(86400,0), fTN | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(86400,0), fTN | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(86400,0), fTN | TS::fSS_Day,         "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Minute,      "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Second,      "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Millisecond, "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Microsecond, "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Nanosecond,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision1,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision2,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision3,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision4,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision5,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision6,  "1 day",    "1d"  },
+        { TS(86400,0), fTN | TS::fSS_Precision7,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Year,        "0 years",  "0y"  },
+        { TS(86400,0), fTS | TS::fSS_Month,       "0 months", "0mo" },
+        { TS(86400,0), fTS | TS::fSS_Day,         "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Minute,      "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Second,      "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Millisecond, "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Microsecond, "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Nanosecond,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision1,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision2,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision3,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision4,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision5,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision6,  "1 day",    "1d"  },
+        { TS(86400,0), fTS | TS::fSS_Precision7,  "1 day",    "1d"  },
 
         // Some long time
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds 900 microseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds 900500 nanoseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds 900 microseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds 900500 nanoseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision4,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
+        // "1 year 6 months 11 days 0 hours 59 minutes 41 seconds"
+        // kAverageSecondsPerYear + kAverageSecondsPerMonth*6 + 11*24*3600 + 59*60 + 41 == 48289409 sec
 
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eRound, CTimeSpan::eSSZ_NoSkipZero, "2 years" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Minute,      eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 1 hour" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Second,      eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Millisecond, eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds 1 millisecond" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Microsecond, eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds 901 microseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Nanosecond,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds 900500 nanoseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision1,  eRound, CTimeSpan::eSSZ_NoSkipZero, "2 years" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision2,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision3,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision4,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 1 hour" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision5,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 1 hour" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eRound, CTimeSpan::eSSZ_SkipZero,   "2 years" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Minute,      eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 1 hour" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Second,      eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Millisecond, eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds 1 millisecond" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Microsecond, eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds 901 microseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Nanosecond,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds 900500 nanoseconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision1,  eRound, CTimeSpan::eSSZ_SkipZero,   "2 years" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision2,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision3,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision4,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 1 hour" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision5,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 1 hour" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
+        { TS(48289409,900500), fTN | TS::fSS_Year,        "1 year", "1y" },
+        { TS(48289409,900500), fTN | TS::fSS_Month,       "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fTN | TS::fSS_Day,         "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fTN | TS::fSS_Minute,      "1 year 6 months 11 days 0 hours 59 minutes", "1y 6mo 11d 0h 59m" },
+        { TS(48289409,900500), fTN | TS::fSS_Second,      "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+        { TS(48289409,900500), fTN | TS::fSS_Millisecond, "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+        { TS(48289409,900500), fTN | TS::fSS_Microsecond, "1 year 6 months 11 days 0 hours 59 minutes 41 seconds 900 microseconds", "1y 6mo 11d 0h 59m 41s 900us" },
+        { TS(48289409,900500), fTN | TS::fSS_Nanosecond,  "1 year 6 months 11 days 0 hours 59 minutes 41 seconds 900500 nanoseconds", "1y 6mo 11d 0h 59m 41s 900500ns" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision1,  "1 year", "1y" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision2,  "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision3,  "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision4,  "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision5,  "1 year 6 months 11 days 0 hours 59 minutes", "1y 6mo 11d 0h 59m" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision6,  "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+        { TS(48289409,900500), fTN | TS::fSS_Precision7,  "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+
+        { TS(48289409,900500), fTS | TS::fSS_Year,        "1 year", "1y" },
+        { TS(48289409,900500), fTS | TS::fSS_Month,       "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fTS | TS::fSS_Day,         "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fTS | TS::fSS_Minute,      "1 year 6 months 11 days 59 minutes", "1y 6mo 11d 59m" },
+        { TS(48289409,900500), fTS | TS::fSS_Second,      "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
+        { TS(48289409,900500), fTS | TS::fSS_Millisecond, "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
+        { TS(48289409,900500), fTS | TS::fSS_Microsecond, "1 year 6 months 11 days 59 minutes 41 seconds 900 microseconds", "1y 6mo 11d 59m 41s 900us" },
+        { TS(48289409,900500), fTS | TS::fSS_Nanosecond,  "1 year 6 months 11 days 59 minutes 41 seconds 900500 nanoseconds", "1y 6mo 11d 59m 41s 900500ns" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision1,  "1 year", "1y" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision2,  "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision3,  "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision4,  "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision5,  "1 year 6 months 11 days 59 minutes", "1y 6mo 11d 59m" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision6,  "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
+        { TS(48289409,900500), fTS | TS::fSS_Precision7,  "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
+
+        { TS(48289409,900500), fRN | TS::fSS_Year,        "2 years", "2y" },
+        { TS(48289409,900500), fRN | TS::fSS_Month,       "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fRN | TS::fSS_Day,         "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fRN | TS::fSS_Minute,      "1 year 6 months 11 days 1 hour", "1y 6mo 11d 1h" },
+        { TS(48289409,900500), fRN | TS::fSS_Second,      "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+        { TS(48289409,900500), fRN | TS::fSS_Millisecond, "1 year 6 months 11 days 0 hours 59 minutes 41 seconds 1 millisecond", "1y 6mo 11d 0h 59m 41s 1ms" },
+        { TS(48289409,900500), fRN | TS::fSS_Microsecond, "1 year 6 months 11 days 0 hours 59 minutes 41 seconds 901 microseconds", "1y 6mo 11d 0h 59m 41s 901us" },
+        { TS(48289409,900500), fRN | TS::fSS_Nanosecond,  "1 year 6 months 11 days 0 hours 59 minutes 41 seconds 900500 nanoseconds", "1y 6mo 11d 0h 59m 41s 900500ns" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision1,  "2 years", "2y" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision2,  "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision3,  "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision4,  "1 year 6 months 11 days 1 hour", "1y 6mo 11d 1h" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision5,  "1 year 6 months 11 days 1 hour", "1y 6mo 11d 1h" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision6,  "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+        { TS(48289409,900500), fRN | TS::fSS_Precision7,  "1 year 6 months 11 days 0 hours 59 minutes 41 seconds", "1y 6mo 11d 0h 59m 41s" },
+
+        { TS(48289409,900500), fRS | TS::fSS_Year,        "2 years", "2y" },
+        { TS(48289409,900500), fRS | TS::fSS_Month,       "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fRS | TS::fSS_Day,         "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fRS | TS::fSS_Minute,      "1 year 6 months 11 days 1 hour", "1y 6mo 11d 1h" },
+        { TS(48289409,900500), fRS | TS::fSS_Second,      "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
+        { TS(48289409,900500), fRS | TS::fSS_Millisecond, "1 year 6 months 11 days 59 minutes 41 seconds 1 millisecond", "1y 6mo 11d 59m 41s 1ms" },
+        { TS(48289409,900500), fRS | TS::fSS_Microsecond, "1 year 6 months 11 days 59 minutes 41 seconds 901 microseconds", "1y 6mo 11d 59m 41s 901us" },
+        { TS(48289409,900500), fRS | TS::fSS_Nanosecond,  "1 year 6 months 11 days 59 minutes 41 seconds 900500 nanoseconds", "1y 6mo 11d 59m 41s 900500ns" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision1,  "2 years", "2y" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision2,  "1 year 6 months", "1y 6mo" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision3,  "1 year 6 months 11 days", "1y 6mo 11d" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision4,  "1 year 6 months 11 days 1 hour", "1y 6mo 11d 1h" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision5,  "1 year 6 months 11 days 1 hour", "1y 6mo 11d 1h" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision6,  "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
+        { TS(48289409,900500), fRS | TS::fSS_Precision7,  "1 year 6 months 11 days 59 minutes 41 seconds", "1y 6mo 11d 59m 41s" },
 
         // stopper
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Smart, eTrunc, CTimeSpan::eSSZ_SkipZero,  NULL }
+        { TS(0,0), TS::fSS_Default,  NULL, NULL }
     };
 
-    for (int i = 0;  s_Test[i].result;  i++) {
-        string s = s_Test[i].timespan.AsSmartString(s_Test[i].precision, s_Test[i].rounding, s_Test[i].zeromode);
-#if 1
-        assert(s == s_Test[i].result);
+    for (int i = 0;  s_Test[i].res_full;  i++) {
+
+        // timespan -> string
+
+        string s_full  = s_Test[i].timespan.AsSmartString(s_Test[i].flags | TS::fSS_Full);
+        string s_short = s_Test[i].timespan.AsSmartString(s_Test[i].flags | TS::fSS_Short);
+#if 0
+        assert(s_full  == s_Test[i].res_full);
+        assert(s_short == s_Test[i].res_short);
 #else
-        if (s != s_Test[i].result) {
-            cout << i << ".  " << s << "  != " << s_Test[i].result << endl;
+        if (s_full != s_Test[i].res_full) {
+            cout << i << ".  Print:" << s_full << " != " << s_Test[i].res_full << endl;
+        }
+        if (s_short != s_Test[i].res_short) {
+            cout << i << ".  Print:" << s_short << " != " << s_Test[i].res_short << endl;
+        }
+#endif
+
+        // string -> timespan -> string (AssignFromSmartString() test)
+
+        CTimeSpan ts;
+        ts.AssignFromSmartString(s_full);
+        string s_full_new  = ts.AsSmartString(s_Test[i].flags | TS::fSS_Full);
+        ts.AssignFromSmartString(s_short);
+        string s_short_new = ts.AsSmartString(s_Test[i].flags | TS::fSS_Short);
+#if 0
+        assert(s_full_new  == s_Test[i].res_full);
+        assert(s_short_new == s_Test[i].res_short);
+#else
+        if (s_full_new != s_Test[i].res_full) {
+            cout << i << ".  Assign:" << s_full_new << " != " << s_Test[i].res_full << endl;
+        }
+        if (s_short_new != s_Test[i].res_short) {
+            cout << i << ".   Assign:" << s_short_new << " != " << s_Test[i].res_short << endl;
         }
 #endif
     }
@@ -2199,7 +2334,6 @@ int main()
 
     // Run tests
     try {
-        s_TestTimeSpan_AsSmartString();
         s_TestMisc();
         s_TestFormats();
         s_TestGMT();
@@ -2208,6 +2342,7 @@ int main()
         #endif
         s_TestTimeSpan();
         s_TestTimeSpan_AsSmartString();
+        s_TestTimeSpan_AssignFromSmartString();
         s_TestTimeout();
         s_DemoStopWatch();
     } catch (CException& e) {

@@ -84,7 +84,7 @@ static CSafeStatic<CFastLocalTime> s_FastLocalTime;
 //============================================================================
 
 // Number of days per month
-    static int s_DaysInMonth[12] = {
+static int s_DaysInMonth[12] = {
     31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
@@ -169,7 +169,7 @@ const char kFormatEscapeSymbol = '$';
 static unsigned s_Date2Number(const CTime& date)
 {
     if ( date.IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eConvert, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     unsigned d = date.Day();
     unsigned m = date.Month();
@@ -180,7 +180,7 @@ static unsigned s_Date2Number(const CTime& date)
         m -= 3;
     } else {
         m += 9;
-        y--;
+        --y;
     }
     c  = y / 100;
     ya = y - 100 * c;
@@ -215,7 +215,7 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
         month += 3;
     } else {
         month -= 9;
-        year++;
+        ++year;
     }
     // Construct new CTime object
     return
@@ -278,7 +278,7 @@ void s_AddZeroPadInt(string& str, long value, size_t len, bool ignore_trailing_z
     }
     char* p = buf + size - len;
     if (ignore_trailing_zeros) {
-        for (; len > 1  &&  p[len-1] == '0'; len--) {}
+        for (; len > 1  &&  p[len-1] == '0'; --len) {}
     }
     str.append(p, len);
 }
@@ -331,21 +331,22 @@ CTimeFormat::CTimeFormat(const string& fmt, TFlags flags)
 
 void CTimeFormat::SetFormat(const string& fmt, TFlags flags)
 {
-    // Checks flags compatibility
+    // Check flags compatibility
+
     TFlags f = fFormat_Simple | fFormat_Ncbi;
-    if ( (flags & f) == f ) {
-        NCBI_THROW(CTimeException, eFormat, 
+    if ((flags & f) == f) {
+        NCBI_THROW(CTimeException, eArgument,
             "Incompatible flags specified together: fFormat_Simple | fFormat_Ncbi");
     }
-    if ( (flags & f) == 0 ) {
+    if ((flags & f) == 0) {
         flags |= fFormat_Simple;  // default
     }
 
-    if ( (flags & fMatch_Strict) && (flags & fMatch_Weak) ) {
-        NCBI_THROW(CTimeException, eFormat, 
-            "Incompatible flags specified together: fMatch_Strict | fMatch_Weak)");
+    if ((flags & fMatch_Strict) && (flags & fMatch_Weak)) {
+        NCBI_THROW(CTimeException, eArgument,
+            "Incompatible flags specified together: fMatch_Strict | fMatch_Weak");
     }
-    if ( (flags & (fMatch_Strict|fMatch_Weak)) == 0 ) {
+    if ((flags & (fMatch_Strict | fMatch_Weak)) == 0) {
         flags |= fMatch_Strict;  // default
     }
 
@@ -435,13 +436,17 @@ CTime::CTime(int year, int yearDayNumber,
         return false; \
     }
 
-// This helper takes care of parsing time with ':z' specified
-struct STzFmtParse
-{
-    STzFmtParse() : m_Active(false) {}
+// Skip white spaces
+#define SKIP_SPACES(s) \
+    while (isspace((unsigned char)(*s))) ++s;
 
-    void fmt(const char*& f)
-    {
+
+// The helper to check string with ':z' format symbol specified
+struct STzFormatCheck
+{
+    STzFormatCheck() : m_Active(false) {}
+
+    void fmt(const char*& f) {
         _ASSERT(f);
         if (*f == ':') {
             if (*++f == 'z') {
@@ -451,23 +456,47 @@ struct STzFmtParse
             }
         }
     }
-
-    bool str(const char*& s)
-    {
+    bool str(const char*& s) {
         _ASSERT(s);
         if (m_Active) {
             if (*s != ':') return false;
-
             ++s;
             m_Active = false;
         }
-
         return true;
     }
+private:
+    bool m_Active;
+};
+
+// The helper to compose string with ':z' format symbol specified
+struct STzFormatMake
+{
+    typedef string::const_iterator T_CI;
+
+    STzFormatMake() : m_Active(false) {}
+
+    void fmt(string& s, T_CI i, T_CI end) {
+        _ASSERT(i != end);
+        T_CI j = i + 1;
+        if (j != end  &&  *j == 'z') {
+            m_Active = true;
+        } else {
+            s += ':';
+        }
+    }
+    void str(string& s) {
+        if (m_Active) {
+            s += ':';
+            m_Active = false;
+        }
+    }
+    bool active() const { return m_Active; }
 
 private:
     bool m_Active;
 };
+
 
 bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_action)
 {
@@ -491,8 +520,8 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     bool is_time_present  = false;
 
     const string& fmt = format.GetString();
-    bool is_escaped = ((format.GetFlags() & CTimeFormat::fFormat_Simple) == 0);
-    bool is_format_symbol = !is_escaped;
+    bool is_escaped_fmt = ((format.GetFlags() & CTimeFormat::fFormat_Simple) == 0);
+    bool is_escaped_symbol = false;
 
     const char* fff;
     const char* sss = str.c_str();
@@ -509,66 +538,77 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     // Used to check white spaces for fMatch_IgnoreSpaces
     bool is_ignore_spaces = ((format.GetFlags() & CTimeFormat::fMatch_IgnoreSpaces) != 0);
     bool is_format_space = false;
+    STzFormatCheck tz_fmt_check;
 
-    STzFmtParse tz_fmt_parse;
+    for (fff = fmt.c_str();  *fff != '\0';  ++fff) {
 
-    for (fff = fmt.c_str();  *fff != '\0';  fff++) {
+        // White space processing -- except directly after escape symbols
 
-        // Skip preceding symbols for some formats
-        if (!is_format_symbol) {
-            if ( *fff == kFormatEscapeSymbol )  {
-                is_format_symbol = true;
-                continue;
-            }
-        }
-        if ( is_escaped ) {
-            is_format_symbol = false;
-        }
-
-        tz_fmt_parse.fmt(fff);
-
-        // White space processing
-        {{
+        if (!is_escaped_symbol) {
             // Skip space symbols in format string
             if (isspace((unsigned char)(*fff))) {
                 is_format_space = true;
                 continue;
             }
             if (is_ignore_spaces) {
-                // Skip space symbols in time string
-                while (isspace((unsigned char)(*sss))) {
-                    sss++;
-                }
-            }
-            else {
+                // Skip space symbols in time string also
+                SKIP_SPACES(sss);
+            } else {
+                // match spaces
                 if (isspace((unsigned char)(*sss))) {
                     if (is_format_space) {
-                        // Skip space symbols in the time string
-                        while (isspace((unsigned char)(*sss))) {
-                            sss++;
-                        }
-                    }
-                    else {
+                        // Skip space symbols in time string
+                        SKIP_SPACES(sss);
+                    } else {
                         break;  // error: non-matching spaces
                     }
-                }
-                else {
+                } else {
                     if (is_format_space) {
                         break;  // error: non-matching spaces
                     }
                 }
                 is_format_space = false;
             }
-        }}
-
-        // Non-format symbols
-        if (strchr(kFormatSymbolsTime, *fff) == 0) {
-            if (*fff == *sss) {
-                sss++;
-                continue;  // skip matching non-format symbols
-            }
-            break;  // error: non-matching non-format symbols
         }
+
+        // Skip preceding symbols for some formats
+        if (is_escaped_fmt  &&  !is_escaped_symbol) {
+            if (*fff == kFormatEscapeSymbol)  {
+                is_escaped_symbol = true;
+                continue;
+            }
+        }
+
+        // Special checks for ':z' format
+        tz_fmt_check.fmt(fff);
+
+        // Match non-format symbols
+
+        if (is_escaped_fmt) {
+            if (!(is_escaped_symbol  &&  *fff != kFormatEscapeSymbol)) {
+                // Match non-format symbols
+                if (*fff == *sss) {
+                    ++sss;
+                    continue;
+                }
+                break;  // error: non-matching symbols
+            }
+            // format symbol found, process as usual
+            is_escaped_symbol = false;
+        } else {
+            // Regular non-escaped format, each symbol can be a format symbol.
+            // Check allowed format symbols
+            if (strchr(kFormatSymbolsTime, *fff) == 0) {
+                // Match non-format symbols
+                if (*fff == *sss) {
+                    ++sss;
+                    continue;
+                }
+                break;  // error: non-matching symbols
+            }
+        }
+
+        // Process format symbols
 
         // Month
         if (*fff == 'b'  ||  *fff == 'B') {
@@ -578,14 +618,14 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             } else {
                 name = kMonthFull;
             }
-            for (unsigned char i = 0;  i < 12;  i++) {
+            for (unsigned char i = 0;  i < 12;  ++i) {
                 size_t namelen = strlen(*name);
                 if (NStr::strncasecmp(sss, *name, namelen) == 0) {
                     sss += namelen;
                     m_Data.month = i + 1;
                     break;
                 }
-                name++;
+                ++name;
             }
             is_month_present = true;
             continue;
@@ -594,14 +634,14 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         // Day of week
         if (*fff == 'w'  ||  *fff == 'W') {
             const char** day = (*fff == 'w') ? kWeekdayAbbr : kWeekdayFull;
-            for (unsigned char i = 0;  i < 7;  i++) {
+            for (unsigned char i = 0;  i < 7;  ++i) {
                 size_t len = strlen(*day);
                 if (NStr::strncasecmp(sss, *day, len) == 0) {
                     sss += len;
                     weekday = i;
                     break;
                 }
-                day++;
+                ++day;
             }
             continue;
         }
@@ -617,18 +657,16 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             continue;
         }
 
-        // Timezone (local time in format GMT+HHMM)
+        // Timezone (local time in format 'GMT+HHMM' or '+/-HH:MM')
         if (*fff == 'z') {
             m_Data.tz = eGmt;
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 sss += 3;
             }
-            while ( isspace((unsigned char)(*sss)) ) {
-                sss++;
-            }
+            SKIP_SPACES(sss);
             int sign = (*sss == '+') ? 1 : ((*sss == '-') ? -1 : 0);
             if ( sign ) {
-                sss++;
+                ++sss;
             } else {
                 sign = 1;
             }
@@ -639,7 +677,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             char* s = value_str;
             for (size_t len = 2;
                  len  &&  *sss  &&  isdigit((unsigned char)(*sss));
-                 len--) {
+                 --len) {
                 *s++ = *sss++;
             }
             *s = '\0';
@@ -651,14 +689,13 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             }
             try {
                 if ( *sss != '\0' ) {
-                    if (!tz_fmt_parse.str(sss)) {
+                    if (!tz_fmt_check.str(sss)) {
                         break;  // error: not matched format symbol ':'
                     }
-
                     s = value_str;
                     for (size_t len = 2;
                          len  &&  *sss  &&  isdigit((unsigned char)(*sss));
-                         len--) {
+                         --len) {
                         *s++ = *sss++;
                     }
                     *s = '\0';
@@ -696,7 +733,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             case 'l': len = 3; break;
             case 'r': len = 6; break;
         }
-        for ( ; len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
+        for ( ; len  &&  *sss  &&  isdigit((unsigned char)(*sss));  --len) {
             *s++ = *sss++;
         }
         *s = '\0';
@@ -771,12 +808,12 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             CHECK_RANGE2_SEC(value, err_action);
             m_Data.sec = (unsigned char)value;
             if ( *sss == '.' ) {
-                sss++;
+                ++sss;
                 char* s = value_str;
                 // Limit fraction of second to 9 digits max,
                 // ignore all other digits in string if any.
                 for (size_t len = 9;
-                    len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
+                    len  &&  *sss  &&  isdigit((unsigned char)(*sss));  --len) {
                     *s++ = *sss++;
                 }
                 *s = '\0';
@@ -784,21 +821,21 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
                 size_t n = strlen(value_str);
                 // 'n' cannot have more then 9 (max for nanoseconds) - see above.
                 _ASSERT(n <= 9);
-                for (;  n < 9;  n++) {
+                for (;  n < 9;  ++n) {
                     value *= 10;
                 }
                 CHECK_RANGE2_NSEC(value, err_action);
                 m_Data.nanosec = (Int4)value;
                 // Ignore extra digits
                 while ( isdigit((unsigned char)(*sss)) ) {
-                    sss++;
+                    ++sss;
                 }
             }
             is_time_present = true;
             break;
 
         default:
-            X_INIT_ERROR(eFormat, "Format '" + fmt + "' is incorrect");
+            X_INIT_ERROR(eFormat, "Format '" + fmt + "' has incorrect format symbol '" + *fff + "'");
         }
     }
 
@@ -809,15 +846,10 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
 
     // Skip all remaining white spaces in the string
     if (is_ignore_spaces) {
-        while (isspace((unsigned char)(*sss))) {
-            sss++;
-        }
-    }
-    else {
+        SKIP_SPACES(sss);
+    } else {
         if (isspace((unsigned char)(*sss))  &&  is_format_space) {
-            while (isspace((unsigned char)(*sss))) {
-                sss++;
-            }
+            SKIP_SPACES(sss);
         }
         // else { error: non-matching spaces -- processed below }
     }
@@ -1103,7 +1135,7 @@ int CTime::YearDayNumber(void) const
 int CTime::YearWeekNumber(EDayOfWeek first_day_of_week) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if (first_day_of_week > eSaturday) {
         NCBI_THROW(CTimeException, eArgument,
@@ -1126,7 +1158,7 @@ int CTime::YearWeekNumber(EDayOfWeek first_day_of_week) const
     if (yday >= wday) {
         week_num = yday / 7;
         if ( (yday % 7) >= wday ) {
-            week_num++;
+            ++week_num;
         }
     }
     // Adjust range from [0..53] to [1..54]
@@ -1146,7 +1178,7 @@ int CTime::MonthWeekNumber(EDayOfWeek first_day_of_week) const
 int CTime::DayOfWeek(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     int y = Year();
     int m = Month();
@@ -1159,7 +1191,7 @@ int CTime::DayOfWeek(void) const
 int CTime::DaysInMonth(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     int n_days = s_DaysInMonth[Month()-1];
     if (n_days == 0) {
@@ -1172,7 +1204,7 @@ int CTime::DaysInMonth(void) const
 int CTime::MonthNameToNum(const string& month)
 {
     const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull;
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 12; ++i) {
         if (month == name[i]) {
             return i+1;
         }
@@ -1193,7 +1225,7 @@ string CTime::MonthNumToName(int month, ENameFormat fmt)
         NCBI_THROW(CTimeException, eArgument,
                    "Invalid month number " + NStr::IntToString(month));
     }
-    month--;
+    --month;
     return fmt == eFull ? kMonthFull[month] : kMonthAbbr[month];
 }
 
@@ -1201,7 +1233,7 @@ string CTime::MonthNumToName(int month, ENameFormat fmt)
 int CTime::DayOfWeekNameToNum(const string& day)
 {
     const char** name = day.length() == 3 ? kWeekdayAbbr : kWeekdayFull;
-    for (int i = 0; i <= 6; i++) {
+    for (int i = 0; i <= 6; ++i) {
         if (day == name[i]) {
             return i;
         }
@@ -1246,41 +1278,6 @@ CTimeFormat CTime::GetFormat(void)
     return fmt;
 }
 
-// This helper takes care of composing string with ':z' specified
-struct STzFmtMake
-{
-    typedef string::const_iterator T_CI;
-
-    STzFmtMake() : m_Active(false) {}
-
-    void fmt(string& s, T_CI i, T_CI end)
-    {
-        _ASSERT(i != end);
-        T_CI j = i + 1;
-
-        if (j != end && *j == 'z') {
-            m_Active = true;
-        } else {
-            s += ':';
-        }
-    }
-
-    bool active() const
-    {
-        return m_Active;
-    }
-
-    void str(string& s)
-    {
-        if (m_Active) {
-            s += ':';
-            m_Active = false;
-        }
-    }
-
-private:
-    bool m_Active;
-};
 
 string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 {
@@ -1324,8 +1321,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     }
     bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
-
-    STzFmtMake tz_fmt_make;
+    STzFormatMake tz_fmt_make;
 
     ITERATE(string, it, fmt) {
 
@@ -1383,8 +1379,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   TSeconds tz = out_tz;
                   if (out_tz == eCurrentTimeZone) {
                       tz = TimeZone();
-                      if ( Daylight() ) {
-                          tz -= 3600;  // DST in effect
+                      if (Daylight()) {
+                        tz -= 3600;  // DST in effect
                       }
                   }
                   str += (tz > 0) ? '-' : '+';
@@ -1413,7 +1409,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 time_t CTime::GetTimeT(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     // MT-Safe protect
     CFastMutexGuard LOCK(s_TimeMutex);
@@ -1522,7 +1518,7 @@ CTime& CTime::SetTimeTM(const struct tm& t)
     m_Data.adjTimeDiff = 0;
 
     if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eConvert,
+        NCBI_THROW(CTimeException, eInvalid,
                    "Invalid time " + s_TimeDump(*this));
     }
     return *this;
@@ -1683,7 +1679,7 @@ CTime& CTime::x_SetTime(const time_t* value)
 CTime& CTime::AddMonth(int months, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( !months ) {
         return *this;
@@ -1714,7 +1710,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
 CTime& CTime::AddDay(int days, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( !days ) {
         return *this;
@@ -1746,7 +1742,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
 CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( !hours ) {
         return *this;
@@ -1776,7 +1772,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 CTime& CTime::AddMinute(int minutes, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( !minutes ) {
         return *this;
@@ -1806,7 +1802,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( !seconds ) {
         return *this;
@@ -1822,7 +1818,7 @@ CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 CTime& CTime::AddNanoSecond(long ns)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( !ns ) {
         return *this;
@@ -1974,7 +1970,7 @@ bool CTime::IsValid(void) const
 CTime CTime::GetLocalTime(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( IsLocalTime() ) {
         return *this;
@@ -1987,7 +1983,7 @@ CTime CTime::GetLocalTime(void) const
 CTime CTime::GetGmtTime(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if ( IsGmtTime() ) {
         return *this;
@@ -2000,7 +1996,7 @@ CTime CTime::GetGmtTime(void) const
 CTime& CTime::ToTime(ETimeZone tz)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "The date is empty");
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     if (GetTimeZone() != tz) {
         struct tm* t;
@@ -2308,7 +2304,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
         sign = ( *this > from ) ? 1 : -1;
         // !!! Run TimeZoneOffset() first for old time value
         diff = -tmp.TimeZoneOffset() + TimeZoneOffset();
-        // Correction need's if time already in identical timezone
+        // Correction needs if time already in identical timezone
         if (!diff  ||  diff == m_Data.adjTimeDiff) {
             return *this;
         }
@@ -2316,7 +2312,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Recursive procedure call. Inside below
     // x_AddHour(*, eAdjustDaylight, false)
     else  {
-        // Correction need't if difference not found
+        // Correction needn't if difference not found
         if (diff == m_Data.adjTimeDiff) {
             return *this;
         }
@@ -2387,53 +2383,70 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
         return;
     }
     const string& fmt = format.GetString();
-    bool is_escaped = ((format.GetFlags() & CTimeFormat::fFormat_Simple) == 0);
-    bool is_format_symbol = !is_escaped;
+    bool is_escaped_fmt = ((format.GetFlags() & CTimeFormat::fFormat_Simple) == 0);
+    bool is_escaped_symbol = false;
 
     const char* fff;
     char  f;
     const char* sss = str.c_str();
     int   sign = 1;
 
-    for (fff = fmt.c_str();  *fff != '\0';  fff++) {
-
-        f = *fff;
+    for (fff = fmt.c_str();  *fff != '\0';  ++fff) {
 
         // Skip preceding symbols for some formats
-        if ( !is_format_symbol ) {
-            if ( f == kFormatEscapeSymbol )  {
-                is_format_symbol = true;
+        if (is_escaped_fmt  &&  !is_escaped_symbol) {
+            if (*fff == kFormatEscapeSymbol)  {
+                is_escaped_symbol = true;
                 continue;
             }
         }
-        if ( is_escaped ) {
-            is_format_symbol = false;
-        }
-        // Non-format symbols
-        if (strchr(kFormatSymbolsSpan, f) == 0) {
-            if (f == *sss) {
-                sss++;
-                continue;  // skip matching non-format symbols
+
+        // Match non-format symbols
+
+        if (is_escaped_fmt) {
+            if (!(is_escaped_symbol  &&  *fff != kFormatEscapeSymbol)) {
+                // Match non-format symbols
+                if (*fff == *sss) {
+                    ++sss;
+                    continue;
+                }
+                break;  // error: non-matching symbols
             }
-            break;  // error: non-matching non-format symbols
+            // format symbol found, process as usual
+            is_escaped_symbol = false;
+        } else {
+            // Regular non-escaped format, each symbol can be a format symbol.
+            // Check allowed format symbols
+            if (strchr(kFormatSymbolsSpan, *fff) == 0) {
+                // Match non-format symbols
+                if (*fff == *sss) {
+                    ++sss;
+                    continue;
+                }
+                break;  // error: non-matching symbols
+            }
         }
 
+        // Process format symbols
+
         // Sign: if specified that the time span is negative
-        if (f == '-') {
+        if (*fff == '-') {
             if (*sss == '-') {
                 sign = -1;
-                sss++;
+                ++sss;
             }
             continue;
         }
+        f = *fff;
 
     read_next_value:
 
         // Other format symbols -- read the next data ingredient
-        char value_str[10];
+        char value_str[11];
         char* s = value_str;
-        for (size_t len = 9;
-             len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
+        // Read 9 (special case) or 10 digits only, ignore all other.
+        size_t len = (f == '\1') ? 9 : 10;
+        for (; len  &&  *sss  &&  isdigit((unsigned char)(*sss));  --len) {
             *s++ = *sss++;
         }
         *s = '\0';
@@ -2441,7 +2454,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
 
         switch ( f ) {
         case 'd':
-            m_Sec += value * 86400L;
+            m_Sec += value * 3600L * 24L;
             break;
         case 'h':
             m_Sec += value * 3600L;
@@ -2468,7 +2481,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             m_Sec += value;
             if ( *sss == '.' ) {
                 // Read fraction
-                sss++;
+                ++sss;
                 f = '\1';
                 goto read_next_value;
             }
@@ -2477,7 +2490,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             m_Sec = value;
             if ( *sss == '.' ) {
                 // Read fraction
-                sss++;
+                ++sss;
                 f = '\1';
                 goto read_next_value;
             }
@@ -2488,28 +2501,23 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
                 // Process a fraction of a second for format symbols 'g' and 'G'.
                 // Convert value to nanoseconds.
                 size_t n = strlen(value_str);
-                // 'n' cannot have more then 9 (max for nanoseconds) - see above.
-                _ASSERT(n <= 9);
-                for (;  n < 9;  n++) {
+                // 'n' cannot have more then 9 (max for nanoseconds)
+                // ignore all other digits
+                for (;  n < 9;  ++n) {
                     value *= 10;
                 }
                 m_NanoSec = value;
                 // Limit fraction of second to 9 digits max,
                 // ignore all other digits in string if any.
                 while ( isdigit((unsigned char)(*sss)) ) {
-                    sss++;
+                    ++sss;
                 }
             }
             break;
         default:
-            NCBI_THROW(CTimeException, eFormat, "Format '" + fmt + "' is incorrect");
+            NCBI_THROW(CTimeException, eFormat, "Format '" + fmt + "' has incorrect format symbol '" + f + "'");
         }
     }
-    // Normalize time span
-    if (sign < 0) {
-        Invert();
-    }
-    x_Normalize();
 
     // Check on errors
     if (*fff != '\0'  &&  
@@ -2524,6 +2532,11 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
                    "Time string '" + str +
                    "' is too long for time format '" + fmt + "'");
     }
+    // Normalize time span
+    if (sign < 0) {
+        Invert();
+    }
+    x_Normalize();
 }
 
 
@@ -2533,10 +2546,10 @@ void CTimeSpan::x_Normalize(void)
     m_NanoSec %= kNanoSecondsPerSecond;
     // If signs are different then make timespan correction
     if (m_Sec > 0  &&  m_NanoSec < 0) {
-        m_Sec--;
+        --m_Sec;
         m_NanoSec += kNanoSecondsPerSecond;
     } else if (m_Sec < 0  &&  m_NanoSec > 0) {
-        m_Sec++;
+        ++m_Sec;
         m_NanoSec -= kNanoSecondsPerSecond;
     }
 }
@@ -2632,127 +2645,174 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
 }
 
 
-struct SSmartStringItem {
-    SSmartStringItem(void) : value(0), str(kEmptyStr) {};
-    SSmartStringItem(long v, const string& s) : value(v), str(s) {};
-    long   value;
-    string str;
+// Number of time components
+const unsigned int kUnitCount = 9;
+
+// Time components
+enum EUnit {
+    eYear        = 0,
+    eMonth       = 1,
+    eDay         = 2,
+    eHour        = 3,
+    eMinute      = 4,
+    eSecond      = 5,
+    eMillisecond = 6,
+    eMicrosecond = 7,
+    eNanosecond  = 8,
+
+    // Special value, some precision based (see fSS_Precision*).
+    // Must be last and go after eNanosecond.
+    ePrecision   = 9
+};
+
+// Structure to store time component names/abbreviations
+struct SUnitName {
+    const char* name_full;
+    const char* name_short;
+};
+static const SUnitName kUnitNames[kUnitCount] = {
+    { "year",         "y" },
+    { "month",        "mo"},
+    { "day",          "d" },
+    { "hour",         "h" },
+    { "minute",       "m" },
+    { "second",       "s" },
+    { "millisecond",  "ms" },
+    { "microsecond",  "us" },
+    { "nanosecond",   "ns" }
+};
+
+// Multipliers for parts of time in seconds/nanoseconds
+static const TSeconds kTimeSpanUnitMultipliers[kUnitCount] = {
+    // second based parts
+    kAverageSecondsPerYear,  // year
+    kAverageSecondsPerMonth, // month
+    3600L * 24L,             // day
+    3600L,                   // hour
+    60L,                     // minute
+    1,                       // seconds
+    // nanosecond based parts
+    1000000L,                // milliseconds
+    1000L,                   // microseconds
+    1                        // nanoseconds
 };
 
 
-// Helper functions for Smart mode and timespans >= 1 min.
-// Do not use with smaller timespans!
-string CTimeSpan::x_AsSmartString_Smart_Big(ERound rounding)
+// Helper functions to convert to smart string for "smart" mode
+// and timespans >= 1 min. Do not use with smaller timespans!
+
+string CTimeSpan::x_AsSmartString_Smart_Big(TSmartStringFlags flags) const
 {
+    _ASSERT(*this >= CTimeSpan(60,0) );
+    _ASSERT(GetSign() != eNegative);
+    _ASSERT((flags & fSS_Smart) == fSS_Smart);
+
+    // Make a copy (for rounding)
+    CTimeSpan ts(*this);
+
     // Round timespan
-    if ( rounding == eRound ) {
+    if ( flags & fSS_Round ) {
 
         // Find first non-zero value for proper rounding (2 level max)
-        long days         = GetCompleteDays();
-        int  hours        = x_Hour();
-        int  minutes      = x_Minute();
-        int  adjust_level = eSSP_Second;
-
-        if ( days >=365 ) {
-            adjust_level = eSSP_Year;
-        } else if (days >= 30) {
-            adjust_level = eSSP_Month;
-        } else if (days > 0) {
-            adjust_level = eSSP_Day;
-        } else if (hours > 0) {
-            adjust_level = eSSP_Hour;
-        } else if (minutes > 0) {
-            adjust_level = eSSP_Minute;
+        long sec = GetCompleteSeconds();
+        int  adjust_level;
+        for (adjust_level = eYear; adjust_level < eSecond; adjust_level++) {
+            if (sec >= kTimeSpanUnitMultipliers[adjust_level]) {
+                break;
+            }
         }
-        adjust_level++; // one level down
+        _ASSERT(adjust_level < eMicrosecond);
+        ++adjust_level;  // one level down
 
         // Add adjustment time span
-        switch (ESmartStringPrecision(adjust_level)) {
-            case eSSP_Month:
-                *this += CTimeSpan(15, 0, 0, 0);
+        switch ( EUnit(adjust_level) ) {
+            case eMonth:
+                ts += CTimeSpan(15, 0, 0, 0);
                 break;
-            case eSSP_Day:
-                *this += CTimeSpan(0, 12, 0, 0);
+            case eDay:
+                ts += CTimeSpan(0, 12, 0, 0);
                 break;
-            case eSSP_Hour:
-                *this += CTimeSpan(0, 0, 30, 0);
+            case eHour:
+                ts += CTimeSpan(0, 0, 30, 0);
                 break;
-            case eSSP_Minute:
-                *this += CTimeSpan(0, 0, 0, 30);
+            case eMinute:
+                ts += CTimeSpan(0, 0, 0, 30);
                 break;
-            case eSSP_Second:
-                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
+            case eSecond:
+                ts += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
                 break;
             default:
-                ; // years, and seconds and below -- nothing to do
+                ; // years, seconds and below -- nothing to do
         }
     }
 
     // Prepare data
-    typedef SSmartStringItem SItem;
     const int max_count = 6;
-    SItem span[max_count];
+    long span[max_count];
+    long sec = ts.GetCompleteSeconds();
 
-    long days = GetCompleteDays();
-    span[0] = SItem(days/365  , "year"  );  days %= 365;
-    span[1] = SItem(days/30   , "month" );  days %= 30;
-    span[2] = SItem(days      , "day"   );
-    span[3] = SItem(x_Hour()  , "hour"  );
-    span[4] = SItem(x_Minute(), "minute");
-    span[5] = SItem(x_Second(), "second");
+    span[eYear]   = sec/kAverageSecondsPerYear;   sec %= kAverageSecondsPerYear;
+    span[eMonth]  = sec/kAverageSecondsPerMonth;  sec %= kAverageSecondsPerMonth;
+    span[eDay]    = sec/(3600L*24);               sec %= (3600L*24);
+    span[eHour]   = sec/3600L;                    sec %= 3600L;
+    span[eMinute] = sec/60L;                      sec %= 60L;
+    span[eSecond] = sec;
 
     string result;   // result string
     int start = 0;   // precision level to start from (first non-zero)
-    int precision;   // end precision
+    int prec;        // end precision
 
     // Get start precision after rounding (it can changes there)
-    for (; start < 5;  start++) {
-        if (span[start].value) {
+    for (; start < 5;  ++start) {
+        if ( span[start] ) {
             break;
         }
     }
-    // Allow 2 levels max for smart mode
-    if (start == eSSP_Second) {
-        precision = start;
+    // Allow 2 levels maximum for smart mode
+    if (start == eSecond) {
+        prec = start;
     } else {
-        precision = start + 1;
+        prec = start + 1;
     }
 
     // Compose result string
-    while (start <= precision) {
-        long val = span[start].value;
+    while (start <= prec) {
+        long val = span[start];
         if ( !val ) {
-            start++;
+            ++start;
             continue;
         }
         if ( !result.empty() ) {
             result += " ";
         }
-        result += NStr::LongToString(val) + " " + span[start].str;
-        if (val != 1) {
-            result += "s";
+        result += NStr::LongToString(val);
+        if (flags & fSS_Full) {
+            result += string(" ") + kUnitNames[start].name_full;
+            if (val != 1) {
+                result += "s";
+            }
+        } else {
+            result += kUnitNames[start].name_short;
         }
-        start++;
+        ++start;
     }
     return result;
 }
 
-// Helper functions for Smart mode and  timespans < 1 min.
-// Do not use with bigger timespans!
-string CTimeSpan::x_AsSmartString_Smart_Small(ERound rounding)
+
+// Helper functions to convert to smart string for "smart" mode
+// and timespans < 1 min. Do not use with sbigger timespans!
+
+string CTimeSpan::x_AsSmartString_Smart_Small(TSmartStringFlags flags) const
 {
-    enum EUnit {
-        eSecond = 0,
-        eMillisecond,
-        eMicrosecond,
-        eNanosecond
-    };
-    const char* kUnitNames[4] = { "second", "millisecond", "microsecond", "nanosecond" };
+    _ASSERT(*this < CTimeSpan(60, 0));
+    _ASSERT(GetSign() != eNegative);
+    _ASSERT((flags & fSS_Smart) == fSS_Smart);
 
     // Get timespan components
     int  sec = x_Second();
     long nanoseconds  = GetNanoSecondsAfterSecond();
-    // Split nanoseconds on 3 digit parts AAABBBCCC
+    // Split nanoseconds to 3 digit parts AAABBBCCC
     // AAA - milli, BBB - micro, CCC - nano
     int  milli = nanoseconds / 1000000;
     int  micro = nanoseconds / 1000 % 1000;
@@ -2781,17 +2841,15 @@ string CTimeSpan::x_AsSmartString_Smart_Small(ERound rounding)
         v2 = 0;
     } else {
         // Empty timespan
-        return "0 seconds";
+        return (flags & fSS_Full) ? "0 seconds" : "0s";
     }
 
-    string result;
-
-    result = NStr::LongToString(v1);
+    string result = NStr::LongToString(v1);
     bool plural = (v1 != 1);
     size_t len = result.length();
 
     // Rounding
-    if (rounding == eRound) {
+    if ( flags & fSS_Round ) {
         // Rounding depends on number of digits we already have in v1
         if (len == 1) {
             v2 += 5;
@@ -2802,12 +2860,12 @@ string CTimeSpan::x_AsSmartString_Smart_Small(ERound rounding)
         }
         // Check on overflow
         if ( v2 > 999 ) {
-            v1++;
+            ++v1;
             v2 = 0;
             if (unit == eSecond) {
                 if ( v1 > 59 ) {
                     // Special case, because we work with timespans < 1 min
-                    return "1 minute";
+                    return (flags & fSS_Full) ? "1 minute" : "1m";
                 }
             } else {
                 if ( v1 > 999 ) {
@@ -2834,78 +2892,93 @@ string CTimeSpan::x_AsSmartString_Smart_Small(ERound rounding)
             plural = true;
         }
     }
-    result += string(" ") + kUnitNames[unit];
-    if (plural) {
-        result += "s";
+    if ( flags & fSS_Full ) {
+        result += string(" ") + kUnitNames[unit].name_full;
+        if (plural) {
+            result += "s";
+        }
+    } else {
+        result += kUnitNames[unit].name_short;
     }
     return result;
 }
 
 
-// Helper functions for all modes except Smart.
-string CTimeSpan::x_AsSmartString_Precision(ESmartStringPrecision precision, 
-                                            ERound rounding, ESmartStringZeroMode zero_mode)
+// Helper functions for all modes except "smart".
+string CTimeSpan::x_AsSmartString_Precision(TSmartStringFlags flags) const
 {
-    // Named or float precision level
-    bool is_named_precision = (precision <= eSSP_Nanosecond);
+    _ASSERT(GetSign() != eNegative);
+    _ASSERT((flags & fSS_Smart) != fSS_Smart);
 
-    // Round time span
-    if (rounding == eRound ) {
+    // Convert precision flags to continuous numeric value (bit position - 1)
+    int precision = -1;
+    TSmartStringFlags pf = flags & fSS_PrecisionMask;
+    while (pf)  {
+        pf >>= 1;  ++precision;
+    }
+    _ASSERT(precision >= 0);
+
+    // Named or float precision level
+    bool is_named_precision = (precision < ePrecision);
+
+    // Make a copy (for rounding)
+    CTimeSpan ts(*this);
+
+    // Round time span if necessary
+    if ( flags & fSS_Round ) {
         int adjust_level = precision;
 
         // Calculate adjustment for floating precision level
         if ( !is_named_precision ) {
-            adjust_level = eSSP_Nanosecond;
-            long days = GetCompleteDays();
-            int  adjust_shift = precision - eSSP_Nanosecond - 1;
 
-            if ( days >=365 ) {
-                adjust_level = eSSP_Year + adjust_shift;
-            } else if (days >= 30) {
-                adjust_level = eSSP_Month + adjust_shift;
-            } else if (days > 0) {
-                adjust_level = eSSP_Day + adjust_shift;
-            } else if (x_Hour() > 0) {
-                adjust_level = eSSP_Hour + adjust_shift;
-            } else if (x_Minute() > 0) {
-                adjust_level = eSSP_Minute + adjust_shift;
-            } else if (x_Second() > 0) {
-                adjust_level = eSSP_Second + adjust_shift;
-            }
-            if (adjust_level > eSSP_Second) {
-                if ( GetNanoSecondsAfterSecond() % 1000 == 0 ) {
-                    adjust_level = eSSP_Millisecond;
-                } else if ( GetNanoSecondsAfterSecond() % 1000000 == 0 ) {
-                    adjust_level = eSSP_Microsecond;
+            // Find first non-zero value
+            long sec = GetCompleteSeconds();
+            for (adjust_level = eYear; adjust_level <= eSecond; adjust_level++) {
+                if (sec >= kTimeSpanUnitMultipliers[adjust_level]) {
+                    break;
                 }
-                // no adjustment otherwise
+            }
+            // Calculate adjustment level
+            if (adjust_level <= eSecond) {
+                adjust_level += (precision - eNanosecond - 1);
+            } else {
+                // ms, us, ns
+                if (GetNanoSecondsAfterSecond() % 1000 == 0) {
+                    adjust_level = eMillisecond;
+                }
+                else if (GetNanoSecondsAfterSecond() % 1000000 == 0) {
+                    adjust_level = eMicrosecond;
+                } else {
+                    // no adjustment otherwise
+                    adjust_level = eNanosecond;
+                }
             }
         }
         // Add adjustment time span
-        switch (ESmartStringPrecision(adjust_level)) {
-            case eSSP_Year:
-                *this += CTimeSpan(365/2, 0, 0, 0);
+        switch ( EUnit(adjust_level) ) {
+            case eYear:
+                ts += CTimeSpan((long)kAverageSecondsPerYear/2);
                 break;
-            case eSSP_Month:
-                *this += CTimeSpan(15, 0, 0, 0);
+            case eMonth:
+                ts += CTimeSpan((long)kAverageSecondsPerMonth/2);
                 break;
-            case eSSP_Day:
-                *this += CTimeSpan(0, 12, 0, 0);
+            case eDay:
+                ts += CTimeSpan(0, 12, 0, 0);
                 break;
-            case eSSP_Hour:
-                *this += CTimeSpan(0, 0, 30, 0);
+            case eHour:
+                ts += CTimeSpan(0, 0, 30, 0);
                 break;
-            case eSSP_Minute:
-                *this += CTimeSpan(0, 0, 0, 30);
+            case eMinute:
+                ts += CTimeSpan(0, 0, 0, 30);
                 break;
-            case eSSP_Second:
-                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
+            case eSecond:
+                ts += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
                 break;
-            case eSSP_Millisecond:
-                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000);
+            case eMillisecond:
+                ts += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000);
                 break;
-            case eSSP_Microsecond:
-                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000000);
+            case eMicrosecond:
+                ts += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000000);
                 break;
             default:
                 ; // nanoseconds -- nothing to do
@@ -2913,27 +2986,35 @@ string CTimeSpan::x_AsSmartString_Precision(ESmartStringPrecision precision,
     }
 
     // Prepare data
-    typedef SSmartStringItem SItem;
+   
+    long sec = ts.GetCompleteSeconds();
+    long nanoseconds = ts.GetNanoSecondsAfterSecond();
+
+    struct SItem {
+        SItem(void) : value(0), unit(eYear) {};
+        SItem(long v, EUnit u) : value(v), unit(u) {};
+        long  value;
+        EUnit unit;
+    };
     const int max_count = 7;
     SItem span[max_count];
-    long days = GetCompleteDays();
-    long nanoseconds = GetNanoSecondsAfterSecond();
 
-    span[0] = SItem(days/365  , "year"  );  days %= 365;
-    span[1] = SItem(days/30   , "month" );  days %= 30;
-    span[2] = SItem(days      , "day"   );
-    span[3] = SItem(x_Hour()  , "hour"  );
-    span[4] = SItem(x_Minute(), "minute");
-    span[5] = SItem(x_Second(), "second");
+    span[0] = SItem(sec/kAverageSecondsPerYear,  eYear  );  sec %= kAverageSecondsPerYear;
+    span[1] = SItem(sec/kAverageSecondsPerMonth, eMonth );  sec %= kAverageSecondsPerMonth;
+    span[2] = SItem(sec/(3600L*24),              eDay   );  sec %= (3600L*24);
+    span[3] = SItem(sec/3600L,                   eHour  );  sec %= 3600L;
+    span[4] = SItem(sec/60L,                     eMinute);  sec %= 60L;
+    span[5] = SItem(sec,                         eSecond);
+
     switch (precision) {
-        case eSSP_Millisecond:
-            span[6] = SItem(nanoseconds / 1000000, "millisecond");
+        case eMillisecond:
+            span[6] = SItem(nanoseconds / 1000000, eMillisecond);
             break;
-        case eSSP_Microsecond:
-            span[6] = SItem(nanoseconds / 1000, "microsecond");
+        case eMicrosecond:
+            span[6] = SItem(nanoseconds / 1000, eMicrosecond);
             break;
-        case eSSP_Nanosecond:
-            span[6] = SItem(nanoseconds, "nanosecond");
+        case eNanosecond:
+            span[6] = SItem(nanoseconds, eNanosecond);
             break;
         default:
             ; // other not-nanoseconds based precisions
@@ -2942,32 +3023,32 @@ string CTimeSpan::x_AsSmartString_Precision(ESmartStringPrecision precision,
     // Result string
     string result;  
     // Precision level to start from (first non-zero)
-    int start = is_named_precision ? eSSP_Year  : eSSP_Precision1;
+    int start = is_named_precision ? eYear  : ePrecision;
 
     // Compose resulting string
 
-    for (int i = 0; i < max_count  &&  start <= precision; i++) {
+    for (int i = 0; i < max_count  &&  start <= precision; ++i) {
         long val = span[i].value;
 
         // Adjust precision to skip zero values
         if ( !val ) {
             if ( result.empty() ) {
-                if (start == precision  &&  start != eSSP_Precision1) {
+                if (start == precision  &&  start != ePrecision) {
                     break;
                 }
                 if ( is_named_precision ) {
-                    start++;
+                    ++start;
                 }
                 continue;
             }
-            if (zero_mode == eSSZ_SkipZero) {
-                start++;
+            if ( flags & fSS_SkipZero ) {
+                ++start;
                 continue;
             } else {
                 long sum = 0;
                 int  cp = start + 1;
                 for (int j = i + 1;
-                     j < max_count  &&  (cp <= precision);  j++, cp++) {
+                     j < max_count  &&  (cp <= precision);  ++j, ++cp) {
                     sum += span[j].value;
                 }
                 if ( !sum ) {
@@ -2977,43 +3058,296 @@ string CTimeSpan::x_AsSmartString_Precision(ESmartStringPrecision precision,
                 }
             }
         }
-        start++;
+        ++start;
         if ( !result.empty() ) {
             result += " ";
         }
-        result += NStr::LongToString(val) + " " + span[i].str;
-        if (val != 1) {
-            result += "s";
+        result += NStr::LongToString(val);
+        if (flags & fSS_Full) {
+            result += string(" ") + kUnitNames[span[i].unit].name_full;
+            if (val != 1) {
+                result += "s";
+            }
+        } else {
+            result += kUnitNames[span[i].unit].name_short;
         }
     }
     if ( result.empty() ) {
-        if ( precision >= eSSP_Second ) {
-            return "0 " + span[eSSP_Second].str + "s";
+        if ( precision >= eSecond ) {
+            return (flags & fSS_Full) ? "0 seconds" : "0s";
         } else {
-            return "0 " + span[precision].str + "s";
+            if (flags & fSS_Full) {
+                return string("0 ") + kUnitNames[span[precision].unit].name_full + "s";
+            }
+            return string("0") + kUnitNames[span[precision].unit].name_short;
         }
     }
     return result;
 }
 
 
-string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
-                                ERound                rounding,
-                                ESmartStringZeroMode  zero_mode) const
+string CTimeSpan::AsSmartString(TSmartStringFlags flags) const
 {
-    // Make positive copy
-    CTimeSpan diff(*this);
-    if ( diff.GetSign() == eNegative ) {
-        diff.Invert();
+    // Check on negative value
+    if (GetSign() == eNegative) {
+        NCBI_THROW(CTimeException, eArgument,
+            "Negative CTimeSpan cannot be converted to smart string");
     }
-    if (precision == eSSP_Smart) {
-        if ( diff < CTimeSpan(60,0) ) {
-            return diff.x_AsSmartString_Smart_Small(rounding);
-        }
-        return diff.x_AsSmartString_Smart_Big(rounding);
+
+    // Check flags compatibility
+
+    _ASSERT(fSS_PrecisionMask == 
+           (fSS_Year        | fSS_Month       | fSS_Day         |
+            fSS_Hour        | fSS_Minute      | fSS_Second      |
+            fSS_Millisecond | fSS_Microsecond | fSS_Nanosecond  |
+            fSS_Precision1  | fSS_Precision2  | fSS_Precision3  |
+            fSS_Precision4  | fSS_Precision5  | fSS_Precision6  |
+            fSS_Precision7  | fSS_Smart)
+    );
+
+    const string kMsg = "Incompatible flags specified together: ";
+
+    TSmartStringFlags f = flags & fSS_PrecisionMask;
+    if (f == 0) {
+        flags |= fSS_Smart;  // default
     } else {
-        return diff.x_AsSmartString_Precision(precision, rounding, zero_mode);
+        if ( !(f && !(f & (f-1))) ) {
+            NCBI_THROW(CTimeException, eArgument, "Only one precision flag can be specified");
+        }
     }
+
+    // Default flags
+
+    // Truncation
+    f = fSS_Trunc | fSS_Round;
+    if ((flags & f) == f) {
+        NCBI_THROW(CTimeException, eArgument, kMsg + "fSS_Trunc | fSS_Round");
+    }
+    if ((flags & f) == 0) {
+        flags |= fSS_Trunc;
+    }
+    // SkipZero
+    f = fSS_SkipZero | fSS_NoSkipZero;
+    if ((flags & f) == f) {
+        NCBI_THROW(CTimeException, eArgument, kMsg + "fSS_SkipZero | fSS_NoSkipZero");
+    }
+    f = fSS_Smart | fSS_NoSkipZero;
+    if ((flags & f) == f) {
+        NCBI_THROW(CTimeException, eArgument, kMsg + "fSS_Smart | fSS_NoSkipZero");
+    }
+    if ((flags & f) == 0) {
+        flags |= fSS_SkipZero;
+    }
+    // Naming
+    f = fSS_Short | fSS_Full;
+    if ((flags & f) == f) {
+        NCBI_THROW(CTimeException, eArgument, kMsg + "fSS_Short | fSS_Full");
+    }
+    if ((flags & f) == 0) {
+        flags |= fSS_Full;
+    }
+
+    // Use specific code depends on precision
+
+    if ((flags & fSS_Smart) == fSS_Smart) {
+        if (*this < CTimeSpan(60, 0)) {
+            return x_AsSmartString_Smart_Small(flags);
+        }
+        return x_AsSmartString_Smart_Big(flags);
+    } else {
+        return x_AsSmartString_Precision(flags);
+    }
+}
+
+
+CTimeSpan& CTimeSpan::AssignFromSmartString(const string& str)
+{
+    Clear();
+    if ( str.empty() ) {
+        return *this;
+    }
+
+    const  char* sss = str.c_str();
+    bool   numeric_expected = true;
+    long   value = 0;
+    long   frac  = 0;
+    size_t frac_len = 0;
+    bool   repetitions[kUnitCount];
+
+    memset(repetitions, 0, kUnitCount * sizeof(repetitions[0]));
+
+    for (; *sss != '\0'; ++sss) {
+
+        // Skip all white spaces
+        if (isspace((unsigned char)(*sss))) {
+            continue;
+        }
+
+        // Numeric data expected
+        if (numeric_expected) {
+
+            value = 0; frac = 0;
+
+            if (isdigit((unsigned char)(*sss))) {
+                // Get numeric value
+                const char* start = sss++;
+                while (*sss && isdigit((unsigned char)(*sss))) ++sss;
+                size_t n = sss - start;
+                if (n > 10) {
+                    NCBI_THROW(CTimeException, eConvert,
+                        "Too long numeric value '" + (string)CTempString(start, n) + 
+                        "': string '" + str + "' (pos = " +
+                        NStr::NumericToString(start - str.c_str()) + ")" );
+                }
+                value = NStr::StringToULong(CTempString(start, n));
+            } else
+            if (*sss != '.') {
+                // no digits and no fraction part (".n" case)
+                break;  // error
+            }
+
+            // Check on fraction
+            if (*sss == '.') {
+                ++sss;
+                if (*sss && isdigit((unsigned char)(*sss))) {
+                    const char* start = sss++;
+                    while (*sss && isdigit((unsigned char)(*sss))) ++sss;
+                    frac_len = sss - start;
+                    if (frac_len > 9) {
+                        NCBI_THROW(CTimeException, eConvert,
+                            "Too long fractional part '" + (string)CTempString(start, frac_len) + 
+                            "': string '" + str + "' (pos = " +
+                            NStr::NumericToString(start - str.c_str()) + ")" );
+                    }
+                    frac = NStr::StringToULong(CTempString(start, frac_len));
+                }
+                // else { "n." case --= nothing to do }
+            }
+            --sss;
+            numeric_expected = false;
+            continue;
+        } 
+
+        // Unit specifier expected after numeric value
+        else  {
+            if (!isalpha((unsigned char)(*sss))) {
+                break;  // error
+            }
+            const char* start = sss++;
+            while (*sss && isalpha((unsigned char)(*sss))) ++sss;
+            size_t n = sss - start;
+            --sss;
+            string spec(start, n);
+            NStr::ToLower(spec);
+
+            unsigned int i = 0;
+            for (; i < kUnitCount; ++i) {
+                if (spec == kUnitNames[i].name_full ||
+                    spec == kUnitNames[i].name_full + string("s") ||
+                    spec == kUnitNames[i].name_short) {
+                    break;
+                }
+            }
+            if (i >= kUnitCount) {
+                NCBI_THROW(CTimeException, eConvert,
+                    "Unknown time specifier '" + spec + "': string '" + str +
+                    "' (pos = " +  NStr::NumericToString(start - str.c_str()) + ")" );
+            }
+
+            // Use bigger values for calculations to check on possible overflow
+            TSeconds sec = m_Sec;
+            TSeconds ns  = m_NanoSec;
+            
+            // Add component to timespan
+            switch (EUnit(i)) {
+            case eYear:
+            case eMonth:
+            case eDay:
+            case eHour:
+            case eMinute:
+            case eSecond:
+                sec += value * kTimeSpanUnitMultipliers[i];
+                break;
+            case eMillisecond:
+            case eMicrosecond:
+                ns += value * kTimeSpanUnitMultipliers[i];
+                break;
+            case eNanosecond:
+                ns += value;
+                break;
+            default:
+                _TROUBLE;
+            }
+
+            // Add fractional part
+            if (frac) {
+                // div = 10 ^ frac_len
+                unsigned int div = 10;
+                _ASSERT(frac_len > 0);
+                while (--frac_len) div *= 10;
+
+                if (i < eSecond) {
+                    // fraction of year, month, day, hour, minute
+                    sec += ((TSeconds)frac * kTimeSpanUnitMultipliers[i] / div);
+                } else
+                if (i == eSecond) {
+                    // sec -- increase nanoseconds
+                    ns += ((TSeconds)frac * (kNanoSecondsPerSecond / div));
+                } else {
+                if (i == eNanosecond) {
+                    // Round fractional nanoseconds to nearest value
+                    if (((TSeconds)frac * 10 / div) >=5 ) {
+                        ++ns;
+                    }
+                } else 
+                    // us, ms -- increase nanoseconds
+                    ns += ((TSeconds)frac * (kTimeSpanUnitMultipliers[i] / div));
+                }
+            }
+
+            // Check repetition of time components -- not allowed
+            if (repetitions[i]) {
+                NCBI_THROW(CTimeException, eConvert,
+                    "Time component for '" + string(kUnitNames[i].name_full) + 
+                    "s' already exists: string '" + str +
+                    "' (pos = " + NStr::NumericToString(start - str.c_str()) + ")");
+            }
+            repetitions[i] = true;
+            if (frac  &&  (i >= eSecond)) {
+                // disable all subsequent ms, us, ns and fraction of second
+                repetitions[eMillisecond] = true;
+                repetitions[eMicrosecond] = true;
+                repetitions[eNanosecond]  = true;
+            }
+
+            // Check on overflow
+            if ( sec <= kMin_Long || sec >= kMax_Long || 
+                 ns  <= kMin_Long || ns  >= kMax_Long) {
+                NCBI_THROW(CTimeException, eConvert,
+                    "Value is too big to convert to CTimeSpan: string '" + str +
+                    "' (pos = " + NStr::NumericToString(start - str.c_str()) + ")");
+            }
+            m_Sec = (long)sec;
+            m_NanoSec = (long)ns;
+            numeric_expected = true;
+        }
+    }
+
+    // Check on errors
+    if (!numeric_expected) {
+        NCBI_THROW(CTimeException, eConvert,
+            "Time specifier expected: string '" + str +
+            "' (pos = " + NStr::NumericToString(sss - str.c_str()) + ")");
+    }
+    if (*sss != '\0') {
+        NCBI_THROW(CTimeException, eConvert,
+            "Unexpected symbol: string '" + str +
+            "' (pos = " + NStr::NumericToString(sss - str.c_str()) + ")");
+    }
+    // Normalize time span
+    x_Normalize();
+
+    return *this;
 }
 
 
@@ -3132,7 +3466,7 @@ void CTimeout::GetNano(unsigned int *sec, unsigned int *nanosec) const
                    s_SpecialValueName(m_Type) + " timeout value");
     }
     if ( sec ) {
-        *sec     = m_Sec;
+        *sec = m_Sec;
     }
     if ( nanosec ) {
         *nanosec = m_NanoSec;
@@ -3178,12 +3512,12 @@ void CTimeout::SetNano(unsigned int sec, unsigned int nanosec)
 void CTimeout::Set(double sec)
 {
     if (sec < 0) {
-        NCBI_THROW(CTimeException, eConvert, 
+        NCBI_THROW(CTimeException, eArgument, 
                    "Cannot set negative value " +
                    NStr::DoubleToString(sec));
     }
     if (sec > kMax_UInt) {
-        NCBI_THROW(CTimeException, eConvert, 
+        NCBI_THROW(CTimeException, eArgument, 
                    "Timeout value " +
                    NStr::DoubleToString(sec) + " too big");
     }
@@ -3196,12 +3530,12 @@ void CTimeout::Set(double sec)
 void CTimeout::Set(const CTimeSpan& ts)
 {
     if (ts.GetSign() == eNegative) {
-        NCBI_THROW(CTimeException, eConvert, 
+        NCBI_THROW(CTimeException, eArgument, 
                    "Cannot convert from negative CTimeSpan(" +
                    ts.AsString() + ")");
     }
     if ((Uint8) ts.GetCompleteSeconds() > kMax_UInt) {
-        NCBI_THROW(CTimeException, eConvert, 
+        NCBI_THROW(CTimeException, eArgument, 
                    "CTimeSpan value (" +
                    ts.AsString() + ") too big");
         // We don't need to check nanoseconds, because CTimeSpan always has it
@@ -3283,7 +3617,7 @@ bool CTimeout::operator>= (const CTimeout& t) const
     case COMPARE_TIMEOUT_TYPES(eInfinite, eDefault):
         return true;      // infinity >= anything
     case COMPARE_TIMEOUT_TYPES(eDefault, eFinite):
-        if ( t.IsZero() ) 
+        if ( t.IsZero() )
             return true;  // default >= zero
         // fall through
     default:
@@ -3435,7 +3769,7 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
     if (thenNS >= nowNS) {
         thenNS -= nowNS;
     } else {
-        thenS--;
+        --thenS;
         thenNS = kNanoSecondsPerSecond - (nowNS - thenNS);
     }
     _ASSERT(thenS >= nowS);
@@ -3625,7 +3959,7 @@ int CFastLocalTime::GetLocalTimezone(void)
 //
 //=============================================================================
 
-// deprecated
+/// @deprecated
 CStopWatch::CStopWatch(bool start)
 {
     m_Total = 0;

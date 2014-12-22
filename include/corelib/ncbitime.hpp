@@ -73,6 +73,9 @@ BEGIN_NCBI_SCOPE
 class CTimeSpan;
 class CFastLocalTime;
 
+/// Number of seconds.
+typedef Int8 TSeconds;
+
 
 /// Number of nanoseconds in one second.
 ///
@@ -89,11 +92,14 @@ const long kMicroSecondsPerSecond = 1000000;
 /// Interval for it is from 0 to 999.
 const long kMilliSecondsPerSecond = 1000;
 
+/// The average length of the year in the Gregorian (modern) calendar (in days)
+const double   kAverageDaysPerYear     = 365.2425;
+/// The average length of the year in the Gregorian (modern) calendar (in seconds)
+const TSeconds kAverageSecondsPerYear  = 31556952;  // 365.2425*24*3600
+const TSeconds kAverageSecondsPerMonth = kAverageSecondsPerYear/12;
+
 
 // Time formats in databases (always contain local time only!)
-
-/// Number of seconds.
-typedef Int8 TSeconds;
 
 /// Database format for time where day and time is unsigned 16 bit.
 typedef struct {
@@ -128,7 +134,10 @@ public:
     ///   that mean simple format string and strict matching.
     /// @sa SetFormat, AsString
     enum EFlags {
+        // Format flags
+
         /// Use single characters as format symbols.
+        /// (default)
         fFormat_Simple       = (1 << 0),
         /// Specify each format symbol with a preceding symbol '$'.
         /// This can be useful if your format string includes output characters
@@ -159,7 +168,7 @@ public:
         fMatch_IgnoreSpaces  = (1 << 8),
         
         /// Default flags
-        fDefault             = fFormat_Simple | fMatch_Strict,
+        fDefault             = 0,  // fFormat_Simple | fMatch_Strict
 
         /// "Enum"s, used for backward compatibility. Please use flags instead.
         eNcbiSimple          = fFormat_Simple,
@@ -586,10 +595,11 @@ public:
     ///   - g = same as "G" but w/o leading "0" if number of seconds < 10.
     ///   - P = am/pm                          (AM/PM)
     ///   - p = am/pm                          (am/pm)
-    ///   - Z = timezone format                (GMT or none)
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
-    ///   following available only on POSIX platforms:
+    ///   - Z = timezone format                (GMT or none)
+    ///
+    ///   following available on POSIX platforms only:
     ///   - z = timezone shift                 ([GMT]+/-HHMM)
     ///   - :z = timezone shift                (+/-HH:MM)
     ///
@@ -1235,7 +1245,8 @@ private:
 /// CTimeSpan
 ///
 /// Defines a class to represents a relative time span.
-/// Time span can be both positive and negative.
+/// Time span can be both positive and negative and hold value in range
+/// [LONG_MIN - LONG_MAX] seconds (a little more than 68 years in each direction).
 ///
 /// Throw exception of type CTimeException on errors.
 
@@ -1357,70 +1368,138 @@ public:
     operator string(void) const;
 
 
+    /// AsSmartString() conversion flags.
+    ///
+    /// @sa AsSmartString
+    enum ESmartStringFlags {
+        /// @note precision
+        ///   Flags describing how many parts of time span should be
+        ///   returned. Values from fSS_Year to fSS_Nanosecond apparently
+        ///   describe part of time span which will be last in output string.
+        ///   Floating precision levels fSS_PrecisionN say that only up to 'N'
+        ///   of most significant parts of time span will be printed.
+        ///   The parts counting begin from first non-zero value.
+        ///   fSS_Smart is default, it tries to represent time span as close
+        ///   and short as possible, usually using only one or two most
+        ///   significant non-zero parts of the time span.
+        fSS_Year        = (1 <<  0),  ///< Round to years
+        fSS_Month       = (1 <<  1),  ///< Round to months
+        fSS_Day         = (1 <<  2),  ///< Round to days
+        fSS_Hour        = (1 <<  3),  ///< Round to hours
+        fSS_Minute      = (1 <<  4),  ///< Round to minutes
+        fSS_Second      = (1 <<  5),  ///< Round to seconds
+        fSS_Millisecond = (1 <<  6),  ///< Round to milliseconds
+        fSS_Microsecond = (1 <<  7),  ///< Round to microseconds
+        fSS_Nanosecond  = (1 <<  8),  ///< Do not round at all (accurate time span)
+        fSS_Precision1  = (1 <<  9),  ///< Floating precision level 1
+        fSS_Precision2  = (1 << 10),  ///< Floating precision level 2
+        fSS_Precision3  = (1 << 11),  ///< Floating precision level 3
+        fSS_Precision4  = (1 << 12),  ///< Floating precision level 4
+        fSS_Precision5  = (1 << 13),  ///< Floating precision level 5
+        fSS_Precision6  = (1 << 14),  ///< Floating precision level 6
+        fSS_Precision7  = (1 << 15),  ///< Floating precision level 7
+        fSS_Smart       = (1 << 16),  ///< Be as smart as possible
+                                      ///< (use most significant levels of time span)
+        fSS_PrecisionMask = 0x1FFFF,  ///< Mask of precision flags (sum of all above)
+
+        /// @note rounding
+        ///   Rounding flags. By default time span will be truncated at last value
+        ///   specified by precision. If fSS_Round specified, that time span will be
+        ///   arithmetically rounded by precision level. 
+        fSS_Round       = (1 << 20),
+        fSS_Trunc       = (1 << 21),
+
+        /// @note zero parts
+        ///   Flags to print or skip zero parts of time span which should be
+        ///   printed but have 0 value. Apply to middle and trailing zero parts
+        ///   of time span only. Leading zeros will be ignored in common case
+        ///   in any mode, they can be printed only if it is impossible
+        ///   to represent time span otherwise.
+        /// @attention
+        ///   fSS_NoSkipZero is not compatible with fSS_Smart (exception will be thrown).
+        fSS_NoSkipZero  = (1 << 22),
+        fSS_SkipZero    = (1 << 23),
+
+        /// @note naming
+        ///   Specify what kind of names use for output time components,
+        ///   short standard abbreviations for time component like "m",
+        ///   or full "minutes".
+        fSS_Short       = (1 << 24),
+        fSS_Full        = (1 << 25),
+        
+        /// Default flags
+        fSS_Default     = 0  // fSS_Smart | fSS_Trunc | fSS_SkipZero | fSS_Full
+    };
+    typedef unsigned int TSmartStringFlags;   ///< Binary OR of "ESmartStringFlags"
+
     /// Precision for span "smart" string. Used in AsSmartString() method.
+    /// @deprecated Use ESmartStringFlags instead
     enum ESmartStringPrecision {
         // Named precision levels
-        eSSP_Year,          ///< Round to years
-        eSSP_Month,         ///< Round to months
-        eSSP_Day,           ///< Round to days
-        eSSP_Hour,          ///< Round to hours
-        eSSP_Minute,        ///< Round to minutes
-        eSSP_Second,        ///< Round to seconds
-        eSSP_Millisecond,   ///< Round to milliseconds
-        eSSP_Microsecond,   ///< Round to microseconds
-        eSSP_Nanosecond,    ///< Do not round at all (accurate time span)
-
-        // Floating precision levels (1-7)
-        eSSP_Precision1,
-        eSSP_Precision2,
-        eSSP_Precision3,
-        eSSP_Precision4,
-        eSSP_Precision5,
-        eSSP_Precision6,
-        eSSP_Precision7,
-
-        /// Be as smart as possible (use most significant levels of time span)
-        eSSP_Smart
+        eSSP_Year        = fSS_Year,
+        eSSP_Month       = fSS_Month,
+        eSSP_Day         = fSS_Day,
+        eSSP_Hour        = fSS_Hour,
+        eSSP_Minute      = fSS_Minute,
+        eSSP_Second      = fSS_Second,
+        eSSP_Millisecond = fSS_Millisecond,
+        eSSP_Microsecond = fSS_Microsecond,
+        eSSP_Nanosecond  = fSS_Nanosecond,
+        eSSP_Precision1  = fSS_Precision1,
+        eSSP_Precision2  = fSS_Precision2,
+        eSSP_Precision3  = fSS_Precision3,
+        eSSP_Precision4  = fSS_Precision4,
+        eSSP_Precision5  = fSS_Precision5,
+        eSSP_Precision6  = fSS_Precision6,
+        eSSP_Precision7  = fSS_Precision7,
+        eSSP_Smart       = fSS_Smart
     };
 
     /// Which format use to output zero time span parts.
+    /// @deprecated Use ESmartStringFlags instead
     enum ESmartStringZeroMode {
-        eSSZ_SkipZero,      ///< Skip zero valued parts
-        eSSZ_NoSkipZero     ///< Print zero valued parts
+        eSSZ_NoSkipZero = fSS_NoSkipZero,  ///< Print zero valued parts
+        eSSZ_SkipZero   = fSS_SkipZero     ///< Skip zero valued parts
     };
 
     /// Transform time span to "smart" string.
     ///
-    /// @param precision
-    ///   Enum value describing how many parts of time span should be
-    ///   returned. Values from eSSP_Year to eSSP_Nanosecond apparently
-    ///   describe part of time span which will be last in output string.
-    ///   Float precision levels eSSP_PrecisionN say that maximum 'N'
-    ///   parts of time span will be put to output string.
-    ///   The parts counting begin from first non-zero value.
-    ///   For special precision value eSSP_Smart it try to represent
-    ///   time span as close and shorter as possible, usually using only
-    ///   one or two most significant non-zero parts of the time span.
-    /// @param rounding
-    ///   Rounding mode. By default time span will be truncated at last value
-    ///   specified by precision. If mode is eRound, that time span will be
-    ///   arithmetically rounded by precision level. 
-    /// @param zero_mode
-    ///   Mode to print or skip zero parts of time span which should be
-    ///   printed but have 0 value. Apply to middle and trailing zero parts
-    ///   of time span only. Leading zeros will be ignored in common case
-    ///   in any mode, they can be printed only if it is impossible
-    ///   to represent time span otherwise.
-    ///   This parameters is ignored for eSSP_Smart precision level and
-    ///   always works as eSSZ_SkipZero.
+    /// @deprecated Use AsSmartString(TSmartStringFlags) instead.
+    NCBI_DEPRECATED
+    string AsSmartString(ESmartStringPrecision precision,
+                         ERound                rounding,
+                         ESmartStringZeroMode  zero_mode = eSSZ_SkipZero) const;
+
+    /// Transform time span to "smart" string.
+    ///
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
     ///   A string representation of time span.
+    ///   It MUST NOT be negative, or an exception will be thrown!
     /// @sa
-    ///   AsString, ESmartStringPrecision, ERound, ESmartStringZeroMode
-    string AsSmartString(ESmartStringPrecision precision = eSSP_Smart,
-                         ERound                rounding  = eTrunc,
-                         ESmartStringZeroMode  zero_mode = eSSZ_SkipZero)
-                         const;
+    ///   AssignFromSmartString, AsString, ESmartStringFlags
+    /// @note
+    ///   For very big time spans it use the average length of the year
+    ///   in the Gregorian (modern) calendar (365.2425 days)
+    ///   to calculate number of months and years.
+    string AsSmartString(TSmartStringFlags flags = 0) const;
+
+    /// Assign value to time span object from string representation of time
+    /// in formats produced by AsSmartString(). 
+    ///
+    /// @param str
+    ///   String representation of time span in the format produced by AsSmartString().
+    ///   All numeric time parts should have letter/word specifiers.
+    ///   The string should represent "positive" timespan, the sign (minus)
+    ///   is not allowed there.
+    /// @sa
+    ///   AsSmartString
+    /// @note
+    ///   It use the average length of the year in the Gregorian (modern)
+    ///   calendar (365.2425 days) to convert years and months.
+    CTimeSpan& AssignFromSmartString(const string& str);
+
 
     //
     // Get various components of time span.
@@ -1526,10 +1605,9 @@ private:
     void x_Normalize(void);
 
     /// Helpers for AsSmartString()
-    string x_AsSmartString_Smart_Big  (ERound rounding);
-    string x_AsSmartString_Smart_Small(ERound rounding);
-    string x_AsSmartString_Precision  (ESmartStringPrecision precision,
-                                       ERound rounding, ESmartStringZeroMode zero_mode);
+    string x_AsSmartString_Smart_Big(TSmartStringFlags flags) const;
+    string x_AsSmartString_Smart_Small(TSmartStringFlags flags) const;
+    string x_AsSmartString_Precision(TSmartStringFlags flags) const;
 
 private:
     long  m_Sec;      ///< Seconds part of the time span
@@ -1723,7 +1801,7 @@ private:
 };
 
 
-/// @deprecated  Use CDeadline instead
+/// @deprecated Use CDeadline instead
 NCBI_DEPRECATED typedef CDeadline CAbsTimeout;
 
 
@@ -1878,11 +1956,24 @@ public:
     ///   A string representation of elapsed time span.
     /// @sa
     ///   CTimeSpan::AsSmartString, AsString, Elapsed
+    /// @deprecated Use AsSmartString(TSmartStringFlags) instead.
+    NCBI_DEPRECATED
     string AsSmartString(
-        CTimeSpan::ESmartStringPrecision precision = CTimeSpan::eSSP_Nanosecond,
-        ERound                           rounding  = eTrunc,
+        CTimeSpan::ESmartStringPrecision precision,
+        ERound                           rounding,
         CTimeSpan::ESmartStringZeroMode  zero_mode = CTimeSpan::eSSZ_SkipZero)
         const;
+
+    /// Transform elapsed time to "smart" string.
+    ///
+    /// For more details see CTimeSpan::AsSmartString().
+    /// @param flags
+    ///   How to convert string to value.
+    /// @return
+    ///   A string representation of elapsed time span.
+    /// @sa
+    ///   CTimeSpan::AsSmartString, AsString, Elapsed
+    string AsSmartString(CTimeSpan::TSmartStringFlags flags = 0) const;
 
 protected:
     /// Get current time mark.
@@ -2524,6 +2615,22 @@ bool CTimeSpan::operator<= (const CTimeSpan& t) const
     return !(*this > t);
 }
 
+// @deprecated
+inline
+string CTimeSpan::AsSmartString(
+    ESmartStringPrecision precision,
+    ERound                rounding,
+    ESmartStringZeroMode  zero_mode) const
+{
+    TSmartStringFlags flags = precision;
+    flags |= (rounding == eRound) ? 
+        CTimeSpan::fSS_Round : CTimeSpan::fSS_Trunc;
+    flags |= (zero_mode == CTimeSpan::eSSZ_NoSkipZero) ?
+        CTimeSpan::fSS_NoSkipZero : CTimeSpan::fSS_SkipZero;
+    return AsSmartString(flags);
+}
+
+
 
 //
 // CTimeout
@@ -2670,6 +2777,7 @@ CStopWatch::operator string(void) const
 }
 
 
+// @deprecated
 inline
 string CStopWatch::AsSmartString(
     CTimeSpan::ESmartStringPrecision precision,
@@ -2677,7 +2785,19 @@ string CStopWatch::AsSmartString(
     CTimeSpan::ESmartStringZeroMode  zero_mode)
     const
 {
-    return CTimeSpan(Elapsed()).AsSmartString(precision, rounding, zero_mode);
+    CTimeSpan::TSmartStringFlags flags = precision;
+    flags |= (rounding == eRound) ? 
+        CTimeSpan::fSS_Round : CTimeSpan::fSS_Trunc;
+    flags |= (zero_mode == CTimeSpan::eSSZ_NoSkipZero) ?
+        CTimeSpan::fSS_NoSkipZero : CTimeSpan::fSS_SkipZero;
+    return CTimeSpan(Elapsed()).AsSmartString(flags);
+}
+
+
+inline
+string CStopWatch::AsSmartString(CTimeSpan::TSmartStringFlags flags) const
+{
+    return CTimeSpan(Elapsed()).AsSmartString(flags);
 }
 
 
