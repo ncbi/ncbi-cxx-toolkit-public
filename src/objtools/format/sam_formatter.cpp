@@ -51,18 +51,17 @@ class CSAM_CIGAR_Formatter : public CCIGAR_Formatter
 {
 public:
     typedef CSAM_Formatter::TFlags TFlags;
+    typedef list<string> TLines;
 
-    CSAM_CIGAR_Formatter(CNcbiOstream&      out,
+    CSAM_CIGAR_Formatter(TLines&            header,
+                         TLines&            body,
                          const CSeq_align&  aln,
                          CScope&            scope,
                          TFlags             flags);
     virtual ~CSAM_CIGAR_Formatter(void) {}
 
-    void SetSkipHeader(bool value = true) { m_SkipHead = value; }
-
 protected:
     virtual void StartAlignment(void);
-    virtual void EndAlignment(void);
     virtual void AddRow(const string& cigar);
     virtual void AddSegment(CNcbiOstream& cigar,
                             char seg_type,
@@ -74,31 +73,27 @@ private:
     };
     typedef unsigned int TReadFlags;
 
-    typedef list<string> TLines;
-
     string x_GetRefIdString(void) const;
     string x_GetTargetIdString(void) const;
-    void x_AddLines(const TLines& lines);
 
-    CNcbiOstream&   m_Out;
     TFlags          m_Flags;
-    TLines          m_Head;
-    TLines          m_Rows;
-    bool            m_SkipHead; // Skip headers when batch processing
+    TLines&         m_Head;
+    TLines&         m_Rows;
     int             m_NumDif;   // count differences
 
     set<CBioseq_Handle> m_KnownRefSeqs; // refseqs already in the header
 };
 
 
-CSAM_CIGAR_Formatter::CSAM_CIGAR_Formatter(CNcbiOstream&      out,
+CSAM_CIGAR_Formatter::CSAM_CIGAR_Formatter(TLines&            header,
+                                           TLines&            body,
                                            const CSeq_align&  aln,
                                            CScope&            scope,
                                            TFlags             flags)
     : CCIGAR_Formatter(aln, &scope),
-      m_Out(out),
       m_Flags(flags),
-      m_SkipHead(false),
+      m_Head(header),
+      m_Rows(body),
       m_NumDif(0)
 {
 }
@@ -120,28 +115,12 @@ string CSAM_CIGAR_Formatter::x_GetTargetIdString(void) const
 }
 
 
-void CSAM_CIGAR_Formatter::x_AddLines(const TLines& lines)
-{
-    ITERATE(TLines, it, lines) {
-        m_Out << *it << '\n';
-    }
-}
-
-
 void CSAM_CIGAR_Formatter::StartAlignment(void)
 {
-    m_Head.push_back("@HD\tVN:1.2\tGO:query");
-}
-
-
-void CSAM_CIGAR_Formatter::EndAlignment(void)
-{
-    if ( !m_SkipHead ) {
-        x_AddLines(m_Head);
+    // One header per file.
+    if ( m_Head.empty() ) {
+        m_Head.push_back("@HD\tVN:1.2\tGO:query");
     }
-    x_AddLines(m_Rows);
-    m_Head.clear();
-    m_Rows.clear();
 }
 
 
@@ -283,10 +262,16 @@ CSAM_Formatter::CSAM_Formatter(CNcbiOstream& out,
 }
 
 
+CSAM_Formatter::~CSAM_Formatter(void)
+{
+    Flush();
+}
+
+
 CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align&  aln,
                                       const CSeq_id&     query_id)
 {
-    CSAM_CIGAR_Formatter fmt(*m_Out, aln, *m_Scope, m_Flags);
+    CSAM_CIGAR_Formatter fmt(m_Header, m_Body, aln, *m_Scope, m_Flags);
     fmt.FormatByTargetId(query_id);
     return *this;
 }
@@ -295,7 +280,7 @@ CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align&  aln,
 CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align&  aln,
                                       CSeq_align::TDim   query_row)
 {
-    CSAM_CIGAR_Formatter fmt(*m_Out, aln, *m_Scope, m_Flags);
+    CSAM_CIGAR_Formatter fmt(m_Header, m_Body, aln, *m_Scope, m_Flags);
     fmt.FormatByTargetRow(query_row);
     return *this;
 }
@@ -320,6 +305,20 @@ CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align_set& aln_set,
     disc.SetSegs().SetDisc().Assign(aln_set);
     Print(disc, query_row);
     return *this;
+}
+
+
+void CSAM_Formatter::Flush(void)
+{
+    if ( !m_Out ) return;
+    ITERATE(TLines, it, m_Header) {
+        *m_Out << *it << '\n';
+    }
+    ITERATE(TLines, it, m_Body) {
+        *m_Out << *it << '\n';
+    }
+    m_Header.clear();
+    m_Body.clear();
 }
 
 

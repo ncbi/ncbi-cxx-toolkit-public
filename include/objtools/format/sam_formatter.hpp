@@ -34,7 +34,12 @@
 /// Flat formatter for Sequence Alignment/Map (SAM).
 
 
-#include <objtools/format/item_formatter.hpp>
+#include <corelib/ncbistre.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objmgr/scope.hpp>
+#include <list>
 
 
 /** @addtogroup Miscellaneous
@@ -69,7 +74,7 @@ public:
     CSAM_Formatter(CNcbiOstream& out,
                    CScope& scope,
                    TFlags flags = fSAM_Default);
-    ~CSAM_Formatter(void) {}
+    ~CSAM_Formatter(void);
 
     void SetOutputStream(CNcbiOstream& out) { m_Out = &out; }
     void SetScope(CScope& scope) { m_Scope.Reset(&scope); }
@@ -86,10 +91,18 @@ public:
     CSAM_Formatter& Print(const CSeq_align_set& aln,
                           CSeq_align::TDim      query_row);
 
+    // Write all data to the output, start a new file.
+    void Flush(void);
+
 private:
     CNcbiOstream* m_Out;
     CRef<CScope>  m_Scope;
     TFlags        m_Flags;
+
+    typedef list<string> TLines;
+
+    TLines        m_Header;
+    TLines        m_Body;
 };
 
 
