@@ -43,27 +43,70 @@
 #include <algorithm>
 
 #include <algo/sequence/consensus_splice.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-// Find the first in-frame position in some interval that is on
-// a list of allowable starts.
-// This could probably be done more efficiently.
-template<class TSeq>
-inline TSeqPos FindFirstStart(const TSeq& seq, TSeqPos from, TSeqPos to,
-                              const vector<string>& allowable_starts)
+char Complement(const char c)
 {
-    TSeqPos pos;
-    for (pos = from;  pos < to;  pos += 3) {
+    //note: N->N, S->S, W->W, U->A, T->A
+    static const char* iupac_revcomp_table =
+        "................................................................"
+        ".TVGH..CD..M.KN...YSAABW.R.......tvgh..cd..m.kn...ysaabw.r......"
+        "................................................................"
+        "................................................................";
+    return iupac_revcomp_table[static_cast<unsigned char>(c)];
+}
+
+bool IsGapOrN(const char c)
+{
+    return c == 'N' || c == 'n' || Complement(c) == '.';
+}
+
+// Find the lowest position, in-frame relative to \p from in [from, to_open)
+// such that codon begining at that position is on a list of \p allowable_starts
+// and there's no more than max_seq_gap consecutive gap-or-N bases between the 
+// putative start and to_open. (gap is any char other than extended IUPAC residues)
+//
+// return to_open iff not found.
+template<class TSeq>
+inline TSeqPos FindFirstStart(const TSeq& seq, 
+                              TSeqPos from, TSeqPos to_open,
+                              const vector<string>& allowable_starts,
+                              size_t max_seq_gap)
+{
+    const TSeqPos inframe_to_open = from + ((to_open - from)/3 * 3);
+    size_t gap_length(0);
+
+    TSeqPos best_start_pos = to_open; //a.k.a not-found
+
+    for (TSeqPos pos = inframe_to_open - 3;
+         pos >= from && pos < inframe_to_open;
+         pos -= 3) 
+    {
+        bool is_gap = IsGapOrN(seq[pos]) 
+                   && IsGapOrN(seq[pos + 1])
+                   && IsGapOrN(seq[pos + 2]);
+
+        gap_length = (gap_length + 3) * is_gap; 
+        // note: this value may slightly differ from the true
+        // one, since we are considering bases in triplets.
+
+        if(gap_length > max_seq_gap) {
+            break;
+        }
+
         ITERATE(vector<string>, it, allowable_starts) {
-            if (seq[pos] == (*it)[0] 
-                && seq[pos + 1] == (*it)[1] && seq[pos + 2] == (*it)[2]) {
-                return pos;
+            if (   seq[pos + 0] == (*it)[0] 
+                && seq[pos + 1] == (*it)[1] 
+                && seq[pos + 2] == (*it)[2]) 
+            {
+                best_start_pos = pos;
             }
         }
     }
-    return pos;  // if no start found, we'll return a position >= to
+    return best_start_pos;
 }
 
 
@@ -77,7 +120,8 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
                             unsigned int min_length_bp,
                             int genetic_code,
                             const vector<string>& allowable_starts,
-                            bool longest_orfs)
+                            bool longest_orfs,
+                            size_t max_seq_gap)
 {
 
     vector<vector<TSeqPos> > stops;
@@ -108,14 +152,20 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
             // divisible by 3
             to = ((seq.size() - from) / 3) * 3 + from - 1;
             if (!allowable_starts.empty()) {
-                from = FindFirstStart(seq, from, to, allowable_starts);
+                from = FindFirstStart(seq, 
+                                      from, to, 
+                                      allowable_starts, 
+                                      max_seq_gap);
             }
             if (to - from + 1 >= min_length_bp) {
                 ranges.push_back(COrf::TRange(from, to));
 
                 if (!longest_orfs && !allowable_starts.empty()) {
                     for (from += 3; from < to; from += 3) {
-                        from = FindFirstStart(seq, from, to, allowable_starts);
+                        from = FindFirstStart(seq, 
+                                              from, to, 
+                                              allowable_starts, 
+                                              max_seq_gap);
                         if (to - from + 1 < min_length_bp)
                             break;
                         ranges.push_back(COrf::TRange(from, to));
@@ -130,14 +180,20 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
         to = stops[frame].front() - 1;
         if (to - from + 1 >= min_length_bp) {
             if (!allowable_starts.empty()) {
-                from = FindFirstStart(seq, from, to, allowable_starts);
+                from = FindFirstStart(seq, 
+                                      from, to, 
+                                      allowable_starts, 
+                                      max_seq_gap);
             }
             if (from < to && to - from + 1 >= min_length_bp) {
                 ranges.push_back(COrf::TRange(from, to));
 
                 if (!longest_orfs && !allowable_starts.empty()) {
                     for (from += 3; from < to; from += 3) {
-                        from = FindFirstStart(seq, from, to, allowable_starts);
+                        from = FindFirstStart(seq, 
+                                              from, to, 
+                                              allowable_starts, 
+                                              max_seq_gap);
                         if (to - from + 1 < min_length_bp)
                             break;
                         ranges.push_back(COrf::TRange(from, to));
@@ -151,7 +207,10 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
             to = stops[frame][i + 1] - 1;
             if (to - from + 1 >= min_length_bp) {
                 if (!allowable_starts.empty()) {
-                    from = FindFirstStart(seq, from, to, allowable_starts);
+                    from = FindFirstStart(seq, 
+                                          from, to, 
+                                          allowable_starts, 
+                                          max_seq_gap);
                     if (from >= to || to - from + 1 < min_length_bp) {
                         continue;
                     }
@@ -160,7 +219,10 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
 
                 if (!longest_orfs && !allowable_starts.empty()) {
                     for (from += 3; from < to; from += 3) {
-                        from = FindFirstStart(seq, from, to, allowable_starts);
+                        from = FindFirstStart(seq, 
+                                              from, to, 
+                                              allowable_starts, 
+                                              max_seq_gap);
                         if (to - from + 1 < min_length_bp)
                             break;
                         ranges.push_back(COrf::TRange(from, to));
@@ -177,7 +239,7 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
         to = ((seq.size() - from) / 3) * 3 + from - 1;
         if (to - from + 1 >= min_length_bp) {
             if (!allowable_starts.empty()) {
-                from = FindFirstStart(seq, from, to, allowable_starts);
+                from = FindFirstStart(seq, from, to, allowable_starts, max_seq_gap);
                 if (from >= to || to - from + 1 < min_length_bp) {
                     continue;
                 }
@@ -186,7 +248,7 @@ inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
 
             if (!longest_orfs && !allowable_starts.empty()) {
                 for (from += 3; from < to; from += 3) {
-                    from = FindFirstStart(seq, from, to, allowable_starts);
+                    from = FindFirstStart(seq, from, to, allowable_starts, max_seq_gap);
                     if (to - from + 1 < min_length_bp)
                         break;
                     ranges.push_back(COrf::TRange(from, to));
@@ -206,7 +268,8 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
                        unsigned int min_length_bp,
                        int genetic_code,
                        const vector<string>& allowable_starts,
-                       bool longest_orfs)
+                       bool longest_orfs,
+                       size_t max_seq_gap)
 {
     COrf::TRangeVec ranges;
 
@@ -216,7 +279,7 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
 
     // find ORFs on the forward sequence and report them as-is
     FindForwardOrfs(seq, ranges, min_length_bp,
-                    genetic_code, allowable_starts, longest_orfs);
+                    genetic_code, allowable_starts, longest_orfs, max_seq_gap);
     ITERATE (COrf::TRangeVec, iter, ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc());
         orf->SetInt().SetFrom(iter->GetFrom());
@@ -250,7 +313,7 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
     }
 
     FindForwardOrfs(comp, ranges, min_length_bp,
-                    genetic_code, allowable_starts, longest_orfs);
+                    genetic_code, allowable_starts, longest_orfs, max_seq_gap);
     ITERATE (COrf::TRangeVec, iter, ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
         unsigned int from = comp.size() - iter->GetTo() - 1;
@@ -281,10 +344,11 @@ void COrf::FindOrfs(const string& seq_iupac,
                     unsigned int min_length_bp,
                     int genetic_code,
                     const vector<string>& allowable_starts,
-                    bool longest_orfs)
+                    bool longest_orfs,
+                    size_t max_seq_gap)
 {
     s_FindOrfs(seq_iupac, results, min_length_bp,
-               genetic_code, allowable_starts, longest_orfs);
+               genetic_code, allowable_starts, longest_orfs, max_seq_gap);
 }
 
 
@@ -295,10 +359,11 @@ void COrf::FindOrfs(const vector<char>& seq_iupac,
                     unsigned int min_length_bp,
                     int genetic_code,
                     const vector<string>& allowable_starts,
-                    bool longest_orfs)
+                    bool longest_orfs,
+                    size_t max_seq_gap)
 {
     s_FindOrfs(seq_iupac, results, min_length_bp,
-               genetic_code, allowable_starts, longest_orfs);
+               genetic_code, allowable_starts, longest_orfs, max_seq_gap);
 }
 
 
@@ -309,14 +374,15 @@ void COrf::FindOrfs(const CSeqVector& orig_vec,
                     unsigned int min_length_bp,
                     int genetic_code,
                     const vector<string>& allowable_starts,
-                    bool longest_orfs)
+                    bool longest_orfs,
+                    size_t max_seq_gap)
 {
     string seq_iupac;  // will contain ncbi8na
     CSeqVector vec(orig_vec);
     vec.SetCoding(CSeq_data::e_Iupacna);
     vec.GetSeqData(0, vec.size(), seq_iupac);
     s_FindOrfs(seq_iupac, results, min_length_bp,
-               genetic_code, allowable_starts, longest_orfs);
+               genetic_code, allowable_starts, longest_orfs, max_seq_gap);
 }
 
 
@@ -327,7 +393,8 @@ void COrf::FindStrongKozakUOrfs(
                    TLocVec& non_overlap_results,
                    unsigned int min_length_bp,
                    unsigned int non_overlap_min_length_bp,
-                   int genetic_code)
+                   int genetic_code,
+                   size_t max_seq_gap)
 {
     if (cds_start > seq.size()) {
         NCBI_THROW(CException, eUnknown,
@@ -341,7 +408,7 @@ void COrf::FindStrongKozakUOrfs(
 
     vector<string> start_codon(1, "ATG");
     TLocVec ORFs;
-    FindOrfs(seq, ORFs, min_length_bp, genetic_code, start_codon, false);
+    FindOrfs(seq, ORFs, min_length_bp, genetic_code, start_codon, false, max_seq_gap);
     ITERATE (TLocVec, it, ORFs) {
         if ((*it)->GetStrand() == eNa_strand_minus) {
             /// We're only intersted in ORFs on the plus strand

@@ -1,0 +1,3235 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 8070,
+        to 10013,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 15618,
+        to 16136,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 19320,
+        to 20762,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 28413,
+        to 29879,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 41100,
+        to 41468,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 64515,
+        to 64952,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 65199,
+        to 65804,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 88365,
+        to 89009,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 89814,
+        to 90407,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 122922,
+        to 123479,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 145014,
+        to 145601,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 158853,
+        to 159449,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 161544,
+        to 162023,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 166026,
+        to 166619,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 166740,
+        to 167882,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 177003,
+        to 177431,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 191961,
+        to 192713,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 11335,
+        to 12177,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 30601,
+        to 31023,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 36718,
+        to 37062,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 55501,
+        to 56007,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 59140,
+        to 59580,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 69460,
+        to 70593,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 89173,
+        to 89817,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 90421,
+        to 92256,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 92701,
+        to 93015,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 107266,
+        to 107631,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 112174,
+        to 112755,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 132382,
+        to 132822,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 136885,
+        to 137277,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 143494,
+        to 144819,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 145726,
+        to 147504,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 174115,
+        to 174471,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 177961,
+        to 178308,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 206059,
+        to 206463,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 210133,
+        to 210528,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 17798,
+        to 18265,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 20993,
+        to 21433,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 26192,
+        to 27301,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 29993,
+        to 30298,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 32915,
+        to 33676,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 37919,
+        to 38500,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 47330,
+        to 47800,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 57950,
+        to 58273,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 66503,
+        to 67348,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 67616,
+        to 68137,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 111182,
+        to 111523,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 139568,
+        to 139873,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 150842,
+        to 152953,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 174944,
+        to 175339,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 190628,
+        to 191971,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 202661,
+        to 204076,
+        strand plus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 215473,
+        to 216054,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 212071,
+        to 212577,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 194116,
+        to 194499,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 186460,
+        to 187326,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 182935,
+        to 186438,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 163306,
+        to 164265,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 159580,
+        to 160134,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 149740,
+        to 150168,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 142249,
+        to 143133,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 140182,
+        to 141678,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 134464,
+        to 136773,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 129367,
+        to 130509,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 125470,
+        to 126300,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 121684,
+        to 122526,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 114286,
+        to 115311,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 112894,
+        to 114111,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 110623,
+        to 111444,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 109120,
+        to 110550,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 107719,
+        to 108501,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 104686,
+        to 105072,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 103138,
+        to 104163,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 101893,
+        to 102843,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 101047,
+        to 101607,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 99262,
+        to 100641,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 77551,
+        to 78771,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 76387,
+        to 77514,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 74611,
+        to 76011,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 71527,
+        to 73932,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 63010,
+        to 63765,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 57610,
+        to 58791,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 56191,
+        to 56949,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 53581,
+        to 54096,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 52702,
+        to 53580,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 50281,
+        to 50868,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 48016,
+        to 49164,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 44194,
+        to 44946,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 40024,
+        to 40986,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 30274,
+        to 30666,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 26758,
+        to 27096,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 25396,
+        to 26193,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 23698,
+        to 24441,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 14812,
+        to 15702,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 13852,
+        to 14787,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 6379,
+        to 6696,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 5488,
+        to 5850,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 1669,
+        to 2013,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 218814,
+        to 220610,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 210108,
+        to 211436,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 207015,
+        to 209645,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 187710,
+        to 189509,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 182115,
+        to 182480,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 181260,
+        to 182048,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 178449,
+        to 179540,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 177264,
+        to 178436,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 175539,
+        to 175916,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 173805,
+        to 174446,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 171351,
+        to 172028,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 167931,
+        to 168602,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 160395,
+        to 161390,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 153165,
+        to 156362,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 138363,
+        to 138761,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 137379,
+        to 137711,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 130572,
+        to 131111,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 127956,
+        to 128393,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 126897,
+        to 127937,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 124779,
+        to 125393,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 120969,
+        to 121331,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 116223,
+        to 118829,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 115638,
+        to 116159,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 111450,
+        to 111875,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 104199,
+        to 104600,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 92574,
+        to 93452,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 68172,
+        to 68792,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 57030,
+        to 57536,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 54795,
+        to 55229,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 54120,
+        to 54584,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 45102,
+        to 45653,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 42480,
+        to 43475,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 41706,
+        to 42413,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 39360,
+        to 40007,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 38556,
+        to 39143,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 35139,
+        to 37310,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 34536,
+        to 35063,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 21519,
+        to 21833,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 16812,
+        to 17282,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 12726,
+        to 13751,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 10725,
+        to 11192,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 10059,
+        to 10616,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 213074,
+        to 214897,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 189845,
+        to 190303,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 180020,
+        to 181183,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 176003,
+        to 176962,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 172181,
+        to 173020,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 169973,
+        to 171349,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 168602,
+        to 169666,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 166955,
+        to 167278,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 164903,
+        to 165823,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 161747,
+        to 162979,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 156947,
+        to 158425,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 148484,
+        to 149434,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 148043,
+        to 148408,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 142577,
+        to 142888,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 132992,
+        to 134197,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 131450,
+        to 132223,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 126467,
+        to 126913,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 123578,
+        to 124489,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 118829,
+        to 120361,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 108533,
+        to 108994,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 105872,
+        to 106183,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 95285,
+        to 98209,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 87035,
+        to 87871,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 85037,
+        to 86626,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 81806,
+        to 83035,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 78833,
+        to 80152,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 63791,
+        to 64372,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 59636,
+        to 62266,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 51260,
+        to 52492,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 49319,
+        to 49978,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 46553,
+        to 47260,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 45677,
+        to 46354,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 43466,
+        to 44179,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 40988,
+        to 41611,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 33857,
+        to 34408,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 31133,
+        to 32113,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 29228,
+        to 29539,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 27338,
+        to 27787,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 24455,
+        to 25372,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 22856,
+        to 23527,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 21914,
+        to 22738,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 18284,
+        to 19357,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 17300,
+        to 17701,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 15869,
+        to 16378,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 12242,
+        to 12673,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 7376,
+        to 7711,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 6719,
+        to 7357,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 4019,
+        to 5491,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 3479,
+        to 4006,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        }
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    },
+    {
+      data cdregion {
+        orf TRUE,
+        frame one
+      },
+      location int {
+        from 2,
+        to 472,
+        strand minus,
+        id genbank {
+          accession "KB976764",
+          version 1
+        },
+        fuzz-from lim lt
+      },
+      title "Open reading frame",
+      exp-ev not-experimental
+    }
+  }
+}
