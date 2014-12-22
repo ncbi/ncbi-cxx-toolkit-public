@@ -187,12 +187,45 @@ private:
 };
 
 
-// An Extended IReader interface
+// An extended IReader interface
 class IExtReader : public IReader
 {
 public:
-    virtual void Open() = 0;
+    virtual void Open() {}
     virtual void Close() = 0;
+
+private:
+    // This is not needed
+    ERW_Result PendingCount(size_t* count)
+    {
+        BOOST_ERROR("PendingCount() is not implemented");
+        return eRW_NotImplemented;
+    }
+};
+
+// An extended IWriter interface
+struct IExtWriter : public IWriter
+{
+    virtual void Open() {}
+    virtual void Close() = 0;
+};
+
+// An extended IExtReader interface for expected data
+struct IExpected : public IExtReader
+{
+    virtual size_t Size() const = 0;
+};
+
+// A reader that is used to read from a string
+template <class TReader>
+class CStrReader : public TReader
+{
+public:
+    typedef CStrReader<TReader> TStrReader; // Self
+
+    CStrReader() {}
+    CStrReader(const string& str) : m_Str(str) {}
+
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
     {
         size_t to_read = 0;
@@ -208,52 +241,25 @@ public:
         return m_Remaining ? eRW_Success : eRW_Eof;
     }
 
-    ERW_Result PendingCount(size_t* count)
-    {
-        if (count) {
-            *count = m_Remaining;
-        }
-        return eRW_Success;
-    }
-    virtual size_t Size() const = 0;
-
-protected:
-    const char* m_Ptr;
-    size_t m_Remaining;
-};
-
-// An extended IWriter interface
-struct IExtWriter : public IWriter
-{
-    virtual void Open() = 0;
-    virtual void Close() = 0;
-};
-
-// A reader that is used to read from a string
-class CStrReader : public IExtReader
-{
-public:
-    CStrReader() {}
-    CStrReader(const string& str) : m_Str(str) {}
-    size_t Size() const { return m_Str.size(); }
     void Open()
     {
         m_Ptr = m_Str.data();
         m_Remaining = m_Str.size();
     }
-    void Close() {}
 
 protected:
     string m_Str;
+    const char* m_Ptr;
+    size_t m_Remaining;
 };
 
 
 // String data to test APIs
-class CStrData : public CStrReader
+class CStrData : public CStrReader<IExpected>
 {
 public:
     CStrData()
-        : CStrReader("The quick brown fox jumps over the lazy dog")
+        : TStrReader("The quick brown fox jumps over the lazy dog")
     {}
 
     void Close()
@@ -262,6 +268,8 @@ public:
             BOOST_ERROR("Got less data than expected");
         }
     }
+
+    size_t Size() const { return m_Str.size(); }
 };
 
 // TODO:
@@ -269,25 +277,48 @@ public:
 // to test API of big data volumes
 
 
-// String reading/writing interface
-class CStrApi
+// NetStorage reader/writer base class
+template <class TBase>
+class CNetStorageRW : public TBase
 {
+public:
+    typedef CNetStorageRW<TBase> TNetStorageRW; // Self
+
+    CNetStorageRW(CNetStorageObject o) : m_Object(o) {}
+    void Close() { m_Object.Close(); }
+
+protected:
+    CNetStorageObject m_Object;
+};
+
+// A reading/writing interface
+template <class TImpl>
+class CApi
+{
+public:
+    CApi(CNetStorageObject o) : m_Reader(o), m_Writer(o) {}
+    IExtReader& GetReader() { return m_Reader; } 
+    IExtWriter& GetWriter() { return m_Writer; }
+
 private:
-    class CReader : public CStrReader
+    typename TImpl::CReader m_Reader;
+    typename TImpl::CWriter m_Writer;
+};
+
+// String reading/writing interface
+struct SStrApiImpl
+{
+    class CReader : public CNetStorageRW<CStrReader<IExtReader> >
     {
     public:
-        CReader(CNetStorageObject o) : m_Object(o) {}
-        void Open() { m_Object.Read(&m_Str); CStrReader::Open(); }
-        void Close() { m_Object.Close(); }
-
-    private:
-        CNetStorageObject m_Object;
+        CReader(CNetStorageObject o) : TNetStorageRW(o) {}
+        void Open() { m_Object.Read(&m_Str); TStrReader::Open(); }
     };
 
-    class CWriter : public IExtWriter
+    class CWriter : public CNetStorageRW<IExtWriter>
     {
     public:
-        CWriter(CNetStorageObject o) : m_Object(o) {}
+        CWriter(CNetStorageObject o) : TNetStorageRW(o) {}
         ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0)
         {
             if (buf) {
@@ -309,36 +340,46 @@ private:
         void Close() { Flush(); m_Object.Close(); }
 
     private:
-        CNetStorageObject m_Object;
         string m_Output;
     };
+};
 
-public:
-    CStrApi(CNetStorageObject o) : m_Reader(o), m_Writer(o) {}
 
-    IExtReader& GetReader()
+// Buffer reading/writing interface
+struct SBufApiImpl
+{
+    class CReader : public CNetStorageRW<IExtReader>
     {
-        m_Reader.Open();
-        return m_Reader;
-    }
+    public:
+        CReader(CNetStorageObject o) : TNetStorageRW(o) {}
 
-    IExtWriter& GetWriter()
+        ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
+        {
+            size_t read = m_Object.Read(buf, count);
+            if (bytes_read) *bytes_read = read;
+            return eRW_Success;
+        }
+    };
+
+    class CWriter : public CNetStorageRW<IExtWriter>
     {
-        m_Writer.Open();
-        return m_Writer;
-    }
-
-private:
-    CReader m_Reader;
-    CWriter m_Writer;
+    public:
+        CWriter(CNetStorageObject o) : TNetStorageRW(o) {}
+        ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0)
+        {
+            m_Object.Write(buf, count);
+            if (bytes_written) *bytes_written = count;
+            return eRW_Success;
+        }
+        ERW_Result Flush(void) { return eRW_Success; }
+    };
 };
 
 
 // TODO:
 // Implement TApi classes to test following CNetStorage methods:
 // 1) GetReader()/GetWriter()
-// 2) Read()/Write() using a buffer
-// 3) GetRWStream();
+// 2) GetRWStream();
 
 
 // A helper to read from API/expected data
@@ -433,7 +474,7 @@ private:
 
 
 template <class TGetInfo, class TApi>
-static void s_ReadAndCompare(IExtReader& expected, CNetStorageObject object)
+static void s_ReadAndCompare(IExpected& expected, CNetStorageObject object)
 {
     SReadHelper expected_reader(expected);
     TApi api(object);
@@ -462,14 +503,14 @@ static void s_ReadAndCompare(IExtReader& expected, CNetStorageObject object)
 
 // This to help preprocessor
 template <class TApi>
-static void s_ReadAndCompareNotFound(IExtReader& expected,
+static void s_ReadAndCompareNotFound(IExpected& expected,
         CNetStorageObject object)
 {
     s_ReadAndCompare<CGetInfoNotFound, TApi>(expected, object);
 }
 
 template <class TGetInfo, class TApi>
-static string s_WriteAndRead(IExtReader& source, CNetStorageObject object)
+static string s_WriteAndRead(IExpected& source, CNetStorageObject object)
 {
     SReadHelper source_reader(source);
     TApi api(object);
@@ -491,7 +532,7 @@ static string s_WriteAndRead(IExtReader& source, CNetStorageObject object)
 // Tests Exists() and Remove() methods
 template <class TNetStorage, class TApi>
 static void s_ExistsAndRemoveTests(const string& id, TNetStorage& netstorage,
-        IExtReader& expected)
+        IExpected& expected)
 {
     BOOST_CHECK(netstorage.Exists(id));
     CNetStorageObject object(netstorage.Open(id));
@@ -549,7 +590,8 @@ void s_TestNetStorage(CNetStorage netstorage)
 
 void g_TestNetStorage(CNetStorage netstorage)
 {
-    s_TestNetStorage<CStrData, CStrApi>(netstorage);
+    s_TestNetStorage<CStrData, CApi<SStrApiImpl> >(netstorage);
+    s_TestNetStorage<CStrData, CApi<SBufApiImpl> >(netstorage);
 }
 
 template <class TExpected, class TApi>
@@ -585,7 +627,8 @@ void s_TestNetStorageByKey(CNetStorageByKey netstorage)
 
 void g_TestNetStorageByKey(CNetStorageByKey netstorage)
 {
-    s_TestNetStorageByKey<CStrData, CStrApi>(netstorage);
+    s_TestNetStorageByKey<CStrData, CApi<SStrApiImpl> >(netstorage);
+    s_TestNetStorageByKey<CStrData, CApi<SBufApiImpl> >(netstorage);
 }
 
 // TODO:
