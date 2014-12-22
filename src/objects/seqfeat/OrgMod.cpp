@@ -64,8 +64,7 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
     replace(name.begin(), name.end(), '_', '-');
     replace(name.begin(), name.end(), ' ', '-');
     
-    if (name == "note" ||
-        NStr::EqualNocase(name, "orgmod-note")) {
+    if (name == "note") {
         return eSubtype_other;
     } else if (vocabulary == eVocabulary_insdc) {
         if (name == "host") {
@@ -79,14 +78,9 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
 }
 
 
-bool COrgMod::IsValidSubtypeName(const string& str, 
+bool COrgMod::IsValidSubtypeName(const string& name, 
                                  EVocabulary vocabulary)
 {
-    string name = NStr::TruncateSpaces(str);
-    NStr::ToLower(name);
-    replace(name.begin(), name.end(), '_', '-');
-    replace(name.begin(), name.end(), ' ', '-');
-
     if (name == "note") {
         return true;
     } else if (vocabulary == eVocabulary_insdc) {
