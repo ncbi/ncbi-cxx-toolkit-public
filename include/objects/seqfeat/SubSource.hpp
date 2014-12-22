@@ -196,8 +196,8 @@ public:
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
 
-    static void RemoveCultureNotes(string& value);
-    void RemoveCultureNotes();
+    static void RemoveCultureNotes(string& value, bool is_species_level = true);
+    void RemoveCultureNotes(bool is_species_level = true);
 
     static string CheckCellLine(const string& cell_line, const string& organism);
 

@@ -915,3 +915,38 @@ BOOST_AUTO_TEST_CASE(Test_Regulatory)
     BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_RBS), "ribosome_binding_site");
     BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_terminator), "terminator");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
+{
+    CRef<CSubSource> ss(new CSubSource());
+    ss->SetSubtype(CSubSource::eSubtype_other);
+    ss->SetName("a; [mixed bacterial source]; b");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "a; b");
+    ss->SetName("[uncultured (using species-specific primers) bacterial source]");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "amplified with species-specific primers");
+    ss->SetName("[BankIt_uncultured16S_wizard]; [universal primers]; [tgge]");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->IsSetName(), false);
+    ss->SetName("[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "amplified with species-specific primers");
+
+    CRef<CBioSource> src(new CBioSource());
+    ss->SetName("a; [mixed bacterial source]; b");
+    src->SetSubtype().push_back(ss);
+    src->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "a; b");
+    ss->SetName("[BankIt_uncultured16S_wizard]; [universal primers]; [tgge]");
+    src->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
+
+    ss->SetName("[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
+    ss->RemoveCultureNotes(false);
+    BOOST_CHECK_EQUAL(ss->GetName(), "[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
+}
+
+
+

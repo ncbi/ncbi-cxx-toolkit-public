@@ -1258,13 +1258,13 @@ void CBioSource::AutoFix()
 }
 
 
-void CBioSource::RemoveCultureNotes()
+void CBioSource::RemoveCultureNotes(bool is_species_level)
 {
     if (IsSetSubtype()) {
         CBioSource::TSubtype::iterator it = SetSubtype().begin();
         while (it != SetSubtype().end()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_other) {
-                CSubSource::RemoveCultureNotes((*it)->SetName());
+                CSubSource::RemoveCultureNotes((*it)->SetName(), is_species_level);
                 if (NStr::IsBlank((*it)->GetName())) {
                     it = SetSubtype().erase(it);
                 } else {

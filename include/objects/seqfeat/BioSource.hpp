@@ -129,7 +129,7 @@ public:
     static bool IsStopWord(const string& value);
 
     void AutoFix();
-    void RemoveCultureNotes();
+    void RemoveCultureNotes(bool is_species_level = true);
     bool RemoveLineageSourceNotes();
 
     bool RemoveSubSource(int subtype);

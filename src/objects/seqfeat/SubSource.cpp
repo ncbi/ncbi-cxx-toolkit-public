@@ -3975,7 +3975,7 @@ static const char * s_ReplaceableCultureNotes[] = {
  NULL
 };
 
-void CSubSource::RemoveCultureNotes (string& value)
+void CSubSource::RemoveCultureNotes (string& value, bool is_species_level)
 {
     if (NStr::IsBlank(value)) {
         return;
@@ -3999,19 +3999,21 @@ void CSubSource::RemoveCultureNotes (string& value)
         value = value.substr(0, value.length() - 1);
     }
 
-    for (size_t i = 0; s_ReplaceableCultureNotes[i] != NULL; i++) {
-        if (NStr::EqualNocase(value, s_ReplaceableCultureNotes[i])) {
-            value = "amplified with species-specific primers";
-            break;
+    if (is_species_level) {
+        for (size_t i = 0; s_ReplaceableCultureNotes[i] != NULL; i++) {
+            if (NStr::EqualNocase(value, s_ReplaceableCultureNotes[i])) {
+                value = "amplified with species-specific primers";
+                break;
+            }
         }
     }
 }
 
 
-void CSubSource::RemoveCultureNotes ()
+void CSubSource::RemoveCultureNotes (bool is_species_level)
 {
     if (IsSetName()) {
-        RemoveCultureNotes(SetName());
+        RemoveCultureNotes(SetName(), is_species_level);
         if (NStr::IsBlank(GetName())) {
             ResetName();
         }
