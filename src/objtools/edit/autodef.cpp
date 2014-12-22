@@ -429,7 +429,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
     pos = NStr::Find (comment, " and ");
     // insert comma for parsing
     if (pos != NCBI_NS_STD::string::npos && pos > 0 && !NStr::StartsWith (comment.substr(pos - 1), ",")) {
-        comment = comment.substr(0, pos - 1) + "," + comment.substr(pos);
+        comment = comment.substr(0, pos) + "," + comment.substr(pos);
     }
 
     vector<string> parts;

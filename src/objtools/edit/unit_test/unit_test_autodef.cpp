@@ -914,5 +914,36 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2115)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3866)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    misc1->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    misc1->SetComment("contains 18S ribosomal RNA and internal transcribed spacer 1");
+    misc1->SetLocation().SetInt().SetFrom(0);
+    misc1->SetLocation().SetInt().SetTo(15);
+    misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+
+    CRef<objects::CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->SetData().SetRna().SetExt().SetName("5.8S ribosomal RNA");
+    rna->SetLocation().SetInt().SetFrom(16);
+    rna->SetLocation().SetInt().SetTo(19);
+
+    CRef<objects::CSeq_feat> misc2 = unit_test_util::AddMiscFeature(seq);
+    misc2->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    misc2->SetComment("contains internal transcribed spacer 2 and 28S ribosomal RNA");
+    misc2->SetLocation().SetInt().SetFrom(20);
+    misc2->SetLocation().SetInt().SetTo(35);
+    misc2->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(seq, "Sebaea microphylla 18S ribosomal RNA gene, partial \
+sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and \
+internal transcribed spacer 2, complete sequence; and 28S ribosomal RNA \
+gene, partial sequence.");
+    CheckDeflineMatches(seq, true);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
