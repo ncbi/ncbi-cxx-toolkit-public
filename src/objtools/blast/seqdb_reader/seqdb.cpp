@@ -623,32 +623,16 @@ bool CSeqDB::CheckOrFindOID(int & oid) const
 
 
 CSeqDB::EOidListType
-CSeqDB::GetNextOIDChunk(
-        int&                        begin,
-        int&                        end,
-        int                         size,
-        vector<int>&                lst,
-        int*                        state,
-        int                         nucl_code,
-        ESeqDBAllocType             strategy,
-        SSeqDBSlice*                region,
-        CSeqDB::TSequenceRanges*    masks
-)
+CSeqDB::GetNextOIDChunk(int         & begin,
+                        int         & end,
+                        int         size,
+                        vector<int> & lst,
+                        int         * state)
 {
     m_Impl->Verify();
 
     CSeqDB::EOidListType rv =
-        m_Impl->GetNextOIDChunk(
-                begin,
-                end,
-                size,
-                lst,
-                state,
-                nucl_code,
-                strategy,
-                region,
-                masks
-        );
+        m_Impl->GetNextOIDChunk(begin, end, size, lst, state);
 
     m_Impl->Verify();
 
