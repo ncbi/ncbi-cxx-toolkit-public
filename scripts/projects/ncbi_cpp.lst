@@ -17,6 +17,7 @@ internal/gpipe/align_db
 internal/test/corelib
 internal/test/misc/xmlwrapp
 internal/demo/misc/xmlwrapp
+internal/ctoolkit
 misc
 objects
 objmgr
