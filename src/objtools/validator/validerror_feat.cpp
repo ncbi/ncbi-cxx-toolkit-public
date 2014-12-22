@@ -539,40 +539,54 @@ void CValidError_feat::ValidateSeqFeatData
                 break;
             }
         }
-        const CGene_ref* grp = feat.GetGeneXref();
-        if ( !grp) {
-            // check overlapping gene
-            CConstRef<CSeq_feat> overlap = 
-                GetOverlappingGene(feat.GetLocation(), *m_Scope);
-            if ( overlap ) {
-                string gene_old_locus_tag;
+        if (!NStr::IsBlank (feat_old_locus_tag)) {
+            bool pseudo = false;
+            if (feat.IsSetPseudo() && feat.GetPseudo()) {
+              pseudo = true;
+            }
+            const CGene_ref* grp = feat.GetGeneXref();
+            if ( !grp) {
+                // check overlapping gene
+                CConstRef<CSeq_feat> overlap = 
+                    GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                if ( overlap ) {
+                    if (overlap->IsSetPseudo() && overlap->GetPseudo()) {
+                        pseudo = true;
+                    }
+                    string gene_old_locus_tag;
 
-                FOR_EACH_GBQUAL_ON_SEQFEAT (it, *overlap) {
-                    if ((*it)->IsSetQual() && NStr::Equal ((*it)->GetQual(), "old_locus_tag")
-                        && (*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
-                        gene_old_locus_tag = (*it)->GetVal();
-                        break;
+                    FOR_EACH_GBQUAL_ON_SEQFEAT (it, *overlap) {
+                        if ((*it)->IsSetQual() && NStr::Equal ((*it)->GetQual(), "old_locus_tag")
+                            && (*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
+                            gene_old_locus_tag = (*it)->GetVal();
+                            break;
+                        }
+                    }
+                    if (!NStr::IsBlank (gene_old_locus_tag)
+                        && !NStr::IsBlank (feat_old_locus_tag)
+                        && !NStr::EqualNocase (gene_old_locus_tag, feat_old_locus_tag)) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_OldLocusTagMismtach,
+                                 "Old locus tag on feature (" + feat_old_locus_tag
+                                 + ") does not match that on gene (" + gene_old_locus_tag + ")",
+                                 feat);
                     }
                 }
-                if (!NStr::IsBlank (gene_old_locus_tag)
-                    && !NStr::IsBlank (feat_old_locus_tag)
-                    && !NStr::EqualNocase (gene_old_locus_tag, feat_old_locus_tag)) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_OldLocusTagMismtach,
-                             "Old locus tag on feature (" + feat_old_locus_tag
-                             + ") does not match that on gene (" + gene_old_locus_tag + ")",
-                             feat);
+                if (! NStr::IsBlank (feat_old_locus_tag)) {
+                    if ( grp == 0 ) {
+                        const CSeq_feat* gene = GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                        if ( gene != 0 ) {
+                            grp = &gene->GetData().GetGene();
+                        }
+                    }
                 }
             }
-            if (! NStr::IsBlank (feat_old_locus_tag)) {
-                if ( grp == 0 ) {
-                    const CSeq_feat* gene = GetOverlappingGene(feat.GetLocation(), *m_Scope);
-                    if ( gene != 0 ) {
-                        grp = &gene->GetData().GetGene();
-                    }
-                }
-                if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
+            if (grp && grp->IsSetPseudo() && grp->GetPseudo()) {
+                pseudo = true;
+            }
+            if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
+                if (! pseudo) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem,
-                            "old_locus_tag without inherited locus_tag", feat);
+                           "old_locus_tag without inherited locus_tag", feat);
                 }
             }
         }
