@@ -499,19 +499,20 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
              i != lSrcMod.end();
              ++i ) {
             switch( (*i)->GetSubtype() ) {
-            case COrgMod::eSubtype_gb_acronym:
-            case COrgMod::eSubtype_gb_anamorph:
-            case COrgMod::eSubtype_gb_synonym:
+            //case COrgMod::eSubtype_gb_acronym:
+            //case COrgMod::eSubtype_gb_anamorph:
+            //case COrgMod::eSubtype_gb_synonym:
+            default:
                 pMod.Reset( new COrgMod() );
                 pMod->Assign( *(*i) );
                 lDstMod.push_back( pMod );
-            default:
+            case COrgMod::eSubtype_other:
                 break;
             }
         }
         // Remove 'other' modifiers
-        PFindModByType fmbt( COrgMod::eSubtype_other );
-        remove_if( lDstMod.begin(), lDstMod.end(), fmbt );
+        //PFindModByType fmbt( COrgMod::eSubtype_other );
+        //remove_if( lDstMod.begin(), lDstMod.end(), fmbt );
     }
     // Remove 'synonym' or 'anamorph' it if coincides with taxname
     PRemoveSynAnamorph rsa( inp_orgRef.GetTaxname() );
