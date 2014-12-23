@@ -268,14 +268,15 @@ static void s_GetAlignmentSpans_Span(const CSeq_align& align,
     s_UpdateSpans(align.GetSeqRange(0), align.GetSeqRange(1), align_info, row);
 }
 
-static void s_PopulateDisambiguitingScores(const CSeq_align &align, 
-                                           const vector<string> &score_list, 
-                                           vector<int> &scores,
-                                           bool required)
+template<typename T>
+void s_PopulateScores(const CSeq_align &align, 
+                      const vector<string> &score_list, 
+                      vector<T> &scores,
+                      bool required = true)
 {
     CScoreLookup lookup;
     ITERATE (vector<string>, it, score_list) {
-        int value = 0;
+        T value = 0;
         try {
             value = lookup.GetScore(align, *it);
         } catch(CAlgoAlignUtilException &e) {
@@ -464,7 +465,8 @@ struct SComp_Less
 
 CAlignCompare::SAlignment::
 SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
-                  const TDisambiguatingScoreList &score_list)
+                  const TDisambiguatingScoreList &score_list,
+                  const vector<string> &quality_score_list)
 : source_set(s)
 , query_strand(eNa_strand_unknown)
 , subject_strand(eNa_strand_unknown)
@@ -482,8 +484,9 @@ SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
         subject_range = align->GetSeqRange(1);
     }
     try {
-        s_PopulateDisambiguitingScores(*align, score_list.first, scores.first, true);
-        s_PopulateDisambiguitingScores(*align, score_list.second, scores.second, false);
+        s_PopulateScores(*align, score_list.first, scores.first);
+        s_PopulateScores(*align, score_list.second, scores.second, false);
+        s_PopulateScores(*align, quality_score_list, quality_scores);
         switch (mode) {
         case e_Full:
             s_GetAlignmentMismatches(*align, *this, row);
@@ -716,6 +719,29 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
         ITERATE (list<TAlignGroup>, group_it, groups) {
             if (group_it->second == e_NoMatch) {
                 continue;
+            }
+            if (group_it->second == e_Overlap && !m_QualityScores.empty())
+            {
+                /// Find which side is better
+                vector<SAlignment *> best(3, NULL);
+                ITERATE (TAlignPtrSet, align_it, group_it->first) {
+                    SAlignment *&side_best = best[(*align_it)->source_set];
+                    if (!side_best || (*align_it)->quality_scores >
+                                      side_best->quality_scores)
+                    {
+                        side_best = *align_it;
+                    }
+                }
+                if (best[1]->quality_scores != best[2]->quality_scores) {
+                    int better_side =
+                        best[1]->quality_scores > best[2]->quality_scores
+                                  ? 1 : 2;
+                    ITERATE (TAlignPtrSet, align_it, group_it->first) {
+                        (*align_it)->match_level =
+                             (*align_it)->source_set == better_side 
+                                 ? e_OverlapBetter : e_OverlapWorse;
+                    }
+                }
             }
             ITERATE (TAlignPtrSet, align1_it, group_it->first) {
                 if ((*align1_it)->source_set != 1) {

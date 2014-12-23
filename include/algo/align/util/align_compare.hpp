@@ -54,7 +54,7 @@ public:
 
     enum EMode { e_Interval, e_Exon, e_Span, e_Intron, e_Full };
 
-    enum EMatchLevel {e_Equiv, e_Overlap, e_NoMatch};
+    enum EMatchLevel {e_Equiv, e_Overlap, e_OverlapBetter, e_OverlapWorse, e_NoMatch};
 
     enum ERowComparison {e_Query, e_Subject, e_Both};
 
@@ -90,6 +90,7 @@ public:
         TSeqRange        subject_range;
 
         TDisambiguatingScoreValues scores;
+        vector<double> quality_scores;
     
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
@@ -100,7 +101,8 @@ public:
         EMatchLevel      match_level;
 
         SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
-                   const TDisambiguatingScoreList &score_list);
+                   const TDisambiguatingScoreList &score_list,
+                   const vector<string> &quality_score_list);
 
         int CompareGroup(const SAlignment &o, bool strict_only) const;
     };
@@ -111,7 +113,8 @@ public:
                   bool strict = false,
                   bool ignore_not_present = false,
                   ERowComparison row = e_Both,
-                  const TDisambiguatingScoreList &scores = TDisambiguatingScoreList())
+                  const TDisambiguatingScoreList &scores = TDisambiguatingScoreList(),
+                  const vector<string> &quality_scores = vector<string>())
     : m_Set1(set1)
     , m_Set2(set2)
     , m_Mode(mode)
@@ -119,6 +122,7 @@ public:
     , m_IgnoreNotPresent(ignore_not_present)
     , m_Row(row)
     , m_DisambiguitingScores(scores)
+    , m_QualityScores(quality_scores)
     , m_CountSet1(0)
     , m_CountSet2(0)
     , m_CountEquivSet1(0)
@@ -159,6 +163,7 @@ private:
     bool m_IgnoreNotPresent;
     ERowComparison m_Row;
     TDisambiguatingScoreList m_DisambiguitingScores;
+    vector<string> m_QualityScores;
 
     size_t m_CountSet1;
     size_t m_CountSet2;
@@ -186,7 +191,7 @@ private:
     {
         ++(set == 1 ? m_CountSet1 : m_CountSet2);
         return new SAlignment(set, (set == 1 ? m_Set1 : m_Set2).GetNext(),
-                              m_Mode, m_Row, m_DisambiguitingScores);
+                              m_Mode, m_Row, m_DisambiguitingScores, m_QualityScores);
     }
 
     void x_GetCurrentGroup(int set);
