@@ -2336,7 +2336,7 @@ inline
 double CTime::DiffNanoSecond(const CTime& t) const
 {
     long dNanoSec = NanoSecond() - t.NanoSecond();
-    return (double) DiffSecond(t) * kNanoSecondsPerSecond + dNanoSec;
+    return double(DiffSecond(t)) * double(kNanoSecondsPerSecond) + double(dNanoSec);
 }
 
 inline
@@ -2489,7 +2489,7 @@ long CTimeSpan::GetNanoSecondsAfterSecond(void) const { return m_NanoSec; }
 inline
 double CTimeSpan::GetAsDouble(void) const
 {
-    return m_Sec + double(m_NanoSec) / kNanoSecondsPerSecond;
+    return double(m_Sec) + double(m_NanoSec) / double(kNanoSecondsPerSecond);
 }
 
 inline
