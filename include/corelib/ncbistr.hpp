@@ -3351,9 +3351,7 @@ public:
         const CException* prev_exception,
         EErrCode err_code,const string& message,
         string::size_type pos, EDiagSev severity = eDiag_Error)
-          : TBase(info, prev_exception,
-            (typename TBase::EErrCode)(CException::eInvalid),
-            message), m_Pos(pos)
+          : TBase(info, prev_exception, message, severity, 0), m_Pos(pos)
     {
         this->x_Init(info,
                      string("{") + NStr::SizetToString(m_Pos) +
@@ -3385,20 +3383,31 @@ public:
     /// Get exception class type.
     virtual const char* GetType(void) const { return "CParseTemplException"; }
 
+    typedef int TErrCode;
     /// Get error code.
-    EErrCode GetErrCode(void) const
+    TErrCode GetErrCode(void) const
     {
         return typeid(*this) == typeid(CParseTemplException<TBase>) ?
-            (typename CParseTemplException<TBase>::EErrCode)
-                this->x_GetErrCode() :
-            (typename CParseTemplException<TBase>::EErrCode)
-                CException::eInvalid;
+            (TErrCode) this->x_GetErrCode() :
+            (TErrCode) CException::eInvalid;
     }
 
     /// Get error position.
     string::size_type GetPos(void) const throw() { return m_Pos; }
 
 protected:
+    CParseTemplException(const CDiagCompileInfo &info,
+        const CException* prev_exception,
+        const string& message,
+        string::size_type pos, EDiagSev severity, CException::TFlags flags)
+          : TBase(info, prev_exception, message, severity, flags), m_Pos(pos)
+    {
+        this->x_Init(info,
+                     string("{") + NStr::SizetToString(m_Pos) +
+                     "} " + message,
+                     prev_exception,
+                     severity);
+    }
     /// Constructor.
     CParseTemplException(void)
     {

@@ -889,6 +889,12 @@ public:
     CException& UnsetFlag(EFlags flag) { m_Flags &= ~flag; return *this; }
 
 protected:
+    /// Constructor for derived classes
+    CException(const CDiagCompileInfo& info,
+               const CException* prev_exception,
+               const string& message,
+               EDiagSev severity = eDiag_Error,
+               TFlags flags = 0);
     /// Constructor with no arguments.
     ///
     /// Required in case of multiple inheritance.
@@ -1110,8 +1116,7 @@ public:                                                                 \
     exception_class(const CDiagCompileInfo& info,                       \
         const CException* prev_exception, EErrCode err_code,            \
         const string& message, EDiagSev severity = eDiag_Error)         \
-        : base_class(info, prev_exception,                              \
-            (base_class::EErrCode) CException::eInvalid, (message))     \
+        : base_class(info, prev_exception, (message), severity, 0)      \
     {                                                                   \
         x_Init(info, message, prev_exception, severity);                \
         x_InitErrCode((CException::EErrCode) err_code);                 \
@@ -1120,13 +1125,22 @@ public:                                                                 \
         const CException* prev_exception,                               \
         const CExceptionArgs<EErrCode>& args,                           \
         const string& message)                                          \
-        : base_class(info, prev_exception,                              \
-            (base_class::EErrCode) CException::eInvalid, (message))     \
+        : base_class(info, prev_exception, (message),                   \
+          args.GetSeverity(), 0)                                        \
     {                                                                   \
         x_Init(info, message, prev_exception, args.GetSeverity());      \
         x_InitArgs(args);                                               \
         x_InitErrCode((CException::EErrCode) args.GetErrCode());        \
     }                                                                   \
+protected: \
+    exception_class(const CDiagCompileInfo& info,                       \
+        const CException* prev_exception,                               \
+        const string& message,                                          \
+        EDiagSev severity, CException::TFlags flags)                    \
+        : base_class(info, prev_exception, (message), severity, flags)  \
+    {                                                                   \
+    }                                                                   \
+public: \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class,       \
         base_class)                                                     \
 private:                                                                \
@@ -1391,34 +1405,7 @@ public:
         }
     }
 
-    /// Constructor.
-    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
-                           const CException* prev_exception,
-                           EErrCode err_code, const string& message, 
-                           EDiagSev severity = eDiag_Error)
-          : TBase(info, prev_exception,
-            (typename TBase::EErrCode)(CException::eInvalid),
-            message)
-     {
-        m_Errno = PErrCode();
-        this->x_Init(info, message, prev_exception, severity);
-        this->x_InitErrCode((CException::EErrCode) err_code);
-    }
-
-    /// Constructor.
-    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
-                           const CException* prev_exception,
-                           EErrCode err_code, const string& message,
-                           int errnum, EDiagSev severity = eDiag_Error)
-          : TBase(info, prev_exception,
-                 (typename TBase::EErrCode)(CException::eInvalid),
-                  message),
-            m_Errno(errnum)
-    {
-        this->x_Init(info, message, prev_exception, severity);
-        this->x_InitErrCode((CException::EErrCode) err_code);
-    }
-
+public:
     /// Copy constructor.
     CErrnoTemplExceptionEx(
         const CErrnoTemplExceptionEx<TBase, PErrCode, PErrStr>& other)
@@ -1458,6 +1445,28 @@ public:
 
 protected:
     /// Constructor.
+    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
+                           const CException* prev_exception,
+                           const string& message, 
+                           EDiagSev severity = eDiag_Error,
+                           CException::TFlags flags = 0)
+          : TBase(info, prev_exception, message, severity, flags)
+     {
+        m_Errno = PErrCode();
+        this->x_Init(info, message, prev_exception, severity);
+    }
+
+    /// Constructor.
+    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
+                           const CException* prev_exception,
+                           const string& message,
+                           int errnum, EDiagSev severity = eDiag_Error)
+          : TBase(info, prev_exception, message, severity),
+            m_Errno(errnum)
+    {
+        this->x_Init(info, message, prev_exception, severity);
+    }
+    /// Constructor.
     CErrnoTemplExceptionEx(void) { m_Errno = PErrCode(); }
 
     /// Helper clone method.
@@ -1493,9 +1502,17 @@ public:
                                 typename CParent::EErrCode err_code,
                                 const string&              message,
                                 EDiagSev                   severity = eDiag_Error)
-        : CParent(info, prev_exception,
-                 (typename CParent::EErrCode)CException::eInvalid, message)
+        : CParent(info, prev_exception, message, severity, 0)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException<TBase>, CParent)
+
+protected:
+    CErrnoTemplException<TBase>(const CDiagCompileInfo&    info,
+                                const CException*          prev_exception,
+                                const string&              message,
+                                EDiagSev                   severity,
+                                CException::TFlags         flags)
+        : CParent(info, prev_exception, message, severity, flags) {
+    }
 };
 
 
@@ -1515,9 +1532,17 @@ public:
                                     typename CParent::EErrCode err_code,
                                     const string&              message,
                                     EDiagSev                   severity = eDiag_Error)
-        : CParent(info, prev_exception,
-                 (typename CParent::EErrCode)CException::eInvalid, message)
+        : CParent(info, prev_exception, message, severity, 0)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException_Win<TBase>, CParent)
+
+protected:
+    CErrnoTemplException_Win<TBase>(const CDiagCompileInfo&    info,
+                                    const CException*          prev_exception,
+                                    const string&              message,
+                                    EDiagSev                   severity,
+                                    CException::TFlags         flags)
+        : CParent(info, prev_exception, message, severity, flags) {
+    }
 };
 #endif
 
@@ -1562,8 +1587,7 @@ public: \
         EErrCode err_code,const string& message, \
         extra_type extra_param, EDiagSev severity = eDiag_Error) \
         : base_class(info, prev_exception, \
-            (base_class::EErrCode) CException::eInvalid, \
-            (message), extra_param, severity) \
+            (message), extra_param, severity, 0) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
 END_NCBI_SCOPE

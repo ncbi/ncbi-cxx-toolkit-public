@@ -424,8 +424,7 @@ public:
                        const CException* prev_exception, EErrCode err_code,
                        const string& message, TPid pid = 0, 
                        EDiagSev severity = eDiag_Error)
-        : CException(info, prev_exception, CException::eInvalid,
-                     message),
+        : CException(info, prev_exception, message, severity),
           m_PID(pid)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
 

@@ -164,7 +164,7 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false),
   m_MainText(true),
-  m_Flags(0)
+  m_Flags(flags)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical->Get()) {
@@ -175,6 +175,26 @@ CException::CException(const CDiagCompileInfo& info,
         prev_exception->m_MainText = false;
 }
 
+CException::CException(const CDiagCompileInfo& info,
+                       const CException* prev_exception,
+                       const string& message,
+                       EDiagSev severity,
+                       TFlags flags)
+: m_Severity(severity),
+  m_ErrCode(CException::eInvalid),
+  m_Predecessor(0),
+  m_InReporter(false),
+  m_MainText(true),
+  m_Flags(flags)
+{
+    if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
+        s_AbortIfCritical->Get()) {
+        abort();
+    }
+    x_Init(info, message, prev_exception, severity);
+    if (prev_exception)
+        prev_exception->m_MainText = false;
+}
 
 CException::CException(const CDiagCompileInfo& info,
                        const CException* prev_exception,
