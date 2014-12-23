@@ -196,7 +196,7 @@ void CSrcWriter::xInit()
         NAMELIST nameList = xGetOrgModSubtypeNames();
         for (NAMELIST::const_iterator cit=nameList.begin();
                 cit != nameList.end(); ++cit) {
-            if (*cit != "other") {
+            if (*cit != "other" && *cit != "common") {
                 sHandlerMap[*cit] = &CSrcWriter::xGatherOrgModFeat;
             }
         }
