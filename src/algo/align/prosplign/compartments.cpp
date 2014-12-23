@@ -235,7 +235,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 }
 
 auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
-                                                                CCompartOptions compart_options, CScope *scope)
+                                                                CCompartOptions compart_options)
 {
     auto_ptr<CCompartmentAccessor<THit> > comps_ptr;
     if (orig_hitrefs.empty())
@@ -285,8 +285,7 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
     CCompartmentAccessor<THit>& comps = *comps_ptr;
 
     comps.SetMaxIntron(compart_options.m_MaxIntron);
-    comps.SetMaxOverlap(compart_options.m_MaxOverlap);
-    comps.Run(hitrefs.begin(), hitrefs.end(), scope);
+    comps.Run(hitrefs.begin(), hitrefs.end());
 
     THitRefs comphits;
     if(comps.GetFirst(comphits)) {
@@ -299,16 +298,16 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
     return comps_ptr;
 }
 
-TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options, CScope *scope)
+TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
 {
     auto_ptr<CCompartmentAccessor<THit> >  comps_ptr =
-        CreateCompartmentAccessor( orig_hitrefs, compart_options, scope);
+        CreateCompartmentAccessor( orig_hitrefs, compart_options);
 
-    TCompartments results = FormatAsAsn(comps_ptr.get(), compart_options, scope);
+    TCompartments results = FormatAsAsn(comps_ptr.get(), compart_options);
     return results;
 }
 
-TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions compart_options, CScope *scope)
+TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions compart_options)
 {
     TCompartments results;
     if (comps_ptr == NULL)
@@ -328,57 +327,10 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
             const TSeqPos* boxPtr = comps.GetBox(i);
             TSeqPos cur_begin = boxPtr[2];
             TSeqPos cur_end = boxPtr[3];
+            TSeqPos cur_begin_extended = cur_begin < max_extent ? 0 : cur_begin - max_extent;
+            TSeqPos cur_end_extended = cur_end + max_extent;
 
             CRef<CSeq_loc> cur_compartment_loc(&compartment->SetDesc().Set().back()->SetRegion());
-
-            TSeqPos cur_begin_extended = cur_begin < max_extent ? 0 : cur_begin - max_extent;
-            //prohibit extension to go over non-bridgeable gaps    
-            if( scope &&  cur_begin_extended < cur_begin ) {
-                THit::TId tid (cur_compartment_loc->GetId());       
-                CRef<CSeq_id> tmp_id(new CSeq_id());
-                tmp_id->Assign(*tid);
-                CSeq_loc tmp_loc(*tmp_id, cur_begin_extended, cur_begin - 1, eNa_strand_plus);
-                CConstRef<CSeqMap> smap = CSeqMap::GetSeqMapForSeq_loc(tmp_loc, scope);
-                if(smap) {
-                    TSeqPos tmplen = cur_begin - cur_begin_extended;
-                    CSeqMap_CI smit = smap->ResolvedRangeIterator(scope,   0, tmplen, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
-                    for(;smit; ++smit) {
-                        if(smit.GetType() == CSeqMap::eSeqGap) {
-                            CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                            if(slit && !slit->IsBridgeable()) {
-                                TSeqPos pos = smit.GetEndPosition();
-                                _ASSERT( cur_begin_extended + pos <= cur_begin );
-                                cur_begin_extended += pos;
-                            }
-                        }
-                    }
-                }
-            }
-
-            TSeqPos cur_end_extended = cur_end + max_extent;
-            //prohibit extension to go over non-bridgeable gaps    
-            if( scope && cur_end_extended > cur_end ) {
-                THit::TId tid (cur_compartment_loc->GetId());       
-                CRef<CSeq_id> tmp_id(new CSeq_id());
-                tmp_id->Assign(*tid);
-                CSeq_loc tmp_loc(*tmp_id, cur_end + 1, cur_end_extended, eNa_strand_plus);
-                CConstRef<CSeqMap> smap = CSeqMap::GetSeqMapForSeq_loc(tmp_loc, scope);
-                if(smap) {
-                    TSeqPos tmplen = cur_end_extended - cur_end;
-                    CSeqMap_CI smit = smap->ResolvedRangeIterator(scope,   0, tmplen, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
-                    for(;smit; ++smit) {
-                        if(smit.GetType() == CSeqMap::eSeqGap) {
-                            CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                            if(slit && !slit->IsBridgeable()) {
-                                TSeqPos pos = smit.GetPosition();
-                                _ASSERT( cur_end + pos < cur_end_extended );
-                                cur_end_extended = cur_end + pos;
-                            }
-                        }
-                    }
-                }
-            }
-
             cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);
             cur_compartment_loc->SetInt().SetTo(cur_end_extended);
 
@@ -389,7 +341,7 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
                 TSeqPos prev_end_extended = prev_compartment_loc->GetStop(eExtreme_Positional);
                 TSeqPos prev_end = prev_end_extended - max_extent;
                 _ASSERT(prev_end < cur_begin);
-                if (prev_end_extended >= cur_begin_extended) {// no non-bridgeable gaps
+                if (prev_end_extended >= cur_begin_extended) {
                     prev_end_extended = (prev_end + cur_begin)/2;
                     cur_begin_extended = prev_end_extended+1;
                     _ASSERT(cur_begin_extended <= cur_begin);
@@ -452,7 +404,6 @@ const double CCompartOptions::default_CompartmentPenalty = 0.5;
 const double CCompartOptions::default_MinCompartmentIdty = 0.5;
 const double CCompartOptions::default_MinSingleCompartmentIdty = 0.25;
 const int CCompartOptions::default_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
-const int CCompartOptions::default_MaxOverlap = CCompartmentFinder<THit>::s_GetDefaultMaxOverlap();
 const char* CCompartOptions::s_scoreNames[] = {"coverage", "identity", "score"};
 
 void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
@@ -502,13 +453,6 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          NStr::IntToString(CCompartOptions::default_MaxIntron));
 
     argdescr->AddDefaultKey
-        ("max_overlap",
-         "integer",
-         "Maximal compartment overlap on subject in bp.",
-         CArgDescriptions::eInteger,
-         NStr::IntToString(CCompartOptions::default_MaxOverlap));
-
-    argdescr->AddDefaultKey
         ("maximize",
          "param",
          "parameter to maximize",
@@ -538,8 +482,7 @@ CCompartOptions::CCompartOptions(const CArgs& args) :
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
     m_MinSingleCompartmentIdty(args["min_singleton_idty"].AsDouble()),
     m_MaxExtent(args["max_extent"].AsInteger()),
-    m_MaxIntron(args["max_intron"].AsInteger()),
-    m_MaxOverlap(args["max_overlap"].AsInteger())
+    m_MaxIntron(args["max_intron"].AsInteger())
 {
     if (args["maximize"]) { 
         m_Maximizing = default_Maximizing;

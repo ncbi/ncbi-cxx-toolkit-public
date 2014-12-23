@@ -54,7 +54,6 @@ public:
     int    m_MaxExtent;
     bool   m_ByCoverage;
     int    m_MaxIntron;
-    int    m_MaxOverlap;
     enum EMaximizing {
         eCoverage = 0,
         eIdentity,
@@ -74,7 +73,6 @@ public:
     static const int    default_MaxExtent = 500;
     static const bool   default_ByCoverage = true;
     static const int    default_MaxIntron;
-    static const int    default_MaxOverlap;
     static const EMaximizing default_Maximizing = default_ByCoverage?eCoverage:eIdentity;
     static const ESubjectMol default_SubjectMol = eGuess;
     static const char* s_scoreNames[];
@@ -109,14 +107,13 @@ typedef list<CRef<CSeq_annot> > TCompartments;
 typedef vector<SCompartment> TCompartmentStructs;
 
 /// Selects compartments. Hits should be for a single query-subject pair.
-/// Pass scope to prohibit compartment to go over non-bridgeable gaps
 
 NCBI_XALGOALIGN_EXPORT
 auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
-                                                                CCompartOptions compart_options, CScope *scope = NULL);
+                                                                CCompartOptions compart_options);
 
 NCBI_XALGOALIGN_EXPORT
-TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comparts_ptr, CCompartOptions compart_options, CScope *scope = NULL);
+TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comparts_ptr, CCompartOptions compart_options);
 
 
 NCBI_XALGOALIGN_EXPORT
@@ -127,7 +124,7 @@ TCompartmentStructs MakeCompartments(const TCompartments& asn_representation,
 /// Composition of first two functions
 NCBI_XALGOALIGN_EXPORT
 TCompartments SelectCompartmentsHits(const THitRefs& hitrefs,
-                                     CCompartOptions compart_options, CScope *scope = NULL );
+                                     CCompartOptions compart_options);
 
 /// Composition of all three functions
 NCBI_XALGOALIGN_EXPORT
