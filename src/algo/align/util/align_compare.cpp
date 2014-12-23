@@ -723,7 +723,7 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
             if (group_it->second == e_Overlap && !m_QualityScores.empty())
             {
                 /// Find which side is better
-                vector<SAlignment *> best(3, NULL);
+                vector<SAlignment *> best(3, nullptr);
                 ITERATE (TAlignPtrSet, align_it, group_it->first) {
                     SAlignment *&side_best = best[(*align_it)->source_set];
                     if (!side_best || (*align_it)->quality_scores >
