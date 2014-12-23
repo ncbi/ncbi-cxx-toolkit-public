@@ -285,6 +285,7 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
     CCompartmentAccessor<THit>& comps = *comps_ptr;
 
     comps.SetMaxIntron(compart_options.m_MaxIntron);
+    comps.SetMaxOverlap(compart_options.m_MaxOverlap);
     comps.Run(hitrefs.begin(), hitrefs.end());
 
     THitRefs comphits;
@@ -404,6 +405,7 @@ const double CCompartOptions::default_CompartmentPenalty = 0.5;
 const double CCompartOptions::default_MinCompartmentIdty = 0.5;
 const double CCompartOptions::default_MinSingleCompartmentIdty = 0.25;
 const int CCompartOptions::default_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
+const int CCompartOptions::default_MaxOverlap = CCompartmentFinder<THit>::s_GetDefaultMaxOverlap();
 const char* CCompartOptions::s_scoreNames[] = {"coverage", "identity", "score"};
 
 void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
@@ -453,6 +455,13 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          NStr::IntToString(CCompartOptions::default_MaxIntron));
 
     argdescr->AddDefaultKey
+        ("max_overlap",
+         "integer",
+         "Maximal compartment overlap on subject in bp.",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CCompartOptions::default_MaxOverlap));
+
+    argdescr->AddDefaultKey
         ("maximize",
          "param",
          "parameter to maximize",
@@ -482,7 +491,8 @@ CCompartOptions::CCompartOptions(const CArgs& args) :
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
     m_MinSingleCompartmentIdty(args["min_singleton_idty"].AsDouble()),
     m_MaxExtent(args["max_extent"].AsInteger()),
-    m_MaxIntron(args["max_intron"].AsInteger())
+    m_MaxIntron(args["max_intron"].AsInteger()),
+    m_MaxOverlap(args["max_overlap"].AsInteger())
 {
     if (args["maximize"]) { 
         m_Maximizing = default_Maximizing;
