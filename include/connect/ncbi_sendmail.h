@@ -56,8 +56,8 @@ enum ESendMailOption {
     fSendMail_LogOff           = eOff,     /**<      fSOCK_LogDefault */
     fSendMail_NoMxHeader       = (1 << 4), /**< Don't add standard mail header,
                                                 just use what user provided */
-    fSendMail_Old822Headers    = (1 << 6), /**< Do not form "Date:" and "From:"
-                                                but let them be defaulted */
+    fSendMail_Old822Headers    = (1 << 6), /**< Form "Date:" and "From:" hdrs
+                                                (usually they are defaulted) */
     fSendMail_StripNonFQDNHost = (1 << 8), /**< Strip host part off the "from"
                                                 field if it does not look like
                                                 an FQDN (i.e. does not have at
