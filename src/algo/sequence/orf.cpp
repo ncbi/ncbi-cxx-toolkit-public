@@ -337,6 +337,40 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
 }
 
 
+vector<string> COrf::GetStartCodons(int genetic_code, bool include_atg, bool include_alt)
+{
+    const objects::CTrans_table& tbl = 
+            objects::CGen_code_table::GetTransTable(genetic_code); 
+
+    static const char* iupacs = "ACGTRYSWKMBDHVN";
+    static const Uint1 k_num_iupacs = 15;
+
+    vector<string> codons;
+    for(Uint1 i1 = 0; i1 < k_num_iupacs; i1++) {
+        char c1 = iupacs[i1];
+        for(Uint1 i2 = 0; i2 < k_num_iupacs; i2++) {
+            char c2 = iupacs[i2];
+            for(Uint1 i3 = 0; i3 < k_num_iupacs; i3++) {
+                char c3 = iupacs[i3];
+                int state = tbl.SetCodonState(c1, c2, c3);
+
+                if(   (include_atg && tbl.IsATGStart(state))
+                   || (include_alt && tbl.IsAltStart(state)) ) 
+                {
+                    codons.resize(codons.size() + 1);
+                    codons.back().resize(3);
+                    codons.back()[0] = c1;
+                    codons.back()[1] = c2;
+                    codons.back()[2] = c3;
+                }
+            }
+        }
+    }
+
+    return codons;
+}
+
+
 //
 // find ORFs in a string
 void COrf::FindOrfs(const string& seq_iupac,

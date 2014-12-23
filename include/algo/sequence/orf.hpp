@@ -89,6 +89,9 @@ public:
                          bool longest_orfs = true,
                          size_t max_seq_gap = k_default_max_seq_gap);
 
+    /// Create vector of allowable_starts by genetic-code.
+    /// satisfying CTrans_table::IsATGStart() and/or CTrans_table::IsAltStart()
+    static vector<string> GetStartCodons(int genetic_code, bool include_atg, bool include_alt);
 
     /// Specifically find ORFS with a strong Kozak signal that are upstream of
     /// cds_start. Separately report uORFS overlapping cds start and uORFs of
