@@ -123,7 +123,9 @@ public:
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED(const TStringUnicode& src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED(const TStringUCS4&    src);
+#endif
     CStringUTF8_DEPRECATED(const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED(const wstring&        src);
@@ -135,7 +137,9 @@ public:
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED(const TUnicodeSymbol* src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED(const TCharUCS4*      src);
+#endif
     CStringUTF8_DEPRECATED(const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED(const wchar_t*        src);
@@ -153,8 +157,10 @@ public:
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED(ECharBufferType type,
                 const TUnicodeSymbol* src, SIZE_TYPE char_count);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED(ECharBufferType type,
                 const TCharUCS4*      src, SIZE_TYPE char_count);
+#endif
     CStringUTF8_DEPRECATED(ECharBufferType type,
                 const TCharUCS2*      src, SIZE_TYPE char_count);
 #if defined(HAVE_WSTRING)
@@ -171,7 +177,9 @@ public:
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& operator= (const TStringUnicode& src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& operator= (const TStringUCS4&    src);
+#endif
     CStringUTF8_DEPRECATED& operator= (const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& operator= (const wstring&        src);
@@ -183,7 +191,9 @@ public:
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& operator= (const TUnicodeSymbol* src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& operator= (const TCharUCS4*      src);
+#endif
     CStringUTF8_DEPRECATED& operator= (const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& operator= (const wchar_t*        src);
@@ -198,7 +208,9 @@ public:
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& operator+= (const TStringUnicode& src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& operator+= (const TStringUCS4&    src);
+#endif
     CStringUTF8_DEPRECATED& operator+= (const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& operator+= (const wstring&        src);
@@ -210,7 +222,9 @@ public:
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& operator+= (const TUnicodeSymbol* src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& operator+= (const TCharUCS4*      src);
+#endif
     CStringUTF8_DEPRECATED& operator+= (const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& operator+= (const wchar_t*        src);
@@ -235,7 +249,9 @@ public:
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& Assign(const TStringUnicode& src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& Assign(const TStringUCS4&    src);
+#endif
     CStringUTF8_DEPRECATED& Assign(const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& Assign(const wstring&        src);
@@ -247,7 +263,9 @@ public:
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& Assign(const TUnicodeSymbol* src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& Assign(const TCharUCS4*      src);
+#endif
     CStringUTF8_DEPRECATED& Assign(const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& Assign(const wchar_t*        src);
@@ -265,8 +283,10 @@ public:
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const TUnicodeSymbol* src, SIZE_TYPE char_count);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const TCharUCS4*      src, SIZE_TYPE char_count);
+#endif
     CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const TCharUCS2*      src, SIZE_TYPE char_count);
 #if defined(HAVE_WSTRING)
@@ -302,7 +322,9 @@ public:
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& Append(const TStringUnicode& src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& Append(const TStringUCS4&    src);
+#endif
     CStringUTF8_DEPRECATED& Append(const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& Append(const wstring&        src);
@@ -314,7 +336,9 @@ public:
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& Append(const TUnicodeSymbol* src);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& Append(const TCharUCS4*      src);
+#endif
     CStringUTF8_DEPRECATED& Append(const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
     CStringUTF8_DEPRECATED& Append(const wchar_t*        src);
@@ -332,8 +356,10 @@ public:
     /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const TUnicodeSymbol* src, SIZE_TYPE char_count);
+#if NCBITOOLKIT_USE_LONG_UCS4
     CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const TCharUCS4*      src, SIZE_TYPE char_count);
+#endif
     CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const TCharUCS2*      src, SIZE_TYPE char_count);
 #if defined(HAVE_WSTRING)

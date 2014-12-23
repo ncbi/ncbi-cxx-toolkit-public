@@ -2903,10 +2903,16 @@ typedef Uint4 TUnicodeSymbol;
 /// Unicode string
 typedef basic_string<TUnicodeSymbol> TStringUnicode;
 
+#define NCBITOOLKIT_USE_LONG_UCS4 0
+#if NCBITOOLKIT_USE_LONG_UCS4
 /// UCS-4 character
 typedef unsigned long TCharUCS4;
 /// UCS-4 string
 typedef basic_string<TCharUCS4> TStringUCS4;
+#else
+typedef TUnicodeSymbol TCharUCS4;
+typedef TStringUnicode TStringUCS4;
+#endif
 
 /// Type for character in UCS-2 encoding
 typedef Uint2 TCharUCS2;
@@ -2973,8 +2979,10 @@ public:
     ///   If it equals to NPOS, buffer is assumed to be zero-terminated
     static CStringUTF8 AsUTF8(const TUnicodeSymbol* src,
                               SIZE_TYPE             tchar_count = NPOS);
+#if NCBITOOLKIT_USE_LONG_UCS4
     static CStringUTF8 AsUTF8(const TCharUCS4*      src,
                               SIZE_TYPE             tchar_count = NPOS);
+#endif
     static CStringUTF8 AsUTF8(const TCharUCS2*      src,
                               SIZE_TYPE             tchar_count = NPOS);
 #if defined(HAVE_WSTRING)
@@ -5301,10 +5309,12 @@ template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<TUnicodeSymbol>&
     CStringUTF8 u8;
     return  x_Append(u8, src.begin(), src.end());
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<TCharUCS4>& src) {
     CStringUTF8 u8;
     return  x_Append(u8, src.begin(), src.end());
 }
+#endif
 template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<TCharUCS2>& src) {
     CStringUTF8 u8;
     return  x_Append(u8, src.begin(), src.end());
@@ -5321,11 +5331,13 @@ CUtf8::AsUTF8(const TUnicodeSymbol* src, SIZE_TYPE tchar_count) {
     CStringUTF8 u8;
     return  x_Append(u8, src, tchar_count);
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 inline CStringUTF8
 CUtf8::AsUTF8(const TCharUCS4* src, SIZE_TYPE tchar_count) {
     CStringUTF8 u8;
     return  x_Append(u8, src, tchar_count);
 }
+#endif
 inline CStringUTF8
 CUtf8::AsUTF8(const TCharUCS2* src, SIZE_TYPE tchar_count) {
     CStringUTF8 u8;
@@ -5347,10 +5359,12 @@ template <> inline CStringUTF8&
 CUtf8::AppendAsUTF8(CStringUTF8& u8, const TUnicodeSymbol* src, SIZE_TYPE tchar_count) {
     return  x_Append(u8, src, tchar_count);
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 template <> inline CStringUTF8&
 CUtf8::AppendAsUTF8(CStringUTF8& u8, const TCharUCS4* src, SIZE_TYPE tchar_count) {
     return  x_Append(u8, src, tchar_count);
 }
+#endif
 template <> inline CStringUTF8&
 CUtf8::AppendAsUTF8(CStringUTF8& u8, const TCharUCS2* src, SIZE_TYPE tchar_count) {
     return  x_Append(u8, src, tchar_count);
@@ -5395,11 +5409,13 @@ CUtf8::AsBasicString(const CTempString& str,
     const TUnicodeSymbol* on_error, EValidate validate) {
     return CUtf8::x_AsBasicString<TUnicodeSymbol>(str,on_error,validate);
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 template <> inline basic_string<TCharUCS4>
 CUtf8::AsBasicString(const CTempString& str,
     const TCharUCS4* on_error, EValidate validate) {
     return CUtf8::x_AsBasicString<TCharUCS4>(str,on_error,validate);
 }
+#endif
 template <> inline basic_string<TCharUCS2>
 CUtf8::AsBasicString(const CTempString& str,
     const TCharUCS2* on_error, EValidate validate) {

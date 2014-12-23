@@ -5685,9 +5685,11 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TStringUnicode& src) {
     assign( CUtf8::AsUTF8(src));
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TStringUCS4& src) {
     assign( CUtf8::AsUTF8(src));
 }
+#endif
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TStringUCS2& src) {
     assign( CUtf8::AsUTF8(src));
 }
@@ -5699,9 +5701,11 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const wstring& src) {
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TUnicodeSymbol* src) {
     assign( CUtf8::AsUTF8(src));
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TCharUCS4* src) {
     assign( CUtf8::AsUTF8(src));
 }
+#endif
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TCharUCS2* src) {
     assign( CUtf8::AsUTF8(src));
 }
@@ -5715,10 +5719,12 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
+#endif
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
@@ -5779,9 +5785,11 @@ CStringUTF8::CStringUTF8(
 CStringUTF8::CStringUTF8(const TStringUnicode& src) {
     assign( CUtf8::AsUTF8(src));
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8::CStringUTF8(const TStringUCS4& src) {
     assign( CUtf8::AsUTF8(src));
 }
+#endif
 CStringUTF8::CStringUTF8(const TStringUCS2& src) {
     assign( CUtf8::AsUTF8(src));
 }
@@ -5793,9 +5801,11 @@ CStringUTF8::CStringUTF8(const wstring& src) {
 CStringUTF8::CStringUTF8(const TUnicodeSymbol* src) {
     assign( CUtf8::AsUTF8(src));
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8::CStringUTF8(const TCharUCS4* src) {
     assign( CUtf8::AsUTF8(src));
 }
+#endif
 CStringUTF8::CStringUTF8(const TCharUCS2* src) {
     assign( CUtf8::AsUTF8(src));
 }
@@ -5810,10 +5820,12 @@ CStringUTF8::CStringUTF8(
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
 
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8::CStringUTF8(
     ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
+#endif
 
 CStringUTF8::CStringUTF8(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
@@ -5828,10 +5840,12 @@ CStringUTF8& CStringUTF8::operator= (const TStringUnicode& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::operator= (const TStringUCS4& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::operator= (const TStringUCS2& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
@@ -5846,10 +5860,12 @@ CStringUTF8& CStringUTF8::operator= (const TUnicodeSymbol* src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::operator= (const TCharUCS4* src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::operator= (const TCharUCS2* src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
@@ -5864,10 +5880,12 @@ CStringUTF8& CStringUTF8::operator+= (const TStringUnicode& src) {
     append( CUtf8::AsUTF8(src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::operator+= (const TStringUCS4& src) {
     append( CUtf8::AsUTF8(src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::operator+= (const TStringUCS2& src) {
     append( CUtf8::AsUTF8(src));
     return *this;
@@ -5882,10 +5900,12 @@ CStringUTF8& CStringUTF8::operator+= (const TUnicodeSymbol* src) {
     append( CUtf8::AsUTF8(src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::operator+= (const TCharUCS4* src) {
     append( CUtf8::AsUTF8(src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::operator+= (const TCharUCS2* src) {
     append( CUtf8::AsUTF8(src));
     return *this;
@@ -5906,10 +5926,12 @@ CStringUTF8& CStringUTF8::Assign(const TStringUnicode& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::Assign(const TStringUCS4& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::Assign(const TStringUCS2& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
@@ -5924,10 +5946,12 @@ CStringUTF8& CStringUTF8::Assign(const TUnicodeSymbol* src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::Assign(const TCharUCS4* src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::Assign(const TCharUCS2* src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
@@ -5943,11 +5967,13 @@ CStringUTF8& CStringUTF8::Assign(
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::Assign(
     ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::Assign(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
@@ -5973,10 +5999,12 @@ CStringUTF8& CStringUTF8::Append(const TStringUnicode& src) {
     append( CUtf8::AsUTF8( src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::Append(const TStringUCS4& src) {
     append( CUtf8::AsUTF8( src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::Append(const TStringUCS2& src) {
     append( CUtf8::AsUTF8( src));
     return *this;
@@ -5991,10 +6019,12 @@ CStringUTF8& CStringUTF8::Append(const TUnicodeSymbol* src) {
     append( CUtf8::AsUTF8( src));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::Append(const TCharUCS4* src) {
     append( CUtf8::AsUTF8( src));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::Append(const TCharUCS2* src) {
     append( CUtf8::AsUTF8( src));
     return *this;
@@ -6010,11 +6040,13 @@ CStringUTF8& CStringUTF8::Append(
     append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
+#if NCBITOOLKIT_USE_LONG_UCS4
 CStringUTF8& CStringUTF8::Append(
     ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
     append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
+#endif
 CStringUTF8& CStringUTF8::Append(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
     append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));

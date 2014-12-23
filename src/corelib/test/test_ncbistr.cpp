@@ -3099,6 +3099,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         CUtf8::AppendAsUTF8(w8test,xxxwss.data(), xxxwss.size());
         CUtf8::AppendAsUTF8(w8test,xxxwss[0]);
     }
+#if NCBITOOLKIT_USE_LONG_UCS4
     {
         typedef unsigned long xxxMywchar;
         basic_string<xxxMywchar> xxxwss;
@@ -3110,6 +3111,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         CUtf8::AppendAsUTF8(w8test,xxxwss.data(), xxxwss.size());
         CUtf8::AppendAsUTF8(w8test,xxxwss[0]);
     }
+#endif
     {
 // iteration
         wss.erase().append(1,0x1000).append(1,0x1100).append(1,0x1110).append(1,0x1111);
