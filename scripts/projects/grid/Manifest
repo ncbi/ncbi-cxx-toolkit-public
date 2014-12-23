@@ -38,8 +38,6 @@ ETC: src/app/grid/util/file_upload.ini
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32-Centos : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
-Linux32-Centos : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Linux64-Centos : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
 Linux64-Centos : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Linux64-Ubuntu : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
