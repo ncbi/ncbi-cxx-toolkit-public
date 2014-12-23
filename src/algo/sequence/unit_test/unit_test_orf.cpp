@@ -50,6 +50,7 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
 #include <algo/sequence/orf.hpp>
@@ -108,10 +109,10 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         {{
             CSeqVector sv(bsh);
             size_t min_length = 300; //=100 codons options in gbench
-            size_t max_N_span = 30;
+            size_t max_seq_gap = 30;
             vector<string> allowable_starts(1, "ATG");
             bool longest_orfs = true;
-            COrf::FindOrfs(sv, loc_vec, min_length, gcode, allowable_starts, longest_orfs);
+            COrf::FindOrfs(sv, loc_vec, min_length, gcode, allowable_starts, longest_orfs, max_seq_gap);
         }}
 
         CRef<CSeq_annot> my_annot = COrf::MakeCDSAnnot(loc_vec, gcode, const_cast<CSeq_id*>(&seq_id));
