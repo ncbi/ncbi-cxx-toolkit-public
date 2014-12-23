@@ -961,16 +961,48 @@ CNetStorageHandler::x_ProcessHealth(
                    "Anonymous client cannot request server health");
     }
 
-    if (!m_Server->IsAdminClientName(m_Client)) {
-        string      msg = "Only administrators can request server health";
-        m_Server->RegisterAlert(eAccess, msg);
-        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
-    }
+    // GRID dashboard needs this command to be executed regardless of the
+    // configuration settings, so the requirement of being an admin is
+    // removed
+    // if (!m_Server->IsAdminClientName(m_Client)) {
+    //     string      msg = "Only administrators can request server health";
+    //     m_Server->RegisterAlert(eAccess, msg);
+    //     NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+    // }
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     reply.SetByKey("Alerts", m_Server->SerializeAlerts());
+
+    // Generic database info
+    CJsonNode       db_stat_node(CJsonNode::NewObjectNode());
+    bool            connected = m_Server->GetDb().IsConnected();
+
+    db_stat_node.SetBoolean("connected", connected);
+    if (connected) {
+        try {
+            map<string, string>   db_stat = m_Server->GetDb().
+                                                        ExecSP_GetGeneralDBInfo();
+            for (map<string, string>::const_iterator  k = db_stat.begin();
+                 k != db_stat.end(); ++k)
+                db_stat_node.SetString(k->first, k->second);
+
+            db_stat = m_Server->GetDb().ExecSP_GetStatDBInfo();
+            for (map<string, string>::const_iterator  k = db_stat.begin();
+                 k != db_stat.end(); ++k)
+                db_stat_node.SetString(k->first, k->second);
+        } catch (const std::exception &  ex) {
+            // Health must not fail if there is no meta DB connection
+            AppendWarning(reply, eDatabaseWarning, ex.what());
+        } catch (...) {
+            // Health must not fail if there is no meta DB connection
+            AppendWarning(reply, eDatabaseWarning,
+                          "Unknown metainfo DB access error");
+        }
+    }
+    reply.SetByKey("MetainfoDB", db_stat_node);
+
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
@@ -1224,13 +1256,15 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             TNSTDBValue<CTime>  attr_write;
             TNSTDBValue<Int8>   read_count;
             TNSTDBValue<Int8>   write_count;
+            TNSTDBValue<string> client_name;
             int                 status = m_Server->GetDb().
                                             ExecSP_GetObjectFixedAttributes(
                                                 object_id.object_key,
                                                 expiration, creation,
                                                 obj_read, obj_write,
                                                 attr_read, attr_write,
-                                                read_count, write_count);
+                                                read_count, write_count,
+                                                client_name);
 
             if (status != 0) {
                 // The record in the meta DB for the object is not found
@@ -1242,6 +1276,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 reply.SetString("AttrWriteTime", "NoMetadataFound");
                 reply.SetString("ObjectReadCount", "NoMetadataFound");
                 reply.SetString("ObjectWriteCount", "NoMetadataFound");
+                reply.SetString("ClientName", "NoMetadataFound");
             } else {
                 // The record in the meta DB for the object is found
                 if (expiration.m_IsNull)
@@ -1290,6 +1325,10 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 else
                     reply.SetString("ObjectWriteCount",
                                     NStr::NumericToString(write_count.m_Value));
+                if (client_name.m_IsNull)
+                    reply.SetString("ClientName", "NotSet");
+                else
+                    reply.SetString("ClientName", client_name.m_Value);
             }
         } catch (const CNetStorageServerException &  ex) {
             if (ex.GetErrCode() == CNetStorageServerException::
@@ -1305,6 +1344,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("AttrWriteTime", "MetadataAccessWarning");
             reply.SetString("ObjectReadCount", "MetadataAccessWarning");
             reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
+            reply.SetString("ClientName", "MetadataAccessWarning");
             AppendWarning(reply, eDatabaseWarning, ex.what());
         } catch (const exception &  ex) {
             reply.SetString("ExpirationTime", "MetadataAccessWarning");
@@ -1315,6 +1355,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("AttrWriteTime", "MetadataAccessWarning");
             reply.SetString("ObjectReadCount", "MetadataAccessWarning");
             reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
+            reply.SetString("ClientName", "MetadataAccessWarning");
             AppendWarning(reply, eDatabaseWarning, "Error while getting an "
                           "object expiration and creation time: " +
                           string(ex.what()));
@@ -1327,6 +1368,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("AttrWriteTime", "MetadataAccessWarning");
             reply.SetString("ObjectReadCount", "MetadataAccessWarning");
             reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
+            reply.SetString("ClientName", "MetadataAccessWarning");
             AppendWarning(reply, eDatabaseWarning, "Unknown error while "
                           "getting an object expiration and creation time");
         }
@@ -1339,6 +1381,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
         reply.SetString("AttrWriteTime", "NoMetadataAccess");
         reply.SetString("ObjectReadCount", "NoMetadataAccess");
         reply.SetString("ObjectWriteCount", "NoMetadataAccess");
+        reply.SetString("ClientName", "NoMetadataAccess");
     }
 
 

@@ -74,6 +74,8 @@ public:
     ~CNSTDatabase(void);
 
     void InitialConnect(void);
+    bool IsConnected(void) const
+    { return m_Connected; }
 
     int  ExecSP_GetNextObjectID(Int8 &  object_id);
     int  ExecSP_CreateClient(const string &  client,
@@ -126,9 +128,12 @@ public:
                                          TNSTDBValue<CTime> &  attr_read,
                                          TNSTDBValue<CTime> &  attr_write,
                                          TNSTDBValue<Int8> &   read_count,
-                                         TNSTDBValue<Int8> &   write_count);
+                                         TNSTDBValue<Int8> &   write_count,
+                                         TNSTDBValue<string> & client_name);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
                                     TNSTDBValue<CTime> &  expiration);
+    map<string, string>  ExecSP_GetGeneralDBInfo(void);
+    map<string, string>  ExecSP_GetStatDBInfo(void);
 
 private:
     void x_ReadDbAccessInfo(void);

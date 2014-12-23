@@ -525,7 +525,8 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                               TNSTDBValue<CTime> &  attr_read,
                                               TNSTDBValue<CTime> &  attr_write,
                                               TNSTDBValue<Int8> &   read_count,
-                                              TNSTDBValue<Int8> &   write_count
+                                              TNSTDBValue<Int8> &   write_count,
+                                              TNSTDBValue<string> & client_name
                                               )
 {
     x_PreCheckConnection();
@@ -550,6 +551,8 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                         eSDB_Int8, eSP_InOut);
         query.SetParameter("@write_cnt", write_count.m_Value,
                                          eSDB_Int8, eSP_InOut);
+        query.SetParameter("@client_name", client_name.m_Value,
+                                           eSDB_String, eSP_InOut);
 
         query.ExecuteSP("GetObjectFixedAttributes");
         query.VerifyDone();
@@ -588,6 +591,10 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
             if (!write_count.m_IsNull)
                 write_count.m_Value = query.GetParameter("@write_cnt").
                                                                 AsInt8();
+            client_name.m_IsNull = query.GetParameter("@client_name").IsNull();
+            if (!client_name.m_IsNull)
+                client_name.m_Value = query.GetParameter("@client_name").
+                                                                AsString();
         }
         return status;
     } catch (...) {
@@ -628,6 +635,62 @@ CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
         x_PostCheckConnection();
         throw;
     }
+}
+
+
+map<string, string>
+CNSTDatabase::ExecSP_GetGeneralDBInfo(void)
+{
+    map<string, string>     result;
+    x_PreCheckConnection();
+
+    try {
+        CQuery      query = x_NewQuery();
+        query.ExecuteSP("sp_spaceused");
+
+        // sp_spaceused provides two recordsets 1 record each, e.g.
+        // NETSTORAGE   224.88 MB   98.34 MB
+        // 1696 KB   752 KB  736 KB  208 KB
+        ITERATE(CQuery, qit, query.SingleSet()) {
+            for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
+                string  columnName = qit.GetColumnName(k);
+                result[columnName] = qit[k].AsString();
+            }
+        }
+        query.VerifyDone();
+    } catch (...) {
+        m_Server->RegisterAlert(eDB, "DB error while getting general DB info");
+        x_PostCheckConnection();
+        throw;
+    }
+    return result;
+}
+
+
+map<string, string>
+CNSTDatabase::ExecSP_GetStatDBInfo(void)
+{
+    map<string, string>     result;
+    x_PreCheckConnection();
+
+    try {
+        CQuery      query = x_NewQuery();
+        query.ExecuteSP("GetStatInfo");
+
+        ITERATE(CQuery, qit, query.SingleSet()) {
+            for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
+                string  columnName = qit.GetColumnName(k);
+                result[columnName] = qit[k].AsString();
+            }
+        }
+        query.VerifyDone();
+    } catch (...) {
+        m_Server->RegisterAlert(eDB,
+                                "DB error while getting statistics DB info");
+        x_PostCheckConnection();
+        throw;
+    }
+    return result;
 }
 
 

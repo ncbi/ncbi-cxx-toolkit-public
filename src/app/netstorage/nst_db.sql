@@ -68,7 +68,9 @@ BEGIN
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Versions')) OR
-       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes'))
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetStatInfo')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClientObjects'))
     BEGIN
         RAISERROR( 'Do not run the script on existing database', 11, 1 )
         SET NOEXEC ON
@@ -114,6 +116,10 @@ IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetNextObjectID')
     DROP PROCEDURE GetNextObjectID
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClient')
     DROP PROCEDURE CreateClient
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetStatInfo')
+    DROP PROCEDURE GetStatInfo
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClientObjects')
+    DROP PROCEDURE GetClientObjects
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'AttrValues')
     DROP TABLE AttrValues
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')
@@ -714,10 +720,12 @@ CREATE PROCEDURE GetObjectFixedAttributes
     @attr_read      DATETIME OUT,
     @attr_write     DATETIME OUT,
     @read_cnt       BIGINT OUT,
-    @write_cnt      BIGINT OUT
+    @write_cnt      BIGINT OUT,
+    @client_name    VARCHAR(256) OUT
 AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL
+    DECLARE @cl_id          BIGINT = NULL
 
     BEGIN TRANSACTION
     BEGIN TRY
@@ -736,8 +744,10 @@ BEGIN
         SELECT @expiration = tm_expiration, @creation = tm_create,
                @obj_read = tm_read, @obj_write = tm_write,
                @attr_read = tm_attr_read, @attr_write = tm_attr_write,
-               @read_cnt = read_count, @write_cnt = write_count
+               @read_cnt = read_count, @write_cnt = write_count,
+               @cl_id = client_id
                FROM Objects WHERE object_key = @object_key
+        SELECT @client_name = name FROM Clients WHERE client_id = @cl_id
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION
@@ -1022,6 +1032,65 @@ END
 GO
 
 
+CREATE PROCEDURE GetClientObjects
+    @client_name    VARCHAR(256),
+    @limit          BIGINT = NULL
+AS
+BEGIN
+    DECLARE @client_id      BIGINT = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+
+        -- Get the client ID
+        SELECT @client_id = client_id FROM Clients WHERE name = @client_name
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+        IF @client_id IS NULL
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN -1               -- client is not found
+        END
+
+        -- This is the output recordset!
+        IF @limit IS NULL
+        BEGIN
+            SELECT object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= GETDATE() ORDER BY object_id ASC
+            IF @@ERROR != 0
+            BEGIN
+                ROLLBACK TRANSACTION
+                RETURN 1
+            END
+        END
+        ELSE
+        BEGIN
+            SELECT TOP(@limit) object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= GETDATE() ORDER BY object_id ASC
+            IF @@ERROR != 0
+            BEGIN
+                ROLLBACK TRANSACTION
+                RETURN 1
+            END
+        END
+
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
 CREATE PROCEDURE GetAttribute
     @object_key     VARCHAR(256),
     @attr_name      VARCHAR(256),
@@ -1099,6 +1168,22 @@ BEGIN
         RAISERROR( @error_message, @error_severity, @error_state )
         RETURN 1
     END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+CREATE PROCEDURE GetStatInfo
+AS
+BEGIN
+    BEGIN TRANSACTION
+        SELECT count(*) AS TotalObjectCount FROM Objects
+        SELECT count(*) AS ExpiredObjectCount FROM Objects WHERE tm_expiration IS NOT NULL AND tm_expiration < GETDATE()
+        SELECT count(*) AS ClientCount FROM Clients
+        SELECT count(*) AS AttributeCount FROM Attributes
+        SELECT count(*) AS AttributeValueCount FROM AttrValues
+        SELECT version as DBStructureVersion FROM Versions WHERE name = 'db_structure'
     COMMIT TRANSACTION
     RETURN 0
 END
