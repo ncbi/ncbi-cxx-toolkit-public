@@ -169,8 +169,7 @@ cdd needs cn3d
 cdd needs scoremat
 clog needs3party $(ORIG_LIBS)
 cluster needs3party $(ORIG_LIBS)
-clustering needs $(SOBJMGR_LIBS)
-clustering needs3party $(DL_LIBS)
+clustering needs cobalt
 cn3d needs mmdb
 cobalt needs $(BLAST_LIBS)
 cobalt needs xalgoalignnw
