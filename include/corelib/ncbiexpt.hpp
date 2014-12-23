@@ -1460,8 +1460,9 @@ protected:
     CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
                            const string& message,
-                           int errnum, EDiagSev severity = eDiag_Error)
-          : TBase(info, prev_exception, message, severity),
+                           int errnum, EDiagSev severity = eDiag_Error,
+                           CException::TFlags flags = 0)
+          : TBase(info, prev_exception, message, severity, flags),
             m_Errno(errnum)
     {
         this->x_Init(info, message, prev_exception, severity);
