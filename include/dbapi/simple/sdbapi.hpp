@@ -104,6 +104,12 @@ public:
     // Standard exception boilerplate code.
     CSDB_Exception(const CDiagCompileInfo& info,
                    const CException* prev_exception,
+                   const CDB_Exception::SMessageInContext& message,
+                   EDiagSev severity = eDiag_Error,
+                   CException::TFlags flags = 0);
+
+    CSDB_Exception(const CDiagCompileInfo& info,
+                   const CException* prev_exception,
                    EErrCode err_code,
                    const CDB_Exception::SMessageInContext& message,
                    EDiagSev severity = eDiag_Error)
@@ -1138,6 +1144,17 @@ private:
 //////////////////////////////////////////////////////////////////////////
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
+
+inline
+CSDB_Exception::CSDB_Exception(const CDiagCompileInfo& info,
+                               const CException* prev_exception,
+                               const CDB_Exception::SMessageInContext& message,
+                               EDiagSev severity, CException::TFlags flags)
+    : CException(info, prev_exception, message.message, severity, flags),
+      m_Context(message.context)
+{
+    x_Init(info, message, prev_exception, severity);
+}
 
 inline
 const CDB_Exception* CSDB_Exception::GetDBException(void) const
