@@ -35,8 +35,8 @@
 /// The NCBI C++ standard methods for dealing with std::string
 
 
-#include <corelib/tempstr.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/tempstr.hpp>
 #include <corelib/ncbierror.hpp>
 #ifdef NCBI_OS_OSF1
 #  include <strings.h>
