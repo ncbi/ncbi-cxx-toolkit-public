@@ -882,7 +882,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
     if (m_EOF) {
         if (bytes_read != NULL)
             *bytes_read = bytes_copied;
-        return eRW_Success;
+        return bytes_copied ? eRW_Success : eRW_Eof;
     }
 
     try {
@@ -919,7 +919,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
                 m_EOF = true;
                 if (bytes_read != NULL)
                     *bytes_read = bytes_copied;
-                return eRW_Success;
+                return bytes_copied ? eRW_Success : eRW_Eof;
 
             case CUTTPReader::eEndOfBuffer:
                 s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
