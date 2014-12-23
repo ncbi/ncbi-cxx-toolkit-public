@@ -104,12 +104,6 @@ public:
     // Standard exception boilerplate code.
     CSDB_Exception(const CDiagCompileInfo& info,
                    const CException* prev_exception,
-                   const CDB_Exception::SMessageInContext& message,
-                   EDiagSev severity = eDiag_Error,
-                   CException::TFlags flags = 0);
-
-    CSDB_Exception(const CDiagCompileInfo& info,
-                   const CException* prev_exception,
                    EErrCode err_code,
                    const CDB_Exception::SMessageInContext& message,
                    EDiagSev severity = eDiag_Error)
@@ -119,6 +113,12 @@ public:
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CSDB_Exception, CException);
 
 protected:
+    CSDB_Exception(const CDiagCompileInfo& info,
+                   const CException* prev_exception,
+                   const CDB_Exception::SMessageInContext& message,
+                   EDiagSev severity = eDiag_Error,
+                   CException::TFlags flags = 0);
+
     void x_Init(const CDiagCompileInfo& info, const string& message,
                 const CException* prev_exception, EDiagSev severity);
 
