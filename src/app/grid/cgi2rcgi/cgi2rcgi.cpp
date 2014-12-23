@@ -825,12 +825,44 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
         stringstream header_stream;
         m_CustomHTTPHeader->Print(header_stream, CNCBINode::ePlainText);
+
         string header_line;
+        string status_line;
+
+        enum {
+            eNoStatusLine,
+            eReadingStatusLine,
+            eGotStatusLine
+        } status_line_status = eNoStatusLine;
+
         CNcbiOstream& out = response.out();
         while (header_stream.good()) {
             getline(header_stream, header_line);
-            if (!header_line.empty())
-                out << header_line << "\r\n";
+            if (header_line.empty())
+                continue;
+            if (status_line_status == eReadingStatusLine) {
+                if (isspace(header_line[0])) {
+                    status_line += header_line;
+                    continue;
+                }
+                status_line_status = eGotStatusLine;
+            }
+            if (NStr::StartsWith(header_line, "Status:", NStr::eNocase)) {
+                status_line_status = eReadingStatusLine;
+                status_line = header_line;
+                continue;
+            }
+            out << header_line << "\r\n";
+        }
+        if (status_line_status != eNoStatusLine) {
+            CTempString status_code_and_reason(
+                    status_line.data() + (sizeof("Status:") - 1),
+                    status_line.size() - (sizeof("Status:") - 1));
+            NStr::TruncateSpacesInPlace(status_code_and_reason);
+            CTempString status_code, reason;
+            NStr::SplitInTwo(status_code_and_reason, CTempString(" \t", 2),
+                    status_code, reason, NStr::eMergeDelims);
+            response.SetStatus(NStr::StringToUInt(status_code), reason);
         }
         response.WriteHeader();
         m_Page->Print(out, CNCBINode::eHTML);
