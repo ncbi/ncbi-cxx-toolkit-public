@@ -188,8 +188,20 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
         }
         if ( resolved_def->size() == 1) {
             modified = true;
+#if 1
+            if (raw_define == resolved_def->front()) {
+                if (GetApp().GetSite().IsCppflagDescribed(raw_define)) {
+                    modified = false;
+                } else {
+                    NStr::ReplaceInPlace(data, raw_define, kEmptyStr);
+                }
+            } else {
+                NStr::ReplaceInPlace(data, raw_define, resolved_def->front());
+            }
+#else
             NStr::ReplaceInPlace(data, raw_define, 
                 raw_define != resolved_def->front() ? resolved_def->front() : kEmptyStr);
+#endif
             resolved_def->clear();
         }
     }
