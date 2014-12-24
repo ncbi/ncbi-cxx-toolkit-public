@@ -858,6 +858,9 @@ void SNetStorageObjectAPIImpl::Remove()
         catch (CException& e) {
             LOG_POST(Trace << e);
         }
+        break;
+    default: /* eNFL_NotFound or eNFL_FileTrack */
+        break;
     }
 
     m_CurrentLocation = eNFL_NotFound;
