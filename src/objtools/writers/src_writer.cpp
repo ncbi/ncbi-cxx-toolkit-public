@@ -542,6 +542,9 @@ bool CSrcWriter::xGatherDefline(
     static const string defaultValue = "";
     
     string label = sequence::CDeflineGenerator().GenerateDefline(bsh);
+    if (label.empty()) {
+        return true;
+    }
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, label);
       

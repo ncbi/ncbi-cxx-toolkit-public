@@ -114,23 +114,32 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
 }
 
 
-bool CSubSource::IsValidSubtypeName(const string& name,
+bool CSubSource::IsValidSubtypeName(const string& str,
                                     EVocabulary vocabulary)
 {
+    
+    string name = NStr::TruncateSpaces(str);
+    NStr::ToLower(name);
+    replace(name.begin(), name.end(), '_', '-');
+
     if ( NStr::EqualNocase(name, "note") ||
-        NStr::EqualNocase(name, "subsource-note") ||
-        NStr::EqualNocase(name, "subsrc-note")) {
-        return true;
+         NStr::EqualNocase(name, "subsource-note") ||
+         NStr::EqualNocase(name, "subsrc-note")) {
+         return true;
     }
 
+
+
     if (vocabulary == eVocabulary_insdc) {
-        if (name == "insertion_seq" || 
+        // consider a table if more special cases arise.
+        if (name == "insertion-seq" || 
             name == "plasmid" || 
             name == "transposon" || 
-            name == "sub_clone") {
+            name == "sub-clone") {
             return true;
         } 
-    }   
+    }
+       
     return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
 }
 
