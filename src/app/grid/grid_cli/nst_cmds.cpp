@@ -325,7 +325,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
         return 2;
 
     default:
-        fprintf(stderr, GRID_APP_NAME " mkobjectloc: object ID cannot "
+        fprintf(stderr, GRID_APP_NAME " mkobjectloc: object locator cannot "
                 "be combined with either '--" OBJECT_KEY_OPTION
                 "' or '--" NAMESPACE_OPTION "'.\n");
         return 2;
