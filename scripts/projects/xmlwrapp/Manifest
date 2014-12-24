@@ -15,7 +15,7 @@ APP: test_xslt tree_parsing xml_generation xslt_transformation
 
 LIB: libxmlwrapp.a
 
-DEFAULT_CONFIGURATIONS: SunOSx86:plain-WS32 Linux32-Centos:plain-GCC Linux64-Centos:plain-GCC
+DEFAULT_CONFIGURATIONS: Linux32-Centos:plain-GCC Linux64-Centos:plain-GCC
 DEFAULT_CONFIGURE_FLAGS: --without-debug --with-mt
 
 # Each line describes a single configuration
@@ -28,9 +28,6 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-mt
 
 FreeBSD32         : plain          : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-SunOSx86          : plain-GCC      : GCC.sh 4.2.3     --without-debug --with-mt    --without-runpath --with-flat-makefile
-SunOSx86          : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --without-runpath --with-flat-makefile
-
 Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
 Linux64-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
@@ -38,6 +35,7 @@ Linux32-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt 
 Linux32-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux32-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Cygwin32          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
