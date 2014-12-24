@@ -268,6 +268,17 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6.1")));
     BOOST_CHECK(id->IsSwissprot());
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A29SS6.1")));
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A0A022YWF9")));
+    BOOST_CHECK(id->IsSwissprot());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A0A022YWF")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("P0A022YWF9")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABA022YWF9")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A02022YWF9")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A0A02XYWF9")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A0A0223WF9")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A0A022YWFZ")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A0A022YWF99")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromRefSeqAcc)

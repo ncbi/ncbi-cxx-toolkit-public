@@ -1055,6 +1055,14 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
                 &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
                 &&  isdigit(ucdata[5])) {
                 return eAcc_swissprot;
+            } else if (digit_pos == 1  &&  main_size == 10
+                       &&  main_acc[0] != 'O'  &&  main_acc[0] != 'P'
+                       &&  main_acc[0] != 'Q'
+                       &&  isalpha(ucdata[2])  &&  isalnum(ucdata[3])
+                       &&  isalnum(ucdata[4])  &&  isdigit(ucdata[5])
+                       &&  isalpha(ucdata[6])  &&  isalnum(ucdata[7])
+                       &&  isalnum(ucdata[8])  &&  isdigit(ucdata[9])) {
+                return eAcc_swissprot;                
             } else if ( !has_version  &&  digit_pos == 0
                        &&  (non_dig_pos == 6  ||  non_dig_pos == 7)
                        &&  (main_size == non_dig_pos + 1
