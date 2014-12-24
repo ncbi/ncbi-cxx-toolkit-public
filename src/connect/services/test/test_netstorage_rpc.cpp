@@ -45,27 +45,19 @@ USING_NCBI_SCOPE;
 #define NETCACHE_SERVICE_NAME "NC_UnitTest"
 #define CACHE_NAME "nst_test"
 
-void g_TestNetStorage(CNetStorage netstorage);
-
-BOOST_AUTO_TEST_CASE(TestNetStorage)
+CNetStorage g_GetNetStorage()
 {
-    CNetStorage netstorage("nst=" NETSTORAGE_SERVICE_NAME
+    return CNetStorage("nst=" NETSTORAGE_SERVICE_NAME
             "&nc=" NETCACHE_SERVICE_NAME
             "&cache=" CACHE_NAME
             "&client=" APP_NAME);
-
-    g_TestNetStorage(netstorage);
 }
 
-void g_TestNetStorageByKey(CNetStorageByKey netstorage);
-
-BOOST_AUTO_TEST_CASE(TestNetStorageByKey)
+CNetStorageByKey g_GetNetStorageByKey()
 {
-    CNetStorageByKey netstorage("nst=" NETSTORAGE_SERVICE_NAME
-            "&nc=" NETCACHE_SERVICE_NAME
-            "&cache=" CACHE_NAME
-            "&client=" APP_NAME
-            "&domain=" CACHE_NAME);
-
-    g_TestNetStorageByKey(netstorage);
+    return CNetStorageByKey("nst=" NETSTORAGE_SERVICE_NAME
+        "&nc=" NETCACHE_SERVICE_NAME
+        "&cache=" CACHE_NAME
+        "&client=" APP_NAME
+        "&domain=" CACHE_NAME);
 }

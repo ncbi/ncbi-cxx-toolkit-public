@@ -39,6 +39,8 @@
 
 #include <util/random_gen.hpp>
 
+#include <boost/preprocessor.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -213,7 +215,7 @@ struct IExtWriter : public IWriter
 // An extended IExtReader interface for expected data
 struct IExpected : public IExtReader
 {
-    virtual size_t Size() const = 0;
+    virtual size_t Size() = 0;
 };
 
 // A reader that is used to read from a string
@@ -258,7 +260,7 @@ protected:
 class CStrData : public CStrReader<IExpected>
 {
 public:
-    CStrData()
+    CStrData(CNetStorageObject)
         : TStrReader("The quick brown fox jumps over the lazy dog")
     {}
 
@@ -269,12 +271,84 @@ public:
         }
     }
 
-    size_t Size() const { return m_Str.size(); }
+    size_t Size() { return m_Str.size(); }
 };
 
-// TODO:
-// Implement CBigData (derived from IExtReader)
-// to test API of big data volumes
+// Large volume data to test APIs
+class CBigData : public IExpected
+{
+public:
+    struct SSource
+    {
+        vector<char> data;
+        CRandom random;
+
+        SSource()
+        {
+            random.Randomize();
+            const size_t kSize = 20 * 1024 * 1024; // 20MB
+            data.reserve(kSize);
+            for (size_t i = 0; i < kSize; ++i) {
+                data.push_back(' ' + random.GetRand() % 95); // [' ', '~']
+            }
+        }
+    };
+
+    CBigData(CNetStorageObject) {}
+
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
+    {
+        size_t read = m_Length < count ? m_Length : count;
+        if (read > 2) read = m_Source.random.GetRand(2 * read / 3, read);
+        if (buf) memcpy(buf, &m_Source.data[m_Begin], read);
+        m_Begin += read;
+        m_Length -= read;
+        if (bytes_read) *bytes_read = read;
+        return m_Length ? eRW_Success : eRW_Eof;
+    }
+
+    void Open()
+    {
+        m_Begin = 0;
+        m_Length = m_Source.data.size();
+    }
+
+    void Close() {}
+    size_t Size() { return m_Source.data.size(); }
+
+private:
+    SSource m_Source;
+    size_t m_Begin;
+    size_t m_Length;
+};
+
+// NetStorage data as a source to test APIs (simultaneous access to NetStorage)
+class CNstData : public IExpected
+{
+public:
+    CNstData(CNetStorageObject object)
+        : m_Object(object)
+    {
+        // Create a NetStorage object to use as a source
+        CBigData::SSource source;
+        m_Object.Write(&source.data[0], source.data.size());
+        m_Object.Close();
+    }
+
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
+    {
+        size_t read = m_Object.Read(buf, count);
+        if (bytes_read) *bytes_read = read;
+        return m_Object.Eof() ? eRW_Eof : eRW_Success;
+    }
+
+    void Open() {}
+    void Close() { m_Object.Close(); }
+    size_t Size() { return m_Object.GetSize(); }
+
+private:
+    CNetStorageObject m_Object;
+};
 
 
 // NetStorage reader/writer base class
@@ -288,6 +362,12 @@ public:
     void Close() { m_Object.Close(); }
 
 protected:
+    ERW_Result Finalize(size_t in, size_t* out, ERW_Result result)
+    {
+        if (out) *out = in;
+        return result;
+    }
+
     CNetStorageObject m_Object;
 };
 
@@ -321,14 +401,8 @@ struct SStrApiImpl
         CWriter(CNetStorageObject o) : TNetStorageRW(o) {}
         ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0)
         {
-            if (buf) {
-                m_Output.append(static_cast<const char*>(buf), count);
-            }
-
-            if (bytes_written) {
-                *bytes_written = count;
-            }
-            return eRW_Success;
+            m_Output.append(static_cast<const char*>(buf), count);
+            return Finalize(count, bytes_written, eRW_Success);
         }
         ERW_Result Flush(void)
         {
@@ -356,8 +430,7 @@ struct SBufApiImpl
         ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
         {
             size_t read = m_Object.Read(buf, count);
-            if (bytes_read) *bytes_read = read;
-            return eRW_Success;
+            return Finalize(read, bytes_read, m_Object.Eof() ? eRW_Eof : eRW_Success);
         }
     };
 
@@ -368,18 +441,107 @@ struct SBufApiImpl
         ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0)
         {
             m_Object.Write(buf, count);
-            if (bytes_written) *bytes_written = count;
-            return eRW_Success;
+            return Finalize(count, bytes_written, eRW_Success);
         }
         ERW_Result Flush(void) { return eRW_Success; }
     };
 };
 
 
-// TODO:
-// Implement TApi classes to test following CNetStorage methods:
-// 1) GetReader()/GetWriter()
-// 2) GetRWStream();
+// GetReader()/GetWriter interface
+struct SIrwApiImpl
+{
+    class CReader : public CNetStorageRW<IExtReader>
+    {
+    public:
+        CReader(CNetStorageObject o)
+            : TNetStorageRW(o),
+              m_Impl(o.GetReader())
+        {}
+
+        ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
+        {
+            return m_Impl.Read(buf, count, bytes_read);
+        }
+
+    private:
+        IReader& m_Impl;
+    };
+
+    class CWriter : public CNetStorageRW<IExtWriter>
+    {
+    public:
+        CWriter(CNetStorageObject o)
+            : TNetStorageRW(o),
+              m_Impl(o.GetWriter())
+        {}
+
+        ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0)
+        {
+            return m_Impl.Write(buf, count, bytes_written);
+        }
+
+        ERW_Result Flush(void) { return m_Impl.Flush(); }
+
+    private:
+        IWriter& m_Impl;
+    };
+};
+
+
+// GetRWStream() interface
+struct SIosApiImpl
+{
+    class CReader : public CNetStorageRW<IExtReader>
+    {
+    public:
+        CReader(CNetStorageObject o)
+            : TNetStorageRW(o),
+              m_Impl(o.GetRWStream())
+        {}
+
+        ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
+        {
+            ERW_Result result = eRW_Success;
+
+            if (!m_Impl->read(static_cast<char*>(buf), count)) {
+                if (!m_Impl->eof()) {
+                    return eRW_Error;
+                }
+
+                result = eRW_Eof;
+            }
+
+            return Finalize(m_Impl->gcount(), bytes_read, result);
+        }
+
+    private:
+        auto_ptr<CNcbiIostream> m_Impl;
+    };
+
+    class CWriter : public CNetStorageRW<IExtWriter>
+    {
+    public:
+        CWriter(CNetStorageObject o)
+            : TNetStorageRW(o),
+              m_Impl(o.GetRWStream())
+        {}
+
+        ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0)
+        {
+            if (!m_Impl->write(static_cast<const char*>(buf), count)) {
+                return eRW_Error;
+            }
+
+            return Finalize(count, bytes_written, eRW_Success);
+        }
+
+        ERW_Result Flush(void) { return m_Impl->flush() ? eRW_Success : eRW_Error; }
+
+    private:
+        auto_ptr<CNcbiIostream> m_Impl;
+    };
+};
 
 
 // A helper to read from API/expected data
@@ -409,12 +571,20 @@ struct SReadHelper
 
         switch (m_Result) {
         case eRW_Success:
+            BOOST_REQUIRE(length);
+            /* FALL THROUGH */
         case eRW_Eof:
             return true;
         default:
             BOOST_ERROR("Failed to read: " << g_RW_ResultToString(m_Result));
             return false;
         }
+    }
+
+    void operator-=(size_t l)
+    {
+        length -= l;
+        memmove(buf, buf + l, length);
     }
 
     operator bool() { return m_Result == eRW_Success; }
@@ -491,8 +661,8 @@ static void s_ReadAndCompare(IExpected& expected, CNetStorageObject object)
             break;
         }
 
-        expected_reader.length -= length;
-        actual_reader.length -= length;
+        expected_reader -= length;
+        actual_reader -= length;
     } while (expected_reader && actual_reader);
 
     expected_reader.Close();
@@ -545,9 +715,9 @@ static void s_ExistsAndRemoveTests(const string& id, TNetStorage& netstorage,
 }
 
 template <class TExpected, class TApi>
-void s_TestNetStorage(CNetStorage netstorage)
+static void s_TestNetStorage(CNetStorage netstorage)
 {
-    TExpected data;
+    TExpected data(netstorage.Create(fNST_Persistent));
     string not_found(
             "VHwxYl4jgV6Y8pM4TzhGbhfoROgxMl10Rz9GNlwqch9HHwkoJw0WbEsxAGoT0Cb0EeOG");
     CGetInfoNotFound(netstorage.Open(not_found)).Check();
@@ -588,22 +758,16 @@ void s_TestNetStorage(CNetStorage netstorage)
     s_ExistsAndRemoveTests<CNetStorage, TApi>(object_loc, netstorage, data);
 }
 
-void g_TestNetStorage(CNetStorage netstorage)
-{
-    s_TestNetStorage<CStrData, CApi<SStrApiImpl> >(netstorage);
-    s_TestNetStorage<CStrData, CApi<SBufApiImpl> >(netstorage);
-}
-
 template <class TExpected, class TApi>
-void s_TestNetStorageByKey(CNetStorageByKey netstorage)
+static void s_TestNetStorageByKey(CNetStorageByKey netstorage)
 {
-    TExpected data;
     CRandom random_gen;
 
     random_gen.Randomize();
 
     string unique_key = NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
+    TExpected data(netstorage.Open(unique_key, fNST_Persistent));
     CGetInfoNotFound(netstorage.Open(unique_key,
             fNST_Fast | fNST_Movable)).Check();
 
@@ -625,17 +789,29 @@ void s_TestNetStorageByKey(CNetStorageByKey netstorage)
     s_ExistsAndRemoveTests<CNetStorageByKey, TApi>(unique_key, netstorage, data);
 }
 
-void g_TestNetStorageByKey(CNetStorageByKey netstorage)
-{
-    s_TestNetStorageByKey<CStrData, CApi<SStrApiImpl> >(netstorage);
-    s_TestNetStorageByKey<CStrData, CApi<SBufApiImpl> >(netstorage);
-}
-
 // TODO:
 // Add tests for GetAttribute()/SetAttribute()
+
+CNetStorage g_GetNetStorage();
+CNetStorageByKey g_GetNetStorageByKey();
 
 NCBITEST_AUTO_INIT()
 {
     boost::unit_test::framework::master_test_suite().p_name->assign(
             "CNetStorage Unit Test");
 }
+
+#define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
+#define SRC_LIST    (Str, (Big, (Nst, BOOST_PP_NIL)))
+#define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
+
+#define TEST_CASE(Storage, Source, Api) \
+BOOST_AUTO_TEST_CASE(Test ## Storage ## Source ## Api) \
+{ \
+    C ## Storage st(g_Get ## Storage()); \
+    s_Test ## Storage<C ## Source ## Data, CApi<S ## Api ## ApiImpl> >(st); \
+}
+
+#define DEFINE_TEST_CASE(r, p) TEST_CASE p
+
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 3, (ST_LIST, SRC_LIST, API_LIST));
