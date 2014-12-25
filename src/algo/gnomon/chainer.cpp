@@ -3648,19 +3648,10 @@ void CChain::CalculateSupportAndWeightFromMembers() {
     ITERATE(TContained, i, m_members) {
         SChainMember* mi = *i;
         CGeneModel* ai = mi->m_align;
-        const CCDSInfo* cdsi = mi->m_cds_info;
         _ASSERT(mi->m_orig_align);
         int matches = ai->AlignLen();
         if(ai->Ident() > 0.)
             matches = ai->Ident()*matches+0.5;
-
-        bool pstop_outside_rf = false;
-        for(int is = 0; is < (int)GetCdsInfo().PStops().size() && !pstop_outside_rf; ++is) {
-            const TSignedSeqRange& s = GetCdsInfo().PStops()[is];
-            pstop_outside_rf = Include(ai->Limits(),s) && !Include(cdsi->ReadingFrame(),s);  // these alignments were not in the 'original' chain - they were added during deleting compatible chains
-        }
-        if(pstop_outside_rf)
-            continue;
 
         bool not_wanted = false;
 
