@@ -1062,6 +1062,9 @@ void CValidError_bioseq::ValidateBioseqContext(
             // Check for duplicate features and overlapping peptide features.
             ValidateDupOrOverlapFeats(seq);
 
+            // Check for introns within introns.
+            ValidateTwintrons(seq);
+
             // check for equivalent source features
             x_ValidateSourceFeatures (bsh);
 
@@ -7007,6 +7010,74 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
         }
     }
 #endif
+}
+
+void CValidError_bioseq::ValidateTwintrons(
+    const CBioseq& bioseq)
+{
+    try {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+        if (!bsh) return;
+        SAnnotSelector sel (CSeqFeatData::eSubtype_intron);
+        for (CFeat_CI feat_ci(bsh, sel); feat_ci;  ++feat_ci) {
+            bool skip = false;
+            const CSeq_feat& const_feat = feat_ci->GetOriginalFeature();
+            const CSeq_loc& loc = const_feat.GetLocation();
+            int num_intervals = 0;
+            int num_intervals_dup = 0;
+            Int4 left = 0;
+            Int4 right = 0;
+            Int4 start = 0;
+            Int4 stop = 0;
+            for (CSeq_loc_CI curr(loc); curr; ++curr) {
+                num_intervals++;
+                const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
+                const CSeq_interval& ivl = part.GetInt();
+                if (left == 0) {
+                    left = ivl.GetTo();
+                }
+                right = ivl.GetFrom();
+            }
+            if (num_intervals == 1) continue;
+            if (num_intervals == 2) {
+               CFeat_CI feat_ci_dup = feat_ci;
+               ++feat_ci_dup;
+               if (feat_ci_dup) {
+                   const CSeq_feat& const_feat_dup = feat_ci_dup->GetOriginalFeature();
+                   const CSeq_loc& loc_dup = const_feat_dup.GetLocation();
+                   for (CSeq_loc_CI curr(loc_dup); curr; ++curr) {
+                       num_intervals_dup++;
+                        const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
+                        const CSeq_interval& ivl = part.GetInt();
+                        if (start == 0) {
+                            start = ivl.GetTo();
+                        }
+                        stop = ivl.GetFrom();
+                   }
+                   if (num_intervals_dup == 1) {
+                       if (stop == left + 1 && start == right - 1) {
+                           skip = true;
+                       }
+                   }
+               }
+            }
+            if (skip) continue;
+            EDiagSev sev = eDiag_Error;
+            if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+                sev = eDiag_Warning;
+            }
+            PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
+                     "An intron should not have multiple intervals",
+                      const_feat);
+        }
+    }
+    catch (CException& e) {
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            if (NStr::Find(e.what(), "Error: ncbi::objects::CSeqMap_CI::x_Push()") == string::npos) {
+                LOG_POST(Error << "ValidateTwintrons error: " << e.what());
+            }
+        }
+    }
 }
 
 

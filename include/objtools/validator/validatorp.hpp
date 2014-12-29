@@ -1372,6 +1372,7 @@ private:
     void x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs);
     void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
+    void ValidateTwintrons(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
         EErrType err, EDiagSev sev);

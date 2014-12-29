@@ -1921,6 +1921,7 @@ void CValidError_feat::ValidateIntron (
 
     const CSeq_loc& loc = feat.GetLocation();
 
+    /*
     int num_intervals = 0;
     for (CSeq_loc_CI curr(loc); curr; ++curr) {
         num_intervals++;
@@ -1934,6 +1935,7 @@ void CValidError_feat::ValidateIntron (
                  "An intron should not have multiple intervals",
                   feat);
     }
+    */
 
     bool partial5 = loc.IsPartialStart(eExtreme_Biological);
     bool partial3 = loc.IsPartialStop(eExtreme_Biological);
