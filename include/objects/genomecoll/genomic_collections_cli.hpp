@@ -53,6 +53,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CGCClient_AssemblyInfo;
 class CGCClient_AssemblySequenceInfo;
+class CGCClient_EquivalentAssemblies;
 
 /////////////////////////////////////////////////////////////////////////////
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
@@ -110,6 +111,10 @@ public:
         (const list<string>& seq_id,
          int filter_type = eGCClient_FindBestAssemblyFilter_any,
          int sort_type = eGCClient_FindBestAssemblySort_default);
+
+
+    CRef<CGCClient_EquivalentAssemblies> GetEquivalentAssemblies(const string& acc,
+                                                                 int equivalency); // see CGCClient_GetEquivalentAssembliesRequest_::EEquivalency
 
 private:
     // Prohibit copy constructor and assignment operator

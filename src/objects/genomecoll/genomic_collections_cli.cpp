@@ -47,6 +47,8 @@
 #include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
+#include <objects/genomecoll/GCClient_EquivalentAssembl.hpp>
+#include <objects/genomecoll/GCClient_GetEquivalentAsse.hpp>
 #include <sstream>
 
 // generated classes
@@ -265,6 +267,33 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAllAssemb
 
     try {
         CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
+
+        return assm;
+    } catch (const CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
+        }
+        throw;
+    }
+}
+
+
+CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAssemblies(const string& acc, int equivalency)
+{
+    CGCClient_GetEquivalentAssembliesRequest req;
+    CGCClientResponse reply;
+
+    req.SetAccession(acc);
+    req.SetEquivalency(equivalency);
+
+#ifdef _DEBUG
+    ostringstream ostrstrm;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
+    LOG_POST(Info << ostrstrm.str());
+#endif
+
+    try {
+        CRef<CGCClient_EquivalentAssemblies> assm = AskGet_equivalent_assemblies(req, &reply);
 
         return assm;
     } catch (const CException& ex) {

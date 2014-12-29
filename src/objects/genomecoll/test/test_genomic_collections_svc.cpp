@@ -45,6 +45,8 @@
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
 #include <objects/genomecoll/GCClient_AssemblySequenceI.hpp>
 #include <objects/genomecoll/GCClient_AssembliesForSequ.hpp>
+#include <objects/genomecoll/GCClient_EquivalentAssembl.hpp>
+#include <objects/genomecoll/GCClient_GetEquivalentAsse.hpp>
 #include <sstream>
 
 USING_NCBI_SCOPE;
@@ -83,7 +85,7 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
 
     argDesc->AddKey("request", "request",
                             "Type of request", CArgDescriptions::eString);
-    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-best-assembly","get-all-assemblies"));
+    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-best-assembly","get-all-assemblies","get-equivalent-assemblies"));
     
     argDesc->AddOptionalKey("url", "Url",
                             "URL to genemic collections service.cgi", CArgDescriptions::eString);
@@ -163,6 +165,10 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
                             "Find best assembly - return limit",
                             CArgDescriptions::eInteger);
 
+    argDesc->AddOptionalKey("equiv", "equivalency",
+                            "Get equivalent assemblies - equivalency type",
+                            CArgDescriptions::eInteger);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(argDesc.release());
 }
@@ -225,6 +231,12 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
         if(args["-sort"]  )   req.SetSort(args["-sort"].AsInteger());
         if(args["-limit"] )   req.SetAssembly_return_limit(args["-limit"].AsInteger());
         else if(request == "get-best-assembly")   req.SetAssembly_return_limit(1);
+    }
+    else if(request == "get-equivalent-assemblies")
+    {
+        CGCClient_GetEquivalentAssembliesRequest& req = gc_request.SetGet_equivalent_assemblies();
+        req.SetAccession(args["acc"].AsString());
+        req.SetEquivalency(args["equiv"].AsInteger());
     }
 }
 
@@ -367,6 +379,14 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
             CRef<CGCClient_AssembliesForSequences> reply(cli->FindAllAssemblies(acc, filter, sort));
+            ostr << *reply;
+        }
+        else if(request == "get-equivalent-assemblies")
+        {
+            string acc = args["acc"].AsString();
+            int equiv = args["equiv"].AsInteger();
+
+            CRef<CGCClient_EquivalentAssemblies> reply(cli->GetEquivalentAssemblies(acc, equiv));
             ostr << *reply;
         }
     } catch (CException& ex) {

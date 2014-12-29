@@ -18,7 +18,8 @@ IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
 GCClientRequest ::= CHOICE {
     get-assembly GCClient-GetAssemblyRequest,
     get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
-    get-best-assembly GCClient-FindBestAssemblyRequest
+    get-best-assembly GCClient-FindBestAssemblyRequest,
+    get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest
 }
 
 
@@ -26,6 +27,7 @@ GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
     get-chrtype-valid  VisibleString,
     get-best-assembly GCClient-AssembliesForSequences,
+    get-equivalent-assemblies GCClient-EquivalentAssemblies,
     
     --  errors encountered at the server side.
     srvr-error GCClient-Error
@@ -168,5 +170,25 @@ GCClient-AssembliesForSequences ::= SEQUENCE {
     assemblies SET OF GCClient-AssemblySequenceInfo OPTIONAL,
     not-found-sequences SET OF VisibleString OPTIONAL
 }
+
+
+
+GCClient-GetEquivalentAssembliesRequest ::= SEQUENCE {
+    accession VisibleString,
+    equivalency INTEGER {
+        paired-strict             (1), -- Paired assembly, if identical
+        paired                    (2), -- Paired assembly, if exists, even if not identical
+        same-coordinates          (3), -- All assemblies with same major release and same type (Gb/Rs)
+        all-types-same-coordinates(4), -- All assemblies with same major release, both Gb and Rs.
+        major-release             (5)  -- Major release of assembly, same type
+    }
+}
+
+GCClient-EquivalentAssemblies ::= SEQUENCE {
+    assemblies SET OF SEQUENCE {
+        accession VisibleString
+    }
+}
+
 
 END
