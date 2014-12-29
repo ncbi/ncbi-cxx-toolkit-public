@@ -4139,7 +4139,7 @@ void CValidError_bioseq::x_ValidateCompletness
     CMolInfo::TBiomol biomol = mi.IsSetBiomol() ? 
         mi.GetBiomol() : CMolInfo::eBiomol_unknown;
     EDiagSev sev = mi.GetTech() == CMolInfo::eTech_htgs_3 ? 
-        eDiag_Warning : eDiag_Error;
+        eDiag_Warning : /* eDiag_Error */ eDiag_Warning;
 
     bool reported = false;
 
