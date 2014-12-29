@@ -73,6 +73,9 @@ class NetStorageConsole:
                                  "sends GETOBJECTINFO message; <object locator>" ],
              'getattrlist':    [ self.sendGetAttrList,
                                  "sends GETATTRLIST message; <object locator>" ],
+             'getclientobjects':
+                               [ self.sendGetClientObjects,
+                                 "sends GETCLIENTOBJECTS message; <client name> [limit]" ],
              'getattr':        [ self.sendGetAttr,
                                  "sends GETATTR message; <object locator> <attribute name>" ],
              'delattr':        [ self.sendDelAttr,
@@ -690,6 +693,26 @@ class NetStorageConsole:
                     'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
+    def sendGetClientObjects( self, arguments ):
+        " Sends GETCLIENTOBJECTS message "
+        if len( arguments ) < 1:
+            print "At least client name must be provided"
+            return
+
+        clientName = arguments[ 0 ]
+        message = { 'Type':         'GETCLIENTOBJECTS',
+                    'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
+                    'ClientIP':     hostIP,
+                    'ClientName':   clientName }
+        if len( arguments ) > 1:
+            message[ 'Limit' ] = int( arguments[ 1 ] )
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
