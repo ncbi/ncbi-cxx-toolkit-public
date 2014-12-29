@@ -76,6 +76,14 @@
 
 BEGIN_NCBI_SCOPE
 
+// Always get rid of the old non-conformant min/max macros
+#ifdef min
+#  undef min
+#endif
+#ifdef max
+#  undef max
+#endif
+
 ///
 ///  Pre-declaration of the "numeric_limits<>" template
 ///  Forcibly overrides (using preprocessor) the original "numeric_limits<>"!
