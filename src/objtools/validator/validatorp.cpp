@@ -3239,12 +3239,12 @@ const CCacheImpl::TFeatValue &
 CCacheImpl::GetFeatStrKeyToFeats(
     const SFeatStrKey & feat_str_key, const CTSE_Handle & tse_arg)
 {
-    const CBioseq_Handle & bsh = feat_str_key.m_bioseq;
+    const CBioseq_Handle & search_bsh = feat_str_key.m_bioseq;
 
     // caller must give us something to work with
-    _ASSERT(bsh || tse_arg);
+    _ASSERT(search_bsh || tse_arg);
 
-    const CTSE_Handle & tse = (tse_arg ? tse_arg : bsh.GetTSE_Handle());
+    const CTSE_Handle & tse = (tse_arg ? tse_arg : search_bsh.GetTSE_Handle());
 
     // load cache if empty
     if( m_featStrKeyToFeatsCache.empty() ) {
@@ -3256,11 +3256,12 @@ CCacheImpl::GetFeatStrKeyToFeats(
         if( tse ) {
             p_gene_ci.reset(new CFeat_CI(tse, sel));
         } else {
-            p_gene_ci.reset(new CFeat_CI(bsh, sel));
+            p_gene_ci.reset(new CFeat_CI(search_bsh, sel));
         }
-        CFeat_CI & gene_ci = *p_gene_ci; // for convenience
+        CFeat_CI & gene_ci = *p_gene_ci; // for convenience        
 
         for( ; gene_ci; ++gene_ci ) {
+            CBioseq_Handle bsh = tse.GetScope().GetBioseqHandle(gene_ci->GetLocation());
             string label;
             const CGene_ref & gene_ref = gene_ci->GetData().GetGene();
 
@@ -3281,7 +3282,7 @@ CCacheImpl::GetFeatStrKeyToFeats(
             m_featStrKeyToFeatsCache[locus_tag_key].push_back(*gene_ci);
             if( bsh ) {
                 locus_tag_key.m_bioseq = kAnyBioseq;
-                m_featStrKeyToFeatsCache[label_key].push_back(*gene_ci);
+                m_featStrKeyToFeatsCache[locus_tag_key].push_back(*gene_ci);
             }
         }
     }
