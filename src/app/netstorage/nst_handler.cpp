@@ -60,30 +60,31 @@ const size_t    kWriteBufferSize = 1024;
 
 CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
 {
-    { "BYE",            & CNetStorageHandler::x_ProcessBye },
-    { "HELLO",          & CNetStorageHandler::x_ProcessHello },
-    { "INFO",           & CNetStorageHandler::x_ProcessInfo },
-    { "CONFIGURATION",  & CNetStorageHandler::x_ProcessConfiguration },
-    { "HEALTH",         & CNetStorageHandler::x_ProcessHealth },
-    { "ACKALERT",       & CNetStorageHandler::x_ProcessAckAlert },
-    { "RECONFIGURE",    & CNetStorageHandler::x_ProcessReconfigure },
-    { "SHUTDOWN",       & CNetStorageHandler::x_ProcessShutdown },
-    { "GETCLIENTSINFO", & CNetStorageHandler::x_ProcessGetClientsInfo },
-    { "GETMETADATAINFO",& CNetStorageHandler::x_ProcessGetMetadataInfo },
-    { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
-    { "GETATTRLIST",    & CNetStorageHandler::x_ProcessGetAttrList },
-    { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
-    { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
-    { "DELATTR",        & CNetStorageHandler::x_ProcessDelAttr },
-    { "READ",           & CNetStorageHandler::x_ProcessRead },
-    { "CREATE",         & CNetStorageHandler::x_ProcessCreate },
-    { "WRITE",          & CNetStorageHandler::x_ProcessWrite },
-    { "DELETE",         & CNetStorageHandler::x_ProcessDelete },
-    { "RELOCATE",       & CNetStorageHandler::x_ProcessRelocate },
-    { "EXISTS",         & CNetStorageHandler::x_ProcessExists },
-    { "GETSIZE",        & CNetStorageHandler::x_ProcessGetSize },
-    { "SETEXPTIME",     & CNetStorageHandler::x_ProcessSetExpTime },
-    { "",               NULL }
+    { "BYE",              & CNetStorageHandler::x_ProcessBye },
+    { "HELLO",            & CNetStorageHandler::x_ProcessHello },
+    { "INFO",             & CNetStorageHandler::x_ProcessInfo },
+    { "CONFIGURATION",    & CNetStorageHandler::x_ProcessConfiguration },
+    { "HEALTH",           & CNetStorageHandler::x_ProcessHealth },
+    { "ACKALERT",         & CNetStorageHandler::x_ProcessAckAlert },
+    { "RECONFIGURE",      & CNetStorageHandler::x_ProcessReconfigure },
+    { "SHUTDOWN",         & CNetStorageHandler::x_ProcessShutdown },
+    { "GETCLIENTSINFO",   & CNetStorageHandler::x_ProcessGetClientsInfo },
+    { "GETMETADATAINFO",  & CNetStorageHandler::x_ProcessGetMetadataInfo },
+    { "GETOBJECTINFO",    & CNetStorageHandler::x_ProcessGetObjectInfo },
+    { "GETATTRLIST",      & CNetStorageHandler::x_ProcessGetAttrList },
+    { "GETCLIENTOBJECTS", & CNetStorageHandler::x_ProcessGetClientObjects },
+    { "GETATTR",          & CNetStorageHandler::x_ProcessGetAttr },
+    { "SETATTR",          & CNetStorageHandler::x_ProcessSetAttr },
+    { "DELATTR",          & CNetStorageHandler::x_ProcessDelAttr },
+    { "READ",             & CNetStorageHandler::x_ProcessRead },
+    { "CREATE",           & CNetStorageHandler::x_ProcessCreate },
+    { "WRITE",            & CNetStorageHandler::x_ProcessWrite },
+    { "DELETE",           & CNetStorageHandler::x_ProcessDelete },
+    { "RELOCATE",         & CNetStorageHandler::x_ProcessRelocate },
+    { "EXISTS",           & CNetStorageHandler::x_ProcessExists },
+    { "GETSIZE",          & CNetStorageHandler::x_ProcessGetSize },
+    { "SETEXPTIME",       & CNetStorageHandler::x_ProcessSetExpTime },
+    { "",                 NULL }
 };
 
 
@@ -1466,6 +1467,77 @@ CNetStorageHandler::x_ProcessGetAttrList(
         // Unknown status
         NCBI_THROW(CNetStorageServerException, eInternalError,
                    "Unknown GetAttributeNames status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetClientObjects(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    x_CheckNonAnonymousClient();
+
+    if (!message.HasKey("ClientName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETCLIENTOBJECTS message must have ClientName.");
+
+    TNSTDBValue<Int8>  limit;
+    limit.m_IsNull = true;
+    if (message.HasKey("Limit")) {
+        try {
+            limit.m_Value = message.GetInteger("Limit");
+            limit.m_IsNull = false;
+        } catch (...) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETCLIENTOBJECTS message ClientName argument "
+                       "must be an integer.");
+        }
+        if (limit.m_Value <= 0)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETCLIENTOBJECTS message ClientName argument "
+                       "must be > 0.");
+    }
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired)
+        x_ValidateWriteMetaDBAccess(message);
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    vector<string>  locators;
+    Int8            total_client_objects;
+    int             status = m_Server->GetDb().ExecSP_GetClientObjects(
+                                        message.GetString("ClientName"), limit,
+                                        total_client_objects, locators);
+
+    if (status == 0) {
+        // Everything is fine, the attribute is found
+        CJsonNode       locators_node(CJsonNode::NewArrayNode());
+        for (vector<string>::const_iterator  k = locators.begin();
+             k != locators.end(); ++k)
+            locators_node.AppendString(*k);
+        reply.SetByKey("ObjectLocators", locators_node);
+        reply.SetInteger("TotalClientObjects", total_client_objects);
+    } else if (status == -1) {
+        // Client is not found
+        NCBI_THROW(CNetStorageServerException, eNetStorageClientNotFound,
+                   "NetStorage client is not found");
+    } else {
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown GetClientObjects status");
     }
 
     x_SendSyncMessage(reply);

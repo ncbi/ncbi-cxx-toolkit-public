@@ -59,15 +59,16 @@ class CNetStorageServerException : public CException
             eNetStorageObjectNotFound           = 1014,
             eNetStorageAttributeNotFound        = 1015,
             eNetStorageAttributeValueNotFound   = 1016,
-            eNetStorageObjectExpired            = 1017,
-            eDatabaseError                      = 1018,
-            eInvalidConfig                      = 1019,
-            eRemoteObjectNotFound               = 1020,
+            eNetStorageClientNotFound           = 1017,
+            eNetStorageObjectExpired            = 1018,
+            eDatabaseError                      = 1019,
+            eInvalidConfig                      = 1020,
+            eRemoteObjectNotFound               = 1021,
 
             // Meta info involving operation requested while the service
             // is not configured for meta or HELLO metadata option conflict
-            eInvalidMetaInfoRequest             = 1021,
-            eUnknownError                       = 1022
+            eInvalidMetaInfoRequest             = 1022,
+            eUnknownError                       = 1023
         };
         virtual const char *  GetErrCodeString(void) const;
         unsigned int ErrCodeToHTTPStatusCode(void) const;

@@ -134,11 +134,14 @@ public:
                                     TNSTDBValue<CTime> &  expiration);
     map<string, string>  ExecSP_GetGeneralDBInfo(void);
     map<string, string>  ExecSP_GetStatDBInfo(void);
+    int  ExecSP_GetClientObjects(const string &  client_name,
+                                 TNSTDBValue<Int8>  limit,
+                                 Int8 &  total,
+                                 vector<string> &  locators);
 
 private:
     void x_ReadDbAccessInfo(void);
     void x_CreateDatabase(void);
-    CQuery x_NewQuery(void);
     void x_PreCheckConnection(void);
     void x_PostCheckConnection(void);
     int  x_CheckStatus(CQuery &  query,

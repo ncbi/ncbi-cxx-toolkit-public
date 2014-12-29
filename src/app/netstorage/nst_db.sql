@@ -1032,9 +1032,13 @@ END
 GO
 
 
+
+-- if @limit is NULL then there will be no limit on how many records are
+-- included into the result set
 CREATE PROCEDURE GetClientObjects
-    @client_name    VARCHAR(256),
-    @limit          BIGINT = NULL
+    @client_name        VARCHAR(256),
+    @limit              BIGINT = NULL,
+    @total_object_cnt   BIGINT OUT
 AS
 BEGIN
     DECLARE @client_id      BIGINT = NULL
@@ -1055,10 +1059,18 @@ BEGIN
             RETURN -1               -- client is not found
         END
 
+        DECLARE @current_time   DATETIME = GETDATE()
+        SELECT @total_object_cnt = COUNT(*) FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= @current_time
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+
         -- This is the output recordset!
         IF @limit IS NULL
         BEGIN
-            SELECT object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= GETDATE() ORDER BY object_id ASC
+            SELECT object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= @current_time ORDER BY object_id ASC
             IF @@ERROR != 0
             BEGIN
                 ROLLBACK TRANSACTION
@@ -1067,7 +1079,7 @@ BEGIN
         END
         ELSE
         BEGIN
-            SELECT TOP(@limit) object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= GETDATE() ORDER BY object_id ASC
+            SELECT TOP(@limit) object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= @current_time ORDER BY object_id ASC
             IF @@ERROR != 0
             BEGIN
                 ROLLBACK TRANSACTION

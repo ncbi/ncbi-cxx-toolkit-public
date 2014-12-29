@@ -211,6 +211,8 @@ private:
                                 const SCommonRequestArguments &  common_args);
     void x_ProcessGetAttrList(const CJsonNode &                message,
                               const SCommonRequestArguments &  common_args);
+    void x_ProcessGetClientObjects(const CJsonNode &                message,
+                                   const SCommonRequestArguments &  comm_args);
     void x_ProcessGetAttr(const CJsonNode &                message,
                           const SCommonRequestArguments &  common_args);
     void x_ProcessSetAttr(const CJsonNode &                message,

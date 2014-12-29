@@ -72,6 +72,8 @@ const char *  CNetStorageServerException::GetErrCodeString(void) const
         return "eNetStorageAttributeNotFound";
     case eNetStorageAttributeValueNotFound:
         return "eNetStorageAttributeValueNotFound";
+    case eNetStorageClientNotFound:
+        return "eNetStorageClientNotFound";
     case eNetStorageObjectExpired:
         return "eNetStorageObjectExpired";
     case eDatabaseError:
@@ -105,6 +107,7 @@ unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode(void) const
     case eNetStorageObjectNotFound:         return 404;
     case eNetStorageAttributeNotFound:      return 404;
     case eNetStorageAttributeValueNotFound: return 404;
+    case eNetStorageClientNotFound:         return 404;
     case eNetStorageObjectExpired:          return 404;
     case eInvalidMetaInfoRequest:           return 400;
     case eRemoteObjectNotFound:             return 404;
