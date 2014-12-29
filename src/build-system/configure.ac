@@ -2296,7 +2296,7 @@ if test "$compiler" = "GCC"; then
       *clang* )
          # Take the LLVM version from both "clang version X.Y (...) ..." and
          # "$Vendor (LLVM|clang) version ... (...) (based on LLVM X.Y)"
-         sed='s/.*[[Mn]] \([[1-9]][[0-9.]]*\).*/\1/; s/\.//; s/^..$/&0/'
+         sed='s/.*[[Mn]] \([[1-9]][[0-9.]]*\).*/\1/; s/\.//g; s/^..$/&0/'
          signature_compiler=Clang
          signature_compiler_version=`echo $llvm_version | sed -e "$sed"`
          ;;
