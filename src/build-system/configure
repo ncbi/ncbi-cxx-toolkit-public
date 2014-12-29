@@ -27611,7 +27611,7 @@ if test "$with_ftds" != "no" ; then
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    d="dbapi/driver/ftds64/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
-         test "$with_ftds" = 64  &&  FTDS_PATH="<$d>"
+         test "$ftds_ver" = 64  &&  FTDS_PATH="<$d>"
          FTDS64_CTLIB_LIB="ct_ftds64${STATIC} tds_ftds64${STATIC}"
          FTDS64_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS)'
          FTDS64_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
@@ -29954,8 +29954,12 @@ if test "$with_boost" != "no"; then
     BOOST_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
  fi
-   test -d "$BOOST_PATH"  ||  BOOST_LIBPATH_=/usr/lib
-   boost_path_digits=`basename $BOOST_PATH | sed -e 's/-ncbi[0-9]*$//; s/.0$//' | tr -cd 0123456789`
+   if test -d "$BOOST_PATH"; then
+      boost_path_digits=`basename $BOOST_PATH | sed -e 's/-ncbi[0-9]*$//; s/.0$//' | tr -cd 0123456789`
+   else
+      boost_path_digits=
+      BOOST_LIBPATH_=/usr/lib
+   fi
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
       if test $boost_path_digits != "$boost_version_digits"; then

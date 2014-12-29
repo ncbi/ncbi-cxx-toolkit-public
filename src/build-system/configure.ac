@@ -4895,8 +4895,12 @@ if test "$with_boost" != "no"; then
    fi
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
-   test -d "$BOOST_PATH"  ||  BOOST_LIBPATH_=/usr/lib
-   boost_path_digits=`basename $BOOST_PATH | sed -e 's/-ncbi[[0-9]]*$//; s/.0$//' | tr -cd 0123456789`
+   if test -d "$BOOST_PATH"; then  
+      boost_path_digits=`basename $BOOST_PATH | sed -e 's/-ncbi[[0-9]]*$//; s/.0$//' | tr -cd 0123456789`
+   else
+      boost_path_digits=
+      BOOST_LIBPATH_=/usr/lib
+   fi
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
       if test $boost_path_digits != "$boost_version_digits"; then

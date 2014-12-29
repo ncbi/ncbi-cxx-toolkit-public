@@ -296,7 +296,7 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
 AC_DEFUN(NCBI_LOCAL_FTDS,
 [d="dbapi/driver/ftds$1/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
-         test "$with_ftds" = $1  &&  FTDS_PATH="<$d>"
+         test "$ftds_ver" = $1  &&  FTDS_PATH="<$d>"
          FTDS$1[_CTLIB_LIB]="ct_ftds$1${STATIC} tds_ftds$1${STATIC}"
          FTDS$1[_CTLIB_LIBS]='$(ICONV_LIBS) $(KRB5_LIBS)'
          FTDS$1[_CTLIB_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
