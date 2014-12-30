@@ -856,6 +856,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
             } while (!json_reader.ReadMessage(m_UTTPReader));
         }
         catch (...) {
+            m_UTTPReader.Reset();
             sock->Close();
             throw;
         }
