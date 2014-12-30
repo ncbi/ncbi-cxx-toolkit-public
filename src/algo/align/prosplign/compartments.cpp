@@ -341,18 +341,20 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
                ) {
                 TSeqPos prev_end_extended = prev_compartment_loc->GetStop(eExtreme_Positional);
                 TSeqPos prev_end = prev_end_extended - max_extent;
-                _ASSERT(prev_end < cur_begin);
-                if (prev_end_extended >= cur_begin_extended) {
-                    prev_end_extended = (prev_end + cur_begin)/2;
-                    cur_begin_extended = prev_end_extended+1;
-                    _ASSERT(cur_begin_extended <= cur_begin);
-
-                    prev_compartment_loc->SetInt().SetTo(prev_end_extended);
-                    cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);
+                if(prev_end < cur_begin) {
+                    if (prev_end_extended >= cur_begin_extended) {
+                        prev_end_extended = (prev_end + cur_begin)/2;
+                        cur_begin_extended = prev_end_extended+1;
+                        _ASSERT(cur_begin_extended <= cur_begin);                       
+                        prev_compartment_loc->SetInt().SetTo(prev_end_extended);
+                        cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);
+                    }
+                } else {//overlapping compartments, no extension    
+                    prev_compartment_loc->SetInt().SetTo(prev_end);
+                    cur_compartment_loc->SetInt().SetFrom(cur_begin);
                 }
             }
             prev_compartment_loc=cur_compartment_loc;
-
             results.push_back(compartment);
             ++i;
         } while (comps.GetNext(comphits));
