@@ -78,6 +78,7 @@ init_cache() {
 }
 
 exitcode=0
+failed=''
 for method in $methods; do
     for cache in 1 2 3; do
         if test "$cache" = 1; then
@@ -99,6 +100,7 @@ for method in $methods; do
         if test $error -ne 0; then
             echo "Test of GenBank loader $m failed (base: $method): $error"
             exitcode=$error
+            failed="$failed $m (base: $method)"
             case $error in
             # signal 1 (HUP), 2 (INTR), 9 (KILL), or 15 (TERM).
                 129|130|137|143) echo "Apparently killed"; break ;;
@@ -107,4 +109,7 @@ for method in $methods; do
     done
 done
 
+if test $exitcode -ne 0; then
+    echo "Failed tests:$failed"
+fi
 exit $exitcode
