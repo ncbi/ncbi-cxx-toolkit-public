@@ -57,6 +57,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/misc/sequence_macros.hpp>
 
+
 #include <util/line_reader.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
@@ -330,7 +331,7 @@ string CVariationUtilities::x_GetAlleleFromLoc(const CSeq_loc& loc, CScope& scop
         } catch(CException& e) {
             string loc_label;   
             loc.GetLabel(&loc_label);
-            NCBI_RETHROW_SAME(e, "Can't get literal for " + loc_label);
+            NCBI_RETHROW_SAME(e, "Can't get literal (not in scope) for " + loc_label);
         }
     }
     

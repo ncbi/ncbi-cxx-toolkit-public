@@ -33,6 +33,8 @@
 
 #include <objects/variation/Variation.hpp>
 #include <objects/variation/VariantPlacement.hpp>
+#include <objects/seqfeat/Variation_inst.hpp>
+
 #include <util/ncbi_cache.hpp>
 
 USING_NCBI_SCOPE;
