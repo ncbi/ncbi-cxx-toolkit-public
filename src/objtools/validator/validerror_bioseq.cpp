@@ -7020,7 +7020,7 @@ void CValidError_bioseq::ValidateTwintrons(
         if (!bsh) return;
         SAnnotSelector sel (CSeqFeatData::eSubtype_intron);
         for (CFeat_CI feat_ci(bsh, sel); feat_ci;  ++feat_ci) {
-            bool skip = false;
+            bool twintron = false;
             const CSeq_feat& const_feat = feat_ci->GetOriginalFeature();
             const CSeq_loc& loc = const_feat.GetLocation();
             int num_intervals = 0;
@@ -7056,19 +7056,24 @@ void CValidError_bioseq::ValidateTwintrons(
                    }
                    if (num_intervals_dup == 1) {
                        if (stop == left + 1 && start == right - 1) {
-                           skip = true;
+                           twintron = true;
                        }
                    }
                }
             }
-            if (skip) continue;
             EDiagSev sev = eDiag_Error;
             if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
                 sev = eDiag_Warning;
             }
-            PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
-                     "An intron should not have multiple intervals",
-                      const_feat);
+            if (twintron) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultiIntervalIntron,
+                         "Multi-interval intron contains possible twintron",
+                          const_feat);
+            } else {
+                PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
+                         "An intron should not have multiple intervals",
+                          const_feat);
+            }
         }
     }
     catch (CException& e) {
