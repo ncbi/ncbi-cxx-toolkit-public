@@ -1,5 +1,5 @@
-Check Variation type: 3
-Ref/Alt : A - G
+Check Variation type: 6
+Ref/Alt : TACGACCGC - 
 Variation ::= {
   data set {
     type package,
@@ -7,17 +7,18 @@ Variation ::= {
       {
         placements {
           {
-            loc pnt {
-              point 68910540,
+            loc int {
+              from 2229045,
+              to 2229053,
               id other {
                 accession "NC_000001",
-                version 10
+                version 11
               }
             },
             mol genomic,
             seq {
-              length 1,
-              seq-data iupacna "G"
+              length 9,
+              seq-data iupacna "TCCGACCGC"
             }
           }
         },
@@ -26,30 +27,41 @@ Variation ::= {
           variations {
             {
               data instance {
-                type snv,
-                delta {
-                  {
-                    seq literal {
-                      length 1,
-                      seq-data iupacna "A"
-                    }
-                  }
-                },
-                observation 5
-              }
-            },
-            {
-              data instance {
                 type identity,
                 delta {
                   {
                     seq literal {
-                      length 1,
-                      seq-data iupacna "G"
+                      length 9,
+                      seq-data iupacna "TCCGACCGC"
                     }
                   }
                 },
                 observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 9,
+                      seq-data iupacna "TACGACCGC"
+                    }
+                  }
+                },
+                observation 5
               }
             }
           }

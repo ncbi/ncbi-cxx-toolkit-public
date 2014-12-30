@@ -1,5 +1,5 @@
-Check Variation type: 3
-Ref/Alt : A - G
+Check Variation type: 4
+Ref/Alt : CC - GC
 Variation ::= {
   data set {
     type package,
@@ -7,17 +7,19 @@ Variation ::= {
       {
         placements {
           {
-            loc pnt {
-              point 68910540,
+            loc int {
+              from 123122,
+              to 123123,
+              strand plus,
               id other {
                 accession "NC_000001",
-                version 10
+                version 11
               }
             },
             mol genomic,
             seq {
-              length 1,
-              seq-data iupacna "G"
+              length 2,
+              seq-data iupacna "AT"
             }
           }
         },
@@ -26,16 +28,15 @@ Variation ::= {
           variations {
             {
               data instance {
-                type snv,
+                type mnp,
                 delta {
                   {
                     seq literal {
-                      length 1,
-                      seq-data iupacna "A"
+                      length 2,
+                      seq-data iupacna "GC"
                     }
                   }
-                },
-                observation 5
+                }
               }
             },
             {
@@ -44,12 +45,26 @@ Variation ::= {
                 delta {
                   {
                     seq literal {
-                      length 1,
-                      seq-data iupacna "G"
+                      length 2,
+                      seq-data iupacna "AT"
                     }
                   }
                 },
                 observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "CC"
+                    }
+                  }
+                },
+                observation 5
               }
             }
           }

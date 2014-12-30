@@ -61,7 +61,8 @@ Variation ::= {
                       seq-data iupacna "A"
                     }
                   }
-                }
+                },
+                observation 5
               }
             }
           }

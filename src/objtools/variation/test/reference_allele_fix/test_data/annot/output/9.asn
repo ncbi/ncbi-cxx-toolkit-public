@@ -1,6 +1,6 @@
-Is Reference Correct? : 0 . A . G
-Check Variation type: 3
-Ref/Alt : A - T
+Is Reference Correct? : 0 . CC . AT
+Check Variation type: 4
+Ref/Alt : CC - GC
 Seq-feat ::= {
   data variation {
     data set {
@@ -8,12 +8,12 @@ Seq-feat ::= {
       variations {
         {
           data instance {
-            type snv,
+            type mnp,
             delta {
               {
                 seq literal {
-                  length 1,
-                  seq-data iupacna "T"
+                  length 2,
+                  seq-data iupacna "GC"
                 }
               }
             }
@@ -25,8 +25,8 @@ Seq-feat ::= {
             delta {
               {
                 seq literal {
-                  length 1,
-                  seq-data iupacna "G"
+                  length 2,
+                  seq-data iupacna "AT"
                 }
               }
             },
@@ -35,12 +35,12 @@ Seq-feat ::= {
         },
         {
           data instance {
-            type snv,
+            type mnp,
             delta {
               {
                 seq literal {
-                  length 1,
-                  seq-data iupacna "A"
+                  length 2,
+                  seq-data iupacna "CC"
                 }
               }
             },
@@ -50,12 +50,11 @@ Seq-feat ::= {
       }
     }
   },
-  location pnt {
-    point 68910540,
-    id other {
-      accession "NC_000001",
-      version 10
-    }
+  location int {
+    from 123122,
+    to 123123,
+    strand plus,
+    id gi 568815597
   },
   exts {
     {
