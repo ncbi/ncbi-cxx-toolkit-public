@@ -140,6 +140,112 @@ CFeat_CI Itr(Var, Sel)
 #define FOR_SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE(Itr, Var, Sel) \
 for (SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Sel); Itr;  ++Itr)
 
+static const char* x_OrganelleName (
+    TBIOSOURCE_GENOME genome,
+    bool has_plasmid,
+    bool virus_or_phage,
+    bool wgs_suffix
+)
+
+{
+    const char* result = kEmptyCStr;
+
+    switch (genome) {
+        case NCBI_GENOME(chloroplast):
+            result = "chloroplast";
+            break;
+        case NCBI_GENOME(chromoplast):
+            result = "chromoplast";
+            break;
+        case NCBI_GENOME(kinetoplast):
+            result = "kinetoplast";
+            break;
+        case NCBI_GENOME(mitochondrion):
+        {
+            if (has_plasmid || wgs_suffix) {
+                result = "mitochondrial";
+            } else {
+                result = "mitochondrion";
+            }
+            break;
+        }
+        case NCBI_GENOME(plastid):
+            result = "plastid";
+            break;
+        case NCBI_GENOME(macronuclear):
+        {
+            result = "macronuclear";
+            break;
+        }
+        case NCBI_GENOME(extrachrom):
+        {
+            if (! wgs_suffix) {
+                result = "extrachromosomal";
+            }
+            break;
+        }
+        case NCBI_GENOME(plasmid):
+        {
+            if (! wgs_suffix) {
+                result = "plasmid";
+            }
+            break;
+        }
+        // transposon and insertion-seq are obsolete
+        case NCBI_GENOME(cyanelle):
+            result = "cyanelle";
+            break;
+        case NCBI_GENOME(proviral):
+        {
+            if (! virus_or_phage) {
+                if (has_plasmid || wgs_suffix) {
+                    result = "proviral";
+                } else {
+                    result = "provirus";
+                }
+            }
+            break;
+        }
+        case NCBI_GENOME(virion):
+        {
+            if (! virus_or_phage) {
+                result = "virus";
+            }
+            break;
+        }
+        case NCBI_GENOME(nucleomorph):
+        {
+            if (! wgs_suffix) {
+                result = "nucleomorph";
+            }
+           break;
+        }
+        case NCBI_GENOME(apicoplast):
+            result = "apicoplast";
+            break;
+        case NCBI_GENOME(leucoplast):
+            result = "leucoplast";
+            break;
+        case NCBI_GENOME(proplastid):
+            result = "proplastid";
+            break;
+        case NCBI_GENOME(endogenous_virus):
+            result = "endogenous virus";
+            break;
+        case NCBI_GENOME(hydrogenosome):
+            result = "hydrogenosome";
+            break;
+        case NCBI_GENOME(chromosome):
+            result = "chromosome";
+            break;
+        case NCBI_GENOME(chromatophore):
+            result = "chromatophore";
+            break;
+    }
+
+    return result;
+}
+
 // set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not
 //  BioSource
 void CDeflineGenerator::x_SetFlags (
@@ -590,6 +696,8 @@ void CDeflineGenerator::x_SetBioSrc (
         }
         if (m_Source->IsSetGenome()) {
             m_Genome = m_Source->GetGenome();
+            m_IsPlasmid = (m_Genome == NCBI_GENOME(plasmid));
+            m_IsChromosome = (m_Genome == NCBI_GENOME(chromosome));
         }
 
         // process SubSource
@@ -678,8 +786,33 @@ void CDeflineGenerator::x_SetBioSrc (
         }
     }
 
-    if (m_has_clone) return;
+    bool virus_or_phage = false;
+    bool has_plasmid = false;
+    bool wgs_suffix = false;
 
+    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
+        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
+        virus_or_phage = true;
+    }
+
+    if (! m_Plasmid.empty()) {
+        has_plasmid = true;
+        /*
+        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+            pls_pfx = " plasmid ";
+        }
+        */
+    }
+
+    if (m_IsWGS) {
+        wgs_suffix = true;
+    }
+
+    m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
+
+
+    if (m_has_clone) return;
 
     try {
         CFeat_CI feat_it(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc));
@@ -794,6 +927,17 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
     if (! m_Chromosome.empty()) {
         joiner.Add(" chromosome ").Add(m_Chromosome);
     }
+    /*
+    if (! m_Breed.empty()) {
+        joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
+    }
+    if (! m_Cultivar.empty()) {
+        joiner.Add(" cultivar ").Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
+    }
+    if (! m_Isolate.empty()) {
+        joiner.Add(" isolate ").Add(m_Isolate);
+    }
+    */
     if (m_has_clone) {
         x_DescribeClones (clnvec, clnbuf);
         ITERATE (vector<CTempString>, it, clnvec) {
@@ -809,119 +953,9 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
     joiner.Join(&m_MainTitle);
     NStr::TruncateSpacesInPlace(m_MainTitle);
-
-    if (!m_MainTitle.empty() && islower ((unsigned char) m_MainTitle[0])) {
-        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
-    }
 }
 
 // generate title for NC
-static const char* x_OrganelleName (
-    TBIOSOURCE_GENOME genome,
-    bool has_plasmid,
-    bool virus_or_phage,
-    bool wgs_suffix
-)
-
-{
-    const char* result = kEmptyCStr;
-
-    switch (genome) {
-        case NCBI_GENOME(chloroplast):
-            result = "chloroplast";
-            break;
-        case NCBI_GENOME(chromoplast):
-            result = "chromoplast";
-            break;
-        case NCBI_GENOME(kinetoplast):
-            result = "kinetoplast";
-            break;
-        case NCBI_GENOME(mitochondrion):
-        {
-            if (has_plasmid || wgs_suffix) {
-                result = "mitochondrial";
-            } else {
-                result = "mitochondrion";
-            }
-            break;
-        }
-        case NCBI_GENOME(plastid):
-            result = "plastid";
-            break;
-        case NCBI_GENOME(macronuclear):
-        {
-            result = "macronuclear";
-            break;
-        }
-        case NCBI_GENOME(extrachrom):
-        {
-            if (! wgs_suffix) {
-                result = "extrachromosomal";
-            }
-            break;
-        }
-        case NCBI_GENOME(plasmid):
-        {
-            if (! wgs_suffix) {
-                result = "plasmid";
-            }
-            break;
-        }
-        // transposon and insertion-seq are obsolete
-        case NCBI_GENOME(cyanelle):
-            result = "cyanelle";
-            break;
-        case NCBI_GENOME(proviral):
-        {
-            if (! virus_or_phage) {
-                if (has_plasmid || wgs_suffix) {
-                    result = "proviral";
-                } else {
-                    result = "provirus";
-                }
-            }
-            break;
-        }
-        case NCBI_GENOME(virion):
-        {
-            if (! virus_or_phage) {
-                result = "virus";
-            }
-            break;
-        }
-        case NCBI_GENOME(nucleomorph):
-        {
-            if (! wgs_suffix) {
-                result = "nucleomorph";
-            }
-           break;
-        }
-        case NCBI_GENOME(apicoplast):
-            result = "apicoplast";
-            break;
-        case NCBI_GENOME(leucoplast):
-            result = "leucoplast";
-            break;
-        case NCBI_GENOME(proplastid):
-            result = "proplastid";
-            break;
-        case NCBI_GENOME(endogenous_virus):
-            result = "endogenous virus";
-            break;
-        case NCBI_GENOME(hydrogenosome):
-            result = "hydrogenosome";
-            break;
-        case NCBI_GENOME(chromosome):
-            result = "chromosome";
-            break;
-        case NCBI_GENOME(chromatophore):
-            result = "chromatophore";
-            break;
-    }
-
-    return result;
-}
-
 void CDeflineGenerator::x_SetTitleFromNC (void)
 
 {
@@ -931,29 +965,10 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
     // require taxname to be set
     if (m_Taxname.empty()) return;
 
-    bool       has_plasmid = false, virus_or_phage = false,
-               is_chromosome = false, is_plasmid = false;
-    const char * orgnl, * seq_tag, * gen_tag, * pls_pfx = " ";
+    const char * seq_tag, * gen_tag, * pls_pfx = " ";
 
     CTextJoiner<6, CTempString> joiner;
 
-    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
-        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
-        virus_or_phage = true;
-    }
-
-    if (! m_Plasmid.empty()) {
-        has_plasmid = true;
-        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
-            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            pls_pfx = " plasmid ";
-        }
-    }
-
-    orgnl = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, false);
-
-    is_plasmid = (m_Genome == NCBI_GENOME(plasmid));
-    is_chromosome = (m_Genome == NCBI_GENOME(chromosome));
 
     switch (m_MICompleteness) {
         case NCBI_COMPLETENESS(partial):
@@ -973,24 +988,32 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
 
     if (NStr::FindNoCase (m_Taxname, "plasmid") != NPOS) {
         joiner.Add(seq_tag);
-    } else if (is_plasmid) {
+    } else if (m_IsPlasmid) {
         if (m_Plasmid.empty()) {
             joiner.Add(" unnamed plasmid").Add(seq_tag);
         } else {
+            if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+                NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+                pls_pfx = " plasmid ";
+            }
             joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
         }
     } else if (! m_Plasmid.empty() ) {
-        if (orgnl[0] != '\0') {
-            joiner.Add(" ").Add(orgnl);
+        if (! m_Organelle.empty()) {
+            joiner.Add(" ").Add(m_Organelle);
+        }
+        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+            pls_pfx = " plasmid ";
         }
         joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
-    } else if ( orgnl[0] != 0 ) {
+    } else if ( ! m_Organelle.empty() ) {
         if ( m_Chromosome.empty() ) {
-            joiner.Add(" ").Add(orgnl).Add(gen_tag);
-        } else if (is_chromosome) {
+            joiner.Add(" ").Add(m_Organelle).Add(gen_tag);
+        } else if (m_IsChromosome) {
             joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
         } else {
-            joiner.Add(" ").Add(orgnl).Add(" chromosome ").Add(m_Chromosome)
+            joiner.Add(" ").Add(m_Organelle).Add(" chromosome ").Add(m_Chromosome)
                 .Add(seq_tag);
         }
     } else if (! m_Segment.empty()) {
@@ -1011,9 +1034,6 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
 
     NStr::ReplaceInPlace (m_MainTitle, "Plasmid", "plasmid");
     NStr::ReplaceInPlace (m_MainTitle, "Element", "element");
-    if (! m_MainTitle.empty()) {
-        m_MainTitle[0] = toupper ((unsigned char) m_MainTitle[0]);
-    }
 }
 
 // generate title for NM
@@ -1186,26 +1206,10 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
 
     joiner.Add(m_Taxname);
 
-    bool       has_plasmid = false, virus_or_phage = false;
-    const char * orgnl, * pls_pfx = " ";
+    const char * pls_pfx = " ";
 
-    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
-        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
-        virus_or_phage = true;
-    }
-
-    if (! m_Plasmid.empty()) {
-        has_plasmid = true;
-        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
-            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            pls_pfx = " plasmid ";
-        }
-    }
-
-    orgnl = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, false);
-
-    if ( orgnl[0] != 0 && NStr::FindNoCase (m_Taxname, "plasmid") != NPOS) {
-        joiner.Add(orgnl);
+    if ( ! m_Organelle.empty() && NStr::FindNoCase (m_Organelle, "plasmid") != NPOS) {
+        joiner.Add(m_Organelle);
     }
 
     if (! m_Strain.empty()) {
@@ -1227,6 +1231,10 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
         joiner.Add(" map ").Add(m_Map);
     }
     if (! m_Plasmid.empty()) {
+        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+            pls_pfx = " plasmid ";
+        }
         joiner.Add(pls_pfx).Add(m_Plasmid);
     }
     if (m_MICompleteness ==  NCBI_COMPLETENESS(complete)) {
@@ -1235,10 +1243,6 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
 
     joiner.Join(&m_MainTitle);
     NStr::TruncateSpacesInPlace(m_MainTitle);
-
-    if (!m_MainTitle.empty() && islower ((unsigned char) m_MainTitle[0])) {
-        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
-    }
 }
 
 // generate title for protein
@@ -1475,7 +1479,7 @@ static const char* s_proteinOrganellePrefix [] = {
   "",
   "",
   "",
-  "",
+  ""
 };
 
 void CDeflineGenerator::x_SetTitleFromProtein (
@@ -1820,10 +1824,6 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
 
     joiner.Join(&m_MainTitle);
     NStr::TruncateSpacesInPlace(m_MainTitle);
-
-    if (islower ((unsigned char) m_MainTitle[0])) {
-        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
-    }
 }
 
 // generate title for optical map
@@ -1833,12 +1833,8 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     string clnbuf;
     vector<CTempString> clnvec;
     CTextJoiner<14, CTempString> joiner;
-    bool is_chromosome, is_plasmid;
 
     joiner.Add(m_Taxname);
-
-    is_plasmid = (m_Genome == NCBI_GENOME(plasmid));
-    is_chromosome = (m_Genome == NCBI_GENOME(chromosome));
 
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
@@ -1848,12 +1844,12 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     }
     if (! m_Chromosome.empty()) {
         joiner.Add(" chromosome ").Add(m_Chromosome);
-    } else if (is_chromosome) {
+    } else if (m_IsChromosome) {
         joiner.Add(" chromosome");
     }
     if (! m_Plasmid.empty()) {
         joiner.Add(" plasmid ").Add(m_Plasmid);
-    } else if (is_plasmid) {
+    } else if (m_IsPlasmid) {
         joiner.Add(" plasmid");
     }
     if (! m_Isolate.empty()) {
@@ -1866,10 +1862,6 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
 
     joiner.Join(&m_MainTitle);
     NStr::TruncateSpacesInPlace(m_MainTitle);
-
-    if (islower ((unsigned char) m_MainTitle[0])) {
-        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
-    }
 }
 
 // generate TPA or TSA prefix
@@ -1908,20 +1900,23 @@ void CDeflineGenerator::x_SetSuffix (
 )
 
 {
+    string type;
+    string comp;
+
     switch (m_MITech) {
         case NCBI_TECH(htgs_0):
             if (m_MainTitle.find ("LOW-PASS") == NPOS) {
-                suffix = ", LOW-PASS SEQUENCE SAMPLING";
+                type = ", LOW-PASS SEQUENCE SAMPLING";
             }
             break;
         case NCBI_TECH(htgs_1):
         case NCBI_TECH(htgs_2):
         {
             if (m_HTGSDraft && m_MainTitle.find ("WORKING DRAFT") == NPOS) {
-                suffix = ", WORKING DRAFT SEQUENCE";
+                type = ", WORKING DRAFT SEQUENCE";
             } else if ( !m_HTGSDraft && !m_HTGSCancelled &&
                        m_MainTitle.find ("SEQUENCING IN") == NPOS) {
-                suffix = ", *** SEQUENCING IN PROGRESS ***";
+                type = ", *** SEQUENCING IN PROGRESS ***";
             }
 
             string un;
@@ -1934,49 +1929,49 @@ void CDeflineGenerator::x_SetSuffix (
                     ++pieces;
                 }
                 if (pieces == 1) {
-                    // suffix += (", 1 " + un + "ordered piece");
+                    // type += (", 1 " + un + "ordered piece");
                 } else {
-                    suffix += (", " + NStr::IntToString (pieces)
+                    type += (", " + NStr::IntToString (pieces)
                                + " " + un + "ordered pieces");
                 }
             } else {
-                // suffix += ", in " + un + "ordered pieces";
+                // type += ", in " + un + "ordered pieces";
             }
             break;
         }
         case NCBI_TECH(htgs_3):
             if (m_MainTitle.find ("complete sequence") == NPOS) {
-                suffix = ", complete sequence";
+                type = ", complete sequence";
             }
             break;
         case NCBI_TECH(est):
             if (m_MainTitle.find ("mRNA sequence") == NPOS) {
-                suffix = ", mRNA sequence";
+                type = ", mRNA sequence";
             }
             break;
         case NCBI_TECH(sts):
             if (m_MainTitle.find ("sequence tagged site") == NPOS) {
-                suffix = ", sequence tagged site";
+                type = ", sequence tagged site";
             }
             break;
         case NCBI_TECH(survey):
             if (m_MainTitle.find ("genomic survey sequence") == NPOS) {
-                suffix = ", genomic survey sequence";
+                type = ", genomic survey sequence";
             }
             break;
         case NCBI_TECH(wgs):
             if (m_WGSMaster) {
                 if (m_MainTitle.find ("whole genome shotgun sequencing project")
                     == NPOS){
-                    suffix = ", whole genome shotgun sequencing project";
+                    type = ", whole genome shotgun sequencing project";
                 }
             } else if (m_MainTitle.find ("whole genome shotgun sequence")
                        == NPOS) {
-                string orgnl = x_OrganelleName (m_Genome, false, false, true);
-                if (! orgnl.empty()  &&  m_MainTitle.find(orgnl) == NPOS) {
-                    suffix = " " + orgnl;
+                if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
+                    type = " ";
+                    type += m_Organelle;
                 }
-                suffix += ", whole genome shotgun sequence";
+                type += ", whole genome shotgun sequence";
             }
             break;
         case NCBI_TECH(tsa):
@@ -1984,19 +1979,19 @@ void CDeflineGenerator::x_SetSuffix (
                 if (m_MainTitle.find
                     ("transcriptome shotgun assembly")
                     == NPOS) {
-                    suffix = ", transcriptome shotgun assembly";
+                    type = ", transcriptome shotgun assembly";
                 }
             } else {
                 if (m_MainTitle.find ("RNA sequence") == NPOS) {
                     switch (m_MIBiomol) {
                         case NCBI_BIOMOL(mRNA):
-                            suffix = ", mRNA sequence";
+                            type = ", mRNA sequence";
                             break;
                         case NCBI_BIOMOL(rRNA):
-                            suffix = ", rRNA sequence";
+                            type = ", rRNA sequence";
                             break;
                         case NCBI_BIOMOL(ncRNA):
-                            suffix = ", ncRNA sequence";
+                            type = ", ncRNA sequence";
                             break;
                         case NCBI_BIOMOL(pre_RNA):
                         case NCBI_BIOMOL(snRNA):
@@ -2004,7 +1999,7 @@ void CDeflineGenerator::x_SetSuffix (
                         case NCBI_BIOMOL(cRNA):
                         case NCBI_BIOMOL(snoRNA):
                         case NCBI_BIOMOL(transcribed_RNA):
-                            suffix = ", transcribed RNA sequence";
+                            type = ", transcribed RNA sequence";
                             break;
                         default:
                             break;
@@ -2015,6 +2010,11 @@ void CDeflineGenerator::x_SetSuffix (
         default:
             break;
     }
+
+    /*
+    */
+
+    suffix = type + comp;
 }
 
 static inline void s_TrimMainTitle (string& str)
@@ -2168,6 +2168,16 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     }
 }
 
+static const char* s_tpaPrefixList [] = {
+  "TPA:",
+  "TPA_exp:",
+  "TPA_inf:",
+  "TPA_reasm:",
+  "TPA_asm:",
+  "TSA:",
+  "UNVERIFIED:"
+};
+
 // main method
 string CDeflineGenerator::GenerateDefline (
     const CBioseq_Handle& bsh,
@@ -2242,36 +2252,11 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // remove TPA or TSA prefix, will rely on other data in record to set
-    switch (CTempString (m_MainTitle, 0, 11).find (':')) {
-    case 3:
-        if (NStr::StartsWith (m_MainTitle, "TPA", NStr::eNocase)  ||
-            NStr::StartsWith (m_MainTitle, "TSA", NStr::eNocase)) {
-            m_MainTitle.erase (0, 4);
+    for (int i = 0; i < sizeof (s_tpaPrefixList) / sizeof (const char*); i++) {
+        string str = s_tpaPrefixList [i];
+        if (NStr::StartsWith (m_MainTitle, str, NStr::eNocase)) {
+            m_MainTitle.erase (0, str.length());
         }
-        break;
-
-    case 7:
-        if (NStr::StartsWith (m_MainTitle, "TPA_exp", NStr::eNocase)  ||
-            NStr::StartsWith (m_MainTitle, "TPA_inf", NStr::eNocase)  ||
-            NStr::StartsWith (m_MainTitle, "TPA_asm", NStr::eNocase)) {
-            m_MainTitle.erase (0, 8);
-        }
-        break;
-
-    case 9:
-        if (NStr::StartsWith (m_MainTitle, "TPA_reasm", NStr::eNocase)) {
-            m_MainTitle.erase (0, 10);
-        }
-        break;
-
-    case 10:
-        if (NStr::StartsWith (m_MainTitle, "UNVERIFIED", NStr::eNocase)) {
-            m_MainTitle.erase (0, 11);
-        }
-        break;
-
-    default:
-        break;
     }
 
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
@@ -2299,6 +2284,12 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     x_CompressRunsOfSpaces (final);
+
+    if (! m_IsPDB && ! m_IsPatent && ! m_IsAA && ! m_IsSeg) {
+        if (!m_MainTitle.empty() && islower ((unsigned char) m_MainTitle[0])) {
+            m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
+        }
+    }
 
     return final;
 }

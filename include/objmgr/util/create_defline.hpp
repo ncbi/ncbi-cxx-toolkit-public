@@ -237,6 +237,10 @@ private:
     CTempString m_Taxname;
     bool m_Multispecies;
     CBioSource::TGenome m_Genome;
+    bool m_IsPlasmid;
+    bool m_IsChromosome;
+
+    CTempString m_Organelle;
 
     string m_FirstSuperKingdom;
     string m_SecondSuperKingdom;
