@@ -1059,9 +1059,10 @@ void SNetStorageObjectRPC::Close()
     if (m_State == eReading) {
         m_State = eReady;
 
-        if (!m_EOF)
+        if (!m_EOF) {
+            m_UTTPReader.Reset();
             conn_copy->Close();
-        else {
+        } else {
             CSocket* sock = &conn_copy->m_Socket;
 
             CJsonOverUTTPReader json_reader;
