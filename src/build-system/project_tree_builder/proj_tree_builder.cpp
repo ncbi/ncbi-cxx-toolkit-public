@@ -281,7 +281,14 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                 const string& define = *l;
                                 if ( IsConfigurableDefine(define) ) {
                                     string stripped = StripConfigurableDefine(define);
-                                    string resolved_def_str = site.GetDefinesEntry(stripped);
+                                    string resolved_def_str;
+                                    list<string> libchoices_includes ;
+                                    site.GetLibChoiceIncludes(stripped, &libchoices_includes);
+                                    if (!libchoices_includes.empty()) {
+                                        resolved_def_str = NStr::Join( libchoices_includes, " ");
+                                    } else {
+                                        resolved_def_str = site.GetDefinesEntry(stripped);
+                                    }
                                     if ( !resolved_def_str.empty() ) {
                                         defs_resolved[define] = resolved_def_str;
                                         list<string> resolved_defs;
