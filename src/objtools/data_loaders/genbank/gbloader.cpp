@@ -937,6 +937,21 @@ void CGBDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
         }
         CGBReaderRequestResult result(this, ids[i]);
         m_Dispatcher->LoadTaxIds(result, ids, loaded, ret);
+
+        // the ID2 may accidentally return no taxid for newly loaded sequences
+        // we have to fall back to full sequence retrieval in such cases
+        bool retry = false;
+        for ( size_t i = 0; i < ids.size(); ++i ) {
+            if ( loaded[i] && ret[i] == -1 ) {
+                loaded[i] = false;
+                retry = true;
+            }
+        }
+        if ( retry ) {
+            // full sequence retrieval is implemented in base CDataLoader class
+            CDataLoader::GetTaxIds(ids, loaded, ret);
+        }
+
         return;
     }
 }
