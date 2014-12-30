@@ -223,21 +223,29 @@ private:
 
 CJsonNode CReadJsonFromSocket::ReadMessage(CSocket* sock)
 {
-    char read_buffer[READ_BUFFER_SIZE];
+    try {
+        char read_buffer[READ_BUFFER_SIZE];
 
-    size_t bytes_read;
+        size_t bytes_read;
 
-    do {
-        s_ReadSocket(sock, read_buffer, READ_BUFFER_SIZE, &bytes_read);
+        do {
+            s_ReadSocket(sock, read_buffer, READ_BUFFER_SIZE, &bytes_read);
 
-        m_UTTPReader.SetNewBuffer(read_buffer, bytes_read);
+            m_UTTPReader.SetNewBuffer(read_buffer, bytes_read);
 
-    } while (!m_JSONReader.ReadMessage(m_UTTPReader));
+        } while (!m_JSONReader.ReadMessage(m_UTTPReader));
+    }
+    catch (...) {
+        sock->Close();
+        throw;
+    }
 
     if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
+        string server_address(sock->GetPeerAddress());
+        sock->Close();
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "Extra bytes past message end while reading from " <<
-                        sock->GetPeerAddress() << " after receiving " <<
+                        server_address << " after receiving " <<
                         m_JSONReader.GetMessage().Repr() << '.');
     }
 
@@ -834,21 +842,27 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
         server->TryExec(json_over_uttp_sender);
 
-        m_Connection = json_over_uttp_sender.GetConnection();
-
         CSocket* sock = &json_over_uttp_sender.GetConnection()->m_Socket;
 
         CJsonOverUTTPReader json_reader;
 
-        do {
-            s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE,
-                    &bytes_read_local);
+        try {
+            do {
+                s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE,
+                        &bytes_read_local);
 
-            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
+                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
 
-        } while (!json_reader.ReadMessage(m_UTTPReader));
+            } while (!json_reader.ReadMessage(m_UTTPReader));
+        }
+        catch (...) {
+            sock->Close();
+            throw;
+        }
 
         s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
+
+        m_Connection = json_over_uttp_sender.GetConnection();
 
         m_CurrentChunkSize = 0;
 
@@ -939,8 +953,9 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
             *bytes_read = bytes_copied;
         return eRW_Success;
     }
-    catch (exception&) {
+    catch (...) {
         m_State = eReady;
+        m_UTTPReader.Reset();
         m_Connection->Close();
         m_Connection = NULL;
         throw;
@@ -1066,19 +1081,26 @@ void SNetStorageObjectRPC::Close()
             CSocket* sock = &conn_copy->m_Socket;
 
             CJsonOverUTTPReader json_reader;
-            size_t bytes_read;
+            try {
+                size_t bytes_read;
 
-            while (!json_reader.ReadMessage(m_UTTPReader)) {
-                s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE, &bytes_read);
+                while (!json_reader.ReadMessage(m_UTTPReader)) {
+                    s_ReadSocket(sock, m_ReadBuffer,
+                            READ_BUFFER_SIZE, &bytes_read);
 
-                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
-            }
+                    m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+                }
 
-            if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
+                if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
                     NCBI_THROW_FMT(CNetStorageException, eIOError,
                             "Extra bytes past confirmation message "
                             "while reading " << m_Locator << " from " <<
                             sock->GetPeerAddress() << '.');
+                }
+            }
+            catch (...) {
+                m_UTTPReader.Reset();
+                conn_copy->Close();
             }
 
             s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
