@@ -303,6 +303,24 @@ const CSeq_id* CBioseq::GetNonLocalId() const
     return NULL;
 }
 
+
+static int s_BestLocalRank(const CRef<CSeq_id>& id)
+{
+    if (id.Empty() || !id->IsLocal()) {
+        return kMax_Int;
+    }
+    return id->BestRankScore();
+}
+
+const CSeq_id* CBioseq::GetLocalId() const 
+{
+    CRef<CSeq_id> id = FindBestChoice(GetId(), &s_BestLocalRank);
+    if (id.NotEmpty() && id->IsLocal()) {
+        return &*id;
+    }
+    return NULL;
+}
+
 bool CBioseq::IsNa(void) const
 {
     return GetInst ().IsNa ();

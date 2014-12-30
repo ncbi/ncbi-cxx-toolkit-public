@@ -206,7 +206,7 @@ bool CSrcChkApp::xGetDesiredFields(
 //  -----------------------------------------------------------------------------
 {
     if (args["all-fields"]) {
-        fields = CSrcWriter::sAllFields;
+        fields = CSrcWriter::sAllSrcCheckFields;
         return true;
     }
 
@@ -251,7 +251,7 @@ bool CSrcChkApp::xGetDesiredFields(
 
 
     fields.assign(
-        CSrcWriter::sDefaultFields.begin(), CSrcWriter::sDefaultFields.end());
+        CSrcWriter::sDefaultSrcCheckFields.begin(), CSrcWriter::sDefaultSrcCheckFields.end());
     return true;
 }
 

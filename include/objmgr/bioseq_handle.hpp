@@ -109,6 +109,9 @@ public:
     /// all IDs for the overall sequence are local.
     CConstRef<CSeq_id> GetNonLocalIdOrNull(void) const;
     
+    // Find a local ID if present
+    CConstRef<CSeq_id> GetLocalIdOrNull(void) const;
+
     /// Get unique object id
     const CBioObjectId& GetBioObjectId(void) const;
 
@@ -767,6 +770,11 @@ CConstRef<CSeq_id> CBioseq_Handle::GetNonLocalIdOrNull(void) const
     return CConstRef<CSeq_id>(GetBioseqCore()->GetNonLocalId());
 }
 
+inline 
+CConstRef<CSeq_id> CBioseq_Handle::GetLocalIdOrNull(void) const 
+{
+    return CConstRef<CSeq_id>(GetBioseqCore()->GetLocalId());
+}
 
 inline
 CScope& CBioseq_Handle::GetScope(void) const 

@@ -105,6 +105,11 @@ public:
     static bool ValidateFields(
         const FIELDS& fields,
         IMessageListener* = 0);
+
+    virtual bool WriteSeqEntry(
+        const CSeq_entry&,
+        CScope&,
+        CNcbiOstream&);
     
   
 protected:
@@ -113,6 +118,7 @@ protected:
     virtual bool xGather(CBioseq_Handle, const FIELDS&, IMessageListener* =0);
     virtual bool xGatherId(CBioseq_Handle, IMessageListener* =0); 
     virtual bool xGatherGi(CBioseq_Handle, IMessageListener* =0);
+    virtual bool xGatherLocalId(CBioseq_Handle, IMessageListener* = 0);
     virtual bool xGatherDefline(CBioseq_Handle, IMessageListener* =0);
     virtual bool xHandleSourceField(const CBioSource&, const string&, IMessageListener* =0);
 
@@ -131,7 +137,7 @@ protected:
 
     virtual bool xFormatTabDelimited(const FIELDS&, CNcbiOstream&);
      
-    static FIELDS xGetOrderedFieldNames();
+    static FIELDS xGetOrderedFieldNames(const FIELDS&);
     static HANDLER xGetHandler(const string&);
     static string xPrimerSetNames(const CPCRPrimerSet&);
     static string xPrimerSetSequences(const CPCRPrimerSet&);
@@ -148,10 +154,14 @@ protected:
     bool xValueNeedsQuoting(const string&);
     string xDequotedValue(const string&);
     string xGetColStub(const string&);
+    
+
 
 public:
-    static const FIELDS sDefaultFields;
-    static const FIELDS sAllFields;
+    static const FIELDS sDefaultSrcCheckFields;
+    static const FIELDS sAllSrcCheckFields;
+    static const FIELDS sDefaultSeqEntryFields;
+    static const FIELDS sAllSeqEntryFields;
 
 protected:
     static HANDLERMAP sHandlerMap;

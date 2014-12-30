@@ -51,6 +51,7 @@
 #include <objtools/writers/src_writer.hpp>
 #include <objmgr/util/sequence.hpp>
 
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -59,7 +60,8 @@ CSrcWriter::NAMEMAP CSrcWriter::sFieldnameToColname;
 //  ----------------------------------------------------------------------------
 //  Default Fields:
 //  ----------------------------------------------------------------------------
-static const string arrDefaultFields[] = {
+static const string arrDefaultSrcCheckFields[] = {
+    "id",
     "gi",
     "organism",
     "taxid",
@@ -80,14 +82,45 @@ static const string arrDefaultFields[] = {
     "old-name"
 };
 
+static const string arrDefaultSeqEntryFields[] = {
+    "id",
+    "gi",
+    "organism",
+    "taxid",
+    "localid",
+    "specimen-voucher",
+    "culture-collection",
+    "bio-material",
+    "strain",
+    "sub-strain",
+    "isolate",
+    "sub-species",
+    "variety",
+    "forma",
+    "cultivar",
+    "ecotype",
+    "serotype",
+    "serovar",
+    "type-material",
+    "old-name"
+};
 
-const size_t countDefaultFields = sizeof(arrDefaultFields)/sizeof(string);
 
-const CSrcWriter::FIELDS CSrcWriter::sDefaultFields(
-    arrDefaultFields, arrDefaultFields + countDefaultFields);
+const size_t countDefaultSrcCheckFields = sizeof(arrDefaultSrcCheckFields)/sizeof(string);
 
-const CSrcWriter::FIELDS CSrcWriter::sAllFields(xGetOrderedFieldNames());
+const CSrcWriter::FIELDS CSrcWriter::sDefaultSrcCheckFields(
+    arrDefaultSrcCheckFields, arrDefaultSrcCheckFields + countDefaultSrcCheckFields);
 
+const CSrcWriter::FIELDS CSrcWriter::sAllSrcCheckFields(
+    xGetOrderedFieldNames(CSrcWriter::sDefaultSrcCheckFields));
+
+const size_t countDefaultSeqEntryFields = sizeof(arrDefaultSeqEntryFields)/sizeof(string);
+
+const CSrcWriter::FIELDS CSrcWriter::sDefaultSeqEntryFields(
+    arrDefaultSeqEntryFields, arrDefaultSeqEntryFields + countDefaultSeqEntryFields);
+
+const CSrcWriter::FIELDS CSrcWriter::sAllSeqEntryFields(
+    xGetOrderedFieldNames(CSrcWriter::sDefaultSeqEntryFields));
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::WriteBioseqHandle( 
@@ -124,6 +157,7 @@ bool CSrcWriter::WriteBioseqHandles(
             return false;
         }
     }
+
     if (!xFormatTabDelimited(colNames,out)) {
         return false;
     }
@@ -132,11 +166,32 @@ bool CSrcWriter::WriteBioseqHandles(
 
 
 //  ----------------------------------------------------------------------------
+bool CSrcWriter::WriteSeqEntry(
+    const CSeq_entry& seqEntry,
+    CScope& scope,
+    CNcbiOstream& out) 
+//  ----------------------------------------------------------------------------
+{
+    CSeq_entry_Handle handle = scope.AddTopLevelSeqEntry(seqEntry);
+    vector<CBioseq_Handle> vecBsh;
+    for (CBioseq_CI bci(handle); bci; ++bci) {
+      vecBsh.push_back(*bci);
+    }
+    WriteBioseqHandles(vecBsh, sAllSeqEntryFields, out, 0);
+  
+   return true;
+}
+
+
+//  ----------------------------------------------------------------------------
 CSrcWriter::FIELDS CSrcWriter::xProcessFieldNames(
     const FIELDS& desiredFields)
 //  ----------------------------------------------------------------------------
 {
     FIELDS colNames;
+    if (desiredFields[0] != "id") {
+        colNames.push_back("id");
+    }
     for (FIELDS::const_iterator cit = desiredFields.begin();
             cit != desiredFields.end();  ++cit)  {  
         NAMEMAP::const_iterator mapIterator = sFieldnameToColname.find(xCompressFieldName(*cit));
@@ -189,7 +244,7 @@ void CSrcWriter::xInit()
         sHandlerMap["origin"] = &CSrcWriter::xGatherOrigin;
         sHandlerMap["pcr-primers"] = &CSrcWriter::xGatherPcrPrimers;
         sHandlerMap["organism"] = &CSrcWriter::xGatherTaxname;
-   
+
         sHandlerMap["note"] = &CSrcWriter::xGatherOrgModFeat;
         sHandlerMap["subsource-note"] = &CSrcWriter::xGatherSubtypeFeat;
 
@@ -214,12 +269,14 @@ void CSrcWriter::xInit()
     if (sFieldnameToColname.empty()) {
         sFieldnameToColname["id"] = "id";
         sFieldnameToColname["gi"] = "gi";
+        sFieldnameToColname["localid"] = "localid";
         sFieldnameToColname["definition"] = "definition";
         sFieldnameToColname["def"] = "definition";
         sFieldnameToColname["defline"] = "definition";
 
         sFieldnameToColname["db"] = "db";
         sFieldnameToColname["org.db"] = "db";
+
         sFieldnameToColname["taxid"] = "taxid";
         sFieldnameToColname["div"] = "division";
         sFieldnameToColname["division"] = "division";
@@ -227,6 +284,7 @@ void CSrcWriter::xInit()
         sFieldnameToColname["lineage"] = "lineage";
         sFieldnameToColname["common"] = "common";
         sFieldnameToColname["org.common"] = "common";
+
         sFieldnameToColname["origin"] = "origin";
         sFieldnameToColname["pcrprimers"] = "pcr-primers";
         sFieldnameToColname["organism"] = "organism";
@@ -249,6 +307,7 @@ void CSrcWriter::xInit()
         NAMELIST nameList = xGetOrgModSubtypeNames();
         for (NAMELIST::const_iterator cit=nameList.begin();  
                 cit != nameList.end();  ++cit) {
+
             if (*cit != "other") {
               sFieldnameToColname[xCompressFieldName(*cit)] = *cit;
             }
@@ -266,27 +325,23 @@ void CSrcWriter::xInit()
 
     mSrcTable.Reset(new CSeq_table());
     mSrcTable->SetNum_rows(0);
-
-    const string colName = "id";
-    const string displayName = "accession";
-    const string defaultValue = "";
-    xPrepareTableColumn(colName, displayName, defaultValue);
 }
 
 
 //  ----------------------------------------------------------------------------
-CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames()
+CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames(const FIELDS& defaultFields)
 //  ----------------------------------------------------------------------------
 {
     FIELDS orderedFields;
     set<string> defaultSet;
 
-    for (int i=0; i < countDefaultFields; ++i) {
-        string colName = arrDefaultFields[i];
+    for (FIELDS::const_iterator cit=defaultFields.begin();
+            cit != defaultFields.end();
+            ++cit) {
+        string colName = *cit;
         orderedFields.push_back(colName);
         defaultSet.insert(colName);
     }
-
    
     FIELDS lexicalFields;
     lexicalFields.push_back("organism");
@@ -424,6 +479,7 @@ bool CSrcWriter::xHandleSourceField(
 //  ----------------------------------------------------------------------------
 {
     HANDLER pHandler = xGetHandler(fieldName);
+   
     if (!pHandler) {
         CSrcError* pE = CSrcError::Create(
             ncbi::eDiag_Error,
@@ -432,8 +488,7 @@ bool CSrcWriter::xHandleSourceField(
         delete pE;
         return false;
     }
-
-
+   
     return (this->*pHandler)(src, fieldName, pEC);
 }
 
@@ -447,8 +502,10 @@ bool CSrcWriter::xGather(
 {
     // for each of biosources we may create individual record
     // with the same ID
-    bool hasGi = ( find(desiredFields.begin(), desiredFields.end(), "gi") != desiredFields.end() ); 
-    bool hasDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
+    bool wantGi = ( find(desiredFields.begin(), desiredFields.end(), "gi") != desiredFields.end() ); 
+    bool wantLocalId = ( find(desiredFields.begin(), desiredFields.end(), "localid") != desiredFields.end() );
+    bool wantDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
+
 
 
     for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
@@ -457,13 +514,20 @@ bool CSrcWriter::xGather(
             return false;
         }
 
-        if (hasGi) {
+
+        if (wantGi) {
             if (!xGatherGi(bsh)) {
                 return false;
             }
         }
 
-        if (hasDef) {
+        if (wantLocalId) {
+            if (!xGatherLocalId(bsh)) {
+                return false;
+            }
+        }
+   
+        if (wantDef) {
             if (!xGatherDefline(bsh)) {
                 return false;
             }
@@ -472,7 +536,7 @@ bool CSrcWriter::xGather(
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
-            if (*cit == "gi" || *cit == "definition") {
+            if (*cit == "id" || *cit == "gi" || *cit == "definition" || *cit == "localid") {
                 continue;
             }
             if (!xHandleSourceField(src, *cit)) {
@@ -492,18 +556,13 @@ bool CSrcWriter::xGatherId(
 //  ----------------------------------------------------------------------------
 {
     static const string colName = "id";
-
-    string label;
-    bool isGi= bsh.GetSeq_id_Handle().IsGi();
     CConstRef<CSeq_id> sid = bsh.GetSeqId();
-
-    if (isGi) {
-        label = sequence::GetAccessionForId(*sid, bsh.GetScope());
-    } else {
-        sid->GetLabel(&label, CSeq_id::eContent);
+    string label = sequence::GetAccessionForId(*sid, bsh.GetScope());
+    if (!label.empty()) {
+        const string defaultValue = "";
+        xPrepareTableColumn(colName, "accession", defaultValue);
+        xAppendColumnValue(colName, label);
     }
-    xAppendColumnValue(colName, label);
-
     return true;
 }
 
@@ -532,6 +591,27 @@ bool CSrcWriter::xGatherGi(
 
 
 //  ----------------------------------------------------------------------------
+bool CSrcWriter::xGatherLocalId(
+    CBioseq_Handle bsh,
+    IMessageListener*)
+//  ----------------------------------------------------------------------------
+{
+    static const string colName = "localid";
+    static const string displayName = colName;
+    static const string defaultValue = "";
+    CConstRef<CSeq_id> seq_id = bsh.GetLocalIdOrNull();
+
+    if (seq_id) {
+        string label;
+        seq_id->GetLabel(&label, CSeq_id::eContent);
+        xPrepareTableColumn(colName, displayName, defaultValue);
+        xAppendColumnValue(colName, label);
+    }
+
+    return true;
+}
+
+
 bool CSrcWriter::xGatherDefline(
     CBioseq_Handle bsh,
     IMessageListener*)
@@ -547,7 +627,6 @@ bool CSrcWriter::xGatherDefline(
     }
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, label);
-      
     return true;
 }
 
@@ -1005,7 +1084,6 @@ bool CSrcWriter::xFormatTabDelimited(
 
     
     NAMELIST colNames;
-    colNames.push_back("id");
     for (FIELDS::const_iterator cit = colStubs.begin();
             cit != colStubs.end();  ++cit) {
         COLSTUBNAMESMAP::iterator mapIter = ColstubToColnames.find(*cit);

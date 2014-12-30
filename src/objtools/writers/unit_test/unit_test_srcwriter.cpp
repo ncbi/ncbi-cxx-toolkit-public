@@ -62,7 +62,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-const string extInput("ids");
+const string extInput("in");
 const string extOutput("out");
 const string extErrors("errors");
 const string extKeep("new");
@@ -112,17 +112,26 @@ public:
         const string sFileName = file.GetName();
         vector<string> vecFileNamePieces;
         NStr::Tokenize( sFileName, ".", vecFileNamePieces );
-        BOOST_REQUIRE(vecFileNamePieces.size() == 2);
+        BOOST_REQUIRE(vecFileNamePieces.size() == 3);
 
         string sTestName = vecFileNamePieces[0];
         BOOST_REQUIRE(!sTestName.empty());
-        string sFileType = vecFileNamePieces[1];
+        string sObjType = vecFileNamePieces[1];
+        BOOST_REQUIRE(!sTestName.empty());
+        string sFileType = vecFileNamePieces[2];
         BOOST_REQUIRE(!sFileType.empty());
        
             
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
    
+
+        // Figure out which test to perform
+        if (sObjType == "seqentry" || sObjType == "ids") {
+            test_info_to_load.mObjType = sObjType;
+        } else {
+            BOOST_FAIL("Unknown object type " << sObjType << ".");
+        }
         // figure out what type of file we have and set appropriately
         if (sFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
@@ -182,23 +191,29 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CSrcWriter writer(0);
     writer.SetDelimiter("\t");
 
-    const streamsize maxLineSize(100);
-    char line[maxLineSize];
-    vector<CBioseq_Handle> vecBsh;
-    while (!ifstr.eof()) {
-        ifstr.getline(line,maxLineSize);
-        if (line[0] == 0  ||  line[0] == '#') {
-            continue;
+    if (test_type == "ids") {
+        const streamsize maxLineSize(100);
+        char line[maxLineSize];
+        vector<CBioseq_Handle> vecBsh;
+        while (!ifstr.eof()) {
+            ifstr.getline(line,maxLineSize);
+            if (line[0] == 0  ||  line[0] == '#') {
+                continue;
+            }
+            string id(line);
+            NStr::TruncateSpacesInPlace(id);
+            CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
+            CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
+            if (bsh) {
+                vecBsh.push_back(bsh);
+            }
         }
-        string id(line);
-        NStr::TruncateSpacesInPlace(id);
-        CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-        CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
-        if (bsh) {
-            vecBsh.push_back(bsh);
-        }
+        writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllSrcCheckFields, ofstr);
+    } else if (test_type == "seqentry") {
+        CRef<CSeq_entry> pEntry(new CSeq_entry);
+        *pI >> *pEntry;
+        writer.WriteSeqEntry(*pEntry, *pScope, ofstr);
     }
-    writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllFields, ofstr);
 
     ofstr.flush();
     ifstr.close();
@@ -225,7 +240,8 @@ void sUpdateAll(CDir& test_cases_dir)
         fFF_Default | fFF_Recursive );
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
-        const string & sName = name_to_info_it->first;
+        const string & sName = name_to_info_it->first + 
+            "." + name_to_info_it->second.mObjType;
         sUpdateCase(test_cases_dir, sName);
     }
 }
@@ -253,31 +269,38 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CSrcWriter writer(0);
     writer.SetDelimiter("\t");
    
-    // Create an input stream for the ids
+    
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
-    // fetch data
-    const streamsize maxLineSize(100);
-    char line[maxLineSize];
-    vector<CBioseq_Handle> vecBsh;
-    while (!ifstr.eof()) {
-        ifstr.getline(line,maxLineSize);
-        if (line[0] == 0  || line[0] == '#') {
-            continue;
-        }
-        string id(line);
-        NStr::TruncateSpacesInPlace(id);
-        CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-        CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
-        if (bsh) {
-            vecBsh.push_back(bsh);
-        }
-    }
-
+    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, eTakeOwnership);
     // create a temporary result file
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
 
-    writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllFields, ofstr);
+    // fetch data
+    if (testInfo.mObjType == "ids") {
+        const streamsize maxLineSize(100);
+        char line[maxLineSize];
+        vector<CBioseq_Handle> vecBsh;
+        while (!ifstr.eof()) {
+            ifstr.getline(line,maxLineSize);
+            if (line[0] == 0  || line[0] == '#') {
+                continue;
+            }
+            string id(line);
+            NStr::TruncateSpacesInPlace(id);
+            CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
+            CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
+            if (bsh) {
+                vecBsh.push_back(bsh);
+            }
+        }
+        writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllSrcCheckFields, ofstr);
+    } else if (testInfo.mObjType == "seqentry") {
+        CRef<CSeq_entry> pEntry(new CSeq_entry);
+        *pI >> *pEntry;
+        writer.WriteSeqEntry(*pEntry, *pScope, ofstr);
+    }
+   
 
     ofstr.flush();
     ifstr.close();

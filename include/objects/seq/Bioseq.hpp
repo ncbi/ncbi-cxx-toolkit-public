@@ -113,6 +113,9 @@ public:
     /// all IDs for the overall sequence are local.
     const CSeq_id* GetNonLocalId() const;
 
+    /// Find a local ID if present
+    const CSeq_id* GetLocalId() const;
+
     // check molecule type for nucleotide or protein
     bool IsNa(void) const;
     bool IsAa(void) const;
