@@ -2,7 +2,7 @@
 # Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
 16S_common needs xmlwrapp
-16S_common needs xncbi
+16S_common needs xutil
 16S_summaries needs 16S_common
 16S_summaries needs xregexp
 Assembly2Fscreen needs fscreen
@@ -163,7 +163,7 @@ boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs gcaccess_utils
 build_config needs gpinit
-build_config needs gpinit_access
+build_config needs gpinit_bag_util
 build_config needs gpipe_xml
 bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
@@ -888,9 +888,9 @@ refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
-refseq_ctl needs $(GPIPE_GENCOLL_LIBS)
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs connssl
+refseq_ctl needs gencoll_client
 refseq_ctl needs gpinit_access
 remap needs $(SEQ_LIBS)
 remap needs pub
@@ -1319,6 +1319,7 @@ xgdsdata_misc needs xncbi
 xgencoll needs $(OBJEDIT_LIBS)
 xgencoll needs $(XFORMAT_LIBS)
 xgencoll needs aligndb_reader
+xgencoll needs gencoll_client
 xgencoll needs gpipe_objutil
 xgencollstats needs $(GPIPE_GENCOLL_LIBS)
 xgencollstats needs gencoll_stats
