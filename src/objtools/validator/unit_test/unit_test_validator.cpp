@@ -5122,7 +5122,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnwantedCompleteFlag)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "UnwantedCompleteFlag",
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "UnwantedCompleteFlag",
                               "Suspicious use of complete"));
 
     eval = validator.Validate(seh, options);
