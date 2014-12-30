@@ -948,5 +948,21 @@ BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
     BOOST_CHECK_EQUAL(ss->GetName(), "[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
 }
 
+BOOST_AUTO_TEST_CASE(Test_DiscouragedEnums)
+{
+    // check for enums that pass
+    // 
+    // make sure to pick subtypes and quals that are
+    // very unlikely to be deprecated in the future
 
+    BOOST_CHECK(
+        ! CSeqFeatData::IsDiscouragedSubtype(CSeqFeatData::eSubtype_gene));
+    BOOST_CHECK(
+        ! CSeqFeatData::IsDiscouragedQual(CSeqFeatData::eQual_host));
 
+    // check for discouraged enums
+    BOOST_CHECK(
+        CSeqFeatData::IsDiscouragedSubtype(CSeqFeatData::eSubtype_conflict));
+    BOOST_CHECK(
+        CSeqFeatData::IsDiscouragedQual(CSeqFeatData::eQual_insertion_seq));
+}

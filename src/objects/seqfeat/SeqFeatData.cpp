@@ -3174,6 +3174,51 @@ string CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
     return rval;
 }
 
+bool CSeqFeatData::IsDiscouragedSubtype(ESubtype subtype)
+{
+    switch(subtype) {
+        case eSubtype_10_signal:
+        case eSubtype_35_signal:
+        case eSubtype_allele:
+        case eSubtype_attenuator:
+        case eSubtype_CAAT_signal:
+        case eSubtype_conflict:
+        case eSubtype_enhancer:
+        case eSubtype_GC_signal:
+        case eSubtype_misc_binding:
+        case eSubtype_mutation:
+        case eSubtype_polyA_signal:
+        case eSubtype_promoter:
+        case eSubtype_RBS:
+        case eSubtype_repeat_unit:
+        case eSubtype_satellite:
+        case eSubtype_scRNA:
+        case eSubtype_site_ref:
+        case eSubtype_snoRNA:
+        case eSubtype_snRNA:
+        case eSubtype_TATA_signal:
+        case eSubtype_terminator:
+        case eSubtype_virion:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+bool CSeqFeatData::IsDiscouragedQual(EQualifier qual)
+{
+    switch(qual) {
+    case eQual_insertion_seq:
+    case eQual_mobile_element:
+    case eQual_rpt_unit:
+    case eQual_transposon:
+        return true;
+    default:
+        return false;
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 

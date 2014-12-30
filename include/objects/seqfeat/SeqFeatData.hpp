@@ -482,6 +482,9 @@ public:
     static bool IsRegulatory(ESubtype subtype);
     static string GetRegulatoryClass(ESubtype subtype);
 
+    static bool IsDiscouragedSubtype(ESubtype subtype);
+    static bool IsDiscouragedQual(EQualifier qual);
+
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
