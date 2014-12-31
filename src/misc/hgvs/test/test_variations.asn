@@ -1432,6 +1432,12 @@ Variation ::= {
         length 1,
         seq-data iupacna "G"
       },
+      exceptions {
+        {
+          code bioseq-state,
+          message "Bioseq is suppressed or withdrawn"
+        }
+      },
       dbxrefs {
         {
           db "GeneID",
