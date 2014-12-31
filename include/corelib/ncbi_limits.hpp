@@ -67,6 +67,14 @@
  */
 
 
+// Always get rid of the old non-conformant min/max macros
+#ifdef min
+#  undef min
+#endif
+#ifdef max
+#  undef max
+#endif
+
 #if defined(HAVE_LIMITS)  &&  ( !defined(NCBI_COMPILER_WORKSHOP) || NCBI_COMPILER_VERSION >= 550)
 // Ideally, we would use std::numeric_limits<> whenever available.
 // However, certain compiler versions leave out support for extensions such
@@ -75,14 +83,6 @@
 #else
 
 BEGIN_NCBI_SCOPE
-
-// Always get rid of the old non-conformant min/max macros
-#ifdef min
-#  undef min
-#endif
-#ifdef max
-#  undef max
-#endif
 
 ///
 ///  Pre-declaration of the "numeric_limits<>" template
