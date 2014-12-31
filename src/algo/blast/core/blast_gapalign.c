@@ -3435,6 +3435,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                                         used for approximate gapped alignment */
    Int4 redo_index = -1; /* these are used for recomputing alignmnets if the */
    Int4 redo_query = -1; /* approximate alignment score is inconclusive */
+   /* FIXME: private_tree is not needed any more */
    BlastIntervalTree *private_tree = NULL;
 
    if (!query || !subject || !gap_align || !score_params || !ext_params ||
@@ -3697,6 +3698,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                 ASSERT(restricted_align_array);
                 restricted_align_array[query_index] = FALSE;
 
+                Blast_IntervalTreeReset(tree);
+
                 /* remove all HSPs computed for the current query */
                 for (index2 = 0; index2 < hsp_list->hspcnt; index2++) {
                     Int4 context2 = hsp_list->hsp_array[index2]->context;
@@ -3707,7 +3710,15 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
                         Blast_HSPListSaveHSP(new_hsp_list,
                                              hsp_list->hsp_array[index2]);
+
+                        status = BlastIntervalTreeAddHSP(
+                                                hsp_list->hsp_array[index2],
+                                                tree,
+                                                query_info, 
+                                                eQueryAndSubject);
+
                         hsp_list->hsp_array[index2] = NULL;
+
                     }
                     else {
                         hsp_list->hsp_array[index2] =
