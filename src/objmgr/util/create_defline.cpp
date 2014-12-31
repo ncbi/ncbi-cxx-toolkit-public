@@ -2286,8 +2286,8 @@ string CDeflineGenerator::GenerateDefline (
     x_CompressRunsOfSpaces (final);
 
     if (! m_IsPDB && ! m_IsPatent && ! m_IsAA && ! m_IsSeg) {
-        if (!m_MainTitle.empty() && islower ((unsigned char) m_MainTitle[0])) {
-            m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
+        if (!final.empty() && islower ((unsigned char) final[0])) {
+            final [0] = toupper ((unsigned char) final [0]);
         }
     }
 
