@@ -1,3 +1,6 @@
+#ifndef TEST_NETSTORAGE_COMMON__HPP
+#define TEST_NETSTORAGE_COMMON__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -23,34 +26,40 @@
  *
  * ===========================================================================
  *
- * Authors:  Dmitry Kazimirov
+ * Authors:  Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:  Simple test for the "direct access" NetStorage API.
  *
  */
 
-#include <ncbi_pch.hpp>
+#include <boost/type_traits/integral_constant.hpp>
 
 #include <misc/netstorage/netstorage.hpp>
 
-#include <corelib/test_boost.hpp>
+BEGIN_NCBI_SCOPE
 
-#include <common/test_assert.h>  /* This header must go last */
 
-USING_NCBI_SCOPE;
+typedef boost::integral_constant<bool, false> TAttrTesting;
 
-#define APP_NAME "test_netstorage_rpc"
-#define NETCACHE_SERVICE_NAME "NC_UnitTest"
-#define CACHE_NAME "nst_test"
 
-CNetStorage g_GetNetStorage()
+#define APP_NAME                "test_netstorage_rpc"
+#define NETCACHE_SERVICE_NAME   "NC_UnitTest"
+#define CACHE_NAME              "nst_test"
+
+template <class TNetStorage>
+inline TNetStorage g_GetNetStorage()
 {
-    CNetICacheClient icache_client(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME);
-    return g_CreateNetStorage(icache_client);
+    return g_CreateNetStorage(
+            CNetICacheClient(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME));
 }
 
-CNetStorageByKey g_GetNetStorageByKey()
+template <>
+inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
-    CNetICacheClient icache_client(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME);
-    return g_CreateNetStorageByKey(icache_client);
+    return g_CreateNetStorageByKey(
+            CNetICacheClient(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME));
 }
+
+END_NCBI_SCOPE
+
+#endif

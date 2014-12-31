@@ -1,3 +1,6 @@
+#ifndef TEST_NETSTORAGE_COMMON__HPP
+#define TEST_NETSTORAGE_COMMON__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -23,41 +26,49 @@
  *
  * ===========================================================================
  *
- * Authors:  Dmitry Kazimirov
+ * Authors:  Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:  Simple test for the NetStorage API
  *      (implemented via RPC to NetStorage servers).
  *
  */
 
-#include <ncbi_pch.hpp>
+#include <boost/type_traits/integral_constant.hpp>
 
 #include <connect/services/netstorage.hpp>
 
-#include <corelib/test_boost.hpp>
+BEGIN_NCBI_SCOPE
 
-#include <common/test_assert.h>  /* This header must go last */
 
-USING_NCBI_SCOPE;
+typedef boost::integral_constant<bool, true> TAttrTesting;
 
-#define APP_NAME "test_netstorage_rpc"
-#define NETSTORAGE_SERVICE_NAME "ST_Test"
-#define NETCACHE_SERVICE_NAME "NC_UnitTest"
-#define CACHE_NAME "nst_test"
 
-CNetStorage g_GetNetStorage()
+#define APP_NAME                    "test_netstorage_rpc"
+#define NETSTORAGE_SERVICE_NAME     "ST_Test"
+#define NETCACHE_SERVICE_NAME       "NC_UnitTest"
+#define CACHE_NAME                  "nst_test"
+
+template <class TNetStorage>
+inline TNetStorage g_GetNetStorage()
 {
-    return CNetStorage("nst=" NETSTORAGE_SERVICE_NAME
-            "&nc=" NETCACHE_SERVICE_NAME
-            "&cache=" CACHE_NAME
-            "&client=" APP_NAME);
+    return CNetStorage(
+            "nst="      NETSTORAGE_SERVICE_NAME
+            "&nc="      NETCACHE_SERVICE_NAME
+            "&cache="   CACHE_NAME
+            "&client="  APP_NAME);
 }
 
-CNetStorageByKey g_GetNetStorageByKey()
+template <>
+inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
-    return CNetStorageByKey("nst=" NETSTORAGE_SERVICE_NAME
-        "&nc=" NETCACHE_SERVICE_NAME
-        "&cache=" CACHE_NAME
-        "&client=" APP_NAME
-        "&domain=" CACHE_NAME);
+    return CNetStorageByKey(
+            "nst="      NETSTORAGE_SERVICE_NAME
+            "&nc="      NETCACHE_SERVICE_NAME
+            "&cache="   CACHE_NAME
+            "&client="  APP_NAME
+            "&domain="  CACHE_NAME);
 }
+
+END_NCBI_SCOPE
+
+#endif
