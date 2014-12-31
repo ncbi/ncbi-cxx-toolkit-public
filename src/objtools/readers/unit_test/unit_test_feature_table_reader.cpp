@@ -1881,9 +1881,9 @@ BOOST_AUTO_TEST_CASE(TestDiscouragedKeys)
 {
     TErrList expected_errors;
     expected_errors.push_back(
-        ILineError::ILineError::eProblem_DiscouragedFeatureName);
+        ILineError::eProblem_DiscouragedFeatureName);
     expected_errors.push_back(
-        ILineError::ILineError::eProblem_DiscouragedQualifierName);
+        ILineError::eProblem_DiscouragedQualifierName);
 
     // TODO: remove comments b4 committing
     // CMessageListenerLenientIgnoreProgress err_container;
