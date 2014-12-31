@@ -1866,3 +1866,30 @@ BOOST_AUTO_TEST_CASE(TestCaseInsensitivity)
         "internal transcribed spacer 1");
 }
 
+
+static const char * sc_Table17 = "\
+>Feature lcl|seq1\n\
+<1\t32\tsnoRNA\n\
+\t\t\tnote\tHello, this is a note.\n\
+33\t170\tmobile_element\n\
+\t\ttransposon\tSomeTransposon\n\
+\n\
+";
+
+
+BOOST_AUTO_TEST_CASE(TestDiscouragedKeys)
+{
+    TErrList expected_errors;
+    expected_errors.push_back(
+        ILineError::ILineError::eProblem_DiscouragedFeatureName);
+    expected_errors.push_back(
+        ILineError::ILineError::eProblem_DiscouragedQualifierName);
+
+    // TODO: remove comments b4 committing
+    // CMessageListenerLenientIgnoreProgress err_container;
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (
+        sc_Table17,
+        expected_errors,
+        CFeature_table_reader::fReportDiscouragedKey);
+        // &err_container);
+}

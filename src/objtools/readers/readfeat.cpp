@@ -1,4 +1,4 @@
-/*
+ /*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -287,6 +287,7 @@ private:
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
         const string &feat_name,
         const string& qual, const string& val,
+        const CFeature_table_reader::TFlags flags,
         IMessageListener *pMessageListener, int line_num, const string &seq_id );
 
     bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
@@ -2039,6 +2040,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     const string &feat_name,
     const string& qual,
     const string& val,
+    const CFeature_table_reader::TFlags flags,
     IMessageListener *pMessageListener, 
     int line, 	
     const string &seq_id 
@@ -2047,6 +2049,17 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
 {
     CSeqFeatData&          sfdata = sfp->SetData ();
     CSeqFeatData::E_Choice typ = sfdata.Which ();
+
+    const CSeqFeatData::EQualifier qual_type =
+        CSeqFeatData::GetQualifierType(qual);
+    if( (flags & CFeature_table_reader::fReportDiscouragedKey) != 0 ) {
+        if( CSeqFeatData::IsDiscouragedQual(qual_type) ) {
+            x_ProcessMsg(
+                pMessageListener,
+                ILineError::eProblem_DiscouragedQualifierName,
+                eDiag_Warning, seq_id, line, feat_name, qual);
+        }
+    }
 
     if (typ == CSeqFeatData::e_Biosrc) {
 
@@ -2565,6 +2578,16 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
             }
         }
 
+        // check for discouraged feature name
+        if( (flags & CFeature_table_reader::fReportDiscouragedKey) != 0 ) {
+            if( CSeqFeatData::IsDiscouragedSubtype(sbtyp) ) {
+                x_ProcessMsg(
+                    pMessageListener,
+                    ILineError::eProblem_DiscouragedFeatureName,
+                    eDiag_Warning, seq_id, line, feat);
+            }
+        }
+
         return true;
     }
 
@@ -2580,7 +2603,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
         CSeqFeatData& sfdata = sfp->SetData ();
         CImp_feat_Base& imp = sfdata.SetImp ();
         imp.SetKey ("misc_feature");
-        x_AddQualifierToFeature (sfp, kEmptyStr, "standard_name", feat, pMessageListener, line, seq_id);
+        x_AddQualifierToFeature (sfp, kEmptyStr, "standard_name", feat, flags, pMessageListener, line, seq_id);
 
         return true;
 
@@ -2847,7 +2870,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             real_seqid,
                             reader.GetLineNumber(), kEmptyStr, qual, val );
                     }
-                } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, pMessageListener, reader.GetLineNumber(), real_seqid) ) {
+                } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags, pMessageListener, reader.GetLineNumber(), real_seqid) ) {
 
                     // unrecognized qualifier key
 
@@ -2880,7 +2903,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
                     if (s_iter != sc_SingleKeys.end ()) {
 
-                        x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, pMessageListener, reader.GetLineNumber(), real_seqid);
+                        x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags, pMessageListener, reader.GetLineNumber(), real_seqid);
                     }
                 }
             } else if (! feat.empty ()) {
@@ -2958,7 +2981,7 @@ void CFeature_table_reader_imp::AddFeatQual (
 {
     if ((! qual.empty ()) && (! val.empty ())) {
 
-        if (! x_AddQualifierToFeature (sfp, feat_name, qual, val, pMessageListener, line, seq_id)) {
+        if (! x_AddQualifierToFeature (sfp, feat_name, qual, val, flags, pMessageListener, line, seq_id)) {
 
             // unrecognized qualifier key
 
@@ -2978,7 +3001,7 @@ void CFeature_table_reader_imp::AddFeatQual (
         TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
         if (s_iter != sc_SingleKeys.end ()) {
 
-            x_AddQualifierToFeature (sfp, feat_name, qual, val, pMessageListener, line, seq_id);
+            x_AddQualifierToFeature (sfp, feat_name, qual, val, flags, pMessageListener, line, seq_id);
 
         }
     }

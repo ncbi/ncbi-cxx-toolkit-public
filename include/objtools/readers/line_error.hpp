@@ -84,6 +84,8 @@ public:
         eProblem_ContradictoryModifiers,
         eProblem_InvalidLengthAutoCorrected, // covers more general cases than eProblem_NonPositiveLength
         eProblem_IgnoredResidue,
+        eProblem_DiscouragedFeatureName,
+        eProblem_DiscouragedQualifierName,
 
         //vcf specific
         eProblem_BadInfoLine,
