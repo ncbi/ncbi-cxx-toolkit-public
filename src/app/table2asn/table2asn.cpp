@@ -770,8 +770,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
-        do_dates = true;
-        m_reader->LoadFile(m_context.m_current_file, entry, submit);
+        CFormatGuess::EFormat format = m_reader->LoadFile(m_context.m_current_file, entry, submit);
         if (m_fcs_reader.get())
         {
             m_fcs_reader->PostProcess(*entry);
@@ -782,6 +781,17 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         {
             m_context.SetSeqId(*entry);
         }
+
+        switch (format)
+        {
+        case CFormatGuess::eTextASN:
+        case CFormatGuess::eBinaryASN:
+            do_dates = true;
+            break;
+        default:
+            break;
+        }
+
     }
 
     if (m_context.m_descriptors.NotNull())

@@ -103,6 +103,13 @@ namespace
             if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
                 molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
 
+            CAutoAddDesc create_date_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Create_date);
+            if (create_date_desc.IsNull())
+            {   
+                CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+                create_date_desc.Set().SetCreate_date(*date);
+            }
+
         }
     };
 
@@ -673,7 +680,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             try {
                 sType = pObjIstrm->ReadFileHeader();
             }
-            catch(CEofException& eof) {
+            catch(CEofException&) {
                 break;
             }
         }
@@ -770,15 +777,17 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
     return result;
 }
 
-bool CMultiReader::LoadFile(const string& ifname, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
+CFormatGuess::EFormat CMultiReader::LoadFile(const string& ifname, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
     xReadFile(ifname, entry, submit);
     if (entry.NotEmpty())
     {
         m_context.MergeWithTemplate(*entry);
     }
-    return entry.NotNull();
+    return m_uFormat;
 }
+
+
 
 void CMultiReader::Cleanup(CRef<CSeq_entry> entry)
 {

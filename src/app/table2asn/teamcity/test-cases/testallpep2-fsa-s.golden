@@ -23,6 +23,11 @@ Seq-entry ::= set {
               name "1"
             }
           }
+        },
+        create-date std {
+          year 2014,
+          month 2,
+          day 1
         }
       },
       seq-set {
@@ -34,11 +39,6 @@ Seq-entry ::= set {
             molinfo {
               biomol genomic,
               tech wgs
-            },
-            create-date std {
-              year 2014,
-              month 2,
-              day 1
             }
           },
           inst {
@@ -2438,13 +2438,6 @@ Seq-entry ::= set {
               accession "EAL73826"
             }
           },
-          descr {
-            create-date std {
-              year 2014,
-              month 2,
-              day 1
-            }
-          },
           inst {
             repr raw,
             mol aa,
@@ -2466,13 +2459,6 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
             },
             genbank {
               accession "EAL73827"
-            }
-          },
-          descr {
-            create-date std {
-              year 2014,
-              month 2,
-              day 1
             }
           },
           inst {

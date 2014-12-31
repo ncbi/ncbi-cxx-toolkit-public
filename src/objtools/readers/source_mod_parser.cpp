@@ -216,16 +216,23 @@ string CSourceModParser::ParseTitle(const CTempString& title,
     return stripped_title;
 }
 
-
-void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
+void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRef<CSeq_loc> location)
 {
     ApplyMods(seq);
     // Although the logic below reuses some existing objects if
     // present, it always creates new features and descriptors.
 
     {{
-        CRef<CSeq_id> id = FindBestChoice(seq.GetId(), CSeq_id::BestRank);
-        if (id) {
+        CRef<CSeq_id> best_id = FindBestChoice(seq.GetId(), CSeq_id::BestRank);
+        if (location.Empty() && !best_id.Empty())
+        {
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            loc->SetWhole(*best_id);
+            location = loc;
+        }
+
+        if (location) 
+        {
             CAutoInitRef<CSeq_annot> ftable;
             bool                     had_ftable = false;
 
@@ -246,7 +253,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
                 if (&gene.Get(LeaveAsIs<CGene_ref>) != NULL) {
                     CRef<CSeq_feat> feat(new CSeq_feat);
                     feat->SetData().SetGene(*gene);
-                    feat->SetLocation().SetWhole(*id);
+                    feat->SetLocation().Assign(*location);
                     ftable->SetData().SetFtable().push_back(feat);
                 }
             }
@@ -260,7 +267,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
                 if ( &prot.Get(LeaveAsIs<CProt_ref>) != NULL ) {
                     CRef<CSeq_feat> feat(new CSeq_feat);
                     feat->SetData().SetProt(*prot);
-                    feat->SetLocation().SetWhole(*id);
+                    feat->SetLocation().Assign(*location);
                     ftable->SetData().SetFtable().push_back(feat);
                 }
             }

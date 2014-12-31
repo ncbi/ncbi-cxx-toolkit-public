@@ -45,6 +45,7 @@ private:
        const objects::CSeq_feat& feature, CTempString locustag);
    objects::IMessageListener* m_logger;
    int m_local_id_counter;
+   bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
 };
 
 END_NCBI_SCOPE

@@ -27,7 +27,7 @@ public:
    CMultiReader(const CTable2AsnContext& context);
    ~CMultiReader();
  
-   bool LoadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+   CFormatGuess::EFormat LoadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);

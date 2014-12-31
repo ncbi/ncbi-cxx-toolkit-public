@@ -98,7 +98,7 @@ public:
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.
-    void ApplyAllMods(CBioseq& seq,  CTempString organism = kEmptyStr);
+    void ApplyAllMods(CBioseq& seq, CTempString organism = kEmptyStr, CConstRef<CSeq_loc> location = CConstRef<CSeq_loc>());
     void ApplyMods(CBioSource& bsrc, CTempString organism = kEmptyStr);
     void ApplyMods(CMolInfo& mi);
     void ApplyMods(CBioseq& seq);
