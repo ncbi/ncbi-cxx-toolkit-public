@@ -1865,10 +1865,12 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
 }
 
 // generate TPA or TSA prefix
-const char * CDeflineGenerator::x_SetPrefix (void)
+void CDeflineGenerator::x_SetPrefix (
+    string& prefix
+)
 
 {
-    const char * prefix = kEmptyCStr;
+    prefix = kEmptyCStr;
 
     if (m_IsUnverified) {
         if (m_MainTitle.find ("UNVERIFIED") == NPOS) {
@@ -1889,8 +1891,6 @@ const char * CDeflineGenerator::x_SetPrefix (void)
     } else if (m_Multispecies && m_IsWP) {
         prefix = "MULTISPECIES: ";
     }
-
-    return prefix;
 }
 
 // generate suffix if not already present
@@ -2185,7 +2185,7 @@ string CDeflineGenerator::GenerateDefline (
 )
 
 {
-    const char * prefix; // from a small set of compile-time constants
+    string prefix; // from a small set of compile-time constants
     string suffix;
 
     // set flags from record components
@@ -2270,11 +2270,12 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // calculate prefix
-    prefix = x_SetPrefix();
+    x_SetPrefix(prefix);
 
     // calculate suffix
     x_SetSuffix (suffix, bsh);
 
+    // produce final result
     string final = prefix + m_MainTitle + suffix;
 
     pos = final.find (" ,");

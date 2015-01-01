@@ -155,7 +155,9 @@ private:
     void x_SetTitleFromWGS (void);
     void x_SetTitleFromMap (void);
 
-    const char * x_SetPrefix (void);
+    void x_SetPrefix (
+        string& prefix
+    );
     void x_SetSuffix (
         string& suffix,
         const CBioseq_Handle& bsh
