@@ -351,7 +351,10 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI> &   clients,
     }
     ITERATE(vector<TJobIdAuthTokenPair>, it, jobs_returned) {
         try {
-            executor.ReturnJob(it->first, it->second);
+            CNetScheduleJob job;
+            job.job_id = it->first;
+            job.auth_token = it->second;
+            executor.ReturnJob(job);
         }
         catch (CException& e)
         {
