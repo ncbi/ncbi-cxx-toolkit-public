@@ -20,6 +20,17 @@ Seq-annot ::= {
         point 0,
         strand plus,
         id gi 19924112
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Interval Shifted",
+              data bool TRUE
+            }
+          }
+        }
       }
     }
   }

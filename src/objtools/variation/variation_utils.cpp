@@ -386,7 +386,7 @@ bool CVariationUtilities::x_FixAlleles(CVariation& variation, string asserted_re
     if (add_asserted_ref)
     {
         CRef<CVariation_inst> inst(new CVariation_inst);
-        inst->SetType(CVariation_inst::eType_snv);
+        inst->SetType(asserted_allele_type);
         inst->SetObservation(CVariation_inst::eObservation_asserted
             |CVariation_inst::eObservation_variant);
 
@@ -1234,6 +1234,31 @@ void CVariationNormalization_base<T>::x_ConvertPointToInterval(CSeq_loc &loc,
     loc.SetInt().Assign(*interval);
 }
 
+template<class T>
+void CVariationNormalization_base<T>::x_SetShiftFlag(CVariation& var,
+    const string& field_text)
+{
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("Variation Normalization");
+    var.SetExt().push_back(uo);
+
+    uo->AddField(field_text, true);
+}
+
+template<class T>
+void CVariationNormalization_base<T>::x_SetShiftFlag(CSeq_feat& feat,
+    const string& field_text)
+{
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("Variation Normalization");
+    feat.SetExts().push_back(uo);
+
+    uo->AddField(field_text, true);
+}
+
+
+
+
 
 /***********************************************************
  Does the last nt in compact match the last 5' end of the insert?
@@ -1489,24 +1514,6 @@ void CVariationNormalizationLeft::Rotate(string& v)
 void CVariationNormalizationRight::Rotate(string& v)
 {
     RotateLeft(v);
-}
-
-void CVariationNormalizationInt::SetShiftFlag(CVariation& var)
-{
-    CRef<CUser_object> uo(new CUser_object);
-    uo->SetType().SetStr("Variation Normalization");
-    var.SetExt().push_back(uo);
-
-    uo->AddField("Fully Shifted", true);
-}
-
-void CVariationNormalizationInt::SetShiftFlag(CSeq_feat& feat)
-{
-    CRef<CUser_object> uo(new CUser_object);
-    uo->SetType().SetStr("Variation Normalization");
-    feat.SetExts().push_back(uo);
-
-    uo->AddField("Fully Shifted", true);
 }
 
 

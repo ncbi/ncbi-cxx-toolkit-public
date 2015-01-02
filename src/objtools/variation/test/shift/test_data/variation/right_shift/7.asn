@@ -47,6 +47,17 @@ Variation ::= {
         }
       }
     }
+  },
+  ext {
+    {
+      type str "Variation Normalization",
+      data {
+        {
+          label str "Right Shifted",
+          data bool TRUE
+        }
+      }
+    }
   }
 }
 Test Fully Shifted : 0

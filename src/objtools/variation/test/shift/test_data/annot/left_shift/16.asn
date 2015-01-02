@@ -42,6 +42,17 @@ Seq-annot ::= {
           accession "NC_000022",
           version 10
         }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Shifted",
+              data bool TRUE
+            }
+          }
+        }
       }
     }
   }

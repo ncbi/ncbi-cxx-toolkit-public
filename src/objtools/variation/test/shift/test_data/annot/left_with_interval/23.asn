@@ -38,6 +38,17 @@ Seq-annot ::= {
             data str "."
           }
         }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Interval Shifted",
+              data bool TRUE
+            }
+          }
+        }
       }
     }
   }

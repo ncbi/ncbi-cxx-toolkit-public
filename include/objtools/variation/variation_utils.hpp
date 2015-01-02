@@ -170,6 +170,8 @@ public:
     /// Convert a Point SeqLoc into an Interval
     static void x_ConvertPointToInterval(CSeq_loc &loc, int pos_left, int pos_right);
 
+    static void x_SetShiftFlag(CVariation& var,const string& field_text);
+    static void x_SetShiftFlag(CSeq_feat& var,const string& field_text);
     
 protected:
    static void RotateLeft(string &v);
@@ -193,9 +195,9 @@ public:
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size );
     static void Rotate(string& v);
 
-    //This type does not have any flags to set
-    static void SetShiftFlag(CVariation& vref) {}
-    static void SetShiftFlag(CSeq_feat& feat) {}
+    template<class V>
+    static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Left Shifted"); }
+
 };
 
 class CVariationNormalizationInt : public CVariationNormalization_base<CVariationNormalizationInt>
@@ -207,9 +209,8 @@ public:
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size );
     static void Rotate(string& v);
     
-    //These are implemented.
-    static void SetShiftFlag(CVariation& vref);
-    static void SetShiftFlag(CSeq_feat& feat);
+    template<class V>
+    static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Fully Shifted"); }
 
 };
 
@@ -222,9 +223,9 @@ public:
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size );
     static void Rotate(string& v);
 
-    //This type does not have any flags to set
-    static void SetShiftFlag(CVariation& vref) {}
-    static void SetShiftFlag(CSeq_feat& feat) {}
+    template<class V>
+    static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Right Shifted"); }
+
 
 };
 
@@ -237,9 +238,8 @@ public:
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size);
     static void Rotate(string& v);
 
-    //This type does not have any flags to set
-    static void SetShiftFlag(CVariation& vref) {}
-    static void SetShiftFlag(CSeq_feat& feat) {}
+    template<class V>
+    static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Left Interval Shifted"); }
 
 };
 

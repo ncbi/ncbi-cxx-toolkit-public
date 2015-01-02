@@ -54,6 +54,17 @@ Seq-annot ::= {
           accession "NT_005612",
           version 16
         }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Right Shifted",
+              data bool TRUE
+            }
+          }
+        }
       }
     }
   }
