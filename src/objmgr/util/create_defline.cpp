@@ -267,6 +267,8 @@ void CDeflineGenerator::x_SetFlags (
 
     m_IsSeg = false;
     m_IsDelta = false;
+    m_IsVirtual = false;
+    m_IsMap = false;
 
     m_IsNC = false;
     m_IsNM = false;
@@ -312,6 +314,10 @@ void CDeflineGenerator::x_SetFlags (
     m_Taxname.clear();
     m_Multispecies = false;
     m_Genome = NCBI_GENOME(unknown);
+    m_IsPlasmid = false;
+    m_IsChromosome = false;
+
+    m_Organelle.clear();
 
     m_FirstSuperKingdom.clear();
     m_SecondSuperKingdom.clear();
