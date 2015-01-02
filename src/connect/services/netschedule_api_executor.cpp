@@ -215,10 +215,7 @@ void CNetScheduleExecutor::JobDelayExpiration(const CNetScheduleJob& job,
     cmd += ' ';
     cmd += NStr::NumericToString(runtime_inc);
     g_AppendClientIPSessionIDHitID(cmd);
-    CNetServer server(job.server);
-    if (server == NULL)
-        server = m_Impl->m_API->GetServer(job.job_id);
-    server.ExecWithRetry(cmd, false);
+    m_Impl->m_API->GetServer(job).ExecWithRetry(cmd, false);
 }
 
 class CGetJobCmdExecutor : public INetServerFinder
@@ -570,16 +567,12 @@ void static s_CheckOutputSize(const string& output, size_t max_output_size)
 void SNetScheduleExecutorImpl::ExecWithOrWithoutRetry(
         const CNetScheduleJob& job, const string& cmd)
 {
-    CNetServer server(job.server);
-    if (server == NULL)
-        server = m_API->GetServer(job.job_id);
-
     if (!m_WorkerNodeMode)
-        server.ExecWithRetry(cmd, false);
+        m_API->GetServer(job).ExecWithRetry(cmd, false);
     else {
         CNetServer::SExecResult exec_result;
 
-        server->ConnectAndExec(cmd, false, exec_result);
+        m_API->GetServer(job)->ConnectAndExec(cmd, false, exec_result);
     }
 }
 
@@ -618,10 +611,7 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
     cmd += '\"';
     g_AppendClientIPSessionIDHitID(cmd);
     CNetServer::SExecResult exec_result;
-    CNetServer server(job.server);
-    if (server == NULL)
-        server = m_Impl->m_API->GetServer(job.job_id);
-    server->ConnectAndExec(cmd, false, exec_result);
+    m_Impl->m_API->GetServer(job)->ConnectAndExec(cmd, false, exec_result);
 }
 
 void CNetScheduleExecutor::GetProgressMsg(CNetScheduleJob& job)

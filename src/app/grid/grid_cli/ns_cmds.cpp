@@ -186,8 +186,9 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
             return 0;
         }
     } else if (IsOptionSet(eStatusOnly)) {
-        JobInfo_PrintStatus(
-                m_NetScheduleAPI.GetExecutor().GetJobStatus(m_Opts.id));
+        CNetScheduleJob job;
+        job.job_id = m_Opts.id;
+        JobInfo_PrintStatus(m_NetScheduleAPI.GetExecutor().GetJobStatus(job));
         return 0;
     }
 

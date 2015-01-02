@@ -283,10 +283,10 @@ bool CWorkerNodeJobContext::IsLogRequested() const
 
 CNetScheduleAdmin::EShutdownLevel CWorkerNodeJobContext::GetShutdownLevel()
 {
-    return m_Impl->GetShutdownLevel();
+    return m_Impl->CheckJobStatus();
 }
 
-CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
+CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::CheckJobStatus()
 {
     if (m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
         try {
@@ -311,7 +311,7 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
             default:
                 // The worker node does not "own" the job any longer.
                 ERR_POST("Cannot proceed with job processing: job '" <<
-                        m_Job.job_id << "' changed status to '" <<
+                        m_Job.job_id << "' has changed its status to '" <<
                         CNetScheduleAPI::StatusToString(job_status) << "'.");
                 MarkJobAsLost();
                 return CNetScheduleAdmin::eShutdownImmediate;

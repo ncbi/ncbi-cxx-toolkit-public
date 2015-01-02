@@ -330,7 +330,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 ///
 struct CNetScheduleJob
 {
-    CNetScheduleJob(const string& _input = kEmptyStr,
+    explicit CNetScheduleJob(const string& _input = kEmptyStr,
             const string& _affinity = kEmptyStr,
             CNetScheduleAPI::TJobMask _mask = CNetScheduleAPI::eEmptyMask) :
         input(_input),

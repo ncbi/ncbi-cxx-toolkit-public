@@ -216,11 +216,7 @@ struct SNetScheduleAPIImpl : public CObject
 
         CNetServer::SExecResult exec_result;
 
-        CNetServer server(job.server);
-        if (server == NULL)
-            server = GetServer(job.job_id);
-
-        server->ConnectAndExec(cmd, false, exec_result);
+        GetServer(job)->ConnectAndExec(cmd, false, exec_result);
 
         return exec_result.response;
     }
@@ -235,6 +231,11 @@ struct SNetScheduleAPIImpl : public CObject
     {
         CNetScheduleKey nskey(job_key, m_CompoundIDPool);
         return m_Service.GetServer(nskey.host, nskey.port);
+    }
+
+    CNetServer GetServer(const CNetScheduleJob& job)
+    {
+        return job.server != NULL ? job.server : GetServer(job.job_id);
     }
 
     bool GetServerByNode(const string& ns_node, CNetServer* server);

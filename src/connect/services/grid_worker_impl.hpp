@@ -58,7 +58,7 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 
     virtual void PutProgressMessage(const string& msg,
         bool send_immediately = false);
-    virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
+    virtual CNetScheduleAdmin::EShutdownLevel CheckJobStatus();
     virtual void JobDelayExpiration(unsigned runtime_inc);
     virtual void x_RunJob();
 
