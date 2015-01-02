@@ -1951,7 +1951,7 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
         offset_table[offset_pos++] = row_pos % 256;
 
         /* Trailing NULLs are not sent or included in the offset table. */
-        while (num_cols >= adjustment_last_required
+        while (num_cols >= adjustment_last_required  &&  num_cols > 0
                &&  offset_table[num_cols] == offset_table[num_cols - 1]) {
             num_cols--;
             offset_pos--;
@@ -1962,7 +1962,8 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
          * a count of variable columns (plus 1 for the eod offset)
          */
 
-        if (adjust_table[adjust_pos - 1] != num_cols + 1) {
+        if (adjust_pos == 0
+            ||  adjust_table[adjust_pos - 1] != num_cols + 1) {
             rowbuffer[row_pos++] = num_cols + 1;
         }
 
