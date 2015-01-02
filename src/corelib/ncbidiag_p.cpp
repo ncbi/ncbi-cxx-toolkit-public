@@ -327,8 +327,7 @@ void CDiagFilter::Fill(const char* filter_string)
 
 
 // Check if the filter accepts the message
-EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message,
-                                     EDiagSev         sev) const
+EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message, EDiagSev sev) const
 {
     // if we do not have any filters accept
     if(m_Matchers.empty())
@@ -336,14 +335,15 @@ EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message,
 
     EDiagFilterAction action;
     action = CheckErrCode(message.GetErrorCode(),
-                          message.GetErrorSubCode());
+                          message.GetErrorSubCode(),
+                          sev);
     if (action == eDiagFilter_None) {
-        action = CheckFile(message.GetFile());
-        if (action == eDiagFilter_None) 
+        action = CheckFile(message.GetFile(), sev);
+        if (action == eDiagFilter_None)
             action = x_Check(message.GetModule(),
-                            message.GetClass(),
-                            message.GetFunction(),
-                            sev);
+                             message.GetClass(),
+                             message.GetFunction(),
+                             sev);
     }
     if (action == eDiagFilter_None) {
         action = eDiagFilter_Reject;
@@ -354,8 +354,7 @@ EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message,
 
 
 // Check if the filter accepts the exception
-EDiagFilterAction CDiagFilter::Check(const CException& ex,
-                                     EDiagSev          sev) const
+EDiagFilterAction CDiagFilter::Check(const CException& ex, EDiagSev sev) const
 {
     // if we do not have any filters accept
     if(m_Matchers.empty())
@@ -374,21 +373,23 @@ EDiagFilterAction CDiagFilter::Check(const CException& ex,
 
     const CException* pex;
     for (pex = &ex;  pex;  pex = pex->GetPredecessor()) {
-        EDiagFilterAction action = CheckFile(pex->GetFile().c_str());
-        if (action == eDiagFilter_None) 
+        EDiagFilterAction action = CheckFile(pex->GetFile().c_str(), sev);
+        if (action == eDiagFilter_None) {
             action = x_Check(pex->GetModule()  .c_str(),
                              pex->GetClass()   .c_str(),
                              pex->GetFunction().c_str(),
                              sev);
-        if (action == eDiagFilter_Accept)
-                return action;
+        }
+        if (action == eDiagFilter_Accept) {
+            return action;
+        }
     }
     return eDiagFilter_Reject;
 }
 
 
-EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
-// same logic as in CheckFile
+// same logic as in CheckFile()
+EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode, EDiagSev sev) const
 {
     size_t not_matchers_processed = 0;
     size_t curr_ind = 0;
@@ -402,13 +403,22 @@ EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
         case eDiagFilter_Accept:
             if ( not_matchers_processed < m_NotMatchersNum ) {
                 ++not_matchers_processed;
+                // Check severity ...
+                if (int(sev) < int((*i)->GetSeverity())) {
+                    return eDiagFilter_Reject;
+                }
                 if ( curr_ind != m_Matchers.size() ) {
                     continue;
                 } else {
                     return eDiagFilter_Accept;
                 }
             }
+            // Process *OR* conditions *PLUS* severity
+            if (int(sev) < int((*i)->GetSeverity())) {
+                continue;
+            }
             return eDiagFilter_Accept;
+
         case eDiagFilter_Reject:
             if ( not_matchers_processed < m_NotMatchersNum ) {
                 ++not_matchers_processed;
@@ -418,6 +428,7 @@ EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
                 continue;
             }
             return eDiagFilter_Reject;
+
         case eDiagFilter_None:
             if ( not_matchers_processed < m_NotMatchersNum ) {
                 ++not_matchers_processed;
@@ -429,7 +440,7 @@ EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
     return eDiagFilter_None;
 }
 
-EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
+EDiagFilterAction CDiagFilter::CheckFile(const char* file, EDiagSev sev) const
 {
     size_t not_matchers_processed = 0;
     size_t curr_ind = 0;
@@ -437,7 +448,7 @@ EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
     ITERATE(TMatchers, i, m_Matchers) {
         ++curr_ind;
         EDiagFilterAction action = (*i)->MatchFile(file);
-
+ 
         switch( action )
         {
         case eDiagFilter_Accept:
@@ -446,16 +457,21 @@ EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
                 // Not all *AND* conditions are still processed. 
                 // Continue to check.
                 ++not_matchers_processed;
-
+                // Check severity ...
+                if (int(sev) < int((*i)->GetSeverity())) {
+                    return eDiagFilter_Reject;
+                }
                 if ( curr_ind != m_Matchers.size() ) {
                     continue;
-                } else {
-                    return eDiagFilter_Accept;
                 }
+                return eDiagFilter_Accept;
             }
-
-            // Process *OR* conditions
+            // Process *OR* conditions *PLUS* severity
+            if (int(sev) < int((*i)->GetSeverity())) {
+                continue;
+            }
             return eDiagFilter_Accept;
+
         case eDiagFilter_Reject:
             // Process all *AND NOT* and *OR* conditions.
             if ( not_matchers_processed < m_NotMatchersNum ) {
@@ -469,6 +485,7 @@ EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
                 continue;
             }
             return eDiagFilter_Reject;
+
         case eDiagFilter_None:
             // Continue the loop.
             if ( not_matchers_processed < m_NotMatchersNum ) {
@@ -502,25 +519,21 @@ EDiagFilterAction CDiagFilter::x_Check(const char* module,
                 // Not all *AND* conditions are still processed. 
                 // Continue to check.
                 ++not_matchers_processed;
-
                 // Check severity ...
                 if ( int(sev) < int((*i)->GetSeverity()) ) {
                     return eDiagFilter_Reject;
                 } 
-
                 if ( curr_ind != m_Matchers.size() ) {
                     continue;
-                } else {
-                    return action;
                 }
+                return eDiagFilter_Accept;
             }
-
             // Process *OR* conditions *PLUS* severity
             if ( int(sev) < int((*i)->GetSeverity()) ) {
                 continue;
             } 
+            return eDiagFilter_Accept;
 
-            return action;
         case eDiagFilter_Reject:
             // Process all *AND NOT* and *OR* conditions.
             if ( not_matchers_processed < m_NotMatchersNum ) {
@@ -533,7 +546,8 @@ EDiagFilterAction CDiagFilter::x_Check(const char* module,
                 // Continue to check for a success.
                 continue;
             }
-            return action;
+            return eDiagFilter_Reject;
+
         case eDiagFilter_None:
             // Continue the loop.
             if ( not_matchers_processed < m_NotMatchersNum ) {
@@ -622,15 +636,15 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                     break;
                 }
                 if ( !isalpha((unsigned char) symbol)  &&  symbol != '_' )
-                    throw CDiagSyntaxParser::TErrorInfo("wrong symbol", 
-                                                        m_Pos);
+                    throw CDiagSyntaxParser::TErrorInfo("wrong symbol", m_Pos);
                 m_Str = symbol;
                 state = eInsideId;
             }
             break;
         case eSpace :
             if ( !isspace((unsigned char) symbol) ) {
-                if ( symbol == '(' ||
+                if ( symbol == '[' ||
+                     symbol == '(' ||
                     (symbol == '!' && CT_TO_CHAR_TYPE(in.peek()) == '(')) {
                     in.putback( symbol );
                     --m_Pos;

@@ -250,20 +250,20 @@ public:
     CDiagFilter(void);
     ~CDiagFilter(void);
 
-    EDiagFilterAction CheckErrCode(int code, int subcode) const;
-
-    // Check if the filter accepts the pass
-    EDiagFilterAction CheckFile(const char* file) const;
-
     /// Check if the filter accepts message with the specified severity
-    EDiagFilterAction Check(const CNcbiDiag& message,
-                            EDiagSev         sev) const;
+    EDiagFilterAction Check(const CNcbiDiag& message, EDiagSev sev) const;
 
     // Check if the filter accepts the exception
     // NOTE: iterate through all exceptions and return TRUE
     //       if any exception matches
-    EDiagFilterAction Check(const CException& ex,
-                            EDiagSev          sev) const;
+    EDiagFilterAction Check(const CException& ex, EDiagSev sev) const;
+
+    // Check if the filter accepts errcode
+    EDiagFilterAction CheckErrCode(int code, int subcode, EDiagSev sev) const;
+
+    // Check if the filter accepts path
+    EDiagFilterAction CheckFile(const char* file, EDiagSev sev) const;
+
 
     // Fill the filter from a string
     void Fill(const char* filter_string);
@@ -299,7 +299,7 @@ private:
 
     typedef deque< AutoPtr<CDiagMatcher> >  TMatchers;
     TMatchers m_Matchers;
-    size_t m_NotMatchersNum;
+    size_t    m_NotMatchersNum;
 };
 
 
