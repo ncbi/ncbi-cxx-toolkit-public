@@ -209,19 +209,24 @@ struct SNetScheduleAPIImpl : public CObject
                 m_Service->m_Listener.GetPointer());
     }
 
-    string x_ExecOnce(const string& cmd_name, const string& job_key)
+    string x_ExecOnce(const string& cmd_name, const CNetScheduleJob& job)
     {
-        string cmd(g_MakeBaseCmd(cmd_name, job_key));
+        string cmd(g_MakeBaseCmd(cmd_name, job.job_id));
         g_AppendClientIPSessionIDHitID(cmd);
 
         CNetServer::SExecResult exec_result;
-        GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);
+
+        CNetServer server(job.server);
+        if (server == NULL)
+            server = GetServer(job.job_id);
+
+        server->ConnectAndExec(cmd, false, exec_result);
 
         return exec_result.response;
     }
 
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,
-            const string& job_key, time_t* job_exptime,
+            const CNetScheduleJob& job, time_t* job_exptime,
             ENetScheduleQueuePauseMode* pause_mode);
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
@@ -339,7 +344,7 @@ struct SNetScheduleExecutorImpl : public CObject
             const CDeadline* timeout,
             CNetScheduleJob& job);
 
-    void ExecWithOrWithoutRetry(const string& job_key, const string& cmd);
+    void ExecWithOrWithoutRetry(const CNetScheduleJob& job, const string& cmd);
 
     enum EChangeAffAction {
         eAddAffs,
@@ -359,6 +364,8 @@ struct SNetScheduleExecutorImpl : public CObject
 
     string m_JobGroup;
 
+    // True when this object is used by a real
+    // worker node application (CGridWorkerNode).
     bool m_WorkerNodeMode;
 };
 

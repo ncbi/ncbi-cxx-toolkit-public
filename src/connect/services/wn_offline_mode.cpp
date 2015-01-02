@@ -108,8 +108,8 @@ void SOfflineJobContextImpl::x_RunJob()
     }
     catch (CGridWorkerNodeException& ex) {
         switch (ex.GetErrCode()) {
-        case CGridWorkerNodeException::eJobIsCanceled:
-            x_SetCanceled();
+        case CGridWorkerNodeException::eJobIsLost:
+            ERR_POST(ex);
             break;
 
         case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
@@ -145,22 +145,23 @@ void SOfflineJobContextImpl::x_RunJob()
         CNetScheduleJobSerializer job_serializer(m_Job, m_CompoundIDPool);
 
         switch (this_job_context.GetCommitStatus()) {
-        case CWorkerNodeJobContext::eDone:
+        case CWorkerNodeJobContext::eCS_Done:
             job_serializer.SaveJobOutput(CNetScheduleAPI::eDone,
                     m_OutputDirName, m_NetCacheAPI);
             break;
 
-        case CWorkerNodeJobContext::eNotCommitted:
+        case CWorkerNodeJobContext::eCS_NotCommitted:
             this_job_context.CommitJobWithFailure(
                     "Job was not explicitly committed");
             /* FALL THROUGH */
 
-        case CWorkerNodeJobContext::eFailure:
+        case CWorkerNodeJobContext::eCS_Failure:
             job_serializer.SaveJobOutput(CNetScheduleAPI::eFailed,
                     m_OutputDirName, m_NetCacheAPI);
             break;
 
-        default: // eReturn, eRescheduled, eCanceled - results won't be saved
+        default: /* eCS_Return, eCS_Rescheduled, etc. */
+            // No job results to save.
             break;
         }
     }

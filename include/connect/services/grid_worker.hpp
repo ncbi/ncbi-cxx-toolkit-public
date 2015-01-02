@@ -340,19 +340,19 @@ class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
     unsigned int GetJobNumber() const;
 
     enum ECommitStatus {
-        eDone,
-        eFailure,
-        eReturn,
-        eRescheduled,
-        eNotCommitted,
-        eCanceled
+        eCS_Done,
+        eCS_Failure,
+        eCS_Return,
+        eCS_Reschedule,
+        eCS_NotCommitted,
+        eCS_JobIsLost
     };
 
     bool IsJobCommitted() const;
     ECommitStatus GetCommitStatus() const;
     static const char* GetCommitStatusDescription(ECommitStatus commit_status);
 
-    bool IsCanceled() const;
+    bool IsJobLost() const;
 
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
@@ -648,7 +648,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNodeException : public CException
 public:
     enum EErrCode {
         ePortBusy,
-        eJobIsCanceled,
+        eJobIsLost,
         eJobFactoryIsNotSet,
         eExclusiveModeIsAlreadySet
     };
@@ -658,7 +658,7 @@ public:
         switch (GetErrCode())
         {
         case ePortBusy:                  return "ePortBusy";
-        case eJobIsCanceled:             return "eJobIsCanceled";
+        case eJobIsLost:                 return "eJobIsLost";
         case eJobFactoryIsNotSet:        return "eJobFactoryIsNotSet";
         case eExclusiveModeIsAlreadySet: return "eExclusiveModeIsAlreadySet";
         default:                         return CException::GetErrCodeString();

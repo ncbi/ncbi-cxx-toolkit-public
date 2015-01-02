@@ -311,7 +311,7 @@ int CGridCommandLineInterfaceApp::NetScheduleSanityCheck()
         bool job_exists = m_NetScheduleExecutor.GetJob(job1, 5);
         if (job_exists) {
             if (job1.job_id != job.job_id)
-                m_NetScheduleExecutor.ReturnJob(job1.job_id, job1.auth_token);
+                m_NetScheduleExecutor.ReturnJob(job1);
             else {
                 if (job1.input != job.input) {
                     job1.error_msg = "Job's (" + job1.job_id +

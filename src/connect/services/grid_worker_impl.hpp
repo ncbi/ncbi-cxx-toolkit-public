@@ -48,8 +48,11 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 
     void ResetJobContext();
 
-    void x_SetCanceled() { m_JobCommitted = CWorkerNodeJobContext::eCanceled; }
-    void CheckIfCanceled();
+    void MarkJobAsLost()
+    {
+        m_JobCommitStatus = CWorkerNodeJobContext::eCS_JobIsLost;
+    }
+    void CheckIfJobIsLost();
 
     void x_PrintRequestStop();
 
@@ -61,7 +64,7 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 
     SGridWorkerNodeImpl* m_WorkerNode;
     CNetScheduleJob m_Job;
-    CWorkerNodeJobContext::ECommitStatus m_JobCommitted;
+    CWorkerNodeJobContext::ECommitStatus m_JobCommitStatus;
     bool m_DisableRetries;
     size_t m_InputBlobSize;
     unsigned int m_JobNumber;
@@ -316,7 +319,6 @@ private:
     void x_ProcessRequestJobNotification();
     bool x_WaitForNewJob(CNetScheduleJob& job);
     bool x_GetNextJob(CNetScheduleJob& job);
-    void x_ReturnJob(const CNetScheduleJob& job);
 };
 
 END_NCBI_SCOPE

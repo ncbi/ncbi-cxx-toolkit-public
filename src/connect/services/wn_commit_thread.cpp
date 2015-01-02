@@ -149,32 +149,32 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
     bool recycle_job_context = false;
 
     try {
-        switch (job_context->m_JobCommitted) {
-        case CWorkerNodeJobContext::eDone:
+        switch (job_context->m_JobCommitStatus) {
+        case CWorkerNodeJobContext::eCS_Done:
             m_WorkerNode->m_NSExecutor.PutResult(job_context->m_Job);
             break;
 
-        case CWorkerNodeJobContext::eFailure:
+        case CWorkerNodeJobContext::eCS_Failure:
             m_WorkerNode->m_NSExecutor.PutFailure(job_context->m_Job,
                     job_context->m_DisableRetries);
             break;
 
-        default: /* eNotCommitted: job registration error,
-                                   e.g. too many jobs per client IP or
-                                   session ID. Return the job. */
+        default: /* eCS_NotCommitted */
+            // In the unlikely event of eCS_NotCommitted, return the job.
+            /* FALL THROUGH */
 
-        case CWorkerNodeJobContext::eReturn:
-            m_WorkerNode->m_NSExecutor.ReturnJob(job_context->m_Job.job_id,
-                    job_context->m_Job.auth_token);
+        case CWorkerNodeJobContext::eCS_Return:
+            m_WorkerNode->m_NSExecutor.ReturnJob(job_context->m_Job);
             break;
 
-        case CWorkerNodeJobContext::eRescheduled:
+        case CWorkerNodeJobContext::eCS_Reschedule:
             m_WorkerNode->m_NSExecutor.Reschedule(job_context->m_Job);
             break;
 
-        case CWorkerNodeJobContext::eCanceled:
-            ERR_POST("Job " << job_context->m_Job.job_id <<
-                    " has been canceled");
+        case CWorkerNodeJobContext::eCS_JobIsLost:
+            // Job is cancelled or otherwise taken away from the worker
+            // node. Whatever the cause is, it has been reported already.
+            break;
         }
 
         recycle_job_context = true;

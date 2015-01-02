@@ -553,7 +553,9 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
 void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
-    m_Impl->m_API->x_ExecOnce("CANCEL", job_key);
+    CNetScheduleJob job;
+    job.job_id = job_key;
+    m_Impl->m_API->x_ExecOnce("CANCEL", job);
 }
 
 void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
@@ -573,8 +575,9 @@ CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobStatus(
         const string& job_key, time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
-    return m_Impl->m_API->GetJobStatus("SST2",
-            job_key, job_exptime, pause_mode);
+    CNetScheduleJob job;
+    job.job_id = job_key;
+    return m_Impl->m_API->GetJobStatus("SST2", job, job_exptime, pause_mode);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobDetails(

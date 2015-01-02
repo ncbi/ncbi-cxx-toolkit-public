@@ -1069,7 +1069,11 @@ int CGridCommandLineInterfaceApp::Cmd_ReturnJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
 
-    m_NetScheduleExecutor.ReturnJob(m_Opts.id, m_Opts.auth_token);
+    CNetScheduleJob job;
+    job.job_id = m_Opts.id;
+    job.auth_token = m_Opts.auth_token;
+
+    m_NetScheduleExecutor.ReturnJob(job);
 
     return 0;
 }
@@ -1091,13 +1095,14 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
             IsOptionSet(eProgressMessage)) {
         CNetScheduleExecutor executor(m_NetScheduleAPI.GetExecutor());
 
+        CNetScheduleJob job;
+        job.job_id = m_Opts.id;
+
         if (IsOptionSet(eExtendLifetime))
-            executor.JobDelayExpiration(m_Opts.id,
+            executor.JobDelayExpiration(job,
                     (unsigned) m_Opts.extend_lifetime_by);
 
         if (IsOptionSet(eProgressMessage)) {
-            CNetScheduleJob job;
-            job.job_id = m_Opts.id;
             job.progress_msg = m_Opts.progress_message;
             executor.PutProgressMsg(job);
         }

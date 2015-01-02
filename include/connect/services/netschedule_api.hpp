@@ -355,6 +355,7 @@ struct CNetScheduleJob
         progress_msg.erase();
         group.erase();
         auth_token.erase();
+        server = NULL;
     }
     // input parameters
 
@@ -383,6 +384,9 @@ struct CNetScheduleJob
     string group;
 
     string auth_token;
+
+    /// The server the job belongs to.
+    CNetServer server;
 };
 
 struct SNetScheduleSubmitterImpl;
@@ -727,17 +731,18 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///         cannot be found (job record has expired).
     ///
     CNetScheduleAPI::EJobStatus GetJobStatus(
-            const string& job_key,
+            const CNetScheduleJob& job,
             time_t* job_exptime = NULL,
             ENetScheduleQueuePauseMode* pause_mode = NULL);
 
-    /// Switch the job back to the "Pending" status. It will be
+    /// Switch the job back to the "Pending" status so that it can be
     /// run again on a different worker node.
     ///
-    /// Node may decide to return the job if it cannot process it right
-    /// now (does not have resources, being asked to shutdown, etc.)
+    /// The node may decide to return the job if it cannot be processed
+    /// at the moment (not enough resources, the node is shutting down,
+    /// etc.)
     ///
-    void ReturnJob(const string& job_key, const string& auth_token);
+    void ReturnJob(const CNetScheduleJob& job);
 
     /// Increment job execution timeout
     ///
@@ -749,7 +754,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// @param runtime_inc
     ///    Estimated time in seconds(from the current moment) to
     ///    finish the job.
-    void JobDelayExpiration(const string& job_key, unsigned runtime_inc);
+    void JobDelayExpiration(const CNetScheduleJob& job, unsigned runtime_inc);
 
     /// Retrieve queue parameters from the server.
     const CNetScheduleAPI::SServerParams& GetServerParams();

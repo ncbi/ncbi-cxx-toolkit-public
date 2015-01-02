@@ -100,18 +100,18 @@ unsigned int CWorkerNodeJobContext::GetJobNumber() const
 
 bool CWorkerNodeJobContext::IsJobCommitted() const
 {
-    return m_Impl->m_JobCommitted != eNotCommitted;
+    return m_Impl->m_JobCommitStatus != eCS_NotCommitted;
 }
 
 CWorkerNodeJobContext::ECommitStatus
         CWorkerNodeJobContext::GetCommitStatus() const
 {
-    return m_Impl->m_JobCommitted;
+    return m_Impl->m_JobCommitStatus;
 }
 
-bool CWorkerNodeJobContext::IsCanceled() const
+bool CWorkerNodeJobContext::IsJobLost() const
 {
-    return m_Impl->m_JobCommitted == eCanceled;
+    return m_Impl->m_JobCommitStatus == eCS_JobIsLost;
 }
 
 IWorkerNodeCleanupEventSource* CWorkerNodeJobContext::GetCleanupEventSource()
@@ -188,30 +188,30 @@ void CWorkerNodeJobContext::CloseStreams()
 
 void CWorkerNodeJobContext::CommitJob()
 {
-    m_Impl->CheckIfCanceled();
-    m_Impl->m_JobCommitted = eDone;
+    m_Impl->CheckIfJobIsLost();
+    m_Impl->m_JobCommitStatus = eCS_Done;
 }
 
 void CWorkerNodeJobContext::CommitJobWithFailure(const string& err_msg,
         bool no_retries)
 {
-    m_Impl->CheckIfCanceled();
-    m_Impl->m_JobCommitted = eFailure;
+    m_Impl->CheckIfJobIsLost();
+    m_Impl->m_JobCommitStatus = eCS_Failure;
     m_Impl->m_DisableRetries = no_retries;
     m_Impl->m_Job.error_msg = err_msg;
 }
 
 void CWorkerNodeJobContext::ReturnJob()
 {
-    m_Impl->CheckIfCanceled();
-    m_Impl->m_JobCommitted = eReturn;
+    m_Impl->CheckIfJobIsLost();
+    m_Impl->m_JobCommitStatus = eCS_Return;
 }
 
 void CWorkerNodeJobContext::RescheduleJob(
         const string& affinity, const string& group)
 {
-    m_Impl->CheckIfCanceled();
-    m_Impl->m_JobCommitted = eRescheduled;
+    m_Impl->CheckIfJobIsLost();
+    m_Impl->m_JobCommitStatus = eCS_Reschedule;
     m_Impl->m_Job.affinity = affinity;
     m_Impl->m_Job.group = group;
 }
@@ -225,7 +225,7 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
 void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
                                                bool send_immediately)
 {
-    CheckIfCanceled();
+    CheckIfJobIsLost();
     if (!send_immediately &&
             !m_ProgressMsgThrottler.Approve(CRequestRateControl::eErrCode)) {
         LOG_POST(Warning << "Progress message \"" <<
@@ -261,13 +261,14 @@ void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
 
 void CWorkerNodeJobContext::JobDelayExpiration(unsigned runtime_inc)
 {
+    m_Impl->CheckIfJobIsLost();
     m_Impl->JobDelayExpiration(runtime_inc);
 }
 
 void SWorkerNodeJobContextImpl::JobDelayExpiration(unsigned runtime_inc)
 {
     try {
-        m_NetScheduleExecutor.JobDelayExpiration(m_Job.job_id, runtime_inc);
+        m_NetScheduleExecutor.JobDelayExpiration(m_Job, runtime_inc);
     }
     catch (exception& ex) {
         ERR_POST_X(8, "CWorkerNodeJobContext::JobDelayExpiration: " <<
@@ -290,8 +291,9 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
     if (m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
         try {
             ENetScheduleQueuePauseMode pause_mode;
-            switch (m_NetScheduleExecutor.GetJobStatus(m_Job.job_id,
-                    NULL, &pause_mode)) {
+            CNetScheduleAPI::EJobStatus job_status =
+                m_NetScheduleExecutor.GetJobStatus(m_Job, NULL, &pause_mode);
+            switch (job_status) {
             case CNetScheduleAPI::eRunning:
                 if (pause_mode == eNSQ_WithPullback) {
                     m_WorkerNode->SetJobPullbackTimer(
@@ -300,13 +302,18 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
                             "(default) pullback timeout=" <<
                             m_WorkerNode->m_DefaultPullbackTimeout);
                 }
-                break;
-
-            case CNetScheduleAPI::eCanceled:
-                x_SetCanceled();
                 /* FALL THROUGH */
 
+            case CNetScheduleAPI::ePending:
+                // NetSchedule will still allow to commit this job.
+                break;
+
             default:
+                // The worker node does not "own" the job any longer.
+                ERR_POST("Cannot proceed with job processing: job '" <<
+                        m_Job.job_id << "' changed status to '" <<
+                        CNetScheduleAPI::StatusToString(job_status) << "'.");
+                MarkJobAsLost();
                 return CNetScheduleAdmin::eShutdownImmediate;
             }
         }
@@ -323,10 +330,10 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
     return CGridGlobals::GetInstance().GetShutdownLevel();
 }
 
-void SWorkerNodeJobContextImpl::CheckIfCanceled()
+void SWorkerNodeJobContextImpl::CheckIfJobIsLost()
 {
-    if (m_JobCommitted == CWorkerNodeJobContext::eCanceled) {
-        NCBI_THROW_FMT(CGridWorkerNodeException, eJobIsCanceled,
+    if (m_JobCommitStatus == CWorkerNodeJobContext::eCS_JobIsLost) {
+        NCBI_THROW_FMT(CGridWorkerNodeException, eJobIsLost,
             "Job " << m_Job.job_id << " has been canceled");
     }
 }
@@ -335,7 +342,7 @@ void SWorkerNodeJobContextImpl::ResetJobContext()
 {
     m_JobNumber = CGridGlobals::GetInstance().GetNewJobNumber();
 
-    m_JobCommitted = CWorkerNodeJobContext::eNotCommitted;
+    m_JobCommitStatus = CWorkerNodeJobContext::eCS_NotCommitted;
     m_DisableRetries = false;
     m_InputBlobSize = 0;
     m_ExclusiveJob =
@@ -359,16 +366,16 @@ const char* CWorkerNodeJobContext::GetCommitStatusDescription(
         CWorkerNodeJobContext::ECommitStatus commit_status)
 {
     switch (commit_status) {
-    case eDone:
+    case eCS_Done:
         return "done";
-    case eFailure:
+    case eCS_Failure:
         return "failed";
-    case eReturn:
+    case eCS_Return:
         return "returned";
-    case eRescheduled:
+    case eCS_Reschedule:
         return "rescheduled";
-    case eCanceled:
-        return "canceled";
+    case eCS_JobIsLost:
+        return "lost";
     default:
         return "not committed";
     }
@@ -380,7 +387,7 @@ void SWorkerNodeJobContextImpl::x_PrintRequestStop()
 
     if (!m_RequestContext->IsSetRequestStatus())
         m_RequestContext->SetRequestStatus(
-            m_JobCommitted == CWorkerNodeJobContext::eDone &&
+            m_JobCommitStatus == CWorkerNodeJobContext::eCS_Done &&
                 m_Job.ret_code == 0 ? 200 : 500);
 
     if (m_RequestContext->GetAppState() == eDiagAppState_Request)
@@ -422,14 +429,14 @@ void SWorkerNodeJobContextImpl::x_RunJob()
         ERR_POST("Too many jobs with client IP \"" <<
                  m_Job.client_ip << "\"; job " <<
                  m_Job.job_id << " will be returned.");
-        m_JobCommitted = CWorkerNodeJobContext::eReturn;
+        m_JobCommitStatus = CWorkerNodeJobContext::eCS_Return;
     } else if (!m_Job.session_id.empty() &&
             !m_WorkerNode->m_JobsPerSessionID.CountJob(m_Job.session_id,
                     &session_id_registration)) {
         ERR_POST("Too many jobs with session ID \"" <<
                  m_Job.session_id << "\"; job " <<
                  m_Job.job_id << " will be returned.");
-        m_JobCommitted = CWorkerNodeJobContext::eReturn;
+        m_JobCommitStatus = CWorkerNodeJobContext::eCS_Return;
     } else {
         m_WorkerNode->x_NotifyJobWatchers(this_job_context,
                 IWorkerNodeJobWatcher::eJobStarted);
@@ -440,8 +447,7 @@ void SWorkerNodeJobContextImpl::x_RunJob()
         }
         catch (CGridWorkerNodeException& ex) {
             switch (ex.GetErrCode()) {
-            case CGridWorkerNodeException::eJobIsCanceled:
-                m_JobCommitted = CWorkerNodeJobContext::eCanceled;
+            case CGridWorkerNodeException::eJobIsLost:
                 break;
 
             case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
@@ -451,71 +457,77 @@ void SWorkerNodeJobContextImpl::x_RunJob()
                         "because it requested exclusive mode while "
                         "another exclusive job is already running.");
                 }
-                if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted)
-                    m_JobCommitted = CWorkerNodeJobContext::eReturn;
+                if (m_JobCommitStatus ==
+                        CWorkerNodeJobContext::eCS_NotCommitted)
+                    m_JobCommitStatus = CWorkerNodeJobContext::eCS_Return;
                 break;
 
             default:
                 ERR_POST_X(62, ex);
-                if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted)
-                    m_JobCommitted = CWorkerNodeJobContext::eReturn;
+                if (m_JobCommitStatus ==
+                        CWorkerNodeJobContext::eCS_NotCommitted)
+                    m_JobCommitStatus = CWorkerNodeJobContext::eCS_Return;
             }
         }
         catch (CNetScheduleException& e) {
             ERR_POST_X(20, "job " << m_Job.job_id << " failed: " << e);
-            if (e.GetErrCode() == CNetScheduleException::eJobNotFound)
-                m_JobCommitted = CWorkerNodeJobContext::eCanceled;
-            else if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted) {
-                m_JobCommitted = CWorkerNodeJobContext::eFailure;
+            if (e.GetErrCode() == CNetScheduleException::eJobNotFound) {
+                ERR_POST("Cannot proceed with job processing: job '" <<
+                        m_Job.job_id << "' has expired.");
+                MarkJobAsLost();
+            } else if (m_JobCommitStatus ==
+                    CWorkerNodeJobContext::eCS_NotCommitted) {
+                m_JobCommitStatus = CWorkerNodeJobContext::eCS_Failure;
                 m_Job.error_msg = e.what();
             }
         }
         catch (exception& e) {
             ERR_POST_X(18, "job " << m_Job.job_id << " failed: " << e.what());
-            if (m_JobCommitted == CWorkerNodeJobContext::eNotCommitted) {
-                m_JobCommitted = CWorkerNodeJobContext::eFailure;
+            if (m_JobCommitStatus == CWorkerNodeJobContext::eCS_NotCommitted) {
+                m_JobCommitStatus = CWorkerNodeJobContext::eCS_Failure;
                 m_Job.error_msg = e.what();
             }
         }
 
         this_job_context.CloseStreams();
 
-        switch (m_JobCommitted) {
-        case CWorkerNodeJobContext::eDone:
+        switch (m_JobCommitStatus) {
+        case CWorkerNodeJobContext::eCS_Done:
             m_WorkerNode->x_NotifyJobWatchers(this_job_context,
                     IWorkerNodeJobWatcher::eJobSucceeded);
             break;
 
-        case CWorkerNodeJobContext::eNotCommitted:
+        case CWorkerNodeJobContext::eCS_NotCommitted:
             if (TWorkerNode_AllowImplicitJobReturn::GetDefault() ||
                     this_job_context.GetShutdownLevel() !=
                             CNetScheduleAdmin::eNoShutdown) {
-                m_JobCommitted = CWorkerNodeJobContext::eReturn;
+                m_JobCommitStatus = CWorkerNodeJobContext::eCS_Return;
                 m_WorkerNode->x_NotifyJobWatchers(this_job_context,
                         IWorkerNodeJobWatcher::eJobReturned);
                 break;
             }
 
-            m_JobCommitted = CWorkerNodeJobContext::eFailure;
+            m_JobCommitStatus = CWorkerNodeJobContext::eCS_Failure;
             m_Job.error_msg = "Job was not explicitly committed";
             /* FALL THROUGH */
 
-        case CWorkerNodeJobContext::eFailure:
+        case CWorkerNodeJobContext::eCS_Failure:
             m_WorkerNode->x_NotifyJobWatchers(this_job_context,
                     IWorkerNodeJobWatcher::eJobFailed);
             break;
 
-        case CWorkerNodeJobContext::eReturn:
+        case CWorkerNodeJobContext::eCS_Return:
             m_WorkerNode->x_NotifyJobWatchers(this_job_context,
                     IWorkerNodeJobWatcher::eJobReturned);
             break;
 
-        case CWorkerNodeJobContext::eRescheduled:
+        case CWorkerNodeJobContext::eCS_Reschedule:
             m_WorkerNode->x_NotifyJobWatchers(this_job_context,
                     IWorkerNodeJobWatcher::eJobRescheduled);
             break;
 
-        default: // eCanceled - will be processed in x_SendJobResults().
+        default: // eCanceled - no action needed.
+            // This object will be recycled in x_CommitJob().
             break;
         }
 
@@ -563,8 +575,8 @@ void* CMainLoopThread::Main()
                     ERR_POST_X(28, ex);
                     // that must not happen after CBlockingQueue is fixed
                     _ASSERT(0);
-                    job_context->m_JobCommitted =
-                            CWorkerNodeJobContext::eReturn;
+                    job_context->m_JobCommitStatus =
+                            CWorkerNodeJobContext::eCS_Return;
                     m_WorkerNode->m_JobCommitterThread->
                             RecycleJobContextAndCommitJob(job_context);
                 }
@@ -779,20 +791,15 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
 
     if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
         if (!m_WorkerNode->EnterExclusiveMode()) {
-            x_ReturnJob(job);
+            m_WorkerNode->m_NSExecutor.ReturnJob(job);
             job_exists = false;
         }
     }
     if (job_exists && x_EnterSuspendedState()) {
-        x_ReturnJob(job);
+        m_WorkerNode->m_NSExecutor.ReturnJob(job);
         return false;
     }
     return job_exists;
-}
-
-void CMainLoopThread::x_ReturnJob(const CNetScheduleJob& job)
-{
-    m_WorkerNode->m_NSExecutor.ReturnJob(job.job_id, job.auth_token);
 }
 
 size_t CGridWorkerNode::GetServerOutputSize()

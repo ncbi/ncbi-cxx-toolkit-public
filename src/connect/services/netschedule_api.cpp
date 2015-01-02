@@ -896,7 +896,7 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
         time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
-    string resp = m_Impl->x_ExecOnce("STATUS2", job.job_id);
+    string resp = m_Impl->x_ExecOnce("STATUS2", job);
 
     static const char* const s_JobStatusAttrNames[] = {
             "job_status",       // 0
@@ -952,13 +952,13 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
 }
 
 CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
-        const string& job_key, time_t* job_exptime,
+        const CNetScheduleJob& job, time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
     string response;
 
     try {
-        response = x_ExecOnce(cmd, job_key);
+        response = x_ExecOnce(cmd, job);
     }
     catch (CNetScheduleException& e) {
         if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
@@ -1104,8 +1104,7 @@ void CNetScheduleAPI::GetQueueParams(
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
-    job.progress_msg = NStr::ParseEscapes(
-            m_Impl->x_ExecOnce("MGET", job.job_id));
+    job.progress_msg = NStr::ParseEscapes(m_Impl->x_ExecOnce("MGET", job));
 }
 
 void SNetScheduleAPIImpl::VerifyQueueNameAlphabet(const string& queue_name)

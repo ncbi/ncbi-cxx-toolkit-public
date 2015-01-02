@@ -208,14 +208,17 @@ bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 }
 
 ////////////////////////////////////////////////////////////////////////
-void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
+void CNetScheduleExecutor::JobDelayExpiration(const CNetScheduleJob& job,
                                               unsigned      runtime_inc)
 {
-    string cmd(g_MakeBaseCmd("JDEX", job_key));
+    string cmd(g_MakeBaseCmd("JDEX", job.job_id));
     cmd += ' ';
     cmd += NStr::NumericToString(runtime_inc);
     g_AppendClientIPSessionIDHitID(cmd);
-    m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd, false);
+    CNetServer server(job.server);
+    if (server == NULL)
+        server = m_Impl->m_API->GetServer(job.job_id);
+    server.ExecWithRetry(cmd, false);
 }
 
 class CGetJobCmdExecutor : public INetServerFinder
@@ -342,6 +345,9 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
     if (!g_ParseGetJobResponse(job, exec_result.response))
         return false;
 
+    // Remember the server that issued this job.
+    job.server = server;
+
     // If a new preferred affinity is given by the server,
     // register it with the rest of servers.
     ClaimNewPreferredAffinity(server, job.affinity);
@@ -408,6 +414,9 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
                     cmd, deadline, m_Impl->m_JobGroup);
             if (g_ParseGetJobResponse(job, server.ExecWithRetry(cmd,
                         false).response)) {
+                // Remember the server that issued this job.
+                job.server = server;
+
                 // Notify the rest of NetSchedule servers that
                 // we are no longer listening on the UDP socket.
                 string cancel_wget_cmd("CWGET");
@@ -558,10 +567,12 @@ void static s_CheckOutputSize(const string& output, size_t max_output_size)
     }
 }
 
-void SNetScheduleExecutorImpl::ExecWithOrWithoutRetry(const string& job_key,
-        const string& cmd)
+void SNetScheduleExecutorImpl::ExecWithOrWithoutRetry(
+        const CNetScheduleJob& job, const string& cmd)
 {
-    CNetServer server(m_API->GetServer(job_key));
+    CNetServer server(job.server);
+    if (server == NULL)
+        server = m_API->GetServer(job.job_id);
 
     if (!m_WorkerNodeMode)
         server.ExecWithRetry(cmd, false);
@@ -592,7 +603,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
 
     g_AppendClientIPSessionIDHitID(cmd);
 
-    m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
+    m_Impl->ExecWithOrWithoutRetry(job, cmd);
 }
 
 void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
@@ -607,8 +618,10 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
     cmd += '\"';
     g_AppendClientIPSessionIDHitID(cmd);
     CNetServer::SExecResult exec_result;
-    m_Impl->m_API->GetServer(job.job_id)->ConnectAndExec(cmd,
-            false, exec_result);
+    CNetServer server(job.server);
+    if (server == NULL)
+        server = m_Impl->m_API->GetServer(job.job_id);
+    server->ConnectAndExec(cmd, false, exec_result);
 }
 
 void CNetScheduleExecutor::GetProgressMsg(CNetScheduleJob& job)
@@ -647,7 +660,7 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job,
     if (no_retries)
         cmd.append(" no_retries=1");
 
-    m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
+    m_Impl->ExecWithOrWithoutRetry(job, cmd);
 }
 
 void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
@@ -674,29 +687,27 @@ void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
 
     g_AppendClientIPSessionIDHitID(cmd);
 
-    m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
+    m_Impl->ExecWithOrWithoutRetry(job, cmd);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
-        const string& job_key, time_t* job_exptime,
+        const CNetScheduleJob& job, time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
-    return m_Impl->m_API->GetJobStatus("WST2",
-            job_key, job_exptime, pause_mode);
+    return m_Impl->m_API->GetJobStatus("WST2", job, job_exptime, pause_mode);
 }
 
-void CNetScheduleExecutor::ReturnJob(const string& job_key,
-        const string& auth_token)
+void CNetScheduleExecutor::ReturnJob(const CNetScheduleJob& job)
 {
-    string cmd("RETURN2 job_key=" + job_key);
+    string cmd("RETURN2 job_key=" + job.job_id);
 
-    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(auth_token);
+    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
     cmd.append(" auth_token=");
-    cmd.append(auth_token);
+    cmd.append(job.auth_token);
 
     g_AppendClientIPSessionIDHitID(cmd);
 
-    m_Impl->ExecWithOrWithoutRetry(job_key, cmd);
+    m_Impl->ExecWithOrWithoutRetry(job, cmd);
 }
 
 int SNetScheduleExecutorImpl::AppendAffinityTokens(string& cmd,

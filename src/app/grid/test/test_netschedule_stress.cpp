@@ -330,7 +330,7 @@ int CTestNetScheduleStress::Run(void)
         CNetScheduleJob job;
         if (!executor.GetJob(job, 60))
             break;
-        executor.ReturnJob(job.job_id, job.auth_token);
+        executor.ReturnJob(job);
         jobs_returned.push_back(job.job_id);
     }
     NcbiCout << "Returned " << cnt << " jobs." << NcbiEndl;

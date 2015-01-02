@@ -195,7 +195,7 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode worker)
     NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
         CNetScheduleJob& job = it->first->GetJob();
         if (!it->second.flag)
-            worker.GetNSExecutor().ReturnJob(job.job_id, job.auth_token);
+            worker.GetNSExecutor().ReturnJob(job);
         else {
             job.error_msg = "Job execution time exceeded " +
                     NStr::NumericToString(

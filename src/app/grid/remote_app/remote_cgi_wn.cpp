@@ -244,7 +244,7 @@ public:
                                          env.GetEnv());
 
         if (!finished_ok) {
-            if (!job_context.IsCanceled())
+            if (!job_context.IsJobCommitted())
                 job_context.CommitJobWithFailure("Job has been canceled");
         } else
             if (m_RemoteAppLauncher.MustFailNoRetries(ret))
