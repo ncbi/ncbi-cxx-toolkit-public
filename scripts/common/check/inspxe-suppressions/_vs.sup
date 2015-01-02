@@ -252,4 +252,13 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "GetUserName"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ADVAPI32.dll,func=GetUserNameA;
+		}
+	}
+}
