@@ -371,9 +371,14 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     else if ( delta1 && !sx_EqualDelta(*delta1, *delta2) ) {
         has_delta_error = true;
     }
-    if ( !gen1 != !gen2 ) {
-        // one has general id but another hasn't
+    if ( !gen1 && gen2 ) {
+        // GB has general id but VDB hasn't
         has_id_error = report_id_error = true;
+    }
+    else if ( gen1 && !gen2 ) {
+        // VDB has general id but GB hasn't
+        // it's possible and shouldn't be considered as an error
+        //has_id_error = report_id_error = true;
     }
     else if ( gen1 && !sx_EqualGeneralId(*gen1, *gen2) ) {
         has_id_error = true;
