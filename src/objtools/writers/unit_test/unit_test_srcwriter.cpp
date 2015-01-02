@@ -62,8 +62,8 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-const string extInput("in");
-const string extOutput("out");
+const string extInput("input");
+const string extOutput("output");
 const string extErrors("errors");
 const string extKeep("new");
 const string dirTestFiles("srcwriter_test_cases");
