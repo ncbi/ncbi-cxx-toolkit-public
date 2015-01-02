@@ -3435,8 +3435,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                                         used for approximate gapped alignment */
    Int4 redo_index = -1; /* these are used for recomputing alignmnets if the */
    Int4 redo_query = -1; /* approximate alignment score is inconclusive */
-   /* FIXME: private_tree is not needed any more */
-   BlastIntervalTree *private_tree = NULL;
 
    if (!query || !subject || !gap_align || !score_params || !ext_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -3638,11 +3636,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       tmp_hsp.subject.frame = subject->frame;
 
       /* use priate interval tree when recomputing alignments */
-      if ((index <= redo_index && query_index == redo_query &&
-           !BlastIntervalTreeContainsHSP(private_tree, &tmp_hsp, query_info,
-                                          hit_options->min_diag_separation))
-          || !BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
-                                    hit_options->min_diag_separation))
+      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
+                                        hit_options->min_diag_separation))
       {
          BlastHSP* new_hsp;
          Int4 cutoff, restricted_cutoff = 0;
@@ -3728,30 +3723,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                 Blast_HSPListFree(hsp_list);
                 hsp_list = new_hsp_list;
 
-                /* create private interval tree for the recomputed alignments;
-                   this is easier than removing nodes from the main tree */
-
-                if (!private_tree) {
-                    if (Blast_SubjectIsTranslated(program_number) &&
-                        score_params->options->is_ooframe) { 
-                        ASSERT(program_number == eBlastTypeTblastn);
-                    
-                        private_tree = Blast_IntervalTreeInit(0, query->length+1,
-                                     0, 2*(subject->length + CODON_LENGTH)+1);
-                    }
-                    else {
-                        private_tree = Blast_IntervalTreeInit(0, query->length+1,
-                                                  0, subject->length+1);
-                    }
-                    if (!private_tree) {
-                        status = BLASTERR_MEMORY;
-                        break;
-                    }
-                }
-                else {
-                    Blast_IntervalTreeReset(private_tree);
-                }
-
                 /* restart the loop over initial hits to recompute
                    alignments for the current query */
                 redo_index = index;
@@ -3832,16 +3803,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                                      eQueryAndSubject);
              if (status)
                  break;
-
-             if (index < redo_index) {
-                 ASSERT(private_tree);
-                 status = BlastIntervalTreeAddHSP(new_hsp, private_tree,
-                                                  query_info,
-                                                  eQueryAndSubject);
-                 if (status) {
-                     break;
-                 }
-             }
          }
          else {
             /* a greedy alignment may have traceback associated with it;
@@ -3857,10 +3818,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    sfree(found_high_score);
    if (restricted_align_array) {
        sfree(restricted_align_array);
-   }
-
-   if (private_tree) {
-       private_tree = Blast_IntervalTreeFree(private_tree);
    }
    tree = Blast_IntervalTreeFree(tree);
    if (rpsblast_pssms) {
