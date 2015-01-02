@@ -250,7 +250,7 @@ int CTestNetScheduleStress::Run(void)
     //< ?????????? How should it really work??????????????
 
     submitter.CancelJob(job.job_id);
-    status = executor.GetJobStatus(job.job_id);
+    status = executor.GetJobStatus(job);
 
     _ASSERT(status == CNetScheduleAPI::eCanceled);
 
@@ -291,10 +291,11 @@ int CTestNetScheduleStress::Run(void)
 
     CStopWatch sw(CStopWatch::eStart);
 
+    CNetScheduleJob job;
     unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
-        const string& jk = *it;
-        status = executor.GetJobStatus(jk);
+        job.job_id = *it;
+        /*status =*/ executor.GetJobStatus(job);
         //status = cl.GetStatus(jk, &ret_code, &output);
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
