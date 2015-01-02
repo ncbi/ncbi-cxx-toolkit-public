@@ -57,6 +57,37 @@ typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_FileTrack>
     TLocationFileTrack;
 
 
+struct SCtx
+{
+    string desc;
+    long line;
+
+    SCtx() : line(0) {}
+};
+
+#define OUTPUT_CTX(ctx) ctx.desc << '[' << ctx.line << "]: "
+
+#define BOOST_ERROR_CTX(message, ctx) \
+    BOOST_ERROR(OUTPUT_CTX(ctx) << message)
+                    
+#define BOOST_CHECK_CTX(predicate, ctx) \
+    BOOST_CHECK_MESSAGE(predicate, OUTPUT_CTX(ctx) << #predicate " failed")
+
+#define BOOST_REQUIRE_CTX(predicate, ctx) \
+    BOOST_REQUIRE_MESSAGE(predicate, OUTPUT_CTX(ctx) << #predicate " failed")
+
+#define BOOST_CHECK_THROW_CTX(expression, exception, ctx) \
+    do { \
+        try { \
+            expression; \
+            BOOST_ERROR_CTX("exception " #exception " is expected", ctx); \
+        } \
+        catch (exception&) {} \
+        catch (...) { \
+            BOOST_ERROR_CTX("an unexpected exception is caught", ctx); \
+        } \
+    } while (0)
+
 // Hierarchy for GetInfo() tests
 
 template <class TLocation>
@@ -65,8 +96,9 @@ class CGetInfoBase : protected CNetStorageObjectInfo
 public:
     typedef CGetInfoBase TGetInfoBase; // Self
 
-    CGetInfoBase(CNetStorageObject object, Uint8 size)
+    CGetInfoBase(const SCtx& ctx, CNetStorageObject object, Uint8 size)
         : CNetStorageObjectInfo(object.GetInfo()),
+          m_Ctx(ctx),
           m_Size(size)
     {}
 
@@ -83,44 +115,47 @@ public:
         CheckToJSON();
     }
 
+protected:
+    const SCtx m_Ctx;
+
 private:
     virtual void CheckGetLocation()
     {
-        BOOST_CHECK_EQUAL(GetLocation(), TLocation::value);
+        BOOST_CHECK_CTX(GetLocation() == TLocation::value, m_Ctx);
     }
 
     virtual void CheckGetObjectLocInfo()
     {
         if (CJsonNode node = GetObjectLocInfo()) {
             m_ObjectLocInfoRepr = node.Repr();
-            BOOST_CHECK(m_ObjectLocInfoRepr.size());
+            BOOST_CHECK_CTX(m_ObjectLocInfoRepr.size(), m_Ctx);
         } else {
-            BOOST_ERROR("!GetObjectLocInfo()");
+            BOOST_ERROR_CTX("!GetObjectLocInfo()", m_Ctx);
         }
     }
 
     virtual void CheckGetCreationTime()
     {
-        BOOST_CHECK(GetCreationTime() != CTime());
+        BOOST_CHECK_CTX(GetCreationTime() != CTime(), m_Ctx);
     }
 
     virtual void CheckGetSize()
     {
-        BOOST_CHECK_EQUAL(GetSize(), m_Size);
+        BOOST_CHECK_CTX(GetSize() == m_Size, m_Ctx);
     }
 
     virtual void CheckGetStorageSpecificInfo()
     {
         if (CJsonNode node = GetStorageSpecificInfo()) {
-            BOOST_CHECK(node.Repr().size());
+            BOOST_CHECK_CTX(node.Repr().size(), m_Ctx);
         } else {
-            BOOST_FAIL("!GetStorageSpecificInfo()");
+            BOOST_ERROR_CTX("!GetStorageSpecificInfo()", m_Ctx);
         }
     }
 
     virtual void CheckGetNFSPathname()
     {
-        BOOST_CHECK_THROW(GetNFSPathname(), CNetStorageException);
+        BOOST_CHECK_THROW_CTX(GetNFSPathname(), CNetStorageException, m_Ctx);
     }
 
     virtual void CheckToJSON()
@@ -128,10 +163,10 @@ private:
         if (CJsonNode node = ToJSON()) {
             if (m_ObjectLocInfoRepr.size()) {
                 string repr = node.Repr();
-                BOOST_CHECK(NPOS != NStr::Find(repr, m_ObjectLocInfoRepr));
+                BOOST_CHECK_CTX(NPOS != NStr::Find(repr, m_ObjectLocInfoRepr), m_Ctx);
             }
         } else {
-            BOOST_ERROR("!ToJSON()");
+            BOOST_ERROR_CTX("!ToJSON()", m_Ctx);
         }
     }
 
@@ -146,19 +181,19 @@ template <>
 class CGetInfo<TLocationNotFound> : public CGetInfoBase<TLocationNotFound>
 {
 public:
-    CGetInfo(CNetStorageObject object, Uint8 = 0U)
-        : TGetInfoBase(object, 0U)
+    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 = 0U)
+        : TGetInfoBase(ctx, object, 0U)
     {}
 
 private:
     void CheckGetCreationTime()
     {
-        BOOST_CHECK(GetCreationTime() == CTime());
+        BOOST_CHECK_CTX(GetCreationTime() == CTime(), m_Ctx);
     }
 
     void CheckGetStorageSpecificInfo()
     {
-        BOOST_CHECK(!GetStorageSpecificInfo());
+        BOOST_CHECK_CTX(!GetStorageSpecificInfo(), m_Ctx);
     }
 };
 
@@ -166,10 +201,10 @@ template <>
 class CGetInfo<TLocationNetCache> : public CGetInfoBase<TLocationNetCache>
 {
 public:
-    CGetInfo(CNetStorageObject object, Uint8 size)
-        : TGetInfoBase(object, size)
+    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
+        : TGetInfoBase(ctx, object, size)
     {
-        BOOST_CHECK(object.GetSize() == size);
+        BOOST_CHECK_CTX(object.GetSize() == size, m_Ctx);
     }
 };
 
@@ -177,16 +212,16 @@ template <>
 class CGetInfo<TLocationFileTrack> : public CGetInfoBase<TLocationFileTrack>
 {
 public:
-    CGetInfo(CNetStorageObject object, Uint8 size)
-        : TGetInfoBase(object, size)
+    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
+        : TGetInfoBase(ctx, object, size)
     {
-        BOOST_CHECK(object.GetSize() == size);
+        BOOST_CHECK_CTX(object.GetSize() == size, m_Ctx);
     }
 
 private:
     void CheckGetNFSPathname()
     {
-        BOOST_CHECK(GetNFSPathname().size());
+        BOOST_CHECK_CTX(GetNFSPathname().size(), m_Ctx);
     }
 };
 
@@ -232,6 +267,7 @@ struct IExtWriter : public IWriter
 struct IExpected : public IExtReader
 {
     virtual size_t Size() = 0;
+    virtual bool Eof() = 0;
 };
 
 // A reader that is used to read from a string
@@ -280,13 +316,8 @@ public:
         : TStrReader("The quick brown fox jumps over the lazy dog")
     {}
 
-    void Close()
-    {
-        if (m_Remaining) {
-            BOOST_ERROR("Got less data than expected");
-        }
-    }
-
+    void Close() {}
+    bool Eof() { return !m_Remaining; }
     size_t Size() { return m_Str.size(); }
 };
 
@@ -326,6 +357,7 @@ public:
     }
 
     void Close() {}
+    bool Eof() { return !m_Length; }
     size_t Size() { return m_Source.data.size(); }
 
 private:
@@ -356,6 +388,7 @@ public:
 
     void Open() {}
     void Close() { m_Object.Close(); }
+    bool Eof() { return m_Object.Eof(); }
     size_t Size() { return m_Object.GetSize(); }
 
 private:
@@ -517,7 +550,7 @@ struct SIosApiImpl
             ERW_Result result = eRW_Success;
 
             if (!m_Impl->read(static_cast<char*>(buf), count)) {
-                if (!m_Impl->eof()) {
+                if (m_Impl->fail()) {
                     return eRW_Error;
                 }
 
@@ -576,19 +609,19 @@ struct SReadHelper
         source.Close();
     }
 
-    bool operator()()
+    bool operator()(const SCtx& ctx)
     {
         if (length) return true;
         m_Result = source.Read(buf, sizeof(buf), &length);
 
         switch (m_Result) {
         case eRW_Success:
-            BOOST_REQUIRE(length);
+            BOOST_REQUIRE_CTX(length, ctx);
             /* FALL THROUGH */
         case eRW_Eof:
             return true;
         default:
-            BOOST_ERROR("Failed to read: " << g_RW_ResultToString(m_Result));
+            BOOST_ERROR_CTX("Failed to read: " << g_RW_ResultToString(m_Result), ctx);
             return false;
         }
     }
@@ -614,14 +647,14 @@ struct SWriteHelper
     {
         m_Dest.Open();
     }
-    void Close()
+    void Close(const SCtx& ctx)
     {
-        BOOST_CHECK(m_Dest.Flush() == eRW_Success);
+        BOOST_CHECK_CTX(m_Dest.Flush() == eRW_Success, ctx);
         m_Dest.Close();
     }
 
     template <class TReader>
-    bool operator()(TReader& reader)
+    bool operator()(TReader& reader, const SCtx& ctx)
     {
         while (reader.length) {
             size_t length = 0;
@@ -633,13 +666,13 @@ struct SWriteHelper
                 break;
             case eRW_Eof:
                 if (reader.length -= length) {
-                    BOOST_ERROR("Wrote less data than expected");
+                    BOOST_ERROR_CTX("Wrote less data than expected", ctx);
                     return false;
                 }
                 break;
             default:
-                BOOST_ERROR("Failed to write to object: " <<
-                        g_RW_ResultToString(m_Result));
+                BOOST_ERROR_CTX("Failed to write to object: " <<
+                        g_RW_ResultToString(m_Result), ctx);
                 return false;
             }
         }
@@ -654,31 +687,6 @@ private:
     ERW_Result m_Result;
 };
 
-
-struct SCtx
-{
-    string desc;
-    long line;
-
-    SCtx() : line(0) {}
-};
-
-#define OUTPUT_CTX(ctx) ctx.desc << '[' << ctx.line << "]: "
-
-#define BOOST_CHECK_CTX(predicate, ctx) \
-    BOOST_CHECK_MESSAGE(predicate, OUTPUT_CTX(ctx) << #predicate " failed")
-
-#define BOOST_CHECK_THROW_CTX(expression, exception, ctx) \
-    do { \
-        try { \
-            expression; \
-            BOOST_ERROR(OUTPUT_CTX(ctx) << "exception " #exception " is expected"); \
-        } \
-        catch (exception&) {} \
-        catch (...) { \
-            BOOST_ERROR(OUTPUT_CTX(ctx) << "an unexpected exception is caught"); \
-        } \
-    } while (0)
 
 // Random attributes set
 struct SAttrApiBase
@@ -735,7 +743,8 @@ struct SAttrApiBase
         Shuffle();
 
         ITERATE(TData, i, data) {
-            BOOST_CHECK_CTX(object.GetAttribute(i->first) == i->second, ctx);
+            string read = object.GetAttribute(i->first);
+            BOOST_CHECK_CTX(read == i->second, ctx);
         }
     }
 
@@ -745,7 +754,8 @@ struct SAttrApiBase
 
         NON_CONST_ITERATE(TData, i, data) {
             object.SetAttribute(i->first, i->first);
-            BOOST_CHECK_CTX(object.GetAttribute(i->first) == i->first, ctx);
+            string read = object.GetAttribute(i->first);
+            BOOST_CHECK_CTX(read == i->first, ctx);
             object.SetAttribute(i->first, i->second);
         }
     }
@@ -835,7 +845,12 @@ struct SFixture
     }
 
     // These two are used to set test context
-    void Ctx(const string& d) { ctx.desc = d; }
+    SFixture& Ctx(const string& d)
+    {
+        BOOST_TEST_CHECKPOINT(d);
+        ctx.desc = d;
+        return *this;
+    }
     const SCtx& Line(long l) { ctx.line = l; return ctx; }
 
     template <class TLocation>
@@ -862,13 +877,20 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
     attr_tester.Read(TLocation(), Line(__LINE__), object);
 
     do {
-        if (!expected_reader()) break;
-        if (!actual_reader()) break;
+        if (!expected_reader(Line(__LINE__))) break;
+
+        if (!actual_reader(Line(__LINE__))) {
+            if (!data->Eof()) {
+                BOOST_ERROR_CTX("Got less data than expected", Line(__LINE__));
+            }
+
+            break;
+        }
 
         size_t length = min(expected_reader.length, actual_reader.length);
 
         if (memcmp(expected_reader.buf, actual_reader.buf, length)) {
-            BOOST_ERROR("Read() returned corrupted data");
+            BOOST_ERROR_CTX("Read() returned corrupted data", Line(__LINE__));
             break;
         }
 
@@ -881,7 +903,7 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
 
     attr_tester.Read(TLocation(), Line(__LINE__), object);
 
-    CGetInfo<TLocation>(object, data->Size()).Check();
+    CGetInfo<TLocation>(Line(__LINE__), object, data->Size()).Check();
 }
 
 template <class TPolicy>
@@ -891,17 +913,15 @@ string SFixture<TPolicy>::WriteAndRead(CNetStorageObject object)
     TApi api(object);
     SWriteHelper dest_writer(api.GetWriter());
 
-    attr_tester.Read(TShouldThrow(), Line(__LINE__), object);
-
     do {
-        if (!source_reader()) break;
-        if (!dest_writer(source_reader)) break;
+        if (!source_reader(Line(__LINE__))) break;
+        if (!dest_writer(source_reader, Line(__LINE__))) break;
     } while (source_reader && dest_writer);
 
     attr_tester.Write(TShouldThrow(), Line(__LINE__), object);
 
     source_reader.Close();
-    dest_writer.Close();
+    dest_writer.Close(Line(__LINE__));
 
     attr_tester.Write(TLocationNetCache(), Line(__LINE__), object);
 
@@ -916,15 +936,18 @@ string SFixture<TPolicy>::WriteAndRead(CNetStorageObject object)
 template <class TPolicy>
 void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
 {
-    BOOST_CHECK(netstorage.Exists(id));
+    BOOST_CHECK_CTX(netstorage.Exists(id),
+            Ctx("Checking existent object").Line(__LINE__));
     CNetStorageObject object(netstorage.Open(id));
-    CGetInfo<TLocationFileTrack>(object, data->Size()).Check();
+    CGetInfo<TLocationFileTrack>(Ctx("Reading existent object info").Line(__LINE__),
+            object, data->Size()).Check();
     netstorage.Remove(id);
-    BOOST_CHECK(!netstorage.Exists(id));
+    BOOST_CHECK_CTX(!netstorage.Exists(id),
+            Ctx("Checking non-existent object").Line(__LINE__));
     CNetStorageObject no_object(netstorage.Open(id));
-    BOOST_CHECK_THROW(
+    BOOST_CHECK_THROW_CTX(
             ReadAndCompare<TLocationNotFound>("Trying to read removed object",
-                no_object), CNetStorageException);
+                no_object), CNetStorageException, ctx);
 }
 
 template <class TPolicy>
@@ -933,7 +956,14 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     data.reset(new TExpected(netstorage.Create(fNST_Persistent)));
     string not_found(
             "VHwxYl4jgV6Y8pM4TzhGbhfoROgxMl10Rz9GNlwqch9HHwkoJw0WbEsxAGoT0Cb0EeOG");
-    CGetInfo<TLocationNotFound>(netstorage.Open(not_found)).Check();
+    CGetInfo<TLocationNotFound>(
+            Ctx("Trying to read non-existent object info").Line(__LINE__),
+            netstorage.Open(not_found)).Check();
+
+    BOOST_CHECK_THROW_CTX(
+            ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
+                netstorage.Create(fNST_Fast | fNST_Movable)),
+            CNetStorageException, Line(__LINE__));
 
     // Create a NetStorage object that should to go to NetCache.
     string object_loc = WriteAndRead(netstorage.Create(fNST_Fast | fNST_Movable));
@@ -949,13 +979,15 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // Verify that the object has disappeared from the "fast" storage.
     CNetStorageObject fast_storage_object =
             netstorage.Open(fast_storage_object_loc);
-    CGetInfo<TLocationNotFound>(fast_storage_object).Check();
+    CGetInfo<TLocationNotFound>(
+            Ctx("Trying to read relocated object info").Line(__LINE__),
+            fast_storage_object).Check();
 
     // Make sure the relocated object does not exists in the
     // original storage anymore.
-    BOOST_CHECK_THROW(
+    BOOST_CHECK_THROW_CTX(
             ReadAndCompare<TLocationNotFound>("Trying to read relocated object",
-                fast_storage_object), CNetStorageException);
+                fast_storage_object), CNetStorageException, ctx);
 
     // However, the object must still be accessible
     // either using the original ID:
@@ -978,8 +1010,15 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     string unique_key = NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
     data.reset(new TExpected(netstorage.Open(unique_key, fNST_Persistent)));
-    CGetInfo<TLocationNotFound>(netstorage.Open(unique_key,
+    CGetInfo<TLocationNotFound>(
+            Ctx("Trying to read non-existent object info").Line(__LINE__),
+            netstorage.Open(unique_key,
             fNST_Fast | fNST_Movable)).Check();
+
+    BOOST_CHECK_THROW_CTX(
+            ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
+                netstorage.Open(unique_key, fNST_Fast | fNST_Movable)),
+            CNetStorageException, Line(__LINE__));
 
     // Write and read test data using a user-defined key.
     WriteAndRead(netstorage.Open(unique_key,
