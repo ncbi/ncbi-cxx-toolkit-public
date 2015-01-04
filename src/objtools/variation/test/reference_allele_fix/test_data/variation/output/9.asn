@@ -55,7 +55,7 @@ Variation ::= {
             },
             {
               data instance {
-                type snv,
+                type mnp,
                 delta {
                   {
                     seq literal {

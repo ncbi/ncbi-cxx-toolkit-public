@@ -79,11 +79,7 @@ private:
     virtual void Init(void);
     virtual int Run ();
     virtual void Exit(void);
-    int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
-    int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2);
     bool IsVariation(AutoPtr<CObjectIStream>& oinput_istream);
-    template<class T>
-    int CorrectAndCompare(AutoPtr<CObjectIStream>& input_objstream, AutoPtr<CObjectIStream>& baseline_objstream, CRef<CScope> scope, bool verbose);
     void GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles);
     void CheckFeats(CObjectIStream& input_objstream, CScope& scope);
     void CheckVars( CObjectIStream& input_objstream, CScope& scope);
@@ -95,8 +91,6 @@ void CReferenceAlleleFixApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Correct Ref Allele in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddOptionalKey("b", "baseline", "Baseline file",CArgDescriptions::eInputFile);
-    arg_desc->AddFlag("v", "Verbose output",true);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -105,84 +99,6 @@ void CReferenceAlleleFixApp::Exit(void)
 }
     
 
-int CReferenceAlleleFixApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
-{
-    int n = 0;
-    if (v1->SetData().SetSet().SetVariations().size() !=
-        v2->SetData().SetSet().SetVariations().size() )
-    {
-        ERR_POST(Error << "Second level variation size does not match" << Endm);
-        n++;
-    }
-
-    if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().size() !=
-        v2->SetData().SetSet().SetVariations().front()->SetPlacements().size())
-    {
-        ERR_POST(Error << "Placement size does not match" << Endm);
-        n++;
-    }
-
-    //if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set() !=
-    //   v2->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set())
-   
-
-    CVariation::TData::TSet::TVariations::iterator vi2 = v2->SetData().SetSet().SetVariations().begin();
-    for (CVariation::TData::TSet::TVariations::iterator vi1 = v1->SetData().SetSet().SetVariations().begin(); 
-         vi1 != v1->SetData().SetSet().SetVariations().end() && vi2 != v2->SetData().SetSet().SetVariations().end();
-         ++vi1, ++vi2)
-    {
-        if ((*vi1)->SetData().SetSet().SetVariations().size() !=
-            (*vi2)->SetData().SetSet().SetVariations().size() )
-        {
-            ERR_POST(Error << "Third level variation size does not match" << Endm);
-            n++;
-        }
-
-        set<string> alleles1, alleles2;
-        string ref1,ref2;
-        for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi1)->SetData().SetSet().SetVariations().begin(); var2 != (*vi1)->SetData().SetSet().SetVariations().end(); ++var2)
-            if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
-                 && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
-                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
-                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
-            {
-                string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-                if (
-                     (*var2)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
-                    //(*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
-                    )
-                    ref1 = a;
-                else
-                    alleles1.insert(a);                    
-            }
-        for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi2)->SetData().SetSet().SetVariations().begin(); var2 != (*vi2)->SetData().SetSet().SetVariations().end(); ++var2)
-            if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
-                 && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
-                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
-                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
-            {
-                string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-                if (
-                    (*var2)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
-                    //(*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
-                    )
-                    ref2 = a;
-                else
-                    alleles2.insert(a);                    
-            }
-        if (alleles1.size() != alleles2.size() || !equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
-        {
-            ERR_POST(Error << "Alt alleles do not match" << Endm);
-            n++;
-        }
-        if (ref1 != ref2)
-        {
-            ERR_POST(Error << "Reference allele does not match" << Endm);
-            n++;
-        }
-    }
-    return n;
-}
 
 void CReferenceAlleleFixApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles)
 {
@@ -205,38 +121,6 @@ void CReferenceAlleleFixApp::GetAlleles(CVariation_ref& vr, string& new_ref, set
     }
 }
 
-int CReferenceAlleleFixApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
-{
-    int n = 0;
-    CSeq_annot::TData::TFtable::iterator feat1, feat2;
-    for ( feat1 = v1->SetData().SetFtable().begin(), feat2 = v2->SetData().SetFtable().begin(); feat1 != v1->SetData().SetFtable().end() && feat2 != v2->SetData().SetFtable().end(); ++feat1,++feat2)
-    {
-        CVariation_ref& vr1 = (*feat1)->SetData().SetVariation();
-        CVariation_ref& vr2 = (*feat2)->SetData().SetVariation();
-        string new_ref1,new_ref2;
-        set<string> alleles1,alleles2;
-        GetAlleles(vr1,new_ref1,alleles1);
-        GetAlleles(vr2,new_ref2,alleles2);
-        if (new_ref1 != new_ref2)
-        {
-            ERR_POST(Error << "Reference allele does not match" << Endm);
-            n++;
-        }
-        if (alleles1.size() != alleles2.size() || !equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
-        {
-            ERR_POST(Error << "Alt alleles do not match" << Endm);
-            n++;
-        } 
-    }
-    if (feat1 != v1->SetData().SetFtable().end() || feat2 != v2->SetData().SetFtable().end())
-    {
-        ERR_POST(Error << "Number of Variations does not match" << Endm);
-        n++;
-    } 
-
-    return n;
-}
-
 bool  CReferenceAlleleFixApp::IsVariation(AutoPtr<CObjectIStream>& oinput_istream)
 {
     set<TTypeInfo> matches;
@@ -255,34 +139,6 @@ bool  CReferenceAlleleFixApp::IsVariation(AutoPtr<CObjectIStream>& oinput_istrea
     return (*matches.begin())->GetName() == "Variation";
 }
 
-template<class T>
-int CReferenceAlleleFixApp::CorrectAndCompare(AutoPtr<CObjectIStream>& input_objstream, AutoPtr<CObjectIStream>& baseline_objstream, CRef<CScope> scope, bool verbose)
-{
-    CRef<T> v1(new T);
-    CRef<T> v2(new T);
-
-    *input_objstream >> *v1;      
-    if (verbose)
-    {
-        NcbiCerr << NcbiEndl << "Input Variation" << NcbiEndl;
-        NcbiCerr <<  MSerial_AsnText << *v1;
-    }
-    CVariationUtilities::CorrectRefAllele(*v1,*scope);
-    *baseline_objstream >> *v2;
-    if (verbose)
-    {
-        NcbiCerr << NcbiEndl << "Desired Variation" << NcbiEndl;
-        NcbiCerr <<  MSerial_AsnText << *v2;
-    }   
-    if (verbose)
-    {
-        NcbiCerr << NcbiEndl << "Output Variation" << NcbiEndl;
-        NcbiCerr <<  MSerial_AsnText << *v1;
-    }   
-    int n = CompareVar(v1,v2);
-    return n;
-}
-
 void CReferenceAlleleFixApp::CheckVars( CObjectIStream& input_objstream, 
     CScope& scope)
 {
@@ -291,15 +147,12 @@ void CReferenceAlleleFixApp::CheckVars( CObjectIStream& input_objstream,
 
     NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it, variation->SetData().SetSet().SetVariations()) {
         CVariation& var = **var_it;
-        CVariantPlacement& vp = *var.SetPlacements().front(); 
-        CSeq_loc& loc = vp.SetLoc();
 
-
-        //2. Test GetType
+        //1. Test GetType
         NcbiCout << "Check Variation type: " 
             << CVariationUtilities::GetVariationType(var) << NcbiEndl;
 
-        //3 Get Ref Alt
+        //2. Get Ref Alt
         string ref;
         vector<string> alts;
         CVariationUtilities::GetVariationRefAlt(var, ref, alts);
@@ -309,9 +162,7 @@ void CReferenceAlleleFixApp::CheckVars( CObjectIStream& input_objstream,
 
     }
 
-    //NB: This is for the whole variation
-
-    //5. Correct Ref Allele
+    //3. Correct Ref Allele
     CVariationUtilities::CorrectRefAllele(*variation, scope);
     NcbiCout << MSerial_AsnText << *variation;
 
@@ -359,7 +210,6 @@ int CReferenceAlleleFixApp::Run()
 {
     CArgs args = GetArgs();
     CNcbiIstream& input_istream = args["i"].AsInputFile();
-    bool verbose = args["v"].AsBoolean();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
@@ -369,49 +219,17 @@ int CReferenceAlleleFixApp::Run()
     AutoPtr<CObjectIStream> input_objstream(CObjectIStream::Open(eSerial_AsnText, input_istream));
     bool is_variation = IsVariation(input_objstream);
 
-/*
-    if (check)
-    {
-        CheckFeats(input_objstream,scope);
-        return 0;
-    }
-*/
-    //All done if no baseline file to compare to.
-    if(!args["b"]) {
+    //Run through tests, dumping information to stdout
+    //1. IsCorrectRef -- only used here?
+    //2. CorrectRef
+    //3. GetType
+    //4. GetVarRefAlt
+    //5. GetAlleleFromLoc
 
-        if(is_variation)
-            CheckVars(*input_objstream, *scope);
-        else
-            CheckFeats(*input_objstream, *scope);
-
-        //Run through tests, dumping information to stdout
-        //1. IsCorrectRef -- only used here?
-        //2. CorrectRef
-        //3. GetType
-        //4. GetVarRefAlt
-        //5. GetAlleleFromLoc
-
-        return 0;
-
-    }
-    //Open up baseline, if we have it.
-    AutoPtr<CNcbiIstream> baseline_input_istreameam(new CNcbiIfstream(args["b"].AsString().c_str()));
-    AutoPtr<CObjectIStream> baseline_objstream(CObjectIStream::Open(eSerial_AsnText, *baseline_input_istreameam));
-
-
-    int n = 0;
-    while (!input_objstream->EndOfData() && !baseline_objstream->EndOfData())
-    {
-        if (is_variation)
-            n += CorrectAndCompare<CVariation>(input_objstream, baseline_objstream, scope,verbose);
-        else
-            n += CorrectAndCompare<CSeq_annot>(input_objstream, baseline_objstream, scope,verbose);
-    }
-    if (verbose)
-        NcbiCerr << NcbiEndl << "Number of inconsistencies: " << n << NcbiEndl;
-    
-    if (!input_objstream->EndOfData() || !baseline_objstream->EndOfData())
-        ERR_POST(Error << "File size does not match" << Endm);
+    if(is_variation)
+        CheckVars(*input_objstream, *scope);
+    else
+        CheckFeats(*input_objstream, *scope);
 
     return 0;
 }
