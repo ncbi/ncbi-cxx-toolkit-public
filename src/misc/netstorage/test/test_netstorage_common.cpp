@@ -660,7 +660,9 @@ struct SReadHelper
         memmove(buf, buf + l, length);
     }
 
-    bool Eof() { return m_Result == eRW_Eof && !length; }
+    // NB: Source can be non-empty and yet has no data yet
+    bool Empty() { return m_Result == eRW_Eof && !length; }
+    bool HasData() { return length; }
 
 private:
     ERW_Result m_Result;
@@ -927,13 +929,19 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
         expected_reader -= length;
         actual_reader -= length;
 
-        if (expected_reader.Eof()) {
-            if (!actual_reader.Eof()) {
-                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
+        if (expected_reader.Empty()) {
+            if (actual_reader.Empty()) {
+                break;
             }
-            break;
-        } else {
-            if (actual_reader.Eof()) {
+
+            if (actual_reader.HasData()) {
+                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
+                break;
+            }
+        }
+
+        if (actual_reader.Empty()) {
+            if (expected_reader.HasData()) {
                 BOOST_ERROR_CTX("Got less data than expected", Line(__LINE__));
                 break;
             }
@@ -957,7 +965,7 @@ string SFixture<TPolicy>::WriteAndRead(CNetStorageObject object)
 
     while (source_reader(Line(__LINE__)) &&
             dest_writer(source_reader, Line(__LINE__)) &&
-            !source_reader.Eof());
+            !source_reader.Empty());
 
     attr_tester.Write(TShouldThrow(), Line(__LINE__), object);
 
