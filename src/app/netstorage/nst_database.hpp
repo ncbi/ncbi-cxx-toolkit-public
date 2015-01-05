@@ -138,6 +138,7 @@ public:
                                  TNSTDBValue<Int8>  limit,
                                  Int8 &  total,
                                  vector<string> &  locators);
+    int  ExecSP_GetClients(vector<string> &  names);
 
 private:
     void x_ReadDbAccessInfo(void);

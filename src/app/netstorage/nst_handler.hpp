@@ -135,7 +135,6 @@ private:
 
     // The client identification. It appears after HELLO.
     string                      m_Client;
-    CNSTClientRegistry          m_ClientRegistry;
     string                      m_Service;
 
 private:

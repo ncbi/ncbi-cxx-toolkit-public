@@ -435,7 +435,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     unsigned int  http_error_code;
 
     try {
-        m_ClientRegistry.Touch(m_Client);
+        m_Server->GetClientRegistry().Touch(m_Client);
 
         // Find the processor
         FProcessor  processor = x_FindProcessor(common_args);
@@ -509,7 +509,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
 
     try {
         m_ObjectBeingWritten.Write(data, data_size);
-        m_ClientRegistry.AddBytesWritten(m_Client, data_size);
+        m_Server->GetClientRegistry().AddBytesWritten(m_Client, data_size);
         m_ObjectSize += data_size;
     }
     catch (const std::exception &  ex) {
@@ -742,7 +742,8 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
                 }
 
                 // Register the socket error with the client
-                m_ClientRegistry.RegisterSocketWriteError(m_Client);
+                m_Server->GetClientRegistry().RegisterSocketWriteError(
+                                                                    m_Client);
 
                 m_Server->CloseConnection(&GetSocket());
                 return status;
@@ -896,7 +897,7 @@ CNetStorageHandler::x_ProcessHello(
     m_MetadataOption = x_ConvertMetadataArgument(message);
 
     // Memorize the client in the registry
-    m_ClientRegistry.Touch(m_Client, application,
+    m_Server->GetClientRegistry().Touch(m_Client, application,
                            ticket, m_Service, m_MetadataOption,
                            x_GetPeerAddress());
 
@@ -911,7 +912,8 @@ CNetStorageHandler::x_ProcessInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     reply.SetString("ServerVersion", NETSTORAGED_VERSION);
@@ -935,7 +937,8 @@ CNetStorageHandler::x_ProcessConfiguration(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
     CNcbiOstrstream             conf;
     CNcbiOstrstreamToString     converter(conf);
@@ -971,7 +974,8 @@ CNetStorageHandler::x_ProcessHealth(
     //     NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     // }
 
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     reply.SetByKey("Alerts", m_Server->SerializeAlerts());
@@ -1034,7 +1038,8 @@ CNetStorageHandler::x_ProcessAckAlert(
                    "Mandatory argument User is not supplied "
                    "in ACKALERT command");
 
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
     EAlertAckResult ack_result = m_Server->AcknowledgeAlert(
                                                     message.GetString("Name"),
@@ -1077,7 +1082,8 @@ CNetStorageHandler::x_ProcessReconfigure(
         NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     }
 
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
     CJsonNode           reply = CreateResponseMessage(
                                             common_args.m_SerialNumber);
@@ -1210,11 +1216,45 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
+    // First part is always there: in-memory clients
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetByKey("Clients", m_Server->GetClientRegistry().Serialize());
 
-    reply.SetByKey("Clients", m_ClientRegistry.Serialize());
+    // Second part might be here
+    bool    db_access = (m_MetadataOption == eMetadataMonitoring ||
+                         m_Server->InMetadataServices(m_Service));
+    if (db_access) {
+        try {
+            vector<string>      names;
+            int     status = m_Server->GetDb().ExecSP_GetClients(names);
+            if (status != 0) {
+                reply.SetString("DBClients", "MetadataAccessWarning");
+                AppendWarning(reply, eDatabaseWarning,
+                              "Stored procedure return code is non zero");
+            } else {
+                CJsonNode   db_clients_node(CJsonNode::NewArrayNode());
+                for (vector<string>::const_iterator  k = names.begin();
+                     k != names.end(); ++k)
+                    db_clients_node.AppendString(*k);
+                reply.SetByKey("DBClients", db_clients_node);
+            }
+        } catch (const exception &  ex) {
+            reply.SetString("DBClients", "MetadataAccessWarning");
+            AppendWarning(reply, eDatabaseWarning, "Error while getting a list "
+                          "of clients in the metainfo DB: " +
+                          string(ex.what()));
+        } catch (...) {
+            reply.SetString("DBClients", "MetadataAccessWarning");
+            AppendWarning(reply, eDatabaseWarning, "Unknown error while "
+                          "getting a list of clients in the metainfo DB");
+        }
+    } else {
+        reply.SetString("DBClients", "NoMetadataAccess");
+    }
+
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
@@ -1225,7 +1265,8 @@ CNetStorageHandler::x_ProcessGetMetadataInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -1240,7 +1281,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     bool        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
@@ -1269,15 +1310,16 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 
             if (status != 0) {
                 // The record in the meta DB for the object is not found
-                reply.SetString("ExpirationTime", "NoMetadataFound");
-                reply.SetString("CreationTime", "NoMetadataFound");
-                reply.SetString("ObjectReadTime", "NoMetadataFound");
-                reply.SetString("ObjectWriteTime", "NoMetadataFound");
-                reply.SetString("AttrReadTime", "NoMetadataFound");
-                reply.SetString("AttrWriteTime", "NoMetadataFound");
-                reply.SetString("ObjectReadCount", "NoMetadataFound");
-                reply.SetString("ObjectWriteCount", "NoMetadataFound");
-                reply.SetString("ClientName", "NoMetadataFound");
+                const string        no_metadata = "NoMetadataFound";
+                reply.SetString("ExpirationTime", no_metadata);
+                reply.SetString("CreationTime", no_metadata);
+                reply.SetString("ObjectReadTime", no_metadata);
+                reply.SetString("ObjectWriteTime", no_metadata);
+                reply.SetString("AttrReadTime", no_metadata);
+                reply.SetString("AttrWriteTime", no_metadata);
+                reply.SetString("ObjectReadCount", no_metadata);
+                reply.SetString("ObjectWriteCount", no_metadata);
+                reply.SetString("ClientName", no_metadata);
             } else {
                 // The record in the meta DB for the object is found
                 if (expiration.m_IsNull)
@@ -1337,52 +1379,56 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 throw;
 
             // eDatabaseError => no connection or MS SQL error
-            reply.SetString("ExpirationTime", "MetadataAccessWarning");
-            reply.SetString("CreationTime", "MetadataAccessWarning");
-            reply.SetString("ObjectReadTime", "MetadataAccessWarning");
-            reply.SetString("ObjectWriteTime", "MetadataAccessWarning");
-            reply.SetString("AttrReadTime", "MetadataAccessWarning");
-            reply.SetString("AttrWriteTime", "MetadataAccessWarning");
-            reply.SetString("ObjectReadCount", "MetadataAccessWarning");
-            reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
-            reply.SetString("ClientName", "MetadataAccessWarning");
+            const string    warning = "MetadataAccessWarning";
+            reply.SetString("ExpirationTime", warning);
+            reply.SetString("CreationTime", warning);
+            reply.SetString("ObjectReadTime", warning);
+            reply.SetString("ObjectWriteTime", warning);
+            reply.SetString("AttrReadTime", warning);
+            reply.SetString("AttrWriteTime", warning);
+            reply.SetString("ObjectReadCount", warning);
+            reply.SetString("ObjectWriteCount", warning);
+            reply.SetString("ClientName", warning);
             AppendWarning(reply, eDatabaseWarning, ex.what());
         } catch (const exception &  ex) {
-            reply.SetString("ExpirationTime", "MetadataAccessWarning");
-            reply.SetString("CreationTime", "MetadataAccessWarning");
-            reply.SetString("ObjectReadTime", "MetadataAccessWarning");
-            reply.SetString("ObjectWriteTime", "MetadataAccessWarning");
-            reply.SetString("AttrReadTime", "MetadataAccessWarning");
-            reply.SetString("AttrWriteTime", "MetadataAccessWarning");
-            reply.SetString("ObjectReadCount", "MetadataAccessWarning");
-            reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
-            reply.SetString("ClientName", "MetadataAccessWarning");
-            AppendWarning(reply, eDatabaseWarning, "Error while getting an "
-                          "object expiration and creation time: " +
+            const string    warning = "MetadataAccessWarning";
+            reply.SetString("ExpirationTime", warning);
+            reply.SetString("CreationTime", warning);
+            reply.SetString("ObjectReadTime", warning);
+            reply.SetString("ObjectWriteTime", warning);
+            reply.SetString("AttrReadTime", warning);
+            reply.SetString("AttrWriteTime", warning);
+            reply.SetString("ObjectReadCount", warning);
+            reply.SetString("ObjectWriteCount", warning);
+            reply.SetString("ClientName", warning);
+            AppendWarning(reply, eDatabaseWarning, "Error while getting "
+                          "object fixed attributes: " +
                           string(ex.what()));
         } catch (...) {
-            reply.SetString("ExpirationTime", "MetadataAccessWarning");
-            reply.SetString("CreationTime", "MetadataAccessWarning");
-            reply.SetString("ObjectReadTime", "MetadataAccessWarning");
-            reply.SetString("ObjectWriteTime", "MetadataAccessWarning");
-            reply.SetString("AttrReadTime", "MetadataAccessWarning");
-            reply.SetString("AttrWriteTime", "MetadataAccessWarning");
-            reply.SetString("ObjectReadCount", "MetadataAccessWarning");
-            reply.SetString("ObjectWriteCount", "MetadataAccessWarning");
-            reply.SetString("ClientName", "MetadataAccessWarning");
+            const string    warning = "MetadataAccessWarning";
+            reply.SetString("ExpirationTime", warning);
+            reply.SetString("CreationTime", warning);
+            reply.SetString("ObjectReadTime", warning);
+            reply.SetString("ObjectWriteTime", warning);
+            reply.SetString("AttrReadTime", warning);
+            reply.SetString("AttrWriteTime", warning);
+            reply.SetString("ObjectReadCount", warning);
+            reply.SetString("ObjectWriteCount", warning);
+            reply.SetString("ClientName", warning);
             AppendWarning(reply, eDatabaseWarning, "Unknown error while "
-                          "getting an object expiration and creation time");
+                          "getting object fixed attributes");
         }
     } else {
-        reply.SetString("ExpirationTime", "NoMetadataAccess");
-        reply.SetString("CreationTime", "NoMetadataAccess");
-        reply.SetString("ObjectReadTime", "NoMetadataAccess");
-        reply.SetString("ObjectWriteTime", "NoMetadataAccess");
-        reply.SetString("AttrReadTime", "NoMetadataAccess");
-        reply.SetString("AttrWriteTime", "NoMetadataAccess");
-        reply.SetString("ObjectReadCount", "NoMetadataAccess");
-        reply.SetString("ObjectWriteCount", "NoMetadataAccess");
-        reply.SetString("ClientName", "NoMetadataAccess");
+        const string    no_access = "NoMetadataAccess";
+        reply.SetString("ExpirationTime", no_access);
+        reply.SetString("CreationTime", no_access);
+        reply.SetString("ObjectReadTime", no_access);
+        reply.SetString("ObjectWriteTime", no_access);
+        reply.SetString("AttrReadTime", no_access);
+        reply.SetString("AttrWriteTime", no_access);
+        reply.SetString("ObjectReadCount", no_access);
+        reply.SetString("ObjectWriteCount", no_access);
+        reply.SetString("ClientName", no_access);
     }
 
 
@@ -1424,7 +1470,7 @@ CNetStorageHandler::x_ProcessGetAttrList(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -1479,7 +1525,7 @@ CNetStorageHandler::x_ProcessGetClientObjects(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("ClientName"))
@@ -1494,12 +1540,12 @@ CNetStorageHandler::x_ProcessGetClientObjects(
             limit.m_IsNull = false;
         } catch (...) {
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "GETCLIENTOBJECTS message ClientName argument "
+                       "GETCLIENTOBJECTS message Limit argument "
                        "must be an integer.");
         }
         if (limit.m_Value <= 0)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "GETCLIENTOBJECTS message ClientName argument "
+                       "GETCLIENTOBJECTS message Limit argument "
                        "must be > 0.");
     }
 
@@ -1550,7 +1596,7 @@ CNetStorageHandler::x_ProcessGetAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("AttrName"))
@@ -1621,7 +1667,7 @@ CNetStorageHandler::x_ProcessSetAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("AttrName"))
@@ -1683,7 +1729,7 @@ CNetStorageHandler::x_ProcessDelAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("AttrName"))
@@ -1745,7 +1791,7 @@ CNetStorageHandler::x_ProcessCreate(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     if (m_MetadataOption == eMetadataMonitoring)
@@ -1794,7 +1840,7 @@ CNetStorageHandler::x_ProcessCreate(
     m_DataMessageSN = common_args.m_SerialNumber;
     m_CreateRequest = true;
     m_ObjectSize = 0;
-    m_ClientRegistry.AddObjectsWritten(m_Client, 1);
+    m_Server->GetClientRegistry().AddObjectsWritten(m_Client, 1);
 }
 
 
@@ -1803,7 +1849,7 @@ CNetStorageHandler::x_ProcessWrite(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -1856,7 +1902,7 @@ CNetStorageHandler::x_ProcessWrite(
     m_DataMessageSN = common_args.m_SerialNumber;
     m_CreateRequest = false;
     m_ObjectSize = 0;
-    m_ClientRegistry.AddObjectsWritten(m_Client, 1);
+    m_Server->GetClientRegistry().AddObjectsWritten(m_Client, 1);
 }
 
 
@@ -1865,7 +1911,7 @@ CNetStorageHandler::x_ProcessRead(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -1906,7 +1952,7 @@ CNetStorageHandler::x_ProcessRead(
 
     x_SendSyncMessage(reply);
 
-    m_ClientRegistry.AddObjectsRead(m_Client, 1);
+    m_Server->GetClientRegistry().AddObjectsRead(m_Client, 1);
 
     char            buffer[kReadBufferSize];
     size_t          bytes_read;
@@ -1921,7 +1967,7 @@ CNetStorageHandler::x_ProcessRead(
             if (x_SendOverUTTP() != eIO_Success)
                 return;
 
-            m_ClientRegistry.AddBytesRead(m_Client, bytes_read);
+            m_Server->GetClientRegistry().AddBytesRead(m_Client, bytes_read);
             total_bytes += bytes_read;
         }
 
@@ -1960,7 +2006,7 @@ CNetStorageHandler::x_ProcessDelete(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -1993,7 +2039,7 @@ CNetStorageHandler::x_ProcessDelete(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
 
     net_storage.Remove(object_id.object_loc);
-    m_ClientRegistry.AddObjectsDeleted(m_Client, 1);
+    m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -2013,7 +2059,7 @@ CNetStorageHandler::x_ProcessRelocate(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     // Take the arguments
@@ -2065,7 +2111,7 @@ CNetStorageHandler::x_ProcessRelocate(
                                     m_DBClientID);
     }
 
-    m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
+    m_Server->GetClientRegistry().AddObjectsRelocated(m_Client, 1);
 
     reply.SetString("ObjectLoc", new_object_loc);
     x_SendSyncMessage(reply);
@@ -2085,7 +2131,7 @@ CNetStorageHandler::x_ProcessExists(
                         const SCommonRequestArguments &  common_args)
 {
     // It was decided to check the object expiration
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     SObjectID       object_id = x_GetObjectKey(message);
@@ -2111,7 +2157,7 @@ CNetStorageHandler::x_ProcessGetSize(
                         const SCommonRequestArguments &  common_args)
 {
     // It was decided to check the object expiration
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
 
     CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
     SObjectID         object_id = x_GetObjectKey(message);
@@ -2138,7 +2184,7 @@ CNetStorageHandler::x_ProcessSetExpTime(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
     if (!message.HasKey("TTL"))

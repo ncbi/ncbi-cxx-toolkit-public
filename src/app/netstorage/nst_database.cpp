@@ -844,6 +844,38 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
 }
 
 
+int
+CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
+{
+    const string    proc_name = "GetClients";
+    x_PreCheckConnection();
+
+    try {
+        CDatabase               db = m_Db->Clone();
+        CQuery                  query = db.NewQuery();
+
+        query.ExecuteSP(proc_name);
+
+        // NOTE: reading result recordset must be done before getting the
+        //       status code
+        ITERATE(CQuery, qit, query.SingleSet()) {
+            names.push_back(qit["name"].AsString());
+        }
+
+        query.VerifyDone();
+        return x_CheckStatus(query, proc_name);
+    } catch (const std::exception &  ex) {
+        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+        x_PostCheckConnection();
+        throw;
+    } catch (...) {
+        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+        x_PostCheckConnection();
+        throw;
+    }
+}
+
+
 void CNSTDatabase::x_PreCheckConnection(void)
 {
     if (!m_Connected)

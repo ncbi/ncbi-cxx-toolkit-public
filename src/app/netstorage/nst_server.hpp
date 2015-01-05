@@ -42,6 +42,7 @@
 #include "nst_alert.hpp"
 #include "nst_database.hpp"
 #include "nst_service_parameters.hpp"
+#include "nst_clients.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -90,6 +91,8 @@ public:
     { m_DiskConfigFileChecksum = checksum; }
     void SetRAMConfigFileChecksum(const string &  checksum)
     { m_RAMConfigFileChecksum = checksum; }
+    CNSTClientRegistry &  GetClientRegistry(void)
+    { return m_ClientRegistry; }
 
     bool IsAdminClientName(const string &  name) const;
 
@@ -151,6 +154,8 @@ private:
 
     CRef<CNetStorageServiceThread>
                                 m_ServiceThread;
+
+    CNSTClientRegistry          m_ClientRegistry;
 
 private:
     string  x_GenerateGUID(void) const;

@@ -70,7 +70,8 @@ BEGIN
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Versions')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetStatInfo')) OR
-       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClientObjects'))
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClientObjects')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClients'))
     BEGIN
         RAISERROR( 'Do not run the script on existing database', 11, 1 )
         SET NOEXEC ON
@@ -120,6 +121,8 @@ IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetStatInfo')
     DROP PROCEDURE GetStatInfo
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClientObjects')
     DROP PROCEDURE GetClientObjects
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetClients')
+    DROP PROCEDURE GetClients
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'AttrValues')
     DROP TABLE AttrValues
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')
@@ -1032,6 +1035,35 @@ END
 GO
 
 
+CREATE PROCEDURE GetClients
+AS
+BEGIN
+    BEGIN TRANSACTION
+    BEGIN TRY
+
+        -- This is the output recordset!
+        SELECT name FROM Clients
+        IF @@ERROR != 0
+        BEGIN
+            ROLLBACK TRANSACTION
+            RETURN 1
+        END
+
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
 
 -- if @limit is NULL then there will be no limit on how many records are
 -- included into the result set
@@ -1060,7 +1092,8 @@ BEGIN
         END
 
         DECLARE @current_time   DATETIME = GETDATE()
-        SELECT @total_object_cnt = COUNT(*) FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= @current_time
+        SELECT @total_object_cnt = COUNT(*) FROM Objects WHERE client_id = @client_id AND
+                                                               (tm_expiration IS NULL OR tm_expiration >= @current_time)
         IF @@ERROR != 0
         BEGIN
             ROLLBACK TRANSACTION
@@ -1070,7 +1103,8 @@ BEGIN
         -- This is the output recordset!
         IF @limit IS NULL
         BEGIN
-            SELECT object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= @current_time ORDER BY object_id ASC
+            SELECT object_loc FROM Objects WHERE client_id = @client_id AND
+                                                 (tm_expiration IS NULL OR tm_expiration >= @current_time) ORDER BY object_id ASC
             IF @@ERROR != 0
             BEGIN
                 ROLLBACK TRANSACTION
@@ -1079,7 +1113,8 @@ BEGIN
         END
         ELSE
         BEGIN
-            SELECT TOP(@limit) object_loc FROM Objects WHERE tm_expiration IS NULL OR tm_expiration >= @current_time ORDER BY object_id ASC
+            SELECT TOP(@limit) object_loc FROM Objects WHERE client_id = @client_id AND
+                                                             (tm_expiration IS NULL OR tm_expiration >= @current_time) ORDER BY object_id ASC
             IF @@ERROR != 0
             BEGIN
                 ROLLBACK TRANSACTION
