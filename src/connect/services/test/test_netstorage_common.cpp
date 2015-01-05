@@ -35,6 +35,7 @@
 
 #include <connect/services/netstorage.hpp>
 
+#include <corelib/ncbi_system.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <util/random_gen.hpp>
@@ -975,7 +976,7 @@ string SFixture<TPolicy>::WriteAndRead(CNetStorageObject object)
     attr_tester.Write(TLocationNetCache(), Line(__LINE__), object);
 
     // Sometimes this object is not immediately available for reading
-    sleep(1);
+    SleepSec(1);
 
     ReadAndCompare<TLocationNetCache>("Reading NetCache after writing", object);
 
