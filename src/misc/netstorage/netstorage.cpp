@@ -443,8 +443,7 @@ ERW_Result SNetStorageObjectAPIImpl::Read(
         }
 
     case eNFS_ReadingFromFileTrack:
-        m_FileTrackRequest->Read(buf, count, bytes_read);
-        break;
+        return m_FileTrackRequest->Read(buf, count, bytes_read);
 
     default: /* eNFS_WritingToNetCache or eNFS_WritingToFileTrack */
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
