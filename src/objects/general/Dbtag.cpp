@@ -71,6 +71,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "Axeldb", CDbtag::eDbtagType_axeldb },
     { "BDGP_EST", CDbtag::eDbtagType_BDGP_EST },
     { "BDGP_INS", CDbtag::eDbtagType_BDGP_INS },
+    { "BEEBASE", CDbtag::eDbtagType_BEEBASE },
     { "BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE },
     { "BGD", CDbtag::eDbtagType_BGD },
     { "BOLD", CDbtag::eDbtagType_BoLD },
@@ -175,7 +176,6 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 };
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
-    { "BEEBASE", CDbtag::eDbtagType_BEEBASE },
     { "BioProject", CDbtag::eDbtagType_BioProject },
     { "BioSample", CDbtag::eDbtagType_BioSample },
     { "CCDS", CDbtag::eDbtagType_CCDS },
