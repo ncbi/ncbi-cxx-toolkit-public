@@ -1072,6 +1072,11 @@ bool CGff3Writer::xWriteFeature(
                     return xWriteFeatureRna( fc, mf );
                 }
                 return xWriteFeatureGeneric( fc, mf );
+            case CSeqFeatData::eSubtype_C_region:
+            case CSeqFeatData::eSubtype_D_segment:
+            case CSeqFeatData::eSubtype_J_segment:
+            case CSeqFeatData::eSubtype_V_segment:
+                return xWriteFeatureCDJVSegment( fc, mf );
             case CSeqFeatData::eSubtype_gene: 
                 return xWriteFeatureGene( fc, mf );
             case CSeqFeatData::eSubtype_cdregion:
@@ -2483,6 +2488,49 @@ bool CGff3Writer::xWriteFeatureRna(
         return true;
     }
     return true;    
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteFeatureCDJVSegment(
+    CGffFeatureContext& fc,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    string id = xNextGenericId();
+
+    CRef<CGffFeatureRecord> pSegment(new CGffFeatureRecord(id));
+
+    if (!xAssignFeature(*pSegment, fc, mf)) {
+        return false;
+    }
+
+    if (!xWriteRecord(*pSegment)) {
+        return false;
+    }
+
+    const CSeq_loc& PackedInt = pSegment->Location();
+
+    if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        list< CRef< CSeq_interval> >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CRef<CGffFeatureRecord> pChild(
+                new CGffFeatureRecord(*pSegment));
+            pChild->SetRecordId(xNextGenericId());
+            pChild->DropAttributes("Name");
+            pChild->DropAttributes("start_range");
+            pChild->DropAttributes("end_range");
+            pChild->SetAttribute("Parent", id);
+            pChild->SetType("exon");
+            pChild->SetLocation(subint);
+            if (!xWriteRecord(*pChild)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

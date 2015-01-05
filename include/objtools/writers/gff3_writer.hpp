@@ -136,6 +136,9 @@ protected:
     virtual bool xWriteFeatureTrna(
         CGffFeatureContext&,
         CMappedFeat );
+    virtual bool xWriteFeatureCDJVSegment(
+        CGffFeatureContext&,
+        CMappedFeat );
 
     virtual bool xWriteRecord( 
         const CGffBaseRecord& );
