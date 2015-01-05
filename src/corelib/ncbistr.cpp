@@ -6806,6 +6806,27 @@ SIZE_TYPE CTempStringList::GetSize(void) const
 }
 
 
+CTempString_Storage::CTempString_Storage(void)
+{
+}
+
+
+CTempString_Storage::~CTempString_Storage(void)
+{
+    NON_CONST_ITERATE(TData, it, m_Data) {
+        delete[] (*it);
+        *it = 0;
+    }
+}
+
+
+char* CTempString_Storage::Allocate(CTempString::size_type len)
+{
+    m_Data.push_back(new char[len]);
+    return m_Data.back();
+}
+
+
 bool CStrTokenizeBase::Advance(CTempStringList* part_collector)
 {
     SIZE_TYPE pos = m_Pos, part_start = m_Pos, delim_pos = 0, quote_pos = 0;

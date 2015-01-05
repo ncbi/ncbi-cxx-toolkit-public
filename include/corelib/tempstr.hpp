@@ -974,19 +974,10 @@ class CTempString_Storage
 public:
     typedef CTempString::size_type size_type;
 
-    ~CTempString_Storage(void)
-    {
-        NON_CONST_ITERATE(TData, it, m_Data) {
-            delete[] (*it);
-            *it = 0;
-        }
-    }
+    CTempString_Storage(void);
+    ~CTempString_Storage(void);
 
-    char* Allocate(CTempString::size_type len)
-    {
-        m_Data.push_back(new char[len]);
-        return m_Data.back();
-    }
+    char* Allocate(CTempString::size_type len);
 
 private:
     typedef char* TBuffer;
