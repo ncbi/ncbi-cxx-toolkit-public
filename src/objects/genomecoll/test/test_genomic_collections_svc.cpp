@@ -109,6 +109,9 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
                     CArgDescriptions::eInteger);
     argDesc->SetDependency("acc", argDesc->eExcludes, "rel_id");
     
+    argDesc->AddOptionalKey("-mode", "mode",
+                            "mode",
+                            CArgDescriptions::eInteger);
     
     argDesc->AddOptionalKey("-level", "level",
                             "level",
@@ -217,11 +220,27 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
         } else {
             req.SetRelease_id(args["rel_id"].AsInteger());
         }
-        req.SetLevel(args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold);
-        req.SetAssm_flags(args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none);
-        req.SetChrom_flags(args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource);
-        req.SetScaf_flags(args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none);
-        req.SetComponent_flags(args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none);
+
+        if(args["-mode"])
+        {
+            CGCClient_GetAssemblyRequest::SRequestParam params;
+            if(!params.SetMode(CGCClient_GetAssemblyRequest::EAssemblyMode(args["-mode"].AsInteger())))
+                ERR_POST(Error << "Invalid get-assembly mode: " << args["-mode"].AsInteger());
+
+            req.SetLevel(params.level);
+            req.SetAssm_flags(params.assembly_flags);
+            req.SetChrom_flags(params.chromosome_flags);
+            req.SetScaf_flags(params.scaffold_flags);
+            req.SetComponent_flags(params.component_flags);
+        }
+        else
+        {
+            req.SetLevel(args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold);
+            req.SetAssm_flags(args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none);
+            req.SetChrom_flags(args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource);
+            req.SetScaf_flags(args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none);
+            req.SetComponent_flags(args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none);
+        }
     }
     else if(request == "get-best-assembly" || request == "get-all-assemblies")
     {
@@ -337,17 +356,28 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
         }
         else if(request == "get-assembly")
         {
-            int levelFlag = args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold;
-            int asmFlags = args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none;
-            int chrAttrFlags = args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource; 
-            int scafAttrFlags = args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none; 
-            int compAttrFlags = args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none;
-
             CRef<CGC_Assembly> reply;
-            if (args["acc"])
-                reply.Reset(cli->GetAssembly(args["acc"].AsString(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
-            else if (args["rel_id"])
-                reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+
+            if(args["-mode"])
+            {
+                if (args["acc"])
+                    reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-mode"].AsInteger()));
+                else if (args["rel_id"])
+                    reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-mode"].AsInteger()));
+            }
+            else
+            {
+                int levelFlag = args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold;
+                int asmFlags = args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none;
+                int chrAttrFlags = args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource; 
+                int scafAttrFlags = args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none; 
+                int compAttrFlags = args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none;
+
+                if (args["acc"])
+                    reply.Reset(cli->GetAssembly(args["acc"].AsString(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+                else if (args["rel_id"])
+                    reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+            }
 
             ostr << *reply;
         }

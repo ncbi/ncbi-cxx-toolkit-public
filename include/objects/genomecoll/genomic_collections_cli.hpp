@@ -94,6 +94,8 @@ public:
          int scafAttrFlags = eGCClient_AttributeFlags_none, 
          int compAttrFlags = eGCClient_AttributeFlags_none);
 
+    CRef<CGC_Assembly> GetAssembly(const string& acc, CGCClient_GetAssemblyRequest::EAssemblyMode mode);
+    CRef<CGC_Assembly> GetAssembly(int releaseId,     CGCClient_GetAssemblyRequest::EAssemblyMode mode);
 
     string ValidateChrType(const string& chrType, const string& chrLoc);
 
