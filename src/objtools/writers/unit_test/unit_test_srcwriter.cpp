@@ -49,6 +49,8 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/writers/src_writer.hpp>
 #include "error_logger.hpp"
+#include <objmgr/bioseq_ci.hpp>
+
 
 #include <cstdio>
 
@@ -127,7 +129,7 @@ public:
    
 
         // Figure out which test to perform
-        if (sObjType == "seqentry" || sObjType == "ids") {
+        if (sObjType == "seqentry" || sObjType == "ids" || sObjType == "srcchk") {
             test_info_to_load.mObjType = sObjType;
         } else {
             BOOST_FAIL("Unknown object type " << sObjType << ".");
@@ -191,28 +193,22 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CSrcWriter writer(0);
     writer.SetDelimiter("\t");
 
-    if (test_type == "ids") {
-        const streamsize maxLineSize(100);
-        char line[maxLineSize];
-        vector<CBioseq_Handle> vecBsh;
-        while (!ifstr.eof()) {
-            ifstr.getline(line,maxLineSize);
-            if (line[0] == 0  ||  line[0] == '#') {
-                continue;
-            }
-            string id(line);
-            NStr::TruncateSpacesInPlace(id);
-            CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-            CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
-            if (bsh) {
-                vecBsh.push_back(bsh);
-            }
-        }
-        writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllSrcCheckFields, ofstr);
-    } else if (test_type == "seqentry") {
+    if (test_type == "seqentry") {
         CRef<CSeq_entry> pEntry(new CSeq_entry);
         *pI >> *pEntry;
         writer.WriteSeqEntry(*pEntry, *pScope, ofstr);
+    } else if (test_type == "srcchk") {
+        vector<CBioseq_Handle> vecBsh;
+      
+        while (!pI->EndOfData()) {
+            CRef<CSeq_entry> pEntry(new CSeq_entry);
+            *pI >> *pEntry;
+             CSeq_entry_Handle handle = pScope->AddTopLevelSeqEntry(*pEntry);
+             for (CBioseq_CI bci(handle); bci; ++bci) {
+                 vecBsh.push_back(*bci);
+             }
+        }
+        writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllSrcCheckFields, ofstr);
     }
 
     ofstr.flush();
@@ -276,31 +272,22 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
 
-    // fetch data
-    if (testInfo.mObjType == "ids") {
-        const streamsize maxLineSize(100);
-        char line[maxLineSize];
-        vector<CBioseq_Handle> vecBsh;
-        while (!ifstr.eof()) {
-            ifstr.getline(line,maxLineSize);
-            if (line[0] == 0  || line[0] == '#') {
-                continue;
-            }
-            string id(line);
-            NStr::TruncateSpacesInPlace(id);
-            CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-            CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
-            if (bsh) {
-                vecBsh.push_back(bsh);
-            }
-        }
-        writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllSrcCheckFields, ofstr);
-    } else if (testInfo.mObjType == "seqentry") {
+    if (testInfo.mObjType == "seqentry") {
         CRef<CSeq_entry> pEntry(new CSeq_entry);
         *pI >> *pEntry;
         writer.WriteSeqEntry(*pEntry, *pScope, ofstr);
+    } else if (testInfo.mObjType == "srcchk") {
+        vector<CBioseq_Handle> vecBsh;
+        while (!pI->EndOfData()) {
+            CRef<CSeq_entry> pEntry(new CSeq_entry);
+            *pI >> *pEntry;
+            CSeq_entry_Handle handle = pScope->AddTopLevelSeqEntry(*pEntry);
+            for (CBioseq_CI bci(handle); bci; ++bci) {
+                vecBsh.push_back(*bci);
+            }
+        }
+        writer.WriteBioseqHandles(vecBsh, CSrcWriter::sAllSrcCheckFields, ofstr);
     }
-   
 
     ofstr.flush();
     ifstr.close();

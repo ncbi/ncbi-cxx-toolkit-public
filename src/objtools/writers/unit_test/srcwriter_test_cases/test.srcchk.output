@@ -1,0 +1,551 @@
+accession	gi	organism	taxid	specimen-voucher	strain	cell-line	cell-type	chromosome	collected-by	collection-date	common	country	definition	division	genome	isolation-source	lat-lon	lineage	note	pcr-primers.names.fwd	pcr-primers.names.reverse	pcr-primers.sequences.fwd	pcr-primers.sequences.reverse	sex	tissue-type	
+NC_005213.1	38349555	Nanoarchaeum equitans Kin4-M	228908		Kin4-M 								Nanoarchaeum equitans Kin4-M chromosome, complete genome	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963295.1	41614797	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ001 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963296.1	41614798	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ003 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963297.1	41614799	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ002 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963298.1	41614800	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ004 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963299.1	41614801	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ005 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963300.1	41614802	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ007 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963301.1	41614803	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ006 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963302.1	41614804	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ008 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963303.1	41614805	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ009 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963304.1	41614806	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ010 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963305.1	41614807	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ011 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963306.1	41614808	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ012 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963307.1	41614809	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ013 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963308.1	41614810	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ014 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963309.1	41614811	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ015 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963310.1	41614812	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ016 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963311.1	41614813	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ017 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963312.1	41614814	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ018 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963313.1	41614815	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ019 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963314.1	41614816	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ020 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963315.1	41614817	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ022 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963316.1	41614818	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ021 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963317.1	41614819	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ023 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963318.1	41614820	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ024 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963319.1	41614821	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ025 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963320.1	41614822	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ026 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963321.1	41614823	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ028 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963322.1	41614824	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ027 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963323.1	41614825	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ029 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963324.1	41614826	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ030 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963325.1	41614827	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								putative RNA-processing protein [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963326.1	41614828	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ032 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963327.1	41614829	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ033 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963328.1	41614830	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ034 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963329.1	41614831	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ035 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963330.1	41614832	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ036 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963331.1	41614833	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L37Ae [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963332.1	41614834	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ037 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963333.1	41614835	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								transcription factor [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963334.1	41614836	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ041 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963335.1	41614837	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ040 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963336.1	41614838	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ042 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963337.1	41614839	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ043 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963338.1	41614840	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ044 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963339.1	41614841	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ045 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963340.1	41614842	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ046 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963341.1	41614843	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ047 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963342.1	41614844	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ048 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963343.1	41614845	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ050 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963344.1	41614846	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ049 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963345.1	41614847	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ051 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963346.1	41614848	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								peptide chain release factor 1 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963347.1	41614849	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ053 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963348.1	41614850	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ054 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963349.1	41614851	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ055 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963350.1	41614852	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ057 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963351.1	41614853	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ056 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963352.1	41614854	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S12P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963353.1	41614855	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								ATPase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963354.1	41614856	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ060 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963355.1	41614857	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ061 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963356.1	41614858	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ062 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963357.1	41614859	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ063 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963358.1	41614860	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ064 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963359.1	41614861	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ065 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963360.1	41614862	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ066 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963361.1	41614863	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ067 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963362.1	41614864	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ068 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963363.1	41614865	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S11P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963364.1	41614866	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ070 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963365.1	41614867	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ072 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963366.1	41614868	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ071 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963367.1	41614869	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ073 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963368.1	41614870	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ074 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963369.1	41614871	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L18P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963370.1	41614872	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ076 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963371.1	41614873	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ077 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963372.1	41614874	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ077a [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963373.1	41614875	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ078 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963374.1	41614876	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ079 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963375.1	41614877	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ080 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963376.1	41614878	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ081 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963377.1	41614879	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								elongation factor 1-alpha [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963378.1	41614880	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S10P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963379.1	41614881	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ084 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963380.1	41614882	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ085 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963381.1	41614883	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ086 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963382.1	41614884	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								flap endonuclease-1 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963383.1	41614885	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ087 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963384.1	41614886	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ089 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963385.1	41614887	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ090 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963386.1	41614888	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								acidic ribosomal protein P0 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963387.1	41614889	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L14P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963388.1	41614890	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ094 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963389.1	41614891	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L5P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963390.1	41614892	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ095 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963391.1	41614893	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ096 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963392.1	41614894	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ097 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963393.1	41614895	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ098 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963394.1	41614896	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ099 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963395.1	41614897	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ100 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963396.1	41614898	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L11 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963397.1	41614899	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								V-type ATP synthase subunit A [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963398.1	41614900	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								histidyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963399.1	41614901	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ104 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963400.1	41614902	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S6e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963401.1	41614903	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ107 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963402.1	41614904	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ109 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963403.1	41614905	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								N(2),N(2)-dimethylguanosine tRNA methyltransferase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963404.1	41614906	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ110 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963405.1	41614907	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								exosome complex RNA-binding protein Rrp42 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963406.1	41614908	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ112 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963407.1	41614909	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ113 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963408.1	41614910	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ114 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963409.1	41614911	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								tryptophanyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963410.1	41614912	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ116 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963411.1	41614913	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ118 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963412.1	41614914	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ117 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963413.1	41614915	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ119 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963414.1	41614916	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ120 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963415.1	41614917	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ121 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963417.1	41614919	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ122 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963418.1	41614920	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ124 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963419.1	41614921	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								fibrillarin [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963420.1	41614922	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								glutamyl-tRNA(Gln) amidotransferase subunit D [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963421.1	41614923	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ126a [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963422.1	41614924	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ127 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963423.1	41614925	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ128 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963424.1	41614926	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-1A [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963425.1	41614927	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ129 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963426.1	41614928	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								haloacid dehalogenase superfamily protein [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963427.1	41614929	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								cell division protein FtsZ [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963428.1	41614930	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ132 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963429.1	41614931	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ134 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963430.1	41614932	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ135 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963431.1	41614933	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ136 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963432.1	41614934	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ137 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963433.1	41614935	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ139 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963434.1	41614936	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ138 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963435.1	41614937	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ140 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963436.1	41614938	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ141 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963437.1	41614939	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA topoisomerase VI subunit B [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963438.1	41614940	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ143 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963439.1	41614941	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L4P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963440.1	41614942	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ145 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963441.1	41614943	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ147 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963442.1	41614944	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ148 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963443.1	41614945	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ150 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963444.1	41614946	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ149 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963445.1	41614947	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ151 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963446.1	41614948	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								tRNA CCA-pyrophosphorylase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963447.1	41614949	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ153 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963448.1	41614950	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ154 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963449.1	41614951	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ155 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963450.1	41614952	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit B' [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963451.1	41614953	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ157 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963452.1	41614954	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ158 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963453.1	41614955	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ159 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963454.1	41614956	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ160 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963455.1	41614957	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ162 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963456.1	41614958	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ161 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963457.1	41614959	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ163 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963458.1	41614960	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ164 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963459.1	41614961	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ165 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963460.1	41614962	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ166 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963461.1	41614963	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								preprotein translocase subunit SecY [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963462.1	41614964	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								replication factor C small subunit [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963463.1	41614965	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ169 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963464.1	41614966	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ171 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963465.1	41614967	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ172 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963466.1	41614968	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit beta'' [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963467.1	41614969	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ175 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963468.1	41614970	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ174 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963469.1	41614971	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ176 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963470.1	41614972	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								threonyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963471.1	41614973	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L14e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963472.1	41614974	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ179 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963473.1	41614975	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ180 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963474.1	41614976	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ182 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963475.1	41614977	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L15e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963476.1	41614978	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ183 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963477.1	41614979	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								exosome complex RNA-binding protein Rrp4 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963478.1	41614980	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								aspartyl/glutamyl-tRNA amidotransferase subunit B [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963479.1	41614981	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								proteasome-activating nucleotidase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963480.1	41614982	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ188 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963481.2	161511236	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S19e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963482.1	41614984	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ190 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963483.1	41614985	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ189 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963484.1	41614986	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ191 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963485.1	41614987	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ193 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963486.1	41614988	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ192 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963487.1	41614989	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ195 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963488.1	41614990	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ194 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963489.1	41614991	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ196 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963490.1	41614992	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ197 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963491.1	41614993	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ198 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963492.1	41614994	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ199 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963493.1	41614995	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ200 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963494.1	41614996	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L12P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963495.1	41614997	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L22P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963496.1	41614998	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ203 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963497.1	41614999	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ205 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717788.1	298205310	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit K [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963498.1	41615000	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ206 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963499.1	41615001	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ208 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963500.1	41615002	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L13 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963501.1	41615003	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ209 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963502.1	41615004	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								prolyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963503.1	41615005	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ212 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963504.1	41615006	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ211 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963505.1	41615007	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ213 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963506.1	41615008	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ214 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963507.1	41615009	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ215 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963508.1	41615010	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ216 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963509.1	41615011	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ217 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963510.1	41615012	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ218 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963511.1	41615013	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S27e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963512.1	41615014	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ220 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963513.1	41615015	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ221 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963514.1	41615016	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ222 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963515.1	41615017	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ223 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963516.1	41615018	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ224 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963517.1	41615019	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ225 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963518.1	41615020	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ226 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963519.1	41615021	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ227 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963520.1	41615022	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ229 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963521.1	41615023	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ228 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963522.1	41615024	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ230 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963523.1	41615025	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ231 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963524.1	41615026	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ233 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963525.1	41615027	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ232 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963526.1	41615028	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ234 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963527.1	41615029	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ235 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963528.1	41615030	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ236 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963529.1	41615031	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ237 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963530.1	41615032	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ238 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963531.1	41615033	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								leucyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963532.1	41615034	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA polymerase II small subunit [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963533.1	41615035	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ241 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963534.1	41615036	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S7P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963535.1	41615037	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ243 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963536.1	41615038	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								glutamyl-tRNA(Gln) amidotransferase subunit E [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963537.1	41615039	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								peptidyl-tRNA hydrolase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963538.1	41615040	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ246 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963539.1	41615041	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S4P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963540.1	41615042	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								exosome complex exonuclease Rrp41 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963541.1	41615043	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ249 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963542.1	41615044	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ250 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963543.1	41615045	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								valyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963544.1	41615046	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ254 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963545.1	41615047	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ253 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963546.1	41615048	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ256 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963547.1	41615049	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ255 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963548.1	41615050	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L24P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963549.1	41615051	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ258 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963550.1	41615052	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ259 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963551.1	41615053	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ261 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963552.1	41615054	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ260 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963553.1	41615055	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ262 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963554.1	41615056	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ264 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963555.1	41615057	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ263 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963556.1	41615058	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ265 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963557.1	41615059	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ266 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963558.1	41615060	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ267 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963559.1	41615061	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ268 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963560.1	41615062	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-2 subunit gamma [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963561.1	41615063	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ271 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963562.1	41615064	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ273 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963563.1	41615065	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ275 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963564.1	41615066	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S8P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963565.1	41615067	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ276 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963566.1	41615068	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ277 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963567.1	41615069	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ278 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963568.1	41615070	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ279 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963569.1	41615071	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ281 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963570.1	41615072	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ280 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963571.1	41615073	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ282 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963572.1	41615074	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ283 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963573.1	41615075	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ284 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717789.1	298205311	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								H/ACA RNA-protein complex component Nop10p [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963574.1	41615076	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ285 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963575.1	41615077	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ288 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963576.1	41615078	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ290 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963577.1	41615079	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ289 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963578.1	41615080	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ291 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963579.1	41615081	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ292 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963580.1	41615082	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ293 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963581.1	41615083	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ294 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963582.1	41615084	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ295 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963583.1	41615085	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ297 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963584.1	41615086	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ296 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963585.1	41615087	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ298 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963586.1	41615088	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								putative ATPase RIL [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963587.1	41615089	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ300 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963588.1	41615090	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ301 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963589.1	41615091	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								glutamyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963590.1	41615092	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L35Ae [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963591.1	41615093	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ304 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963592.1	41615094	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ305 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963593.1	41615095	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ306 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963594.1	41615096	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								nucleoside diphosphate kinase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963595.1	41615097	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ309 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963596.1	41615098	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								seryl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963597.1	41615099	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ310 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963598.1	41615100	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ312 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963599.1	41615101	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L30P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963600.1	41615102	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ314 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963601.1	41615103	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ313 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963602.1	41615104	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ316 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963603.1	41615105	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ315 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963604.1	41615106	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ317 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963605.1	41615107	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ318 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963606.1	41615108	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L7Ae [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963607.1	41615109	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ321 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963608.1	41615110	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ320 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963609.1	41615111	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ322 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963610.1	41615112	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ324 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963611.1	41615113	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-2 subunit beta [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963612.1	41615114	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ325 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963613.1	41615115	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S17P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963614.1	41615116	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ328 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963615.1	41615117	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ327 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963616.1	41615118	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ329 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963617.1	41615119	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ330 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963618.1	41615120	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ331 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963619.1	41615121	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ332 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963620.1	41615122	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ334 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963621.1	41615123	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ333 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963622.1	41615124	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ335 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963623.1	41615125	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ336 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963624.1	41615126	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit N [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963625.1	41615127	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ337 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717790.1	298205312	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L24E [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963626.1	41615128	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ340 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963627.1	41615129	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ339 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963628.1	41615130	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA primase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963629.1	41615131	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ342 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963630.1	41615132	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ344 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963631.1	41615133	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ343 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963632.1	41615134	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								anaerobic ribonucleoside triphosphate reductase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963634.1	41615136	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ346 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963635.1	41615137	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ347 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963636.1	41615138	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ348 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963637.1	41615139	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								ATP-dependent protease Lon [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963638.1	41615140	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ350 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963639.1	41615141	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ351, partial [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963640.1	41615142	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ352 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963641.1	41615143	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ353 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963642.1	41615144	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ354 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963643.1	41615145	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ356 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963644.1	41615146	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ355 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963645.1	41615147	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ358 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963646.1	41615148	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ357 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963647.1	41615149	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S28e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963648.1	41615150	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L2P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963649.1	41615151	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ360 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963650.1	41615152	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ362 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963651.1	41615153	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA/RNA-binding protein albA [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963652.1	41615154	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ364 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963653.1	41615155	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ365 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963654.1	41615156	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ366 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963655.1	41615157	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ367 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963656.1	41615158	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ368 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963657.1	41615159	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ369 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963658.1	41615160	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit E' [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963659.1	41615161	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ372 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963660.1	41615162	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ371 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963661.1	41615163	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ373 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963662.1	41615164	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S3Ae [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717791.1	298205313	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								preprotein translocase subunit SecE [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963663.1	41615165	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ376 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963664.1	41615166	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ377 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963665.1	41615167	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ378 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963666.1	41615168	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L19e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963667.1	41615169	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ380 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963668.1	41615170	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ381 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963669.1	41615171	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ383 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963670.1	41615172	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								tRNA-modifying enzyme [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963671.1	41615173	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ384 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963672.1	41615174	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ386 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963673.1	41615175	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ385 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963674.1	41615176	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								Hef nuclease [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963675.1	41615177	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S5P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963676.1	41615178	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								tyrosyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963677.1	41615179	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ392 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963678.1	41615180	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ391 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963679.1	41615181	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-5A [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963680.1	41615182	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ396 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963681.1	41615183	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ395 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963682.1	41615184	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L21e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963683.1	41615185	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ398 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963684.1	41615186	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								methionine aminopeptidase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717792.1	298205314	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963685.1	41615187	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ401 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963686.1	41615188	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ403 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963687.1	41615189	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								putative deoxyhypusine synthase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963688.1	41615190	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ404 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963689.1	41615191	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-2 subunit alpha [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963690.1	41615192	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ406 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963691.1	41615193	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ408 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963692.1	41615194	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ407 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963693.1	41615195	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ409 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963694.1	41615196	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ410 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963695.1	41615197	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ411 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963696.1	41615198	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ412 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963697.1	41615199	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ413 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963698.1	41615200	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ415 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963699.1	41615201	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ414 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963700.1	41615202	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ416 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963701.1	41615203	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								glycyl-tRNA synthetase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963702.1	41615204	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ418 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963703.1	41615205	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA polymerase II large subunit [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963704.1	41615206	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ419 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963705.1	41615207	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ421 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963706.1	41615208	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								diphthine synthase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963707.1	41615209	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ424 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963708.1	41615210	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ423 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963709.1	41615211	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ425 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963710.1	41615212	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA repair and recombination protein RadA [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963711.1	41615213	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit A'' [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963712.1	41615214	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ428 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963713.1	41615215	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ429 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963714.1	41615216	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								replication factor C large subunit [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963716.1	41615218	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L3P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963717.1	41615219	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ432 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963718.1	41615220	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ434 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963719.1	41615221	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ435 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963720.1	41615222	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ436 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963721.1	41615223	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								preprotein translocase subunit SecF [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963722.1	41615224	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ438 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963723.1	41615225	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ440 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963724.1	41615226	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ442 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963725.1	41615227	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ441 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963726.1	41615228	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ443 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963727.1	41615229	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ444 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963728.1	41615230	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ445 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963729.1	41615231	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S9P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963730.1	41615232	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ448 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963731.1	41615233	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ447 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963732.1	41615234	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ449 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963733.1	41615235	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L10e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963734.1	41615236	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ451 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963735.1	41615237	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ452 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963736.1	41615238	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ453 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963737.1	41615239	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								H/ACA RNA-protein complex component Cbf5p [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963738.1	41615240	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ455 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963739.1	41615241	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ457 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963740.1	41615242	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ456 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963741.1	41615243	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ458 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963742.1	41615244	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ459 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963743.1	41615245	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ460 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963744.1	41615246	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ461 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963745.1	41615247	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ462 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963746.1	41615248	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ464 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963747.1	41615249	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation-associated GTPase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963748.1	41615250	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ466 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963749.1	41615251	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S13P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963750.1	41615252	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ468 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963751.1	41615253	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S8e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963752.1	41615254	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ470 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963753.1	41615255	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ471 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963754.1	41615256	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ472 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963755.1	41615257	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								cell division protein FtsZ [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963756.1	41615258	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ475 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963757.1	41615259	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ474 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963758.1	41615260	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ476 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963759.1	41615261	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ477 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963760.1	41615262	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S4e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963761.1	41615263	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								phenylalanyl-tRNA synthetase subunit beta [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963762.1	41615264	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S19P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963763.1	41615265	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ481 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963764.1	41615266	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ482 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963765.1	41615267	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ483 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963766.1	41615268	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ485 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963767.1	41615269	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ484 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963768.1	41615270	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ486 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963769.1	41615271	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S15P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963770.1	41615272	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L18e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717793.1	298205315	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								putative Zn-ribbon RNA-binding protein [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963771.1	41615273	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ490 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963772.1	41615274	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ491 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963773.1	41615275	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ492 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963774.1	41615276	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ493 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963775.1	41615277	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ494 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963776.1	41615278	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ495 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963777.1	41615279	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-2 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963778.1	41615280	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ497 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963779.1	41615281	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ499 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963780.1	41615282	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ500 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963781.1	41615283	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ502 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963782.1	41615284	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ501 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963783.1	41615285	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ504 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963784.1	41615286	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit A' [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963785.1	41615287	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ506 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963786.1	41615288	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								phenylalanyl-tRNA synthetase subunit alpha [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+YP_003717794.1	298205316	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L40E [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963787.1	41615289	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA-directed RNA polymerase subunit H [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963788.1	41615290	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								30S ribosomal protein S2 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963789.1	41615291	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ509 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963790.1	41615292	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ510 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963791.1	41615293	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								succinyl-diaminopimelate desuccinylase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963792.1	41615294	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ512 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963793.1	41615295	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ513 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963794.1	41615296	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ514 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963795.1	41615297	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								N-glycosylase/DNA lyase [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963796.1	41615298	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ516 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963797.1	41615299	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ518 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963798.1	41615300	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								translation initiation factor IF-6 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963799.1	41615301	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ519 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963800.1	41615302	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ520 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963801.1	41615303	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								proteasome subunit alpha [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963802.1	41615304	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ523 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963803.1	41615305	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ522 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963804.1	41615306	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ525 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963805.1	41615307	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								putative RNA-associated protein [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963806.1	41615308	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ526 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963807.1	41615309	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ527 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963808.1	41615310	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ528 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963809.1	41615311	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ529 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963810.1	41615312	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ531 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963811.1	41615313	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L32e [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963812.1	41615314	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ532 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963813.1	41615315	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ533 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963814.1	41615316	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ534 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963815.1	41615317	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ535 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963816.1	41615318	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ536 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963817.1	41615319	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ538 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963818.1	41615320	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ537 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963819.1	41615321	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ539 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963820.1	41615322	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								transcription antitermination protein NusG [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963821.1	41615323	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ541 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963822.1	41615324	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								elongation factor EF-2 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963823.1	41615325	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								DNA topoisomerase VI subunit A [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963824.1	41615326	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ545 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963825.1	41615327	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ544 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963826.1	41615328	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								50S ribosomal protein L1P [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963827.1	41615329	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ548 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963828.1	41615330	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ547 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963829.1	41615331	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ549 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NP_963830.1	41615332	Nanoarchaeum equitans Kin4-M	228908		Kin4-M								hypothetical protein NEQ550 [Nanoarchaeum equitans Kin4-M]	BCT				Archaea; Nanoarchaeota; Nanoarchaeum								
+NW_003106344.1	281483135	Saccoglossus kowalevskii	10224					Unknown				USA: MA	Saccoglossus kowalevskii unplaced genomic scaffold, Skow_1.1 scaffold1251, whole genome shotgun sequence	INV	genomic	beach area of Waquoit Pond near Woods Hole, MA		Eukaryota; Metazoa; Hemichordata; Enteropneusta; Harrimaniidae; Saccoglossus						male	testes	
+U55469.1	1872258	Mus musculus	10090		(NZB x NZW) F1	373p.66	hybridoma				house mouse		Mus musculus anti-DNA immunoglobulin heavy chain IgM mRNA, antibody 373p.66, partial cds	ROD				Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia; Sciurognathi; Muroidea; Muridae; Murinae; Mus; Mus	mouse number 373							
+AAB49068.1	1872259	Mus musculus	10090		(NZB x NZW) F1	373p.66	hybridoma				house mouse		anti-DNA immunoglobulin heavy chain IgM, partial [Mus musculus]	ROD				Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia; Sciurognathi; Muroidea; Muridae; Murinae; Mus; Mus	mouse number 373							
+U55473.1	1872266	Mus musculus	10090		(NZB x NZW) F1	373s.29	hybridoma				house mouse		Mus musculus anti-DNA immunoglobulin heavy chain IgM mRNA, antibody 373s.29, partial cds	ROD				Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia; Sciurognathi; Muroidea; Muridae; Murinae; Mus; Mus	mouse number 373							
+AAB49072.1	1872267	Mus musculus	10090		(NZB x NZW) F1	373s.29	hybridoma				house mouse		anti-DNA immunoglobulin heavy chain IgM, partial [Mus musculus]	ROD				Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia; Sciurognathi; Muroidea; Muridae; Murinae; Mus; Mus	mouse number 373							
+HQ951770.1	320557569	Theila sp. ANIC1	1536409	10ANIC-09073					E.D.Edwards	30-Oct-1981		Australia: Queensland, Russell River Palm Swamp	Theila sp. ANIC1 voucher 10ANIC-09073 cytochrome oxidase subunit 1 (COI) gene, partial cds; mitochondrial	INV	mitochondrion		17.16 S 145.56 E	Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota; Neoptera; Endopterygota; Lepidoptera; Glossata; Ditrysia; Pyraloidea; Crambidae; Nymphulinae; Theila		;	;	;attcaaccaatcataaagatattgggctttcccacgaataaataata	;cctgttccagctccattttctaaacttctggatgtccaaaaaatca			
+ADW53310.1	320557570	Theila sp. ANIC1	1536409	10ANIC-09073					E.D.Edwards	30-Oct-1981		Australia: Queensland, Russell River Palm Swamp	cytochrome oxidase subunit 1, partial (mitochondrion) [Theila sp. ANIC1]	INV	mitochondrion		17.16 S 145.56 E	Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota; Neoptera; Endopterygota; Lepidoptera; Glossata; Ditrysia; Pyraloidea; Crambidae; Nymphulinae; Theila		;	;	;attcaaccaatcataaagatattgggctttcccacgaataaataata	;cctgttccagctccattttctaaacttctggatgtccaaaaaatca			
+HQ951769.1	320557567	Theila sp. ANIC1	1536409	10ANIC-09072					I.F.B.Common	30-Aug-1985		Australia: Queensland, 3km SW of Kennedy	Theila sp. ANIC1 voucher 10ANIC-09072 cytochrome oxidase subunit 1 (COI) gene, partial cds; mitochondrial	INV	mitochondrion		18.14 S 145.57 E	Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota; Neoptera; Endopterygota; Lepidoptera; Glossata; Ditrysia; Pyraloidea; Crambidae; Nymphulinae; Theila		;	;	;attcaaccaatcataaagatattgggctttcccacgaataaataata	;cctgttccagctccattttctaaacttctggatgtccaaaaaatca			
+ADW53309.1	320557568	Theila sp. ANIC1	1536409	10ANIC-09072					I.F.B.Common	30-Aug-1985		Australia: Queensland, 3km SW of Kennedy	cytochrome oxidase subunit 1, partial (mitochondrion) [Theila sp. ANIC1]	INV	mitochondrion		18.14 S 145.57 E	Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota; Neoptera; Endopterygota; Lepidoptera; Glossata; Ditrysia; Pyraloidea; Crambidae; Nymphulinae; Theila		;	;	;attcaaccaatcataaagatattgggctttcccacgaataaataata	;cctgttccagctccattttctaaacttctggatgtccaaaaaatca			
