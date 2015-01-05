@@ -49,6 +49,8 @@ public:
         , m_flags (0)
         , m_skip_virtual (false)
         , m_skip_segmented (false)
+        , m_skip_nucleotide (false)
+        , m_skip_protein (false)
         , m_do_indexed (false)
         , m_gpipe_mode (false)
     {};
@@ -61,6 +63,8 @@ public:
         , m_flags (0)
         , m_skip_virtual (false)
         , m_skip_segmented (false)
+        , m_skip_nucleotide (false)
+        , m_skip_protein (false)
         , m_do_indexed (use_indexing)
         , m_gpipe_mode (false)
     {};
@@ -73,6 +77,8 @@ public:
         , m_flags (0)
         , m_skip_virtual (false)
         , m_skip_segmented (false)
+        , m_skip_nucleotide (false)
+        , m_skip_protein (false)
         , m_do_indexed (use_indexing)
         , m_gpipe_mode (gpipe_mode)
     {};
@@ -102,6 +108,19 @@ public:
         }
 
         string skip = args["skip"].AsString();
+        if ( NStr::Find(skip, "virtual") != NPOS) {
+            m_skip_virtual = true;
+        }
+        if ( NStr::Find(skip, "segmented") != NPOS) {
+            m_skip_segmented = true;
+        }
+        if ( NStr::Find(skip, "nucleotide") != NPOS) {
+            m_skip_nucleotide = true;
+        }
+        if ( NStr::Find(skip, "protein") != NPOS) {
+            m_skip_protein = true;
+        }
+        /*
         if ( skip == "virtual" ) {
             m_skip_virtual = true;
         }
@@ -112,6 +131,7 @@ public:
             m_skip_virtual = true;
             m_skip_segmented = true;
         }
+        */
 
         m_debug = args["debug"];
 
@@ -224,6 +244,30 @@ public:
                         }
                     }
                 }
+                if (m_skip_nucleotide) {
+                    if (bioseq.IsSetInst()) {
+                        const CSeq_inst& inst = bioseq.GetInst();
+                        if (inst.IsSetMol()) {
+                            TSEQ_MOL mol = inst.GetMol();
+                            if (mol == CSeq_inst::eMol_dna ||
+                                mol == CSeq_inst::eMol_rna ||
+                                mol == CSeq_inst::eMol_na) {
+                                okay = false;
+                            }
+                        }
+                    }
+                }
+                if (m_skip_protein) {
+                    if (bioseq.IsSetInst()) {
+                        const CSeq_inst& inst = bioseq.GetInst();
+                        if (inst.IsSetMol()) {
+                            TSEQ_MOL mol = inst.GetMol();
+                            if (mol == CSeq_inst::eMol_aa) {
+                                okay = false;
+                            }
+                        }
+                    }
+                }
  
                 if (okay) {
                     const string& title = gen.GenerateDefline (bioseq, *m_scope, m_flags);
@@ -320,6 +364,8 @@ protected:
     CDeflineGenerator::TUserFlags m_flags;
     bool m_skip_virtual;
     bool m_skip_segmented;
+    bool m_skip_nucleotide;
+    bool m_skip_protein;
     bool m_do_indexed;
     bool m_gpipe_mode;
     bool m_debug;
