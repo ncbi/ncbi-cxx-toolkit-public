@@ -250,6 +250,7 @@ int CFeatTreeSampleApp::Run(void)
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
@@ -260,16 +261,13 @@ void CFeatTreeSampleApp::Exit(void)
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
 
 int main(int argc, const char* argv[])
 {
-    // Do not show warning about inaccessible configuration file
-    SetDiagFilter(eDiagFilter_Post, "!(106.11)");
-
     // Execute main application function
     return CFeatTreeSampleApp().AppMain(argc, argv);
 }
-

@@ -71,8 +71,5 @@ void CGetPasswordApplication::Init(void)
 
 int main(int argc, char* argv[])
 {
-    // Do not show warning about inaccessible configuration file
-    SetDiagFilter(eDiagFilter_Post, "!(106.11)");
-
     return CGetPasswordApplication().AppMain(argc, argv);
 }

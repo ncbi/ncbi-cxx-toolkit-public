@@ -842,9 +842,6 @@ CNcbiTestApplication::CNcbiTestApplication(void)
 {
     m_Reporter = new CNcbiBoostReporter();
     m_Logger   = new CNcbiBoostLogger();
-
-    // Do not show warning about inaccessible configuration file
-    SetDiagFilter(eDiagFilter_Post, "!(106.11)");
 }
 
 CNcbiTestApplication::~CNcbiTestApplication(void)
