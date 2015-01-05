@@ -181,15 +181,18 @@ void CEUtilsApp::Init(void)
         CArgDescriptions::eString);
     arg_desc->SetConstraint("report", &(*new CArgAllow_Strings,
         "uilist", "brief", "docsum", "xml"));
-    // esearch flag
+    // esearch
     arg_desc->AddOptionalKey("usehistory", "UseHistory", "Use history",
         CArgDescriptions::eBoolean);
+    arg_desc->AddOptionalKey("sort", "Sort", "Sort order or 'none'",
+        CArgDescriptions::eString);
 
     // Dependencies
     // ESearch
     arg_desc->SetDependency("esearch", CArgDescriptions::eRequires, "db");
     arg_desc->SetDependency("esearch", CArgDescriptions::eRequires, "term");
     arg_desc->SetDependency("usehistory", CArgDescriptions::eRequires, "esearch");
+    arg_desc->SetDependency("sort", CArgDescriptions::eRequires, "esearch");
     // EGQuery
     arg_desc->SetDependency("egquery", CArgDescriptions::eRequires, "term");
     // EFetch
@@ -288,6 +291,9 @@ void CEUtilsApp::CallESearch(const CArgs& args)
     req.SetTerm(args["term"].AsString());
     if ( args["usehistory"] ) {
         req.SetUseHistory(args["usehistory"].AsBoolean());
+    }
+    if ( args["sort"] ) {
+        req.SetSortOrderName(args["sort"].AsString());
     }
     if ( args["reldate"] ) {
         req.SetRelDate(args["reldate"].AsInteger());

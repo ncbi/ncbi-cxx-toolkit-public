@@ -122,22 +122,28 @@ public:
     void SetRetType(ERetType rettype) { Disconnect(); m_RetType = rettype; }
 
     /// Sort orders.
+    /// @deprecated Use string sort orders instead.
     enum ESort {
-        eSort_none,
+        eSort_none,         // no sorting or sort order set by string
         eSort_author,       // author
         eSort_last_author,  // last+author
         eSort_journal,      // journal
-        eSort_pub_date      // pub+date
+        eSort_pub_date,     // pub+date
     };
-    /// Sort order.
-    ESort GetSort(void) const { return m_Sort; }
-    void SetSort(ESort order) { Disconnect(); m_Sort = order; }
+    /// Get sort order. @deprecated Use GetSortOrderName().
+    NCBI_DEPRECATED ESort GetSort(void) const { return m_Sort; }
+    /// Set sort order. @deprecated Use SetSortOrderName().
+    NCBI_DEPRECATED void SetSort(ESort order);
+
+    /// Get sort order. Empty string indicates no sorting (or the default one).
+    const string& GetSortOrderName(void) const { return m_SortName; }
+    /// Set sort order. Empty string indicates no sorting (or the default one).
+    void SetSortOrderName(CTempString name);
 
 private:
     typedef CEUtils_Request TParent;
 
     const char* x_GetRetTypeName(void) const;
-    const char* x_GetSortName(void) const;
 
     bool       m_UseHistory;
     string     m_Term;
@@ -150,6 +156,7 @@ private:
     int        m_RetMax;
     ERetType   m_RetType;
     ESort      m_Sort;
+    string     m_SortName;
 };
 
 

@@ -57,6 +57,37 @@ CESearch_Request::~CESearch_Request(void)
 }
 
 
+void CESearch_Request::SetSort(ESort order)
+{
+    Disconnect();
+    m_Sort = order;
+    switch ( m_Sort ) {
+    case eSort_author:
+        m_SortName = "author";
+        break;
+    case eSort_last_author:
+        m_SortName = "last+author";
+        break;
+    case eSort_journal:
+        m_SortName = "journal";
+        break;
+    case eSort_pub_date:
+        m_SortName = "pub+date";
+        break;
+    default:
+        m_SortName.clear();
+    }
+}
+
+
+void CESearch_Request::SetSortOrderName(CTempString name)
+{
+    Disconnect();
+    m_Sort = eSort_none;
+    m_SortName = name;
+}
+
+
 inline
 const char* CESearch_Request::x_GetRetTypeName(void) const
 {
@@ -64,16 +95,6 @@ const char* CESearch_Request::x_GetRetTypeName(void) const
         "none", "count", "ulist"
     };
     return s_RetTypeName[m_RetType];
-}
-
-
-inline
-const char* CESearch_Request::x_GetSortName(void) const
-{
-    static const char* s_SortName[] = {
-        "none", "author", "last+author", "journal", "pub+date"
-    };
-    return s_SortName[m_Sort];
 }
 
 
@@ -117,9 +138,9 @@ string CESearch_Request::GetQueryString(void) const
         args += "&rettype=";
         args += x_GetRetTypeName();
     }
-    if ( m_Sort != eSort_none ) {
+    if ( !m_SortName.empty() ) {
         args += "&sort=";
-        args += NStr::URLEncode(x_GetSortName(),
+        args += NStr::URLEncode(m_SortName,
             NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
