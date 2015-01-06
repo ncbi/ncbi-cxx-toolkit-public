@@ -955,14 +955,35 @@ BOOST_AUTO_TEST_CASE(Test_DiscouragedEnums)
     // make sure to pick subtypes and quals that are
     // very unlikely to be deprecated in the future
 
-    BOOST_CHECK(
-        ! CSeqFeatData::IsDiscouragedSubtype(CSeqFeatData::eSubtype_gene));
-    BOOST_CHECK(
-        ! CSeqFeatData::IsDiscouragedQual(CSeqFeatData::eQual_host));
-
     // check for discouraged enums
     BOOST_CHECK(
         CSeqFeatData::IsDiscouragedSubtype(CSeqFeatData::eSubtype_conflict));
     BOOST_CHECK(
         CSeqFeatData::IsDiscouragedQual(CSeqFeatData::eQual_insertion_seq));
+
+    BOOST_CHECK(
+        ! CSeqFeatData::IsDiscouragedSubtype(CSeqFeatData::eSubtype_gene));
+    BOOST_CHECK(
+        ! CSeqFeatData::IsDiscouragedQual(CSeqFeatData::eQual_host));
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CheckCellLine)
+{
+    string msg = CSubSource::CheckCellLine("222", "Homo sapiens");
+    BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that 222 from Homo sapiens is known to be contaminated by PA1 from Human. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
+
+    msg = CSubSource::CheckCellLine("223", "Homo sapiens");
+    BOOST_CHECK_EQUAL(msg, "");
+
+    msg = CSubSource::CheckCellLine("222", "Canis familiaris");
+    BOOST_CHECK_EQUAL(msg, "");
+
+    msg = CSubSource::CheckCellLine("ARO81-1", "Homo sapiens");
+    BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that ARO81-1 from Homo sapiens is known to be contaminated by HT-29 from Human. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
+
+    msg = CSubSource::CheckCellLine("aRO81-1", "Homo sapiens");
+    BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that aRO81-1 from Homo sapiens is known to be contaminated by HT-29 from Human. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
+    
+}
+

@@ -2304,6 +2304,7 @@ static void s_ProcessCellLineLine(const CTempString& line)
         ERR_POST_X(1, Warning << "Not enough columns in cell_line entry " << line
                    << "; disregarding");
     } else {
+        NStr::ToUpper(tokens[0]);
         (s_CellLineContaminationMap[tokens[0]])[tokens[1]] = TContaminatingCellLine(tokens[2], tokens[3]);
     }
 }
@@ -2334,12 +2335,14 @@ string CSubSource::CheckCellLine(const string& cell_line, const string& organism
     string rval = "";
 
     s_InitializeCellLineContaminationMap();
+    string cell_line_search = cell_line;
+    NStr::ToUpper(cell_line_search);
 
-    if (!NStr::IsBlank(((s_CellLineContaminationMap[cell_line])[organism]).first)) {
+    if (!NStr::IsBlank(((s_CellLineContaminationMap[cell_line_search])[organism]).first)) {
         rval = "The International Cell Line Authentication Committee database indicates that " +
                cell_line + " from " + organism + " is known to be contaminated by " +
-               ((s_CellLineContaminationMap[cell_line])[organism]).first +
-               " from " + ((s_CellLineContaminationMap[cell_line])[organism]).second +
+               ((s_CellLineContaminationMap[cell_line_search])[organism]).first +
+               " from " + ((s_CellLineContaminationMap[cell_line_search])[organism]).second +
                ". Please see http://iclac.org/databases/cross-contaminations/ for more information and references.";
     }
     return rval;
