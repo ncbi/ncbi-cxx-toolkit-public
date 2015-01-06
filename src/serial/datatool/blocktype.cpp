@@ -719,11 +719,12 @@ AutoPtr<CTypeStrings> CDataContainerType::AddMembers(
 
         bool delayed = GetBoolVar((*i)->GetName()+"._delay");
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
+        string external_name = (*i)->GetName();
         string member_name = (*i)->GetType()->DefClassMemberName();
         if (member_name.empty()) {
-            member_name = (*i)->GetName();
+            member_name = external_name;
         }
-        code->AddMember(member_name, memberType,
+        code->AddMember(external_name, member_name, memberType,
                         (*i)->GetType()->GetVar("_pointer"),
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),

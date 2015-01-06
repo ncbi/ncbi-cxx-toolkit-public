@@ -103,7 +103,8 @@ bool CClassTypeStrings::x_IsUniSeq(TMembers::const_iterator i) const
     return i->dataType && i->dataType->IsUniSeq();
 }
 
-void CClassTypeStrings::AddMember(const string& name,
+void CClassTypeStrings::AddMember(const string& external_name,
+                                  const string& name,
                                   const AutoPtr<CTypeStrings>& type,
                                   const string& pointerType,
                                   bool optional,
@@ -113,14 +114,15 @@ void CClassTypeStrings::AddMember(const string& name,
                                   bool simple,const CDataType* dataType,
                                   bool nonempty, const CComments& comments)
 {
-    m_Members.push_back(SMemberInfo(name, type,
+    m_Members.push_back(SMemberInfo(external_name, name, type,
                                     pointerType,
                                     optional, defaultValue,
                                     delayed, tag, noPrefix,attlist,noTag,
                                     simple,dataType,nonempty, comments));
 }
 
-CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
+CClassTypeStrings::SMemberInfo::SMemberInfo(const string& external_name,
+                                            const string& name,
                                             const AutoPtr<CTypeStrings>& t,
                                             const string& pType,
                                             bool opt, const string& defValue,
@@ -128,7 +130,7 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             bool attlst, bool noTg, bool simpl,
                                             const CDataType* dataTp, bool nEmpty,
                                             const CComments& commnts)
-    : externalName(name), cName(Identifier(name)),
+    : externalName(external_name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),

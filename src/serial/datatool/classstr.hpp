@@ -68,7 +68,9 @@ public:
         const CDataType* dataType;
         bool nonEmpty;
         CComments comments;
-        SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
+        SMemberInfo(const string& external_name,
+                    const string& name, 
+                    const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
                     bool delayed, int tag,
@@ -98,7 +100,8 @@ public:
     void SetParentClass(const string& className, const CNamespace& ns,
                         const string& fileName);
 
-    void AddMember(const string& name, const AutoPtr<CTypeStrings>& type,
+    void AddMember(const string& external_name, const string& name,
+                   const AutoPtr<CTypeStrings>& type,
                    const string& pointerType,
                    bool optional, const string& defaultValue,
                    bool delayed, int tag,
@@ -106,7 +109,7 @@ public:
                    const CDataType* dataType, bool nonEmpty, const CComments& comments);
     void AddMember(const AutoPtr<CTypeStrings>& type, int tag, bool nonEmpty, bool noPrefix)
         {
-            AddMember(NcbiEmptyString, type, NcbiEmptyString,
+            AddMember(NcbiEmptyString, NcbiEmptyString, type, NcbiEmptyString,
                       false, NcbiEmptyString, false, tag,
                       noPrefix,false,false,false,0,nonEmpty,CComments());
         }
