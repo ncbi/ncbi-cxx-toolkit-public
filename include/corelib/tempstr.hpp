@@ -969,7 +969,7 @@ private:
 /// in the functions which need to modify the strings (e.g. NStr::Splilt).
 
 
-class CTempString_Storage
+class NCBI_XNCBI_EXPORT CTempString_Storage
 {
 public:
     typedef CTempString::size_type size_type;
