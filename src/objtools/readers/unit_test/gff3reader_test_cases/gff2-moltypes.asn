@@ -1,0 +1,186 @@
+Seq-annot ::= {
+  id {
+    local str "gi|224589800|ref|NC_000001.10|"
+  },
+  data ftable {
+    {
+      id local str "local-id:3",
+      data gene {
+      },
+      location int {
+        from 228750496,
+        to 228750610,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:4",
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 228748255,
+        to 228748369,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:5",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 228777314,
+        to 228777428,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:6",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 147665993,
+        to 147666092,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:7",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 228766136,
+        to 228766250,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:8",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 43662091,
+        to 43662192,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:9",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 219935134,
+        to 219935233,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:10",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 52439085,
+        to 52439187,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:11",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 111584459,
+        to 111584574,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    },
+    {
+      id local str "local-id:12",
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 228754978,
+        to 228755092,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      }
+    }
+  }
+}

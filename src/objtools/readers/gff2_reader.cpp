@@ -919,8 +919,14 @@ bool CGff2Reader::x_FeatureSetData(
     case CSeqFeatData::eSubtype_gene:
         return x_FeatureSetDataGene(record, pFeature);
     case CSeqFeatData::eSubtype_mRNA:
-        return x_FeatureSetDataRna(record, pFeature, iGenbankType);
     case CSeqFeatData::eSubtype_rRNA:
+    case CSeqFeatData::eSubtype_ncRNA:
+    case CSeqFeatData::eSubtype_preRNA:
+    case CSeqFeatData::eSubtype_scRNA:
+    case CSeqFeatData::eSubtype_snRNA:
+    case CSeqFeatData::eSubtype_snoRNA:
+    case CSeqFeatData::eSubtype_tRNA:
+    case CSeqFeatData::eSubtype_tmRNA:
         return x_FeatureSetDataRna(record, pFeature, iGenbankType);
     }    
     return true;

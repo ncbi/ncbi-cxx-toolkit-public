@@ -29,7 +29,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "local-id:4",
+      id local str "local-id:14",
       data imp {
         key "TF_binding_site"
       },
