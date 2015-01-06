@@ -63,8 +63,11 @@ CJsonNode SNSTAlertAttributes::Serialize(void) const
     alert.SetInteger("Count", m_Count);
     alert.SetString("LastOccured",
                     NST_FormatPreciseTime(m_LastDetectedTimestamp));
-    alert.SetString("LastAcknowledged",
-                    NST_FormatPreciseTime(m_AcknowledgedTimestamp));
+    if (double(m_AcknowledgedTimestamp) == 0.0)
+        alert.SetString("LastAcknowledged", "n/a");
+    else
+        alert.SetString("LastAcknowledged",
+                        NST_FormatPreciseTime(m_AcknowledgedTimestamp));
     alert.SetString("User", m_User);
     alert.SetString("Message", m_Message);
 

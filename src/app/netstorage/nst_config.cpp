@@ -435,7 +435,7 @@ TNSTDBValue<CTimeSpan>  ReadTimeSpan(const string &  reg_value,
     }
 
     result.m_IsNull = false;
-    result.m_Value = CTimeSpan(NStr::StringToDouble(reg_value));
+    result.m_Value.AssignFromSmartString(reg_value);
     return result;
 }
 

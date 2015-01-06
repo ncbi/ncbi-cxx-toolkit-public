@@ -1534,6 +1534,7 @@ CNetStorageHandler::x_ProcessGetClientObjects(
 
     TNSTDBValue<Int8>  limit;
     limit.m_IsNull = true;
+    limit.m_Value = 0;
     if (message.HasKey("Limit")) {
         try {
             limit.m_Value = message.GetInteger("Limit");

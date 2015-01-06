@@ -40,6 +40,11 @@
 USING_NCBI_SCOPE;
 
 
+CTimeSpan::TSmartStringFlags   kTimeSpanFlags = CTimeSpan::fSS_Nanosecond |
+                                                CTimeSpan::fSS_SkipZero |
+                                                CTimeSpan::fSS_Short;
+
+
 
 CNSTServiceProperties::CNSTServiceProperties()
 {
@@ -57,8 +62,10 @@ CNSTServiceProperties::Serialize(void) const
     CJsonNode       service(CJsonNode::NewObjectNode());
 
     service.SetString("TTL", GetTTLAsString());
-    service.SetString("ProlongOnRead", m_ProlongOnRead.AsString());
-    service.SetString("ProlongOnWrite", m_ProlongOnWrite.AsString());
+    service.SetString("ProlongOnRead",
+                      m_ProlongOnRead.AsSmartString(kTimeSpanFlags));
+    service.SetString("ProlongOnWrite",
+                      m_ProlongOnWrite.AsSmartString(kTimeSpanFlags));
 
     return service;
 }
@@ -69,7 +76,7 @@ CNSTServiceProperties::GetTTLAsString(void) const
 {
     if (m_TTL.m_IsNull)
         return "infinity";
-    return m_TTL.m_Value.AsString();
+    return m_TTL.m_Value.AsSmartString(kTimeSpanFlags);
 }
 
 
@@ -155,11 +162,13 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
         prolong_diff.SetByKey("Old",
                               CJsonNode::NewStringNode(
                                   m_DefaultProperties.
-                                            GetProlongOnRead().AsString()));
+                                            GetProlongOnRead().
+                                                AsSmartString(kTimeSpanFlags)));
         prolong_diff.SetByKey("New",
                               CJsonNode::NewStringNode(
                                   new_default_service_props.
-                                            GetProlongOnRead().AsString()));
+                                            GetProlongOnRead().
+                                                AsSmartString(kTimeSpanFlags)));
         diff.SetByKey("ProlongOnRead", prolong_diff);
     }
 
@@ -169,11 +178,13 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
         prolong_diff.SetByKey("Old",
                               CJsonNode::NewStringNode(
                                   m_DefaultProperties.
-                                            GetProlongOnWrite().AsString()));
+                                            GetProlongOnWrite().
+                                                AsSmartString(kTimeSpanFlags)));
         prolong_diff.SetByKey("New",
                               CJsonNode::NewStringNode(
                                   new_default_service_props.
-                                            GetProlongOnWrite().AsString()));
+                                            GetProlongOnWrite().
+                                                AsSmartString(kTimeSpanFlags)));
         diff.SetByKey("ProlongOnWrite", prolong_diff);
     }
 
@@ -218,10 +229,12 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
                     CJsonNode       val_diff = CJsonNode::NewObjectNode();
                     val_diff.SetByKey("Old",
                                       CJsonNode::NewStringNode(
-                        m_Services[*k].GetProlongOnRead().AsString()));
+                        m_Services[*k].GetProlongOnRead().
+                                                AsSmartString(kTimeSpanFlags)));
                     val_diff.SetByKey("New",
                                       CJsonNode::NewStringNode(
-                        new_service_conf[*k].GetProlongOnRead().AsString()));
+                        new_service_conf[*k].GetProlongOnRead().
+                                                AsSmartString(kTimeSpanFlags)));
                     mod_diff.SetByKey("ProlongOnRead", val_diff);
                 }
 
@@ -230,10 +243,12 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
                     CJsonNode       val_diff = CJsonNode::NewObjectNode();
                     val_diff.SetByKey("Old",
                                       CJsonNode::NewStringNode(
-                        m_Services[*k].GetProlongOnWrite().AsString()));
+                        m_Services[*k].GetProlongOnWrite().
+                                                AsSmartString(kTimeSpanFlags)));
                     val_diff.SetByKey("New",
                                       CJsonNode::NewStringNode(
-                        new_service_conf[*k].GetProlongOnWrite().AsString()));
+                        new_service_conf[*k].GetProlongOnWrite().
+                                                AsSmartString(kTimeSpanFlags)));
                     mod_diff.SetByKey("ProlongOnWrite", val_diff);
                 }
 
