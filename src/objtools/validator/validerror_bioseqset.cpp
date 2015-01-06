@@ -926,7 +926,7 @@ void CValidError_bioseqset::CheckForImproperlyNestedSets (const CBioseq_set& seq
 
 void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
 {
-    FOR_EACH_SEQDESC_ON_BIOSEQ (it, seqset) {
+    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
         const CSeqdesc& desc = **it;
         if (! SEQDESC_CHOICE_IS (desc, NCBI_SEQDESC(User))) continue;
         const CUser_object& usr = desc.GetUser();
