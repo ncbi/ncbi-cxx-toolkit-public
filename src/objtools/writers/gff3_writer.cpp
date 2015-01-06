@@ -507,11 +507,36 @@ bool CGff3Writer::xAssignAlignmentSplicedMethod(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
+    //const CSeq_id& genomicId = spliced.GetGenomic_id();
+    //const CSeq_id& productId = spliced.GetProduct_id();
     string method;
+
+    //following order of resolution is from mss-265:
+    
+    //if feature has a ModelEvidence user object, use that
+    // this is an alignment, not a feature, hence does not apply
+
+    //use source database of the target
+    if (spliced.IsSetProduct_id()) {
+        const CSeq_id& productId = spliced.GetProduct_id();
+        CSeq_id_Handle bestH = sequence::GetId(
+            productId, *m_pScope, sequence::eGetId_Best);
+        const CSeq_id& bestId = *bestH.GetSeqId();
+        CWriteUtil::GetIdType(bestId, method);
+        record.SetMethod(method);
+        return true;
+    }
+
+    //if parent has a ModelEvidence user objcet, use that
+    // this is an alignment, not a feature, hence does not apply
+
+    // use the default method if one has been set
     if (!m_sDefaultMethod.empty()) {
         record.SetMethod(m_sDefaultMethod);
         return true;
     }
+
+    // finally, look at the type of accession
     const CSeq_id& genomicId = spliced.GetGenomic_id();
     CSeq_id_Handle bestH = sequence::GetId(
         genomicId, *m_pScope, sequence::eGetId_Best);
