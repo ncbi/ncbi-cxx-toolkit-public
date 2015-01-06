@@ -100,6 +100,7 @@ class CId1FetchApp : public CNcbiApplication
 private:
     bool LookUpGI(TGi gi);
     TGi  LookUpFastaSeqID(const string& s);
+    TGi  LookUpRawSeqID(const string& s);
     TGi  LookUpFlatSeqID(const string& s);
 
     void WriteFastaIDs     (const list< CRef< CSeq_id > >& ids);
@@ -366,7 +367,7 @@ int CId1FetchApp::Run(void)
             } else if (id.find_first_of(":=(") != NPOS) {
                 gi = LookUpFlatSeqID(id);
             } else {
-                gi = NStr::StringToNumeric<TGi>(id);
+                gi = LookUpRawSeqID(id);
             }
 
             if (gi <= ZERO_GI  ||  !LookUpGI(gi)) {
@@ -675,6 +676,21 @@ TGi CId1FetchApp::LookUpFastaSeqID(const string& s)
 }
 
 
+TGi CId1FetchApp::LookUpRawSeqID(const string& s)
+{
+    try {
+        CSeq_id id(s, CSeq_id::fParse_AnyRaw | CSeq_id::fParse_NoFASTA);
+        if (id.IsGi()) {
+            return id.GetGi();
+        } else {
+            return m_ID1Client.AskGetgi(id);
+        }
+    } catch (CSeqIdException&) {
+        return GI_FROM(TIntGI, -1);
+    }
+}
+
+
 TGi CId1FetchApp::LookUpFlatSeqID(const string& s)
 {
     CSeq_id::E_Choice type = static_cast<CSeq_id::E_Choice>(atoi(s.c_str()));
@@ -699,7 +715,8 @@ TGi CId1FetchApp::LookUpFlatSeqID(const string& s)
         NStr::Tokenize(data, ",", pieces);
         pieces.resize(4, kEmptyStr);
         // name acc rel ver -> acc name ver rel
-        CSeq_id id(type, pieces[1], pieces[0], NStr::StringToInt(pieces[3]),
+        CSeq_id id(type, pieces[1], pieces[0],
+                   pieces[3].empty() ? 0 : NStr::StringToInt(pieces[3]),
                    pieces[2]);
         return m_ID1Client.AskGetgi(id);
     }
