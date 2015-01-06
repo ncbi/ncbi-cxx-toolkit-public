@@ -201,9 +201,10 @@ public:
         const CGff2Record&,
         CRef< CSeq_feat > );
 
-    virtual bool x_FeatureSetDataMRNA(
+    virtual bool x_FeatureSetDataRna(
         const CGff2Record&,
-        CRef< CSeq_feat > );
+        CRef< CSeq_feat >,
+        CSeqFeatData::ESubtype );
 
     virtual bool x_FeatureSetDataCDS(
         const CGff2Record&,

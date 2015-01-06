@@ -898,7 +898,7 @@ bool CGff2Reader::x_FeatureSetGffInfo(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_FeatureSetData(
     const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
+    CRef< CSeq_feat > pFeature)
 //  ----------------------------------------------------------------------------
 {
     //
@@ -906,20 +906,22 @@ bool CGff2Reader::x_FeatureSetData(
     //
 
     CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(
-        record.Type() );
+        record.Type());
 
-    switch( iGenbankType ) {
+    switch(iGenbankType) {
     default:
-        return x_FeatureSetDataMiscFeature( record, pFeature );
+        return x_FeatureSetDataMiscFeature(record, pFeature);
 
     case CSeqFeatData::eSubtype_cdregion:
-        return x_FeatureSetDataCDS( record, pFeature );
+        return x_FeatureSetDataCDS(record, pFeature);
     case CSeqFeatData::eSubtype_exon:
-        return x_FeatureSetDataExon( record, pFeature );
+        return x_FeatureSetDataExon(record, pFeature);
     case CSeqFeatData::eSubtype_gene:
-        return x_FeatureSetDataGene( record, pFeature );
+        return x_FeatureSetDataGene(record, pFeature);
     case CSeqFeatData::eSubtype_mRNA:
-        return x_FeatureSetDataMRNA( record, pFeature );
+        return x_FeatureSetDataRna(record, pFeature, iGenbankType);
+    case CSeqFeatData::eSubtype_rRNA:
+        return x_FeatureSetDataRna(record, pFeature, iGenbankType);
     }    
     return true;
 }
@@ -935,14 +937,24 @@ bool CGff2Reader::x_FeatureSetDataGene(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetDataMRNA(
+bool CGff2Reader::x_FeatureSetDataRna(
     const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
+    CRef< CSeq_feat > pFeature,
+    CSeqFeatData::ESubtype subType)
 //  ----------------------------------------------------------------------------
 {
     CRNA_ref& rnaRef = pFeature->SetData().SetRna();
-    rnaRef.SetType( CRNA_ref::eType_mRNA );
-
+    switch (subType){
+        default:
+            rnaRef.SetType(CRNA_ref::eType_miscRNA);
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            rnaRef.SetType(CRNA_ref::eType_mRNA);
+            break;
+        case CSeqFeatData::eSubtype_rRNA:
+            rnaRef.SetType(CRNA_ref::eType_rRNA);
+            break;
+    }
     return true;
 }
 

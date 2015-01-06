@@ -1,0 +1,406 @@
+Seq-annot ::= {
+  id {
+    local str "gi|224589800|ref|NC_000001.10|"
+  },
+  data ftable {
+    {
+      data gene {
+      },
+      location int {
+        from 228750496,
+        to 228750610,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "228750496"
+            },
+            {
+              label str "gff-stop",
+              data str "228750610"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 228748255,
+        to 228748369,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "228748255"
+            },
+            {
+              label str "gff-stop",
+              data str "228748369"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 228777314,
+        to 228777428,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "228777314"
+            },
+            {
+              label str "gff-stop",
+              data str "228777428"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 147665993,
+        to 147666092,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "147665993"
+            },
+            {
+              label str "gff-stop",
+              data str "147666092"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 228766136,
+        to 228766250,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "228766136"
+            },
+            {
+              label str "gff-stop",
+              data str "228766250"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 43662091,
+        to 43662192,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "43662091"
+            },
+            {
+              label str "gff-stop",
+              data str "43662192"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 219935134,
+        to 219935233,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "219935134"
+            },
+            {
+              label str "gff-stop",
+              data str "219935233"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 52439085,
+        to 52439187,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "52439085"
+            },
+            {
+              label str "gff-stop",
+              data str "52439187"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 111584459,
+        to 111584574,
+        strand plus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "111584459"
+            },
+            {
+              label str "gff-stop",
+              data str "111584574"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 228754978,
+        to 228755092,
+        strand minus,
+        id local str "gi|224589800|ref|NC_000001.10|"
+      },
+      qual {
+        {
+          qual "8s_rRNA",
+          val ""
+        }
+      },
+      exts {
+        {
+          type str "gff-info",
+          data {
+            {
+              label str "gff-attributes",
+              data str "8s_rRNA"
+            },
+            {
+              label str "gff-start",
+              data str "228754978"
+            },
+            {
+              label str "gff-stop",
+              data str "228755092"
+            },
+            {
+              label str "gff-cooked",
+              data str "false"
+            }
+          }
+        }
+      }
+    }
+  }
+}

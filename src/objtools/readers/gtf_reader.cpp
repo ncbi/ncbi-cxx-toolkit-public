@@ -932,20 +932,21 @@ bool CGtfReader::x_FeatureSetDataGene(
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataMRNA(
     const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
+    CRef<CSeq_feat> pFeature)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff2Reader::x_FeatureSetDataMRNA( record, pFeature ) ) {
+    if ( ! CGff2Reader::x_FeatureSetDataRna( 
+            record, pFeature, CSeqFeatData::eSubtype_mRNA)) {
         return false;
     }
     
     CRNA_ref& rna = pFeature->SetData().SetRna();
 
     string strValue;
-    if ( record.GetAttribute( "product", strValue ) ) {
-        rna.SetExt().SetName( strValue );
+    if (record.GetAttribute("product", strValue)) {
+        rna.SetExt().SetName(strValue);
     }
-    if ( record.GetAttribute( "transcript_id", strValue ) ) {
+    if (record.GetAttribute("transcript_id", strValue)) {
         pFeature->SetProduct().SetWhole(
             *CReadUtil::AsSeqId(strValue, m_iFlags & fAllIdsAsLocal));
     }
