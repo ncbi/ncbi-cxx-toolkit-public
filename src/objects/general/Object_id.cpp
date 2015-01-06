@@ -76,7 +76,7 @@ bool CObject_id::Match(const CObject_id& oid2) const
 }
 
 
-CObject_id::E_Choice CObject_id::GetIdType(Int8& value) const
+CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
 {
     switch ( Which() ) {
     case e_Id:
@@ -125,7 +125,7 @@ CObject_id::E_Choice CObject_id::GetIdType(Int8& value) const
 // match for identity
 int CObject_id::Compare(const CObject_id& oid2) const
 {
-    Int8 value, value2;
+    TId8 value, value2;
     E_Choice type = GetIdType(value);
     E_Choice type2 = oid2.GetIdType(value2);
     if ( int diff = type - type2 ) {
@@ -138,6 +138,29 @@ int CObject_id::Compare(const CObject_id& oid2) const
         return PNocase().Compare(GetStr(), oid2.GetStr());
     default:
         return 0;
+    }
+}
+
+
+CObject_id::TId8 CObject_id::GetId8(void) const
+{
+    TId8 value;
+    if ( !GetId8(value) ) {
+        NCBI_THROW(CSerialException, eInvalidData,
+                   "CObject_id doesn't have Int8 value");
+    }
+    return value;
+}
+
+
+void CObject_id::SetId8(TId8 value)
+{
+    if ( TId(value) == value ) {
+        // fits in id
+        SetId(TId(value));
+    }
+    else {
+        NStr::NumericToString(SetStr(), value);
     }
 }
 

@@ -71,7 +71,18 @@ public:
     //   e_Str if the Object-id as a string without valid integer
     // If the result is e_Id the integer id will be returned by Int8 value,
     // otherwise the value will be set to 0.
-    E_Choice GetIdType(Int8& value) const;
+    typedef Int8 TId8;
+    E_Choice GetIdType(TId8& value) const;
+
+    bool IsId8(void) const;
+    TId8 GetId8(void) const;
+    NCBI_WARN_UNUSED_RESULT bool GetId8(TId8& value) const;
+    void SetId8(TId8 value);
+
+    bool IsGi(void) const;
+    TIntId GetGi(void) const;
+    NCBI_WARN_UNUSED_RESULT bool GetGi(TIntId& value) const;
+    void SetGi(TIntId value);
 
     // format contents into a stream
     ostream& AsString(ostream &s) const;
@@ -97,6 +108,71 @@ inline
 bool CObject_id::operator<(const CObject_id& id2) const
 {
     return Compare(id2) < 0;
+}
+
+
+inline
+NCBI_WARN_UNUSED_RESULT
+bool CObject_id::GetId8(TId8& value) const
+{
+    return GetIdType(value) == e_Id;
+}
+
+
+inline
+bool CObject_id::IsId8(void) const
+{
+    TId8 value;
+    return GetId8(value);
+}
+
+
+inline
+NCBI_WARN_UNUSED_RESULT
+bool CObject_id::GetGi(TIntId& value) const
+{
+#ifdef NCBI_INT8_GI
+    return GetId8(value);
+#else
+    if ( IsId() ) {
+        value = GetId();
+        return true;
+    }
+    return false;
+#endif
+}
+
+
+inline
+bool CObject_id::IsGi(void) const
+{
+#ifdef NCBI_INT8_GI
+    return IsId8();
+#else
+    return IsId();
+#endif
+}
+
+
+inline
+TIntId CObject_id::GetGi(void) const
+{
+#ifdef NCBI_INT8_GI
+    return GetId8();
+#else
+    return GetId();
+#endif
+}
+
+
+inline
+void CObject_id::SetGi(TIntId value)
+{
+#ifdef NCBI_INT8_GI
+    SetId8(value);
+#else
+    SetId(value);
+#endif
 }
 
 
