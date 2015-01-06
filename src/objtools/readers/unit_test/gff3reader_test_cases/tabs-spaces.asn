@@ -21,6 +21,10 @@ Seq-annot ::= {
         {
           qual "Name",
           val "EDEN"
+        },
+        {
+          qual "group",
+          val ""
         }
       }
     },

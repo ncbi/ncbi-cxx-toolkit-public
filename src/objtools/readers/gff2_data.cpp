@@ -375,11 +375,13 @@ string CGff2Record::x_NormalizedAttributeValue(
     return NStr::URLDecode(strValue);
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CGff2Record::x_AssignAttributesFromGff(
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {
+    m_Attributes.clear();
     vector< string > attributes;
     x_SplitGffAttributes(strRawAttributes, attributes);
 	for ( size_t u=0; u < attributes.size(); ++u ) {
@@ -387,7 +389,8 @@ bool CGff2Record::x_AssignAttributesFromGff(
         string strValue;
         if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
             if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
-                return false;
+                m_Attributes[attributes[u]] = "";
+                continue;
             }
         }
 		if ( strKey.empty() && strValue.empty() ) {

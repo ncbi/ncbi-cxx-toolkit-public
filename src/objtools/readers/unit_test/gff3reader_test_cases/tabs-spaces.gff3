@@ -2,7 +2,7 @@
 ##sequence-region   ctg123 1 1497228
 
 
-ctg123 space space gene            1000  9000  .  +  .  ID=gene00001;Name=EDEN
+ctg123 space space gene            1000  9000  .  +  .  ID=gene00001;Name=EDEN;group
 ctg123	tab tab tab	TF_binding_site	1000	1012	.	+	.	Parent=gene00001
 ctg123 .    mRNA            1050  9000  .  +  .  ID=mRNA00001;Parent=gene00001
 ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00002;Parent=gene00001
