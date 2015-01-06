@@ -73,8 +73,8 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
-an_core needs bag_access
 an_core needs gc_util_sdbapi
+an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
 an_core needs gpipe_jira
 an_core needs gpipe_kmer
@@ -90,6 +90,8 @@ an_prok_pipeline needs gpipe_xml
 an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
+asn_build_config needs build_config
+asn_build_config needs gpinit
 asn_cache includes id_dump
 asn_sample_lib needs xser
 asngendefs needs xser
@@ -161,8 +163,8 @@ bob_g needs splitdbasn_g
 bob_g needs3party netblast
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs bacterial_pipeline_proc
+build_config needs gc_utils
 build_config needs gcaccess_utils
-build_config needs gpinit
 build_config needs gpinit_bag_util
 build_config needs gpipe_xml
 bz2 needs3party $(ORIG_LIBS)
