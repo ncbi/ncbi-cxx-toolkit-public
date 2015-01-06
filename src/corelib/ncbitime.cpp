@@ -43,12 +43,23 @@
 #  include <sys/time.h>
 #endif
 
+
+// The current difference in seconds between UTC and local time on this computer.
+// UTC = local time + TimeZone()
 #if defined(__CYGWIN__)
 #  define TimeZone() _timezone
 #  define Daylight() _daylight
 #else
 #  define TimeZone()  timezone
 #  define Daylight()  daylight
+#endif
+
+// The offset in seconds of daylight saving time.
+// 1 hour for most time zones.
+#if defined(NCBI_COMPILER_MSVC)
+#  define DSTBias()   _dstbias
+#else
+#  define DSTBias()   -3600
 #endif
 
 #if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
@@ -110,6 +121,7 @@ static const char* kWeekdayFull [7] = {
 // Default value for time/timespan format
 static const char* kDefaultFormatTime      = "M/D/Y h:m:s";
 static const char* kDefaultFormatSpan      = "-S.n";
+static const char* kDefaultFormatSpanIn    = "-G";    // default CTimeSpan init format
 static const char* kDefaultFormatStopWatch = "S.n";
 
 // Set of the checked format symbols.
@@ -1279,163 +1291,32 @@ CTimeFormat CTime::GetFormat(void)
 }
 
 
-string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
+// Internal version without checks and locks
+time_t s_GetTimeT(const CTime& ct)
 {
-    if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid,
-                   "Invalid time " + s_TimeDump(*this));
-    }
-    if ( IsEmpty() ) {
-        return kEmptyStr;
-    }
-#if !defined(TIMEZONE_IS_UNDEFINED)
-    // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
-#endif
-
-    const CTime* t = this;
-    CTime* t_out = 0;
-    // Adjust time for output timezone
-    if (out_tz != eCurrentTimeZone) {
-#if defined(TIMEZONE_IS_UNDEFINED)
-        ERR_POST_X(4, "Output timezone is unsupported on this platform");
-#else
-        if (out_tz != TimeZone()) {
-            t_out = new CTime(*this);
-            t_out->AddSecond(TimeZone() - out_tz);
-            t = t_out;
-        }
-#endif
-    }
-    string str;
-    str.reserve(64); // try to save on memory allocations
-    string fmt;
-    CTimeFormat::TFlags fmt_flags;
-    if ( format.IsEmpty() ) {
-        CTimeFormat f = GetFormat();
-        fmt       = f.GetString();
-        fmt_flags = f.GetFlags();
-    } else {
-        fmt       = format.GetString();
-        fmt_flags = format.GetFlags();
-    }
-    bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
-    bool is_format_symbol = !is_escaped;
-    STzFormatMake tz_fmt_make;
-
-    ITERATE(string, it, fmt) {
-
-        if ( !is_format_symbol ) {
-            if ( *it == kFormatEscapeSymbol )  {
-                is_format_symbol = true;
-            } else {
-                str += *it;
-            }
-            continue;
-        }
-        if ( is_escaped ) {
-            is_format_symbol = false;
-        }
-        switch ( *it ) {
-        case 'y': s_AddZeroPadInt2(str, t->Year() % 100);   break;
-        case 'Y': s_AddZeroPadInt(str, t->Year(), 4);       break;
-        case 'M': s_AddZeroPadInt2(str, t->Month());        break;
-        case 'b': str += kMonthAbbr[t->Month()-1];          break;
-        case 'B': str += kMonthFull[t->Month()-1];          break;
-        case 'D': s_AddZeroPadInt2(str, t->Day());          break;
-        case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
-        case 'h': s_AddZeroPadInt2(str, t->Hour());         break;
-        case 'H': s_AddZeroPadInt2(str, (t->Hour()+11) % 12+1);
-                  break;
-        case 'm': s_AddZeroPadInt2(str, t->Minute());       break;
-        case 's': s_AddZeroPadInt2(str, t->Second());       break;
-        case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3);
-                  break;
-        case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
-                  break;
-        case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
-        case 'G': s_AddZeroPadInt2(str, t->Second());
-                  str += ".";
-                  s_AddZeroPadInt(str, t->NanoSecond(), 9, true);
-                  break;
-        case 'g': s_AddInt(str, t->Second());
-                  str += ".";
-                  s_AddZeroPadInt(str, t->NanoSecond(), 9, true);
-                  break;
-        case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
-        case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
-        case ':': tz_fmt_make.fmt(str, it, fmt.end());      break;
-        case 'z': {
-#if defined(TIMEZONE_IS_UNDEFINED)
-                  ERR_POST_X(5, "Format symbol 'z' is unsupported "
-                                "on this platform");
-#else
-                  if (!tz_fmt_make.active()) {
-                      str += "GMT";
-                      if (IsGmtTime()) {
-                          break;
-                      }
-                  }
-                  TSeconds tz = out_tz;
-                  if (out_tz == eCurrentTimeZone) {
-                      tz = TimeZone();
-                      if (Daylight()) {
-                        tz -= 3600;  // DST in effect
-                      }
-                  }
-                  str += (tz > 0) ? '-' : '+';
-                  if (tz < 0) tz = -tz;
-                  int tzh = int(tz / 3600);
-                  s_AddZeroPadInt2(str, tzh);
-                  tz_fmt_make.str(str);
-                  s_AddZeroPadInt2(str, (int)(tz - tzh * 3600) / 60);
-#endif
-                  break;
-                  }
-        case 'Z': if (IsGmtTime()) str += "GMT";            break;
-        case 'w': str += kWeekdayAbbr[t->DayOfWeek()];      break;
-        case 'W': str += kWeekdayFull[t->DayOfWeek()];      break;
-        default : str += *it;                               break;
-        }
-    }
-    // Free used memory
-    if ( t_out ) {
-        delete t_out;
-    }
-    return str;
-}
-
-
-time_t CTime::GetTimeT(void) const
-{
-    if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eArgument, "The date is empty");
-    }
-    // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
-
     struct tm t;
 
     // Convert time to time_t value at base local time
 #if defined(HAVE_TIMEGM)  ||  defined(NCBI_OS_DARWIN)
-    t.tm_sec   = Second();
+    t.tm_sec   = ct.Second();
 #else
-    t.tm_sec   = Second() + (int)(IsGmtTime() ? -TimeZone() : 0);
+    // see below
+    t.tm_sec   = ct.Second() + (int)(ct.IsGmtTime() ? -TimeZone() : 0);
 #endif
-    t.tm_min   = Minute();
-    t.tm_hour  = Hour();
-    t.tm_mday  = Day();
-    t.tm_mon   = Month()-1;
-    t.tm_year  = Year()-1900;
+    t.tm_min   = ct.Minute();
+    t.tm_hour  = ct.Hour();
+    t.tm_mday  = ct.Day();
+    t.tm_mon   = ct.Month()-1;
+    t.tm_year  = ct.Year()-1900;
     t.tm_isdst = -1;
 #if defined(NCBI_OS_DARWIN)
     time_t tt = mktime(&t);
     if ( tt == (time_t)(-1L) ) {
         return tt;
     }
-    return IsGmtTime() ? tt+t.tm_gmtoff : tt;
+    return ct.IsGmtTime() ? tt+t.tm_gmtoff : tt;
 #elif defined(HAVE_TIMEGM)
-    return IsGmtTime() ? timegm(&t) : mktime(&t);
+    return ct.IsGmtTime() ? timegm(&t) : mktime(&t);
 #else
     struct tm *ttemp;
     time_t timer;
@@ -1445,18 +1326,21 @@ time_t CTime::GetTimeT(void) const
     }
 
     // Correct timezone for GMT time
-    if ( IsGmtTime() ) {
+    if ( ct.IsGmtTime() ) {
 
-       // Call mktime() second time for GMT time !!!
+       // Somewhat hackish, but seem to work.
+       // Local time is ambiguous and we don't know is DST on
+       // for specified date/time or not, so we call mktime()
+       // second time for GMT time:
        // 1st - to get correct value of TimeZone().
-       // 2nd - to get value "timer".
+       // 2nd - to get value of "timer".
 
-        t.tm_sec   = Second() - (int)TimeZone();
-        t.tm_min   = Minute();
-        t.tm_hour  = Hour();
-        t.tm_mday  = Day();
-        t.tm_mon   = Month()-1;
-        t.tm_year  = Year()-1900;
+        t.tm_sec   = ct.Second() - (int)TimeZone();
+        t.tm_min   = ct.Minute();
+        t.tm_hour  = ct.Hour();
+        t.tm_mday  = ct.Day();
+        t.tm_mon   = ct.Month()-1;
+        t.tm_year  = ct.Year()-1900;
         t.tm_isdst = -1;
         timer = mktime(&t);
         if ( timer == (time_t)(-1L) ) {
@@ -1473,10 +1357,54 @@ time_t CTime::GetTimeT(void) const
         if (ttemp == NULL)
             return (time_t)(-1L);
         if (ttemp->tm_isdst > 0  &&  Daylight())
-            timer += 3600;
+            timer -= DSTBias();  // +1 hour in common case
     }
     return timer;
 #endif
+}
+
+
+// Internal version without checks and locks
+bool s_IsDST(const CTime& ct)
+{
+    time_t timer = s_GetTimeT(ct);
+    if (timer == (time_t)(-1L)) {
+        return false;
+    }
+    struct tm *t;
+#  if defined(HAVE_LOCALTIME_R)
+    struct tm temp;
+    localtime_r(&timer, &temp);
+    t = &temp;
+#  else
+    t = localtime(&timer);
+#  endif
+    if (t == NULL) {
+        return false;
+    }
+    return (t->tm_isdst > 0);
+}
+
+
+bool CTime::IsDST(void) const
+{
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
+    }
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+    return s_IsDST(*this);
+}
+
+
+time_t CTime::GetTimeT(void) const
+{
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eArgument, "The date is empty");
+    }
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+    return s_GetTimeT(*this);
 }
 
 
@@ -1581,6 +1509,133 @@ CTime& CTime::SetTimeDBI(const TDBTimeI& t)
 
     *this = time;
     return *this;
+}
+
+
+string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
+{
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid,
+                   "Invalid time " + s_TimeDump(*this));
+    }
+    if ( IsEmpty() ) {
+        return kEmptyStr;
+    }
+#if !defined(TIMEZONE_IS_UNDEFINED)
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+#endif
+
+    const CTime* t = this;
+    CTime* t_out = 0;
+    // Adjust time for output timezone
+    if (out_tz != eCurrentTimeZone) {
+#if defined(TIMEZONE_IS_UNDEFINED)
+        ERR_POST_X(4, "Output timezone is unsupported on this platform");
+#else
+        if (out_tz != TimeZone()) {
+            t_out = new CTime(*this);
+            t_out->AddSecond(TimeZone() - out_tz);
+            t = t_out;
+        }
+#endif
+    }
+    string str;
+    str.reserve(64); // try to save on memory allocations
+    string fmt;
+    CTimeFormat::TFlags fmt_flags;
+    if ( format.IsEmpty() ) {
+        CTimeFormat f = GetFormat();
+        fmt       = f.GetString();
+        fmt_flags = f.GetFlags();
+    } else {
+        fmt       = format.GetString();
+        fmt_flags = format.GetFlags();
+    }
+    bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
+    bool is_format_symbol = !is_escaped;
+    STzFormatMake tz_fmt_make;
+
+    ITERATE(string, it, fmt) {
+
+        if ( !is_format_symbol ) {
+            if ( *it == kFormatEscapeSymbol )  {
+                is_format_symbol = true;
+            } else {
+                str += *it;
+            }
+            continue;
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
+        }
+        switch ( *it ) {
+        case 'y': s_AddZeroPadInt2(str, t->Year() % 100);   break;
+        case 'Y': s_AddZeroPadInt(str, t->Year(), 4);       break;
+        case 'M': s_AddZeroPadInt2(str, t->Month());        break;
+        case 'b': str += kMonthAbbr[t->Month()-1];          break;
+        case 'B': str += kMonthFull[t->Month()-1];          break;
+        case 'D': s_AddZeroPadInt2(str, t->Day());          break;
+        case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
+        case 'h': s_AddZeroPadInt2(str, t->Hour());         break;
+        case 'H': s_AddZeroPadInt2(str, (t->Hour()+11) % 12+1);
+                  break;
+        case 'm': s_AddZeroPadInt2(str, t->Minute());       break;
+        case 's': s_AddZeroPadInt2(str, t->Second());       break;
+        case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3);
+                  break;
+        case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
+                  break;
+        case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
+        case 'G': s_AddZeroPadInt2(str, t->Second());
+                  str += ".";
+                  s_AddZeroPadInt(str, t->NanoSecond(), 9, true);
+                  break;
+        case 'g': s_AddInt(str, t->Second());
+                  str += ".";
+                  s_AddZeroPadInt(str, t->NanoSecond(), 9, true);
+                  break;
+        case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
+        case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
+        case ':': tz_fmt_make.fmt(str, it, fmt.end());      break;
+        case 'z': {
+#if defined(TIMEZONE_IS_UNDEFINED)
+                  ERR_POST_X(5, "Format symbol 'z' is unsupported "
+                                "on this platform");
+#else
+                  if (!tz_fmt_make.active()) {
+                      str += "GMT";
+                  }
+                  if (IsGmtTime()) {
+                      break;
+                  }
+                  TSeconds tz = out_tz;
+                  if (tz == eCurrentTimeZone) {
+                     tz = TimeZone();
+                     if (s_IsDST(*this)) {
+                        tz += DSTBias();  // DST in effect
+                     }
+                  }
+                  str += (tz > 0) ? '-' : '+';
+                  if (tz < 0) tz = -tz;
+                  tz /= 60;
+                  s_AddZeroPadInt2(str, (long)(tz / 60));
+                  tz_fmt_make.str(str);
+                  s_AddZeroPadInt2(str, (long)(tz % 60));
+#endif
+                  break;
+                  }
+        case 'Z': if (IsGmtTime()) str += "GMT";            break;
+        case 'w': str += kWeekdayAbbr[t->DayOfWeek()];      break;
+        case 'W': str += kWeekdayFull[t->DayOfWeek()];      break;
+        default : str += *it;                               break;
+        }
+    }
+    // Free used memory
+    if ( t_out ) {
+        delete t_out;
+    }
+    return str;
 }
 
 
@@ -2290,7 +2345,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Time in hours for temporary time shift.
     // Shift used for obtainment correct result at changeover daytime saving.
     // Must be > 3 (Linux distinction). On other platforms may be == 3.
-    const int kShift = 4;
+    const int kShiftHours = 4;
 
     // MT-Safe protect
     CFastMutexGuard LOCK(s_TimeAdjustMutex);
@@ -2319,7 +2374,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     }
     // Make correction with temporary time shift
     time_t t = GetTimeT();
-    CTime tn(t + (time_t)diff + 3600 * kShift * sign);
+    CTime tn(t + (time_t)diff + 3600 * kShiftHours * sign);
     if (from.GetTimeZone() == eLocal) {
         tn.ToLocalTime();
     }
@@ -2331,7 +2386,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Primary procedure call
     if ( shift_time ) {
         // Cancel temporary time shift
-        tn.x_AddHour(-kShift * sign, eAdjustDaylight, false);
+        tn.x_AddHour(-kShiftHours * sign, eAdjustDaylight, false);
         tn.m_Data.adjTimeDiff = (Int4)diff;
     }
     *this = tn;
@@ -2370,11 +2425,35 @@ CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
 CTimeSpan::CTimeSpan(const string& str, const CTimeFormat& fmt)
 {
     if (fmt.IsEmpty()) {
-        x_Init(str, GetFormat());
+        // Use another format to init from string by default
+        // if global format has not set.
+        CTimeFormat* ptr = s_TlsFormatSpan.GetValue();
+        if (!ptr) {
+            CTimeFormat fmt(kDefaultFormatSpanIn);
+            x_Init(str, fmt);
+        } else {
+            x_Init(str, *ptr);
+        }
     } else {
         x_Init(str, fmt);
     }
 }
+
+
+CTimeSpan& CTimeSpan::operator= (const string& str)
+{
+    // Use another format to init from string by default
+    // if global format has not set.
+    CTimeFormat* ptr = s_TlsFormatSpan.GetValue();
+    if (!ptr) {
+        CTimeFormat fmt(kDefaultFormatSpanIn);
+        x_Init(str, fmt);
+    } else {
+        x_Init(str, *ptr);
+    }
+    return *this;
+}
+
 
 void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
 {

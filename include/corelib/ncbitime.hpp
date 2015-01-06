@@ -1090,6 +1090,13 @@ public:
     /// Is time GMT time?
     bool IsGmtTime   (void) const;
 
+    /// Is DST (daylight savings time) in effect for this time?
+    /// @note
+    ///   This method use current DST rules on current machine, so be aware
+    ///   to use it against time in the past or future, because such rules
+    ///   can be changed.
+    bool IsDST(void) const;
+
     /// Validate if string match time format.
     ///
     /// @param str
@@ -1301,7 +1308,9 @@ public:
     ///   String representation of time span in format "fmt".
     /// @param fmt
     ///   Format in which "str" is presented. Default value of kEmptyStr,
-    ///   implies the "-S.n" format.
+    ///   implies the format set with SetFormat(), or "-G" if SetFormat()
+    ///   has not used before.
+    /// @sa SetFormat
     explicit CTimeSpan(const string& str, const CTimeFormat& fmt = kEmptyStr);
 
     /// Copy constructor.
@@ -1346,7 +1355,9 @@ public:
 
     /// Get the current time span format.
     ///
-    /// The default format is: "-S.n".
+    /// If SetFormat() has not used before, that default formats are: 
+    ///   "-S.n" - to output with AsString();
+    ///   "-G"   - to initialize from string.
     /// @return
     ///   An object describing the time format.
     /// @sa
@@ -1370,18 +1381,22 @@ public:
 
     /// AsSmartString() conversion flags.
     ///
+    /// @attention
+    ///   Use one flag in each group only, or CTimeException exception
+    ///   will be thrown. If not specified otherwise default value will be used.
     /// @sa AsSmartString
     enum ESmartStringFlags {
         /// @note precision
         ///   Flags describing how many parts of time span should be
-        ///   returned. Values from fSS_Year to fSS_Nanosecond apparently
-        ///   describe part of time span which will be last in output string.
-        ///   Floating precision levels fSS_PrecisionN say that only up to 'N'
-        ///   of most significant parts of time span will be printed.
-        ///   The parts counting begin from first non-zero value.
-        ///   fSS_Smart is default, it tries to represent time span as close
-        ///   and short as possible, usually using only one or two most
-        ///   significant non-zero parts of the time span.
+        ///   returned. 
+        ///   - Values from fSS_Year to fSS_Nanosecond apparently
+        ///     describe part of time span which will be last in output string.
+        ///   - Floating precision levels fSS_PrecisionN say that only up to 'N'
+        ///     of most significant parts of time span will be printed.
+        ///     The parts counting begin from first non-zero value.
+        ///   - fSS_Smart is default, it tries to represent time span as close
+        ///     and short as possible, usually using only one or two most
+        ///     significant non-zero parts of the time span.
         fSS_Year        = (1 <<  0),  ///< Round to years
         fSS_Month       = (1 <<  1),  ///< Round to months
         fSS_Day         = (1 <<  2),  ///< Round to days
@@ -1398,8 +1413,7 @@ public:
         fSS_Precision5  = (1 << 13),  ///< Floating precision level 5
         fSS_Precision6  = (1 << 14),  ///< Floating precision level 6
         fSS_Precision7  = (1 << 15),  ///< Floating precision level 7
-        fSS_Smart       = (1 << 16),  ///< Be as smart as possible
-                                      ///< (use most significant levels of time span)
+        fSS_Smart       = (1 << 16),  ///< Be as smart as possible (see above)
         fSS_PrecisionMask = 0x1FFFF,  ///< Mask of precision flags (sum of all above)
 
         /// @note rounding
@@ -1645,7 +1659,7 @@ public:
 
     /// Initialize timeout in seconds and microseconds.
     /// @note
-    ///  Use CNanoTimeout ctor to initialize with (seconds and) nanoseconds
+    ///   Use CNanoTimeout ctor to initialize with (seconds and) nanoseconds
     /// @sa CNanoTimeout
     CTimeout(unsigned int sec, unsigned int usec);
 
@@ -2511,13 +2525,6 @@ CTimeSpan& CTimeSpan::operator= (const CTimeSpan& t)
 {
     m_Sec = t.m_Sec;
     m_NanoSec = t.m_NanoSec;
-    return *this;
-}
-
-inline
-CTimeSpan& CTimeSpan::operator= (const string& str)
-{
-    x_Init(str, GetFormat());
     return *this;
 }
 

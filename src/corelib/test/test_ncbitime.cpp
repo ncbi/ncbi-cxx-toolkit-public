@@ -1262,27 +1262,56 @@ static void s_TestTimeSpan(void)
 
     // Arithmetics
     {{
-        CTimeSpan t;
-        t = CTimeSpan("100.3") - CTimeSpan("123.4");
-        assert(t == CTimeSpan("-23.1"));
-        t = CTimeSpan("63.7")  + CTimeSpan("2.3");
-        assert(t == CTimeSpan("65.10"));
-        t = CTimeSpan("63.7")  - CTimeSpan("72.6");
-        assert(t == CTimeSpan("-8.999999999"));
+        // This case test defaut behavior -- SetFormat() never used before!
+        // and "-G" is format by default to init from strings in this case.
+        {{
+            CTimeSpan t;
+            t = CTimeSpan("100.3") - CTimeSpan("123.4");
+            assert(t == CTimeSpan("-23.1"));
+            t = CTimeSpan("63.7")  + CTimeSpan("2.3");
+            assert(t == CTimeSpan("66"));
+            t = CTimeSpan("63.7")  - CTimeSpan("72.6");
+            assert(t == CTimeSpan("-8.9"));
 
-        t = "-123.4";
-        t += CTimeSpan("1.0");  
-        assert(t == CTimeSpan("-122.4"));
-        t += CTimeSpan("222.4");  
-        assert(t == CTimeSpan("100.0") );
-        t -= CTimeSpan("50.1");  
-        assert(t == CTimeSpan("49.999999999"));
-        t += CTimeSpan("0.1");  
-        assert(t == CTimeSpan("50.0"));
-        t += CTimeSpan("3.7");  
-        assert(t == CTimeSpan("53.7"));
-        t -= CTimeSpan("3.8");  
-        assert(t == CTimeSpan("49.999999999"));
+            t = "-123.4";
+            t += CTimeSpan("1.0");
+            assert(t == CTimeSpan("-122.4"));
+            t += CTimeSpan("222.4");  
+            assert(t == CTimeSpan("100.0") );
+            t -= CTimeSpan("50.1");  
+            assert(t == CTimeSpan("49.9"));
+            t += CTimeSpan("0.1");  
+            assert(t == CTimeSpan("50.0"));
+            t += CTimeSpan("3.7");  
+            assert(t == CTimeSpan("53.7"));
+            t -= CTimeSpan("3.8");  
+            assert(t == CTimeSpan("49.9"));
+        }}
+        // And now the same with another format "-S.n".
+        {{
+            CTimeSpan::SetFormat("-S.n");
+            CTimeSpan t;
+            t = CTimeSpan("100.3") - CTimeSpan("123.4");
+            assert(t == CTimeSpan("-23.1"));
+            t = CTimeSpan("63.7")  + CTimeSpan("2.3");
+            assert(t == CTimeSpan("65.10"));
+            t = CTimeSpan("63.7")  - CTimeSpan("72.6");
+            assert(t == CTimeSpan("-8.999999999"));
+
+            t = "-123.4";
+            t += CTimeSpan("1.0");  
+            assert(t == CTimeSpan("-122.4"));
+            t += CTimeSpan("222.4");  
+            assert(t == CTimeSpan("100.0") );
+            t -= CTimeSpan("50.1");  
+            assert(t == CTimeSpan("49.999999999"));
+            t += CTimeSpan("0.1");  
+            assert(t == CTimeSpan("50.0"));
+            t += CTimeSpan("3.7");  
+            assert(t == CTimeSpan("53.7"));
+            t -= CTimeSpan("3.8");  
+            assert(t == CTimeSpan("49.999999999"));
+        }}
     }}
 
     // Formats with floating numbers of seconds ("g", "G")
@@ -1434,7 +1463,7 @@ static void s_TestTimeSpan_AssignFromSmartString(void)
 
     for (int i = 0; s_Test[i].str;  i++) {
         ts.AssignFromSmartString(s_Test[i].str);
-#if 0
+#if 1
         assert(ts == s_Test[i].result);
 #else
         if (ts != s_Test[i].result) {
@@ -1482,10 +1511,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         const char*           res_short;
     };
 
-    // Short code for testing in smart mode -- (sec,ns) constructor only
-    #define SMART_STR_TEST(round, sec, nanosec, res_full, res_short) \
-            { TS(sec, nanosec), TS::fSS_Smart | round | TS::fSS_SkipZero,   res_full, res_short }
-    
     //  Shorten some common flags combinations
     TS::TSmartStringFlags fTN = TS::fSS_Trunc | TS::fSS_NoSkipZero;
     TS::TSmartStringFlags fTS = TS::fSS_Trunc | TS::fSS_SkipZero;
@@ -1784,7 +1809,6 @@ static void s_TestTimeSpan_AsSmartString(void)
 
 #if (SIZEOF_LONG == 8)
         // 10,000,000,000 nanoseconds
-        { TS(0,NCBI_CONST_INT8(10000000000)), fTN | TS::fSS_Smart,       "10 seconds", "10s" },
         { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Smart,       "10 seconds", "10s" },
         { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Year,        "0 years",    "0y"  },
         { TS(0,NCBI_CONST_INT8(10000000000)), fTS | TS::fSS_Month,       "0 months",   "0mo" },
@@ -2034,7 +2058,7 @@ static void s_TestTimeSpan_AsSmartString(void)
 
         string s_full  = s_Test[i].timespan.AsSmartString(s_Test[i].flags | TS::fSS_Full);
         string s_short = s_Test[i].timespan.AsSmartString(s_Test[i].flags | TS::fSS_Short);
-#if 0
+#if 1
         assert(s_full  == s_Test[i].res_full);
         assert(s_short == s_Test[i].res_short);
 #else
@@ -2053,7 +2077,7 @@ static void s_TestTimeSpan_AsSmartString(void)
         string s_full_new  = ts.AsSmartString(s_Test[i].flags | TS::fSS_Full);
         ts.AssignFromSmartString(s_short);
         string s_short_new = ts.AsSmartString(s_Test[i].flags | TS::fSS_Short);
-#if 0
+#if 1
         assert(s_full_new  == s_Test[i].res_full);
         assert(s_short_new == s_Test[i].res_short);
 #else
