@@ -6341,6 +6341,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNEFM	s	Universidad Experimental Francisco de Miranda",
 "UNEVR	s	University of Nevada, Museum of Biology",
 "UNEX	s	Universidad de Extremadura, Departamento de Botanica",
+"UNEX:FECRGA	c	Universidad de Extremadura, Departamento de Botanica, Fungal Endophytes Collection of the  Research Group of Agronomy",
 "UNH	s	University of New Hampshire",
 "UNI	s	University of Northern Iowa",
 "UNIMAS<MYS>	s	Universiti Malaysia Sarawak",
