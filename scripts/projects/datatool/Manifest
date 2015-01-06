@@ -43,4 +43,4 @@ Win32_10   : 1000 : static  32  ReleaseMT
 
 XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
 
-#USE_COMPONENTS
+USE_COMPONENTS
