@@ -1122,6 +1122,16 @@ private:
 /// @sa NCBI_DEPRECATED_CTOR
 #define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
 
+#ifndef NCBI_WARN_UNUSED_RESULT
+# if defined NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION >= 330
+#  define NCBI_WARN_UNUSED_RESULT __attribute__ ((warn_unused_result))
+# elif defined NCBI_COMPILER_MSVC && _MSC_VER >= 1700
+#  define NCBI_WARN_UNUSED_RESULT _Check_return_
+# else
+#  define NCBI_WARN_UNUSED_RESULT
+# endif
+#endif
+
 END_NCBI_NAMESPACE;
 
 BEGIN_STD_NAMESPACE;
