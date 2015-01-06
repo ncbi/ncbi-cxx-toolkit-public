@@ -72,10 +72,10 @@ struct SContext
 };
 
 // Lazy initialization
-class CLazyInit
+class CLazyInit : protected virtual SContext
 {
 protected:
-    CLazyInit(bool initialized = false) : m_Initialized(initialized) {}
+    CLazyInit(int primary) : m_Initialized(use == primary) {}
     virtual ~CLazyInit() {}
 
     void Check()
@@ -92,7 +92,7 @@ private:
     bool m_Initialized;
 };
 
-class CDataSource : protected virtual SContext, private CLazyInit
+class CDataSource : protected CLazyInit
 {
 public:
     ENetStorageObjectLocation GetLocation() { Check(); return data.loc; }
@@ -112,13 +112,13 @@ private:
     CTime m_CreationTime;
 };
 
-class CJsonSource : protected virtual SContext, private CLazyInit
+class CJsonSource : protected CLazyInit
 {
 public:
     CJsonNode GetJSON() { Check(); return json; }
 
 protected:
-    CJsonSource() : CLazyInit(use == eJson) { Clean(); }
+    CJsonSource() : CLazyInit(eJson) { Clean(); }
 
 private:
     void Clean();
@@ -175,7 +175,7 @@ CTime SContext::GetTime<eNFL_NetCache>()
 }
 
 CDataSource::CDataSource()
-    : CLazyInit(use == eData)
+    : CLazyInit(eData)
 {
     if (use == eData) {
         InitExtra();
