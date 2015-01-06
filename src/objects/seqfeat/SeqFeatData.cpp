@@ -3131,6 +3131,7 @@ bool CSeqFeatData::IsRegulatory(ESubtype subtype)
         case CSeqFeatData::eSubtype_RBS:
         case CSeqFeatData::eSubtype_polyA_signal:
         case CSeqFeatData::eSubtype_terminator:
+        case CSeqFeatData::eSubtype_misc_signal:
             rval = true;
             break;
         default:
