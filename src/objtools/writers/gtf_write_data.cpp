@@ -395,20 +395,60 @@ CMappedFeat CGtfRecord::x_MrnaFeatureToGeneParent(
 
 //  ============================================================================
 string CGtfRecord::x_GeneToGeneId(
-    CMappedFeat mapped_feature )
+    CMappedFeat mf )
 //  ============================================================================
 {
-    const CGene_ref& gene = mapped_feature.GetData().GetGene();
+    typedef string GENE_ID;
+    typedef map<CMappedFeat, GENE_ID> GENE_MAP;
+    typedef list<GENE_ID> GENE_IDS;
+
+    static GENE_IDS usedGeneIds;
+    static GENE_MAP geneMap;
+
+    GENE_MAP::const_iterator geneIt = geneMap.find(mf);
+    if (geneMap.end() != geneIt) {
+        return geneIt->second;
+    }
+
+    GENE_ID geneId;
+    const CGene_ref& gene = mf.GetData().GetGene();
+
     if ( gene.IsSetLocus_tag() ) {
-        return gene.GetLocus_tag();
+        geneId = gene.GetLocus_tag();
     }
-    if (gene.IsSetLocus()) {
-        return gene.GetLocus();
+    if (geneId.empty() &&  gene.IsSetLocus()) {
+        geneId = gene.GetLocus();
     }
-    if ( gene.IsSetSyn() ) {
-        return gene.GetSyn().front();
+    if (geneId.empty() &&  gene.IsSetSyn() ) {
+        geneId = gene.GetSyn().front();
     }
-    return x_GenericGeneId( mapped_feature ); 
+    if (geneId.empty()) {
+        geneId = x_GenericGeneId(mf); 
+        //we know the ID is going to be unique if we get it this way
+        // not point in further checking
+        usedGeneIds.push_back(geneId);
+        geneMap[mf] = geneId;
+        return geneId;
+    }
+    list<GENE_ID>::const_iterator cit = find(
+        usedGeneIds.begin(), usedGeneIds.end(), geneId);
+    if (usedGeneIds.end() == cit) {
+        usedGeneIds.push_back(geneId);
+        geneMap[mf] = geneId;
+        return geneId;
+    }
+    unsigned int suffix = 1;
+    geneId += "_";
+    while (true) {
+        GENE_ID qualifiedGeneId = geneId + NStr::UIntToString(suffix);
+        cit = find(usedGeneIds.begin(), usedGeneIds.end(), qualifiedGeneId);
+        if (usedGeneIds.end() == cit) {
+            usedGeneIds.push_back(qualifiedGeneId);
+            geneMap[mf] = qualifiedGeneId;
+            return qualifiedGeneId;
+        }
+        ++suffix;
+    }
 }                        
 
 //  ============================================================================
@@ -450,14 +490,51 @@ string CGtfRecord::x_MrnaToTranscriptId(
     CMappedFeat mf)
 //  ============================================================================
 {
-	if (!mf  || !mf.IsSetProduct()) {
-		return x_GenericTranscriptId( mf );
-	}
-	string product;
-	if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
-		return product;
-	}
-	return mf.GetProduct().GetId()->GetSeqIdString( true );
+    typedef string RNA_ID;
+    typedef map<CMappedFeat, RNA_ID> RNA_MAP;
+    typedef list<RNA_ID> RNA_IDS;
+
+    static RNA_MAP rnaMap;
+    RNA_MAP::const_iterator rnaIt = rnaMap.find(mf);
+    if (rnaMap.end() != rnaIt) {
+        return rnaIt->second;
+    }
+
+    static RNA_IDS usedRnaIds;
+    RNA_ID rnaId;
+
+    if (mf.IsSetProduct()) {
+        if (!CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), rnaId)) {
+            rnaId = mf.GetProduct().GetId()->GetSeqIdString(true);
+        }
+    }
+    if (rnaId.empty()) {
+        rnaId = x_GenericTranscriptId(mf);
+        //we know the ID is going to be unique if we get it this way
+        // not point in further checking
+        usedRnaIds.push_back(rnaId);
+        rnaMap[mf] = rnaId;
+        return rnaId;
+    }
+    RNA_IDS::const_iterator cit = find(
+        usedRnaIds.begin(), usedRnaIds.end(), rnaId);
+    if (usedRnaIds.end() == cit) {
+        usedRnaIds.push_back(rnaId);
+        rnaMap[mf] = rnaId;
+        return rnaId;
+    }     
+    unsigned int suffix = 1;
+    rnaId += "_";
+    while (true) {
+        RNA_ID qualifiedId = rnaId + NStr::UIntToString(suffix);   
+        cit = find(usedRnaIds.begin(), usedRnaIds.end(), qualifiedId);
+        if (usedRnaIds.end() == cit) {
+            usedRnaIds.push_back(qualifiedId);
+            rnaMap[mf] = qualifiedId;
+            return qualifiedId;
+        }
+        ++suffix;
+    }   
 }
     
 //  =============================================================================
