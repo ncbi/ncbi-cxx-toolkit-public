@@ -225,8 +225,10 @@ namespace
         {
             if (feature.GetData().IsProt() &&
                 feature.GetData().GetProt().IsSetName())
+            {
                 feature.GetData().GetProt().GetLabel(&protein_name);
-            return true;
+                return true;
+            }
         }
 
         if (feature.IsSetXref())

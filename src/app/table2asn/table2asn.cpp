@@ -612,18 +612,13 @@ int CTbl2AsnApp::Run(void)
     {
         if (args["r"])
         {
-            m_context.m_ResultsDirectory = args["r"].AsString();
-        }
-        else
-        {
-            m_context.m_ResultsDirectory = ".";
-        }
-        m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(m_context.m_ResultsDirectory);
+            m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(args["r"].AsString());
 
-        CDir outputdir(m_context.m_ResultsDirectory);
-        if (!IsDryRun())
-        if (!outputdir.Exists())
-            outputdir.Create();
+            CDir outputdir(m_context.m_ResultsDirectory);
+            if (!IsDryRun())
+                if (!outputdir.Exists())
+                    outputdir.Create();
+        }
     }
 
     if (args["Z"])
@@ -809,6 +804,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         fr.FindOpenReadingFrame(*entry);
 
     fr.m_replacement_protein = m_replacement_proteins;
+    
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
     if (m_possible_proteins.NotEmpty())
@@ -932,7 +928,7 @@ void CTbl2AsnApp::ProcessOneFile()
             CConstRef<CValidError> errors = val.Validate(*obj, validator_opts);
             if (errors.NotEmpty())
             {
-                CNcbiOfstream file(m_context.ReplaceFileExt(".val").c_str());
+                CNcbiOfstream file(GenerateOutputFilename(".val").c_str());
                 val.ReportErrors(errors, file);
             }
         }

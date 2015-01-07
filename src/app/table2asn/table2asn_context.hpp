@@ -148,8 +148,6 @@ public:
     CRef<objects::CScope>      m_scope;
     CRef<objects::CObjectManager> m_ObjMgr;
 
-    string ReplaceFileExt(const string& newext) const;
-
 private:
 };
 

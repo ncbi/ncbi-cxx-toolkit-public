@@ -694,13 +694,4 @@ void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
     AddUserTrack(entry.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", m_ft_url_mod);
 }
 
-string CTable2AsnContext::ReplaceFileExt(const string& newext) const
-{
-    string dir;
-    string base;
-    string ext;
-    CDirEntry::SplitPath(m_current_file, &dir, &base, &ext);
-
-    return m_ResultsDirectory + base + newext;
-}
 END_NCBI_SCOPE
