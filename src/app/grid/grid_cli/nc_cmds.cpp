@@ -173,12 +173,11 @@ void CGridCommandLineInterfaceApp::ParseICacheKey(
     m_Opts.icache_key.subkey = key_parts.back();
 }
 
-void CGridCommandLineInterfaceApp::PrintSelectedICacheServer()
+void CGridCommandLineInterfaceApp::PrintServerAddress(CNetServer server)
 {
-    CNetServer selected_server(m_NetICacheClient.GetCurrentServer());
     printf("Server: %s:%hu\n",
-        g_NetService_gethostnamebyaddr(selected_server.GetHost()).c_str(),
-        selected_server.GetPort());
+        g_NetService_gethostnamebyaddr(server.GetHost()).c_str(),
+        server.GetPort());
 }
 
 int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
@@ -197,11 +196,16 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
             output = m_NetCacheAPI.GetBlobInfo(m_Opts.id,
                     nc_try_all_servers = IsOptionSet(eTryAllServers));
         } else {
-            output = m_NetICacheClient.GetBlobInfo(m_Opts.icache_key.key,
-                m_Opts.icache_key.version, m_Opts.icache_key.subkey,
-                    nc_try_all_servers = IsOptionSet(eTryAllServers));
+            CNetServer server_last_used;
 
-            PrintSelectedICacheServer();
+            output = m_NetICacheClient.GetBlobInfo(
+                    m_Opts.icache_key.key,
+                    m_Opts.icache_key.version,
+                    m_Opts.icache_key.subkey,
+                    (nc_try_all_servers = IsOptionSet(eTryAllServers),
+                    nc_server_last_used = &server_last_used));
+
+            PrintServerAddress(server_last_used);
         }
 
         string line;
@@ -221,10 +225,15 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
             printf("Size: %lu\n", (unsigned long)
                 m_NetCacheAPI.GetBlobSize(m_Opts.id));
         else {
-            size_t blob_size = m_NetICacheClient.GetSize(m_Opts.icache_key.key,
-                    m_Opts.icache_key.version, m_Opts.icache_key.subkey);
+            CNetServer server_last_used;
 
-            PrintSelectedICacheServer();
+            size_t blob_size = m_NetICacheClient.GetBlobSize(
+                    m_Opts.icache_key.key,
+                    m_Opts.icache_key.version,
+                    m_Opts.icache_key.subkey,
+                    nc_server_last_used = &server_last_used);
+
+            PrintServerAddress(server_last_used);
 
             printf("Size: %lu\n", (unsigned long) blob_size);
         }
@@ -372,6 +381,8 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     // command line.
     string blob_key = m_Opts.id;
 
+    CNetServer server_last_used;
+
     if (m_APIClass == eNetCacheAPI) {
         switch (IsOptionSet(ePassword, 1) | IsOptionSet(eUseCompoundID, 2)) {
         case 1:
@@ -403,12 +414,14 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
                     (nc_blob_ttl = m_Opts.ttl,
-                    nc_blob_password = m_Opts.password)) :
+                    nc_blob_password = m_Opts.password,
+                    nc_server_last_used = &server_last_used)) :
             m_NetICacheClient.GetNetCacheWriter(
                     m_Opts.icache_key.key,
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
-                    nc_blob_ttl = m_Opts.ttl));
+                    (nc_blob_ttl = m_Opts.ttl,
+                    nc_server_last_used = &server_last_used)));
     }
 
     if (!writer.get()) {
@@ -417,7 +430,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
     if (m_APIClass != eNetCacheAPI &&
             m_NetICacheClient.GetService().IsLoadBalanced())
-        PrintSelectedICacheServer();
+        PrintServerAddress(server_last_used);
 
     size_t bytes_written;
 

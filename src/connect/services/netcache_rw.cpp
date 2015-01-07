@@ -253,11 +253,13 @@ void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
 /////////////////////////////////////////////////
 CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
         string* blob_id,
+        const string& key,
         ENetCacheResponseType response_type,
         const CNetCacheAPIParameters* parameters) :
     m_ResponseType(response_type),
     m_NetCacheAPI(impl),
     m_BlobID(*blob_id),
+    m_Key(key),
     m_Parameters(parameters)
 {
     switch (parameters->GetCachingMode()) {

@@ -58,10 +58,11 @@ public:
         eDP_ServerCheckHint = 1 << 4,
         eDP_Password = 1 << 5,
         eDP_ServerToUse = 1 << 6,
-        eDP_MaxBlobAge = 1 << 7,
-        eDP_ActualBlobAgePtr = 1 << 8,
-        eDP_UseCompoundID = 1 << 9,
-        eDP_TryAllServers = 1 << 10,
+        eDP_ServerLastUsedPtr = 1 << 7,
+        eDP_MaxBlobAge = 1 << 8,
+        eDP_ActualBlobAgePtr = 1 << 9,
+        eDP_UseCompoundID = 1 << 10,
+        eDP_TryAllServers = 1 << 11,
     };
     typedef unsigned TDefinedParameters;
 
@@ -79,6 +80,7 @@ public:
         m_MirroringMode(CNetCacheAPI::eIfKeyMirrored),
         m_ServerCheck(eDefault),
         m_ServerCheckHint(true),
+        m_ServerLastUsedPtr(NULL),
         m_MaxBlobAge(0),
         m_ActualBlobAgePtr(NULL),
         m_UseCompoundID(false),
@@ -130,16 +132,22 @@ public:
         m_ServerToUse = server_to_use;
     }
 
+    void SetServerLastUsedPtr(CNetServer* server_last_used_ptr)
+    {
+        m_DefinedParameters |= eDP_ServerLastUsedPtr;
+        m_ServerLastUsedPtr = server_last_used_ptr;
+    }
+
     void SetMaxBlobAge(unsigned max_age)
     {
         m_DefinedParameters |= eDP_MaxBlobAge;
         m_MaxBlobAge = max_age;
     }
 
-    void SetActualBlobAgePtr(unsigned* actual_age)
+    void SetActualBlobAgePtr(unsigned* actual_age_ptr)
     {
         m_DefinedParameters |= eDP_ActualBlobAgePtr;
-        m_ActualBlobAgePtr = actual_age;
+        m_ActualBlobAgePtr = actual_age_ptr;
     }
 
     void SetUseCompoundID(bool use_compound_id)
@@ -161,6 +169,7 @@ public:
     bool GetServerCheckHint(bool* server_check_hint) const;
     std::string GetPassword() const;
     CNetServer GetServerToUse() const;
+    CNetServer* GetServerLastUsedPtr() const;
     unsigned GetMaxBlobAge() const;
     unsigned* GetActualBlobAgePtr() const;
     bool GetUseCompoundID() const;
@@ -180,6 +189,7 @@ private:
     bool m_ServerCheckHint;
     std::string m_Password;
     CNetServer m_ServerToUse;
+    CNetServer* m_ServerLastUsedPtr;
     unsigned m_MaxBlobAge;
     unsigned* m_ActualBlobAgePtr;
     bool m_UseCompoundID;

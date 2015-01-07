@@ -317,10 +317,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// Print meta information about the specified blob.
     void PrintBlobInfo(const string& key, int version, const string& subkey);
 
-    /// Return the server that this object is
-    /// currently using for blob access.
-    CNetServer GetCurrentServer();
-
     CNetService GetService();
 
     /// This method is for use by the grid_cli utility only.

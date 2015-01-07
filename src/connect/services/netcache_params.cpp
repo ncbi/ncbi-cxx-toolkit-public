@@ -63,6 +63,8 @@ void CNetCacheAPIParameters::LoadNamedParameters(
             SetServerCheckHint(Get<bool>(optional));
         else if (optional->Is(CNetCacheAPI::eNPT_ServerToUse))
             SetServerToUse(Get<CNetServer::TInstance>(optional));
+        else if (optional->Is(CNetCacheAPI::eNPT_ServerLastUsedPtr))
+            SetServerLastUsedPtr(Get<CNetServer*>(optional));
         else if (optional->Is(CNetCacheAPI::eNPT_MaxBlobAge))
             SetMaxBlobAge(Get<unsigned>(optional));
         else if (optional->Is(CNetCacheAPI::eNPT_ActualBlobAgePtr))
@@ -175,6 +177,11 @@ std::string CNetCacheAPIParameters::GetPassword() const
 CNetServer CNetCacheAPIParameters::GetServerToUse() const
 {
     NETCACHE_API_GET_PARAM_IMPL(ServerToUse);
+}
+
+CNetServer* CNetCacheAPIParameters::GetServerLastUsedPtr() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(ServerLastUsedPtr);
 }
 
 unsigned CNetCacheAPIParameters::GetMaxBlobAge() const

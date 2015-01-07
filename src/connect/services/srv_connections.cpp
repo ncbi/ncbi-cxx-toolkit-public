@@ -314,6 +314,13 @@ SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port,
     m_FreeConnectionListSize = 0;
 
     ResetThrottlingParameters();
+
+    m_RankBase = 1103515245 *
+            // XOR the network prefix bytes of the IP address with the port
+            // number (in network byte order) and convert the result
+            // to host order so that it can be used in arithmetic operations.
+            CSocketAPI::NetToHostLong(host ^ CSocketAPI::HostToNetShort(port)) +
+            12345;
 }
 
 void SNetServerInPool::DeleteThis()

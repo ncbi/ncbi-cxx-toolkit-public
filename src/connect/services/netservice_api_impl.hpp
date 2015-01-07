@@ -191,6 +191,47 @@ struct SNetServiceIterator_Circular : public SNetServiceIteratorImpl
     TNetServerList::const_iterator m_Pivot;
 };
 
+struct SNetServiceIterator_Weighted : public SNetServiceIteratorImpl
+{
+    SNetServiceIterator_Weighted(SDiscoveredServers* server_group_impl,
+            Uint4 key_crc32);
+
+    virtual bool Next();
+    virtual bool Prev();
+
+    Uint4 m_KeyCRC32;
+
+    struct SServerRank {
+        TNetServerList::const_iterator m_ServerListIter;
+        Uint4 m_ServerRank;
+        SServerRank(TNetServerList::const_iterator server_list_iter,
+                Uint4 server_rank) :
+            m_ServerListIter(server_list_iter),
+            m_ServerRank(server_rank)
+        {
+        }
+        bool operator <(const SServerRank& that) const
+        {
+            return m_ServerRank < that.m_ServerRank ||
+                    (m_ServerRank == that.m_ServerRank &&
+                    m_ServerListIter->first->m_Address <
+                            that.m_ServerListIter->first->m_Address);
+        }
+    };
+
+    SServerRank x_GetServerRank(TNetServerList::const_iterator server) const
+    {
+        Uint4 rank = (1103515245 *
+                (server->first->m_RankBase ^ m_KeyCRC32) + 12345) & 0x7FFFFFFF;
+        return SServerRank(server, rank);
+    }
+
+    bool m_SingleServer;
+
+    vector<SServerRank> m_ServerRanks;
+    vector<SServerRank>::const_iterator m_CurrentServerRank;
+};
+
 class IServiceTraversal
 {
 public:

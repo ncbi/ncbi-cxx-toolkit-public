@@ -47,6 +47,7 @@
 #include <corelib/ncbi_config.hpp>
 
 #include <util/random_gen.hpp>
+#include <util/checksum.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
@@ -180,6 +181,17 @@ bool SNetServiceIterator_RandomPivot::Next()
     return true;
 }
 
+bool SNetServiceIterator_RandomPivot::Prev()
+{
+    if (m_RandomIterators.empty() ||
+            m_RandomIterator == m_RandomIterators.begin())
+        return false;
+
+    m_Position = *--m_RandomIterator;
+
+    return true;
+}
+
 bool SNetServiceIterator_Circular::Next()
 {
     if (++m_Position == m_ServerGroup->m_Servers.end())
@@ -197,14 +209,69 @@ bool SNetServiceIterator_Circular::Prev()
     return true;
 }
 
-bool SNetServiceIterator_RandomPivot::Prev()
+SNetServiceIterator_Weighted::SNetServiceIterator_Weighted(
+        SDiscoveredServers* server_group_impl, Uint4 key_crc32) :
+    SNetServiceIteratorImpl(server_group_impl),
+    m_KeyCRC32(key_crc32)
 {
-    if (m_RandomIterators.empty() ||
-            m_RandomIterator == m_RandomIterators.begin())
+    TNetServerList::const_iterator server_list_iter(m_Position);
+
+    if ((m_SingleServer =
+            (++server_list_iter == server_group_impl->m_SuppressedBegin)))
+        // Nothing to do if there's only one server.
+        return;
+
+    // Find the server with the highest rank.
+    SServerRank highest_rank(x_GetServerRank(m_Position));
+
+    do {
+        SServerRank server_rank(x_GetServerRank(server_list_iter));
+        if (highest_rank < server_rank)
+            highest_rank = server_rank;
+        // To avoid unnecessary memory allocations, do not save
+        // the calculated server ranks in hope that Next()
+        // will be called very rarely for this type of iterators.
+    } while (++server_list_iter != server_group_impl->m_SuppressedBegin);
+
+    m_Position = highest_rank.m_ServerListIter;
+}
+
+bool SNetServiceIterator_Weighted::Next()
+{
+    if (m_SingleServer)
         return false;
 
-    m_Position = *--m_RandomIterator;
+    if (m_ServerRanks.empty()) {
+        TNetServerList::const_iterator server_list_iter(
+                m_ServerGroup->m_Servers.begin());
+        do
+            m_ServerRanks.push_back(x_GetServerRank(server_list_iter));
+        while (++server_list_iter != m_ServerGroup->m_SuppressedBegin);
 
+        // Sort the ranks in *reverse* order.
+        sort(m_ServerRanks.rbegin(), m_ServerRanks.rend());
+
+        // Skip the server with the highest rank, which was the first
+        // server returned by this iterator object.
+        m_CurrentServerRank = m_ServerRanks.begin() + 1;
+    } else if (++m_CurrentServerRank == m_ServerRanks.end())
+        return false;
+
+    m_Position = m_CurrentServerRank->m_ServerListIter;
+    return true;
+}
+
+bool SNetServiceIterator_Weighted::Prev()
+{
+    if (m_SingleServer)
+        return false;
+
+    _ASSERT(!m_ServerRanks.empty());
+
+    if (m_CurrentServerRank == m_ServerRanks.begin())
+        return false;
+
+    m_Position = (--m_CurrentServerRank)->m_ServerListIter;
     return true;
 }
 
@@ -1095,6 +1162,24 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server)
         m_Impl->m_ServiceName + " service.");
 }
 
+CNetServiceIterator CNetService::IterateByWeight(const string& key)
+{
+    CRef<SDiscoveredServers> servers;
+    m_Impl->GetDiscoveredServers(servers);
+
+    if (servers->m_Servers.begin() == servers->m_SuppressedBegin) {
+        NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
+            "Couldn't find any available servers for the " +
+            m_Impl->m_ServiceName + " service.");
+    }
+
+    CChecksum key_crc32(CChecksum::eCRC32);
+
+    key_crc32.AddChars(key.data(), key.length());
+
+    return new SNetServiceIterator_Weighted(servers, key_crc32.GetChecksum());
+}
+
 CNetServiceIterator CNetService::ExcludeServer(CNetServer::TInstance server)
 {
     CRef<SDiscoveredServers> servers;
@@ -1105,9 +1190,9 @@ CNetServiceIterator CNetService::ExcludeServer(CNetServer::TInstance server)
         if (it->first == server->m_ServerInPool) {
             // The server is found. Make an iterator and
             // skip to the next server (the iterator may become NULL).
-            CNetServiceIterator server_it(
+            CNetServiceIterator circular_iter(
                     new SNetServiceIterator_Circular(servers, it));
-            return ++server_it;
+            return ++circular_iter;
         }
     }
 

@@ -90,6 +90,11 @@ BEGIN_NCBI_SCOPE
 /// @see CNetCacheAPI::TServerToUse
 #define nc_server_to_use CNetCacheAPI::TServerToUse()
 
+/// Pointer to a variable for saving the CNetServer that was last used.
+/// Works only with (some of) CNetICacheClient methods.
+/// @see CNetCacheAPI::TServerLastUsedPtr
+#define nc_server_last_used CNetCacheAPI::TServerLastUsedPtr()
+
 /// Do not read the blob if its age is greater than the specified value.
 /// @see CNetCacheAPI::TMaxBlobAge
 #define nc_max_age CNetCacheAPI::TMaxBlobAge()
@@ -207,6 +212,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         eNPT_ServerCheckHint,
         eNPT_Password,
         eNPT_ServerToUse,
+        eNPT_ServerLastUsedPtr,
         eNPT_MaxBlobAge,
         eNPT_ActualBlobAgePtr,
         eNPT_UseCompoundID,
@@ -527,6 +533,16 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @see nc_server_to_use
     typedef CNamedParameter<CNetServer::TInstance,
             eNPT_ServerToUse> TServerToUse;
+
+    /// Named parameter type to supply a pointer to a variable for saving
+    /// the CNetServer object that was last used. This parameter works
+    /// only with (some of) CNetICacheClient methods.
+    /// This type of parameter can be defined through the nc_server_last_used
+    /// macro substitution, for example:
+    ///     nc_server_last_used = &netserver_object
+    /// @see nc_server_last_used
+    typedef CNamedParameter<CNetServer*,
+            eNPT_ServerLastUsedPtr> TServerLastUsedPtr;
 
     /// Named parameter type to specify that the blob should not be read
     /// if its age in seconds is greater than the specified value.

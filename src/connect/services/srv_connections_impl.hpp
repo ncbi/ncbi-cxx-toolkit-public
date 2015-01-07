@@ -160,6 +160,7 @@ struct SNetServerInPool : public CObject
     string m_ThrottleMessage;
     CTime m_ThrottledUntil;
     CFastMutex m_ThrottleLock;
+    Uint4 m_RankBase;
 };
 
 struct SNetServerInfoImpl : public CObject

@@ -117,6 +117,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IEmbeddedStreamWriter
 public:
     CNetCacheWriter(SNetCacheAPIImpl* impl,
         string* blob_id,
+        const string& key,
         ENetCacheResponseType response_type,
         const CNetCacheAPIParameters* parameters);
 
@@ -137,6 +138,7 @@ public:
     ENetCacheResponseType GetResponseType() const {return m_ResponseType;}
 
     const string& GetBlobID() const {return m_BlobID;}
+    const string& GetKey() const {return m_Key;}
 
     void SetBlobID(const string& blob_id) {m_BlobID = blob_id;}
 
@@ -156,6 +158,7 @@ private:
 
     CNetCacheAPI m_NetCacheAPI;
     string m_BlobID;
+    string m_Key; // Only for ICache mode.
     const CNetCacheAPIParameters* m_Parameters;
 
     CFileIO m_CacheFile;

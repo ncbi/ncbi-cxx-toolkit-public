@@ -666,7 +666,8 @@ string  CNetCacheAPI::PutData(const string& key,
     parameters.LoadNamedParameters(optional);
     parameters.SetCachingMode(eCaching_Disable);
 
-    CNetCacheWriter writer(m_Impl, &actual_key, eNetCache_Wait, &parameters);
+    CNetCacheWriter writer(m_Impl, &actual_key, kEmptyStr,
+            eNetCache_Wait, &parameters);
 
     writer.WriteBufferAndClose(reinterpret_cast<const char*>(buf), size);
 
@@ -687,7 +688,8 @@ IEmbeddedStreamWriter* CNetCacheAPI::PutData(string* key,
 
     parameters.LoadNamedParameters(optional);
 
-    return new CNetCacheWriter(m_Impl, key, eNetCache_Wait, &parameters);
+    return new CNetCacheWriter(m_Impl, key, kEmptyStr,
+            eNetCache_Wait, &parameters);
 }
 
 
