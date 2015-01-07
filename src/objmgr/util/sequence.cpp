@@ -2364,7 +2364,7 @@ static string s_FastaGetOriginalID (const CBioseq& seq)
         }
     }
 
-    return NULL;
+    return "";
 }
 
 static bool s_ShouldUseOriginalID (const CBioseq& seq)
@@ -2417,7 +2417,12 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
 
     m_Out << '>';
     if (s_ShouldUseOriginalID(bioseq)) {
-        m_Out << "lcl|" << s_FastaGetOriginalID(bioseq);
+        string origID = s_FastaGetOriginalID(bioseq);
+        if (! NStr::IsBlank(origID)) {
+            m_Out << "lcl|" << origID;
+        } else {
+            CSeq_id::WriteAsFasta(m_Out, bioseq);
+        }
     } else {
         CSeq_id::WriteAsFasta(m_Out, bioseq);
     }
