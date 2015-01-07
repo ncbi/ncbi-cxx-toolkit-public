@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 
 static const int  kTTL = 60; // seconds
 static const string kTestStr = "This is a very simple test string.";
-static const CProjectStorage::ENC_Compression kDefComp = CProjectStorage::CProjectStorage::eNC_ZlibCompressed;
+static const CProjectStorage::ENC_Compression kDefComp = CProjectStorage::eNC_ZlibCompressed;
 
 // global variables
 static bool verbose = false;
