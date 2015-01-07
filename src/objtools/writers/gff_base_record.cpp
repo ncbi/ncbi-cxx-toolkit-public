@@ -339,6 +339,13 @@ void CGffBaseRecord::SetScore(
     if (key == "score") {
         mScore = value;
     }
+
+    //mss-263: if a record has multiple scores with the same key, turn them into
+    // a comma separated multi-value
+    CGffBaseRecord::TScoreIt it = mExtraScores.find(key);
+    if (it != mExtraScores.end()) {
+        value = it->second + "," + value;
+    }
     mExtraScores[key] = value;
 }
 
