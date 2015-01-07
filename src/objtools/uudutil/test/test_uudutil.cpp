@@ -54,8 +54,7 @@ USING_SCOPE(objects);
 
 static const int  kTTL = 60; // seconds
 static const string kTestStr = "This is a very simple test string.";
-static const CProjectStorage::ENC_Compression kDefComp =
-    CProjectStorage::eNC_ZlibCompressed;
+static const CProjectStorage::ENC_Compression kDefComp = CProjectStorage::CProjectStorage::eNC_ZlibCompressed;
 
 // global variables
 static bool verbose = false;
@@ -137,6 +136,10 @@ static CProjectStorage s_GetPrjStorage(const string& password = "")
 
     string nc_service =  args["service"].HasValue() ?
         args["service"].AsString() : "NC_SV_UserData_TEST";
+    if (nc_service[0] == '\'')
+        nc_service = nc_service.substr(1, nc_service.length() - 1);
+    if (nc_service[nc_service.length() - 1] == '\'')
+        nc_service = nc_service.substr(0, nc_service.length() - 1);
 
     string nc_client = args["client"].HasValue() ?
         args["client"].AsString() : "NC_Test";

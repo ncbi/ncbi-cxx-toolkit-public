@@ -41,11 +41,13 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
-#include <connect/services/netcache_api.hpp>
+#include <connect/services/netstorage.hpp>
+
 
 
 BEGIN_NCBI_SCOPE
 
+class CNetCacheAPI;
 
 BEGIN_SCOPE(objects)
     class IGBProject;
@@ -94,17 +96,25 @@ public:
     typedef list< CRef<objects::CSeq_annot> > TAnnots;
 
     /// Constructor.
+    /// This transient version use both NetCahceAPI and NetStorage services 
+    /// according to the values of nc_service and password parameters
+    /// if nc_service is NetStorage' init string (url-like string) then NetStorage is used for both reading and writing
+    /// if nc_service is NetCache's service name then NetCache is used for writing and NetStorage is used for reading
+    /// if password is not empty then NetCache is used for both reading/writing
     /// For retrieving a NC blob data, the service name is 
     /// not required. So it is optional for reading. We 
     /// always require a client name for tracking purpose even
     /// though an empty client name will still work fine. But
     /// that is not recommended. For saving data to NetCache,
-    /// a valid NetCaceh service name is required. 
+    /// a valid NetCache service name is required. 
+
     /// @param password is needed only for reading and writing
     /// password-rotected data blobs.
+    /// @param default_flags sets up CNetStorage default_flags
     CProjectStorage(const string& client,
-             const string& nc_service = "",
-             const string& password = "");
+                    const string& nc_service = "",
+                    const string& password = "",
+                    TNetStorageFlags default_flags = 0);
 
     /// Set netservice communication time out.
     /// If not set, whatever default timeout set inside CNetCacheAPI
@@ -122,7 +132,8 @@ public:
                        const string& key = "",
                        TCompressionFormat compression_fmt = eNC_ZlibCompressed,
                        TDataFormat data_fmt = eSerial_AsnBinary, 
-                       unsigned int time_to_live = 0);
+                       unsigned int time_to_live = 0,
+                       TNetStorageFlags default_flags = 0);
 
     /// Save a serializable ASN object to NetCache.
     /// @param key if a key is given and valid, the existing project
@@ -135,7 +146,8 @@ public:
                       const string& key = "", 
                       TCompressionFormat compression_fmt = eNC_ZlibCompressed, 
                       TDataFormat data_fmt = eSerial_AsnBinary, 
-                      unsigned int time_to_live = 0);
+                      unsigned int time_to_live = 0,
+                      TNetStorageFlags default_flags = 0);
 
     /// Save a string to NetCache.
     /// @param key if a is given and valid, the existing content will
@@ -146,7 +158,8 @@ public:
     string SaveString(const string& str,
                       const string& key = "",
                       TCompressionFormat compression_fmt = eNC_ZlibCompressed,
-                      unsigned int time_to_live = 0);
+                      unsigned int time_to_live = 0,
+                      TNetStorageFlags default_flags = 0);
 
     /// Save data from an incoming stream to NetCache.
     /// @param key if a is given and valid, the existing content will
@@ -157,7 +170,8 @@ public:
     string SaveStream(CNcbiIstream& istream,
                       const string& key,
                       TCompressionFormat compression_fmt = eNC_ZlibCompressed,
-                      unsigned int time_to_live = 0);
+                      unsigned int time_to_live = 0,
+                      TNetStorageFlags default_flags = 0);
 
     /// Get a object ostream to allow save data to NetCache.
     /// @param format the asn serialization format is required
@@ -172,7 +186,6 @@ public:
                                     string& key,
                                     TCompressionFormat compression_fmt = eNC_ZlibCompressed,
                                     unsigned int time_to_live = 0);
-
     /// Save any raw data to NetCache.
     /// No compression and no header
     /// @param key if a is given and valid, the existing content will
@@ -180,12 +193,14 @@ public:
     /// @return a NC key
     string SaveRawData(const void* buf, size_t size,
                        const string& key = "", 
-                       unsigned int time_to_live = 0);
+                       unsigned int time_to_live = 0,
+                       TNetStorageFlags default_flags = 0);
 
     /// Duplicate an existing data Blob.
     /// @return a new key
     string Clone(const string& key,
-                 unsigned int time_to_live = 0);
+                 unsigned int time_to_live = 0,
+                 TNetStorageFlags default_flags = 0);
 
     /// Retrieve a NC blob as a GB project.
     /// @throw CPrjStorageException
@@ -240,11 +255,31 @@ public:
     ///        there is problem on accessing the data, such as
     ///        incorrect password for password-protected blobs.
     bool Exists(const string& key);
+
+
  
 private:
     /// Create an output stream.
     auto_ptr<CNcbiOstream> x_GetOutputStream(string& key,
-                                             unsigned int time_to_live);
+                                             unsigned int time_to_live, 
+                                             TNetStorageFlags default_flags,
+                                             CNetStorageObject nso);
+
+    /// Get a object ostream to allow save data to NetCache.
+    /// @param format the asn serialization format is required
+    /// @param key if it is valid, the existing content will be
+    ///            updated using the input string. If it is empty,
+    ///            it will be updated with a new NC key.
+    /// @return CObjectOStream
+    /// @throw CPrjStorageException
+    ///        Thrown if the compression format is not supported,
+    ///        or data format is not supported.
+    CObjectOStream* x_GetObjectOStream(TDataFormat data_fmt,
+                                       CNetStorageObject nso,
+                                       string& key,
+                                       TCompressionFormat compression_fmt = eNC_ZlibCompressed,
+                                       unsigned int time_to_live = 0,
+                                       TNetStorageFlags default_flags = 0);
 
     /// Check if the object format is valid.
     /// @throw CPrjStorageException if no_throw is false
@@ -280,7 +315,9 @@ private:
     ///  eSerial_Json         = 4
     TDataFormat        m_DataFmt;
     string             m_Password;      ///< For password-protected Blobs
-    CNetCacheAPI       m_NC;
+    AutoPtr<CNetCacheAPI> m_NC;
+    bool m_HasNetStorage;
+    CNetStorage m_NS;
 };
 
 
