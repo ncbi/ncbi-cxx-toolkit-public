@@ -107,7 +107,7 @@ string  CNSTClient::x_TypeAsString(void) const
     if (m_Type & eAdministrator) {
         if (!result.empty())
             result += " | ";
-        result += "administrator";
+        result += "admin";
     }
 
     if (result.empty())

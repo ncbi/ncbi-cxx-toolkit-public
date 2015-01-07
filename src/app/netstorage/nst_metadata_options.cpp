@@ -46,7 +46,7 @@ struct MetadataOptionToId
 
 
 const MetadataOptionToId    metadataOptionToIdMap[] = {
-                                { eMetadataNotSpecified, "not specified" },
+                                { eMetadataNotSpecified, "not set" },
                                 { eMetadataRequired,     "required" },
                                 { eMetadataDisabled,     "disabled" },
                                 { eMetadataMonitoring,   "monitoring" }
