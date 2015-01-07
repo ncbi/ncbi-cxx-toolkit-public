@@ -248,7 +248,8 @@ void g_SetNetICacheParams(CNetStorageObjectLoc& object_loc,
     else {
         CNetService service(icache_client.GetService());
 
-        CNetServer icache_server(service.Iterate().GetServer());
+        CNetServer icache_server(service.IterateByWeight(
+                object_loc.GetUniqueKey()).GetServer());
 
         object_loc.SetNetICacheParams(
                 service.GetServiceName(), icache_client.GetCacheName(),
