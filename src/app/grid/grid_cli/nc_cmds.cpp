@@ -381,8 +381,6 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     // command line.
     string blob_key = m_Opts.id;
 
-    CNetServer server_last_used;
-
     if (m_APIClass == eNetCacheAPI) {
         switch (IsOptionSet(ePassword, 1) | IsOptionSet(eUseCompoundID, 2)) {
         case 1:
@@ -414,23 +412,17 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
                     (nc_blob_ttl = m_Opts.ttl,
-                    nc_blob_password = m_Opts.password,
-                    nc_server_last_used = &server_last_used)) :
+                    nc_blob_password = m_Opts.password)) :
             m_NetICacheClient.GetNetCacheWriter(
                     m_Opts.icache_key.key,
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
-                    (nc_blob_ttl = m_Opts.ttl,
-                    nc_server_last_used = &server_last_used)));
+                    nc_blob_ttl = m_Opts.ttl));
     }
 
     if (!writer.get()) {
         NCBI_USER_THROW("Cannot create blob stream");
     }
-
-    if (m_APIClass != eNetCacheAPI &&
-            m_NetICacheClient.GetService().IsLoadBalanced())
-        PrintServerAddress(server_last_used);
 
     size_t bytes_written;
 
