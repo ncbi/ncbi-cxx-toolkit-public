@@ -127,6 +127,11 @@ Corrected code generation for alias to alias ASN data types.
 Corrected argument processing to not load same data specification twice.
 Modified code generation behavior to delete generated files on specification parsing error.
 
-
-
+January 07, 2015
+version 2.12.0
+Added support for optional choice variants (in XML).
+Corrected to allow blanks in XML attribute definition.
+Fixed bug in XML schema generation.
+Fixed bug in renaming nested classes.
+Changed to allow different data types when converting data file.
 
