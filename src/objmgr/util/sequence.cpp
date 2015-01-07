@@ -52,6 +52,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Date.hpp>
+#include <objects/general/general_macros.hpp>
 
 #include <objects/misc/sequence_util_macros.hpp>
 
@@ -68,6 +69,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
+#include <objects/seq/seq_macros.hpp>
 
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
@@ -2338,6 +2340,62 @@ void CFastaOstream::Write(const CBioseq_Handle& handle,
 }
 
 
+static string s_FastaGetOriginalID (const CBioseq& seq)
+
+{
+    FOR_EACH_SEQDESC_ON_BIOSEQ (it, seq) {
+        const CSeqdesc& desc = **it;
+        if (! desc.IsUser()) continue;
+        if (! desc.GetUser().IsSetType()) continue;
+        const CUser_object& usr = desc.GetUser();
+        const CObject_id& oi = usr.GetType();
+        if (! oi.IsStr()) continue;
+        const string& type = oi.GetStr();
+        if (! NStr::EqualNocase(type, "OrginalID") && ! NStr::EqualNocase(type, "OriginalID")) continue;
+        FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
+            const CUser_field& fld = **uitr;
+            if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
+                const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                if (! NStr::EqualNocase(label_str, "LocalId")) continue;
+                if (fld.IsSetData() && fld.GetData().IsStr()) {
+                    return fld.GetData().GetStr();
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static bool s_ShouldUseOriginalID (const CBioseq& seq)
+{
+    FOR_EACH_SEQID_ON_BIOSEQ (id_itr, seq) {
+        const CSeq_id& sid = **id_itr;
+        switch (sid.Which()) {
+            case CSeq_id::e_Local:
+                break;
+            case CSeq_id::e_General:
+                {
+                    const CDbtag& dbtag = sid.GetGeneral();
+                    if (dbtag.IsSetDb()) {
+                        const string& db = dbtag.GetDb();
+                        if (! NStr::EqualNocase(db, "TMSMART") &&
+                            ! NStr::EqualNocase(db, "BankIt") &&
+                            ! NStr::EqualNocase(db, "NCBIFILE")) {
+                            return false;
+                        }
+                    }
+                }
+                break;
+            default:
+                return false;
+        }
+    }
+
+    return true;
+}
+
+
 void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
                                   const CSeq_loc* location)
 {
@@ -2358,7 +2416,11 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     }
 
     m_Out << '>';
-    CSeq_id::WriteAsFasta(m_Out, bioseq);
+    if (s_ShouldUseOriginalID(bioseq)) {
+        m_Out << "lcl|" << s_FastaGetOriginalID(bioseq);
+    } else {
+        CSeq_id::WriteAsFasta(m_Out, bioseq);
+    }
 
     if (have_range) {
         char delim = ':';
