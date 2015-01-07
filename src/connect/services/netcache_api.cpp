@@ -436,7 +436,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
         Uint4 crc32 = key.GetHostPortCRC32();
 
-        for (CNetServiceIterator it(service.Iterate()); it; ++it) {
+        for (CNetServiceIterator it(service.Iterate(CNetService::eRandomize));
+                it; ++it) {
             CNetServer server(*it);
 
             if (CNetCacheKey::CalculateChecksum(
