@@ -199,7 +199,7 @@ static string s_FastaGetOriginalID (CBioseqContext& ctx)
         }
     }
 
-    return NULL;
+    return "";
 }
 
 static bool s_ShouldUseOriginalID (CBioseqContext& ctx)
@@ -299,7 +299,10 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
         if (x_NameHasBadChars(m_Name)  ||  NStr::IsBlank(m_Name)) {
             m_Name = id.GetSeqId()->GetSeqIdString();
             if (s_ShouldUseOriginalID(ctx)) {
-                m_Name = s_FastaGetOriginalID(ctx);
+                string origID = s_FastaGetOriginalID(ctx);
+                if (! NStr::IsBlank(origID)) {
+                    m_Name = origID;
+                }
             }
         }
 
