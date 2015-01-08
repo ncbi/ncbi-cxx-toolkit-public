@@ -578,7 +578,8 @@ CUser_object& CUser_object::SetExperiment(EExperiment category)
 
 const string kDBLink = "DBLink";
 const string kStructuredComment = "StructuredComment";
-const string kOriginalId = "OrginalID";
+const string kOriginalId = "OriginalID";
+const string kOrigIdAltSpell = "OrginalID";
 const string kUnverified = "Unverified";
 const string kValidationSuppression = "ValidationSuppression";
 
@@ -595,6 +596,8 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
     } else if (NStr::Equal(label, kStructuredComment)) {
         rval = eObjectType_StructuredComment;
     } else if (NStr::Equal(label, kOriginalId)) {
+        rval = eObjectType_OriginalId;
+    } else if (NStr::Equal(label, kOrigIdAltSpell)) {
         rval = eObjectType_OriginalId;
     } else if (NStr::Equal(label, kUnverified)) {
         rval = eObjectType_Unverified;
