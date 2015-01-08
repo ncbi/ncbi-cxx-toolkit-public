@@ -404,6 +404,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     virtual ~SNetStorageObjectRPC();
 
+    void ReadConfirmation();
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
 
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -819,6 +820,37 @@ string SNetStorageObjectRPC::GetLoc()
     return m_Locator;
 }
 
+void SNetStorageObjectRPC::ReadConfirmation()
+{
+    CSocket* sock = &m_Connection->m_Socket;
+
+    CJsonOverUTTPReader json_reader;
+    try {
+        size_t bytes_read;
+
+        while (!json_reader.ReadMessage(m_UTTPReader)) {
+            s_ReadSocket(sock, m_ReadBuffer,
+                    READ_BUFFER_SIZE, &bytes_read);
+
+            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+        }
+
+        if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
+            NCBI_THROW_FMT(CNetStorageException, eIOError,
+                    "Extra bytes past confirmation message "
+                    "while reading " << m_Locator << " from " <<
+                    sock->GetPeerAddress() << '.');
+        }
+    }
+    catch (...) {
+        m_UTTPReader.Reset();
+        m_Connection->Close();
+        throw;
+    }
+
+    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
+}
+
 ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         size_t* bytes_read)
 {
@@ -932,6 +964,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
                                     (int) m_UTTPReader.GetControlSymbol());
                 }
                 m_EOF = true;
+                ReadConfirmation();
                 if (bytes_read != NULL)
                     *bytes_read = bytes_copied;
                 return bytes_copied ? eRW_Success : eRW_Eof;
@@ -1078,33 +1111,6 @@ void SNetStorageObjectRPC::Close()
         if (!m_EOF) {
             m_UTTPReader.Reset();
             conn_copy->Close();
-        } else {
-            CSocket* sock = &conn_copy->m_Socket;
-
-            CJsonOverUTTPReader json_reader;
-            try {
-                size_t bytes_read;
-
-                while (!json_reader.ReadMessage(m_UTTPReader)) {
-                    s_ReadSocket(sock, m_ReadBuffer,
-                            READ_BUFFER_SIZE, &bytes_read);
-
-                    m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
-                }
-
-                if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
-                    NCBI_THROW_FMT(CNetStorageException, eIOError,
-                            "Extra bytes past confirmation message "
-                            "while reading " << m_Locator << " from " <<
-                            sock->GetPeerAddress() << '.');
-                }
-            }
-            catch (...) {
-                m_UTTPReader.Reset();
-                conn_copy->Close();
-            }
-
-            s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
         }
     } else { /* m_State == eWriting */
         m_State = eReady;
