@@ -52,8 +52,12 @@ static const string s_kQueryNodeBgColor = "255 255 0";
 static const string s_kSeqOfTypeNodeBgColor = "204 255 204";
 static const string s_kSeqFromVerifiedMatNodeBgColor = "181 228 240";
 
+static const string s_kSeqReferenceDBNodeBgColor = "102 255 255";
+static const string s_kSeqKmerBlastNodeBgColor = "255 204 255";
+
 
 map<int,string> linkotTypeToBGColor;
+map<int,string> seqTypeToBGColor;
 
 // tree leaf label for unknown taxonomy
 static const string s_kUnknown = "unknown";
@@ -68,6 +72,13 @@ const string CPhyTreeFormatter::kNodeInfoQuery = "query";
 const string CPhyTreeFormatter::kNodeInfoSeqFromType = "sequence_from_type";
 
 const string CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat = "sequence_from_verified_material";
+
+const string CPhyTreeFormatter::kNodeInfoSeqReferenceDB = "sequence_reference_db";
+
+const string CPhyTreeFormatter::kNodeInfoSeqKmerBlast = "sequence_KmerBlast";
+
+
+
 
 
 
@@ -90,6 +101,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
                        m_BlastNameColorMap,
+                       m_SeqTypeMap,
                        m_LinkoutDB,
                        m_LinkoutType);                     
 
@@ -108,6 +120,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
                        m_BlastNameColorMap,
+                       m_SeqTypeMap,
                        m_LinkoutDB,
                        m_LinkoutType);
 
@@ -133,6 +146,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
                        m_BlastNameColorMap,
+                       m_SeqTypeMap,
                        m_LinkoutDB,
                        m_LinkoutType);
 
@@ -165,12 +179,35 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
     }
     x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_leaves,
                        m_BlastNameColorMap,
+                       m_SeqTypeMap,
                        m_LinkoutDB,
                        m_LinkoutType);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc, true);
 }
 
+CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,                      
+                      map < string, int > &seqTypeMap,                      
+                      ELabelType lbl_type)
+{
+
+    x_Init();
+    m_SeqTypeMap = seqTypeMap;    
+    CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();    
+    //Query
+    vector<int> mark_leaves;
+    mark_leaves.push_back(0);
+        
+    x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
+                       *guide_tree_calc.GetScope(), 
+                       lbl_type, mark_leaves,
+                       m_BlastNameColorMap,
+                       m_SeqTypeMap,
+                       m_LinkoutDB,
+                       m_LinkoutType);                     
+
+    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
+}
 
 CPhyTreeFormatter::CPhyTreeFormatter(const CBioTreeDynamic& tree)
     : m_Dyntree(tree)
@@ -329,6 +366,12 @@ bool CPhyTreeFormatter::ExpandCollapseSubtree(int node_id)
         else if (tracker.FoundSeqFromVerifiedMat()) {
             x_MarkNode(node, s_kSeqFromVerifiedMatNodeBgColor);
         }        
+        else if (tracker.FoundSeqReferenceDB()) {
+            x_MarkNode(node, s_kSeqReferenceDBNodeBgColor);
+        }        
+        else if (tracker.FoundSeqKmerBlast()) {
+            x_MarkNode(node, s_kSeqKmerBlastNodeBgColor);
+        }                
         int leafCount = tracker.GetLeafCount();
         if(leafCount != 0) {            
             node->SetFeature(GetFeatureTag(eLeafCountId),NStr::IntToString(leafCount));
@@ -460,6 +503,8 @@ void CPhyTreeFormatter::x_Init(void)
 {
     linkotTypeToBGColor[eFromType] = s_kSeqOfTypeNodeBgColor;    
     linkotTypeToBGColor[eFromVerifiedMaterial] = s_kSeqFromVerifiedMatNodeBgColor;    
+    seqTypeToBGColor[eSeqTypeReferenceDB] = s_kSeqReferenceDBNodeBgColor;    
+    seqTypeToBGColor[eSeqTypeKmerBlast] = s_kSeqKmerBlastNodeBgColor;    
 
     m_SimplifyMode = eNone;
     m_LinkoutDB = NULL;
@@ -528,6 +573,12 @@ void CPhyTreeFormatter::x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper)
         else if (query_checker.HasSeqFromVerifiedMat()) {
             x_MarkNode(it->GetNode(), s_kSeqFromVerifiedMatNodeBgColor);
         }        
+        else if (query_checker.HasSeqReferenceDB()) {
+            x_MarkNode(it->GetNode(), s_kSeqReferenceDBNodeBgColor);
+        }        
+        else if (query_checker.HasSeqKmerBlast()) {
+            x_MarkNode(it->GetNode(), s_kSeqKmerBlastNodeBgColor);
+        }                
         int leafCount = query_checker.GetLeafCount();
         if(leafCount != 0) {            
             it->GetNode()->SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(leafCount));
@@ -752,6 +803,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     CPhyTreeFormatter::ELabelType label_type,
                                     const vector<int>& mark_leaves,
                                     TBlastNameColorMap& bcolormap,
+                                    map < string, int> &seqTypeMap,
                                     ILinkoutDB* linkoutDB,
                                     int linkoutType)
 {
@@ -964,6 +1016,23 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                             x_AddFeature(eNodeInfoId,nodeInfo,node);
                         }                        
                     }
+                    else if (!seqTypeMap.empty()) {
+                        int seqType = x_FindSeqType(seqTypeMap,id_string);
+                        string nodeInfo,bgColor;
+                        if(seqType == eSeqTypeReferenceDB) {
+                            bgColor = seqTypeToBGColor[eSeqTypeReferenceDB];
+                            nodeInfo = kNodeInfoSeqReferenceDB;
+                        }
+                        else if(seqType == eSeqTypeKmerBlast) {
+                            bgColor = seqTypeToBGColor[eSeqTypeKmerBlast];
+                            nodeInfo = kNodeInfoSeqKmerBlast;
+                        }
+                        //color for ReferenceDB KmerBlast
+                        if(!bgColor.empty()) {
+                            x_AddFeature(eLabelBgColorId,bgColor, node);                                 
+                            x_AddFeature(eNodeInfoId,nodeInfo,node);
+                        }                     
+                    }
                     
                     // done with this node
                     break;
@@ -979,7 +1048,17 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     }
 }
 
+int CPhyTreeFormatter::x_FindSeqType(map<string, int > &seqTypeMap, string idString)
+{
+    int seqType;
+    map<string, int>::const_iterator iter = seqTypeMap.find(idString);
+    if ( iter != seqTypeMap.end() ){
+        seqType = iter->second;
+    }		    
+    return seqType;
+}
 
+        
 void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
                                             vector<string>& ids,
                                             CScope& scope)

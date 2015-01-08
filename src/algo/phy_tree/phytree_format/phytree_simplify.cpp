@@ -257,7 +257,9 @@ CPhyTreeLabelTracker::CPhyTreeLabelTracker(const string& label_feature,
       m_ColorFeatureTag(color_feature),
       m_FoundQueryNode(false),
       m_FoundSeqFromType(false),
-      m_FoundSeqFromVerifiedMat(false)      
+      m_FoundSeqFromVerifiedMat(false),      
+      m_FoundSeqReferenceDB(false),     
+      m_FoundSeqKmerBlast(false)            
 {
     const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
     if (!fdict.HasFeature(label_feature) || !fdict.HasFeature(color_feature)) {
@@ -289,6 +291,12 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
         if (!m_FoundSeqFromVerifiedMat && x_IsSeqFromVerifiedMat(node)) {
             m_FoundSeqFromVerifiedMat = true;
         }        
+        if (!m_FoundSeqReferenceDB && x_IsSeqReferenceDB(node)) {
+            m_FoundSeqReferenceDB = true;
+        }        
+        if (!m_FoundSeqKmerBlast && x_IsSeqKmerBlast(node)) {
+            m_FoundSeqKmerBlast = true;
+        }                
         if (node.IsLeaf()) {
             const string& label = node.GetFeature(m_LabelFeatureTag);
             const string& color = node.GetFeature(m_ColorFeatureTag);
@@ -324,6 +332,21 @@ bool CPhyTreeLabelTracker::x_IsSeqFromVerifiedMat(
                                             CPhyTreeFormatter::eNodeInfoId))
         == CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat;
 }
+bool CPhyTreeLabelTracker::x_IsSeqReferenceDB(
+                                  const CBioTreeDynamic::CBioNode& node) const
+{
+    return node.GetFeature(CPhyTreeFormatter::GetFeatureTag(
+                                            CPhyTreeFormatter::eNodeInfoId))
+        == CPhyTreeFormatter::kNodeInfoSeqReferenceDB;
+}
+bool CPhyTreeLabelTracker::x_IsSeqKmerBlast(
+                                  const CBioTreeDynamic::CBioNode& node) const
+{
+    return node.GetFeature(CPhyTreeFormatter::GetFeatureTag(
+                                            CPhyTreeFormatter::eNodeInfoId))
+        == CPhyTreeFormatter::kNodeInfoSeqKmerBlast;
+}
+
 
 
 END_NCBI_SCOPE
