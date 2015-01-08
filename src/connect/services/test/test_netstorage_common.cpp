@@ -49,12 +49,13 @@
 USING_NCBI_SCOPE;
 
 
-#define TEST_ATTRIBUTES
+// There is a known issue with attribute reading (JIRA CXX-5571),
+// test will be disabled until the issue is fixed
+#undef TEST_ATTRIBUTES
 
-// These tests are not working well enough at the moment
-#undef TEST_NON_EXISTENT
-#undef TEST_RELOCATED
-#undef TEST_REMOVED
+#define TEST_NON_EXISTENT
+#define TEST_RELOCATED
+#define TEST_REMOVED
 
 
 // ENetStorageObjectLocation to type mapping
@@ -288,7 +289,8 @@ public:
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
     {
-        if (!Init()) return eRW_Error;
+        Init();
+
         if (!m_Remaining) return eRW_Eof;
 
         size_t to_read = 0;
@@ -312,18 +314,12 @@ protected:
     size_t m_Remaining;
 
 private:
-    bool Init()
+    void Init()
     {
-        if (m_Ptr) return true;
-
-        try {
+        if (!m_Ptr) {
             DoInit();
             m_Ptr = m_Str.data();
             m_Remaining = m_Str.size();
-            return true;
-        }
-        catch (...) {
-            return false;
         }
     }
 
@@ -480,7 +476,6 @@ struct SStrApiImpl
             m_Output.clear();
             return eRW_Success;
         }
-        void Close() { Flush(); m_Object.Close(); }
 
     private:
         string m_Output;
@@ -498,14 +493,9 @@ struct SBufApiImpl
 
         ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
         {
-            try {
-                if (m_Object.Eof()) return eRW_Eof;
-                size_t read = m_Object.Read(buf, count);
-                return Finalize(read, bytes_read, eRW_Success);
-            }
-            catch (...) {
-                return eRW_Error;
-            }
+            if (m_Object.Eof()) return eRW_Eof;
+            size_t read = m_Object.Read(buf, count);
+            return Finalize(read, bytes_read, eRW_Success);
         }
     };
 
@@ -619,15 +609,14 @@ struct SIosApiImpl
     };
 };
 
-
 // A helper to read from API/expected data
-struct SReadHelper
+struct SReadHelperBase
 {
     IExtReader& source;
     char buf[65537]; // Prime
     size_t length;
 
-    SReadHelper(IExtReader& s)
+    SReadHelperBase(IExtReader& s)
         : source(s),
           length(0),
           m_Result(eRW_Success)
@@ -650,7 +639,6 @@ struct SReadHelper
         case eRW_Eof:
             return true;
         default:
-            BOOST_ERROR_CTX("Failed to read: " << g_RW_ResultToString(m_Result), ctx);
             return false;
         }
     }
@@ -665,8 +653,54 @@ struct SReadHelper
     bool Empty() { return m_Result == eRW_Eof && !length; }
     bool HasData() { return length; }
 
-private:
+protected:
     ERW_Result m_Result;
+};
+
+template <class TApi, class TLocation>
+struct SReadHelper : SReadHelperBase
+{
+    SReadHelper(IExtReader& s) : SReadHelperBase(s) {}
+
+    bool operator()(const SCtx& ctx)
+    {
+        if (SReadHelperBase::operator()(ctx)) {
+            return true;
+        }
+
+        BOOST_ERROR_CTX("Failed to read: " << g_RW_ResultToString(m_Result), ctx);
+        return false;
+    }
+};
+
+template <class TApi>
+struct SReadHelper<TApi, TLocationNotFound> : SReadHelperBase
+{
+    SReadHelper(IExtReader& s) : SReadHelperBase(s) {}
+
+    bool operator()(const SCtx& ctx)
+    {
+        BOOST_CHECK_THROW_CTX(SReadHelperBase::operator()(ctx),
+                CNetStorageException, ctx);
+        return false;
+    }
+};
+
+typedef CApi<SIosApiImpl> TIosApi;
+
+template <>
+struct SReadHelper<TIosApi, TLocationNotFound> : SReadHelperBase
+{
+    SReadHelper(IExtReader& s) : SReadHelperBase(s) {}
+
+    bool operator()(const SCtx& ctx)
+    {
+        if (SReadHelperBase::operator()(ctx)) {
+            BOOST_ERROR_CTX("iostream::read() was expected to fail", ctx);
+        }
+
+        return false;
+    }
 };
 
 // A helper to read from expected and write to object
@@ -904,15 +938,17 @@ struct SFixture
     void Test(CNetStorageByKey&);
 };
 
+// NB: It does not matter whether TLocationNetCache or TLocationFileTrack is used here
+typedef TLocationNetCache TShouldWork;
 
 template <class TPolicy>
 template <class TLocation>
 void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject object)
 {
     Ctx(ctx);
-    SReadHelper expected_reader(*data);
+    SReadHelper<TApi, TShouldWork> expected_reader(*data);
     TApi api(object);
-    SReadHelper actual_reader(api.GetReader());
+    SReadHelper<TApi, TLocation> actual_reader(api.GetReader());
 
     attr_tester.Read(TLocation(), Line(__LINE__), object);
 
@@ -960,7 +996,7 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
 template <class TPolicy>
 string SFixture<TPolicy>::WriteAndRead(CNetStorageObject object)
 {
-    SReadHelper source_reader(*data);
+    SReadHelper<TApi, TShouldWork> source_reader(*data);
     TApi api(object);
     SWriteHelper dest_writer(api.GetWriter());
 
@@ -999,10 +1035,8 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
             Ctx("Checking non-existent object").Line(__LINE__));
 
 #ifdef TEST_REMOVED
-    CNetStorageObject no_object(netstorage.Open(id));
-    BOOST_CHECK_THROW_CTX(
-            ReadAndCompare<TLocationNotFound>("Trying to read removed object",
-                no_object), CNetStorageException, ctx);
+    ReadAndCompare<TLocationNotFound>("Trying to read removed object",
+        netstorage.Open(id));
 #endif
 }
 
@@ -1014,14 +1048,8 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 #ifdef TEST_NON_EXISTENT
     string not_found(
             "VHwxYl4jgV6Y8pM4TzhGbhfoROgxMl10Rz9GNlwqch9HHwkoJw0WbEsxAGoT0Cb0EeOG");
-    CGetInfo<TLocationNotFound>(
-            Ctx("Trying to read non-existent object info").Line(__LINE__),
-            netstorage.Open(not_found)).Check();
-
-    BOOST_CHECK_THROW_CTX(
-            ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
-                netstorage.Open(not_found)),
-            CNetStorageException, Line(__LINE__));
+    ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
+        netstorage.Open(not_found));
 #endif
 
     // Create a NetStorage object that should to go to NetCache.
@@ -1037,17 +1065,10 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 
 #ifdef TEST_RELOCATED
     // Verify that the object has disappeared from the "fast" storage.
-    CNetStorageObject fast_storage_object =
-            netstorage.Open(fast_storage_object_loc);
-    CGetInfo<TLocationNotFound>(
-            Ctx("Trying to read relocated object info").Line(__LINE__),
-            fast_storage_object).Check();
-
     // Make sure the relocated object does not exists in the
     // original storage anymore.
-    BOOST_CHECK_THROW_CTX(
-            ReadAndCompare<TLocationNotFound>("Trying to read relocated object",
-                fast_storage_object), CNetStorageException, ctx);
+    ReadAndCompare<TLocationNotFound>("Trying to read relocated object",
+        netstorage.Open(fast_storage_object_loc));
 #endif
 
     // However, the object must still be accessible
@@ -1076,15 +1097,8 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
             random_gen.GetRand() * random_gen.GetRand());
 
 #ifdef TEST_NON_EXISTENT
-    CGetInfo<TLocationNotFound>(
-            Ctx("Trying to read non-existent object info").Line(__LINE__),
-            netstorage.Open(unique_key,
-            fNST_Fast | fNST_Movable)).Check();
-
-    BOOST_CHECK_THROW_CTX(
-            ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
-                netstorage.Open(unique_key, fNST_Fast | fNST_Movable)),
-            CNetStorageException, Line(__LINE__));
+    ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
+        netstorage.Open(unique_key, fNST_Fast | fNST_Movable));
 #endif
 
     // Write and read test data using a user-defined key.
