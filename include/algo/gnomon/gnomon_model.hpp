@@ -254,7 +254,7 @@ public:
     struct SPStop : public TSignedSeqRange {
         SPStop(TSignedSeqRange r, int t) : TSignedSeqRange(r), m_type(t) {};
 
-        //not overloaded == is used for uniquing anf finding intervals
+        //not overloaded == is used for uniquing and finding intervals
         //overloaded < is used for sorting before uniquing
         bool operator<(const SPStop& stp) const {
             if(operator==(stp))                // == is not overloaded
