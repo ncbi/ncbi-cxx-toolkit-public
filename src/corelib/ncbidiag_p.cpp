@@ -811,6 +811,8 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     m_ErrCodeMatcher = NULL;
     m_FileMatcher = NULL;
     matcher->SetSeverity(m_DiagSev);
+    // reset severity for next matcher
+    m_DiagSev = eDiag_Info;
 
     _ASSERT( matcher );
 
