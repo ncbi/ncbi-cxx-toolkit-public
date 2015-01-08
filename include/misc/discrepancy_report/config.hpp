@@ -32,7 +32,7 @@
 #define _CONFIG_H_
 
 #include <corelib/ncbistd.hpp>
-
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 
