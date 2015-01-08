@@ -58,6 +58,9 @@
 #include <misc/discrepancy_report/hDiscRep_config.hpp>
 #include <misc/discrepancy_report/hUtilib.hpp>
 
+
+#include <misc/discrepancy_report/analysis_workflow.hpp>
+
 #include <objects/submit/Contact_info.hpp>
 #include <objects/biblio/Author.hpp>
 
@@ -183,12 +186,16 @@ CRef<CClickableItem> RunOneTest(CSeq_entry& entry, const string& test_name)
 }
 
 
-void CheckOneItem(CClickableItem& c_item, const string& msg, bool expect_fatal)
+void CheckOneItem(CClickableItem& c_item, const string& msg, bool expect_fatal, size_t num_items = 0, size_t num_subcat = 0, bool check_item_and_subcat = false)
 {
    NCBITEST_CHECK_MESSAGE(c_item.item_list.size() == c_item.obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
 
    BOOST_CHECK_EQUAL(c_item.description, msg);
+   if (check_item_and_subcat) {
+       BOOST_CHECK_EQUAL(c_item.item_list.size(), num_items);
+       BOOST_CHECK_EQUAL(c_item.subcategories.size(), num_subcat);
+   }
 
    BOOST_CHECK_EQUAL(CDiscRepOutput::IsFatal(c_item, true, true), expect_fatal);
 }
@@ -2382,3 +2389,925 @@ BOOST_AUTO_TEST_CASE(GB_3763)
     CheckOneItem(*item, "1 object contains institue", false);
 
 }
+
+
+CRef<CSeq_entry> s_BuildEntryForSrcQualProblem()
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    unit_test_util::ChangeId(e1, "_1");
+    unit_test_util::SetOrgMod(e1, COrgMod::eSubtype_isolate, "abc");
+    unit_test_util::SetOrgMod(e1, COrgMod::eSubtype_strain, "x");
+    unit_test_util::SetOrgMod(e1, COrgMod::eSubtype_strain, "y");
+    unit_test_util::SetSubSource(e1, CSubSource::eSubtype_cell_type, "c1");
+
+    CRef<CSeq_entry> e2 = unit_test_util::BuildGoodSeq();
+    unit_test_util::ChangeId(e2, "_2");
+    unit_test_util::SetOrgMod(e2, COrgMod::eSubtype_isolate, "abc");
+    unit_test_util::SetSubSource(e2, CSubSource::eSubtype_cell_type, "c2");
+
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_phy_set);
+    entry->SetSet().SetSeq_set().push_back(e1);
+    entry->SetSet().SetSeq_set().push_back(e2);
+    return entry;
+}
+
+
+CRef<CSeq_entry> s_MakeEntryForDISC_DUP_SRC_QUAL()
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    unit_test_util::ChangeId(e1, "_1");
+    unit_test_util::SetOrgMod(e1, COrgMod::eSubtype_isolate, "abc");
+    unit_test_util::SetOrgMod(e1, COrgMod::eSubtype_strain, "abc");
+    CRef<CSeq_entry> e2 = unit_test_util::BuildGoodSeq();
+    unit_test_util::ChangeId(e2, "_2");
+    unit_test_util::SetOrgMod(e2, COrgMod::eSubtype_isolate, "def");
+    unit_test_util::SetOrgMod(e2, COrgMod::eSubtype_strain, "def");
+
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_phy_set);
+    entry->SetSet().SetSeq_set().push_back(e1);
+    entry->SetSet().SetSeq_set().push_back(e2);
+    return entry;
+}
+
+
+static const string k2GoodList = "lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n";
+
+static const string kAbcForIsolate = "DISC_SOURCE_QUALS_ASNDISC::isolate (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have 'abc' for isolate\n" + k2GoodList;
+
+static const string kIsolateAllPresentAllUnique = "isolate (all present, all unique)\n" + k2GoodList;
+static const string kADIsolateAllPresentAllUnique = "DISC_SOURCE_QUALS_ASNDISC::" + kIsolateAllPresentAllUnique;
+static const string kSQIsolateAllPresentAllUnique = "DISC_SRC_QUAL_PROBLEM::" + kIsolateAllPresentAllUnique;
+
+static const string kSameValue = "DISC_DUP_SRC_QUAL::2 sources have two or more qualifiers with the same value\n"
++ k2GoodList + 
+"DISC_DUP_SRC_QUAL::BioSource has value 'abc' for these qualifiers: isolate, strain\n\
+lcl|good_1:Sebaea microphylla\n\
+DISC_DUP_SRC_QUAL::BioSource has value 'def' for these qualifiers: isolate, strain\n\
+lcl|good_2:Sebaea microphylla\n";
+
+static const string kSQChromosome2for1 = "DISC_SRC_QUAL_PROBLEM::chromosome (all present, all same)\n\
+DISC_SRC_QUAL_PROBLEM::2 sources have '1' for chromosome\n" + k2GoodList;
+
+static const string kADChromosome2for1 = "DISC_SOURCE_QUALS_ASNDISC::chromosome (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have '1' for chromosome\n" + k2GoodList;
+
+BOOST_AUTO_TEST_CASE(Test_New_Framework)
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_COUNT_NUCLEOTIDES, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_SOURCE_QUALS_ASNDISC, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_DUP_SRC_QUAL, true);
+    report_maker->BuildTestList();
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SOURCE_QUALS_ASNDISC);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_DUP_SRC_QUAL);
+    BOOST_CHECK_EQUAL(list.size(), 4);
+    BOOST_CHECK_EQUAL(list[0]->GetText(), "1 nucleotide Bioseq is present");
+    BOOST_CHECK_EQUAL(list[0]->GetObjects().size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::1 nucleotide Bioseq is present\nlcl|good (length 60)\n");
+
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::chromosome (all present, all unique)\nlcl|good:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxid (all present, all unique)\nlcl|good:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[3]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxname (all present, all unique)\nlcl|good:Sebaea microphylla\n");
+
+    report_maker->ResetData();
+    scope.RemoveTopLevelSeqEntry(seh);
+    e1 = s_BuildEntryForSrcQualProblem();
+    seh = scope.AddTopLevelSeqEntry(*e1);
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 7);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_SOURCE_QUALS_ASNDISC::cell_type (all present, all unique)\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope), kADChromosome2for1);
+    BOOST_CHECK_EQUAL(list[3]->Format(output_config, scope), kAbcForIsolate);
+    BOOST_CHECK_EQUAL(list[4]->Format(output_config, scope),
+        "DISC_SOURCE_QUALS_ASNDISC::strain (some missing, all unique, some multi)\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source is missing strain\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source has multiple strain qualifiers\n\
+lcl|good_1:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source has unique values for strain\n\
+lcl|good_1:Sebaea microphylla\n\
+");
+    BOOST_CHECK_EQUAL(list[5]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxid (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have '592768' for taxid\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[6]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxname (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have 'Sebaea microphylla' for taxname\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+
+
+    report_maker->ResetData();
+    scope.RemoveTopLevelSeqEntry(seh);
+    e1 = s_MakeEntryForDISC_DUP_SRC_QUAL();
+    seh = scope.AddTopLevelSeqEntry(*e1);
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 7);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope), kADChromosome2for1);
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope), kADIsolateAllPresentAllUnique);
+    BOOST_CHECK_EQUAL(list[3]->Format(output_config, scope),
+        "DISC_SOURCE_QUALS_ASNDISC::strain (all present, all unique)\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[4]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxid (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have '592768' for taxid\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[5]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxname (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have 'Sebaea microphylla' for taxname\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[6]->Format(output_config, scope), kSameValue);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MISSING_GENES)
+{
+    CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kMISSING_GENES, true);
+    report_maker->BuildTestList();
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kMISSING_GENES);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "MISSING_GENES::1 feature has no genes.\nCDS\tfake protein name\tlcl|nuc:1-27\t\n");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_DISC_SUPERFLUOUS_GENE)
+{
+    CRef <CSeq_entry> entry = BuildGoodSeq();
+    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("abc");
+    gene->ResetComment();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_SUPERFLUOUS_GENE, true);
+    report_maker->BuildTestList();
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SUPERFLUOUS_GENE);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "EXTRA_GENES::1 gene feature is not associated with a CDS or RNA feature.\nGene\tabc\tlcl|good:1-11\t\n\
+EXTRA_GENES::1 non-pseudo gene feature is not associated with a CDS or RNA feature and does not have frameshift in the comment.\nGene\tabc\tlcl|good:1-11\t\n");
+
+    report_maker->ResetData();
+    // do not report if gene feature has comment
+    gene->SetComment("a comment");
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 0);
+
+    report_maker->ResetData();
+    // but do report if pseudo
+    gene->SetPseudo(true);
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "EXTRA_GENES::1 gene feature is not associated with a CDS or RNA feature.\nGene\tabc\tlcl|good:1-11\t\n\
+EXTRA_GENES::1 pseudo gene feature is not associated with a CDS or RNA feature.\nGene\tabc\tlcl|good:1-11\t\n");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_DropReferences)
+{
+    CRef <CSeq_entry> entry = BuildGoodSeq();
+    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("abc");
+    gene->ResetComment();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_SUPERFLUOUS_GENE, true);
+    report_maker->BuildTestList();
+
+    report_maker->CollectData(seh, true);
+    scope.RemoveTopLevelSeqEntry(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SUPERFLUOUS_GENE);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config), 
+        "EXTRA_GENES::1 gene feature is not associated with a CDS or RNA feature.\nGene\tabc\tlcl|good:1-11\t\n\
+EXTRA_GENES::1 non-pseudo gene feature is not associated with a CDS or RNA feature and does not have frameshift in the comment.\nGene\tabc\tlcl|good:1-11\t\n");
+
+    report_maker->ResetData();
+    // do not report if gene feature has comment
+    gene->SetComment("a comment");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    report_maker->CollectData(seh, true);
+    scope.RemoveTopLevelSeqEntry(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 0);
+
+    report_maker->ResetData();
+    // but do report if pseudo
+    gene->SetPseudo(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    report_maker->CollectData(seh, true);
+    scope.RemoveTopLevelSeqEntry(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config), 
+        "EXTRA_GENES::1 gene feature is not associated with a CDS or RNA feature.\nGene\tabc\tlcl|good:1-11\t\n\
+EXTRA_GENES::1 pseudo gene feature is not associated with a CDS or RNA feature.\nGene\tabc\tlcl|good:1-11\t\n");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_New_Framework_Grouping)
+{
+    CRef<CSeq_entry> e1 = s_MakeEntryForDISC_DUP_SRC_QUAL();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_COUNT_NUCLEOTIDES, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_SRC_QUAL_PROBLEM, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_DUP_SRC_QUAL, true);
+    report_maker->BuildTestList();
+
+    CRef<CGroupPolicy> group_policy(new CGUIGroupPolicy());
+    report_maker->SetGroupPolicy(group_policy);
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SRC_QUAL_PROBLEM);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_DUP_SRC_QUAL);
+    output_config.SetAddTag(true);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 3);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_SRC_QUAL_PROBLEM::Source Qualifier Report\n" + kSQChromosome2for1 + kSQIsolateAllPresentAllUnique +
+"DISC_SRC_QUAL_PROBLEM::strain (all present, all unique)\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SRC_QUAL_PROBLEM::taxid (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have '592768' for taxid\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SRC_QUAL_PROBLEM::taxname (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have 'Sebaea microphylla' for taxname\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope), kSameValue);
+
+    group_policy.Reset(new COncallerGroupPolicy());
+    report_maker->SetGroupPolicy(group_policy);
+    list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 2);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_SRC_QUAL_PROBLEM::Source tests\n\
+DISC_SRC_QUAL_PROBLEM::Source Qualifier Report\n" + kSQChromosome2for1 + kSQIsolateAllPresentAllUnique +
+"DISC_SRC_QUAL_PROBLEM::strain (all present, all unique)\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SRC_QUAL_PROBLEM::taxid (all present, all same)\n\
+DISC_SRC_QUAL_PROBLEM::2 sources have '592768' for taxid\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SRC_QUAL_PROBLEM::taxname (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have 'Sebaea microphylla' for taxname\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n" + kSameValue);
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_New_Framework_Tagging)
+{
+    CRef<CSeq_entry> e1 = s_BuildEntryForSrcQualProblem();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_COUNT_NUCLEOTIDES, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_SOURCE_QUALS_ASNDISC, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_DUP_SRC_QUAL, true);
+    report_maker->BuildTestList();
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    CRef<CWGSTagPolicy> policy(new CWGSTagPolicy());
+    policy->SetMoreThanOneNuc(true);
+    report_maker->SetTagPolicy((CRef<CTagPolicy>)(policy.GetPointer()));
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SOURCE_QUALS_ASNDISC);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_DUP_SRC_QUAL);
+    output_config.SetAddTag(true);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 7);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_SOURCE_QUALS_ASNDISC::cell_type (all present, all unique)\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope), kADChromosome2for1);
+    BOOST_CHECK_EQUAL(list[3]->Format(output_config, scope), kAbcForIsolate);
+    BOOST_CHECK_EQUAL(list[4]->Format(output_config, scope),
+        "FATAL: DISC_SOURCE_QUALS_ASNDISC::strain (some missing, all unique, some multi)\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source is missing strain\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source has multiple strain qualifiers\n\
+lcl|good_1:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source has unique values for strain\n\
+lcl|good_1:Sebaea microphylla\n\
+");
+    BOOST_CHECK_EQUAL(list[5]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxid (all present, all same)\nDISC_SOURCE_QUALS_ASNDISC::2 sources have '592768' for taxid\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[6]->Format(output_config, scope), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxname (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have 'Sebaea microphylla' for taxname\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_New_Framework_Ordering)
+{
+    CRef<CSeq_entry> e1 = s_MakeEntryForDISC_DUP_SRC_QUAL();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_COUNT_NUCLEOTIDES, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_SRC_QUAL_PROBLEM, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_DUP_SRC_QUAL, true);
+    report_maker->BuildTestList();
+
+    CRef<CGroupPolicy> group_policy(new CGUIGroupPolicy());
+    report_maker->SetGroupPolicy(group_policy);
+    CRef<COrderPolicy> order_policy(new COrderPolicy());
+    report_maker->SetOrderPolicy(order_policy);
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SRC_QUAL_PROBLEM);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_DUP_SRC_QUAL);
+    output_config.SetAddTag(true);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 3);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_SRC_QUAL_PROBLEM::Source Qualifier Report\n" + kSQChromosome2for1 + kSQIsolateAllPresentAllUnique +
+"DISC_SRC_QUAL_PROBLEM::strain (all present, all unique)\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SRC_QUAL_PROBLEM::taxid (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have '592768' for taxid\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n\
+DISC_SRC_QUAL_PROBLEM::taxname (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have 'Sebaea microphylla' for taxname\n\
+lcl|good_1:Sebaea microphylla\n\
+lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope), kSameValue);
+
+    group_policy.Reset(new COncallerGroupPolicy());
+    report_maker->SetGroupPolicy(group_policy);
+    order_policy.Reset(new COncallerOrderPolicy());
+    report_maker->SetOrderPolicy(order_policy);
+    list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 2);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_SRC_QUAL_PROBLEM::Source tests\n\
+DISC_SRC_QUAL_PROBLEM::Source Qualifier Report\n" + kSQChromosome2for1 + kSQIsolateAllPresentAllUnique +
+"DISC_SRC_QUAL_PROBLEM::strain (all present, all unique)\n" + k2GoodList +
+"DISC_SRC_QUAL_PROBLEM::taxid (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have '592768' for taxid\n" + k2GoodList +
+"DISC_SRC_QUAL_PROBLEM::taxname (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have 'Sebaea microphylla' for taxname\n"
++ k2GoodList + kSameValue);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_New_Framework_ConfigureOncaller)
+{
+    CRef<CSeq_entry> e1 = s_MakeEntryForDISC_DUP_SRC_QUAL();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Configure(DiscRepNmSpc::CReportConfig::eConfigTypeOnCaller);
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SRC_QUAL_PROBLEM);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_DUP_SRC_QUAL);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_FEATURE_MOLTYPE_MISMATCH);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_CHECK_AUTH_CAPS);
+    output_config.SetExpand(DiscRepNmSpc::kONCALLER_SUPERFLUOUS_GENE);
+    output_config.SetAddTag(true);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 35);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_COUNT_NUCLEOTIDES::2 nucleotide Bioseqs are present\nlcl|good_1 (length 60)\nlcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config, scope),
+        "DISC_DUP_DEFLINE::DISC_DUP_DEFLINE is not implemented\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config, scope),
+        "DISC_MISSING_DEFLINES::DISC_MISSING_DEFLINES is not implemented\n");
+    BOOST_CHECK_EQUAL(list[3]->Format(output_config, scope),
+        "TEST_TAXNAME_NOT_IN_DEFLINE::TEST_TAXNAME_NOT_IN_DEFLINE is not implemented\n");
+    BOOST_CHECK_EQUAL(list[4]->Format(output_config, scope),
+        "TEST_HAS_PROJECT_ID::TEST_HAS_PROJECT_ID is not implemented\n");
+    BOOST_CHECK_EQUAL(list[5]->Format(output_config, scope),
+        "ONCALLER_BIOPROJECT_ID::ONCALLER_BIOPROJECT_ID is not implemented\n");
+    BOOST_CHECK_EQUAL(list[6]->Format(output_config, scope),
+        "ONCALLER_DEFLINE_ON_SET::ONCALLER_DEFLINE_ON_SET is not implemented\n");
+    BOOST_CHECK_EQUAL(list[7]->Format(output_config, scope),
+        "TEST_UNWANTED_SET_WRAPPER::TEST_UNWANTED_SET_WRAPPER is not implemented\n");
+    BOOST_CHECK_EQUAL(list[8]->Format(output_config, scope),
+        "TEST_COUNT_UNVERIFIED::TEST_COUNT_UNVERIFIED is not implemented\n");
+    BOOST_CHECK_EQUAL(list[9]->Format(output_config, scope),
+        "DISC_SRC_QUAL_PROBLEM::Source tests\n\
+DISC_SRC_QUAL_PROBLEM::Source Qualifier Report\n" + kSQChromosome2for1 + kSQIsolateAllPresentAllUnique +
+"DISC_SRC_QUAL_PROBLEM::strain (all present, all unique)\n" + k2GoodList +
+"DISC_SRC_QUAL_PROBLEM::taxid (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have '592768' for taxid\n" + k2GoodList +
+"DISC_SRC_QUAL_PROBLEM::taxname (all present, all same)\nDISC_SRC_QUAL_PROBLEM::2 sources have 'Sebaea microphylla' for taxname\n" + k2GoodList +
+"DISC_BACTERIA_MISSING_STRAIN::DISC_BACTERIA_MISSING_STRAIN is not implemented\n\
+DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE::DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE is not implemented\n\
+DISC_BIOMATERIAL_TAXNAME_MISMATCH::DISC_BIOMATERIAL_TAXNAME_MISMATCH is not implemented\n\
+DISC_CULTURE_TAXNAME_MISMATCH::DISC_CULTURE_TAXNAME_MISMATCH is not implemented\n"
++ kSameValue +
+"DISC_DUP_SRC_QUAL_DATA::DISC_DUP_SRC_QUAL_DATA is not implemented\n\
+DISC_HUMAN_HOST::DISC_HUMAN_HOST is not implemented\n\
+DISC_INFLUENZA_DATE_MISMATCH::DISC_INFLUENZA_DATE_MISMATCH is not implemented\n\
+DISC_MAP_CHROMOSOME_CONFLICT::DISC_MAP_CHROMOSOME_CONFLICT is not implemented\n\
+DISC_METAGENOME_SOURCE::DISC_METAGENOME_SOURCE is not implemented\n\
+DISC_METAGENOMIC::DISC_METAGENOMIC is not implemented\n\
+DISC_MISSING_VIRAL_QUALS::DISC_MISSING_VIRAL_QUALS is not implemented\n\
+DISC_MITOCHONDRION_REQUIRED::DISC_MITOCHONDRION_REQUIRED is not implemented\n\
+DISC_REQUIRED_CLONE::DISC_REQUIRED_CLONE is not implemented\n\
+DISC_RETROVIRIDAE_DNA::DISC_RETROVIRIDAE_DNA is not implemented\n\
+DISC_SPECVOUCHER_TAXNAME_MISMATCH::DISC_SPECVOUCHER_TAXNAME_MISMATCH is not implemented\n\
+DISC_STRAIN_TAXNAME_MISMATCH::DISC_STRAIN_TAXNAME_MISMATCH is not implemented\n\
+DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER::DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER is not implemented\n\
+DUP_DISC_ATCC_CULTURE_CONFLICT::DUP_DISC_ATCC_CULTURE_CONFLICT is not implemented\n\
+DUP_DISC_CBS_CULTURE_CONFLICT::DUP_DISC_CBS_CULTURE_CONFLICT is not implemented\n\
+END_COLON_IN_COUNTRY::END_COLON_IN_COUNTRY is not implemented\n\
+NON_RETROVIRIDAE_PROVIRAL::NON_RETROVIRIDAE_PROVIRAL is not implemented\n\
+ONCALLER_CHECK_AUTHORITY::ONCALLER_CHECK_AUTHORITY is not implemented\n\
+ONCALLER_COUNTRY_COLON::ONCALLER_COUNTRY_COLON is not implemented\n\
+ONCALLER_DUPLICATE_PRIMER_SET::ONCALLER_DUPLICATE_PRIMER_SET is not implemented\n\
+ONCALLER_HIV_RNA_INCONSISTENT::ONCALLER_HIV_RNA_INCONSISTENT is not implemented\n\
+ONCALLER_MORE_NAMES_COLLECTED_BY::ONCALLER_MORE_NAMES_COLLECTED_BY is not implemented\n\
+ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY::ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY is not implemented\n\
+ONCALLER_MULTIPLE_CULTURE_COLLECTION::ONCALLER_MULTIPLE_CULTURE_COLLECTION is not implemented\n\
+ONCALLER_MULTISRC::ONCALLER_MULTISRC is not implemented\n\
+ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH::ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH is not implemented\n\
+ONCALLER_STRAIN_TAXNAME_CONFLICT::ONCALLER_STRAIN_TAXNAME_CONFLICT is not implemented\n\
+ONCALLER_SUSPECTED_ORG_COLLECTED::ONCALLER_SUSPECTED_ORG_COLLECTED is not implemented\n\
+ONCALLER_SUSPECTED_ORG_IDENTIFIED::ONCALLER_SUSPECTED_ORG_IDENTIFIED is not implemented\n\
+RNA_PROVIRAL::RNA_PROVIRAL is not implemented\n\
+TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE::TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE is not implemented\n\
+TEST_BAD_MRNA_QUAL::TEST_BAD_MRNA_QUAL is not implemented\n\
+TEST_SMALL_GENOME_SET_PROBLEM::TEST_SMALL_GENOME_SET_PROBLEM is not implemented\n\
+TEST_SP_NOT_UNCULTURED::TEST_SP_NOT_UNCULTURED is not implemented\n\
+TEST_UNNECESSARY_ENVIRONMENTAL::TEST_UNNECESSARY_ENVIRONMENTAL is not implemented\n\
+TEST_UNWANTED_SPACER::TEST_UNWANTED_SPACER is not implemented\n");
+    BOOST_CHECK_EQUAL(list[10]->Format(output_config, scope),
+        "DISC_FEATURE_COUNT::DISC_FEATURE_COUNT is not implemented\n");
+    BOOST_CHECK_EQUAL(list[11]->Format(output_config, scope),
+        "DISC_NO_ANNOTATION::DISC_NO_ANNOTATION is not implemented\n");
+    BOOST_CHECK_EQUAL(list[12]->Format(output_config, scope),
+        "DISC_FEATURE_MOLTYPE_MISMATCH::Molecule type tests\n\
+DISC_FEATURE_MOLTYPE_MISMATCH::DISC_FEATURE_MOLTYPE_MISMATCH is not implemented\n\
+DISC_INCONSISTENT_MOLTYPES::DISC_INCONSISTENT_MOLTYPES is not implemented\n\
+TEST_ORGANELLE_NOT_GENOMIC::TEST_ORGANELLE_NOT_GENOMIC is not implemented\n");
+    BOOST_CHECK_EQUAL(list[13]->Format(output_config, scope),
+        "DISC_CHECK_AUTH_CAPS::Cit-sub type tests\n\
+DISC_CHECK_AUTH_CAPS::DISC_CHECK_AUTH_CAPS is not implemented\n\
+DISC_CHECK_AUTH_NAME::DISC_CHECK_AUTH_NAME is not implemented\n\
+DISC_CITSUBAFFIL_CONFLICT::DISC_CITSUBAFFIL_CONFLICT is not implemented\n\
+DISC_MISSING_AFFIL::DISC_MISSING_AFFIL is not implemented\n\
+DISC_SUBMITBLOCK_CONFLICT::DISC_SUBMITBLOCK_CONFLICT is not implemented\n\
+DISC_TITLE_AUTHOR_CONFLICT::DISC_TITLE_AUTHOR_CONFLICT is not implemented\n\
+DISC_UNPUB_PUB_WITHOUT_TITLE::DISC_UNPUB_PUB_WITHOUT_TITLE is not implemented\n\
+DISC_USA_STATE::DISC_USA_STATE is not implemented\n\
+ONCALLER_CITSUB_AFFIL_DUP_TEXT::ONCALLER_CITSUB_AFFIL_DUP_TEXT is not implemented\n\
+ONCALLER_CONSORTIUM::ONCALLER_CONSORTIUM is not implemented\n");
+
+    BOOST_CHECK_EQUAL(list[14]->Format(output_config, scope),
+        "ONCALLER_SUPERFLUOUS_GENE::Feature tests\n\
+DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA::DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA is not implemented\n\
+DISC_BADLEN_TRNA::DISC_BADLEN_TRNA is not implemented\n\
+DISC_BAD_GENE_STRAND::DISC_BAD_GENE_STRAND is not implemented\n\
+DISC_CDS_HAS_NEW_EXCEPTION::DISC_CDS_HAS_NEW_EXCEPTION is not implemented\n\
+DISC_CDS_WITHOUT_MRNA::DISC_CDS_WITHOUT_MRNA is not implemented\n\
+DISC_EXON_INTRON_CONFLICT::DISC_EXON_INTRON_CONFLICT is not implemented\n\
+DISC_GENE_PARTIAL_CONFLICT::DISC_GENE_PARTIAL_CONFLICT is not implemented\n\
+DISC_MICROSATELLITE_REPEAT_TYPE::DISC_MICROSATELLITE_REPEAT_TYPE is not implemented\n\
+DISC_MRNA_ON_WRONG_SEQUENCE_TYPE::DISC_MRNA_ON_WRONG_SEQUENCE_TYPE is not implemented\n\
+DISC_NON_GENE_LOCUS_TAG::DISC_NON_GENE_LOCUS_TAG is not implemented\n\
+DISC_PSEUDO_MISMATCH::DISC_PSEUDO_MISMATCH is not implemented\n\
+DISC_RBS_WITHOUT_GENE::DISC_RBS_WITHOUT_GENE is not implemented\n\
+DISC_RNA_NO_PRODUCT::DISC_RNA_NO_PRODUCT is not implemented\n\
+DISC_SHORT_INTRON::DISC_SHORT_INTRON is not implemented\n\
+DISC_SHORT_RRNA::DISC_SHORT_RRNA is not implemented\n\
+MULTIPLE_CDS_ON_MRNA::MULTIPLE_CDS_ON_MRNA is not implemented\n\
+ONCALLER_GENE_MISSING::ONCALLER_GENE_MISSING is not implemented\n\
+ONCALLER_ORDERED_LOCATION::ONCALLER_ORDERED_LOCATION is not implemented\n\
+ONCALLER_SUPERFLUOUS_GENE::ONCALLER_SUPERFLUOUS_GENE is not implemented\n\
+TEST_EXON_ON_MRNA::TEST_EXON_ON_MRNA is not implemented\n\
+TEST_MRNA_OVERLAPPING_PSEUDO_GENE::TEST_MRNA_OVERLAPPING_PSEUDO_GENE is not implemented\n\
+TEST_UNNECESSARY_VIRUS_GENE::TEST_UNNECESSARY_VIRUS_GENE is not implemented\n");
+
+    BOOST_CHECK_EQUAL(list[15]->Format(output_config, scope),
+        "DISC_POSSIBLE_LINKER::DISC_POSSIBLE_LINKER is not implemented\n");
+    BOOST_CHECK_EQUAL(list[16]->Format(output_config, scope),
+        "DISC_HAPLOTYPE_MISMATCH::DISC_HAPLOTYPE_MISMATCH is not implemented\n");
+    BOOST_CHECK_EQUAL(list[17]->Format(output_config, scope),
+        "DISC_FLATFILE_FIND_ONCALLER::DISC_FLATFILE_FIND_ONCALLER is not implemented\n");
+    BOOST_CHECK_EQUAL(list[18]->Format(output_config, scope),
+        "DISC_CDS_PRODUCT_FIND::DISC_CDS_PRODUCT_FIND is not implemented\n");
+    BOOST_CHECK_EQUAL(list[19]->Format(output_config, scope),
+        "DISC_SUSPICIOUS_NOTE_TEXT::DISC_SUSPICIOUS_NOTE_TEXT is not implemented\n");
+    BOOST_CHECK_EQUAL(list[20]->Format(output_config, scope),
+        "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS::DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS is not implemented\n");
+    BOOST_CHECK_EQUAL(list[21]->Format(output_config, scope),
+        "DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA::DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA is not implemented\n");
+    BOOST_CHECK_EQUAL(list[22]->Format(output_config, scope),
+        "ONCALLER_COMMENT_PRESENT::ONCALLER_COMMENT_PRESENT is not implemented\n");
+    BOOST_CHECK_EQUAL(list[23]->Format(output_config, scope),
+        "DISC_SUSPECT_PRODUCT_NAME::DISC_SUSPECT_PRODUCT_NAME is not implemented\n");
+    BOOST_CHECK_EQUAL(list[24]->Format(output_config, scope),
+        "DISC_FLATFILE_FIND_ONCALLER_FIXABLE::DISC_FLATFILE_FIND_ONCALLER_FIXABLE is not implemented\n");
+    BOOST_CHECK_EQUAL(list[25]->Format(output_config, scope),
+        "DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE::DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE is not implemented\n");
+    BOOST_CHECK_EQUAL(list[26]->Format(output_config, scope),
+        "DIVISION_CODE_CONFLICTS::DIVISION_CODE_CONFLICTS is not implemented\n");
+    BOOST_CHECK_EQUAL(list[27]->Format(output_config, scope),
+        "ONCALLER_HAS_STANDARD_NAME::ONCALLER_HAS_STANDARD_NAME is not implemented\n");
+    BOOST_CHECK_EQUAL(list[28]->Format(output_config, scope),
+        "ONCALLER_MISSING_STRUCTURED_COMMENTS::ONCALLER_MISSING_STRUCTURED_COMMENTS is not implemented\n");
+    BOOST_CHECK_EQUAL(list[29]->Format(output_config, scope),
+        "ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX::ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX is not implemented\n");
+    BOOST_CHECK_EQUAL(list[30]->Format(output_config, scope),
+        "TEST_MISSING_PRIMER::TEST_MISSING_PRIMER is not implemented\n");
+    BOOST_CHECK_EQUAL(list[31]->Format(output_config, scope),
+        "TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES::TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES is not implemented\n");
+    BOOST_CHECK_EQUAL(list[32]->Format(output_config, scope),
+        "TEST_ORGANELLE_PRODUCTS::TEST_ORGANELLE_PRODUCTS is not implemented\n");
+    BOOST_CHECK_EQUAL(list[33]->Format(output_config, scope),
+        "TEST_SHORT_LNCRNA::TEST_SHORT_LNCRNA is not implemented\n");
+    BOOST_CHECK_EQUAL(list[34]->Format(output_config, scope),
+        "UNCULTURED_NOTES_ONCALLER::UNCULTURED_NOTES_ONCALLER is not implemented\n");
+
+
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MultiEntryDropReferenceFilename)
+{
+    // set up for analysis workflow
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    // enable five tests
+    report_maker->Enable(DiscRepNmSpc::kDISC_SUPERFLUOUS_GENE, true);
+    report_maker->Enable(DiscRepNmSpc::kMISSING_GENES, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_COUNT_NUCLEOTIDES, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_SOURCE_QUALS_ASNDISC, true);
+    report_maker->Enable(DiscRepNmSpc::kDISC_DUP_SRC_QUAL, true);
+    report_maker->BuildTestList();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+
+    // check file "a.txt"
+    CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    report_maker->CollectData(seh, true, "a.txt");
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    // check file "b.txt"
+    entry = BuildGoodSeq();
+    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("abc");
+    gene->ResetComment();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    report_maker->CollectData(seh, true, "b.txt");
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    // check file "c.txt"
+    entry = s_BuildEntryForSrcQualProblem();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    report_maker->CollectData(seh, true, "c.txt");
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    report_maker->Collate();
+
+    // set up output configuration
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SUPERFLUOUS_GENE);
+    output_config.SetExpand(DiscRepNmSpc::kMISSING_GENES);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_SOURCE_QUALS_ASNDISC);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_DUP_SRC_QUAL);
+
+    CRef<COrderPolicy> order_policy(new COrderPolicy());
+    report_maker->SetOrderPolicy(order_policy);
+
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 9);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config), 
+        "MISSING_GENES::1 feature has no genes.\na.txt:CDS\tfake protein name\tlcl|nuc:1-27\t\n");
+    BOOST_CHECK_EQUAL(list[1]->Format(output_config), 
+        "EXTRA_GENES::1 gene feature is not associated with a CDS or RNA feature.\n\
+b.txt:Gene\tabc\tlcl|good:1-11\t\n\
+EXTRA_GENES::1 non-pseudo gene feature is not associated with a CDS or RNA feature and does not have frameshift in the comment.\n\
+b.txt:Gene\tabc\tlcl|good:1-11\t\n");
+    BOOST_CHECK_EQUAL(list[2]->Format(output_config), 
+        "DISC_COUNT_NUCLEOTIDES::4 nucleotide Bioseqs are present\n\
+a.txt:lcl|nuc (length 60)\n\
+b.txt:lcl|good (length 60)\n\
+c.txt:lcl|good_1 (length 60)\n\
+c.txt:lcl|good_2 (length 60)\n");
+    BOOST_CHECK_EQUAL(list[3]->Format(output_config),
+        "DISC_SOURCE_QUALS_ASNDISC::cell_type (some missing, all unique)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources are missing cell_type\n\
+a.txt:lcl|nuc (2 components):Sebaea microphylla\n\
+b.txt:lcl|good:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have unique values for cell_type\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+c.txt:lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[4]->Format(output_config),
+        "DISC_SOURCE_QUALS_ASNDISC::chromosome (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::4 sources have '1' for chromosome\n\
+a.txt:lcl|nuc (2 components):Sebaea microphylla\n\
+b.txt:lcl|good:Sebaea microphylla\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+c.txt:lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[5]->Format(output_config),
+        "DISC_SOURCE_QUALS_ASNDISC::isolate (some missing, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources are missing isolate\n\
+a.txt:lcl|nuc (2 components):Sebaea microphylla\n\
+b.txt:lcl|good:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::2 sources have 'abc' for isolate\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+c.txt:lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[6]->Format(output_config),
+        "DISC_SOURCE_QUALS_ASNDISC::strain (some missing, all unique, some multi)\n\
+DISC_SOURCE_QUALS_ASNDISC::3 sources are missing strain\n\
+a.txt:lcl|nuc (2 components):Sebaea microphylla\n\
+b.txt:lcl|good:Sebaea microphylla\n\
+c.txt:lcl|good_2:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source has multiple strain qualifiers\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+DISC_SOURCE_QUALS_ASNDISC::1 source has unique values for strain\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+");
+    BOOST_CHECK_EQUAL(list[7]->Format(output_config), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxid (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::4 sources have '592768' for taxid\n\
+a.txt:lcl|nuc (2 components):Sebaea microphylla\n\
+b.txt:lcl|good:Sebaea microphylla\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+c.txt:lcl|good_2:Sebaea microphylla\n");
+    BOOST_CHECK_EQUAL(list[8]->Format(output_config), 
+        "DISC_SOURCE_QUALS_ASNDISC::taxname (all present, all same)\n\
+DISC_SOURCE_QUALS_ASNDISC::4 sources have 'Sebaea microphylla' for taxname\n\
+a.txt:lcl|nuc (2 components):Sebaea microphylla\n\
+b.txt:lcl|good:Sebaea microphylla\n\
+c.txt:lcl|good_1:Sebaea microphylla\n\
+c.txt:lcl|good_2:Sebaea microphylla\n");
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_OVERLAPPING_CDS)
+{
+    CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<objects::CSeq_feat> cds2 = unit_test_util::AddMiscFeature(entry);
+    cds2->Assign(*cds);
+    CRef<CSeq_entry> protein = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> prot2(new CSeq_entry());
+    prot2->Assign(*protein);
+    unit_test_util::ChangeId(prot2, "_2");
+    cds2->SetProduct().SetWhole().SetLocal().SetStr() += "_2";
+    entry->SetSet().SetSeq_set().push_back(prot2);
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_OVERLAPPING_CDS, true);
+    report_maker->BuildTestList();
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_OVERLAPPING_CDS);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_OVERLAPPING_CDS::2 coding regions overlap another coding region with a similar or identical name.\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\nCDS\tfake protein name\tlcl|nuc:1-27\t\n\
+DISC_OVERLAPPING_CDS::2 coding regions overlap another coding region with a similar or identical name that do not have the appropriate note text.\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\nCDS\tfake protein name\tlcl|nuc:1-27\t\n");
+
+    BOOST_CHECK(report_maker->Autofix(seh));
+    report_maker->ResetData();
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "DISC_OVERLAPPING_CDS::2 coding regions overlap another coding region with a similar or identical name.\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\nCDS\tfake protein name\tlcl|nuc:1-27\t\n\
+DISC_OVERLAPPING_CDS::2 coding regions overlap another coding region with a similar or identical name but have the appropriate note text.\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\nCDS\tfake protein name\tlcl|nuc:1-27\t\n");
+}
+
+
+CRef<CSeq_feat> AddContainedCDS(CRef<CSeq_entry> entry, size_t offset)
+{
+    string suffix = "_" + NStr::NumericToString(offset);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<objects::CSeq_feat> cds2 = unit_test_util::AddMiscFeature(entry);
+    cds2->Assign(*cds);  
+    cds2->SetLocation().SetInt().SetFrom(cds->GetLocation().GetInt().GetFrom() + offset);
+    CRef<CSeq_entry> protein = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> prot2(new CSeq_entry());
+    prot2->Assign(*protein);
+    unit_test_util::ChangeId(prot2, suffix);
+    CRef<CSeq_id> id = prot2->SetSeq().SetId().front();
+
+    cds2->SetProduct().SetWhole().Assign(*id);
+    entry->SetSet().SetSeq_set().push_back(prot2);
+    CRef<CSeq_feat> protfeat2 = prot2->SetAnnot().front()->SetData().SetFtable().front();
+    protfeat2->SetData().SetProt().SetName().front() += suffix;
+    return cds2;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CONTAINED_CDS)
+{
+    CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds2 = AddContainedCDS(entry, 1);
+    CRef<CSeq_feat> cds3 = AddContainedCDS(entry, 2);
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CAnalysisWorkflow> report_maker(new CAnalysisWorkflow());
+    report_maker->Enable(DiscRepNmSpc::kDISC_CONTAINED_CDS, true);
+    report_maker->BuildTestList();
+
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+
+    DiscRepNmSpc::CReportOutputConfig output_config;
+    output_config.SetFormat(CReportOutputConfig::eFormatText);
+    output_config.SetExpand(DiscRepNmSpc::kDISC_CONTAINED_CDS);
+    DiscRepNmSpc::TReportItemList list = report_maker->GetResults();
+
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "CONTAINED_CDS::3 coding regions are completely contained in another coding region on the same strand.\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\n\
+CDS\tfake protein name_1\tlcl|nuc:2-27\t\n\
+CDS\tfake protein name_1_2\tlcl|nuc:3-27\t\n");
+
+    cds2->SetComment("completely contained in another CDS");
+    report_maker->ResetData();
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 1);
+    BOOST_CHECK_EQUAL(list[0]->Format(output_config, scope), 
+        "CONTAINED_CDS::3 coding regions are completely contained in another coding region.\n\
+CDS\tfake protein name_1\tlcl|nuc:2-27\t\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\n\
+CDS\tfake protein name_1_2\tlcl|nuc:3-27\t\n\
+CONTAINED_CDS::1 coding region is completely contained in another coding region but have note.\n\
+CDS\tfake protein name_1\tlcl|nuc:2-27\t\n\
+CONTAINED_CDS::2 coding regions are completely contained in another coding region on the same strand.\n\
+CDS\tfake protein name\tlcl|nuc:1-27\t\n\
+CDS\tfake protein name_1_2\tlcl|nuc:3-27\t\n\
+");
+
+    BOOST_CHECK_EQUAL(report_maker->Autofix(seh), TRUE);
+    report_maker->ResetData();
+    report_maker->CollectData(seh);
+    report_maker->Collate();
+    list = report_maker->GetResults();
+    BOOST_CHECK_EQUAL(list.size(), 0);
+}
+

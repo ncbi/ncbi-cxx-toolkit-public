@@ -4,7 +4,10 @@
 ###############################
 
 SRC = cDiscRep_autofix cchecking_class cauto_disc_class cDiscRep_config cDiscRep_tests cDiscRep_output \
-      cDiscRep_util cUtilib cDiscRep_susrule cDiscRep_summ cDiscRep_dt
+      cDiscRep_util cUtilib cDiscRep_susrule cDiscRep_summ cDiscRep_dt \
+      report_object report_item config analysis_workflow \
+      tag_policy group_policy order_policy\
+      analysis_process src_qual_problem missing_genes
 
 LIB = xdiscrepancy_report
 
