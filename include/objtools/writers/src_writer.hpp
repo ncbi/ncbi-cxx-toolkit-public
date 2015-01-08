@@ -62,6 +62,10 @@ public:
         const std::string&);
 };
 
+/**
+  * Used to generate tables showing qualifier-field entries occuring in the 
+  * BioSources of instances of Bioseq and Seq-entry. 
+  */
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CSrcWriter:
     public CObject
@@ -86,26 +90,38 @@ public:
     virtual ~CSrcWriter()
     {};
 
+    /** Write a table of the specified qualifier-field entries 
+      * found in the BioSource of a given Bioseq. 
+      */
     virtual bool WriteBioseqHandle( 
         CBioseq_Handle,
         const FIELDS&,
         CNcbiOstream&);
 
+    /** Write a table of the specified qualifier-field entries 
+      * found in the BioSources of a vector of Bioseqs. 
+      */
     virtual bool WriteBioseqHandles( 
         const vector<CBioseq_Handle>&,
         const FIELDS&,
         CNcbiOstream&,
         IMessageListener* = 0);
 
+    /// Set the column delimiter for the output table.
     void SetDelimiter(
         const string& delimiter) {
         mDelimiter = delimiter;
     };
 
+    /// Check that each string in fields is a valid qualifier name.
     static bool ValidateFields(
         const FIELDS& fields,
         IMessageListener* = 0);
 
+    /** Write a table of all qualifier-field entries occurring
+      * in the BioSources for a given Seq-entry,
+      * with columns appearing in a canonical order. 
+      */
     virtual bool WriteSeqEntry(
         const CSeq_entry&,
         CScope&,
