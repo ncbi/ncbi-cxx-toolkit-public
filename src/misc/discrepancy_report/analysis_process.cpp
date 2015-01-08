@@ -694,7 +694,7 @@ bool CContainedCDS::Autofix(CScope& scope)
     TReportObjectList::iterator it1 = list_all.begin();
     while (it1 != list_all.end()) {
         const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>((*it1)->GetObject().GetPointer());
-        TReportObjectList::const_iterator it2 = it1;
+        TReportObjectList::iterator it2 = it1;
         ++it2;
         bool remove_f1 = false;
         while (it2 != list_all.end()) {
