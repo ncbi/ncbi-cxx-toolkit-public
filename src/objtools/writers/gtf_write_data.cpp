@@ -503,11 +503,37 @@ string CGtfRecord::x_MrnaToTranscriptId(
     static RNA_IDS usedRnaIds;
     RNA_ID rnaId;
 
+    //far accession first
     if (mf.IsSetProduct()) {
         if (!CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), rnaId)) {
-            rnaId = mf.GetProduct().GetId()->GetSeqIdString(true);
+            rnaId.clear();
         }
     }
+
+    //then orig_transcript_id if available
+    if (rnaId.empty()  &&  !CWriteUtil::GetQualifier(mf, "orig_transcript_id", rnaId)) {
+        rnaId.clear();
+    }
+
+    //then gene/locus-tag
+    //then gene/locus
+    if (rnaId.empty()) {
+        try {
+            CMappedFeat gf = x_MrnaFeatureToGeneParent(mf);
+            if (gf) {
+                const CGene_ref& gRef = gf.GetData().GetGene();
+                if (gRef.IsSetLocus_tag()) {
+                    rnaId = gRef.GetLocus_tag();
+                }
+                else if (gRef.IsSetLocus()) {
+                    rnaId = gRef.GetLocus();
+                }
+            }
+        }
+        catch(...){}
+    }
+
+    //generic ID as last resort
     if (rnaId.empty()) {
         rnaId = x_GenericTranscriptId(mf);
         //we know the ID is going to be unique if we get it this way
@@ -516,6 +542,8 @@ string CGtfRecord::x_MrnaToTranscriptId(
         rnaMap[mf] = rnaId;
         return rnaId;
     }
+
+    //uniquify the ID we came up with
     RNA_IDS::const_iterator cit = find(
         usedRnaIds.begin(), usedRnaIds.end(), rnaId);
     if (usedRnaIds.end() == cit) {
