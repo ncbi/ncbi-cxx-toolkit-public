@@ -250,7 +250,7 @@ void CDiscRepApp :: x_ProcessOutputArgs(const CArgs& args)
 
 void CDiscRepApp :: x_ProduceReport(const string& filename)
 {
-    CNcbiOfstream ostr(filename);
+    CNcbiOfstream ostr(filename.c_str());
 
     m_Workflow.Collate();
     DiscRepNmSpc::TReportItemList list = m_Workflow.GetResults();
