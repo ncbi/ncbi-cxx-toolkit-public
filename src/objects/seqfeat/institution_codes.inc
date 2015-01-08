@@ -5340,6 +5340,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SCSIO	s	South China Sea Institute of Oceanology, Academia Sinica",
 "SCSM	s	South Carolina State Museum",
 "SCT	s	Friend's School",
+"SCTCC	c	Sichuan Type Culture Collection",
 "SCU	s	Shandong Christian University",
 "SCUF	s	Universidade Federal de Santa Catarina",
 "SCZ	s	Smithsonian Tropical Research Institute",
