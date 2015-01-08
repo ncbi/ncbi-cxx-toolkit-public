@@ -92,6 +92,11 @@ public:
         eLastId = eLeafCountId ///< Last Id (with largest index)
     };
 
+    enum eSeqType {
+        eSeqTypeReferenceDB,
+        eSeqTypeKmerBlast
+    };
+
     
 public:
 
@@ -131,6 +136,11 @@ public:
                       ILinkoutDB* linkoutDB = NULL,
                       int linkoutType = 0,
                       string mv_build_name = "");
+
+    CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,                      
+                      map < string, int > &seqTypeMap,
+                      ELabelType lbl_type = eSeqId);
+                      
 
     /// Constructor
     /// @param btc BioTreeContainer object [in]
@@ -393,6 +403,8 @@ protected:
     void x_MarkLeavesBySeqId(CBioTreeContainer& btc, vector<string>& ids,
                              CScope& scope);
 
+    
+
 private:
     
 
@@ -413,8 +425,11 @@ private:
                                  ELabelType label_type,
                                  const vector<int>& mark_leaves,
                                  TBlastNameColorMap& bcolormap,
+                                 map < string, int > &seqTypeMap,
                                  ILinkoutDB* linkoutDB = NULL,
                                  int linkoutType = 0);
+
+    static int x_FindSeqType(map<string, int> &seqTypeMap, string idString);
 
     /// Add feature descriptor to tree
     /// @param id Feature id [in]
@@ -547,7 +562,7 @@ private:
         string m_CurrentBlastName;
     };
 
-
+    
     /// Tree visitor for checking whether a subtree contains a query node.
     /// A query node has feature node-info set to "query".
     class CQueryNodeChecker {
@@ -558,6 +573,8 @@ private:
             : m_HasQueryNode(false),
               m_HasSeqFromType(false),
               m_HasSeqFromVerifiedMat(false),              
+              m_HasSeqReferenceDB(false),
+              m_HasSeqKmerBlast(false),
               m_LeafCount(0)
         {
             const CBioTreeFeatureDictionary& fdict
@@ -587,6 +604,8 @@ private:
         int GetLeafCount (void) const { return m_LeafCount;}
 
         bool HasSeqFromVerifiedMat(void) const { return m_HasSeqFromVerifiedMat;}
+        bool HasSeqReferenceDB(void) const { return m_HasSeqReferenceDB;}
+        bool HasSeqKmerBlast(void) const { return m_HasSeqKmerBlast;}
         
 
         /// Expamine node: check if query node. Function invoked on each
@@ -621,6 +640,16 @@ private:
 
                         m_HasSeqFromVerifiedMat = true;
                     }                    
+                    if (node.GetFeature(GetFeatureTag(eNodeInfoId))
+                        == kNodeInfoSeqReferenceDB) {
+
+                        m_HasSeqReferenceDB = true;
+                    }                    
+                    else if (node.GetFeature(GetFeatureTag(eNodeInfoId))
+                        == kNodeInfoSeqKmerBlast) {
+
+                        m_HasSeqKmerBlast = true;
+                    }                                        
                 }
             }
             return eTreeTraverse;
@@ -629,7 +658,9 @@ private:
     private:
         bool m_HasQueryNode;
         bool m_HasSeqFromType;
-        bool m_HasSeqFromVerifiedMat;        
+        bool m_HasSeqFromVerifiedMat;    
+        bool m_HasSeqReferenceDB;    
+        bool m_HasSeqKmerBlast;            
         int m_LeafCount;
     };
 
@@ -659,6 +690,7 @@ protected:
     ILinkoutDB* m_LinkoutDB;
     int m_LinkoutType;
     string m_MapViewerBuildName;
+    map < string, int > m_SeqTypeMap;
         
 
 public:
@@ -669,7 +701,9 @@ public:
     static const string kNodeInfoSeqFromType;
 
     static const string kNodeInfoSeqFromVerifiedMat;                        
-    
+
+    static const string kNodeInfoSeqReferenceDB;
+    static const string kNodeInfoSeqKmerBlast;
 };
 
 

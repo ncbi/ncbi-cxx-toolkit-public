@@ -122,12 +122,16 @@ public:
     bool FoundQueryNode(void) const {return m_FoundQueryNode;}
     bool FoundSeqFromType(void) const { return m_FoundSeqFromType;}
     bool FoundSeqFromVerifiedMat(void) const { return m_FoundSeqFromVerifiedMat;}
+    bool FoundSeqReferenceDB(void) const { return m_FoundSeqReferenceDB;}
+    bool FoundSeqKmerBlast(void) const { return m_FoundSeqKmerBlast;}    
     int GetLeafCount(void) const { return m_LeafCount;}
 
 protected:
     bool x_IsQuery(const CBioTreeDynamic::CBioNode& node) const;
     bool x_IsSeqFromType(const CBioTreeDynamic::CBioNode& node) const;
     bool x_IsSeqFromVerifiedMat(const CBioTreeDynamic::CBioNode& node) const;    
+    bool x_IsSeqReferenceDB(const CBioTreeDynamic::CBioNode& node) const;    
+    bool x_IsSeqKmerBlast(const CBioTreeDynamic::CBioNode& node) const;        
 
 protected:
     string m_LabelFeatureTag;
@@ -138,6 +142,8 @@ protected:
     bool m_FoundSeqFromType;
     int m_LeafCount;
     bool m_FoundSeqFromVerifiedMat;
+    bool m_FoundSeqKmerBlast;
+    bool m_FoundSeqReferenceDB;    
 };
 
 
