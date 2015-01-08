@@ -48,7 +48,10 @@
 #  endif /*!HAVE_GETPWUID*/
 #  ifndef NCBI_OS_SOLARIS
 #    include <limits.h>
-#  endif
+#  endif /*!NCBI_OS_SOLARIS*/
+#  ifdef NCBI_OS_LINUX
+#    include <sys/user.h>
+#  endif /*NCBI_OS_LINUX*/
 #  include <pwd.h>
 #  include <unistd.h>
 #  include <sys/stat.h>
@@ -58,6 +61,11 @@
 #  include <windows.h>
 #  include <lmcons.h>
 #endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
+#if defined(PAGE_SIZE)  &&  !defined(NCBI_OS_CYGWIN)
+#  define NCBI_DEFAULT_PAGE_SIZE  PAGE_SIZE
+#else
+#  define NCBI_DEFAULT_PAGE_SIZE  0/*unknown*/
+#endif /*PAGE_SIZE && !NCBI_OS_CYGWIN*/
 
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
@@ -809,8 +817,8 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         break;
     }
 
-#  if defined(NCBI_OS_SOLARIS)  ||                                  \
-    (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
+#  if defined(NCBI_OS_SOLARIS)                                          \
+    ||  (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
 #    ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
@@ -868,14 +876,14 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 
 extern size_t CORE_GetVMPageSize(void)
 {
-    static size_t ps = 0;
+    static size_t s_PS = 0;
 
-    if (!ps) {
+    if (!s_PS) {
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
-        /* NB: CYGWIN's PAGESIZE (== PAGE_SIZE) are actually granularity */
+        /* NB: CYGWIN's PAGESIZE (== PAGE_SIZE) is actually the granularity */
         SYSTEM_INFO si;
         GetSystemInfo(&si);
-        ps = (size_t) si.dwPageSize;
+        s_PS = (size_t) si.dwPageSize;
 #elif defined(NCBI_OS_UNIX) 
 #  if   defined(_SC_PAGESIZE)
 #    define NCBI_SC_PAGESIZE  _SC_PAGESIZE
@@ -893,15 +901,15 @@ extern size_t CORE_GetVMPageSize(void)
         if (x <= 0) {
 #  ifdef HAVE_GETPAGESIZE
             if ((x = getpagesize()) <= 0)
-                return 0;
+                return NCBI_DEFAULT_PAGE_SIZE;
 #  else
-            return 0;
-#  endif
+            return NCBI_DEFAULT_PAGE_SIZE;
+#  endif /*HAVE_GETPAGESIZE*/
         }
-        ps = (size_t) x;
+        s_PS = (size_t) x;
 #endif /*OS_TYPE*/
     }
-    return ps;
+    return s_PS;
 }
 
 
