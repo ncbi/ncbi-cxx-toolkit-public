@@ -391,7 +391,6 @@ gpipe_align_format needs prosplign
 gpipe_align_format needs xobjwrite
 gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
-gpipe_alnutil needs xalgoalignutil
 gpipe_an_base needs gencoll_client
 gpipe_an_base needs gpinit
 gpipe_an_base needs gpinit_access
@@ -401,10 +400,12 @@ gpipe_an_base needs gpxlib
 gpipe_an_base needs grid_wrapper
 gpipe_asn_cleanup needs xvalidate
 gpipe_asn_proc needs gpipe_alnutil
+gpipe_asn_proc needs xalgoalignutil
 gpipe_asn_proc needs xalgognomon
 gpipe_asn_proc needs xmergetree
 gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
+gpipe_best_placement needs xalgoalignutil
 gpipe_clean_titles needs xdiscrepancy_report
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
@@ -413,6 +414,7 @@ gpipe_common needs xmlwrapp
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
 gpipe_ftp needs gpipe_alnutil
+gpipe_ftp needs xalgoalignutil
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs gcaccess_utils
