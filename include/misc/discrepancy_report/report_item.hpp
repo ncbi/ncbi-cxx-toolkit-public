@@ -83,12 +83,12 @@ protected:
     bool m_AddTag;                 // indicates whether tags are requested in output
     bool m_LabelSub;               // indicates whether text should include label for "top level" vs. sub
     bool m_ListObjects;            // indicates whether to list objects in report
+    bool m_SuppressAllObjects;     
     EFormat m_Format;              // format to use for output (text or XML)
 
     typedef map <string, bool> TExpandedTestList;
     TExpandedTestList m_TestList;
 
-    bool m_SuppressAllObjects;
     typedef map <string, bool> TSuppressObjectsList;
     TSuppressObjectsList m_SuppressObjects;
 };
@@ -102,8 +102,13 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CReportItem : public CObject
 {
 public:
     CReportItem() : m_Text(""), 
-                          m_IsSelected(false), m_IsChecked(false), m_IsExpanded(false), 
-                          m_Objects(), m_Subitems(), m_NeedsTag(false) {}
+                    m_IsSelected(false),
+                    m_IsExpanded(false), 
+                    m_IsChecked(false),
+                    m_Subitems(),
+                    m_Objects(),
+                    m_SettingName(""),
+                    m_NeedsTag(false) {}
     ~CReportItem() {}
 
     const string& GetText() const { return m_Text; }
