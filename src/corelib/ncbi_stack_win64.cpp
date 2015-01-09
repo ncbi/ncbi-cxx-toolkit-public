@@ -324,6 +324,8 @@ private:
 
 CStackTraceImpl::CStackTraceImpl(void)
 {
+    s_SymbolGuard->UpdateSymbols();
+
     HANDLE curr_proc = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
 
