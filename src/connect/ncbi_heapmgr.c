@@ -872,13 +872,13 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 
     if (unlikely(!s_HEAP_fast)) {
         const SHEAP_HeapBlock* e = heap->base + heap->size;
-        if (unlikely(b < heap->base  ||  e < n)) {
+        if (unlikely(b < heap->base)  ||  unlikely(e < n)) {
             CORE_LOGF_X(17, eLOG_Error,
                         ("Heap Free%s: Alien block", s_HEAP_Id(_id, heap)));
             return;
         }
-        if (unlikely((!p  &&  b != heap->base)  ||
-                     ( p  &&  (p < heap->base  ||  b != HEAP_NEXT(p))))) {
+        if (unlikely((!p  &&  b != heap->base))  ||
+            unlikely(( p  &&  (p < heap->base  ||  b != HEAP_NEXT(p))))) {
             char h[40];
             if (!p  ||  p < heap->base  ||  e <= p)
                 *h = '\0';
@@ -1183,7 +1183,7 @@ SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
         if (unlikely(!ptr))
             return &heap->base->head;
         b = HEAP_NEXT((SHEAP_HeapBlock*) ptr);
-        return likely(ptr < &b->head  &&  b < heap->base + heap->size)
+        return likely(ptr < &b->head)  &&  likely(b < heap->base + heap->size)
             ? &b->head : 0;
     }
     return s_HEAP_Walk(heap, ptr);
