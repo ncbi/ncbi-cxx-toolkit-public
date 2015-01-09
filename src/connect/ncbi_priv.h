@@ -82,7 +82,7 @@ extern "C" {
 NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  36);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   302, 163);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   9);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     304,  32);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     304,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);
 NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,     306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  23);
@@ -196,15 +196,15 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
 #define DO_CORE_LOG_X(_code, _subcode, _level, _message, _dynamic,      \
                       _error, _descr, _raw_data, _raw_size)             \
     do {                                                                \
-        ELOG_Level xx_level = (_level);                                 \
-        if (g_CORE_Log  ||  xx_level == eLOG_Fatal) {                   \
+        ELOG_Level _xx_level = (_level);                                \
+        if (g_CORE_Log  ||  _xx_level == eLOG_Fatal) {                  \
             SLOG_Handler _mess;                                         \
             _mess.dynamic     = _dynamic;                               \
             _mess.message     = NcbiMessagePlusError(&_mess.dynamic,    \
-                                                     _message,          \
-                                                     _error,            \
-                                                     _descr);           \
-            _mess.level       = xx_level;                               \
+                                                     (_message),        \
+                                                     (_error),          \
+                                                     (_descr));         \
+            _mess.level       = _xx_level;                              \
             _mess.module      = THIS_MODULE;                            \
             _mess.func        = CORE_CURRENT_FUNCTION;                  \
             _mess.file        = __FILE__;                               \
@@ -332,8 +332,8 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
 
 
 #ifdef __GNUC__
-#  define likely(x)    __builtin_expect((x),1)
-#  define unlikely(x)  __builtin_expect((x),0)
+#  define likely(x)    __builtin_expect(!(x),0)
+#  define unlikely(x)  __builtin_expect(!(x),1)
 #else
 #  define likely(x)    (x)
 #  define unlikely(x)  (x)
