@@ -1187,7 +1187,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 #endif
 
     // Create a NetStorage object that should to go to NetCache.
-    string object_loc = WriteTwoAndRead<TLoc::TCreate>(
+    string object_loc = WriteTwoAndRead<typename TLoc::TCreate>(
             netstorage.Create(TLoc::create),
             netstorage.Create(TLoc::create));
 
@@ -1209,13 +1209,13 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 
     // However, the object must still be accessible
     // either using the original ID:
-    ReadAndCompare<TLoc::TRelocate>("Reading using original ID",
+    ReadAndCompare<typename TLoc::TRelocate>("Reading using original ID",
             netstorage.Open(object_loc));
     // or using the newly generated persistent storage ID:
-    ReadAndCompare<TLoc::TRelocate>("Reading using newly generated ID",
+    ReadAndCompare<typename TLoc::TRelocate>("Reading using newly generated ID",
             netstorage.Open(persistent_loc));
 
-    ExistsAndRemoveTests<TLoc::TRelocate>(object_loc);
+    ExistsAndRemoveTests<typename TLoc::TRelocate>(object_loc);
 }
 
 template <class TPolicy>
@@ -1238,22 +1238,22 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
 #endif
 
     // Write and read test data using a user-defined key.
-    WriteTwoAndRead<TLoc::TCreate>(
+    WriteTwoAndRead<typename TLoc::TCreate>(
             netstorage.Open(unique_key2, TLoc::create),
             netstorage.Open(unique_key3, TLoc::create));
 
     // Make sure the object is readable with a different combination of flags.
-    ReadAndCompare<TLoc::TCreate>("Reading using different set of flags",
+    ReadAndCompare<typename TLoc::TCreate>("Reading using different set of flags",
             netstorage.Open(unique_key2, TLoc::readable));
 
     // Relocate the object to FileTrack and make sure
     // it can be read from there.
     netstorage.Relocate(unique_key2, TLoc::relocate, TLoc::create);
 
-    ReadAndCompare<TLoc::TRelocate>("Reading relocated object",
+    ReadAndCompare<typename TLoc::TRelocate>("Reading relocated object",
             netstorage.Open(unique_key2, TLoc::relocate));
 
-    ExistsAndRemoveTests<TLoc::TRelocate>(unique_key2);
+    ExistsAndRemoveTests<typename TLoc::TRelocate>(unique_key2);
 }
 
 NCBITEST_AUTO_INIT()
