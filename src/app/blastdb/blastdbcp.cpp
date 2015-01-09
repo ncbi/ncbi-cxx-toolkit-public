@@ -91,9 +91,9 @@ BlastdbCopyApplication::BlastdbCopyApplication()
     version->SetVersionInfo(1, 0);
     SetFullVersion(version);
 
-    m_MembershipMap[kSwissprot] = EMembershipBits::eSwissprot;
-    m_MembershipMap[kPdb]       = EMembershipBits::ePdb;
-    m_MembershipMap[kRefseq]    = EMembershipBits::eRefseq;
+    m_MembershipMap[kSwissprot] = eSwissprot;
+    m_MembershipMap[kPdb]       = ePdb;
+    m_MembershipMap[kRefseq]    = eRefseq;
 }
 
 
