@@ -39,6 +39,14 @@ USING_SCOPE(blast);
 /////////////////////////////////////////////////////////////////////////////
 //  BlastdbCopyApplication::
 
+static const string kTargetOnly("target_only");
+static const string kMembershipBits("membership_bits");
+
+static const string kCopyOnly("copy_only");
+
+static const string kSwissprot("swissprot");
+static const string kPdb("pdb");
+static const string kRefseq("refseq");
 
 class BlastdbCopyApplication : public CNcbiApplication
 {
@@ -66,15 +74,6 @@ private: /* Private Data */
         eRefseq,            // bit 3
         eReserved           // bit 4 (only appears with some bit 3 entries?)
     };
-
-    const string kTargetOnly     = "target_only";
-    const string kMembershipBits = "membership_bits";
-
-    const string kCopyOnly       = "copy_only";
-
-    const string kSwissprot = "swissprot";
-    const string kPdb       = "pdb";
-    const string kRefseq    = "refseq";
 
     typedef map<string, EMembershipBits> TMemBitMap;
 
