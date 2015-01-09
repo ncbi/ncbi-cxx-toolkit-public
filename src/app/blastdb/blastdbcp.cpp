@@ -50,14 +50,36 @@ private: /* Private Methods */
     virtual int  Run(void);
     virtual void Exit(void);
 
-    bool x_ShouldParseSeqIds(const string& dbname, 
+    bool x_ShouldParseSeqIds(const string& dbname,
                              CSeqDB::ESeqType seq_type) const;
 
     bool x_ShouldCopyPIGs(const string& dbname,
                           CSeqDB::ESeqType seq_type) const;
 
 private: /* Private Data */
-    bool    m_bCheckOnly;
+    bool m_bCheckOnly;
+
+    enum EMembershipBits {
+        eUnused,
+        eSwissprot,         // bit 1 (LSB?)
+        ePdb,               // bit 2
+        eRefseq,            // bit 3
+        eReserved           // bit 4 (only appears with some bit 3 entries?)
+    };
+
+    const string kTargetOnly     = "target_only";
+    const string kMembershipBits = "membership_bits";
+
+    const string kCopyOnly       = "copy_only";
+
+    const string kSwissprot = "swissprot";
+    const string kPdb       = "pdb";
+    const string kRefseq    = "refseq";
+
+    typedef map<string, EMembershipBits> TMemBitMap;
+
+    TMemBitMap m_MembershipMap;
+
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -69,6 +91,10 @@ BlastdbCopyApplication::BlastdbCopyApplication()
     CRef<CVersion> version(new CVersion());
     version->SetVersionInfo(1, 0);
     SetFullVersion(version);
+
+    m_MembershipMap[kSwissprot] = EMembershipBits::eSwissprot;
+    m_MembershipMap[kPdb]       = EMembershipBits::ePdb;
+    m_MembershipMap[kRefseq]    = EMembershipBits::eRefseq;
 }
 
 
@@ -82,43 +108,95 @@ void BlastdbCopyApplication::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Performs a (deep) copy of a subset of a BLAST database");
+    arg_desc->SetUsageContext(
+            GetArguments().GetProgramBasename(),
+            "Performs a (deep) copy of a subset of a BLAST database"
+    );
 
     arg_desc->SetCurrentGroup("BLAST database options");
-    arg_desc->AddDefaultKey(kArgDb, "dbname", "BLAST database name", 
-                            CArgDescriptions::eString, "nr");
 
-    arg_desc->AddDefaultKey(kArgDbType, "molecule_type",
-                            "Molecule type stored in BLAST database",
-                            CArgDescriptions::eString, "prot");
-    arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
-                                        "nucl", "prot", "guess"));
+    arg_desc->AddDefaultKey(
+            kArgDb,
+            "dbname",
+            "BLAST database name",
+            CArgDescriptions::eString, "nr"
+    );
+
+    arg_desc->AddDefaultKey(
+            kArgDbType,
+            "molecule_type",
+            "Molecule type stored in BLAST database",
+            CArgDescriptions::eString, "prot"
+    );
+    arg_desc->SetConstraint(
+            kArgDbType,
+            &(*new CArgAllow_Strings, "nucl", "prot", "guess")
+    );
 
     arg_desc->SetCurrentGroup("Configuration options");
-    arg_desc->AddOptionalKey(kArgDbTitle, "database_title",
-                             "Title for BLAST database",
-                             CArgDescriptions::eString);
-    arg_desc->AddKey(kArgGiList, "input_file", 
-                     "Text or binary gi file to restrict the BLAST "
-                     "database provided in -db argument",
-					 CArgDescriptions::eString);
-    arg_desc->AddFlag("membership_bits", "Copy the membershi bits", true);
+
+    arg_desc->AddOptionalKey(
+            kArgDbTitle,
+            "database_title",
+            "Title for BLAST database",
+            CArgDescriptions::eString
+    );
+
+    arg_desc->AddKey(
+            kArgGiList,
+            "input_file",
+            "Text or binary gi file to restrict the BLAST "
+            "database provided in -db argument",
+            CArgDescriptions::eString
+    );
+
+    arg_desc->AddFlag(
+            kMembershipBits,
+            "Copy the membership bits",
+            true
+    );
+
+    arg_desc->AddFlag(
+            kTargetOnly,
+            "Copy only entries specified in gi file",
+            true
+    );
+
+    arg_desc->AddOptionalKey(
+            kCopyOnly,
+            "membership_bit",
+            "Membership bit by which copied entries are filtered",
+            CArgDescriptions::eString
+    );
+    arg_desc->SetConstraint(
+            kCopyOnly,
+            &(*new CArgAllow_Strings, kSwissprot, kPdb, kRefseq)
+    );
 
     arg_desc->SetCurrentGroup("Output options");
-    arg_desc->AddOptionalKey(kArgOutput, "database_name",
-                             "Name of BLAST database to be created",
-                             CArgDescriptions::eString);
-    HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
+
+    arg_desc->AddOptionalKey(
+            kArgOutput,
+            "database_name",
+            "Name of BLAST database to be created",
+            CArgDescriptions::eString
+    );
+
+    HideStdArgs(
+            fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun
+    );
+
     SetupArgDescriptions(arg_desc.release());
 }
 
 class CBlastDbBioseqSource : public IBioseqSource
 {
 public:
-    CBlastDbBioseqSource(CRef<CSeqDBExpert> blastdb,
-                         CRef<CSeqDBGiList> gilist,
-                         bool copy_membership_bits = false)
+    CBlastDbBioseqSource(
+            CRef<CSeqDBExpert> blastdb,
+            CRef<CSeqDBGiList> gilist,
+            bool copy_membership_bits = false
+    )
     {
         CStopWatch total_timer, bioseq_timer, memb_timer;
         total_timer.Start();
@@ -133,20 +211,32 @@ public:
                 // don't add the same OID twice to avoid duplicates
                 continue;
             }
+
             bioseq_timer.Start();
-            CConstRef<CBioseq> bs(&*blastdb->GetBioseq(oid));
+            CRef<CBioseq> bs_nc = blastdb->GetBioseq(oid);
+            if (bs_nc.Empty()) {
+                // If we end up here, all sequences were probably filtered
+                // out by the membership bit setting for this gi.
+                bioseq_timer.Stop();
+                continue;
+            }
+
+            CConstRef<CBioseq> bs(&*bs_nc);
             m_Bioseqs.push_back(bs);
             bioseq_timer.Stop();
 
-            if (copy_membership_bits == false)
+            if (copy_membership_bits == false) {
+                // If we're not copying the membership bits, we're done
+                // with this gi, so loop back for the next one.
                 continue;
+            }
 
             memb_timer.Start();
             CRef<CBlast_def_line_set> hdr = CSeqDB::ExtractBlastDefline(*bs);
             ITERATE(CBlast_def_line_set::Tdata, itr, hdr->Get()) {
                 CRef<CBlast_def_line> bdl = *itr;
-                if (bdl->CanGetMemberships() && 
-                    !bdl->GetMemberships().empty()) {
+                if (bdl->CanGetMemberships() &&
+                        !bdl->GetMemberships().empty()) {
                     int memb_bits = bdl->GetMemberships().front();
                     if (memb_bits == 0) {
                         continue;
@@ -158,18 +248,29 @@ public:
             memb_timer.Stop();
         }
         total_timer.Stop();
-        ERR_POST(Info << "Will extract " << m_Bioseqs.size()
-                      << " sequences from the source database");
-        ERR_POST(Info << "Processed all input data in " << total_timer.AsSmartString());
-        ERR_POST(Info << "Processed bioseqs in " << bioseq_timer.AsSmartString());
-        ERR_POST(Info << "Processed membership bits in " << memb_timer.AsSmartString());
+        ERR_POST(
+                Info << "Will extract " << m_Bioseqs.size()
+                << " sequences from the source database"
+        );
+        ERR_POST(
+                Info << "Processed all input data in "
+                << total_timer.AsSmartString()
+        );
+        ERR_POST(
+                Info << "Processed bioseqs in "
+                << bioseq_timer.AsSmartString()
+        );
+        ERR_POST(
+                Info << "Processed membership bits in "
+                << memb_timer.AsSmartString()
+        );
     }
 
     const TLinkoutMap GetMembershipBits() const {
         return m_MembershipBits;
     }
 
-    virtual CConstRef<CBioseq> GetNext() 
+    virtual CConstRef<CBioseq> GetNext()
     {
         if (m_Bioseqs.empty()) {
             return CConstRef<CBioseq>(0);
@@ -239,8 +340,8 @@ int BlastdbCopyApplication::Run(void)
 
     // Setup Logging
     if (args["logfile"]) {
-        SetDiagPostLevel(eDiag_Info); 
-        SetDiagPostFlag(eDPF_All); 
+        SetDiagPostLevel(eDiag_Info);
+        SetDiagPostFlag(eDPF_All);
         time_t now = time(0);
         LOG_POST( Info << string(72,'-') << "\n" << "NEW LOG - " << ctime(&now) );
     }
@@ -249,8 +350,33 @@ int BlastdbCopyApplication::Run(void)
     try {{
 
         seq_type = ParseMoleculeTypeString(args[kArgDbType].AsString());
-        CRef<CSeqDBGiList> gilist(new CSeqDBFileGiList(args[kArgGiList].AsString()));
-        CRef<CSeqDBExpert> sourcedb(new CSeqDBExpert(args[kArgDb].AsString(), seq_type));
+        CRef<CSeqDBGiList> gilist(
+                new CSeqDBFileGiList(args[kArgGiList].AsString())
+        );
+
+        CSeqDBExpert* dbexpert;
+        if (args[kTargetOnly].AsBoolean()) {
+            dbexpert = new CSeqDBExpert(
+                    args[kArgDb].AsString(),
+                    seq_type,
+                    &*gilist
+            );
+        } else {
+            dbexpert = new CSeqDBExpert(
+                    args[kArgDb].AsString(),
+                    seq_type
+            );
+        }
+        CRef<CSeqDBExpert> sourcedb(dbexpert);
+
+        if (args[kCopyOnly].HasValue()) {
+            string mbitName = args[kCopyOnly].AsString();
+            TMemBitMap::iterator it = m_MembershipMap.find(mbitName);
+            if (it != m_MembershipMap.end()) {
+                sourcedb->SetVolsMemBit(it->second);
+            }
+        }
+
         string title;
         if (args[kArgDbTitle].HasValue()) {
             title = args[kArgDbTitle].AsString();
@@ -262,8 +388,11 @@ int BlastdbCopyApplication::Run(void)
 
         const bool kCopyPIGs = x_ShouldCopyPIGs(args[kArgDb].AsString(),
                                                               seq_type);
-        CBlastDbBioseqSource bioseq_source(sourcedb, gilist,
-                                           args["membership_bits"]);
+        CBlastDbBioseqSource bioseq_source(
+                sourcedb,
+                gilist,
+                args[kMembershipBits].AsBoolean()
+        );
         const bool kIsSparse = false;
         const bool kParseSeqids = x_ShouldParseSeqIds(args[kArgDb].AsString(),
                                                       seq_type);
@@ -275,7 +404,7 @@ int BlastdbCopyApplication::Run(void)
         CBuildDatabase destdb(args[kArgOutput].AsString(), title,
                               static_cast<bool>(seq_type == CSeqDB::eProtein),
                               kIsSparse, kParseSeqids, kUseGiMask,
-                              &(args["logfile"].HasValue() 
+                              &(args["logfile"].HasValue()
                                ? args["logfile"].AsOutputFile() : cerr));
         destdb.SetUseRemote(false);
         //destdb.SetVerbosity(true);
@@ -287,7 +416,7 @@ int BlastdbCopyApplication::Run(void)
         timer.Stop();
         ERR_POST(Info << "Created BLAST database in " << timer.AsSmartString());
     }}
-    catch (const CException& ex) {
+    catch (CException& ex) {
         LOG_POST( Error << ex );
         DeleteBlastDb(args[kArgOutput].AsString(), seq_type);
         retval = -1;

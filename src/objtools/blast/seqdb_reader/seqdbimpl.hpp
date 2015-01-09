@@ -1105,6 +1105,9 @@ public:
         return m_Atlas.GetSliceSize();
     }
 
+    /// Set the membership bit of all volumes
+    void SetVolsMemBit(int mbit);
+
 private:
     CLASS_MARKER_FIELD("IMPL")
 

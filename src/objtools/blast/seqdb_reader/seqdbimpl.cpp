@@ -2488,5 +2488,13 @@ int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const
     return retval;
 }
 
+void CSeqDBImpl::SetVolsMemBit(int mbit)
+{
+    int nvols = m_VolSet.GetNumVols();
+    for (int vol = 0; vol < nvols; ++vol) {
+        m_VolSet.GetVolNonConst(vol)->SetMemBit(mbit);
+    }
+}
+
 END_NCBI_SCOPE
 

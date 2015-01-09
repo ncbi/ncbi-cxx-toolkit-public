@@ -1234,6 +1234,11 @@ string CSeqDB::GenerateSearchPath()
     return CSeqDBAtlas::GenerateSearchPath();
 }
 
+void CSeqDB::SetVolsMemBit(int mbit)
+{
+    m_Impl->SetVolsMemBit(mbit);
+}
+
 /// Functor class for FindFilesInDir
 class CBlastDbFinder {
 public:

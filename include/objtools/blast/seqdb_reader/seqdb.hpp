@@ -1433,6 +1433,10 @@ public:
 
     /// Retrieve the disk usage in bytes for this BLAST database
     Int8 GetDiskUsage() const;
+
+    /// Set the membership of all volumes
+    void SetVolsMemBit(int mbit);
+
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
