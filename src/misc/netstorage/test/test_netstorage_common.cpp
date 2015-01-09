@@ -718,14 +718,16 @@ struct SWriteHelper
     }
 
     template <class TReader>
-    bool operator()(TReader& reader, const SCtx& ctx)
+    bool operator()(const TReader& reader, const SCtx& ctx)
     {
-        while (reader.length) {
+        size_t total = reader.length;
+
+        while (total) {
             size_t length = 0;
-            m_Result = m_Dest.Write(reader.buf, reader.length, &length);
+            m_Result = m_Dest.Write(reader.buf, total, &length);
 
             if (m_Result == eRW_Success) {
-                reader.length -= length;
+                total -= length;
             } else {
                 BOOST_ERROR_CTX("Failed to write to object: " <<
                         g_RW_ResultToString(m_Result), ctx);
@@ -888,14 +890,57 @@ struct SAttrApi<TAttrTestingEnabled> : SAttrApiBase
 #endif
 
 
+// Locations and flags used for tests
+
+struct SNC2FT
+{
+    static const int source = fNST_Persistent;
+
+    static const int non_existent = fNST_Fast | fNST_Movable;
+
+    typedef TLocationNetCache TCreate;
+    static const int create = fNST_Fast | fNST_Movable;
+
+    static const int immovable = fNST_Fast;
+
+    static const int readable = fNST_Persistent | fNST_Movable;
+
+    typedef TLocationFileTrack TRelocate;
+    static const int relocate = fNST_Persistent;
+};
+
+struct SFT2NC
+{
+    static const int source = fNST_Fast;
+
+    static const int non_existent = fNST_Persistent | fNST_Movable;
+
+    typedef TLocationFileTrack TCreate;
+    static const int create = fNST_Persistent | fNST_Movable;
+
+    static const int immovable = fNST_Persistent;
+
+    static const int readable = fNST_Fast | fNST_Movable;
+
+    typedef TLocationNetCache TRelocate;
+    static const int relocate = fNST_Fast;
+};
+
+
 // Just a convenience wrapper
-template <class TNetStorage, class TExpected, class TApi, class TAttrTesting>
+template <
+    class TNetStorage,
+    class TExpected,
+    class TApi,
+    class TAttrTesting,
+    class TLoc>
 struct SPolicy
 {
     typedef TNetStorage NetStorage;
     typedef TExpected Expected;
     typedef TApi Api;
     typedef TAttrTesting AttrTesting;
+    typedef TLoc Loc;
 };
 
 // Test context
@@ -907,6 +952,7 @@ struct SFixture
     typedef typename TPolicy::Expected TExpected;
     typedef typename TPolicy::Api TApi;
     typedef typename TPolicy::AttrTesting TAttrTesting;
+    typedef typename TPolicy::Loc TLoc;
 
     TNetStorage netstorage;
     auto_ptr<TExpected> data;
@@ -930,7 +976,14 @@ struct SFixture
     template <class TLocation>
     void ReadAndCompare(const string&, CNetStorageObject object);
 
-    string WriteAndRead(CNetStorageObject object);
+    template <class TLocation>
+    void ReadTwoAndCompare(const string&,
+            CNetStorageObject object1, CNetStorageObject object2);
+
+    template <class TLocation>
+    string WriteTwoAndRead(CNetStorageObject object1, CNetStorageObject object2);
+
+    template <class TLocation>
     void ExistsAndRemoveTests(const string& id);
 
     // The parameter is only used to select the implementation
@@ -994,41 +1047,122 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
 }
 
 template <class TPolicy>
-string SFixture<TPolicy>::WriteAndRead(CNetStorageObject object)
+template <class TLocation>
+void SFixture<TPolicy>::ReadTwoAndCompare(const string& ctx,
+        CNetStorageObject object1, CNetStorageObject object2)
+{
+    Ctx(ctx);
+    SReadHelper<TApi, TShouldWork> expected_reader(*data);
+    TApi api1(object1);
+    SReadHelper<TApi, TLocation> actual_reader1(api1.GetReader());
+    TApi api2(object2);
+    SReadHelper<TApi, TLocation> actual_reader2(api2.GetReader());
+
+    attr_tester.Read(TLocation(), Line(__LINE__), object1);
+    attr_tester.Read(TLocation(), Line(__LINE__), object2);
+
+    for (;;) {
+        if (!expected_reader(Line(__LINE__))) break;
+        if (!actual_reader1(Line(__LINE__))) break;
+        if (!actual_reader2(Line(__LINE__))) break;
+
+        size_t length = min(expected_reader.length,
+                min(actual_reader1.length, actual_reader2.length));
+
+        if (memcmp(expected_reader.buf, actual_reader1.buf, length)) {
+            BOOST_ERROR_CTX("Read() returned corrupted data", Line(__LINE__));
+            break;
+        }
+
+        if (memcmp(expected_reader.buf, actual_reader2.buf, length)) {
+            BOOST_ERROR_CTX("Read() returned corrupted data", Line(__LINE__));
+            break;
+        }
+
+        expected_reader -= length;
+        actual_reader1 -= length;
+        actual_reader2 -= length;
+
+        if (expected_reader.Empty()) {
+            if (actual_reader1.Empty() && actual_reader2.Empty()) {
+                break;
+            }
+
+            if (actual_reader1.HasData()) {
+                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
+                break;
+            }
+
+            if (actual_reader2.HasData()) {
+                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
+                break;
+            }
+        }
+
+        if (actual_reader1.Empty() || actual_reader2.Empty()) {
+            if (expected_reader.HasData()) {
+                BOOST_ERROR_CTX("Got less data than expected", Line(__LINE__));
+                break;
+            }
+        }
+    }
+
+    expected_reader.Close();
+    actual_reader1.Close();
+    actual_reader2.Close();
+
+    attr_tester.Read(TLocation(), Line(__LINE__), object1);
+    attr_tester.Read(TLocation(), Line(__LINE__), object2);
+
+    CGetInfo<TLocation>(Line(__LINE__), object1, data->Size()).Check();
+    CGetInfo<TLocation>(Line(__LINE__), object2, data->Size()).Check();
+}
+
+template <class TPolicy>
+template <class TLocation>
+string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
+        CNetStorageObject object2)
 {
     SReadHelper<TApi, TShouldWork> source_reader(*data);
-    TApi api(object);
-    SWriteHelper dest_writer(api.GetWriter());
+    TApi api1(object1);
+    SWriteHelper dest_writer1(api1.GetWriter());
+    TApi api2(object2);
+    SWriteHelper dest_writer2(api2.GetWriter());
 
     while (source_reader(Line(__LINE__)) &&
-            dest_writer(source_reader, Line(__LINE__)) &&
-            !source_reader.Empty());
+            dest_writer1(source_reader, Line(__LINE__)) &&
+            dest_writer2(source_reader, Line(__LINE__)) &&
+            !source_reader.Empty()) {
+        source_reader.length = 0;
+    }
 
-    attr_tester.Write(TShouldThrow(), Line(__LINE__), object);
+    attr_tester.Write(TShouldThrow(), Line(__LINE__), object1);
+    attr_tester.Write(TShouldThrow(), Line(__LINE__), object2);
 
     source_reader.Close();
-    dest_writer.Close(Line(__LINE__));
+    dest_writer1.Close(Line(__LINE__));
+    dest_writer2.Close(Line(__LINE__));
 
-    attr_tester.Write(TLocationNetCache(), Line(__LINE__), object);
+    attr_tester.Write(TLocation(), Line(__LINE__), object1);
+    attr_tester.Write(TLocation(), Line(__LINE__), object2);
 
     // Sometimes this object is not immediately available for reading
     SleepSec(1);
 
-    ReadAndCompare<TLocationNetCache>("Reading NetCache after writing", object);
+    ReadTwoAndCompare<TLocation>("Reading after writing", object1, object2);
 
-    return object.GetLoc();
+    return object1.GetLoc();
 }
-
-// TODO: Add tests that read from/write into two objects simultaneously
 
 // Tests Exists() and Remove() methods
 template <class TPolicy>
+template <class TLocation>
 void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
 {
     BOOST_CHECK_CTX(netstorage.Exists(id),
             Ctx("Checking existent object").Line(__LINE__));
     CNetStorageObject object(netstorage.Open(id));
-    CGetInfo<TLocationFileTrack>(Ctx("Reading existent object info").Line(__LINE__),
+    CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
             object, data->Size()).Check();
     netstorage.Remove(id);
     BOOST_CHECK_CTX(!netstorage.Exists(id),
@@ -1043,7 +1177,7 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorage&)
 {
-    data.reset(new TExpected(netstorage.Create(fNST_Persistent)));
+    data.reset(new TExpected(netstorage.Create(TLoc::source)));
 
 #ifdef TEST_NON_EXISTENT
     string not_found(
@@ -1053,70 +1187,73 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 #endif
 
     // Create a NetStorage object that should to go to NetCache.
-    string object_loc = WriteAndRead(netstorage.Create(fNST_Fast | fNST_Movable));
+    string object_loc = WriteTwoAndRead<TLoc::TCreate>(
+            netstorage.Create(TLoc::create),
+            netstorage.Create(TLoc::create));
 
     // Generate a "non-movable" object ID by calling Relocate()
     // with the same storage preferences (so the object should not
     // be actually relocated).
-    string fast_storage_object_loc = netstorage.Relocate(object_loc, fNST_Fast);
+    string immovable_loc = netstorage.Relocate(object_loc, TLoc::immovable);
 
     // Relocate the object to a persistent storage.
-    string persistent_loc = netstorage.Relocate(object_loc, fNST_Persistent);
+    string persistent_loc = netstorage.Relocate(object_loc, TLoc::relocate);
 
 #ifdef TEST_RELOCATED
     // Verify that the object has disappeared from the "fast" storage.
     // Make sure the relocated object does not exists in the
     // original storage anymore.
     ReadAndCompare<TLocationNotFound>("Trying to read relocated object",
-        netstorage.Open(fast_storage_object_loc));
+        netstorage.Open(immovable_loc));
 #endif
 
     // However, the object must still be accessible
     // either using the original ID:
-    ReadAndCompare<TLocationFileTrack>("Reading using original ID",
+    ReadAndCompare<TLoc::TRelocate>("Reading using original ID",
             netstorage.Open(object_loc));
     // or using the newly generated persistent storage ID:
-    ReadAndCompare<TLocationFileTrack>("Reading using newly generated ID",
+    ReadAndCompare<TLoc::TRelocate>("Reading using newly generated ID",
             netstorage.Open(persistent_loc));
 
-    ExistsAndRemoveTests(object_loc);
+    ExistsAndRemoveTests<TLoc::TRelocate>(object_loc);
 }
 
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
     CRandom random_gen;
-
     random_gen.Randomize();
-
-    string unique_key = NStr::NumericToString(
+    string unique_key1 = NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
-    data.reset(new TExpected(netstorage.Open(unique_key, fNST_Persistent)));
-
-    unique_key = NStr::NumericToString(
+    string unique_key2 = NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
+    string unique_key3 = NStr::NumericToString(
+            random_gen.GetRand() * random_gen.GetRand());
+
+    data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
 
 #ifdef TEST_NON_EXISTENT
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
-        netstorage.Open(unique_key, fNST_Fast | fNST_Movable));
+        netstorage.Open(unique_key2, TLoc::non_existent));
 #endif
 
     // Write and read test data using a user-defined key.
-    WriteAndRead(netstorage.Open(unique_key,
-            fNST_Fast | fNST_Movable));
+    WriteTwoAndRead<TLoc::TCreate>(
+            netstorage.Open(unique_key2, TLoc::create),
+            netstorage.Open(unique_key3, TLoc::create));
 
     // Make sure the object is readable with a different combination of flags.
-    ReadAndCompare<TLocationNetCache>("Reading using different set of flags",
-            netstorage.Open(unique_key, fNST_Persistent | fNST_Movable));
+    ReadAndCompare<TLoc::TCreate>("Reading using different set of flags",
+            netstorage.Open(unique_key2, TLoc::readable));
 
     // Relocate the object to FileTrack and make sure
     // it can be read from there.
-    netstorage.Relocate(unique_key, fNST_Persistent, fNST_Movable);
+    netstorage.Relocate(unique_key2, TLoc::relocate, TLoc::create);
 
-    ReadAndCompare<TLocationFileTrack>("Reading relocated object",
-            netstorage.Open(unique_key, fNST_Persistent));
+    ReadAndCompare<TLoc::TRelocate>("Reading relocated object",
+            netstorage.Open(unique_key2, TLoc::relocate));
 
-    ExistsAndRemoveTests(unique_key);
+    ExistsAndRemoveTests<TLoc::TRelocate>(unique_key2);
 }
 
 NCBITEST_AUTO_INIT()
@@ -1128,15 +1265,18 @@ NCBITEST_AUTO_INIT()
 #define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
 #define SRC_LIST    (Str, (Big, (Nst, BOOST_PP_NIL)))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
+#define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
 
-#define TEST_CASE(ST, SRC, API) \
-typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, TAttrTesting> \
-    T##ST##SRC##API##Policy; \
-BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API, SFixture<T##ST##SRC##API##Policy>) \
+#define TEST_CASE(ST, SRC, API, LOC) \
+typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, TAttrTesting, S##LOC> \
+    T##ST##SRC##API##LOC##Policy; \
+BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
+        SFixture<T##ST##SRC##API##LOC##Policy>) \
 { \
     Test(netstorage); \
 }
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
-BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 3, (ST_LIST, SRC_LIST, API_LIST));
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
+        (ST_LIST, SRC_LIST, API_LIST, LOC_LIST));
