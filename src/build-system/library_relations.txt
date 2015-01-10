@@ -298,6 +298,8 @@ gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
 gc_ftp_ctl needs gpipe_objutil
+gc_load_utils needs $(OBJEDIT_LIBS)
+gc_load_utils needs $(XFORMAT_LIBS)
 gc_load_utils needs gc_utils
 gc_load_utils needs xid_utils
 gc_util_sdbapi needs gencoll_client
