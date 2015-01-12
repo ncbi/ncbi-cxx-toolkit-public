@@ -315,16 +315,14 @@ const ENetStorageObjectLocation*
         // Just guessing.
         return SetNetICacheClient() ? s_TryNetCacheThenFileTrack : s_FileTrack;
 
-    if (flags & fNST_Movable) {
-        if (!SetNetICacheClient())
-            return s_FileTrack;
-
-        return flags & fNST_Fast ? s_TryNetCacheThenFileTrack :
+    if (flags & (fNST_Persistent | fNST_Movable)) {
+        if (SetNetICacheClient() && (flags & (fNST_Fast | fNST_Movable))) {
+            return flags & fNST_Fast ?  s_TryNetCacheThenFileTrack :
                 s_TryFileTrackThenNetCache;
-    }
+        }
 
-    if (flags & fNST_Persistent)
         return s_FileTrack;
+    }
 
     DemandNetCache();
     return s_NetCache;
