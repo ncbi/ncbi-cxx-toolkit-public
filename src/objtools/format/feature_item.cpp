@@ -1836,16 +1836,23 @@ void CFeatureItem::x_AddQualsRna(
                     if ( prod ) {
                         x_AddProductIdQuals(prod, slot);
                     } else {
-                        if (sip->IsGi()) {
-                            string acc = GetAccessionForGi(sip->GetGi(), scope);
-                            if( acc.empty() && ! cfg.DropIllegalQuals() ) {
-                                x_AddQual(slot, new CFlatStringQVal(
-                                    NStr::NumericToString(sip->GetGi()) ) );
-                            } else {
-                                if ( !cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
-                                    CRef<CSeq_id> acc_id(new CSeq_id(acc));
-                                    x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
-                                }
+                        string acc;
+                        sip->GetLabel(&acc, CSeq_id::eBoth);
+                        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*sip);
+                        CSeq_id_Handle besth = sequence::GetId(idh, scope, sequence::eGetId_Best);
+                        if (besth) {
+                            acc.clear();
+                            besth.GetSeqId()->GetLabel(&acc, CSeq_id::eContent);
+                        }
+                        if( acc.empty() && ! cfg.DropIllegalQuals() ) {
+                            //sure of that? doesn't look right---
+                            x_AddQual(slot, new CFlatStringQVal(
+                                NStr::NumericToString(sip->GetGi()) ) );
+                        }
+                        if (!acc.empty()) {
+                            if ( !cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
+                                CRef<CSeq_id> acc_id(new CSeq_id(acc));
+                                x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
                             }
                             x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
                         }
