@@ -68,7 +68,9 @@ echo
 $kill $pid > /dev/null 2>&1
 if [ $cygwin = false ]; then
    sleep $sleep_time >/dev/null 2>&1
-   kill -9 $pid > /dev/null 2>&1
+   kill -9 $pid      >/dev/null 2>&1
+   sleep $sleep_time >/dev/null 2>&1
+   kill -ALRM $PPID  >/dev/null 2>&1
 fi
 
 exit 1
