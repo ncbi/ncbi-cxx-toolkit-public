@@ -182,6 +182,9 @@ public:
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
 
+    int GetMaxHspsPerSubject() const;
+    void SetMaxHspsPerSubject(int m);
+
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 
@@ -1094,10 +1097,23 @@ CBlastOptionsLocal::GetMaxNumHspPerSequence() const
 }
 
 inline void
+CBlastOptionsLocal::SetMaxHspsPerSubject(int m)
+{
+    m_HitSaveOpts->max_hsps_per_subject = m;
+}
+
+inline int
+CBlastOptionsLocal::GetMaxHspsPerSubject() const
+{
+    return m_HitSaveOpts->max_hsps_per_subject;
+}
+
+inline void
 CBlastOptionsLocal::SetMaxNumHspPerSequence(int m)
 {
     m_HitSaveOpts->hsp_num_max = m;
 }
+
 
 inline int
 CBlastOptionsLocal::GetCullingLimit() const

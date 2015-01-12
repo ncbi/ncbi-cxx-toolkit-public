@@ -234,6 +234,14 @@ public:
     /// @param m MaxNumHspPerSequence [in]
     void SetMaxNumHspPerSequence(int m) { m_Opts->SetMaxNumHspPerSequence(m); }
 
+    /// Returns MaxHspsPerSubjectQueryPair
+    int GetMaxHspsPerSubject() const {
+        return m_Opts->GetMaxHspsPerSubject();
+    }
+    /// Sets MaxHspPerSubjectQueryPair
+    /// @param m MaxNumHspPerSequence [in]
+    void SetMaxHspsPerSubject(int m) { m_Opts->SetMaxHspsPerSubject(m); }
+
     /// Returns EvalueThreshold
     double GetEvalueThreshold() const { return m_Opts->GetEvalueThreshold(); }
     /// Sets EvalueThreshold

@@ -1863,7 +1863,7 @@ Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
    Int4 hsp_cnt = 0;
    Int4 index;
 
-   if ((hsp_list == NULL) || (hsp_list->hspcnt == 0))
+   if ((hsp_list == NULL) || (hsp_list->hspcnt == 0) || (hit_options->query_cov_hsp_perc == 0))
       return 0;
 
    hsp_array = hsp_list->hsp_array;
@@ -1884,6 +1884,29 @@ Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
 
    return 0;
 }
+
+Int2 Blast_TrimHSPListByMaxHsps(BlastHSPList* hsp_list,
+                                const BlastHitSavingOptions* hit_options)
+{
+   BlastHSP** hsp_array;
+   Int4 index;
+   Int4 hsp_max;
+
+   if ((hsp_list == NULL) ||
+	   (hit_options->max_hsps_per_subject == 0) ||
+	   (hsp_list->hspcnt <= hit_options->max_hsps_per_subject))
+      return 0;
+
+   hsp_max = hit_options->max_hsps_per_subject;
+   hsp_array = hsp_list->hsp_array;
+   for (index = hsp_max; index < hsp_list->hspcnt; index++) {
+      hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+   }
+
+   hsp_list->hspcnt = hsp_max;
+   return;
+}
+
 
 /** Same as Blast_HSPListReapByEvalue() except that it uses
  *  the raw score of the hit and the HitSavingOptions->cutoff_score

@@ -110,6 +110,7 @@ CBlastProteinOptionsHandle::SetHitSavingOptionsDefaults()
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
+    SetMaxHspsPerSubject(0);
 
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple

@@ -179,6 +179,12 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgQueryCovHspPerc,
                            new CArgAllow_Doubles(0.0, 100.0));
 
+    arg_desc.AddOptionalKey(kArgMaxHSPsPerSubject, "int_value",
+                           "Set maximum number of HSPs per subject sequence to save for each query",
+                           CArgDescriptions::eInteger);
+    arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
+                           new CArgAllowValuesGreaterThanOrEqual(1));
+
     arg_desc.SetCurrentGroup("Extension options");
     // ungapped X-drop
     // Default values: blastn=20, megablast=10, others=7
@@ -208,13 +214,6 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Effective length of the search space",
                             CArgDescriptions::eInt8);
     arg_desc.SetConstraint(kArgEffSearchSpace, 
-                           new CArgAllowValuesGreaterThanOrEqual(0));
-
-    arg_desc.AddDefaultKey(kArgMaxHSPsPerSubject, "int_value",
-                           "Set maximum number of HSPs per subject sequence to save (0 means no limit)",
-                           CArgDescriptions::eInteger,
-                           NStr::IntToString(kDfltArgMaxHSPsPerSubject));
-    arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     arg_desc.AddOptionalKey(kArgSumStats, "bool_value",
@@ -284,10 +283,7 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args[kArgMaxHSPsPerSubject]) {
-        const int value = args[kArgMaxHSPsPerSubject].AsInteger();
-        if (value != kDfltArgMaxHSPsPerSubject) {
-            opt.SetMaxNumHspPerSequence(value);
-        }
+        opt.SetMaxHspsPerSubject(args[kArgMaxHSPsPerSubject].AsInteger());
     }
 
     if (args.Exist(kArgSumStats) && args[kArgSumStats]) {
@@ -2304,6 +2300,7 @@ CHspFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgBestHitScoreEdge,
                            CArgDescriptions::eExcludes,
                            kArgCullingLimit);
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -2320,6 +2317,7 @@ CHspFilteringArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args[kArgBestHitScoreEdge]) {
         opts.SetBestHitScoreEdge(args[kArgBestHitScoreEdge].AsDouble());
     }
+
 }
 
 void
@@ -2650,8 +2648,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
     has_defaults[kArgEvalue] = NStr::DoubleToString(BLAST_EXPECT_VALUE);
     has_defaults[kTask] = m_Task;
     has_defaults[kArgOldStyleIndex] = kDfltArgOldStyleIndex;
-    has_defaults[kArgMaxHSPsPerSubject] =
-        NStr::IntToString(kDfltArgMaxHSPsPerSubject);
+
     if (Blast_QueryIsProtein(prog)) {
         if (NStr::Find(m_Task, "blastp") != NPOS || 
             NStr::Find(m_Task, "psiblast") != NPOS) {

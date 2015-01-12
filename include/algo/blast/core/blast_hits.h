@@ -359,6 +359,11 @@ Boolean Blast_HSPQueryCoverageTest(BlastHSP* hsp,
         						   double min_query_coverage_pct,
         						   Int4 query_length);
 
+
+NCBI_XBLAST_EXPORT
+Int2 Blast_TrimHSPListByMaxHsps(BlastHSPList* hsp_list,
+                                const BlastHitSavingOptions* hit_options);
+
 /** Calculated the number of HSPs that should be saved.
  * @param gapped_calculation ungapped if false [in]
  * @param options HitSavingoptions object [in]

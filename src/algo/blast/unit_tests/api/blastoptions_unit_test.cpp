@@ -1081,6 +1081,16 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamUpdateMultipleCalls )
     BOOST_CHECK_EQUAL(40, hit_params->cutoff_score_min);
     BOOST_CHECK_EQUAL(40, hit_params->cutoffs[0].cutoff_score);
     BOOST_CHECK_EQUAL(40, hit_params->cutoffs[0].cutoff_score_max);
+    //Check hit saving default
+    BOOST_CHECK_EQUAL(0, hit_options->query_cov_hsp_perc);
+    BOOST_CHECK_EQUAL(0, hit_options->max_hsps_per_subject);
+    BOOST_CHECK_EQUAL(0, opts->GetQueryCovHspPerc());
+    BOOST_CHECK_EQUAL(0, opts->GetMaxHspsPerSubject());
+    opts->SetQueryCovHspPerc(55.2);
+    opts->SetMaxHspsPerSubject(8);
+    BOOST_CHECK_EQUAL(55.2, opts->GetQueryCovHspPerc());
+    BOOST_CHECK_EQUAL(8, opts->GetMaxHspsPerSubject());
+
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);

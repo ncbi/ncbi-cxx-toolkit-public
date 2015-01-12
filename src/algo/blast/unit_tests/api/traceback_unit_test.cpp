@@ -823,6 +823,212 @@ BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
      BOOST_REQUIRE_EQUAL(kNumHsps, (int)crs[0].GetSeqAlign()->Size());
 }
 
+BOOST_AUTO_TEST_CASE(testFilterBlastResults_QueryCov) {
+    const int k_num_hsps_start = 12;
+    const int k_num_hsps_filtered = 6;
+
+    CSeq_id qid("gi|42734333");
+    CSeq_id sid("gi|30176631");
+
+    auto_ptr<SSeqLoc> qsl(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_unknown));
+    auto_ptr<SSeqLoc> ssl(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_unknown));
+
+    CBlastProteinOptionsHandle opts_handle;
+    CBl2Seq blaster(*qsl, *ssl, opts_handle);
+
+    CBlastQueryInfo query_info;
+    CBLAST_SequenceBlk query_blk;
+    TSearchMessages blast_msg;
+
+    const CBlastOptions& kOpts = blaster.GetOptionsHandle().GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+
+    SetupQueryInfo(const_cast<TSeqLocVector&>(blaster.GetQueries()),
+                   prog, strand_opt, &query_info);
+    SetupQueries(const_cast<TSeqLocVector&>(blaster.GetQueries()),
+                 query_info, &query_blk, prog, strand_opt, blast_msg);
+    ITERATE(TSearchMessages, m, blast_msg) {
+        BOOST_REQUIRE(m->empty());
+    }
+
+    BlastSeqSrc* seq_src =
+        MultiSeqBlastSeqSrcInit(
+                        const_cast<TSeqLocVector&>(blaster.GetSubjects()),
+                        opts_handle.GetOptions().GetProgramType());
+    TestUtil::CheckForBlastSeqSrcErrors(seq_src);
+
+    BlastHSPList* hsp_list =
+        (BlastHSPList*) calloc(1, sizeof(BlastHSPList));
+    hsp_list->oid = 0;
+    hsp_list->hspcnt = k_num_hsps_start;
+    hsp_list->allocated = k_num_hsps_start;
+    hsp_list->hsp_max = k_num_hsps_start;
+    hsp_list->do_not_reallocate = FALSE;
+    hsp_list->hsp_array = (BlastHSP**) malloc(hsp_list->allocated*sizeof(BlastHSP*));
+
+    BlastHSPStream* hsp_stream = x_MakeStream(blaster.GetOptionsHandle().GetOptions());
+
+    const int query_offset[k_num_hsps_start] = { 0, 3864, 3254, 1828, 2189, 795, 607, 1780, 1363, 2751, 3599, 242};
+    const int query_end[k_num_hsps_start] = { 307, 4287, 3556, 2058, 2269, 914, 741, 1821, 1451, 2810, 3631, 285};
+    const int subject_offset[k_num_hsps_start] = { 1, 2723, 2267, 1028, 1292, 634, 501, 925, 1195, 1795, 477, 1233};
+    const int subject_end[k_num_hsps_start] = { 321, 3171, 2537, 1243, 1371, 749, 618, 966, 1286, 1869, 509, 1276};
+    const int score[k_num_hsps_start] = { 370, 319, 139, 120, 89, 84, 75, 70, 69, 60, 47, 43};
+    const int query_gapped_start[k_num_hsps_start] = { 47, 4181, 3286, 2034, 2228, 871, 632, 1798, 1383, 2759, 3606, 259};
+    const int subject_gapped_start[k_num_hsps_start] = { 48, 3073, 2299, 1219, 1330, 709, 526, 943, 1215, 1803, 484, 1250};
+
+   for (int index=0; index<k_num_hsps_start; index++)
+   {
+        hsp_list->hsp_array[index] = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+        hsp_list->hsp_array[index]->query.offset =query_offset[index];
+        hsp_list->hsp_array[index]->query.end =query_end[index];
+        hsp_list->hsp_array[index]->subject.offset =subject_offset[index];
+        hsp_list->hsp_array[index]->subject.end =subject_end[index];
+        hsp_list->hsp_array[index]->score =score[index];
+        hsp_list->hsp_array[index]->query.gapped_start =query_gapped_start[index];
+        hsp_list->hsp_array[index]->subject.gapped_start =subject_gapped_start[index];
+   }
+
+   // needed after tie-breaking algorithm for scores was changed in
+   // ScoreCompareHSP (blast_hits.c, revision 1.139)
+   Blast_HSPListSortByScore(hsp_list);
+   BlastHSPStreamWrite(hsp_stream, &hsp_list);
+
+   x_SetupMain(blaster.GetOptionsHandle().GetOptions(), query_blk, query_info);
+
+   // Set "database" length option to the length of subject sequence,
+   // to avoid having to calculate cutoffs and effective lengths twice.
+   Int4 oid = 0;
+   Uint4 subj_length = BlastSeqSrcGetSeqLen(seq_src, (void*)&oid);
+   blaster.SetOptionsHandle().SetDbLength(subj_length);
+   blaster.SetOptionsHandle().SetQueryCovHspPerc(5);
+
+   x_SetupGapAlign(blaster.GetOptionsHandle().GetOptions(), seq_src, query_info);
+
+   BlastHSPResults* results = NULL;
+
+   x_ComputeTracebak(blaster.GetOptionsHandle().GetOptions(),
+                     hsp_stream, query_blk, query_info, seq_src, &results);
+
+   BlastHSPStreamFree(hsp_stream);
+
+   BlastHitList* hit_list = results->hitlist_array[0];
+   hsp_list = hit_list->hsplist_array[0];
+
+   // One hsp is dropped when the function runs.
+   BOOST_REQUIRE(hsp_list != NULL);
+   BOOST_REQUIRE_EQUAL(k_num_hsps_filtered, hsp_list->hspcnt);
+
+   results = Blast_HSPResultsFree(results);
+   seq_src = BlastSeqSrcFree(seq_src);
+
+}
+
+BOOST_AUTO_TEST_CASE(testFilterBlastResults_MaxHsps) {
+     const int k_num_hsps_start = 9;
+     const int k_num_hsps_filtered = 4;
+
+     CSeq_id qid("gi|1945388");
+     auto_ptr<SSeqLoc> qsl(
+         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+     CSeq_id sid("gi|1732684");
+     auto_ptr<SSeqLoc> ssl(
+         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+     CBl2Seq blaster(*qsl, *ssl, eBlastn);
+
+     CBlastQueryInfo query_info;
+     CBLAST_SequenceBlk query_blk;
+     TSearchMessages blast_msg;
+
+     const CBlastOptions& kOpts = blaster.GetOptionsHandle().GetOptions();
+     EBlastProgramType prog = kOpts.GetProgramType();
+     ENa_strand strand_opt = kOpts.GetStrandOption();
+
+     SetupQueryInfo(const_cast<TSeqLocVector&>(blaster.GetQueries()),
+                    prog, strand_opt, &query_info);
+     SetupQueries(const_cast<TSeqLocVector&>(blaster.GetQueries()),
+                  query_info, &query_blk, prog, strand_opt, blast_msg);
+     ITERATE(TSearchMessages, m, blast_msg) {
+         BOOST_REQUIRE(m->empty());
+     }
+
+     BlastSeqSrc* seq_src =
+         MultiSeqBlastSeqSrcInit(
+                 const_cast<TSeqLocVector&>(blaster.GetSubjects()),
+                 blaster.GetOptionsHandle().GetOptions().GetProgramType());
+     TestUtil::CheckForBlastSeqSrcErrors(seq_src);
+
+     BlastHSPList* hsp_list =
+         (BlastHSPList*) calloc(1, sizeof(BlastHSPList));
+     hsp_list->oid = 0;
+     hsp_list->hspcnt = k_num_hsps_start;
+     hsp_list->allocated = k_num_hsps_start;
+     hsp_list->hsp_max = k_num_hsps_start;
+     hsp_list->do_not_reallocate = FALSE;
+     hsp_list->hsp_array = (BlastHSP**) malloc(hsp_list->allocated*sizeof(BlastHSP*));
+
+     BlastHSPStream* hsp_stream = x_MakeStream(blaster.GetOptionsHandle().GetOptions());
+
+     const int query_offset[k_num_hsps_start] = { 6020, 6022, 6622, 6622, 5295, 5199, 7191, 3818, 7408};
+     const int query_end[k_num_hsps_start] = { 6032, 6161, 6730, 6753, 5386, 5219, 7227, 3830, 7419};
+     const int subject_offset[k_num_hsps_start] = { 98, 104, 241, 241, 16, 0, 378, 71, 63};
+     const int subject_end[k_num_hsps_start] = { 110, 241, 350, 376, 107, 20, 415, 83, 74};
+     const int score[k_num_hsps_start] = { 17, 115, 93, 91, 91, 20, 17, 12, 11};
+     const int context[k_num_hsps_start] = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
+     const int subject_frame[k_num_hsps_start] = { 1, 1, 1, 1, 1, 1, 1, 1, 1};
+     const int query_gapped_start[k_num_hsps_start] = { 20, 6035, 6625, 6745, 5295, 5199, 7193, 3819, 7409};
+     const int subject_gapped_start[k_num_hsps_start] = { 115, 116, 244, 368, 16, 0, 380, 72, 64};
+
+    for (int index=0; index<k_num_hsps_start; index++)
+    {
+         hsp_list->hsp_array[index] = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+         hsp_list->hsp_array[index]->query.offset =query_offset[index];
+         hsp_list->hsp_array[index]->query.end =query_end[index];
+         hsp_list->hsp_array[index]->subject.offset =subject_offset[index];
+         hsp_list->hsp_array[index]->subject.end =subject_end[index];
+         hsp_list->hsp_array[index]->score =score[index];
+         hsp_list->hsp_array[index]->context =context[index];
+         hsp_list->hsp_array[index]->subject.frame =subject_frame[index];
+         hsp_list->hsp_array[index]->query.gapped_start =query_gapped_start[index];
+         hsp_list->hsp_array[index]->subject.gapped_start =subject_gapped_start[index];
+    }
+
+    // needed after tie-breaking algorithm for scores was changed in
+    // ScoreCompareHSP (blast_hits.c, revision 1.139)
+    Blast_HSPListSortByScore(hsp_list);
+    BlastHSPStreamWrite(hsp_stream, &hsp_list);
+
+    x_SetupMain(blaster.GetOptionsHandle().GetOptions(), query_blk, query_info);
+
+    // Set "database" length option to the length of subject sequence,
+    // to avoid having to calculate cutoffs and effective lengths twice.
+    Int4 oid = 0;
+    Uint4 subj_length = BlastSeqSrcGetSeqLen(seq_src, (void*)&oid);
+    blaster.SetOptionsHandle().SetDbLength(subj_length);
+    blaster.SetOptionsHandle().SetMaxHspsPerSubject(k_num_hsps_filtered);
+
+    x_SetupGapAlign(blaster.GetOptionsHandle().GetOptions(), seq_src, query_info);
+
+    BlastHSPResults* results = NULL;
+
+    x_ComputeTracebak(blaster.GetOptionsHandle().GetOptions(),
+                      hsp_stream, query_blk, query_info, seq_src, &results);
+
+    BlastHSPStreamFree(hsp_stream);
+
+    // One hsp is dropped when the function runs.
+    BlastHitList* hit_list = results->hitlist_array[0];
+    hsp_list = hit_list->hsplist_array[0];
+
+    BOOST_REQUIRE(hsp_list != NULL);
+    BOOST_REQUIRE_EQUAL(k_num_hsps_filtered, hsp_list->hspcnt);
+
+    results = Blast_HSPResultsFree(results);
+    seq_src = BlastSeqSrcFree(seq_src);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

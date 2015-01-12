@@ -380,6 +380,12 @@ typedef struct BlastHitSavingOptions {
 
    double query_cov_hsp_perc; /**< Min query coverage hsp percentage */
 
+    /* Used by default hsp filtering strategy, num of best hsps to keep per subject
+     * seq for each query. Note that hsp_num_max should be used only to reduce memory footprint,
+     * it does not guarantee best hsp per query due to query concatenation
+     */
+   Int4 max_hsps_per_subject;
+
 } BlastHitSavingOptions;
 
 /** Scoring options block 

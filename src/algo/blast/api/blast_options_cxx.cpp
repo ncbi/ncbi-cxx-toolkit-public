@@ -522,6 +522,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
+    case eBlastOpt_MaxHspsPerSubject:
+        x_SetParam(CBlast4Field::Get(opt), v);
+        return;
     //For handling rpsblast save search strategy with mutli-dbs
     case eBlastOpt_DbSeqNum:
     case eBlastOpt_DbLength:
@@ -1622,6 +1625,25 @@ CBlastOptions::SetMaxNumHspPerSequence(int m)
 }
 
 int 
+CBlastOptions::GetMaxHspsPerSubject() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMaxHspsPerSubject() not available.");
+    }
+    return m_Local->GetMaxHspsPerSubject();
+}
+void
+CBlastOptions::SetMaxHspsPerSubject(int m)
+{
+    if (m_Local) {
+        m_Local->SetMaxHspsPerSubject(m);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_MaxHspsPerSubject, m);
+    }
+}
+
+int
 CBlastOptions::GetCullingLimit() const
 {
     if (! m_Local) {

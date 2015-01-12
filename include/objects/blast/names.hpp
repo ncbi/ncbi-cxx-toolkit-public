@@ -84,6 +84,7 @@ enum EBlastOptIdx {
     eBlastOpt_GapExtnAlgorithm,
     eBlastOpt_HitlistSize,
     eBlastOpt_MaxNumHspPerSequence,
+    eBlastOpt_MaxHspsPerSubject,
     eBlastOpt_CullingLimit,
     eBlastOpt_EvalueThreshold,
     eBlastOpt_CutoffScore,

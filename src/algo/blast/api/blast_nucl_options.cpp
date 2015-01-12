@@ -233,6 +233,7 @@ CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
+    SetMaxHspsPerSubject(0);
     SetMinDiagSeparation(50);
     // Default is to show all results. -RMH-
     SetMaskLevel(101);
@@ -242,6 +243,7 @@ CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
     // and passed to the engine in the params structure
 
     SetLowScorePerc(0.15);
+    SetQueryCovHspPerc(0);
 }
 void
 CBlastNucleotideOptionsHandle::SetMBHitSavingOptionsDefaults()
@@ -251,6 +253,7 @@ CBlastNucleotideOptionsHandle::SetMBHitSavingOptionsDefaults()
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
+    SetMaxHspsPerSubject(0);
     SetMinDiagSeparation(6);
     // Default is to show all results. -RMH-
     SetMaskLevel(101);

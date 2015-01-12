@@ -284,6 +284,9 @@ public:
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
 
+    int GetMaxHspsPerSubject() const;
+    void SetMaxHspsPerSubject(int m);
+
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 

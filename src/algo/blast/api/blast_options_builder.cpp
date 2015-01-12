@@ -327,7 +327,10 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetMaskAtHash(v.GetBoolean());
         } else if (CBlast4Field::Get(eBlastOpt_MbIndexName).Match(p)) {
             m_MbIndexName = v.GetString();
-        } else {
+        } else if (CBlast4Field::Get(eBlastOpt_MaxHspsPerSubject).Match(p)) {
+        	bo.SetMaxHspsPerSubject(v.GetInteger());
+        }
+        else {
             found = false;
         }
         break;

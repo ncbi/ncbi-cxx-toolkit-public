@@ -139,6 +139,9 @@ CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
         case eBlastOpt_QueryCovHspPerc:
             m_Fields[opt] = CBlast4Field("QueryCovHspPerc",       CBlast4_value::e_Real);
             break;
+        case eBlastOpt_MaxHspsPerSubject:
+            m_Fields[opt] = CBlast4Field("MaxHspsPerSubject",     CBlast4_value::e_Integer);
+            break;
         case eBlastOpt_SumStatisticsMode:
             m_Fields[opt] = CBlast4Field("SumStatistics",         CBlast4_value::e_Boolean);
             break;

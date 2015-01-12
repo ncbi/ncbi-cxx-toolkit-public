@@ -828,7 +828,7 @@ EBlastEncoding Blast_TracebackGetEncoding(EBlastProgramType program_number)
  * @param program_number  blast program number [in]
  */
 static void
-s_BlastResultsReapByQueryCoverage(BlastHSPResults* results, const BlastHitSavingOptions* hit_options,
+s_FilterBlastResults(BlastHSPResults* results, const BlastHitSavingOptions* hit_options,
         const BlastQueryInfo* query_info, EBlastProgramType program_number)
 {
    Int4 query_index, subject_index;
@@ -840,7 +840,12 @@ s_BlastResultsReapByQueryCoverage(BlastHSPResults* results, const BlastHitSaving
       for (subject_index = 0;
            subject_index < hit_list->hsplist_count; ++subject_index) {
     	  	  BlastHSPList * hsp_list = hit_list->hsplist_array[subject_index];
-    	  	  Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info, program_number);
+    	  	  if(hit_options->max_hsps_per_subject) {
+    	  		  Blast_TrimHSPListByMaxHsps(hsp_list, hit_options);
+    	  	  }
+    	  	  if(hit_options->query_cov_hsp_perc) {
+    	  		  Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info, program_number);
+    	  	  }
       }
    }
 }
@@ -1701,10 +1706,10 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
     if (BlastSeqSrcGetTotLen(seq_src) > 0)
         Blast_HSPResultsSortByEvalue(results);
 
-    if(hit_params->options->query_cov_hsp_perc > 0) {
-    	s_BlastResultsReapByQueryCoverage(results, hit_params->options,
-            						  	  query_info, program_number);
+    if(hit_params->options->query_cov_hsp_perc > 0 || hit_params->options->max_hsps_per_subject > 0) {
+    	s_FilterBlastResults(results, hit_params->options, query_info, program_number);
     }
+
     /* Eliminate extra hits from results, if preliminary hit list size is
        larger than the final hit list size */
     s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);

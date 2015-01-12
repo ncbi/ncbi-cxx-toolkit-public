@@ -2753,6 +2753,20 @@ BOOST_AUTO_TEST_CASE(CheckQueryCoveragePercent) {
     BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
 }
 
+BOOST_AUTO_TEST_CASE(CheckMaxHspsPerSubject) {
+    auto_ptr<CArgs> args;
+    CBlastxAppArgs blast_args;
+
+    // invalid value
+    CString2Args s2a("-db ecoli -max_hsps 0");
+    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blast_args)),
+                      CArgException);
+
+    // valid combination
+    s2a.Reset("-db ecoli -max_hsps 5");
+    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
+}
+
 BOOST_AUTO_TEST_SUITE_END() // end of blastargs test suite
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
