@@ -113,7 +113,7 @@ public:
         mDelimiter = delimiter;
     };
 
-    /// Check that each string in fields is a valid qualifier name.
+    /// Verify that each string in fields is a valid qualifier name.
     static bool ValidateFields(
         const FIELDS& fields,
         IMessageListener* = 0);
