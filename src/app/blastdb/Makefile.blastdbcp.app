@@ -14,4 +14,4 @@ LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
-WATCHERS = rackerst
+WATCHERS = rackerst camacho madden
