@@ -22,7 +22,7 @@ CFLAGS  = $(FAST_CFLAGS)
 LDFLAGS = $(FAST_LDFLAGS) 
 
 
-WATCHERS = madden camacho
+WATCHERS = madden camacho fongah2
 
 
 USES_LIBRARIES =  \
