@@ -440,6 +440,11 @@ version  1 # of file format
 2+6  LM  embl_other_nuc
 2+6  LN  embl_other_nuc
 2+6  LO  embl_other_nuc
+2+6  LP  embl_other_nuc
+2+6  LQ  embl_other_nuc
+2+6  LR  embl_other_nuc
+2+6  LS  embl_other_nuc
+2+6  LT  embl_other_nuc
 2+6  ??  unreserved_nuc
 
 # Specially handled type-general Dbtag names; commented out for now in
