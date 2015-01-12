@@ -677,7 +677,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_Assembly, "http://www.ncbi.nlm.nih.gov/assembly/" },
     { CDbtag::eDbtagType_GenBank, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_BioSample, "http://www.ncbi.nlm.nih.gov/biosample/" },
-    { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&Rec=" },
+    { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&ExactMatch=T&Name=MITS" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
