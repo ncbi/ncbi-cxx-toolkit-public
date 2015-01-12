@@ -1904,7 +1904,7 @@ Int2 Blast_TrimHSPListByMaxHsps(BlastHSPList* hsp_list,
    }
 
    hsp_list->hspcnt = hsp_max;
-   return;
+   return 0;
 }
 
 
