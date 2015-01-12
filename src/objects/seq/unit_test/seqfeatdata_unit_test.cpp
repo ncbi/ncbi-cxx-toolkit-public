@@ -987,3 +987,18 @@ BOOST_AUTO_TEST_CASE(Test_CheckCellLine)
     
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_FixStrain)
+{
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("DSM1235"), "DSM 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("DSM/1235"), "DSM 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("dsm/1235"), "DSM 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("dsm:1235"), "DSM 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("dsm : 1235"), "DSM 1235");
+
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("ATCC1235"), "ATCC 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("ATCC/1235"), "ATCC 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc/1235"), "ATCC 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc:1235"), "ATCC 1235");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc : 1235"), "ATCC 1235");
+}

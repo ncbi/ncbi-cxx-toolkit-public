@@ -585,14 +585,22 @@ string COrgMod::FixStrain( const string& strain)
 {
     string new_val = "";
 
-    if (NStr::StartsWith(strain, "ATCC")) {
+    if (NStr::StartsWith(strain, "ATCC", NStr::eNocase)) {
         string tmp = strain.substr(4);
+        NStr::TruncateSpacesInPlace(tmp);
+        if (NStr::StartsWith(tmp, ":") || NStr::StartsWith(tmp, "/")) {
+            tmp = tmp.substr(1);
+        }
         NStr::TruncateSpacesInPlace(tmp);
         if (s_IsAllDigits(tmp)) {
             new_val = "ATCC " + tmp;
         }
-    } else if (NStr::StartsWith(strain, "DSM")) {
+    } else if (NStr::StartsWith(strain, "DSM", NStr::eNocase)) {
         string tmp = strain.substr(3);
+        NStr::TruncateSpacesInPlace(tmp);
+        if (NStr::StartsWith(tmp, ":") || NStr::StartsWith(tmp, "/")) {
+            tmp = tmp.substr(1);
+        }
         NStr::TruncateSpacesInPlace(tmp);
         if (s_IsAllDigits(tmp)) {
             new_val = "DSM " + tmp;
