@@ -735,6 +735,17 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
             time_t* job_exptime = NULL,
             ENetScheduleQueuePauseMode* pause_mode = NULL);
 
+    NCBI_DEPRECATED
+    CNetScheduleAPI::EJobStatus GetJobStatus(
+            const string& job_key,
+            time_t* job_exptime = NULL,
+            ENetScheduleQueuePauseMode* pause_mode = NULL)
+    {
+        CNetScheduleJob job;
+        job.job_id = job_key;
+        return GetJobStatus(job, job_exptime, pause_mode);
+    }
+
     /// Switch the job back to the "Pending" status so that it can be
     /// run again on a different worker node.
     ///
