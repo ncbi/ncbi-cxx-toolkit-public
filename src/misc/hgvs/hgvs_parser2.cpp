@@ -648,27 +648,18 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
         if(static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint()) < 0) {
             ofpnt.offset.value += static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint());
             ofpnt.pnt->SetPoint(0);
-        } else if(ofpnt.pnt->GetPoint() >= context.GetBioseqHandle().GetInst_Length()) {
-            //in case there's overrun past the end of the sequence, set the anchor as
-            //last position of the last point of the last exon (NOT last point of the sequence,
-            //as we could end up in polyA).
+        } else {
+            CVariationUtil vu(context.GetScope());
+            TSeqPos transcribed_len = vu.GetEffectiveTranscriptLength(context.GetBioseqHandle());
+            // Note: positions past the last exon are interpreted as specifying near-gene/intronic
+            // target rather than polyA. JIRA:SNP-7341
 
-            TSeqPos anchor_pos = 0;
-            SAnnotSelector sel;
-            sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
-            for(CFeat_CI ci(context.GetBioseqHandle(), sel); ci; ++ci) {
-                const CMappedFeat& mf = *ci;
-                anchor_pos = max(anchor_pos, mf.GetLocation().GetStop(eExtreme_Positional));
+            if(ofpnt.pnt->GetPoint() >= transcribed_len) {
+                TSeqPos anchor_pos = transcribed_len - 1;
+                TSeqPos overrun = ofpnt.pnt->GetPoint() - anchor_pos;
+                ofpnt.offset.value += overrun;
+                ofpnt.pnt->SetPoint(anchor_pos);
             }
-
-            //didn't find any exons - so set the anchor point as last point in the sequence
-            if(anchor_pos == 0) {
-                anchor_pos = context.GetBioseqHandle().GetInst_Length() - 1;
-            }
-
-            TSeqPos overrun = ofpnt.pnt->GetPoint() - anchor_pos;
-            ofpnt.offset.value += overrun;
-            ofpnt.pnt->SetPoint(anchor_pos);
         }
     }
 
