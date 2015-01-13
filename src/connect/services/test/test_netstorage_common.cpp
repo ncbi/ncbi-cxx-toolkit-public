@@ -98,6 +98,17 @@ struct SCtx
         } \
     } while (0)
 
+#define BOOST_CHECK_NO_THROW_CTX(expression, ctx) \
+    do { \
+        try { \
+            expression; \
+        } \
+        catch (...) { \
+            BOOST_ERROR_CTX("an unexpected exception is caught", ctx); \
+            throw; \
+        } \
+    } while (0)
+
 // Hierarchy for GetInfo() tests
 
 template <class TLocation>
@@ -397,6 +408,9 @@ public:
         CBigData::SSource source;
         m_Object.Write(&source.data[0], source.data.size());
         m_Object.Close();
+
+        // Sometimes this object is not immediately available for reading
+        SleepSec(1);
     }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
@@ -622,9 +636,9 @@ struct SReadHelperBase
           m_Result(eRW_Success)
     {}
 
-    void Close()
+    void Close(const SCtx& ctx)
     {
-        source.Close();
+        BOOST_CHECK_NO_THROW_CTX(source.Close(), ctx);
     }
 
     bool operator()(const SCtx& ctx)
@@ -663,6 +677,12 @@ struct SReadHelper : SReadHelperBase
     SReadHelper(IExtReader& s) : SReadHelperBase(s) {}
 
     bool operator()(const SCtx& ctx)
+    {
+        BOOST_CHECK_NO_THROW_CTX(return Read(ctx), ctx);
+    }
+
+private:
+    bool Read(const SCtx& ctx)
     {
         if (SReadHelperBase::operator()(ctx)) {
             return true;
@@ -714,7 +734,7 @@ struct SWriteHelper
     void Close(const SCtx& ctx)
     {
         BOOST_CHECK_CTX(m_Dest.Flush() == eRW_Success, ctx);
-        m_Dest.Close();
+        BOOST_CHECK_NO_THROW_CTX(m_Dest.Close(), ctx);
     }
 
     template <class TReader>
@@ -1038,8 +1058,8 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
         }
     }
 
-    expected_reader.Close();
-    actual_reader.Close();
+    expected_reader.Close(Line(__LINE__));
+    actual_reader.Close(Line(__LINE__));
 
     attr_tester.Read(TLocation(), Line(__LINE__), object);
 
@@ -1107,9 +1127,9 @@ void SFixture<TPolicy>::ReadTwoAndCompare(const string& ctx,
         }
     }
 
-    expected_reader.Close();
-    actual_reader1.Close();
-    actual_reader2.Close();
+    expected_reader.Close(Line(__LINE__));
+    actual_reader1.Close(Line(__LINE__));
+    actual_reader2.Close(Line(__LINE__));
 
     attr_tester.Read(TLocation(), Line(__LINE__), object1);
     attr_tester.Read(TLocation(), Line(__LINE__), object2);
@@ -1139,7 +1159,7 @@ string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
     attr_tester.Write(TShouldThrow(), Line(__LINE__), object1);
     attr_tester.Write(TShouldThrow(), Line(__LINE__), object2);
 
-    source_reader.Close();
+    source_reader.Close(Line(__LINE__));
     dest_writer1.Close(Line(__LINE__));
     dest_writer2.Close(Line(__LINE__));
 
@@ -1186,7 +1206,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
         netstorage.Open(not_found));
 #endif
 
-    // Create a NetStorage object that should to go to NetCache.
+    // Create a NetStorage object
     string object_loc = WriteTwoAndRead<typename TLoc::TCreate>(
             netstorage.Create(TLoc::create),
             netstorage.Create(TLoc::create));
@@ -1196,13 +1216,14 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // be actually relocated).
     string immovable_loc = netstorage.Relocate(object_loc, TLoc::immovable);
 
-    // Relocate the object to a persistent storage.
+    // Relocate the object to a different storage.
     string persistent_loc = netstorage.Relocate(object_loc, TLoc::relocate);
 
+    // Sometimes this object is not immediately available for reading
+    SleepSec(1);
+
 #ifdef TEST_RELOCATED
-    // Verify that the object has disappeared from the "fast" storage.
-    // Make sure the relocated object does not exists in the
-    // original storage anymore.
+    // Verify that the object has disappeared from the original storage.
     ReadAndCompare<TLocationNotFound>("Trying to read relocated object",
         netstorage.Open(immovable_loc));
 #endif
@@ -1211,7 +1232,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // either using the original ID:
     ReadAndCompare<typename TLoc::TRelocate>("Reading using original ID",
             netstorage.Open(object_loc));
-    // or using the newly generated persistent storage ID:
+    // or using the newly generated storage ID:
     ReadAndCompare<typename TLoc::TRelocate>("Reading using newly generated ID",
             netstorage.Open(persistent_loc));
 
@@ -1246,9 +1267,12 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     ReadAndCompare<typename TLoc::TCreate>("Reading using different set of flags",
             netstorage.Open(unique_key2, TLoc::readable));
 
-    // Relocate the object to FileTrack and make sure
+    // Relocate the object to a different storage and make sure
     // it can be read from there.
     netstorage.Relocate(unique_key2, TLoc::relocate, TLoc::create);
+
+    // Sometimes this object is not immediately available for reading
+    SleepSec(1);
 
     ReadAndCompare<typename TLoc::TRelocate>("Reading relocated object",
             netstorage.Open(unique_key2, TLoc::relocate));
