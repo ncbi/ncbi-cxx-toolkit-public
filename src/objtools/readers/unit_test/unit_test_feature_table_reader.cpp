@@ -1,4 +1,4 @@
-/*  $Id$
+ /*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -180,8 +180,8 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
 
-    CSimpleTableFilter tbl_filter;
-    tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
+    CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
+    tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
 
     auto_ptr<IMessageListener> p_temp_err_container;
     if( ! pMessageListener ) {
@@ -227,8 +227,8 @@ s_ReadMultipleTablesFromString(
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
 
-    CSimpleTableFilter tbl_filter;
-    tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
+    CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
+    tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
 
     auto_ptr<IMessageListener> p_temp_err_container;
     if( ! pMessageListener ) {

@@ -44,55 +44,76 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
+/// Use to give a feature filter to CFeature_table_reader
 class ITableFilter
 //  ============================================================================
 {
 public:
+    ITableFilter(void) { }
     virtual ~ITableFilter() {}
 
-    enum EResult {
-        eResult_Okay = 1,
-        eResult_AllowedButWarn,
-        eResult_Disallowed
+    /// How a given feature name should be handled
+    enum EAction {
+        eAction_Okay = 1, ///< Just accept the feat
+        eAction_AllowedButWarn, ///< Accept the feat but give message eProblem_FeatureNameNotAllowed
+        eAction_Disallowed, ///< Do not accept the feat and give message eProblem_FeatureNameNotAllowed
     };
 
-    // Returns how we should treat the given feature name
-    virtual EResult IsFeatureNameOkay( 
-        const string &feature_name ) = 0;
+    /// Returns how we should treat the given feature name
+    virtual EAction GetFeatAction( 
+        const string &feature_name ) const = 0;
+private:
+    /// forbid copy
+    ITableFilter(const ITableFilter &);
+    /// forbid assignment
+    ITableFilter & operator=(const ITableFilter &);
 };
 
 //  ============================================================================
+/// Example implementation of ITableFilter with the simplest, most common
+/// functionality.
 class CSimpleTableFilter
     : public ITableFilter
 //  ============================================================================
 {
 public:
-    void AddDisallowedFeatureName( const string &feature_name, EResult result )
+    /// @param default_action
+    ///     The action to return if no special action has been set for
+    ///     a feature.
+    explicit CSimpleTableFilter(EAction default_action)
+        : m_default_action(default_action) { }
+
+    /// Special EAction for this feat to override the default action.
+    /// Calling again will override the previous setting
+    void SetActionForFeat(const string &feature_name, EAction action)
     {
-        // set how to handle the given feature_name
-        m_DisallowedFeatureNames[feature_name] = result;
+        m_FeatActionMap[feature_name] = action;
     }
 
-    EResult IsFeatureNameOkay( const string &feature_name )
+    /// Indicate how a given feature should be handled.
+    EAction GetFeatAction( const string &feature_name ) const
     {
-        TDisallowedMap::const_iterator find_feature_result = 
-            m_DisallowedFeatureNames.find(feature_name);
+        TFeatActionMap::const_iterator find_feature_action = 
+            m_FeatActionMap.find(feature_name);
 
-        if( find_feature_result != m_DisallowedFeatureNames.end() )
+        if( find_feature_action != m_FeatActionMap.end() )
         {
-            return find_feature_result->second;
+            return find_feature_action->second;
         } else {
-            return eResult_Okay;
+            return m_default_action;
         }
     }
 
 private:
-    typedef std::map<std::string, EResult, PNocase_Conditional> TDisallowedMap;
+    const EAction m_default_action;
+
+    typedef std::map<std::string, EAction, PNocase_Conditional> TFeatActionMap;
     // maps feature names to how they should be handled
-    TDisallowedMap m_DisallowedFeatureNames;
+    TFeatActionMap m_FeatActionMap;
 };
              
 END_objects_SCOPE
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___TABLEFILTER__HPP

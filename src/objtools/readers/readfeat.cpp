@@ -2497,12 +2497,12 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
 
     // check filter, if any
     if( NULL != filter ) {
-        ITableFilter::EResult result = filter->IsFeatureNameOkay(feat);
-        if( result != ITableFilter::eResult_Okay ) {
+        ITableFilter::EAction action = filter->GetFeatAction(feat);
+        if( action != ITableFilter::eAction_Okay ) {
             x_ProcessMsg( pMessageListener, 
                 ILineError::eProblem_FeatureNameNotAllowed,
                 eDiag_Warning, seq_id, line, feat );
-            if( result == ITableFilter::eResult_Disallowed ) {
+            if( action == ITableFilter::eAction_Disallowed ) {
                 return false;
             }
         }

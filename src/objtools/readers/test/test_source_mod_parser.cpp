@@ -146,8 +146,8 @@ int CSourceModParserTestApp::Run(void)
         CFastaReader      reader( args["fasta"].AsString(), CFastaReader::fAddMods );
         CRef<CSeq_entry>  entry(reader.ReadSet());
 
-        CSimpleTableFilter tbl_filter;
-        tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
+        CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
+        tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
 
         CMessageListenerLenient err_container;
         CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
