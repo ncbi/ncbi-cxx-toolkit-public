@@ -31,6 +31,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
+#include <objtools/blast/seqdb_writer/impl/criteria.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -38,15 +39,6 @@ USING_SCOPE(blast);
 
 /////////////////////////////////////////////////////////////////////////////
 //  BlastdbCopyApplication::
-
-static const string kTargetOnly("target_only");
-static const string kMembershipBits("membership_bits");
-
-static const string kCopyOnly("copy_only");
-
-static const string kSwissprot("swissprot");
-static const string kPdb("pdb");
-static const string kRefseq("refseq");
 
 class BlastdbCopyApplication : public CNcbiApplication
 {
@@ -67,33 +59,27 @@ private: /* Private Methods */
 private: /* Private Data */
     bool m_bCheckOnly;
 
-    enum EMembershipBits {
-        eUnused,
-        eSwissprot,         // bit 1 (LSB?)
-        ePdb,               // bit 2
-        eRefseq,            // bit 3
-        eReserved           // bit 4 (only appears with some bit 3 entries?)
-    };
-
-    typedef map<string, EMembershipBits> TMemBitMap;
+    typedef map<string, ICriteria::EMembershipBit> TMemBitMap;
 
     TMemBitMap m_MembershipMap;
 
+    const string kTargetOnly;
+    const string kMembershipBits;
+    const string kCopyOnly;
 };
 
 /////////////////////////////////////////////////////////////////////////////
 //  Constructor
 
 BlastdbCopyApplication::BlastdbCopyApplication()
-  : m_bCheckOnly(false)
+  : m_bCheckOnly(false),
+    kTargetOnly("target_only"),
+    kMembershipBits("membership_bits"),
+    kCopyOnly("copy_only")
 {
     CRef<CVersion> version(new CVersion());
     version->SetVersionInfo(1, 0);
     SetFullVersion(version);
-
-    m_MembershipMap[kSwissprot] = eSwissprot;
-    m_MembershipMap[kPdb]       = ePdb;
-    m_MembershipMap[kRefseq]    = eRefseq;
 }
 
 
@@ -167,6 +153,15 @@ void BlastdbCopyApplication::Init(void)
             "Membership bit by which copied entries are filtered",
             CArgDescriptions::eString
     );
+
+    const string kSwissprot("swissprot");
+    const string kPdb("pdb");
+    const string kRefseq("refseq");
+
+    m_MembershipMap[kSwissprot] = ICriteria::eSWISSPROT;
+    m_MembershipMap[kPdb]       = ICriteria::ePDB;
+    m_MembershipMap[kRefseq]    = ICriteria::eREFSEQ;
+
     arg_desc->SetConstraint(
             kCopyOnly,
             &(*new CArgAllow_Strings, kSwissprot, kPdb, kRefseq)
