@@ -2174,30 +2174,6 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     }
 }
 
-static bool s_OkayToCapitalize (
-    string& str
-)
-
-{
-    char last ='\0';
-    FOR_EACH_CHAR_IN_STRING (str_itr, str) {
-        const char ch = *str_itr;
-        if (last == '|') {
-            if (ch != ' ') return false;
-            return true;
-        } else if (ch == '|') {
-            if (last == '|') return false;
-        } else if (ch == ' ') {
-            return true;
-        } else if (! islower ((unsigned char) ch)) {
-            return true;
-        }
-        last = ch;
-    }
-
-    return false;
-}
-
 static const char* s_tpaPrefixList [] = {
   "TPA:",
   "TPA_exp:",
@@ -2215,6 +2191,8 @@ string CDeflineGenerator::GenerateDefline (
 )
 
 {
+    bool capitalize = true;
+
     string prefix; // from a small set of compile-time constants
     string suffix;
 
@@ -2227,6 +2205,9 @@ string CDeflineGenerator::GenerateDefline (
         size_t pos = m_MainTitle.find_last_not_of (".,;~ ");
         if (pos != NPOS) {
             m_MainTitle.erase (pos + 1);
+        }
+        if (! m_MainTitle.empty()) {
+            capitalize = false;
         }
     }
 
@@ -2321,7 +2302,7 @@ string CDeflineGenerator::GenerateDefline (
     x_CompressRunsOfSpaces (final);
 
     if (! m_IsPDB && ! m_IsPatent && ! m_IsAA && ! m_IsSeg) {
-        if (!final.empty() && islower ((unsigned char) final[0]) && s_OkayToCapitalize(final)) {
+        if (!final.empty() && islower ((unsigned char) final[0]) && capitalize) {
             final [0] = toupper ((unsigned char) final [0]);
         }
     }
