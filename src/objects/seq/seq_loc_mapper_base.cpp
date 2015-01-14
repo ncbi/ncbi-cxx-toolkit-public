@@ -721,17 +721,18 @@ void CSeq_loc_Mapper_Base::x_InitializeFeat(const CSeq_feat&  map_feat,
         frame = map_feat.GetData().GetCdregion().GetFrame();
     }
     if (dir == eLocationToProduct) {
-        x_InitializeLocs(map_feat.GetLocation(), map_feat.GetProduct(), frame);
+        x_InitializeLocs(map_feat.GetLocation(), map_feat.GetProduct(), frame, 0);
     }
     else {
-        x_InitializeLocs(map_feat.GetProduct(), map_feat.GetLocation(), frame);
+        x_InitializeLocs(map_feat.GetProduct(), map_feat.GetLocation(), 0, frame);
     }
 }
 
 
 void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                                             const CSeq_loc& target,
-                                            int             frame)
+                                            int             src_frame,
+                                            int             dst_frame)
 {
     if (source.IsEmpty()  ||  target.IsEmpty()) {
         // Ignore mapping from or to an empty location.
@@ -749,6 +750,39 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     ESeqType dst_type = eSeq_unknown; // destination sequence type
     bool known_src_types = x_CheckSeqTypes(source, src_type, src_total_len);
     bool known_dst_types = x_CheckSeqTypes(target, dst_type, dst_total_len);
+
+    // Non-zero frame indicates genomic sequence in a nuc-to-prot alignment.
+    if (src_frame) {
+        if (src_type == eSeq_unknown) {
+            src_type = eSeq_nuc;
+        }
+        else if (src_type != eSeq_nuc) {
+            NCBI_THROW(CAnnotMapperException, eBadLocation,
+                        "Frame can not be specified for a protein source location.");
+        }
+        if (!dst_frame) {
+            if (dst_type == eSeq_unknown) {
+                dst_type = eSeq_prot;
+            }
+            // If frame is not set it's probably a prot, but we are not enforcing this.
+        }
+    }
+    if (dst_frame) {
+        if (dst_type == eSeq_unknown) {
+            dst_type = eSeq_nuc;
+        }
+        else if (dst_type != eSeq_nuc) {
+            NCBI_THROW(CAnnotMapperException, eBadLocation,
+                        "Frame can not be specified for a protein target location.");
+        }
+        if (!src_frame) {
+            if (src_type == eSeq_unknown) {
+                src_type = eSeq_prot;
+            }
+            // If frame is not set it's probably a nuc, but we are not enforcing this.
+        }
+    }
+
     // Check if all sequence types are known and there are no conflicts.
     bool known_types = known_src_types  &&  known_dst_types;
     if ( !known_types ) {
@@ -786,12 +820,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 else if (dst_type != eSeq_unknown) {
                     src_type = dst_type;
                 }
-                else if (frame) {
-                    // Both sequence types are unknown, but frame is set.
-                    // Assume they are proteins.
-                    src_type = eSeq_prot;
-                    dst_type = eSeq_prot;
-                }
                 // By default we assume that both sequences are nucleotides.
                 // Even if it's a mapping between two proteins, this assumption
                 // should work fine in most cases.
@@ -803,6 +831,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             // While checking if it's a mapping between nuc and prot,
             // truncate incomplete or stop codons.
+            // NOTE: It's safe to ignore frames here. If frames are set, sequence types
+            // should have been already assigned.
             else if (src_total_len/3 == dst_total_len  ||  src_total_len == (dst_total_len + 1)*3) {
                 if (src_type == eSeq_unknown) {
                     src_type = eSeq_nuc;
@@ -845,6 +875,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     // If both source and destination total length are known, check if
     // they match each other.
     if (src_total_len != kInvalidSeqPos  &&  dst_total_len != kInvalidSeqPos) {
+        if ( src_frame ) src_total_len -= src_frame - 1;
+        if ( dst_frame ) dst_total_len -= dst_frame - 1;
         // Check for incomplete and stop codons.
         if (src_type == eSeq_nuc  &&  dst_type == eSeq_prot) {
             // Report overhanging bases if any
@@ -926,22 +958,19 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         dst_len = x_GetRangeLength(dst_it)*dst_width;
     }
 
-    if ( frame ) {
-        const int shift = frame - 1;
-        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos &&
-            static_cast<TSeqPos>(shift) < src_len ) {
-            if( ! source.IsReverseStrand() ) {
-                src_start += shift;
-            }
-            src_len -= shift;
+    if (src_frame  &&  dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos  &&
+        static_cast<TSeqPos>(src_frame) <= src_len ) {
+        if( !source.IsReverseStrand() ) {
+            src_start += src_frame - 1;
         }
-        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos &&
-            static_cast<TSeqPos>(shift) < dst_len ) {
-            if( ! target.IsReverseStrand() ) {
-                dst_start += shift;
-            }
-            dst_len -= shift;
+        src_len -= src_frame - 1;
+    }
+    if (dst_frame  &&  src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos &&
+        static_cast<TSeqPos>(dst_frame) <= dst_len ) {
+        if( !target.IsReverseStrand() ) {
+            dst_start += dst_frame - 1;
         }
+        dst_len -= dst_frame - 1;
     }
     // Iterate source and destination ranges.
     TSeqPos src_bioseq_len = (source.GetId() ? GetSequenceLength( *source.GetId())
@@ -1000,7 +1029,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         x_NextMappingRange(
             src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
             dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
-            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo(), frame, dst_total_len, src_bioseq_len );
+            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo(),
+            src_frame ? src_frame : dst_frame,
+            dst_total_len, src_bioseq_len);
         // Start new group on a gap in src or dst.
         // If the whole source or destination range was used, increment the
         // iterator.

@@ -519,7 +519,8 @@ protected:
     // only with cd-region features.
     void x_InitializeLocs(const CSeq_loc& source,
                           const CSeq_loc& target,
-                          int             frame = 0);
+                          int             src_frame = 0,
+                          int             dst_frame = 0);
     // Initialize the mapper from an alignment. Looks for the first
     // row containing the id and sets it as mapping target. All other
     // rows become mapping source.
