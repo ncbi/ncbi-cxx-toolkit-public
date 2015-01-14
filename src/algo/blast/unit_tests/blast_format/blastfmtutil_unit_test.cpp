@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
                                      total_bit_score_str,
                                      raw_score_str);
     BOOST_REQUIRE(evalue_str == string("2e-141"));
-    BOOST_REQUIRE(bit_score_str == string("  503"));
+    BOOST_REQUIRE(bit_score_str == string("503"));
 }
 
 BOOST_AUTO_TEST_CASE(GetSubjectQueryCoverageScore)
