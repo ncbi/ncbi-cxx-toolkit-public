@@ -1590,31 +1590,18 @@ bool CGff3Writer::xAssignFeatureAttributeDbXref(
                 }
             }
             CMappedFeat gene_feat = fc.FeatTree().GetParent(mf, CSeqFeatData::e_Gene);
-            if (gene_feat  &&  mf.IsSetXref()) {
-                const CSeq_feat::TXref& xref = mf.GetXref();
-                for (CSeq_feat::TXref::const_iterator cit = xref.begin(); 
-                        cit != xref.end(); ++cit) {
-                    if ((*cit)->IsSetData()  &&  (*cit)->GetData().IsGene()) {
-                        const CSeqFeatData::TGene& gene = (*cit)->GetData().GetGene();
-                        if (gene.IsSuppressed()) {
-                            gene_feat = CMappedFeat();
-                            return true;
-                        }
-                        if (!gene_feat.IsSetDbxref()) {
-                            return true;
-                        }
-                        const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
-                        for ( size_t i=0; i < dbxrefs.size(); ++i ) {
-                            string tag;
-                            if (CWriteUtil::GetDbTag(*dbxrefs[i], tag)) {
-                                record.AddAttribute("Dbxref", tag);
-                            }
-                        }
-                        return true;
+            if (gene_feat  &&  !gene_feat.GetData().GetGene().IsSuppressed()  
+                    &&  gene_feat.IsSetDbxref()) {
+                const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
+                for ( size_t i=0; i < dbxrefs.size(); ++i ) {
+                    string tag;
+                    if (CWriteUtil::GetDbTag(*dbxrefs[i], tag)) {
+                        record.AddAttribute("Dbxref", tag);
                     }
                 }
             }
         }
+        break;
     }
     return true; 
 }
