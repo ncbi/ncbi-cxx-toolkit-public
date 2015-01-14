@@ -120,7 +120,7 @@ void CTest::x_TestString(const char* str, int expects[])
 
         NcbiCout << setw(45) << (string) CNcbiOstrstreamToString(out) << " "
                  << ( expects[i] ? "accept" : "reject" ) << " expected - ";
-        if ( (tester.Check(*m_Diags[i], eDiag_Fatal) == eDiagFilter_Accept)
+        if ( (tester.Check(*m_Diags[i]) == eDiagFilter_Accept)
              == (expects[i] != 0)) {
             NcbiCout << "PASS";
         } else {

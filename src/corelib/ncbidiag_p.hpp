@@ -250,33 +250,28 @@ public:
     CDiagFilter(void);
     ~CDiagFilter(void);
 
-    /// Check if the filter accepts message with the specified severity
-    EDiagFilterAction Check(const CNcbiDiag& message, EDiagSev sev) const;
+    /// Check if the filter accepts message.
+    /// In addition check an exception and all its backlog if specified.
+    EDiagFilterAction Check(const CNcbiDiag&  msg, const CException* ex = NULL) const;
 
-    // Check if the filter accepts the exception
-    // NOTE: iterate through all exceptions and return TRUE
-    //       if any exception matches
-    EDiagFilterAction Check(const CException& ex, EDiagSev sev) const;
-
-    // Check if the filter accepts errcode
-    EDiagFilterAction CheckErrCode(int code, int subcode, EDiagSev sev) const;
-
-    // Check if the filter accepts path
-    EDiagFilterAction CheckFile(const char* file, EDiagSev sev) const;
-
-
-    // Fill the filter from a string
+    /// Fill the filter from a string
     void Fill(const char* filter_string);
 
-    // Print state
+    /// Print state
     void Print(ostream& out) const;
 
 private:
+    /// Check if the filter accepts errcode
+    EDiagFilterAction x_CheckErrCode(int code, int subcode, EDiagSev sev) const;
+
+    /// Check if the filter accepts path
+    EDiagFilterAction x_CheckFile(const char* file, EDiagSev sev) const;
+
     // Check if the filter accepts the location
-    EDiagFilterAction x_Check(const char* module,
-                              const char* nclass,
-                              const char* function,
-                              EDiagSev    sev) const;
+    EDiagFilterAction x_CheckLocation(const char* module,
+                                      const char* nclass,
+                                      const char* function,
+                                      EDiagSev    sev) const;
 
     // CSyntaxParser can insert CDiagStrMatcher and clean
     friend class CDiagSyntaxParser;
@@ -284,7 +279,9 @@ private:
     // Insert a new matcher into the end of list
     // Take ownership of the matcher
     void InsertMatcher(CDiagMatcher *matcher)
-    { m_Matchers.push_back(matcher); }
+    {
+        m_Matchers.push_back(matcher);
+    }
 
     // Negative matchers should be processed first
     // because they are *AND NOT* matchers, not just *NOT*.
@@ -297,6 +294,7 @@ private:
     // Remove and destroy all matchers, if any
     void Clean(void);
 
+private:
     typedef deque< AutoPtr<CDiagMatcher> >  TMatchers;
     TMatchers m_Matchers;
     size_t    m_NotMatchersNum;
@@ -358,7 +356,6 @@ class CDiagSyntaxParser
 public:
     // Error info type
     typedef pair<const char*, int> TErrorInfo;
-
 
     // Constructor
     CDiagSyntaxParser();

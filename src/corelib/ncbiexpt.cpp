@@ -658,12 +658,7 @@ void CExceptionReporter::ReportDefaultEx(int err_code, int err_subcode,
                               flags);
     } else {
         CNcbiDiag d(info, cex->GetSeverity(), flags);
-        d << ErrCode(err_code, err_subcode);
-        if ((err_code==0 && err_subcode==0) || d.CheckFilters()) {
-            d << title << *cex;
-        } else {
-            Reset(d);
-        }
+        d << ErrCode(err_code, err_subcode) << title << " " <<  *cex;
     }
 }
 

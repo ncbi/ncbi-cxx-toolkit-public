@@ -1126,9 +1126,10 @@ public:
     /// Get function name of the current message.
     const char* GetFunction(void) const;
 
-    /// Check if filters are passed
+    /// Check if filters are passed for the current message.
+    /// In addition check an exception and all its backlog if specified.
     NCBI_XNCBI_EXPORT
-    bool CheckFilters(void) const;
+    bool CheckFilters(const CException* ex = NULL) const;
 
     /// Get post flags for the current message.
     /// If the post flags have "eDPF_Default" set, then in the returned flags

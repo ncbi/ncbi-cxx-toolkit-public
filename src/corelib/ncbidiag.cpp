@@ -3527,7 +3527,7 @@ void CDiagBuffer::Flush(void)
         flags |= sm_TraceFlags | eDPF_Trace;
     }
 
-    if (  m_Diag->CheckFilters()  ) {
+    if ( m_Diag->CheckFilters() ) {
         if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
             string src = message;
             NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", message);
@@ -6720,22 +6720,19 @@ const CNcbiDiag& CNcbiDiag::SetFunction(const char* function) const
 }
 
 
-bool CNcbiDiag::CheckFilters(void) const
+bool CNcbiDiag::CheckFilters(const CException* ex) const
 {
     EDiagSev current_sev = GetSeverity();
-    if (current_sev == eDiag_Fatal) 
+    if (current_sev == eDiag_Fatal) {
         return true;
-
+    }
     CDiagLock lock(CDiagLock::eRead);
     if (GetSeverity() == eDiag_Trace) {
         // check for trace filter
-        return  s_TraceFilter->Check(*this, this->GetSeverity())
-                != eDiagFilter_Reject;
+        return  s_TraceFilter->Check(*this, ex) != eDiagFilter_Reject;
     }
-    
-    // check for post filter and severity
-    return  s_PostFilter->Check(*this, this->GetSeverity())
-            != eDiagFilter_Reject;
+    // check for post filter
+    return  s_PostFilter->Check(*this, ex) != eDiagFilter_Reject;
 }
 
 
@@ -6777,11 +6774,10 @@ s_GetExceptionText(const CException* pex)
 
 const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
 {
-    if (m_Buffer.SeverityDisabled(GetSeverity())  ||  !CheckFilters())
+    if (m_Buffer.SeverityDisabled(GetSeverity()) || !CheckFilters(&ex)) {
         return *this;
-
-    CDiagContextThreadData& thr_data =
-        CDiagContextThreadData::GetThreadData();
+    }
+    CDiagContextThreadData& thr_data = CDiagContextThreadData::GetThreadData();
     CDiagCollectGuard* guard = thr_data.GetCollectGuard();
     EDiagSev print_sev = AdjustApplogPrintableSeverity(CDiagBuffer::sm_PostSeverity);
     EDiagSev collect_sev = print_sev;
@@ -6852,7 +6848,6 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
 
         m_Buffer.PrintMessage(diagmsg, *this);
     }
-    
 
     return *this;
 }

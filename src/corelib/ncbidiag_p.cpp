@@ -279,7 +279,7 @@ void CDiagMatcher::Print(ostream& out) const
     if (m_Action == eDiagFilter_Reject)
         out << '!';
 
-    s_PrintMatcher(out, m_ErrCode,  "ErrCode"    );
+    s_PrintMatcher(out, m_ErrCode,  "ErrCode" );
     s_PrintMatcher(out, m_File,     "File"    );
     s_PrintMatcher(out, m_Module,   "Module"  );
     s_PrintMatcher(out, m_Class,    "Class"   );
@@ -325,71 +325,67 @@ void CDiagFilter::Fill(const char* filter_string)
     }
 }
 
-
-// Check if the filter accepts the message
-EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message, EDiagSev sev) const
+EDiagFilterAction CDiagFilter::Check(const CNcbiDiag&  msg,
+                                     const CException* ex) const
 {
-    // if we do not have any filters accept
-    if(m_Matchers.empty())
+    // if we do not have any filters -- accept
+    if (m_Matchers.empty()) {
         return eDiagFilter_Accept;
-
-    EDiagFilterAction action;
-    action = CheckErrCode(message.GetErrorCode(),
-                          message.GetErrorSubCode(),
-                          sev);
-    if (action == eDiagFilter_None) {
-        action = CheckFile(message.GetFile(), sev);
-        if (action == eDiagFilter_None)
-            action = x_Check(message.GetModule(),
-                             message.GetClass(),
-                             message.GetFunction(),
-                             sev);
     }
+
+    // Check errcode, file and location for the message
+    EDiagFilterAction action;
+    EDiagSev sev = msg.GetSeverity();
+    action = x_CheckErrCode(msg.GetErrorCode(), msg.GetErrorSubCode(), sev);
+    if (action == eDiagFilter_None) {
+        action = x_CheckFile(msg.GetFile(), sev);
+    }
+    if (action == eDiagFilter_None) {
+        action = x_CheckLocation(msg.GetModule(), msg.GetClass(), msg.GetFunction(), sev);
+    }
+
+    // If specified, additionally check an exception and its backlog.
+    // Accept if one of the exceptions match.
+
+    if (action == eDiagFilter_None  &&  ex) {
+
+        // Fast check on non errcode matchers.
+        // We already did errcode check above, exceptions have file/location only.
+        bool found = false;
+        ITERATE(TMatchers, i, m_Matchers) {
+            if (!(*i)->IsErrCodeMatcher()) {
+                found = true;
+                break;
+            }
+        }
+        // If found at least one, process with check
+        if (found) {
+            const CException* pex;
+            for (pex = ex;  pex;  pex = pex->GetPredecessor()) {
+                action = x_CheckFile(pex->GetFile().c_str(), sev);
+                if (action == eDiagFilter_None) {
+                    action = x_CheckLocation(pex->GetModule().c_str(),
+                                             pex->GetClass().c_str(),
+                                             pex->GetFunction().c_str(),
+                                             sev);
+                }
+                if (action == eDiagFilter_Accept) {
+                    return action;
+                }
+            }
+        }
+    }
+
+    // Reject if not accepted
     if (action == eDiagFilter_None) {
         action = eDiagFilter_Reject;
     }
-
     return action;
 }
 
 
-// Check if the filter accepts the exception
-EDiagFilterAction CDiagFilter::Check(const CException& ex, EDiagSev sev) const
-{
-    // if we do not have any filters accept
-    if(m_Matchers.empty())
-        return eDiagFilter_Accept;
-
-    bool found = false;
-    ITERATE(TMatchers, i, m_Matchers) {
-        if (!(*i)->IsErrCodeMatcher()) {
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        return eDiagFilter_Accept;
-    }
-
-    const CException* pex;
-    for (pex = &ex;  pex;  pex = pex->GetPredecessor()) {
-        EDiagFilterAction action = CheckFile(pex->GetFile().c_str(), sev);
-        if (action == eDiagFilter_None) {
-            action = x_Check(pex->GetModule()  .c_str(),
-                             pex->GetClass()   .c_str(),
-                             pex->GetFunction().c_str(),
-                             sev);
-        }
-        if (action == eDiagFilter_Accept) {
-            return action;
-        }
-    }
-    return eDiagFilter_Reject;
-}
-
-
 // same logic as in CheckFile()
-EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode, EDiagSev sev) const
+EDiagFilterAction CDiagFilter::x_CheckErrCode(int code, int subcode, EDiagSev sev) const
 {
     size_t not_matchers_processed = 0;
     size_t curr_ind = 0;
@@ -440,7 +436,7 @@ EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode, EDiagSev sev)
     return eDiagFilter_None;
 }
 
-EDiagFilterAction CDiagFilter::CheckFile(const char* file, EDiagSev sev) const
+EDiagFilterAction CDiagFilter::x_CheckFile(const char* file, EDiagSev sev) const
 {
     size_t not_matchers_processed = 0;
     size_t curr_ind = 0;
@@ -499,10 +495,10 @@ EDiagFilterAction CDiagFilter::CheckFile(const char* file, EDiagSev sev) const
 }
 
 // Check if the filter accepts module, class and function
-EDiagFilterAction CDiagFilter::x_Check(const char* module,
-                                       const char* nclass,
-                                       const char* function,
-                                       EDiagSev    sev) const
+EDiagFilterAction CDiagFilter::x_CheckLocation(const char* module,
+                                               const char* nclass,
+                                               const char* function,
+                                               EDiagSev    sev) const
 {
     size_t not_matchers_processed = 0;
     size_t curr_ind = 0;
