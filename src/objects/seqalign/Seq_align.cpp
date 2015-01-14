@@ -50,6 +50,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <serial/iterator.hpp>
 #include <util/static_set.hpp>
@@ -192,6 +193,21 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
                                 (CRange<TSeqPos>
                                  (loc.GetInt().GetFrom(),
                                   loc.GetInt().GetTo()));
+                        } else if (loc.IsPnt()) {
+                            if ( !seg_i ) {
+                                seq_id.Assign(loc.GetPnt().GetId());
+                            } else if (seq_id.Compare(loc.GetPnt().GetId())
+                                       != CSeq_id::e_YES) {
+                                NCBI_THROW(CSeqalignException,
+                                           eInvalidRowNumber,
+                                           "CSeq_align::GetSeqRange():"
+                                           " Row seqids not consistent."
+                                           " Cannot determine range.");
+                            }
+                            rng.CombineWith
+                                (CRange<TSeqPos>
+                                 (loc.GetPnt().GetPoint(),
+                                  loc.GetPnt().GetPoint()));
                         }
                     }
                 }
