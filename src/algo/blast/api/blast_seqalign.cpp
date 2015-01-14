@@ -898,7 +898,7 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
     size_t retval = 1;
 
     if (hsp->score) {
-        retval++;
+        retval+=2;
     }
 
     if (hsp->num > 1) {
@@ -950,6 +950,8 @@ s_BuildScoreList(const BlastHSP     * hsp,
     if (hsp->score) {
         static const string kScore("score");
         scores.push_back(s_MakeScore(kScore, 0.0, hsp->score, true));
+        static const string kBlastScore("blast_score");
+        scores.push_back(s_MakeScore(kBlastScore, 0.0, hsp->score, true));
     }
 
     if (hsp->num > 1) {
