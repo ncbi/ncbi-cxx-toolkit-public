@@ -119,7 +119,8 @@ enum EHTTP_Flag {
     fHTTP_NoAutoRetry     = 0x100,/**< No auto-retries allowed               */
     fHTTP_NoAutomagicSID  = 0x200,/**< Do not add NCBI SID automagically     */
     fHTTP_InsecureRedirect= 0x400,/**< Any redirect will be honored          */
-    fHTTP_AdjustOnRedirect= 0x800 /**< Call adjust routine for redirects, too*/
+    fHTTP_AdjustOnRedirect= 0x800,/**< Call adjust routine for redirects, too*/
+    fHTTP_SuppressMessages= 0x1000/**< Most annoying ones reduced to traces  */
 };
 typedef unsigned int THTTP_Flags; /**< Bitwise OR of EHTTP_Flag              */
 NCBI_HTTP_CONNECTOR_DEPRECATED

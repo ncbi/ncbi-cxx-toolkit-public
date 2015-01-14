@@ -919,7 +919,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     int               http_code;
     size_t            size, n;
     EIO_Status        status;
-    int               tmp;
+    int               fatal;
 
     assert(uuu->sock  &&  uuu->read_state == eRS_ReadHeader);
     memset(retry, 0, sizeof(*retry));
@@ -984,7 +984,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     BUF_Erase(uuu->http);
 
     /* HTTP status must come on the first line of the response */
-    tmp = 0/*false*/;
+    fatal = 0/*false*/;
     if (sscanf(str, "HTTP/%*d.%*d %d ", &http_code) != 1  ||  !http_code)
         http_code = -1;
     uuu->http_code = http_code;
@@ -1001,7 +1001,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                  http_code == 400  ||  http_code == 403  ||
                  http_code == 404  ||  http_code == 405  ||
                  http_code == 406  ||  http_code == 410) {
-            tmp = 1/*true*/;
+            fatal = 1/*true*/;
         }
     } else
         http_code = 0/*no server error*/;
@@ -1013,7 +1013,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         const char* header_header;
         if (!http_code)
             header_header = "HTTP header";
-        else if (tmp)
+        else if (fatal)
             header_header = "HTTP header (fatal)";
         else if (uuu->flags & fHTTP_KeepHeader)
             header_header = "HTTP header (error)";
@@ -1029,7 +1029,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             header_header = "HTTP header (retriable server error)";
         assert(!url);
         url = ConnNetInfo_URL(uuu->net_info);
-        CORE_DATAF_X(9, tmp ? eLOG_Error : eLOG_Note, str, size,
+        CORE_DATAF_X(9, fatal ? eLOG_Error : eLOG_Note, str, size,
                      ("[HTTP%s%s]  %s",
                       url ? "; " : "",
                       url ? url  : "", header_header));
@@ -1098,7 +1098,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         }
     }}
 
-    if (tmp) {
+    if (fatal) {
         if (!uuu->net_info->debug_printout) {
             char text[40];
             assert(http_code);
@@ -1108,8 +1108,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 sprintf(text, "%d", http_code);
             else
                 strncpy0(text, "occurred", sizeof(text) - 1);
-            CORE_LOGF_X(22, eLOG_Error,
-                        ("[HTTP%s%s]  Fatal error %s",
+            CORE_LOGF_X(22, uuu->flags & fHTTP_SuppressMessages
+                        ? eLOG_Trace : eLOG_Error,
+                        ("[HTTP%s%s]  HTTP error %s",
                          url ? "; " : "",
                          url ? url  : "", text));
         }
@@ -1144,6 +1145,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         if (uuu->net_info->req_method != eReqMethod_Head) {
             static const char kContentLenTag[] = "\nContent-Length: ";
             const char* s;
+            int end;
             for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
                 if (!strncasecmp(s, kContentLenTag, sizeof(kContentLenTag)-1)){
                     const char* len = s + sizeof(kContentLenTag) - 1;
@@ -1159,7 +1161,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     if (s == len)
                         continue;
                     if (sscanf(len, "%" NCBI_BIGCOUNT_FORMAT_SPEC "%n",
-                               &uuu->expected, &tmp) < 1  ||  len + tmp != s) {
+                               &uuu->expected, &end) < 1  ||  len + end != s) {
                         uuu->expected = (TNCBI_BigCount)(-1L)/*no checks*/;
                     }
                     break;
@@ -1290,7 +1292,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                          url ? "; " : "",
                          url ? url  : "", err));
         } else if (!size) {
-            CORE_LOGF_X(12, err ? eLOG_Warning : eLOG_Trace,
+            CORE_LOGF_X(12, err  &&  !(uuu->flags & fHTTP_SuppressMessages)
+                        ? eLOG_Warning : eLOG_Trace,
                         ("[HTTP%s%s]  No error message received from server"
                          "%s%s%s",
                          url ? "; " : "",
