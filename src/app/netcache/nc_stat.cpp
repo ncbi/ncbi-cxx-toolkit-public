@@ -65,7 +65,14 @@ static set<Uint8> s_UnknownSrv;
 typedef map<Uint8, CSrvTime> TSyncTimes;
 static TSyncTimes s_SyncSucceeded;
 static TSyncTimes s_SyncFailed;
+
+#define USE_DETAILED_SLOT_STAT 1
+#if USE_DETAILED_SLOT_STAT
+typedef map<Uint8, map<Uint2, CSrvTime> > TDetailedSyncTimes;
+static TDetailedSyncTimes s_SyncPeriodic;
+#else
 static TSyncTimes s_SyncPeriodic;
+#endif
 
 
 static void
@@ -542,7 +549,7 @@ CNCStat::PeerDataRead(size_t data_size)
 }
 
 void
-CNCStat::PeerSyncFinished(Uint8 srv_id, Uint8 cnt_ops, bool success)
+CNCStat::PeerSyncFinished(Uint8 srv_id, Uint2 slot, Uint8 cnt_ops, bool success)
 {
     CNCStat* stat = s_Stat();
     if (success)
@@ -550,7 +557,11 @@ CNCStat::PeerSyncFinished(Uint8 srv_id, Uint8 cnt_ops, bool success)
     AtomicAdd(stat->m_PeerSynOps, cnt_ops);
     if (success) {
         CMiniMutexGuard guard(s_CommonStatLock);
+#if USE_DETAILED_SLOT_STAT
+        s_SyncPeriodic[srv_id][slot] = CSrvTime::Current();
+#else
         s_SyncPeriodic[srv_id] = CSrvTime::Current();
+#endif
     }
 }
 
@@ -888,6 +899,22 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
                         CNCDistributionConf::GetPeerName(s->first) << " at " << buf << endl;
                 }
             }
+#if USE_DETAILED_SLOT_STAT
+            ITERATE(TDetailedSyncTimes, s,  s_SyncPeriodic) {
+                string peer_name(CNCDistributionConf::GetPeerName(s->first));
+                const map<Uint2, CSrvTime>& per_slot = s->second;
+                for (map<Uint2, CSrvTime>::const_iterator i = per_slot.begin(); i != per_slot.end(); ++i) {
+                    Uint8 agoSec = (now - i->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
+                    Uint8 agoUsec = (now - i->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
+                    i->second.Print(buf, CSrvTime::eFmtHumanUSecs);
+
+                    proxy << "Periodic Sync succeeded - " <<
+                        peer_name << " slot " << i->first << "  " <<
+                        agoSec << "." << agoUsec << "s ago" << endl;
+                }
+
+            }
+#else
             ITERATE(TSyncTimes, s,  s_SyncPeriodic) {
                 Uint8 agoSec = (now - s->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
                 Uint8 agoUsec = (now - s->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
@@ -896,6 +923,7 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
                     CNCDistributionConf::GetPeerName(s->first) << " at " << buf <<
                     ", " << agoSec << "." << agoUsec << "s ago" << endl;
             }
+#endif
         }
     }
 

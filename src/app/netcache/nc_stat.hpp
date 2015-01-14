@@ -93,7 +93,7 @@ public:
     static void ClientBlobRead(Uint8 blob_size, Uint8 len_usec);
     static void PeerDataWrite(size_t data_size);
     static void PeerDataRead(size_t data_size);
-    static void PeerSyncFinished(Uint8 srv_id, Uint8 cnt_ops, bool success);
+    static void PeerSyncFinished(Uint8 srv_id, Uint2 slot, Uint8 cnt_ops, bool success);
     static void DiskDataWrite(size_t data_size);
     static void DiskDataRead(size_t data_size);
     static void DiskBlobWrite(Uint8 blob_size);
