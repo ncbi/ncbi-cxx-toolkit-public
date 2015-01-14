@@ -119,7 +119,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
         string defline[] = {"adenosine deaminase [Rattus norvegicus]", 
                             "adenosine deaminase [Mus musculus]"};
         string evalue_string[] = {"2e-141", "3e-141"};
-        string bit_string[] = {"  503", "  502"};
+        string bit_string[] = {"503", "502"};
         int sum_n[] = {1, 1};
                 
         string id_url[] = {"<a title=\"Show report for NP_569083.1\" href=\"http://www.ncbi.nlm.nih.gov/nucleotide/18426812?report=genbank&log$=nucltop&blast_rank=1&RID=\" >",
