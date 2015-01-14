@@ -75,7 +75,6 @@ SOutputFlag wgs_fatal[] = {
         {"DISC_SUSPECT_RRNA_PRODUCTS", "", ""},
         {"DISC_TITLE_AUTHOR_CONFLICT", "", ""},
         {"DISC_UNPUB_PUB_WITHOUT_TITLE", "", ""},
-        {"DISC_USA_STATE", "", ""},
         {"EC_NUMBER_ON_UNKNOWN_PROTEIN", "", ""},
         {"EUKARYOTE_SHOULD_HAVE_MRNA", "no mRNA present", ""},
         {"INCONSISTENT_LOCUS_TAG_PREFIX", "", ""},
