@@ -125,7 +125,8 @@ SFileTrackRequest::SFileTrackRequest(
     m_ObjectLoc(object_loc),
     m_URL(url),
     m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
-            NULL, fHTTP_AutoReconnect, &storage_impl->m_WriteTimeout),
+            NULL, fHTTP_AutoReconnect | fHTTP_SuppressMessages,
+            &storage_impl->m_WriteTimeout),
     m_HTTPStatus(0),
     m_ContentLength((size_t) -1)
 {
