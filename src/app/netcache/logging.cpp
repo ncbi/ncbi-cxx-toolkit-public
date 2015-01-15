@@ -138,6 +138,11 @@ SetLogFileName(CTempString name)
     s_FileName = name;
 }
 
+string GetLogFileName(void)
+{
+    return s_FileName;
+}
+
 static void
 s_InitConstants(void)
 {

@@ -177,10 +177,7 @@ s_LoadConfFile(CNcbiRegistry*& reg)
     return true;
 #else
     CNcbiIfstream ifs;
-    string ini(s_AppBaseName + ".ini");
-    if (!s_ConfName.empty()) {
-        ini = s_ConfName;
-    }
+    string ini( GetConfName());
     ifs.open( ini.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if (!ifs.is_open()) {
         return false;
@@ -228,6 +225,16 @@ CTaskServer::ReadConfiguration( CNcbiRegistry*& reg)
     return true;
 }
 
+string
+GetConfName(void)
+{
+    string ini(s_AppBaseName + ".ini");
+    if (!s_ConfName.empty()) {
+        ini = s_ConfName;
+    }
+    return ini;
+}
+
 void
 ExtractFileName(const char* file, const char*& file_name, size_t& name_size)
 {
@@ -266,6 +273,7 @@ s_ProcessParameters(int& argc, const char** argv)
                 s_ConfName = argv[i + 1];
             }
             else {
+                cerr << "Parameter -conffile misses file name" << endl;
                 SRV_LOG(Critical, "Parameter -conffile misses file name");
                 return false;
             }
@@ -275,6 +283,7 @@ s_ProcessParameters(int& argc, const char** argv)
                 SetLogFileName(argv[i + 1]);
             }
             else {
+                cerr << "Parameter -logfile misses file name" << endl;
                 SRV_LOG(Critical, "Parameter -logfile misses file name");
                 return false;
             }

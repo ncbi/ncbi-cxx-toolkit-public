@@ -49,6 +49,9 @@
 #include "periodic_sync.hpp"
 #include "nc_storage_blob.hpp"
 
+#include "logging.hpp"
+#include "server_core.hpp"
+
 #ifdef NCBI_OS_LINUX
 # include <sys/resource.h>
 #endif
@@ -721,6 +724,23 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
+    for (int i = 1; i < argc; ++i) {
+        string param(argv[i]);
+        if (param == "-version") {
+            cout << NETCACHED_VERSION << endl;
+            return 0;
+        } else if (param == "-help") {
+            cout << "Network data storage server" << endl;
+            cout << "Arguments:" << endl;
+            cout << "-conffile name  - configuration file, default = netcached.ini" << endl;
+            cout << "-logfile  name  - log file, default = netcached.log" << endl;
+            cout << "-pidfile  name  - report process ID into this file" << endl;
+            cout << "-reinit         - reinitialize database, cleaning all data from it" << endl;
+            cout << "-nodaemon       - do not enter UNIX daemon mode" << endl;
+            return 0;
+        }
+    }
+
     // Defaults that should be always set for NetCache
 #ifdef NCBI_OS_LINUX
     struct rlimit rlim;
@@ -731,6 +751,7 @@ int main(int argc, const char* argv[])
 #endif
 
     if (!CTaskServer::Initialize(argc, argv)  ||  !s_ReadServerParams()) {
+        cerr << "Failed to initialize: conffile: " << GetConfName() << ", logfile: " << GetLogFileName() << endl;
         CTaskServer::Finalize();
         return 100;
     }
@@ -753,10 +774,12 @@ int main(int argc, const char* argv[])
                 pid_file = argv[++i];
                 ok = !pid_file.empty() && pid_file[0] != '-' && s_ReportPid(pid_file);
                 if (!ok) {
+                    cerr << "Cannot write into pidfile: " << pid_file << endl;
                     ERR_POST(Critical << "Cannot write into pidfile: " << pid_file);
                 }
             }
             else {
+                cerr << "Parameter -pidfile misses file name" << endl;
                 ERR_POST(Critical << "Parameter -pidfile misses file name");
             }
             if (!ok) {
@@ -764,6 +787,7 @@ int main(int argc, const char* argv[])
                 return 122;
             }
         } else {
+            cerr << "Unknown parameter: " << param << endl;
             ERR_POST(Critical << "Unknown parameter: " << param);
             CTaskServer::Finalize();
             return 150;
@@ -772,6 +796,7 @@ int main(int argc, const char* argv[])
 
 #ifdef NCBI_OS_LINUX
     if (is_daemon) {
+        cout << "Entering UNIX daemon mode..." << endl;
         INFO("Entering UNIX daemon mode...");
         // Here's workaround for SQLite3 bug: if stdin is closed in forked
         // process then 0 file descriptor is returned to SQLite after open().
@@ -782,6 +807,7 @@ int main(int argc, const char* argv[])
                                CProcess::fDontChroot | CProcess::fKeepStdin
                                                      | CProcess::fKeepStdout) != 0;
         if (!is_good) {
+            cerr << "Error during daemonization" << endl;
             SRV_LOG(Critical, "Error during daemonization");
             return 200;
         }

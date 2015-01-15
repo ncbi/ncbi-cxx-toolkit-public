@@ -34,6 +34,7 @@
 BEGIN_NCBI_SCOPE
 
 
+string GetConfName(void);
 void ExtractFileName(const char* file, const char*& file_name, size_t& name_size);
 void TrackShuttingDown(void);
 
