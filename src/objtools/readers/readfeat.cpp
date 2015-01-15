@@ -182,6 +182,7 @@ public:
         eQual_PubMed,
         eQual_rad_map,
         eQual_region_name,
+        eQual_regulatory_class,
         eQual_replace,
         eQual_ribosomal_slippage,
         eQual_rpt_family,
@@ -472,6 +473,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "pseudo",               CFeature_table_reader_imp::eQual_pseudo                },
     {  "pseudogene",           CFeature_table_reader_imp::eQual_pseudogene            },
     {  "rad_map",              CFeature_table_reader_imp::eQual_rad_map               },
+    {  "regulatory_class",     CFeature_table_reader_imp::eQual_regulatory_class      },
     {  "replace",              CFeature_table_reader_imp::eQual_replace               },
     {  "ribosomal_slippage",   CFeature_table_reader_imp::eQual_ribosomal_slippage    },
     {  "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family            },
@@ -1527,6 +1529,35 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
     const char *str = NULL;
 
     CSeqFeatData::ESubtype subtype = sfdata.GetSubtype ();
+
+    // used if-statement because CSeqFeatData::IsRegulatory won't work in a
+    // switch statement.
+    if( (subtype == CSeqFeatData::eSubtype_regulatory) ||
+        CSeqFeatData::IsRegulatory(subtype) )
+    {
+        switch (qtype) 
+        {
+        case eQual_regulatory_class:
+            {
+                const CSeqFeatData::ESubtype regulatory_class_subtype =
+                    CSeqFeatData::GetRegulatoryClass(val);
+                if( regulatory_class_subtype == CSeqFeatData::eSubtype_bad ) {
+                    // msg will be sent in caller x_AddQualifierToFeature
+                    return false; 
+                } else {
+                    // okay 
+                    // (Note that at this time we don't validate
+                    // if the regulatory_class actually matches the
+                    // subtype)
+                    x_AddGBQualToFeature(sfp, qual, val);
+                    return true;
+                }
+            }
+        default:
+            break;
+        }
+    }
+
     switch (subtype) {
         case CSeqFeatData::eSubtype_variation:
             {
@@ -2339,6 +2370,15 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     } catch( CSeqIdException & ) {
                         return false;
                     }
+                case eQual_regulatory_class:
+                    // This should've been handled up in x_AddQualifierToImp
+                    // so it's always a bad value to be here
+                    x_ProcessMsg(
+                        pMessageListener,
+                        ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                        seq_id, line,
+                        feat_name, qual, val );
+                    return true;
                 default:
                     break;
             }

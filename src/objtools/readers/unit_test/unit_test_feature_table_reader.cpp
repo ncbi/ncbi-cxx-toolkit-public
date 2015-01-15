@@ -1885,11 +1885,81 @@ BOOST_AUTO_TEST_CASE(TestDiscouragedKeys)
     expected_errors.push_back(
         ILineError::eProblem_DiscouragedQualifierName);
 
-    // TODO: remove comments b4 committing
-    // CMessageListenerLenientIgnoreProgress err_container;
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (
         sc_Table17,
         expected_errors,
         CFeature_table_reader::fReportDiscouragedKey);
         // &err_container);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestRegulatoryFeat)
+{
+    // set what constitutes a valid vs. invalid regulatory_class
+    // (note that at this time we're not testing the case of a
+    // mismatch between the subtype and qual value)
+    const string kInvalidRegulatoryClass("foo");
+    const string & kValidRegulatoryClass =
+        CSeqFeatData::GetRegulatoryClass(
+            CSeqFeatData::eSubtype_10_signal);
+    BOOST_REQUIRE( ! kValidRegulatoryClass.empty() );
+
+    struct SSubtypeCase {
+        CSeqFeatData::ESubtype subtype;
+        bool                   is_regulatory;
+    };
+    const SSubtypeCase subtype_cases [] = {
+        { CSeqFeatData::eSubtype_regulatory, true },
+        // This is a special case which a special string translation
+        { CSeqFeatData::eSubtype_10_signal, false },
+        // Not a special case; just uses eSubtype_10_signal
+        { CSeqFeatData::eSubtype_CAAT_signal, false },
+    };
+
+    ITERATE_0_IDX(subtype_case_idx, ArraySize(subtype_cases)) {
+        ITERATE_BOTH_BOOL_VALUES(bUseValidRegulatoryClass) {
+            TErrList expected_errors;
+
+            const SSubtypeCase & subtype_case =
+                subtype_cases[subtype_case_idx];
+
+            const CSeqFeatData::ESubtype subtype = subtype_case.subtype;
+            const string & subtype_name =
+                CSeqFeatData::SubtypeValueToName(subtype);
+
+            cout << "Test case: use subtype: "
+                 << subtype_name
+                 << ", use valid regulatory_class: "
+                 << NStr::BoolToString(bUseValidRegulatoryClass) << endl;
+
+            const bool bUseRegulatorySubtypeItself =
+                subtype_case.is_regulatory;
+            if( ! bUseRegulatorySubtypeItself ) {
+                expected_errors.push_back(
+                    ILineError::eProblem_DiscouragedFeatureName);
+            }
+
+            const string & qual_val = (
+                bUseValidRegulatoryClass ?
+                kValidRegulatoryClass :
+                kInvalidRegulatoryClass );
+            if( ! bUseValidRegulatoryClass ) {
+                expected_errors.push_back(
+                    ILineError::eProblem_QualifierBadValue);
+            }
+
+            // build the feat table
+            string feat_table;
+            feat_table += ">Feature lcl|seq1\n";
+            feat_table += "<1\t32\t" + subtype_name + '\n';
+            feat_table += "\t\t\tregulatory_class\t" + qual_val + '\n';
+
+            CRef<CSeq_annot> annot = s_ReadOneTableFromString (
+                feat_table.c_str(), expected_errors,
+                CFeature_table_reader::fReportDiscouragedKey);
+            // &err_container);
+
+            BOOST_CHECK( annot );
+        }
+    }
 }

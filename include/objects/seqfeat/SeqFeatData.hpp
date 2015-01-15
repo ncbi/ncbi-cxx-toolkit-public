@@ -480,7 +480,8 @@ public:
     static const CSiteList* GetSiteList();
 
     static bool IsRegulatory(ESubtype subtype);
-    static string GetRegulatoryClass(ESubtype subtype);
+    static const string & GetRegulatoryClass(ESubtype subtype);
+    static ESubtype GetRegulatoryClass(const string & class_name );
 
     static bool IsDiscouragedSubtype(ESubtype subtype);
     static bool IsDiscouragedQual(EQualifier qual);
@@ -505,7 +506,9 @@ private:
     // Prohibit copy constructor and assignment operator
     CSeqFeatData(const CSeqFeatData& value);
     CSeqFeatData& operator=(const CSeqFeatData& value);
-    
+
+    typedef CStaticArraySet<ESubtype> TSubtypeSet;
+    static const TSubtypeSet & GetSetOfRegulatorySubtypes();
 };
 
 

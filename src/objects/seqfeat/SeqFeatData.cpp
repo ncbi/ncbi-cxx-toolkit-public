@@ -53,7 +53,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
 // constructor
 CSeqFeatData::CSeqFeatData(void)
 {
@@ -2878,8 +2877,12 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
     table[eSubtype_old_sequence].push_back(eQual_citation);
     table[eSubtype_operon].push_back(eQual_operon);
     table[eSubtype_source].push_back(eQual_organism);
+    // although INSDC indicates that mol_type should be mandatory on
+    // source subtype, we do not do so since there are legacy
+    // records for which a mol_type could cause loss of information.
     table[eSubtype_ncRNA].push_back(eQual_ncRNA_class);
     table[eSubtype_regulatory].push_back(eQual_regulatory_class);
+    table[eSubtype_mobile_element].push_back(eQual_mobile_element_type);
 
     // sort for binary_search
     NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
@@ -3115,64 +3118,114 @@ const CSiteList* CSeqFeatData::GetSiteList()
     return theSiteList.get();
 }
 
-
 bool CSeqFeatData::IsRegulatory(ESubtype subtype)
 {
-    bool rval = false;
-    switch (subtype) {
-        case CSeqFeatData::eSubtype_10_signal:
-        case CSeqFeatData::eSubtype_35_signal:
-        case CSeqFeatData::eSubtype_attenuator:
-        case CSeqFeatData::eSubtype_CAAT_signal:
-        case CSeqFeatData::eSubtype_enhancer:
-        case CSeqFeatData::eSubtype_promoter:
-        case CSeqFeatData::eSubtype_TATA_signal:
-        case CSeqFeatData::eSubtype_GC_signal:
-        case CSeqFeatData::eSubtype_RBS:
-        case CSeqFeatData::eSubtype_polyA_signal:
-        case CSeqFeatData::eSubtype_terminator:
-        case CSeqFeatData::eSubtype_misc_signal:
-            rval = true;
-            break;
-        default:
-            rval = false;
-            break;
-    }
-    return rval;
+    const TSubtypeSet & regulatory_subtypes_set = GetSetOfRegulatorySubtypes();
+    return (
+        regulatory_subtypes_set.find(subtype) !=
+        regulatory_subtypes_set.end() );
 }
 
 
-string CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
+const string & CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
 {
-    string rval = "";
-    switch (subtype) {
-        case CSeqFeatData::eSubtype_10_signal:
-            rval = "minus_10_signal";
-            break;
-        case CSeqFeatData::eSubtype_35_signal:
-            rval = "minus_35_signal";
-            break;
-        case CSeqFeatData::eSubtype_TATA_signal:
-            rval = "TATA_box";
-            break;
-        case CSeqFeatData::eSubtype_RBS:
-            rval = "ribosome_binding_site";
-            break;
-        case CSeqFeatData::eSubtype_polyA_signal:
-            rval = "polyA_signal_sequence";
-            break;
-        case CSeqFeatData::eSubtype_attenuator:            
-        case CSeqFeatData::eSubtype_CAAT_signal:
-        case CSeqFeatData::eSubtype_enhancer:
-        case CSeqFeatData::eSubtype_promoter:
-        case CSeqFeatData::eSubtype_GC_signal:
-        case CSeqFeatData::eSubtype_terminator:
-            rval = SubtypeValueToName(subtype);
-            break;
-        default:
-            break;
+    // Special cases where subtype does not translate to its
+    // SubtypeValueToName equivalent.
+    typedef map<ESubtype, string> TSubtypeToNameMap;
+
+    struct FCreateSubtypeNameMap {
+        static TSubtypeToNameMap * Create() {
+
+            // create via the inverse of the GetRegulatoryClass that
+            // takes a string
+            AutoPtr<TSubtypeToNameMap> p_new_map(new TSubtypeToNameMap);
+
+            const TSubtypeSet & regulatory_subtypes_set =
+                GetSetOfRegulatorySubtypes();
+            ITERATE(TSubtypeSet, subtype_iter, regulatory_subtypes_set) {
+                const string & class_name = SubtypeValueToName(*subtype_iter);
+                (*p_new_map)[*subtype_iter] = class_name;
+            }
+
+            _ASSERT( regulatory_subtypes_set.size() == p_new_map->size() );
+
+            // override for special cases
+            typedef SStaticPair<ESubtype, const char *> TSubtypeNameElem; 
+            static const TSubtypeNameElem sc_subtype_name_map[] = {
+                { CSeqFeatData::eSubtype_polyA_signal, "polyA_signal_sequence"},
+                { CSeqFeatData::eSubtype_RBS, "ribosome_binding_site"},
+                { CSeqFeatData::eSubtype_TATA_signal, "TATA_box"},
+                { CSeqFeatData::eSubtype_35_signal, "minus_35_signal"},
+                { CSeqFeatData::eSubtype_10_signal, "minus_10_signal"},
+            };
+
+            ITERATE_0_IDX(special_case_idx, ArraySize(sc_subtype_name_map)) {
+                const TSubtypeNameElem & subtype_name_elem =
+                    sc_subtype_name_map[special_case_idx];
+                
+                (*p_new_map)[subtype_name_elem.first] =
+                    subtype_name_elem.second;
+            }
+
+            _ASSERT( regulatory_subtypes_set.size() == p_new_map->size() );
+            return p_new_map.release();
+        }
+    };
+
+    static CSafeStatic<TSubtypeToNameMap> sc_SubtypeToNameMap(
+        FCreateSubtypeNameMap::Create);
+
+    if( ! IsRegulatory(subtype) ) {
+        return kEmptyStr;
+    } else if( subtype == eSubtype_misc_signal ) {
+        // this subtype does not have a string equivalent
+        return kEmptyStr;
+    } else {
+        TSubtypeToNameMap::const_iterator find_iter =
+            sc_SubtypeToNameMap->find(subtype);
+        if( find_iter != sc_SubtypeToNameMap->end() ) {
+            return find_iter->second;
+        }
     }
-    return rval;
+
+    // give up
+    return kEmptyStr;
+}
+
+CSeqFeatData::ESubtype
+CSeqFeatData::GetRegulatoryClass(const string & class_name )
+{
+    typedef map<string, ESubtype> TNameToSubtypeMap;
+
+    // to avoid getting out of sync, this map is created via the
+    // inverse of the subtype-to-name map.
+    struct FCreateNameToSubtypeMap {
+        static TNameToSubtypeMap * Create() {
+            AutoPtr<TNameToSubtypeMap> p_new_map(new TNameToSubtypeMap);
+
+            const TSubtypeSet & regulatory_subtypes_set =
+                GetSetOfRegulatorySubtypes();
+            ITERATE(TSubtypeSet, subtype_iter, regulatory_subtypes_set) {
+                const string & class_name =
+                    GetRegulatoryClass(*subtype_iter);
+                (*p_new_map)[class_name] = *subtype_iter;
+            }
+
+            _ASSERT( p_new_map->size() == regulatory_subtypes_set.size() );
+            return p_new_map.release();
+        }
+    };
+
+    static CSafeStatic<TNameToSubtypeMap> ms_NameToSubtypeMap(
+        FCreateNameToSubtypeMap::Create);
+
+    TNameToSubtypeMap::const_iterator find_iter =
+        ms_NameToSubtypeMap->find(class_name);
+    if( find_iter != ms_NameToSubtypeMap->end() ) {
+        return find_iter->second;
+    }
+
+    return eSubtype_bad;
 }
 
 bool CSeqFeatData::IsDiscouragedSubtype(ESubtype subtype)
@@ -3623,6 +3676,30 @@ CSeqFeatData::ESite CSiteList::GetSiteType(string str) const
     } else {
         return ci_it->second;
     }
+}
+
+const CSeqFeatData::TSubtypeSet & 
+CSeqFeatData::GetSetOfRegulatorySubtypes(void)
+{
+    static ESubtype const regulatory_subtypes [] = {
+        eSubtype_attenuator,
+        eSubtype_CAAT_signal,
+        eSubtype_enhancer,
+        eSubtype_GC_signal,
+        eSubtype_misc_signal,
+        eSubtype_polyA_signal,
+        eSubtype_promoter,
+        eSubtype_RBS,
+        eSubtype_TATA_signal,
+        eSubtype_terminator,
+        eSubtype_10_signal,
+        eSubtype_35_signal,
+    };
+
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(
+        TSubtypeSet, sc_RegulatorySubtypes, regulatory_subtypes);
+
+    return sc_RegulatorySubtypes;
 }
 
 
