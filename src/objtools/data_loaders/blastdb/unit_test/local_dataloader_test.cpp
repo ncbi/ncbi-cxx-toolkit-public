@@ -251,4 +251,41 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      BOOST_REQUIRE(defline.find("iron transport protein") == 0);
 }
 
+// Motivated by WB-1712
+BOOST_AUTO_TEST_CASE(FetchNonRedundantEntryByGi)
+{
+     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+     string dbname("nr");
+     string loader_name = 
+       CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eProtein, true,
+           CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
+
+     BOOST_REQUIRE_EQUAL("BLASTDB_nrProtein", loader_name);
+
+     CScope scope(*objmgr);
+
+     scope.AddDataLoader(loader_name);
+
+     const size_t kExpectedLength(333);
+     const size_t kExpectedTaxid(9606);
+
+     CSeq_id seqid1(CSeq_id::e_Gi, 530415817);  // human protein
+     CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
+     BOOST_REQUIRE(handle1);
+     BOOST_REQUIRE_EQUAL(kExpectedLength, handle1.GetInst().GetLength());
+     BOOST_CHECK_EQUAL(kExpectedTaxid, scope.GetTaxId(seqid1));
+     BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_aa, scope.GetSequenceType(seqid1));
+
+     CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
+     BOOST_REQUIRE(bioseq1.NotNull());
+     BOOST_REQUIRE_EQUAL(kExpectedLength, bioseq1->GetInst().GetLength());
+     BOOST_CHECK_EQUAL(kExpectedTaxid, bioseq1->GetTaxId());
+
+     CSeq_id monkey_gi(CSeq_id::e_Gi, 297276911); // monkey sequence
+     CBioseq_Handle monkey_handle = scope.GetBioseqHandle(seqid1);
+     BOOST_REQUIRE(monkey_handle);
+     BOOST_REQUIRE_EQUAL(kExpectedLength, monkey_handle.GetInst().GetLength());
+     BOOST_CHECK_EQUAL(9544, scope.GetTaxId(monkey_gi));
+}
+
 END_SCOPE(blast)

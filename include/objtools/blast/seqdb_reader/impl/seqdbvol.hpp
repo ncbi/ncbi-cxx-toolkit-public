@@ -1255,7 +1255,9 @@ private:
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
     /// @param preferred_gi
-    ///     This GI's defline (if found) will be put at the front of the list. [in]
+    ///     This GI's defline (if non-zero and found) will be put at the front of the list. [in]
+    /// @param preferred_seqid
+    ///     This SeqID's defline (if non-NULL and found) will be put at the front of the list. [in]
     /// @param locked
     ///     The lock holder object for this thread. [in]
     /// @return
@@ -1263,6 +1265,7 @@ private:
     CRef<CBlast_def_line_set>
     x_GetTaxDefline(int                    oid,
                     int                    preferred_gi,
+                    const CSeq_id        * preferred_seq_id,
                     CSeqDBLockHold       & locked);
     
     /// Get taxonomic descriptions of a sequence.
@@ -1278,7 +1281,9 @@ private:
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
     /// @param preferred_gi
-    ///     This GI's defline (if found) will be put at the front of the list. [in]
+    ///     This GI's defline (if non-zero and found) will be put at the front of the list. [in]
+    /// @param preferred_seqid
+    ///     This SeqID's defline (if non-NULL and found) will be put at the front of the list. [in]
     /// @param tax_info
     ///     Taxonomic info to encode. [in]
     /// @param locked
@@ -1288,6 +1293,7 @@ private:
     list< CRef<CSeqdesc> >
     x_GetTaxonomy(int                    oid,
                   int                    preferred_gi,
+                  const CSeq_id        * preferred_seq_id,
                   CRef<CSeqDBTaxInfo>    tax_info,
                   CSeqDBLockHold       & locked);
     

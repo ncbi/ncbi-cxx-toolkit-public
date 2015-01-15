@@ -999,6 +999,7 @@ s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetTaxDefline(int                    oid,
                            int                    preferred_gi,
+                           const CSeq_id        * preferred_seqid,
                            CSeqDBLockHold       & locked)
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
@@ -1012,15 +1013,20 @@ CSeqDBVol::x_GetTaxDefline(int                    oid,
     
     // 2. if there is a preferred gi, bump it to the top.
     
-    if (preferred_gi != 0) {
+    if (preferred_gi != ZERO_GI || preferred_seqid) {
         CRef<CBlast_def_line_set> new_bdls(new CBlast_def_line_set);
         
-        CSeq_id seqid(CSeq_id::e_Gi, preferred_gi);
+        CRef<const CSeq_id> seqid;
+        if (preferred_gi) {
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, preferred_gi));
+        } else {
+            seqid.Reset(preferred_seqid);
+        }
         
         bool found = false;
         
         ITERATE(list< CRef<CBlast_def_line> >, iter, BDLS->Get()) {
-            if ((! found) && s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
+            if ((! found) && s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid)) {
                 found = true;
                 new_bdls->Set().push_front(*iter);
             } else {
@@ -1037,6 +1043,7 @@ CSeqDBVol::x_GetTaxDefline(int                    oid,
 list< CRef<CSeqdesc> >
 CSeqDBVol::x_GetTaxonomy(int                    oid,
                          int                    preferred_gi,
+                         const CSeq_id        * preferred_seqid,
                          CRef<CSeqDBTaxInfo>    tax_info,
                          CSeqDBLockHold       & locked)
 {
@@ -1048,7 +1055,7 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
     list< CRef<CSeqdesc> > taxonomy;
     
     CRef<CBlast_def_line_set> bdls =
-        x_GetTaxDefline(oid, preferred_gi, locked);
+        x_GetTaxDefline(oid, preferred_gi, preferred_seqid, locked);
     
     if (bdls.Empty()) {
         return taxonomy;
@@ -1269,7 +1276,7 @@ CSeqDBVol::GetBioseq(int                    oid,
     
     CRef<CBlast_def_line_set> defline_set;
     
-    if (target_gi || target_seq_id ) {
+    if (target_gi || target_seq_id) {
         defline_set.Reset(new CBlast_def_line_set);
         
         CRef<const CSeq_id > seqid;
@@ -1402,7 +1409,7 @@ CSeqDBVol::GetBioseq(int                    oid,
     }
     
     list< CRef<CSeqdesc> > tax =
-        x_GetTaxonomy(oid, target_gi, tax_info, locked);
+        x_GetTaxonomy(oid, target_gi, target_seq_id, tax_info, locked);
     
     ITERATE(list< CRef<CSeqdesc> >, iter, tax) {
         bioseq->SetDescr().Set().push_back(*iter);
