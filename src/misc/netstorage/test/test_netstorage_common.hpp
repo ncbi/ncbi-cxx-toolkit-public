@@ -42,22 +42,35 @@ BEGIN_NCBI_SCOPE
 typedef boost::integral_constant<bool, false> TAttrTesting;
 
 
-#define APP_NAME                "test_netstorage_rpc"
-#define NETCACHE_SERVICE_NAME   "NC_UnitTest"
-#define CACHE_NAME              "nst_test"
+#define APP_NAME                "test_netstorage"
+
+// NB: This parameter is not used here, but required for compilation
+NCBI_PARAM_DECL(string, netstorage, service_name);
+typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
+
+NCBI_PARAM_DECL(string, netcache, service_name);
+typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
+
+NCBI_PARAM_DECL(string, netcache, cache_name);
+typedef NCBI_PARAM_TYPE(netcache, cache_name) TNetCache_CacheName;
+
 
 template <class TNetStorage>
 inline TNetStorage g_GetNetStorage()
 {
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nc_cache(TNetCache_CacheName::GetDefault());
     return g_CreateNetStorage(
-            CNetICacheClient(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME));
+            CNetICacheClient(nc_service.c_str(), nc_cache.c_str(), APP_NAME));
 }
 
 template <>
 inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nc_cache(TNetCache_CacheName::GetDefault());
     return g_CreateNetStorageByKey(
-            CNetICacheClient(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME));
+            CNetICacheClient(nc_service.c_str(), nc_cache.c_str(), APP_NAME));
 }
 
 END_NCBI_SCOPE

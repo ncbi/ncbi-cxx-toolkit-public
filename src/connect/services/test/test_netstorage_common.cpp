@@ -58,6 +58,12 @@ USING_NCBI_SCOPE;
 #define TEST_REMOVED
 
 
+// Configuration parameters
+NCBI_PARAM_DEF(string, netstorage, service_name, "ST_Test");
+NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
+NCBI_PARAM_DEF(string, netcache, cache_name, "nst_test");
+
+
 // ENetStorageObjectLocation to type mapping
 typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NotFound>
     TLocationNotFound;

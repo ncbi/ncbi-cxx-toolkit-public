@@ -44,29 +44,44 @@ typedef boost::integral_constant<bool, true> TAttrTesting;
 
 
 #define APP_NAME                    "test_netstorage_rpc"
-#define NETSTORAGE_SERVICE_NAME     "ST_Test"
-#define NETCACHE_SERVICE_NAME       "NC_UnitTest"
-#define CACHE_NAME                  "nst_test"
+
+NCBI_PARAM_DECL(string, netstorage, service_name);
+typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
+
+NCBI_PARAM_DECL(string, netcache, service_name);
+typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
+
+NCBI_PARAM_DECL(string, netcache, cache_name);
+typedef NCBI_PARAM_TYPE(netcache, cache_name) TNetCache_CacheName;
+
 
 template <class TNetStorage>
 inline TNetStorage g_GetNetStorage()
 {
-    return CNetStorage(
-            "nst="      NETSTORAGE_SERVICE_NAME
-            "&nc="      NETCACHE_SERVICE_NAME
-            "&cache="   CACHE_NAME
-            "&client="  APP_NAME);
+    string nst_service(TNetStorage_ServiceName::GetDefault());
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nc_cache(TNetCache_CacheName::GetDefault());
+    string init_string(
+            "nst="     + nst_service +
+            "&nc="     + nc_service +
+            "&cache="  + nc_cache +
+            "&client="   APP_NAME);
+    return CNetStorage(init_string);
 }
 
 template <>
 inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
-    return CNetStorageByKey(
-            "nst="      NETSTORAGE_SERVICE_NAME
-            "&nc="      NETCACHE_SERVICE_NAME
-            "&cache="   CACHE_NAME
-            "&client="  APP_NAME
-            "&domain="  CACHE_NAME);
+    string nst_service(TNetStorage_ServiceName::GetDefault());
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nc_cache(TNetCache_CacheName::GetDefault());
+    string init_string(
+            "nst="     + nst_service +
+            "&nc="     + nc_service +
+            "&cache="  + nc_cache +
+            "&client="   APP_NAME
+            "&domain=" + nc_cache);
+    return CNetStorageByKey(init_string);
 }
 
 END_NCBI_SCOPE
