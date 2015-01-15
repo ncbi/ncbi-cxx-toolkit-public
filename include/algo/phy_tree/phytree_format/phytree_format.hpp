@@ -94,7 +94,8 @@ public:
 
     enum eSeqType {
         eSeqTypeReferenceDB,
-        eSeqTypeKmerBlast
+        eSeqTypeKmerBlast,
+        eSeqTypeQuery
     };
 
     
@@ -201,6 +202,11 @@ public:
     /// @return root node id
     ///
     int GetRootNodeID(void);
+
+    /// Get tree seqIds in the order of nodeIds    
+    /// @return vector of <CConstRef<CSeq_id>
+    ///
+    vector <CConstRef<CSeq_id> > GetTreeSeqIDs(void) {return m_TreeSeqIDs;}        
 
     /// Get pointer to the node with given id
     /// @param id Node's numerical id [in]
@@ -403,10 +409,7 @@ protected:
     void x_MarkLeavesBySeqId(CBioTreeContainer& btc, vector<string>& ids,
                              CScope& scope);
 
-    
-
-private:
-    
+private:    
 
     /// Create and initialize tree features. Initializes node labels,
     /// descriptions, colors, etc.
@@ -419,7 +422,7 @@ private:
     ///
     /// Tree leaves must have labels as numbers from zero to number of leaves
     /// minus 1. This function does not initialize distance feature.
-    static void x_InitTreeFeatures(CBioTreeContainer& btc,
+    void x_InitTreeFeatures(CBioTreeContainer& btc,
                                  const vector< CRef<CSeq_id> >& seqids,
                                  CScope& scope,
                                  ELabelType label_type,
@@ -429,6 +432,7 @@ private:
                                  ILinkoutDB* linkoutDB = NULL,
                                  int linkoutType = 0);
 
+    string x_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first);
     static int x_FindSeqType(map<string, int> &seqTypeMap, string idString);
 
     /// Add feature descriptor to tree
@@ -691,7 +695,7 @@ protected:
     int m_LinkoutType;
     string m_MapViewerBuildName;
     map < string, int > m_SeqTypeMap;
-        
+    vector <CConstRef<CSeq_id> > m_TreeSeqIDs;        
 
 public:
     /// Node feature "node-info" value for query nodes
