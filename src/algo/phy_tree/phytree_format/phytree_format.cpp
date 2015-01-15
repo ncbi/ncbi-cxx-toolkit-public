@@ -730,7 +730,7 @@ CRef<CBioTreeContainer> CPhyTreeFormatter::GetSerialTree(void)
 
 // Get SeqID string from CBioseq_Handle such as gi|36537373
 // If getGIFirst tries to get gi. If gi does not exist tries to get be 'Best ID'
-static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
+string CPhyTreeFormatter::x_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
 {
     CSeq_id_Handle seq_id_handle;
     bool get_best_id = true;
@@ -750,12 +750,13 @@ static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
         seq_id_handle = sequence::GetId(handle, sequence::eGetId_Best);                 
     }
     CConstRef<CSeq_id> seq_id = seq_id_handle.GetSeqId();
-
+    m_TreeSeqIDs.push_back(seq_id);
     string id_string;
     (*seq_id).GetLabel(&id_string);
 
     return id_string;
 }
+
 
 // Generate Blast Name-based colors for tree leaves
 // TO DO: This needs to be redesigned
@@ -951,10 +952,10 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                     (*node_feature)->SetValue(labels[seq_number]);
 
                     //Gets gi, if cnnot gets best id
-                    string id_string 
-                        = s_GetSeqIDString(bio_seq_handles[seq_number], true);
+                    string id_string = x_GetSeqIDString(bio_seq_handles[seq_number],true);                    
 
                     x_AddFeature(eSeqIdId, id_string, node); 
+                    
 
                     // add organism attribute if possible
                     if (!organisms[seq_number].empty()) {
