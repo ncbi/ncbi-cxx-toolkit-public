@@ -246,6 +246,9 @@ bool CGff3Reader::xUpdateAnnotCds(
         pErr->SetLineNumber(m_uLineNumber);
         ProcessError(*pErr, pEC);
     }
+
+    //if the feature has a parent that's still under construction then
+    // add feature location to parent location:
     list<string> parents;
     if (record.GetAttribute("Parent", parents)) {
         for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
@@ -260,9 +263,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     }
 
     string id;
-    if (!record.GetAttribute("ID", id)) {
-        id = xNextGenericId();
-    }
+    record.GetAttribute("ID", id);
     string strParents;
     if (record.GetAttribute("Parent", strParents)) {
         list<string> parents;
@@ -270,12 +271,50 @@ bool CGff3Reader::xUpdateAnnotCds(
         for (list<string>::const_iterator cit = parents.begin();
                 cit != parents.end();
                 ++cit) {
-            string cdsId = id + ":" + *cit;
-            IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
-            if (it != m_MapIdToFeature.end()) {
-                record.UpdateFeature(m_iFlags, it->second);
-                continue;
+            //the following needs to happen for each of the parent mRNAs:
+            // try to find a CDS feature that belongs to the same parent and that should
+            //  be appended to
+            // if successful then update the pre-existing CDS feature
+            // if not then create a brand new CDS feature
+
+            //find pre-existing cds to append to ---
+            // if this record had an ID attribute then look for a cds of the same ID:parent
+            // combination:
+            string cdsId;
+            if (!id.empty()) {
+                cdsId = id + ":" + *cit;
+                IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
+                if (it != m_MapIdToFeature.end()) {
+                    record.UpdateFeature(m_iFlags, it->second);
+                    continue;
+                }
             }
+            //find pre-existing cds to append to ---
+            // if this record did not have an ID attribute then look for a cds with feature
+            // ID of pattern genericXX:parent:
+            else {
+                cdsId = xNextGenericId() + ":" + *cit;
+                IdToFeatureMap::iterator it;
+                for (it = m_MapIdToFeature.begin(); it != m_MapIdToFeature.end(); ++it) {
+                    string key = it->first;
+                    string prefix, parent;
+                    NStr::SplitInTwo(key, ":", prefix, parent);
+                    if (!NStr::StartsWith(prefix, "generic")) {
+                        continue;
+                    }
+                    if (parent != *cit) {
+                        continue;
+                    }
+                    break;
+                }
+                if (it != m_MapIdToFeature.end()) {
+                    record.UpdateFeature(m_iFlags, it->second);
+                    continue;
+                }
+            }
+
+            //still here?
+            // create brand new CDS feature:
             if (!record.InitializeFeature(m_iFlags, pFeature)) {
                 return false;
             }
