@@ -1,3 +1,10 @@
+2015-01-15 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* remote_cgi, remote_app: can run behind firewalls now.
+	* grid_cli: new default: try all servers in service to find ICache blob.
+	* grid_cli: new command 'discover' to query LBSM.
+	* grid_cli replay: new option '--dump-cgi-stdin'.
+
 2014-12-23 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* cgi2rcgi: fix for when framework overrides Status header from template
