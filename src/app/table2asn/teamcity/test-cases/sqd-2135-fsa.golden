@@ -1,0 +1,205 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Saccharomyces cerevisiae"
+      }
+    },
+    create-date std {
+      year 2014,
+      month 2,
+      day 1
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        gi 172344,
+        genbank {
+          name "YSCRAD57A",
+          accession "M65061",
+          version 1
+        }
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 1980,
+        seq-data ncbi2na '8D663CF58BEECF32CA04C73E3F2BF889EB2CD86D4812D0F4DA06
+7F61DAD4680253D063F31A1AE3FE3CB70F97333CC0CCF7D7F173F7DD113CD770B04E20F48E5AF0
+DF69FFD9BE0F40038038E04147A83D14FFD02EEC0F4E5CA97CD0C03F8431B33A17F18E0F1680B0
+1D7F38E083FD337FE8E4B0A403AEDE6DB23FFC11D1D60A0FA429C3102B63038AFF48FD243E7EF4
+E0CC3802C7C80DEE0001DCD2548C1AD78BBF461E78EC9CE8E0F3CAE8A4CF464E93C480CF68889D
+C7AC0DD0F1F392FA6F0BB507F58179A8A9FA6903BB333C51E2A63F141D223E80B39CDB72969F38
+0072B3C44340CFF45B49EC185C3034A044C343BD2F973FCF222370ABD0C03EB8C323D8FDD34FE2
+AE89F4810B5F488354200C00737A328E92209D40C7A5463CF4F35BEEBA70D0BEA8C051E9C12D4B
+A44CA133B078F38F349CABA72FA7A081D053DFCDA48E0F679FA242F50C18E03DCD218E08F339C3
+6222F3891EC0E1683CE3FFFD0008051530F883005BE2603D342D734B6102C201A03F8736ED5437
+6BF87EB50D1BF411833C7D0037F429F410C3D022B8274DFCC2A2B8F6909F7A42F08A10E02EB33D
+44F67097AD03E4CD03C7098A0C804978F82F5B3D80807089FE4B0CCE38292DFFCCCB2644F3D0D7
+6702EF43CB0330CFB4C0AC4CBE00AB3FFF003201F10CB21302A1EFFC18F32BB0842803D103C0BF
+00'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 2,
+              data gene {
+                locus "RAD57"
+              },
+              location int {
+                from 182,
+                to 1795,
+                strand plus,
+                id genbank {
+                  name "YSCRAD57A",
+                  accession "M65061",
+                  version 1
+                }
+              }
+            },
+            {
+              id local id 3,
+              data imp {
+                key "regulatory"
+              },
+              location int {
+                from 182,
+                to 187,
+                strand plus,
+                id genbank {
+                  name "YSCRAD57A",
+                  accession "M65061",
+                  version 1
+                }
+              },
+              qual {
+                {
+                  qual "regulatory_class",
+                  val "TATA_box"
+                }
+              }
+            },
+            {
+              id local id 4,
+              data imp {
+                key "regulatory"
+              },
+              location int {
+                from 1788,
+                to 1795,
+                strand plus,
+                id genbank {
+                  name "YSCRAD57A",
+                  accession "M65061",
+                  version 1
+                }
+              },
+              qual {
+                {
+                  qual "regulatory_class",
+                  val "terminator"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "AAA34950",
+          version 1
+        }
+      },
+      descr {
+        title "DNA repair protein [Saccharomyces cerevisiae]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 460,
+        topology linear,
+        seq-data iupacaa "MPRALSIKFDNTYMDLYDELPESKLLYDEEFSYLLDAVRQNGVCVVDFLTLT
+PKELARLIQRSINEVFRFQQLLVHEYNEKYLEICEKNSISPDNGPECFTTADVAMDELLGGGIFTHGITEIFGESSTG
+KSQLLMQLALSVQLSEPAGGLGGKCVYITTEGDLPTQRLESMLSSRPAYEKLGITQSNIFTVSCNDLINQEHIINVQL
+PILLERSKGSIKLVIIDSISHHLRVELQNKSFRESQENKNYLDRMAEKLQILAHDYSLSVVVANQVGDKPLANSPVAH
+RTYVTDYDYQLGWLVGWKNSTILYRQMNSLLGASSNNDEILSDDEDYMLIERVMSTVNDRNYDFFSKKKPPIIENKTV
+ERNSSSPISRQSKKRKFDYRVPNLGLTWSNHVSTRILLQKSFKASTIIQRGEAHLYKGGDSASFWQVKRTMKVVYSTF
+AKPGQIAYQITKRGIETA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 5,
+              data prot {
+                name {
+                  "DNA repair protein"
+                }
+              },
+              location int {
+                from 0,
+                to 459,
+                id genbank {
+                  accession "AAA34950",
+                  version 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          id local id 1,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole genbank {
+            accession "AAA34950",
+            version 1
+          },
+          location int {
+            from 345,
+            to 1727,
+            strand plus,
+            id genbank {
+              name "YSCRAD57A",
+              accession "M65061",
+              version 1
+            }
+          },
+          xref {
+            {
+              data prot {
+                name {
+                  "DNA repair protein"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

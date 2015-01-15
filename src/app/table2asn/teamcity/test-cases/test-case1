@@ -20,3 +20,4 @@
 #-i twocomments.fsa -s -w twocomments_plussuffix
 -i sp3060.fsa -s
 -i uncult_test.fsa -s
+-i sqd-2135.fsa

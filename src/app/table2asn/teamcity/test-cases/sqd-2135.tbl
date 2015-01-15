@@ -1,0 +1,11 @@
+>Feature gb|M65061.1|YSCRAD57A
+183	1796	gene
+			gene	RAD57
+183	188	regulatory
+			regulatory_class	TATA_box
+346	1728	CDS
+			product	DNA repair protein
+			transl_table	1
+			protein_id	gb|AAA34950.1|
+1789	1796	regulatory
+			regulatory_class	terminator
