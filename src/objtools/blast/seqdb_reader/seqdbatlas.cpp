@@ -1201,17 +1201,14 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
             }
 
             m_Data = (const char*) m_MemFile->Map(m_Begin, m_End - m_Begin);
-#if 1
             string last2 = m_Fname->substr(m_Fname->length() - 2);
             if (last2 == "in"  ||  last2 == "sq") {
                 MemoryAdvise(
                         (void*) m_Data,
                         (unsigned long) (m_End - m_Begin),
-//                        eMADV_WillNeed
                         eMADV_Sequential
                 );
             }
-#endif
         }
         catch(std::bad_alloc&) {
             expt = "\nstd::bad_alloc.";
