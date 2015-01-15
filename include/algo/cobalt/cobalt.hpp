@@ -255,6 +255,11 @@ public:
     const CClusterer::TClusters& GetQueryClusters(void) const
     {return m_Clusterer.GetClusters();}
 
+    /// Get alignment score
+    /// @return  Alignment score
+    ///
+    int GetScore(void) const {return m_Score;}
+
 
     // ---------------- Interrupt ---------------------------
 
@@ -696,6 +701,9 @@ protected:
     vector<int> m_Msa2Repr;
 
     vector<CSequence> m_Results;
+
+    /// Alignment score
+    int m_Score;
 
     // Server classes
 

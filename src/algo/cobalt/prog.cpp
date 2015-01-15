@@ -1940,6 +1940,8 @@ CMultiAligner::x_BuildAlignmentIterative(
             x_AlignProgressive(GetTree(), tmp_aligned, 
                                pair_info, iteration, false);
         }
+
+        m_Score = best_score;
     }
     catch (std::bad_alloc ex) {
         // memory clean up
