@@ -72,8 +72,8 @@ protected:
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
-        typedef uint64_t TGraphV;
-        typedef uint64_t TGraphQ;
+        typedef int64_t TGraphV;
+        typedef int64_t TGraphQ;
 
         DECLARE_VDB_COLUMN_AS_STRING(SID);
         DECLARE_VDB_COLUMN_AS(int64_t, START);

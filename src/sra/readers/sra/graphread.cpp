@@ -248,10 +248,13 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
     }
 
     typedef SGraphTableCursor::TGraphQ TValue;
+    const TValue kMinIntValue = kMin_I4;
     const TValue kMaxIntValue = kMax_I4;
+    const TValue kMinByteValue = 0;
     const TValue kMaxByteValue = kMax_UI1;
 
-    TValue max_v = 0, min_v = numeric_limits<TValue>::max();
+    TValue max_v = numeric_limits<TValue>::min();
+    TValue min_v = numeric_limits<TValue>::max();
     CInt_graph* int_graph = &graph->SetGraph().SetInt();
     CReal_graph* real_graph = 0;
     CInt_graph::TValues* int_vv = &int_graph->SetValues();
@@ -266,20 +269,23 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
               index < values.size() && pos < range.GetToOpen();
               ++index, pos += step ) {
             TValue v = values[index];
+            bool switch_to_real = false;
             if ( v < min_v ) {
                 min_v = v;
+                switch_to_real = v < kMinIntValue;
             }
             if ( v > max_v ) {
                 max_v = v;
-                if ( max_v > kMaxIntValue ) {
-                    // switch to real graph
-                    CRef<CInt_graph> save_int_graph(int_graph);
-                    real_graph = &graph->SetGraph().SetReal();
-                    int_graph = 0;
-                    real_vv = &real_graph->SetValues();
-                    sx_Assign(*real_vv, *int_vv);
-                    int_vv = 0;
-                }
+                switch_to_real = v > kMaxIntValue;
+            }
+            if ( switch_to_real ) {
+                // switch to real graph
+                CRef<CInt_graph> save_int_graph(int_graph);
+                real_graph = &graph->SetGraph().SetReal();
+                int_graph = 0;
+                real_vv = &real_graph->SetValues();
+                sx_Assign(*real_vv, *int_vv);
+                int_vv = 0;
             }
             if ( int_vv ) {
                 int_vv->push_back(int(v));
@@ -295,7 +301,7 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
         }
     }
     size_t numval = 0;
-    if ( max_v <= kMaxByteValue ) {
+    if ( min_v >= kMinByteValue && max_v <= kMaxByteValue ) {
         // use smaller byte representation
         numval = int_vv->size();
         CRef<CByte_graph> byte_graph(new CByte_graph);
@@ -307,7 +313,7 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
         int_graph = 0;
         int_vv = 0;
     }
-    else if ( max_v > kMaxIntValue ) {
+    else if ( real_graph ) {
         // need bigger double representation
         numval = real_vv->size();
         real_graph->SetAxis(0);
@@ -347,9 +353,10 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
     TSeqPos size = range.GetLength();
     TSeqPos row_size = info.m_RowSize;
     typedef SGraphTableCursor::TGraphQ TValue;
+    const TValue kMinIntValue = kMin_I4;
     const TValue kMaxIntValue = kMax_I4;
 
-    TValue max_v = 0;
+    TValue min_v = 0, max_v = 0;
     vector<TValue> vv;
     vv.reserve(size);
     TSeqPos pos = range.GetFrom();
@@ -363,6 +370,9 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
             vv.push_back(v);
             if ( v > max_v ) {
                 max_v = v;
+            }
+            if ( v < min_v ) {
+                min_v = v;
             }
         }
     }
@@ -401,7 +411,7 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
 
     TSeqPos cur_i = 0;
     TValue cur_v = vv[0];
-    if ( max_v > kMaxIntValue ) {
+    if ( min_v < kMinIntValue || max_v > kMaxIntValue ) {
         CSeqTable_multi_data::TReal& arr_vv = col_val->SetData().SetReal();
         for ( TSeqPos i = 0; i < size; ++i ) {
             TValue v = vv[i];
@@ -458,9 +468,11 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
         return false;
     }
     typedef SGraphTableCursor::TGraphV TValue;
+    const TValue kMinIntValue = kMin_I4;
     const TValue kMaxIntValue = kMax_I4;
+    const TValue kMinByteValue = 0;
     const TValue kMaxByteValue = kMax_UI1;
-    TValue max_v = 0;
+    TValue min_v = 0, max_v = 0;
     size_t values = 0;
     uint64_t switches = 0;
     TSeqPos pos = range.GetFrom();
@@ -474,11 +486,14 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
         if ( v > max_v ) {
             max_v = v;
         }
+        if ( v < min_v ) {
+            min_v = v;
+        }
     }
     size_t table_value_size =
-        max_v > kMaxIntValue? sizeof(double): sizeof(int);
+        min_v < kMinIntValue || max_v > kMaxIntValue? sizeof(double): sizeof(int);
     size_t graph_value_size =
-        max_v > kMaxByteValue? table_value_size: 1;
+        min_v < kMinByteValue || max_v > kMaxByteValue? table_value_size: 1;
     uint64_t table_size =
         (table_value_size+2*sizeof(int))*switches; //+pos+span
     size_t graph_size =
