@@ -557,7 +557,7 @@ BP	s	Hungarian Natural History Museum, Botanical Department
 BPBM	s	Bernice P. Bishop Museum
 BPBM:Fish	s	Bernice P. Bishop Museum, Fish Collection
 BPBM:IZ	s	Bernice P. Bishop Museum, Invertebrate Zoology
-BPI	s	U.S. National Fungus Collections, Systematic Botany and Mycology Laboratory
+BPI	sc	U.S. National Fungus Collections, Systematic Botany and Mycology Laboratory
 BPI<ZAF>	s	Bernard Price Institute for Palaeontological Research
 BPIC	c	Benaki Phytopathological Institute Collection
 BPL	s	Museum of Barnstaple & North Devon
@@ -4601,7 +4601,7 @@ OKL	s	University of Oklahoma, Botany and Microbiology Department/ Oklahoma Biolo
 OKLA	s	Oklahoma State University, Botany Department
 OL	s	Palacky University, Botany Department
 OLAN	s	Ministerio de Recursos Naturales
-OLD	s	Universitaet Oldenburg, Fachbereich 7
+OLD	s	Universitat Oldenburg
 OLDM	s	Libraries, Art Galleries and Museums
 OLDS	s	Olds College, Horticulture Department
 OLE	s	Oundle School, Biology Department
