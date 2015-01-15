@@ -1892,6 +1892,18 @@ BOOST_AUTO_TEST_CASE(TestDiscouragedKeys)
         // &err_container);
 }
 
+struct SRegulatoryFeatSubtypeCases {
+    CSeqFeatData::ESubtype subtype;
+    bool                   is_regulatory;
+};
+const SRegulatoryFeatSubtypeCases subtype_cases [] = {
+    { CSeqFeatData::eSubtype_regulatory, true },
+    // This is a special case which a special string translation
+    { CSeqFeatData::eSubtype_10_signal, false },
+    // Not a special case; just uses eSubtype_10_signal
+    { CSeqFeatData::eSubtype_CAAT_signal, false },
+};
+
 
 BOOST_AUTO_TEST_CASE(TestRegulatoryFeat)
 {
@@ -1904,23 +1916,11 @@ BOOST_AUTO_TEST_CASE(TestRegulatoryFeat)
             CSeqFeatData::eSubtype_10_signal);
     BOOST_REQUIRE( ! kValidRegulatoryClass.empty() );
 
-    struct SSubtypeCase {
-        CSeqFeatData::ESubtype subtype;
-        bool                   is_regulatory;
-    };
-    const SSubtypeCase subtype_cases [] = {
-        { CSeqFeatData::eSubtype_regulatory, true },
-        // This is a special case which a special string translation
-        { CSeqFeatData::eSubtype_10_signal, false },
-        // Not a special case; just uses eSubtype_10_signal
-        { CSeqFeatData::eSubtype_CAAT_signal, false },
-    };
-
     ITERATE_0_IDX(subtype_case_idx, ArraySize(subtype_cases)) {
         ITERATE_BOTH_BOOL_VALUES(bUseValidRegulatoryClass) {
             TErrList expected_errors;
 
-            const SSubtypeCase & subtype_case =
+            const SRegulatoryFeatSubtypeCases & subtype_case =
                 subtype_cases[subtype_case_idx];
 
             const CSeqFeatData::ESubtype subtype = subtype_case.subtype;
