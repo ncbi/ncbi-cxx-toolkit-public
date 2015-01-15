@@ -809,7 +809,8 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd,
 
             m_Impl->IterateUntilExecOK(cmd, multiline_output,
                     exec_result, &random_traversal,
-                    SNetServiceImpl::eIgnoreServerErrors);
+                    SNetServiceImpl::eIgnoreServerErrors,
+                    m_Impl->m_Listener);
 
             return exec_result;
         }
@@ -970,46 +971,67 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     bool multiline_output,
     CNetServer::SExecResult& exec_result,
     IServiceTraversal* service_traversal,
-    SNetServiceImpl::EServerErrorHandling error_handling)
+    SNetServiceImpl::EServerErrorHandling error_handling,
+    INetServerConnectionListener* conn_listener)
 {
+    if (conn_listener == NULL)
+        conn_listener = m_Listener;
+
     int retry_count = (int) TServConn_ConnMaxRetries::GetDefault();
 
     const unsigned long retry_delay = s_GetRetryDelay();
 
-    CDeadline max_connection_time
-        (m_ServerPool->m_MaxConnectionTime / 1000,
+    CDeadline max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
          (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
 
+    enum EIterationMode {
+        eInitialIteration,
+        eRetry
+    } iteration_mode = eInitialIteration;
     CNetServer server = service_traversal->BeginIteration();
+
+    vector<CNetServer> servers_to_retry;
+    unsigned current_server;
+
+    bool skip_server;
 
     unsigned number_of_servers = 0;
     unsigned ns_with_submits_disabled = 0;
     unsigned servers_throttled = 0;
+    bool blob_not_found = false;
 
     STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
 
     for (;;) {
+        skip_server = false;
+
         try {
-            server->ConnectAndExec(cmd, multiline_output, exec_result, timeout);
+            server->ConnectAndExec(cmd, multiline_output, exec_result,
+                    timeout, NULL, conn_listener);
             return;
         }
         catch (CNetCacheException& ex) {
-            if (error_handling == eRethrowServerErrors ||
-                    (retry_count <= 0 && !m_UseSmartRetries))
+            if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
-            LOG_POST(Warning << server.GetServerAddress() << ": " << ex);
+            if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
+                blob_not_found = true;
+                skip_server = true;
+            } else if (error_handling == eRethrowServerErrors)
+                throw;
+            else
+                conn_listener->OnWarning(ex.GetMsg(), server);
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
-            if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled)
+            if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled) {
                 ++ns_with_submits_disabled;
-            else if (error_handling == eRethrowServerErrors)
+                skip_server = true;
+            } else if (error_handling == eRethrowServerErrors)
                 throw;
-            else {
-                LOG_POST(Warning << server.GetServerAddress() << ": " << ex);
-            }
+            else
+                conn_listener->OnWarning(ex.GetMsg(), server);
         }
         catch (CNetSrvConnException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -1018,7 +1040,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             case CNetSrvConnException::eReadTimeout:
                 break;
             case CNetSrvConnException::eConnectionFailure:
-                LOG_POST(Warning << ex);
+                conn_listener->OnWarning(ex.GetMsg(), server);
                 break;
 
             case CNetSrvConnException::eServerThrottle:
@@ -1031,7 +1053,23 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         }
 
         ++number_of_servers;
-        server = service_traversal->NextServer();
+
+        if (iteration_mode == eInitialIteration) {
+            if (!skip_server)
+                servers_to_retry.push_back(server);
+            server = service_traversal->NextServer();
+        } else {
+            if (!skip_server)
+                ++current_server;
+            else
+                servers_to_retry.erase(servers_to_retry.begin() +
+                        current_server);
+
+            if (current_server < servers_to_retry.size())
+                server = servers_to_retry[current_server];
+            else
+                server = NULL;
+        }
 
         if (m_ServerPool->m_MaxConnectionTime > 0 &&
                 max_connection_time.GetRemainingTime().GetAsMilliSeconds() <=
@@ -1054,10 +1092,14 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                         "Cannot execute ["  << cmd <<
                         "]: all servers are throttled.");
             }
-            if (retry_count <= 0) {
+            if (retry_count <= 0 || servers_to_retry.empty()) {
+                if (blob_not_found) {
+                    NCBI_THROW_FMT(CNetCacheException, eBlobNotFound,
+                            "Cannot execute ["  << cmd << "]: blob not found.");
+                }
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-                        "Unable to send [" << cmd <<
-                        "] to any of the discovered servers.");
+                        "Unable to execute [" << cmd <<
+                        "] on any of the discovered servers.");
             }
 
             LOG_POST(Warning << "Unable to send [" << cmd << "] to any "
@@ -1065,11 +1107,12 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
             SleepMilliSec(retry_delay);
 
-            server = service_traversal->BeginIteration();
-
             number_of_servers = 0;
             ns_with_submits_disabled = 0;
             servers_throttled = 0;
+
+            iteration_mode = eRetry;
+            server = servers_to_retry[current_server = 0];
         }
 
         --retry_count;

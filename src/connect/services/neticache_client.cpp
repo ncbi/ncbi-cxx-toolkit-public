@@ -219,9 +219,9 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     icache_impl->m_ICacheCmdPrefix.append(") ");
 
     if (config != NULL)
-        icache_impl->m_DefaultParameters.SetTryAllServers(
+        icache_impl->m_DefaultParameters.SetSingleServer(
                 config->GetBool(config_section,
-                        "try_all_servers", CConfig::eErr_NoThrow, false));
+                        "single_server", CConfig::eErr_NoThrow, false));
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
@@ -283,6 +283,35 @@ STimeout CNetICacheClient::GetCommunicationTimeout() const
     return m_Impl->m_Service->m_ServerPool.GetCommunicationTimeout();
 }
 
+class SWeightedServiceTraversal : public IServiceTraversal
+{
+public:
+    SWeightedServiceTraversal(CNetService::TInstance service,
+            const string& key) :
+        m_Service(service),
+        m_Key(key)
+    {
+    }
+
+    virtual CNetServer BeginIteration();
+    virtual CNetServer NextServer();
+
+private:
+    CNetService m_Service;
+    const string& m_Key;
+    CNetServiceIterator m_Iterator;
+};
+
+CNetServer SWeightedServiceTraversal::BeginIteration()
+{
+    return *(m_Iterator = m_Service.IterateByWeight(m_Key));
+}
+
+CNetServer SWeightedServiceTraversal::NextServer()
+{
+    return ++m_Iterator ? *m_Iterator : CNetServer();
+}
+
 CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
         const string& cmd,
         const string& key,
@@ -293,60 +322,46 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
     CNetServer selected_server(parameters->GetServerToUse());
     CNetServer* server_last_used_ptr(parameters->GetServerLastUsedPtr());
 
+    if (parameters->GetSingleServer()) {
+        if (!selected_server)
+            selected_server = m_Service.IterateByWeight(key).GetServer();
+
+        if (server_last_used_ptr == NULL)
+            return selected_server.ExecWithRetry(cmd,
+                    multiline_output, conn_listener);
+        else {
+            CNetServer::SExecResult exec_result(
+                    selected_server.ExecWithRetry(cmd,
+                            multiline_output, conn_listener));
+            *server_last_used_ptr = selected_server;
+            return exec_result;
+        }
+    }
+
+    CNetServer::SExecResult exec_result;
+
     if (selected_server) {
-        try {
-            if (server_last_used_ptr == NULL)
-                return selected_server.ExecWithRetry(cmd,
-                        multiline_output, conn_listener);
-            else {
-                CNetServer::SExecResult exec_result(
-                        selected_server.ExecWithRetry(cmd,
-                                multiline_output, conn_listener));
-                *server_last_used_ptr = selected_server;
-                return exec_result;
-            }
-        }
-        catch (CNetCacheException& ex) {
-            if (ex.GetErrCode() != CNetCacheException::eBlobNotFound ||
-                    !parameters->GetTryAllServers())
-                throw;
-        }
-        catch (CNetSrvConnException& ex) {
-            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
-                ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
-                throw;
-            ERR_POST(ex.what());
-        }
+        ESwitch server_check = eDefault;
+        parameters->GetServerCheck(&server_check);
+
+        SNetCacheMirrorTraversal mirror_traversal(m_Service,
+                selected_server, server_check);
+
+        m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
+                &mirror_traversal, SNetServiceImpl::eIgnoreServerErrors,
+                conn_listener);
+    } else {
+        SWeightedServiceTraversal service_traversal(m_Service, key);
+
+        m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
+                &service_traversal, SNetServiceImpl::eIgnoreServerErrors,
+                conn_listener);
     }
 
-    CNetServiceIterator it = m_Service.IterateByWeight(key);
+    if (server_last_used_ptr != NULL)
+        *server_last_used_ptr = exec_result.conn->m_Server;
 
-    for (;;) {
-        try {
-            if (server_last_used_ptr == NULL)
-                return (*it).ExecWithRetry(cmd,
-                        multiline_output, conn_listener);
-            else {
-                CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd,
-                        multiline_output, conn_listener));
-                *server_last_used_ptr = *it;
-                return exec_result;
-            }
-        }
-        catch (CNetCacheException& ex) {
-            if (ex.GetErrCode() != CNetCacheException::eBlobNotFound ||
-                    !parameters->GetTryAllServers() ||
-                    !++it)
-                throw;
-        }
-        catch (CNetSrvConnException& ex) {
-            if ((ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
-                    ex.GetErrCode() != CNetSrvConnException::eServerThrottle) ||
-                    !++it)
-                throw;
-            ERR_POST(ex.what());
-        }
-    }
+    return exec_result;
 }
 
 void CNetICacheClient::RegisterSession(unsigned pid)

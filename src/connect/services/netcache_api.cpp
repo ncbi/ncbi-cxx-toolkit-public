@@ -259,8 +259,9 @@ void CNetCacheServerListener::OnWarning(const string& warn_msg,
     if (m_EventHandler)
         m_EventHandler->OnWarning(warn_msg, server);
     else {
-        LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
-                ": " << warn_msg);
+        LOG_POST(Warning << "NetCache server at "
+                << server->m_ServerInPool->m_Address.AsString() <<
+                ": WARNING: " << warn_msg);
     }
 }
 
@@ -361,50 +362,33 @@ unsigned SNetCacheAPIImpl::x_ExtractBlobAge(
             sizeof("AGE=") - 1, NStr::fAllowTrailingSymbols);
 }
 
-class SNetCacheMirrorTraversal : public IServiceTraversal
-{
-public:
-    SNetCacheMirrorTraversal(CNetService::TInstance service,
-            CNetServer::TInstance primary_server, ESwitch server_check) :
-        m_Service(service),
-        m_PrimaryServer(primary_server),
-        m_PrimaryServerCheck(server_check != eOff)
-    {
-    }
-
-    virtual CNetServer BeginIteration();
-    virtual CNetServer NextServer();
-
-    CNetService m_Service;
-    CNetServiceIterator m_Iterator;
-    CNetServer::TInstance m_PrimaryServer;
-    bool m_PrimaryServerCheck;
-};
-
 CNetServer SNetCacheMirrorTraversal::BeginIteration()
 {
     if (m_PrimaryServerCheck)
         return *(m_Iterator = m_Service.Iterate(m_PrimaryServer));
 
+    m_Iterator = NULL;
     return m_PrimaryServer;
 }
 
 CNetServer SNetCacheMirrorTraversal::NextServer()
 {
-    if (m_PrimaryServerCheck)
-        return ++m_Iterator ? *m_Iterator : CNetServer();
-
-    m_PrimaryServerCheck = true;
-    return *(m_Iterator = m_Service.Iterate(m_PrimaryServer));
+    if (!m_Iterator) {
+        m_Iterator = m_Service.Iterate(m_PrimaryServer);
+        CNetServer first_server = *m_Iterator;
+        if (first_server->m_ServerInPool != m_PrimaryServer->m_ServerInPool)
+            return first_server;
+    }
+    return ++m_Iterator ? *m_Iterator : CNetServer();
 }
 
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     const CNetCacheKey& key, const string& cmd,
     bool multiline_output,
     const CNetCacheAPIParameters* parameters,
-    SNetServiceImpl::EServerErrorHandling error_handling)
+    SNetServiceImpl::EServerErrorHandling error_handling,
+    INetServerConnectionListener* conn_listener)
 {
-
     const string& service_name(key.GetServiceName());
 
     bool service_name_is_defined = !key.GetServiceName().empty();
@@ -450,7 +434,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 // them into host:port immediately.
 
                 if (!key_is_mirrored)
-                    return server.ExecWithRetry(cmd, multiline_output);
+                    return server.ExecWithRetry(cmd, multiline_output,
+                            conn_listener);
 
                 CNetServer::SExecResult exec_result;
 
@@ -460,7 +445,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                                         through this service */);
 
                 m_Service->IterateUntilExecOK(cmd, multiline_output,
-                        exec_result, &mirror_traversal, error_handling);
+                        exec_result, &mirror_traversal, error_handling,
+                        conn_listener);
 
                 return exec_result;
             }
@@ -486,7 +472,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 primary_server, server_check);
 
         m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
-                &mirror_traversal, error_handling);
+                &mirror_traversal, error_handling, conn_listener);
 
         return exec_result;
     }
@@ -499,7 +485,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 "accessed because it is not registered for the service.");
     }
 
-    return primary_server.ExecWithRetry(cmd, multiline_output);
+    return primary_server.ExecWithRetry(cmd, multiline_output, conn_listener);
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,

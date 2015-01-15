@@ -118,7 +118,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         bool multiline_output,
         const CNetCacheAPIParameters* parameters,
         SNetServiceImpl::EServerErrorHandling error_handling =
-            SNetServiceImpl::eRethrowServerErrors);
+            SNetServiceImpl::eRethrowServerErrors,
+        INetServerConnectionListener* conn_listener = NULL);
 
     CNetCacheServerListener* GetListener()
     {
@@ -157,6 +158,26 @@ inline SNetCacheAdminImpl::SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl) :
     m_API(nc_api_impl)
 {
 }
+
+class SNetCacheMirrorTraversal : public IServiceTraversal
+{
+public:
+    SNetCacheMirrorTraversal(CNetService::TInstance service,
+            CNetServer::TInstance primary_server, ESwitch server_check) :
+        m_Service(service),
+        m_PrimaryServer(primary_server),
+        m_PrimaryServerCheck(server_check != eOff)
+    {
+    }
+
+    virtual CNetServer BeginIteration();
+    virtual CNetServer NextServer();
+
+    CNetService m_Service;
+    CNetServiceIterator m_Iterator;
+    CNetServer::TInstance m_PrimaryServer;
+    bool m_PrimaryServerCheck;
+};
 
 END_NCBI_SCOPE
 

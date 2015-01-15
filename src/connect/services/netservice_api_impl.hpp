@@ -310,7 +310,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         bool multiline_output,
         CNetServer::SExecResult& exec_result,
         IServiceTraversal* service_traversal,
-        EServerErrorHandling error_handling);
+        EServerErrorHandling error_handling,
+        INetServerConnectionListener* conn_listener);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
 

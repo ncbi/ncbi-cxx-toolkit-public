@@ -108,10 +108,10 @@ BEGIN_NCBI_SCOPE
 /// @see CNetCacheAPI::TUseCompoundID
 #define nc_use_compound_id CNetCacheAPI::TUseCompoundID()
 
-/// Whether to run a request through all NetCache servers in the
-/// ICache service in an attempt to find the blob.
-/// @see CNetCacheAPI::TTryAllServers
-#define nc_try_all_servers CNetCacheAPI::TTryAllServers()
+/// When looking for an ICache blob, use only the most likely server
+/// to hold the blob; do not query other servers.
+/// @see CNetCacheAPI::TSingleServer
+#define nc_single_server CNetCacheAPI::TSingleServer()
 
 /* @} */
 
@@ -216,7 +216,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         eNPT_MaxBlobAge,
         eNPT_ActualBlobAgePtr,
         eNPT_UseCompoundID,
-        eNPT_TryAllServers,
+        eNPT_SingleServer,
     };
 
     /// Override defaults used by this object.
@@ -568,13 +568,13 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @see nc_use_compound_id
     typedef CNamedParameter<bool, eNPT_UseCompoundID> TUseCompoundID;
 
-    /// Named parameter type to define whether to run a request through all
-    /// NetCache servers in the ICache service in an attempt to find the blob.
+    /// Named parameter type to define whether to use only the most
+    /// likely server when looking for an ICache blob.
     /// This type of parameter can be defined through the
-    /// nc_try_all_servers macro substitution, for example:
-    ///     nc_try_all_servers = true
-    /// @see nc_try_all_servers
-    typedef CNamedParameter<bool, eNPT_TryAllServers> TTryAllServers;
+    /// nc_single_server macro substitution, for example:
+    ///     nc_single_server = true
+    /// @see nc_single_server
+    typedef CNamedParameter<bool, eNPT_SingleServer> TSingleServer;
 
     /// @deprecated Please use PutData(key, buf, size, optional) instead.
     NCBI_DEPRECATED string PutData(const string& key,

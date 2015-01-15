@@ -483,8 +483,9 @@ ERW_Result SNetStorageObjectAPIImpl::Write(const void* buf, size_t count,
         if (m_CurrentLocation == eNFL_NetCache) {
             m_NetCacheWriter.reset(m_NetICacheClient.GetNetCacheWriter(
                     m_ObjectLoc.GetUniqueKey(), 0, kEmptyStr,
-                            nc_blob_ttl = (m_ObjectLoc.GetFields() & fNFID_TTL ?
-                                    (unsigned) m_ObjectLoc.GetTTL() : 0)));
+                    (nc_blob_ttl = (m_ObjectLoc.GetFields() & fNFID_TTL ?
+                            (unsigned) m_ObjectLoc.GetTTL() : 0),
+                    nc_server_to_use = GetNetCacheServer())));
 
             m_IOStatus = eNFS_WritingToNetCache;
 

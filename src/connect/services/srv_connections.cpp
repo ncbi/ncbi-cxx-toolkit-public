@@ -712,6 +712,9 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
         INetServerExecListener* exec_listener,
         INetServerConnectionListener* conn_listener)
 {
+    if (conn_listener == NULL)
+        conn_listener = m_Service->m_Listener;
+
     CNetServerExecHandler exec_handler(cmd, multiline_output,
             exec_result, exec_listener, conn_listener);
 
@@ -763,8 +766,7 @@ void SNetServerInPool::CheckIfThrottled()
             ResetThrottlingParameters();
             return;
         }
-        NCBI_THROW(CNetSrvConnException, eServerThrottle,
-            m_ThrottleMessage);
+        NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
 
     if (m_ServerPool->m_MaxConsecutiveIOFailures > 0 &&
@@ -788,8 +790,7 @@ void SNetServerInPool::CheckIfThrottled()
     if (m_Throttled) {
         m_ThrottledUntil.SetCurrent();
         m_ThrottledUntil.AddSecond(m_ServerPool->m_ServerThrottlePeriod);
-        NCBI_THROW(CNetSrvConnException, eServerThrottle,
-            m_ThrottleMessage);
+        NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
 }
 
