@@ -311,7 +311,8 @@ const ENetStorageObjectLocation*
 {
     TNetStorageFlags flags = m_ObjectLoc.GetStorageFlags();
 
-    if (flags == 0)
+    // None of locations is pointed out
+    if ((flags & (fNST_Fast | fNST_Persistent)) == 0)
         // Just guessing.
         return SetNetICacheClient() ? s_TryNetCacheThenFileTrack : s_FileTrack;
 
