@@ -159,7 +159,7 @@ inline SNetCacheAdminImpl::SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl) :
 {
 }
 
-class SNetCacheMirrorTraversal : public IServiceTraversal
+class NCBI_XCONNECT_EXPORT SNetCacheMirrorTraversal : public IServiceTraversal
 {
 public:
     SNetCacheMirrorTraversal(CNetService::TInstance service,
