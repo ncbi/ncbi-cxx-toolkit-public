@@ -1314,9 +1314,9 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
            line = buffer;
            string ltype = line.substr(0, 2);
            if (ltype == "ID") 
-             name = line.substr(5);
+             name = line.substr(4);
            else if (ltype == "PA")
-             pattern = line.substr(5);
+             pattern = line.substr(4);
         }
         if (!pattern.empty())
             opt.SetPHIPattern(pattern.c_str(), 
