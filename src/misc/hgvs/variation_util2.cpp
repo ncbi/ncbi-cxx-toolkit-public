@@ -1204,6 +1204,7 @@ void CVariationUtil::s_CalcPrecursorVariationCodon(
     size_t max_matches(0);
     s_UntranslateProt(prot_to, candidates1);
     codons_to.clear();
+    bool have_silent = false;
 
     ITERATE(vector<string>, it1, candidates1) {
         size_t matches = s_CountMatches(codon_from, *it1);
@@ -1212,6 +1213,7 @@ void CVariationUtil::s_CalcPrecursorVariationCodon(
         if(matches == 3) {
             //all three bases in a codon matched - we must be processing a silent mutation.
             //in this case we want to consider candidate codons other than itself.
+            have_silent = true;
             continue;
         }
 
@@ -1222,6 +1224,11 @@ void CVariationUtil::s_CalcPrecursorVariationCodon(
             codons_to.push_back(*it1);
             max_matches = matches;
         }
+    }
+
+    // didn't find polymorphic candidate - must be dealing with no-change at nucleotide level
+    if(codons_to.empty() && have_silent) {
+        codons_to.push_back(codon_from);
     }
 }
 
@@ -1362,24 +1369,34 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     }
 
 
-    CSeq_data variant_prot_seq;
-    CSeqportUtil::Convert(delta->GetSeq().GetLiteral().GetSeq_data(), &variant_prot_seq, CSeq_data::e_Iupacaa);
-
     CSeqVector seqv(*nuc_loc, m_scope, CBioseq_Handle::eCoding_Iupac);
     string original_allele_codon; //nucleotide allele on the sequence
     seqv.GetSeqData(seqv.begin(), seqv.end(), original_allele_codon);
 
-    vector<string> variant_codons;
+    string variant_codon;
+    {{
+        CSeq_data variant_prot_seq;
+        CSeqportUtil::Convert(
+                delta->GetSeq().GetLiteral().GetSeq_data(), 
+                &variant_prot_seq, 
+                CSeq_data::e_Iupacaa);
 
-    if(v.GetData().GetInstance().IsSetObservation()
-       && v.GetData().GetInstance().GetObservation() == CVariation_inst::eObservation_asserted)
-    {
-        s_UntranslateProt(variant_prot_seq.GetIupacaa(), variant_codons);
-    } else {
-        s_CalcPrecursorVariationCodon(original_allele_codon, variant_prot_seq.GetIupacaa(), variant_codons);
-    }
-
-    string variant_codon = s_CollapseAmbiguities(variant_codons);
+        vector<string> variant_codons;
+        if(v.GetData().GetInstance().IsSetObservation()
+           && v.GetData().GetInstance().GetObservation() 
+              == CVariation_inst::eObservation_asserted)
+        {
+            s_UntranslateProt(
+                    variant_prot_seq.GetIupacaa(), 
+                    variant_codons);
+        } else {
+            s_CalcPrecursorVariationCodon(
+                    original_allele_codon, 
+                    variant_prot_seq.GetIupacaa(), 
+                    variant_codons);
+        }
+        variant_codon = s_CollapseAmbiguities(variant_codons);
+    }}
 
     if(flags & fAA2NA_truncate_common_prefix_and_suffix
         && !v.IsSetFrameshift()

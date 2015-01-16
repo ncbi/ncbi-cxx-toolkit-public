@@ -1358,7 +1358,10 @@ CRef<CVariation> CHgvsParser::x_no_change(TIterator const& i, const CContext& co
     }
 
     //var_inst.SetType(CVariation_inst::eType_identity);
-    var_inst.SetType(p.GetSeq().GetLength() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
+    var_inst.SetType(
+            p.GetMol() == CVariantPlacement::eMol_protein ? CVariation_inst::eType_prot_silent
+          : p.GetSeq().GetLength() == 1                   ? CVariation_inst::eType_snv 
+          :                                                 CVariation_inst::eType_mnp);
 
     TDelta delta(new TDelta::TObjectType);
     delta->SetSeq().SetLiteral().Assign(p.GetSeq());
@@ -1655,7 +1658,9 @@ CRef<CVariation> CHgvsParser::x_prot_missense(TIterator const& i, const CContext
 
     CRef<CVariation> vr(new CVariation);
     CVariation_inst& var_inst = vr->SetData().SetInstance();
-    var_inst.SetType(prot_literal->GetLength() == 1 ? CVariation_inst::eType_prot_missense : CVariation_inst::eType_prot_other);
+    var_inst.SetType(prot_literal->GetLength() == 1 ? 
+            CVariation_inst::eType_prot_missense 
+          : CVariation_inst::eType_prot_other);
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
 

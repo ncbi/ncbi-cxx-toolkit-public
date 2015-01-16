@@ -832,7 +832,10 @@ string CHgvsParser::x_AsHgvsInstExpression(
         //  NC_000001:g.100000A=        - correct
         //  NC_000001:g.100000_100123=  - correct
         //  NC_000001:g.100000_100123124= - wrong, can't use literal's length "124"
-        inst_str = (asserted_seq && asserted_seq->GetLength() < s_max_literal_length  && !is_prot ? asserted_seq_str : "") + "=";
+        inst_str = (   asserted_seq 
+                    && asserted_seq->GetLength() < s_max_literal_length  
+                    && !is_prot ? asserted_seq_str : "") 
+                  + "=";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
         inst_str = "inv" + asserted_seq_str;
     } else if(inst.GetType() == CVariation_inst::eType_snv) {
@@ -928,9 +931,12 @@ string CHgvsParser::x_AsHgvsInstExpression(
                 }
 
                 string variant_str = x_SeqLiteralToStr(*literal, is_prot, is_mito);
-                if(inst_str == variant_str + ">") {
-                    //instead of "G>G" etc want to report "G="
-                    inst_str[inst_str.size() - 1] = '='; //overwrite '>' with '='
+                if(   inst_str == variant_str + ">"
+                   || inst_str == "del" + variant_str + "ins")
+                {
+                    //instead of "G>G"          report "G="
+                    //instead of "delACTinsACT" report "ACT="
+                    inst_str = variant_str + "=";
                 } else {
                     inst_str += variant_str;
                 }
