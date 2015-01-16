@@ -529,7 +529,6 @@ CSearchResultSet::SetFilteredQueryRegions(const TSeqLocInfoVector& orig_masks)
     } else {
         masks = orig_masks;
     }
-    _ASSERT(masks.size() == m_Results.size());
 
     if (m_IsPhiBlast) {
         for (size_t i = 0; i < m_Results.size(); i++) {
