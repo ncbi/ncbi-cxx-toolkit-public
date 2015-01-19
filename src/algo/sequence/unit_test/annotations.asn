@@ -9607,7 +9607,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "ASIC2",
-        desc "acid-sensing (proton-gated) ion channel 2",
+        desc "acid sensing (proton gated) ion channel 2",
         syn {
           "ACCN",
           "ACCN1",
@@ -9648,7 +9648,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "acid-sensing (proton-gated) ion channel 2, transcript
+        ext name "acid sensing (proton gated) ion channel 2, transcript
  variant MDEG2"
       },
       except TRUE,
