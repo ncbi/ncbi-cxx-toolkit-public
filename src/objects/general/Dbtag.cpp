@@ -80,6 +80,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "CK", CDbtag::eDbtagType_CK },
     { "COG", CDbtag::eDbtagType_COG },
     { "ENSEMBL", CDbtag::eDbtagType_ENSEMBL },
+    { "ERIC", CDbtag::eDbtagType_ERIC },
     { "ESTLIB", CDbtag::eDbtagType_ESTLIB },
     { "EcoGene", CDbtag::eDbtagType_EcoGene },
     { "EnsemblGenomes", CDbtag::eDbtagType_EnsemblGenomes },
