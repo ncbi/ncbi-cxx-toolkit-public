@@ -415,8 +415,8 @@ NW_001955489.1	GNOMON	CDS	142093	142270	.	+	2	ID=cds20;Parent=rna20;Dbxref=GeneI
 NW_001955489.1	GNOMON	CDS	142523	142658	.	+	1	ID=cds20;Parent=rna20;Dbxref=GeneID:100180766,Genbank:XP_002123078.1;Name=similar to Spermatogenesis-associated protein 6 precursor (Kinesin-related protein);gbkey=CDS;gene=LOC100180766;product=XP_002123078.1;protein_id=XP_002123078.1
 NW_001955489.1	GNOMON	CDS	143290	143396	.	+	0	ID=cds20;Parent=rna20;Dbxref=GeneID:100180766,Genbank:XP_002123078.1;Name=similar to Spermatogenesis-associated protein 6 precursor (Kinesin-related protein);gbkey=CDS;gene=LOC100180766;product=XP_002123078.1;protein_id=XP_002123078.1
 NW_001955489.1	GNOMON	CDS	144156	144300	.	+	1	ID=cds20;Parent=rna20;Dbxref=GeneID:100180766,Genbank:XP_002123078.1;Name=similar to Spermatogenesis-associated protein 6 precursor (Kinesin-related protein);gbkey=CDS;gene=LOC100180766;product=XP_002123078.1;protein_id=XP_002123078.1
-NW_001955489.1	GNOMON	tRNA	140482	140553	.	+	.	ID=rna21;Parent=gene19;Dbxref=GeneID:100187635;Name=tRNA-Tyr;gbkey=tRNA
-NW_001955489.1	GNOMON	exon	140482	140553	.	+	.	ID=id189;Parent=rna21;Dbxref=GeneID:100187635;Name=tRNA-Tyr;gbkey=tRNA
+NW_001955489.1	GNOMON	tRNA	140482	140553	.	+	.	ID=rna21;Parent=gene19;Dbxref=GeneID:100187635,GeneID:100180766;Name=tRNA-Tyr;gbkey=tRNA
+NW_001955489.1	GNOMON	exon	140482	140553	.	+	.	ID=id189;Parent=rna21;Dbxref=GeneID:100187635,GeneID:100180766;Name=tRNA-Tyr;gbkey=tRNA
 NW_001955489.1	BestRefseq	gene	149590	158724	.	+	.	ID=gene20;Dbxref=GeneID:445636;Name=Hh1;gbkey=Gene;gene=Hh1
 NW_001955489.1	BestRefseq	mRNA	149590	158724	.	+	.	ID=rna22;Parent=gene20;Dbxref=GeneID:445636,Genbank:NM_001032462.1;Name=hedgehog homolog 1;exception=unclassified transcription discrepancy;gbkey=mRNA;gene=Hh1;product=NM_001032462.1;transcript_id=NM_001032462.1
 NW_001955489.1	BestRefseq	exon	149590	150250	.	+	.	ID=id190;Parent=rna22;Dbxref=GeneID:445636,Genbank:NM_001032462.1;exception=unclassified transcription discrepancy;gbkey=mRNA;gene=Hh1;product=NM_001032462.1;transcript_id=NM_001032462.1
