@@ -77,7 +77,7 @@ public:
 
     typedef list<CRef<CSeq_id_Resolver> > TResolvers;
     /// Iterate through resolvers and resolve using the first one that can do it
-    /// Use CSeq_id_Handle::GetHandle(s) if none matched
+    /// Return empty handle otherwise.
     static CSeq_id_Handle s_Get(TResolvers& resolvers, const string& s)
     {
         NON_CONST_ITERATE(TResolvers, it, resolvers) {

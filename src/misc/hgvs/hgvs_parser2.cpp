@@ -805,7 +805,7 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
     CSeq_id_Handle idh = context.ResolevSeqId(id_str);
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(idh);
     if(!bsh) {
-        HGVS_THROW(eSemantic, "Could not resolve seq-id " + id_str);
+        HGVS_THROW(eSemantic, "Could not resolve seq-id-str='" + id_str + "'; idh=" + idh.AsString());
     }
         
 
@@ -1968,9 +1968,8 @@ void CHgvsParser::sx_AppendMoltypeExceptions(CVariation& v, CScope& scope)
 
 CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 {
-    string hgvs2 = NStr::TruncateSpaces(hgvs);
+    string hgvs2 = NStr::TruncateSpaces(hgvs); 
     tree_parse_info<> info = pt_parse(hgvs2.c_str(), *s_grammar, +space_p);
-    CRef<CVariation> vr;
 
     if(!info.full) {
 #if 0
@@ -1979,15 +1978,15 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
         string tree_str = CNcbiOstrstreamToString(ostr);
 #endif
         HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::SizetToString(info.length + 1) + " in " + hgvs2 + "");
-    } else {
-        CContext context(m_scope, m_seq_id_resolvers, hgvs);
-        vr = x_root(info.trees.begin(), context);
-        vr->SetName(hgvs2);
-        sx_AppendMoltypeExceptions(*vr, context.GetScope());
-
-        CVariationUtil util(context.GetScope());
-        util.CheckAmbiguitiesInLiterals(*vr);
     }
+
+    CContext context(m_scope, m_seq_id_resolvers, hgvs);
+    CRef<CVariation> vr = x_root(info.trees.begin(), context);
+    vr->SetName(hgvs2);
+    sx_AppendMoltypeExceptions(*vr, context.GetScope());
+
+    CVariationUtil util(context.GetScope());
+    util.CheckAmbiguitiesInLiterals(*vr);
 
     return vr;
 }

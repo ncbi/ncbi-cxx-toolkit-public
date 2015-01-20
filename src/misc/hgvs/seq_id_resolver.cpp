@@ -56,10 +56,13 @@ bool CSeq_id_Resolver::CanCreate(const string& s)
         return m_regexp->IsMatch(s);
     } else {
         try {
+            // Note: we will not resolve bare numeric ids
+            // to gis unless they are prefixed "gi|", as otherwise
+            // it is likely that the input was intended to refer to
+            // a prefix-less chromosome name or a local id, so we
+            // prefer to fail rather than process a wrong answer. VAR-575
             CSeq_id id(s);
-            return !id.IsLocal() && !id.IsGi();
-            //note: GIs are not supported because it could be a prefix-less chromosome name or a local id.
-            //VAR-575
+            return !id.IsGi() || NStr::StartsWith(s, "gi|");
         } catch(CException&) {
             return false;
         }
@@ -67,8 +70,10 @@ bool CSeq_id_Resolver::CanCreate(const string& s)
 }
 
 CSeq_id_Handle CSeq_id_Resolver::x_Create(const string& s)
-{
-    return sequence::GetId(CSeq_id_Handle::GetHandle(s), *m_scope, sequence::eGetId_ForceAcc);
+{    
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s);
+    return !idh.IsGi() ? idh
+         : sequence::GetId(idh, *m_scope, sequence::eGetId_ForceAcc);
 }
 
 CSeq_id_Resolver::~CSeq_id_Resolver()

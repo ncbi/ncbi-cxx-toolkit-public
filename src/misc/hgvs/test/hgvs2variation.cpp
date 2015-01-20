@@ -332,7 +332,7 @@ int CHgvs2variationApplication::Run(void)
         string line_str("");
         while(NcbiGetlineEOL(istr, line_str)) {
 
-            //expected line format: input_hgvs, optionally followed by "|" and
+            //expected line format: input_hgvs, optionally followed by "~" and
             //expected output expression, optionally followed by "#" and comment
             if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
                 if(args["roundtrip_hgvs"]) {
@@ -360,7 +360,7 @@ int CHgvs2variationApplication::Run(void)
             }
 
             string input_hgvs, other_synonyms;
-            NStr::SplitInTwo(test_expr, "|", input_hgvs, other_synonyms);
+            NStr::SplitInTwo(test_expr, "~", input_hgvs, other_synonyms);
 
             CRef<CVariation> v;
             try {
