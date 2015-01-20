@@ -34,6 +34,7 @@
 
 #include <boost/type_traits/integral_constant.hpp>
 
+#include <corelib/ncbi_system.hpp>
 #include <misc/netstorage/netstorage.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -71,6 +72,11 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
     string nc_cache(TNetCache_CacheName::GetDefault());
     return g_CreateNetStorageByKey(
             CNetICacheClient(nc_service.c_str(), nc_cache.c_str(), APP_NAME));
+}
+
+inline void g_Sleep()
+{
+    SleepSec(2UL);
 }
 
 END_NCBI_SCOPE

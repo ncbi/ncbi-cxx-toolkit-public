@@ -16,4 +16,4 @@ CHECK_CMD = test_netstorage.sh
 CHECK_COPY = test_netstorage.sh
 CHECK_TIMEOUT = 800
 
-WATCHERS = kazimird
+WATCHERS = kazimird sadyrovr

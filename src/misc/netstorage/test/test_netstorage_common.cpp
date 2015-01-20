@@ -35,7 +35,6 @@
 
 #include <connect/services/netstorage.hpp>
 
-#include <corelib/ncbi_system.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <util/random_gen.hpp>
@@ -415,8 +414,8 @@ public:
         m_Object.Write(&source.data[0], source.data.size());
         m_Object.Close();
 
-        // Sometimes this object is not immediately available for reading
-        SleepSec(1);
+        // Wait some time for changes to take effect
+        g_Sleep();
     }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
@@ -1172,8 +1171,8 @@ string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
     attr_tester.Write(TLocation(), Line(__LINE__), object1);
     attr_tester.Write(TLocation(), Line(__LINE__), object2);
 
-    // Sometimes this object is not immediately available for reading
-    SleepSec(1);
+    // Wait some time for changes to take effect
+    g_Sleep();
 
     ReadTwoAndCompare<TLocation>("Reading after writing", object1, object2);
 
@@ -1195,6 +1194,9 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
             Ctx("Checking non-existent object").Line(__LINE__));
 
 #ifdef TEST_REMOVED
+    // Wait some time for changes to take effect
+    g_Sleep();
+
     ReadAndCompare<TLocationNotFound>("Trying to read removed object",
         netstorage.Open(id));
 #endif
@@ -1225,8 +1227,8 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // Relocate the object to a different storage.
     string persistent_loc = netstorage.Relocate(object_loc, TLoc::relocate);
 
-    // Sometimes this object is not immediately available for reading
-    SleepSec(1);
+    // Wait some time for changes to take effect
+    g_Sleep();
 
 #ifdef TEST_RELOCATED
     // Verify that the object has disappeared from the original storage.
@@ -1277,8 +1279,8 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     // it can be read from there.
     netstorage.Relocate(unique_key2, TLoc::relocate, TLoc::create);
 
-    // Sometimes this object is not immediately available for reading
-    SleepSec(1);
+    // Wait some time for changes to take effect
+    g_Sleep();
 
     ReadAndCompare<typename TLoc::TRelocate>("Reading relocated object",
             netstorage.Open(unique_key2, TLoc::relocate));
