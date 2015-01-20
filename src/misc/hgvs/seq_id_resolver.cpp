@@ -71,9 +71,11 @@ bool CSeq_id_Resolver::CanCreate(const string& s)
 
 CSeq_id_Handle CSeq_id_Resolver::x_Create(const string& s)
 {    
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s);
-    return !idh.IsGi() ? idh
-         : sequence::GetId(idh, *m_scope, sequence::eGetId_ForceAcc);
+    // resolve to accver whenether possible (e.g. for gis or versionless accs)
+    // with fall-back on the original (eg. for lcl)
+    CSeq_id_Handle orig_idh = CSeq_id_Handle::GetHandle(s);
+    CSeq_id_Handle acc_idh  = sequence::GetId(orig_idh, *m_scope, sequence::eGetId_ForceAcc);
+    return acc_idh ? acc_idh : orig_idh;
 }
 
 CSeq_id_Resolver::~CSeq_id_Resolver()
