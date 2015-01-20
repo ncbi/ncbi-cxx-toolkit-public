@@ -2833,8 +2833,18 @@ END_SUBTYPE
 START_SUBTYPE(regulatory)
     ADD_QUAL(allele);
     ADD_QUAL(bound_moiety);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
