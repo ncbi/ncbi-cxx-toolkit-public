@@ -533,6 +533,7 @@ void CValidError_bioseq::ValidateSeqIds
     bool wgs_tech_needs_wgs_accession = false;
     bool is_segset_accession = false;
     bool has_wgs_general = false;
+    bool is_eb_db = false;
 
     FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
         // first, do standalone validation
@@ -557,6 +558,10 @@ void CValidError_bioseq::ValidateSeqIds
                         || NStr::StartsWith(acc, "NR_")) {
                 wgs_tech_needs_wgs_accession = true;
             }
+        } else if ((*i)->IsEmbl() && (*i)->GetEmbl().IsSetAccession()) {
+            is_eb_db = true;
+        } else if ((*i)->IsDdbj() && (*i)->GetDdbj().IsSetAccession()) {
+            is_eb_db = true;
         }
 
         // Check that no two CSeq_ids for same CBioseq are same type
@@ -664,7 +669,11 @@ void CValidError_bioseq::ValidateSeqIds
                     !is_segset_accession &&
                     !has_wgs_general &&
                     !x_IsWgsSecondary(seq)) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            EDiagSev sev = eDiag_Error;
+            if (is_eb_db) {
+                sev = eDiag_Warning;
+            }
+            PostErr(sev, eErr_SEQ_DESCR_Inconsistent,
                 "Mol-info.tech of wgs should have WGS accession", seq);
         }
 
@@ -973,13 +982,15 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
         }
     }
 
-    bool is_gb = false, is_refseq = false, is_ng = false;
+    bool is_gb = false, is_eb_db = false, is_refseq = false, is_ng = false;
 
     FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, seq) {
         const CSeq_id& sid = **sid_itr;
         switch (sid.Which()) {
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
+                is_eb_db = true;
+                /* fall through */
             case CSeq_id::e_Ddbj:
                 is_gb = true;
                 break;
