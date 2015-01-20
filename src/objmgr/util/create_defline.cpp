@@ -843,7 +843,7 @@ void CDeflineGenerator::x_SetBioSrc (
             ++feat_it;
         }
     } catch ( const exception& e ) {
-        ERR_POST(Error << "Unable to iterate source features while constructing default definition line");
+        // ERR_POST(Error << "Unable to iterate source features while constructing default definition line");
     }
 }
 
