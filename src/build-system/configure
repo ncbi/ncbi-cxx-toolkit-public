@@ -22528,6 +22528,80 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+{ echo "$as_me:$LINENO: checking syntax for marking functions whose result should be checked" >&5
+echo $ECHO_N "checking syntax for marking functions whose result should be checked... $ECHO_C" >&6; }
+if test "${ncbi_cv_c_warn_unused_result+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+int f(void) __attribute__((warn_unused_result));
+int
+main ()
+{
+int status = f();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_c_warn_unused_result='__attribute__((warn_unused_result))'
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_c_warn_unused_result=none
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_c_warn_unused_result" >&5
+echo "${ECHO_T}$ncbi_cv_c_warn_unused_result" >&6; }
+wur=$ncbi_cv_c_warn_unused_result
+test "$wur" = "none"  &&  wur=""
+
+cat >>confdefs.h <<_ACEOF
+#define NCBI_WARN_UNUSED_RESULT $wur
+_ACEOF
+
+
 { echo "$as_me:$LINENO: checking syntax for declaring thread-local variables" >&5
 echo $ECHO_N "checking syntax for declaring thread-local variables... $ECHO_C" >&6; }
 if test "${ncbi_cv_c_tls_var+set}" = set; then
@@ -22606,6 +22680,80 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 fi
+
+{ echo "$as_me:$LINENO: checking syntax for marking types as packed to save memory" >&5
+echo $ECHO_N "checking syntax for marking types as packed to save memory... $ECHO_C" >&6; }
+if test "${ncbi_cv_c_packed+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+enum E { foo, bar } __attribute__((packed));
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_c_packed='__attribute__((__packed__))'
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_c_packed=none
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_c_packed" >&5
+echo "${ECHO_T}$ncbi_cv_c_packed" >&6; }
+packed=$ncbi_cv_c_packed
+test "$packed" = "none"  &&  packed=""
+
+cat >>confdefs.h <<_ACEOF
+#define NCBI_PACKED $packed
+_ACEOF
+
 
 # for FreeTDS
 { echo "$as_me:$LINENO: checking whether FIONBIO requires BSD_COMP to be defined" >&5

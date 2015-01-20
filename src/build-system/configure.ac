@@ -3647,6 +3647,19 @@ AC_DEFINE_UNQUOTED(NCBI_NORETURN, $noret,
    [Define to whatever syntax, if any, your compiler supports for marking
     functions that never return.])
 
+AC_CACHE_CHECK([syntax for marking functions whose result should be checked],
+   ncbi_cv_c_warn_unused_result,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[int f(void) __attribute__((warn_unused_result));]],
+       [[int status = f();]])],
+      [ncbi_cv_c_warn_unused_result='__attribute__((warn_unused_result))'],
+      [ncbi_cv_c_warn_unused_result=none])])
+wur=$ncbi_cv_c_warn_unused_result
+test "$wur" = "none"  &&  wur=""
+AC_DEFINE_UNQUOTED(NCBI_WARN_UNUSED_RESULT, $wur,
+   [Define to whatever syntax, if any, your compiler supports for marking
+    functions whose (status) result is important to check.])
+
 AC_CACHE_CHECK([syntax for declaring thread-local variables],
    ncbi_cv_c_tls_var,
    [ncbi_cv_c_tls_var=none
@@ -3662,6 +3675,18 @@ if test "$tls_var" != "none"; then
       [Define to whatever syntax your compiler supports for declaring
        thread-local variables, or leave undefined if it doesn't.])
 fi
+
+AC_CACHE_CHECK([syntax for marking types as packed to save memory],
+   ncbi_cv_c_packed,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+       [[enum E { foo, bar } __attribute__((packed));]])],
+      [ncbi_cv_c_packed='__attribute__((__packed__))'],
+      [ncbi_cv_c_packed=none])])
+packed=$ncbi_cv_c_packed
+test "$packed" = "none"  &&  packed=""
+AC_DEFINE_UNQUOTED(NCBI_PACKED, $packed,
+   [Define to whatever syntax, if any, your compiler supports for marking
+    types as packed to save memory.])
 
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],

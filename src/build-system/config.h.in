@@ -772,6 +772,10 @@
 /* Define to 1 on Unix. */
 #undef NCBI_OS_UNIX
 
+/* Define to whatever syntax, if any, your compiler supports for marking types
+   as packed to save memory. */
+#undef NCBI_PACKED
+
 /* Define to the architecture size. */
 #undef NCBI_PLATFORM_BITS
 
@@ -806,6 +810,10 @@
 
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC
+
+/* Define to whatever syntax, if any, your compiler supports for marking
+   functions whose (status) result is important to check. */
+#undef NCBI_WARN_UNUSED_RESULT
 
 /* Define to 1 if the BSD-style netdb interface is reentrant. */
 #undef NETDB_REENTRANT

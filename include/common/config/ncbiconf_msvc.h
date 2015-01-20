@@ -72,9 +72,12 @@
 #define NCBI_DEPRECATED __declspec(deprecated)
 #define NCBI_NORETURN   __declspec(noreturn)
 #define NCBI_FORCEINLINE __forceinline
+#define NCBI_PACKED_ENUM_TYPE(type)  : type
+#define NCBI_PACKED_ENUM_END()
 #define NCBI_RESTRICT_C
 #define NCBI_RESTRICT_CXX
 #define NCBI_TLS_VAR __declspec(thread)
+#define NCBI_WARN_UNUSED_RESULT _Check_return_
 
 #ifdef _WIN64
 #  define HOST         "i386-pc-win64"

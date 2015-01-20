@@ -110,6 +110,23 @@
 #  endif
 #endif
 
+/* Definition of packed enum type, to save some memory */
+/* enum EMyEnum NCBI_PACKED_ENUM_TYPE(Type) { ... } NCBI_PACKED_ENUM_END(); */
+#ifndef NCBI_PACKED_ENUM_TYPE
+#  define NCBI_PACKED_ENUM_TYPE(type)
+#endif
+#ifndef NCBI_PACKED_ENUM_END
+#  ifdef NCBI_PACKED
+#    define NCBI_PACKED_ENUM_END() NCBI_PACKED
+#  else
+#    define NCBI_PACKED_ENUM_END()
+#  endif
+#endif
+
+#ifndef NCBI_WARN_UNUSED_RESULT
+#  define NCBI_WARN_UNUSED_RESULT
+#endif
+
 #ifdef __cplusplus
 #  if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__) \
       || defined(__GXX_EXPERIMENTAL_CPP0X__)
