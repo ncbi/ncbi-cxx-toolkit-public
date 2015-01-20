@@ -122,8 +122,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount, 
     EDiagSev severity)
-        : CSerialException(diag_info, 0,
-          (CSerialException::EErrCode) CException::eInvalid,"")
+        : CSerialException(diag_info, 0, "", eDiag_Error, 0)
 {
     CNcbiOstrstream msg;
     const CChoiceTypeInfo* type = 0;
@@ -152,8 +151,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount, 
     EDiagSev severity)
-        : CSerialException(diag_info, 0,
-          (CSerialException::EErrCode) CException::eInvalid,"")
+        : CSerialException(diag_info, 0, "", eDiag_Error, 0)
 {
     x_Init(diag_info,
            string("Invalid choice selection: ")+
@@ -168,8 +166,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount,
     EDiagSev severity)
-        : CSerialException(CDiagCompileInfo(file, line), 0,
-          (CSerialException::EErrCode) CException::eInvalid,"")
+        : CSerialException(CDiagCompileInfo(file, line), 0, "", eDiag_Error, 0)
 {
     x_Init(CDiagCompileInfo(file, line),
            string("Invalid choice selection: ")+
@@ -183,8 +180,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount,
     EDiagSev severity)
-        : CSerialException(CDiagCompileInfo("unknown", 0), 0,
-          (CSerialException::EErrCode) CException::eInvalid,"")
+        : CSerialException(CDiagCompileInfo("unknown", 0), 0, "", eDiag_Error, 0)
 {
     x_Init(CDiagCompileInfo("unknown", 0),
            string("Invalid choice selection: ")+
