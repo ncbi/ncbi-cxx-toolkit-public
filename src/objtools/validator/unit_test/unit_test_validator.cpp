@@ -4784,6 +4784,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4796,6 +4797,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NM_123456");
+    expected_errors[0]->SetSeverity(eDiag_Error);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("NM_123456");
     eval = validator.Validate(seh, options);
