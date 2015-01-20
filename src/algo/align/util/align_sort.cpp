@@ -50,6 +50,64 @@ USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
 
+template <class Container>
+class CLocalAlignSource : public IAlignSource
+{
+public:
+    typedef Container TList;
+
+    CLocalAlignSource(const TList& aligns)
+        : m_Aligns(aligns)
+    {
+        m_Iter = m_Aligns.begin();
+    }
+
+    virtual CRef<CSeq_align> GetNext()
+    {
+        CRef<CSeq_align> align;
+        if (m_Iter != m_Aligns.end()) {
+            align = *m_Iter;
+            ++m_Iter;
+        }
+        return align;
+    }
+    virtual bool EndOfData() const       { return m_Iter == m_Aligns.end(); }
+    virtual size_t DataSizeSoFar() const { return 1;   }
+private:
+    TList m_Aligns;
+    typename TList::iterator m_Iter;
+};
+
+
+template <class Container>
+class CLocalAlignSortedOutput : public CAlignSort::IAlignSortedOutput
+{
+public:
+    typedef Container TList;
+
+    CLocalAlignSortedOutput(TList& sortedOutput)
+        : m_output(sortedOutput)
+    {
+    }
+    virtual ~CLocalAlignSortedOutput()   {  }
+    virtual void Write(const CAlignSort::TAlignment& aln)
+    {
+        m_output.push_back(aln.second);
+    }
+    virtual void Flush()
+    {
+    }
+
+    virtual size_t GetCountProcessed() const { return m_output.size(); }
+    virtual size_t GetCountEmitted() const { return m_output.size(); }
+
+private:
+    TList& m_output;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 bool CAlignSort::SSortKey_Less::operator()(const TAlignment& k1,
                                             const TAlignment& k2) const
 {
@@ -223,6 +281,37 @@ CAlignSort::CAlignSort(CScope &scope,
     m_TmpPath += ".";
 }
 
+
+void CAlignSort::SortAlignments(const list< CRef<CSeq_align> >& aligns_in,
+                                list< CRef<CSeq_align> >& aligns_out)
+{
+    if ( &aligns_in == &aligns_out) {
+        NCBI_THROW(CException, eUnknown,
+                   "cannot sort into the same container");
+    }
+
+    typedef list< CRef<CSeq_align> > TAlns;
+    CLocalAlignSource<TAlns> in_iface(aligns_in);
+    CLocalAlignSortedOutput<TAlns> out_iface(aligns_out);
+    SortAlignments(in_iface, out_iface);
+}
+
+
+void CAlignSort::SortAlignments(const vector< CRef<CSeq_align> >& aligns_in,
+                                vector< CRef<CSeq_align> >& aligns_out)
+{
+    if ( &aligns_in == &aligns_out) {
+        NCBI_THROW(CException, eUnknown,
+                   "cannot sort into the same container");
+    }
+
+    typedef vector< CRef<CSeq_align> > TAlns;
+    CLocalAlignSource<TAlns> in_iface(aligns_in);
+    CLocalAlignSortedOutput<TAlns> out_iface(aligns_out);
+    SortAlignments(in_iface, out_iface);
+}
+
+
 void CAlignSort::SortAlignments(IAlignSource &align_source,
                                 IAlignSortedOutput &sorted_output)
 {
@@ -234,7 +323,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
     /// loop on our input stream
     /// if we hit the limit, we dump a temporary file and merge at the end
     ///
-    LOG_POST(Error << "pass 1: extracting alignments");
+    //LOG_POST(Error << "pass 1: extracting alignments");
 
     size_t last_flush_point = 0;
     vector<string> tmp_volumes;
@@ -326,7 +415,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
             }
         }
 
-        LOG_POST(Error << "pass 2: sorting");
+        //LOG_POST(Error << "pass 2: sorting");
         if (tmp_volumes.size()) {
             MergeSortedFiles(tmp_volumes, sorted_output, true, true);
         } else {

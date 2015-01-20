@@ -82,6 +82,14 @@ public:
                           bool remove_input_files = false,
                           bool filtered = false);
 
+    /// Utility function for sorting alignments whern all alignments are in-core
+    void SortAlignments(const list< CRef<objects::CSeq_align> >& aligns, 
+                        list< CRef<objects::CSeq_align> >& sorted);
+
+    void SortAlignments(const vector< CRef<objects::CSeq_align> >& aligns, 
+                        vector< CRef<objects::CSeq_align> >& sorted);
+
+
     size_t NumProcessed() const
     { return m_Extractor.count; }
 
