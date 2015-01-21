@@ -219,6 +219,164 @@ namespace {
         return 0;
     }
     #endif
+
+    // The function recursively fixes the switches the document pointer except
+    // of the highest level node
+    void set_new_doc(xmlNodePtr  node, xmlDocPtr  old_doc,
+                                       xmlDocPtr  new_doc,
+                     bool  nested) {
+        if (node == NULL)
+            return;
+
+        if (nested)
+            if (node->doc == old_doc)
+                node->doc = new_doc;
+
+        xmlNsPtr    def = node->nsDef;
+        while (def) {
+            if (def->context == old_doc)
+                def->context = new_doc;
+            def = def->next;
+        }
+
+        xmlAttrPtr  attr = node->properties;
+        while (attr) {
+            if (attr->doc == old_doc)
+                attr->doc = new_doc;
+            if (attr->children && attr->children->doc == old_doc)
+                attr->children->doc = new_doc;
+            attr = attr->next;
+        }
+
+        node = node->children;
+        while (node) {
+            set_new_doc(node, old_doc, new_doc, true);
+            node = node->next;
+        }
+    }
+
+    // Provides a distinctive list of namespaces which are recursively used
+    // in the node and defined outside of the node
+    void get_used_out_namespaces(xmlNodePtr  node,
+                                 std::vector<xmlNsPtr> &  definitions,
+                                 std::vector<xmlNsPtr> &  namespaces) {
+        if (node == NULL)
+            return;
+
+        xmlNsPtr    def = node->nsDef;
+        while (def) {
+            definitions.push_back(def);
+            def = def->next;
+        }
+
+        if (node->ns != NULL)
+            if (std::find(namespaces.begin(), namespaces.end(),
+                          node->ns) == namespaces.end())
+                if (std::find(definitions.begin(), definitions.end(),
+                              node->ns) == definitions.end())
+                    namespaces.push_back(node->ns);
+
+        xmlAttrPtr  attr = node->properties;
+        while (attr) {
+            if (attr->ns != NULL)
+                if (std::find(namespaces.begin(), namespaces.end(),
+                              attr->ns) == namespaces.end())
+                    if (std::find(definitions.begin(), definitions.end(),
+                                  attr->ns) == definitions.end())
+                        namespaces.push_back(attr->ns);
+            attr = attr->next;
+        }
+
+        node = node->children;
+        while (node) {
+            get_used_out_namespaces(node, definitions, namespaces);
+            node = node->next;
+        }
+    }
+
+    // Provides a list of namespace definitions defined above the given node
+    std::vector<xmlNsPtr>  get_upper_namespaces(xmlNodePtr  node) {
+        std::vector<xmlNsPtr>   namespaces;
+        if (node == NULL)
+            return namespaces;
+
+        node = node->parent;
+        while (node) {
+            xmlNsPtr    def = node->nsDef;
+            while (def) {
+                namespaces.push_back(def);
+                def = def->next;
+            }
+            node = node->parent;
+        }
+        return namespaces;
+    }
+
+    void update_ns_pointers(xmlNodePtr  node,
+                            xmlNsPtr  old_ns, xmlNsPtr  new_ns) {
+        if (node == NULL)
+            return;
+
+        if (node->ns == old_ns)
+            node->ns = new_ns;
+
+        xmlAttrPtr  attr = node->properties;
+        while (attr) {
+            if (attr->ns == old_ns)
+                attr->ns = new_ns;
+            attr = attr->next;
+        }
+
+        node = node->children;
+        while (node) {
+            update_ns_pointers(node, old_ns, new_ns);
+            node = node->next;
+        }
+    }
+
+    bool in_doc_dict(xmlDocPtr  doc, const xmlChar *  s) {
+        if (doc == NULL)
+            return false;
+        if (doc->dict == NULL)
+            return false;
+        if (s == NULL)
+            return false;
+        return xmlDictOwns(doc->dict, s) == 1;
+    }
+
+    void unlink_doc_dict(xmlDocPtr  doc, xmlNodePtr  node) {
+        if (doc == NULL)
+            return;
+        if (doc->dict == NULL)
+            return;
+        if (node == NULL)
+            return;
+
+        if (in_doc_dict(doc, node->name))
+            node->name = xmlStrdup(node->name);
+        if (in_doc_dict(doc, node->content))
+            node->content = xmlStrdup(node->content);
+
+        xmlAttrPtr  attr = node->properties;
+        while (attr) {
+            if (in_doc_dict(doc, attr->name))
+                attr->name = xmlStrdup(attr->name);
+
+            // Attribute value is stored in a child xmlNode which is always a
+            // single node and the field is 'content'
+            if (attr->children)
+                if (in_doc_dict(doc, attr->children->content))
+                    attr->children->content = xmlStrdup(
+                                                    attr->children->content);
+            attr = attr->next;
+        }
+
+        node = node->children;
+        while (node) {
+            unlink_doc_dict(doc, node);
+            node = node->next;
+        }
+    }
 }
 //####################################################################
 xml::node::node (int) {
@@ -284,7 +442,9 @@ xml::node::node (comment comment_info) {
 xml::node::node (pi pi_info) {
     std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
 
-    if ( (pimpl_->xmlnode_ = xmlNewPI(reinterpret_cast<const xmlChar*>(pi_info.n), reinterpret_cast<const xmlChar*>(pi_info.c))) == 0) {
+    if ( (pimpl_->xmlnode_ =
+            xmlNewPI(reinterpret_cast<const xmlChar*>(pi_info.n),
+                     reinterpret_cast<const xmlChar*>(pi_info.c))) == 0) {
         throw std::bad_alloc();
     }
 
@@ -294,7 +454,8 @@ xml::node::node (pi pi_info) {
 xml::node::node (text text_info) {
     std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
 
-    if ( (pimpl_->xmlnode_ =  xmlNewText(reinterpret_cast<const xmlChar*>(text_info.t))) == 0) {
+    if ( (pimpl_->xmlnode_ =
+            xmlNewText(reinterpret_cast<const xmlChar*>(text_info.t))) == 0) {
         throw std::bad_alloc();
     }
 
@@ -311,7 +472,7 @@ xml::node::node (const node &other) {
 } /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::node& xml::node::assign (const node &other) {
-    node tmp_node(other);
+    node tmp_node(other);                   /* NCBI_FAKE_WARNING */
     swap(tmp_node);
     return *this;
 }
@@ -333,7 +494,169 @@ xml::node* xml::node::detached_copy (void) const {
 }
 //####################################################################
 void xml::node::swap (node &other) {
-    std::swap(pimpl_, other.pimpl_);
+
+    if (pimpl_->xmlnode_ == other.pimpl_->xmlnode_)
+        return;
+
+    // check if the nodes are nested into each other
+    if (pimpl_->xmlnode_->doc && other.pimpl_->xmlnode_->doc) {
+        if (pimpl_->xmlnode_->doc == other.pimpl_->xmlnode_->doc) {
+            xmlNodePtr  parent = pimpl_->xmlnode_->parent;
+            while (parent) {
+                if (parent == other.pimpl_->xmlnode_)
+                    throw xml::exception("a node cannot be swapped with "
+                                         "a node that it contains");
+                parent = parent->parent;
+            }
+            parent = other.pimpl_->xmlnode_->parent;
+            while (parent) {
+                if (parent == pimpl_->xmlnode_)
+                    throw xml::exception("a node cannot be swapped with "
+                                         "a node that it contains");
+                parent = parent->parent;
+            }
+        }
+    }
+
+    // deal with namespaces
+    // step 1: build a list of namespaces which are used from levels above
+    //         the nodes to be swapped
+    std::vector<xmlNsPtr>   self_ns_definitions;
+    std::vector<xmlNsPtr>   other_ns_definitions;
+    std::vector<xmlNsPtr>   self_used_out_namespaces;
+    std::vector<xmlNsPtr>   other_used_out_namespaces;
+    get_used_out_namespaces(pimpl_->xmlnode_, self_ns_definitions,
+                            self_used_out_namespaces);
+    get_used_out_namespaces(other.pimpl_->xmlnode_, other_ns_definitions,
+                            other_used_out_namespaces);
+
+    // step 2: compare the lists and leave only those namespaces which
+    //         definitions differ
+    std::vector<xmlNsPtr>::iterator current = self_used_out_namespaces.begin();
+    std::vector<xmlNsPtr>           other_definitions = get_upper_namespaces(
+                                                        other.pimpl_->xmlnode_);
+    while (current != self_used_out_namespaces.end()) {
+        // try exact match - this might be the same document
+        std::vector<xmlNsPtr>::iterator  found = std::find(
+                                            other_used_out_namespaces.begin(),
+                                            other_used_out_namespaces.end(),
+                                            *current);
+        if (found != other_used_out_namespaces.end()) {
+            current = self_used_out_namespaces.erase(current);
+            other_used_out_namespaces.erase(found);
+            continue;
+        }
+
+        bool    removed = false;
+        for (std::vector<xmlNsPtr>::const_iterator
+                k = other_definitions.begin();
+                k != other_definitions.end(); ++k) {
+            if ((*current)->href == (*k)->href &&
+                (*current)->prefix == (*k)->prefix) {
+                current = self_used_out_namespaces.erase(current);
+                removed = true;
+                break;
+            }
+        }
+
+        if (!removed)
+            ++current;
+    }
+
+    current = other_used_out_namespaces.begin();
+    std::vector<xmlNsPtr>   self_definitions = get_upper_namespaces(
+                                                            pimpl_->xmlnode_);
+    while (current != other_used_out_namespaces.end()) {
+        // No need to try the direct match, it was tested above
+        bool    removed = false;
+        for (std::vector<xmlNsPtr>::const_iterator
+                k = self_definitions.begin();
+                k != self_definitions.end(); ++k) {
+            if ((*current)->href == (*k)->href &&
+                (*current)->prefix == (*k)->prefix) {
+                current = other_used_out_namespaces.erase(current);
+                removed = true;
+                break;
+            }
+        }
+
+        if (!removed)
+            ++current;
+    }
+
+    // step 3: introduce namespace definitions which are required for proper
+    //         swapping and fix the namespace pointers
+    for (std::vector<xmlNsPtr>::const_iterator
+            k = self_used_out_namespaces.begin();
+            k != self_used_out_namespaces.end(); ++k) {
+        // Add namespace definition
+        xml::ns new_ns = add_namespace_def((const char *)((*k)->href),
+                                           (const char *)((*k)->prefix));
+        if ((*k)->prefix != NULL) {
+            // This is not a default namespace; if it was a default one then
+            // the pointers have been fixed in the add_namespace_def(...) call
+            // Otherwise the pointers need to be updated here.
+            update_ns_pointers(pimpl_->xmlnode_, *k,
+                               xmlSearchNs(NULL, pimpl_->xmlnode_,
+                                           (*k)->prefix));
+        }
+    }
+
+    for (std::vector<xmlNsPtr>::const_iterator
+            k = other_used_out_namespaces.begin();
+            k != other_used_out_namespaces.end(); ++k) {
+        // Add namespace definition
+        xml::ns new_ns = other.add_namespace_def((const char *)((*k)->href),
+                                                 (const char *)((*k)->prefix));
+        if ((*k)->prefix != NULL) {
+            // This is not a default namespace; if it was a default one then
+            // the pointers have been fixed in the add_namespace_def(...) call
+            // Otherwise the pointers need to be updated here.
+            update_ns_pointers(other.pimpl_->xmlnode_, *k,
+                               xmlSearchNs(NULL, other.pimpl_->xmlnode_,
+                                           (*k)->prefix));
+        }
+    }
+
+    // Set the new document for the nested nodes recursively
+    xmlDocPtr       self_doc = pimpl_->xmlnode_->doc;
+    xmlDocPtr       other_doc = other.pimpl_->xmlnode_->doc;
+
+    if (self_doc != other_doc) {
+        set_new_doc(pimpl_->xmlnode_, self_doc, other_doc, false);
+        set_new_doc(other.pimpl_->xmlnode_, other_doc, self_doc, false);
+    }
+
+    if (self_doc != other_doc) {
+        // This is an inter-document swap.
+        // Let's invalidate default attribute iterators
+        if (self_doc)
+            invalidate_default_attr_iterators(pimpl_->xmlnode_);
+        if (other_doc)
+            invalidate_default_attr_iterators(other.pimpl_->xmlnode_);
+
+        // Some node and attribute strings may come from a document dictionary
+        // so they need to be unlinked from the document
+        unlink_doc_dict(self_doc, pimpl_->xmlnode_);
+        unlink_doc_dict(other_doc, other.pimpl_->xmlnode_);
+    }
+
+    // The name field was unlinked from the document above, if required
+    std::swap(pimpl_->xmlnode_->name, other.pimpl_->xmlnode_->name);
+
+    std::swap(pimpl_->xmlnode_->_private, other.pimpl_->xmlnode_->_private);
+    std::swap(pimpl_->xmlnode_->type, other.pimpl_->xmlnode_->type);
+    std::swap(pimpl_->xmlnode_->children, other.pimpl_->xmlnode_->children);
+    std::swap(pimpl_->xmlnode_->last, other.pimpl_->xmlnode_->last);
+    // parent, next, prev, doc are skipped because the top level xmlNode
+    // structure does not change its location
+    std::swap(pimpl_->xmlnode_->ns, other.pimpl_->xmlnode_->ns);
+    std::swap(pimpl_->xmlnode_->content, other.pimpl_->xmlnode_->content);
+    std::swap(pimpl_->xmlnode_->properties, other.pimpl_->xmlnode_->properties);
+    std::swap(pimpl_->xmlnode_->nsDef, other.pimpl_->xmlnode_->nsDef);
+    std::swap(pimpl_->xmlnode_->psvi, other.pimpl_->xmlnode_->psvi);
+    std::swap(pimpl_->xmlnode_->line, other.pimpl_->xmlnode_->line);
+    std::swap(pimpl_->xmlnode_->extra, other.pimpl_->xmlnode_->extra);
 }
 //####################################################################
 xml::node::~node (void) {
@@ -439,27 +762,30 @@ xml::attributes::iterator xml::node::find_attribute (const char* name,
     return get_attributes().find(name, nspace);
 }
 //####################################################################
-xml::attributes::const_iterator xml::node::find_attribute (const char* name,
-                                                           const ns* nspace) const {
+xml::attributes::const_iterator
+xml::node::find_attribute (const char* name, const ns* nspace) const {
     return get_attributes().find(name, nspace);
 }
 //####################################################################
 xml::ns xml::node::get_namespace (xml::ns::ns_safety_type type) const {
     if (type == xml::ns::type_safe_ns) {
         return pimpl_->xmlnode_->ns
-            ? xml::ns(reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->prefix),
-                      reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->href))
-            : xml::ns(xml::ns::type_void);
+        ? xml::ns(reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->prefix),
+                  reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->href))
+        : xml::ns(xml::ns::type_void);
     }
     // unsafe namespace
     return xml::ns(pimpl_->xmlnode_->ns);
 }
 //####################################################################
-xml::ns_list_type xml::node::get_namespace_definitions (xml::ns::ns_safety_type type) const {
+xml::ns_list_type
+xml::node::get_namespace_definitions (xml::ns::ns_safety_type type) const {
     return get_namespace_definitions(pimpl_->xmlnode_, type);
 }
 //####################################################################
-xml::ns_list_type xml::node::get_namespace_definitions (void* nd, xml::ns::ns_safety_type type) const {
+xml::ns_list_type
+xml::node::get_namespace_definitions (void* nd,
+                                      xml::ns::ns_safety_type type) const {
     xml::ns_list_type      namespace_definitions;
     if (!reinterpret_cast<xmlNodePtr>(nd)->nsDef) {
         return namespace_definitions;
@@ -478,8 +804,11 @@ xml::ns_list_type xml::node::get_namespace_definitions (void* nd, xml::ns::ns_sa
 //####################################################################
 xml::ns xml::node::set_namespace (const char *prefix) {
     if (prefix && prefix[0] == '\0') prefix = NULL;
-    xmlNs *  definition(xmlSearchNs(NULL, pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(prefix)));
-    if (!definition) throw xml::exception("Namespace definition is not found");
+    xmlNs *  definition(xmlSearchNs(NULL,
+                                    pimpl_->xmlnode_,
+                                    reinterpret_cast<const xmlChar*>(prefix)));
+    if (!definition)
+        throw xml::exception("Namespace definition is not found");
     pimpl_->xmlnode_->ns = definition;
     return xml::ns(definition);
 }
@@ -497,19 +826,29 @@ xml::ns xml::node::set_namespace (const xml::ns &name_space) {
         const char *    prefix(name_space.get_prefix());
         if (prefix[0] == '\0') prefix = NULL;
 
-        xmlNs *  definition(xmlSearchNs(NULL, pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(prefix)));
+        xmlNs *  definition(xmlSearchNs(
+                                NULL, pimpl_->xmlnode_,
+                                reinterpret_cast<const xmlChar*>(prefix)));
         if (!definition)
             throw xml::exception("Namespace definition is not found");
-        if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri())))
-            throw xml::exception("Namespace definition URI differs to the given");
+        if (!xmlStrEqual(
+                    definition->href,
+                    reinterpret_cast<const xmlChar*>(name_space.get_uri())))
+            throw xml::exception("Namespace definition URI "
+                                 "differs to the given");
         pimpl_->xmlnode_->ns = definition;
     }
     return xml::ns(pimpl_->xmlnode_->ns);
 }
 //####################################################################
-xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_definition_adding_type type) {
-    if (name_space.is_void()) throw xml::exception("void namespace cannot be added to namespace definitions");
-    if (!pimpl_->xmlnode_->nsDef)   return add_namespace_def(name_space.get_uri(), name_space.get_prefix());
+xml::ns
+xml::node::add_namespace_definition (const xml::ns &name_space,
+                                     ns_definition_adding_type type) {
+    if (name_space.is_void())
+        throw xml::exception("void namespace cannot be added "
+                             "to namespace definitions");
+    if (!pimpl_->xmlnode_->nsDef)
+        return add_namespace_def(name_space.get_uri(), name_space.get_prefix());
 
     // Search in the list of existed
     const char *    patternPrefix(name_space.get_prefix());
@@ -519,12 +858,16 @@ xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_defin
     while (current) {
         if (current->prefix == NULL) {
             // Check if the default namespace matched
-            if (patternPrefix == NULL) return add_matched_namespace_def(current, name_space.get_uri(), type);
+            if (patternPrefix == NULL)
+                return add_matched_namespace_def(current, name_space.get_uri(),
+                                                 type);
         }
         else {
             // Check if a non default namespace matched
-            if (xmlStrEqual(reinterpret_cast<const xmlChar*>(patternPrefix), current->prefix))
-                return add_matched_namespace_def(current, name_space.get_uri(), type);
+            if (xmlStrEqual(reinterpret_cast<const xmlChar*>(patternPrefix),
+                            current->prefix))
+                return add_matched_namespace_def(current, name_space.get_uri(),
+                                                 type);
         }
         current = current->next;
     }
@@ -535,16 +878,19 @@ xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_defin
 //####################################################################
 void xml::node::add_namespace_definitions (const xml::ns_list_type &name_spaces,
                                            ns_definition_adding_type type) {
-    xml::ns_list_type::const_iterator  first(name_spaces.begin()), last(name_spaces.end());
+    xml::ns_list_type::const_iterator  first(name_spaces.begin()),
+                                             last(name_spaces.end());
     for (; first != last; ++first) { add_namespace_definition(*first, type); }
 }
 //####################################################################
 xml::ns xml::node::add_namespace_def (const char *uri, const char *prefix) {
     if (prefix && prefix[0] == '\0') prefix = NULL;
     if (uri && uri[0] == '\0')       uri = NULL;
-    xmlNs *     newNs(xmlNewNs(pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(uri),
-                      reinterpret_cast<const xmlChar*>(prefix)));
-    if (!newNs) throw std::bad_alloc();
+    xmlNs *     newNs(xmlNewNs(pimpl_->xmlnode_,
+                               reinterpret_cast<const xmlChar*>(uri),
+                               reinterpret_cast<const xmlChar*>(prefix)));
+    if (!newNs)
+        throw std::bad_alloc();
 
     if (!prefix) {
         // The added namespace is the default. Set the default namespace to all
@@ -557,17 +903,24 @@ xml::ns xml::node::add_namespace_def (const char *uri, const char *prefix) {
     return xml::ns(newNs);
 }
 //####################################################################
-xml::ns xml::node::add_matched_namespace_def (void *libxml2RawNamespace, const char *uri, ns_definition_adding_type type) {
-    if (type == type_throw_if_exists) throw xml::exception("namespace is already defined");
+xml::ns
+xml::node::add_matched_namespace_def (void *libxml2RawNamespace,
+                                      const char *uri,
+                                      ns_definition_adding_type type) {
+    if (type == type_throw_if_exists)
+        throw xml::exception("namespace is already defined");
     if (reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href != NULL )
         xmlFree((char*)(reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href));
-    reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href = xmlStrdup(reinterpret_cast<const xmlChar*>(uri));
+    reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href =
+                             xmlStrdup(reinterpret_cast<const xmlChar*>(uri));
     return xml::ns(libxml2RawNamespace);
 }
 //####################################################################
-xml::ns xml::node::lookup_namespace (const char *prefix, xml::ns::ns_safety_type type) const {
+xml::ns xml::node::lookup_namespace (const char *prefix,
+                                     xml::ns::ns_safety_type type) const {
     if (prefix && prefix[0] == '\0') prefix = NULL;
-    xmlNs *     found(xmlSearchNs(NULL, pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(prefix)));
+    xmlNs *     found(xmlSearchNs(NULL, pimpl_->xmlnode_,
+                                  reinterpret_cast<const xmlChar*>(prefix)));
 
     if (type == xml::ns::type_safe_ns) {
         if (found) return xml::ns(reinterpret_cast<const char*>(found->prefix),
@@ -621,25 +974,32 @@ void xml::node::erase_namespace (void) {
 //####################################################################
 void xml::node::erase_duplicate_ns_defs (void) {
     std::deque<xml::ns_list_type> definitions_stack;
-    definitions_stack.push_front(get_namespace_definitions(xml::ns::type_unsafe_ns));
+    definitions_stack.push_front(
+                            get_namespace_definitions(xml::ns::type_unsafe_ns));
     return erase_duplicate_ns_defs(pimpl_->xmlnode_, definitions_stack);
 }
 //####################################################################
-void xml::node::erase_duplicate_ns_defs (void* nd, std::deque<ns_list_type>& defs) {
+void xml::node::erase_duplicate_ns_defs (void* nd,
+                                         std::deque<ns_list_type>& defs) {
     xmlNodePtr current = reinterpret_cast<xmlNodePtr>(nd)->children;
     while (current) {
         erase_duplicate_ns_defs_single_node(current, defs);
-        defs.push_front(get_namespace_definitions(current, xml::ns::type_unsafe_ns));
+        defs.push_front(get_namespace_definitions(current,
+                                                  xml::ns::type_unsafe_ns));
         erase_duplicate_ns_defs(current, defs);
         defs.pop_front();
         current = current->next;
     }
 }
 //####################################################################
-void xml::node::erase_duplicate_ns_defs_single_node (void* nd, std::deque<ns_list_type>& defs) {
+void
+xml::node::erase_duplicate_ns_defs_single_node(void* nd,
+                                               std::deque<ns_list_type>& defs) {
     xmlNsPtr  ns(reinterpret_cast<xmlNodePtr>(nd)->nsDef);
     while (ns) {
-        xmlNsPtr  replacement(reinterpret_cast<xmlNsPtr>(find_replacement_ns_def(defs, ns)));
+        xmlNsPtr  replacement(
+                        reinterpret_cast<xmlNsPtr>(
+                                        find_replacement_ns_def(defs, ns)));
         if (replacement) {
             replace_ns(reinterpret_cast<xmlNodePtr>(nd), ns, replacement);
             xmlNsPtr next(ns->next);
@@ -652,12 +1012,18 @@ void xml::node::erase_duplicate_ns_defs_single_node (void* nd, std::deque<ns_lis
     }
 }
 //####################################################################
-void* xml::node::find_replacement_ns_def (std::deque<ns_list_type>& defs, void* ns) {
+void* xml::node::find_replacement_ns_def (std::deque<ns_list_type>& defs,
+                                          void* ns) {
     xmlNsPtr nspace(reinterpret_cast<xmlNsPtr>(ns));
-    for (std::deque<ns_list_type>::const_iterator k(defs.begin()); k != defs.end(); ++k) {
+    for (std::deque<ns_list_type>::const_iterator k(defs.begin());
+         k != defs.end(); ++k) {
         for (ns_list_type::const_iterator j(k->begin()); j != k->end(); ++j) {
-            if (xmlStrcmp(nspace->prefix, reinterpret_cast<xmlNsPtr>(j->unsafe_ns_)->prefix) == 0) {
-                if (xmlStrcmp(nspace->href, reinterpret_cast<xmlNsPtr>(j->unsafe_ns_)->href) == 0) {
+            if (xmlStrcmp(
+                    nspace->prefix,
+                    reinterpret_cast<xmlNsPtr>(j->unsafe_ns_)->prefix) == 0) {
+                if (xmlStrcmp(
+                        nspace->href,
+                        reinterpret_cast<xmlNsPtr>(j->unsafe_ns_)->href) == 0) {
                     return j->unsafe_ns_;
                 }
                 return NULL;
@@ -790,8 +1156,13 @@ xml::node::const_iterator xml::node::find (const char *name,
 }
 //####################################################################
 xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) {
-    xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));
-    xmlXPathObjectPtr       object(reinterpret_cast<xmlXPathObjectPtr>(evaluate_xpath_expression(expr, xpath_context)));
+    xmlXPathContextPtr      xpath_context(
+                                reinterpret_cast<xmlXPathContextPtr>(
+                                    create_xpath_context(expr)));
+    xmlXPathObjectPtr       object(
+                                reinterpret_cast<xmlXPathObjectPtr>(
+                                    evaluate_xpath_expression(expr,
+                                                              xpath_context)));
     xmlXPathFreeContext(xpath_context);
 
     switch (object->type) {
@@ -806,10 +1177,16 @@ xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) {
     throw xml::exception("Unsupported xpath run result type");
 }
 //####################################################################
-const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) const {
+const xml::node_set
+xml::node::run_xpath_query (const xml::xpath_expression& expr) const {
     // Create a context
-    xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));
-    xmlXPathObjectPtr       object(reinterpret_cast<xmlXPathObjectPtr>(evaluate_xpath_expression(expr, xpath_context)));
+    xmlXPathContextPtr      xpath_context(
+                                reinterpret_cast<xmlXPathContextPtr>(
+                                    create_xpath_context(expr)));
+    xmlXPathObjectPtr       object(
+                                reinterpret_cast<xmlXPathObjectPtr>(
+                                    evaluate_xpath_expression(expr,
+                                                              xpath_context)));
     xmlXPathFreeContext(xpath_context);
 
     switch (object->type) {
@@ -870,11 +1247,14 @@ xml::node::get_effective_namespaces (effective_ns_list_type which) const {
     return nspaces;
 }
 //####################################################################
-void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
-    if (!pimpl_->xmlnode_ || !pimpl_->xmlnode_->doc) {
-        throw xml::exception("cannot create xpath context (reference to document is not set)");
-    }
-    xmlXPathContextPtr  xpath_context(xmlXPathNewContext(pimpl_->xmlnode_->doc));
+void *
+xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
+    if (!pimpl_->xmlnode_ || !pimpl_->xmlnode_->doc)
+        throw xml::exception("cannot create xpath context "
+                             "(reference to document is not set)");
+
+    xmlXPathContextPtr  xpath_context(xmlXPathNewContext(
+                                                    pimpl_->xmlnode_->doc));
     if (!xpath_context) {
         xmlErrorPtr     last_error(xmlGetLastError());
         std::string     message("cannot create xpath context");
@@ -885,15 +1265,19 @@ void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const 
         throw xml::exception(message);
     }
     const ns_list_type& nspaces(expr.get_namespaces());
-    for (ns_list_type::const_iterator k(nspaces.begin()); k!=nspaces.end(); ++k) {
+    for (ns_list_type::const_iterator k(nspaces.begin());
+         k!=nspaces.end(); ++k) {
         const char* prefix(k->get_prefix());
         if (strlen(prefix) == 0) {
             prefix = NULL;
         }
-        if (xmlXPathRegisterNs(xpath_context, reinterpret_cast<const xmlChar*>(prefix),
-                                              reinterpret_cast<const xmlChar*>(k->get_uri())) != 0) {
+        if (xmlXPathRegisterNs(
+                xpath_context,
+                reinterpret_cast<const xmlChar*>(prefix),
+                reinterpret_cast<const xmlChar*>(k->get_uri())) != 0) {
             xmlErrorPtr     last_error(xmlGetLastError());
-            std::string     message("cannot create xpath context (namespace registering error)");
+            std::string     message("cannot create xpath context "
+                                    "(namespace registering error)");
 
             if (last_error && last_error->message)
                 message += " : " + std::string(last_error->message);
@@ -906,16 +1290,21 @@ void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const 
     return xpath_context;
 }
 //####################################################################
-void* xml::node::evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const {
+void *
+xml::node::evaluate_xpath_expression (const xml::xpath_expression& expr,
+                                      void* context) const {
     xmlXPathObjectPtr object(NULL);
 
     if (expr.get_compile_type() == xpath_expression::type_compile) {
-        object = xmlXPathCompiledEval(reinterpret_cast<xmlXPathCompExprPtr>(expr.get_compiled_expression()),
-                                      reinterpret_cast<xmlXPathContextPtr>(context));
+        object = xmlXPathCompiledEval(
+                    reinterpret_cast<xmlXPathCompExprPtr>(
+                                            expr.get_compiled_expression()),
+                    reinterpret_cast<xmlXPathContextPtr>(context));
     }
     else {
-        object = xmlXPathEvalExpression(reinterpret_cast<const xmlChar*>(expr.get_xpath()),
-                                        reinterpret_cast<xmlXPathContextPtr>(context));
+        object = xmlXPathEvalExpression(
+                    reinterpret_cast<const xmlChar*>(expr.get_xpath()),
+                    reinterpret_cast<xmlXPathContextPtr>(context));
     }
     if (!object) {
         xmlErrorPtr     last_error(xmlGetLastError());
@@ -931,19 +1320,28 @@ void* xml::node::evaluate_xpath_expression (const xml::xpath_expression& expr, v
 }
 //####################################################################
 xml::node::iterator xml::node::insert (const node &n) {
-    return iterator(xml::impl::node_insert(pimpl_->xmlnode_, 0, n.pimpl_->xmlnode_));
+    return iterator(xml::impl::node_insert(pimpl_->xmlnode_, 0,
+                                           n.pimpl_->xmlnode_));
 }
 //####################################################################
-xml::node::iterator xml::node::insert (const iterator& position, const node &n) {
-    return iterator(xml::impl::node_insert(pimpl_->xmlnode_, static_cast<xmlNodePtr>(position.get_raw_node()), n.pimpl_->xmlnode_));
+xml::node::iterator xml::node::insert (const iterator& position,
+                                       const node &n) {
+    return iterator(xml::impl::node_insert(
+                        pimpl_->xmlnode_,
+                        static_cast<xmlNodePtr>(position.get_raw_node()),
+                        n.pimpl_->xmlnode_));
 }
 //####################################################################
-xml::node::iterator xml::node::replace (const iterator& old_node, const node &new_node) {
-    return iterator(xml::impl::node_replace(static_cast<xmlNodePtr>(old_node.get_raw_node()), new_node.pimpl_->xmlnode_));
+xml::node::iterator
+xml::node::replace (const iterator& old_node, const node &new_node) {
+    return iterator(xml::impl::node_replace(
+                            static_cast<xmlNodePtr>(old_node.get_raw_node()),
+                            new_node.pimpl_->xmlnode_));
 }
 //####################################################################
 xml::node::iterator xml::node::erase (const iterator& to_erase) {
-    return iterator(xml::impl::node_erase(static_cast<xmlNodePtr>(to_erase.get_raw_node())));
+    return iterator(xml::impl::node_erase(
+                            static_cast<xmlNodePtr>(to_erase.get_raw_node())));
 }
 //####################################################################
 xml::node::iterator xml::node::erase (iterator first, const iterator& last) {
@@ -978,7 +1376,9 @@ void xml::node::sort (const char *node_name, const char *attr_name) {
     while (i!=0) {
         next = i->next;
 
-        if (i->type == XML_ELEMENT_NODE && xmlStrcmp(i->name, reinterpret_cast<const xmlChar*>(node_name)) == 0) {
+        if (i->type == XML_ELEMENT_NODE &&
+            xmlStrcmp(i->name,
+                      reinterpret_cast<const xmlChar*>(node_name)) == 0) {
             xmlUnlinkNode(i);
             node_list.push_back(i);
         }
@@ -989,7 +1389,8 @@ void xml::node::sort (const char *node_name, const char *attr_name) {
     if (node_list.empty()) return;
 
     std::sort(node_list.begin(), node_list.end(), compare_attr(attr_name));
-    std::for_each(node_list.begin(), node_list.end(), insert_node(pimpl_->xmlnode_));
+    std::for_each(node_list.begin(), node_list.end(),
+                  insert_node(pimpl_->xmlnode_));
 }
 //####################################################################
 void xml::node::sort_fo (cbfo_node_compare &cb) {
@@ -1010,7 +1411,8 @@ void xml::node::sort_fo (cbfo_node_compare &cb) {
     if (node_list.empty()) return;
 
     std::sort(node_list.begin(), node_list.end(), node_cmp(cb));
-    std::for_each(node_list.begin(), node_list.end(), insert_node(pimpl_->xmlnode_));
+    std::for_each(node_list.begin(), node_list.end(),
+                  insert_node(pimpl_->xmlnode_));
 }
 //####################################################################
 void xml::node::node_to_string (std::string &xml,
@@ -1041,7 +1443,8 @@ void xml::node::node_to_string (std::string &xml,
 //####################################################################
 node_set xml::node::convert_to_nset(void *  object_as_void) const {
     // It converts a scalar xpath object into a nodeset with 1 node in it
-    xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(object_as_void);
+    xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(
+                                                                object_as_void);
     std::string         type_name;
     std::string         content;
 
@@ -1059,7 +1462,8 @@ node_set xml::node::convert_to_nset(void *  object_as_void) const {
             break;
         case XPATH_STRING:
             type_name = "string";
-            content = std::string(reinterpret_cast<const char*>(object->stringval));
+            content = std::string(
+                            reinterpret_cast<const char*>(object->stringval));
             break;
         default:
             throw xml::exception("Internal logic error: unexpected xpath "
@@ -1108,9 +1512,9 @@ namespace xml {
 
         if (ctxt) {
             xmlSaveDoc(ctxt, doc);
-            xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
+            xmlSaveClose(ctxt);    // xmlSaveFlush() is called in xmlSaveClose()
         }
         return stream;
     }
 }
-//####################################################################
+

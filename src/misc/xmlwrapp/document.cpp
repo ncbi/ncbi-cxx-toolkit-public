@@ -333,10 +333,12 @@ xml::document::~document (void) {
 }
 //####################################################################
 const xml::node& xml::document::get_root_node (void) const {
+    pimpl_->root_.set_node_data(xmlDocGetRootElement(pimpl_->doc_));
     return pimpl_->root_;
 }
 //####################################################################
 xml::node& xml::document::get_root_node (void) {
+    pimpl_->root_.set_node_data(xmlDocGetRootElement(pimpl_->doc_));
     return pimpl_->root_;
 }
 //####################################################################

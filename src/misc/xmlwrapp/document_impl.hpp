@@ -73,11 +73,18 @@ struct doc_impl {
     xmlDocPtr               doc_;
     xsltStylesheetPtr       xslt_stylesheet_;
 
+    // Note: the root_ member is required only for the document::get_root_node()
+    //       member. The root_ member never owes the node it points to. The
+    //       owner of the node is always a document!
+    //       When a document is created, both the xmlDoc and xmlNode (for the
+    //       root node) structures are created.
+    //       The root_ member is set at the time when get_root_node() is
+    //       called.
     node                    root_;
     std::string             version_;
 
     // Note: the value of the member is in sync with what is in the
-    // doc_->encoding most of the time except one case. When a read doment does
+    // doc_->encoding most of the time except one case. When a read document does
     // not have an encoding spec and then doc.get_encoding() is called then:
     // - the encoding_ member will be updated with a default "ISO-8859-1"
     // - the doc->encoding will preserve the NULL value

@@ -58,7 +58,8 @@ namespace xml
             if (xmlnode->_private == NULL)
                 return;
 
-            node_private_data *  node_data = static_cast<node_private_data *>(xmlnode->_private);
+            node_private_data *  node_data = static_cast<node_private_data *>
+                                                            (xmlnode->_private);
 
             // Clean the phantom attributes
             {{
@@ -85,6 +86,7 @@ namespace xml
             }}
 
             delete node_data;
+            xmlnode->_private = NULL;
         }
 
         // The argument is actually of type xmlNodePtr
@@ -101,6 +103,10 @@ namespace xml
                 data->attr_instances_ = NULL;
                 data->node_instance_.set_node_data(raw_node);
                 raw_node->_private = data;
+            } else {
+                node_private_data *     data = static_cast<node_private_data*>
+                                                    (raw_node->_private);
+                data->node_instance_.set_node_data(raw_node);
             }
             return static_cast<node_private_data*>(raw_node->_private);
         }
@@ -108,7 +114,8 @@ namespace xml
         void *  get_ptr_to_attr_instance(void *  att)
         {
             attributes::attr *  att_ptr = static_cast<attributes::attr *>(att);
-            node_private_data * node_data = attach_node_private_data(att_ptr->get_node());
+            node_private_data * node_data = attach_node_private_data(
+                                                        att_ptr->get_node());
             attr_instance *     current = node_data->attr_instances_;
 
             while (current != NULL)
@@ -124,6 +131,31 @@ namespace xml
             new_attr_instance->next = node_data->attr_instances_;
             node_data->attr_instances_ = new_attr_instance;
             return & new_attr_instance->attr_;
+        }
+
+        void invalidate_default_attr_iterators(xmlNodePtr xmlnode)
+        {
+            if (xmlnode == NULL)
+                return;
+            if (xmlnode->_private == NULL)
+                return;
+
+            node_private_data *     data = static_cast<node_private_data*>
+                                                        (xmlnode->_private);
+            // Invalidate default attribute pointers
+            phantom_attr *  current = data->phantom_attrs_;
+            while (current != NULL)
+            {
+                current->def_prop_ = NULL;
+                current = current->next;
+            }
+
+            xmlnode = xmlnode->children;
+            while (xmlnode)
+            {
+                invalidate_default_attr_iterators(xmlnode);
+                xmlnode = xmlnode->next;
+            }
         }
 
     } // namespace impl

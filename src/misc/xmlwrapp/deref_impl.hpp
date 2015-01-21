@@ -96,7 +96,7 @@ namespace xml
          * phantom_attrs attached to the node, the linked list of dereferenced
          * attributes and the dereferenced node
          */
-        void cleanup_node (xmlNodePtr xmlnode);
+        void cleanup_node(xmlNodePtr xmlnode);
 
         /* Attaches a new private data structure to the node if it has not been
          * attached yet.
@@ -109,7 +109,14 @@ namespace xml
          */
         void *  get_ptr_to_attr_instance(void *  att);
 
+        /* Recursively invalidates the default attributes iterators.
+         * It needs to be done when a swap is done between documents and the
+         * user has already created iterators to the default attributes
+         */
+        void invalidate_default_attr_iterators(xmlNodePtr xmlnode);
+
     } // end impl namespace
+
 
 } // end xml namespace
 

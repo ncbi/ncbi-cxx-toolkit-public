@@ -65,6 +65,7 @@ using namespace xml::impl;
 const char*     kDerefError = "dereferencing non initialised or out of range iterator";
 const char*     kRefError   = "referencing non initialised or out of range iterator";
 const char*     kAdvError   = "advancing non initialised or out of range iterator";
+const char*     kInvalidDefaultIterError = "invalid default attribute iterator";
 
 
 /*
@@ -333,6 +334,8 @@ bool xml::attributes::attr::is_default (void) const {
 const char* xml::attributes::attr::get_name (void) const {
     if (is_default()) {
         xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+        if (!dprop)
+            throw xml::exception(kInvalidDefaultIterError);
         return reinterpret_cast<const char*>(dprop->name);
     }
     if (prop_) {
@@ -346,6 +349,8 @@ const char* xml::attributes::attr::get_name (void) const {
 const char* xml::attributes::attr::get_value (void) const {
     if (is_default()) {
         xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+        if (!dprop)
+            throw xml::exception(kInvalidDefaultIterError);
         if (dprop->defaultValue)
             return reinterpret_cast<const char*>(dprop->defaultValue);
         return "";
@@ -402,6 +407,8 @@ void *xml::attributes::attr::resolve_default_attr_ns (void) const {
                              "resolving non-default attribute namespace");
 
     xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+    if (!dprop)
+        throw xml::exception(kInvalidDefaultIterError);
     xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(xmlnode_),
                                           dprop->prefix));
     if (dprop->prefix)
@@ -417,6 +424,8 @@ void xml::attributes::attr::convert (void) {
 
     xmlNs * definition = static_cast<xmlNs*>(resolve_default_attr_ns());
     xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+    if (!dprop)
+        throw xml::exception(kInvalidDefaultIterError);
     xmlAttrPtr new_attr = xmlSetNsProp(reinterpret_cast<xmlNode*>(xmlnode_),
                                        definition,
                                        dprop->name,

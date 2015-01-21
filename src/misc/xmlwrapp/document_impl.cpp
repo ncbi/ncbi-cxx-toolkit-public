@@ -51,16 +51,26 @@ using namespace xml::impl;
 
 
 doc_impl::doc_impl (void) : doc_(0), xslt_stylesheet_(0), owe_(true) { /* NCBI_FAKE_WARNING */
+    node            tmpnode;
     xmlDocPtr       tmpdoc;
-    if ( (tmpdoc = xmlNewDoc(0)) == 0)
+
+    if ( (tmpdoc = xmlNewDoc(NULL)) == NULL)
         throw std::bad_alloc();
+
+    void *          raw_node = tmpnode.release_node_data();
+    xmlDocSetRootElement(tmpdoc, reinterpret_cast<xmlNodePtr>(raw_node));
     set_doc_data(tmpdoc, true);
 }
 
-doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_stylesheet_(0), root_(root_name), owe_(true) { /* NCBI_FAKE_WARNING */
+doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_stylesheet_(0), owe_(true) { /* NCBI_FAKE_WARNING */
+    node            tmpnode(root_name);
     xmlDocPtr       tmpdoc;
-    if ( (tmpdoc = xmlNewDoc(0)) == 0)
+
+    if ( (tmpdoc = xmlNewDoc(NULL)) == NULL)
         throw std::bad_alloc();
+
+    void *          raw_node = tmpnode.release_node_data();
+    xmlDocSetRootElement(tmpdoc, reinterpret_cast<xmlNodePtr>(raw_node));
     set_doc_data(tmpdoc, true);
 }
 
@@ -83,33 +93,33 @@ void doc_impl::set_doc_data (xmlDocPtr newdoc, bool root_is_okay) {
 
     if (doc_->version)
         version_  = reinterpret_cast<const char*>(doc_->version);
+    else
+        version_ = "";
     if (doc_->encoding)
         encoding_ = reinterpret_cast<const char*>(doc_->encoding);
+    else
+        encoding_ = "";
 
-    if (root_is_okay) {
-        xmlDocSetRootElement(doc_, static_cast<xmlNodePtr>(root_.release_node_data()));
-    } else {
+    if (!root_is_okay) {
         xmlNodePtr libxml_root_node = xmlDocGetRootElement(doc_);
 
-        if (libxml_root_node)  {
-            root_.set_node_data(libxml_root_node);
-        } else {
-            node tmpnode;
-            root_.swap(tmpnode);
-
-            xmlDocSetRootElement(doc_, static_cast<xmlNodePtr>(root_.release_node_data()));
+        if (!libxml_root_node)  {
+            node    tmpnode;
+            xmlDocSetRootElement(doc_,
+                        static_cast<xmlNodePtr>(tmpnode.release_node_data()));
         }
     }
 }
 
 void doc_impl::set_root_node (const node &n) {
     node &      non_const_node = const_cast<node&>(n);
-    xmlNodePtr  new_root_node = xmlCopyNode(static_cast<xmlNodePtr>(non_const_node.get_node_data()), 1);
+    xmlNodePtr  new_root_node = xmlCopyNode(
+                                    static_cast<xmlNodePtr>(
+                                        non_const_node.get_node_data()), 1);
     if (!new_root_node)
         throw std::bad_alloc();
 
     xmlNodePtr old_root_node = xmlDocSetRootElement(doc_, new_root_node);
-    root_.set_node_data(new_root_node);
     if (old_root_node)
         xmlFreeNode(old_root_node);
 }
