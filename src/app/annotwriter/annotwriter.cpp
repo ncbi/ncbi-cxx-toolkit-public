@@ -112,27 +112,21 @@ private:
         const CArgs& );
 
     bool xTryProcessSeqEntry(
-        const string&,
         CScope&,
         CObjectIStream&);
     bool xTryProcessSeqAnnot(
-        const string&,
         CScope&,
         CObjectIStream&);
     bool xTryProcessBioseq(
-        const string&,
         CScope&,
         CObjectIStream&);
     bool xTryProcessBioseqSet(
-        const string&,
         CScope&,
         CObjectIStream&);
     bool xTryProcessSeqAlign(
-        const string&,
         CScope&,
         CObjectIStream&);
     bool xTryProcessSeqAlignSet(
-        const string&,
         CScope&,
         CObjectIStream&);
         
@@ -246,6 +240,10 @@ void CAnnotWriterApp::Init()
         "flybase",
         "GFF3 only: Use Flybase inerpretation of the GFF3 spec",
         true );
+    arg_desc->AddFlag(
+        "binary",
+        "input file is binary ASN.1",
+        true );
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -338,33 +336,69 @@ bool CAnnotWriterApp::xTryProcessInputFile(
 
     pIs.reset( xInitInputStream( args ) );
 
+    set<TTypeInfo> knownTypes, matchingTypes;
+    knownTypes.insert(CSeq_entry::GetTypeInfo());
+    knownTypes.insert(CSeq_annot::GetTypeInfo());
+    knownTypes.insert(CBioseq::GetTypeInfo());
+    knownTypes.insert(CBioseq_set::GetTypeInfo());
+    knownTypes.insert(CSeq_align::GetTypeInfo());
+    knownTypes.insert(CSeq_align_set::GetTypeInfo());
+
     while (!pIs->EndOfData()) {
-        string objtype = pIs->ReadFileHeader();
-
-        if (xTryProcessSeqEntry(objtype, *m_pScope, *pIs)) {
-            continue;
+        matchingTypes = pIs->GuessDataType(knownTypes);
+        if (matchingTypes.empty()) {
+           NCBI_THROW(CObjWriterException, eBadInput, 
+                "xTryProcessInputFile: Unidentifiable input object");
         }
-        if (xTryProcessSeqAnnot(objtype, *m_pScope, *pIs)) {
-            continue;
-        }
-        if (xTryProcessBioseq(objtype, *m_pScope, *pIs)) {
-            continue;
-        }
-        if (xTryProcessBioseqSet(objtype, *m_pScope, *pIs)) {
-            continue;
-        }
-        if (xTryProcessSeqAlign(objtype, *m_pScope, *pIs)) {
-            continue;
-        }
-        if (xTryProcessSeqAlignSet(objtype, *m_pScope, *pIs)) {
-            continue;
+        if (matchingTypes.size() > 1) {
+           NCBI_THROW(CObjWriterException, eBadInput, 
+                "xTryProcessInputFile: Ambiguous input object");
         }
 
-        NCBI_THROW(CObjWriterException, eBadInput, 
-            "xTryProcessInputFile: Object type \"" +
-            objtype +
-            "\" not supported.");
-        break;
+        const TTypeInfo typeInfo = *matchingTypes.begin();
+        if (typeInfo == CSeq_entry::GetTypeInfo()) {
+            if (!xTryProcessSeqEntry(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Seq-entry object");
+            }
+            continue;
+        }
+        if (typeInfo == CSeq_annot::GetTypeInfo()) {
+            if (!xTryProcessSeqAnnot(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Seq-annot object");
+            }
+            continue;
+        }
+
+        if (typeInfo == CBioseq::GetTypeInfo()) {
+            if (!xTryProcessBioseq(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Bioseq object");
+            }
+            continue;
+        }
+        if (typeInfo == CBioseq_set::GetTypeInfo()) {
+            if (!xTryProcessBioseqSet(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Bioseq-set object");
+            }
+            continue;
+        }
+        if (typeInfo == CSeq_align::GetTypeInfo()) {
+            if (!xTryProcessSeqAlign(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Seq-align object");
+            }
+            continue;
+        }
+        if (typeInfo == CSeq_align_set::GetTypeInfo()) {
+            if (!xTryProcessSeqAlignSet(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Seq-align-set object");
+            }
+            continue;
+        }
     }
     pIs.reset();
     return true;
@@ -372,16 +406,18 @@ bool CAnnotWriterApp::xTryProcessInputFile(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessSeqEntry(
-    const string& objtype,
     CScope& scope,
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    if (objtype != "Seq-entry") {
+    CSeq_entry seq_entry;
+    try {
+        istr.Read(ObjectInfo(seq_entry));
+    }
+    catch (CException&) {
         return false;
     }
-    CSeq_entry seq_entry;
-    istr.Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
+
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( seq_entry );
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
@@ -392,38 +428,42 @@ bool CAnnotWriterApp::xTryProcessSeqEntry(
     return true;
 }
 
+
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessSeqAnnot(
-    const string& objtype,
     CScope& /*scope*/,
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    if (objtype != "Seq-annot") {
+    CRef<CSeq_annot> pSeqAnnot(new CSeq_annot);
+    try {
+        istr.Read(ObjectInfo(*pSeqAnnot), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException&) {
         return false;
     }
-    CRef<CSeq_annot> pSeqAnnot(new CSeq_annot);
-    istr.Read(ObjectInfo(*pSeqAnnot), CObjectIStream::eNoFileHeader);
+   
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
-    m_pWriter->WriteAnnot( *pSeqAnnot, xAssemblyName(), xAssemblyAccession() );
+    m_pWriter->WriteAnnot(*pSeqAnnot, xAssemblyName(), xAssemblyAccession());
     m_pWriter->WriteFooter();
     return true;
 }
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessBioseq(
-    const string& objtype,
     CScope& scope,
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    if (objtype != "Bioseq") {
+    CBioseq bioseq;
+    try {
+        istr.Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException&) {
         return false;
     }
-    CBioseq bioseq;
-    istr.Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
     CBioseq_Handle bsh = scope.AddBioseq(bioseq);
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
@@ -436,16 +476,17 @@ bool CAnnotWriterApp::xTryProcessBioseq(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessBioseqSet(
-    const string& objtype,
     CScope& scope,
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    if (objtype != "Bioseq-set") {
+    CBioseq_set seq_set;
+    try {
+        istr.Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException&) {
         return false;
     }
-    CBioseq_set seq_set;
-    istr.Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
     CSeq_entry se;
     se.SetSet( seq_set );
     scope.AddTopLevelSeqEntry( se );
@@ -461,16 +502,17 @@ bool CAnnotWriterApp::xTryProcessBioseqSet(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessSeqAlign(
-    const string& objtype,
     CScope& /*scope*/,
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    if (objtype != "Seq-align") {
+    CSeq_align align;
+    try {
+        istr.Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException&) {
         return false;
     }
-    CSeq_align align;
-    istr.Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
@@ -481,16 +523,17 @@ bool CAnnotWriterApp::xTryProcessSeqAlign(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessSeqAlignSet(
-    const string& objtype,
     CScope& /*scope*/,
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    if (objtype != "Seq-align-set") {
+    CSeq_align_set align_set;
+    try {
+        istr.Read(ObjectInfo(align_set), CObjectIStream::eNoFileHeader);
+    }
+    catch (CException&) {
         return false;
     }
-    CSeq_align_set align_set;
-    istr.Read(ObjectInfo(align_set), CObjectIStream::eNoFileHeader);
     if(!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
@@ -513,6 +556,9 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
 //  -----------------------------------------------------------------------------
 {
     ESerialDataFormat serial = eSerial_AsnText;
+    if (args["binary"]) {
+        serial = eSerial_AsnBinary;
+    }
     CNcbiIstream* pInputStream = &NcbiCin;
 		
     bool bDeleteOnClose = false;
