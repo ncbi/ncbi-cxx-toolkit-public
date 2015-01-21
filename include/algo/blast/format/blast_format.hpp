@@ -52,6 +52,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <objtools/format/sam_formatter.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -345,6 +346,9 @@ private:
     size_t m_LineLength;
 
     IOS_BASE::iostate m_OrigExceptionMask;
+
+    /// Pointer to the SAM formatting object
+    auto_ptr<CSAM_Formatter> m_SamFormatter;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

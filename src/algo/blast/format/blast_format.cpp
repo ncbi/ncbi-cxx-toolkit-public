@@ -161,6 +161,9 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     }
 
     m_IsIterative = options.IsIterativeSearch();
+    if (m_FormatType == CFormattingArgs::eSAM) {
+        m_SamFormatter.reset(new CSAM_Formatter(m_Outfile, *m_Scope));
+    }
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -255,6 +258,9 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
         m_Program = "deltablast";
     }
     m_IsIterative = opts.IsIterativeSearch();
+    if (m_FormatType == CFormattingArgs::eSAM) {
+        m_SamFormatter.reset(new CSAM_Formatter(m_Outfile, *m_Scope));
+    }
 }
 
 CBlastFormat::~CBlastFormat()
@@ -663,6 +669,13 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
     	x_PrintXML2Report(results, queries);
     	return;
     }
+    else if (m_FormatType == CFormattingArgs::eSAM) {
+        ITERATE (CSeq_align_set::Tdata, it, results.GetSeqAlign()->Get()) {
+            _ASSERT(m_SamFormatter.get());
+            m_SamFormatter->Print(**it, (*it)->GetSeq_id(0));
+        }
+        return;
+    }
 }
 
 void
@@ -906,7 +919,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
       || m_FormatType == CFormattingArgs::eXml
       || m_FormatType == CFormattingArgs::eXml2
       || m_FormatType == CFormattingArgs::eJson
-      || m_FormatType == CFormattingArgs::eJsonSeqalign)
+      || m_FormatType == CFormattingArgs::eJsonSeqalign
+      || m_FormatType == CFormattingArgs::eSAM)
     {
         x_PrintStructuredReport(results, queries);
         return;

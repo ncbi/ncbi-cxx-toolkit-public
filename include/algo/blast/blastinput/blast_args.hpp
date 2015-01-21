@@ -859,6 +859,8 @@ public:
         eJson,
         /// XML2 output
         eXml2,
+        /// SAM format
+        eSAM,
         /// Sentinel value for error checking
         eEndValue
     };
@@ -913,7 +915,8 @@ public:
             m_OutputFormat == eAsnBinary ||
             m_OutputFormat == eXml2 ||
             m_OutputFormat == eJson ||
-            m_OutputFormat == eJsonSeqalign;
+            m_OutputFormat == eJsonSeqalign ||
+            m_OutputFormat == eSAM;
     }
 
     /// Display the NCBI GIs in formatted output?
