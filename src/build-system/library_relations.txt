@@ -163,9 +163,9 @@ bob_g needs splitdbasn_g
 bob_g needs3party netblast
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs bacterial_pipeline_proc
-build_config needs gc_utils
 build_config needs gcaccess_utils
 build_config needs gpinit_bag_util
+build_config needs gpinit_register
 build_config needs gpipe_xml
 bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
@@ -426,6 +426,7 @@ gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs gpipe_common
 gpipe_jira needs3party $(GSOAP_LIBS)
+gpipe_kmer includes sampling
 gpipe_kmer needs biotree
 gpipe_kmer needs kmer_metadata
 gpipe_kpi needs xmlwrapp
@@ -858,13 +859,16 @@ omssa needs pub
 osutils needs3party ctutils
 pathogen_connection needs connssl
 pathogen_connection needs gpipe_common
+pathogen_ctl needs $(SRAREAD_LIBS)
 pathogen_ctl needs bag_access
-pathogen_ctl needs gc_utils
 pathogen_ctl needs gencoll_client
 pathogen_ctl needs gpipe_xml
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
+pathogen_ctl needs3party $(SRA_SDK_SYSLIBS)
 pathogen_fill_taxa needs gpipe_common
+pathogen_target_loader needs gpinit_register
+pathogen_target_loader needs pathogen_ctl
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
@@ -906,6 +910,7 @@ sablot needs3party $(EXPAT_LIBS)
 sablot needs3party $(ORIG_LIBS)
 sage_mappings needs xser
 sample_asn needs general
+sampling needs3party $(ORIG_LIBS)
 scoremat needs seqset
 sdbapi needs $(XCONNEXT)
 sdbapi needs dbapi
