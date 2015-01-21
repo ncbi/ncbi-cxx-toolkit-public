@@ -7,7 +7,7 @@
 
 
 BLAST_FORMATTER_MINIMAL_LIBS = xblastformat align_format taxon1 blastdb_format \
-    gene_info xalnmgr blastxml blastxml2 xcgi xhtml
+    gene_info $(XFORMAT_LIBS) xalnmgr blastxml blastxml2 xcgi xhtml
 # BLAST_FORMATTER_LIBS = $(BLAST_FORMATTER_MINIMAL_LIBS)
 BLAST_FORMATTER_LIBS = $(BLAST_INPUT_LIBS)
 BLAST_DB_DATA_LOADER_LIBS = ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt
