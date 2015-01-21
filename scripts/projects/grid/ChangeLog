@@ -1,9 +1,11 @@
-2015-01-15 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+2015-01-21 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* remote_cgi, remote_app: can run behind firewalls now.
 	* grid_cli: new default: try all servers in service to find ICache blob.
 	* grid_cli: new command 'discover' to query LBSM.
 	* grid_cli replay: new option '--dump-cgi-stdin'.
+
+	* all applications: fixed service traversal with unresponsive NC server.
 
 2014-12-23 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
