@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-APP_PROJ = netcache_control ncfetch netschedule_control file_upload
+APP_PROJ = netcache_control ncfetch netschedule_control file_upload cidtool
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

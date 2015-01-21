@@ -27,6 +27,7 @@ ETC: src/app/grid/test/test_netschedule_node.ini
 
 APP: grid_cli netschedule_control
 APP: netcache_control ncfetch.cgi$exe
+APP: cidtool
 
 APP: file_upload.cgi$exe
 ETC: src/app/grid/util/file_upload.ini
