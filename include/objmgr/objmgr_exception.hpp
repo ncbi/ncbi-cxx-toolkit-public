@@ -157,8 +157,7 @@ public:
                         TBlobState state,
                         EDiagSev severity = eDiag_Error)
         : CObjMgrException(info, prev_exception,
-                           (CObjMgrException::EErrCode) CException::eInvalid,
-                           message, severity),
+                           message, severity, 0),
           m_BlobState(state)
     {
         x_Init(info, message, prev_exception, severity);
