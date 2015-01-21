@@ -174,8 +174,8 @@ protected:
 
 
 public:
-    static const FIELDS sDefaultSrcCheckFields;
-    static const FIELDS sAllSrcCheckFields;
+    static const FIELDS sDefaultSrcCheckFields; ///< Default fields processed by srcchk application, in their canonical order
+    static const FIELDS sAllSrcCheckFields; ///< All possible fields processed by srchck application, in their canonical order
     static const FIELDS sDefaultSeqEntryFields;
     static const FIELDS sAllSeqEntryFields;
 
