@@ -3,6 +3,6 @@
 APP = cidtool
 SRC = cidtool
 
-LIB = xconnserv xconnect xutil xncbi
+LIB = xconnserv xthrserv xconnect xutil xncbi
 
 WATCHERS = kazimird
