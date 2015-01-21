@@ -206,11 +206,11 @@ void CNetCacheServerListener::OnConnected(CNetServerConnection& connection)
         guard.Release();
         connection->WriteLine(m_Auth);
     } else {
+        string version_info(connection.Exec(m_Auth + "\r\nVERSION", false));
+
+        server_props->mirroring_checked = true;
+
         try {
-            string version_info(connection.Exec(m_Auth + "\r\nVERSION", false));
-
-            server_props->mirroring_checked = true;
-
             CUrlArgs url_parser(version_info);
 
             ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
