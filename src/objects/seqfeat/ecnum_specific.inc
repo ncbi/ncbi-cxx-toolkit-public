@@ -721,7 +721,7 @@ static const char* const kECNum_specific[] = {
     "1.3.7.8	Benzoyl-CoA reductase",
     "1.3.7.9	4-hydroxybenzoyl-CoA reductase",
     "1.3.8.1	Short-chain acyl-CoA dehydrogenase",
-    "1.3.8.2	4,4'-diapophytoene desaturase",
+    "1.3.8.2	4,4'-diapophytoene desaturase (4,4'-diapolycopene-forming)",
     "1.3.8.3	(R)-benzylsuccinyl-CoA dehydrogenase",
     "1.3.8.4	Isovaleryl-CoA dehydrogenase",
     "1.3.8.5	2-methyl-branched-chain-enoyl-CoA reductase",
