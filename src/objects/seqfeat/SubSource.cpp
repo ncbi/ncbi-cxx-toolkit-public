@@ -1798,7 +1798,12 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     pos = NStr::Find(countryname, ",");
     if (pos != string::npos) {
          countryname = countryname.substr(0, pos);
-        }
+    }
+
+    // adjust for special cases
+    if (NStr::StartsWith(countryname, "Norway: Svalbard")) {
+        countryname = "Svalbard";
+    }
 
     string country = countryname;
     string province = "";
