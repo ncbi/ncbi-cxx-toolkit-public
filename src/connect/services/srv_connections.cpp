@@ -230,13 +230,10 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
         if (io_st != eIO_Success) {
             Abort();
 
-            CIO_Exception io_ex(DIAG_COMPILE_INFO, 0,
-                (CIO_Exception::EErrCode) io_st, "IO error.");
-
             NCBI_THROW_FMT(CNetSrvConnException, eWriteFailure,
                 "Failed to write to " <<
                 m_Server->m_ServerInPool->m_Address.AsString() << ": " <<
-                string(io_ex.what()));
+                IO_StatusStr(io_st));
         }
         len -= n_written;
         buf += n_written;
