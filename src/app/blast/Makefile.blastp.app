@@ -4,7 +4,7 @@ WATCHERS = camacho madden fongah2
 
 APP = blastp
 SRC = blastp_app
-LIB_ = $(BLAST_INPUT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = blast_app_util $(LIB_:%=%$(STATIC))
 
 # De-universalize Mac builds to work around a PPC toolchain limitation
