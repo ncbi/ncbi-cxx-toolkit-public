@@ -5,6 +5,8 @@ APP = test_hgvs_reader
 SRC = test_hgvs_reader
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = $(ORIG_CXXFLAGS)
+LDFLAGS  = $(ORIG_LDFLAGS)
 
 LIB = hgvs \
       $(OBJREAD_LIBS) xobjutil taxon1 \

@@ -5,6 +5,8 @@ APP = hgvs2variation
 SRC = hgvs2variation
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = $(ORIG_CXXFLAGS)
+LDFLAGS  = $(ORIG_LDFLAGS)
 
 LIB_ = hgvs $(OBJREAD_LIBS) \
        seq entrez2cli entrez2 xregexp $(PCRE_LIB) xobjutil $(OBJMGR_LIBS)

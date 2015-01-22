@@ -4,6 +4,8 @@ APP = test_hgvs_parser
 SRC = test_hgvs_parser_app
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = $(ORIG_CXXFLAGS)
+LDFLAGS  = $(ORIG_LDFLAGS)
 
 LIB_ = hgvs $(OBJREAD_LIBS) test_boost xregexp $(PCRE_LIB) xobjutil \
        entrez2cli entrez2 $(OBJMGR_LIBS)
