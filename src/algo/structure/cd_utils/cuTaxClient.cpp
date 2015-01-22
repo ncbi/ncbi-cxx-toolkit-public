@@ -239,6 +239,14 @@ string TaxClient::GetSuperKingdom(int taxid) {
     return (skId == -1) ? kEmptyStr : GetTaxNameForTaxID(skId);
 }
 
+bool TaxClient::GetDisplayCommonName(int taxid, string& displayCommonName)
+{
+    if (IsAlive()) {
+        return m_taxonomyClient->GetDisplayCommonName(taxid, displayCommonName);
+    } else {
+        return false;
+    }
+}
 
 //is taxid2 the descendant of taxid1?
 bool TaxClient::IsTaxDescendant(int taxid1, int taxid2)

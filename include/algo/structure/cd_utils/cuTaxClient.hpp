@@ -56,7 +56,7 @@ public:
     virtual ~TaxClient();
 
 	virtual bool init();
-    //  return true is the CTaxon1 object is alive
+    //  return true is the CTaxon1 object has been created and is alive
     virtual bool IsAlive();
 
     //  return 0 if Get*TaxID*(...) fails
@@ -72,6 +72,9 @@ public:
     virtual int GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq);
     virtual string GetTaxNameForTaxID(int taxid);
     virtual string GetSuperKingdom(int taxid);
+
+    //  Returns true on success, false in case of error.
+    virtual bool GetDisplayCommonName(int taxid, string& displayCommonName);
 
     //  Returns zero if the client is not alive (i.e., IsAlive() returns false).
     virtual int GetParentTaxID(int taxid);
