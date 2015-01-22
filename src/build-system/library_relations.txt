@@ -135,6 +135,7 @@ blast needs connect
 blast needs tables
 blast_app_util needs $(BLAST_INPUT_LIBS)
 blast_app_util needs $(BLAST_LIBS)
+blast_app_util needs $(XFORMAT_LIBS)
 blast_services needs xnetblastcli
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
@@ -1265,6 +1266,7 @@ xblast needs xalgodustmask
 xblast needs xalgowinmask
 xblast needs xnetblastcli
 xblastformat needs $(BLAST_LIBS)
+xblastformat needs $(XFORMAT_LIBS)
 xblastformat needs align_format
 xblastformat needs blastxml
 xblastformat needs blastxml2
@@ -1391,6 +1393,7 @@ xnetblast needs scoremat
 xnetblastcli needs xconnect
 xnetblastcli needs xnetblast
 xngalign needs $(BLAST_INPUT_LIBS)
+xngalign needs $(XFORMAT_LIBS)
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
