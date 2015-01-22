@@ -249,13 +249,13 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
                 (Uint8) size_node.AsInteger() :
                 m_NetCacheAPI.GetBlobSize(m_BlobKey);
 
-        return CNetStorageObjectInfo(m_BlobKey,
+        return g_CreateNetStorageObjectInfo(m_BlobKey,
                 eNFL_NetCache, NULL, blob_size, blob_info);
     }
     catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
-        return CNetStorageObjectInfo(m_BlobKey,
+        return g_CreateNetStorageObjectInfo(m_BlobKey,
                 eNFL_NotFound, NULL, 0, NULL);
     }
 }

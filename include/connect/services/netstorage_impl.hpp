@@ -418,6 +418,15 @@ NCBI_XCONNECT_EXPORT
 CNetStorageObject g_CreateNetStorage_NetCacheBlob(
         CNetCacheAPI::TInstance nc_api,
         const string& blob_key);
+ 
+NCBI_XCONNECT_EXPORT
+CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
+        ENetStorageObjectLocation location, const CNetStorageObjectLoc* object_loc_struct,
+        Uint8 file_size, CJsonNode::TInstance storage_specific_info);
+
+NCBI_XCONNECT_EXPORT
+CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
+        const CJsonNode& object_info_node);
 
 END_NCBI_SCOPE
 

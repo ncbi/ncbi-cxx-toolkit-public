@@ -89,17 +89,6 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
 {
     NCBI_NET_COMPONENT(NetStorageObjectInfo);
 
-    /// Construct a CNetStorageObjectInfo object.
-    CNetStorageObjectInfo(const string& object_loc,
-            ENetStorageObjectLocation location,
-            const CNetStorageObjectLoc* object_loc_struct,
-            Uint8 object_size,
-            CJsonNode::TInstance storage_specific_info);
-
-    /// Load NetStorage object information from a JSON object.
-    CNetStorageObjectInfo(const string& object_loc,
-            const CJsonNode& object_info_node);
-
     /// Return a ENetStorageObjectLocation constant that corresponds to the
     /// storage back-end where the object currently resides. If the
     /// object cannot be found in any of the predictable locations,

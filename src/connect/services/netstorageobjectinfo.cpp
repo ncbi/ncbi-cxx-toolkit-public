@@ -236,20 +236,20 @@ string SNetStorageObjectInfoImpl::GetNFSPathname() const
             "Cannot retrieve NFS path information for '" << m_Loc << '\'');
 }
 
-CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
-        TLocation location,
+CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
+        ENetStorageObjectLocation location,
         const CNetStorageObjectLoc* object_loc_struct,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info)
-    : m_Impl(new SNetStorageObjectInfoImpl(object_loc, SData(location,
-            object_loc_struct ? object_loc_struct->ToJSON() : NULL,
-            file_size, storage_specific_info)))
 {
+    return new SNetStorageObjectInfoImpl(object_loc, SData(location,
+            object_loc_struct ? object_loc_struct->ToJSON() : NULL,
+            file_size, storage_specific_info));
 }
 
-CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
+CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         const CJsonNode& object_info_node)
-    : m_Impl(new SNetStorageObjectInfoImpl(object_loc, object_info_node))
 {
+    return new SNetStorageObjectInfoImpl(object_loc, object_info_node);
 }
 
 TLocation CNetStorageObjectInfo::GetLocation() const

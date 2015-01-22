@@ -1094,7 +1094,7 @@ CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 
     CJsonNode request(x_MkRequest("GETOBJECTINFO"));
 
-    return CNetStorageObjectInfo(m_Locator, m_NetStorageRPC->Exchange(request));
+    return g_CreateNetStorageObjectInfo(m_Locator, m_NetStorageRPC->Exchange(request));
 }
 
 void SNetStorageObjectRPC::Close()
