@@ -223,6 +223,7 @@ void CTbl2AsnApp::Init(void)
         ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
     arg_desc->AddOptionalKey
         ("j", "String", "Source Qualifiers", CArgDescriptions::eString);   // done
+    arg_desc->AddOptionalKey("src-file", "InFile", "Single source qualifiers file", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey
         ("y", "String", "Comment", CArgDescriptions::eString);             // done
     arg_desc->AddOptionalKey
@@ -470,6 +471,8 @@ int CTbl2AsnApp::Run(void)
         m_context.m_accession = args["A"].AsString();
     if (args["j"])
         m_context.m_source_qualifiers = args["j"].AsString();
+    if (args["src-file"])
+        m_context.m_single_source_qual_file = args["src-file"].AsString();
 
     if (args["f"])
         m_context.m_single_table5_file = args["f"].AsString();
@@ -1060,6 +1063,8 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     ProcessTBLFile(name + ".tbl", result);
     ProcessTBLFile(m_context.m_single_table5_file, result);
     ProcessSRCFile(name + ".src", result, ext == ".xml"? (name+".xml") : "");
+    if (!m_context.m_single_source_qual_file.empty())
+      ProcessSRCFile(m_context.m_single_source_qual_file, result, ext == ".xml"? (name+".xml") : "");
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
     ProcessCMTFile(name + ".cmt", result, m_context.m_flipped_struc_cmt);

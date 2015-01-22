@@ -40,6 +40,7 @@ public:
     string m_accession;
     string m_OrganismName;
     string m_source_qualifiers;
+    string m_single_source_qual_file;
     string m_Comment;
     string m_single_table5_file;
     string m_find_open_read_frame;
