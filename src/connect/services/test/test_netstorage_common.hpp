@@ -80,8 +80,7 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
             "nst="     + nst_service +
             "&nc="     + nc_service +
             "&cache="  + nc_cache +
-            "&client="   APP_NAME
-            "&domain=" + nc_cache);
+            "&client="   APP_NAME);
     return CNetStorageByKey(init_string);
 }
 

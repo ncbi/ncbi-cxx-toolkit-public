@@ -510,9 +510,11 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
                 m_NetCacheServiceName = field->value;
             break;
         case 'c':
-            if (field->name == "cache")
+            if (field->name == "cache") {
                 m_CacheName = field->value;
-            else if (field->name == "client")
+                if (m_AppDomain.empty())
+                    m_AppDomain = m_CacheName;
+            } else if (field->name == "client")
                 m_ClientName = field->value;
         }
     }
