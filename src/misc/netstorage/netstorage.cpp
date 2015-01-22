@@ -102,9 +102,9 @@ SNetStorageAPIImpl::SNetStorageAPIImpl(
     string backend_storage(TNetStorageAPI_BackendStorage::GetDefault());
 
     if (strstr(backend_storage.c_str(), "netcache") != NULL)
-        m_AvailableStorageMask |= fNST_Fast;
+        m_AvailableStorageMask |= fNST_NetCache;
     if (strstr(backend_storage.c_str(), "filetrack") != NULL)
-        m_AvailableStorageMask |= fNST_Persistent;
+        m_AvailableStorageMask |= fNST_FileTrack;
 
     m_DefaultFlags &= m_AvailableStorageMask;
 
@@ -122,10 +122,17 @@ enum ENetStorageObjectIOStatus {
     eNFS_ReadingFromFileTrack,
 };
 
+enum ENetStorageObjectLocationImpl {
+    eNFL_Unknown = -1 ///< Uninitialized
+};
+
+/// Can both be ENetStorageObjectLocation and ENetStorageObjectLocationImpl
+typedef int TNetStorageObjectLocation;
+
 class ITryLocation
 {
 public:
-    virtual bool TryLocation(ENetStorageObjectLocation location) = 0;
+    virtual bool TryLocation(TNetStorageObjectLocation location) = 0;
     virtual ~ITryLocation() {}
 };
 
@@ -204,19 +211,19 @@ struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
     const ENetStorageObjectLocation* GetPossibleFileLocations(); // For reading.
     void ChooseLocation(); // For writing.
 
-    bool s_TryReadLocation(ENetStorageObjectLocation location,
+    bool s_TryReadLocation(TNetStorageObjectLocation location,
             ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read);
 
     void Locate();
     bool LocateAndTry(ITryLocation* try_object);
 
-    bool x_TryGetFileSizeFromLocation(ENetStorageObjectLocation location,
+    bool x_TryGetFileSizeFromLocation(TNetStorageObjectLocation location,
             Uint8* file_size);
 
-    bool x_TryGetInfoFromLocation(ENetStorageObjectLocation location,
+    bool x_TryGetInfoFromLocation(TNetStorageObjectLocation location,
             CNetStorageObjectInfo* file_info);
 
-    bool x_ExistsAtLocation(ENetStorageObjectLocation location);
+    bool x_ExistsAtLocation(TNetStorageObjectLocation location);
 
     bool Exists();
     void Remove();
@@ -228,7 +235,7 @@ struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
     CNetICacheClient m_NetICacheClient;
 
     CNetStorageObjectLoc m_ObjectLoc;
-    ENetStorageObjectLocation m_CurrentLocation;
+    TNetStorageObjectLocation m_CurrentLocation;
     ENetStorageObjectIOStatus m_IOStatus;
 
     auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
@@ -312,13 +319,13 @@ const ENetStorageObjectLocation*
     TNetStorageFlags flags = m_ObjectLoc.GetStorageFlags();
 
     // None of locations is pointed out
-    if ((flags & (fNST_Fast | fNST_Persistent)) == 0)
+    if ((flags & fNST_AnyLoc) == 0)
         // Just guessing.
         return SetNetICacheClient() ? s_TryNetCacheThenFileTrack : s_FileTrack;
 
-    if (flags & (fNST_Persistent | fNST_Movable)) {
-        if (SetNetICacheClient() && (flags & (fNST_Fast | fNST_Movable))) {
-            return flags & fNST_Fast ?  s_TryNetCacheThenFileTrack :
+    if (flags & (fNST_FileTrack | fNST_Movable)) {
+        if (SetNetICacheClient() && (flags & (fNST_NetCache | fNST_Movable))) {
+            return flags & fNST_NetCache ?  s_TryNetCacheThenFileTrack :
                 s_TryFileTrackThenNetCache;
         }
 
@@ -334,10 +341,10 @@ void SNetStorageObjectAPIImpl::ChooseLocation()
     TNetStorageFlags flags = m_ObjectLoc.GetStorageFlags();
 
     if (flags == 0)
-        flags = (SetNetICacheClient() ? fNST_Fast : fNST_Persistent) &
+        flags = (SetNetICacheClient() ? fNST_NetCache : fNST_FileTrack) &
                 m_NetStorage->m_AvailableStorageMask;
 
-    if (flags & fNST_Persistent)
+    if (flags & fNST_FileTrack)
         m_CurrentLocation = eNFL_FileTrack;
     else {
         DemandNetCache();
@@ -346,7 +353,7 @@ void SNetStorageObjectAPIImpl::ChooseLocation()
 }
 
 bool SNetStorageObjectAPIImpl::s_TryReadLocation(
-        ENetStorageObjectLocation location,
+        TNetStorageObjectLocation location,
         ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read)
 {
     if (location == eNFL_NetCache) {
@@ -523,13 +530,13 @@ struct SCheckForExistence : public ITryLocation
     {
     }
 
-    virtual bool TryLocation(ENetStorageObjectLocation location);
+    virtual bool TryLocation(TNetStorageObjectLocation location);
 
     CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
             SNetStorageObjectAPIImpl> > m_NetStorageObjectAPI;
 };
 
-bool SCheckForExistence::TryLocation(ENetStorageObjectLocation location)
+bool SCheckForExistence::TryLocation(TNetStorageObjectLocation location)
 {
     try {
         if (location == eNFL_NetCache) {
@@ -614,7 +621,7 @@ bool SNetStorageObjectAPIImpl::LocateAndTry(ITryLocation* try_object)
 }
 
 bool SNetStorageObjectAPIImpl::x_TryGetFileSizeFromLocation(
-        ENetStorageObjectLocation location,
+        TNetStorageObjectLocation location,
         Uint8* file_size)
 {
     try {
@@ -687,7 +694,7 @@ void SNetStorageObjectAPIImpl::SetAttribute(const string& attr_name,
 }
 
 bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
-        ENetStorageObjectLocation location,
+        TNetStorageObjectLocation location,
         CNetStorageObjectInfo* file_info)
 {
     if (location == eNFL_NetCache) {
@@ -778,7 +785,7 @@ CNetStorageObjectInfo SNetStorageObjectAPIImpl::GetInfo()
 }
 
 bool SNetStorageObjectAPIImpl::x_ExistsAtLocation(
-        ENetStorageObjectLocation location)
+        TNetStorageObjectLocation location)
 {
     if (location == eNFL_NetCache) {
         try {

@@ -165,8 +165,7 @@ void SLazyInitData::InitData()
 
     loc =
         l == "NetCache"  ? eNFL_NetCache :
-        l == "FileTrack" ? eNFL_FileTrack :
-        l == "NotFound"  ? eNFL_NotFound : eNFL_Unknown;
+        l == "FileTrack" ? eNFL_FileTrack : eNFL_NotFound;
     loc_info = json.GetByKey("ObjectLocInfo");
     file_size = size ? (Uint8) size.AsInteger() : 0;
     st_info = json.GetByKeyOrNull("StorageSpecificInfo");

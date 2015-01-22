@@ -77,7 +77,6 @@ public:
 
 /// Enumeration that indicates the current location of the object.
 enum ENetStorageObjectLocation {
-    eNFL_Unknown,
     eNFL_NotFound,
     eNFL_NetCache,
     eNFL_FileTrack
@@ -125,13 +124,28 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
 
 /// Blob storage allocation and access strategy
 enum ENetStorageFlags {
-    fNST_Fast       = (1 << 0), ///< E.g. use NetCache as the primary storage
-    fNST_Persistent = (1 << 1), ///< E.g. use FileTrack as the primary storage
-    fNST_Movable    = (1 << 2), ///< Allow the object to move between storages
-    fNST_Cacheable  = (1 << 3), ///< Use NetCache for data caching
-    fNST_NoMetaData = (1 << 4), ///< Do not use NetStorage relational database
-                                ///< to track ownership & changes. Attributes
-                                ///< and querying will also be disabled.
+    fNST_NetCache   = (1 << 0), ///< Use NetCache as the primary storage
+    fNST_FileTrack  = (1 << 1), ///< Use FileTrack as the primary storage
+
+    ///@{
+    /// These are not used runtime (only for compile-time calculations)
+    fNST_V1,
+    fNST_V2 = (fNST_V1 - 1) << 1,
+    ///@}
+
+    ///@{
+    /// Abstract locations (values and mapping may be changed later)
+    fNST_Fast       = fNST_NetCache,
+    fNST_Persistent = fNST_FileTrack,
+    ///@}
+
+    fNST_AnyLoc     = (fNST_V2 - 1),  ///< Any location (all location bits are set)
+
+    fNST_Movable    = (fNST_V2 << 0), ///< Allow the object to move between storages
+    fNST_Cacheable  = (fNST_V2 << 1), ///< Has no effect at the moment
+    fNST_NoMetaData = (fNST_V2 << 2), ///< Do not use NetStorage relational database
+                                      ///< to track ownership & changes. Attributes
+                                      ///< and querying will also be disabled.
 };
 typedef int TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
 
