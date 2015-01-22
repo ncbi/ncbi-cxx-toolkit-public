@@ -204,17 +204,19 @@ void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& i
     const CTempString digits("0123456789");
 
     size_t current = 0;
-    while (current != CTempString::npos && columns.size()<8 && (index = in_line.find_first_of(space_tab_delim, current)) != CTempString::npos)
-    {
+    while (current != CTempString::npos && columns.size()<8 && 
+            (index = in_line.find_first_of(space_tab_delim, current)) != CTempString::npos) {
         CTempString next = in_line.substr(current, index-current);
         current = in_line.find_first_not_of(space_tab_delim, index);
-        // looking for the numeric columns at 3 & 4 but not at 5
-        if (columns.size() == 5)
-        {
-            if (next.find_first_of(digits) != CTempString::npos ||
-                columns[4].find_first_not_of(digits) != CTempString::npos ||
-                columns[3].find_first_not_of(digits) != CTempString::npos)
-            {
+        if (columns.size() == 5) {
+            // reminder:
+            // columns [3] and [4] are positions and must always be numeric
+            // column [5] is a score (floating point or "." if absent)
+            bool isNumericCol3 = columns[3].find_first_not_of(digits) == CTempString::npos;
+            bool isNumericCol4 = columns[4].find_first_not_of(digits) == CTempString::npos;
+            bool isNumericNext = next.find_first_not_of(digits) == CTempString::npos;
+
+            if (!isNumericCol3  &&  isNumericCol4  &&  isNumericNext) {
                 // merge col2 with col3 and shift subsequent columns
                 // operations with iterators are legal since all belong to the same memory space
                 size_t sizeof_col1 = (columns[2].begin() + columns[2].size() - columns[1].begin());
