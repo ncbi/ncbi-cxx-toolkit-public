@@ -56,6 +56,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Variation_ref.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -98,8 +99,13 @@ void s_GetTypeLabel(const CSeq_feat& feat, string* label, TFeatLabelFlags flags)
     CSeqFeatData::ESubtype idx = feat.GetData().GetSubtype();
     if ( idx != CSeqFeatData::eSubtype_bad ) {
         tlabel = feat.GetData().GetKey();
-        if (feat.GetData().IsImp()  &&  tlabel != "CDS") {
-            tlabel = "[" + tlabel + "]";
+        if (feat.GetData().IsImp()) {
+            if ( tlabel == "variation" ) {
+                tlabel = "Variation";
+            }
+            else if ( tlabel != "CDS") {
+                tlabel = "[" + tlabel + "]";
+            }
         } else if ((flags & fFGL_NoComments) == 0  &&  feat.GetData().IsRegion()
                    &&  feat.GetData().GetRegion() == "Domain"
                    &&  feat.IsSetComment() ) {
@@ -384,6 +390,26 @@ static void s_GetRnaRefLabel
 }
 
 
+static void s_GetVariationDbtagLabel(string* tlabel,
+                                     TFeatLabelFlags /*flags*/,
+                                     const CDbtag& dbtag)
+{
+    if ( dbtag.GetDb() == "dbSNP" ) {
+        if ( !tlabel->empty() ) {
+            *tlabel += ", ";
+        }
+        const CObject_id& tag = dbtag.GetTag();
+        if ( tag.IsId() ) {
+            *tlabel += "rs";
+            *tlabel += NStr::NumericToString(tag.GetId());
+        }
+        else {
+            *tlabel += tag.GetStr();
+        }
+    }
+}
+
+
 // Appends a label to tlabel for a CImp_feat. A return value of true indicates 
 // that the label was created for a CImp_feat key = "Site-ref" 
 inline
@@ -406,6 +432,14 @@ static bool s_GetImpLabel
         if (feat.IsSetCit()) {
             // Create label based on Pub-set
             feat.GetCit().GetLabel(tlabel);
+            return true;
+        }
+    }
+    else if (NStr::EqualNocase(key, "variation")) {
+        if ( feat.IsSetDbxref() ) {
+            ITERATE( CSeq_feat::TDbxref, it, feat.GetDbxref() ) {
+                s_GetVariationDbtagLabel(tlabel, flags, **it);
+            }
             return true;
         }
     // else if the key is not Site-ref
@@ -501,6 +535,31 @@ static bool s_GetImpLabel
         }
     } 
     return false;                
+}
+
+ 
+// Appends a label to tlabel for a CImp_feat. A return value of true indicates 
+// that the label was created for a CImp_feat key = "Site-ref" 
+static void s_GetVariationLabel(const CSeq_feat&      feat, 
+                                string*               tlabel,
+                                TFeatLabelFlags       flags,
+                                const string*         /*type_label*/)
+{
+    // Return if tlablel does not exist or feature data is not Imp-feat
+    if (!tlabel  ||  !feat.GetData().IsVariation()) {
+        return;
+    }
+    
+    const CVariation_ref& var = feat.GetData().GetVariation();
+    if ( var.IsSetId() ) {
+        s_GetVariationDbtagLabel(tlabel, flags, var.GetId());
+    }
+    if ( var.IsSetName() ) {
+        if ( !tlabel->empty() ) {
+            *tlabel += ", ";
+        }
+        *tlabel += var.GetName();
+    }
 }
 
  
@@ -620,6 +679,9 @@ void s_GetContentLabel
             }
             tlabel += str;
         }}
+        break;        
+    case CSeqFeatData::e_Variation:
+        s_GetVariationLabel(feat, &tlabel, flags, type_label);
         break;        
     default:
         break;
