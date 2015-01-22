@@ -360,14 +360,22 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     		}
 		// The entire archive file (multiple sets) is formatted in this loop for XML.
 		// That does not work for other formats.  Ugly, but that's where it's at now.
-		if (m_LoadFromArchive == false || fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml 
-			|| !m_RmtBlast->LoadFromArchive())
+		if (m_LoadFromArchive == false || (fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml 
+                        && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml2 
+                        && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eJson )
+			|| !m_RmtBlast->LoadFromArchive()) {
 			break;
+                }
 		// Reset these for next set from archive
     		results.Reset(m_RmtBlast->GetResultSet());
     		queries.Reset(x_ExtractQueries(Blast_QueryIsProtein(p)?true:false));
     		_ASSERT(queries);
-    		scope.Reset(queries->GetScope(0));
+                if (fmt_args.GetFormattedOutputChoice() == CFormattingArgs::eXml) {
+    		    scope.Reset(queries->GetScope(0));
+                }
+                else {
+    		    scope->AddScope(*(queries->GetScope(0)));
+                }
     		InitializeSubject(db_args, opts_handle, true, db_adapter, scope);
 	}
     }
