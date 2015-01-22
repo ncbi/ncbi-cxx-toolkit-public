@@ -16,6 +16,7 @@ endif
 DLL_LIB = objcoords xobjmgr
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = $(ORIG_CXXFLAGS)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Spirit
 
