@@ -66,276 +66,58 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-#if 0
-void ReplaceInPlaceWholeWordNoCase (string& rna_name, const string& search, const string& replace)
+CMutex CRemoteUpdater::m_static_mutex;
+
+namespace
 {
-    size_t pos = NStr::FindNoCase(rna_name, search);
-    
-    while (pos != string::npos) {
-        // only if whole word
-        size_t right_end = pos + search.length();
-        if ((pos == 0 || !isalpha(rna_name.c_str()[pos - 1]))
-            && (right_end == rna_name.length() || !isalpha(rna_name.c_str()[right_end]))) {
-            string this_replace = replace;
-            if (rna_name.c_str()[right_end] != 0 && !isspace(rna_name.c_str()[right_end])) {
-                this_replace += " ";
-            }
-            rna_name = rna_name.substr(0, pos) + this_replace + rna_name.substr(right_end);
-            right_end = pos + this_replace.length();
-        } 
-        pos = NStr::FindNoCase (rna_name, search, right_end);
-    }
-}
 
-
-string GetAdjustedRnaName(const string& orig_rna_name)
+int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
 {
-    string rval = orig_rna_name;
-    ReplaceInPlaceWholeWordNoCase(rval, "rrna", "ribosomal RNA");
-    ReplaceInPlaceWholeWordNoCase(rval, "ITS", "internal transcribed spacer");
-    return rval;
-}
-
-
-
-
-
-CRef<CPubdesc> GetPubdescFromEntrezById(const string& id)
-{
-    CRef<CPub> pub(NULL);
-    CRef<CEUtils_ConnContext> ctx(new CEUtils_ConnContext);
-    CEFetch_Request req(ctx);
-    req.SetRetMode(CEFetch_Request::eRetMode_asn);
-    req.SetDatabase("pubmed");
-    req.SetRetMax(1);
-    req.GetId().SetIds(id);
-    CObjectIStream* istr = req.GetObjectIStream();
-    if (istr->InGoodState() && !istr->EndOfData())
+    ITERATE(CPub_equiv::Tdata, item_it, arr)
     {
-        string obj_type;
-        try {
-            obj_type = istr->ReadFileHeader();   // If nothing returned it's crashing here
-        } catch(...) {} // truly ugly but there doesn't seem to be any other way
-        CRef<CSerialObject> obj;
-        if (obj_type == "Pubmed-entry") 
+        if ((**item_it).IsPmid())
         {
-            obj.Reset(new CPubmed_entry());
-            istr->ReadObject(obj.GetPointer(), CPubmed_entry::GetTypeInfo());
-            CPubmed_entry& pubmed = dynamic_cast<CPubmed_entry &>(*obj);
-            if (pubmed.CanGetMedent() && pubmed.GetMedent().CanGetCit()) {
-                CRef<CPubdesc> pubdesc(new CPubdesc());
-                pub.Reset(new CPub());
-                pub->SetArticle().Assign(pubmed.GetMedent().GetCit());
-                if (pub->GetArticle().IsSetAuthors()) {
-                    ConvertToStandardAuthors(pub->SetArticle().SetAuthors());
-                }
-            }
+            return (**item_it).GetPmid().Get();
+        }
+        else
+        if ((**item_it).IsMuid())
+        {
+            int id = (**item_it).GetMuid();
+            return mlaClient.AskUidtopmid(id);
         }
     }
-
-    if (pub) {
-        CRef<CPubdesc> pubdesc(new CPubdesc());
-        pubdesc->SetPub().Set().push_back(pub);
-        CRef<CPub> pmid_pub(new CPub());
-        int pmid_val = NStr::StringToInt(id);
-        pmid_pub->SetPmid().Set(pmid_val);
-        pubdesc->SetPub().Set().push_back(pmid_pub);
-        return pubdesc;
-    } else {
-        return CRef<CPubdesc>(NULL);
-    }
-
+    return 0;
 }
 
-
-string GetAuthorsString (const CAuth_list& auth_list)
+// the method is not used at the momment
+void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
 {
-    string auth_str = "";
+    try {
+        CPubMedId req(id);
+        CRef<CPub> new_pub = mlaClient.AskGetpubpmid(req);
+        if (new_pub.NotEmpty())
+        {
+            // authors come back in a weird format that we need
+            // to convert to ISO
+            CReferenceItem::ChangeMedlineAuthorsToISO(new_pub);
+            if (new_pub->IsSetAuthors())
+               CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
 
-    if (!auth_list.IsSetNames()) {
-        return auth_str;
+
+            arr.clear();
+            CRef<CPub> new_pmid(new CPub);
+            new_pmid->SetPmid().Set(id);
+            arr.push_back(new_pmid);
+            arr.push_back(new_pub);
+        }
+    } catch(...) {
+        // don't worry if we can't look it up
     }
 
-    vector<string> name_list;
-
-    if (auth_list.GetNames().IsStd()) {
-        ITERATE (CAuth_list::TNames::TStd, auth_it, auth_list.GetNames().GetStd()) {
-            if ((*auth_it)->IsSetName()) {
-                string label;
-                (*auth_it)->GetName().GetLabel(&label);
-                name_list.push_back(label);
-            }
-        }
-    } else if (auth_list.GetNames().IsMl()) {
-        ITERATE (CAuth_list::TNames::TMl, auth_it, auth_list.GetNames().GetMl()) {
-            name_list.push_back((*auth_it));
-        }
-    } else if (auth_list.GetNames().IsStr()) {
-        ITERATE (CAuth_list::TNames::TStr, auth_it, auth_list.GetNames().GetStr()) {
-            name_list.push_back((*auth_it));
-        }
-    }
-
-    if (name_list.size() == 0) {
-        return auth_str;
-    }
-
-    auth_str = name_list.back();
-    name_list.pop_back();
-    if (name_list.size() > 0) {
-        auth_str = "and " + auth_str;
-        if (name_list.size() == 1) {
-            auth_str = name_list.front() + auth_str;
-        } else {        
-            while (name_list.size() > 0) {
-                string this_name = name_list.back();
-                name_list.pop_back();
-                auth_str = this_name + ", " + auth_str;
-            }
-        }
-    }
-
-    return auth_str;
 }
 
+}// end anonymous namespace
 
-static string s_GetAuthorsString (const CPubdesc& pd) 
-{
-    string authors_string = "";
-
-    FOR_EACH_PUB_ON_PUBDESC (pub, pd) {
-        if ((*pub)->IsSetAuthors()) {
-            authors_string = GetAuthorsString ((*pub)->GetAuthors());
-            break;
-        }
-    }
-    return authors_string;
-}
-
-
-string GetPubdescLabel(const CPubdesc& pd)
-{
-    vector<int> pmids;
-    vector<int> muids;
-    vector<int> serials;
-    vector<string> published_labels;
-    vector<string> unpublished_labels;
-
-    GetPubdescLabels(pd, pmids, muids, serials, published_labels, unpublished_labels);
-    string label = "";
-    if (published_labels.size() > 0) {
-        return published_labels[0];
-    } else if (unpublished_labels.size() > 0) {
-        label = unpublished_labels[0];
-    }
-    return label;
-}
-
-
-void GetPubdescLabels 
-(const CPubdesc& pd, 
- vector<int>& pmids, vector<int>& muids, vector<int>& serials,
- vector<string>& published_labels, vector<string>& unpublished_labels)
-{
-    string label = "";
-    bool   is_published = false;
-    bool   need_label = false;
-    FOR_EACH_PUB_ON_PUBDESC (it, pd) {
-        if ((*it)->IsPmid()) {
-            pmids.push_back ((*it)->GetPmid());
-            is_published = true;
-        } else if ((*it)->IsMuid()) {
-            muids.push_back ((*it)->GetMuid());
-            is_published = true;
-        } else if ((*it)->IsGen()) {
-            if ((*it)->GetGen().IsSetCit() 
-                && NStr::StartsWith ((*it)->GetGen().GetCit(), "BackBone id_pub", NStr::eNocase)) {
-                need_label = true;
-            }
-            if ((*it)->GetGen().IsSetSerial_number()) {
-                serials.push_back ((*it)->GetGen().GetSerial_number());
-                if ((*it)->GetGen().IsSetCit() 
-                    || (*it)->GetGen().IsSetJournal()
-                    || (*it)->GetGen().IsSetDate()) {
-                    need_label = true;
-                }
-            } else {
-                need_label = true;
-            }
-        } else {
-            need_label = true;
-        }
-        if (need_label && NStr::IsBlank(label)) {
-            // create unique label
-            (*it)->GetLabel(&label, CPub::eContent, true);
-            label += "; " + s_GetAuthorsString (pd);
-        }
-    }
-    if (!NStr::IsBlank(label)) {
-        if (is_published) {
-            published_labels.push_back(label);
-        } else {
-            unpublished_labels.push_back(label);
-        }
-    }
-}
-
-
-string GetDocSumLabel(const CPubdesc& pd)
-{
-    string author = s_GetAuthorsString(pd);
-    string title = "";
-    string source = "";
-    string volume = "";
-    string pages = "";
-    string year_str = "";
-    string pmid = "";
-
-    if (pd.IsSetPub()) {
-        ITERATE(CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
-            if ((*it)->IsPmid()) {
-                pmid = NStr::NumericToString((*it)->GetPmid().Get());
-            } else if ((*it)->IsArticle()) {
-                const CCit_art& art = (*it)->GetArticle();
-                if (art.IsSetTitle()) {
-                    title = art.GetTitle().GetTitle();
-                }
-                if (art.IsSetFrom() && art.GetFrom().IsJournal()) {
-                    const CCit_jour& journal = art.GetFrom().GetJournal();
-                    if (journal.IsSetTitle()) {
-                        source = journal.GetTitle().GetTitle();
-                    }
-                    if (journal.IsSetImp()) {
-                        const CImprint& imp = journal.GetImp();
-                        if (imp.IsSetVolume()) {
-                            volume = imp.GetVolume();
-                        }
-                        if (imp.IsSetPages()) {
-                            pages = imp.GetPages();
-                        }
-                        if (imp.IsSetDate() && imp.GetDate().IsStd() && imp.GetDate().GetStd().IsSetYear()) {
-                            year_str = NStr::NumericToString(imp.GetDate().GetStd().GetYear());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    if (NStr::IsBlank(author)) {
-        author = "NO AUTHOR AVAILABLE";
-    }
-    if (NStr::IsBlank(title)) {
-        title = "NO TITLE AVAILABLE";
-    }
-
-    string rval =  author + "\n" + title + "\n" + source + ". " + year_str + "; " + volume + ":" + pages + "\nPMID: " + pmid + "\n";
-    return rval;
-}
-
-
-#endif
 
 class CCachedTaxon3_impl
 {
@@ -352,7 +134,15 @@ public:
         }
     }
 
-    CRef<COrg_ref> GetOrg(const COrg_ref& org, objects::IMessageListener* logger = 0)
+    void ClearCache()
+    {
+        if (m_cache.get() != 0)
+        {
+            m_cache->clear();
+        }
+    }
+
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, objects::IMessageListener* logger)
     {
         CRef<COrg_ref> result;
         CRef<CT3Reply> reply = GetOrgReply(org);
@@ -422,59 +212,6 @@ protected:
     auto_ptr<CCachedReplyMap> m_cache;
 };
 
-USING_SCOPE(objects);
-
-namespace
-{
-
-int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
-{
-    ITERATE(CPub_equiv::Tdata, item_it, arr)
-    {
-        if ((**item_it).IsPmid())
-        {
-            return (**item_it).GetPmid().Get();
-        }
-        else
-        if ((**item_it).IsMuid())
-        {
-            int id = (**item_it).GetMuid();
-            return mlaClient.AskUidtopmid(id);
-        }
-    }
-    return 0;
-}
-
-// the method is not used at the momment
-void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
-{
-    try {
-        CPubMedId req(id);
-        CRef<CPub> new_pub = mlaClient.AskGetpubpmid(req);
-        if (new_pub.NotEmpty())
-        {
-            // authors come back in a weird format that we need
-            // to convert to ISO
-            CReferenceItem::ChangeMedlineAuthorsToISO(new_pub);
-            if (new_pub->IsSetAuthors())
-               CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
-
-
-            arr.clear();
-            CRef<CPub> new_pmid(new CPub);
-            new_pmid->SetPmid().Set(id);
-            arr.push_back(new_pmid);
-            arr.push_back(new_pub);
-        }
-    } catch(...) {
-        // don't worry if we can't look it up
-    }
-
-}
-
-}// end anonymous namespace
-
-
 void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeqdesc& obj)
 {
     if (obj.IsOrg())
@@ -490,6 +227,8 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objec
 
 void CRemoteUpdater::xUpdateOrgTaxname(objects::IMessageListener* logger, COrg_ref& org)
 {
+    CMutexGuard guard(m_Mutex);
+
     int taxid = org.GetTaxId();
     if (taxid == 0 && !org.IsSetTaxname())
         return;
@@ -512,7 +251,10 @@ void CRemoteUpdater::xUpdateOrgTaxname(objects::IMessageListener* logger, COrg_r
 
 CRemoteUpdater& CRemoteUpdater::GetInstance()
 {
+    CMutexGuard guard(m_static_mutex);
+    
     static CRemoteUpdater instance;
+
     return instance;
 }
 
@@ -523,6 +265,16 @@ CRemoteUpdater::CRemoteUpdater(bool enable_caching)
 
 CRemoteUpdater::~CRemoteUpdater()
 {
+}
+
+void CRemoteUpdater::ClearCache()
+{
+    CMutexGuard guard(m_Mutex);
+
+    if (m_taxClient.get() != 0)
+    {
+        m_taxClient->ClearCache();
+    }
 }
 
 void CRemoteUpdater::UpdatePubReferences(objects::CSeq_entry_EditHandle& obj)
@@ -569,6 +321,8 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
 
 void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
 {
+    CMutexGuard guard(m_Mutex);
+
     CSeq_descr::Tdata& descr = seq_descr.Set();
     size_t count = descr.size();
     CSeq_descr::Tdata::iterator it = descr.begin();
@@ -601,7 +355,7 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
                     break;
                 }
             }
-            catch(CException& ex)
+            catch(CException& /*ex*/)
             {
             }
         }

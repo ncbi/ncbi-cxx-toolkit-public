@@ -32,6 +32,7 @@ public:
    void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry& entry);
    void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry_EditHandle& obj);
    void UpdateOrgFromTaxon(IMessageListener* logger, CSeqdesc& obj);
+   void ClearCache();
    static void ConvertToStandardAuthors(CAuth_list& auth_list);
    static void PostProcessPubs(CSeq_entry_EditHandle& obj);
    static void PostProcessPubs(CSeq_entry& obj);
@@ -49,6 +50,8 @@ private:
    CRef<CMLAClient>  m_mlaClient;
    auto_ptr<CCachedTaxon3_impl>  m_taxClient;
    bool m_enable_caching;
+   CMutex m_Mutex;
+   static CMutex m_static_mutex;
 };
 
 END_SCOPE(edit)
