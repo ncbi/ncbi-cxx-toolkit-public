@@ -135,7 +135,6 @@ blast needs connect
 blast needs tables
 blast_app_util needs $(BLAST_INPUT_LIBS)
 blast_app_util needs $(BLAST_LIBS)
-blast_app_util needs $(XFORMAT_LIBS)
 blast_services needs xnetblastcli
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
@@ -388,7 +387,6 @@ gpinit_register needs gpinit_access
 gpinit_stats_report needs $(GPIPE_COMMON_LIBS)
 gpinit_utils needs $(GPIPE_COMMON_LIBS)
 gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
-gpipe_align_format needs $(XFORMAT_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
 gpipe_align_format needs xobjwrite
@@ -1393,7 +1391,6 @@ xnetblast needs scoremat
 xnetblastcli needs xconnect
 xnetblastcli needs xnetblast
 xngalign needs $(BLAST_INPUT_LIBS)
-xngalign needs $(XFORMAT_LIBS)
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
