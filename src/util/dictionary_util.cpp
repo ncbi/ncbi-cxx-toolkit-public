@@ -302,24 +302,26 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
             break;
 
         case 'y':
-            if ( *(iter + 1) == 'a'  ||
-                 *(iter + 1) == 'e'  ||
-                 *(iter + 1) == 'i'  ||
-                 *(iter + 1) == 'o'  ||
-                 *(iter + 1) == 'u') {
+            if (remaining &&
+                ( *(iter + 1) == 'a'  ||
+                  *(iter + 1) == 'e'  ||
+                  *(iter + 1) == 'i'  ||
+                  *(iter + 1) == 'o'  ||
+                  *(iter + 1) == 'u')) {
                 break;
             }
-            if ( *(iter + 1) != 'a'  &&
-                 *(iter + 1) != 'e'  &&
-                 *(iter + 1) != 'i'  &&
-                 *(iter + 1) != 'o'  &&
-                 *(iter + 1) != 'u'  &&
+            if (remaining  &&
+                ( *(iter + 1) != 'a'  &&
+                   *(iter + 1) != 'e'  &&
+                   *(iter + 1) != 'i'  &&
+                   *(iter + 1) != 'o'  &&
+                   *(iter + 1) != 'u'  &&
 
-                 *(iter - 1) != 'a'  &&
-                 *(iter - 1) != 'e'  &&
-                 *(iter - 1) != 'i'  &&
-                 *(iter - 1) != 'o'  &&
-                 *(iter - 1) != 'u') {
+                   *(iter - 1) != 'a'  &&
+                   *(iter - 1) != 'e'  &&
+                   *(iter - 1) != 'i'  &&
+                   *(iter - 1) != 'o'  &&
+                   *(iter - 1) != 'u')) {
                 break;
             }
             *out += tolower((unsigned char)(*iter));
