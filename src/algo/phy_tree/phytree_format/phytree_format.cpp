@@ -1051,7 +1051,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
 
 int CPhyTreeFormatter::x_FindSeqType(map<string, int > &seqTypeMap, string idString)
 {
-    int seqType;
+    int seqType = eSeqTypeNotFound;
     map<string, int>::const_iterator iter = seqTypeMap.find(idString);
     if ( iter != seqTypeMap.end() ){
         seqType = iter->second;
