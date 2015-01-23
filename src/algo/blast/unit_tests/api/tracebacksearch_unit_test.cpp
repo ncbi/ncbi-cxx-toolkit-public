@@ -346,6 +346,57 @@ BOOST_AUTO_TEST_CASE(Traceback) {
     BOOST_REQUIRE(use_these.empty());
 }
 
+// Traceback without Seq-align
+BOOST_AUTO_TEST_CASE(SimpleTraceback)
+{
+        // Build uniform search factory, get options
+        CRef<ISearchFactory> sf(new CLocalSearchFactory);
+        CRef<CBlastOptionsHandle> opth(&* sf->GetOptions(eBlastp));
+        
+        // Get a SeqDB and a query factory... This uses two SeqDB
+        // objects in the gi_list case, so that it is possible to
+        // fetch the query, which is not in the GI list.
+        
+        CRef<CSeqDB> query_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
+        CRef<CSeqDB> subject_seqdb;
+        
+        subject_seqdb = query_seqdb;
+        
+        CSeq_id query("gi|54607139");
+        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
+        TSeqLocVector qv;
+        qv.push_back(*sl);
+        CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(qv));
+        
+        // Note that the traceback code will (in some cases) modify
+        // the options object.
+        
+        CRef<CBlastOptions>
+            opts(& const_cast<CBlastOptions&>(opth->GetOptions()));
+        
+        // Construct false HSPs.
+        CRef< CStructWrapper<BlastHSPStream> >
+            hsps(x_GetSampleHspStream(opts, *subject_seqdb));
+        
+        // Now to do the traceback..
+        
+        // Build the object itself
+        CRef<CBlastTracebackSearch> tbs;
+        
+        BOOST_REQUIRE(subject_seqdb.NotEmpty());
+        CBlastSeqSrc seq_src = SeqDbBlastSeqSrcInit(subject_seqdb);
+        CRef<blast::IBlastSeqInfoSrc> seq_info_src(new blast::CSeqDbSeqInfoSrc(subject_seqdb));
+        tbs.Reset(new CBlastTracebackSearch(qf, opts, seq_src.Get(), seq_info_src, hsps));
+        
+        BlastHSPResults* hsp = tbs->RunSimple();
+
+        BOOST_REQUIRE_EQUAL(1, (int)hsp->num_queries);
+
+	BlastHitList* hitlist = hsp->hitlist_array[0];
+
+        BOOST_REQUIRE_EQUAL(1, (int)hitlist->hsplist_count);
+}
+
 BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
     // read the pssm
     const string kPssmFile("data/pssm_zero_fratios.asn");

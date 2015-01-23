@@ -78,6 +78,9 @@ public:
     /// Run the traceback search.
     CRef<CSearchResultSet> Run();
     
+    /// Runs the traceback but only returns the HSP's and not the Seq-Align.
+    BlastHSPResults* RunSimple();
+
     /// Specifies how the Seq-align-set returned as part of the
     /// results is formatted.
     void SetResultType(EResultType type);

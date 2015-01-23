@@ -296,6 +296,73 @@ CBlastTracebackSearch::Run()
                                      m_ResultType);
 }
 
+BlastHSPResults*
+CBlastTracebackSearch::RunSimple()
+{
+    _ASSERT(m_OptsMemento);
+    SPHIPatternSearchBlk* phi_lookup_table(0);
+
+    // For PHI BLAST we need to pass the pattern search items structure to the
+    // traceback code
+    bool is_phi = !! Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType);
+    
+    if (is_phi) {
+        _ASSERT(m_InternalData->m_LookupTable);
+        _ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB !=
+                m_DBscanInfo->kNoPhiBlastPattern);
+        phi_lookup_table = (SPHIPatternSearchBlk*) 
+            m_InternalData->m_LookupTable->GetPointer()->lut;
+        phi_lookup_table->num_patterns_db = m_DBscanInfo->m_NumPatOccurInDB;
+    }
+    else
+    {
+        m_InternalData->m_LookupTable.Reset(NULL);
+    }
+
+    // When dealing with PSI-BLAST iterations, we need to keep a larger
+    // alignment for the PSSM engine as to replicate blastpgp's behavior
+    int hitlist_size_backup = m_OptsMemento->m_HitSaveOpts->hitlist_size;
+    if (m_OptsMemento->m_ProgramType == eBlastTypePsiBlast ) {
+        SBlastHitsParameters* bhp = NULL;
+        SBlastHitsParametersNew(m_OptsMemento->m_HitSaveOpts, 
+                                m_OptsMemento->m_ExtnOpts,
+                                m_OptsMemento->m_ScoringOpts,
+                                &bhp);
+        m_OptsMemento->m_HitSaveOpts->hitlist_size = bhp->prelim_hitlist_size;
+        SBlastHitsParametersFree(bhp);
+    }
+    
+    auto_ptr<CAutoEnvironmentVariable> omp_env;
+    if (m_NumThreads > kMinNumThreads) {
+        omp_env.reset(new CAutoEnvironmentVariable("OMP_WAIT_POLICY", "passive"));
+    }
+
+    BlastHSPResults * hsp_results(0);
+    int status =
+        Blast_RunTracebackSearchWithInterrupt(m_OptsMemento->m_ProgramType,
+                                 m_InternalData->m_Queries,
+                                 m_InternalData->m_QueryInfo,
+                                 m_InternalData->m_SeqSrc->GetPointer(),
+                                 m_OptsMemento->m_ScoringOpts,
+                                 m_OptsMemento->m_ExtnOpts,
+                                 m_OptsMemento->m_HitSaveOpts,
+                                 m_OptsMemento->m_EffLenOpts,
+                                 m_OptsMemento->m_DbOpts,
+                                 m_OptsMemento->m_PSIBlastOpts,
+                                 m_InternalData->m_ScoreBlk->GetPointer(),
+                                 m_InternalData->m_HspStream->GetPointer(),
+                                 m_InternalData->m_RpsData ?
+                                 (*m_InternalData->m_RpsData)() : 0,
+                                 phi_lookup_table,
+                                 & hsp_results,
+                                 m_InternalData->m_FnInterrupt,
+                                 m_InternalData->m_ProgressMonitor->Get(), m_NumThreads);
+    if (status) {
+        NCBI_THROW(CBlastException, eCoreBlastError, "Traceback failed"); 
+    }
+    return hsp_results;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
