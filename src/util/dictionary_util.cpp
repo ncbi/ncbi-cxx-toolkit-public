@@ -202,6 +202,9 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 *out += tolower((unsigned char)(*iter));
                 ++iter;
             }
+            else if ( !prev_len ) {
+                *out += tolower((unsigned char)(*iter));
+            }
             break;
 
         case 'm':
