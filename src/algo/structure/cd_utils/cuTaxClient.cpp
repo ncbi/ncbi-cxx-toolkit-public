@@ -277,6 +277,51 @@ int TaxClient::Join(int taxid1, int taxid2)
     }
 }
 
+bool TaxClient::GetFullLineage(int taxid, vector<int>& lineageFromRoot)
+{
+    int rootTaxid = 1;
+    vector<int> v;
+    v.push_back(rootTaxid);
+    v.push_back(taxid);
+    lineageFromRoot.clear();
+
+    if (IsAlive() && m_taxonomyClient->GetPopsetJoin(v, lineageFromRoot) && lineageFromRoot.size() > 0) {
+        lineageFromRoot.push_back(taxid);  //  GetPopsetJoin does not put taxid at the end of the lineage
+        return true;
+    }
+    return false;
+}
+
+bool TaxClient::GetFullLineage(int taxid, vector< pair<int, string> >& lineageFromRoot, bool useCommonName)
+{
+    string commonName;
+    string unknownName("Unknown"), root("Root");
+    vector<int> lineageAsTaxids;
+    pair<int, string> p;
+
+    lineageFromRoot.clear();
+    if (GetFullLineage(taxid, lineageAsTaxids)) {
+        ITERATE(vector<int>, vit, lineageAsTaxids) {
+            p.first = *vit;
+            if (!useCommonName) {  // formal name via the COrg_ref
+                commonName = GetTaxNameForTaxID(*vit);
+                if (commonName.length() > 0) {
+                    p.second = (p.first > 1) ? commonName : root;
+                } else {
+                    p.second = unknownName;
+                }
+            } else if (useCommonName && GetDisplayCommonName(*vit, commonName) && commonName.length() > 0) {
+                p.second = (p.first > 1) ? commonName : root;
+            } else {
+                p.second = unknownName;
+            }
+            lineageFromRoot.push_back(p);
+        }
+        return true;
+    }
+    return false;
+}
+
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

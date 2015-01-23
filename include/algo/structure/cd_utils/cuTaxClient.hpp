@@ -81,6 +81,19 @@ public:
 	//is tax2 the descendant of tax1?
     virtual bool IsTaxDescendant(int tax1, int tax2);
 
+    //  On success, lineageFromRoot contains the path in the taxonomy from the root to taxid.
+    //  Returns true on success (i.e., a non-empty lineage), false in case of error.
+    virtual bool GetFullLineage(int taxid, vector<int>& lineageFromRoot);
+
+    //  On success, lineageFromRoot contains (taxid, taxname) for each step along the path 
+    //  in the taxonomy from the root to provided taxid.  'Unknown' is used should any
+    //  individual taxname not be found.
+    //  When 'useCommonName' is true, the taxname is the 'common name'; otherwise, it is
+    //  the preferred formal name found in the corresponding COrg_ref for the taxid (and
+    //  shown in lineages on the Entrez taxonomy pages).
+    //  Returns true on success (i.e., a non-empty lineage), false in case of error.
+    virtual bool GetFullLineage(int taxid, vector< pair<int, string> >& lineageFromRoot, bool useCommonName = false);
+
     virtual bool ConnectToTaxServer();  
 
     //  Wrapper functions to invoke CTaxon1 methods.
