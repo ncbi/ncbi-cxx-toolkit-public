@@ -95,7 +95,8 @@ public:
     enum eSeqType {
         eSeqTypeReferenceDB,
         eSeqTypeKmerBlast,
-        eSeqTypeQuery
+        eSeqTypeQuery,
+        eSeqTypeNotFound
     };
 
     

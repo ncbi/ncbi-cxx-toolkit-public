@@ -142,8 +142,8 @@ protected:
     bool m_FoundSeqFromType;
     int m_LeafCount;
     bool m_FoundSeqFromVerifiedMat;
-    bool m_FoundSeqKmerBlast;
-    bool m_FoundSeqReferenceDB;    
+    bool m_FoundSeqReferenceDB;
+    bool m_FoundSeqKmerBlast;    
 };
 
 
