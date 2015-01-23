@@ -14,7 +14,6 @@ APP: launcherd fwdaemon dispd.cgi
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:GCC Cygwin32:GCC
-ASK_STRIP_SENSITIVE_SOURCES
 
 COPY: $bindir/test_mghbn                     $installdir/bin/ncbi_mghbn
 COPY: $bindir/test_ncbi_dblb                 $installdir/bin/ncbi_dblb
