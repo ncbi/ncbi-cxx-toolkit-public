@@ -1284,7 +1284,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    bool        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
+    bool        need_db_access = true;
+    if (m_MetadataOption != eMetadataMonitoring)
+        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
     SObjectID   object_id = x_GetObjectKey(message);
 
     // First source of data - MS SQL database at hand
@@ -2108,7 +2110,7 @@ CNetStorageHandler::x_ProcessRelocate(
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
                                     object_id.object_key,
-                                    object_id.object_loc,
+                                    new_object_loc,
                                     m_DBClientID);
     }
 
