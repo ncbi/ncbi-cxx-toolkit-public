@@ -66,7 +66,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-CMutex CRemoteUpdater::m_static_mutex;
+DEFINE_CLASS_STATIC_MUTEX(CRemoteUpdater::m_static_mutex);
 
 namespace
 {

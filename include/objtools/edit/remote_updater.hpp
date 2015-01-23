@@ -51,7 +51,7 @@ private:
    auto_ptr<CCachedTaxon3_impl>  m_taxClient;
    bool m_enable_caching;
    CMutex m_Mutex;
-   static CMutex m_static_mutex;
+   DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
 };
 
 END_SCOPE(edit)
