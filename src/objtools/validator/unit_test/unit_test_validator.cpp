@@ -10834,6 +10834,29 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_tRNA_Mixed_Loc) // Jira: VR_133
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> trna = unit_test_util::BuildtRNA(entry->SetSeq().SetId().front()); // N(Asn)
+    CRef<CSeq_loc> anticodon_loc = unit_test_util::MakeMixLoc(entry->SetSeq().SetId().front());
+    anticodon_loc->SetMix().Set().front()->SetInt().SetFrom(0);	// A
+    anticodon_loc->SetMix().Set().front()->SetInt().SetTo(0);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetStrand(eNa_strand_plus);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetFrom(2); // TT
+    anticodon_loc->SetMix().Set().back()->SetInt().SetTo(3);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetStrand(eNa_strand_plus);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*anticodon_loc);
+    unit_test_util::AddFeat (trna, entry);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();

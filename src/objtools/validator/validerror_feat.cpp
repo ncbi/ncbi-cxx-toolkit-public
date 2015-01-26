@@ -3857,13 +3857,7 @@ void CValidError_feat::ValidateTrnaCodons(
         try {
             anticodon = GetSequenceStringFromLoc(trna.GetAnticodon(), *m_Scope);
             // get reverse complement sequence for location
-            CRef<CSeq_loc> codon_loc (new CSeq_loc());
-            codon_loc->Add (trna.GetAnticodon());
-            if (codon_loc->GetStrand() == eNa_strand_minus) {
-                codon_loc->SetStrand (eNa_strand_plus);
-            } else {
-                codon_loc->SetStrand (eNa_strand_minus);
-            }
+            CRef<CSeq_loc> codon_loc(SeqLocRevCmpl(trna.GetAnticodon(), m_Scope));
             string codon = GetSequenceStringFromLoc(*codon_loc, *m_Scope);
             if (codon.length() > 3) {
                 codon = codon.substr (0, 3);
