@@ -945,6 +945,8 @@ CJsonOverUTTPReader::CJsonOverUTTPReader() :
 #define DOUBLE_PREFIX 'd'
 #endif
 
+#define EOM_MARKER '\n'
+
 bool CJsonOverUTTPReader::ReadMessage(CUTTPReader& reader)
 {
     for (;;)
@@ -1018,7 +1020,7 @@ bool CJsonOverUTTPReader::ReadMessage(CUTTPReader& reader)
             {
                 char control_symbol = reader.GetControlSymbol();
 
-                if (control_symbol == '\n') {
+                if (control_symbol == EOM_MARKER) {
                     if (m_State != eMessageComplete) {
                         NCBI_THROW(CJsonOverUTTPException, eUnexpectedEOM,
                                 "JSON-over-UTTP: Unexpected end of message");
@@ -1241,7 +1243,7 @@ bool CJsonOverUTTPWriter::CompleteMessage()
         }
     }
 
-    m_UTTPWriter.SendControlSymbol('\n');
+    m_UTTPWriter.SendControlSymbol(EOM_MARKER);
     return true;
 }
 
