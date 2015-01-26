@@ -991,7 +991,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     CNetServer server = service_traversal->BeginIteration();
 
     vector<CNetServer> servers_to_retry;
-    unsigned current_server;
+    unsigned current_server = 0;
 
     bool skip_server;
 
