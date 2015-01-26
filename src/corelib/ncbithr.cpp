@@ -136,11 +136,13 @@ static void s_CleanupMainUsedTlsBases(CUsedTlsBases& tls)
 }
 
 // Storage for used TLS sets
-CStaticTls<CUsedTlsBases> CUsedTlsBases::sm_UsedTlsBases;
+CStaticTls<CUsedTlsBases>
+    CUsedTlsBases::sm_UsedTlsBases(0, CSafeStaticLifeSpan::eLifeSpan_Long);
 // Main thread needs a usual safe-static-ref for proper cleanup --
 // there's no thread which can do it on destruction.
 static CSafeStatic<CUsedTlsBases>
-s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases);
+s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases,
+CSafeStaticLifeSpan::eLifeSpan_Long);
 
 CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
 {
