@@ -1241,7 +1241,8 @@ bool CJsonOverUTTPWriter::CompleteMessage()
         }
     }
 
-    return m_UTTPWriter.SendControlSymbol('\n');
+    m_UTTPWriter.SendControlSymbol('\n');
+    return true;
 }
 
 bool CJsonOverUTTPWriter::x_SendNode(const CJsonNode& node)
