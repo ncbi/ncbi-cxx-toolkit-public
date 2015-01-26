@@ -561,7 +561,14 @@ CRef<CSeq_entry> CFeatureTableReader::ReadReplacementProtein(ILineReader& line_r
     {
         if (pep->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
         {
-            result = (CSeq_entry*)(pep.GetPointerOrNull());
+            CRef<CSeq_entry> seq((CSeq_entry*)(pep.GetPointerOrNull()));
+            if (seq->IsSeq())
+            {
+                result.Reset(new CSeq_entry);
+                result->SetSet().SetSeq_set().push_back(seq);
+            }
+            else
+                result = seq;
         }
     }
 
@@ -929,7 +936,7 @@ void AddSeqEntry(CSeq_entry_Handle m_SEH, CSeq_entry* m_Add)
     
 
     CSeq_entry_EditHandle added = eh.AttachEntry(*m_Add);
-    int m_index = eh.GetSet().GetSeq_entry_Index(added);
+    /*int m_index = */ eh.GetSet().GetSeq_entry_Index(added);
 }
 
 void AddFeature(CSeq_entry_Handle m_seh, CSeq_feat* m_Feat)
