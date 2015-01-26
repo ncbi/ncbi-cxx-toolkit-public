@@ -146,7 +146,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("X", "ExpandCategories", 
          "Expand Report Categories (comma-delimited list of test names or ALL)",
                                 CArgDescriptions::eString); 
-    arg_desc->AddOptionalKey("L", "Lineage to use",
+    arg_desc->AddOptionalKey("L", "LineageToUse",
         "Use this text in place of lineage when testing for eukaryote etc.",
                              CArgDescriptions::eString);
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
