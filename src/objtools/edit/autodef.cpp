@@ -831,10 +831,13 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
                 if (subtype == CSeqFeatData::eSubtype_misc_feature) {
                     if (!x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags) &&
                         !x_AddtRNAAndOther(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
+                        new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
 					    if (m_MiscFeatRule == eDelete
 						    || (m_MiscFeatRule == eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
+                                delete new_clause;
 						    new_clause = NULL;
 					    } else if (m_MiscFeatRule == eCommentFeat) {
+                            delete new_clause;
 						    new_clause = NULL;
 						    if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
 							    new_clause = new CAutoDefMiscCommentClause(bh, cf, mapped_loc);

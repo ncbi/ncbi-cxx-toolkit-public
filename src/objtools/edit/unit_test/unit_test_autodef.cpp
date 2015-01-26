@@ -213,7 +213,8 @@ static void AddTitle (CRef<CSeq_entry> entry, string defline)
 
 
 static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
-                                CAutoDef::EFeatureListType list_type = CAutoDef::eListAllFeatures)
+                                CAutoDef::EFeatureListType list_type = CAutoDef::eListAllFeatures,
+                                CAutoDef::EMiscFeatRule misc_feat_rule = CAutoDef::eDelete)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -233,6 +234,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
     }
 
     autodef.SetFeatureListType(list_type);
+    autodef.SetMiscFeatRule(misc_feat_rule);
 
     // check defline for each nucleotide sequence
     CBioseq_CI seq_iter(seh, CSeq_inst::eMol_na);
@@ -961,6 +963,30 @@ tRNA-Pro gene, complete sequence; and control region, partial sequence.");
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_GB_1851)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    misc1->SetComment("nonfunctional xyz due to argle");
+    misc1->SetLocation().SetInt().SetFrom(0);
+    misc1->SetLocation().SetInt().SetTo(15);
+    misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc1->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(seq, "Sebaea microphylla.");
+    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eDelete);
+    AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
+    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eNoncodingProductFeat);
+    AddTitle(seq, "Sebaea microphylla nonfunctional xyz due to argle genomic sequence.");
+    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eCommentFeat);
+
+
+    misc1->SetComment("similar to xyz");
+    AddTitle(seq, "Sebaea microphylla xyz-like gene, partial sequence.");
+    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eNoncodingProductFeat);
+
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
