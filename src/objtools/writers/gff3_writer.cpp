@@ -1810,83 +1810,35 @@ bool CGff3Writer::xAssignFeatureAttributeName(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    vector<string> value;   
+    switch (mf.GetFeatSubtype()) {
+        default:
+            break;
 
-	
-    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
-
-    if (subtype == CSeqFeatData::eSubtype_cdregion) {
-        const CProt_ref* pProtRef = mf.GetProtXref();
-        if ( pProtRef && pProtRef->IsSetName() ) {
-            const list<string>& names = pProtRef->GetName();
-            record.SetAttribute("Name", names.front());
-            return true;
-        }
-    }
-
-
-    if (mf.IsSetProduct()) {
-        const CSeq_id* pId = mf.GetProduct().GetId();
-        if (pId) {
-            CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId); 
-            if (bsh) {
-                CFeat_CI it(bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
-                if (it  &&  it->IsSetData() 
-                    &&  it->GetData().GetProt().IsSetName()
-                    &&  !it->GetData().GetProt().GetName().empty()) {
-                    record.SetAttribute("Name",
-                    it->GetData().GetProt().GetName().front());
-                    return true;
-                }
-            }
-        }
-    }
-
-	
-  
-    CSeqFeatData::E_Choice type = mf.GetFeatType(); 
-
-    if (type == CSeqFeatData::e_Rna) {
-        const CRNA_ref& rna = mf.GetData().GetRna();
-
-        if (rna.IsSetExt() ) {
-		
-            if (rna.GetExt().IsName()) {
-                record.SetAttribute("Name", rna.GetExt().GetName());
+        case CSeqFeatData::eSubtype_gene:
+            if (record.GetAttributes("gene", value)) {
+                record.SetAttribute("Name", value.front());
                 return true;
             }
-
-		
-            if (subtype == CSeqFeatData::eSubtype_tRNA) {
-                if (rna.GetExt().IsTRNA()) {
-                    string aa;
-                    if (CWriteUtil::GetTrnaProductName(rna.GetExt().GetTRNA(), aa)) {
-                        record.SetAttribute("Name", aa);
-                        return true;
-                    }
-                }
-            }
-
-			
-            if (rna.GetExt().IsGen()  &&  
-                rna.GetExt().GetGen().IsSetProduct() ) {
-                record.SetAttribute("Name", rna.GetExt().GetGen().GetProduct());
+            if (record.GetAttributes("locus_tag", value)) {
+                record.SetAttribute("Name", value.front());
                 return true;
             }
-
-        }
-
-    }
-
- 
-    vector<string> value;
-    if(subtype == CSeqFeatData::eSubtype_gene) {
-        if (record.GetAttributes("gene", value)) {
-            record.SetAttribute("Name", value.front());
             return true;
-        }
+
+        case CSeqFeatData::eSubtype_cdregion:
+            if (record.GetAttributes("protein_id", value)) {
+                record.SetAttribute("Name", value.front());
+                return true;
+            }
+            return true;
     }
 
-    return true;
+    if (record.GetAttributes("transcript_id", value)) {
+        record.SetAttribute("Name", value.front());
+        return true;
+    }
+    return true; 
 }
 
 //  ----------------------------------------------------------------------------
@@ -1994,16 +1946,95 @@ bool CGff3Writer::xAssignFeatureAttributeProduct(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! mf.IsSetProduct() ) {
-        return true;
+
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+
+        // Possibility 1:
+        // Product name comes from a prot-ref which stored in the seqfeat's 
+        // xrefs:
+        const CProt_ref* pProtRef = mf.GetProtXref();
+        if ( pProtRef && pProtRef->IsSetName() ) {
+            const list<string>& names = pProtRef->GetName();
+            record.SetAttribute("product", names.front());
+            return true;
+        }
+
+        // Possibility 2:
+        // Product name is from the prot-ref refered to by the seqfeat's 
+        // data.product:
+        if (mf.IsSetProduct()) {
+            const CSeq_id* pId = mf.GetProduct().GetId();
+            if (pId) {
+                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId); 
+                if (bsh) {
+                    CFeat_CI it(bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+                    if (it  &&  it->IsSetData() 
+                            &&  it->GetData().GetProt().IsSetName()
+                            &&  !it->GetData().GetProt().GetName().empty()) {
+                        record.SetAttribute("product",
+                            it->GetData().GetProt().GetName().front());
+                        return true;
+                    }
+                }
+            }
+            
+            string product;
+            if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+                record.SetAttribute("product", product);
+                return true;
+            }
+        }
     }
 
-    string product;
-    if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
-        record.SetAttribute("product", product);
-        return true;
+    CSeqFeatData::E_Choice type = mf.GetFeatType();
+    if (type == CSeqFeatData::e_Rna) {
+        const CRNA_ref& rna = mf.GetData().GetRna();
+
+        if (subtype == CSeqFeatData::eSubtype_tRNA) {
+            if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
+                const CTrna_ext& trna = rna.GetExt().GetTRNA();
+                string anticodon;
+                if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
+                    record.SetAttribute("anticodon", anticodon);
+                }
+                string codons;
+                if (CWriteUtil::GetTrnaCodons(trna, codons)) {
+                    record.SetAttribute("codons", codons);
+                }
+                string aa;
+                if (CWriteUtil::GetTrnaProductName(trna, aa)) {
+                    record.SetAttribute("product", aa);
+                    return true;
+                }
+            }
+        }
+
+        if (rna.IsSetExt()  &&  rna.GetExt().IsName()) {
+            record.SetAttribute("product", rna.GetExt().GetName());
+            return true;
+        }
+
+        if (rna.IsSetExt()  &&  rna.GetExt().IsGen()  &&  
+                rna.GetExt().GetGen().IsSetProduct() ) {
+            record.SetAttribute("product", rna.GetExt().GetGen().GetProduct());
+            return true;
+        }
     }
-    return true;
+
+    // finally, look for gb_qual
+    if (mf.IsSetQual()) {
+        const CSeq_feat::TQual& quals = mf.GetQual();
+        for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
+                cit != quals.end(); ++cit) {
+            if ((*cit)->IsSetQual()  &&  (*cit)->IsSetVal()  &&  
+                    (*cit)->GetQual() == "product") {
+                record.SetAttribute("product", (*cit)->GetVal());
+                return true;
+            }
+        }
+    }
+    return true; 
 }
 
 //  ----------------------------------------------------------------------------
