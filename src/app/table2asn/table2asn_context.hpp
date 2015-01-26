@@ -90,6 +90,8 @@ public:
     bool   m_split_log_files;
     bool   m_optmap_use_locations;
     bool   m_postprocess_pubs;
+    bool   m_handle_as_aa;
+    bool   m_handle_as_nuc;
     string m_asn1_suffix;
 
     CRef<objects::CSeq_descr>  m_descriptors;

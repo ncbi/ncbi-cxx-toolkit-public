@@ -332,6 +332,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
+    arg_desc->AddFlag("type-aa", "Treas sequence as DNA");
+    arg_desc->AddFlag("type-nuc", "Treas sequence as Nukleotide");
     arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);
@@ -489,6 +491,13 @@ int CTbl2AsnApp::Run(void)
     m_context.m_avoid_submit_block = args["avoid-submit"].AsBoolean();
 
     m_context.m_optmap_use_locations = args["map-use-loc"].AsBoolean();
+
+    if (args["type-aa"] && args["type-nuc"])
+    {
+       NCBI_THROW(CArgException, eConstraint, "type-aa flag cannot be used with type-nuc");
+    }
+    m_context.m_handle_as_aa = args["type-aa"].AsBoolean();
+    m_context.m_handle_as_nuc = args["type-nuc"].AsBoolean();
 
     if (args["a"])
     {

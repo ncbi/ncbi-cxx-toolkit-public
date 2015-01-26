@@ -202,6 +202,8 @@ CTable2AsnContext::CTable2AsnContext():
     m_split_log_files(false),
     m_optmap_use_locations(false),
     m_postprocess_pubs(false),
+    m_handle_as_aa(false),
+    m_handle_as_nuc(false),
     m_logger(0)
 {
 }

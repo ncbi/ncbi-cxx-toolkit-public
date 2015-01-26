@@ -225,8 +225,25 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 //                 |  CFastaReader::fLeaveAsText;
     }
     m_iFlags |= CFastaReader::fAddMods
-             |  CFastaReader::fAssumeNuc
              |  CFastaReader::fValidate;
+
+    if (m_context.m_handle_as_aa)
+    {
+        m_iFlags |= CFastaReader::fAssumeProt 
+                 |  CFastaReader::fForceType;
+                   
+    }
+    else
+    if (m_context.m_handle_as_nuc)
+    {
+        m_iFlags |= CFastaReader::fAssumeNuc
+                 |  CFastaReader::fForceType;
+    }
+    else
+    {
+        m_iFlags |= CFastaReader::fAssumeNuc;
+    }
+
 
     CStreamLineReader lr( instream );
     auto_ptr<CFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
