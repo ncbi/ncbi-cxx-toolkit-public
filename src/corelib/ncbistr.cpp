@@ -4043,7 +4043,7 @@ string NStr::ShellEncode(const string& str)
     //     quoting style. Avoid it as much as possible.
 
     ITERATE ( string, it, str ) {
-        if ( isprint(Uchar(*it)) ) {
+        if ( !isprint(Uchar(*it)) ) {
             return "$'" + NStr::PrintableString(str) + "'";
         }
     }
