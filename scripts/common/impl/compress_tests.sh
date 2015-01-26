@@ -31,8 +31,8 @@ for dir in "$@"; do
         case "`basename $f`" in
             plugin_test | speedtest | streamtest | biosample_chk \
                 | testipub | test_basic_cleanup | test_checksum | test_mghbn \
-                | test_ncbi_connutil_hit | test_ncbi_dblb | test_ncbi_http_get \
-                | *.*z* )
+                | test_ncbi_connutil_hit | test_ncbi_crypt | test_ncbi_dblb \
+                | test_ncbi_http_get | *.*z* )
                 ;;
             *test* | *demo* | *sample* \
                 | net*che*_c* | ns_*remote_job* | save_to_nc )
