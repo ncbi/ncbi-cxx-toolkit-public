@@ -642,9 +642,13 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
     if (file_info->garb_size > file_info->file_size) {
         SRV_FATAL("DB file info broken");
     }
+#if 0
+// possible race here
+// we have similar check in CSpaceShrinker::x_MoveNextRecord - let it abort there, if so happens
     if (file_info->index_head->next_num == 0  &&  file_info->used_size != 0) {
         SRV_FATAL("DB file info broken");
     }
+#endif
     file_info->info_lock.Unlock();
 
     AtomicAdd(s_GarbageSize,size);
