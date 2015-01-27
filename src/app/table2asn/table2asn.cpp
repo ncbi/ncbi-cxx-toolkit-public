@@ -852,6 +852,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         m_context.MakeGenomeCenterId(entry_edit_handle);
     }
 
+    fr.MakeGapsFromFeatures(entry_edit_handle);
+
     if (m_context.m_delay_genprodset)
     {
         m_context.VisitAllFeatures(entry_edit_handle, m_context.MakeDelayGenProdSet);

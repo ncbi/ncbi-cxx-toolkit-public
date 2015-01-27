@@ -66,6 +66,11 @@
 
 #include <objmgr/seq_annot_ci.hpp>
 
+#include <objmgr/annot_selector.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objmgr/annot_ci.hpp>
+#include <objtools/edit/gaps_edit.hpp>
+
 #include "feature_table_reader.hpp"
 
 #include "table2asn_context.hpp"
@@ -77,6 +82,11 @@ USING_SCOPE(objects);
 
 namespace
 {
+
+    static string kAssemblyGap_feature = "assembly_gap";
+    static string kGapType_qual = "gap_type";
+    static string kLinkageEvidence_qual = "linkage_evidence";
+
 
     void MoveSomeDescr(CSeq_entry& dest, CBioseq& src)
     {
@@ -1129,7 +1139,130 @@ bool CFeatureTableReader::AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_e
     return true;
 }
 
+CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const CSeq_feat& feature_gap)
+{
+    const string& sGT = feature_gap.GetNamedQual(kGapType_qual);
+    const string& sLE = feature_gap.GetNamedQual(kLinkageEvidence_qual);
 
+    TSeqPos gap_start(kInvalidSeqPos);
+    TSeqPos gap_length(kInvalidSeqPos);
+
+    CSeq_gap::EType gap_type = CSeq_gap::eType_unknown;
+    CLinkage_evidence::EType evidence = CLinkage_evidence::eType_unspecified;
+
+    {
+        const CEnumeratedTypeValues::TNameToValue& 
+            linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+
+        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(sLE);
+        if (it == linkage_evidence_to_value_map.end())
+        {
+            //NCBI_THROW(CArgException, eConvert, "Unrecognized linkage evidence " + args["l"].AsString());
+        }
+        else
+        {
+            evidence = (CLinkage_evidence::EType)it->second;
+            gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
+        }
+    }
+
+    {
+        const CEnumeratedTypeValues::TNameToValue& 
+            gaptype_to_value_map = CSeq_gap::GetTypeInfo_enum_EType()->NameToValue();
+
+        CEnumeratedTypeValues::TNameToValue::const_iterator it = gaptype_to_value_map.find(sGT);
+        if (it == gaptype_to_value_map.end())
+        {
+            //NCBI_THROW(CArgException, eConvert, "Unrecognized gap type " + args["gap-type"].AsString());
+        }
+        else
+        {
+            gap_type = (CSeq_gap::EType)it->second;
+        }
+    }
+
+    if (feature_gap.IsSetLocation() && feature_gap.GetLocation().IsInt())
+    {
+        gap_start = feature_gap.GetLocation().GetInt().GetFrom();
+        gap_length = feature_gap.GetLocation().GetInt().GetTo();
+        if (feature_gap.GetLocation().GetInt().IsSetStrand() && feature_gap.GetLocation().GetInt().GetStrand() == eNa_strand_minus)
+        {
+            swap(gap_start, gap_length);
+        }
+        gap_length -= gap_start;
+        gap_length++;
+    }
+
+
+    return CGapsEditor::CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length, gap_type, evidence);
+}
+
+void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
+{
+    for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it)
+    {
+        {
+            SAnnotSelector annot_sel(CSeqFeatData::e_Imp);           
+            for (CFeat_CI feature_it(*bioseq_it, annot_sel); feature_it; ) // no ++
+            {
+                if (feature_it->IsSetData() && feature_it->GetData().IsImp())
+                {
+                    const CImp_feat& imp = feature_it->GetData().GetImp();
+                    if (imp.IsSetKey() && imp.GetKey() == kAssemblyGap_feature)
+                    {
+                        // removing feature
+                        const CSeq_feat& feature_gap = feature_it->GetOriginalFeature();
+                        CSeq_feat_EditHandle to_remove(*feature_it);
+                        ++feature_it;
+                        try
+                        {
+                            CRef<CDelta_seq> gap = MakeGap(*bioseq_it, feature_gap);
+                            if (gap.Empty())
+                            {
+                                m_logger->PutError(*auto_ptr<CLineError>(
+                                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                                    "Failed to convert feature gap into a gap")));
+                            }
+                            else
+                            {
+                                to_remove.Remove();
+                            }
+                        }
+                        catch(const CException& ex)
+                        {
+                            m_logger->PutError(*auto_ptr<CLineError>(
+                                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                                ex.GetMsg())));
+                        }
+                        continue;
+                    }
+                }
+                ++feature_it;
+            };
+        }
+
+        CBioseq& bioseq = (CBioseq&)*bioseq_it->GetEditHandle().GetCompleteBioseq();
+
+        if (bioseq.IsSetAnnot())
+        {
+            for (CBioseq::TAnnot::iterator annot_it = bioseq.SetAnnot().begin(); annot_it != bioseq.SetAnnot().end(); ) // no ++
+            {
+                if ((**annot_it).IsFtable() && (**annot_it).GetData().GetFtable().empty())
+                {
+                    annot_it = bioseq.SetAnnot().erase(annot_it);
+                }
+                else
+                    annot_it++;
+            }
+
+            if (bioseq_it->GetCompleteBioseq()->GetAnnot().empty())
+            {
+                bioseq.ResetAnnot();
+            }
+        }
+
+    }
+}
 
 
 

@@ -39,6 +39,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CDelta_seq;
+
 class NCBI_XOBJEDIT_EXPORT CGapsEditor
 {
 public:
@@ -59,9 +61,12 @@ public:
        CSeq_gap::EType gap_type,
        CLinkage_evidence::EType evidence);
     static 
-    void ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min);
+    void ConvertNs2Gaps(CBioseq::TInst& inst, TSeqPos gap_min);
     static
-    void ConvertNs2Gaps(const CSeq_data& data, size_t len, CDelta_ext& ext, size_t gap_min);
+    void ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext, TSeqPos gap_min);
+    static
+    CRef<CDelta_seq> CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length, 
+        CSeq_gap::EType gap_type, CLinkage_evidence::EType evidence);
 };
 
 END_SCOPE(objects)

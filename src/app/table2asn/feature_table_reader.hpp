@@ -13,6 +13,8 @@ namespace objects
     class IMessageListener;
     class CSeq_entry_Handle;
     class CScope;
+    class CDelta_seq;
+    class CSeq_feat;
 };
 class CSerialObject;
 class ILineReader;
@@ -39,6 +41,9 @@ public:
    CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
    CRef<objects::CSeq_entry> m_replacement_protein;
+
+   void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
+   CRef<objects::CDelta_seq> MakeGap(objects::CBioseq_Handle bsh, const objects::CSeq_feat& feature_gap);
 private:
    CRef<objects::CSeq_entry> TranslateProtein(
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
