@@ -176,10 +176,10 @@ protected:
 public:
     static const FIELDS sDefaultSrcCheckFields; ///< Default fields processed by srcchk application, in their canonical order
     static const FIELDS sAllSrcCheckFields; ///< All possible fields processed by srchck application, in their canonical order
-    static const FIELDS sDefaultSeqEntryFields;
-    static const FIELDS sAllSeqEntryFields;
 
 protected:
+    static const FIELDS sDefaultSeqEntryFields;
+    static const FIELDS sAllSeqEntryFields;
     static HANDLERMAP sHandlerMap;
     static NAMEMAP sFieldnameToColname;
     CRef<CSeq_table> mSrcTable;
