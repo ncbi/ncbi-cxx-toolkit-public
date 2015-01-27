@@ -1234,7 +1234,7 @@ static bool s_IsTSA_Contig (const CBioseq& seq)
 
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
-    if ( m_NoPubs ) {
+     if ( m_NoPubs ) {
         if ( !m_IsGPS  &&  !cs) {
             CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
             if (b_it)
@@ -1255,8 +1255,16 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
         } 
     }
     if ( m_NoCitSubPubs && !cs ) {
-        PostErr(m_genomeSubmission ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubInfo, 
-            "No submission citation anywhere on this entire record.", se);
+        CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
+        if (b_it) {
+            CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
+	          if (   !s_IsNoncuratedRefSeq(*bioseq)
+		         && !s_IsWgs_Contig(*bioseq)
+		         && !s_IsTSA_Contig(*bioseq) ) {
+                  PostErr(m_genomeSubmission ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubInfo,
+                       "No submission citation anywhere on this entire record.", se);
+            }
+        }
     }
 }
 
