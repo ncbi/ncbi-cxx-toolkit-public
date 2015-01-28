@@ -297,7 +297,7 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
 SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
         SNetCacheAPIImpl* parent) :
     m_Service(new SNetServiceImpl(server, parent->m_Service)),
-    m_ServicesFromKeys(parent->m_ServicesFromKeys),
+    m_ServiceMap(parent->m_ServiceMap),
     m_TempDir(parent->m_TempDir),
     m_CacheInput(parent->m_CacheInput),
     m_CacheOutput(parent->m_CacheOutput),
@@ -395,16 +395,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     CNetService service(m_Service);
 
-    if (service_name_is_defined && service_name != service.GetServiceName()) {
-        CFastMutexGuard guard(m_ServiceMapMutex);
-
-        pair<TNetServiceByName::iterator, bool> loc(m_ServicesFromKeys.insert(
-                TNetServiceByName::value_type(service_name, CNetService())));
-
-        service = !loc.second ? loc.first->second :
-                (loc.first->second =
-                        new SNetServiceImpl(service_name, service));
-    }
+    if (service_name_is_defined && service_name != service.GetServiceName())
+        service = m_ServiceMap.GetServiceByName(service_name, m_Service);
 
     bool key_is_mirrored = service_name_is_defined &&
             !key.GetFlag(CNetCacheKey::fNCKey_SingleServer) &&
@@ -444,7 +436,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                                         the server is discovered
                                         through this service */);
 
-                m_Service->IterateUntilExecOK(cmd, multiline_output,
+                service->IterateUntilExecOK(cmd, multiline_output,
                         exec_result, &mirror_traversal, error_handling,
                         conn_listener);
 
@@ -471,7 +463,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         SNetCacheMirrorTraversal mirror_traversal(service,
                 primary_server, server_check);
 
-        m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
+        service->IterateUntilExecOK(cmd, multiline_output, exec_result,
                 &mirror_traversal, error_handling, conn_listener);
 
         return exec_result;

@@ -57,24 +57,36 @@ struct SNetStorageRPC : public SNetStorageImpl
     virtual bool Exists(const string& object_loc);
     virtual void Remove(const string& object_loc);
 
-    CJsonNode Exchange(const CJsonNode& request,
+    CJsonNode Exchange(CNetService service,
+            const CJsonNode& request,
             CNetServerConnection* conn = NULL,
             CNetServer::TInstance server_to_use = NULL);
 
     void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
     void x_SetICacheNames(CJsonNode& node);
     CJsonNode MkStdRequest(const string& request_type);
-    CJsonNode MkFileRequest(const string& request_type,
+    CJsonNode MkObjectRequest(const string& request_type,
             const string& object_loc);
-    CJsonNode MkFileRequest(const string& request_type,
+    CJsonNode MkObjectRequest(const string& request_type,
             const string& unique_key, TNetStorageFlags flags);
     void x_InitNetCacheAPI();
     bool x_NetCacheMode(const string& object_loc);
+
+    CNetService GetServiceFromLocator(const string& object_loc)
+    {
+        CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc);
+        string service_name = locator_struct.GetServiceName();
+
+        return service_name.empty() ||
+                service_name == m_Service.GetServiceName() ? m_Service :
+                        m_ServiceMap.GetServiceByName(service_name, m_Service);
+    }
 
     EDefaultStorage m_DefaultStorage;
 
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;
+    SNetServiceMap m_ServiceMap;
 
     string m_NetStorageServiceName;
     string m_NetCacheServiceName;

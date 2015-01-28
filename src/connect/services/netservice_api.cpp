@@ -1285,6 +1285,19 @@ CNetServiceIterator CNetService::FindServer(INetServerFinder* finder,
     return it;
 }
 
+CNetService SNetServiceMap::GetServiceByName(const string& service_name,
+        SNetServiceImpl* prototype)
+{
+    CFastMutexGuard guard(m_ServiceMapMutex);
+
+    pair<TNetServiceByName::iterator, bool> loc(m_ServiceByName.insert(
+            TNetServiceByName::value_type(service_name, CNetService())));
+
+    return !loc.second ? loc.first->second :
+            (loc.first->second =
+                    new SNetServiceImpl(service_name, prototype));
+}
+
 CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
         CNetService::EServiceType service_type,
         CNetService::EIterationMode iteration_mode)

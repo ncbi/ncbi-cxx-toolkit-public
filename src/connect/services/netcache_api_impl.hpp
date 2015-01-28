@@ -129,10 +129,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     CNetService m_Service;
 
-    typedef map<string, CNetService> TNetServiceByName;
-
-    CFastMutex m_ServiceMapMutex;
-    TNetServiceByName m_ServicesFromKeys;
+    SNetServiceMap m_ServiceMap;
 
     string m_TempDir;
     bool m_CacheInput;

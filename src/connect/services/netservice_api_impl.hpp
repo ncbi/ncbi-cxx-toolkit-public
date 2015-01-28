@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 typedef pair<SNetServerInPool*, double> TServerRate;
 typedef vector<TServerRate> TNetServerList;
 typedef map<SServerAddress, SNetServerInPool*> TNetServerByAddress;
+typedef map<string, CNetService> TNetServiceByName;
 
 struct SDiscoveredServers : public CObject
 {
@@ -258,28 +259,28 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     }
 
     // Constructors for 'spawning'.
-    SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* parent) :
-        m_Listener(parent->m_Listener),
-        m_ServerPool(parent->m_ServerPool),
+    SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prototype) :
+        m_Listener(prototype->m_Listener),
+        m_ServerPool(prototype->m_ServerPool),
         m_ServiceName(server->m_Address.AsString()),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        m_ColoNetwork(parent->m_ColoNetwork),
-        m_AllowXSiteConnections(parent->m_AllowXSiteConnections),
+        m_ColoNetwork(prototype->m_ColoNetwork),
+        m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
 #endif
-        m_UseSmartRetries(parent->m_UseSmartRetries)
+        m_UseSmartRetries(prototype->m_UseSmartRetries)
     {
         ZeroInit();
         Construct(server);
     }
-    SNetServiceImpl(const string& service_name, SNetServiceImpl* parent) :
-        m_Listener(parent->m_Listener),
-        m_ServerPool(parent->m_ServerPool),
+    SNetServiceImpl(const string& service_name, SNetServiceImpl* prototype) :
+        m_Listener(prototype->m_Listener),
+        m_ServerPool(prototype->m_ServerPool),
         m_ServiceName(service_name),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        m_ColoNetwork(parent->m_ColoNetwork),
-        m_AllowXSiteConnections(parent->m_AllowXSiteConnections),
+        m_ColoNetwork(prototype->m_ColoNetwork),
+        m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
 #endif
-        m_UseSmartRetries(parent->m_UseSmartRetries)
+        m_UseSmartRetries(prototype->m_UseSmartRetries)
     {
         ZeroInit();
         Construct();
@@ -346,6 +347,20 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 #endif
 
     bool m_UseSmartRetries;
+};
+
+struct SNetServiceMap {
+    CFastMutex m_ServiceMapMutex;
+    TNetServiceByName m_ServiceByName;
+
+    SNetServiceMap() {}
+    SNetServiceMap(const SNetServiceMap& source) :
+        m_ServiceByName(source.m_ServiceByName)
+    {
+    }
+
+    CNetService GetServiceByName(const string& service_name,
+            SNetServiceImpl* prototype);
 };
 
 END_NCBI_SCOPE
