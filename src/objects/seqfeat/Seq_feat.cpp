@@ -454,6 +454,24 @@ CConstRef<CUser_object> CSeq_feat::FindExt(const string& ext_type) const
             }
         }
     }
+    if ( !ret  &&  IsSetExt()) {
+        if (GetExt().GetType().IsStr()) {
+            if (GetExt().GetType().GetStr() == ext_type) {
+                ret.Reset(&GetExt());
+            }
+            else if (GetExt().GetType().GetStr() == "CombinedFeatureUserObjects") {
+                ITERATE (TExt::TData, it, GetExt().GetData()) {
+                    const CUser_field& f = **it;
+                    if (f.GetData().IsObject()  &&
+                        f.GetData().GetObject().GetType().IsStr()  &&
+                        f.GetData().GetObject().GetType().GetStr()  == ext_type) {
+                        ret.Reset(&f.GetData().GetObject());
+                        break;
+                    }
+                }
+            }
+        }
+    }
     return ret;
 }
 
@@ -466,6 +484,24 @@ CRef<CUser_object> CSeq_feat::FindExt(const string& ext_type)
             if ( obj_type.IsStr()  &&  obj_type.GetStr() == ext_type ) {
                 ret.Reset(it->GetPointer());
                 break;
+            }
+        }
+    }
+    if ( !ret  &&  IsSetExt()) {
+        if (GetExt().GetType().IsStr()) {
+            if (GetExt().GetType().GetStr() == ext_type) {
+                ret.Reset(&SetExt());
+            }
+            else if (GetExt().GetType().GetStr() == "CombinedFeatureUserObjects") {
+                NON_CONST_ITERATE (TExt::TData, it, SetExt().SetData()) {
+                    CUser_field& f = **it;
+                    if (f.GetData().IsObject()  &&
+                        f.GetData().GetObject().GetType().IsStr()  &&
+                        f.GetData().GetObject().GetType().GetStr()  == ext_type) {
+                        ret.Reset(&f.SetData().SetObject());
+                        break;
+                    }
+                }
             }
         }
     }
