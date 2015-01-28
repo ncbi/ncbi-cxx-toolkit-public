@@ -293,6 +293,11 @@ void CFeatTableEdit::GenerateLocusTags()
 	SAnnotSelector selOther;
 	selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itOther(mHandle, selOther);
+
+    // mss-315:
+    //  only the genes get the locus_tags. they are inherited down
+    //  to the features that live on them when we generate a flat file,
+    //  but we don't want them here in the asn.1
 	for ( ; itOther; ++itOther) {
         const CSeq_feat& feat = itOther->GetOriginalFeature();		
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
@@ -302,8 +307,8 @@ void CFeatTableEdit::GenerateLocusTags()
 		if (!pGeneParent) {
 			continue;
 		}
-		string locusTag = pGeneParent->GetNamedQual("locus_tag");
-		feh.AddQualifier("locus_tag", locusTag);
+		//string locusTag = pGeneParent->GetNamedQual("locus_tag");
+		//feh.AddQualifier("locus_tag", locusTag);
 	}
 }
 
