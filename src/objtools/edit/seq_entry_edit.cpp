@@ -1542,6 +1542,7 @@ void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown)
 {
     CRef<CDelta_seq> gap(new CDelta_seq());
     gap->SetLiteral().SetSeq_data().SetGap();
+    gap->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
     if (is_unknown) {
         gap->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
     }
