@@ -440,7 +440,7 @@ static bool s_GetImpLabel
             ITERATE( CSeq_feat::TDbxref, it, feat.GetDbxref() ) {
                 s_GetVariationDbtagLabel(tlabel, flags, **it);
             }
-            return true;
+            return false;
         }
     // else if the key is not Site-ref
     } else if ((flags & fFGL_Type) == 0) {
