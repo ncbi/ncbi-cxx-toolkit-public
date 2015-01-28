@@ -436,16 +436,16 @@ namespace {
     };
 #endif
 
-    typedef set<TGi> TGiSet;
+    typedef set<TIntId> TGiSet;
     typedef set<CSeq_id_Handle> TIdSet;
 
     template<class Func>
     void ForEachGiRange(const TGiSet& gis, Func func)
     {
-        TGi gi_start = ZERO_GI;
+        TIntId gi_start = ZERO_GI;
         int gi_count = 0;
         ITERATE ( TGiSet, it, gis ) {
-            if ( gi_count == 0 || *it != GI_FROM(TIntId, GI_TO(TIntId, gi_start) + gi_count) ) {
+            if ( gi_count == 0 || *it != gi_start + gi_count ) {
                 if ( gi_count > 0 ) {
                     func(gi_start, gi_count);
                 }
@@ -556,7 +556,7 @@ namespace {
 
         enum { SEPARATE = 3 };
 
-        void operator()(TGi start, int count) const
+        void operator()(TIntId start, int count) const
             {
                 _ASSERT(count > 0);
                 if ( count <= SEPARATE ) {
@@ -651,7 +651,7 @@ namespace {
         TIdSet id_set;
         ITERATE ( set<CSeq_id_Handle>, it, ids ) {
             if ( it->IsGi() ) {
-                gi_set.insert(GI_TO(TGiSet::value_type, it->GetGi()));
+                gi_set.insert(it->GetGi());
             }
             else {
                 id_set.insert(it->GetSeqId());
