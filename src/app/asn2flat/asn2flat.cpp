@@ -290,8 +290,6 @@ int CAsn2FlatApp::Run(void)
         m_FFGenerator->SetAnnotSelector().SetResolveAll();
     }
 
-    m_do_cleanup = ( ! args["nocleanup"]);
-
     auto_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
     if (is.get() == NULL) {
@@ -718,6 +716,8 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 {
     CFlatFileConfig cfg;
     cfg.FromArguments(args);
+    m_do_cleanup = ( ! args["nocleanup"]);
+    cfg.BasicCleanup(false);
 
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
