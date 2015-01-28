@@ -2807,6 +2807,16 @@ void CFlatGatherer::x_GatherFeatures(void) const
         
         // look for the Cdregion feature for this protein
         CBioseq_Handle handle = ( ctx.CanGetMaster() ? ctx.GetMaster().GetHandle() : ctx.GetHandle() );
+        CBioseq_set_Handle bssh = ctx.GetHandle().GetParentBioseq_set();
+        if ( bssh && bssh.CanGetLevel() && bssh.GetLevel() == CBioseq_set::eClass_nuc_prot ) {
+            CBioseq_CI bioseq_ci( bssh, CSeq_inst::eMol_na );
+            if ( bioseq_ci ) {
+                CBioseq_Handle nuc = *bioseq_ci;
+                if ( nuc ) {
+                    handle = nuc;
+                }
+            }
+        }
         CFeat_CI feat_it(handle,
             SAnnotSelector(CSeqFeatData::e_Cdregion)
             .SetByProduct()
