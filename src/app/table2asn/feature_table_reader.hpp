@@ -44,6 +44,8 @@ public:
 
    void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq_Handle bsh, const objects::CSeq_feat& feature_gap);
+   static 
+   void RemoveEmptyFtable(objects::CBioseq& bioseq);
 private:
    CRef<objects::CSeq_entry> TranslateProtein(
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 

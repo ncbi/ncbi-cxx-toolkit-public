@@ -214,6 +214,10 @@ public:
     /// all possible types).
     static const TGapTypeMap & GetNameToGapTypeInfoMap(void);
 
+    // Make case-sensitive and other kinds of insensitivity, too
+    // (such as "spaces" and "underscores" becoming "hyphens"
+    static string CanonicalizeString(const CTempString & sValue);
+
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
     void SetGapLinkageEvidence(CSeq_gap::EType type, CLinkage_evidence::EType evidence);
 
@@ -306,10 +310,6 @@ protected:
 
     std::string x_NucOrProt(void) const;
     
-    // Make case-sensitive and other kinds of insensitivity, too
-    // (such as "spaces" and "underscores" becoming "hyphens"
-    static string CanonicalizeString(const TStr & sValue);
-
 private:
     struct SGap : public CObject {
         enum EKnownSize {

@@ -1139,6 +1139,27 @@ bool CFeatureTableReader::AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_e
     return true;
 }
 
+void CFeatureTableReader::RemoveEmptyFtable(objects::CBioseq& bioseq)
+{
+    if (bioseq.IsSetAnnot())
+    {
+        for (CBioseq::TAnnot::iterator annot_it = bioseq.SetAnnot().begin(); annot_it != bioseq.SetAnnot().end(); ) // no ++
+        {
+            if ((**annot_it).IsFtable() && (**annot_it).GetData().GetFtable().empty())
+            {
+                annot_it = bioseq.SetAnnot().erase(annot_it);
+            }
+            else
+                annot_it++;
+        }
+
+        if (bioseq.GetAnnot().empty())
+        {
+            bioseq.ResetAnnot();
+        }
+    }
+}
+
 CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const CSeq_feat& feature_gap)
 {
     const string& sGT = feature_gap.GetNamedQual(kGapType_qual);
@@ -1148,36 +1169,70 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
     TSeqPos gap_length(kInvalidSeqPos);
 
     CSeq_gap::EType gap_type = CSeq_gap::eType_unknown;
-    CLinkage_evidence::EType evidence = CLinkage_evidence::eType_unspecified;
+    CLinkage_evidence::EType evidence = (CLinkage_evidence::EType)-1; //CLinkage_evidence::eType_unspecified;
 
+    if (!sGT.empty())
     {
         const CEnumeratedTypeValues::TNameToValue& 
             linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
 
-        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(sLE);
+        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString(sLE));
         if (it == linkage_evidence_to_value_map.end())
         {
-            //NCBI_THROW(CArgException, eConvert, "Unrecognized linkage evidence " + args["l"].AsString());
+            m_logger->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                string("Unrecognized linkage evidence ") + sLE)));
+            return CRef<CDelta_seq>(0);
         }
         else
         {
             evidence = (CLinkage_evidence::EType)it->second;
-            gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
         }
     }
 
+    if (!sLE.empty())
     {
-        const CEnumeratedTypeValues::TNameToValue& 
-            gaptype_to_value_map = CSeq_gap::GetTypeInfo_enum_EType()->NameToValue();
+        const CFastaReader::SGapTypeInfo * gap_type_info = 
+            CFastaReader::NameToGapTypeInfo(sGT);
 
-        CEnumeratedTypeValues::TNameToValue::const_iterator it = gaptype_to_value_map.find(sGT);
-        if (it == gaptype_to_value_map.end())
+        if (gap_type_info)
         {
-            //NCBI_THROW(CArgException, eConvert, "Unrecognized gap type " + args["gap-type"].AsString());
+            gap_type = gap_type_info->m_eType;
+            switch (gap_type_info->m_eType)
+            {
+            /// only the "unspecified" linkage-evidence is allowed
+            case CFastaReader::eLinkEvid_UnspecifiedOnly:
+                if (evidence != CLinkage_evidence::eType_unspecified)
+                {
+                    m_logger->PutError(*auto_ptr<CLineError>(
+                        CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                        string("Linkage evidence must not be specified for ") + sGT)));
+                    return CRef<CDelta_seq>(0);
+                }
+                break;
+            /// no linkage-evidence is allowed
+            case CFastaReader::eLinkEvid_Forbidden:
+                if (evidence == CLinkage_evidence::eType_unspecified)
+                {
+                    m_logger->PutError(*auto_ptr<CLineError>(
+                        CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                        string("Linkage evidence must be specified for ") + sGT)));
+                    return CRef<CDelta_seq>(0);
+                }
+                break;
+            /// any linkage-evidence is allowed, and at least one is required
+            case CFastaReader::eLinkEvid_Required:
+                break;
+            default:
+                break;
+            }
         }
         else
         {
-            gap_type = (CSeq_gap::EType)it->second;
+            m_logger->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                string("Unrecognized gap type ") + sGT)));
+            return CRef<CDelta_seq>(0);
         }
     }
 
@@ -1242,24 +1297,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
         }
 
         CBioseq& bioseq = (CBioseq&)*bioseq_it->GetEditHandle().GetCompleteBioseq();
-
-        if (bioseq.IsSetAnnot())
-        {
-            for (CBioseq::TAnnot::iterator annot_it = bioseq.SetAnnot().begin(); annot_it != bioseq.SetAnnot().end(); ) // no ++
-            {
-                if ((**annot_it).IsFtable() && (**annot_it).GetData().GetFtable().empty())
-                {
-                    annot_it = bioseq.SetAnnot().erase(annot_it);
-                }
-                else
-                    annot_it++;
-            }
-
-            if (bioseq_it->GetCompleteBioseq()->GetAnnot().empty())
-            {
-                bioseq.ResetAnnot();
-            }
-        }
+        RemoveEmptyFtable(bioseq);
 
     }
 }
