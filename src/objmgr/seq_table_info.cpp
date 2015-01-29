@@ -119,16 +119,16 @@ void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
                                         const CSeqTableSetLocField& setter) const
 {
     switch ( data.GetValueType() ) {
-    case data.e_Int:
+    case CSeqTable_single_data::e_Int:
         setter.SetInt(loc, data.GetInt());
         return;
-    case data.e_Int8:
+    case CSeqTable_single_data::e_Int8:
         setter.SetInt8(loc, data.GetInt8());
         return;
-    case data.e_Real:
+    case CSeqTable_single_data::e_Real:
         setter.SetReal(loc, data.GetReal());
         return;
-    case data.e_String:
+    case CSeqTable_single_data::e_String:
         setter.SetString(loc, data.GetString());
         return;
     default:
@@ -143,22 +143,22 @@ void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
                                          const CSeqTableSetFeatField& setter) const
 {
     switch ( data.GetValueType() ) {
-    case data.e_Bit:
+    case CSeqTable_single_data::e_Bit:
         setter.SetInt(feat, data.GetBit());
         return;
-    case data.e_Int:
+    case CSeqTable_single_data::e_Int:
         setter.SetInt(feat, data.GetInt());
         return;
-    case data.e_Int8:
+    case CSeqTable_single_data::e_Int8:
         setter.SetInt8(feat, data.GetInt8());
         return;
-    case data.e_Real:
+    case CSeqTable_single_data::e_Real:
         setter.SetReal(feat, data.GetReal());
         return;
-    case data.e_String:
+    case CSeqTable_single_data::e_String:
         setter.SetString(feat, data.GetString());
         return;
-    case data.e_Bytes:
+    case CSeqTable_single_data::e_Bytes:
         setter.SetBytes(feat, data.GetBytes());
         return;
     default:
@@ -174,28 +174,28 @@ bool CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
                                         const CSeqTableSetLocField& setter) const
 {
     switch ( data.GetValueType() ) {
-    case data.e_Int:
+    case CSeqTable_multi_data::e_Int:
         int value_int;
         if ( data.TryGetValue(index, value_int) ) {
             setter.SetInt(loc, value_int);
             return true;
         }
         break;
-    case data.e_Int8:
+    case CSeqTable_multi_data::e_Int8:
         Int8 value_int8;
         if ( data.TryGetValue(index, value_int8) ) {
             setter.SetInt8(loc, value_int8);
             return true;
         }
         break;
-    case data.e_Real:
+    case CSeqTable_multi_data::e_Real:
         double value_real;
         if ( data.TryGetValue(index, value_real) ) {
             setter.SetReal(loc, value_real);
             return true;
         }
         break;
-    case data.e_String:
+    case CSeqTable_multi_data::e_String:
         if ( const string* ptr = data.GetStringPtr(index) ) {
             setter.SetString(loc, *ptr);
             return true;
@@ -215,34 +215,34 @@ bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
                                          const CSeqTableSetFeatField& setter) const
 {
     switch ( data.GetValueType() ) {
-    case data.e_Int:
+    case CSeqTable_multi_data::e_Int:
         int value_int;
         if ( data.TryGetValue(index, value_int) ) {
             setter.SetInt(feat, value_int);
             return true;
         }
         break;
-    case data.e_Int8:
+    case CSeqTable_multi_data::e_Int8:
         Int8 value_int8;
         if ( data.TryGetValue(index, value_int8) ) {
             setter.SetInt8(feat, value_int8);
             return true;
         }
         break;
-    case data.e_Real:
+    case CSeqTable_multi_data::e_Real:
         double value_real;
         if ( data.TryGetValue(index, value_real) ) {
             setter.SetReal(feat, value_real);
             return true;
         }
         break;
-    case data.e_String:
+    case CSeqTable_multi_data::e_String:
         if ( const string* ptr = data.GetStringPtr(index) ) {
             setter.SetString(feat, *ptr);
             return true;
         }
         break;
-    case data.e_Bytes:
+    case CSeqTable_multi_data::e_Bytes:
         if ( const vector<char>* ptr = data.GetBytesPtr(index) ) {
             setter.SetBytes(feat, *ptr);
             return true;
