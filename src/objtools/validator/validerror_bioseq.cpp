@@ -2015,7 +2015,7 @@ size_t CValidError_bioseq::NumOfIntervals(const CSeq_loc& loc)
 {
     size_t counter = 0;
     for ( CSeq_loc_CI slit(loc); slit; ++slit ) {
-        if ( !m_Imp.IsFarLocation(slit.GetEmbeddingSeq_loc()) ) {
+        if ( !IsFarLocation(slit.GetEmbeddingSeq_loc(), m_Imp.GetTSEH()) ) {
             ++counter;
         }
     }
@@ -5284,7 +5284,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
                 }    
 
-                if ( !is_nc  &&  !is_emb  &&  m_Imp.IsFarLocation(feat.GetLocation()) ) {
+                if ( !is_nc  &&  !is_emb  &&  IsFarLocation(feat.GetLocation(), m_Imp.GetTSEH()) ) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
                         "Feature has 'far' location - accession not packaged in record",
                         feat);

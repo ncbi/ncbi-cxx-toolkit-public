@@ -2158,23 +2158,6 @@ bool CValidError_imp::IsNucAcc(const string& acc)
 }
 
 
-bool CValidError_imp::IsFarLocation(const CSeq_loc& loc)
-{
-    for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
-        CConstRef<CSeq_id> id(&citer.GetSeq_id());
-        if ( id ) {
-            CBioseq_Handle near_seq = 
-                m_Scope->GetBioseqHandleFromTSE(*id, GetTSE());
-            if ( !near_seq ) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-
 CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 {
     CConstRef<CSeq_feat> feat;
@@ -2829,13 +2812,13 @@ bool CValidError_imp::x_IsFarFetchFailure (const CSeq_loc& loc)
             m_Scope->GetBioseqHandleFromTSE(prod_id, GetTSE());
         if ( !prod ) {
             if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
-                && IsFarLocation(loc)) {
+                && IsFarLocation(loc, GetTSEH())) {
                 rval = true;
             }                        
         }
     } else {
         if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
-            && IsFarLocation(loc)) {
+            && IsFarLocation(loc, GetTSEH())) {
             rval = true;
         }
     }

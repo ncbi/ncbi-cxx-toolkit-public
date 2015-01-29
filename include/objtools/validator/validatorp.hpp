@@ -644,7 +644,6 @@ public:
     void ReportMissingBiosource(const CSeq_entry& se);
 
     bool IsNucAcc(const string& acc);
-    bool IsFarLocation(const CSeq_loc& loc);
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
     CConstRef<CSeq_feat> GetmRNAGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);

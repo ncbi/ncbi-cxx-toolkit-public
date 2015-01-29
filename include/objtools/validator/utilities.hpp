@@ -71,6 +71,7 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope);
 bool IsBlankStringList(const list< string >& str_list);
 TGi GetGIForSeqId(const CSeq_id& id);
 CScope::TIds GetSeqIdsForGI(TGi gi);
+bool NCBI_VALIDATOR_EXPORT IsFarLocation(const CSeq_loc& loc, const CSeq_entry_Handle& seh);
 
 CSeqVector GetSequenceFromLoc(const CSeq_loc& loc, CScope& scope,
     CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac);

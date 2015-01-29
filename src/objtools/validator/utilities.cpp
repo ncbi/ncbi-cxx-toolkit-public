@@ -124,8 +124,8 @@ TGi GetGIForSeqId(const CSeq_id& id)
     try {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
         gi = scope->GetGi (idh);
-	} catch (CException &) {
-	} catch (std::exception &) {
+    } catch (CException &) {
+    } catch (std::exception &) {
     }
     return gi;
 }
@@ -143,12 +143,27 @@ CScope::TIds GetSeqIdsForGI(TGi gi)
     try {
         id_list = scope->GetIds(tmp_id);
 
-	} catch (CException &) {
-	} catch (std::exception &) {
+    } catch (CException &) {
+    } catch (std::exception &) {
     }
     return id_list;
 }
 
+bool IsFarLocation(const CSeq_loc& loc, const CSeq_entry_Handle& seh)
+{
+    CScope& scope = seh.GetScope();
+    for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
+        CConstRef<CSeq_id> id(&citer.GetSeq_id());
+        if ( id ) {
+            CBioseq_Handle near_seq = scope.GetBioseqHandleFromTSE(*id, seh);
+            if ( !near_seq ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 string GetSequenceStringFromLoc
 (const CSeq_loc& loc,
@@ -978,7 +993,7 @@ bool IsRefGeneTrackingObject (const CUser_object& user)
 
     if (user.IsSetType()) {
         const CObject_id& oi = user.GetType();
-	    if (oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
+        if (oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
             rval = true;
         }
     }
@@ -1824,24 +1839,24 @@ IsDuplicate
 
 bool IsCommonName (const CT3Data& data)
 {
-	bool is_common = false;
-	
-	if (data.IsSetStatus()) {
-		ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
-			if ((*status_it)->IsSetProperty() 
-				&& NStr::Equal((*status_it)->GetProperty(), "old_name_class", NStr::eNocase)) {
-				if ((*status_it)->IsSetValue() && (*status_it)->GetValue().IsStr()) {
-					string value_str = (*status_it)->GetValue().GetStr();
-					if (NStr::Equal(value_str, "common name", NStr::eCase) 
-						|| NStr::Equal(value_str, "genbank common name", NStr::eCase)) {
-						is_common = true;
+    bool is_common = false;
+    
+    if (data.IsSetStatus()) {
+        ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
+            if ((*status_it)->IsSetProperty() 
+                && NStr::Equal((*status_it)->GetProperty(), "old_name_class", NStr::eNocase)) {
+                if ((*status_it)->IsSetValue() && (*status_it)->GetValue().IsStr()) {
+                    string value_str = (*status_it)->GetValue().GetStr();
+                    if (NStr::Equal(value_str, "common name", NStr::eCase) 
+                        || NStr::Equal(value_str, "genbank common name", NStr::eCase)) {
+                        is_common = true;
                         break;
-					}
-				}
-			}
-		}
-	}
-	return is_common;
+                    }
+                }
+            }
+        }
+    }
+    return is_common;
 }
 
 bool HasMisSpellFlag (const CT3Data& data)
@@ -1893,7 +1908,7 @@ bool FindMatchInOrgRef (string str, const COrg_ref& org)
             }
         }
     }
-	return NStr::EqualCase(str, match);
+    return NStr::EqualCase(str, match);
 }
 
 
@@ -1963,8 +1978,8 @@ string SpecificHostValueToCheck(const string& val)
 string InterpretSpecificHostResult(const string& host, const CT3Reply& reply)
 {
     string err_str = "";
-	if (reply.IsError()) {
-		err_str = "?";
+    if (reply.IsError()) {
+        err_str = "?";
         if (reply.GetError().IsSetMessage()) {
             err_str = reply.GetError().GetMessage();
         }
@@ -1973,57 +1988,57 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply)
         } else {
             err_str = "Invalid value for specific host: " + host;
         }
-	} else if (reply.IsData()) {
-		if (HasMisSpellFlag(reply.GetData())) {
+    } else if (reply.IsData()) {
+        if (HasMisSpellFlag(reply.GetData())) {
             err_str = "Specific host value is misspelled: " + host;
-		} else if (reply.GetData().IsSetOrg()) {
-			if ( ! FindMatchInOrgRef (host, reply.GetData().GetOrg()) && ! IsCommonName(reply.GetData())) {
+        } else if (reply.GetData().IsSetOrg()) {
+            if ( ! FindMatchInOrgRef (host, reply.GetData().GetOrg()) && ! IsCommonName(reply.GetData())) {
                 err_str = "Specific host value is incorrectly capitalized: " + host;
-			}
-		} else {
-			err_str = "Invalid value for specific host: " + host;
-		}
-	}
+            }
+        } else {
+            err_str = "Invalid value for specific host: " + host;
+        }
+    }
     return err_str;
 }
 
 
 bool IsSpecificHostValid(const string& val, string& error_msg)
 {
-	bool is_valid = true;
-	error_msg = kEmptyStr;
-	
+    bool is_valid = true;
+    error_msg = kEmptyStr;
+    
     // only check host values that start with a capital letter and have at least two words
     string host = SpecificHostValueToCheck(val);
     if (!NStr::IsBlank(host)) {
-	    vector<CRef<COrg_ref> > org_req_list;
-	    CRef<COrg_ref> req(new COrg_ref());
-	    req->SetTaxname(host);
-	    org_req_list.push_back(req);
-	
-	    CTaxon3 taxon3;
-	    taxon3.Init();
-	    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
-	    if (reply && reply->GetReply().size() == 1) {
-		    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+        vector<CRef<COrg_ref> > org_req_list;
+        CRef<COrg_ref> req(new COrg_ref());
+        req->SetTaxname(host);
+        org_req_list.push_back(req);
+    
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+        if (reply && reply->GetReply().size() == 1) {
+            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
             error_msg = InterpretSpecificHostResult(host, **reply_it);
             if (!NStr::IsBlank(error_msg)) {
                 is_valid = false;
             }
-	    } else {
-		    error_msg = "Invalid value for specific host: " + host;
-	    }
+        } else {
+            error_msg = "Invalid value for specific host: " + host;
+        }
     }
-	
-	return is_valid;
+    
+    return is_valid;
 }
 
 string FixSpecificHost(const string& val)
 {
-	string hostfix = val;
-	if (NStr::IsBlank(val)) {
-		return hostfix;
-	}
+    string hostfix = val;
+    if (NStr::IsBlank(val)) {
+        return hostfix;
+    }
 
     NStr::TruncateSpacesInPlace(hostfix);
 
@@ -2033,44 +2048,44 @@ string FixSpecificHost(const string& val)
     if (IsSpecificHostValid(hostfix, errormsg)) {
         return hostfix;
     }
-	
-	string host = val;
-	
-	AdjustSpecificHostForTaxServer(host);
-	vector<CRef<COrg_ref> > org_req_list;
-	CRef<COrg_ref> req(new COrg_ref());
-	req->SetTaxname(host);
-	org_req_list.push_back(req);
-	
-	CTaxon3 taxon3;
-	taxon3.Init();
-	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
-	bool corrected = false;
-	if (reply && reply->GetReply().size() == 1) {
-		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-		if ((*reply_it)->IsError()) {
-			hostfix = kEmptyStr;
-		} else if ((*reply_it)->IsData()) {
-			if (HasMisSpellFlag((*reply_it)->GetData()) && (*reply_it)->GetData().IsSetOrg()) {
-				hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
-				corrected = true;
-			} else if ((*reply_it)->GetData().IsSetOrg()) {
-				if (! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())
-					&& ! IsCommonName((*reply_it)->GetData())) {
-						hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
-						corrected = true;
-					}
-			} else  {
-				hostfix = kEmptyStr;
-			}
-		}
-	}
-	if ( !corrected && ! NStr::IsBlank(hostfix)) {
-		NStr::ReplaceInPlace(hostfix, "  ", " ");
-		NStr::TruncateSpacesInPlace(hostfix);
-	}	
-	
-	return hostfix;
+    
+    string host = val;
+    
+    AdjustSpecificHostForTaxServer(host);
+    vector<CRef<COrg_ref> > org_req_list;
+    CRef<COrg_ref> req(new COrg_ref());
+    req->SetTaxname(host);
+    org_req_list.push_back(req);
+    
+    CTaxon3 taxon3;
+    taxon3.Init();
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+    bool corrected = false;
+    if (reply && reply->GetReply().size() == 1) {
+        CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+        if ((*reply_it)->IsError()) {
+            hostfix = kEmptyStr;
+        } else if ((*reply_it)->IsData()) {
+            if (HasMisSpellFlag((*reply_it)->GetData()) && (*reply_it)->GetData().IsSetOrg()) {
+                hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
+                corrected = true;
+            } else if ((*reply_it)->GetData().IsSetOrg()) {
+                if (! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())
+                    && ! IsCommonName((*reply_it)->GetData())) {
+                        hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
+                        corrected = true;
+                    }
+            } else  {
+                hostfix = kEmptyStr;
+            }
+        }
+    }
+    if ( !corrected && ! NStr::IsBlank(hostfix)) {
+        NStr::ReplaceInPlace(hostfix, "  ", " ");
+        NStr::TruncateSpacesInPlace(hostfix);
+    }	
+    
+    return hostfix;
 }
 
 
