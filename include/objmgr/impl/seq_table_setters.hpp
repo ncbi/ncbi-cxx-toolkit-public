@@ -104,6 +104,7 @@ public:
     CSeqTableSetExt(const CTempString& name);
 
     virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetInt8(CSeq_feat& feat, Int8 value) const;
     virtual void SetReal(CSeq_feat& feat, double value) const;
     virtual void SetString(CSeq_feat& feat, const string& value) const;
     virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;
@@ -127,6 +128,7 @@ public:
         }
 
     virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetInt8(CSeq_feat& feat, Int8 value) const;
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 
 private:
@@ -138,6 +140,7 @@ class CSeqTableSetExtType : public CSeqTableSetFeatField
 {
 public:
     virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetInt8(CSeq_feat& feat, Int8 value) const;
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
@@ -223,6 +226,7 @@ public:
     CObjectInfo GetFinalObject(CObjectInfo obj) const;
 
     void SetObjectField(CObjectInfo obj, int value) const;
+    void SetObjectField(CObjectInfo obj, Int8 value) const;
     void SetObjectField(CObjectInfo obj, double value) const;
     void SetObjectField(CObjectInfo obj, const string& value) const;
     void SetObjectField(CObjectInfo obj, const vector<char>& value) const;
@@ -242,6 +246,7 @@ public:
     CSeqTableSetAnyLocField(const CTempString& field);
 
     virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetInt8(CSeq_loc& loc, Int8 value) const;
     virtual void SetReal(CSeq_loc& loc, double value) const;
     virtual void SetString(CSeq_loc& loc, const string& value) const;
     virtual void SetBytes(CSeq_loc& loc, const vector<char>& value) const;
@@ -255,6 +260,7 @@ public:
     CSeqTableSetAnyFeatField(const CTempString& field);
 
     virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetInt8(CSeq_feat& feat, Int8 value) const;
     virtual void SetReal(CSeq_feat& feat, double value) const;
     virtual void SetString(CSeq_feat& feat, const string& value) const;
     virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;

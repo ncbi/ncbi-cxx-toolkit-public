@@ -95,22 +95,6 @@ CTableFieldHandle_Base::x_FindColumn(const CSeq_annot_Info& annot) const
 }
 
 
-inline
-const CSeqTable_column*
-CTableFieldHandle_Base::x_FindColumn(const CSeq_annot_Handle& annot) const
-{
-    return x_FindColumn(annot.x_GetInfo());
-}
-
-
-inline
-const CSeqTable_column*
-CTableFieldHandle_Base::x_FindColumn(const CFeat_CI& feat_ci) const
-{
-    return x_FindColumn(feat_ci.Get().GetSeq_annot_Info());
-}
-
-
 const CSeqTable_column&
 CTableFieldHandle_Base::x_GetColumn(const CSeq_annot_Info& annot) const
 {
@@ -131,162 +115,6 @@ CTableFieldHandle_Base::x_GetColumn(const CSeq_annot_Info& annot) const
 }
 
 
-inline
-const CSeqTable_column&
-CTableFieldHandle_Base::x_GetColumn(const CSeq_annot_Handle& annot) const
-{
-    return x_GetColumn(annot.x_GetInfo());
-}
-
-
-inline
-const CSeqTable_column&
-CTableFieldHandle_Base::x_GetColumn(const CFeat_CI& feat_ci) const
-{
-    return x_GetColumn(feat_ci.Get().GetSeq_annot_Info());
-}
-
-
-inline
-size_t CTableFieldHandle_Base::x_GetRow(const CFeat_CI& feat_ci) const
-{
-    return feat_ci.Get().GetAnnotIndex();
-}
-
-
-bool CTableFieldHandle_Base::IsSet(const CFeat_CI& feat_ci) const
-{
-    return x_GetColumn(feat_ci).IsSet(x_GetRow(feat_ci));
-}
-
-
-bool CTableFieldHandle_Base::IsSet(const CSeq_annot_Handle& annot,
-                                   size_t row) const
-{
-    return x_GetColumn(annot).IsSet(row);
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
-                                    bool& v) const
-{
-    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
-        return column->TryGetBool(x_GetRow(feat_ci), v);
-    }
-    return false;
-}
-
-
-void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
-                                 bool& v) const
-{
-    if ( !TryGet(feat_ci, v) ) {
-        x_ThrowUnsetValue();
-    }
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
-                                    int& v) const
-{
-    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
-        return column->TryGetInt(x_GetRow(feat_ci), v);
-    }
-    return false;
-}
-
-
-void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
-                                 int& v) const
-{
-    if ( !TryGet(feat_ci, v) ) {
-        x_ThrowUnsetValue();
-    }
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
-                                    size_t row,
-                                    bool& v) const
-{
-    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
-        return column->TryGetBool(row, v);
-    }
-    return false;
-}
-
-
-void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
-                                 size_t row,
-                                 bool& v) const
-{
-    if ( !TryGet(annot, row, v) ) {
-        x_ThrowUnsetValue();
-    }
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
-                                    size_t row,
-                                    int& v) const
-{
-    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
-        return column->TryGetInt(row, v);
-    }
-    return false;
-}
-
-
-void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
-                                 size_t row,
-                                 int& v) const
-{
-    if ( !TryGet(annot, row, v) ) {
-        x_ThrowUnsetValue();
-    }
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
-                                    double& v) const
-{
-    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
-        return column->TryGetReal(x_GetRow(feat_ci), v);
-    }
-    return false;
-}
-
-
-void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
-                                 double& v) const
-{
-    if ( !TryGet(feat_ci, v) ) {
-        x_ThrowUnsetValue();
-    }
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
-                                    size_t row,
-                                    double& v) const
-{
-    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
-        return column->TryGetReal(row, v);
-    }
-    return false;
-}
-
-
-void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
-                                 size_t row,
-                                 double& v) const
-{
-    if ( !TryGet(annot, row, v) ) {
-        x_ThrowUnsetValue();
-    }
-}
-
-
 const string*
 CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
                                const string* /*dummy*/,
@@ -300,29 +128,6 @@ CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
         x_ThrowUnsetValue();
     }
     return ret;
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
-                                    string& v) const
-{
-    const string* ptr = 0;
-    ptr = GetPtr(feat_ci, ptr, false);
-    if ( ptr ) {
-        v = *ptr;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-
-void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
-                                 string& v) const
-{
-    const string* ptr = 0;
-    v = *GetPtr(feat_ci, ptr, true);
 }
 
 
@@ -343,31 +148,6 @@ CTableFieldHandle_Base::GetPtr(const CSeq_annot_Handle& annot,
 }
 
 
-bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
-                                    size_t row,
-                                    string& v) const
-{
-    const string* ptr = 0;
-    ptr = GetPtr(annot, row, ptr, false);
-    if ( ptr ) {
-        v = *ptr;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-
-void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
-                                 size_t row,
-                                 string& v) const
-{
-    const string* ptr = 0;
-    v = *GetPtr(annot, row, ptr, true);
-}
-
-
 const vector<char>*
 CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
                                const vector<char>* /*dummy*/,
@@ -381,29 +161,6 @@ CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
         x_ThrowUnsetValue();
     }
     return ret;
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
-                                    vector<char>& v) const
-{
-    const vector<char>* ptr = 0;
-    ptr = GetPtr(feat_ci, ptr, false);
-    if ( ptr ) {
-        v = *ptr;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-
-void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
-                                 vector<char>& v) const
-{
-    const vector<char>* ptr = 0;
-    v = *GetPtr(feat_ci, ptr, true);
 }
 
 
@@ -421,31 +178,6 @@ CTableFieldHandle_Base::GetPtr(const CSeq_annot_Handle& annot,
         x_ThrowUnsetValue();
     }
     return ret;
-}
-
-
-bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
-                                    size_t row,
-                                    vector<char>& v) const
-{
-    const vector<char>* ptr = 0;
-    ptr = GetPtr(annot, row, ptr, false);
-    if ( ptr ) {
-        v = *ptr;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-
-void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
-                                 size_t row,
-                                 vector<char>& v) const
-{
-    const vector<char>* ptr = 0;
-    v = *GetPtr(annot, row, ptr, true);
 }
 
 

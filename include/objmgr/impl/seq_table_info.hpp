@@ -90,48 +90,16 @@ public:
             bool val = false;
             return *this && m_Column->TryGetBool(row, val) && val;
         }
-    bool GetBool(size_t row, bool& v, bool force = false) const
+    template<class Value>
+    bool GetValue(size_t row, Value& v, bool force = false) const
         {
-            return m_Column->TryGetBool(row, v) ||
+            return m_Column->TryGetValue(row, v) ||
                 (force && x_ThrowUnsetValue());
         }
-    bool GetInt(size_t row, int& v, bool force = false) const
-        {
-            return m_Column->TryGetInt(row, v) ||
-                (force && x_ThrowUnsetValue());
-        }
-    bool GetReal(size_t row, double& v, bool force = false) const
-        {
-            return m_Column->TryGetReal(row, v) ||
-                (force && x_ThrowUnsetValue());
-        }
-    bool GetString(size_t row, string& v, bool force = false) const;
-    bool GetBytes(size_t row, vector<char>& v, bool force = false) const;
     const string* GetStringPtr(size_t row, bool force = false) const;
     const vector<char>* GetBytesPtr(size_t row, bool force = false) const;
     CConstRef<CSeq_id> GetSeq_id(size_t row, bool force = false) const;
     CConstRef<CSeq_loc> GetSeq_loc(size_t row, bool force = false) const;
-
-    bool GetValue(size_t row, bool& value, bool force = false) const
-        {
-            return GetBool(row, value, force);
-        }
-    bool GetValue(size_t row, int& value, bool force = false) const
-        {
-            return GetInt(row, value, force);
-        }
-    bool GetValue(size_t row, double& value, bool force = false) const
-        {
-            return GetReal(row, value, force);
-        }
-    bool GetValue(size_t row, string& value, bool force = false) const
-        {
-            return GetString(row, value, force);
-        }
-    bool GetValue(size_t row, vector<char>& value, bool force = false) const
-        {
-            return GetBytes(row, value, force);
-        }
 
     void UpdateSeq_loc(CSeq_loc& loc, size_t row,
                        const CSeqTableSetLocField& setter) const;

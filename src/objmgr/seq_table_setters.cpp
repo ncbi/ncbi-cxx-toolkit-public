@@ -60,6 +60,13 @@ void CSeqTableSetFeatField::SetInt(CSeq_feat& feat, int value) const
 }
 
 
+void CSeqTableSetFeatField::SetInt8(CSeq_feat& feat, Int8 value) const
+{
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-feat field value: "<<value);
+}
+
+
 void CSeqTableSetFeatField::SetReal(CSeq_feat& feat, double value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
@@ -88,6 +95,13 @@ CSeqTableSetLocField::~CSeqTableSetLocField()
 
 
 void CSeqTableSetLocField::SetInt(CSeq_loc& loc, int value) const
+{
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-loc field value: "<<value);
+}
+
+
+void CSeqTableSetLocField::SetInt8(CSeq_loc& loc, Int8 value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
@@ -208,6 +222,13 @@ void CSeqTableSetExt::SetInt(CSeq_feat& feat, int value) const
 }
 
 
+void CSeqTableSetExt::SetInt8(CSeq_feat& feat, Int8 value) const
+{
+    // TODO: Int8 in User-field
+    x_SetField(feat).SetData().SetInt(value);
+}
+
+
 void CSeqTableSetExt::SetReal(CSeq_feat& feat, double value) const
 {
     x_SetField(feat).SetData().SetReal(value);
@@ -235,6 +256,15 @@ void CSeqTableSetDbxref::SetInt(CSeq_feat& feat, int value) const
 }
 
 
+void CSeqTableSetDbxref::SetInt8(CSeq_feat& feat, Int8 value) const
+{
+    CRef<CDbtag> dbtag(new CDbtag);
+    dbtag->SetDb(name);
+    dbtag->SetTag().SetId8(value);
+    feat.SetDbxref().push_back(dbtag);
+}
+
+
 void CSeqTableSetDbxref::SetString(CSeq_feat& feat, const string& value) const
 {
     CRef<CDbtag> dbtag(new CDbtag);
@@ -247,6 +277,12 @@ void CSeqTableSetDbxref::SetString(CSeq_feat& feat, const string& value) const
 void CSeqTableSetExtType::SetInt(CSeq_feat& feat, int value) const
 {
     feat.SetExt().SetType().SetId(value);
+}
+
+
+void CSeqTableSetExtType::SetInt8(CSeq_feat& feat, Int8 value) const
+{
+    feat.SetExt().SetType().SetId8(value);
 }
 
 
@@ -413,6 +449,24 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
 
 
 void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
+                                             Int8 value) const
+{
+    ITERATE ( TNexters, it, m_Nexters ) {
+        obj = (*it)->GetNextObject(obj);
+    }
+    if ( !m_SetUserField.empty() ) {
+        CUser_field* field = CType<CUser_field>::Get(obj);
+        field->SetLabel().SetStr(m_SetUserField);
+        // TODO: Int8 in User-field
+        field->SetData().SetInt(int(value));
+    }
+    else if ( m_SetFinalObject ) {
+        obj.GetPrimitiveTypeInfo()->SetValueInt8(obj.GetObjectPtr(), value);
+    }
+}
+
+
+void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
                                              double value) const
 {
     ITERATE ( TNexters, it, m_Nexters ) {
@@ -475,6 +529,12 @@ void CSeqTableSetAnyLocField::SetInt(CSeq_loc& obj, int value) const
 }
 
 
+void CSeqTableSetAnyLocField::SetInt8(CSeq_loc& obj, Int8 value) const
+{
+    SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
+}
+
+
 void CSeqTableSetAnyLocField::SetReal(CSeq_loc& obj, double value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
@@ -500,6 +560,12 @@ CSeqTableSetAnyFeatField::CSeqTableSetAnyFeatField(const CTempString& field)
 
 
 void CSeqTableSetAnyFeatField::SetInt(CSeq_feat& obj, int value) const
+{
+    SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
+}
+
+
+void CSeqTableSetAnyFeatField::SetInt8(CSeq_feat& obj, Int8 value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }

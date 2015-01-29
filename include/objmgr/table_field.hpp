@@ -66,30 +66,28 @@ public:
         return m_FieldName;
     }
 
-    bool IsSet(const CFeat_CI& feat_ci) const;
-    bool IsSet(const CSeq_annot_Handle& annot, size_t row) const;
+    bool IsSet(const CFeat_CI& feat_ci) const {
+        return x_GetColumn(feat_ci).IsSet(x_GetRow(feat_ci));
+    }
+    bool IsSet(const CSeq_annot_Handle& annot, size_t row) const {
+        return x_GetColumn(annot).IsSet(row);
+    }
 
-    void Get(const CFeat_CI& feat_ci, bool& v) const;
-    void Get(const CFeat_CI& feat_ci, int& v) const;
-    void Get(const CFeat_CI& feat_ci, double& v) const;
-    void Get(const CFeat_CI& feat_ci, string& v) const;
-    void Get(const CFeat_CI& feat_ci, vector<char>& v) const;
-    void Get(const CSeq_annot_Handle& annot, size_t row, bool& v) const;
-    void Get(const CSeq_annot_Handle& annot, size_t row, int& v) const;
-    void Get(const CSeq_annot_Handle& annot, size_t row, double& v) const;
-    void Get(const CSeq_annot_Handle& annot, size_t row, string& v) const;
-    void Get(const CSeq_annot_Handle& annot, size_t row, vector<char>& v) const;
+    template<class Value>
+    bool TryGet(const CFeat_CI& feat_ci, Value& v) const {
+        if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+            return column->TryGetValue(x_GetRow(feat_ci), v);
+        }
+        return false;
+    }
 
-    bool TryGet(const CFeat_CI& feat_ci, bool& v) const;
-    bool TryGet(const CFeat_CI& feat_ci, int& v) const;
-    bool TryGet(const CFeat_CI& feat_ci, double& v) const;
-    bool TryGet(const CFeat_CI& feat_ci, string& v) const;
-    bool TryGet(const CFeat_CI& feat_ci, vector<char>& v) const;
-    bool TryGet(const CSeq_annot_Handle& annot, size_t row, bool& v) const;
-    bool TryGet(const CSeq_annot_Handle& annot, size_t row, int& v) const;
-    bool TryGet(const CSeq_annot_Handle& annot, size_t row, double& v) const;
-    bool TryGet(const CSeq_annot_Handle& annot, size_t row, string& v) const;
-    bool TryGet(const CSeq_annot_Handle& annot, size_t row, vector<char>& v) const;
+    template<class Value>
+    bool TryGet(const CSeq_annot_Handle& annot, size_t row, Value& v) const {
+        if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+            return column->TryGetValue(row, v);
+        }
+        return false;
+    }
 
     const string* GetPtr(const CFeat_CI& feat_ci,
                          const string* dummy,
@@ -108,14 +106,27 @@ public:
     
 protected:
     bool x_ThrowUnsetValue(void) const;
-    const CSeqTable_column* x_FindColumn(const CFeat_CI& feat_ci) const;
-    const CSeqTable_column* x_FindColumn(const CSeq_annot_Info& annot) const;
-    const CSeqTable_column* x_FindColumn(const CSeq_annot_Handle& annot) const;
-    const CSeqTable_column& x_GetColumn(const CFeat_CI& feat_ci) const;
-    const CSeqTable_column& x_GetColumn(const CSeq_annot_Info& annot) const;
-    const CSeqTable_column& x_GetColumn(const CSeq_annot_Handle& annot) const;
 
-    size_t x_GetRow(const CFeat_CI& feat_ci) const;
+    const CSeqTable_column* x_FindColumn(const CSeq_annot_Info& annot) const;
+    const CSeqTable_column& x_GetColumn(const CSeq_annot_Info& annot) const;
+
+    const CSeqTable_column* x_FindColumn(const CSeq_annot_Handle& annot) const {
+        return x_FindColumn(annot.x_GetInfo());
+    }
+    const CSeqTable_column* x_FindColumn(const CFeat_CI& feat_ci) const {
+        return x_FindColumn(feat_ci.Get().GetSeq_annot_Info());
+    }
+
+    const CSeqTable_column& x_GetColumn(const CSeq_annot_Handle& annot) const {
+        return x_GetColumn(annot.x_GetInfo());
+    }
+    const CSeqTable_column& x_GetColumn(const CFeat_CI& feat_ci) const {
+        return x_GetColumn(feat_ci.Get().GetSeq_annot_Info());
+    }
+
+    size_t x_GetRow(const CFeat_CI& feat_ci) const {
+        return feat_ci.Get().GetAnnotIndex();
+    }
 
     int m_FieldId;
     string m_FieldName;
@@ -138,13 +149,34 @@ public:
     CTableFieldHandle(const string& field_name)
         : CTableFieldHandle_Base(field_name) {
     }
+    /*
     const TFieldType* GetPtr(const CFeat_CI& feat_ci) const {
         const TFieldType* dummy = 0;
         return CTableFieldHandle_Base::GetPtr(feat_ci, dummy, false);
     }
-    const TFieldType& Get(const CFeat_CI& feat_ci) const {
-        const TFieldType* dummy = 0;
-        return *CTableFieldHandle_Base::GetPtr(feat_ci, dummy, true);
+    */
+    void Get(const CFeat_CI& feat_ci, TFieldType& v) const {
+        if ( !TryGet(feat_ci, v) ) {
+            x_ThrowUnsetValue();
+        }
+    }
+    
+    void Get(const CSeq_annot_Handle& annot, size_t row, TFieldType& v) const {
+        if ( !TryGet(annot, row, v) ) {
+            x_ThrowUnsetValue();
+        }
+    }
+
+    TFieldType Get(const CFeat_CI& feat_ci) const {
+        TFieldType value;
+        Get(feat_ci, value);
+        return value;
+    }
+
+    TFieldType Get(const CSeq_annot_Handle& annot, size_t row) const {
+        TFieldType value;
+        Get(annot, row, value);
+        return value;
     }
 };
 
