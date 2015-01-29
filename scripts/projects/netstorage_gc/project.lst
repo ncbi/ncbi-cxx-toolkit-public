@@ -1,0 +1,32 @@
+corelib$
+util$
+util/regexp$
+util/compress
+util/fileblobstorage$
+util/qparse$
+util/bitset$ update-only
+util/cache$ update-only
+util/math$ update-only
+connect$
+connect/ext$
+connect/services$
+db$
+db/bdb$
+app$
+app/netstorage$
+app/netstorage/utils$
+dll
+misc$
+misc/third_party
+misc/third_party_static
+misc/netstorage
+dbapi$
+dbapi/driver$
+dbapi/driver/impl$
+dbapi/driver/util$ update-only
+dbapi/driver/odbc/unix_odbc$ update-only
+dbapi/driver/ctlib$
+dbapi/driver/ftds64$
+dbapi/driver/ftds64/freetds
+dbapi/driver/ftds64/ctlib$
+dbapi/simple$
