@@ -157,7 +157,7 @@ s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv)
     slot_srv->peer->ConnOk();
     if (slot_srv->is_by_blobs)
         slot_srv->was_blobs_sync = true;
-    if (!slot_srv->made_initial_sync  &&  !CNCServer::IsInitiallySynced())
+    if (!slot_srv->made_initial_sync)
     {
         slot_srv->made_initial_sync = true;
         slot_srv->peer->AddInitiallySyncedSlot();
@@ -377,14 +377,14 @@ CNCPeriodicSync::ReInitialize(void)
             return;
         }
     }
+    CNCServer::InitialSyncRequired();
+    CNCPeerControl::ResetServersForInitSync();
     ITERATE(TSyncSlotsList, sl, s_SlotsList) {
         ITERATE(TSlotSrvsList, srv, (*sl)->srvs) {
             (*srv)->made_initial_sync = false;
             (*srv)->peer->ResetSlotsForInitSync();
         }
     }
-    CNCPeerControl::ResetServersForInitSync();
-    CNCServer::InitialSyncRequired();
 }
 
 void
