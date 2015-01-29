@@ -55,7 +55,8 @@ public:
 
     vector<string>  GetGCCandidates(void);
     int             GetDBStructureVersion(void);
-    void            RemoveObject(const string &  locator, bool  dryrun);
+    void            RemoveObject(const string &  locator, bool  dryrun,
+                                 const string &  hit_id);
 
 private:
     void x_Connect(void);

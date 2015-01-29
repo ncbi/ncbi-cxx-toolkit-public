@@ -196,7 +196,8 @@ CNetStorageGCDatabase::GetDBStructureVersion(void)
 
 
 void
-CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun)
+CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
+                                    const string &  hit_id)
 {
     CRef<CRequestContext>   ctx;
 
@@ -214,6 +215,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun)
         ctx.Reset(new CRequestContext());
         ctx->SetRequestID();
         GetDiagContext().SetRequestContext(ctx);
+        ctx->SetHitID(hit_id);
         GetDiagContext().PrintRequestStart()
                         .Print("action", "meta_attributes_remove")
                         .Print("locator", locator);
@@ -271,6 +273,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun)
         ctx.Reset(new CRequestContext());
         ctx->SetRequestID();
         GetDiagContext().SetRequestContext(ctx);
+        ctx->SetHitID(hit_id);
         GetDiagContext().PrintRequestStart()
                         .Print("action", "meta_object_remove")
                         .Print("locator", locator);

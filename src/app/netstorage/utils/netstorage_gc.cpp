@@ -182,6 +182,9 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
 
     for (vector<string>::const_iterator  k = locators.begin();
             k != locators.end(); ++k) {
+
+        const string &      hit_id = CDiagContext::GetRequestContext()
+                                                                .SetHitID();
         try {
             if (verbose)
                 cout << "Removing backend storage object " << *k << endl;
@@ -189,6 +192,7 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
             ctx.Reset(new CRequestContext());
             ctx->SetRequestID();
             GetDiagContext().SetRequestContext(ctx);
+            ctx->SetHitID(hit_id);
             GetDiagContext().PrintRequestStart()
                             .Print("action", "backend_remove")
                             .Print("locator", *k);
@@ -235,7 +239,7 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
         }
 
         // Cleaning MS SQL db
-        db.RemoveObject(*k, dryrun);
+        db.RemoveObject(*k, dryrun, hit_id);
     }
 }
 
