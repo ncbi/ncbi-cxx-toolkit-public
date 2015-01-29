@@ -9,12 +9,13 @@ util/cache$ update-only
 util/math$ update-only
 connect$
 connect/ext$
-connect/services$
+connect/services
 db$
 db/bdb$
 app$
 app/netstorage$
 app/netstorage/test$
+app/netstorage/utils$
 dll
 misc$
 misc/third_party
