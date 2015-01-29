@@ -15,6 +15,7 @@
 # The ETC: statement describes configuration files
 # It is allowed to have more than one of each statements
 APP: netstorage_gc
+ETC: src/app/netstorage/utils/netstorage_gc.ini
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:Release
 
