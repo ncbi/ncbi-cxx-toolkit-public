@@ -39,14 +39,67 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class NCBI_SEQ_EXPORT CIntDeltaSumCache : public CObject
 {
 public:
-    CIntDeltaSumCache(size_t size); // size of deltas array
-    ~CIntDeltaSumCache(void);
+    virtual ~CIntDeltaSumCache(void);
 
     typedef CSeqTable_multi_data TDeltas;
-    typedef int TValue;
 
-    TValue GetDeltaSum(const TDeltas& deltas,
-                       size_t index);
+    virtual Int4 GetDeltaSum4(const TDeltas& deltas,
+                              size_t index);
+    virtual Int8 GetDeltaSum8(const TDeltas& deltas,
+                              size_t index);
+};
+
+
+// delta accumulation support
+class NCBI_SEQ_EXPORT CInt4DeltaSumCache : public CIntDeltaSumCache
+{
+public:
+    CInt4DeltaSumCache(size_t size); // size of deltas array
+    ~CInt4DeltaSumCache(void);
+
+    typedef Int4 TValue;
+
+    TValue GetDeltaSum4(const TDeltas& deltas,
+                        size_t index);
+
+protected:
+    TValue x_GetDeltaSum2(const TDeltas& deltas,
+                          size_t block_index,
+                          size_t block_offset);
+
+    // size of blocks of deltas for accumulation
+    static const size_t kBlockSize;
+    
+    // accumulated deltas for each block
+    // size = (totaldeltas+kBlockSize-1)/kBlockSize
+    // m_Blocks[0] = sum of deltas in the 1st block (0..kBlockSize-1)
+    // m_Blocks[1] = sum of deltas in first 2 blocks (0..2*kBlockSize-1)
+    AutoArray<TValue> m_Blocks;
+    // number of calculated entries in m_Block
+    size_t m_BlocksFilled;
+    
+    // cached accumulated sums per delta within a block
+    // size = kBlockSize
+    // m_CacheBlockInfo[0] = sum of the first delta of cached block
+    // m_CacheBlockInfo[1] = sum of first 2 deltas of cached block
+    // ...
+    AutoArray<TValue> m_CacheBlockInfo;
+    // index of the block with cached sums (or size_t(-1))
+    size_t m_CacheBlockIndex;
+};
+
+
+// delta accumulation support
+class NCBI_SEQ_EXPORT CInt8DeltaSumCache : public CIntDeltaSumCache
+{
+public:
+    CInt8DeltaSumCache(size_t size); // size of deltas array
+    ~CInt8DeltaSumCache(void);
+
+    typedef Int8 TValue;
+
+    TValue GetDeltaSum8(const TDeltas& deltas,
+                        size_t index);
 
 protected:
     TValue x_GetDeltaSum2(const TDeltas& deltas,

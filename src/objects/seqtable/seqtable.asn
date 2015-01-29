@@ -132,7 +132,12 @@ Scaled-int-multi-data ::= SEQUENCE {
     -- output data[i] = data[i]*mul+add
     mul     INTEGER,
     add     INTEGER,
-    data    SeqTable-multi-data
+    data    SeqTable-multi-data,
+
+    -- min/max scaled value
+    -- should be set if scaled values may not fit in 32-bit signed integer
+    min     INTEGER OPTIONAL,
+    max     INTEGER OPTIONAL
 }
 
 
@@ -154,7 +159,7 @@ BVector-data ::= SEQUENCE {
 
 
 SeqTable-multi-data ::= CHOICE {
-    -- a set of integers, one per row
+    -- a set of 4-byte integers, one per row
     int         SEQUENCE OF INTEGER,
     
     -- a set of reals, one per row
@@ -192,7 +197,16 @@ SeqTable-multi-data ::= CHOICE {
 
     -- a set of bit, represented as serialized bvector,
     -- see include/util/bitset/bm.h
-    bit-bvector BVector-data
+    bit-bvector BVector-data,
+
+    -- a set of signed 1-byte integers encoded as sequential octets
+    int1        OCTET STRING,
+
+    -- a set of signed 2-byte integers
+    int2        SEQUENCE OF INTEGER,
+
+    -- a set of signed 8-byte integers
+    int8        SEQUENCE OF INTEGER
 }
 
 
@@ -215,7 +229,9 @@ SeqTable-single-data ::= CHOICE {
     -- location
     loc         Seq-loc,
     id          Seq-id,
-    interval    Seq-interval
+    interval    Seq-interval,
+
+    int8        INTEGER
 }
 
 

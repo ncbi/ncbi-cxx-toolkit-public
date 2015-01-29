@@ -626,7 +626,7 @@ void CSeqTable_sparse_index::ChangeTo(E_Choice type)
         ChangeToBit_set_bvector();
         break;
     default:
-        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+        NCBI_THROW(CSeqTableException, eIncompatibleValueType,
                    "CSeqTable_sparse_index::ChangeTo(): "
                    "requested sparse index type is invalid");
     }

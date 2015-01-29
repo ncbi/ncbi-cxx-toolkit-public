@@ -40,6 +40,8 @@
 // generated includes
 #include <objects/seqtable/Scaled_int_multi_data.hpp>
 
+#include <objects/seqtable/SeqTable_multi_data.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -49,6 +51,36 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CScaled_int_multi_data::~CScaled_int_multi_data(void)
 {
+}
+
+
+size_t CScaled_int_multi_data::GetIntSize(void) const
+{
+    if ( (IsSetMax() && GetMax() > kMax_Int) ||
+         (IsSetMin() && GetMin() < kMin_Int) ) {
+        return sizeof(Int8);
+    }
+    return sizeof(int);
+}
+
+
+bool CScaled_int_multi_data::TryGetInt4(size_t row, Int4& v) const
+{
+    if ( !GetData().TryGetInt4(row, v) ) {
+        return false;
+    }
+    v = v*GetMul()+GetAdd();
+    return true;
+}
+
+
+bool CScaled_int_multi_data::TryGetInt8(size_t row, Int8& v) const
+{
+    if ( !GetData().TryGetInt8(row, v) ) {
+        return false;
+    }
+    v = v*GetMul()+GetAdd();
+    return true;
 }
 
 

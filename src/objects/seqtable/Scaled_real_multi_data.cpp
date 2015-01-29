@@ -52,6 +52,16 @@ CScaled_real_multi_data::~CScaled_real_multi_data(void)
 }
 
 
+bool CScaled_real_multi_data::TryGetReal(size_t row, double& v) const
+{
+    if ( !GetData().TryGetReal(row, v) ) {
+        return false;
+    }
+    v = v*GetMul()+GetAdd();
+    return true;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -72,18 +72,102 @@ public:
         return row_index < GetSize();
     }
 
+    // return equivalent simpler variant:
+    // e_Bit      - bool
+    // e_Int      - any integer that fits in Int4
+    // e_Int8     - integer that fits in Int8
+    // e_Real     - floating point value
+    // e_String   - string
+    // e_Bytes    - char/byte vector
+    // e_Loc      - CSeq_loc
+    // e_Id       - CSeq_id
+    // e_Interval - CSeq_interval
+    // e_notset   - no data
+    E_Choice GetValueType(void) const;
+
+    // return true if the value is convertible to integer value (any size).
+    // Bool, Int, Int1, Int2, Int8 are all integer types.
+    // This includes special representations:
+    // bvector for 1-bit values, scaled integers, delta encoding.
+    bool CanGetInt(void) const;
+
+    // return true if the value is convertible to double value.
+    // This includes special representation: scaled values.
+    bool CanGetReal(void) const;
+
+    // return size (sizeof) of integer value to store data from any row,
+    // or zero if the data is not convertible to integer value.
+    // Bool, Int, Int1, Int2, Int8 are all integer types.
+    // This includes special representations:
+    // bvector for 1-bit values, scaled integers, delta encoding.
+    size_t GetIntSize(void) const;
+
     // get bool value for the row, return false if there is no a value
     bool TryGetBool(size_t row, bool& v) const;
-    // get int value for the row, return false if there is no a value
-    bool TryGetInt(size_t row, int& v) const;
+
     // get double value for the row, return false if there is no a value
     bool TryGetReal(size_t row, double& v) const;
+
+    // get Int1 value for the row, return false if there is no a value
+    bool TryGetInt1(size_t row, Int1& v) const;
+    bool TryGetInt1WithRounding(size_t row, Int1& v) const;
+    // get Int2 value for the row, return false if there is no a value
+    bool TryGetInt2(size_t row, Int2& v) const;
+    bool TryGetInt2WithRounding(size_t row, Int2& v) const;
+    // get Int4 value for the row, return false if there is no a value
+    bool TryGetInt4(size_t row, Int4& v) const;
+    bool TryGetInt4WithRounding(size_t row, Int4& v) const;
+    // get Int8 value for the row, return false if there is no a value
+    bool TryGetInt8(size_t row, Int8& v) const;
+    bool TryGetInt8WithRounding(size_t row, Int8& v) const;
+
+    // for plain int (=Int4)
+    bool TryGetInt(size_t row, int& v) const {
+        return TryGetInt4(row, v);
+    }
+    bool TryGetIntWithRounding(size_t row, int& v) const {
+        return TryGetInt4WithRounding(row, v);
+    }
 
     // get pointer to a string value for the row, or null if there is none
     const string* GetStringPtr(size_t row) const;
     // get pointer to a byte vector value for the row, or null if there is none
     typedef vector<char> TBytesValue;
     const TBytesValue* GetBytesPtr(size_t row) const;
+
+    // overloaded methods for use in templates
+    bool TryGetValue(size_t row, Int1& v) const {
+        return TryGetInt1(row, v);
+    }
+    bool TryGetValue(size_t row, Int2& v) const {
+        return TryGetInt2(row, v);
+    }
+    bool TryGetValue(size_t row, Int4& v) const {
+        return TryGetInt4(row, v);
+    }
+    bool TryGetValue(size_t row, Int8& v) const {
+        return TryGetInt8(row, v);
+    }
+    bool TryGetValue(size_t row, bool& v) const {
+        return TryGetBool(row, v);
+    }
+    bool TryGetValue(size_t row, double& v) const {
+        return TryGetReal(row, v);
+    }
+    bool TryGetValue(size_t row, string& v) const {
+        if ( const string* ptr = GetStringPtr(row) ) {
+            v = *ptr;
+            return true;
+        }
+        return false;
+    }
+    bool TryGetValue(size_t row, TBytesValue& v) const {
+        if ( const TBytesValue* ptr = GetBytesPtr(row) ) {
+            v = *ptr;
+            return true;
+        }
+        return false;
+    }
 
     // reserve memory for multi-row data vectors
     class NCBI_SEQ_EXPORT CReserveHook : public CPreReadChoiceVariantHook
@@ -96,7 +180,13 @@ public:
     void ChangeTo(E_Choice type);
     void ChangeToBit(void); // convert int data with values 0/1 to bits
     void ChangeToBit_bvector(void);
-    void ChangeToInt(void);
+    void ChangeToInt1(void);
+    void ChangeToInt2(void);
+    void ChangeToInt4(void);
+    void ChangeToInt8(void);
+    void ChangeToInt(void) {
+        ChangeToInt4();
+    }
     void ChangeToInt_delta(void);
     void ChangeToInt_scaled(int mul, int add);
     void ChangeToReal(void);
@@ -117,6 +207,8 @@ public:
     }
 
 protected:
+
+    bool x_TryGetInt8(size_t row, Int8& v, const char* type_name) const;
 
     void x_ResetCache(void);
 

@@ -56,6 +56,12 @@ CSeq_table::~CSeq_table(void)
 }
 
 
+string CSeq_table::GetIdName(TColumnId column_id)
+{
+    return CSeqTable_column_info::ENUM_METHOD_NAME(EField_id)()->FindName(column_id, true);
+}
+
+
 const CSeqTable_column& CSeq_table::GetColumn(CTempString column_name) const
 {
     ITERATE ( TColumns, it, GetColumns() ) {
@@ -80,7 +86,7 @@ const CSeqTable_column& CSeq_table::GetColumn(TColumnId column_id) const
         }
     }
     NCBI_THROW(CSeqTableException, eColumnNotFound,
-               "Column not found: "+CSeqTable_column_info::ENUM_METHOD_NAME(EField_id)()->FindName(column_id, true));
+               "Column not found: "+GetIdName(column_id));
 }
 
 
@@ -98,7 +104,7 @@ const CSeqTable_column& CSeq_table::GetColumn(TColumnId column_id,
         }
     }
     NCBI_THROW(CSeqTableException, eColumnNotFound,
-               "Column not found: "+string(column_name)+"/"+CSeqTable_column_info::ENUM_METHOD_NAME(EField_id)()->FindName(column_id, true));
+               "Column not found: "+string(column_name)+"/"+GetIdName(column_id));
 }
 
 
@@ -107,8 +113,8 @@ const char* CSeqTableException::GetErrCodeString(void) const
     switch ( GetErrCode() ) {
     case eColumnNotFound:       return "eColumnNotFound";
     case eRowNotFound:          return "eRowNotFound";
+    case eIncompatibleValueType:return "eIncompatibleValueType";
     case eOtherError:           return "eOtherError";
-    case eIncompatibleRowType:  return "eIncompatibleRowType";
     default:                    return CException::GetErrCodeString();
     }
 }
@@ -116,5 +122,3 @@ const char* CSeqTableException::GetErrCodeString(void) const
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 57, chars: 1726, CRC32: d9ae38b2 */

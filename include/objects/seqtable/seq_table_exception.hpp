@@ -53,7 +53,7 @@ public:
     enum EErrCode {
         eColumnNotFound,        ///< Requested column is missing
         eRowNotFound,           ///< Requested row is missing
-        eIncompatibleRowType,   ///< Data cannot be converted to asked type
+        eIncompatibleValueType, ///< Data cannot be converted to asked type
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;

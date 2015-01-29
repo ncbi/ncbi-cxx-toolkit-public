@@ -59,6 +59,8 @@ public:
     // destructor
     ~CScaled_real_multi_data(void);
 
+    bool TryGetReal(size_t row, double& v) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CScaled_real_multi_data(const CScaled_real_multi_data& value);

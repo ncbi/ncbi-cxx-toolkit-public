@@ -59,6 +59,13 @@ public:
     // destructor
     ~CScaled_int_multi_data(void);
 
+    // return size (sizeof) of integer value to store data,
+    // returned value is the size of data in chars.
+    size_t GetIntSize(void) const;
+
+    bool TryGetInt4(size_t row, Int4& v) const;
+    bool TryGetInt8(size_t row, Int8& v) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CScaled_int_multi_data(const CScaled_int_multi_data& value);

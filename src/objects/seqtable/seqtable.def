@@ -6,6 +6,10 @@ columns._type       = vector
 
 [SeqTable-multi-data]
 int._type      = vector
+int2._type     = vector
+int8._type     = vector
+int2.E._type   = Int2
+int8.E._type   = Int8
 real._type     = vector
 string._type   = vector
 bytes._type    = vector
@@ -30,3 +34,7 @@ indexes-delta.E._type = unsigned
 
 [BVector-data]
 size._type          = unsigned
+
+[Scaled-int-multi-data]
+min._type = Int8
+max._type = Int8

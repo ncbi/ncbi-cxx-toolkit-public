@@ -43,6 +43,11 @@
 // generated includes
 #include <objects/seqtable/SeqTable_column_.hpp>
 
+// extra includes
+#include <objects/seqtable/SeqTable_sparse_index.hpp>
+#include <objects/seqtable/SeqTable_single_data.hpp>
+#include <objects/seqtable/SeqTable_multi_data.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -66,12 +71,42 @@ public:
     // return true if there is a value at the row
     bool IsSet(size_t row) const;
 
+    // get value for the row, return false if there is no a value
+    template<class Value>
+    bool TryGetValue(size_t row, Value& v) const {
+        size_t index = row;
+        if ( IsSetSparse() ) {
+            index = GetSparse().GetIndexAt(row);
+            if ( index == CSeqTable_sparse_index::kSkipped ) {
+                if ( !IsSetSparse_other() ) {
+                    return false;
+                }
+                GetSparse_other().GetValue(v);
+                return true;
+            }
+        }
+        if ( IsSetData() && GetData().TryGetValue(index, v) ) {
+            return true;
+        }
+        if ( IsSetDefault() ) {
+            GetDefault().GetValue(v);
+            return true;
+        }
+        return false;
+    }
+
     // get bool value for the row, return false if there is no a value
-    bool TryGetBool(size_t row, bool& v) const;
+    bool TryGetBool(size_t row, bool& v) const {
+        return TryGetValue(row, v);
+    }
     // get int value for the row, return false if there is no a value
-    bool TryGetInt(size_t row, int& v) const;
+    bool TryGetInt(size_t row, int& v) const {
+        return TryGetValue(row, v);
+    }
     // get double value for the row, return false if there is no a value
-    bool TryGetReal(size_t row, double& v) const;
+    bool TryGetReal(size_t row, double& v) const {
+        return TryGetValue(row, v);
+    }
 
     // get pointer to a string value for the row, or null if there is none
     const string* GetStringPtr(size_t row) const;
