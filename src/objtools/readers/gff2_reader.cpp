@@ -130,10 +130,8 @@ CGff2Reader::CGff2Reader(
     const string& name,
     const string& title):
 //  ----------------------------------------------------------------------------
-    CReaderBase(iFlags),
-    m_pErrors(0),
-    m_AnnotName(name),
-    m_AnnotTitle(title)
+    CReaderBase(iFlags, name, title),
+    m_pErrors(0)
 {
 }
 
@@ -142,7 +140,6 @@ CGff2Reader::~CGff2Reader()
 //  ----------------------------------------------------------------------------
 {
 }
-
 
 //  --------------------------------------------------------------------------- 
 void

@@ -298,8 +298,6 @@ protected:
     IMessageListener* m_pErrors;
     CRef<CAnnotdesc> m_CurrentTrackInfo;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
-    string m_AnnotName;
-    string m_AnnotTitle;
 };
 
 END_SCOPE(objects)

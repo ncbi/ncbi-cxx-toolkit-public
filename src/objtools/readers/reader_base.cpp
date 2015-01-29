@@ -145,12 +145,16 @@ CReaderBase::GetReader(
 
 //  ----------------------------------------------------------------------------
 CReaderBase::CReaderBase(
-    TReaderFlags flags) :
+    TReaderFlags flags,
+    const string& annotName,
+    const string& annotTitle) :
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
     m_uProgressReportInterval(0),
 	m_uNextProgressReport(0),
     m_iFlags(flags),
+    m_AnnotName(annotName),
+    m_AnnotTitle(annotTitle),
     m_pReader(0),
     m_pCanceler(0)
 {
@@ -220,6 +224,7 @@ CReaderBase::ReadSeqAnnots(
     xProgressInit(lr);
     CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pMessageListener);
     while (annot) {
+        //xAssignTrackData(annot);
         annots.push_back(annot);
         annot = ReadSeqAnnot(lr, pMessageListener);
     }
@@ -426,6 +431,12 @@ void CReaderBase::xAssignTrackData(
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
+    if (!m_AnnotName.empty()) {
+        annot->SetNameDesc(m_AnnotName);
+    }
+    if (!m_AnnotTitle.empty()) {
+        annot->SetTitleDesc(m_AnnotTitle);
+    }
     if (!m_pTrackDefaults->ContainsData()) {
         return;
     }

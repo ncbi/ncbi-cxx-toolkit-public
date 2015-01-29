@@ -651,7 +651,7 @@ void CMultiReaderApp::xProcessWiggle(
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     
-    CWiggleReader reader(m_iFlags);
+    CWiggleReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
@@ -659,7 +659,7 @@ void CMultiReaderApp::xProcessWiggle(
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xDumpTrack(args, **cit, cerr);
+        //xDumpTrack(args, **cit, cerr);
         xWriteObject(args, **cit, ostr);
     }
 }
@@ -701,7 +701,7 @@ void CMultiReaderApp::xProcessBed(
 //  ----------------------------------------------------------------------------
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
-    CBedReader reader(m_iFlags);
+    CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     if (args["show-progress"]) {
         reader.SetProgressReportInterval(10);
     }
@@ -722,7 +722,7 @@ void CMultiReaderApp::xProcessBedRaw(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    CBedReader reader(m_iFlags);
+    CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(istr);
     CRawBedTrack raw;
     while (reader.ReadTrackData(lr, raw)) {

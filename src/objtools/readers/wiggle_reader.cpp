@@ -119,9 +119,11 @@ CWiggleReader::xValuesAreFromSingleSequence() const
 
 //  ----------------------------------------------------------------------------
 CWiggleReader::CWiggleReader(
-    TFlags flags ) :
+    int iFlags,
+    const string& name,
+    const string& title):
 //  ----------------------------------------------------------------------------
-    CReaderBase(flags),
+    CReaderBase(iFlags, name, title),
     m_OmitZeros(false),
     m_TrackType(eTrackType_invalid)
 {
@@ -155,12 +157,17 @@ CWiggleReader::ReadSeqAnnot(
 //  ----------------------------------------------------------------------------                
 {
     xProgressInit(lr);
+    CRef<CSeq_annot> pAnnot;
     if (m_iFlags & CWiggleReader::fAsGraph) {
-        return xReadSeqAnnotGraph(lr, pMessageListener);
+        pAnnot = xReadSeqAnnotGraph(lr, pMessageListener);
     }
     else {
-        return xReadSeqAnnotTable(lr, pMessageListener);
+        pAnnot = xReadSeqAnnotTable(lr, pMessageListener);
     }
+    if (pAnnot) {
+        xAssignTrackData(pAnnot);
+    }
+    return pAnnot;
 }
 
 //  ----------------------------------------------------------------------------                
@@ -689,20 +696,6 @@ CRef<CSeq_annot> CWiggleReader::xMakeAnnot(void)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    string trackDescription = m_pTrackDefaults->Description();
-    if (!trackDescription.empty()) {
-        CRef<CAnnotdesc> desc(new CAnnotdesc);
-        desc->SetTitle(trackDescription);
-        annot->SetDesc().Set().push_back(desc);
-    }
-
-    string trackName = m_pTrackDefaults->Name();
-    if (!trackName.empty()) {
-        CRef<CAnnotdesc> desc(new CAnnotdesc);
-        desc->SetName(trackName);
-        annot->SetDesc().Set().push_back(desc);
-    }
-    xAssignTrackData(annot);
     return annot;
 }
 
@@ -990,7 +983,7 @@ CRef<CSeq_annot> CWiggleReader::xGetAnnot()
     if ( m_ChromId.empty() ) {
         return CRef<CSeq_annot>();
     }
-    CRef<CSeq_annot> pAnnot = xMakeAnnot();
+    CRef<CSeq_annot> pAnnot(new CSeq_annot);
     if (m_iFlags & fAsGraph) {
         //pAnnot->SetData().SetGraph().push_back(xMakeGraph());
         pAnnot = xMakeGraphAnnot();

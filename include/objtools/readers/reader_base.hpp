@@ -81,7 +81,9 @@ public:
 protected:
     /// Protected constructor. Use GetReader() to get an actual reader object.
     CReaderBase(
-        TReaderFlags flags =0);    //flags
+        TReaderFlags flags = 0,     //flags
+        const string& name = "",    //annot name
+        const string& title = "" ); //annot title
 
 
 public:
@@ -314,6 +316,9 @@ protected:
     unsigned int m_uNextProgressReport;
 
     TReaderFlags       m_iFlags;
+    string m_AnnotName;
+    string m_AnnotTitle;
+
     CTrackData*  m_pTrackDefaults;
     ILineReader* m_pReader;
     ICanceled* m_pCanceler;

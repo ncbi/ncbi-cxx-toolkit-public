@@ -246,7 +246,9 @@ public:
 
 public:
     CWiggleReader( 
-        int =fDefaults );
+        int = fDefaults,
+        const string& = "",
+        const string& = "" );
         
     virtual ~CWiggleReader();
     

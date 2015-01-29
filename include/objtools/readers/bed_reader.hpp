@@ -156,7 +156,9 @@ class NCBI_XOBJREAD_EXPORT CBedReader
     //
 public:
     CBedReader( 
-        unsigned int =fNormal );
+        int = fNormal,
+        const string& = "",
+        const string& = "" );
     virtual ~CBedReader();
     
     //
