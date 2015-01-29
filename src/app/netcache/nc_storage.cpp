@@ -596,9 +596,13 @@ s_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
 }
 
 static void
-s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec, bool skip_lock = false);
+static void
+s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec, bool skip_lock)
 {
-    file_info->info_lock.Lock();
+    if (!skip_lock) {
+        file_info->info_lock.Lock();
+    }
     SFileIndexRec* prev_rec;
     SFileIndexRec* next_rec;
     if (ind_rec->prev_num == 0)
@@ -614,7 +618,9 @@ s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
     ACCESS_ONCE(prev_rec->next_num) = ind_rec->next_num;
     ACCESS_ONCE(next_rec->prev_num) = ind_rec->prev_num;
     ind_rec->next_num = ind_rec->prev_num = Uint4(file_info->index_head - ind_rec);
-    file_info->info_lock.Unlock();
+    if (!skip_lock) {
+        file_info->info_lock.Unlock();
+    }
 }
 
 static inline void
@@ -632,8 +638,8 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
         size += 8 - (size & 7);
     size += sizeof(SFileIndexRec);
 
-    s_DeleteIndexRec(file_info, ind_rec);
     file_info->info_lock.Lock();
+    s_DeleteIndexRec(file_info, ind_rec, true);
     if (file_info->used_size < size) {
         SRV_FATAL("DB file info broken");
     }
@@ -642,13 +648,9 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
     if (file_info->garb_size > file_info->file_size) {
         SRV_FATAL("DB file info broken");
     }
-#if 0
-// possible race here
-// we have similar check in CSpaceShrinker::x_MoveNextRecord - let it abort there, if so happens
     if (file_info->index_head->next_num == 0  &&  file_info->used_size != 0) {
         SRV_FATAL("DB file info broken");
     }
-#endif
     file_info->info_lock.Unlock();
 
     AtomicAdd(s_GarbageSize,size);
