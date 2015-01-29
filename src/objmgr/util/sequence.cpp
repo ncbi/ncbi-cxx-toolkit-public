@@ -2148,8 +2148,19 @@ const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
 
 const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
 {
-    if ( bsh ) {
-        CFeat_CI fi(bsh,
+    CBioseq_Handle handle = bsh;
+    if ( handle ) {
+        CBioseq_set_Handle bssh = handle.GetParentBioseq_set();
+        if ( bssh && bssh.CanGetLevel() && bssh.GetLevel() == CBioseq_set::eClass_nuc_prot ) {
+            CBioseq_CI bioseq_ci( bssh, CSeq_inst::eMol_na );
+            if ( bioseq_ci ) {
+                CBioseq_Handle nuc = *bioseq_ci;
+                if ( nuc ) {
+                    handle = nuc;
+                }
+            }
+        }
+        CFeat_CI fi(handle,
                     SAnnotSelector(CSeqFeatData::e_Cdregion)
                     .SetByProduct());
         if ( fi ) {
@@ -2164,7 +2175,18 @@ const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
 
 CMappedFeat GetMappedCDSForProduct(const CBioseq_Handle& bsh)
 {
-    if ( bsh ) {
+    CBioseq_Handle handle = bsh;
+    if ( handle ) {
+        CBioseq_set_Handle bssh = handle.GetParentBioseq_set();
+        if ( bssh && bssh.CanGetLevel() && bssh.GetLevel() == CBioseq_set::eClass_nuc_prot ) {
+            CBioseq_CI bioseq_ci( bssh, CSeq_inst::eMol_na );
+            if ( bioseq_ci ) {
+                CBioseq_Handle nuc = *bioseq_ci;
+                if ( nuc ) {
+                    handle = nuc;
+                }
+            }
+        }
         CFeat_CI fi(bsh,
                     SAnnotSelector(CSeqFeatData::e_Cdregion)
                     .SetByProduct());
