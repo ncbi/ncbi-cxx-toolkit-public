@@ -1,0 +1,4 @@
+APP_PROJ = netstorage_gc
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
