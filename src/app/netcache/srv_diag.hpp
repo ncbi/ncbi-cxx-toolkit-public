@@ -41,7 +41,7 @@ struct SSrvThread;
 struct SLogData;
 
 
-#define _VERIFY(x)  if (x) {} else SRV_FATAL("")
+#define _VERIFY(x)  if (x) {} else SRV_FATAL("assertion failed")
 
 #ifdef _ASSERT
 # undef _ASSERT
