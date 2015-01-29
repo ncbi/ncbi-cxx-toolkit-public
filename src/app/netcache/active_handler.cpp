@@ -172,6 +172,9 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
 
 CNCActiveHandler::~CNCActiveHandler(void)
 {
+    if (m_DiagCtx) {
+        ReleaseDiagCtx();
+    }
     delete m_BlobSum;
 
     //Uint8 cnt = AtomicSub(s_CntHndls, 1);
