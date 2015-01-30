@@ -1,0 +1,33 @@
+ERROR: valid [SEQ_INST.StopInProtein] [1] termination symbols in protein sequence (gene? - Non-structural polyprotein) BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1: raw, aa len= 2474
+WARNING: valid [SEQ_FEAT.ExceptInconsistent] Exception text is present, but exception flag is not set FEATURE: CDS: Non-structural polyprotein [lcl|M125:77-7501] [lcl|M125: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+ERROR: valid [SEQ_FEAT.InternalStop] 1 internal stops. Genetic code [1] FEATURE: CDS: Non-structural polyprotein [lcl|M125:77-7501] [lcl|M125: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: Structural polyprotein [lcl|M125:7567-11313] [lcl|M125: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_2]
+WARNING: valid [SEQ_INST.CompleteTitleProblem] Complete genome in title without complete flag set BIOSEQ: gb|KM923918|: raw, dna len= 11837
+WARNING: valid [SEQ_DESCR.BioSourceInconsistency] Genomic DNA viral lineage indicates no DNA stage DESCRIPTOR: BioSrc: Chikungunya virus BIOSEQ: gb|KM923918|: raw, dna len= 11837
+WARNING: valid [SEQ_DESCR.MolInfoConflictsWithBioSource] Taxonomy indicates single-stranded RNA, sequence does not agree. DESCRIPTOR: BioSrc: Chikungunya virus BIOSEQ: gb|KM923918|: raw, dna len= 11837
+ERROR: valid [SEQ_INST.StopInProtein] [1] termination symbols in protein sequence (gene? - prot?) BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/M127_1: raw, aa len= 2474
+ERROR: valid [SEQ_PKG.NoCdRegionPtr] No CdRegion in nuc-prot set points to this protein BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/M127_1: raw, aa len= 2474
+ERROR: valid [SEQ_FEAT.NoProtRefFound] No full length Prot-ref feature applied to this Bioseq BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/M127_1: raw, aa len= 2474
+ERROR: valid [SEQ_INST.StopInProtein] [1] termination symbols in protein sequence (gene? - prot?) BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/prt_seq: raw, aa len= 2474
+ERROR: valid [SEQ_FEAT.NoProtRefFound] No full length Prot-ref feature applied to this Bioseq BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/prt_seq: raw, aa len= 2474
+ERROR: valid [SEQ_PKG.NoCdRegionPtr] No CdRegion in nuc-prot set points to this protein BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/M127_2: raw, aa len= 1248
+ERROR: valid [SEQ_FEAT.NoProtRefFound] No full length Prot-ref feature applied to this Bioseq BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/M127_2: raw, aa len= 1248
+ERROR: valid [SEQ_PKG.NoCdRegionPtr] No CdRegion in nuc-prot set points to this protein BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/prt_seq_1: raw, aa len= 1248
+ERROR: valid [SEQ_FEAT.NoProtRefFound] No full length Prot-ref feature applied to this Bioseq BIOSEQ: gnl|NCBIFILE|Chikungunyavirus.sqn/prt_seq_1: raw, aa len= 1248
+ERROR: valid [SEQ_FEAT.InternalStop] 1 internal stops. Genetic code [1] FEATURE: CDS:  [lcl|M127:77-7501] [lcl|M127: raw, dna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/prt_seq]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: Structural polyprotein [lcl|M127:7567-11313] [lcl|M127: raw, dna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_2]
+WARNING: valid [SEQ_DESCR.BadCollectionDate] Collection_date format is not in DD-Mmm-YYYY format DESCRIPTOR: BioSrc: Chikungunya virus BIOSEQ-SET: nuc-prot: KM923918
+ERROR: valid [SEQ_FEAT.InternalStop] 1 internal stops. Genetic code [1] FEATURE: CDS: Non-structural polyprotein [lcl|M128:77-7501] [lcl|M128: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: Non-structural polyprotein [lcl|M128:77-7501] [lcl|M128: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: Non-structural polyprotein [lcl|M128:77-7501] [lcl|M128: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: Structural polyprotein [lcl|M128:7567-11313] [lcl|M128: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_2]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: Structural polyprotein [lcl|M128:7567-11313] [lcl|M128: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_2]
+WARNING: valid [SEQ_DESCR.BadCollectionDate] Collection_date format is not in DD-Mmm-YYYY format DESCRIPTOR: BioSrc: Chikungunya virus BIOSEQ: gb|KM923919|: raw, rna len= 11837
+WARNING: valid [SEQ_INST.CompleteTitleProblem] Complete genome in title without complete flag set BIOSEQ: gb|KM923920|: raw, rna len= 11837
+ERROR: valid [SEQ_FEAT.InternalStop] 1 internal stops. Genetic code [1] FEATURE: CDS: Non-structural polyprotein [lcl|M129:77-7501] [lcl|M129: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: Non-structural polyprotein [lcl|M129:77-7501] [lcl|M129: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: Non-structural polyprotein [lcl|M129:77-7501] [lcl|M129: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_1]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: Structural polyprotein [lcl|M129:7567-11313] [lcl|M129: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_2]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: Structural polyprotein [lcl|M129:7567-11313] [lcl|M129: raw, rna len= 11837] -> [gnl|NCBIFILE|Chikungunyavirus.sqn/M125_2]
+WARNING: valid [SEQ_DESCR.BadCollectionDate] Collection_date format is not in DD-Mmm-YYYY format DESCRIPTOR: BioSrc: Chikungunya virus BIOSEQ: gb|KM923920|: raw, rna len= 11837
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: pop-set: KM923917

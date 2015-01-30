@@ -8,3 +8,4 @@
 -i SQD-1475.sqn
 -i asnfail_all.sqn
 -i reject.sqn
+-i bad_record.sqn
