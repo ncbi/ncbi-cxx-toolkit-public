@@ -1,0 +1,127 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Saccharomyces cerevisiae"
+      }
+    },
+    create-date std {
+      year 2014,
+      month 2,
+      day 1
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Sc_16"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 543,
+        seq-data ncbi2na 'CCA60D8B33CFFF74133B3381388333F3283B300FB85DD79CFF2F
+1E3FCECECAA832A9E5FDF0E4BFC3FFDFF0FFF7CB00F3F02C08F0E83053E67FFFC4BFFAFFD3FFE8
+0033FC0CFF17FF3F2AACFF332CDCC7D048FFDE04CCBD73E7FF42E4F255FFB092EF9FFCE880CD73
+804D3330390FF0FACFF0FAFF32EBD7FB700B7F387F4E2A338FCCC3F2BFC492BC'H
+      },
+      annot {
+        {
+          desc {
+            name "Table1"
+          },
+          data ftable {
+            {
+              id local id 2,
+              data gene {
+                locus "sde3p"
+              },
+              location int {
+                from 68,
+                to 542,
+                strand plus,
+                id local str "Sc_16"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "WS1030"
+      },
+      descr {
+        title "SDE3P [Saccharomyces cerevisiae]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 158,
+        seq-data ncbieaa "MYKIVTSPAILVTDFMYVGGIGAAFLNAVLIFSFNFFLVKLFKVKINGITIA
+AFFTVFGFSFFGKNILNILPFYLGGILYSIYTSTDFSEHIVPIAFSSALAPFVSSVAFYGEISYETSYINAILIGILI
+GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 3,
+              data prot {
+                name {
+                  "SDE3P"
+                }
+              },
+              location int {
+                from 0,
+                to 157,
+                id local str "WS1030"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          id local id 1,
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole local str "WS1030",
+          location int {
+            from 68,
+            to 542,
+            strand plus,
+            id local str "Sc_16"
+          },
+          xref {
+            {
+              data prot {
+                name {
+                  "SDE3P"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
