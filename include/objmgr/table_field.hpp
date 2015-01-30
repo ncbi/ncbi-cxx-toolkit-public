@@ -38,6 +38,8 @@
 #include <objects/seqtable/SeqTable_column_info.hpp>
 #include <objects/seqtable/SeqTable_column.hpp>
 
+#include <objmgr/feat_ci.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -47,7 +49,6 @@ class CSeq_annot;
 class CSeq_annot_Info;
 class CSeq_annot_Handle;
 class CTable_annot_Info;
-class CFeat_CI;
 
 
 class NCBI_XOBJMGR_EXPORT CTableFieldHandle_Base
