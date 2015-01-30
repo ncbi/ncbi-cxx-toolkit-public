@@ -126,8 +126,8 @@ CNetStorageGCDatabase::GetGCCandidates(void)
                                "tm_expiration < GETDATE()";
 
     if (m_Verbose)
-        cout << "Retrieving the NetStorage meta info "
-                "database expired objects..." << endl;
+        cout << "Retrieving the expired objects from the NetStorage meta info "
+                "database..." << endl;
 
     try {
         CQuery              query = m_Db->NewQuery(stmt);
@@ -137,8 +137,8 @@ CNetStorageGCDatabase::GetGCCandidates(void)
             candidates.push_back(row["object_loc"].AsString());
         }
     } catch (...) {
-        cerr << "Error retrieving the NetStorage meta info "
-                "database expired objects" << endl;
+        cerr << "Error retrieving the expired objects from the NetStorage meta "
+                "info database" << endl;
         throw;
     }
 
@@ -157,8 +157,8 @@ CNetStorageGCDatabase::GetDBStructureVersion(void)
     int                 db_ver = -1;
 
     if (m_Verbose)
-        cout << "Retrieving the NetStorage meta info "
-                "database structure version..." << endl;
+        cout << "Retrieving the version of the NetStorage meta info "
+                "database structure..." << endl;
 
     try {
         CQuery              query = m_Db->NewQuery(stmt);
@@ -177,14 +177,14 @@ CNetStorageGCDatabase::GetDBStructureVersion(void)
     } catch (const CNetStorageGCException &  ex) {
         throw;
     } catch (...) {
-        cerr << "Error retrieving the NetStorage meta info "
-                "database structure version..." << endl;
+        cerr << "Error retrieving the version of the NetStorage meta info "
+                "database structure..." << endl;
         throw;
     }
 
     if (db_ver == -1) {
-        string      msg = "Cannot find NetStorage meta info "
-                          "database structure version";
+        string      msg = "Cannot find the version of the NetStorage meta info "
+                          "database structure";
         cerr << msg << endl;
         NCBI_THROW(CNetStorageGCException, eDBStructureVersionNotFound, msg);
     }
@@ -264,7 +264,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
 
     // Second part: removing the object record
     if (m_Verbose)
-        cout << "Removing object record of " << locator << endl;
+        cout << "Removing the object record for " << locator << endl;
 
     stmt = "DELETE FROM Objects WHERE object_loc='" + locator + "'";
     try {
@@ -293,7 +293,8 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
         ctx.Reset();
         GetDiagContext().SetRequestContext(NULL);
 
-        cerr << "Exception while removing object record of " << locator << endl;
+        cerr << "Exception while removing the object record for "
+             << locator << endl;
         NCBI_THROW(CNetStorageGCException, eStopGC, k_StopGC);
     } catch (const std::exception &  ex ) {
         ERR_POST(ex.what());
@@ -303,7 +304,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
         ctx.Reset();
         GetDiagContext().SetRequestContext(NULL);
 
-        cerr << "std::exception while removing object record of "
+        cerr << "std::exception while removing the object record for "
              << locator << endl;
         NCBI_THROW(CNetStorageGCException, eStopGC, k_StopGC);
     } catch (...) {
@@ -314,7 +315,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
         ctx.Reset();
         GetDiagContext().SetRequestContext(NULL);
 
-        cerr << "Unknown exception while removing object record of "
+        cerr << "Unknown exception while removing the object record for "
              << locator << endl;
         NCBI_THROW(CNetStorageGCException, eStopGC, k_StopGC);
     }
