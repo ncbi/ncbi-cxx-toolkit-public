@@ -437,7 +437,8 @@ bool CAnnotWriterApp::xTryProcessSeqAnnot(
 {
     CRef<CSeq_annot> pSeqAnnot(new CSeq_annot);
     try {
-        istr.Read(ObjectInfo(*pSeqAnnot), CObjectIStream::eNoFileHeader);
+        istr.Read(ObjectInfo(*pSeqAnnot));
+        //istr.Read(ObjectInfo(*pSeqAnnot), CObjectIStream::eNoFileHeader);
     }
     catch (CException&) {
         return false;
@@ -459,7 +460,7 @@ bool CAnnotWriterApp::xTryProcessBioseq(
 {
     CBioseq bioseq;
     try {
-        istr.Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+        istr.Read(ObjectInfo(bioseq));
     }
     catch (CException&) {
         return false;
@@ -482,7 +483,7 @@ bool CAnnotWriterApp::xTryProcessBioseqSet(
 {
     CBioseq_set seq_set;
     try {
-        istr.Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
+        istr.Read(ObjectInfo(seq_set));
     }
     catch (CException&) {
         return false;
@@ -508,7 +509,7 @@ bool CAnnotWriterApp::xTryProcessSeqAlign(
 {
     CSeq_align align;
     try {
-        istr.Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
+        istr.Read(ObjectInfo(align));
     }
     catch (CException&) {
         return false;
@@ -529,7 +530,7 @@ bool CAnnotWriterApp::xTryProcessSeqAlignSet(
 {
     CSeq_align_set align_set;
     try {
-        istr.Read(ObjectInfo(align_set), CObjectIStream::eNoFileHeader);
+        istr.Read(ObjectInfo(align_set));
     }
     catch (CException&) {
         return false;
