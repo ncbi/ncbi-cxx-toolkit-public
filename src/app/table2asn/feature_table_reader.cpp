@@ -305,19 +305,7 @@ namespace
         return protein_name;
     }
 
-    CTempString GetQual(const CSeq_feat& feature, const CTempString& qual)
-    {
-        ITERATE(CSeq_feat::TQual, it, feature.GetQual())
-        {
-            if (0 == NStr::Compare((**it).GetQual(), qual))
-            {
-                return (**it).GetVal();
-            }
-        }
-        return CTempString();
-    }
-
-    CRef<CSeq_entry> LocateProtein(CConstRef<CSeq_entry> proteins, const CSeq_feat& feature)
+    CConstRef<CSeq_entry> LocateProtein(CConstRef<CSeq_entry> proteins, const CSeq_feat& feature)
     {
         if (proteins.NotEmpty())
         {
@@ -328,14 +316,12 @@ namespace
                 {
                     if ((**seq_it).Compare(*id) == CSeq_id::e_YES)
                     {
-                        CRef<CSeq_entry> result(new CSeq_entry);
-                        result->Assign(**it);
-                        return result;
+                        return *it;
                     }
                 }
             }
         }
-        return CRef<CSeq_entry>();
+        return CConstRef<CSeq_entry>();
     }
 
 
@@ -365,25 +351,79 @@ namespace
         }
         return CRef<CSeq_annot>();
     }
+
+    bool BioseqHasId(const CBioseq& seq, const CSeq_id* id)
+    {
+        if (id && seq.IsSetId())
+        {
+            ITERATE(CBioseq::TId, it, seq.GetId())
+            {
+                if (id->Compare(**it) == CSeq_id::e_YES)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    CSeq_feat& CreateOrSetFTable(CBioseq& bioseq)
+    {
+        CSeq_annot::C_Data::TFtable* ftable = 0;                    
+        if (bioseq.IsSetAnnot())
+        {
+            NON_CONST_ITERATE(CBioseq::TAnnot, it, bioseq.SetAnnot())
+            {
+                if ((**it).IsFtable())
+                {
+                    ftable = &(**it).SetData().SetFtable();                    
+                    break;
+                }
+            }
+        }
+        if (ftable == 0)
+        {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            ftable = &annot->SetData().SetFtable();
+            bioseq.SetAnnot().push_back(annot);
+        }
+
+        if (ftable->empty())
+        {
+            CRef<CSeq_feat> feat;
+            feat.Reset(new CSeq_feat);
+            ftable->push_back(feat);
+            return *feat;
+        }
+        else
+        {
+            return *ftable->front();
+        }
+    }
+
 }
 
 CFeatureTableReader::CFeatureTableReader(IMessageListener* logger): m_logger(logger), m_local_id_counter(0)
 {
 }
 
-
 CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag)
 {
-    CRef<CSeq_entry> pentry = LocateProtein(m_replacement_protein, feature);
-    if (pentry.NotEmpty())
-        return pentry;
+    CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, feature);
+    CRef<CBioseq> protein;
+    if (replacement.Empty())
+    {
+        protein = CSeqTranslator::TranslateToProtein(feature, scope);
+        if (protein.Empty())
+            return CRef<CSeq_entry>();
+    }
+    else
+    {
+        protein.Reset(new CBioseq());
+        protein->Assign(replacement->GetSeq());
+    }
 
-    CRef<CBioseq> protein = CSeqTranslator::TranslateToProtein(feature, scope);
-
-    if (protein.Empty())
-        return CRef<CSeq_entry>();
-
-    pentry.Reset(new CSeq_entry);
+    CRef<CSeq_entry> pentry(new CSeq_entry);
     pentry->SetSeq(*protein);
 
     CAutoAddDesc molinfo_desc(pentry->SetSeq().SetDescr(), CSeqdesc::e_Molinfo);
@@ -406,7 +446,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     title_desc.Set().SetTitle(title);
 
     string base_name;
-    CTempString protein_ids = GetQual(feature, "protein_id");
+    const string& protein_ids = feature.GetNamedQual("protein_id");
 
     if (protein_ids.empty())
     {
@@ -423,7 +463,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
             protein->SetId().push_back(newid);
 #else
             const CSeq_id* id = feature.GetProduct().GetId();
-            if (id)
+            if (!BioseqHasId(*protein, id)) // to avoid dupolicate ID creation
             {
                 //id->GetLabel(&base_name, CSeq_id::eContent);
                 CRef<CSeq_id> newid(new CSeq_id);
@@ -446,17 +486,18 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         protein->SetId().push_back(newid);
     }
 
-    CRef<CSeq_annot> annot(new CSeq_annot);
-    CRef<CSeq_feat> feat(new CSeq_feat);
-    feat->SetData().SetProt().SetName().push_back(protein_name);
+    CSeq_feat* feat = &CreateOrSetFTable(*protein);
+
+    CProt_ref::TName& prot_ref = feat->SetData().SetProt().SetName();
+    if (prot_ref.empty())
+        prot_ref.push_back(protein_name);
+
     //feat->SetLocation().Assign(feature.GetLocation());
     feat->SetId().SetLocal().SetId(++m_local_id_counter);
     feat->SetLocation().SetInt().SetFrom(0);       
     feat->SetLocation().SetInt().SetTo(protein->GetInst().GetLength()-1);
     //feat->SetLocation().SetInt().SetId().SetLocal().SetStr("debug");
     feat->SetLocation().SetInt().SetId().Assign(*protein->GetId().front());
-    annot->SetData().SetFtable().push_back(feat);
-    pentry->SetSeq().SetAnnot().push_back(annot);
 
     CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
 
@@ -552,37 +593,6 @@ void CFeatureTableReader::FindOpenReadingFrame(CSeq_entry& entry) const
     default:
         break;
     }
-}
-
-CRef<CSeq_entry> CFeatureTableReader::ReadReplacementProtein(ILineReader& line_reader)
-{
-    int flags = 0;
-    flags |= CFastaReader::fAddMods
-          |  CFastaReader::fNoUserObjs
-          |  CFastaReader::fBadModThrow
-          |  CFastaReader::fAssumeProt;
-
-    auto_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
-
-    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_logger);
-    CRef<CSeq_entry> result;
-
-    if (pep.NotEmpty())
-    {
-        if (pep->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
-        {
-            CRef<CSeq_entry> seq((CSeq_entry*)(pep.GetPointerOrNull()));
-            if (seq->IsSeq())
-            {
-                result.Reset(new CSeq_entry);
-                result->SetSet().SetSeq_set().push_back(seq);
-            }
-            else
-                result = seq;
-        }
-    }
-
-    return result;
 }
 
 void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)

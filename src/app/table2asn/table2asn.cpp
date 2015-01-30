@@ -1148,7 +1148,7 @@ void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
 
     CFeatureTableReader peps(m_context.m_logger);
 
-    m_replacement_proteins = peps.ReadReplacementProtein(*reader);
+    m_replacement_proteins = peps.ReadProtein(*reader);
 }
 
 void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& entry)
