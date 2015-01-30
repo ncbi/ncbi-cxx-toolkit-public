@@ -377,15 +377,16 @@ gpexec_query needs monitor_buildrun
 gpg-error needs3party $(ORIG_LIBS)
 gpinit needs entrez2cli
 gpinit needs gc_utils
-gpinit needs gpinit_utils
+gpinit needs gpinit_access
 gpinit_access needs gpipe_common
 gpinit_asn_factory needs gpinit
 gpinit_bag_util needs bag_access
 gpinit_bag_util needs gpinit_access
 gpinit_register needs gc_utils
 gpinit_register needs gpinit_access
+gpinit_reports needs xmlwrapp
+gpinit_reports needs xregexp
 gpinit_stats_report needs $(GPIPE_COMMON_LIBS)
-gpinit_utils needs $(GPIPE_COMMON_LIBS)
 gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
@@ -394,7 +395,6 @@ gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
 gpipe_an_base needs gencoll_client
 gpipe_an_base needs gpinit
-gpipe_an_base needs gpinit_access
 gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
@@ -1343,7 +1343,6 @@ xgpp_console_commands needs gpipe_common
 xgpp_console_commands needs xgpp_console
 xgpsubmit needs gc_load_utils
 xgpsubmit needs gpinit_access
-xgpsubmit needs gpinit_utils
 xgpsubmit needs gpipe_asn_cleanup
 xgpsubmit needs grid_wrapper
 xgpsubmit needs xasmcompare
