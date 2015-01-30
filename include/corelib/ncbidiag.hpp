@@ -2161,10 +2161,16 @@ public:
     /// Set application name
     void SetAppName(const string& app_name);
 
+    /// Check if exit code has been set.
+    bool IsSetExitCode(void) const { return m_ExitCodeSet; }
     /// Get exit code
     int GetExitCode(void) const { return m_ExitCode; }
     /// Set exit code
-    void SetExitCode(int exit_code) { m_ExitCode = exit_code; }
+    void SetExitCode(int exit_code)
+    {
+        m_ExitCode = exit_code;
+        m_ExitCodeSet = true;
+    }
 
     /// Get exit signal
     int GetExitSignal(void) const { return m_ExitSig; }
@@ -2321,6 +2327,7 @@ private:
     mutable auto_ptr<string>            m_DefaultHitId;
     mutable bool                        m_LoggedHitId;
     int                                 m_ExitCode;
+    bool                                m_ExitCodeSet;
     int                                 m_ExitSig;
     EDiagAppState                       m_AppState;
     TProperties                         m_Properties;

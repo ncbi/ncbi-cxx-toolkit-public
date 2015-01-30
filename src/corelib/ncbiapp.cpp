@@ -566,9 +566,11 @@ int CNcbiApplication::AppMain
     s_MacArgMunging(*this, &argc, &argv, exepath);
 #endif
 
+    CDiagContext& diag_context = GetDiagContext();
+
     // Preparse command line
     if (PreparseArgs(argc, argv) == ePreparse_Exit) {
-        GetDiagContext().DiscardMessages();
+        diag_context.DiscardMessages();
         return 0;
     }
 
@@ -606,7 +608,7 @@ int CNcbiApplication::AppMain
                 // Print VERSION
                 cout << GetFullVersion().Print( appname,
                     CVersion::fVersionInfo | CVersion::fPackageShort );
-                GetDiagContext().DiscardMessages();
+                diag_context.DiscardMessages();
                 return 0;
 
                 // Full version
@@ -614,7 +616,7 @@ int CNcbiApplication::AppMain
                 delete[] v;
                 // Print full VERSION
                 cout << GetFullVersion().Print( appname );
-                GetDiagContext().DiscardMessages();
+                diag_context.DiscardMessages();
                 return 0;
 
                 // Dry run
@@ -719,10 +721,14 @@ int CNcbiApplication::AppMain
         exit_code = 1;
     }
 
+    if (!diag_context.IsSetExitCode()) {
+        diag_context.SetExitCode(got_exception ? 500 : exit_code);
+    }
+
     if (m_ExitCodeCond == eAllExits
         ||  (got_exception  &&  m_ExitCodeCond == eExceptionalExits)) {
         _TRACE("Overriding exit code from " << exit_code
-               << " to " << m_ExitCodeCond);
+               << " to " << m_ExitCode);
         exit_code = m_ExitCode;
     }
 
@@ -1390,7 +1396,10 @@ void CNcbiApplication::AppStart(void)
 
 void CNcbiApplication::AppStop(int exit_code)
 {
-    GetDiagContext().SetExitCode(exit_code);
+    CDiagContext& ctx = GetDiagContext();
+    if ( !ctx.IsSetExitCode() ) {
+        ctx.SetExitCode(exit_code);
+    }
 }
 
 

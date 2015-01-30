@@ -1141,6 +1141,7 @@ CDiagContext::CDiagContext(void)
       m_AppNameSet(false),
       m_LoggedHitId(false),
       m_ExitCode(0),
+      m_ExitCodeSet(false),
       m_ExitSig(0),
       m_AppState(eDiagAppState_AppBegin),
       m_StopWatch(new CStopWatch(CStopWatch::eStart)),
