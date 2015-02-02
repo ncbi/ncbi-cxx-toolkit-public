@@ -1191,6 +1191,7 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample, bool i
 
 
 static const char* const s_StopWords[] = {
+    "-",
     "?",
     "missing",
     "n/a",
