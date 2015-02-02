@@ -2148,26 +2148,9 @@ const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
 
 const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
 {
-    CBioseq_Handle handle = bsh;
-    if ( handle ) {
-        CBioseq_set_Handle bssh = handle.GetParentBioseq_set();
-        if ( bssh && bssh.CanGetLevel() && bssh.GetLevel() == CBioseq_set::eClass_nuc_prot ) {
-            CBioseq_CI bioseq_ci( bssh, CSeq_inst::eMol_na );
-            if ( bioseq_ci ) {
-                CBioseq_Handle nuc = *bioseq_ci;
-                if ( nuc ) {
-                    handle = nuc;
-                }
-            }
-        }
-        CFeat_CI fi(handle,
-                    SAnnotSelector(CSeqFeatData::e_Cdregion)
-                    .SetByProduct());
-        if ( fi ) {
-            // return the first one (should be the one packaged on the
-            // nuc-prot set).
-            return &(fi->GetOriginalFeature());
-        }
+    CMappedFeat f = GetMappedCDSForProduct(bsh);
+    if ( f ) {
+        return &f.GetOriginalFeature();
     }
 
     return 0;
@@ -2175,21 +2158,17 @@ const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
 
 CMappedFeat GetMappedCDSForProduct(const CBioseq_Handle& bsh)
 {
-    CBioseq_Handle handle = bsh;
-    if ( handle ) {
-        CBioseq_set_Handle bssh = handle.GetParentBioseq_set();
-        if ( bssh && bssh.CanGetLevel() && bssh.GetLevel() == CBioseq_set::eClass_nuc_prot ) {
-            CBioseq_CI bioseq_ci( bssh, CSeq_inst::eMol_na );
-            if ( bioseq_ci ) {
-                CBioseq_Handle nuc = *bioseq_ci;
-                if ( nuc ) {
-                    handle = nuc;
-                }
-            }
-        }
+    if ( bsh ) {
+        // try first in-TSE CDS
         CFeat_CI fi(bsh,
                     SAnnotSelector(CSeqFeatData::e_Cdregion)
-                    .SetByProduct());
+                    .SetByProduct().SetLimitTSE(bsh.GetTSE_Handle()));
+        if ( !fi ) {
+            // then any other CDS
+            fi = CFeat_CI(bsh,
+                          SAnnotSelector(CSeqFeatData::e_Cdregion)
+                          .SetByProduct().ExcludeTSE(bsh.GetTSE_Handle()));
+        }
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
