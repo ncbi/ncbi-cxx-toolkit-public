@@ -3713,6 +3713,38 @@ CSeqFeatData::GetSetOfRegulatorySubtypes(void)
 }
 
 
+CSeqFeatData::EFeatureLocationAllowed CSeqFeatData::AllowedFeatureLocation(ESubtype subtype)
+{
+    EFeatureLocationAllowed rval = eFeatureLocationAllowed_Any;
+    switch (subtype) {
+        case eSubtype_prot:
+        case eSubtype_preprotein:
+        case eSubtype_mat_peptide_aa:
+        case eSubtype_sig_peptide_aa:
+        case eSubtype_transit_peptide_aa:
+        case eSubtype_bond:
+        case eSubtype_psec_str:
+            rval = eFeatureLocationAllowed_ProtOnly;
+            break;
+        case eSubtype_region:
+        case eSubtype_pub:
+        case eSubtype_site:
+            rval = eFeatureLocationAllowed_Any;
+            break;
+        case eSubtype_any:
+        case eSubtype_bad:
+        case eSubtype_max:
+            rval = eFeatureLocationAllowed_Error;
+            break;
+        default:
+            rval = eFeatureLocationAllowed_NucOnly;
+            break;
+    }
+
+    return rval;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

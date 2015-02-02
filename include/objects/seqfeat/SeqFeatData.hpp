@@ -486,6 +486,16 @@ public:
     static bool IsDiscouragedSubtype(ESubtype subtype);
     static bool IsDiscouragedQual(EQualifier qual);
 
+    enum EFeatureLocationAllowed {
+        eFeatureLocationAllowed_Any = 0,
+        eFeatureLocationAllowed_Error,
+        eFeatureLocationAllowed_NucOnly,
+        eFeatureLocationAllowed_ProtOnly,
+    };
+
+    static EFeatureLocationAllowed AllowedFeatureLocation(ESubtype subtype);
+
+
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {

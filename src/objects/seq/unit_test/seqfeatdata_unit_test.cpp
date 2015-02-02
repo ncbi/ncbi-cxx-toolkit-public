@@ -1002,3 +1002,11 @@ BOOST_AUTO_TEST_CASE(Test_FixStrain)
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc:1235"), "ATCC 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc : 1235"), "ATCC 1235");
 }
+
+BOOST_AUTO_TEST_CASE(Test_AllowedFeatureLocation)
+{
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowedFeatureLocation(CSeqFeatData::eSubtype_gene), CSeqFeatData::eFeatureLocationAllowed_NucOnly);
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowedFeatureLocation(CSeqFeatData::eSubtype_mat_peptide_aa), CSeqFeatData::eFeatureLocationAllowed_ProtOnly);
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowedFeatureLocation(CSeqFeatData::eSubtype_site), CSeqFeatData::eFeatureLocationAllowed_Any);
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowedFeatureLocation(CSeqFeatData::eSubtype_bad), CSeqFeatData::eFeatureLocationAllowed_Error);
+}
