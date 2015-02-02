@@ -209,7 +209,7 @@ public:
 
     /// Indicate how many times (if at all) this connection has been
     /// previously used.
-    size_t GetReuseCount() const;
+    unsigned int GetReuseCount() const;
     
     /// @brief 
     ///   Find out which connection pool this connection belongs to
