@@ -807,6 +807,9 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
                 rt_data.GetDBServiceMapper().GetName());
 
     extra.Print(prefix + "retries", ctx.retries);
+    if (connection != NULL) {
+        extra.Print(prefix + "conn_reuse_count", connection->GetReuseCount());
+    }
 }
 
 

@@ -265,6 +265,11 @@ protected:
     void CheckCanOpen(void);
     void MarkClosed(void);
 
+    size_t GetReuseCount(void) const
+    {
+        return m_ReuseCount;
+    }
+    
     //
     bool IsBCPable(void) const
     {
@@ -309,6 +314,7 @@ private:
     const Uint2    m_Port;
     const string   m_Passwd;
     const string   m_Pool;
+    size_t         m_ReuseCount;
     const bool     m_Reusable;
     bool           m_OpenFinished;
     bool           m_Valid;

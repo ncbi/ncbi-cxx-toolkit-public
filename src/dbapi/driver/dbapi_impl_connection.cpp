@@ -102,6 +102,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Port(params.GetPort())
 , m_Passwd(params.GetPassword())
 , m_Pool(params.GetParam("pool_name"))
+, m_ReuseCount(0)
 , m_Reusable(params.GetParam("is_pooled") == "true")
 , m_OpenFinished(false)
 , m_Valid(true)
@@ -318,6 +319,7 @@ void CConnection::AttachTo(CDB_Connection* interface)
 void CConnection::ReleaseInterface(void)
 {
     m_Interface = NULL;
+    ++m_ReuseCount;
 }
 
 

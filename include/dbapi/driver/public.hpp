@@ -207,6 +207,10 @@ public:
     ///   - true if this connection is a reusable one.
     virtual bool IsReusable() const;
 
+    /// Indicate how many times (if at all) this connection has been
+    /// previously used.
+    size_t GetReuseCount() const;
+    
     /// @brief 
     ///   Find out which connection pool this connection belongs to
     /// 

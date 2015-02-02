@@ -459,6 +459,12 @@ bool CDB_Connection::IsReusable() const
     return m_ConnImpl->IsReusable();
 }
 
+size_t CDB_Connection::GetReuseCount() const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->GetReuseCount();
+}
+
 const string& CDB_Connection::PoolName() const
 {
     CHECK_CONNECTION(m_ConnImpl);
