@@ -2817,10 +2817,16 @@ void CFlatGatherer::x_GatherFeatures(void) const
                 }
             }
         }
-        CFeat_CI feat_it(handle,
-            SAnnotSelector(CSeqFeatData::e_Cdregion)
-            .SetByProduct()
-            .SetResolveDepth(0) );
+        SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+        sel.SetByProduct().SetResolveDepth(0);
+        // try first in-TSE CDS
+        sel.SetLimitTSE(handle.GetTSE_Handle());
+        CFeat_CI feat_it(handle, sel);
+        if ( !feat_it ) {
+            // then any other CDS
+            sel.SetLimitNone().ExcludeTSE(handle.GetTSE_Handle());
+            feat_it = CFeat_CI(handle, sel);
+        }
         if (feat_it) {
             CMappedFeat cds = *feat_it;
 
