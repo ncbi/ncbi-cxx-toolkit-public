@@ -3209,8 +3209,10 @@ bool CDiagContext::IsUsingRootLog(void)
 CDiagContext& GetDiagContext(void)
 {
     // Make the context live longer than other diag safe-statics
+    // and +1 longer than TLS safe statics which print app stop
+    // from their cleanup.
     static CSafeStatic<CDiagContext> s_DiagContext(
-        CSafeStaticLifeSpan::eLifeSpan_Long);
+        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 
     return s_DiagContext.Get();
 }
