@@ -26,6 +26,6 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:Release
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Centos : Release : GCC.sh 4.8.1 --without-debug --with-mt --with-flat-makefile
-Linux64-Centos : Debug   : GCC.sh 4.8.1 --with-debug    --with-mt --with-flat-makefile
+Linux64-Centos : Release : GCC.sh 4.8.1 --with-debug --with-mt --with-flat-makefile --with-symbols --with-optimization
+Linux64-Centos : Debug   : GCC.sh 4.8.1 --with-debug --with-mt --with-flat-makefile
 
