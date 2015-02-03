@@ -74,10 +74,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
                 "' requires '--" NETCACHE_OPTION "'.");
     }
 
-    if (!IsOptionSet(eNetStorage))
+    if (!IsOptionSet(eNetStorage)) {
         m_NetStorage = g_CreateNetStorage(m_NetICacheClient,
                 m_Opts.netstorage_flags);
-    else {
+        if (IsOptionSet(eNamespace))
+            m_NetStorageByKey = g_CreateNetStorageByKey(m_NetICacheClient,
+                    m_Opts.app_domain, m_Opts.netstorage_flags);
+    } else {
         string init_string = "nst=" + NStr::URLEncode(m_Opts.nst_service);
 
         if (IsOptionExplicitlySet(eNetCache)) {
@@ -105,6 +108,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
 
         if (api_class == eNetStorageAdmin)
             m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
+
+        if (IsOptionSet(eNamespace)) {
+            init_string += "&domain=";
+            init_string += NStr::URLEncode(m_Opts.app_domain);
+            m_NetStorageByKey = CNetStorageByKey(init_string,
+                    m_Opts.netstorage_flags);
+        }
     }
 }
 
@@ -293,27 +303,24 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    auto_ptr<CNetStorageObjectLoc> object_loc;
+    CNetStorageObject netstorage_object;
 
     switch (IsOptionSet(eOptionalObjectLoc, OPTION_N(0)) |
             IsOptionSet(eObjectKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
-        object_loc.reset(new CNetStorageObjectLoc(m_CompoundIDPool, m_Opts.id));
+        netstorage_object = m_NetStorage.Open(m_Opts.id,
+                m_Opts.netstorage_flags);
         break;
 
     case OPTION_N(1) + OPTION_N(2):
-        object_loc.reset(new CNetStorageObjectLoc(m_CompoundIDPool,
-                m_Opts.netstorage_flags, m_Opts.app_domain, m_Opts.id,
-                TFileTrack_Site::GetDefault().c_str()));
+        netstorage_object = m_NetStorageByKey.Open(m_Opts.id,
+                m_Opts.netstorage_flags);
         break;
 
     case 0:
-        fprintf(stderr, GRID_APP_NAME " mkobjectloc: either an "
-                "object ID or a combination of '--"
-                OBJECT_KEY_OPTION "' and '--" NAMESPACE_OPTION
-                "' must be specified.\n");
-        return 2;
+        netstorage_object = m_NetStorage.Create(m_Opts.netstorage_flags);
+        break;
 
     case OPTION_N(1):
         fprintf(stderr, GRID_APP_NAME " mkobjectloc: '--" OBJECT_KEY_OPTION
@@ -332,20 +339,9 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
         return 2;
     }
 
-    if (IsOptionSet(eNetCache))
-        g_SetNetICacheParams(*object_loc, m_NetICacheClient);
+    netstorage_object.Close();
 
-    if (m_Opts.netstorage_flags != 0)
-        object_loc->SetStorageFlags(m_Opts.netstorage_flags);
-
-    if (IsOptionSet(eTTL))
-        object_loc->SetTTL(m_Opts.ttl);
-
-    if (IsOptionSet(eNetStorage) &&
-            strchr(m_Opts.nst_service.c_str(), ':') == NULL)
-        object_loc->SetServiceName(m_Opts.nst_service);
-
-    PrintLine(object_loc->GetLoc());
+    PrintLine(netstorage_object.GetLoc());
 
     return 0;
 }

@@ -435,6 +435,7 @@ private:
     CNetScheduleExecutor m_NetScheduleExecutor;
     auto_ptr<CGridClient> m_GridClient;
     CNetStorage m_NetStorage;
+    CNetStorageByKey m_NetStorageByKey;
     CNetStorageAdmin m_NetStorageAdmin;
     CCompoundIDPool m_CompoundIDPool;
 
