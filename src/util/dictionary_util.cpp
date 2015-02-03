@@ -52,6 +52,8 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
         return;
     }
 
+    CTempString vowels("aeiou");
+
     ITERATE (string, iter, in) {
         size_t prev_len = iter - in.begin();
         size_t remaining = in.length() - prev_len - 1;
@@ -189,16 +191,8 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
 
         case 'h':
             if (remaining  &&  prev_len  &&
-                ( *(iter + 1) == 'a'  ||
-                  *(iter + 1) == 'e'  ||
-                  *(iter + 1) == 'i'  ||
-                  *(iter + 1) == 'o'  ||
-                  *(iter + 1) == 'u') &&
-                *(iter - 1) != 'c'  &&
-                *(iter - 1) != 'g'  &&
-                *(iter - 1) != 'p'  &&
-                *(iter - 1) != 's'  &&
-                *(iter - 1) != 't') {
+                vowels.find(*(iter + 1)) != string::npos  &&
+                CTempString("cgpst").find(*(iter - 1)) == string::npos) {
                 *out += tolower((unsigned char)(*iter));
                 ++iter;
             }
@@ -305,26 +299,12 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
             break;
 
         case 'y':
-            if (remaining &&
+            if (remaining  &&  prev_len  &&
                 ( *(iter + 1) == 'a'  ||
                   *(iter + 1) == 'e'  ||
                   *(iter + 1) == 'i'  ||
                   *(iter + 1) == 'o'  ||
                   *(iter + 1) == 'u')) {
-                break;
-            }
-            if (remaining  &&
-                ( *(iter + 1) != 'a'  &&
-                   *(iter + 1) != 'e'  &&
-                   *(iter + 1) != 'i'  &&
-                   *(iter + 1) != 'o'  &&
-                   *(iter + 1) != 'u'  &&
-
-                   *(iter - 1) != 'a'  &&
-                   *(iter - 1) != 'e'  &&
-                   *(iter - 1) != 'i'  &&
-                   *(iter - 1) != 'o'  &&
-                   *(iter - 1) != 'u')) {
                 break;
             }
             *out += tolower((unsigned char)(*iter));
