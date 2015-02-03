@@ -5,7 +5,8 @@
 
 APP_PROJ = \
     unit_test_idmapper \
-    unit_test_format_guess_ex  \
+    unit_test_format_guess \
+    unit_test_format_guess_ex \
     unit_test_feature_table_reader \
     unit_test_fasta_reader \
     unit_test_agp_seq_entry \
