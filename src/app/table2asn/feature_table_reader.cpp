@@ -367,6 +367,18 @@ namespace
         return false;
     }
 
+    void MergeSeqIds(CBioseq& bioseq, CBioseq::TId& seq_ids)
+    {
+        ITERATE(CBioseq::TId, it, seq_ids)
+        {
+            if (!BioseqHasId(bioseq, *it))
+            {
+                bioseq.SetId().push_back(*it);
+            }
+        }
+    }
+
+
     CSeq_feat& CreateOrSetFTable(CBioseq& bioseq)
     {
         CSeq_annot::C_Data::TFtable* ftable = 0;                    
@@ -475,9 +487,9 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     }
     else
     {
-        CSeq_id::ParseIDs(protein->SetId(), protein_ids,
-                CSeq_id::fParse_ValidLocal
-            | CSeq_id::fParse_PartialOK);
+        CBioseq::TId new_ids;
+        CSeq_id::ParseIDs(new_ids, protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
+        MergeSeqIds(*protein, new_ids);
     }
 
     if (protein->GetId().empty())

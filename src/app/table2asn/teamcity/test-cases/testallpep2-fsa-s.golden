@@ -2438,6 +2438,13 @@ Seq-entry ::= set {
               accession "EAL73826"
             }
           },
+          descr {
+            title "hypothetical protein [Dictyostelium discoideum AX4]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans
+            }
+          },
           inst {
             repr raw,
             mol aa,
@@ -2449,6 +2456,28 @@ FCTLNSLNPANITLVVFMDYLTHLFKHKPPLAFSTINGHRSMLNQLLLLRNQTDIVNDPFITRIMTGIHKLRPSSAKY
 KEIWDANQVFKHLSTIKVIPKYTYTALLNKTLVLCKMFGLARSSDLVKWSFKGLIISLDSIKGPVINAKEQRSGVVSV
 LELTSLDDTNSQVCPVRHLATYLRASKGRRKPHSGDSVFIKNEGEPLQVNDINSIVLSALSKSGIDIVKFKSHSTRSA
 MASLLLSNNVLFHVVKKMIVGNQMIL"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  id local id 7,
+                  data prot {
+                    name {
+                      "hypothetical protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 463,
+                    id general {
+                      db "WGS:AAFI",
+                      tag str "DDB0216437"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         seq {
@@ -2461,6 +2490,13 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
               accession "EAL73827"
             }
           },
+          descr {
+            title "hypothetical protein [Dictyostelium discoideum AX4]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans
+            }
+          },
           inst {
             repr raw,
             mol aa,
@@ -2470,6 +2506,28 @@ MFSSNTNSRSQPSHDNSDTENEQSEDESSNNVEVPTDYQLSDTLLGQYKHMVNNQGLLVEEECILKKDEISELNKVFN
 FPSNFQVNVAPFGTPEGITVSSNVKNNDTDLLIVEKRINDSLKPLLLISSMLSSDSSNVDVELISYLTQSAIVLAVNA
 QASLSRVRRKNIAKEIYGSEVLLPIKIKDTPKMFDETETERVRKLAKSIRKNNEAKQSLLKLNYHSKPNVKKLVNSSG
 NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  id local id 8,
+                  data prot {
+                    name {
+                      "hypothetical protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 333,
+                    id general {
+                      db "WGS:AAFI",
+                      tag str "DDB0216438"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
