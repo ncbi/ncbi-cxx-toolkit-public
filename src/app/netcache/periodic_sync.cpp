@@ -109,10 +109,12 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
 
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started) {
-        if (!is_passive  ||  !slot_srv->is_passive  ||  slot_srv->started_cmds != 0)
+        if (!is_passive  ||  !slot_srv->is_passive  ||  slot_srv->started_cmds != 0) {
             return eCrossSynced;
-        if (slot_srv->cnt_sync_ops != 0)
+        }
+        if (slot_srv->cnt_sync_ops != 0) {
             CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_data->slot, slot_srv->cnt_sync_ops, false);
+        }
         slot_srv->sync_started = false;
         --slot_data->cnt_sync_started;
     }
@@ -136,10 +138,14 @@ s_StopSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
                                      slot_srv->next_sync_time,
                                      next_delay);
     slot_srv->sync_started = false;
-    if (slot_data->cnt_sync_started == 0) {
-        SRV_FATAL("SyncSlotData broken");
+    slot_srv->started_cmds = 0;
+    slot_srv->is_passive = true;
+    if (slot_data->cnt_sync_started != 0) {
+        --slot_data->cnt_sync_started;
+    } else {
+        SRV_LOG(Critical, "SyncSlotData broken");
     }
-    if (--slot_data->cnt_sync_started == 0  &&  slot_data->clean_required)
+    if (slot_data->cnt_sync_started == 0  &&  slot_data->clean_required)
         s_LogCleaner->SetRunnable();
 }
 
@@ -503,6 +509,26 @@ CNCPeriodicSync::SyncCommandFinished(Uint8 server_id, Uint2 slot, Uint8 sync_id)
 }
 
 void
+CNCPeriodicSync::Cancel(Uint8 server_id, Uint2 slot, Uint8 sync_id)
+{
+    SSyncSlotData* slot_data;
+    SSyncSlotSrv* slot_srv;
+    s_FindServerSlot(server_id, slot, slot_data, slot_srv);
+
+    CMiniMutexGuard g_slot(slot_data->lock);
+    CMiniMutexGuard g_srv(slot_srv->lock);
+    if (slot_srv->sync_started  &&  slot_srv->is_passive
+        &&  slot_srv->cur_sync_id == sync_id)
+    {
+        if (slot_srv->started_cmds != 0) {
+            --slot_srv->started_cmds;
+        }
+        --slot_srv->cnt_sync_ops;
+        s_CancelSync(slot_data, slot_srv, 0);
+    }
+}
+
+void
 CNCPeriodicSync::Commit(Uint8 server_id,
                         Uint2 slot,
                         Uint8 sync_id,
@@ -525,23 +551,6 @@ CNCPeriodicSync::Commit(Uint8 server_id,
     {
         --slot_srv->cnt_sync_ops;
         s_CommitSync(slot_data, slot_srv);
-    }
-}
-
-void
-CNCPeriodicSync::Cancel(Uint8 server_id, Uint2 slot, Uint8 sync_id)
-{
-    SSyncSlotData* slot_data;
-    SSyncSlotSrv* slot_srv;
-    s_FindServerSlot(server_id, slot, slot_data, slot_srv);
-
-    CMiniMutexGuard g_slot(slot_data->lock);
-    CMiniMutexGuard g_srv(slot_srv->lock);
-    if (slot_srv->sync_started  &&  slot_srv->is_passive
-        &&  slot_srv->cur_sync_id == sync_id)
-    {
-        --slot_srv->cnt_sync_ops;
-        s_CancelSync(slot_data, slot_srv, 0);
     }
 }
 
@@ -632,11 +641,9 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
         SSyncSlotSrv* slot_srv = *it_srv;
         slot_srv->lock.Lock();
         if (slot_srv->sync_started) {
-            if (slot_srv->is_passive
-//                &&  slot_srv->started_cmds == 0
-                &&  CSrvTime::Current().AsUSec() - slot_srv->last_active_time
-                        >= CNCDistributionConf::GetPeriodicSyncTimeout())
-            {
+            if (/*slot_srv->is_passive && slot_srv->started_cmds == 0 && */
+                CSrvTime::Current().AsUSec() - slot_srv->last_active_time
+                        >= CNCDistributionConf::GetPeriodicSyncTimeout()) {
                 s_CancelSync(m_SlotData, slot_srv, 0);
             }
         }
