@@ -76,13 +76,11 @@ alndbaccess needs generic_db_core
 an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
-an_core needs gpipe_jira
 an_core needs gpipe_kmer
 an_core needs gpipe_val
 an_core needs ncbi_xcache_netcache
 an_euk_pipeline needs bag_access
 an_euk_pipeline needs gpipe_an_base
-an_euk_pipeline needs gpipe_jira
 an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs gpipe_xml
 an_prok_pipeline needs gpipe_an_base
@@ -395,6 +393,7 @@ gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
 gpipe_an_base needs gencoll_client
 gpipe_an_base needs gpinit
+gpipe_an_base needs gpipe_jira
 gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
@@ -423,7 +422,8 @@ gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
-gpipe_jira needs gpipe_common
+gpipe_jira needs $(GPIPE_COMMON_LIBS)
+gpipe_jira needs gpinit_access
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer includes sampling
 gpipe_kmer needs biotree
