@@ -172,7 +172,7 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
 
 CNCActiveHandler::~CNCActiveHandler(void)
 {
-    if (m_DiagCtx) {
+    while (GetDiagCtx()) {
         ReleaseDiagCtx();
     }
     delete m_BlobSum;
