@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = genbank lds lds2 blastdb cdd trace patcher
+SUB_PROJ = genbank lds2 blastdb cdd trace patcher
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

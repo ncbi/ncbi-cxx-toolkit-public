@@ -1,7 +1,6 @@
 # $Id$
 
 SUB_PROJ =  \
-    ncbi_lds \
     ncbi_lds2 \
     ncbi_validator \
     ncbi_xdiscrepancy_report \
@@ -9,7 +8,6 @@ SUB_PROJ =  \
     ncbi_xloader_remoteblast \
     ncbi_xloader_cdd \
     ncbi_xloader_genbank \
-    ncbi_xloader_lds \
     ncbi_xloader_lds2 \
     ncbi_xloader_patcher \
     ncbi_xloader_table \

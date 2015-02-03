@@ -5,7 +5,7 @@
 
 REQUIRES = objects
 
-SUB_PROJ = unit_test_util readers blast lds lds2 data_loaders simple \
+SUB_PROJ = unit_test_util readers blast lds2 data_loaders simple \
            alnmgr cddalignview test manip cleanup format edit validator \
            asniotest align seqmasks_io eutils \
            align_format snputil uudutil variation writers

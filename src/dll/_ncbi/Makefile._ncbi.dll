@@ -18,7 +18,7 @@ DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  ncbi_dbapi_driver     \
                  ncbi_general          \
                  ncbi_image            \
-                 ncbi_lds              \
+                 ncbi_lds2             \
                  ncbi_misc             \
                  ncbi_mmdb             \
                  ncbi_pub              \
@@ -32,7 +32,7 @@ DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  ncbi_xloader_blastdb  \
                  ncbi_xloader_cdd      \
                  ncbi_xloader_genbank  \
-                 ncbi_xloader_lds      \
+                 ncbi_xloader_lds2     \
                  ncbi_xloader_trace    \
                  ncbi_xobjsimple       \
                  ncbi_xreader          \

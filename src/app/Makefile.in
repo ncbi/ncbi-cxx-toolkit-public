@@ -4,14 +4,14 @@
 #################################
 
 SUB_PROJ = asn2asn asn2fasta asn2flat asnval asn_cleanup \
-		   id1_fetch blast convert_seq \
+           id1_fetch blast convert_seq \
            nmer_repeats objmgr gi2taxid netschedule grid netstorage igblast \
            winmasker dustmasker segmasker blastdb vecscreen \
-           agpconvert id2_fetch agp_validate objextract lds_indexer \
+           agpconvert id2_fetch agp_validate objextract \
            bdb_env_keeper nw_aligner speedtest idmapper formatguess \
            multireader read_blast_result splign hfilter \
            annotwriter compart streamtest lds2_indexer \
-		   discrep_report biosample_chk gap_stats table2asn \
+           discrep_report biosample_chk gap_stats table2asn \
            srcchk tableval
 
 EXPENDABLE_SUB_PROJ = split_cache wig2table netcache rmblastn dblb
@@ -20,4 +20,3 @@ REQUIRES = app
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
