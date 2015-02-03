@@ -2621,7 +2621,9 @@ CNCBlobStorage::CheckDiskSpace(void)
         if (s_StopWriteOnSize != 0  &&  cur_db_size >= s_StopWriteOnSize) {
             s_IsStopWrite = eStopDBSize;
             ERR_POST(Critical << "Database size exceeded its limit. "
-                                 "Will no longer accept any writes from clients.");
+                              << "Current db size is " << g_ToSizeStr(cur_db_size)
+                              << ", stopwrite size is "            << g_ToSizeStr(s_StopWriteOnSize)
+                              <<   "Will no longer accept any writes from clients.");
         }
     }
     else if (s_IsStopWrite ==  eStopDBSize  &&  cur_db_size <= s_StopWriteOffSize)
@@ -2630,13 +2632,17 @@ CNCBlobStorage::CheckDiskSpace(void)
     }
     if (free_space <= s_DiskCritical) {
         s_IsStopWrite = eStopDiskCritical;
-        ERR_POST(Critical << "Free disk space is below CRITICAL threshold. "
-                             "Will no longer accept any writes.");
+        ERR_POST(Critical << "Free disk space is below CRITICAL threshold: "
+                          << "  free " << g_ToSizeStr(free_space)
+                          << ", limit " << g_ToSizeStr(s_DiskCritical)
+                          << "Will no longer accept any writes.");
     }
     else if (free_space <= s_DiskFreeLimit) {
         s_IsStopWrite = eStopDiskSpace;
-        ERR_POST(Critical << "Free disk space is below threshold. "
-                             "Will no longer accept any writes from clients.");
+        ERR_POST(Critical << "Free disk space is below threshold: "
+                          << "  free " << g_ToSizeStr(free_space)
+                          << ", limit " << g_ToSizeStr(s_DiskFreeLimit)
+                          << "Will no longer accept any writes from clients.");
     }
     else if (s_IsStopWrite == eStopDiskSpace
              ||  s_IsStopWrite == eStopDiskCritical)
