@@ -42,6 +42,10 @@
 BEGIN_NCBI_SCOPE
 
 
+const string    k_LBSMDNSTTestService = "LBSMDNSTTestService";
+
+
+
 
 // Note: access to the instances of this class is possible only via the service
 // registry and the corresponding container access is always done under a lock.
@@ -118,6 +122,7 @@ class CNSTServiceRegistry
                                          const string &  entry);
 
     private:
+        CNSTServiceProperties           m_LBSMDTestServiceProperties;
         CNSTServiceProperties           m_DefaultProperties;
         map< string,
              CNSTServiceProperties >    m_Services; // All the services

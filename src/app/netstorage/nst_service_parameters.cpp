@@ -81,7 +81,16 @@ CNSTServiceProperties::GetTTLAsString(void) const
 
 
 CNSTServiceRegistry::CNSTServiceRegistry()
-{}
+{
+    // LBSMD test service propertiesare ttl = 1h, prolongs = 0s
+    TNSTDBValue<CTimeSpan>      lbsmd_ttl;
+
+    lbsmd_ttl.m_IsNull = false;
+    lbsmd_ttl.m_Value = CTimeSpan(3600L);
+    m_LBSMDTestServiceProperties.SetTTL(lbsmd_ttl);
+    m_LBSMDTestServiceProperties.SetProlongOnRead(CTimeSpan(0L));
+    m_LBSMDTestServiceProperties.SetProlongOnWrite(CTimeSpan(0L));
+}
 
 
 size_t
@@ -292,7 +301,13 @@ bool
 CNSTServiceRegistry::IsKnown(const string &  service) const
 {
     CMutexGuard     guard(m_Lock);
-    return m_Services.find(service) != m_Services.end();
+    bool            found = m_Services.find(service) != m_Services.end();
+
+    if (found)
+        return true;
+
+    // Hardcoded service for LBSMD health check
+    return service == k_LBSMDNSTTestService;
 }
 
 
@@ -305,8 +320,14 @@ CNSTServiceRegistry::GetTTL(const string &            service,
     map< string,
          CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
 
-    if (s == m_Services.end())
+    if (s == m_Services.end()) {
+        // It might be the LBSMD test service
+        if (service == k_LBSMDNSTTestService) {
+            ttl = m_LBSMDTestServiceProperties.GetTTL();
+            return true;
+        }
         return false;
+    }
 
     ttl = s->second.GetTTL();
     return true;
@@ -322,8 +343,14 @@ CNSTServiceRegistry::GetProlongOnRead(const string &  service,
     map< string,
          CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
 
-    if (s == m_Services.end())
+    if (s == m_Services.end()) {
+        // It might be the LBSMD test service
+        if (service == k_LBSMDNSTTestService) {
+            prolong_on_read = m_LBSMDTestServiceProperties.GetProlongOnRead();
+            return true;
+        }
         return false;
+    }
 
     prolong_on_read = s->second.GetProlongOnRead();
     return true;
@@ -339,8 +366,14 @@ CNSTServiceRegistry::GetProlongOnWrite(const string &  service,
     map< string,
          CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
 
-    if (s == m_Services.end())
+    if (s == m_Services.end()) {
+        // It might be the LBSMD test service
+        if (service == k_LBSMDNSTTestService) {
+            prolong_on_write = m_LBSMDTestServiceProperties.GetProlongOnWrite();
+            return true;
+        }
         return false;
+    }
 
     prolong_on_write = s->second.GetProlongOnWrite();
     return true;
@@ -356,8 +389,14 @@ CNSTServiceRegistry::GetServiceProperties(const string &  service,
     map< string,
          CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
 
-    if (s == m_Services.end())
+    if (s == m_Services.end()) {
+        // It might be the LBSMD test service
+        if (service == k_LBSMDNSTTestService) {
+            props = m_LBSMDTestServiceProperties;
+            return true;
+        }
         return false;
+    }
 
     props = s->second;
     return true;
