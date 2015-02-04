@@ -12,7 +12,7 @@ LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_REQUIRES = in-house-resources GNUTLS
-CHECK_CMD = test_netstorage.sh
+# CHECK_CMD = test_netstorage.sh
 CHECK_COPY = test_netstorage.sh
 CHECK_TIMEOUT = 800
 
