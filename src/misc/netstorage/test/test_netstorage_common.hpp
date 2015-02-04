@@ -52,26 +52,30 @@ typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
 NCBI_PARAM_DECL(string, netcache, service_name);
 typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
 
-NCBI_PARAM_DECL(string, netcache, cache_name);
-typedef NCBI_PARAM_TYPE(netcache, cache_name) TNetCache_CacheName;
+NCBI_PARAM_DECL(string, netstorage, app_domain);
+typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
 
 
 template <class TNetStorage>
 inline TNetStorage g_GetNetStorage()
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
-    string nc_cache(TNetCache_CacheName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     return g_CreateNetStorage(
-            CNetICacheClient(nc_service.c_str(), nc_cache.c_str(), APP_NAME));
+            CNetICacheClient(nc_service.c_str(),
+                    nst_app_domain.c_str(), APP_NAME),
+            nst_app_domain);
 }
 
 template <>
 inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
-    string nc_cache(TNetCache_CacheName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     return g_CreateNetStorageByKey(
-            CNetICacheClient(nc_service.c_str(), nc_cache.c_str(), APP_NAME));
+            CNetICacheClient(nc_service.c_str(),
+                    nst_app_domain.c_str(), APP_NAME),
+            nst_app_domain);
 }
 
 inline void g_Sleep()

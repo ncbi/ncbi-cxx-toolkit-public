@@ -77,6 +77,7 @@ public:
 
 /// Enumeration that indicates the current location of the object.
 enum ENetStorageObjectLocation {
+    eNFL_Unknown,
     eNFL_NotFound,
     eNFL_NetCache,
     eNFL_FileTrack
@@ -147,7 +148,7 @@ enum ENetStorageFlags {
                                       ///< to track ownership & changes. Attributes
                                       ///< and querying will also be disabled.
 };
-typedef int TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
+typedef unsigned TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
 
 
 
@@ -336,12 +337,13 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  and the value of the attribute must be separated by the equality
     ///  sign, and the value must be URL-encoded.
     ///  The following attributes are recoginzed:
+    ///  * namespace  - Application domain. This parameter is required.
     ///  * client     - Application name. If omitted, generated from
     ///                 the executable pathname.
     ///  * nst        - NetStorage server address or LBSM service name
     ///                 pointing to a group of NetStorage servers.
     ///  * nc         - NetCache service name or server address.
-    ///  * cache      - Application-specific NetCache cache name.
+    ///  * cache      - Synonym for "namespace".
     ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
     ///
     /// @param default_flags
@@ -432,14 +434,16 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     ///  and the value of the attribute must be separated by the equality
     ///  sign, and the value must be URL-encoded.
     ///  The following attributes are recoginzed:
-    ///  * domain     - Namespace name, within which the keys passed
+    ///  * namespace  - Namespace name, within which the keys passed
     ///                 to the methods of this class must be unique.
+    ///                 This parameter is required.
+    ///  * domain     - Synonym for "namespace".
     ///  * client     - Application name.
     ///  * nst        - NetStorage server address or LBSM service name
     ///                 pointing to a group of NetStorage servers.
     ///  * nc         - NetCache service name or server address.
-    ///  * cache      - Application-specific NetCache cache name.
-    ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
+    ///  * cache      - Synonym for "namespace".
+    ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&namespace=myapp"
     ///
     /// @param default_flags
     ///  Default storage preferences for objects created by this object.

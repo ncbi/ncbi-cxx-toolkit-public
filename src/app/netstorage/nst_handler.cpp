@@ -1438,6 +1438,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     try {
         CNetStorage       net_storage(g_CreateNetStorage(
                               CNetICacheClient(CNetICacheClient::eAppRegistry),
+                              kEmptyStr,
                               0));
         CNetStorageObject net_storage_object = net_storage.Open(
                                                     object_id.object_loc, 0);
@@ -1885,7 +1886,9 @@ CNetStorageHandler::x_ProcessWrite(
                                                           true, reply);
 
     CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+                          CNetICacheClient(CNetICacheClient::eAppRegistry),
+                          kEmptyStr,
+                          0));
 
     m_ObjectBeingWritten = net_storage.Open(object_id.object_loc, 0);
 
@@ -1949,7 +1952,9 @@ CNetStorageHandler::x_ProcessRead(
 
 
     CNetStorage         net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+                          CNetICacheClient(CNetICacheClient::eAppRegistry),
+                          kEmptyStr,
+                          0));
     CNetStorageObject   net_storage_object = net_storage.Open(
                                                     object_id.object_loc, 0);
 
@@ -2039,7 +2044,9 @@ CNetStorageHandler::x_ProcessDelete(
     }
 
     CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+                          CNetICacheClient(CNetICacheClient::eAppRegistry),
+                          kEmptyStr,
+                          0));
 
     net_storage.Remove(object_id.object_loc);
     m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
@@ -2103,7 +2110,9 @@ CNetStorageHandler::x_ProcessRelocate(
         x_CheckObjectExpiration(object_id.object_key, true, reply);
 
     CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+                          CNetICacheClient(CNetICacheClient::eAppRegistry),
+                          kEmptyStr,
+                          0));
     string          new_object_loc = net_storage.Relocate(object_id.object_loc,
                                                           new_location_flags);
 
@@ -2145,7 +2154,9 @@ CNetStorageHandler::x_ProcessExists(
         x_CheckObjectExpiration(object_id.object_loc, true, reply);
 
     CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+                          CNetICacheClient(CNetICacheClient::eAppRegistry),
+                          kEmptyStr,
+                          0));
     bool            exists = net_storage.Exists(object_id.object_loc);
 
     reply.SetBoolean("Exists", exists);
@@ -2171,7 +2182,9 @@ CNetStorageHandler::x_ProcessGetSize(
         x_CheckObjectExpiration(object_id.object_loc, true, reply);
 
     CNetStorage       net_storage(g_CreateNetStorage(
-                        CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+                        CNetICacheClient(CNetICacheClient::eAppRegistry),
+                        kEmptyStr,
+                        0));
     CNetStorageObject net_storage_object = net_storage.Open(
                         object_id.object_loc, 0);
     Uint8             object_size = net_storage_object.GetSize();
@@ -2292,10 +2305,10 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
                                        user_key.m_UniqueID,
                                        TFileTrack_Site::GetDefault().c_str());
     object_loc_struct.SetServiceName(m_Service);
-    g_SetNetICacheParams(object_loc_struct, icache_client);
+    //object_loc_struct.SetLocation_NetCache(icache_client);
 
     ret_val.object_key = object_loc_struct.GetUniqueKey();
-    ret_val.object_loc = object_loc_struct.GetLoc();
+    ret_val.object_loc = object_loc_struct.GetLocator();
 
     // Log if needed
     if (m_ConnContext.NotNull()) {
@@ -2381,11 +2394,15 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
     CNetStorage     net_storage;
     if (icache_settings.m_ServiceName.empty())
         net_storage = g_CreateNetStorage(
-                CNetICacheClient(CNetICacheClient::eAppRegistry), 0);
+                CNetICacheClient(CNetICacheClient::eAppRegistry),
+                icache_settings.m_CacheName,
+                0);
     else {
         CNetICacheClient icache_client(icache_settings.m_ServiceName,
                 icache_settings.m_CacheName, m_Client);
-        net_storage = g_CreateNetStorage(icache_client, 0);
+        net_storage = g_CreateNetStorage(icache_client,
+                icache_settings.m_CacheName,
+                0);
     }
 
     if ((flags & fNST_NoMetaData) != 0) {
@@ -2475,8 +2492,7 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
         CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
                                                 object_loc);
 
-        bool    no_metadata = (object_loc_struct.GetStorageFlags() &
-                               fNST_NoMetaData) != 0;
+        bool    no_metadata = object_loc_struct.IsMetaDataDisabled();
 
         if (no_metadata)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
@@ -2524,8 +2540,8 @@ CNetStorageHandler::x_DetectMetaDBNeedUpdate(
         CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
                                                 object_loc);
 
-        bool    no_metadata = (object_loc_struct.GetStorageFlags() &
-                              fNST_NoMetaData) != 0;
+        bool    no_metadata = object_loc_struct.IsMetaDataDisabled();
+
         if (no_metadata)
             return false;
 
@@ -2604,8 +2620,7 @@ CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
         CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
                                                 object_loc);
 
-        bool    no_metadata = (object_loc_struct.GetStorageFlags() &
-                              fNST_NoMetaData) != 0;
+        bool    no_metadata = object_loc_struct.IsMetaDataDisabled();
 
         if (no_metadata)
             return false;

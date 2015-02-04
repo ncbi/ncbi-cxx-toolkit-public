@@ -517,17 +517,17 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
             }
             break;
         case 'n':
-            if (field->name == "nst")
+            if (field->name == "namespace")
+                m_AppDomain = field->value;
+            else if (field->name == "nst")
                 m_NetStorageServiceName = field->value;
             else if (field->name == "nc")
                 m_NetCacheServiceName = field->value;
             break;
         case 'c':
-            if (field->name == "cache") {
-                m_CacheName = field->value;
-                if (m_AppDomain.empty())
-                    m_AppDomain = m_CacheName;
-            } else if (field->name == "client")
+            if (field->name == "cache")
+                m_AppDomain = field->value;
+            else if (field->name == "client")
                 m_ClientName = field->value;
         }
     }
@@ -755,10 +755,10 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
 
 void SNetStorageRPC::x_SetICacheNames(CJsonNode& node)
 {
-    if (!m_NetCacheServiceName.empty() && !m_CacheName.empty()) {
+    if (!m_NetCacheServiceName.empty() && !m_AppDomain.empty()) {
         CJsonNode icache(CJsonNode::NewObjectNode());
         icache.SetString("ServiceName", m_NetCacheServiceName);
-        icache.SetString("CacheName", m_CacheName);
+        icache.SetString("CacheName", m_AppDomain);
         node.SetByKey("ICache", icache);
     }
 }

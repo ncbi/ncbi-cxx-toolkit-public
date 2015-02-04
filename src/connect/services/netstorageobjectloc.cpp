@@ -48,9 +48,23 @@
 
 #define DEFAULT_CACHE_CHUNK_SIZE (1024 * 1024)
 
+#define FILETRACK_STORAGE_CODE "FT"
+#define NETCACHE_STORAGE_CODE "NC"
+
+#define STORAGE_INFO_CUE 0
+
 BEGIN_NCBI_SCOPE
 
-EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name)
+/// @internal
+enum EFileTrackSite {
+    eFileTrack_ProdSite,
+    eFileTrack_DevSite,
+    eFileTrack_QASite,
+    eNumberOfFileTrackSites
+};
+
+/// @internal
+static EFileTrackSite s_StringToFileTrackSite(const char* ft_site_name)
 {
     if (strcmp(ft_site_name, "submit") == 0 ||
             strcmp(ft_site_name, "prod") == 0)
@@ -68,15 +82,23 @@ EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name)
 }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-        TNetStorageFlags flags, Uint8 random_number,
+        TNetStorageFlags flags,
+        const string& app_domain,
+        Uint8 random_number,
         const char* ft_site_name) :
     m_CompoundIDPool(cid_pool),
-    m_StorageFlags(flags | fNST_NoMetaData),
-    m_Fields(0),
+    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags)),
     m_ObjectID(0),
+    //m_LocationCode(FILETRACK_STORAGE_CODE),
+    //m_Location(eNFL_FileTrack),
+    m_Location(eNFL_Unknown),
+    m_AppDomain(app_domain),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
+    m_NCFlags(0),
+    m_NetCacheIP(0),
+    m_NetCachePort(0),
     m_Dirty(true)
 {
     x_SetFileTrackSite(ft_site_name);
@@ -89,66 +111,101 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& unique_key,
         const char* ft_site_name) :
     m_CompoundIDPool(cid_pool),
-    m_StorageFlags(flags | fNST_NoMetaData),
-    m_Fields(fNFID_KeyAndNamespace),
+    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags) | fLF_HasUserKey),
     m_ObjectID(0),
+    //m_LocationCode(FILETRACK_STORAGE_CODE),
+    //m_Location(eNFL_FileTrack),
+    m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
     m_UserKey(unique_key),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
+    m_NCFlags(0),
+    m_NetCacheIP(0),
+    m_NetCachePort(0),
     m_Dirty(true)
 {
     x_SetFileTrackSite(ft_site_name);
     x_SetUniqueKeyFromUserDefinedKey();
 }
 
-#define THROW_INVALID_LOC_ERROR(object_loc) \
+#define INVALID_LOC_ERROR_MSG "Invalid NetStorage object locator"
+
+#define THROW_INVALID_LOC_ERROR(object_loc, msg) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
-                "Invalid NetStorage object locator '" << (object_loc) << '\'')
+                msg " '" << (object_loc) << '\'')
 
 #define VERIFY_FIELD_EXISTS(field) \
         if (!(field)) { \
-            THROW_INVALID_LOC_ERROR(object_loc); \
+            THROW_INVALID_LOC_ERROR(object_loc, INVALID_LOC_ERROR_MSG); \
         }
+
+ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
+{
+    if (location.length() == 2) {
+        if (location.data()[0] == FILETRACK_STORAGE_CODE[0] &&
+                location.data()[1] == FILETRACK_STORAGE_CODE[1])
+            return eNFL_FileTrack;
+        if (location.data()[0] == NETCACHE_STORAGE_CODE[0] &&
+                location.data()[1] == NETCACHE_STORAGE_CODE[1])
+            return eNFL_NetCache;
+    }
+    return eNFL_Unknown;
+}
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& object_loc) :
     m_CompoundIDPool(cid_pool),
+    m_ObjectID(0),
+    m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
+    m_NCFlags(0),
+    m_NetCacheIP(0),
+    m_NetCachePort(0),
     m_Dirty(false),
     m_Locator(object_loc)
 {
     CCompoundID cid = m_CompoundIDPool.FromString(object_loc);
 
     // Check the ID class.
-    if (cid.GetClass() != eCIC_NetStorageObjectLoc) {
-        THROW_INVALID_LOC_ERROR(object_loc);
+    switch (cid.GetClass()) {
+    case eCIC_NetStorageObjectLocV1:
+        THROW_INVALID_LOC_ERROR(object_loc,
+                "Unsupported NetStorage object locator version");
+    case eCIC_NetStorageObjectLoc:
+        break;
+    default:
+        THROW_INVALID_LOC_ERROR(object_loc, INVALID_LOC_ERROR_MSG);
     }
 
-    // Restore the storage flags.
+    // Get locator flags.
     CCompoundIDField field = cid.GetFirst(eCIT_Flags);
     VERIFY_FIELD_EXISTS(field);
-    m_StorageFlags = (TNetStorageFlags) field.GetFlags();
+    m_LocatorFlags = (TLocatorFlags) field.GetFlags();
 
-    // Restore the field flags.
-    VERIFY_FIELD_EXISTS(field = field.GetNextHomogeneous());
-    m_Fields = (TNetStorageObjectLocFields) field.GetFlags();
+    // Restore NetStorage service name.
+    if (m_LocatorFlags & fLF_NetStorageService) {
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_ServiceName = field.GetServiceName();
+    }
 
-    if ((m_StorageFlags & fNST_NoMetaData) == 0) {
+    // Restore object ID.
+    if (m_LocatorFlags & fLF_HasObjectID) {
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_ObjectID = field.GetID();
     }
 
-    // Restore file identification.
-    if (m_Fields & fNFID_KeyAndNamespace) {
-        // Get the unique file key.
+    // Get the domain name.
+    VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+    m_AppDomain = field.GetString();
+
+    // Restore object identification.
+    if (m_LocatorFlags & fLF_HasUserKey) {
+        // Get the unique object key.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_UserKey = field.GetString();
-        // Get the domain name.
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_AppDomain = field.GetString();
 
         x_SetUniqueKeyFromUserDefinedKey();
     } else {
-        // Get file creation timestamp.
+        // Get object creation timestamp.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_Timestamp = field.GetTimestamp();
         // Get the random ID.
@@ -160,92 +217,93 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         x_SetUniqueKeyFromRandom();
     }
 
-    // Restore NetCache info.
-    if (m_Fields & fNFID_NetICache) {
-        // Get the service name.
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_NCServiceName = field.GetServiceName();
-        // Get the cache name.
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_CacheName = field.GetDatabaseName();
-        // Get the primary NetCache server IP and port.
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_NetCacheIP = field.GetIPv4Address();
-        m_NetCachePort = field.GetPort();
-    }
-
-    // If this file is cacheable, load the size of cache chunks.
-    if (m_StorageFlags & fNST_Cacheable) {
+    // If this object is cacheable, load the size of cache chunks.
+    if (m_LocatorFlags & fLF_Cacheable) {
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_CacheChunkSize = (Uint8) field.GetInteger();
     }
 
-    // Restore the TTL if it's in the key.
-    if (m_Fields & fNFID_TTL) {
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_TTL = (Uint8) field.GetInteger();
+    // Find storage info (optional).
+    for (field = cid.GetFirst(eCIT_Cue); ; field = field.GetNextHomogeneous()) {
+        if (!field)
+            return;
+        if (field.GetCue() == STORAGE_INFO_CUE)
+            break;
     }
 
-    // Restore NetStorage service name.
-    if (m_Fields & fNFID_NetStorageService) {
+    // Restore object location.
+    VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+    m_LocationCode = field.GetDatabaseName();
+    m_Location = s_LocationCodeToLocation(m_LocationCode);
+
+    // Restore storage-specific info.
+    switch (m_Location) {
+    case eNFL_NetCache:
+        // Get NetCache flags.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_ServiceName = field.GetString();
+        m_NCFlags = (TNetCacheFlags) field.GetFlags();
+        // Get the service name.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_NCServiceName = field.GetServiceName();
+        // Get the primary NetCache server IP and port.
+        if (m_NCFlags & fNCF_ServerSpecified) {
+            VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+            m_NetCacheIP = field.GetIPv4Address();
+            m_NetCachePort = field.GetPort();
+        }
+        break;
+    default: /* Unknown storages */
+        break;
     }
 }
 
-void CNetStorageObjectLoc::ClearNetICacheParams()
+void CNetStorageObjectLoc::SetLocation_NetCache(
+        const string& service_name,
+        Uint4 server_ip, unsigned short server_port,
+        bool allow_xsite_conn)
 {
     m_Dirty = true;
 
-    ClearFieldFlags(fNFID_NetICache);
-}
-
-void CNetStorageObjectLoc::SetNetICacheParams(const string& service_name,
-        const string& cache_name, Uint4 server_ip, unsigned short server_port
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        , bool allow_xsite_conn
-#endif
-        )
-{
-    m_Dirty = true;
-
-    SetFieldFlags(fNFID_NetICache);
+    m_LocationCode = NETCACHE_STORAGE_CODE;
+    m_Location = eNFL_NetCache;
 
     m_NCServiceName = service_name;
-    m_CacheName = cache_name;
-    m_NetCacheIP = server_ip;
-    m_NetCachePort = server_port;
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (allow_xsite_conn)
-        SetFieldFlags(fNFID_AllowXSiteConn);
+    if (server_ip != 0 && server_port != 0)
+        m_NCFlags |= fNCF_ServerSpecified;
     else
-        ClearFieldFlags(fNFID_AllowXSiteConn);
-#endif
+        m_NCFlags &= ~(TNetCacheFlags) fNCF_ServerSpecified;
+
+    if (allow_xsite_conn)
+        m_NCFlags |= fNCF_AllowXSiteConn;
+    else
+        m_NCFlags &= ~(TNetCacheFlags) fNCF_AllowXSiteConn;
 }
 
-void CNetStorageObjectLoc::SetFileTrackSite(EFileTrackSite ft_site)
+void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
 {
+    EFileTrackSite ft_site = s_StringToFileTrackSite(ft_site_name);
+
     m_Dirty = true;
 
-    m_Fields &= ~(unsigned char) (fNFID_FileTrackDev | fNFID_FileTrackQA);
+    m_LocationCode = FILETRACK_STORAGE_CODE;
+    m_Location = eNFL_FileTrack;
+
+    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
 
     if (ft_site == eFileTrack_DevSite)
-        m_Fields |= fNFID_FileTrackDev;
+        m_LocatorFlags |= fLF_DevEnv;
     else if (ft_site == eFileTrack_QASite)
-        m_Fields |= fNFID_FileTrackQA;
-}
-
-EFileTrackSite CNetStorageObjectLoc::GetFileTrackSite()
-{
-    return m_Fields & fNFID_FileTrackDev ? eFileTrack_DevSite :
-            m_Fields & fNFID_FileTrackQA ? eFileTrack_QASite :
-                    eFileTrack_ProdSite;
+        m_LocatorFlags |= fLF_QAEnv;
 }
 
 string CNetStorageObjectLoc::GetFileTrackURL()
 {
-    switch (GetFileTrackSite()) {
+    EFileTrackSite ft_site = m_LocatorFlags & fLF_DevEnv ? eFileTrack_DevSite :
+            m_LocatorFlags & fLF_QAEnv ? eFileTrack_QASite :
+                    eFileTrack_ProdSite;
+
+    switch (ft_site) {
     default:
         return "https://submit.ncbi.nlm.nih.gov";
         break;
@@ -259,12 +317,14 @@ string CNetStorageObjectLoc::GetFileTrackURL()
 
 void CNetStorageObjectLoc::x_SetFileTrackSite(const char* ft_site_name)
 {
-    switch (g_StringToFileTrackSite(ft_site_name)) {
+    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
+
+    switch (s_StringToFileTrackSite(ft_site_name)) {
     case eFileTrack_DevSite:
-        m_Fields |= fNFID_FileTrackDev;
+        m_LocatorFlags |= fLF_DevEnv;
         break;
     case eFileTrack_QASite:
-        m_Fields |= fNFID_FileTrackQA;
+        m_LocatorFlags |= fLF_QAEnv;
     default:
         break;
     }
@@ -272,14 +332,22 @@ void CNetStorageObjectLoc::x_SetFileTrackSite(const char* ft_site_name)
 
 void CNetStorageObjectLoc::x_SetUniqueKeyFromRandom()
 {
-    m_UniqueKey = NStr::NumericToString(m_Timestamp) + '_';
-    m_UniqueKey.append(NStr::NumericToString(m_Random));
+    m_ICacheKey = NStr::NumericToString(m_Timestamp);
+    m_ICacheKey += '-';
+    m_ICacheKey += NStr::NumericToString(m_Random);
+    if (m_LocatorFlags & fLF_HasObjectID) {
+        m_ICacheKey += '-';
+        m_ICacheKey.append(NStr::NumericToString(m_ObjectID));
+    }
+    m_UniqueKey = m_AppDomain + '-';
+    m_UniqueKey += m_ICacheKey;
 }
 
 void CNetStorageObjectLoc::x_SetUniqueKeyFromUserDefinedKey()
 {
-    m_UniqueKey = m_AppDomain + '_';
-    m_UniqueKey.append(m_UserKey);
+    m_ICacheKey = m_UserKey;
+    m_UniqueKey = m_AppDomain + '-';
+    m_UniqueKey += m_UserKey;
 }
 
 void CNetStorageObjectLoc::x_Pack()
@@ -287,54 +355,103 @@ void CNetStorageObjectLoc::x_Pack()
     // Allocate a new CompoundID object.
     CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageObjectLoc);
 
-    // Save the storage flags.
-    cid.AppendFlags(m_StorageFlags);
-    // Remember which fields are stored.
-    cid.AppendFlags(m_Fields);
+    // Save locator flags.
+    cid.AppendFlags(m_LocatorFlags);
 
-    // Save file identification.
-    if ((m_StorageFlags & fNST_NoMetaData) == 0)
+    // Save NetStorage service name.
+    if (m_LocatorFlags & fLF_NetStorageService)
+        cid.AppendServiceName(m_ServiceName);
+
+    // Save object ID.
+    if (m_LocatorFlags & fLF_HasObjectID)
         cid.AppendID(m_ObjectID);
 
-    if (m_Fields & fNFID_KeyAndNamespace) {
-        // Save the unique file key.
+    // Save the domain name.
+    cid.AppendString(m_AppDomain);
+
+    // Save object identification
+    if (m_LocatorFlags & fLF_HasUserKey)
+        // Save the unique object key.
         cid.AppendString(m_UserKey);
-        // Save the domain name.
-        cid.AppendString(m_AppDomain);
-    } else {
-        // Save file creation timestamp.
+    else {
+        // Save object creation timestamp.
         cid.AppendTimestamp(m_Timestamp);
         // Save the random ID.
         cid.AppendRandom(m_Random >> (sizeof(Uint4) * 8));
         cid.AppendRandom((Uint4) m_Random);
     }
 
-    // (Optional) Save NetCache info.
-    if (m_Fields & fNFID_NetICache) {
-        // Save the service name.
-        cid.AppendServiceName(m_NCServiceName);
-        // Save the cache name.
-        cid.AppendDatabaseName(m_CacheName);
-        // Save the primary NetCache server IP and port.
-        cid.AppendIPv4SockAddr(m_NetCacheIP, m_NetCachePort);
-    }
-
-    // If this file is cacheable, save the size of cache chunks.
-    if (m_StorageFlags & fNST_Cacheable)
+    // If this object is cacheable, save the size of cache chunks.
+    if (m_LocatorFlags & fLF_Cacheable)
         cid.AppendInteger((Int8) m_CacheChunkSize);
 
-    // Save the TTL if it's defined.
-    if (m_Fields & fNFID_TTL)
-        cid.AppendInteger((Int8) m_TTL);
+    // Save storage info (optional).
+    if (m_Location != eNFL_Unknown) {
+        cid.AppendCue(STORAGE_INFO_CUE);
 
-    // Save NetStorage service name.
-    if (m_Fields & fNFID_NetStorageService)
-        cid.AppendString(m_ServiceName);
+        // Save object location.
+        cid.AppendDatabaseName(m_LocationCode);
+
+        switch (m_Location) {
+        case eNFL_NetCache:
+            // Save NetCache flags.
+            cid.AppendFlags(m_NCFlags);
+            // Save the service name.
+            cid.AppendServiceName(m_NCServiceName);
+            // Save the primary NetCache server IP and port.
+            if (m_NCFlags & fNCF_ServerSpecified)
+                cid.AppendIPv4SockAddr(m_NetCacheIP, m_NetCachePort);
+            break;
+        default:
+            break;
+        }
+    }
 
     // Now pack it all up.
     m_Locator = cid.ToString();
 
     m_Dirty = false;
+}
+
+TNetStorageFlags CNetStorageObjectLoc::GetStorageFlags() const
+{
+    TNetStorageFlags flags = 0;
+
+    if (m_LocatorFlags & fLF_Movable)
+        flags |= fNST_Movable;
+    if (m_LocatorFlags & fLF_Cacheable)
+        flags |= fNST_Cacheable;
+    if (m_LocatorFlags & fLF_NoMetaData)
+        flags |= fNST_NoMetaData;
+
+    switch (m_Location) {
+    case eNFL_NetCache:
+        flags |= fNST_NetCache;
+        break;
+    case eNFL_FileTrack:
+        flags |= fNST_FileTrack;
+        break;
+    default: /* Unknown storages */
+        break;
+    }
+
+    return flags;
+}
+
+CNetStorageObjectLoc::TLocatorFlags
+        CNetStorageObjectLoc::x_StorageFlagsToLocatorFlags(
+                TNetStorageFlags storage_flags)
+{
+    TLocatorFlags locator_flags = 0;
+
+    if (storage_flags & fNST_Movable)
+        locator_flags |= fLF_Movable;
+    if (storage_flags & fNST_Cacheable)
+        locator_flags |= fLF_Cacheable;
+    if (storage_flags & fNST_NoMetaData)
+        locator_flags |= fLF_NoMetaData;
+
+    return locator_flags;
 }
 
 CJsonNode CNetStorageObjectLoc::ToJSON() const
@@ -346,63 +463,62 @@ CJsonNode CNetStorageObjectLoc::ToJSON() const
 
 void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
 {
-    root.SetInteger("Version", 1);
+    root.SetInteger("Version", 1 +
+            eCIC_NetStorageObjectLoc - eCIC_NetStorageObjectLocV1);
+
+    root.SetString("Environment",
+            m_LocatorFlags & fLF_DevEnv ? "dev/test" :
+            m_LocatorFlags & fLF_QAEnv ? "QA" : "production");
+
+    if (m_LocatorFlags & fLF_NetStorageService)
+        root.SetString("ServiceName", m_ServiceName);
+
+    if (m_LocatorFlags & fLF_HasObjectID)
+        root.SetInteger("ObjectID", (Int8) m_ObjectID);
 
     CJsonNode storage_flags(CJsonNode::NewObjectNode());
 
-    storage_flags.SetBoolean("Fast",
-            (m_StorageFlags & fNST_Fast) != 0);
-    storage_flags.SetBoolean("Persistent",
-            (m_StorageFlags & fNST_Persistent) != 0);
     storage_flags.SetBoolean("Movable",
-            (m_StorageFlags & fNST_Movable) != 0);
+            (m_LocatorFlags & fLF_Movable) != 0);
     storage_flags.SetBoolean("Cacheable",
-            (m_StorageFlags & fNST_Cacheable) != 0);
+            (m_LocatorFlags & fLF_Cacheable) != 0);
     storage_flags.SetBoolean("NoMetaData",
-            (m_StorageFlags & fNST_NoMetaData) != 0);
+            (m_LocatorFlags & fLF_NoMetaData) != 0);
 
     root.SetByKey("StorageFlags", storage_flags);
 
-    if (m_Fields & fNFID_NetStorageService)
-        root.SetString("ServiceName", m_ServiceName);
+    root.SetString("Namespace", m_AppDomain);
 
-    if ((m_StorageFlags & fNST_NoMetaData) == 0)
-        root.SetInteger("ObjectID", (Int8) m_ObjectID);
-
-    if (m_Fields & fNFID_KeyAndNamespace) {
-        root.SetString("AppDomain", m_AppDomain);
+    if (m_LocatorFlags & fLF_HasUserKey)
         root.SetString("UserKey", m_UserKey);
-    } else {
+    else {
         root.SetInteger("Timestamp", (Int8) m_Timestamp);
         root.SetInteger("Random", (Int8) m_Random);
     }
 
-    if (m_Fields & fNFID_NetICache) {
-        CJsonNode icache_params(CJsonNode::NewObjectNode());
-
-        icache_params.SetString("ServiceName", m_NCServiceName);
-        icache_params.SetString("CacheName", m_CacheName);
-        icache_params.SetString("ServerHost",
-                g_NetService_gethostnamebyaddr(m_NetCacheIP));
-        icache_params.SetInteger("ServerPort", m_NetCachePort);
-        icache_params.SetBoolean("AllowXSiteConn",
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-                m_Fields & fNFID_AllowXSiteConn ? true :
-#endif
-                false);
-
-        root.SetByKey("ICache", icache_params);
-    }
-
-    if (m_StorageFlags & fNST_Cacheable)
+    if (m_LocatorFlags & fLF_Cacheable)
         root.SetInteger("CacheChunkSize", (Int8) m_CacheChunkSize);
 
-    if (m_Fields & fNFID_TTL)
-        root.SetInteger("TTL", (Int8) m_TTL);
+    if (!m_LocationCode.empty())
+        root.SetString("DefaultLocation", m_LocationCode);
 
-    if (m_Fields & (fNFID_FileTrackDev | fNFID_FileTrackQA))
-        root.SetString("FileTrackSite",
-                m_Fields & fNFID_FileTrackDev ? "dev" : "qa");
+    CJsonNode storage_info(CJsonNode::NewObjectNode());
+
+    switch (m_Location) {
+    case eNFL_NetCache:
+        storage_info.SetString("ServiceName", m_NCServiceName);
+        if (m_NCFlags & fNCF_ServerSpecified) {
+            storage_info.SetString("ServerHost",
+                    g_NetService_gethostnamebyaddr(m_NetCacheIP));
+            storage_info.SetInteger("ServerPort", m_NetCachePort);
+        }
+        storage_info.SetBoolean("AllowXSiteConn", IsXSiteProxyAllowed());
+
+        root.SetByKey("NetCache", storage_info);
+        break;
+    default:
+        break;
+    }
 }
 
 END_NCBI_SCOPE

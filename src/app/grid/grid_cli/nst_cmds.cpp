@@ -50,33 +50,20 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             "must be explicitly specified.");
     }
 
-    switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
-            IsOptionExplicitlySet(eCache, OPTION_N(1)))
-    {
-    case OPTION_N(0) + OPTION_N(1):
-        if (!IsOptionSet(eNetStorage)) {
-            m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
-                    m_Opts.cache_name, m_Opts.auth);
-            m_NetICacheClient.SetEventHandler(new CNetCacheWarningLogger);
+    if (IsOptionExplicitlySet(eNetCache) && IsOptionExplicitlySet(eNamespace) &&
+            !IsOptionSet(eNetStorage)) {
+        m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
+                m_Opts.app_domain, m_Opts.auth);
+        m_NetICacheClient.SetEventHandler(new CNetCacheWarningLogger);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-            if (IsOptionExplicitlySet(eAllowXSiteConn))
-                m_NetICacheClient.GetService().AllowXSiteConnections();
+        if (IsOptionExplicitlySet(eAllowXSiteConn))
+            m_NetICacheClient.GetService().AllowXSiteConnections();
 #endif
-        }
-        break;
-
-    case OPTION_N(0):
-        NCBI_THROW(CArgException, eNoArg, "'--" NETCACHE_OPTION
-                "' requires '--" CACHE_OPTION "'.");
-
-    case OPTION_N(1):
-        NCBI_THROW(CArgException, eNoArg, "'--" CACHE_OPTION
-                "' requires '--" NETCACHE_OPTION "'.");
     }
 
     if (!IsOptionSet(eNetStorage)) {
         m_NetStorage = g_CreateNetStorage(m_NetICacheClient,
-                m_Opts.netstorage_flags);
+                m_Opts.app_domain, m_Opts.netstorage_flags);
         if (IsOptionSet(eNamespace))
             m_NetStorageByKey = g_CreateNetStorageByKey(m_NetICacheClient,
                     m_Opts.app_domain, m_Opts.netstorage_flags);
@@ -87,7 +74,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             init_string += "&nc=";
             init_string += NStr::URLEncode(m_Opts.nc_service);
             init_string += "&cache=";
-            init_string += NStr::URLEncode(m_Opts.cache_name);
+            init_string += NStr::URLEncode(m_Opts.app_domain);
         }
 
         string auth;
@@ -110,7 +97,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
 
         if (IsOptionSet(eNamespace)) {
-            init_string += "&domain=";
+            init_string += "&namespace=";
             init_string += NStr::URLEncode(m_Opts.app_domain);
             m_NetStorageByKey = CNetStorageByKey(init_string,
                     m_Opts.netstorage_flags);

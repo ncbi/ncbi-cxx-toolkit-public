@@ -90,7 +90,6 @@ struct SNetStorageRPC : public SNetStorageImpl
 
     string m_NetStorageServiceName;
     string m_NetCacheServiceName;
-    string m_CacheName;
     string m_ClientName;
     string m_AppDomain;
 

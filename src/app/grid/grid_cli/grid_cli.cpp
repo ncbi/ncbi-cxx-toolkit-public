@@ -621,7 +621,7 @@ struct SCommandDefinition {
         "the generated object locator is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
         {eOptionalObjectLoc, eNetStorage, ePersistent, eFastStorage,
-            eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
+            eNetCache, eNamespace, eTTL, eMovable, eCacheable, eNoMetaData,
             eInput, eInputFile, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -631,7 +631,7 @@ struct SCommandDefinition {
         "Read the object pointed to by the specified locator and "
         "send its contents to the standard output or a file."
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eCache, eOffset, eSize,
+        {eID, eNetStorage, eNetCache, eOffset, eSize,
             eOutputFile, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -644,7 +644,7 @@ struct SCommandDefinition {
         "will be generated, which can be used instead of the old "
         "one for faster object access."
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eCache,
+        {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
             eTTL, eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -657,7 +657,7 @@ struct SCommandDefinition {
         "specified by the '--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION
         "', '--" MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
         {eOptionalObjectLoc, eObjectKey, eNamespace, ePersistent, eFastStorage,
-            eNetStorage, eNetCache, eCache, eTTL,
+            eNetStorage, eNetCache, eNamespace, eTTL,
             eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -667,7 +667,7 @@ struct SCommandDefinition {
         "objectinfo", "Print information about a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
+        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -675,7 +675,7 @@ struct SCommandDefinition {
         "rmobject", "Remove a NetStorage object by its locator.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
+        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,

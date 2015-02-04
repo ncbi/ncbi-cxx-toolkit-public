@@ -60,7 +60,7 @@ USING_NCBI_SCOPE;
 // Configuration parameters
 NCBI_PARAM_DEF(string, netstorage, service_name, "ST_Test");
 NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
-NCBI_PARAM_DEF(string, netcache, cache_name, "nst_test");
+NCBI_PARAM_DEF(string, netstorage, app_domain, "nst_test");
 
 
 // ENetStorageObjectLocation to type mapping

@@ -52,8 +52,8 @@ typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
 NCBI_PARAM_DECL(string, netcache, service_name);
 typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
 
-NCBI_PARAM_DECL(string, netcache, cache_name);
-typedef NCBI_PARAM_TYPE(netcache, cache_name) TNetCache_CacheName;
+NCBI_PARAM_DECL(string, netstorage, app_domain);
+typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
 
 
 template <class TNetStorage>
@@ -61,11 +61,11 @@ inline TNetStorage g_GetNetStorage()
 {
     string nst_service(TNetStorage_ServiceName::GetDefault());
     string nc_service(TNetCache_ServiceName::GetDefault());
-    string nc_cache(TNetCache_CacheName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     string init_string(
             "nst="     + nst_service +
             "&nc="     + nc_service +
-            "&cache="  + nc_cache +
+            "&domain=" + nst_app_domain +
             "&client="   APP_NAME);
     return CNetStorage(init_string);
 }
@@ -75,11 +75,11 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
     string nst_service(TNetStorage_ServiceName::GetDefault());
     string nc_service(TNetCache_ServiceName::GetDefault());
-    string nc_cache(TNetCache_CacheName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     string init_string(
             "nst="     + nst_service +
             "&nc="     + nc_service +
-            "&cache="  + nc_cache +
+            "&domain=" + nst_app_domain +
             "&client="   APP_NAME);
     return CNetStorageByKey(init_string);
 }

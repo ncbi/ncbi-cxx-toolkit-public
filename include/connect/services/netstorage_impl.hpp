@@ -38,6 +38,7 @@
 #include "netcache_api.hpp"
 
 #include <corelib/rwstream.hpp>
+#include <connect/services/neticache_client.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -232,49 +233,12 @@ inline void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
 }
 
 /// @internal
-enum ENetStorageObjectCompoundIDCues {
-    eNFCIDC_KeyAndNamespace,
-    eNFCIDC_NetICache,
-    eNFCIDC_AllowXSiteConn,
-    eNFCIDC_TTL,
-    eNFCIDC_FileTrackDev,
-    eNFCIDC_FileTrackQA,
-    eNFCIDC_NetStorageService,
-};
-
-/// @internal
-enum ENetStorageObjectLocFields {
-    fNFID_KeyAndNamespace   = (1 << eNFCIDC_KeyAndNamespace),
-    fNFID_NetICache         = (1 << eNFCIDC_NetICache),
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    fNFID_AllowXSiteConn    = (1 << eNFCIDC_AllowXSiteConn),
-#endif
-    fNFID_TTL               = (1 << eNFCIDC_TTL),
-    fNFID_FileTrackDev      = (1 << eNFCIDC_FileTrackDev),
-    fNFID_FileTrackQA       = (1 << eNFCIDC_FileTrackQA),
-    fNFID_NetStorageService = (1 << eNFCIDC_NetStorageService),
-};
-///< @internal Bitwise OR of ENetStorageObjectLocFields
-typedef unsigned char TNetStorageObjectLocFields;
-
-/// @internal
-enum EFileTrackSite {
-    eFileTrack_ProdSite,
-    eFileTrack_DevSite,
-    eFileTrack_QASite,
-    eNumberOfFileTrackSites
-};
-
-/// @internal
-NCBI_XCONNECT_EXPORT
-EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name);
-
-/// @internal
 class NCBI_XCONNECT_EXPORT CNetStorageObjectLoc
 {
 public:
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
+            const string& app_domain,
             Uint8 random_number,
             const char* ft_site_name);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
@@ -285,19 +249,13 @@ public:
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc);
 
-    void SetStorageFlags(TNetStorageFlags storage_flags)
-    {
-        m_StorageFlags = storage_flags;
-        m_Dirty = true;
-    }
-
-    TNetStorageFlags GetStorageFlags() const {return m_StorageFlags;}
-    TNetStorageObjectLocFields GetFields() const {return m_Fields;}
-
     void SetObjectID(Uint8 object_id)
     {
-        m_StorageFlags &= ~(int) fNST_NoMetaData;
+        m_LocatorFlags &= ~(TLocatorFlags) fLF_NoMetaData;
+        m_LocatorFlags |= fLF_HasObjectID;
         m_ObjectID = object_id;
+        if ((m_LocatorFlags & fLF_HasUserKey) == 0)
+            x_SetUniqueKeyFromRandom();
         m_Dirty = true;
     }
 
@@ -305,44 +263,37 @@ public:
 
     void SetServiceName(const string& service_name)
     {
-        if (service_name.empty())
-            ClearFieldFlags(fNFID_NetStorageService);
+        if (service_name.empty() ||
+                strchr(service_name.c_str(), ':') != NULL)
+            ClearLocatorFlags(fLF_NetStorageService);
         else {
             m_ServiceName = service_name;
-            SetFieldFlags(fNFID_NetStorageService);
+            SetLocatorFlags(fLF_NetStorageService);
         }
         m_Dirty = true;
     }
 
     string GetServiceName() const {return m_ServiceName;}
 
+    ENetStorageObjectLocation GetLocation() const {return m_Location;}
+
+    bool IsMovable() const {return (m_LocatorFlags & fLF_Movable) != 0;}
+    bool IsCacheable() const {return (m_LocatorFlags & fLF_Cacheable) != 0;}
+    bool IsMetaDataDisabled() const
+    {
+        return (m_LocatorFlags & fLF_NoMetaData) != 0;
+    }
+
     Int8 GetTimestamp() const {return m_Timestamp;}
     CTime GetCreationTime() const {return CTime(m_Timestamp);}
     Uint8 GetRandom() const {return m_Random;}
 
-    bool HasUserKey() const {return (m_Fields & fNFID_KeyAndNamespace) != 0;}
+    bool HasUserKey() const {return (m_LocatorFlags & fLF_HasUserKey) != 0;}
     string GetAppDomain() const {return m_AppDomain;}
     string GetUserKey() const {return m_UserKey;}
 
-    // A combination of either timestamp+random or app_domain+user_key.
+    string GetICacheKey() const {return m_ICacheKey;}
     string GetUniqueKey() const {return m_UniqueKey;}
-
-    void ClearNetICacheParams();
-    void SetNetICacheParams(const string& service_name,
-        const string& cache_name, Uint4 server_ip, unsigned short server_port
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        , bool allow_xsite_conn
-#endif
-        );
-
-    string GetNCServiceName() const {return m_NCServiceName;}
-    string GetCacheName() const {return m_CacheName;}
-    Uint4 GetNetCacheIP() const {return m_NetCacheIP;}
-    Uint2 GetNetCachePort() const {return m_NetCachePort;}
-
-    void SetFileTrackSite(EFileTrackSite ft_site);
-    EFileTrackSite GetFileTrackSite();
-    string GetFileTrackURL();
 
     void SetCacheChunkSize(size_t cache_chunk_size)
     {
@@ -352,62 +303,94 @@ public:
 
     Uint8 GetCacheChunkSize() const {return m_CacheChunkSize;}
 
-    void SetTTL(Uint8 ttl)
+    void SetLocation_NetCache(const string& service_name,
+        Uint4 server_ip, unsigned short server_port,
+        bool allow_xsite_conn);
+
+    string GetNCServiceName() const {return m_NCServiceName;}
+    Uint4 GetNetCacheIP() const {return m_NetCacheIP;}
+    Uint2 GetNetCachePort() const {return m_NetCachePort;}
+
+    bool IsXSiteProxyAllowed() const
     {
-        if (ttl == 0)
-            ClearFieldFlags(fNFID_TTL);
-        else {
-            m_TTL = ttl;
-            SetFieldFlags(fNFID_TTL);
-        }
-        m_Dirty = true;
+        return (m_NCFlags & fNCF_AllowXSiteConn) != 0;
     }
 
-    Uint8 GetTTL() const {return m_TTL;}
+    void SetLocation_FileTrack(const char* ft_site_name);
 
-    string GetLoc()
+    string GetFileTrackURL();
+
+    string GetLocator()
     {
         if (m_Dirty)
             x_Pack();
         return m_Locator;
     }
 
+    TNetStorageFlags GetStorageFlags() const;
+
     // Serialize to a JSON object.
     void ToJSON(CJsonNode& root) const;
     CJsonNode ToJSON() const;
 
 private:
+    enum ELocatorFlags {
+        fLF_NetStorageService   = (1 << 0),
+        fLF_NoMetaData          = (1 << 1),
+        fLF_HasObjectID         = (1 << 2),
+        fLF_HasUserKey          = (1 << 3),
+        fLF_Movable             = (1 << 4),
+        fLF_Cacheable           = (1 << 5),
+        fLF_DevEnv              = (1 << 6),
+        fLF_QAEnv               = (1 << 7),
+    };
+    typedef unsigned TLocatorFlags;
+
+    enum ENetCacheFlags {
+        fNCF_AllowXSiteConn     = (1 << 0),
+        fNCF_ServerSpecified    = (1 << 1),
+    };
+    typedef unsigned TNetCacheFlags;
+
     void x_SetFileTrackSite(const char* ft_site_name);
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();
 
     void x_Pack();
-    void SetFieldFlags(TNetStorageObjectLocFields flags) {m_Fields |= flags;}
-    void ClearFieldFlags(TNetStorageObjectLocFields flags) {m_Fields &= ~flags;}
+    void SetLocatorFlags(TLocatorFlags flags) {m_LocatorFlags |= flags;}
+    void ClearLocatorFlags(TLocatorFlags flags) {m_LocatorFlags &= ~flags;}
+
+    TLocatorFlags x_StorageFlagsToLocatorFlags(
+            TNetStorageFlags storage_flags);
 
     CCompoundIDPool m_CompoundIDPool;
 
-    TNetStorageFlags m_StorageFlags;
-    TNetStorageObjectLocFields m_Fields;
+    TLocatorFlags m_LocatorFlags;
 
     Uint8 m_ObjectID;
 
     string m_ServiceName;
+    string m_LocationCode;
+    ENetStorageObjectLocation m_Location;
+
+    string m_AppDomain;
 
     Int8 m_Timestamp;
     Uint8 m_Random;
 
-    string m_AppDomain;
     string m_UserKey;
 
+    // Either "m_Timestamp-m_Random[-m_ObjectID]" or m_UserKey.
+    string m_ICacheKey;
+    // "m_AppDomain-m_ICacheKey"
     string m_UniqueKey;
 
+    Uint8 m_CacheChunkSize;
+
+    TNetCacheFlags m_NCFlags;
     string m_NCServiceName;
-    string m_CacheName;
     Uint4 m_NetCacheIP;
     Uint2 m_NetCachePort;
-    Uint8 m_CacheChunkSize;
-    Uint8 m_TTL;
 
     bool m_Dirty;
 
@@ -418,10 +401,11 @@ NCBI_XCONNECT_EXPORT
 CNetStorageObject g_CreateNetStorage_NetCacheBlob(
         CNetCacheAPI::TInstance nc_api,
         const string& blob_key);
- 
+
 NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
-        ENetStorageObjectLocation location, const CNetStorageObjectLoc* object_loc_struct,
+        ENetStorageObjectLocation location,
+        const CNetStorageObjectLoc* object_loc_struct,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info);
 
 NCBI_XCONNECT_EXPORT

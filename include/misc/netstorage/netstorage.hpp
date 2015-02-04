@@ -38,7 +38,6 @@
 ///
 
 #include <connect/services/netstorage.hpp>
-#include <connect/services/neticache_client.hpp>
 
 #include <corelib/ncbi_param.hpp>
 
@@ -52,6 +51,8 @@ BEGIN_NCBI_SCOPE
 
 /// Construct a CNetStorage object
 ///
+/// @param app_domain
+///  Namespace for new objects.
 /// @param icache_client
 ///  NetCache service used for storing movable blobs and for caching
 /// @param default_flags
@@ -59,21 +60,26 @@ BEGIN_NCBI_SCOPE
 ///
 CNetStorage g_CreateNetStorage(
         CNetICacheClient::TInstance icache_client,
+        const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
 /// Construct a CNetStorage object for use with FileTrack only.
 ///
+/// @param app_domain
+///  Namespace for new objects.
 /// @param default_flags
 ///  Default storage preferences for files created by this object.
 ///
-CNetStorage g_CreateNetStorage(TNetStorageFlags default_flags);
+CNetStorage g_CreateNetStorage(
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
 
 
 /// Construct a CNetStorageByKey object.
 ///
 /// @param icache_client
 ///  NetCache service used for storing movable blobs and for caching
-/// @param domain_name
+/// @param app_domain
 ///  Namespace for the keys that will be created by this object.
 ///  If not specified, then the cache name from the 'icache_client' object
 ///  will be used.
@@ -82,19 +88,21 @@ CNetStorage g_CreateNetStorage(TNetStorageFlags default_flags);
 ///
 CNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
-        const string&               domain_name   = kEmptyStr,
+        const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
 /// Construct a CNetStorageByKey object for use with FileTrack only.
 ///
-/// @param domain_name
+/// @param app_domain
 ///  Namespace for the keys that will be created by this object
 /// @param default_flags
 ///  Default storage preferences for files created by this object.
 ///
 CNetStorageByKey g_CreateNetStorageByKey(
-        const string&    domain_name,
-        TNetStorageFlags default_flags = 0);
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
+
 
 /// @internal
 CNetStorageObject g_CreateNetStorageObject(
@@ -108,10 +116,6 @@ CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
         const string& service_name,
         TNetStorageFlags flags);
-
-/// @internal
-void g_SetNetICacheParams(CNetStorageObjectLoc& object_loc,
-        CNetICacheClient icache_client);
 
 NCBI_PARAM_DECL(string, netstorage_api, backend_storage);
 typedef NCBI_PARAM_TYPE(netstorage_api, \
