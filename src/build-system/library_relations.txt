@@ -618,9 +618,6 @@ krb5 needs3party $(ORIG_LIBS)
 krb5 needs3party com_err
 krb5 needs3party k5crypto
 lbsmdapi needs connect
-lds needs $(OBJREAD_LIBS)
-lds needs bdb
-lds needs xobjutil
 lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs sqlitewrapp
@@ -751,7 +748,6 @@ ncbi_xloader_csra needs3party $(SRA_SDK_SYSLIBS)
 ncbi_xloader_genbank needs ncbi_xreader_cache
 ncbi_xloader_genbank needs ncbi_xreader_id1
 ncbi_xloader_genbank needs ncbi_xreader_id2
-ncbi_xloader_lds needs lds
 ncbi_xloader_lds2 needs $(SOBJMGR_LIBS)
 ncbi_xloader_lds2 needs lds2
 ncbi_xloader_lds2 needs3party $(DL_LIBS)
