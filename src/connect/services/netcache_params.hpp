@@ -63,6 +63,7 @@ public:
         eDP_ActualBlobAgePtr = 1 << 9,
         eDP_UseCompoundID = 1 << 10,
         eDP_SingleServer = 1 << 11,
+        eDP_CacheName = 1 << 12,
     };
     typedef unsigned TDefinedParameters;
 
@@ -162,6 +163,12 @@ public:
         m_SingleServer = single_server;
     }
 
+    void SetCacheName(const string& cache_name)
+    {
+        m_DefinedParameters |= eDP_CacheName;
+        m_CacheName = cache_name;
+    }
+
     unsigned GetTTL() const;
     CNetCacheAPI::ECachingMode GetCachingMode() const;
     CNetCacheAPI::EMirroringMode GetMirroringMode() const;
@@ -174,6 +181,7 @@ public:
     unsigned* GetActualBlobAgePtr() const;
     bool GetUseCompoundID() const;
     bool GetSingleServer() const;
+    string GetCacheName() const;
 
     static bool StringToBool(const string& bool_str,
             bool default_value = false);
@@ -194,6 +202,7 @@ private:
     unsigned* m_ActualBlobAgePtr;
     bool m_UseCompoundID;
     bool m_SingleServer;
+    string m_CacheName;
 };
 
 /* @} */

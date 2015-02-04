@@ -73,6 +73,8 @@ void CNetCacheAPIParameters::LoadNamedParameters(
             SetUseCompoundID(Get<bool>(optional));
         else if (optional->Is(CNetCacheAPI::eNPT_SingleServer))
             SetSingleServer(Get<bool>(optional));
+        else if (optional->Is(CNetCacheAPI::eNPT_CacheName))
+            SetCacheName(Get<string>(optional));
 }
 
 void CNetCacheAPIParameters::SetTTL(unsigned blob_ttl)
@@ -202,6 +204,11 @@ bool CNetCacheAPIParameters::GetUseCompoundID() const
 bool CNetCacheAPIParameters::GetSingleServer() const
 {
     NETCACHE_API_GET_PARAM_IMPL(SingleServer);
+}
+
+string CNetCacheAPIParameters::GetCacheName() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(CacheName);
 }
 
 bool CNetCacheAPIParameters::StringToBool(const string& bool_str,

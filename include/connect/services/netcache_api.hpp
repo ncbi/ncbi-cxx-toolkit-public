@@ -113,6 +113,11 @@ BEGIN_NCBI_SCOPE
 /// @see CNetCacheAPI::TSingleServer
 #define nc_single_server CNetCacheAPI::TSingleServer()
 
+/// In ICache mode, override the name of the cache specified
+/// in the CNetICacheClient constructor.
+/// @see CNetCacheAPI::TCacheName
+#define nc_cache_name CNetCacheAPI::TCacheName()
+
 /* @} */
 
 /** @addtogroup NetCacheClient
@@ -217,6 +222,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         eNPT_ActualBlobAgePtr,
         eNPT_UseCompoundID,
         eNPT_SingleServer,
+        eNPT_CacheName,
     };
 
     /// Override defaults used by this object.
@@ -575,6 +581,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///     nc_single_server = true
     /// @see nc_single_server
     typedef CNamedParameter<bool, eNPT_SingleServer> TSingleServer;
+
+    /// In ICache mode, override the name of the cache specified
+    /// in the CNetICacheClient constructor.
+    /// This type of parameter can be defined through the
+    /// nc_cache_name macro substitution, for example:
+    ///     nc_cache_name = "appdata"
+    /// @see nc_cache_name
+    typedef CNamedParameter<string, eNPT_CacheName> TCacheName;
 
     /// @deprecated Please use PutData(key, buf, size, optional) instead.
     NCBI_DEPRECATED string PutData(const string& key,

@@ -140,9 +140,9 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& cache_name) :
         SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
                 client_name, new CNetICacheServerListener)),
-        m_CacheName(cache_name),
         m_CacheFlags(ICache::fBestPerformance)
     {
+        m_DefaultParameters.SetCacheName(cache_name);
         m_Service->Init(this, service_name,
             config, section, s_NetICacheConfigSections);
     }
@@ -177,9 +177,6 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         size_t* blob_size_ptr,
         const CNamedParameterList* optional);
 
-    string m_CacheName;
-    string m_ICacheCmdPrefix;
-
     ICache::TFlags m_CacheFlags;
 };
 
@@ -191,32 +188,30 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     SNetICacheClientImpl* icache_impl =
         static_cast<SNetICacheClientImpl*>(api_impl);
 
-    if (icache_impl->m_CacheName.empty()) {
+    if (icache_impl->m_DefaultParameters.GetCacheName().empty()) {
         if (config == NULL) {
             NCBI_THROW(CNetCacheException,
                 eAuthenticationError, "ICache database name is not defined");
         } else {
             try {
-                icache_impl->m_CacheName = config->GetString(config_section,
-                    "name", CConfig::eErr_Throw, kEmptyStr);
+                icache_impl->m_DefaultParameters.SetCacheName(
+                        config->GetString(config_section,
+                                "name", CConfig::eErr_Throw, kEmptyStr));
             }
             catch (exception&) {
-                icache_impl->m_CacheName = config->GetString(config_section,
-                    "cache_name", CConfig::eErr_Throw, "default_cache");
+                icache_impl->m_DefaultParameters.SetCacheName(
+                        config->GetString(config_section,
+                                "cache_name", CConfig::eErr_Throw,
+                                        "default_cache"));
             }
         }
     }
 
-    icache_impl->m_CacheName = NStr::PrintableString(icache_impl->m_CacheName);
-
-    if (icache_impl->m_CacheName.length() > MAX_ICACHE_CACHE_NAME_LENGTH) {
+    if (icache_impl->m_DefaultParameters.GetCacheName().length() >
+            MAX_ICACHE_CACHE_NAME_LENGTH) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "NetICache: cache name is too long");
     }
-
-    icache_impl->m_ICacheCmdPrefix = "IC(";
-    icache_impl->m_ICacheCmdPrefix.append(icache_impl->m_CacheName);
-    icache_impl->m_ICacheCmdPrefix.append(") ");
 
     if (config != NULL)
         icache_impl->m_DefaultParameters.SetSingleServer(
@@ -227,7 +222,9 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
     CNetCacheWriter* nc_writer, const CNetCacheAPIParameters* parameters)
 {
-    string cmd(m_ICacheCmdPrefix + "STOR ");
+    string cmd("IC(" + NStr::PrintableString(parameters->GetCacheName()));
+    cmd.append(") STOR ");
+
     cmd.append(NStr::UIntToString(parameters->GetTTL()));
     cmd.push_back(' ');
     cmd.append(nc_writer->GetBlobID());
@@ -961,9 +958,9 @@ string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     const string& blob_id, const CNetCacheAPIParameters* parameters,
     const string& injection)
 {
-    string cmd(kEmptyStr);
+    string cmd("IC(" + NStr::PrintableString(parameters->GetCacheName()));
+    cmd.append(") ");
 
-    cmd.append(m_ICacheCmdPrefix);
     cmd.append(cmd_base);
 
     cmd.push_back(' ');
@@ -993,7 +990,7 @@ string SNetICacheClientImpl::ExecStdCmd(const char* cmd_base,
 
 string CNetICacheClient::GetCacheName(void) const
 {
-    return m_Impl->m_CacheName;
+    return m_Impl->m_DefaultParameters.GetCacheName();
 }
 
 
