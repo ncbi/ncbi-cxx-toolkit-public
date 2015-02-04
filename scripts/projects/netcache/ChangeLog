@@ -91,3 +91,15 @@ Bug fix: re-enable blob keys that are not in CNetCacheKey format.
 December 18, 2014
 version 6.8.4
 Fixed bug in SHUTDOWN.
+
+February 04, 2015
+version 6.8.5
+Added support of 'version' and 'help' command line arguments
+On startup, added duplication of error messages into the standard output.
+Added monitoring  of periodic synchronization activity and aborting it when it appears stalled.
+Tweaked initial synchronization sequence of actions and corrected resetting synchronization data.
+
+
+
+
+
