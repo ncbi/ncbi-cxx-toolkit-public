@@ -727,6 +727,46 @@ BOOST_AUTO_TEST_CASE(ReadSingleFasta_WithTitle)
 
 }
 
+BOOST_AUTO_TEST_CASE(SingleSequenceString_CFastaReader)
+{
+    const string kUserInput(">seq_1\nATGC");
+    const TSeqPos kExpectedLength(4);
+    CFastaReader::TFlags defaultBLASTflags = CFastaReader::fNoParseID |
+                                             CFastaReader::fDLOptional;
+    defaultBLASTflags += CFastaReader::fAssumeNuc;
+    defaultBLASTflags += CFastaReader::fHyphensIgnoreAndWarn;
+    defaultBLASTflags += CFastaReader::fDisableNoResidues;
+    defaultBLASTflags += CFastaReader::fQuickIDCheck;
+
+    CRef<ILineReader> line_reader(new CMemoryLineReader(kUserInput.c_str(),
+                                                        kUserInput.size()));
+    CFastaReader fasta_reader(*line_reader, defaultBLASTflags);
+    fasta_reader.IgnoreProblem(ILineError::eProblem_ModifierFoundButNoneExpected);
+    fasta_reader.IgnoreProblem(ILineError::eProblem_TooLong);
+
+    CRef<CSeqIdGenerator> idgen(new CSeqIdGenerator(1, kEmptyStr));
+    fasta_reader.SetIDGenerator(*idgen);
+
+    CRef<CSeq_entry> se(fasta_reader.ReadOneSeq());
+    BOOST_REQUIRE_EQUAL(kExpectedLength, se->GetSeq().GetLength());
+}
+
+BOOST_AUTO_TEST_CASE(SingleSequenceString)
+{
+    const string kUserInput(">seq_1\nATGC");
+    const TSeqPos kExpectedLength(4);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    BOOST_REQUIRE(objmgr);
+
+    SDataLoaderConfig dlconfig(false);
+    CBlastInputSourceConfig iconfig(dlconfig);
+    CBlastFastaInputSource queryInput(kUserInput, iconfig);
+    CScope scope(*objmgr);
+    CBlastInput qIn(&queryInput);
+    blast::TSeqLocVector query = qIn.GetAllSeqLocs(scope);
+    BOOST_REQUIRE_EQUAL(kExpectedLength, sequence::GetLength(*query.front().seqloc, &scope));
+}
+
 BOOST_AUTO_TEST_CASE(ReadEmptyUserInput_OnlyTitle)
 {
     CTmpFile tmpfile;
