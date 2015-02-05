@@ -744,7 +744,7 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
 
         while (!std_stream.eof()) {
             std_stream.read(buffer, sizeof(buffer));
-            if (std_stream.fail())
+            if (std_stream.fail() && !std_stream.eof())
                 goto Error;
             bytes_read = (size_t) std_stream.gcount();
             if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
@@ -772,7 +772,7 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     return 0;
 
 Error:
-    fprintf(stderr, GRID_APP_NAME ": error while writing job data.\n");
+    fprintf(stderr, GRID_APP_NAME ": I/O error.\n");
     return 3;
 }
 
