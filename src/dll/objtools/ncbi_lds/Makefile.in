@@ -1,8 +1,0 @@
-#################################
-# $Id$
-#################################
-
-DLL_PROJ = ncbi_lds
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

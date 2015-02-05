@@ -1,9 +1,0 @@
-# $Id$
-
-APP_PROJ = lds_unit_test
-PROJ_TAG = test
-
-REQUIRES = Boost.Test.Included bdb
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
