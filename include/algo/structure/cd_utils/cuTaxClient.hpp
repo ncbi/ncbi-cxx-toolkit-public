@@ -86,7 +86,7 @@ public:
     virtual bool GetFullLineage(int taxid, vector<int>& lineageFromRoot);
 
     //  On success, lineageFromRoot contains (taxid, taxname) for each step along the path 
-    //  in the taxonomy from the root to provided taxid.  'Unknown' is used should any
+    //  in the taxonomy from the root to provided taxid.  An empty string is used should any
     //  individual taxname not be found.
     //  When 'useCommonName' is true, the taxname is the 'common name'; otherwise, it is
     //  the preferred formal name found in the corresponding COrg_ref for the taxid (and
