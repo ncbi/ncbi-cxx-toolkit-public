@@ -453,9 +453,17 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     const SMod* mod = NULL;
 
     // org[anism]
-    if (((mod = FindMod("organism", "org")) != NULL)  &&  organism.empty()) {
-        organism = mod->value;
+    if (organism.empty())
+    {
+        if ((mod = FindMod("organism", "org")) != NULL) {
+            organism = mod->value;
+        }
+        else
+        if ((mod = FindMod("taxname")) != NULL) {
+            organism = mod->value;
+        }
     }
+
     if ( !organism.empty()
         &&  ( !bsrc->GetOrg().IsSetTaxname()
              ||  !NStr::EqualNocase(bsrc->GetOrg().GetTaxname(), organism))) {
