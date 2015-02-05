@@ -3891,11 +3891,8 @@ case "$host_os:$compiler" in
      darwin*      ) ac_cv_search_iconv="-liconv" ;;
 esac
 NCBI_CHECK_LIBS(DL, dl, dlopen)
-# libc's stubs aren't always sufficient...
-case "$host_os:$libnsl" in
-     solaris2.[[89]]:* ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
-     solaris*:-lnsl    ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
-esac
+orig_LIBS="$DL_LIBS $orig_LIBS"
+DL_LIBS=
 dnl NCBI_CHECK_LIBS(UUID, uuid, uuid_generate)
 AC_SEARCH_LIBS(uuid_generate, uuid,
    [NCBI_PACKAGE(UUID)
@@ -4416,7 +4413,7 @@ if test "$with_sybase" != "no" ; then
    AC_CACHE_CHECK([for Sybase${SYBASE_PATH:+ in $SYBASE_PATH}],
       ncbi_cv_lib_sybase,
       [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-       LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
+       LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <ctpublic.h>]],
           [[CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ]])],
@@ -4450,7 +4447,7 @@ if test "$with_sybase" != "no" ; then
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
       AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
          [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[
               #include <sybfront.h>
@@ -5583,7 +5580,7 @@ else
          GLEW_LDFLAGS=-L$GLEW_LIBDIR
       fi
       LDFLAGS="$orig_LDFLAGS $GLEW_LDFLAGS"
-      LIBS="$OPENGL_LIBS $DL_LIBS $orig_LIBS"
+      LIBS="$OPENGL_LIBS $orig_LIBS"
       NCBI_CHECK_LIBS(GLEW, [$glew_libname GLEWmx GLEW], glewGetExtension)
       if test "$ac_cv_search_glewGetExtension" = no; then
          GLEW_INCLUDE=
@@ -5595,7 +5592,7 @@ else
          GLEW_LIBS=$tmp_LIBS
          NCBI_PACKAGE(GLEW)
          CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE $OPENGL_INCLUDE"
-         LIBS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LIBS"
+         LIBS="$GLEW_LIBS $OPENGL_LIBS $orig_LIBS"
          AC_CACHE_CHECK([for GLEW multi-context (MX) support (recommended)],
             ncbi_cv_lib_glew_mx,
             [AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -5873,7 +5870,7 @@ else
       LIBSSSUTILS="-lsssutils"
       AC_CACHE_CHECK([for the NCBI SSS UTILS library], ncbi_cv_lib_sssutils,
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-          LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[#include <hashtab.hpp>]],
              [[ (new C_HashTab(123))->Clear(); ]])],
@@ -5905,7 +5902,7 @@ else
       fi
       AC_CACHE_CHECK([for the NCBI SSS DB library], ncbi_cv_lib_sssdb,
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-          LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[#include <cslink.hpp>]],
              [[ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ]])],
@@ -6005,7 +6002,7 @@ if test "$with_orbacus" != no; then
    AC_CACHE_CHECK([for ORBacus${ORBACUS_PATH:+ in $ORBACUS_PATH}],
       ncbi_cv_lib_orbacus,
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
-       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <OB/CORBA.h>]],
           [[

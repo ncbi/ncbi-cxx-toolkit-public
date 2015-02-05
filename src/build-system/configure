@@ -24574,11 +24574,8 @@ fi
 
  LIBS=$saved_LIBS
 
-# libc's stubs aren't always sufficient...
-case "$host_os:$libnsl" in
-     solaris2.[89]:* ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
-     solaris*:-lnsl    ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
-esac
+orig_LIBS="$DL_LIBS $orig_LIBS"
+DL_LIBS=
 { echo "$as_me:$LINENO: checking for library containing uuid_generate" >&5
 echo $ECHO_N "checking for library containing uuid_generate... $ECHO_C" >&6; }
 if test "${ac_cv_search_uuid_generate+set}" = set; then
@@ -27501,7 +27498,7 @@ if test "${ncbi_cv_lib_sybase+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-       LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
+       LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -27613,7 +27610,7 @@ if test "${ncbi_cv_lib_sybdb+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"
           cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -33516,7 +33513,7 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
          GLEW_LDFLAGS=-L$GLEW_LIBDIR
       fi
       LDFLAGS="$orig_LDFLAGS $GLEW_LDFLAGS"
-      LIBS="$OPENGL_LIBS $DL_LIBS $orig_LIBS"
+      LIBS="$OPENGL_LIBS $orig_LIBS"
       saved_LIBS=$LIBS
  { echo "$as_me:$LINENO: checking for library containing glewGetExtension" >&5
 echo $ECHO_N "checking for library containing glewGetExtension... $ECHO_C" >&6; }
@@ -33668,7 +33665,7 @@ echo "$as_me: error: --with-glew-mx explicitly specified, but no usable version 
          GLEW_LIBS=$tmp_LIBS
                    WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" "
          CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE $OPENGL_INCLUDE"
-         LIBS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LIBS"
+         LIBS="$GLEW_LIBS $OPENGL_LIBS $orig_LIBS"
          { echo "$as_me:$LINENO: checking for GLEW multi-context (MX) support (recommended)" >&5
 echo $ECHO_N "checking for GLEW multi-context (MX) support (recommended)... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_glew_mx+set}" = set; then
@@ -34397,7 +34394,7 @@ if test "${ncbi_cv_lib_sssutils+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-          LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
           cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -34502,7 +34499,7 @@ if test "${ncbi_cv_lib_sssdb+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-          LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
           cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -34806,7 +34803,7 @@ if test "${ncbi_cv_lib_orbacus+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
-       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
