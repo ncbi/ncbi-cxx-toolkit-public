@@ -1240,7 +1240,13 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
         bool found = (it != features.end());
         m_IniParser->AddSymbol(name.c_str(), found);
     }
+
+    // Is it running from TeamCity?
+    m_IniParser->AddSymbol
+        ("TeamCity",
+         !CNcbiEnvironment().Get("TEAMCITY_PROJECT_NAME").empty());
 }
+
 
 inline bool
 CNcbiTestApplication::x_CalcConfigValue(const string& value)
