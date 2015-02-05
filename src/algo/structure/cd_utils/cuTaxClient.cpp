@@ -295,7 +295,7 @@ bool TaxClient::GetFullLineage(int taxid, vector<int>& lineageFromRoot)
 bool TaxClient::GetFullLineage(int taxid, vector< pair<int, string> >& lineageFromRoot, bool useCommonName)
 {
     string commonName;
-    string unknownName("unknown"), root("root");
+    string root("root");
     vector<int> lineageAsTaxids;
     pair<int, string> p;
 
@@ -308,12 +308,12 @@ bool TaxClient::GetFullLineage(int taxid, vector< pair<int, string> >& lineageFr
                 if (commonName.length() > 0) {
                     p.second = (p.first > 1) ? commonName : root;
                 } else {
-                    p.second = unknownName;
+                    p.second = kEmptyStr;
                 }
             } else if (useCommonName && GetDisplayCommonName(*vit, commonName) && commonName.length() > 0) {
                 p.second = (p.first > 1) ? commonName : root;
             } else {
-                p.second = unknownName;
+                p.second = kEmptyStr;
             }
             lineageFromRoot.push_back(p);
         }
