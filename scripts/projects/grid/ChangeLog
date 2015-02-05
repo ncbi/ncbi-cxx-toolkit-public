@@ -1,3 +1,7 @@
+2015-02-05 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* grid_cli getjoboutput: fix for incorrect input stream status check
+
 2015-01-21 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* remote_cgi, remote_app: can run behind firewalls now.
