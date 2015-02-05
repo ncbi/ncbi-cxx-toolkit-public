@@ -38,7 +38,7 @@
 
 #include <ncbiconf.h>
 #if !defined(NCBI_OS_UNIX)
-#  error "ncbi_os_mswin_p.hpp can be used on MS Windows platforms only"
+#  error "ncbi_os_unix_p.hpp can be used on UNIX platforms only"
 #endif
 
 #include <string>
