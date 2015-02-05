@@ -780,13 +780,25 @@ void s_ReadAndTestQueryFromString(const string& input, TSeqPos expected_length,
 
     SDataLoaderConfig dlconfig(is_protein);
     CBlastInputSourceConfig iconfig(dlconfig);
-    iconfig.SetQueryLocalIdMode();
     CBlastFastaInputSource queryInput(input, iconfig);
     CScope scope(*objmgr);
     CBlastInput qIn(&queryInput);
     blast::TSeqLocVector query = qIn.GetAllSeqLocs(scope);
     BOOST_REQUIRE_EQUAL(expected_length, 
                         sequence::GetLength(*query.front().seqloc, &scope));
+    CRef<CSeqVector> sv(new CSeqVector(*query.front().seqloc, &scope));
+    BOOST_REQUIRE_EQUAL(expected_length, sv->size());
+    BOOST_REQUIRE_EQUAL(is_protein, sv->IsProtein());
+    sv->SetIupacCoding();
+    TSeqPos input_pos = input.find_first_of("ACTG");
+    BOOST_REQUIRE(input_pos != string::npos);
+    for (TSeqPos pos = 0; pos < sv->size(); pos++, input_pos++) {
+        CNcbiOstrstream oss;
+        oss << "Sequence data differs at position " << pos << ": '"
+            << input[input_pos] << "' .vs '" << (*sv)[pos] << "'";
+        string msg = CNcbiOstrstreamToString(oss);
+        BOOST_REQUIRE_MESSAGE(input[input_pos] == (*sv)[pos],  msg);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(SingleSequenceString_NoNewLineAfterSeq)

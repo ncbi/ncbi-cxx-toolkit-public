@@ -437,7 +437,6 @@ int CPsiBlastApp::Run(void)
                                          query_opts->UseLowercaseMasks(),
                                          query_opts->GetParseDeflines(),
                                          query_opts->GetRange());
-            iconfig.SetQueryLocalIdMode();
             if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
             	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
             CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(

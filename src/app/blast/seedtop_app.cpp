@@ -167,7 +167,6 @@ int CSeedTopApp::Run(void)
             SDataLoaderConfig dlconfig(true);
             dlconfig.OptimizeForWholeLargeSequenceRetrieval();
             CBlastInputSourceConfig iconfig(dlconfig);
-            iconfig.SetQueryLocalIdMode();
             CBlastFastaInputSource fasta(f_subject, iconfig);
             CBlastInput input(&fasta);
             CRef<blast::CBlastQueryVector> subjects(input.GetAllSeqs(*scope));

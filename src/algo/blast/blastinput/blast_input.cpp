@@ -71,6 +71,7 @@ CBlastInputSourceConfig::CBlastInputSourceConfig
             ? eNa_strand_unknown
             : eNa_strand_both;
     }
+    SetQueryLocalIdMode();
 }
 
 CBlastInput::CBlastInput(const CBlastInput& rhs)
