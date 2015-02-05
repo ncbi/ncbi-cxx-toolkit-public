@@ -52,7 +52,7 @@ enum ECapChange {
 
 /// Capitalize the string according to desired capitalization option
 NCBI_XOBJEDIT_EXPORT void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECapChange capchange_opt);
-NCBI_XOBJEDIT_EXPORT void FixAbbreviationsInElement(string& result);
+NCBI_XOBJEDIT_EXPORT void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence = true);
 NCBI_XOBJEDIT_EXPORT void FixOrgNames(objects::CSeq_entry_Handle seh, string& result);
 NCBI_XOBJEDIT_EXPORT void FindOrgNames(objects::CSeq_entry_Handle seh, vector<string>& taxnames);
 

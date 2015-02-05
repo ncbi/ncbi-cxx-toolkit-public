@@ -103,6 +103,12 @@ static const SStaticPair<const char*, const char*> set_abbreviation_list[] =
     {"\\b\\(hiv\\)\\b", "(HIV)" },
     {"\\b\\(hiv1\\)\\b", "(HIV1)" },
     {"\\b\\(hiv\\-1\\)\\b", "(HIV-1)"},
+   
+    {"\0","\0"}
+};
+
+static const SStaticPair<const char*, const char*> set_abbreviation_list_end_of_sentence[] = 
+{
     {"\\bsp\\.$", "sp.." },
     {"\\bnov\\.$", "nov.." },
     {"\\bssp\\.$", "ssp.." },
@@ -615,12 +621,12 @@ void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECa
         switch (capchange_opt) {
             case eCapChange_tolower:
                 NStr::ToLower(str); 
-                FixAbbreviationsInElement(str);
+                FixAbbreviationsInElement(str,seh);
                 FixOrgNames(seh, str);
                 break;
             case eCapChange_toupper:
                 NStr::ToUpper(str);
-                FixAbbreviationsInElement(str);
+                FixAbbreviationsInElement(str,seh);
                 FixOrgNames(seh, str);
                 break;
             case eCapChange_firstcap_restlower:
@@ -628,7 +634,7 @@ void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECa
                 if ( isalpha(str[0]) ) {
                     str[0] = toupper(str[0]);
                 }
-                FixAbbreviationsInElement(str);
+                FixAbbreviationsInElement(str,seh);
                 FixOrgNames(seh, str);
                 break;
             case eCapChange_firstcap_restnochange:
@@ -664,7 +670,7 @@ void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECa
                         }
                     }
                 }
-                FixAbbreviationsInElement(str);
+                FixAbbreviationsInElement(str,seh);
                 FixOrgNames(seh, str);
             }
                 break;
@@ -674,7 +680,7 @@ void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECa
     }
 }
 
-void FixAbbreviationsInElement(string& result)
+void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence)
 {
     for (int pat=0; set_abbreviation_list[pat].first[0]!='\0'; ++pat) {
         CRegexpUtil replacer( result );
@@ -683,6 +689,16 @@ void FixAbbreviationsInElement(string& result)
             CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
         replacer.GetResult().swap( result );
     }
+    if (fix_end_of_sentence)
+    {
+        for (int pat=0; set_abbreviation_list_end_of_sentence[pat].first[0]!='\0'; ++pat) {
+            CRegexpUtil replacer( result );
+            replacer.Replace( set_abbreviation_list_end_of_sentence[pat].first, set_abbreviation_list_end_of_sentence[pat].second, 
+                              CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
+            replacer.GetResult().swap( result );
+        }
+    }
+    
 }
 
 void FixOrgNames(objects::CSeq_entry_Handle seh, string& result)
