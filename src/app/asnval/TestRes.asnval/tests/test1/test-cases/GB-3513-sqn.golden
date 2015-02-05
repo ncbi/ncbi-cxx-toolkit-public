@@ -1,0 +1,34 @@
+WARNING: valid [SEQ_PKG.InternalGenBankSet] Bioseq-set contains internal GenBank Bioseq-set BIOSEQ-SET: phy-set: KJ650789
+WARNING: valid [SEQ_FEAT.PartialsInconsistent] Coding region and protein feature partials conflict FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+WARNING: valid [SEQ_FEAT.ProductLength] Protein product length [152] is more than 120% of the translation length [1] FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+ERROR: valid [SEQ_FEAT.TransLen] Given protein length [152] does not match translation length [1] FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+ERROR: valid [SEQ_FEAT.PartialProblem] Got stop codon, but 3'end is labeled partial FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+ERROR: valid [SEQ_FEAT.CDSproductPackagingProblem] Protein product not packaged in nuc-prot set with nucleotide FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+REJECT: valid [SEQ_FEAT.MultipleCDSproducts] Same product Bioseq from multiple CDS features FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+WARNING: valid [SEQ_FEAT.PartialProblem] CDS is 5' partial but protein has neither end FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_38:<1-4] [lcl|SE_38: raw, dna len= 138] -> [gnl|NCBIFILE|rpoB.sqn/SE_38_1]
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: phy-set: KJ650789
+WARNING: valid [SEQ_PKG.ImproperlyNestedSets] Nested sets within Pop/Phy/Mut/Eco/Wgs set BIOSEQ-SET: genbank: KJ650848
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|Alk_5_2:c>457-<1] [lcl|Alk_5_2: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/Alk_5_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|Alk_7_2:c>457-<1] [lcl|Alk_7_2: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/Alk_7_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|Dic_1652_2:c>431-<1] [lcl|Dic_1652_2: raw, dna len= 431] -> [gnl|NCBIFILE|rpoB.sqn/Dic_1652_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|Dic_1666_3:c>457-<1] [lcl|Dic_1666_3: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/Dic_1666_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|Dac_3:c>457-<1] [lcl|Dac_3: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/Dac_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|Dfl_2:c>457-<1] [lcl|Dfl_2: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/Dfl_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_4_2:c>457-<1] [lcl|SE_4_2: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/SE_4_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_22_3:c>457-<1] [lcl|SE_22_3: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/SE_22_1]
+WARNING: valid [SEQ_FEAT.GenCodeMismatch] Genetic code conflict between CDS (code 1) and BioSource.genome biological context (chloroplast) (uses code 11) FEATURE: CDS: RNA polymerase beta subunit [lcl|SE_27_3:c>457-<1] [lcl|SE_27_3: raw, dna len= 457] -> [gnl|NCBIFILE|rpoB.sqn/SE_27_1]
+WARNING: valid [SEQ_DESCR.InconsistentProteinTitle] Instantiated protein title does not match automatically generated title BIOSEQ: gnl|NCBIFILE|rpoB.sqn/DE_2_1: raw, aa len= 152
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: phy-set: KJ650907
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: phy-set: KJ651051
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: phy-set: KJ650849
+WARNING: valid [SEQ_DESCR.InconsistentProteinTitle] Instantiated protein title does not match automatically generated title BIOSEQ: gnl|NCBIFILE|T4.sqn/DE_2_1: raw, aa len= 73
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: phy-set: KJ651000
+WARNING: valid [SEQ_DESCR.InconsistentProteinTitle] Instantiated protein title does not match automatically generated title BIOSEQ: gnl|NCBIFILE|rps19.sqn/DE_2_1: raw, aa len= 53
+WARNING: valid [SEQ_DESCR.InconsistentProteinTitle] Instantiated protein title does not match automatically generated title BIOSEQ: gnl|NCBIFILE|rps19.sqn/DE_2_2: raw, aa len= 31
+ERROR: valid [SEQ_FEAT.InvalidForType] Invalid feature for a protein Bioseq. FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+WARNING: valid [SEQ_FEAT.PartialProblem] PartialLocation: 5' partial is not at start AND is not at consensus splice site FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+REJECT: valid [SEQ_FEAT.Range] Location: SeqLoc [lcl|Dta_2_5:c>309-213] out of range FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+WARNING: valid [SEQ_FEAT.MinusStrandProtein] Feature on protein indicates negative strand FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+ERROR: valid [SEQ_FEAT.CdTransFail] Unable to translate FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+ERROR: valid [SEQ_FEAT.MissingCDSproduct] Expected CDS product absent FEATURE: CDS:  [lcl|Dta_2_5:c>309-213] [lcl|Dta_2_5: raw, aa len= 31]
+WARNING: valid [SEQ_PKG.MissingSetTitle] Pop/Phy/Mut/Eco set does not have title BIOSEQ-SET: phy-set: KJ650961

@@ -1,0 +1,16 @@
+#!/bin/sh
+#Cleanup method for the template test
+#Cleanup method is invoked after test execution to clean up the results of the initialization method
+#
+
+#Environment variables provided by the framework:
+#$NCBI_TESTRES_INIT_DIR             Where init scripts results were placed
+#$NCBI_TESRES_TREE_PATH             Tree path of the test
+
+RESULTS="$NCBI_TESTRES_INIT_DIR/cleanup_file"
+
+echo "Cleaning up!" 1>"$RESULTS"
+echo "$NCBI_TESTRES_TREE_PATH" 1>>"$RESULTS"
+date 1>>"$RESULTS"
+
+exit 0

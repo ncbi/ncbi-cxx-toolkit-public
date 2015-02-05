@@ -1,0 +1,29 @@
+#!/bin/sh
+#Run method for the template test
+#Test waits TR_PAUSE sec before reporting success
+
+#Environment variables provided by the framework:
+#$NCBI_TESTRES_UNIT                 Name of the test unit
+#$NCBI_TESTRES_RESOURCE             Name of the resource
+#$NCBI_TESTRES_RESULT               Name of the result file
+#$NCBI_TESTRES_VERSION_DIR          Name of the test version configuration directory (R/O)
+#$NCBI_TESTRES_TEST_DIR             Name of the test configuration directory (R/O)
+#$NCBI_TESTRES_WORK_DIR              Name of the specially created working directory (R/W)
+#$NCBI_TESTRES_INIT_DIR             Name of the initialization script dir results
+
+OLD_TOOL="$NCBI_TESTRES_TEST_DIR/../bin/asnval"
+NEW_TOOL="$NCBI_TESTRES_TEST_DIR/../bin/asnvalidate"
+
+GOLDEN_DIR="$NCBI_TESTRES_TEST_DIR/test-cases"
+
+INPUT_FILE="$GOLDEN_DIR/$FILENAME"
+OLD_TOOL_OUTPUT="$NCBI_TESTRES_WORK_DIR/$FILENAME.orig"
+NEW_TOOL_OUTPUT="$NCBI_TESTRES_WORK_DIR/$FILENAME.new"
+
+"$OLD_TOOL" -i "$INPUT_FILE" -Q 0 -o "$OLD_TOOL_OUTPUT"
+"$NEW_TOOL" -i "$INPUT_FILE" -Q 0 -o "$NEW_TOOL_OUTPUT"
+
+diff "$OLD_TOOL_OUTPUT" "$NEW_TOOL_OUTPUT"
+
+exit $?
+
