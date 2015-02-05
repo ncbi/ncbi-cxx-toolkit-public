@@ -69,7 +69,7 @@ public:
 
 	/// a single bin entry
 	///
-	/// some of the fields are specially formatted, descriptions are in 
+	/// some of the fields are specially formatted, descriptions are in
 	/// https://sp.ncbi.nlm.nih.gov/IEB/pdas/dbsnp/SNP Named Annotation/BinTrackRequirements.docx
 	struct SBinEntry : public CObject
 	{
@@ -86,6 +86,12 @@ public:
 		string  dbgaptext;	///< specially formatted, see document
 		string  context;
 		TSource source;
+		string  trackSubType;    ///< used to further differentiate some GWAS/pha tracks (see SV-2201)
+		string  population;      ///< population description for GWAS/pha tracks
+		TSeqPos pos_end;         ///< gene end when trackSubType is (Gene association)
+		int     geneId;          ///< gene ID when trackSubType is (Gene association)
+		string  geneName;        ///< gene name when trackSubType is (Gene association)
+
 	};
 
 	typedef list<CRef<SBinEntry> >  TBinEntryList;
@@ -122,7 +128,7 @@ public:
 		///
 		/// key is gene symbol, value is gene id
 		typedef map<string, string> TGeneMap;
-		
+
 		/// masquerading as container
 		typedef TGeneMap::const_iterator const_iterator;
 		const_iterator begin() const { return m_GeneMap.begin(); }
@@ -143,7 +149,7 @@ public:
 	                           int depth,
 	                           objects::SAnnotSelector& sel);
 
-    /// get an annotation handle that is needed to load a singlular bin on range
+    /// get an annotation handle that is needed to load a singular bin on range
 	///
 	/// @param scope
 	///    active scope
@@ -153,7 +159,7 @@ public:
 	///   range that the bin will cover
 	/// @param annot
 	///   will be filled if a handle can be obtained
-	/// @return 
+	/// @return
 	///   false if a handle cannot be obtained
     static bool GetBinHandle(objects::CScope& scope,
                              const objects::SAnnotSelector& sel,
@@ -174,12 +180,12 @@ public:
 	///   annotation handle obtained by GetBinHandle()
 	/// @param row
 	///   row in the annotation table
-	/// @return 
+	/// @return
 	///   null if there is no valid entry for this row
 	static CRef<SBinEntry> GetEntry(const objects::CSeq_annot_Handle& annot, int row);
 
 	/// choose a more significant entry of the two offered
-	/// @return 
+	/// @return
 	///   - 1 of entry1 is more significant
 	///   - 2 if entry2 is more significant
 	static int ChooseSignificant(const SBinEntry* entry1, const SBinEntry* entry2, TBinType type);
@@ -206,7 +212,7 @@ public:
 	///   upper boundary for the "pos" value (exclusive)
 	/// @param pos_index_begin
 	///   first index (row) which contains the indicated "pos" values
-    /// @param pos_index_end 
+    /// @param pos_index_end
 	///   points at one row greater than the last item found (exclusive)
 	/// @note
 	///   annot is supposed to contain a table with a sorted "pos" column (but may contain
@@ -215,6 +221,9 @@ public:
     static void FindPosIndexRange(const objects::CSeq_annot_Handle& annot,
                           int pos_value_from, int pos_value_to,
                           int& pos_index_begin, int& pos_index_end);
+
+    /// determine whether a string in TrackSubType describes a Gene Marker ("102_1" or "102_3")
+    static bool isGeneMarker(const string& trackSubType) { return trackSubType == "102_1" || trackSubType == "102_3"; }
 };
 
 /// compare two GeneMaps, return true if they have the same set of elements
