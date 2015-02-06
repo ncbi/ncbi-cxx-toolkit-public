@@ -285,15 +285,21 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
     
     const BlastHSPFilteringOptions* filt_opts =
         opts_memento->m_HitSaveOpts->hsp_filt_opt;
+    if(filt_opts && (filt_opts->best_hit) && filt_opts->best_hit->score_edge == 0) {
+    	//We want to only do score edge in prelimiary stage, skip if score edge in 0
+    	filt_opts = NULL;
+    }
     if (filt_opts) {
         bool hsp_writer_found = false;
-        if (filt_opts->best_hit && (filt_opts->best_hit_stage & ePrelimSearch)) 
+        if (filt_opts->best_hit && (filt_opts->best_hit_stage & ePrelimSearch))
         {
             BlastHSPBestHitParams* params = 
                 BlastHSPBestHitParamsNew(opts_memento->m_HitSaveOpts,
                      filt_opts->best_hit,
                      opts_memento->m_ExtnOpts->compositionBasedStats, 
                      opts_memento->m_ScoringOpts->gapped_calculation);
+            // Disable overhang in prelimiary stage
+            params->overhang = 0;
             writer_info = BlastHSPBestHitInfoNew(params);
             hsp_writer_found = true;
         }
