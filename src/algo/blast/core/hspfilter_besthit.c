@@ -198,51 +198,40 @@ s_ImportFromHitlist(int qid,
 static int 
 s_BlastHSPBestHitFinal(void* data, BlastHSPResults* results)
 {
-   int qid, sid, id;
+   int qid, sid;
    BlastHSPBestHitData *bh_data = data;
    LinkedHSP_BH **best_list = bh_data->best_list;
    BlastHitList* hitlist;
-   BlastHSPList* list;
-   double best_evalue, worst_evalue;
-   Int4 low_score;
 
    /* rip best hits off the best_list and put them to results */
    for (qid=0; qid<results->num_queries; ++qid) {
       if (best_list[qid]) {
 
          if (!results->hitlist_array[qid]) {
-            results->hitlist_array[qid] = 
-                Blast_HitListNew(bh_data->params->prelim_hitlist_size);
-         }
-         hitlist = results->hitlist_array[qid];
+        		results->hitlist_array[qid] = Blast_HitListNew(bh_data->params->prelim_hitlist_size);
+        }
+         hitlist = Blast_HitListNew(bh_data->num_hsps[qid]);
 
          s_ExportToHitlist(qid, bh_data, hitlist);
-
          /* sort hsplists */
-         worst_evalue = 0.0;
-         low_score = INT4_MAX;
          for (sid=0; sid < hitlist->hsplist_count; ++sid) {
-            list = hitlist->hsplist_array[sid];
-            best_evalue = (double) INT4_MAX;
-            for (id=0; id < list->hspcnt; ++id) {
-                best_evalue = MIN(list->hsp_array[id]->evalue, best_evalue);
-            }
-            Blast_HSPListSortByScore(list);
-            list->best_evalue = best_evalue;
-            worst_evalue = MAX(worst_evalue, best_evalue);
-            low_score = MIN(list->hsp_array[0]->score, low_score);
+        	Blast_HSPListSortByScore(hitlist->hsplist_array[sid]);
          }
-         hitlist->worst_evalue = worst_evalue;
-         hitlist->low_score = low_score;
+         Blast_HitListSortByEvalue(hitlist);
+         for (sid=0; sid < hitlist->hsplist_count; ++sid) {
+        	 Blast_HitListUpdate(results->hitlist_array[qid], hitlist->hsplist_array[sid] );
+        	 hitlist->hsplist_array[sid] = NULL;
+         }
+         Blast_HitListFree(hitlist);
       }
    }
+
    sfree(bh_data->best_list);
    sfree(bh_data->num_hsps);
    sfree(bh_data->max_hsps);
    bh_data->best_list = NULL;
    return 0;
 }
-
 
 /** Perform writing task, will save best hits to best_list
  * @param data To store results to [in][out]
@@ -284,7 +273,7 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
 
       /* See if new hit A is bad */
       bad = FALSE;
-      for (p=best_list[qid]; p &&   p->end <= end;   p=p->next);
+      for (p=best_list[qid]; p &&   p->end < end;   p=p->next);
       for (                ; p && p->begin <= begin; p=p->next) {
          /* check conditions */
          lenB   = p->len;
@@ -351,9 +340,8 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
          best_list[qid] = r;
       }
 
-      /* If hsps exceed max limit, prune */
       if ( ++(bh_data->num_hsps[qid]) > bh_data->max_hsps[qid]) {
-         BlastHitList *hitlist = Blast_HitListNew(bh_data->params->prelim_hitlist_size);
+         BlastHitList *hitlist = Blast_HitListNew(bh_data->num_hsps[qid]);
          s_ExportToHitlist(qid, bh_data, hitlist);
          s_ImportFromHitlist(qid, bh_data, hitlist);
          Blast_HitListFree(hitlist);
@@ -535,6 +523,7 @@ s_BlastHSPBestHitPipeRun(void* data, BlastHSPResults* results)
 {
    int qid, sid, num_list;
    s_BlastHSPBestHitInit(data, results);
+   Blast_HSPResultsSortByEvalue(results);
    for (qid = 0; qid < results->num_queries; ++qid) {
       if (!(results->hitlist_array[qid])) continue;
       num_list = results->hitlist_array[qid]->hsplist_count;
