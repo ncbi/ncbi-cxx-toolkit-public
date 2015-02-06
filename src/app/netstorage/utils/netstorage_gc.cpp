@@ -45,7 +45,8 @@ USING_NCBI_SCOPE;
 
 
 CNetStorageGCApp::CNetStorageGCApp(void) :
-    CNcbiApplication()
+    CNcbiApplication(),
+    m_DeleteCount(0), m_TotalCount(0)
 {
     CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
                                 NCBI_PACKAGE_VERSION_MINOR,
@@ -106,6 +107,8 @@ int CNetStorageGCApp::Run(void)
     }
 
     vector<string>          candidates = db.GetGCCandidates();
+    m_TotalCount = candidates.size();
+
     if (!candidates.empty()) {
         // It was decided not to perform this check because it can lead to
         // unwilling behavior. Here is an example:
@@ -121,12 +124,18 @@ int CNetStorageGCApp::Run(void)
         // - the garbage collector expects the ObjectExpired exception but
         //   receives 'not found' condition. That stops the GC utility.
         // x_CheckExpiration(candidates, verbose);
-        x_RemoveObjects(candidates, verbose, db, dryrun);
+        try {
+            x_RemoveObjects(candidates, verbose, db, dryrun);
+        } catch (...) {
+            x_PrintFinishCounters();
+            throw;
+        }
     }
 
     if (verbose)
         cout << "Removed " << candidates.size() << " object(s)" << endl;
 
+    x_PrintFinishCounters();
     return 0;
 }
 
@@ -240,7 +249,18 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
 
         // Cleaning MS SQL db
         db.RemoveObject(*k, dryrun, hit_id);
+
+        ++m_DeleteCount;
     }
+}
+
+
+void  CNetStorageGCApp::x_PrintFinishCounters(void)
+{
+    GetDiagContext().Extra()
+        .Print("_type", "finish")
+        .Print("total_count", NStr::NumericToString(m_TotalCount))
+        .Print("deleted_count", NStr::NumericToString(m_DeleteCount));
 }
 
 

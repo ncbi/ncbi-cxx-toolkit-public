@@ -54,6 +54,11 @@ class CNetStorageGCApp : public CNcbiApplication
         void  x_RemoveObjects(const vector<string> &  locators,
                               bool  verbose, CNetStorageGCDatabase &  db,
                               bool  dryrun);
+        void  x_PrintFinishCounters(void);
+
+    private:
+        size_t      m_DeleteCount;  // Successfully deleted candidates
+        size_t      m_TotalCount;   // Toatal number of candidates
 };
 
 END_NCBI_SCOPE
