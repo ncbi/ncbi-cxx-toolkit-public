@@ -868,14 +868,19 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
                 if (options->gapped_calculation && !Blast_ProgramIsRpsBlast(program_number))
                 {
                     Int2 status=0;
+                    Boolean std_matrix_only =
+                        (program_number != eBlastTypeBlastp &&
+                         program_number != eBlastTypeTblastn);
                     if ((status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open,
-                     options->gap_extend, options->matrix)) != 0)
+                          options->gap_extend, options->matrix, std_matrix_only)) != 0)
                      {
 			if (status == 1)
 			{
 				char* buffer;
 
-				buffer = BLAST_PrintMatrixMessage(options->matrix); 
+				buffer = BLAST_PrintMatrixMessage(options->matrix,
+                                                  std_matrix_only);
+
                                 Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, buffer);
 				sfree(buffer);
 				return BLASTERR_OPTION_VALUE_INVALID;
@@ -1139,6 +1144,8 @@ Int2 BLAST_GetSuggestedThreshold(EBlastProgramType program_number, const char* m
         *threshold = 16;
     else if(strcasecmp(matrixName, "PAM70") == 0)
         *threshold = 14;
+    else if(strcasecmp(matrixName, "IDENTITY") == 0)
+        *threshold = 27;
     else
         *threshold = kB62_threshold;
 

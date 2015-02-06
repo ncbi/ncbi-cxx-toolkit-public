@@ -400,12 +400,13 @@ Int2 Blast_ScoreBlkKbpIdealCalc(BlastScoreBlk* sbp);
  * @param gap_open gap existence cost [in]
  * @param gap_extend gap extension cost [in]
  * @param matrix_name name of the matrix used [in]
+ * @param standard_only If true, include only the standard blosum and pam matrices [in]
  * @return  -1 if matrix_name is NULL;
  *          1 if matrix not found
  *           2 if matrix found, but open, extend etc. values not supported.
 */
 NCBI_XBLAST_EXPORT
-Int2 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, const char* matrix_name);
+Int2 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, const char* matrix_name, Boolean standard_only);
 
 /** Fills in gumbel parameters to estimate p-value using FSC
  * @param gbp object to be filled in [in|out]
@@ -435,10 +436,12 @@ Int2 Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
 
 /** Prints a messages about the allowed matrices, BlastKarlinBlkGappedFill should return 1 before this is called. 
  * @param matrix the matrix to print a message about [in]
+ * @param standard_only, If true, include only the standad blosum and pam
+ * matrices [in]
  * @return the message
  */
 NCBI_XBLAST_EXPORT
-char* BLAST_PrintMatrixMessage(const char *matrix);
+char* BLAST_PrintMatrixMessage(const char *matrix, Boolean standard_only);
 
 /** Prints a messages about the allowed open etc values for the given matrix, 
  * BlastKarlinBlkGappedFill should return 2 before this is called. 

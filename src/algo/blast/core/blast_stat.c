@@ -577,6 +577,19 @@ BLAST_MATRIX_NOMINAL
 
 #endif
 
+
+#define PROT_IDENTITY_VALUES_MAX 2
+static array_of_8 prot_idenity_values[PROT_IDENTITY_VALUES_MAX] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.28768, 0.282, 1.69, 0.1703, -0.3, 0.43828, 0.16804, 0.16804},
+    {15, 2, (double) INT2_MAX, 0.2835, 0.255, 1.49, 0.19, -1, 0.44502, 0.24613, 0.22743}
+};
+
+static Int4 prot_identity_prefs[PROT_IDENTITY_VALUES_MAX] = {
+    BLAST_MATRIX_NOMINAL,
+    BLAST_MATRIX_BEST
+};
+
+
 /** Supported substitution and gap costs with corresponding quality values
  * for nucleotide sequence comparisons.
  * NB: the values 0 and 0 for the gap costs are treated as the defaults used for
@@ -2934,7 +2947,7 @@ BlastMatrixValuesDestruct(ListNode* vnp)
  *
 */
 static ListNode* 
-BlastLoadMatrixValues (void)
+BlastLoadMatrixValues (Boolean standard_only)
 
 {
    MatrixInfo* matrix_info;
@@ -2969,6 +2982,13 @@ BlastLoadMatrixValues (void)
    matrix_info = MatrixInfoNew("PAM70", pam70_values, pam70_prefs, PAM70_VALUES_MAX);
    ListNodeAddPointer(&retval, 0, matrix_info);
 
+   if (!standard_only) {
+       matrix_info = MatrixInfoNew("IDENTITY", prot_idenity_values,
+                                   prot_identity_prefs,
+                                   PROT_IDENTITY_VALUES_MAX);
+       ListNodeAddPointer(&retval, 0, matrix_info);
+   }
+
    return retval;
 }
 
@@ -3002,7 +3022,7 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, double*
    if (matrix == NULL)
       return 0;
 
-   vnp = head = BlastLoadMatrixValues();
+   vnp = head = BlastLoadMatrixValues(FALSE);
 
    while (vnp)
    {
@@ -3462,7 +3482,7 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
    ListNode* vnp,* head;
    MatrixInfo* matrix_info;
 
-   vnp = head = BlastLoadMatrixValues();
+   vnp = head = BlastLoadMatrixValues(FALSE);
    while (vnp)
    {
            matrix_info = vnp->ptr;
@@ -3508,7 +3528,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
    char buffer[256];
    Int2 status = 
       Blast_KarlinBlkGappedLoadFromTables(kbp, gap_open, 
-                                          gap_extend, matrix_name);
+                                          gap_extend, matrix_name, FALSE);
 
    if (status && error_return)
    {
@@ -3517,7 +3537,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
          MatrixInfo* matrix_info;
          ListNode* vnp,* head;      
 
-         vnp = head = BlastLoadMatrixValues();
+         vnp = head = BlastLoadMatrixValues(FALSE);
 
          sprintf(buffer, "%s is not a supported matrix", matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
@@ -3553,7 +3573,8 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 */
 Int2
 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, 
-                                    Int4 gap_extend, const char* matrix_name)
+                                    Int4 gap_extend, const char* matrix_name,
+                                    Boolean standard_only)
 {
    Boolean found_matrix=FALSE;
    array_of_8 *values;
@@ -3567,7 +3588,7 @@ Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open,
 
    values = NULL;
 
-   vnp = head = BlastLoadMatrixValues();
+   vnp = head = BlastLoadMatrixValues(standard_only);
    while (vnp)
    {
       matrix_info = vnp->ptr;
@@ -3638,7 +3659,7 @@ Blast_GumbelBlkCalc(Blast_GumbelBlk* gbp, Int4 gap_open,
          MatrixInfo* matrix_info;
          ListNode* vnp,* head;      
 
-         vnp = head = BlastLoadMatrixValues();
+         vnp = head = BlastLoadMatrixValues(FALSE);
 
          sprintf(buffer, "%s is not a supported matrix", matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
@@ -3685,7 +3706,7 @@ Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
 
    values = NULL;
 
-   vnp = head = BlastLoadMatrixValues();
+   vnp = head = BlastLoadMatrixValues(FALSE);
    while (vnp) {
       matrix_info = vnp->ptr;
       if (strcasecmp(matrix_info->name, matrix_name) == 0) {
@@ -3734,7 +3755,7 @@ Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
 }
 
 char*
-BLAST_PrintMatrixMessage(const char *matrix_name)
+BLAST_PrintMatrixMessage(const char *matrix_name, Boolean standard_only)
 {
    char* buffer= (char *) calloc(1024, sizeof(char));
    char* ptr;
@@ -3746,7 +3767,7 @@ BLAST_PrintMatrixMessage(const char *matrix_name)
 
    ptr += strlen(ptr);
 
-        vnp = head = BlastLoadMatrixValues();
+        vnp = head = BlastLoadMatrixValues(standard_only);
 
         while (vnp)
         {
@@ -3778,7 +3799,7 @@ BLAST_PrintAllowedValues(const char *matrix_name,
 
    ptr += strlen(ptr);
 
-   vnp = head = BlastLoadMatrixValues();
+   vnp = head = BlastLoadMatrixValues(FALSE);
    while (vnp)
    {
       matrix_info = vnp->ptr;

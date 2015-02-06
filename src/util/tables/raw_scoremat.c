@@ -43,6 +43,7 @@
 #include "sm_pam30.c"
 #include "sm_pam70.c"
 #include "sm_pam250.c"
+#include "sm_identity.c"
 
 static const char kNCBIstdaa[] = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ";
 
@@ -147,6 +148,12 @@ const SNCBIPackedScoreMatrix* NCBISM_GetStandardMatrix(const char* name)
         case '3': return strcmp(name + 3, "30")  ? NULL : &NCBISM_Pam30;
         case '7': return strcmp(name + 3, "70")  ? NULL : &NCBISM_Pam70;
         }
+
+    case 'I': case 'i':
+        if ( !s_NCBISM_StartsWith(name, "identity") ) {
+            return NULL;
+        }
+        return &NCBISM_Identity;
 
     default:
         return NULL;
