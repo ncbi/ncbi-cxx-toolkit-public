@@ -431,7 +431,7 @@ CMultiAligner::x_ComputeTree(void)
     const Int4 kGapOpen = 11;
     const Int4 kGapExtend = 1;
     if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk, kGapOpen, kGapExtend,
-                             m_Options->GetScoreMatrixName().c_str()) != 0) {
+                       m_Options->GetScoreMatrixName().c_str(), true) != 0) {
 
         NCBI_THROW(blast::CBlastException, eInvalidArgument,
                      "Cannot generate Karlin block");
