@@ -745,7 +745,7 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
  * @param old_hit_list_ptr Pointer to original HitList, will be NULLed 
  *                          out on return [in|out]
  * @param combined_hit_list_ptr Pointer to the combined HitList [in|out]
- * @param contexts_per_query The number of different contexts that can
+ t* @param contexts_per_query The number of different contexts that can
  *             occur in hits from old_hit_list and combined_hit_list [in]
  * @param split_offsets the query offset that marks the boundary between
  *             combined_hit_list and old_hit_list. HSPs in old_hit_list
@@ -768,6 +768,14 @@ Int2 Blast_HitListMerge(BlastHitList** old_hit_list_ptr,
 NCBI_XBLAST_EXPORT
 Int2 
 Blast_HitListPurgeNullHSPLists(BlastHitList* hit_list);
+
+/** Sort BlastHitLIst bon evalue
+ *  @param hit_lsit BLAST hit list to be sorted [in] [out]
+ */
+NCBI_XBLAST_EXPORT
+Int2
+Blast_HitListSortByEvalue(BlastHitList* hit_list);
+
 /********************************************************************************
           HSPResults API.
 ********************************************************************************/

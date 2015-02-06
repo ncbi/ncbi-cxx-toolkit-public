@@ -3088,6 +3088,17 @@ Blast_HitListPurgeNullHSPLists(BlastHitList* hit_list)
    return 0;
 }
 
+Int2 Blast_HitListSortByEvalue(BlastHitList* hit_list)
+{
+      if (hit_list && hit_list->hsplist_count > 1) {
+         qsort(hit_list->hsplist_array, hit_list->hsplist_count,
+                  sizeof(BlastHSPList*), s_EvalueCompareHSPLists);
+      }
+      s_BlastHitListPurge(hit_list);
+   return 0;
+}
+
+
 /********************************************************************************
           Functions manipulating BlastHSPResults
 ********************************************************************************/
