@@ -76,9 +76,12 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
             break;
 
         case 'b':
-            if (remaining != 0  ||  *(iter - 1) != 'm') {
+            if (remaining != 0  ||
+                !prev_len  ||
+                *(iter - 1) != 'm') {
                 *out += 'p';
             }
+
             break;
 
         case 'f':
