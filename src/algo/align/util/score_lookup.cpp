@@ -1375,15 +1375,30 @@ public:
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
         CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     
-        ///
-        /// compute the BLAST score
-        ///
+        //
+        // compute the BLAST score
+        //
         int score = m_ScoreLookup.GetBlastScore(*scope, align);
     
-        ///
-        /// compute the BLAST score for a degenerate perfect alignment for
-        /// this sequence
-        ///
+        //
+        // compute the BLAST score for a degenerate perfect alignment for
+        // the two sequences
+        //
+        double q_perfect = x_GetPerfectScore(*scope, idh);
+        double s_perfect = x_GetPerfectScore
+            (*scope, CSeq_id_Handle::GetHandle(align.GetSeq_id(1)));
+
+        double perfect_score = max(q_perfect, s_perfect);
+        return perfect_score ? score / perfect_score : 0;
+    }
+
+private:
+    CScoreLookup &m_ScoreLookup;
+
+    double x_GetPerfectScore(CScope& scope, const CSeq_id_Handle& idh) const
+    {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(idh);
+
         CSeq_align perfect_align;
         CDense_seg& seg = perfect_align.SetSegs().SetDenseg();
         CRef<CSeq_id> id(new CSeq_id);
@@ -1395,13 +1410,8 @@ public:
         seg.SetStarts().push_back(0);
         seg.SetLens().push_back(bsh.GetBioseqLength());
     
-        double perfect_score =
-            m_ScoreLookup.GetBlastScore(*scope, perfect_align);
-        return perfect_score ? score / perfect_score : 0;
+        return m_ScoreLookup.GetBlastScore(scope, perfect_align);
     }
-
-private:
-    CScoreLookup &m_ScoreLookup;
 };
 
 
