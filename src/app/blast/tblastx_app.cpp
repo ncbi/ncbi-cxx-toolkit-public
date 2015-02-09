@@ -121,8 +121,10 @@ int CTblastxApp::Run(void)
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
                                      query_opts->GetRange());
-        if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
-           	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
+        if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())){
+           	ERR_POST(Warning << "Query is Empty!");
+           	return BLAST_EXIT_SUCCESS;
+        }
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
