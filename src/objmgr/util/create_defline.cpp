@@ -1015,7 +1015,16 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
         joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
     } else if ( ! m_Organelle.empty() ) {
         if ( m_Chromosome.empty() ) {
-            joiner.Add(" ").Add(m_Organelle).Add(gen_tag);
+			switch (m_Genome) {
+				case NCBI_GENOME(mitochondrion):
+				case NCBI_GENOME(chloroplast):
+				case NCBI_GENOME(kinetoplast):
+				case NCBI_GENOME(plastid):
+				case NCBI_GENOME(apicoplast):
+					joiner.Add(" ").Add(m_Organelle);
+					break;
+        	}
+            joiner.Add(gen_tag);
         } else if (m_IsChromosome) {
             joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
         } else {
