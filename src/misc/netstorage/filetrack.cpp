@@ -300,7 +300,8 @@ void SFileTrackPostRequest::FinishUpload()
                 "Error while uploading \"" << m_ObjectLoc->GetLocator() <<
                 "\" to FileTrack: the file has been stored as \"" <<
                 filetrack_file_id << "\" instead of "
-                "\"" << unique_key << "\" as requested.");
+                "\"" << unique_key << "\" as requested. "
+                "A file with the key might already exist.");
     }
 }
 

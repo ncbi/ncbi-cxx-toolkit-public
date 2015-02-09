@@ -1209,7 +1209,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 
 #ifdef TEST_NON_EXISTENT
     string not_found(
-            "VHwxYl4jgV6Y8pM4TzhGbhfoROgxMl10Rz9GNlwqch9HHwkoJw0WbEsxAGoT0Cb0EeOG");
+            "akBZHDAuHAAeLCAJDR2qGyZd7WG8LXRxa4hCLFtLHE1bQ1thGg4uelAdPkVuBQ1SSxY");
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(not_found));
 #endif
@@ -1250,13 +1250,15 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
+    string prefix = NStr::NumericToString(time(NULL));
+
     CRandom random_gen;
     random_gen.Randomize();
-    string unique_key1 = NStr::NumericToString(
+    string unique_key1 = prefix + NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
-    string unique_key2 = NStr::NumericToString(
+    string unique_key2 = prefix + NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
-    string unique_key3 = NStr::NumericToString(
+    string unique_key3 = prefix + NStr::NumericToString(
             random_gen.GetRand() * random_gen.GetRand());
 
     data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
