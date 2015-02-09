@@ -38,7 +38,6 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <errno.h>
-#include <string>
 #include <corelib/impl/ncbierror_impl.hpp>
 
 

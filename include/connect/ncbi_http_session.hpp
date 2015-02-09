@@ -34,11 +34,7 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_url.hpp>
 #include <corelib/ncbi_cookies.hpp>
-#include <connect/connect_export.h>
 #include <connect/ncbi_conn_stream.hpp>
 
 

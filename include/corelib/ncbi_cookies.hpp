@@ -33,8 +33,6 @@
 */
 
 
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_url.hpp>
 
 

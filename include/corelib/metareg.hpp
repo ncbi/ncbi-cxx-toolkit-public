@@ -35,9 +35,7 @@
 /// files; keeps track of what it loaded from where, for potential
 /// reuse.
 
-#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 

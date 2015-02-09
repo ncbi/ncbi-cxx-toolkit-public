@@ -39,10 +39,8 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include <vector>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
 #  error "Class CPipe is only supported on Windows and Unix"

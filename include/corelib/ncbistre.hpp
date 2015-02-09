@@ -38,7 +38,6 @@
 
 #include <corelib/ncbictype.hpp>
 
-
 /// Determine which iostream library to use, include appropriate
 /// headers, and #define specific preprocessor variables.
 /// The default is the new(template-based, std::) one.
@@ -119,7 +118,6 @@
 // Obsolete
 #define SEEKOFF         PUBSEEKOFF
 
-#include <string>
 #include <stddef.h>
 
 

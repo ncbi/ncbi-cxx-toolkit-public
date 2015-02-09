@@ -35,16 +35,11 @@
 /// Miscellaneous common-use basic types and functionality
 
 
-#include <corelib/ncbistl.hpp>
-
+#include <corelib/ncbidbg.hpp>
 #include <stdlib.h>
-
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
-
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbidbg.hpp>
 
 #if !defined(HAVE_NULLPTR)  &&  !defined(nullptr)
 #  define nullptr NULL

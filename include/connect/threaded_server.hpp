@@ -33,7 +33,6 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
