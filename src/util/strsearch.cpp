@@ -195,7 +195,7 @@ SIZE_TYPE CBoyerMooreMatcher::Search(const char*  text,
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
             } else {
-                shift += (unsigned int)m_LastOccurrence[text[shift + j]];
+                shift += (unsigned int)m_LastOccurrence[text[shift + (int)m_PatLen - 1]];
             }
         }
     } else { // case insensitive NStr::eNocase
@@ -210,7 +210,7 @@ SIZE_TYPE CBoyerMooreMatcher::Search(const char*  text,
                 return  shift;
             } else {
                 shift += 
-                    (unsigned int)m_LastOccurrence[toupper((unsigned char) text[shift + j])];
+                    (unsigned int)m_LastOccurrence[toupper((unsigned char) text[shift + (int)m_PatLen - 1])];
             }
         }
     }
