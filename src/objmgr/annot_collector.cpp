@@ -1003,6 +1003,10 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             }
         }
     }
+    if ( x.IsFromOtherTSE() != y.IsFromOtherTSE() ) {
+        // non-sequence TSE annotations should come later
+        return y.IsFromOtherTSE();
+    }
 
     return x < y;
 }
@@ -1477,7 +1481,8 @@ public:
 
 CAnnot_Collector::CAnnot_Collector(CScope& scope)
     : m_Selector(0),
-      m_Scope(scope)
+      m_Scope(scope),
+      m_FromOtherTSE(false)
 {
 }
 
@@ -1764,6 +1769,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
     if ( m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_None ) {
         // any data source
         const CTSE_Handle& tse = bh.GetTSE_Handle();
+        m_FromOtherTSE = false;
         if ( m_Selector->m_ExcludeExternal ) {
             const CTSE_Info& tse_info = tse.x_GetTSE_Info();
             tse_info.UpdateAnnotIndex();
@@ -1800,6 +1806,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 m_Scope->GetTSESetWithAnnots(bh, tse_map);
             }
             ITERATE (CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map) {
+                m_FromOtherTSE = tse_it->first != bh.GetTSE_Handle();
                 tse.AddUsedTSE(tse_it->first);
                 x_SearchTSE(tse_it->first, tse_it->second,
                             master_range, 0);
@@ -1815,6 +1822,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
         bool syns_initialized = false;
         ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
             const CTSE_Info& tse_info = *tse_it->first;
+            m_FromOtherTSE = tse_it->second != bh.GetTSE_Handle();
             tse_info.UpdateAnnotIndex();
             if ( tse_info.HasMatchingAnnotIds() ) {
                 if ( !syns_initialized ) {
@@ -2148,6 +2156,7 @@ struct SLessByInfo
 
 void CAnnot_Collector::x_AddObject(CAnnotObject_Ref& ref)
 {
+    ref.SetFromOtherTSE(m_FromOtherTSE);
     m_AnnotSet.push_back(ref);
 }
 
@@ -2559,6 +2568,7 @@ void CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
     if ( !m_MappingCollector.get() ) {
         m_MappingCollector.reset(new CAnnotMappingCollector);
     }
+    object_ref.SetFromOtherTSE(m_FromOtherTSE);
     CRef<CSeq_loc_Conversion_Set>& mapping_set =
         m_MappingCollector->m_AnnotMappingSet[object_ref];
     if ( cvt ) {
@@ -3004,6 +3014,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     continue;
                 }
                 _ASSERT(tse);
+                m_FromOtherTSE = false;
                 const CTSE_Info& tse_info = tse->x_GetTSE_Info();
                 tse_info.UpdateAnnotIndex();
                 if ( tse_info.HasMatchingAnnotIds() ) {
@@ -3044,6 +3055,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     if ( tse ) {
                         tse->AddUsedTSE(tse_it->first);
                     }
+                    m_FromOtherTSE = !bh || tse_it->first != bh.GetTSE_Handle();
                     found |= x_SearchTSE(tse_it->first, tse_it->second,
                                          idit->second, cvt);
                     if ( x_NoMoreObjects() ) {
@@ -3057,6 +3069,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                   m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_TSE_Info &&
                   m_Selector->m_LimitObject ) {
             // external annotations only
+            m_FromOtherTSE = true;
             ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
                 const CTSE_Info& tse_info = *tse_it->first;
                 tse_info.UpdateAnnotIndex();

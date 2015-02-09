@@ -79,7 +79,8 @@ public:
         fMapped_Product      = 1<<1,
         fMapped_Seq_point    = 1<<2,
         fMapped_Partial_from = 1<<3,
-        fMapped_Partial_to   = 1<<4
+        fMapped_Partial_to   = 1<<4,
+        fFromOtherTSE        = 1<<5
     };
 
     enum EMappedObjectType {
@@ -122,6 +123,9 @@ public:
 
     ENa_strand GetMappedStrand(void) const;
     void SetMappedStrand(ENa_strand strand);
+
+    bool IsFromOtherTSE(void) const;
+    void SetFromOtherTSE(bool from_other_tse = true);
 
     const CSeq_loc& GetMappedSeq_loc(void) const;
     const CSeq_id& GetMappedSeq_id(void) const;
@@ -207,6 +211,9 @@ public:
     const CSeq_align& GetAlign(void) const;
 
     CAnnotMapping_Info& GetMappingInfo(void) const;
+
+    bool IsFromOtherTSE(void) const;
+    void SetFromOtherTSE(bool from_other_tse = true);
 
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
@@ -467,6 +474,7 @@ private:
     typedef SAnnotSelector::TMaxSearchSegments TMaxSearchSegments;
     CStopWatch              m_SearchTime;
     TMaxSearchSegments      m_SearchSegments;
+    bool                    m_FromOtherTSE;
 
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
@@ -731,6 +739,25 @@ void CAnnotMapping_Info::SetProduct(bool product)
 
 
 inline
+bool CAnnotMapping_Info::IsFromOtherTSE(void) const
+{
+    return (m_MappedFlags & fFromOtherTSE) != 0;
+}
+
+
+inline
+void CAnnotMapping_Info::SetFromOtherTSE(bool from_other_tse)
+{
+    if ( from_other_tse ) {
+        m_MappedFlags |= fFromOtherTSE;
+    }
+    else {
+        m_MappedFlags &= ~fFromOtherTSE;
+    }
+}
+
+
+inline
 void CAnnotMapping_Info::SetAnnotObjectRange(const TRange& range, bool product)
 {
     m_TotalRange = range;
@@ -843,6 +870,20 @@ inline
 CAnnotMapping_Info& CAnnotObject_Ref::GetMappingInfo(void) const
 {
     return m_MappingInfo;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsFromOtherTSE(void) const
+{
+    return m_MappingInfo.IsFromOtherTSE();
+}
+
+
+inline
+void CAnnotObject_Ref::SetFromOtherTSE(bool from_other_tse)
+{
+    m_MappingInfo.SetFromOtherTSE(from_other_tse);
 }
 
 
