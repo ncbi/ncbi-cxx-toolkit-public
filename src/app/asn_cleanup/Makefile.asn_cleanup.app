@@ -19,5 +19,8 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(FTDS_LIBS) \
 
 REQUIRES = objects -Cygwin
 
+CXXFLAGS += $(ORIG_CXXFLAGS)
+LDFLAGS  += $(ORIG_LDFLAGS)
+
 
 WATCHERS = bollin kornbluh
