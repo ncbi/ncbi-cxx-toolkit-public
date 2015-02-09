@@ -73,6 +73,13 @@ extern const char* LBSMD_GetHostParameter(unsigned int host,
 
 
 /*ARGSUSED*/
+unsigned int LBSMD_GetLocalHostAddress(const void* v)
+{
+    return SOCK_GetLocalHostAddress(eDefault);
+}
+
+
+/*ARGSUSED*/
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo)
 {
     return -1;

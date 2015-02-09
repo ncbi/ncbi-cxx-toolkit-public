@@ -35,7 +35,7 @@
  */
 
 #include "ncbi_servicep.h"
-#include "ncbi_lbsm.h"
+#include <connect/ncbi_heapmgr.h>
 
 
 #ifdef __cplusplus
@@ -91,7 +91,7 @@ NCBI_XCONNECT_EXPORT const char* LBSMD_GetHostParameter(unsigned int addr,
 NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 
 
-unsigned int LBSMD_GetLocalHostAddress(const SLBSM_Version* v);
+unsigned int LBSMD_GetLocalHostAddress(const void/*SLBSM_Version*/ *v);
 
 
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo);
