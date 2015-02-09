@@ -88,7 +88,8 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
     if (Blast_SubjectIsPssm(program) ||
         // the current implementation does NOT support splitting for multiple
         // blastx queries, loop over queries individually here...
-        (program == eBlastTypeBlastx && num_queries > 1)) {
+        (program == eBlastTypeBlastx && num_queries > 1) ||
+        Blast_ProgramIsPhiBlast(program)) {
         retval = false;
     }
 
