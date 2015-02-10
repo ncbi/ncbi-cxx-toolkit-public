@@ -1560,6 +1560,12 @@ Variation ::= {
         length 4,
         seq-data iupacna "TATC"
       },
+      exceptions {
+        {
+          code bioseq-state,
+          message "Bioseq is suppressed or withdrawn"
+        }
+      },
       dbxrefs {
         {
           db "GeneID",
