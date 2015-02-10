@@ -52,9 +52,9 @@ USING_NCBI_SCOPE;
 // test will be disabled until the issue is fixed
 #undef TEST_ATTRIBUTES
 
-#define TEST_NON_EXISTENT
-#define TEST_RELOCATED
-#define TEST_REMOVED
+#undef TEST_NON_EXISTENT
+#undef TEST_RELOCATED
+#undef TEST_REMOVED
 
 
 // Configuration parameters
@@ -992,6 +992,7 @@ struct SFixture
     // These two are used to set test context
     SFixture& Ctx(const string& d)
     {
+        LOG_POST(Trace << d);
         BOOST_TEST_CHECKPOINT(d);
         ctx.desc = d;
         return *this;
@@ -1189,14 +1190,16 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
     CNetStorageObject object(netstorage.Open(id));
     CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
             object, data->Size()).Check();
+    LOG_POST(Trace << "Removing existent object");
     netstorage.Remove(id);
+
+    // Wait some time for changes to take effect
+    g_Sleep();
+
     BOOST_CHECK_CTX(!netstorage.Exists(id),
             Ctx("Checking non-existent object").Line(__LINE__));
 
 #ifdef TEST_REMOVED
-    // Wait some time for changes to take effect
-    g_Sleep();
-
     ReadAndCompare<TLocationNotFound>("Trying to read removed object",
         netstorage.Open(id));
 #endif
@@ -1222,9 +1225,11 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // Generate a "non-movable" object ID by calling Relocate()
     // with the same storage preferences (so the object should not
     // be actually relocated).
+    Ctx("Creating immovable locator");
     string immovable_loc = netstorage.Relocate(object_loc, TLoc::immovable);
 
     // Relocate the object to a different storage.
+    Ctx("Relocating object");
     string persistent_loc = netstorage.Relocate(object_loc, TLoc::relocate);
 
     // Wait some time for changes to take effect
@@ -1279,6 +1284,7 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
 
     // Relocate the object to a different storage and make sure
     // it can be read from there.
+    Ctx("Relocating object");
     netstorage.Relocate(unique_key2, TLoc::relocate, TLoc::create);
 
     // Wait some time for changes to take effect

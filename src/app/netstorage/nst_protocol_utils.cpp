@@ -94,6 +94,10 @@ ExtractStorageFlags(const CJsonNode &  message)
             result |= fNST_Fast;
         if (flags.HasKey("Persistent") && flags.GetBoolean("Persistent"))
             result |= fNST_Persistent;
+        if (flags.HasKey("NetCache") && flags.GetBoolean("NetCache"))
+            result |= fNST_NetCache;
+        if (flags.HasKey("FileTrack") && flags.GetBoolean("FileTrack"))
+            result |= fNST_FileTrack;
         if (flags.HasKey("Movable") && flags.GetBoolean("Movable"))
             result |= fNST_Movable;
         if (flags.HasKey("Cacheable") && flags.GetBoolean("Cacheable"))

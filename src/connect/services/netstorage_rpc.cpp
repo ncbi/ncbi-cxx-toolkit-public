@@ -743,6 +743,10 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
         storage_flags.SetBoolean("Fast", true);
     if (flags & fNST_Persistent)
         storage_flags.SetBoolean("Persistent", true);
+    if (flags & fNST_NetCache)
+        storage_flags.SetBoolean("NetCache", true);
+    if (flags & fNST_FileTrack)
+        storage_flags.SetBoolean("FileTrack", true);
     if (flags & fNST_Movable)
         storage_flags.SetBoolean("Movable", true);
     if (flags & fNST_Cacheable)

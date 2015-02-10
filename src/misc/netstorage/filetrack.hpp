@@ -43,6 +43,12 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_DECL(string, filetrack, site);
+typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
+
+NCBI_PARAM_DECL(string, filetrack, api_key);
+typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_APIKey;
+
 struct SFileTrackAPI;
 
 struct SFileTrackRequest : public CObject
@@ -90,8 +96,6 @@ struct SFileTrackPostRequest : public SFileTrackRequest
 struct SFileTrackAPI
 {
     SFileTrackAPI();
-
-    string GetAPIKey();
 
     string LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc);
 

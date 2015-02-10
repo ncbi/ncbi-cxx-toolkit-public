@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+// TODO: Merge every two into one (with icache_client = NULL)
+
 /// Construct a CNetStorage object
 ///
 /// @param app_domain
@@ -116,16 +118,6 @@ CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
         const string& service_name,
         TNetStorageFlags flags);
-
-NCBI_PARAM_DECL(string, netstorage_api, backend_storage);
-typedef NCBI_PARAM_TYPE(netstorage_api, \
-        backend_storage) TNetStorageAPI_BackendStorage;
-
-NCBI_PARAM_DECL(string, filetrack, site);
-typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
-
-NCBI_PARAM_DECL(string, filetrack, api_key);
-typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_APIKey;
 
 /* @} */
 

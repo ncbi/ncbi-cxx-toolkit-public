@@ -66,7 +66,7 @@ struct SNetICacheClientImpl;
 ///
 class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 {
-    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(NetICacheClient);
+    NCBI_NET_COMPONENT_IMPL(NetICacheClient);
 
     /// Defines how this object must be initialized.
     enum EAppRegistry {

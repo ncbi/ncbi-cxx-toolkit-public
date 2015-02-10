@@ -233,21 +233,40 @@ inline void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
 }
 
 /// @internal
+template <TNetStorageFlags MASK>
+class CNetStorageFlagsSubset
+{
+    typedef CNetStorageFlagsSubset TSelf;
+public:
+    CNetStorageFlagsSubset(TNetStorageFlags flags) : m_Flags(flags & MASK) {}
+    TSelf& operator &=(TSelf flag) { m_Flags &= flag; return *this; }
+    TSelf& operator |=(TSelf flag) { m_Flags |= flag; return *this; }
+    TSelf& operator ^=(TSelf flag) { m_Flags ^= flag; return *this; }
+    operator TNetStorageFlags() const { return m_Flags; }
+
+private:
+    TNetStorageFlags m_Flags;
+};
+
+typedef CNetStorageFlagsSubset<fNST_AnyLoc> TNetStorageLocFlags;
+typedef CNetStorageFlagsSubset<~fNST_AnyLoc> TNetStorageAttrFlags;
+
+/// @internal
 class NCBI_XCONNECT_EXPORT CNetStorageObjectLoc
 {
 public:
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-            TNetStorageFlags flags,
+            TNetStorageAttrFlags flags,
             const string& app_domain,
             Uint8 random_number,
             const char* ft_site_name);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-            TNetStorageFlags flags,
+            TNetStorageAttrFlags flags,
             const string& app_domain,
             const string& unique_key,
             const char* ft_site_name);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-            const string& object_loc);
+            const string& object_loc, TNetStorageAttrFlags flags = 0);
 
     void SetObjectID(Uint8 object_id)
     {
@@ -303,6 +322,8 @@ public:
 
     Uint8 GetCacheChunkSize() const {return m_CacheChunkSize;}
 
+    void ResetLocation(const char* ft_site_name);
+
     void SetLocation_NetCache(const string& service_name,
         Uint4 server_ip, unsigned short server_port,
         bool allow_xsite_conn);
@@ -327,7 +348,8 @@ public:
         return m_Locator;
     }
 
-    TNetStorageFlags GetStorageFlags() const;
+    TNetStorageAttrFlags GetStorageAttrFlags() const;
+    void SetStorageAttrFlags(TNetStorageAttrFlags flags);
 
     // Serialize to a JSON object.
     void ToJSON(CJsonNode& root) const;
@@ -343,6 +365,8 @@ private:
         fLF_Cacheable           = (1 << 5),
         fLF_DevEnv              = (1 << 6),
         fLF_QAEnv               = (1 << 7),
+
+        eLF_AttrFlags = (fLF_NoMetaData | fLF_Movable | fLF_Cacheable)
     };
     typedef unsigned TLocatorFlags;
 
@@ -361,7 +385,7 @@ private:
     void ClearLocatorFlags(TLocatorFlags flags) {m_LocatorFlags &= ~flags;}
 
     TLocatorFlags x_StorageFlagsToLocatorFlags(
-            TNetStorageFlags storage_flags);
+            TNetStorageAttrFlags storage_flags);
 
     CCompoundIDPool m_CompoundIDPool;
 

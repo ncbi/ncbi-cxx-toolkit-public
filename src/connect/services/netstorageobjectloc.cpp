@@ -82,7 +82,7 @@ static EFileTrackSite s_StringToFileTrackSite(const char* ft_site_name)
 }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-        TNetStorageFlags flags,
+        TNetStorageAttrFlags flags,
         const string& app_domain,
         Uint8 random_number,
         const char* ft_site_name) :
@@ -106,7 +106,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
 }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-        TNetStorageFlags flags,
+        TNetStorageAttrFlags flags,
         const string& app_domain,
         const string& unique_key,
         const char* ft_site_name) :
@@ -153,7 +153,7 @@ ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
 }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-        const string& object_loc) :
+        const string& object_loc, TNetStorageAttrFlags flags) :
     m_CompoundIDPool(cid_pool),
     m_ObjectID(0),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
@@ -180,6 +180,9 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     CCompoundIDField field = cid.GetFirst(eCIT_Flags);
     VERIFY_FIELD_EXISTS(field);
     m_LocatorFlags = (TLocatorFlags) field.GetFlags();
+
+    // Override locator flags, if needed
+    SetStorageAttrFlags(flags);
 
     // Restore NetStorage service name.
     if (m_LocatorFlags & fLF_NetStorageService) {
@@ -255,6 +258,27 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     default: /* Unknown storages */
         break;
     }
+}
+
+// TODO: Make ResetLocation and SetLocation_FileTrack using one internal method
+void CNetStorageObjectLoc::ResetLocation(const char* ft_site_name)
+{
+    EFileTrackSite ft_site = s_StringToFileTrackSite(ft_site_name);
+
+    m_Dirty = true;
+
+    m_LocationCode.clear();
+    m_Location = eNFL_Unknown;
+
+    m_NCServiceName.clear();
+    m_NCFlags = 0;
+
+    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
+
+    if (ft_site == eFileTrack_DevSite)
+        m_LocatorFlags |= fLF_DevEnv;
+    else if (ft_site == eFileTrack_QASite)
+        m_LocatorFlags |= fLF_QAEnv;
 }
 
 void CNetStorageObjectLoc::SetLocation_NetCache(
@@ -413,9 +437,9 @@ void CNetStorageObjectLoc::x_Pack()
     m_Dirty = false;
 }
 
-TNetStorageFlags CNetStorageObjectLoc::GetStorageFlags() const
+TNetStorageAttrFlags CNetStorageObjectLoc::GetStorageAttrFlags() const
 {
-    TNetStorageFlags flags = 0;
+    TNetStorageAttrFlags flags = 0;
 
     if (m_LocatorFlags & fLF_Movable)
         flags |= fNST_Movable;
@@ -440,7 +464,7 @@ TNetStorageFlags CNetStorageObjectLoc::GetStorageFlags() const
 
 CNetStorageObjectLoc::TLocatorFlags
         CNetStorageObjectLoc::x_StorageFlagsToLocatorFlags(
-                TNetStorageFlags storage_flags)
+                TNetStorageAttrFlags storage_flags)
 {
     TLocatorFlags locator_flags = 0;
 
@@ -452,6 +476,14 @@ CNetStorageObjectLoc::TLocatorFlags
         locator_flags |= fLF_NoMetaData;
 
     return locator_flags;
+}
+
+void CNetStorageObjectLoc::SetStorageAttrFlags(TNetStorageAttrFlags flags)
+{
+    if (flags) {
+        m_LocatorFlags &= (~static_cast<TLocatorFlags>(eLF_AttrFlags)) |
+            x_StorageFlagsToLocatorFlags(flags);
+    }
 }
 
 CJsonNode CNetStorageObjectLoc::ToJSON() const

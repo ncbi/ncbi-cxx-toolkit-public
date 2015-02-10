@@ -371,6 +371,12 @@ void SFileTrackAPI::Remove(CNetStorageObjectLoc* object_loc)
     CWStream null_stream(&null_writer);
 
     NcbiStreamCopy(null_stream, new_request->m_HTTPStream);
+
+    if (new_request->m_HTTPStatus == CRequestStatus::e404_NotFound) {
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                "Cannot remove \"" << new_request->m_ObjectLoc->GetLocator() <<
+                "\" (HTTP status " << new_request->m_HTTPStatus << ").");
+    }
 }
 
 ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
@@ -443,14 +449,9 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
     return eHTTP_HeaderComplete;
 }
 
-string SFileTrackAPI::GetAPIKey()
-{
-    return TFileTrack_APIKey::GetDefault();
-}
-
 string SFileTrackAPI::LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc)
 {
-    string api_key(GetAPIKey());
+    string api_key(TFileTrack_APIKey::GetDefault());
 
     string url(object_loc->GetFileTrackURL() + "/accounts/api_login?key=");
     url += api_key;
@@ -611,5 +612,8 @@ string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
 
     return header;
 }
+
+NCBI_PARAM_DEF(string, filetrack, site, "prod");
+NCBI_PARAM_DEF(string, filetrack, api_key, kEmptyStr);
 
 END_NCBI_SCOPE

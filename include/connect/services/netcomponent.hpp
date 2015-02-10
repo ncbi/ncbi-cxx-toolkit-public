@@ -74,7 +74,7 @@ public:
 };
 
 
-#define NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component) \
+#define NCBI_NET_COMPONENT_IMPL(component) \
     protected: \
     CRef<S##component##Impl, \
         CNetComponentCounterLocker<S##component##Impl> > m_Impl; \
@@ -91,7 +91,7 @@ public:
     C##component(EVoid /* create_void */) {}
 
 #define NCBI_NET_COMPONENT(component) \
-    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component) \
+    NCBI_NET_COMPONENT_IMPL(component) \
     C##component() {}
 
 END_NCBI_SCOPE

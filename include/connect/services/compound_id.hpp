@@ -304,7 +304,7 @@ class NCBI_XCONNECT_EXPORT CCompoundID
 ///
 class NCBI_XCONNECT_EXPORT CCompoundIDPool
 {
-    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(CompoundIDPool);
+    NCBI_NET_COMPONENT_IMPL(CompoundIDPool);
 
     /// Construct a new pool of CompoundID objects.
     CCompoundIDPool();
