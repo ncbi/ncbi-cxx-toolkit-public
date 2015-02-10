@@ -60,6 +60,8 @@ static char const rcsid[] =
 #include <algo/blast/core/hspfilter_besthit.h>
 #include <algo/blast/core/hspfilter_culling.h>
 
+#include <sstream>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -140,6 +142,18 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
 
     BlastQueryInfo* query_info = query_data->GetQueryInfo();
     BLAST_SequenceBlk* queries = query_data->GetSequenceBlk();
+
+    // reset composition based statistics for the identity scoring matrix
+    // (we do not have all necessary data to compute CBS)
+    if (strcasecmp(opts_memento->m_ScoringOpts->matrix, "identity") == 0 &&
+        opts_memento->m_ExtnOpts->compositionBasedStats > 0) {
+
+        opts_memento->m_ExtnOpts->compositionBasedStats = 0;
+        ostringstream os;
+        os << "Composition-based statistics cannot be used with the IDENTITY "
+           << "matrix, resetting the composition-based statistics option to 0";
+        search_messages.AddMessageAllQueries(eBlastSevWarning, 0, os.str());
+    }
 
     BlastScoreBlk* retval(0);
     Int2 status = BLAST_MainSetUp(opts_memento->m_ProgramType,
