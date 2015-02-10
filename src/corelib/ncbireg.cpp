@@ -1639,7 +1639,8 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
             }
         }
         _TRACE("LoadBaseRegistries(" << this << "): using " << s);
-        NStr::Split(s, ", ", names, NStr::fSplit_CanSingleQuote);
+        NStr::Split(s, ", ", names,
+                    NStr::fSplit_CanSingleQuote | NStr::fSplit_MergeDelims);
     }}
 
     typedef pair<string, CRef<IRWRegistry> > TNewBase;
