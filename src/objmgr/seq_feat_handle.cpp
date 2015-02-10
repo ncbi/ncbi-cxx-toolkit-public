@@ -376,13 +376,13 @@ const CProt_ref* CSeq_feat_Handle::GetProtXref(void) const
 }
 
 
-CConstRef<CDbtag> CSeq_feat_Handle::GetNamedDbxref(const string& db) const
+CConstRef<CDbtag> CSeq_feat_Handle::GetNamedDbxref(const CTempString& db) const
 {
     return GetSeq_feat()->GetNamedDbxref(db);
 }
 
 
-const string& CSeq_feat_Handle::GetNamedQual(const string& qual_name) const
+const string& CSeq_feat_Handle::GetNamedQual(const CTempString& qual_name) const
 {
     return GetSeq_feat()->GetNamedQual(qual_name);
 }

@@ -374,7 +374,7 @@ void CSeq_feat::RemoveExceptText(const string & exception_text)
     SetExcept_text().swap(new_except_texts);
 }
 
-CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db) const
+CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const CTempString& db) const
 {
     if (IsSetDbxref()) {
         ITERATE (TDbxref, iter, GetDbxref()) {
@@ -388,7 +388,7 @@ CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db) const
 }
 
 
-const string& CSeq_feat::GetNamedQual(const string& qual_name) const
+const string& CSeq_feat::GetNamedQual(const CTempString& qual_name) const
 {
     if (IsSetQual()) {
         ITERATE (TQual, iter, GetQual()) {

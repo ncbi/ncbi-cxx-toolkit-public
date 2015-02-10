@@ -203,12 +203,12 @@ public:
     /// Return a specified DB xref.  This will find the *first* item in the
     /// given referenced database.  If no item is found, an empty CConstRef<>
     /// is returned.
-    CConstRef<CDbtag> GetNamedDbxref(const string& db) const;
+    CConstRef<CDbtag> GetNamedDbxref(const CTempString& db) const;
 
     /// Return a named qualifier.  This will return the first item matching the
     /// qualifier name.  If no such qualifier is found, an empty string is
     /// returned.
-    const string& GetNamedQual(const string& qual_name) const;
+    const string& GetNamedQual(const CTempString& qual_name) const;
 
 protected:
     friend class CMappedFeat;
