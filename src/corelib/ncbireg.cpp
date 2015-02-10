@@ -625,11 +625,11 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                                 "Invalid registry section name" + in_path
                                 + ": `" + str + "'", line);
                 }
-                // add section comment
-                if ( !comment.empty() ) {
-                    SetComment(GetComment(section) + comment, section);
-                    comment.erase();
-                }
+                // Unconditional, to ensure the section becomes known
+                // even if it has no comment or contents
+                SetComment(GetComment(section, kEmptyStr, impact) + comment,
+                           section, kEmptyStr, flags | fCountCleared);
+                comment.erase();
                 break;
             }
 
@@ -785,7 +785,7 @@ bool IRWRegistry::SetComment(const string& comment, const string& section,
                              const string& name, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::SetComment", flags,
-                 fTransient | fNoOverride | fInternalSpaces);
+                 fTransient | fNoOverride | fInternalSpaces | fCountCleared);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRWRegistry::SetComment: bad section name \""
@@ -1002,7 +1002,7 @@ bool CMemoryRegistry::x_SetComment(const string& comment,
     }
     TSections::iterator sit = m_Sections.find(section);
     if (sit == m_Sections.end()) {
-        if (comment.empty()) {
+        if (comment.empty()  &&  (flags & fCountCleared) == 0) {
             return false;
         } else {
             sit = m_Sections.insert(make_pair(section, SSection(m_Flags)))
@@ -1012,7 +1012,8 @@ bool CMemoryRegistry::x_SetComment(const string& comment,
     }
     TEntries& entries = sit->second.entries;
     if (name.empty()) {
-        if (comment.empty()  &&  entries.empty()) {
+        if (comment.empty()  &&  entries.empty()
+            &&  (flags & fCountCleared) == 0) {
             m_Sections.erase(sit);
             return true;
         } else {
