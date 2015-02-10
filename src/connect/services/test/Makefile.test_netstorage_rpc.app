@@ -11,7 +11,7 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_REQUIRES = in-house-resources
-# CHECK_CMD = test_netstorage_rpc
+CHECK_CMD = test_netstorage_rpc
 CHECK_TIMEOUT = 800
 
 WATCHERS = kazimird sadyrovr
