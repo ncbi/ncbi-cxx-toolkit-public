@@ -1012,3 +1012,11 @@ BOOST_AUTO_TEST_CASE(Test_AllowedFeatureLocation)
     BOOST_CHECK_EQUAL(CSeqFeatData::AllowedFeatureLocation(CSeqFeatData::eSubtype_site), CSeqFeatData::eFeatureLocationAllowed_Any);
     BOOST_CHECK_EQUAL(CSeqFeatData::AllowedFeatureLocation(CSeqFeatData::eSubtype_bad), CSeqFeatData::eFeatureLocationAllowed_Error);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2180)
+{
+    string msg = CSubSource::CheckCellLine("Yamada", "Canis lupus familiaris");
+    BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that Yamada from Canis lupus familiaris is known to be contaminated by Unknown from Mouse. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
+
+}

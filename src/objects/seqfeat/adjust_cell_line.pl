@@ -96,7 +96,10 @@ sub fix_species
     "Cow", "Bos taurus",
     "Guinea pig", "Cavia porcellus",
     "Horse", "Equus caballus",
-    "Rabbit", "Oryctolagus cuniculus"); 
+    "Rabbit", "Oryctolagus cuniculus");
+
+  my %species_fixes = (
+    "Canis familiaris", "Canis lupus familiaris"); 
 
   if ($species =~ /\((.*)\)/) {
     #scientific name in parentheses
@@ -106,6 +109,9 @@ sub fix_species
     $species = $1;
   } elsif ($known_taxnames{$species}) {
     $species = $known_taxnames{$species};
+  }
+  if ($species_fixes{$species}) {
+    $species = $species_fixes{$species};
   }
   return $species;
 }

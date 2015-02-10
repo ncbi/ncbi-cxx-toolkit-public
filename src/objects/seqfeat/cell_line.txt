@@ -1,477 +1,475 @@
-Misidentified Cell Line	Claimed Species	Contaminating Cell Line	Actual Species	
-222	Human	PA1	Human	
-2474/90	Human	HT-29	Human	
-2563 (MAC-21)	Human	HeLa	Human	
-2957/90	Human	HT-29	Human	
-3051/80	Human	HT-29	Human	
-41M	Human	OAW 28	Human	
-A2008	Human	ME-180	Human	
-ACC2	Human	HeLa	Human	
-ACC3	Human	HeLa	Human	
-ACCM	Human	HeLa	Human	
-ACCNS	Human	Unknown	Mouse	
-ACCS	Human	T-24	Human	
-ADLC-5M2	Human	HeLa	Human	
-Aedes aegypti, Suitor's clone	Mosquito	Unknown	Moth, Antheraea eucalypti	
-Aedes vexans culture	Mosquito	Unknown	Moth, Antheraea eucalypti	
-AG-F	Human	CCRF-CEM	Human	
-AKI	Human	HeLa	Human	
-ALVA-31	Human	PC-3	Human	
-ALVA-41	Human	PC-3	Human	
-ALVA-55	Human	PC-3	Human	
-ALVA-101	Human	PC-3	Human	
-AMDURII	Human	LLC-PK1	Pig, Sus scrofa	
-AO	Human	HeLa	Human	
-ARO	Human	HT-29	Human	
-ARO81-1	Human	HT-29	Human	
-AV3	Human	HeLa	Human	
-AZ521	Human	HuTu 80	Human	
-B2-17	Human	U-251 MG	Human	
-BCC1/KMC	Human	HeLa	Human	
-BE-13	Human	PEER	Human	
-BG-1	Human	MCF-7	Human	
-BHP 10-3	Human	TPC-1	Human	
-BHP 14-9	Human	M14	Human	
-BHP 17-10	Human	M14	Human	
-BHP 2-7	Human	TPC-1	Human	
-BHP 5-16	Human	M14	Human	
-BHP 7-13	Human	TPC-1	Human	
-BIC-1	Human	SW-480, SW-620	Human	
-BLIN-1 (also subclone 1E8)	Human	NALM-6	Human	
-BM-1604	Human	DU-145	Human	
-BrCA 5	Human	HeLa	Human	
-BSCC-93	Human	DJM-1	Human	
-BT-B	Human	HeLa	Human	
-C13	Human	ME-180	Human	
-C16 (MRC-5 derivative)	Human	HeLa	Human	
-C-433	Human	RD-ES	Human	
-CAC2	Human	Unknown	Rat	
-CaMa (clone 15)	Human	Unknown	Syrian hamster and mouse	
-CaOV	Human	HeLa	Human	
-Caov-2	Human	NIH:OVCAR-2	Human	
-CaVe	Human	HeLa	Human	
-CCL3	Human	Unknown	Mouse	
-CH1, CH1cisR	Human	PA1	Human	
-Chang liver	Human	HeLa	Human	
-CHB	Human	Unknown	Rat	
-CHP-100	Human	IMR-32	Human	
-CHP-234	Human	Unknown	Human	
-Clom 15	Human	Unknown	Rat	
-Clone 1-5c-4	Human	HeLa	Human	
-Clone-16	Human	Unknown	Syrian hamster	
-Clone 1A	Rainbow trout, Oncorhynchus mykiss	CHSE-214	Chinook salmon, Oncorhynchus tschawytscha	
-CMP	Human	HeLa	Human	
-CMPII C2	Human	HeLa	Human	
-CNDT2	Human	Unknown	Human	
-CO (= COLE)	Human	CCRF-CEM	Human	
-COLO-587	Human	COLO-320DM	Human	
-COLO-677	Human	RPMI-8226	Human	
-COLO-818	Human	COLO-800	Human	
-CoLo-TC	Human	COLO-205	Human	
-Culisita inornata culture	Mosquito	Unknown	Moth, Antheraea eucalypti	
-D18T	Human	HeLa	Human	
-D98/AH	Human	HeLa	Human	
-D98/AH2 Clone B	Human	HeLa	Human	
-DAMI	Human	HEL	Human	
-DAPT	Human	HeLa	Human	
-DD	Human	K-562	Human	
-Det30A	Human	HeLa	Human	
-Detroit-6 (Det6)	Human	HeLa	Human	
-Detroit-98	Human	HeLa	Human	
-Detroit 98/AG	Human	HeLa	Human	
-Detroit 98/AH-2	Human	HeLa	Human	
-Detroit 98/AH-R	Human	HeLa	Human	
-Detroit 98s	Human	HeLa	Human	
-DM12  (Tu-167 derivative)	Human	UM-SCC-1	Human	
-DM14 (Tu-167 derivative)	Human	UM-SCC-1	Human	
-DRO	Human	A-375	Human	
-DRO90-1	Human	A-375	Human	
-DuPro-1	Human	PC-3	Human	
-EB33	Human	HeLa	Human	
-ECC-1	Human	Ishikawa	Human	
-ECTC	Cow	Vero	Monkey, African green (Cercopithecus aethiops)	
-ECV-304	Human	T-24	Human	
-ED27	Human	HeLa	Human	
-EEK	Horse	NSK	Pig, Sus scrofa	
-EH	Human	HK	Human	
-EJ-1	Human	T-24	Human	
-Ej138	Human	T-24	Human	
-ElCo	Human	HeLa	Human	
-EPC	Carp, Cyprinus carpio	Unknown	Fathead minnow, Pimephales promelas	
-EPLC3-2M1	Human	HeLa	Human	
-EPLC-65	Human	HeLa	Human	
-ESP1	Human	HeLa	Human	
-ETK-1	Human	SSP-25	Human	
-EU-1	Human	REH	Human	
-EU-7	Human	CCRF-CEM	Human	
-EUE	Human	HeLa	Human	
-EVLC2	Human	Unknown	Human	
-F2-4E5	Human	SK-HEP-1	Human	
-F2-5B6	Human	SK-HEP-1	Human	
-F255A4	Human	HeLa	Human	
-FB2	Human	TPC-1	Human	
-Fitz-HSA 	Dog, Canis familiaris	DEN-HSA 	Dog, Canis familiaris	
-FL	Human	HeLa	Human	
-Flow 13000	Human	MRC-5	Human	
-Flow 5000	Human	Flow 1000	Human	
-Flow 6000	Human	Flow 1000	Human	
-Flow 7000	Human	Flow 3000	Human	
-FQ	Human	OMK-210	Monkey, Owl (Aotus trivirgatus)	
-G-11  (HBT-3 derivative)	Human	HeLa	Human	
-GHE	Human	T-24	Human	
-Girardi heart	Human	HeLa	Human	
-GM1312	Human	Correct name, incorrect cell type	Human	
-GOS-3	Human	U-343 MG	Human	
-GPS-M	Guinea pig	Strain L-M	Mouse	
-GPS-PD	Guinea pig	Strain L-M	Mouse	
-GREF-X	Human	Unknown	Rat	
-GT3TKB	Human	RERF-LC-A1	Human	
-H249	Human	H69	Human	
-H-494	Human	HeLa	Human	
-H7D7A and derivatives	Human	HepG2	Human	
-H7D7B and derivatives	Human	HepG2	Human	
-H7D7C and derivatives	Human	HepG2	Human	
-H7D7D and derivatives	Human	HepG2	Human	
-HAG	Human	T-24	Human	
-HBC	Human	Unknown	Rat	
-HBL-100	Human	Unknown	Human	
-HBT-3	Human	HeLa	Human	
-HBT-39b	Human	HeLa	Human	
-HBT-E (HBT-3 clone)	Human	HeLa	Human	
-HCE	Human	HeLa	Human	
-HCu-10	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCu-18	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCu-22	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCu-27	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCu-33	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCu-37	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCu-39	Human	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human	
-HCV-29Tmv  (HCV-29 derivative)	Human	T-24	Human	
-HEC-155	Human	HEC-180	Human	
-HEC-180	Human	HEC-155	Human	
-HEK	Human	HeLa	Human	
-HEK/HRV  (HEK derivative)	Human	HeLa	Human	
-HEL-R66	Human	Unknown	Monkey, African green (Cercopithecus aethiops)	
-HEp-2 (H.Ep.-2)	Human	HeLa	Human	
-Hep-2C	Human	HeLa	Human	
-Hep2 (Clone 2B)	Human	HeLa	Human	
-HES	Human	HeLa	Human	
-HIMEG-1	Human	HL-60	Human	
-HKB-1	Human	Unknown	Human	
-HKMUS	Human	SKG-II-SF	Human	
-HKMUS-SF	Human	SKG-II-SF	Human	
-HL111783	Human	HeLa	Human	
-HMV-1	Human	HeLa	Human	
-HPB-MLT	Human	HPB-ALL	Human	
-HPC-36M (HPC-36 derivative)	Human	HeLa	Human	
-hPTC	Human	Unknown	Pig, Sus scrofa	
-Hs 677.St	Human	Unknown	Mouse	
-HSC-41	Human	HSC-42	Human	
-HSG	Human	HeLa	Human	
-HSG-AZA1	Human	HeLa	Human	
-HSG-AZA3	Human	HeLa	Human	
-HSGc-C5	Human	HeLa	Human	
-HS-SULTAN	Human	JIJOYE	Human	
-HSY	Human	HeLa	Human	
-hTERT-EEC	Human	MCF-7	Human	
-Hu1734	Human	HCV-29	Human	
-Hu456	Human	T-24	Human	
-Hu549	Human	T-24	Human	
-Hu609	Human	J82	Human	
-Hu609Tmv  (Hu609 derivative)	Human	T-24	Human	
-Hu961a, Hu961t (Hu961 derivatives)	Human	T-24	Human	
-HuKo39	Human	HeLa	Human	
-HuL-1	Human	HeLa	Human	
-Hut	Human	HeLa	Human	
-IMC-2	Human	HeLa	Human	
-IMC-3	Human	HeLa	Human	
-IMC-4	Human	HeLa	Human	
-Intestine 407  (Int-407, HEI)	Human	HeLa	Human	
-IPDDC-A2	Human	Unknown	Rat	
-IPRB	Human	Unknown	Rat	
-IPTP/98	Human	Unknown	Rat	
-IST-1	Human	SK-OV-3	Human	
-J-111	Human	HeLa	Human	
-J96	Human	HeLa	Human	
-JCA-1	Human	T-24	Human	
-JHC	Human	HeLa	Human	
-JHU012	Human	JHU022	Human	
-JHU013 (JHU012 derivative)	Human	FaDu	Human	
-JHU019	Human	PC-3	Human	
-JHU028	Human	A549	Human	
-JHT (JHC derivative)	Human	HeLa	Human	
-JMAR (Tu-167 derivative)	Human	UM-SCC-1	Human	
-JOSK-I	Human	U-937	Human	
-JOSK-K	Human	U-937	Human	
-JOSK-M	Human	U-937	Human	
-JOSK-S	Human	U-937	Human	
-JTC-17	Human	HeLa	Human	
-JTC-3	Human	HeLa	Human	
-K051	Human	K-562	Human	
-K1	Human	GLAG-66	Human	
-K2	Human	GLAG-66	Human	
-KAK1	Human	HT-29	Human	
-KAT10	Human	HT-29	Human	
-KAT4	Human	HT-29	Human	
-KAT5	Human	HT-29	Human	
-KAT50	Human	HT-29	Human	
-KAT7	Human	HT-29	Human	
-KB	Human	HeLa	Human	
-KB-3-1	Human	HeLa	Human	
-KB-V1	Human	HeLa	Human	
-KCI-MOH1	Human	HPAC	Human	
-KM-3	Human	REH	Human	
-KM3	Human	Unknown	Rat	
-KMS-21-BM	Human	Unknown	Human	
-KMT-2	Human	KG-1	Human	
-KNS-89	Human	U-251 MG	Human	
-KOSC-3	Human	Ca9-22	Human	
-KP-1N	Human	PANC-1	Human	
-KPB-M15	Human	KYO-1	Human	
-KPL-1	Human	MCF-7	Human	
-KP-P1	Human	HeLa	Human	
-KSY-1	Human	T-24	Human	
-KU7	Human	HeLa	Human	
-KU-YS	Human	KU-SN	Human	
-L-132	Human	HeLa	Human	
-L-41 (J96 derivative)	Human	HeLa	Human	
-LED-Ti	Human	HeLa	Human	
-LLC-15MB	Human	M14	Human	
-LN-319	Human	LN-992	Human	
-LN-443	Human	LN-444	Human	
-LR10.6	Human	NALM-6	Human	
-LT-1	Frog, grass	TH and FHM	TH = box turtle; FHM = fathead minnow	
-LU	Human	HeLa	Human	
-LU 106	Human	HeLa	Human	
-Lu-130	Human	Lu-134A, B	Human	
-M10T	Human	HeLa	Human	
-M4A4 and derivatives (MDA-MB-435 derivatives)	Human	M14	Human	
-MA-1	Human	Pfeiffer	Human	
-MA-104	Monkey, Rhesus (Macaca mulatta)	Vero?	Monkey, African green (Cercopithecus aethiops)	
-MA-111	Rabbit	Vero?	Monkey, African green (Cercopithecus aethiops)	
-MA-160	Human	HeLa	Human	
-Mash-1	Human	MMac	Human	
-MaTu	Human	HeLa	Human	
-MC-4000	Human	HeLa	Human	
-McCoy	Human	Strain L	Mouse	
-MCF-7/AdrR (NCI/ADR-RES)	Human	OVCAR-8	Human	
-MDA-MB-435	Human	M14	Human	
-MDA-N (MDA-MB-435 derivative)	Human	M14	Human	
-MDS	Human	JURKAT	Human	
-MEL-HO	Human	Unknown, does not match other cell line from same donor	Human	
-ME-WEI	Human	Unknown, does not match other cell line from same donor	Human	
-MGH-U1 (EJ)	Human	T-24	Human	
-MGH-U2 (HM)	Human	T-24	Human	
-MHH-225	Human	JURKAT	Human	
-Minnesota EE	Human	HeLa	Human	
-MKB-1	Human	CCRF-CEM	Human	
-MKN28	Human	MKN74	Human	
-MOBS-1	Human	U-937	Human	
-MOLT-15	Human	CTV-1	Human	
-MPanc-96	Human	AsPC-1	Human	
-MRO87-1	Human	HT-29	Human	
-MS  (Monkey Stable)	Monkey	HeLa	Human	
-MT-1	Human	HeLa	Human	
-MUTZ-1	Human	Namalwa	Human	
-MV522	Human	HT-29	Human	
-NC-37	Human	Raji	Human	
-NCC16	Human	PHK16-0b	Human	
-NCI/ADR-RES (MCF-7/AdrR)	Human	OVCAR-8	Human	
-NCI-H1264	Human	NCI-H157	Human	
-NCI-H1304	Human	NCI-H1870	Human	
-NCI-H1514	Human	Unknown	Human	
-NCI-H157	Human	NCI-H1264	Human	
-NCI-H1622	Human	Unknown	Human	
-NCI-H1870	Human	NCI-H1304	Human	
-NCI-H249	Human	NCI-H69	Human	
-NCI-H513	Human	NCI-H125	Human	
-NCI-H592	Human	NCI-H69	Human	
-NCI-H60	Human	NCI-N417	Human	
-NCI-H630	Human	Mixture	Human	
-NCI-H738	Human	Unknown	Human	
-NCOL-1	Human	LoVo	Human	
-NCTC 2544	Human	HeLa	Human	
-NCTC 3075	Human	HeLa	Human	
-ND-1	Human	DU-145	Human	
-NM2C5 and derivatives  (MDA-MB-435 derivatives)	Human	M14	Human	
-NOI-90	Human	REH	Human	
-NOSE06	Human	DOV-13	Human	
-NOSE07	Human	DOV-13	Human	
-NPA87	Human	M14	Human	
-NS-3	Human	COLO 201	Human	
-OCUM-6	Human	OCUM-11	Human	
-OE	Human	HeLa	Human	
-OF	Human	HeLa	Human	
-OLGA-PH-J/92  [OL-J/92]	Crayfish, Orconectes limosus	Unknown	Unknown, similar to amoeba species	
-ONCO-DG-1	Human	OVCAR-3	Human	
-OS 187	Human	HCT-15	Human	
-OST	Human	HeLa	Human	
-OU-AML-1	Human	OCI/AML2	Human	
-OU-AML-2	Human	OCI/AML2	Human	
-OU-AML-3	Human	OCI/AML2	Human	
-OU-AML-4	Human	OCI/AML2	Human	
-OU-AML-5	Human	OCI/AML2	Human	
-OU-AML-6	Human	OCI/AML2	Human	
-OU-AML-7	Human	OCI/AML2	Human	
-OU-AML-8	Human	OCI/AML2	Human	
-OV-1063	Human	Unknown	Human	
-OV2008, OV2008/C13	Human	ME-180	Human	
-Ovary1847	Human	NIH:OVCAR-8	Human	
-OVMIU	Human	OVSAYO	Human	
-P1-1A3	Human	SK-HEP-1	Human	
-P1-4D6	Human	SK-HEP-1	Human	
-P39/TSUGANE (P39/TSU)	Human	HL-60	Human	
-PBEI	Human	NALM-6	Human	
-PC-93	Human	HeLa	Human	
-PC-MDS	Human	K-562	Human	
-PCI-22A	Human	Unknown, does not match other cell line from same donor	Human	
-PCI-22B	Human	Unknown, does not match other cell line from same donor	Human	
-PCI-3	Human	PC-3	Human	
-PEAZ-1	Human	HT-1080	Human	
-PH61-N	Human	MIA PaCa-2	Human	
-PLB-985	Human	HL-60	Human	
-PPC-1	Human	PC-3	Human	
-PSV811	Human	WI-38	Human	
-RAMAK-1	Human	T-24	Human	
-RB	Human	OMK-210	Monkey, Owl (Aotus trivirgatus)	
-RBHF-1	Human	Unknown	Non-human	
-RC-2A	Human	CCRF-CEM	Human	
-RED-3	Human	HL-60	Human	
-REH-6	Human	Unknown	Mouse	
-REPC	Human	Hep 3B	Human	
-RERF-LC-MA	Human	SK-MES-1	Human	
-RERF-LC-OK	Human	Marcus	Human	
-RGC-5	Rat	661W	Mouse	
-RM-10	Human	K-562	Human	
-RMUG-L	Human	SNG-II	Human	
-RO-D81-1	Human	HT-29	Human	
-RO-H85-1	Human	647-V	Human	
-RPMI-4788	Human	HeLa	Human	
-RPMI-6666	Human	Correct name, incorrect cell type	Human	
-RPTC-1	Human	TPC-1	Human	
-RS-1	Human	K-562	Human	
-RTSG	Human	SNG-II	Human	
-RY	Human	Unknown	Monkey	
-SA4	Human	HeLa	Human	
-SAM-1	Human	K-562	Human	
-SAML-1	Human	U-937	Human	
-SBC-2	Human	HeLa	Human	
-SBC-7	Human	HeLa	Human	
-SCCTF	Human	SCCKN	Human	
-SCLC-16H	Human	SCLC-21/22H	Human	
-SCLC-24H	Human	SCLC-21/22H	Human	
-SEG-1	Human	NCI-H460	Human	
-SF767	Human	ME-180	Human	
-SH-2	Human	HeLa	Human	
-SH-3	Human	HeLa	Human	
-SJPL	Pig, Sus scrofa	Unknown	Monkey, African green (Cercopithecus aethiops)	
-SK-GT-5	Human	SK-GT-2	Human	
-SK-MG-1	Human	Marcus	Human	
-SK-N-MC	Human	Unknown	Human	
-SK-OV-4	Human	C-33A	Human	
-SK-OV-6	Human	C-33A	Human	
-SKW-3	Human	KE-37	Human	
-SLK	Human	Caki-1	Human	
-SNB-19	Human	U-251 MG	Human	
-SPI-801	Human	K-562	Human	
-SPI-802	Human	K-562	Human	
-SpR	Human	OMK-210	Monkey, Owl (Aotus trivirgatus)	
-SQ-5	Human	HeLa	Human	
-SR-91	Human	AML-193	Human	
-SW-527	Human	SW-480, SW-620	Human	
-SW-598	Human	SW-480, SW-620	Human	
-SW-608	Human	SW-480, SW-620	Human	
-SW-613	Human	SW-480, SW-620	Human	
-SW-732	Human	SW-480, SW-620	Human	
-SW-733	Human	SW-480, SW-620	Human	
-T-1	Human	HeLa	Human	
-T1	Human	HeLa	Human	
-T-33	Human	K-562	Human	
-T404	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-T406 (oral SCC) **Different cell line exists with same name:  T406 (glioblastoma)**	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-T409	Human	UM-SCC-1	Human	
-T-9 (WI-38 derivative)	Human	HeLa	Human	
-TCO-1	Human	TCO-2	Human	
-TDL-1	Human	P3JHR-1	Human	
-TDL-2	Human	P3JHR-1	Human	
-TDL-3	Human	RPMI 1788	Human	
-TDL-4	Human	Raji	Human	
-TE-12	Human	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human	
-TE-13	Human	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human	
-TE-2	Human	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human	
-TE-3	Human	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human	
-TE671	Human	RD	Human	
-TE671 Subline No.2	Human	RD	Human	
-TE-7	Human	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human	
-TEC61	Human	JEG3	Human	
-TK-1	Human	U-251 MG	Human	
-TI-1	Human	K-562	Human	
-TMH-1	Human	IHH-4	Human	
-TMM	Human	Correct name, incorrect cell type	Human	
-TSU-Pr1	Human	T-24	Human	
-Tu-138	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-Tu-158LN	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-Tu-159	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-Tu-167	Human	UM-SCC-1	Human	
-Tu-182	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-Tu-212	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-Tu-212LN	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-TuWi	Human	HeLa	Human	
-U-118 MG	Human	U-138 MG	Human	
-UM-UC-2	Human	T-24	Human	
-UM-UC-3-GFP (UM-UC-3 derivative)	Human	Unknown, NOT UM-UC-3	Human	
-UPES/C	Human	Unknown	Rat	
-UPHHJA	Human	Unknown	Rat	
-UTMB-460	Human	CCRF-CEM	Human	
-VC312R	Human	Unknown	Mixed, human + mouse	
-VM-CUB-III	Human	VM-CUB-I	Human	
-WiDr	Human	HT-29	Human	
-WISH	Human	HeLa	Human	
-WKD	Human	HeLa	Human	
-Wong-Kilbourne	Human	HeLa	Human	
-WRL 68	Human	HeLa	Human	
-WSU-ALCL	Human	CCRF-CEM	Human	
-WSU-CLL	Human	REH	Human	
-YAA	Human	U-937	Human	
-YAP	Human	U-937	Human	
-YJ	Human	HL-60	Human	
-YMB-1	Human	ZR-75-1	Human	
-YMB-1-E	Human	ZR-75-1	Human	
-1483	Human	UM-SCC-1	Human	
-183	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-207 (EU-2)	Human	REH and SUP-B2	Human	
-B10XI	Chicken, Gallus gallus	Unknown	Pig, Sus scrofa	
-B6	Chicken, Gallus gallus	Unknown	Pig, Sus scrofa	
-BJA-B	Human	HeLa	Human	
-BT-20	Human	HeLa	Human	
-Ca9-22	Human	MSK-922	Human	
-COLO-720E	Human	COLO684, COLO685,  COLO704	Human	
-D-17	Dog, Canis familiaris	Moresco	Dog, Canis familiaris	
-EB-3	Human	Daudi	Human	
-FU-RPNT-2	Human	FU-RPNT-1	Human	
-Grey	Dog, Canis familiaris	Unknown	Human	
-HPB-ALL	Human	JURKAT	Human	
-IPEC	Pig, Sus scrofa	Unknown	Cow	
-J-82	Human	T-24	Human	
-JHH-1	Human	Unknown	Mouse	
-KARPAS-45	Human	Unknown	Human	
-KBM-3	Human	HL-60	Human	
-KE-37	Human	CCRF-CEM	Human	
-L-540	Human	CCRF-CEM	Human	
-MB-02	Human	HU-3	Human	
-MDA1986LN	Human	UM-SCC-1	Human	
-MDA686LN	Human	UM-SCC-1	Human	
-MDA686TU	Human	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human	
-MKN-7	Human	Unknown	Human	
-NCI-H929	Human	K-562	Human	
-Parks	Dog, Canis familiaris	Unknown	Human	
-RMG-II	Human	RMG-I	Human	
-RPMI-8402	Human	Unknown	Human	
-RT4	Human	HeLa	Human	
-T3M-12	Human	T3M-1	Human	
-U-373 MG	Human	U-251 MG	Human	
-U-937	Human	Unknown	Human	
-UROtsa	Human	T-24	Human	
-UT-7	Human	U-937	Human	
-Yamada	Dog, Canis familiaris	Unknown	Mouse	
-				
+222	Homo sapiens	PA1	Human
+2474/90	Homo sapiens	HT-29	Human
+2563 (MAC-21)	Homo sapiens	HeLa	Human
+2957/90	Homo sapiens	HT-29	Human
+3051/80	Homo sapiens	HT-29	Human
+41M	Homo sapiens	OAW 28	Human
+A2008	Homo sapiens	ME-180	Human
+ACC2	Homo sapiens	HeLa	Human
+ACC3	Homo sapiens	HeLa	Human
+ACCM	Homo sapiens	HeLa	Human
+ACCNS	Homo sapiens	Unknown	Mouse
+ACCS	Homo sapiens	T-24	Human
+ADLC-5M2	Homo sapiens	HeLa	Human
+Aedes aegypti, Suitor's clone	Mosquito	Unknown	Moth, Antheraea eucalypti
+Aedes vexans culture	Mosquito	Unknown	Moth, Antheraea eucalypti
+AG-F	Homo sapiens	CCRF-CEM	Human
+AKI	Homo sapiens	HeLa	Human
+ALVA-31	Homo sapiens	PC-3	Human
+ALVA-41	Homo sapiens	PC-3	Human
+ALVA-55	Homo sapiens	PC-3	Human
+ALVA-101	Homo sapiens	PC-3	Human
+AMDURII	Homo sapiens	LLC-PK1	Pig, Sus scrofa
+AO	Homo sapiens	HeLa	Human
+ARO	Homo sapiens	HT-29	Human
+ARO81-1	Homo sapiens	HT-29	Human
+AV3	Homo sapiens	HeLa	Human
+AZ521	Homo sapiens	HuTu 80	Human
+B2-17	Homo sapiens	U-251 MG	Human
+BCC1/KMC	Homo sapiens	HeLa	Human
+BE-13	Homo sapiens	PEER	Human
+BG-1	Homo sapiens	MCF-7	Human
+BHP 10-3	Homo sapiens	TPC-1	Human
+BHP 14-9	Homo sapiens	M14	Human
+BHP 17-10	Homo sapiens	M14	Human
+BHP 2-7	Homo sapiens	TPC-1	Human
+BHP 5-16	Homo sapiens	M14	Human
+BHP 7-13	Homo sapiens	TPC-1	Human
+BIC-1	Homo sapiens	SW-480, SW-620	Human
+BLIN-1 (also subclone 1E8)	Homo sapiens	NALM-6	Human
+BM-1604	Homo sapiens	DU-145	Human
+BrCA 5	Homo sapiens	HeLa	Human
+BSCC-93	Homo sapiens	DJM-1	Human
+BT-B	Homo sapiens	HeLa	Human
+C13	Homo sapiens	ME-180	Human
+C16 (MRC-5 derivative)	Homo sapiens	HeLa	Human
+C-433	Homo sapiens	RD-ES	Human
+CAC2	Homo sapiens	Unknown	Rat
+CaMa (clone 15)	Homo sapiens	Unknown	Syrian hamster and mouse
+CaOV	Homo sapiens	HeLa	Human
+Caov-2	Homo sapiens	NIH:OVCAR-2	Human
+CaVe	Homo sapiens	HeLa	Human
+CCL3	Homo sapiens	Unknown	Mouse
+CH1, CH1cisR	Homo sapiens	PA1	Human
+Chang liver	Homo sapiens	HeLa	Human
+CHB	Homo sapiens	Unknown	Rat
+CHP-100	Homo sapiens	IMR-32	Human
+CHP-234	Homo sapiens	Unknown	Human
+Clom 15	Homo sapiens	Unknown	Rat
+Clone 1-5c-4	Homo sapiens	HeLa	Human
+Clone-16	Homo sapiens	Unknown	Syrian hamster
+Clone 1A	Oncorhynchus mykiss	CHSE-214	Chinook salmon, Oncorhynchus tschawytscha
+CMP	Homo sapiens	HeLa	Human
+CMPII C2	Homo sapiens	HeLa	Human
+CNDT2	Homo sapiens	Unknown	Human
+CO (= COLE)	Homo sapiens	CCRF-CEM	Human
+COLO-587	Homo sapiens	COLO-320DM	Human
+COLO-677	Homo sapiens	RPMI-8226	Human
+COLO-818	Homo sapiens	COLO-800	Human
+CoLo-TC	Homo sapiens	COLO-205	Human
+Culisita inornata culture	Mosquito	Unknown	Moth, Antheraea eucalypti
+D18T	Homo sapiens	HeLa	Human
+D98/AH	Homo sapiens	HeLa	Human
+D98/AH2 Clone B	Homo sapiens	HeLa	Human
+DAMI	Homo sapiens	HEL	Human
+DAPT	Homo sapiens	HeLa	Human
+DD	Homo sapiens	K-562	Human
+Det30A	Homo sapiens	HeLa	Human
+Detroit-6 (Det6)	Homo sapiens	HeLa	Human
+Detroit-98	Homo sapiens	HeLa	Human
+Detroit 98/AG	Homo sapiens	HeLa	Human
+Detroit 98/AH-2	Homo sapiens	HeLa	Human
+Detroit 98/AH-R	Homo sapiens	HeLa	Human
+Detroit 98s	Homo sapiens	HeLa	Human
+DM12 (Tu-167 derivative)	Homo sapiens	UM-SCC-1	Human
+DM14 (Tu-167 derivative)	Homo sapiens	UM-SCC-1	Human
+DRO	Homo sapiens	A-375	Human
+DRO90-1	Homo sapiens	A-375	Human
+DuPro-1	Homo sapiens	PC-3	Human
+EB33	Homo sapiens	HeLa	Human
+ECC-1	Homo sapiens	Ishikawa	Human
+ECTC	Bos taurus	Vero	Monkey, African green (Cercopithecus aethiops)
+ECV-304	Homo sapiens	T-24	Human
+ED27	Homo sapiens	HeLa	Human
+EEK	Equus caballus	NSK	Pig, Sus scrofa
+EH	Homo sapiens	HK	Human
+EJ-1	Homo sapiens	T-24	Human
+Ej138	Homo sapiens	T-24	Human
+ElCo	Homo sapiens	HeLa	Human
+EPC	Cyprinus carpio	Unknown	Fathead minnow, Pimephales promelas
+EPLC3-2M1	Homo sapiens	HeLa	Human
+EPLC-65	Homo sapiens	HeLa	Human
+ESP1	Homo sapiens	HeLa	Human
+ETK-1	Homo sapiens	SSP-25	Human
+EU-1	Homo sapiens	REH	Human
+EU-7	Homo sapiens	CCRF-CEM	Human
+EUE	Homo sapiens	HeLa	Human
+EVLC2	Homo sapiens	Unknown	Human
+F2-4E5	Homo sapiens	SK-HEP-1	Human
+F2-5B6	Homo sapiens	SK-HEP-1	Human
+F255A4	Homo sapiens	HeLa	Human
+FB2	Homo sapiens	TPC-1	Human
+Fitz-HSA 	Canis lupus familiaris	DEN-HSA 	Dog, Canis familiaris
+FL	Homo sapiens	HeLa	Human
+Flow 13000	Homo sapiens	MRC-5	Human
+Flow 5000	Homo sapiens	Flow 1000	Human
+Flow 6000	Homo sapiens	Flow 1000	Human
+Flow 7000	Homo sapiens	Flow 3000	Human
+FQ	Homo sapiens	OMK-210	Monkey, Owl (Aotus trivirgatus)
+G-11 (HBT-3 derivative)	Homo sapiens	HeLa	Human
+GHE	Homo sapiens	T-24	Human
+Girardi heart	Homo sapiens	HeLa	Human
+GM1312	Homo sapiens	Correct name, incorrect cell type	Human
+GOS-3	Homo sapiens	U-343 MG	Human
+GPS-M	Cavia porcellus	Strain L-M	Mouse
+GPS-PD	Cavia porcellus	Strain L-M	Mouse
+GREF-X	Homo sapiens	Unknown	Rat
+GT3TKB	Homo sapiens	RERF-LC-A1	Human
+H249	Homo sapiens	H69	Human
+H-494	Homo sapiens	HeLa	Human
+H7D7A and derivatives	Homo sapiens	HepG2	Human
+H7D7B and derivatives	Homo sapiens	HepG2	Human
+H7D7C and derivatives	Homo sapiens	HepG2	Human
+H7D7D and derivatives	Homo sapiens	HepG2	Human
+HAG	Homo sapiens	T-24	Human
+HBC	Homo sapiens	Unknown	Rat
+HBL-100	Homo sapiens	Unknown	Human
+HBT-3	Homo sapiens	HeLa	Human
+HBT-39b	Homo sapiens	HeLa	Human
+HBT-E (HBT-3 clone)	Homo sapiens	HeLa	Human
+HCE	Homo sapiens	HeLa	Human
+HCu-10	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCu-18	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCu-22	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCu-27	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCu-33	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCu-37	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCu-39	Homo sapiens	Hcu-10, Hcu-18, Hcu-22, Hcu-27, Hcu-33, Hcu-37 or Hcu-39 (genetically identical)	Human
+HCV-29Tmv (HCV-29 derivative)	Homo sapiens	T-24	Human
+HEC-155	Homo sapiens	HEC-180	Human
+HEC-180	Homo sapiens	HEC-155	Human
+HEK	Homo sapiens	HeLa	Human
+HEK/HRV (HEK derivative)	Homo sapiens	HeLa	Human
+HEL-R66	Homo sapiens	Unknown	Monkey, African green (Cercopithecus aethiops)
+HEp-2 (H.Ep.-2)	Homo sapiens	HeLa	Human
+Hep-2C	Homo sapiens	HeLa	Human
+Hep2 (Clone 2B)	Homo sapiens	HeLa	Human
+HES	Homo sapiens	HeLa	Human
+HIMEG-1	Homo sapiens	HL-60	Human
+HKB-1	Homo sapiens	Unknown	Human
+HKMUS	Homo sapiens	SKG-II-SF	Human
+HKMUS-SF	Homo sapiens	SKG-II-SF	Human
+HL111783	Homo sapiens	HeLa	Human
+HMV-1	Homo sapiens	HeLa	Human
+HPB-MLT	Homo sapiens	HPB-ALL	Human
+HPC-36M (HPC-36 derivative)	Homo sapiens	HeLa	Human
+hPTC	Homo sapiens	Unknown	Pig, Sus scrofa
+Hs 677.St	Homo sapiens	Unknown	Mouse
+HSC-41	Homo sapiens	HSC-42	Human
+HSG	Homo sapiens	HeLa	Human
+HSG-AZA1	Homo sapiens	HeLa	Human
+HSG-AZA3	Homo sapiens	HeLa	Human
+HSGc-C5	Homo sapiens	HeLa	Human
+HS-SULTAN	Homo sapiens	JIJOYE	Human
+HSY	Homo sapiens	HeLa	Human
+hTERT-EEC	Homo sapiens	MCF-7	Human
+Hu1734	Homo sapiens	HCV-29	Human
+Hu456	Homo sapiens	T-24	Human
+Hu549	Homo sapiens	T-24	Human
+Hu609	Homo sapiens	J82	Human
+Hu609Tmv (Hu609 derivative)	Homo sapiens	T-24	Human
+Hu961a, Hu961t (Hu961 derivatives)	Homo sapiens	T-24	Human
+HuKo39	Homo sapiens	HeLa	Human
+HuL-1	Homo sapiens	HeLa	Human
+Hut	Homo sapiens	HeLa	Human
+IMC-2	Homo sapiens	HeLa	Human
+IMC-3	Homo sapiens	HeLa	Human
+IMC-4	Homo sapiens	HeLa	Human
+Intestine 407 (Int-407, HEI)	Homo sapiens	HeLa	Human
+IPDDC-A2	Homo sapiens	Unknown	Rat
+IPRB	Homo sapiens	Unknown	Rat
+IPTP/98	Homo sapiens	Unknown	Rat
+IST-1	Homo sapiens	SK-OV-3	Human
+J-111	Homo sapiens	HeLa	Human
+J96	Homo sapiens	HeLa	Human
+JCA-1	Homo sapiens	T-24	Human
+JHC	Homo sapiens	HeLa	Human
+JHU012	Homo sapiens	JHU022	Human
+JHU013 (JHU012 derivative)	Homo sapiens	FaDu	Human
+JHU019	Homo sapiens	PC-3	Human
+JHU028	Homo sapiens	A549	Human
+JHT (JHC derivative)	Homo sapiens	HeLa	Human
+JMAR (Tu-167 derivative)	Homo sapiens	UM-SCC-1	Human
+JOSK-I	Homo sapiens	U-937	Human
+JOSK-K	Homo sapiens	U-937	Human
+JOSK-M	Homo sapiens	U-937	Human
+JOSK-S	Homo sapiens	U-937	Human
+JTC-17	Homo sapiens	HeLa	Human
+JTC-3	Homo sapiens	HeLa	Human
+K051	Homo sapiens	K-562	Human
+K1	Homo sapiens	GLAG-66	Human
+K2	Homo sapiens	GLAG-66	Human
+KAK1	Homo sapiens	HT-29	Human
+KAT10	Homo sapiens	HT-29	Human
+KAT4	Homo sapiens	HT-29	Human
+KAT5	Homo sapiens	HT-29	Human
+KAT50	Homo sapiens	HT-29	Human
+KAT7	Homo sapiens	HT-29	Human
+KB	Homo sapiens	HeLa	Human
+KB-3-1	Homo sapiens	HeLa	Human
+KB-V1	Homo sapiens	HeLa	Human
+KCI-MOH1	Homo sapiens	HPAC	Human
+KM-3	Homo sapiens	REH	Human
+KM3	Homo sapiens	Unknown	Rat
+KMS-21-BM	Homo sapiens	Unknown	Human
+KMT-2	Homo sapiens	KG-1	Human
+KNS-89	Homo sapiens	U-251 MG	Human
+KOSC-3	Homo sapiens	Ca9-22	Human
+KP-1N	Homo sapiens	PANC-1	Human
+KPB-M15	Homo sapiens	KYO-1	Human
+KPL-1	Homo sapiens	MCF-7	Human
+KP-P1	Homo sapiens	HeLa	Human
+KSY-1	Homo sapiens	T-24	Human
+KU7	Homo sapiens	HeLa	Human
+KU-YS	Homo sapiens	KU-SN	Human
+L-132	Homo sapiens	HeLa	Human
+L-41 (J96 derivative)	Homo sapiens	HeLa	Human
+LED-Ti	Homo sapiens	HeLa	Human
+LLC-15MB	Homo sapiens	M14	Human
+LN-319	Homo sapiens	LN-992	Human
+LN-443	Homo sapiens	LN-444	Human
+LR10.6	Homo sapiens	NALM-6	Human
+LT-1	Frog, grass	TH and FHM	TH = box turtle; FHM = fathead minnow
+LU	Homo sapiens	HeLa	Human
+LU 106	Homo sapiens	HeLa	Human
+Lu-130	Homo sapiens	Lu-134A, B	Human
+M10T	Homo sapiens	HeLa	Human
+M4A4 and derivatives (MDA-MB-435 derivatives)	Homo sapiens	M14	Human
+MA-1	Homo sapiens	Pfeiffer	Human
+MA-104	Macaca mulatta	Vero?	Monkey, African green (Cercopithecus aethiops)
+MA-111	Oryctolagus cuniculus	Vero?	Monkey, African green (Cercopithecus aethiops)
+MA-160	Homo sapiens	HeLa	Human
+Mash-1	Homo sapiens	MMac	Human
+MaTu	Homo sapiens	HeLa	Human
+MC-4000	Homo sapiens	HeLa	Human
+McCoy	Homo sapiens	Strain L	Mouse
+MCF-7/AdrR (NCI/ADR-RES)	Homo sapiens	OVCAR-8	Human
+MDA-MB-435	Homo sapiens	M14	Human
+MDA-N (MDA-MB-435 derivative)	Homo sapiens	M14	Human
+MDS	Homo sapiens	JURKAT	Human
+MEL-HO	Homo sapiens	Unknown, does not match other cell line from same donor	Human
+ME-WEI	Homo sapiens	Unknown, does not match other cell line from same donor	Human
+MGH-U1 (EJ)	Homo sapiens	T-24	Human
+MGH-U2 (HM)	Homo sapiens	T-24	Human
+MHH-225	Homo sapiens	JURKAT	Human
+Minnesota EE	Homo sapiens	HeLa	Human
+MKB-1	Homo sapiens	CCRF-CEM	Human
+MKN28	Homo sapiens	MKN74	Human
+MOBS-1	Homo sapiens	U-937	Human
+MOLT-15	Homo sapiens	CTV-1	Human
+MPanc-96	Homo sapiens	AsPC-1	Human
+MRO87-1	Homo sapiens	HT-29	Human
+MS (Monkey Stable)	Monkey	HeLa	Human
+MT-1	Homo sapiens	HeLa	Human
+MUTZ-1	Homo sapiens	Namalwa	Human
+MV522	Homo sapiens	HT-29	Human
+NC-37	Homo sapiens	Raji	Human
+NCC16	Homo sapiens	PHK16-0b	Human
+NCI/ADR-RES (MCF-7/AdrR)	Homo sapiens	OVCAR-8	Human
+NCI-H1264	Homo sapiens	NCI-H157	Human
+NCI-H1304	Homo sapiens	NCI-H1870	Human
+NCI-H1514	Homo sapiens	Unknown	Human
+NCI-H157	Homo sapiens	NCI-H1264	Human
+NCI-H1622	Homo sapiens	Unknown	Human
+NCI-H1870	Homo sapiens	NCI-H1304	Human
+NCI-H249	Homo sapiens	NCI-H69	Human
+NCI-H513	Homo sapiens	NCI-H125	Human
+NCI-H592	Homo sapiens	NCI-H69	Human
+NCI-H60	Homo sapiens	NCI-N417	Human
+NCI-H630	Homo sapiens	Mixture	Human
+NCI-H738	Homo sapiens	Unknown	Human
+NCOL-1	Homo sapiens	LoVo	Human
+NCTC 2544	Homo sapiens	HeLa	Human
+NCTC 3075	Homo sapiens	HeLa	Human
+ND-1	Homo sapiens	DU-145	Human
+NM2C5 and derivatives (MDA-MB-435 derivatives)	Homo sapiens	M14	Human
+NOI-90	Homo sapiens	REH	Human
+NOSE06	Homo sapiens	DOV-13	Human
+NOSE07	Homo sapiens	DOV-13	Human
+NPA87	Homo sapiens	M14	Human
+NS-3	Homo sapiens	COLO 201	Human
+OCUM-6	Homo sapiens	OCUM-11	Human
+OE	Homo sapiens	HeLa	Human
+OF	Homo sapiens	HeLa	Human
+OLGA-PH-J/92 [OL-J/92]	Orconectes limosus	Unknown	Unknown, similar to amoeba species
+ONCO-DG-1	Homo sapiens	OVCAR-3	Human
+OS 187	Homo sapiens	HCT-15	Human
+OST	Homo sapiens	HeLa	Human
+OU-AML-1	Homo sapiens	OCI/AML2	Human
+OU-AML-2	Homo sapiens	OCI/AML2	Human
+OU-AML-3	Homo sapiens	OCI/AML2	Human
+OU-AML-4	Homo sapiens	OCI/AML2	Human
+OU-AML-5	Homo sapiens	OCI/AML2	Human
+OU-AML-6	Homo sapiens	OCI/AML2	Human
+OU-AML-7	Homo sapiens	OCI/AML2	Human
+OU-AML-8	Homo sapiens	OCI/AML2	Human
+OV-1063	Homo sapiens	Unknown	Human
+OV2008, OV2008/C13	Homo sapiens	ME-180	Human
+Ovary1847	Homo sapiens	NIH:OVCAR-8	Human
+OVMIU	Homo sapiens	OVSAYO	Human
+P1-1A3	Homo sapiens	SK-HEP-1	Human
+P1-4D6	Homo sapiens	SK-HEP-1	Human
+P39/TSUGANE (P39/TSU)	Homo sapiens	HL-60	Human
+PBEI	Homo sapiens	NALM-6	Human
+PC-93	Homo sapiens	HeLa	Human
+PC-MDS	Homo sapiens	K-562	Human
+PCI-22A	Homo sapiens	Unknown, does not match other cell line from same donor	Human
+PCI-22B	Homo sapiens	Unknown, does not match other cell line from same donor	Human
+PCI-3	Homo sapiens	PC-3	Human
+PEAZ-1	Homo sapiens	HT-1080	Human
+PH61-N	Homo sapiens	MIA PaCa-2	Human
+PLB-985	Homo sapiens	HL-60	Human
+PPC-1	Homo sapiens	PC-3	Human
+PSV811	Homo sapiens	WI-38	Human
+RAMAK-1	Homo sapiens	T-24	Human
+RB	Homo sapiens	OMK-210	Monkey, Owl (Aotus trivirgatus)
+RBHF-1	Homo sapiens	Unknown	Non-human
+RC-2A	Homo sapiens	CCRF-CEM	Human
+RED-3	Homo sapiens	HL-60	Human
+REH-6	Homo sapiens	Unknown	Mouse
+REPC	Homo sapiens	Hep 3B	Human
+RERF-LC-MA	Homo sapiens	SK-MES-1	Human
+RERF-LC-OK	Homo sapiens	Marcus	Human
+RGC-5	Rat	661W	Mouse
+RM-10	Homo sapiens	K-562	Human
+RMUG-L	Homo sapiens	SNG-II	Human
+RO-D81-1	Homo sapiens	HT-29	Human
+RO-H85-1	Homo sapiens	647-V	Human
+RPMI-4788	Homo sapiens	HeLa	Human
+RPMI-6666	Homo sapiens	Correct name, incorrect cell type	Human
+RPTC-1	Homo sapiens	TPC-1	Human
+RS-1	Homo sapiens	K-562	Human
+RTSG	Homo sapiens	SNG-II	Human
+RY	Homo sapiens	Unknown	Monkey
+SA4	Homo sapiens	HeLa	Human
+SAM-1	Homo sapiens	K-562	Human
+SAML-1	Homo sapiens	U-937	Human
+SBC-2	Homo sapiens	HeLa	Human
+SBC-7	Homo sapiens	HeLa	Human
+SCCTF	Homo sapiens	SCCKN	Human
+SCLC-16H	Homo sapiens	SCLC-21/22H	Human
+SCLC-24H	Homo sapiens	SCLC-21/22H	Human
+SEG-1	Homo sapiens	NCI-H460	Human
+SF767	Homo sapiens	ME-180	Human
+SH-2	Homo sapiens	HeLa	Human
+SH-3	Homo sapiens	HeLa	Human
+SJPL	Sus scrofa	Unknown	Monkey, African green (Cercopithecus aethiops)
+SK-GT-5	Homo sapiens	SK-GT-2	Human
+SK-MG-1	Homo sapiens	Marcus	Human
+SK-N-MC	Homo sapiens	Unknown	Human
+SK-OV-4	Homo sapiens	C-33A	Human
+SK-OV-6	Homo sapiens	C-33A	Human
+SKW-3	Homo sapiens	KE-37	Human
+SLK	Homo sapiens	Caki-1	Human
+SNB-19	Homo sapiens	U-251 MG	Human
+SPI-801	Homo sapiens	K-562	Human
+SPI-802	Homo sapiens	K-562	Human
+SpR	Homo sapiens	OMK-210	Monkey, Owl (Aotus trivirgatus)
+SQ-5	Homo sapiens	HeLa	Human
+SR-91	Homo sapiens	AML-193	Human
+SW-527	Homo sapiens	SW-480, SW-620	Human
+SW-598	Homo sapiens	SW-480, SW-620	Human
+SW-608	Homo sapiens	SW-480, SW-620	Human
+SW-613	Homo sapiens	SW-480, SW-620	Human
+SW-732	Homo sapiens	SW-480, SW-620	Human
+SW-733	Homo sapiens	SW-480, SW-620	Human
+T-1	Homo sapiens	HeLa	Human
+T1	Homo sapiens	HeLa	Human
+T-33	Homo sapiens	K-562	Human
+T404	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+T406 (oral SCC) **Different cell line exists with same name:  T406 (glioblastoma)**	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+T409	Homo sapiens	UM-SCC-1	Human
+T-9 (WI-38 derivative)	Homo sapiens	HeLa	Human
+TCO-1	Homo sapiens	TCO-2	Human
+TDL-1	Homo sapiens	P3JHR-1	Human
+TDL-2	Homo sapiens	P3JHR-1	Human
+TDL-3	Homo sapiens	RPMI 1788	Human
+TDL-4	Homo sapiens	Raji	Human
+TE-12	Homo sapiens	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human
+TE-13	Homo sapiens	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human
+TE-2	Homo sapiens	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human
+TE-3	Homo sapiens	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human
+TE671	Homo sapiens	RD	Human
+TE671 Subline No.2	Homo sapiens	RD	Human
+TE-7	Homo sapiens	TE-2, TE-3, TE-12 or TE-13 (genetically identical)	Human
+TEC61	Homo sapiens	JEG3	Human
+TK-1	Homo sapiens	U-251 MG	Human
+TI-1	Homo sapiens	K-562	Human
+TMH-1	Homo sapiens	IHH-4	Human
+TMM	Homo sapiens	Correct name, incorrect cell type	Human
+TSU-Pr1	Homo sapiens	T-24	Human
+Tu-138	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+Tu-158LN	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+Tu-159	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+Tu-167	Homo sapiens	UM-SCC-1	Human
+Tu-182	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+Tu-212	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+Tu-212LN	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+TuWi	Homo sapiens	HeLa	Human
+U-118 MG	Homo sapiens	U-138 MG	Human
+UM-UC-2	Homo sapiens	T-24	Human
+UM-UC-3-GFP (UM-UC-3 derivative)	Homo sapiens	Unknown, NOT UM-UC-3	Human
+UPES/C	Homo sapiens	Unknown	Rat
+UPHHJA	Homo sapiens	Unknown	Rat
+UTMB-460	Homo sapiens	CCRF-CEM	Human
+VC312R	Homo sapiens	Unknown	Mixed, human + mouse
+VM-CUB-III	Homo sapiens	VM-CUB-I	Human
+WiDr	Homo sapiens	HT-29	Human
+WISH	Homo sapiens	HeLa	Human
+WKD	Homo sapiens	HeLa	Human
+Wong-Kilbourne	Homo sapiens	HeLa	Human
+WRL 68	Homo sapiens	HeLa	Human
+WSU-ALCL	Homo sapiens	CCRF-CEM	Human
+WSU-CLL	Homo sapiens	REH	Human
+YAA	Homo sapiens	U-937	Human
+YAP	Homo sapiens	U-937	Human
+YJ	Homo sapiens	HL-60	Human
+YMB-1	Homo sapiens	ZR-75-1	Human
+YMB-1-E	Homo sapiens	ZR-75-1	Human
+1483	Homo sapiens	UM-SCC-1	Human
+183	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+207 (EU-2)	Homo sapiens	REH and SUP-B2	Human
+B10XI	Gallus gallus	Unknown	Pig, Sus scrofa
+B6	Gallus gallus	Unknown	Pig, Sus scrofa
+BJA-B	Homo sapiens	HeLa	Human
+BT-20	Homo sapiens	HeLa	Human
+Ca9-22	Homo sapiens	MSK-922	Human
+COLO-720E	Homo sapiens	COLO684, COLO685, COLO704	Human
+D-17	Canis lupus familiaris	Moresco	Dog, Canis familiaris
+EB-3	Homo sapiens	Daudi	Human
+FU-RPNT-2	Homo sapiens	FU-RPNT-1	Human
+Grey	Canis lupus familiaris	Unknown	Human
+HPB-ALL	Homo sapiens	JURKAT	Human
+IPEC	Sus scrofa	Unknown	Cow
+J-82	Homo sapiens	T-24	Human
+JHH-1	Homo sapiens	Unknown	Mouse
+KARPAS-45	Homo sapiens	Unknown	Human
+KBM-3	Homo sapiens	HL-60	Human
+KE-37	Homo sapiens	CCRF-CEM	Human
+L-540	Homo sapiens	CCRF-CEM	Human
+MB-02	Homo sapiens	HU-3	Human
+MDA1986LN	Homo sapiens	UM-SCC-1	Human
+MDA686LN	Homo sapiens	UM-SCC-1	Human
+MDA686TU	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human
+MKN-7	Homo sapiens	Unknown	Human
+NCI-H929	Homo sapiens	K-562	Human
+Parks	Canis lupus familiaris	Unknown	Human
+RMG-II	Homo sapiens	RMG-I	Human
+RPMI-8402	Homo sapiens	Unknown	Human
+RT4	Homo sapiens	HeLa	Human
+T3M-12	Homo sapiens	T3M-1	Human
+U-373 MG	Homo sapiens	U-251 MG	Human
+U-937	Homo sapiens	Unknown	Human
+UROtsa	Homo sapiens	T-24	Human
+UT-7	Homo sapiens	U-937	Human
+Yamada	Canis lupus familiaris	Unknown	Mouse

@@ -142,7 +142,7 @@ static const char* const kCellLine[] = {
     "F2-5B6	Homo sapiens	SK-HEP-1	Human",
     "F255A4	Homo sapiens	HeLa	Human",
     "FB2	Homo sapiens	TPC-1	Human",
-    "Fitz-HSA 	Canis familiaris	DEN-HSA 	Dog, Canis familiaris",
+    "Fitz-HSA 	Canis lupus familiaris	DEN-HSA 	Dog, Canis familiaris",
     "FL	Homo sapiens	HeLa	Human",
     "Flow 13000	Homo sapiens	MRC-5	Human",
     "Flow 5000	Homo sapiens	Flow 1000	Human",
@@ -478,10 +478,10 @@ static const char* const kCellLine[] = {
     "BT-20	Homo sapiens	HeLa	Human",
     "Ca9-22	Homo sapiens	MSK-922	Human",
     "COLO-720E	Homo sapiens	COLO684, COLO685, COLO704	Human",
-    "D-17	Canis familiaris	Moresco	Dog, Canis familiaris",
+    "D-17	Canis lupus familiaris	Moresco	Dog, Canis familiaris",
     "EB-3	Homo sapiens	Daudi	Human",
     "FU-RPNT-2	Homo sapiens	FU-RPNT-1	Human",
-    "Grey	Canis familiaris	Unknown	Human",
+    "Grey	Canis lupus familiaris	Unknown	Human",
     "HPB-ALL	Homo sapiens	JURKAT	Human",
     "IPEC	Sus scrofa	Unknown	Cow",
     "J-82	Homo sapiens	T-24	Human",
@@ -496,7 +496,7 @@ static const char* const kCellLine[] = {
     "MDA686TU	Homo sapiens	T404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)	Human",
     "MKN-7	Homo sapiens	Unknown	Human",
     "NCI-H929	Homo sapiens	K-562	Human",
-    "Parks	Canis familiaris	Unknown	Human",
+    "Parks	Canis lupus familiaris	Unknown	Human",
     "RMG-II	Homo sapiens	RMG-I	Human",
     "RPMI-8402	Homo sapiens	Unknown	Human",
     "RT4	Homo sapiens	HeLa	Human",
@@ -505,5 +505,5 @@ static const char* const kCellLine[] = {
     "U-937	Homo sapiens	Unknown	Human",
     "UROtsa	Homo sapiens	T-24	Human",
     "UT-7	Homo sapiens	U-937	Human",
-    "Yamada	Canis familiaris	Unknown	Mouse"
+    "Yamada	Canis lupus familiaris	Unknown	Mouse"
 };
