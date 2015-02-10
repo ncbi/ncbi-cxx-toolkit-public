@@ -541,16 +541,44 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
     }
 }
 
+CConstRef<CSeq_id> GetSeqIdWithoutVersion(const CSeq_id& id)
+{
+   const CTextseq_id* text_id = id.GetTextseq_Id();
+
+   if (text_id && text_id->IsSetVersion())
+   {
+       CRef<CSeq_id> new_id(new CSeq_id);
+       new_id->Assign(id);
+       CTextseq_id* text_id = (CTextseq_id*) new_id->GetTextseq_Id();
+       text_id->ResetVersion();
+       return CConstRef<CSeq_id>(new_id);
+   }
+
+   return CConstRef<CSeq_id>(0);
+}
+
 void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader)
 {
     //CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
 
     // let's use map to speedup matching on very large files, see SQD-1847
-    map<const CSeq_id*, CRef<CBioseq>, SCSeqidCompare> seq_map;
+    map<CConstRef<CSeq_id>, CRef<CBioseq>, SCSeqidCompare> seq_map;
 
     for (CTypeIterator<CBioseq> seqit(entry);  seqit;  ++seqit) {
-        ITERATE (CBioseq::TId, seq_id, seqit->GetId()) {
-            seq_map[seq_id->GetPointer()].Reset(&*seqit);
+        ITERATE (CBioseq::TId, seq_id_it, seqit->GetId()) 
+        {
+            CConstRef<CSeq_id> seq_id = *seq_id_it;
+            seq_map[seq_id].Reset(&*seqit);
+
+            CConstRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*seq_id);
+            if (alt_id)
+            {
+                CRef<CBioseq>& alt_seq = seq_map[alt_id];
+                if (alt_seq.Empty())
+                  alt_seq.Reset(&*seqit);
+            }
+
+            //cout << "Found id: " << seq_id->AsFastaString() << endl;
         }
     }
 
@@ -565,13 +593,23 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
 
         // otherwise, take the first feature, which should be representative
         const CSeq_feat& feat    = *annot->GetData().GetFtable().front();
-        const CSeq_id*   feat_id = feat.GetLocation().GetId();
-        CBioseq*         seq     = NULL;
+        CConstRef<CSeq_id> feat_id(feat.GetLocation().GetId());
+
         _ASSERT(feat_id); // we expect a uniform sequence ID
-        seq = seq_map[feat_id].GetPointer();
-        if (seq) { // found a match
+        CRef<CBioseq> seq = seq_map[feat_id];
+        if (seq.Empty())
+        {
+            CConstRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*feat_id);
+            if (alt_id)
+            {
+                seq = seq_map[alt_id];
+            }
+        }
+
+        if (seq.NotEmpty()) { // found a match
             seq->SetAnnot().push_back(annot);
         } else { // just package on the set
+            //cout << "Not found id: " << feat_id->AsFastaString() << endl;
             /*
             ERR_POST_X(6, Warning
                        << "ReadSequinFeatureTables: unable to find match for "
@@ -613,9 +651,9 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
         entry.GetSet().GetClass() != CBioseq_set::eClass_nuc_prot)
         return;
 
-    CRef<CObjectManager> mgr(CObjectManager::GetInstance());
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
 
-    CScope scope(*mgr);
     CSeq_entry_Handle entry_h = scope.AddTopLevelSeqEntry(entry);
 
     // Create empty annotation holding cdregion features
@@ -708,6 +746,8 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
     {
         entry.SetSet().ResetAnnot();
     }
+
+    scope.RemoveTopLevelSeqEntry(entry_h);
 }
 
 CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)

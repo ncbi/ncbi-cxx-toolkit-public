@@ -73,7 +73,7 @@
 #include "table2asn_validator.hpp"
 #include <objtools/readers/fasta_exception.hpp>
 
-//#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -258,7 +258,7 @@ void CTbl2AsnApp::Init(void)
       Begin, Middle, End Gap Characters,\n\
       Missing Characters, Match Characters", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID"); // candidate to remove
+    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID"); // done
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
     arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
@@ -746,13 +746,6 @@ int CTbl2AsnApp::Run(void)
 
 CRef<CScope> CTbl2AsnApp::GetScope (void)
 {
-    if (m_context.m_ObjMgr.Empty())
-    {
-        m_context.m_ObjMgr = CObjectManager::GetInstance();
-
-        m_context.m_scope.Reset(new CScope (*m_context.m_ObjMgr));
-        m_context.m_scope->AddDefaults();
-    }
     return m_context.m_scope;
 }
 
@@ -1043,13 +1036,17 @@ void CTbl2AsnApp::Setup(const CArgs& args)
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
     // Create object manager and scope
-    GetScope();
-    if ( args["r"] ) {
+
+    m_context.m_ObjMgr = CObjectManager::GetInstance();
+
+    m_context.m_scope.Reset(new CScope (*m_context.m_ObjMgr));
+    if ( args["R"] ) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
-        //CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
+        CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
     }
+    m_context.m_scope->AddDefaults();
 }
 
 /*
@@ -1071,8 +1068,11 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
 
     string name = dir + base;
 
-    ProcessTBLFile(name + ".tbl", result);
-    ProcessTBLFile(m_context.m_single_table5_file, result);
+    if (m_context.m_single_table5_file.empty())
+       ProcessTBLFile(name + ".tbl", result);
+    else
+       ProcessTBLFile(m_context.m_single_table5_file, result);
+
     ProcessSRCFile(name + ".src", result, ext == ".xml"? (name+".xml") : "");
     if (!m_context.m_single_source_qual_file.empty())
       ProcessSRCFile(m_context.m_single_source_qual_file, result, ext == ".xml"? (name+".xml") : "");

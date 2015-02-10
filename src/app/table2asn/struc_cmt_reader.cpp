@@ -218,6 +218,8 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
     vector<string> cols;
 
     CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+
     CSeq_entry_EditHandle h_entry = scope.AddTopLevelSeqEntry(entry).GetEditHandle();
         
     size_t filename_id = string::npos;
