@@ -128,18 +128,9 @@ enum ENetStorageFlags {
     fNST_NetCache   = (1 << 0), ///< Use NetCache as the primary storage
     fNST_FileTrack  = (1 << 1), ///< Use FileTrack as the primary storage
 
-    ///@{
-    /// These are not used runtime (only for compile-time calculations)
-    fNST_V1,
-    fNST_V2 = (fNST_V1 - 1) << 1,
-    ///@}
-
-    ///@{
-    /// Abstract locations (values and mapping may be changed later)
+    /**@{ @internal */ fNST_V1, fNST_V2 = (fNST_V1 - 1) << 1, /**@}*/
     fNST_Fast       = fNST_NetCache,
     fNST_Persistent = fNST_FileTrack,
-    ///@}
-
     fNST_AnyLoc     = (fNST_V2 - 1),  ///< Any location (all location bits are set)
 
     fNST_Movable    = (fNST_V2 << 0), ///< Allow the object to move between storages
@@ -147,6 +138,9 @@ enum ENetStorageFlags {
     fNST_NoMetaData = (fNST_V2 << 2), ///< Do not use NetStorage relational database
                                       ///< to track ownership & changes. Attributes
                                       ///< and querying will also be disabled.
+
+    /**@{ @internal */ fNST_V3, fNST_V4 = (fNST_V3 - 1) << 1, /**@}*/
+    fNST_AnyAttr    = (fNST_V4 - 1) ^ fNST_AnyLoc
 };
 typedef unsigned TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
 

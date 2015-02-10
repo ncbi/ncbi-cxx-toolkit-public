@@ -249,7 +249,7 @@ private:
 };
 
 typedef CNetStorageFlagsSubset<fNST_AnyLoc> TNetStorageLocFlags;
-typedef CNetStorageFlagsSubset<~fNST_AnyLoc> TNetStorageAttrFlags;
+typedef CNetStorageFlagsSubset<fNST_AnyAttr> TNetStorageAttrFlags;
 
 /// @internal
 class NCBI_XCONNECT_EXPORT CNetStorageObjectLoc
