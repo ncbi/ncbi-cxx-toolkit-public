@@ -1255,7 +1255,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
-    string prefix = NStr::NumericToString(time(NULL));
+    string prefix = NStr::NumericToString(time(NULL)) + "t";
 
     CRandom random_gen;
     random_gen.Randomize();
