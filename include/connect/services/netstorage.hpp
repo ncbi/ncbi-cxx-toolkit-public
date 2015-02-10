@@ -325,7 +325,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
 
 class NCBI_XCONNECT_EXPORT CNetStorage
 {
-    NCBI_NET_COMPONENT_IMPL(NetStorage);
+    NCBI_NET_COMPONENT(NetStorage);
 
     /// Construct a CNetStorage object
     ///
