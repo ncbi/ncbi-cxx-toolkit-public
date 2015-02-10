@@ -581,30 +581,36 @@ bool s_IsAllDigits(string str)
 }
 
 
+bool s_FixStrainForPrefix(const string& prefix, string& strain)
+{
+    bool rval = false;
+
+    if (NStr::StartsWith(strain, prefix, NStr::eNocase)) {
+        string tmp = strain.substr(prefix.length());
+        NStr::TruncateSpacesInPlace(tmp);
+        if (NStr::StartsWith(tmp, ":") || NStr::StartsWith(tmp, "/")) {
+            tmp = tmp.substr(1);
+        }
+        NStr::TruncateSpacesInPlace(tmp);
+        if (!NStr::IsBlank(tmp) && s_IsAllDigits(tmp)) {
+            strain = prefix + " " + tmp;
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 string COrgMod::FixStrain( const string& strain)
 {
-    string new_val = "";
-
-    if (NStr::StartsWith(strain, "ATCC", NStr::eNocase)) {
-        string tmp = strain.substr(4);
-        NStr::TruncateSpacesInPlace(tmp);
-        if (NStr::StartsWith(tmp, ":") || NStr::StartsWith(tmp, "/")) {
-            tmp = tmp.substr(1);
-        }
-        NStr::TruncateSpacesInPlace(tmp);
-        if (s_IsAllDigits(tmp)) {
-            new_val = "ATCC " + tmp;
-        }
-    } else if (NStr::StartsWith(strain, "DSM", NStr::eNocase)) {
-        string tmp = strain.substr(3);
-        NStr::TruncateSpacesInPlace(tmp);
-        if (NStr::StartsWith(tmp, ":") || NStr::StartsWith(tmp, "/")) {
-            tmp = tmp.substr(1);
-        }
-        NStr::TruncateSpacesInPlace(tmp);
-        if (s_IsAllDigits(tmp)) {
-            new_val = "DSM " + tmp;
-        }
+    string new_val = strain;
+    if (s_FixStrainForPrefix("ATCC", new_val)) {
+        // fixed for ATCC
+    } else if (s_FixStrainForPrefix("DSM", new_val)) {
+        // fixed for DSM
+    } else {
+        // no fix
+        new_val = "";
     }
     return new_val;
 }
