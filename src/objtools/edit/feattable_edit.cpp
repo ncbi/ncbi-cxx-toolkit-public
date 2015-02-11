@@ -86,6 +86,9 @@ void CFeatTableEdit::InferParentMrnas()
         if (!pRna) {
             continue;
         }
+        pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
+        pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
+        pRna->ResetPartial();
         //find proper name for rna
         string rnaId(xNextFeatId());
         pRna->SetId().SetLocal().SetStr(rnaId);
