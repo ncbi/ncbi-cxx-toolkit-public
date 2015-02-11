@@ -110,7 +110,8 @@ void CTestShiftApp::Init(void)
     arg_desc->AddFlag("v", 
         "Verbose output - dump input, baseline, and calculated output",true);
 
-    arg_desc->AddDefaultKey("mode", "Mode", "How to shift the variant",
+    arg_desc->AddDefaultKey("mode", "Mode", "How to shift the variant "
+            "(default: full_shift)",
         CArgDescriptions::eString, "full_shift");
 
     arg_desc->SetConstraint("mode", &(*new CArgAllow_Strings,
@@ -139,14 +140,14 @@ int CTestShiftApp::Run()
         baseline_stream.reset(new CNcbiIfstream(args["b"].AsString().c_str()));
 
     CVariationNormalization::ETargetContext context ;
-    if(mode == "full_shift")
-        context = CVariationNormalization::eDbSnp;
-    else if(mode == "left_shift")
+    if (mode == "left_shift")
         context = CVariationNormalization::eVCF;
     else if(mode == "right_shift")
         context = CVariationNormalization::eHGVS;
     else if(mode == "left_with_interval")
         context = CVariationNormalization::eVarLoc;
+    else // "full_shift" or unspecified
+        context = CVariationNormalization::eDbSnp;
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
