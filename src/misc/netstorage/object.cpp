@@ -199,13 +199,17 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 
 IState* CObj::StartRead(void*, size_t, size_t*, ERW_Result*)
 {
-    abort(); // This just cannot happen
+    // This just cannot happen
+    _TROUBLE;
+    return NULL;
 }
 
 
 IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 {
-    abort(); // This just cannot happen
+    // This just cannot happen
+    _TROUBLE;
+    return NULL;
 }
 
 
