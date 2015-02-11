@@ -1052,7 +1052,7 @@ struct SCommandDefinition {
         {eHumanReadable, eRaw, eJSON, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Stats,
-        "stats", "Show server access statistics.",
+        "stats|stat|status", "Show server status and access statistics.",
         "Dump accumulated statistics on server access and "
         "performance.\n\n"
         "When applied to a NetSchedule server, this operation "
