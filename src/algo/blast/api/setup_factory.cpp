@@ -146,7 +146,7 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
     // reset composition based statistics for the identity scoring matrix
     // (we do not have all necessary data to compute CBS)
     if (opts_memento->m_ScoringOpts->matrix &&
-        NStr::strcasecmp("identity", opts_memento->m_ScoringOpts->matrix) == 0 &&
+        strcasecmp("identity", opts_memento->m_ScoringOpts->matrix) == 0 &&
         opts_memento->m_ExtnOpts->compositionBasedStats > 0) {
 
         opts_memento->m_ExtnOpts->compositionBasedStats = 0;
