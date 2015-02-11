@@ -88,7 +88,8 @@ CProjectStorage::CProjectStorage(const string& client, const string& nc_service,
     m_CmprsFmt(eNC_Uncompressed),
     m_DataFmt(eSerial_None),
     m_Password(password),
-    m_HasNetStorage(false)
+    m_HasNetStorage(false),
+    m_NS(eVoid)
 {
 
     if (!m_Password.empty()) {

@@ -58,6 +58,9 @@ USING_NCBI_SCOPE;
 ///
 class CNetCacheBlobFetchApp : public CCgiApplication
 {
+public:
+    CNetCacheBlobFetchApp() : m_NetStorage(eVoid) {}
+
 protected:
     virtual void Init();
     virtual int ProcessRequest(CCgiContext& ctx);

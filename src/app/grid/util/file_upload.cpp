@@ -50,6 +50,7 @@ enum EErrorMessageVerbosity {
 class CFileUploadApplication : public CCgiApplication
 {
 public:
+    CFileUploadApplication() : m_NetStorage(eVoid) {}
     void Init();
     int  ProcessRequest(CCgiContext& ctx);
 

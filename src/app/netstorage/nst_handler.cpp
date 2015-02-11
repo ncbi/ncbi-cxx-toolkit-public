@@ -2393,7 +2393,7 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags)
 {
-    CNetStorage     net_storage;
+    CNetStorage     net_storage(eVoid);
     if (icache_settings.m_ServiceName.empty())
         net_storage = g_CreateNetStorage(
                 CNetICacheClient(CNetICacheClient::eAppRegistry),
