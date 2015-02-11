@@ -332,18 +332,18 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
-    arg_desc->AddFlag("type-aa", "Treas sequence as DNA");
-    arg_desc->AddFlag("type-nuc", "Treas sequence as Nukleotide");
+    arg_desc->AddFlag("type-aa", "Treat sequence as DNA");
+    arg_desc->AddFlag("type-nuc", "Treat sequence as Nukleotide");
     arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url-mod", "String", "FileTrack URL for the XML file base modifications", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("gaps-min", "Integer", "minumum run of Ns recognised as a gap", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey("min-threshold", "Integer", "minimun length of sequence", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("min-threshold", "Integer", "minimum length of sequence", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
