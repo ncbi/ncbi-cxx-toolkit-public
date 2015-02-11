@@ -28,10 +28,11 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include "object.hpp"
 
+
 BEGIN_NCBI_SCOPE
+
 
 namespace NImpl
 {
@@ -46,25 +47,30 @@ CObj::~CObj()
     NCBI_CATCH_ALL("Error while implicitly closing a NetStorage file.");
 }
 
+
 ERW_Result CObj::Read(void* buf, size_t count, size_t* bytes_read)
 {
     return m_State->ReadImpl(buf, count, bytes_read);
 }
+
 
 bool CObj::Eof()
 {
     return m_State->EofImpl();
 }
 
+
 ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 {
     return m_State->WriteImpl(buf, count, bytes_written);
 }
 
+
 Uint8 CObj::GetSize()
 {
     return m_Location->GetSizeImpl();
 }
+
 
 string CObj::GetAttribute(const string& attr_name)
 {
@@ -72,26 +78,31 @@ string CObj::GetAttribute(const string& attr_name)
         "Attribute support is only implemented in NetStorage server.");
 }
 
+
 void CObj::SetAttribute(const string& attr_name, const string& attr_value)
 {
     NCBI_THROW(CNetStorageException, eInvalidArg,
         "Attribute support is only implemented in NetStorage server.");
 }
 
+
 CNetStorageObjectInfo CObj::GetInfo()
 {
     return m_Location->GetInfoImpl();
 }
+
 
 bool CObj::Exists()
 {
     return m_Location->ExistsImpl();
 }
 
+
 void CObj::Remove()
 {
     m_Location->RemoveImpl();
 }
+
 
 void CObj::Close()
 {
@@ -99,16 +110,19 @@ void CObj::Close()
     m_State = this;
 }
 
+
 void CObj::Abort()
 {
     m_State->AbortImpl();
     m_State = this;
 }
 
+
 string CObj::GetLoc()
 {
     return m_Selector->Locator();
 }
+
 
 string CObj::MoveTo(ISelector::Ptr selector)
 {
@@ -140,54 +154,60 @@ string CObj::MoveTo(ISelector::Ptr selector)
     return new_file->GetLoc();
 }
 
+
 ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
+    ERW_Result result = eRW_Error;
     for (ILocation* l = m_Selector->First(); l; l = m_Selector->Next()) {
-        ERW_Result result;
         IState* rw_state = l->StartRead(buf, count, bytes_read, &result);
-
         if (rw_state) {
             m_Location = l;
             m_State = rw_state;
             return result;
         }
     }
-
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "Cannot open \"" << m_Selector->Locator() << "\" for reading.");
+    // Not reached
+    return result;
 }
+
 
 bool CObj::EofImpl()
 {
     return false;
 }
 
+
 ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 {
+    ERW_Result result = eRW_Error;
     if (ILocation* l = m_Selector->First()) {
-        ERW_Result result;
         IState* rw_state = l->StartWrite(buf, count, bytes_written, &result);
-
         if (rw_state) {
             m_Location = l;
             m_State = rw_state;
             return result;
         }
     }
-
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "Cannot open \"" << m_Selector->Locator() << "\" for writing.");
+    // Not reached
+    return result;
 }
+
 
 IState* CObj::StartRead(void*, size_t, size_t*, ERW_Result*)
 {
     abort(); // This just cannot happen
 }
 
+
 IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 {
     abort(); // This just cannot happen
 }
+
 
 // TODO: Redo this with a functor?
 #define DEFINE_COBJ_METHOD(type, method)                        \
