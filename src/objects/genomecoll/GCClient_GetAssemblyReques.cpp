@@ -74,11 +74,13 @@ bool CGCClient_GetAssemblyRequest::SRequestParam::SetMode(EAssemblyMode mode)
         level          = CGCClient_GetAssemblyRequest::eLevel_assembly;
         assembly_flags = eGCClient_AttributeFlags_exclude_stats;
         break;
+    case eAssemblyMode_ftp_export:
+        // if ftp needs to different than euk-annotation, add it here.
     case eAssemblyMode_eukaryotic_annotation:
-        // genome_pipeline_base.gpc uses asm_fl=0 and scaf_fl=33792 (instantiate empty assmeblies, scaffolds for annotation)
+        // genome_pipeline_base.gpc uses asm_fl=0, chr_fl=3, scaf_fl=33792 (biosource on chromosomes, instantiate empty assmeblies, scaffolds for annotation)
         level            = CGCClient_GetAssemblyRequest::eLevel_component;
         assembly_flags   = eGCClient_AttributeFlags_none;
-        chromosome_flags = eGCClient_AttributeFlags_none;
+        chromosome_flags = eGCClient_AttributeFlags_all;
         scaffold_flags   = eGCClient_AttributeFlags_get_wgs_contigs |
                            eGCClient_AttributeFlags_include_unordered_scaffolds;
         break;
