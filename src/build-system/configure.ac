@@ -1016,6 +1016,7 @@ if test -z "$with_mt" -a -f "$NCBI_OLD_STATUS_DIR/-MT.enabled"; then
 fi
 
 if test "$with_mt" != "no" ; then
+   with_mt=yes
    case "$host_os:$compiler" in
     darwin* | irix* | cygwin* | *:Cray ) ;;
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
@@ -5015,7 +5016,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
             ;;
          esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
-         test "$with_debug" = "yes"  &&  BOOST_D=-d
+         test "$with_debug" = "no"   ||  BOOST_D=-d
          test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
          found=no
          for base in "$BOOST_TAG$boost_comp_vers" "$BOOST_TAG" ''; do
