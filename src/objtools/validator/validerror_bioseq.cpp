@@ -982,15 +982,15 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
         }
     }
 
-    bool is_gb = false, is_eb_db = false, is_refseq = false, is_ng = false;
+    bool is_gb = false, /* is_eb_db = false, */ is_refseq = false, is_ng = false;
 
     FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, seq) {
         const CSeq_id& sid = **sid_itr;
         switch (sid.Which()) {
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
-                is_eb_db = true;
-                /* fall through */
+                // is_eb_db = true;
+                // fall through
             case CSeq_id::e_Ddbj:
                 is_gb = true;
                 break;
