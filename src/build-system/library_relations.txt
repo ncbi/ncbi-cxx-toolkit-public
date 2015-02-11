@@ -202,9 +202,9 @@ ct64 needs3party $(ORIG_LIBS)
 ct64 needs3party comn64
 ct64 needs3party intl64
 ct_ftds64 needs tds_ftds64
-ctutils needs $(Z_LIB)
+ctutils needs $(SRA_LIBS)
+ctutils needs3party $(SRA_SDK_SYSLIBS)
 ctutils needs3party $(SYBASE_LIBS)
-ctutils needs3party $(Z_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
 db needs3party $(ORIG_LIBS)
