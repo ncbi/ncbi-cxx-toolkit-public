@@ -38,6 +38,8 @@
 
 #include <connect/services/netstorage_impl.hpp>
 
+#include <../src/misc/netstorage/filetrack.hpp>
+
 USING_NCBI_SCOPE;
 
 #define TOKEN_TYPE__NETCACHE_BLOB_KEY "NetCacheBlobKey"

@@ -37,6 +37,8 @@
 #include <connect/services/clparser.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
+#include <../src/misc/netstorage/filetrack.hpp>
+
 #ifdef WIN32
 #include <io.h>
 #include <fcntl.h>
@@ -54,7 +56,8 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
     m_ArgC(argc),
     m_ArgV(argv),
     m_AdminMode(false),
-    m_NetICacheClient(eVoid)
+    m_NetICacheClient(eVoid),
+    m_NetStorageByKey(eVoid)
 {
 }
 

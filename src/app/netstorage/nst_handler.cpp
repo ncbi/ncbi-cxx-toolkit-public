@@ -41,6 +41,8 @@
 #include <connect/services/netstorage_impl.hpp>
 #include <misc/netstorage/netstorage.hpp>
 
+#include <../src/misc/netstorage/filetrack.hpp>
+
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
 #include "nst_protocol_utils.hpp"
