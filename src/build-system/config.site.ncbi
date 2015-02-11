@@ -152,11 +152,7 @@ esac
 
 : ${LZO_PATH=$NCBI/lzo-2.05}
 
-case "$ncbi_platform" in
-    FreeBSD32  ) : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2} ;;
-    *MAC       ) : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2} ;;
-    *          ) : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi1} ;;
-esac
+: ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
 case "$ncbi_platform" in
     Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.0-rc0} ;;
