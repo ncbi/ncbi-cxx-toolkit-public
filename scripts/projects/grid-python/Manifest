@@ -9,4 +9,5 @@
 #          package.  It is used by the prepare_release system.
 #
 
+TAG_PRE_COMMIT: tagprecommit/update_version.py $version
 POSTTAG: clone_trunk_scripts.sh $LOCAL $VERSION
