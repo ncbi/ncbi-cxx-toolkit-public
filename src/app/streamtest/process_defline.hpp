@@ -210,6 +210,20 @@ public:
         try {
             CDeflineGenerator gen (m_topseh);
 
+            bool has_segset = false;
+            if (m_skip_segmented) {
+                VISIT_ALL_SEQSETS_WITHIN_SEQENTRY (bst, *m_entry) {
+                    const CBioseq_set& bss = *bst;
+                    if (bss.IsSetClass()) {
+                        CBioseq_set::EClass mclass = bss.GetClass();
+                        if (mclass == CBioseq_set::eClass_segset ||
+                            mclass == CBioseq_set::eClass_parts) {
+                            has_segset = true;
+                        }
+                    }
+                }
+            }
+
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
 
@@ -226,23 +240,35 @@ public:
                     }
                 }
                 if (m_skip_segmented) {
-                    CSeq_entry* se;
-                    se = bioseq.GetParentEntry();
-                    if (se) {
-                        se = se->GetParentEntry();
-                        if (se) {
-                            if (se->IsSet()) {
-                                const CBioseq_set& seqset = se->GetSet();
-                                if (seqset.IsSetClass()) {
-                                    CBioseq_set::EClass mclass = seqset.GetClass();
-                                    if (mclass == CBioseq_set::eClass_segset ||
-                                        mclass == CBioseq_set::eClass_parts) {
-                                        okay = false;
-                                    }
-                                }
+                    if (has_segset) {
+                        okay = false;
+                    }
+                    if (bioseq.IsSetInst()) {
+                        const CSeq_inst& inst = bioseq.GetInst();
+                        if (inst.IsSetRepr()) {
+                            TSEQ_REPR repr = inst.GetRepr();
+                            if (repr == CSeq_inst::eRepr_seg) {
+                                okay = false;
                             }
                         }
                     }
+                    /*
+                    CSeq_entry* se;
+                    se = bioseq.GetParentEntry();
+                    while (se) {
+                        if (se->IsSet()) {
+                            const CBioseq_set& seqset = se->GetSet();
+                            if (seqset.IsSetClass()) {
+                                CBioseq_set::EClass mclass = seqset.GetClass();
+                                if (mclass == CBioseq_set::eClass_segset ||
+                                    mclass == CBioseq_set::eClass_parts) {
+                                    okay = false;
+                                }
+                            }
+                        }
+                        se = se->GetParentEntry();
+                    }
+                    */
                 }
                 if (m_skip_nucleotide) {
                     if (bioseq.IsSetInst()) {
