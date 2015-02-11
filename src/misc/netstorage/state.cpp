@@ -28,9 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include "state.hpp"
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -39,14 +37,18 @@
 #  include <unistd.h>
 #endif
 
+
 BEGIN_NCBI_SCOPE
+
 
 namespace
 {
 
 using namespace NImpl;
 
+
 typedef CNetStorageObjectLoc TObjLoc;
+
 
 class CROState : public IState
 {
@@ -54,12 +56,14 @@ public:
     ERW_Result WriteImpl(const void*, size_t, size_t*);
 };
 
+
 class CWOState : public IState
 {
 public:
     ERW_Result ReadImpl(void*, size_t, size_t*);
     bool EofImpl();
 };
+
 
 class CRWNotFound : public IState
 {
@@ -75,6 +79,7 @@ public:
 private:
     TObjLoc& m_ObjectLoc;
 };
+
 
 class CRONetCache : public CROState
 {
@@ -98,6 +103,7 @@ private:
     size_t m_BytesRead;
 };
 
+
 class CWONetCache : public CWOState
 {
 public:
@@ -115,6 +121,7 @@ public:
 private:
     TWriterPtr m_Writer;
 };
+
 
 class CROFileTrack : public CROState
 {
@@ -134,6 +141,7 @@ private:
     TRequest m_Request;
 };
 
+
 class CWOFileTrack : public CWOState
 {
 public:
@@ -151,7 +159,9 @@ private:
     TRequest m_Request;
 };
 
+
 typedef CNetStorageObjectLoc TObjLoc;
+
 
 class CLocation : public ILocation
 {
@@ -165,6 +175,7 @@ public:
 protected:
     TObjLoc& m_ObjectLoc;
 };
+
 
 class CNotFound : public CLocation
 {
@@ -184,6 +195,7 @@ public:
 private:
     CRWNotFound m_RW;
 };
+
 
 class CNetCache : public CLocation
 {
@@ -215,6 +227,7 @@ private:
     CWONetCache m_Write;
 };
 
+
 class CFileTrack : public CLocation
 {
 public:
@@ -236,40 +249,52 @@ private:
     CWOFileTrack m_Write;
 };
 
+
 ERW_Result CROState::WriteImpl(const void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "Invalid file status: cannot write while reading.");
+    return eRW_Error; // Not reached
 }
+
 
 ERW_Result CWOState::ReadImpl(void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "Invalid file status: cannot read while writing.");
+    return eRW_Error; // Not reached
 }
+
 
 bool CWOState::EofImpl()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "Invalid file status: cannot check EOF status while writing.");
+    return true; // Not reached
 }
+
 
 ERW_Result CRWNotFound::ReadImpl(void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for reading.");
+    return eRW_Error; // Not reached
 }
+
 
 ERW_Result CRWNotFound::WriteImpl(const void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
+    return eRW_Error; // Not reached
 }
+
 
 bool CRWNotFound::EofImpl()
 {
     return false;
 }
+
 
 ERW_Result CRONetCache::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
@@ -282,20 +307,24 @@ ERW_Result CRONetCache::ReadImpl(void* buf, size_t count, size_t* bytes_read)
     return rw_res;
 }
 
+
 bool CRONetCache::EofImpl()
 {
     return m_BytesRead >= m_BlobSize;
 }
+
 
 void CRONetCache::CloseImpl()
 {
     m_Reader.reset();
 }
 
+
 ERW_Result CWONetCache::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 {
     return m_Writer->Write(buf, count, bytes_written);
 }
+
 
 void CWONetCache::CloseImpl()
 {
@@ -303,21 +332,25 @@ void CWONetCache::CloseImpl()
     m_Writer.reset();
 }
 
+
 void CWONetCache::AbortImpl()
 {
     m_Writer->Abort();
     m_Writer.reset();
 }
 
+
 ERW_Result CROFileTrack::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
     return m_Request->Read(buf, count, bytes_read);
 }
 
+
 bool CROFileTrack::EofImpl()
 {
     return m_Request->m_HTTPStream.eof();
 }
+
 
 void CROFileTrack::CloseImpl()
 {
@@ -325,17 +358,20 @@ void CROFileTrack::CloseImpl()
     m_Request.Reset();
 }
 
+
 ERW_Result CWOFileTrack::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 {
     m_Request->Write(buf, count, bytes_written);
     return eRW_Success;
 }
 
+
 void CWOFileTrack::CloseImpl()
 {
     m_Request->FinishUpload();
     m_Request.Reset();
 }
+
 
 IState* CNotFound::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
@@ -345,6 +381,7 @@ IState* CNotFound::StartRead(void* buf, size_t count,
     return &m_RW;
 }
 
+
 IState* CNotFound::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
 {
@@ -353,12 +390,15 @@ IState* CNotFound::StartWrite(const void* buf, size_t count,
     return &m_RW;
 }
 
+
 Uint8 CNotFound::GetSizeImpl()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
             "\" could not be found in any of the designated locations.");
+    return 0; // Not reached
 }
+
 
 CNetStorageObjectInfo CNotFound::GetInfoImpl()
 {
@@ -366,14 +406,17 @@ CNetStorageObjectInfo CNotFound::GetInfoImpl()
             eNFL_NotFound, &m_ObjectLoc, 0, NULL);
 }
 
+
 bool CNotFound::ExistsImpl()
 {
     return false;
 }
 
+
 void CNotFound::RemoveImpl()
 {
 }
+
 
 bool CNetCache::Init()
 {
@@ -392,6 +435,7 @@ bool CNetCache::Init()
     }
     return true;
 }
+
 
 IState* CNetCache::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
@@ -412,6 +456,7 @@ IState* CNetCache::StartRead(void* buf, size_t count,
     *result =  m_Read.ReadImpl(buf, count, bytes_read);
     return &m_Read;
 }
+
 
 IState* CNetCache::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
@@ -440,12 +485,14 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
     return &m_Write;
 }
 
+
 Uint8 CNetCache::GetSizeImpl()
 {
     return m_Client.GetBlobSize(
             m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
             nc_cache_name = m_ObjectLoc.GetAppDomain());
 }
+
 
 CNetStorageObjectInfo CNetCache::GetInfoImpl()
 {
@@ -469,6 +516,7 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
             &m_ObjectLoc, blob_size, blob_info);
 }
 
+
 bool CNetCache::ExistsImpl()
 {
     LOG_POST(Trace << "Cheching existence in NetCache " << m_ObjectLoc.GetLocator());
@@ -476,12 +524,14 @@ bool CNetCache::ExistsImpl()
             kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain());
 }
 
+
 void CNetCache::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from NetCache " << m_ObjectLoc.GetLocator());
     m_Client.RemoveBlob(m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
             nc_cache_name = m_ObjectLoc.GetAppDomain());
 }
+
 
 IState* CFileTrack::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
@@ -506,6 +556,7 @@ IState* CFileTrack::StartRead(void* buf, size_t count,
     return NULL;
 }
 
+
 IState* CFileTrack::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
 {
@@ -518,11 +569,13 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
     return &m_Write;
 }
 
+
 Uint8 CFileTrack::GetSizeImpl()
 {
     return (Uint8) m_Context->filetrack_api.GetFileInfo(
             &m_ObjectLoc).GetInteger("size");
 }
+
 
 CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 {
@@ -540,17 +593,20 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
             eNFL_FileTrack, &m_ObjectLoc, file_size, file_info_node);
 }
 
+
 bool CFileTrack::ExistsImpl()
 {
     LOG_POST(Trace << "Cheching existence in FileTrack " << m_ObjectLoc.GetLocator());
     return !m_Context->filetrack_api.GetFileInfo(&m_ObjectLoc).GetBoolean("deleted");
 }
 
+
 void CFileTrack::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from FileTrack " << m_ObjectLoc.GetLocator());
     m_Context->filetrack_api.Remove(&m_ObjectLoc);
 }
+
 
 class CSelector : public ISelector
 {
@@ -570,6 +626,7 @@ private:
     CFileTrack m_FileTrack;
     stack<CLocation*> m_Locations;
 };
+
 
 CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags flags)
     : m_ObjectLoc(loc),
@@ -632,10 +689,12 @@ CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags fla
     }
 }
 
+
 ILocation* CSelector::First()
 {
     return m_Locations.size() ? Top() : NULL;
 }
+
 
 ILocation* CSelector::Next()
 {
@@ -647,6 +706,7 @@ ILocation* CSelector::Next()
     return NULL;
 }
 
+
 ILocation* CSelector::Top()
 {
     _ASSERT(m_Locations.size());
@@ -655,11 +715,13 @@ ILocation* CSelector::Top()
     return location->Init() ? location : NULL;
 }
 
+
 string CSelector::Locator()
 {
     return m_ObjectLoc.GetLocation() != eNFL_Unknown ?
         m_ObjectLoc.GetLocator() : kEmptyStr;
 }
+
 
 // TODO:
 // Reconsider, default_flags should not be always used,
@@ -671,6 +733,7 @@ inline TNetStorageFlags PurifyFlags(SContext* context,
     flags &= context->valid_flags_mask;
     return flags ? flags : context->default_flags;
 }
+
 
 Uint8 GetRandomNumber(SContext* context)
 {
@@ -704,7 +767,9 @@ Uint8 GetRandomNumber(SContext* context)
 #endif // NCBI_OS_MSWIN
 }
 
+
 }
+
 
 namespace NImpl
 {
@@ -732,6 +797,7 @@ SContext::SContext(const string& domain, CNetICacheClient client, TNetStorageFla
     }
 }
 
+
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags)
 {
     flags = PurifyFlags(context, flags);
@@ -740,12 +806,14 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags)
                     TFileTrack_Site::GetDefault().c_str()), context, flags));
 }
 
+
 ISelector::Ptr ISelector::CreateFromLoc(SContext* context, const string& object_loc, TNetStorageFlags flags)
 {
     flags = PurifyFlags(context, flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
                     object_loc, flags), context, flags));
 }
+
 
 ISelector::Ptr ISelector::CreateFromKey(SContext* context, const string& key, TNetStorageFlags flags)
 {
@@ -754,6 +822,7 @@ ISelector::Ptr ISelector::CreateFromKey(SContext* context, const string& key, TN
                     flags, context->app_domain, key,
                     TFileTrack_Site::GetDefault().c_str()), context, flags));
 }
+
 
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
         const string& service, Int8 id)
@@ -768,6 +837,7 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
     return Ptr(new CSelector(loc, context, flags));
 }
 
+
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
         const string& service)
 {
@@ -780,8 +850,11 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
     return Ptr(new CSelector(loc, context, flags));
 }
 
+
 }
 
+
 NCBI_PARAM_DEF(string, netstorage_api, backend_storage, "netcache, filetrack");
+
 
 END_NCBI_SCOPE

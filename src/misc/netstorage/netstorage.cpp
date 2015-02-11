@@ -31,22 +31,22 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include <misc/netstorage/netstorage.hpp>
 #include <misc/netstorage/error_codes.hpp>
-
 #include <util/util_exception.hpp>
-
 #include "object.hpp"
 
 #define NCBI_USE_ERRCODE_X  NetStorage
 
+
 BEGIN_NCBI_SCOPE
+
 
 namespace
 {
 
 using namespace NImpl;
+
 
 class CNetCache
 {
@@ -68,6 +68,7 @@ private:
     CNetCacheAPI m_API;
 };
 
+
 CNetStorageObject CNetCache::DoOpen(const string& object_loc)
 {
     if (!m_API) {
@@ -80,7 +81,9 @@ CNetStorageObject CNetCache::DoOpen(const string& object_loc)
     return g_CreateNetStorage_NetCacheBlob(m_API, object_loc);
 }
 
+
 }
+
 
 struct SNetStorageAPIImpl : public SNetStorageImpl
 {
@@ -104,12 +107,14 @@ private:
     CNetCache m_NetCache;
 };
 
+
 CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, flags));
     CRef<CObj> object(new CObj(selector));
     return object.GetPointerOrNull();
 }
+
 
 CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
         const string& service, Int8 id)
@@ -119,6 +124,7 @@ CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
     return object.GetPointerOrNull();
 }
 
+
 CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
         const string& service)
 {
@@ -126,6 +132,7 @@ CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
     CRef<CObj> object(new CObj(selector));
     return object.GetPointerOrNull();
 }
+
 
 CNetStorageObject SNetStorageAPIImpl::Open(
         const string& object_loc, TNetStorageFlags flags)
@@ -138,6 +145,22 @@ CNetStorageObject SNetStorageAPIImpl::Open(
     }
 }
 
+
+string SNetStorageAPIImpl::Relocate(const string& object_loc,
+        TNetStorageFlags flags)
+{
+    flags &= m_Context->valid_flags_mask;
+
+    if (flags == 0)
+        return string();
+
+    ISelector::Ptr orig_selector(ISelector::CreateFromLoc(m_Context, object_loc));
+    ISelector::Ptr new_selector(ISelector::CreateFromLoc(m_Context, object_loc, flags));
+    CRef<CObj> orig_file(new CObj(orig_selector));
+    return orig_file->MoveTo(new_selector);
+}
+
+
 bool SNetStorageAPIImpl::Exists(const string& object_loc)
 {
     ISelector::Ptr selector(ISelector::CreateFromLoc(m_Context, object_loc));
@@ -145,12 +168,14 @@ bool SNetStorageAPIImpl::Exists(const string& object_loc)
     return net_file->Exists();
 }
 
+
 void SNetStorageAPIImpl::Remove(const string& object_loc)
 {
     ISelector::Ptr selector(ISelector::CreateFromLoc(m_Context, object_loc));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
 }
+
 
 struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
 {
@@ -174,6 +199,7 @@ private:
     CRef<SContext> m_Context;
 };
 
+
 CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
@@ -181,33 +207,6 @@ CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& key,
     return new CObj(selector);
 }
 
-bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
-{
-    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
-    CRef<CObj> net_file(new CObj(selector));
-    return net_file->Exists();
-}
-
-void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
-{
-    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
-    CRef<CObj> net_file(new CObj(selector));
-    net_file->Remove();
-}
-
-string SNetStorageAPIImpl::Relocate(const string& object_loc,
-        TNetStorageFlags flags)
-{
-    flags &= m_Context->valid_flags_mask;
-
-    if (flags == 0)
-        return string();
-
-    ISelector::Ptr orig_selector(ISelector::CreateFromLoc(m_Context, object_loc));
-    ISelector::Ptr new_selector(ISelector::CreateFromLoc(m_Context, object_loc, flags));
-    CRef<CObj> orig_file(new CObj(orig_selector));
-    return orig_file->MoveTo(new_selector);
-}
 
 string SNetStorageByKeyAPIImpl::Relocate(const string& key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
@@ -223,6 +222,23 @@ string SNetStorageByKeyAPIImpl::Relocate(const string& key,
     return orig_file->MoveTo(new_selector);
 }
 
+
+bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
+{
+    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
+    CRef<CObj> net_file(new CObj(selector));
+    return net_file->Exists();
+}
+
+
+void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
+{
+    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
+    CRef<CObj> net_file(new CObj(selector));
+    net_file->Remove();
+}
+
+
 // TODO: It might worth merging these two into one
 // TODO: dynamic_cast is not good, needs reconsidering
 CNetStorageObject g_CreateNetStorageObject(
@@ -237,6 +253,7 @@ CNetStorageObject g_CreateNetStorageObject(
     return api_impl->Create(flags, service_name, object_id);
 }
 
+
 CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
         const string& service_name,
@@ -248,6 +265,7 @@ CNetStorageObject g_CreateNetStorageObject(
     return api_impl->Create(flags, service_name);
 }
 
+
 CNetStorage g_CreateNetStorage(
         CNetICacheClient::TInstance icache_client,
         const string& app_domain,
@@ -256,11 +274,13 @@ CNetStorage g_CreateNetStorage(
     return new SNetStorageAPIImpl(app_domain, default_flags, icache_client);
 }
 
+
 CNetStorage g_CreateNetStorage(const string& app_domain,
         TNetStorageFlags default_flags)
 {
     return new SNetStorageAPIImpl(app_domain, default_flags);
 }
+
 
 CNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
@@ -269,10 +289,12 @@ CNetStorageByKey g_CreateNetStorageByKey(
     return new SNetStorageByKeyAPIImpl(app_domain, default_flags, icache_client);
 }
 
+
 CNetStorageByKey g_CreateNetStorageByKey(const string& app_domain,
         TNetStorageFlags default_flags)
 {
     return new SNetStorageByKeyAPIImpl(app_domain, default_flags);
 }
+
 
 END_NCBI_SCOPE
