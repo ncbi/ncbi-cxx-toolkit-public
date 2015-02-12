@@ -2276,14 +2276,17 @@ string CSubSource::FixAltitude (const string& value)
     s_CollectNumberAndUnits(value, number, units);
     if (NStr::IsBlank(number)) {
         return "";
-    } else if (NStr::Equal(units, "ft.") || NStr::Equal(units, "ft") || NStr::Equal(units, "feet")) {
+    } else if (NStr::Equal(units, "ft.") || NStr::Equal(units, "ft") || NStr::Equal(units, "feet") || NStr::Equal(units, "foot")) {
         double val = NStr::StringToDouble(number);
         val *= 0.3048;
         NStr::NumericToString(number, val);
         units = "m.";
     } 
     
-    if (NStr::Equal(units, "m.")) {
+    if (NStr::Equal(units, "m.")
+        || NStr::Equal(units, "meters")
+        || NStr::Equal(units, "meter")
+        || NStr::Equal(units, "m")) {
         return number + " " + "m.";
     } else {
         return "";

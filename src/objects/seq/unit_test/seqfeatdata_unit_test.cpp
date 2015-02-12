@@ -1020,3 +1020,13 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2180)
     BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that Yamada from Canis lupus familiaris is known to be contaminated by Unknown from Mouse. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2183)
+{
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 meters"), "100 m.");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 meter"), "100 m.");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 m"), "100 m.");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 feet"), "30.48 m.");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 foot"), "30.48 m.");
+}
