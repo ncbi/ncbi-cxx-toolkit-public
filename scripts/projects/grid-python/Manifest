@@ -10,4 +10,3 @@
 #
 
 TAG_PRE_COMMIT: tagprecommit/update_version.py $version
-POSTTAG: clone_trunk_scripts.sh $LOCAL $VERSION

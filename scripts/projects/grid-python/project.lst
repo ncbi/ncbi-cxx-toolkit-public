@@ -1,0 +1,19 @@
+^/internal/scripts/common/lib/python/ncbi
+
+-./compilers
+-./src/build-system
+-./src$
+-./configure$
+-corelib/impl$ update-only
+-corelib/hash_impl$ update-only
+-./include/common
+-./include$
+-^/c++/compilers
+-^/c++/include
+-^/c++/src
+-^/c++/configure
+
+# Leave a bit less projects
+-^/c++/scripts/common
+-^/c++/scripts/internal
+-^/c++/scripts/.*lst$
