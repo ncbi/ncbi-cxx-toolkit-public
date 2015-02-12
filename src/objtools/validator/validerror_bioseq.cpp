@@ -4199,8 +4199,15 @@ void CValidError_bioseq::x_ValidateCompletness
                     && (!biosrc.IsSetOrigin() || biosrc.GetOrigin() != CBioSource::eOrigin_artificial) // not artificial
                     && (!src_desc->GetSource().IsSetGenome()
                         || src_desc->GetSource().GetGenome() == CBioSource::eGenome_genomic)) { // location not set or genomic
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                            CConstRef<CSeqdesc> closest_molinfo = seq.GetClosestDescriptor(CSeqdesc::e_Molinfo);
+                            if (closest_molinfo) {
+                                const CSeq_entry& ctx = *seq.GetParentEntry();
+                                PostErr(eDiag_Warning, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                                        "Suspicious use of complete", ctx, *closest_molinfo);
+                            } else {
+                                PostErr(eDiag_Warning, eErr_SEQ_DESCR_UnwantedCompleteFlag,
                                         "Suspicious use of complete", seq);
+                            }
                 }
             }
         }
