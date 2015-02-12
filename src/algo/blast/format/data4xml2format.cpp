@@ -1,4 +1,4 @@
-/*
+/* $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -29,10 +29,6 @@
 /** @file data4xml2format.cpp
  * Produce data required for generating BLAST XML2 output
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
