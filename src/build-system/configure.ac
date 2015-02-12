@@ -800,14 +800,10 @@ ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
    compiler_ver="`$real_CXX -dumpversion 2>&1`"
-   case "$compiler_ver" in
-     2.95* | 2.96* | 3.* | 4.* )
-       compiler="GCC"
-       ncbi_compiler="GCC"
-       ncbi_compiler_ver="$compiler_ver"
-       NCBI_FEATURE(GCC)
-       ;;
-   esac
+   compiler="GCC"
+   ncbi_compiler="GCC"
+   ncbi_compiler_ver="$compiler_ver"
+   NCBI_FEATURE(GCC)
 elif test "$KCC" = "yes" ; then
    compiler_ver="$kcc_ver"
    compiler="KCC"
