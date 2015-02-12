@@ -94,6 +94,12 @@ public:
     ///       than eGetRand_Sys one
     TValue GetRand(TValue min_value, TValue max_value); 
 
+    /// Get random Uint8 number
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
+    Uint8 GetRandUint8(void);
+
     /// Get random number in the interval [min_value..max_value] (inclusive)
     /// @sa  EGetRandMethod
     /// @note eGetRand_LFG generator could be 100 times faster
@@ -232,6 +238,13 @@ inline CRandom::TValue CRandom::x_GetRand32Bits(void)
 inline CRandom::TValue CRandom::GetRand(void)
 {
     return x_GetRand32Bits() >> 1; // discard the least-random bit
+}
+
+
+inline Uint8 CRandom::GetRandUint8(void)
+{
+    Uint8 v1 = x_GetRand32Bits();
+    return (v1 << 32)+x_GetRand32Bits();
 }
 
 

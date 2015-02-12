@@ -1260,11 +1260,11 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     CRandom random_gen;
     random_gen.Randomize();
     string unique_key1 = prefix + NStr::NumericToString(
-            random_gen.GetRand() * random_gen.GetRand());
+            random_gen.GetRandUint8());
     string unique_key2 = prefix + NStr::NumericToString(
-            random_gen.GetRand() * random_gen.GetRand());
+            random_gen.GetRandUint8());
     string unique_key3 = prefix + NStr::NumericToString(
-            random_gen.GetRand() * random_gen.GetRand());
+            random_gen.GetRandUint8());
 
     data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
 

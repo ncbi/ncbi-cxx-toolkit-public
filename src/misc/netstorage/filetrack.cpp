@@ -592,7 +592,7 @@ Uint8 SFileTrackAPI::GetRandom()
 {
     CFastMutexGuard guard(m_RandomMutex);
 
-    return m_Random.GetRand() * m_Random.GetRand();
+    return m_Random.GetRandUint8();
 }
 
 string SFileTrackAPI::GenerateUniqueBoundary()
