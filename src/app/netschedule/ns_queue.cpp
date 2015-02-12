@@ -3752,10 +3752,9 @@ string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
     result.reserve(2048*buffer_size);
 
     {{
-        CJob    buffer[buffer_size];
-
-        size_t      read_jobs = 0;
-        size_t      printed_count = 0;
+        vector<CJob>    buffer(buffer_size);
+        size_t          read_jobs = 0;
+        size_t          printed_count = 0;
 
         for ( ; en.valid(); ) {
             {{
