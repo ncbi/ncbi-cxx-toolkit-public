@@ -430,7 +430,7 @@ public:
     CExtObject(void)
     {
         // This is not an appropriate place for initialization ....
-//            PyObject_INIT( this, GetType().GetPyTypeObject() );
+//            PyObject_INIT( this, &GetType() );
     }
 
     ~CExtObject(void)
@@ -763,7 +763,7 @@ protected:
     static void PrepareForPython(CExtModule<T>* self)
     {
         // Borrowed reference.
-        PyObject_Init( self, GetType().GetPyTypeObject() );
+        PyObject_Init( self, &GetType() );
     }
 
 private:
