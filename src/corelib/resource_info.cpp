@@ -496,7 +496,7 @@ void CNcbiEncrypt::sx_InitKeyMap(void)
                 if (home_pos == 0  &&  fname.size() > 5  &&  CDirEntry::IsPathSeparator(fname[5])) {
                     fname = CDir::ConcatPath(CDir::GetHome(), fname.substr(6));
                 }
-                CNcbiIfstream in(fname);
+                CNcbiIfstream in(fname.c_str());
                 if ( !in.good() ) continue;
                 size_t line = 0;
                 while ( in.good() && !in.eof() ) {
