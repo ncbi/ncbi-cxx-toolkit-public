@@ -758,11 +758,13 @@ void CBedReader::xSetFeatureIdsBlock(
     pXrefChrom->SetId(*pIdChrom);  
     feature->SetXref().push_back(pXrefChrom);
 
-    CRef<CFeat_id> pIdBlock(new CFeat_id);
-    pIdBlock->SetLocal().SetId(baseId+1);
-    CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
-    pXrefBlock->SetId(*pIdBlock);  
-    feature->SetXref().push_back(pXrefBlock);   
+    if (xContainsThickFeature(fields)) {
+        CRef<CFeat_id> pIdThick(new CFeat_id);
+        pIdThick->SetLocal().SetId(baseId+1);
+        CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
+        pXrefBlock->SetId(*pIdThick);  
+        feature->SetXref().push_back(pXrefBlock);   
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -1143,7 +1145,28 @@ CBedReader::xContainsThickFeature(
     const vector<string>& fields) const
 //  ----------------------------------------------------------------------------
 {
-    return (fields.size() >= 8);
+    if (fields.size() < 8) {
+        return false;
+    }
+
+    int start = -1, from = -1, to = -1;
+    try {
+        start = NStr::StringToInt(fields[1]);
+        from = NStr::StringToInt(fields[6]);
+        to = NStr::StringToInt(fields[7]);
+    }
+    catch (std::exception&) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad \"Start/ThickStart/ThickStop\" values." ) );
+        pErr->Throw();
+    }
+    if (start == from  &&  from == to) {
+        return false;
+    }
+    return true;
 }
 
 
