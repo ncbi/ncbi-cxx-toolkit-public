@@ -108,7 +108,7 @@ int CResInfoTest::Run(void)
     CFileDeleteAtExit file_guard; /* NCBI_FAKE_WARNING */
     string enc_name = CFile::GetTmpName();
     _ASSERT(!enc_name.empty());
-    file_guard.Add(enc_name);
+    //file_guard.Add(enc_name);
 
     {{
         // Encode and save the source plaintext file
@@ -137,6 +137,31 @@ int CResInfoTest::Run(void)
     _ASSERT(info3); // success?
     _ASSERT(info3.GetValue() == test3_val); // check main value
     CheckExtra(info3, test3_ex);
+
+    // Test string encryption/decrypton using an explicit password.
+    string data = "Test CNcbiEncrypt class";
+    string key = CNcbiEncrypt::GenerateKey("foobar");
+    _ASSERT(key == "0AA2C441A5F2F3DB7E9565E9349C18AB");
+    string checksum = CNcbiEncrypt::GetKeyChecksum(key);
+    _ASSERT(checksum == "BCB50C9A5FC53A1608242FE827BAE228");
+    string encr = CNcbiEncrypt::Encrypt(data, "foobar");
+    _ASSERT(encr == "E02EC2D472FEA8A346D24E87680C34DF9ADC038C04184BEB2911CB523D0CC5154540D39BCD7138F9D9430950E3127D43D0B92365D944384AD236238DFA7EEC0F");
+    string decr = CNcbiEncrypt::Decrypt(encr, "foobar");
+    _ASSERT(decr == data);
+
+    // Test decryption using ncbi keys file, the key is a non-default one
+    // (not the first key in the file). To do this add checksum to the
+    // encrypted data.
+    decr = CNcbiEncrypt::Decrypt(checksum + ":" + encr);
+    _ASSERT(decr == data);
+
+    // Test automatic key selection.
+    encr = CNcbiEncrypt::Encrypt(data);
+    _ASSERT(encr == "EA5F4753A86C69EACEDE867587A25D5D:B473B8AFF18B9CD8E6205DDF9030CA2527A5B5B03E22E04BF4035F0CD212DCE4D78A1EAECF8420889542277D18F9CE51386B49A7F734A6927E08A3703E7AFC5F");
+    decr = CNcbiEncrypt::Decrypt(encr);
+    _ASSERT(decr == data);
+
+    cout << "All tests passed" << endl;
 
     return 0;
 }

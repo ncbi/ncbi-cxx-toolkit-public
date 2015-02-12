@@ -169,6 +169,93 @@ private:
 };
 
 
+/// "NCBI keys file" -- contains a set of encryption keys, one key per line.
+/// These files are supposed to be readable only by selected accounts that
+/// require the use of keys (through CNcbiEncrypt API).
+///
+/// By default, the key file is ".ncbi_keys" in the user's home directory.
+/// This can be changed via env variable $NCBI_KEY_FILES. There can be more
+/// than one key file, e.g. $NCBI_KEY_FILES="/foo/.bar;/bar/.foo"
+///
+class NCBI_XNCBI_EXPORT CNcbiEncrypt
+{
+public:
+    /// Encrypt a string using key from the 1st line of the 1st NCBI keys file.
+    /// @note The encrypted string has format:
+    ///         "key_checksum:encrypted_orig_string";
+    ///       the "key_checksum" part is later utilized to match the key that
+    ///       was used to encrypt the original string.
+    /// @note The key must be generated using GenerateKey() method.
+    /// @param original_string
+    ///   The string to encrypt
+    /// @return
+    ///   Encrypted string
+    static string Encrypt(const string& original_string);
+
+    /// Decrypt a string using the matching key found in the NCBI keys files.
+    /// @note It looks up for the matching key (using "key_checksum" part of
+    ///       "encrypted_string") in all NCBI keys files.
+    ///
+    /// @note The key must be generated using GenerateKey() method.
+    /// @param encrypted_string
+    ///   The string to decrypt
+    /// @return
+    ///   Decrypted string
+    static string Decrypt(const string& encrypted_string);
+
+    /// Generate an encryption key from the password, encrypt the string
+    /// using the key.
+    /// @param original_string
+    ///   The string to encrypt
+    /// @param password
+    ///   The password used to generate the encryption key.
+    /// @return
+    ///   Encrypted string
+    static string Encrypt(const string& original_string,
+                          const string& password);
+
+    /// Generate a decryption key from the password, decrypt the string
+    /// using the key.
+    /// @param encrypted_string
+    ///   The string to decrypt
+    /// @param password
+    ///   The password used to generate the decryption key.
+    /// @return
+    ///   Decrypted string
+    static string Decrypt(const string& encrypted_string,
+                          const string& password);
+
+    /// Generate an encryption/decryption key from the seed string.
+    /// @param seed
+    ///   String to be used as a seed for the key. This can be a random
+    ///   set of characters, a password provided by user input, or
+    ///   anything else.
+    /// @return
+    ///   Hexadecimal string representation of the key.
+    static string GenerateKey(const string& seed);
+
+    /// Get checksum for a key.
+    /// @param key
+    ///   Hexadecimal string (e.g. returned by GenerateKey).
+    /// @return
+    ///   Hexadecimal representation of the key checksum.
+    static string GetKeyChecksum(const string& key);
+
+    /// Convert binary data to a printable hexadecimal string.
+    static string BinToHex(const string& data);
+
+    /// Convert hexadecimal string to binary data. Throw CNcbiEncryptException
+    /// if string format is not valid.
+    static string HexToBin(const string& hex);
+
+private:
+    // Load (if not yet loaded) and return key map.
+    static void sx_InitKeyMap(void);
+    // Calculate checksum for a binary (not printable hexadecimal) key.
+    static string x_GetBinKeyChecksum(const string& key);
+};
+
+
 /// Exception thrown by resource info classes
 class NCBI_XNCBI_EXPORT CNcbiResourceInfoException :
     EXCEPTION_VIRTUAL_BASE public CException
@@ -191,6 +278,31 @@ public:
     }
 
     NCBI_EXCEPTION_DEFAULT(CNcbiResourceInfoException, CException);
+};
+
+
+/// Exception thrown by encryption classes
+class NCBI_XNCBI_EXPORT CNcbiEncryptException :
+    EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    enum EErrCode {
+        eMissingKey,   //< No keys found
+        eBadPassword,  //< Bad password string (empty password).
+        eBadFormat     //< Invalid encrypted string format
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eMissingKey:   return "eMissingKey";
+        case eBadPassword:  return "eBadPassword";
+        case eBadFormat:    return "eBadFormat";
+        default:         return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNcbiEncryptException, CException);
 };
 
 
