@@ -111,12 +111,10 @@ struct SFileTrackAPI
 
     void Remove(CNetStorageObjectLoc* object_loc);
 
-    Uint8 GetRandom();
     string GenerateUniqueBoundary();
     string MakeMutipartFormDataHeader(const string& boundary);
 
     CRandom m_Random;
-    CFastMutex m_RandomMutex;
 
     STimeout m_WriteTimeout;
     STimeout m_ReadTimeout;

@@ -735,39 +735,6 @@ inline TNetStorageFlags PurifyFlags(SContext* context,
 }
 
 
-Uint8 GetRandomNumber(SContext* context)
-{
-    _ASSERT(context);
-#ifndef NCBI_OS_MSWIN
-    Uint8 random_number = 0;
-
-    int urandom_fd = open("/dev/urandom", O_RDONLY);
-    if (urandom_fd < 0) {
-        NCBI_USER_THROW_FMT("Cannot open /dev/urandom: " <<
-                strerror(errno));
-    }
-
-    char* read_buffer = reinterpret_cast<char*>(&random_number) + 1;
-    ssize_t bytes_read;
-    ssize_t bytes_remain = sizeof(random_number) - 2;
-    do {
-        bytes_read = read(urandom_fd, read_buffer, bytes_remain);
-        if (bytes_read < 0 && errno != EINTR) {
-            NCBI_USER_THROW_FMT("Error while reading "
-                    "/dev/urandom: " << strerror(errno));
-        }
-        read_buffer += bytes_read;
-    } while ((bytes_remain -= bytes_read) > 0);
-
-    close(urandom_fd);
-
-    return random_number >>= 8;
-#else
-    return context->filetrack_api.GetRandom();
-#endif // NCBI_OS_MSWIN
-}
-
-
 }
 
 
@@ -800,15 +767,17 @@ SContext::SContext(const string& domain, CNetICacheClient client, TNetStorageFla
 
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags)
 {
+    _ASSERT(context);
     flags = PurifyFlags(context, flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
-                    flags, context->app_domain, GetRandomNumber(context),
+                    flags, context->app_domain, context->GetRandomNumber(),
                     TFileTrack_Site::GetDefault().c_str()), context, flags));
 }
 
 
 ISelector::Ptr ISelector::CreateFromLoc(SContext* context, const string& object_loc, TNetStorageFlags flags)
 {
+    _ASSERT(context);
     flags = PurifyFlags(context, flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
                     object_loc, flags), context, flags));
@@ -817,6 +786,7 @@ ISelector::Ptr ISelector::CreateFromLoc(SContext* context, const string& object_
 
 ISelector::Ptr ISelector::CreateFromKey(SContext* context, const string& key, TNetStorageFlags flags)
 {
+    _ASSERT(context);
     flags = PurifyFlags(context, flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
                     flags, context->app_domain, key,
@@ -827,10 +797,11 @@ ISelector::Ptr ISelector::CreateFromKey(SContext* context, const string& key, TN
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
         const string& service, Int8 id)
 {
+    _ASSERT(context);
     flags = PurifyFlags(context, flags);
     TObjLoc loc(context->compound_id_pool,
                     flags, context->app_domain,
-                    GetRandomNumber(context),
+                    context->GetRandomNumber(),
                     TFileTrack_Site::GetDefault().c_str());
     loc.SetServiceName(service);
     loc.SetObjectID(id);
@@ -841,10 +812,11 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
         const string& service)
 {
+    _ASSERT(context);
     flags = PurifyFlags(context, flags);
     TObjLoc loc(context->compound_id_pool,
                     flags, context->app_domain,
-                    GetRandomNumber(context),
+                    context->GetRandomNumber(),
                     TFileTrack_Site::GetDefault().c_str());
     loc.SetServiceName(service);
     return Ptr(new CSelector(loc, context, flags));

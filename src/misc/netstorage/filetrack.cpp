@@ -588,18 +588,11 @@ void SFileTrackAPI::SetFileAttribute(CNetStorageObjectLoc* object_loc,
     request.CheckIOStatus();
 }
 
-Uint8 SFileTrackAPI::GetRandom()
-{
-    CFastMutexGuard guard(m_RandomMutex);
-
-    return m_Random.GetRandUint8();
-}
-
 string SFileTrackAPI::GenerateUniqueBoundary()
 {
     string boundary("FileTrack-" + NStr::NumericToString(time(NULL)));
     boundary += '-';
-    boundary += NStr::NumericToString(GetRandom());
+    boundary += NStr::NumericToString(m_Random.GetRandUint8());
 
     return boundary;
 }

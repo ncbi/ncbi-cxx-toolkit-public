@@ -55,6 +55,7 @@ struct SContext : CObject
     string app_domain;
 
     SContext(const string&, CNetICacheClient, TNetStorageFlags);
+    Uint8 GetRandomNumber() { return filetrack_api.m_Random.GetRandUint8(); }
 };
 
 // TODO: Add constness to methods where applicable
