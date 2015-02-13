@@ -1118,7 +1118,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMU	s	Chiang Mai University",
 "CMUT	s	Chiang Mai University",
 "CMV	s	Centre Marie-Victorin",
-"CMW	c	Tree Pathology Cooperative Program",
+"CMW	c	Forestry and Agricultural Biotechnology Institute, University of Pretoria, Pretoria",
 "CMY	s	R. G. Kar Medical College, Botany Department",
 "CN<FR>	s	Universite de Caen",
 "CN<UK>	c	Wellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories",
