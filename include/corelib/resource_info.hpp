@@ -203,6 +203,9 @@ public:
     ///   Decrypted string
     static string Decrypt(const string& encrypted_string);
 
+    /// Re-read key file locations, reload encryption keys.
+    static void Reload(void);
+
     /// Generate an encryption key from the password, encrypt the string
     /// using the key.
     /// @param original_string

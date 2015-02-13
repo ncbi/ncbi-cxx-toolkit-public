@@ -356,7 +356,28 @@ NCBI_PARAM_DEF_EX(string, NCBI_KEY, FILES, kEmptyStr, eParam_NoThread,
     NCBI_KEY_FILES);
 typedef NCBI_PARAM_TYPE(NCBI_KEY, FILES) TKeyFiles;
 
-typedef map<string, string> TKeyMap;
+
+struct SEncryptionKeyInfo
+{
+    SEncryptionKeyInfo(void)
+        : m_Severity(eDiag_Trace), m_Line(0)
+    {}
+
+    SEncryptionKeyInfo(const string& key,
+                       EDiagSev      sev,
+                       const string& file,
+                       size_t        line)
+        : m_Key(key), m_Severity(sev), m_File(file), m_Line(line)
+    {}
+
+    string   m_Key;
+    EDiagSev m_Severity;
+    string   m_File;
+    size_t   m_Line;
+};
+
+
+typedef map<string, SEncryptionKeyInfo> TKeyMap;
 
 static CSafeStatic<TKeyMap> s_KeyMap;
 static CSafeStatic<string> s_DefaultKey;
@@ -397,7 +418,15 @@ string CNcbiEncrypt::Decrypt(const string& encrypted_string)
         NCBI_THROW(CNcbiEncryptException, eMissingKey,
             "No decryption key found for the checksum.");
     }
-    string key = key_it->second;
+    string key = key_it->second.m_Key;
+    EDiagSev sev = key_it->second.m_Severity;
+    // TRACE severity indicates there's no need to log key usage.
+    if (key != s_DefaultKey.Get()  &&  sev != eDiag_Trace) {
+        ERR_POST_ONCE(Severity(key_it->second.m_Severity) <<
+            "Decryption key accessed: checksum=" << x_GetBinKeyChecksum(key) <<
+            ", location=" << key_it->second.m_File << ":" << key_it->second.m_Line);
+    }
+
     _ASSERT(!key.empty());
     return x_BlockTEA_Decode(key, HexToBin(encrypted_string.substr(33)));
 }
@@ -477,6 +506,17 @@ string CNcbiEncrypt::HexToBin(const string& hex)
 }
 
 
+void CNcbiEncrypt::Reload(void)
+{
+    CMutexGuard guard(s_EncryptMutex);
+    s_KeysInitialized = false;
+    TKeyFiles::ResetDefault();
+    s_KeyMap.Get().clear();
+    s_DefaultKey.Get().clear();
+    sx_InitKeyMap();
+}
+
+
 void CNcbiEncrypt::sx_InitKeyMap(void)
 {
     if ( !s_KeysInitialized ) {
@@ -508,22 +548,41 @@ void CNcbiEncrypt::sx_InitKeyMap(void)
                     if (s.empty() || s[0] == '#') continue;
                     string checksum, key;
                     if ( !NStr::SplitInTwo(s, ":", checksum, key)  ||
-                        checksum.size() != 32  ||  key.size() != 32 ) {
+                        checksum.size() != 32 ) {
                         ERR_POST(Warning <<
-                            "Invalid key format in " << fname << ", line " << line);
+                            "Invalid checksum/key format in " << fname << ", line " << line);
+                        continue;
                     }
                     checksum = HexToBin(checksum);
+
+                    EDiagSev sev = eDiag_Trace;
+                    size_t sevpos = key.find('/');
+                    if (sevpos != NPOS) {
+                        if ( !CNcbiDiag::StrToSeverityLevel(key.substr(sevpos + 1).c_str(), sev) ) {
+                            ERR_POST(Warning <<
+                                "Invalid key severity in " << fname << ", line " << line);
+                            continue;
+                        }
+                        key.resize(sevpos);
+                    }
+                    if (key.size() != 32) {
+                        ERR_POST(Warning <<
+                            "Invalid key format in " << fname << ", line " << line);
+                        continue;
+                    }
+
                     key = HexToBin(key);
                     char md5[16];
                     CalcMD5(key.c_str(), key.size(), (unsigned char*)md5);
                     if (string(md5, 16) != checksum) {
                         ERR_POST(Warning << "Invalid key checksum in " << fname << ", line " << line);
+                        continue;
                     }
                     // Set the first available key as the default one.
                     if ( s_DefaultKey->empty() ) {
                         *s_DefaultKey = key;
                     }
-                    keys[checksum] = key;
+                    keys[checksum] = SEncryptionKeyInfo(key, sev, fname, line);
                 }
             }
             s_KeysInitialized = true;
