@@ -158,7 +158,8 @@ int CResInfoTest::Run(void)
     // Test automatic key selection.
     encr = CNcbiEncrypt::Encrypt(data);
     _ASSERT(encr == "EA5F4753A86C69EACEDE867587A25D5D:B473B8AFF18B9CD8E6205DDF9030CA2527A5B5B03E22E04BF4035F0CD212DCE4D78A1EAECF8420889542277D18F9CE51386B49A7F734A6927E08A3703E7AFC5F");
-    decr = CNcbiEncrypt::Decrypt(encr);
+    // The comment (backslash and any text after it) should be ignored.
+    decr = CNcbiEncrypt::Decrypt(encr + "/comment");
     _ASSERT(decr == data);
 
     cout << "All tests passed" << endl;

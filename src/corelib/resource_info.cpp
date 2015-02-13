@@ -427,8 +427,13 @@ string CNcbiEncrypt::Decrypt(const string& encrypted_string)
             ", location=" << key_it->second.m_File << ":" << key_it->second.m_Line);
     }
 
+    size_t comment = encrypted_string.find('/');
+    if (comment != NPOS) {
+        comment -= 33;
+    }
     _ASSERT(!key.empty());
-    return x_BlockTEA_Decode(key, HexToBin(encrypted_string.substr(33)));
+    return x_BlockTEA_Decode(key,
+        HexToBin(encrypted_string.substr(33, comment)));
 }
 
 
