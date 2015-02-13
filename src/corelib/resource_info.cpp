@@ -563,12 +563,15 @@ void CNcbiEncrypt::sx_InitKeyMap(void)
                     EDiagSev sev = eDiag_Trace;
                     size_t sevpos = key.find('/');
                     if (sevpos != NPOS) {
-                        if ( !CNcbiDiag::StrToSeverityLevel(key.substr(sevpos + 1).c_str(), sev) ) {
+                        string sevname = key.substr(sevpos + 1);
+                        NStr::TruncateSpacesInPlace(sevname);
+                        if ( !CNcbiDiag::StrToSeverityLevel(sevname.c_str(), sev) ) {
                             ERR_POST(Warning <<
                                 "Invalid key severity in " << fname << ", line " << line);
                             continue;
                         }
                         key.resize(sevpos);
+                        NStr::TruncateSpacesInPlace(key);
                     }
                     if (key.size() != 32) {
                         ERR_POST(Warning <<
