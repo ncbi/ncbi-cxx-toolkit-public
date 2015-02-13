@@ -1674,7 +1674,9 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                             if (ins_it->IntersectingWith(edges[1])) {
                                 edge_insertions[r] = ins_it->GetLength();
                             }
-                            if (ins_it->IntersectingWith(edges[0])) {
+                            if (ins_it->IntersectingWith(edges[0]) &&
+                                last_edge_insertions[r])
+                            {
                                 last_edge_insertions[r] += ins_it->GetLength();
                                 if (last_edge_insertions[r] % 3 == 0) {
                                     /// This insertion is on edge of exon, and
