@@ -1337,6 +1337,7 @@ xid_utils needs xconnect
 xid_utils needs xmlwrapp
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
+xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
 xmergetree needs $(SOBJMGR_LIBS)
