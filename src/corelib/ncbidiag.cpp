@@ -6901,6 +6901,7 @@ void CNcbiDiag::DiagAssert(const CDiagCompileInfo& info,
         "Assertion failed: (" <<
         (expression ? expression : "") << ") " <<
         (message ? message : "") << Endm;
+    Abort();
 }
 
 void CNcbiDiag::DiagAssertIfSuppressedSystemMessageBox(

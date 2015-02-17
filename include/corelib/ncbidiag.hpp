@@ -1155,7 +1155,7 @@ public:
                             const char* message = NULL);
 
     /// Assert specified expression and report results.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void DiagAssert(const CDiagCompileInfo& info,
                            const char* expression,
                            const char* message = NULL);
