@@ -45,7 +45,6 @@
 #include <objects/macro/Location_type_constraint.hpp>
 #include <objects/macro/Location_pos_constraint.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objmgr/util/sequence.hpp>
 
 // generated classes
 

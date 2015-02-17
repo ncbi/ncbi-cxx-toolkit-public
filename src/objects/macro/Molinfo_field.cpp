@@ -39,6 +39,8 @@
 
 // generated includes
 #include <objects/macro/Molinfo_field.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 // generated classes
 
