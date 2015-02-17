@@ -289,7 +289,8 @@ DEFINE_COL_VALIDATOR(date)
     {
        CRef<CDate> date(CSubSource::GetDateFromISODate(value));
        bad_format = false;
-       in_future = (date->Compare(CDate(CTime(CTime::eCurrent))) == CDate::eCompare_after);
+       CDate today(CTime(CTime::eCurrent));
+       in_future = (date->Compare(today) == CDate::eCompare_after);
     }
     else
     {
