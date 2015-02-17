@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test2)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test2)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_minus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 27));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 26));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(27, 27));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_minus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_minus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_minus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_minus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
-    BOOST_CHECK_EQUAL(it.GetStrand(), eNa_strand_minus);
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
