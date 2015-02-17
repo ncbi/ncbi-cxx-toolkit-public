@@ -264,7 +264,7 @@ public:
 private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];
-    static void x_RemoveDelimitersFromEnds(string& val);
+    static void x_RemoveDelimitersFromEnds(string& val, bool except_paren = false);
     static vector<string> x_Tokenize(const string& val);
 };
 
