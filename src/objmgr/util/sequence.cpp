@@ -3369,7 +3369,8 @@ static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
        
     CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
 
-    if (residue == '*') {
+    if (residue == '*' || residue == '-') {
+        // found a residue that is not part of the IUPACAA alphabet, must convert to NCBIEAA
         if (last->IsLiteral() && last->GetLiteral().IsSetSeq_data() && last->GetLiteral().GetSeq_data().IsIupacaa()) {
             // convert to ncbieaa
             string current = last->GetLiteral().GetSeq_data().GetIupacaa().Get();
@@ -3378,8 +3379,10 @@ static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
         // add *
         last->SetLiteral().SetSeq_data().SetNcbieaa().Set().append(1, residue);
     } else if (last->IsLiteral() && last->GetLiteral().IsSetSeq_data() && last->GetLiteral().GetSeq_data().IsNcbieaa()) {
+        // already using NCBIEAA, must continue to do so
         last->SetLiteral().SetSeq_data().SetNcbieaa().Set().append(1, residue);
     } else {
+        // so far, have not found residues that are not part of IUPACAA, can continue to use IUPACAA
         last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, residue);
     }
         
@@ -3631,7 +3634,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         if ((*seg_it)->GetLiteral().IsSetSeq_data()
             && (*seg_it)->GetLiteral().GetSeq_data().IsNcbieaa()) {
             string current = (*seg_it)->GetLiteral().GetSeq_data().GetNcbieaa();
-            if (NStr::Find (current, "*") == string::npos) {
+            if (NStr::Find (current, "*") == string::npos && NStr::Find (current, "-") == string::npos) {
                 (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set(current);
             }
         }            

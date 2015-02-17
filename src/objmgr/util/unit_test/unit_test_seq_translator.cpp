@@ -91,6 +91,7 @@ extern const char* sc_TestEntry_GapInSeq3;
 extern const char* sc_TestEntry_GapInSeq4;
 extern const char* sc_TestEntry_GapInSeq5;
 extern const char* sc_TestEntry_CodeBreakForStopCodon;
+extern const char* sc_TestEntry_GB_2236;
 
 static string GetProteinString (CFeat_CI fi, CScope& scope)
 {
@@ -985,9 +986,14 @@ static void CheckTranslatedBioseq (CRef<CBioseq> bioseq, string seqdata)
 {
     if (bioseq) {
         BOOST_CHECK_EQUAL(CSeq_inst::eRepr_raw, bioseq->GetInst().GetRepr());
-        if (bioseq->GetInst().IsSetSeq_data()
-            && bioseq->GetInst().GetSeq_data().IsIupacaa()) {
-            BOOST_CHECK_EQUAL(seqdata, bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
+        if (bioseq->GetInst().IsSetSeq_data()) {
+            if (bioseq->GetInst().GetSeq_data().IsIupacaa()) {
+                BOOST_CHECK_EQUAL(seqdata, bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
+            } else if (bioseq->GetInst().GetSeq_data().IsNcbieaa()) {
+                BOOST_CHECK_EQUAL(seqdata, bioseq->GetInst().GetSeq_data().GetNcbieaa().Get());
+            } else {
+                BOOST_CHECK_EQUAL("Unexpected encoding", "Result not Iupacaa or Ncbieaa");
+            }
         } else {
             BOOST_CHECK_EQUAL("Expected raw seq", "Result not raw seq");
         }
@@ -1384,6 +1390,50 @@ BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeaturesOnMultipleSeqs)
 
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_2236)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_GB_2236);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    CRef<CSeq_feat> cds(new CSeq_feat());
+
+    // set genetic code
+    CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
+    ce->SetId(1);
+    CRef<CGenetic_code> gcode(new CGenetic_code());
+    cds->SetData().SetCdregion().SetCode().Set().push_back(ce);
+
+    // set location
+    CRef<CSeq_loc> int1(new CSeq_loc());
+    int1->SetInt().SetId().Assign(*(entry.GetSeq().GetId().front()));
+    int1->SetInt().SetFrom(0);
+    int1->SetInt().SetTo(40);
+    CRef<CSeq_loc> int2(new CSeq_loc());
+    int2->SetInt().SetId().Assign(*(entry.GetSeq().GetId().front()));
+    int2->SetInt().SetFrom(121);
+    int2->SetInt().SetTo(175);
+    CRef<CSeq_loc> int3(new CSeq_loc());
+    int3->SetInt().SetId().Assign(*(entry.GetSeq().GetId().front()));
+    int3->SetInt().SetFrom(201);
+    int3->SetInt().SetTo(416); 
+    cds->SetLocation().SetMix().Set().push_back(int1);
+    cds->SetLocation().SetMix().Set().push_back(int2);
+    cds->SetLocation().SetMix().Set().push_back(int3);
+
+    CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*cds, scope);
+    string seg1 = "-TISGEHGLDSNGVYNGTSELQLERMNVYFNESSHHPASCLLLPSGLLWPDRACPSDAFLVQASGNKYVPRAVLVDLEPGTMDAVRAGPFGQLFRPDNFVFGQS";
+    CheckTranslatedBioseq (bioseq, seg1);
+
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2641,3 +2691,76 @@ ESEEKMTELRVLKKKTWQDLWHEDLDNFLSELQQRRLS\"\
 }\
 ";
 
+const char* sc_TestEntry_GB_2236 = "\
+Seq-entry ::= seq {\
+  id {\
+    local str \"CMW8541SA\"\
+  },\
+  descr {\
+    source {\
+      genome genomic,\
+      org {\
+        taxname \"Holocryphia eucalypti\",\
+        orgname {\
+          mod {\
+            {\
+              subtype isolate,\
+              subname \"CMW8541\"\
+            }\
+          },\
+          lineage \"Cryphonectriaceae Diaporthales\",\
+          gcode 1\
+        }\
+      },\
+      subtype {\
+        {\
+          subtype country,\
+          name \"South Africa\"\
+        }\
+      }\
+    },\
+    title \"Holocryphia eucalypti\",\
+    molinfo {\
+      biomol genomic\
+    },\
+    create-date std {\
+      year 2009,\
+      month 8,\
+      day 5\
+    }\
+  },\
+  inst {\
+    repr delta,\
+    mol dna,\
+    length 987,\
+    ext delta {\
+      literal {\
+        length 417,\
+        seq-data iupacna \"CAAACCATCTCGGGCGAGCACGGCCTCGACAGCAATGGCGTGTA\
+TGTACCACACCATACCCTACACGGCGGCCCACGCAAGATGGACGCGGCTCGGGCTTTCCTGCTAACCACCCGCGTAGC\
+TACAACGGCACCTCCGAGCTCCAGCTCGAGCGCATGAACGTCTACTTCAACGAGGTATGTCTTGTCGGCTGACCAGGC\
+CTCCAGCCATCATCCTGCCTCCTGCCTCCTCCTTCCATCGGGACTTCTGTGGCCTGACCGAGCTTGCCCTTCTGACGC\
+GTTTCTCGTCCAGGCCTCCGGCAACAAGTATGTTCCCCGCGCCGTCCTCGTCGATCTCGAGCCCGGTACCATGGATGC\
+CGTCCGCGCCGGCCCCTTCGGCCAGCTGTTCCGTCCCGACAACTTCGTCTTCGGCCAGTCC\"\
+      },\
+      literal {\
+        length 100,\
+        fuzz lim unk,\
+        seq-data gap {\
+          type unknown\
+        }\
+      },\
+      literal {\
+        length 470,\
+        seq-data iupacna \"TGACCAGCCGTGGCGCCCACTCCTTCCGCGCCCTCACCGTGCCC\
+GAGTTGACCCAGCAAATGTTCGACCCCAAGAACATGATGGCTGCCTCGGACTTCCGCAACGGCCGCTACCTGACGTGC\
+TCTGCCATCTTGTACGTTTTTGTCTTCTCTGTCTCACACATCTCGGATCCACCTCTCGGGCTTGTTTTTGCTAACCCT\
+GCTTTCCTCTCTCCCCTACAGCCGTGGCAAGGTCTCCATGAAGGAGGTCGAGGACCAGATGCGCAACGTCCAGAGCAA\
+GAACTCGTCCTACTTCGTCGAGTGGATCCCCAACAACGTCCAGACCGCCCTCTGCTCCATCCCCCCCAAGGGCCTCAA\
+GATGTCCTCCACCTTTGTCGGCAACTCCACCGCCATCCAGGAGCTCTTCAAGCGTGTTGGCGAGCAGTTCACCGCCAT\
+GTTCCGGCGCAAGGCTTTCTTGCATTGGTACACTGG\"\
+      }\
+    }\
+  }\
+}\
+";
