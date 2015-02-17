@@ -59,6 +59,23 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+// CSeqLocException
+const char* CSeqLocException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eNotSet:       return "eNotSet";
+    case eMultipleId:   return "eMultipleId";
+    case eUnsupported:  return "eUnsupported";
+    case eBadLocation:  return "eBadLocation";
+    case eBadIterator:  return "eBadIterator";
+    case eIncomatible:  return "eIncomatible";
+    case eOtherError:   return "eOtherError";
+    default:            return CException::GetErrCodeString();
+    }
+}
+
+
 // constructors
 CSeq_loc::CSeq_loc(E_Choice index)
 {
@@ -193,8 +210,8 @@ void x_Assign(CInt_fuzz& dst, const CInt_fuzz& src)
         dst.SetAlt() = src.GetAlt();
         break;
     default:
-        NCBI_THROW(CException, eUnknown,
-            "Invalid Int-fuzz variant");
+        NCBI_THROW(CSeqLocException, eNotSet,
+                   "Int-fuzz is not set");
     }
 }
 
@@ -388,7 +405,7 @@ bool CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id,
         total_id = id;
     } else if ( (id  &&  !total_id->Equals(*id)) ) {
         if (may_throw) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqLocException, eMultipleId,
                        "CSeq_loc::GetTotalRange() is not defined "
                        "for seq-loc with several different seq-ids");
         } else {
@@ -501,13 +518,13 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             }
             break;
         }
+
     case e_Feat:
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::CalculateTotalRange -- "
-                       "unsupported location type");
-        }
+        NCBI_THROW_FMT(CSeqLocException, eUnsupported,
+                       "CSeq_loc::CalculateTotalRange(): "
+                       "unsupported location type: "<<
+                       SelectionName(Which()));
     }
 
     return total_range;
@@ -518,7 +535,7 @@ int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
                                 const CSeq_id* id2) const
 {
     if ( !id1 || !id2 ) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqLocException, eMultipleId,
                    "CSeq_loc::Compare(): "
                    "cannot compare locations with several different seq-ids");
     }
@@ -868,9 +885,9 @@ ENa_strand CSeq_loc::GetStrand(void) const
     case e_Equiv:
     case e_Feat:
     default:
-        NCBI_THROW(CException, eUnknown,
-            "CSeq_loc::GetStrand -- unsupported location type" +
-            CSeq_loc::SelectionName(Which()));
+        NCBI_THROW_FMT(CSeqLocException, eUnsupported,
+                       "CSeq_loc::GetStrand(): unsupported location type"<<
+                       SelectionName(Which()));
     }
 }
 
@@ -916,11 +933,9 @@ TSeqPos CSeq_loc::GetStart(ESeqLocExtremes ext) const
     case e_Equiv:
     case e_Feat:
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::GetStart -- "
-                       "unsupported location type");
-        }
+        NCBI_THROW_FMT(CSeqLocException, eUnsupported,
+                       "CSeq_loc::GetStart(): "
+                       "unsupported location type: "<<SelectionName(Which()));
     }
 }
 
@@ -966,11 +981,9 @@ TSeqPos CSeq_loc::GetStop(ESeqLocExtremes ext) const
     case e_Equiv:
     case e_Feat:
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::GetStart -- "
-                       "unsupported location type");
-        }
+        NCBI_THROW_FMT(CSeqLocException, eUnsupported,
+                       "CSeq_loc::GetStop(): "
+                       "unsupported location type: "<<SelectionName(Which()));
     }
 }
 
@@ -1007,6 +1020,19 @@ CSeq_loc::const_iterator CSeq_loc::end(void) const
 
 // CSeq_loc_CI implementation
 
+SSeq_loc_CI_RangeInfo::SSeq_loc_CI_RangeInfo(void)
+    : m_IsSetStrand(false),
+      m_Strand(eNa_strand_unknown),
+      m_ParentType(CSeq_loc::e_not_set)
+{
+}
+
+
+SSeq_loc_CI_RangeInfo::~SSeq_loc_CI_RangeInfo(void)
+{
+}
+
+
 class CSeq_loc_CI_Impl : public CObject
 {
 public:
@@ -1017,11 +1043,52 @@ public:
     virtual ~CSeq_loc_CI_Impl(void) {}
 
     typedef SSeq_loc_CI_RangeInfo::TRange     TRange;
-    typedef SSeq_loc_CI_RangeInfo::TRangeList TRanges;
+    typedef vector<SSeq_loc_CI_RangeInfo>     TRanges;
 
+    struct SEquivSet {
+        size_t m_StartIndex;
+        size_t m_EndIndex;
+        vector<size_t> m_PartsIndexes;
+    };
+    typedef vector<SEquivSet> TEquivSets;
+
+    TRanges& GetRanges(void) { return m_Ranges; }
     const TRanges& GetRanges(void) const { return m_Ranges; }
 
     bool IsEnd(size_t idx) const { return idx >= m_Ranges.size(); }
+
+    void DeleteRange(size_t idx)
+        {
+            m_Ranges.erase(m_Ranges.begin()+idx);
+        }
+    SSeq_loc_CI_RangeInfo& InsertRange(size_t idx);
+
+    bool HasEquivParts(void) const
+        {
+            return !m_EquivSets.empty();
+        }
+    bool IsInEquivPart(size_t idx) const
+        {
+            ITERATE ( TEquivSets, it, m_EquivSets ) {
+                if ( idx >= it->m_StartIndex && idx < it->m_EndIndex ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+    CRef<CSeq_loc> MakeLoc(CSeq_loc_I::EMakeType make_type) const;
+    CRef<CSeq_loc> MakeLoc(size_t idx_begin,
+                           size_t idx_end,
+                           CSeq_loc_I::EMakeType make_type) const;
+
+    CRef<CSeq_loc> MakeLocBond(size_t idx_begin, size_t idx_end) const;
+    CRef<CSeq_loc> MakeLocPacked_pnt(size_t idx_begin, size_t idx_end) const;
+    CRef<CSeq_loc> MakeLocPacked_int(size_t idx_begin, size_t idx_end) const;
+
+    bool CanBeBond(size_t idx_begin, size_t idx_end) const;
+    bool CanBePacked_pnt(size_t idx_begin, size_t idx_end) const;
+    bool CanBePacked_int(size_t idx_begin, size_t idx_end) const;
 
 private:
     // Never copy this object
@@ -1029,14 +1096,26 @@ private:
     CSeq_loc_CI_Impl& operator=(const CSeq_loc_CI_Impl&);
 
     // Process the location, fill the list
-    void x_ProcessLocation(const CSeq_loc& loc);
+    void x_ProcessLocation(const CSeq_loc& loc,
+                           CSeq_loc::E_Choice parent_type);
+    void x_ProcessInterval(const CSeq_interval& seq_int,
+                           const CSeq_loc& loc,
+                           CSeq_loc::E_Choice parent_type);
+    void x_ProcessPoint(const CSeq_point& seq_pnt,
+                        const CSeq_loc& loc,
+                        CSeq_loc::E_Choice parent_type);
+
+    static void x_SetId(SSeq_loc_CI_RangeInfo& info, const CSeq_id& id);
 
     // Prevent seq-loc destruction
     CConstRef<CSeq_loc>      m_Location;
     // List of intervals
     TRanges                  m_Ranges;
+    // List of equiv parts
+    TEquivSets               m_EquivSets;
     // Empty locations processing option
     CSeq_loc_CI::EEmptyFlag  m_EmptyFlag;
+    CSeq_loc_CI::ESeqLocOrder m_Order;
 };
 
 
@@ -1049,31 +1128,44 @@ CSeq_loc_CI_Impl::CSeq_loc_CI_Impl(const CSeq_loc&           loc,
                                    CSeq_loc_CI::EEmptyFlag   empty_flag,
                                    CSeq_loc_CI::ESeqLocOrder order)
     : m_Location(&loc),
-      m_EmptyFlag(empty_flag)
+      m_EmptyFlag(empty_flag),
+      m_Order(order)
 {
-    x_ProcessLocation(loc);
+    x_ProcessLocation(loc, CSeq_loc::e_not_set);
     if ( order == CSeq_loc_CI::eOrder_Positional  &&  loc.IsReverseStrand() ) {
         reverse(m_Ranges.begin(), m_Ranges.end());
     }
 }
 
 
-void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
+void CSeq_loc_CI_Impl::x_SetId(SSeq_loc_CI_RangeInfo& info,
+                               const CSeq_id& id)
 {
+    info.m_Id = &id;
+    info.m_IdHandle = CSeq_id_Handle::GetHandle(id);
+}
+
+
+void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc,
+                                         CSeq_loc::E_Choice parent_type)
+{
+    _ASSERT(parent_type == CSeq_loc::e_not_set ||
+            parent_type == CSeq_loc::e_Mix ||
+            parent_type == CSeq_loc::e_Equiv);
     switch ( loc.Which() ) {
-    case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
     case CSeq_loc::e_Empty:
         {
             if (m_EmptyFlag == CSeq_loc_CI::eEmpty_Allow) {
                 SSeq_loc_CI_RangeInfo info;
                 if (loc.Which() == CSeq_loc::e_Empty) {
-                    info.m_Id = &loc.GetEmpty();
+                    x_SetId(info, loc.GetEmpty());
                 }
                 else {
                     info.m_Id.Reset(new CSeq_id);
                 }
                 info.m_Range = TRange::GetEmpty();
+                info.m_ParentType = parent_type;
                 info.m_Loc = &loc;
                 m_Ranges.push_back(info);
             }
@@ -1082,45 +1174,21 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Whole:
         {
             SSeq_loc_CI_RangeInfo info;
-            info.m_Id = &loc.GetWhole();
+            x_SetId(info, loc.GetWhole());
             info.m_Range = TRange::GetWhole();
+            info.m_ParentType = parent_type;
             info.m_Loc = &loc;
             m_Ranges.push_back(info);
             return;
         }
     case CSeq_loc::e_Int:
         {
-            const CSeq_interval& seq_int = loc.GetInt();
-            SSeq_loc_CI_RangeInfo info;
-            info.m_Id = &seq_int.GetId();
-            info.m_Range.Set(seq_int.GetFrom(), seq_int.GetTo());
-            if ( seq_int.IsSetStrand() ) {
-                info.SetStrand(seq_int.GetStrand());
-            }
-            info.m_Loc = &loc;
-            if (seq_int.IsSetFuzz_from()) {
-                info.m_Fuzz.first = &seq_int.GetFuzz_from();
-            }
-            if (seq_int.IsSetFuzz_to()) {
-                info.m_Fuzz.second = &seq_int.GetFuzz_to();
-            }
-            m_Ranges.push_back(info);
+            x_ProcessInterval(loc.GetInt(), loc, parent_type);
             return;
         }
     case CSeq_loc::e_Pnt:
         {
-            const CSeq_point& pnt = loc.GetPnt();
-            SSeq_loc_CI_RangeInfo info;
-            info.m_Id = &pnt.GetId();
-            info.m_Range.Set(pnt.GetPoint(), pnt.GetPoint());
-            if ( pnt.IsSetStrand() ) {
-                info.SetStrand(pnt.GetStrand());
-            }
-            info.m_Loc = &loc;
-            if (pnt.IsSetFuzz()) {
-                info.m_Fuzz.first = info.m_Fuzz.second = &pnt.GetFuzz();
-            }
-            m_Ranges.push_back(info);
+            x_ProcessPoint(loc.GetPnt(), loc, parent_type);
             return;
         }
     case CSeq_loc::e_Packed_int:
@@ -1128,21 +1196,7 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
             const CPacked_seqint::Tdata& data = loc.GetPacked_int().Get();
             m_Ranges.reserve(m_Ranges.size() + data.size());
             ITERATE ( CPacked_seqint::Tdata, ii, data ) {
-                const CSeq_interval& seq_int = **ii;
-                SSeq_loc_CI_RangeInfo info;
-                info.m_Id = &seq_int.GetId();
-                info.m_Range.Set(seq_int.GetFrom(), seq_int.GetTo());
-                if ( seq_int.IsSetStrand() ) {
-                    info.SetStrand(seq_int.GetStrand());
-                }
-                info.m_Loc = &loc;
-                if (seq_int.IsSetFuzz_from()) {
-                    info.m_Fuzz.first = &seq_int.GetFuzz_from();
-                }
-                if (seq_int.IsSetFuzz_to()) {
-                    info.m_Fuzz.second = &seq_int.GetFuzz_to();
-                }
-                m_Ranges.push_back(info);
+                x_ProcessInterval(**ii, loc, parent_type);
             }
             return;
         }
@@ -1151,13 +1205,14 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
             const CPacked_seqpnt& pack_pnt = loc.GetPacked_pnt();
             m_Ranges.reserve(m_Ranges.size() + pack_pnt.GetPoints().size());
             SSeq_loc_CI_RangeInfo info;
-            info.m_Id = &pack_pnt.GetId();
+            x_SetId(info, pack_pnt.GetId());
             if ( pack_pnt.IsSetStrand() ) {
                 info.SetStrand(pack_pnt.GetStrand());
             }
             if (pack_pnt.IsSetFuzz()) {
                 info.m_Fuzz.first = info.m_Fuzz.second = &pack_pnt.GetFuzz();
             }
+            info.m_ParentType = parent_type;
             info.m_Loc = &loc;
             ITERATE ( CPacked_seqpnt::TPoints, pi, pack_pnt.GetPoints() ) {
                 info.m_Range.Set(*pi, *pi);
@@ -1170,7 +1225,7 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
             const CSeq_loc_mix::Tdata& data = loc.GetMix().Get();
             m_Ranges.reserve(m_Ranges.size() + data.size());
             ITERATE(CSeq_loc_mix::Tdata, li, data) {
-                x_ProcessLocation(**li);
+                x_ProcessLocation(**li, CSeq_loc::e_Mix);
             }
             return;
         }
@@ -1178,49 +1233,452 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
         {
             const CSeq_loc_equiv::Tdata& data = loc.GetEquiv().Get();
             m_Ranges.reserve(m_Ranges.size() + data.size());
+            SEquivSet eq_set;
+            eq_set.m_StartIndex = m_Ranges.size();
             ITERATE(CSeq_loc_equiv::Tdata, li, data) {
-                x_ProcessLocation(**li);
+                eq_set.m_PartsIndexes.push_back(m_Ranges.size());
+                x_ProcessLocation(**li, CSeq_loc::e_Equiv);
             }
+            eq_set.m_EndIndex = m_Ranges.size();
+            m_EquivSets.push_back(eq_set);
             return;
         }
     case CSeq_loc::e_Bond:
         {
             const CSeq_bond& bond = loc.GetBond();
-            const CSeq_point& a = bond.GetA();
-            SSeq_loc_CI_RangeInfo infoA;
-            infoA.m_Id = &a.GetId();
-            infoA.m_Range.Set(a.GetPoint(), a.GetPoint());
-            if ( a.IsSetStrand() ) {
-                infoA.SetStrand(a.GetStrand());
-            }
-            infoA.m_Loc = &loc;
-            if (a.IsSetFuzz()) {
-                infoA.m_Fuzz.first = infoA.m_Fuzz.second = &a.GetFuzz();
-            }
-            m_Ranges.push_back(infoA);
+            x_ProcessPoint(bond.GetA(), loc, CSeq_loc::e_Bond);
             if ( bond.IsSetB() ) {
-                const CSeq_point& b = bond.GetB();
-                SSeq_loc_CI_RangeInfo infoB;
-                infoB.m_Id = &b.GetId();
-                infoB.m_Range.Set(b.GetPoint(), b.GetPoint());
-                if ( b.IsSetStrand() ) {
-                    infoB.SetStrand(b.GetStrand());
-                }
-                infoB.m_Loc = &loc;
-                if (b.IsSetFuzz()) {
-                    infoB.m_Fuzz.first = infoB.m_Fuzz.second = &b.GetFuzz();
-                }
-                m_Ranges.push_back(infoB);
+                x_ProcessPoint(bond.GetB(), loc, CSeq_loc::e_Bond);
             }
             return;
         }
-    case CSeq_loc::e_Feat:
+    case CSeq_loc::e_not_set:
+        NCBI_THROW(CSeqLocException, eNotSet,
+                   "CSeq_loc_CI: location is not set");
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc_CI -- unsupported location type");
+        NCBI_THROW_FMT(CSeqLocException, eUnsupported,
+                       "CSeq_loc_CI: unsupported location type: "<<
+                       loc.SelectionName(loc.Which()));
+    }
+}
+
+
+void CSeq_loc_CI_Impl::x_ProcessInterval(const CSeq_interval& seq_int,
+                                         const CSeq_loc& loc,
+                                         CSeq_loc::E_Choice parent_type)
+{
+    _ASSERT(loc.Which() == CSeq_loc::e_Int ||
+            loc.Which() == CSeq_loc::e_Packed_int);
+    SSeq_loc_CI_RangeInfo info;
+    x_SetId(info, seq_int.GetId());
+    info.m_Range.Set(seq_int.GetFrom(), seq_int.GetTo());
+    if ( seq_int.IsSetStrand() ) {
+        info.SetStrand(seq_int.GetStrand());
+    }
+    info.m_ParentType = parent_type;
+    info.m_Loc = &loc;
+    if (seq_int.IsSetFuzz_from()) {
+        info.m_Fuzz.first = &seq_int.GetFuzz_from();
+    }
+    if (seq_int.IsSetFuzz_to()) {
+        info.m_Fuzz.second = &seq_int.GetFuzz_to();
+    }
+    m_Ranges.push_back(info);
+}
+
+
+void CSeq_loc_CI_Impl::x_ProcessPoint(const CSeq_point& seq_pnt,
+                                      const CSeq_loc& loc,
+                                      CSeq_loc::E_Choice parent_type)
+{
+    _ASSERT(loc.Which() == CSeq_loc::e_Pnt ||
+            loc.Which() == CSeq_loc::e_Bond);
+    SSeq_loc_CI_RangeInfo info;
+    x_SetId(info, seq_pnt.GetId());
+    info.m_Range.Set(seq_pnt.GetPoint(), seq_pnt.GetPoint());
+    if ( seq_pnt.IsSetStrand() ) {
+        info.SetStrand(seq_pnt.GetStrand());
+    }
+    info.m_ParentType = parent_type;
+    info.m_Loc = &loc;
+    if (seq_pnt.IsSetFuzz()) {
+        info.m_Fuzz.first = info.m_Fuzz.second = &seq_pnt.GetFuzz();
+    }
+    m_Ranges.push_back(info);
+}
+
+
+SSeq_loc_CI_RangeInfo& CSeq_loc_CI_Impl::InsertRange(size_t idx)
+{
+    CSeq_loc::E_Choice parent_type = CSeq_loc::e_not_set;
+    if ( idx > 0 ) {
+        parent_type = m_Ranges[idx-1].m_ParentType;
+    }
+    else if ( idx < m_Ranges.size() ) {
+        parent_type = m_Ranges[idx].m_ParentType;
+    }
+    SSeq_loc_CI_RangeInfo& info =
+        *m_Ranges.insert(m_Ranges.begin()+idx, SSeq_loc_CI_RangeInfo());
+    info.m_ParentType = parent_type;
+    return info;
+}
+
+
+static inline
+bool IsInBond(const SSeq_loc_CI_RangeInfo& info)
+{
+    return info.m_ParentType == CSeq_loc::e_Bond;
+}
+
+
+static
+bool CanBeAnyPoint(const SSeq_loc_CI_RangeInfo& info)
+{
+    if ( info.m_Range.GetLength() != 1 ) {
+        return false;
+    }
+    if ( info.m_Fuzz.first != info.m_Fuzz.second ) {
+        return false;
+    }
+    if ( !info.m_IdHandle ) {
+        return false;
+    }
+    return true;
+}
+
+
+static
+bool CanBeInterval(const SSeq_loc_CI_RangeInfo& info)
+{
+    if ( IsInBond(info) ) {
+        return false;
+    }
+    if ( info.m_Range.Empty() || info.m_Range.IsWhole() ) {
+        return false;
+    }
+    if ( !info.m_IdHandle ) {
+        return false;
+    }
+    return true;
+}
+
+
+static inline
+bool CanBePoint(const SSeq_loc_CI_RangeInfo& info)
+{
+    if ( IsInBond(info) ) {
+        return false;
+    }
+    return CanBeAnyPoint(info);
+}
+
+
+bool CSeq_loc_CI_Impl::CanBeBond(size_t idx_begin, size_t idx_end) const
+{
+    size_t count = idx_end - idx_begin;
+    if ( count != 1 && count != 2 ) {
+        return false;
+    }
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        const SSeq_loc_CI_RangeInfo& info = m_Ranges[idx];
+        if ( !IsInBond(info) || !CanBeAnyPoint(info) ) {
+            return false;
         }
     }
+    return true;
+}
+
+
+static
+CRef<CSeq_id> MakeId(const SSeq_loc_CI_RangeInfo& info)
+{
+    if ( !info.m_IdHandle ) {
+        NCBI_THROW(CSeqLocException, eNotSet,
+                   "CSeq_loc_I: part id is null");
+    }
+    return Ref(&const_cast<CSeq_id&>(*info.m_Id));
+}
+
+
+static inline
+CRef<CInt_fuzz> MakeFuzz(const CInt_fuzz& fuzz)
+{
+    return Ref(&const_cast<CInt_fuzz&>(fuzz));
+}
+
+
+static
+CRef<CSeq_point> MakePoint(const SSeq_loc_CI_RangeInfo& info)
+{
+    CRef<CSeq_point> seq_pnt(new CSeq_point);
+    seq_pnt->SetId(*MakeId(info));
+    seq_pnt->SetPoint(info.m_Range.GetFrom());
+    if ( info.m_IsSetStrand ) {
+        seq_pnt->SetStrand(info.m_Strand);
+    }
+    if ( info.m_Fuzz.first ) {
+        seq_pnt->SetFuzz(*MakeFuzz(*info.m_Fuzz.first));
+    }
+    return seq_pnt;
+}
+
+
+static
+CRef<CSeq_interval> MakeInterval(const SSeq_loc_CI_RangeInfo& info)
+{
+    CRef<CSeq_interval> seq_int(new CSeq_interval);
+    seq_int->SetId(*MakeId(info));
+    seq_int->SetFrom(info.m_Range.GetFrom());
+    seq_int->SetTo(info.m_Range.GetTo());
+    if ( info.m_IsSetStrand ) {
+        seq_int->SetStrand(info.m_Strand);
+    }
+    if ( info.m_Fuzz.first ) {
+        seq_int->SetFuzz_from(*MakeFuzz(*info.m_Fuzz.first));
+    }
+    if ( info.m_Fuzz.second ) {
+        seq_int->SetFuzz_to(*MakeFuzz(*info.m_Fuzz.second));
+    }
+    return seq_int;
+}
+
+
+static
+CRef<CSeq_loc> MakeLocPoint(const SSeq_loc_CI_RangeInfo& info)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetPnt(*MakePoint(info));
+    return loc;
+}
+
+
+static
+CRef<CSeq_loc> MakeLocInterval(const SSeq_loc_CI_RangeInfo& info)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt(*MakeInterval(info));
+    return loc;
+}
+
+
+static
+CRef<CSeq_loc> MakeLocOther(const SSeq_loc_CI_RangeInfo& info)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( info.m_Range.IsWhole() ) {
+        loc->SetWhole(*MakeId(info));
+    }
+    else {
+        if ( !info.m_Range.Empty() ) {
+            NCBI_THROW(CSeqLocException, eOtherError,
+                       "CSeq_loc_I::MakeSeq_loc(): "
+                       "cannot determine type of loc part");
+        }
+        if ( info.m_IdHandle ) {
+            loc->SetEmpty(*MakeId(info));
+        }
+        else {
+            loc->SetNull();
+        }
+    }
+    return loc;
+}
+
+
+CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLocBond(size_t idx_begin,
+                                             size_t idx_end) const
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetBond().SetA(*MakePoint(m_Ranges[idx_begin]));
+    if ( idx_begin+1 < idx_end ) {
+        loc->SetBond().SetB(*MakePoint(m_Ranges[idx_begin+1]));
+    }
+    return loc;
+}
+
+
+bool CSeq_loc_CI_Impl::CanBePacked_pnt(size_t idx_begin,
+                                       size_t idx_end) const
+{
+    if ( idx_end <= idx_begin ) {
+        return false;
+    }
+    const SSeq_loc_CI_RangeInfo& info0 = m_Ranges[idx_begin];
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        const SSeq_loc_CI_RangeInfo& info = m_Ranges[idx];
+        if ( !CanBePoint(m_Ranges[idx]) ) {
+            return false;
+        }
+        if ( idx != idx_begin ) {
+            if ( info.m_IdHandle != info0.m_IdHandle ) {
+                return false;
+            }
+            if ( info.m_IsSetStrand != info0.m_IsSetStrand ) {
+                return false;
+            }
+            if ( info0.m_IsSetStrand && info.m_Strand != info0.m_Strand ) {
+                return false;
+            }
+            if ( info.m_Fuzz.first != info0.m_Fuzz.first ) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+bool CSeq_loc_CI_Impl::CanBePacked_int(size_t idx_begin,
+                                       size_t idx_end) const
+{
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        if ( !CanBeInterval(m_Ranges[idx]) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLocPacked_pnt(size_t idx_begin,
+                                                   size_t idx_end) const
+{
+    const SSeq_loc_CI_RangeInfo& info0 = m_Ranges[idx_begin];
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CPacked_seqpnt& pnts = loc->SetPacked_pnt();
+    pnts.SetId(*MakeId(info0));
+    if ( info0.m_IsSetStrand ) {
+        pnts.SetStrand(info0.m_Strand);
+    }
+    if ( info0.m_Fuzz.first ) {
+        pnts.SetFuzz(*MakeFuzz(*info0.m_Fuzz.first));
+    }
+    pnts.SetPoints().reserve(idx_end-idx_begin);
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        const SSeq_loc_CI_RangeInfo& info = m_Ranges[idx];
+        pnts.SetPoints().push_back(info.m_Range.GetFrom());
+    }
+    return loc;
+}
+
+
+CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLocPacked_int(size_t idx_begin,
+                                                   size_t idx_end) const
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CPacked_seqint::Tdata& ints = loc->SetPacked_int().Set();
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        ints.push_back(MakeInterval(m_Ranges[idx]));
+    }
+    return loc;
+}
+
+
+static
+void AddLoc(CRef<CSeq_loc>& loc, CRef<CSeq_loc> loc2)
+{
+    if ( !loc ) {
+        loc = loc2;
+        return;
+    }
+    if ( !loc->IsMix() ) {
+        CRef<CSeq_loc> loc1 = loc;
+        loc = new CSeq_loc;
+        loc->SetMix().Set().push_back(loc1);
+    }
+    loc->SetMix().Set().push_back(loc2);
+}
+
+
+CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(CSeq_loc_I::EMakeType make_type) const
+{
+    return MakeLoc(0, m_Ranges.size(), make_type);
+}
+
+
+CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(size_t idx_begin,
+                                         size_t idx_end,
+                                         CSeq_loc_I::EMakeType make_type) const
+{
+    if ( idx_begin == idx_end ) {
+        NCBI_THROW(CSeqLocException, eNotSet,
+                   "CSeq_loc_I::MakeSeq_loc: no any parts");
+    }
+    if ( !m_EquivSets.empty() ) {
+        NCBI_THROW(CSeqLocException, eUnsupported,
+                   "CSeq_loc_I::MakeSeq_loc: equiv not supported yet");
+    }
+    // check bonds
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        const SSeq_loc_CI_RangeInfo& info = m_Ranges[idx];
+        if ( IsInBond(info) ) {
+            if ( !CanBeAnyPoint(info) ) {
+                NCBI_THROW(CSeqLocException, eIncomatible,
+                           "CSeq_loc_I::MakeSeq_loc: "
+                           "bond part is not a point");
+            }
+        }
+    }
+    if ( CanBeBond(idx_begin, idx_end) ) {
+        return MakeLocBond(idx_begin, idx_end);
+    }
+    const SSeq_loc_CI_RangeInfo& info0 = m_Ranges[idx_begin];
+    if ( make_type == CSeq_loc_I::eMake_PreserveType ) {
+        if ( info0.m_ParentType == CSeq_loc::e_Packed_pnt &&
+             CanBePacked_pnt(idx_begin, idx_end) ) {
+            return MakeLocPacked_pnt(idx_begin, idx_end);
+        }
+        if ( info0.m_ParentType == CSeq_loc::e_Packed_int &&
+             CanBePacked_int(idx_begin, idx_end) ) {
+            return MakeLocPacked_int(idx_begin, idx_end);
+        }
+    }
+    if ( make_type != CSeq_loc_I::eMake_PreserveType ||
+         info0.m_ParentType != CSeq_loc::e_Mix ) {
+        if ( CanBePacked_pnt(idx_begin, idx_end) ) {
+            return MakeLocPacked_pnt(idx_begin, idx_end);
+        }
+        if ( CanBePacked_int(idx_begin, idx_end) ) {
+            return MakeLocPacked_int(idx_begin, idx_end);
+        }
+    }
+
+    CRef<CSeq_loc> loc;
+    for ( size_t idx = idx_begin; idx < idx_end; ++idx ) {
+        const SSeq_loc_CI_RangeInfo& info = m_Ranges[idx];
+        if ( IsInBond(info) ) {
+            size_t size = 1;
+            if ( idx+1 < idx_end && IsInBond(m_Ranges[idx+1]) ) {
+                size = 2;
+            }
+            AddLoc(loc, MakeLocBond(idx, idx+size));
+            idx += size-1;
+            continue;
+        }
+        if ( make_type == CSeq_loc_I::eMake_PreserveType && info.m_Loc ) {
+            if ( info.m_Loc->IsPnt() && CanBePoint(info) ) {
+                AddLoc(loc, MakeLocPoint(info));
+                continue;
+            }
+            if ( info.m_Loc->IsInt() && CanBeInterval(info) ) {
+                AddLoc(loc, MakeLocInterval(info));
+                continue;
+            }
+        }
+        if ( CanBePoint(info) ) {
+            AddLoc(loc, MakeLocPoint(info));
+            continue;
+        }
+        if ( CanBeInterval(info) ) {
+            AddLoc(loc, MakeLocInterval(info));
+            continue;
+        }
+        AddLoc(loc, MakeLocOther(info));
+    }
+    if ( !loc ) {
+        loc = new CSeq_loc;
+    }
+    return loc;
 }
 
 
@@ -1276,6 +1734,19 @@ bool CSeq_loc_CI::operator!= (const CSeq_loc_CI& iter) const
 }
 
 
+bool CSeq_loc_CI::HasEquivParts(void) const
+{
+    return m_Impl->HasEquivParts();
+}
+
+
+bool CSeq_loc_CI::IsInEquivPart(void) const
+{
+    x_CheckNotValid("IsInEquivPart()");
+    return m_Impl->IsInEquivPart(m_Index);
+}
+
+
 const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
 {
     return GetEmbeddingSeq_loc();
@@ -1287,8 +1758,8 @@ const CSeq_loc& CSeq_loc_CI::GetEmbeddingSeq_loc(void) const
     x_CheckNotValid("GetEmbeddingSeq_loc()");
     CConstRef<CSeq_loc> loc = x_GetRangeInfo().m_Loc;
     if ( !loc ) {
-        NCBI_THROW(CException, eUnknown,
-            "CSeq_loc_CI::GetSeq_loc() -- NULL seq-loc");
+        NCBI_THROW(CSeqLocException, eNotSet,
+                   "CSeq_loc_CI::GetSeq_loc(): NULL seq-loc");
     }
     return *loc;
 }
@@ -1315,26 +1786,24 @@ CConstRef<CSeq_loc> CSeq_loc_CI::GetRangeAsSeq_loc(void) const
     const SSeq_loc_CI_RangeInfo& rg_info = x_GetRangeInfo();
     if ( rg_info.m_Range.IsWhole() ) {
         // Whole location
-        loc->SetWhole(const_cast<CSeq_id&>(*rg_info.m_Id));
+        loc->SetWhole(*MakeId(rg_info));
     }
     else if ( rg_info.m_Range.Empty() ) {
         // Empty location
-        loc->SetEmpty(const_cast<CSeq_id&>(*rg_info.m_Id));
+        loc->SetEmpty(*MakeId(rg_info));
     }
     else {
         loc->SetInt().SetFrom(rg_info.m_Range.GetFrom());
         loc->SetInt().SetTo(rg_info.m_Range.GetTo());
-        loc->SetInt().SetId(const_cast<CSeq_id&>(*rg_info.m_Id));
+        loc->SetInt().SetId(*MakeId(rg_info));
         if ( rg_info.m_IsSetStrand ) {
             loc->SetInt().SetStrand(rg_info.m_Strand);
         }
         if ( rg_info.m_Fuzz.first ) {
-            loc->SetInt().SetFuzz_from(
-                const_cast<CInt_fuzz&>(*rg_info.m_Fuzz.first));
+            loc->SetInt().SetFuzz_from(*MakeFuzz(*rg_info.m_Fuzz.first));
         }
         if ( rg_info.m_Fuzz.second ) {
-            loc->SetInt().SetFuzz_to(
-                const_cast<CInt_fuzz&>(*rg_info.m_Fuzz.second));
+            loc->SetInt().SetFuzz_to(*MakeFuzz(*rg_info.m_Fuzz.second));
         }
     }
     return ConstRef(loc.Release());
@@ -1349,12 +1818,15 @@ bool CSeq_loc_CI::x_IsValid(void) const
 
 void CSeq_loc_CI::x_ThrowNotValid(const char* where) const
 {
-    string msg;
-    msg += "CSeq_loc_CI::";
-    msg += where;
-    msg += " -- iterator is not valid";
-    NCBI_THROW(CException, eUnknown,
-        msg);
+    NCBI_THROW_FMT(CSeqLocException, eBadIterator,
+                   x_GetIteratorType() << "::" << where << ": "
+                   "iterator is not valid");
+}
+
+
+const char* CSeq_loc_CI::x_GetIteratorType(void) const
+{
+    return "CSeq_loc_CI";
 }
 
 
@@ -1375,6 +1847,243 @@ void CSeq_loc_CI::SetPos(size_t pos)
 {
     m_Index = pos;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_loc_I
+
+CSeq_loc_I::CSeq_loc_I(void)
+    : m_HasChanges(false)
+{
+}
+
+
+CSeq_loc_I::CSeq_loc_I(const CSeq_loc& loc)
+    : CSeq_loc_CI(loc, eEmpty_Allow, eOrder_Biological),
+      m_HasChanges(false)
+{
+}
+
+
+CSeq_loc_I::~CSeq_loc_I()
+{
+}
+
+
+const char* CSeq_loc_I::x_GetIteratorType(void) const
+{
+    return "CSeq_loc_I";
+}
+
+
+SSeq_loc_CI_RangeInfo& CSeq_loc_I::x_GetRangeInfo(void)
+{
+    // The index validity must be checked by the caller.
+    return m_Impl->GetRanges()[m_Index];
+}
+
+
+inline
+void CSeq_loc_I::x_SetHasChanges(void)
+{
+    if ( !m_HasChanges ) {
+        m_HasChanges = true;
+    }
+}
+
+
+void CSeq_loc_I::x_SetSeq_id_Handle(SSeq_loc_CI_RangeInfo& info,
+                                    const CSeq_id_Handle& id)
+{
+    info.m_Id = id.GetSeqId();
+    info.m_IdHandle = id;
+}
+
+
+void CSeq_loc_I::Delete(void)
+{
+    x_CheckNotValid("Delete()");
+    x_SetHasChanges();
+    m_Impl->DeleteRange(m_Index);
+}
+
+
+void CSeq_loc_I::InsertNull(void)
+{
+    x_CheckNotValid("InsertNull()");
+    x_SetHasChanges();
+    m_Impl->InsertRange(m_Index);
+}
+
+
+void CSeq_loc_I::InsertEmpty(const CSeq_id_Handle& id)
+{
+    x_CheckNotValid("InsertEmpty()");
+    x_SetHasChanges();
+    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    x_SetSeq_id_Handle(info, id);
+}
+
+
+void CSeq_loc_I::InsertWhole(const CSeq_id_Handle& id)
+{
+    x_CheckNotValid("InsertWhole()");
+    x_SetHasChanges();
+    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    x_SetSeq_id_Handle(info, id);
+    info.m_Range = TRange::GetWhole();
+}
+
+
+void CSeq_loc_I::InsertPoint(const CSeq_id_Handle& id,
+                             TSeqPos pos,
+                             ENa_strand strand)
+{
+    x_CheckNotValid("InsertPoint()");
+    x_SetHasChanges();
+    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    x_SetSeq_id_Handle(info, id);
+    info.m_Range.SetFrom(pos).SetLength(1);
+    if ( strand != eNa_strand_unknown ) {
+        info.SetStrand(strand);
+    }
+}
+
+
+void CSeq_loc_I::InsertInterval(const CSeq_id_Handle& id,
+                                const TRange& range,
+                                ENa_strand strand)
+{
+    x_CheckNotValid("InsertPoint()");
+    x_SetHasChanges();
+    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    x_SetSeq_id_Handle(info, id);
+    info.m_Range = range;
+    if ( strand != eNa_strand_unknown ) {
+        info.SetStrand(strand);
+    }
+}
+
+
+void CSeq_loc_I::SetSeq_id_Handle(const CSeq_id_Handle& id)
+{
+    x_CheckNotValid("SetSeq_id_Handle()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_IdHandle != id ) {
+        x_SetHasChanges();
+        x_SetSeq_id_Handle(info, id);
+    }
+}
+
+
+void CSeq_loc_I::SetRange(const TRange& range)
+{
+    x_CheckNotValid("SetRange()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_Range != range ) {
+        x_SetHasChanges();
+        info.m_Range = range;
+    }
+}
+
+
+void CSeq_loc_I::SetFrom(TSeqPos from)
+{
+    x_CheckNotValid("SetFrom()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_Range.GetFrom() != from ) {
+        x_SetHasChanges();
+        info.m_Range.SetFrom(from);
+    }
+}
+
+
+void CSeq_loc_I::SetTo(TSeqPos to)
+{
+    x_CheckNotValid("SetTo()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_Range.GetTo() != to ) {
+        x_SetHasChanges();
+        info.m_Range.SetTo(to);
+    }
+}
+
+
+void CSeq_loc_I::ResetStrand(void)
+{
+    x_CheckNotValid("ResetStrand()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_IsSetStrand ) {
+        x_SetHasChanges();
+        info.m_IsSetStrand = false;
+        info.m_Strand = eNa_strand_unknown;
+    }
+}
+
+
+void CSeq_loc_I::SetStrand(ENa_strand strand)
+{
+    x_CheckNotValid("SetStrand()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( !info.m_IsSetStrand || info.m_Strand != strand ) {
+        x_SetHasChanges();
+        info.SetStrand(strand);
+    }
+}
+
+
+void CSeq_loc_I::ResetFuzzFrom(void)
+{
+    x_CheckNotValid("ResetFuzzFrom()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_Fuzz.first ) {
+        x_SetHasChanges();
+        info.m_Fuzz.first = null;
+    }
+}
+
+
+void CSeq_loc_I::SetFuzzFrom(const CInt_fuzz& fuzz)
+{
+    x_CheckNotValid("SetFuzzFrom()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( !info.m_Fuzz.first || !info.m_Fuzz.first->Equals(fuzz) ) {
+        x_SetHasChanges();
+        info.m_Fuzz.first = SerialClone(fuzz);
+    }
+}
+
+
+void CSeq_loc_I::ResetFuzzTo(void)
+{
+    x_CheckNotValid("ResetFuzzTo()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( info.m_Fuzz.second ) {
+        x_SetHasChanges();
+        info.m_Fuzz.second = null;
+    }
+}
+
+
+void CSeq_loc_I::SetFuzzTo(const CInt_fuzz& fuzz)
+{
+    x_CheckNotValid("SetFuzzTo()");
+    SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
+    if ( !info.m_Fuzz.second || !info.m_Fuzz.second->Equals(fuzz) ) {
+        x_SetHasChanges();
+        info.m_Fuzz.second = SerialClone(fuzz);
+    }
+}
+
+
+CRef<CSeq_loc> CSeq_loc_I::MakeSeq_loc(EMakeType make_type) const
+{
+    return m_Impl->MakeLoc(make_type);
+}
+
+
+// CSeq_loc_I
+/////////////////////////////////////////////////////////////////////////////
 
 
 // Append a string representation of a CSeq_id to label
@@ -1994,15 +2703,13 @@ bool CSeq_loc::x_CheckId(const CSeq_id*& id, bool may_throw) const
         }
     case e_Feat:
     default:
-        {
-            if (may_throw) {
-                NCBI_THROW(CException, eUnknown,
-                           "CSeq_loc::CheckId -- "
-                           "unsupported location type");
-            } else {
-                return false;
-            }
+        if (may_throw) {
+            NCBI_THROW_FMT(CSeqLocException, eUnsupported,
+                           "CSeq_loc::CheckId(): "
+                           "unsupported location type: "<<
+                           SelectionName(Which()));
         }
+        return false;
     }
 }
 
@@ -2107,10 +2814,10 @@ void CSeq_loc::ChangeToPackedInt(void)
             return;
         }
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                "Can not convert location to packed-int");
-        }
+        NCBI_THROW_FMT(CSeqLocException, eIncomatible,
+                       "CSeq_loc::ChangeToPackedInt(): "
+                       "Can not convert location to packed-int: "<<
+                       SelectionName(Which()));
     }
 }
 
@@ -2335,11 +3042,10 @@ void CSeq_loc::Add(const CSeq_loc& other)
         }
     case e_Feat:
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::Add -- "
-                       "unsupported location type");
-        }
+        NCBI_THROW_FMT(CSeqLocException, eIncomatible,
+                       "CSeq_loc::Add(): "
+                       "cannot add sub-location to location of type: "<<
+                       SelectionName(Which()));
     }
 }
 
@@ -2841,8 +3547,8 @@ void x_SingleRange(CSeq_loc& dst,
         if ( first_id ) {
             // Seq-id may be missing for NULL seq-loc
             if (next_id  &&  first_id != next_id) {
-                NCBI_THROW(CException, eUnknown,
-                    "Can not merge multi-id seq-loc");
+                NCBI_THROW(CSeqLocException, eMultipleId,
+                           "Can not merge multi-id seq-loc");
             }
         }
         else {
@@ -2967,6 +3673,10 @@ void x_MergeNoSort(CSeq_loc& dst,
 }
 
 
+static const bool force_strand_merge = true;
+static const bool force_strand_subtract = true;
+
+
 static
 void x_MergeAndSort(CSeq_loc& dst,
                     const CSeq_loc& src,
@@ -2982,7 +3692,7 @@ void x_MergeAndSort(CSeq_loc& dst,
         *pid_map_minus.get() : id_map_plus;
 
     // Prepare default strands
-    ENa_strand default_plus = use_strand ?
+    ENa_strand default_plus = force_strand_merge && use_strand ?
         eNa_strand_plus : eNa_strand_unknown;
     ENa_strand default_minus = use_strand ?
         eNa_strand_minus : eNa_strand_unknown;
@@ -3028,8 +3738,8 @@ void x_SingleRange(CSeq_loc& dst,
         if ( first_id ) {
             // Seq-id may be missing for NULL seq-loc
             if (next_id  &&  first_id != next_id) {
-                NCBI_THROW(CException, eUnknown,
-                    "Can not merge multi-id seq-loc");
+                NCBI_THROW(CSeqLocException, eMultipleId,
+                           "Can not merge multi-id seq-loc");
             }
         }
         else {
@@ -3202,7 +3912,7 @@ void x_SubAndSort(CSeq_loc& dst,
         *p_id_map_minus.get() : id_map_plus;
 
     // Prepare default strands
-    ENa_strand default_plus = use_strand ?
+    ENa_strand default_plus = force_strand_subtract && use_strand ?
         eNa_strand_plus : eNa_strand_unknown;
     ENa_strand default_minus = use_strand ?
         eNa_strand_minus : eNa_strand_unknown;

@@ -67,6 +67,27 @@ class CSeq_id_Handle;
 class ISynonymMapper;
 class ILengthGetter;
 class CSeq_loc_CI;
+class CSeq_loc_I;
+
+/// Seq-loc exceptions
+class NCBI_SEQ_EXPORT CSeqLocException : public CException
+{
+public:
+    enum EErrCode {
+        eNotSet,         ///< Seq-loc is not set
+        eMultipleId,     ///< Seq-loc on multiple ids when one id is required
+        eUnsupported,    ///< Seq-loc has data that is not supported yet
+        eBadLocation,    ///< Seq-loc is incorrectly formed
+        eBadIterator,    ///< Seq-loc iterator is in bad state
+        eIncomatible,    ///< Seq-loc type is incompatible with operation
+
+        eOtherError
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CSeqLocException, CException);
+};
+
 
 class NCBI_SEQLOC_EXPORT CSeq_loc : public CSeq_loc_Base
 {
@@ -382,17 +403,20 @@ public:
 
 
 // Simple location structure: id/from/to
-struct SSeq_loc_CI_RangeInfo {
+struct NCBI_SEQLOC_EXPORT SSeq_loc_CI_RangeInfo {
     SSeq_loc_CI_RangeInfo(void);
+    ~SSeq_loc_CI_RangeInfo(void);
+
     void SetStrand(ENa_strand strand);
 
     typedef CSeq_loc::TRange    TRange;
-    typedef vector<SSeq_loc_CI_RangeInfo> TRangeList;
 
+    CSeq_id_Handle      m_IdHandle;
     CConstRef<CSeq_id>  m_Id;
     TRange              m_Range;
     bool                m_IsSetStrand;
     ENa_strand          m_Strand;
+    CSeq_loc::E_Choice  m_ParentType;
     // The original seq-loc for the interval
     CConstRef<CSeq_loc> m_Loc;
     pair<CConstRef<CInt_fuzz>, CConstRef<CInt_fuzz> > m_Fuzz;
@@ -423,7 +447,7 @@ public:
                 EEmptyFlag empty_flag = eEmpty_Skip,
                 ESeqLocOrder order = eOrder_Biological);
     /// destructor
-    ~CSeq_loc_CI(void);
+    virtual ~CSeq_loc_CI(void);
 
     CSeq_loc_CI(const CSeq_loc_CI& iter);
     CSeq_loc_CI& operator= (const CSeq_loc_CI& iter);
@@ -433,6 +457,11 @@ public:
 
     bool operator== (const CSeq_loc_CI& iter) const;
     bool operator!= (const CSeq_loc_CI& iter) const;
+
+    /// Return true if location has equiv parts
+    bool HasEquivParts(void) const;
+    /// Return true if current position is in some equiv part
+    bool IsInEquivPart(void) const;
 
     /// Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
@@ -481,19 +510,132 @@ public:
     /// Set iterator's position.
     void SetPos(size_t pos);
 
-private:
+protected:
     const SSeq_loc_CI_RangeInfo& x_GetRangeInfo(void) const;
 
-    typedef SSeq_loc_CI_RangeInfo::TRangeList TRangeList;
     CRef<CSeq_loc_CI_Impl> m_Impl;
 
     // Check the iterator position
     bool x_IsValid(void) const;
     // Check the position, throw exception if not valid
+    virtual const char* x_GetIteratorType(void) const;
     void x_CheckNotValid(const char* where) const;
     void x_ThrowNotValid(const char* where) const;
 
     size_t m_Index;
+};
+
+
+
+/// Seq-loc iterator class -- iterates all intervals from a seq-loc
+/// in the correct order.
+class NCBI_SEQLOC_EXPORT CSeq_loc_I : public CSeq_loc_CI
+{
+public:
+    /// Options for creation modified locations
+    /// Bond and equiv types are preserved if possible
+    enum EMakeType {
+        eMake_CompactType, /// use most compact Seq-loc type (default)
+        eMake_PreserveType /// keep original Seq-loc type if possible
+    };
+
+    /// constructors
+    CSeq_loc_I(void);
+    CSeq_loc_I(const CSeq_loc& loc);
+    /// destructor
+    virtual ~CSeq_loc_I(void);
+
+    /// return true of any part was changed since initialization
+    bool HasChanges(void) const;
+
+    /// return constructed CSeq_loc with all changes
+    CRef<CSeq_loc> MakeSeq_loc(EMakeType make_type = eMake_CompactType) const;
+
+    /// Delete current piece, position to the next piece
+    void Delete(void);
+
+    /// Insert new piece before current, position to the inserted piece
+    void InsertNull(void);
+    void InsertEmpty(const CSeq_id_Handle& id);
+    void InsertEmpty(const CSeq_id& id)
+        {
+            InsertEmpty(CSeq_id_Handle::GetHandle(id));
+        }
+    void InsertWhole(const CSeq_id_Handle& id);
+    void InsertWhole(const CSeq_id& id)
+        {
+            InsertWhole(CSeq_id_Handle::GetHandle(id));
+        }
+
+    /// Insert new piece before current, position to the inserted piece
+    /// The strand value eNa_strand_unknown produces strand field not set,
+    /// If eNa_strand_unknown is expicitly required, call SetStrand().
+    void InsertInterval(const CSeq_id_Handle& id,
+                        const TRange& range,
+                        ENa_strand strand = eNa_strand_unknown);
+    void InsertInterval(const CSeq_id& id,
+                        const TRange& range,
+                        ENa_strand strand = eNa_strand_unknown)
+        {
+            InsertInterval(CSeq_id_Handle::GetHandle(id), range, strand);
+        }
+    void InsertInterval(const CSeq_id& id,
+                        TSeqPos from, TSeqPos to,
+                        ENa_strand strand = eNa_strand_unknown)
+        {
+            InsertInterval(id, TRange(from, to), strand);
+        }
+    void InsertInterval(const CSeq_id_Handle& id,
+                        TSeqPos from, TSeqPos to,
+                        ENa_strand strand = eNa_strand_unknown)
+        {
+            InsertInterval(id, TRange(from, to), strand);
+        }
+
+    /// Insert new piece before current, position to the inserted piece
+    void InsertPoint(const CSeq_id_Handle& id,
+                     TSeqPos pos,
+                     ENa_strand strand = eNa_strand_unknown);
+    void InsertPoint(const CSeq_id& id,
+                     TSeqPos pos,
+                     ENa_strand strand = eNa_strand_unknown)
+        {
+            InsertPoint(CSeq_id_Handle::GetHandle(id), pos, strand);
+        }
+
+    /// Set seq_id of the current location
+    void SetSeq_id_Handle(const CSeq_id_Handle& id);
+    void SetSeq_id(const CSeq_id& id)
+        {
+            SetSeq_id_Handle(CSeq_id_Handle::GetHandle(id));
+        }
+
+    /// Set the range
+    void SetRange(const TRange& range);
+    void SetFrom(TSeqPos from);
+    void SetTo(TSeqPos to);
+
+    /// Set strand
+    void ResetStrand(void);
+    void SetStrand(ENa_strand strand);
+
+    // Change fuzz values
+    void ResetFuzzFrom(void);
+    void SetFuzzFrom(const CInt_fuzz& fuzz);
+    void ResetFuzzTo(void);
+    void SetFuzzTo(const CInt_fuzz& fuzz);
+
+protected:
+    using CSeq_loc_CI::x_GetRangeInfo;
+    SSeq_loc_CI_RangeInfo& x_GetRangeInfo(void);
+
+    void x_SetHasChanges(void);
+    void x_SetSeq_id_Handle(SSeq_loc_CI_RangeInfo& info,
+                            const CSeq_id_Handle& id);
+
+    virtual const char* x_GetIteratorType(void) const;
+
+    bool m_HasChanges;
 };
 
 
@@ -621,16 +763,6 @@ bool CSeq_loc::IsReverseStrand(void) const
 /////////////////// CSeq_loc_CI inline methods
 
 inline
-SSeq_loc_CI_RangeInfo::SSeq_loc_CI_RangeInfo(void)
-    : m_Id(0),
-      m_IsSetStrand(false),
-      m_Strand(eNa_strand_unknown),
-      m_Loc(0)
-{
-    return;
-}
-
-inline
 void SSeq_loc_CI_RangeInfo::SetStrand(ENa_strand strand)
 {
     m_IsSetStrand = true;
@@ -638,17 +770,18 @@ void SSeq_loc_CI_RangeInfo::SetStrand(ENa_strand strand)
 }
 
 inline
-CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
-{
-    ++m_Index;
-    return *this;
-}
-
-inline
 void CSeq_loc_CI::x_CheckNotValid(const char* where) const
 {
     if ( !x_IsValid() )
         x_ThrowNotValid(where);
+}
+
+inline
+CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
+{
+    x_CheckNotValid("operator++");
+    ++m_Index;
+    return *this;
 }
 
 inline
@@ -661,7 +794,8 @@ const CSeq_id& CSeq_loc_CI::GetSeq_id(void) const
 inline
 CSeq_id_Handle CSeq_loc_CI::GetSeq_id_Handle(void) const
 {
-    return CSeq_id_Handle::GetHandle(GetSeq_id());
+    x_CheckNotValid("GetSeq_id_Handle()");
+    return x_GetRangeInfo().m_IdHandle;
 }
 
 inline
@@ -725,6 +859,15 @@ void CSeq_loc_CI::Rewind(void)
 {
     m_Index = 0;
 }
+
+/////////////////// CSeq_loc_I inline methods
+
+inline
+bool CSeq_loc_I::HasChanges(void) const
+{
+    return m_HasChanges;
+}
+
 
 NCBISER_HAVE_POST_READ(CSeq_loc)
 
