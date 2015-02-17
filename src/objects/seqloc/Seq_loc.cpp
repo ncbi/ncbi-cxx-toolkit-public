@@ -1153,6 +1153,11 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc,
             parent_type == CSeq_loc::e_Mix ||
             parent_type == CSeq_loc::e_Equiv);
     switch ( loc.Which() ) {
+    case CSeq_loc::e_not_set:
+        /*
+        NCBI_THROW(CSeqLocException, eNotSet,
+                   "CSeq_loc_CI: location is not set");
+        */
     case CSeq_loc::e_Null:
     case CSeq_loc::e_Empty:
         {
@@ -1252,9 +1257,6 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc,
             }
             return;
         }
-    case CSeq_loc::e_not_set:
-        NCBI_THROW(CSeqLocException, eNotSet,
-                   "CSeq_loc_CI: location is not set");
     default:
         NCBI_THROW_FMT(CSeqLocException, eUnsupported,
                        "CSeq_loc_CI: unsupported location type: "<<
