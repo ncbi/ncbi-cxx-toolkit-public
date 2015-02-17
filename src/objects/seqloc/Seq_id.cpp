@@ -89,6 +89,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
+// CSeqIdException
+const char* CSeqIdException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eUnknownType:  return "eUnknownType";
+    case eFormat:       return "eFormat";
+    default:            return CException::GetErrCodeString();
+    }
+}
+
+
 // constructor
 CSeq_id::CSeq_id(void)
 {
