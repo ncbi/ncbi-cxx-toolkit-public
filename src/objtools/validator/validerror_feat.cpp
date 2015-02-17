@@ -6270,6 +6270,7 @@ static const string s_RefseqExceptionStrings [] = {
     "mismatches in transcription",
     "mismatches in translation",
     "adjusted for low-quality genome",
+    "translation initiation by tRNA-Leu at CUG codon",
     "16S ribosomal RNA and 23S ribosomal RNA overlap",
     "16S ribosomal RNA and 5S ribosomal RNA overlap",
     "23S ribosomal RNA and 16S ribosomal RNA overlap",
@@ -7531,6 +7532,23 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
 
 }
 
+static bool x_LeuCUGstart
+(
+    const CSeq_feat& feat
+)
+
+{
+    if ( ! feat.IsSetExcept()) return false;
+    if ( ! feat.IsSetExcept_text()) return false;
+    const string& except_text = feat.GetExcept_text();
+    if (NStr::FindNoCase(except_text, "translation initiation by tRNA-Leu at CUG codon") == NPOS) return false;
+    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+        const CGb_qual& qual = **it;
+        if ( qual.IsSetQual() && NStr::Compare(qual.GetQual(), "experiment") == 0) return true;
+    }
+    return false;
+}
+
 
 bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
 (const CSeq_feat& feat,
@@ -7646,7 +7664,9 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
 
                //At the beginning of the CDS
                 if (prot_pos == 0 && ex != 'M') {
-                    if ((! feat.IsSetPartial()) || (! feat.GetPartial())) {
+                    if (prot_pos == 0 && ex == 'L' && x_LeuCUGstart(feat) && m_Imp.IsRefSeq()) {
+                        /* do not warn on explicitly documented unusual translation initiation at CUG without initiator tRNA-Met */
+                    } else if ((! feat.IsSetPartial()) || (! feat.GetPartial())) {
                         string msg = "Suspicious transl_except ";
                         msg += ex;
                         msg += " at first codon of complete CDS";
@@ -7661,13 +7681,17 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                     if (from_end < 2 && NStr::Equal (except_char, "*")) {
                         // this is a necessary terminal transl_except
                     } else if (NStr::EqualNocase (cb_trans, except_char)) {
-                        string msg = "Unnecessary transl_except ";
-                        msg += ex;
-                        msg += " at position ";
-                        msg += NStr::SizetToString (prot_pos + 1);
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                 msg,
-                                 feat);
+                        if (prot_pos == 0 && ex == 'L' && x_LeuCUGstart(feat) && m_Imp.IsRefSeq()) {
+                            /* do not warn on explicitly documented unusual translation initiation at CUG without initiator tRNA-Met */
+                        } else {
+                            string msg = "Unnecessary transl_except ";
+                            msg += ex;
+                            msg += " at position ";
+                            msg += NStr::SizetToString (prot_pos + 1);
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                     msg,
+                                     feat);
+                        }
                     }
                 }
                 else if(!NStr::Equal(except_char, "*"))
