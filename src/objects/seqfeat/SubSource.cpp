@@ -3198,7 +3198,7 @@ string CCountries::GetCorrectedCountryCapitalization(const string& country)
 }
 
 
-void CCountries::x_RemoveDelimitersFromEnds(string& val)
+void CCountries::x_RemoveDelimitersFromEnds(string& val, bool except_paren)
 {
     NStr::TruncateSpacesInPlace(val);
     bool any_found = true;
@@ -3207,13 +3207,13 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val)
         if (NStr::StartsWith(val, ",") 
             || NStr::StartsWith(val, ":") 
             || NStr::StartsWith(val, ".")
-            || NStr::StartsWith(val, ")")) {
+            || (!except_paren && NStr::StartsWith(val, ")"))) {
             val = val.substr(1);
             any_found = true;
             NStr::TruncateSpacesInPlace(val);
         } else if (NStr::EndsWith(val, ",") 
             || NStr::EndsWith(val, ":")
-            || NStr::EndsWith(val, "(")) {
+            || (!except_paren && NStr::EndsWith(val, "("))) {
             val = val.substr(0, val.length() - 1);
             any_found = true;
             NStr::TruncateSpacesInPlace(val);
@@ -3406,7 +3406,7 @@ string CCountries::NewFixCountry (const string& test)
         NStr::TruncateSpacesInPlace(before);
         // save trailing string without initial spaces or delimiters
         string after = input.substr(pos+orig_valid_country.length());
-        x_RemoveDelimitersFromEnds(after);
+        x_RemoveDelimitersFromEnds(after, true);
         NStr::TruncateSpacesInPlace(after);
         if (bad_cap) new_country = GetCorrectedCountryCapitalization(valid_country);
         else new_country = valid_country;
@@ -3414,7 +3414,7 @@ string CCountries::NewFixCountry (const string& test)
             new_country += ": ";
         if (!before.empty())
             new_country += before;
-        if (!before.empty() && !after.empty())
+        if (!before.empty() && !after.empty() && !NStr::Equal(after, ")"))
             new_country += ", ";
         if (!after.empty())
             new_country += after;

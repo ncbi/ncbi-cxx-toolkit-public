@@ -1030,3 +1030,11 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2183)
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 feet"), "30.48 m.");
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 foot"), "30.48 m.");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2164)
+{
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("Mediterranean, Malvarrosa Beach (Valencia, Spain)", false), 
+                      "Spain: Mediterranean, Malvarrosa Beach (Valencia)");
+
+}
