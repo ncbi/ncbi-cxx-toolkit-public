@@ -447,7 +447,6 @@ bool CAutoDefModifierCombo::HasTrickyHIV()
 }
 
 
-
 unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_description, const CBioSource& bsrc)
 {
     unsigned int mods_used = 0;
@@ -523,6 +522,90 @@ unsigned int CAutoDefModifierCombo::x_AddRequiredSubSourceModifiers (string& des
 }
 
 
+typedef struct {
+    size_t subtype;
+    bool is_orgmod;
+} SPreferredQual;
+
+static const SPreferredQual s_PreferredList[] = {
+    { CSubSource::eSubtype_transgenic, false } ,
+    { COrgMod::eSubtype_strain, true },
+    { COrgMod::eSubtype_isolate, true },
+    { COrgMod::eSubtype_cultivar, true },
+    { COrgMod::eSubtype_specimen_voucher, true },
+    { COrgMod::eSubtype_ecotype, true },
+    { COrgMod::eSubtype_type, true},
+    { COrgMod::eSubtype_serotype, true},
+    { COrgMod::eSubtype_authority, true},
+    { COrgMod::eSubtype_breed, true},
+
+    { COrgMod::eSubtype_acronym, true },
+    { COrgMod::eSubtype_anamorph, true },
+    { COrgMod::eSubtype_bio_material, true },
+    { COrgMod::eSubtype_biotype, true },
+    { COrgMod::eSubtype_biovar, true },
+    { COrgMod::eSubtype_chemovar, true },
+    { COrgMod::eSubtype_common, true },
+    { COrgMod::eSubtype_culture_collection, true },
+    { COrgMod::eSubtype_forma, true },
+    { COrgMod::eSubtype_forma_specialis, true },
+    { COrgMod::eSubtype_group, true },
+    { COrgMod::eSubtype_nat_host, true },
+    { COrgMod::eSubtype_other, true },
+    { COrgMod::eSubtype_pathovar, true },
+    { COrgMod::eSubtype_serogroup, true },
+    { COrgMod::eSubtype_serovar, true },
+    { COrgMod::eSubtype_subgroup, true },
+    { COrgMod::eSubtype_sub_species, true },
+    { COrgMod::eSubtype_substrain, true },
+    { COrgMod::eSubtype_subtype, true },
+    { COrgMod::eSubtype_synonym, true },
+    { COrgMod::eSubtype_teleomorph, true },
+    { COrgMod::eSubtype_type_material, true },
+    { COrgMod::eSubtype_variety, true },
+
+    { CSubSource::eSubtype_plasmid_name, false } ,
+    { CSubSource::eSubtype_endogenous_virus_name, false } ,
+    { CSubSource::eSubtype_clone, false } ,
+    { CSubSource::eSubtype_haplotype, false } ,
+
+    { CSubSource::eSubtype_altitude, false },
+    { CSubSource::eSubtype_cell_line, false } ,
+    { CSubSource::eSubtype_cell_type, false } ,
+    { CSubSource::eSubtype_chromosome, false } ,
+    { CSubSource::eSubtype_clone_lib, false } ,
+    { CSubSource::eSubtype_collected_by, false } ,
+    { CSubSource::eSubtype_collection_date, false } ,
+    { CSubSource::eSubtype_country, false } ,
+    { CSubSource::eSubtype_dev_stage, false } ,
+    { CSubSource::eSubtype_environmental_sample, false } ,
+    { CSubSource::eSubtype_frequency, false } ,
+    { CSubSource::eSubtype_genotype, false } ,
+    { CSubSource::eSubtype_germline, false } ,
+    { CSubSource::eSubtype_haplogroup, false } ,
+
+    { CSubSource::eSubtype_identified_by, false } ,
+    { CSubSource::eSubtype_isolation_source, false } ,
+    { CSubSource::eSubtype_lab_host, false } ,
+    { CSubSource::eSubtype_lat_lon, false } ,
+    { CSubSource::eSubtype_linkage_group, false } ,
+    { CSubSource::eSubtype_map, false } ,
+    { CSubSource::eSubtype_mating_type, false } ,
+    { CSubSource::eSubtype_metagenomic, false } ,
+    { CSubSource::eSubtype_other, false } ,
+    { CSubSource::eSubtype_plastid_name, false } ,
+    { CSubSource::eSubtype_pop_variant, false } ,
+    { CSubSource::eSubtype_rearranged, false } ,
+    { CSubSource::eSubtype_segment, false } ,
+    { CSubSource::eSubtype_sex, false } ,
+    { CSubSource::eSubtype_subclone, false } ,
+    { CSubSource::eSubtype_tissue_lib, false } ,
+    { CSubSource::eSubtype_tissue_type, false } ,
+};
+
+
+static const size_t kNumPreferred = sizeof(s_PreferredList) / sizeof (SPreferredQual);
+
 string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc) 
 {
     unsigned int k;
@@ -566,7 +649,22 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
         source_description = "Mutant " + source_description;
     }
+
+    for (k = 0; k < kNumPreferred; k++) {
+        if (s_PreferredList[k].is_orgmod) {
+            if (HasOrgMod((COrgMod::ESubtype)s_PreferredList[k].subtype) &&
+                x_AddOrgModString (source_description, bsrc, (COrgMod::ESubtype)s_PreferredList[k].subtype)) {
+                mods_used++;
+            }
+        } else {
+            if (HasSubSource((CSubSource::ESubtype)s_PreferredList[k].subtype) &&
+                x_AddSubsourceString(source_description, bsrc, (CSubSource::ESubtype)s_PreferredList[k].subtype)) {
+                mods_used++;
+            }
+        }
+    }
     
+#if 0
     if (bsrc.CanGetSubtype()) {
         for (k = 0; k < GetNumSubSources() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
             if (x_AddSubsourceString (source_description, bsrc, GetSubSource(k))) {
@@ -582,6 +680,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
             }
         }
     }
+#endif
     
     return source_description;
 }

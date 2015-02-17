@@ -212,30 +212,13 @@ static void AddTitle (CRef<CSeq_entry> entry, string defline)
 }
 
 
-static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
-                                CAutoDef::EFeatureListType list_type = CAutoDef::eListAllFeatures,
-                                CAutoDef::EMiscFeatRule misc_feat_rule = CAutoDef::eDelete)
+
+
+
+static void CheckDeflineMatches(CSeq_entry_Handle seh,
+                                objects::CAutoDef& autodef, 
+                                CRef<CAutoDefModifierCombo> mod_combo)
 {
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
-
-    objects::CAutoDef autodef;
-
-    // add to autodef 
-    autodef.AddSources (seh);
-
-    CRef<CAutoDefModifierCombo> mod_combo;
-    if (use_best) {
-        mod_combo = autodef.FindBestModifierCombo();
-    } else {
-        mod_combo = new CAutoDefModifierCombo ();
-    }
-
-    autodef.SetFeatureListType(list_type);
-    autodef.SetMiscFeatRule(misc_feat_rule);
-
     // check defline for each nucleotide sequence
     CBioseq_CI seq_iter(seh, CSeq_inst::eMol_na);
     for ( ; seq_iter; ++seq_iter ) {
@@ -265,6 +248,65 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
         string new_defline = autodef.GetDocsumDefLine(seh);
         BOOST_CHECK_EQUAL(orig_defline, new_defline);
     }
+}
+
+
+static void CheckDeflineMatches(CRef<CSeq_entry> entry,
+                                vector<CSubSource::ESubtype> subsrcs,
+                                vector<COrgMod::ESubtype> orgmods)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources (seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = new CAutoDefModifierCombo ();
+    mod_combo->SetUseModifierLabels(true);
+    ITERATE(vector<CSubSource::ESubtype>, it, subsrcs) {
+        mod_combo->AddSubsource(*it, true);
+    }
+    ITERATE(vector<COrgMod::ESubtype>, it, orgmods) {
+        mod_combo->AddOrgMod(*it, true);
+    }
+
+    autodef.SetFeatureListType(CAutoDef::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDef::eDelete);    
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
+
+
+static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
+                                CAutoDef::EFeatureListType list_type = CAutoDef::eListAllFeatures,
+                                CAutoDef::EMiscFeatRule misc_feat_rule = CAutoDef::eDelete)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources (seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    if (use_best) {
+        mod_combo = autodef.FindBestModifierCombo();
+    } else {
+        mod_combo = new CAutoDefModifierCombo ();
+    }
+
+    autodef.SetFeatureListType(list_type);
+    autodef.SetMiscFeatRule(misc_feat_rule);
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
 
@@ -1053,6 +1095,29 @@ BOOST_AUTO_TEST_CASE(Test_GB_3942)
     AddTitle(nuc, "Sebaea microphylla protein gene, complete cds, alternatively spliced; and RNA-dependent RNA polymerase gene, partial cds.");
     CheckDeflineMatches(entry, true);
 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3926)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    misc1->ResetComment();
+    misc1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    misc1->SetData().SetRna().SetExt().SetName("28S ribosomal RNA");
+    misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc1->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    unit_test_util::SetOrgMod(seq, COrgMod::eSubtype_isolate, "JU6");
+    unit_test_util::SetSubSource(seq, CSubSource::eSubtype_clone, "1");
+
+    AddTitle(seq, "Sebaea microphylla isolate JU6 clone 1 28S ribosomal RNA gene, partial sequence.");
+
+    vector<CSubSource::ESubtype> subsrcs;
+    vector<COrgMod::ESubtype> orgmods;
+    subsrcs.push_back(CSubSource::eSubtype_clone);
+    orgmods.push_back(COrgMod::eSubtype_isolate);
+
+    CheckDeflineMatches(seq, subsrcs, orgmods);
 }
 
 
