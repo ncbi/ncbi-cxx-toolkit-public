@@ -775,6 +775,20 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
 static const string unwanted_words[] = {"splice variant", "splice product", "variant", "isoform"};
 
 
+// This function determins whether two locations share a common interval
+bool ShareInterval(const CSeq_loc& loc1, const CSeq_loc& loc2)
+{
+    for (CSeq_loc_CI loc_iter1(loc1); loc_iter1;  ++loc_iter1) {
+        for (CSeq_loc_CI loc_iter2(loc2); loc_iter2; ++loc_iter2) {
+            if (loc_iter1.GetEmbeddingSeq_loc().Equals(loc_iter2.GetEmbeddingSeq_loc())) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 /* This function determines whether two CDS clauses meet the conditions for
  * alternative splicing, and if so, it returns the name of the alternatively
  * spliced product.  In order to be alternatively spliced, the two CDSs 
@@ -789,9 +803,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
         return false;
     }
     
-    
-    sequence::ECompare loc_compare = m_ClauseList[clause1]->CompareLocation(*(m_ClauseList[clause2]->GetLocation()));
-    if (loc_compare == eNoOverlap) {
+    if (!ShareInterval(*(m_ClauseList[clause1]->GetLocation()), *(m_ClauseList[clause2]->GetLocation()))) {
         return false;
     }
     // are genes the same?

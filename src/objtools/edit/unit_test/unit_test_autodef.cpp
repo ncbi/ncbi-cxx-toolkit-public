@@ -988,5 +988,73 @@ BOOST_AUTO_TEST_CASE(Test_GB_1851)
 
 }
 
+
+void s_SetProteinName(CRef<CSeq_entry> prot, const string& name)
+{
+    prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().front() = name;
+}
+
+
+CRef<CSeq_feat> s_AddCDS(CRef<CSeq_entry> np, const string& name, size_t from, size_t to)
+{
+    CRef<CSeq_entry> prev_prot = np->SetSet().SetSeq_set().back();
+    CRef<CSeq_entry> new_prot (new CSeq_entry());
+    new_prot->Assign(*prev_prot);
+    CRef<CSeq_id> new_id(new CSeq_id());
+    new_id->Assign(*(prev_prot->GetSeq().GetId().front()));
+    size_t pos = NStr::Find(new_id->GetLocal().GetStr(), "_");
+    string prefix = new_id->GetLocal().GetStr().substr(0, pos+ 1);
+    string suffix = new_id->GetLocal().GetStr().substr(pos + 1);
+    int prev_offset = NStr::StringToInt(suffix);
+    new_id->SetLocal().SetStr(prefix + NStr::NumericToString(prev_offset + 1));
+    unit_test_util::ChangeId(new_prot, new_id);
+    s_SetProteinName(new_prot, name);
+    np->SetSet().SetSeq_set().push_back(new_prot);
+
+    CRef<CSeq_feat> prev_cds = np->SetSet().SetAnnot().front()->SetData().SetFtable().back();
+    CRef<CSeq_feat> new_cds(new CSeq_feat());
+    new_cds->Assign(*prev_cds);
+    new_cds->SetProduct().SetWhole().Assign(*new_id);
+    new_cds->SetLocation().SetInt().SetFrom(from);
+    new_cds->SetLocation().SetInt().SetTo(to);
+    np->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(new_cds);    
+    return new_cds;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3942)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_entry> prot1 = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+
+    unit_test_util::ChangeId(prot1, "_1");
+    cds1->SetLocation().SetInt().SetFrom(0);
+    cds1->SetLocation().SetInt().SetTo(5);
+    cds1->SetProduct().SetWhole().Assign(*(prot1->GetSeq().GetId().front()));
+    s_SetProteinName(prot1, "RNA-dependent RNA polymerase");
+
+    CRef<CSeq_feat> cds2 = s_AddCDS(entry, "Coat protein", 10, 25);
+    CRef<CSeq_feat> cds3 = s_AddCDS(entry, "Movement protein", 12, 20);
+
+    cds1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+
+    AddTitle(nuc, "Sebaea microphylla RNA-dependent RNA polymerase gene, partial cds; and Coat protein and Movement protein genes, complete cds.");
+    CheckDeflineMatches(entry, true);
+
+
+    // actual splicing
+    cds2->SetLocation().Assign(*(unit_test_util::MakeMixLoc(nuc->GetSeq().GetId().front())));
+    cds3->SetLocation().Assign(cds2->GetLocation());
+    size_t old_end = cds3->GetLocation().GetMix().Get().back()->GetInt().GetTo();
+    cds3->SetLocation().SetMix().Set().back()->SetInt().SetTo(old_end + 2);
+
+    AddTitle(nuc, "Sebaea microphylla protein gene, complete cds, alternatively spliced; and RNA-dependent RNA polymerase gene, partial cds.");
+    CheckDeflineMatches(entry, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
