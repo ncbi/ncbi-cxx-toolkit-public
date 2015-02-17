@@ -632,6 +632,7 @@ static const char* const kBuiltInGuide[] = {
     "special  CAG34288-CAG34296  embl_tpa_prot",
     "special  CAH03726-CAH03727  embl_tpa_prot",
     "special  CAH17840-CAH17841  embl_tpa_prot",
+    "special  CAH17860-CAH17862  embl_tpa_prot",
     "special  CAH18893           embl_tpa_prot",
     "special  CAH18925-CAH18926  embl_tpa_prot",
     "special  CAH56764           embl_tpa_prot",
@@ -9655,5 +9656,5 @@ static const char* const kBuiltInGuide[] = {
     "special  CDM98735-CDM98850  embl_tpa_prot",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CEL89346-CZZ99999  unreserved_prot"
+    "#special CEP27845-CZZ99999  unreserved_prot"
 };
