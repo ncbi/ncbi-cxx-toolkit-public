@@ -842,19 +842,19 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
     Uint4 gi_list[] = {
         329847,   737263,   1708889,  2612955,  2982661,  3115393,
         3318935,  3930059,  4868071,  6573653,  7530437,  9657431,
-        9951219,  12044947, 12698889
+        9951219,  12698889
     };
 
     Uint4 pig_list[] = {
         1153908,  507276,   851580,   200775,   1028308,  939134,
         199107,   511756,   27645,    429124,   575812,   648744,
-        421191,   638614,   1128836
+        421191,   1128836
     };
 
     Uint4 len_list[] = {
         199,      233,      186,      441,      96,       206,
         277,      205,      110,      206,      510,      293,
-        394,      398,      174
+        394,      174
     };
 
     Uint4 L_gi  = Uint4(sizeof(gi_list)  / sizeof(gi_list[0]));
@@ -883,9 +883,9 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
         b4 = nr.GiToOid (pig2gi,  pig2gi2oid);
         b5 = nr.PigToOid(arr_pig, pig2oid);
 
-        BOOST_REQUIRE_EQUAL(arr_pig, gi2pig);
-        BOOST_REQUIRE_EQUAL(pig2oid, gi2oid);
-        BOOST_REQUIRE_EQUAL(pig2oid, pig2gi2oid);
+        BOOST_CHECK_EQUAL(arr_pig, gi2pig);
+        BOOST_CHECK_EQUAL(pig2oid, gi2oid);
+        BOOST_CHECK_EQUAL(pig2oid, pig2gi2oid);
         BOOST_REQUIRE(pig2oid != int(-1));
 
         oid2len = nr.GetSeqLength(pig2oid);
