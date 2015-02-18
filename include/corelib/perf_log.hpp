@@ -88,6 +88,15 @@ public:
     /// Constructor. Starts the timer by default.
     CPerfLogger(EStart state = eStart);
 
+    /// Constructor. Use the provided stopwatch to track time.
+    /// Start or stop the stopwatch according to the 'state'.
+    /// The same stopwatch object can be used multiple times
+    /// to accumulate total time for several operations.
+    /// @note
+    ///   The stopwatch is not copied, so the original object must not be
+    ///   destroyed while the logger is running.
+    CPerfLogger(CStopWatch& stopwatch, EStart state = eStart);
+
     /// Activate and start (or, restart after Suspend()) the timer.
     /// @note
     ///   If the timer is already running, post an error (once).
@@ -108,6 +117,8 @@ public:
     ///   Verbal description of the status of the timed code.
     /// @note
     ///   If the timer is already inactive, then post an error (once).
+    /// @note
+    ///   If an external stopwatch was provided, it is stopped by this method.
     /// @sa Discard
     CDiagContext_Extra Post(CRequestStatus::ECode status,
                             CTempString           resource,
@@ -137,10 +148,10 @@ private:
     friend class CPerfLogGuard;
 
 private:
-    CStopWatch         m_StopWatch;   ///< Internal timer
-    CStopWatch::EStart m_TimerState;  ///< Internal timer state to save cycles 
-    bool               m_IsDiscarded; ///< TRUE if Post() or Discard() is already called
-
+    auto_ptr<CStopWatch> m_StopWatchGuard; // Internal timer if auto-created.
+    CStopWatch*          m_StopWatch;      // Timer (internal or provided by user)
+    CStopWatch::EStart   m_TimerState;     // Internal timer state to save cycles 
+    bool                 m_IsDiscarded;    // TRUE if Post() or Discard() is already called
 };
 
 
@@ -195,6 +206,23 @@ public:
     /// @param state
     ///   Whether to start the timer by default.
     CPerfLogGuard(CTempString resource,
+                  CPerfLogger::EStart state = CPerfLogger::eStart);
+
+    /// Constructor.
+    /// @param resource
+    ///   Name of the resource (must be non-empty, else throws an exception).
+    /// Constructor. Use the provided stopwatch to track time.
+    /// @param stopwatch
+    ///   User-provided stopwatch to use for tracking time.
+    ///   The same stopwatch object can be used multiple times
+    ///   to accumulate total time for several operations.
+    /// @param state
+    ///   Whether to start the timer by default.
+    /// @note
+    ///   The stopwatch is not copied, so the original object must not be
+    ///   destroyed while the logger is running.
+    CPerfLogGuard(CTempString resource,
+                  CStopWatch& stopwatch,
                   CPerfLogger::EStart state = CPerfLogger::eStart);
 
     /// Activate and start (or, restart after Suspend()) the timer.
@@ -256,6 +284,20 @@ private:
 inline
 CPerfLogger::CPerfLogger(EStart state)
 {
+    m_StopWatchGuard.reset(new CStopWatch);
+    m_StopWatch = m_StopWatchGuard.get();
+    m_IsDiscarded = false;
+    m_TimerState  = CStopWatch::eStop;
+    if ( state == eStart ) {
+        Start();
+    }
+}
+
+
+inline
+CPerfLogger::CPerfLogger(CStopWatch& stopwatch, EStart state)
+{
+    m_StopWatch = &stopwatch;
     m_IsDiscarded = false;
     m_TimerState  = CStopWatch::eStop;
     if ( state == eStart ) {
@@ -275,7 +317,7 @@ void CPerfLogger::Start()
         return;
     }
     if ( CPerfLogger::IsON() ) {
-        m_StopWatch.Start();
+        m_StopWatch->Start();
     }
     m_TimerState = CStopWatch::eStart;
 }
@@ -288,13 +330,13 @@ void CPerfLogger::Suspend()
         return;
     }
     if ( CPerfLogger::IsON() ) {
-        m_StopWatch.Stop();
+        m_StopWatch->Stop();
     }
     m_TimerState = CStopWatch::eStop;
 }
 
 
-inline CDiagContext_Extra 
+inline CDiagContext_Extra
 CPerfLogger::Post(CRequestStatus::ECode status,
                   CTempString           resource,
                   CTempString           status_msg)
@@ -306,7 +348,7 @@ CPerfLogger::Post(CRequestStatus::ECode status,
 inline
 void CPerfLogger::Discard()
 {
-    // We don't need to "stop" CStopWatch here, it is nor really running.
+    // We don't need to "stop" CStopWatch here, it is nor actually running.
     m_TimerState  = CStopWatch::eStop;
     m_IsDiscarded = true;
 }
@@ -340,6 +382,19 @@ bool CPerfLogger::x_CheckValidity(const CTempString& err_msg) const
 inline
 CPerfLogGuard::CPerfLogGuard(CTempString resource, CPerfLogger::EStart state)
     : m_Logger(state), m_Resource(resource)   
+{
+    if ( resource.empty() ) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+            "CPerfLogGuard:: resource name is not specified");
+    }
+}
+
+
+inline
+CPerfLogGuard::CPerfLogGuard(CTempString resource,
+                             CStopWatch& stopwatch,
+                             CPerfLogger::EStart state)
+    : m_Logger(stopwatch, state), m_Resource(resource)   
 {
     if ( resource.empty() ) {
         NCBI_THROW(CCoreException, eInvalidArg,
