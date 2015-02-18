@@ -519,17 +519,30 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
 
 bool CNetCache::ExistsImpl()
 {
-    LOG_POST(Trace << "Cheching existence in NetCache " << m_ObjectLoc.GetLocator());
-    return m_Client.HasBlob(m_ObjectLoc.GetICacheKey(),
-            kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain());
+    LOG_POST(Trace << "Checking existence in NetCache " << m_ObjectLoc.GetLocator());
+
+    if (m_Client.HasBlob(m_ObjectLoc.GetICacheKey(),
+            kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain())) {
+        return true;
+    } else {
+        // Have to throw to let other locations do this check
+        NCBI_THROW_FMT(CNetCacheException, eBlobNotFound, "Not found");
+        return false; // Not reached
+    }
 }
 
 
 void CNetCache::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from NetCache " << m_ObjectLoc.GetLocator());
-    m_Client.RemoveBlob(m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
-            nc_cache_name = m_ObjectLoc.GetAppDomain());
+
+    if (ExistsImpl()) {
+        m_Client.RemoveBlob(m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+                nc_cache_name = m_ObjectLoc.GetAppDomain());
+    } else {
+        // Have to throw to let other locations try to remove
+        NCBI_THROW_FMT(CNetCacheException, eBlobNotFound, "Not found");
+    }
 }
 
 
@@ -596,7 +609,7 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 
 bool CFileTrack::ExistsImpl()
 {
-    LOG_POST(Trace << "Cheching existence in FileTrack " << m_ObjectLoc.GetLocator());
+    LOG_POST(Trace << "Checking existence in FileTrack " << m_ObjectLoc.GetLocator());
     return !m_Context->filetrack_api.GetFileInfo(&m_ObjectLoc).GetBoolean("deleted");
 }
 
@@ -611,13 +624,16 @@ void CFileTrack::RemoveImpl()
 class CSelector : public ISelector
 {
 public:
+    CSelector(const TObjLoc&, SContext*);
     CSelector(const TObjLoc&, SContext*, TNetStorageFlags);
 
     ILocation* First();
     ILocation* Next();
     string Locator();
+    void ResetLocator();
 
 private:
+    void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
     ILocation* Top();
 
     TObjLoc m_ObjectLoc;
@@ -628,28 +644,33 @@ private:
 };
 
 
+CSelector::CSelector(const TObjLoc& loc, SContext* context)
+    : m_ObjectLoc(loc),
+        m_NotFound(m_ObjectLoc),
+        m_NetCache(m_ObjectLoc, context),
+        m_FileTrack(m_ObjectLoc, context)
+{
+    InitLocations(m_ObjectLoc.GetLocation(), m_ObjectLoc.GetStorageAttrFlags());
+}
+
 CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags flags)
     : m_ObjectLoc(loc),
         m_NotFound(m_ObjectLoc),
         m_NetCache(m_ObjectLoc, context),
         m_FileTrack(m_ObjectLoc, context)
 {
-    _ASSERT(context);
+    InitLocations(eNFL_Unknown, flags);
+}
 
-    if (flags) {
-        m_ObjectLoc.ResetLocation(TFileTrack_Site::GetDefault().c_str());
-        m_ObjectLoc.SetStorageAttrFlags(flags);
-    } else {
-        flags = m_ObjectLoc.GetStorageAttrFlags();
-    }
-
+void CSelector::InitLocations(ENetStorageObjectLocation location,
+        TNetStorageFlags flags)
+{
     // The order does matter:
     // First, primary locations
     // Then, secondary locations
     // After, all other locations that have not yet been used
     // And finally, the 'not found' location
 
-    ENetStorageObjectLocation location = m_ObjectLoc.GetLocation();
     bool primary_nc = location == eNFL_NetCache;
     bool primary_ft = location == eNFL_FileTrack;
     bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
@@ -687,6 +708,13 @@ CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags fla
         LOG_POST(Trace << "FileTrack (location)");
         m_Locations.push(&m_FileTrack);
     }
+
+    // No real locations, only CNotFound
+    if (m_Locations.size() == 1) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "No storages available available for locator=\"" <<
+                m_ObjectLoc.GetLocator() << "\" and flags=" << flags);
+    }
 }
 
 
@@ -723,15 +751,9 @@ string CSelector::Locator()
 }
 
 
-// TODO:
-// Reconsider, default_flags should not be always used,
-// otherwise location is not used at all
-inline TNetStorageFlags PurifyFlags(SContext* context,
-        TNetStorageFlags flags)
+void CSelector::ResetLocator()
 {
-    _ASSERT(context);
-    flags &= context->valid_flags_mask;
-    return flags ? flags : context->default_flags;
+    m_ObjectLoc.ResetLocation();
 }
 
 
@@ -744,23 +766,36 @@ namespace NImpl
 SContext::SContext(const string& domain, CNetICacheClient client, TNetStorageFlags flags)
     : icache_client(client),
       default_flags(flags),
-      valid_flags_mask(~0U),
+      valid_flags_mask(0),
       app_domain(domain)
 {
     string backend_storage(TNetStorageAPI_BackendStorage::GetDefault());
 
-    if (strstr(backend_storage.c_str(), "netcache") == NULL)
-        valid_flags_mask &= ~fNST_NetCache;
-    if (strstr(backend_storage.c_str(), "filetrack") == NULL)
-        valid_flags_mask &= ~fNST_FileTrack;
+    if (strstr(backend_storage.c_str(), "netcache"))
+        valid_flags_mask |= fNST_NetCache;
+    if (strstr(backend_storage.c_str(), "filetrack"))
+        valid_flags_mask |= fNST_FileTrack;
 
-    default_flags &= valid_flags_mask;
+    // If there were specific underlying storages requested
+    if (TNetStorageLocFlags(default_flags)) {
+        // Reduce storages to the ones that are available
+        default_flags &= valid_flags_mask;
+    } else {
+        // Use all available underlying storages
+        default_flags |= valid_flags_mask;
+    }
 
-    if (default_flags == 0)
-        default_flags = valid_flags_mask & fNST_AnyLoc;
+    if (TNetStorageLocFlags(default_flags)) {
+        valid_flags_mask |= fNST_AnyAttr;
 
-    if (app_domain.empty() && icache_client) {
-        app_domain = icache_client.GetCacheName();
+        if (app_domain.empty() && icache_client) {
+            app_domain = icache_client.GetCacheName();
+        }
+    } else {
+        // If no available underlying storages left
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "No storages available when using backend_storage=\"" <<
+                backend_storage << "\" and flags=" << default_flags);
     }
 }
 
@@ -768,29 +803,28 @@ SContext::SContext(const string& domain, CNetICacheClient client, TNetStorageFla
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags)
 {
     _ASSERT(context);
-    flags = PurifyFlags(context, flags);
+    flags = context->DefaultFlags(flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
                     flags, context->app_domain, context->GetRandomNumber(),
                     TFileTrack_Site::GetDefault().c_str()), context, flags));
 }
 
 
-ISelector::Ptr ISelector::CreateFromLoc(SContext* context, const string& object_loc, TNetStorageFlags flags)
+ISelector::Ptr ISelector::Create(SContext* context, const string& object_loc)
 {
     _ASSERT(context);
-    flags = PurifyFlags(context, flags);
-    return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
-                    object_loc, flags), context, flags));
+    return Ptr(new CSelector(TObjLoc(context->compound_id_pool, object_loc),
+                context));
 }
 
 
-ISelector::Ptr ISelector::CreateFromKey(SContext* context, const string& key, TNetStorageFlags flags)
+ISelector::Ptr ISelector::Create(SContext* context, const string& object_loc,
+        TNetStorageFlags flags)
 {
     _ASSERT(context);
-    flags = PurifyFlags(context, flags);
-    return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
-                    flags, context->app_domain, key,
-                    TFileTrack_Site::GetDefault().c_str()), context, flags));
+    flags = context->DefaultFlags(flags);
+    return Ptr(new CSelector(TObjLoc(context->compound_id_pool, object_loc,
+                    flags), context, flags));
 }
 
 
@@ -798,28 +832,23 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
         const string& service, Int8 id)
 {
     _ASSERT(context);
-    flags = PurifyFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool,
-                    flags, context->app_domain,
-                    context->GetRandomNumber(),
-                    TFileTrack_Site::GetDefault().c_str());
+    flags = context->DefaultFlags(flags);
+    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
+            context->GetRandomNumber(), TFileTrack_Site::GetDefault().c_str());
     loc.SetServiceName(service);
-    loc.SetObjectID(id);
+    if (id) loc.SetObjectID(id);
     return Ptr(new CSelector(loc, context, flags));
 }
 
 
 ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
-        const string& service)
+        const string& key)
 {
     _ASSERT(context);
-    flags = PurifyFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool,
-                    flags, context->app_domain,
-                    context->GetRandomNumber(),
-                    TFileTrack_Site::GetDefault().c_str());
-    loc.SetServiceName(service);
-    return Ptr(new CSelector(loc, context, flags));
+    flags = context->DefaultFlags(flags);
+    return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
+                    flags, context->app_domain, key,
+                    TFileTrack_Site::GetDefault().c_str()), context, flags));
 }
 
 

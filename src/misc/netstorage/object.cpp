@@ -92,6 +92,37 @@ CNetStorageObjectInfo CObj::GetInfo()
 }
 
 
+string CObj::Relocate(ISelector::Ptr selector)
+{
+    // Use Read() to detect the current location
+    char buffer[RELOCATION_BUFFER_SIZE];
+    size_t bytes_read;
+    Read(buffer, sizeof(buffer), &bytes_read);
+
+    // TODO: typeid is not good, needs reconsidering
+    // (maybe, location from object locator will do)
+    if (typeid(*m_Location) == typeid(*selector->First())) {
+        LOG_POST(Trace << "locations are the same");
+        return selector->Locator();
+    }
+
+    LOG_POST(Trace << "locations are different");
+    selector->ResetLocator();
+    CRef<CObj> new_file(new CObj(selector));
+
+    for (;;) {
+        new_file->Write(buffer, bytes_read, NULL);
+        if (Eof()) break;
+        Read(buffer, sizeof(buffer), &bytes_read);
+    }
+
+    new_file->Close();
+    Close();
+    Remove();
+    return new_file->GetLoc();
+}
+
+
 bool CObj::Exists()
 {
     return m_Location->ExistsImpl();
@@ -121,37 +152,6 @@ void CObj::Abort()
 string CObj::GetLoc()
 {
     return m_Selector->Locator();
-}
-
-
-string CObj::MoveTo(ISelector::Ptr selector)
-{
-    // Use Read() to detect the current location
-    char buffer[RELOCATION_BUFFER_SIZE];
-    size_t bytes_read;
-    Read(buffer, sizeof(buffer), &bytes_read);
-
-    // TODO: typeid is not good, needs reconsidering
-    // (maybe, location from object locator will do)
-    if (typeid(*m_Location) == typeid(*selector->First())) {
-        LOG_POST(Trace << "locations are the same");
-        return selector->Locator();
-    } else {
-        LOG_POST(Trace << "locations are different");
-    }
-
-    CRef<CObj> new_file(new CObj(selector));
-
-    for (;;) {
-        new_file->Write(buffer, bytes_read, NULL);
-        if (Eof()) break;
-        Read(buffer, sizeof(buffer), &bytes_read);
-    }
-
-    new_file->Close();
-    Close();
-    Remove();
-    return new_file->GetLoc();
 }
 
 

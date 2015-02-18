@@ -276,7 +276,7 @@ string CProjectStorage::SaveRawData(const void* buf,
         return m_NC->PutData(buf, size,
                              (nc_blob_ttl=time_to_live, nc_blob_password=m_Password));
     } else {
-        CNetStorageObject nso = Exists(key) ? m_NS->Open(key, default_flags) : m_NS->Create(default_flags);
+        CNetStorageObject nso = Exists(key) ? m_NS->Open(key) : m_NS->Create(default_flags);
         nso.Write(buf, size);
         nso.Close();
         return nso.GetLoc();
@@ -579,7 +579,7 @@ auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned 
     if (m_NC) {
         ostr.reset(m_NC->CreateOStream(key, (nc_blob_ttl=time_to_live, nc_blob_password=m_Password)));
     } else {
-        nso = Exists(key) ? m_NS->Open(key, default_flags) : m_NS->Create(default_flags);
+        nso = Exists(key) ? m_NS->Open(key) : m_NS->Create(default_flags);
         key = nso.GetLoc();
         ostr.reset(nso.GetRWStream());
     }

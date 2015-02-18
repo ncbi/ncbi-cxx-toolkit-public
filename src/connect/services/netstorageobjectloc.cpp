@@ -153,6 +153,20 @@ ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
 }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
+        const string& object_loc) :
+    m_CompoundIDPool(cid_pool),
+    m_ObjectID(0),
+    m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
+    m_NCFlags(0),
+    m_NetCacheIP(0),
+    m_NetCachePort(0),
+    m_Dirty(false),
+    m_Locator(object_loc)
+{
+    Parse(object_loc);
+}
+
+CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& object_loc, TNetStorageAttrFlags flags) :
     m_CompoundIDPool(cid_pool),
     m_ObjectID(0),
@@ -162,6 +176,17 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_NetCachePort(0),
     m_Dirty(false),
     m_Locator(object_loc)
+{
+    Parse(object_loc);
+
+    if (flags != GetStorageAttrFlags()) {
+        m_Dirty = true;
+        m_LocatorFlags = (m_LocatorFlags & eLF_FieldFlags) |
+            x_StorageFlagsToLocatorFlags(flags);
+    }
+}
+
+void CNetStorageObjectLoc::Parse(const string& object_loc)
 {
     CCompoundID cid = m_CompoundIDPool.FromString(object_loc);
 
@@ -180,9 +205,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     CCompoundIDField field = cid.GetFirst(eCIT_Flags);
     VERIFY_FIELD_EXISTS(field);
     m_LocatorFlags = (TLocatorFlags) field.GetFlags();
-
-    // Override locator flags, if needed
-    SetStorageAttrFlags(flags);
 
     // Restore NetStorage service name.
     if (m_LocatorFlags & fLF_NetStorageService) {
@@ -227,44 +249,36 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     }
 
     // Find storage info (optional).
-    for (field = cid.GetFirst(eCIT_Cue); ; field = field.GetNextHomogeneous()) {
-        if (!field)
-            return;
-        if (field.GetCue() == STORAGE_INFO_CUE)
-            break;
-    }
-
-    // Restore object location.
-    VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-    m_LocationCode = field.GetDatabaseName();
-    m_Location = s_LocationCodeToLocation(m_LocationCode);
-
-    // Restore storage-specific info.
-    switch (m_Location) {
-    case eNFL_NetCache:
-        // Get NetCache flags.
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_NCFlags = (TNetCacheFlags) field.GetFlags();
-        // Get the service name.
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_NCServiceName = field.GetServiceName();
-        // Get the primary NetCache server IP and port.
-        if (m_NCFlags & fNCF_ServerSpecified) {
+    for (field = cid.GetFirst(eCIT_Cue); field; field = field.GetNextHomogeneous()) {
+        if (field.GetCue() == STORAGE_INFO_CUE) {
+            // Restore object location.
             VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-            m_NetCacheIP = field.GetIPv4Address();
-            m_NetCachePort = field.GetPort();
+            m_LocationCode = field.GetDatabaseName();
+            m_Location = s_LocationCodeToLocation(m_LocationCode);
+
+            // Restore storage-specific info.
+            if (m_Location == eNFL_NetCache) {
+                // Get NetCache flags.
+                VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+                m_NCFlags = (TNetCacheFlags) field.GetFlags();
+                // Get the service name.
+                VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+                m_NCServiceName = field.GetServiceName();
+                // Get the primary NetCache server IP and port.
+                if (m_NCFlags & fNCF_ServerSpecified) {
+                    VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+                    m_NetCacheIP = field.GetIPv4Address();
+                    m_NetCachePort = field.GetPort();
+                }
+            }
+
+            break;
         }
-        break;
-    default: /* Unknown storages */
-        break;
     }
 }
 
-// TODO: Make ResetLocation and SetLocation_FileTrack using one internal method
-void CNetStorageObjectLoc::ResetLocation(const char* ft_site_name)
+void CNetStorageObjectLoc::ResetLocation()
 {
-    EFileTrackSite ft_site = s_StringToFileTrackSite(ft_site_name);
-
     m_Dirty = true;
 
     m_LocationCode.clear();
@@ -272,13 +286,7 @@ void CNetStorageObjectLoc::ResetLocation(const char* ft_site_name)
 
     m_NCServiceName.clear();
     m_NCFlags = 0;
-
-    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
-
-    if (ft_site == eFileTrack_DevSite)
-        m_LocatorFlags |= fLF_DevEnv;
-    else if (ft_site == eFileTrack_QASite)
-        m_LocatorFlags |= fLF_QAEnv;
+    m_CacheChunkSize = DEFAULT_CACHE_CHUNK_SIZE;
 }
 
 void CNetStorageObjectLoc::SetLocation_NetCache(
@@ -448,17 +456,6 @@ TNetStorageAttrFlags CNetStorageObjectLoc::GetStorageAttrFlags() const
     if (m_LocatorFlags & fLF_NoMetaData)
         flags |= fNST_NoMetaData;
 
-    switch (m_Location) {
-    case eNFL_NetCache:
-        flags |= fNST_NetCache;
-        break;
-    case eNFL_FileTrack:
-        flags |= fNST_FileTrack;
-        break;
-    default: /* Unknown storages */
-        break;
-    }
-
     return flags;
 }
 
@@ -476,14 +473,6 @@ CNetStorageObjectLoc::TLocatorFlags
         locator_flags |= fLF_NoMetaData;
 
     return locator_flags;
-}
-
-void CNetStorageObjectLoc::SetStorageAttrFlags(TNetStorageAttrFlags flags)
-{
-    if (flags) {
-        m_LocatorFlags &= (~static_cast<TLocatorFlags>(eLF_AttrFlags)) |
-            x_StorageFlagsToLocatorFlags(flags);
-    }
 }
 
 CJsonNode CNetStorageObjectLoc::ToJSON() const

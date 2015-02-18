@@ -364,16 +364,10 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///
     /// @param object_loc
     ///  File to open
-    /// @param flags
-    ///  Combination of flags that hints at the current object location
-    ///  (storage).
-    ///  and caching. If this combination differs from that embedded in
-    ///  'object_loc', a new object ID will be generated for this object.
     /// @return
     ///  New CNetStorageObject
     ///
-    CNetStorageObject Open(const string& object_loc,
-            TNetStorageFlags flags = 0);
+    CNetStorageObject Open(const string& object_loc);
 
     /// Relocate a object according to the specified combination of flags
     ///

@@ -95,9 +95,8 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
     {}
 
     CNetStorageObject Create(TNetStorageFlags = 0);
-    CNetStorageObject Create(TNetStorageFlags, const string&, Int8);
-    CNetStorageObject Create(TNetStorageFlags, const string&);
-    CNetStorageObject Open(const string&, TNetStorageFlags = 0);
+    CNetStorageObject Create(TNetStorageFlags, const string&, Int8 = 0);
+    CNetStorageObject Open(const string&);
     string Relocate(const string&, TNetStorageFlags);
     bool Exists(const string&);
     void Remove(const string&);
@@ -125,22 +124,12 @@ CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
 }
 
 
-CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
-        const string& service)
-{
-    ISelector::Ptr selector(ISelector::Create(m_Context, flags, service));
-    CRef<CObj> object(new CObj(selector));
-    return object.GetPointerOrNull();
-}
-
-
-CNetStorageObject SNetStorageAPIImpl::Open(
-        const string& object_loc, TNetStorageFlags flags)
+CNetStorageObject SNetStorageAPIImpl::Open(const string& object_loc)
 {
     if (CNetStorageObject object = m_NetCache.Open(object_loc)) {
         return object;
     } else {
-        ISelector::Ptr selector(ISelector::CreateFromLoc(m_Context, object_loc, flags));
+        ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
         return new CObj(selector);
     }
 }
@@ -149,21 +138,16 @@ CNetStorageObject SNetStorageAPIImpl::Open(
 string SNetStorageAPIImpl::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
-    flags &= m_Context->valid_flags_mask;
-
-    if (flags == 0)
-        return string();
-
-    ISelector::Ptr orig_selector(ISelector::CreateFromLoc(m_Context, object_loc));
-    ISelector::Ptr new_selector(ISelector::CreateFromLoc(m_Context, object_loc, flags));
+    ISelector::Ptr orig_selector(ISelector::Create(m_Context, object_loc));
+    ISelector::Ptr new_selector(ISelector::Create(m_Context, object_loc, flags));
     CRef<CObj> orig_file(new CObj(orig_selector));
-    return orig_file->MoveTo(new_selector);
+    return orig_file->Relocate(new_selector);
 }
 
 
 bool SNetStorageAPIImpl::Exists(const string& object_loc)
 {
-    ISelector::Ptr selector(ISelector::CreateFromLoc(m_Context, object_loc));
+    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
     CRef<CObj> net_file(new CObj(selector));
     return net_file->Exists();
 }
@@ -171,7 +155,7 @@ bool SNetStorageAPIImpl::Exists(const string& object_loc)
 
 void SNetStorageAPIImpl::Remove(const string& object_loc)
 {
-    ISelector::Ptr selector(ISelector::CreateFromLoc(m_Context, object_loc));
+    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
 }
@@ -203,7 +187,7 @@ private:
 CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
+    ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
     return new CObj(selector);
 }
 
@@ -211,21 +195,16 @@ CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& key,
 string SNetStorageByKeyAPIImpl::Relocate(const string& key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
-    flags &= m_Context->valid_flags_mask;
-
-    if (flags == 0)
-        return string();
-
-    ISelector::Ptr orig_selector(ISelector::CreateFromKey(m_Context, key, old_flags));
-    ISelector::Ptr new_selector(ISelector::CreateFromKey(m_Context, key, flags));
+    ISelector::Ptr orig_selector(ISelector::Create(m_Context, old_flags, key));
+    ISelector::Ptr new_selector(ISelector::Create(m_Context, flags, key));
     CRef<CObj> orig_file(new CObj(orig_selector));
-    return orig_file->MoveTo(new_selector);
+    return orig_file->Relocate(new_selector);
 }
 
 
 bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
+    ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
     CRef<CObj> net_file(new CObj(selector));
     return net_file->Exists();
 }
@@ -233,7 +212,7 @@ bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 
 void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::CreateFromKey(m_Context, key, flags));
+    ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
 }

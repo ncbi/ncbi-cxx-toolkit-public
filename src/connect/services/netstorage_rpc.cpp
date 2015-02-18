@@ -635,15 +635,14 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
             object_loc, flags, SNetStorageObjectRPC::eWriting);
 }
 
-CNetStorageObject SNetStorageRPC::Open(const string& object_loc,
-        TNetStorageFlags flags)
+CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 {
     if (x_NetCacheMode(object_loc))
         return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, object_loc);
 
     return new SNetStorageObjectRPC(this, NULL, NULL,
             SNetStorageObjectRPC::eByGeneratedID,
-            object_loc, flags, SNetStorageObjectRPC::eReady);
+            object_loc, 0, SNetStorageObjectRPC::eReady);
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,

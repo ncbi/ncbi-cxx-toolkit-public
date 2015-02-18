@@ -1443,7 +1443,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                               kEmptyStr,
                               0));
         CNetStorageObject net_storage_object = net_storage.Open(
-                                                    object_id.object_loc, 0);
+                                                    object_id.object_loc);
 
         CJsonNode         object_info = net_storage_object.GetInfo().ToJSON();
 
@@ -1892,7 +1892,7 @@ CNetStorageHandler::x_ProcessWrite(
                           kEmptyStr,
                           0));
 
-    m_ObjectBeingWritten = net_storage.Open(object_id.object_loc, 0);
+    m_ObjectBeingWritten = net_storage.Open(object_id.object_loc);
 
     string          locator = m_ObjectBeingWritten.GetLoc();
 
@@ -1958,7 +1958,7 @@ CNetStorageHandler::x_ProcessRead(
                           kEmptyStr,
                           0));
     CNetStorageObject   net_storage_object = net_storage.Open(
-                                                    object_id.object_loc, 0);
+                                                    object_id.object_loc);
 
     x_SendSyncMessage(reply);
 
@@ -2188,7 +2188,7 @@ CNetStorageHandler::x_ProcessGetSize(
                         kEmptyStr,
                         0));
     CNetStorageObject net_storage_object = net_storage.Open(
-                        object_id.object_loc, 0);
+                        object_id.object_loc);
     Uint8             object_size = net_storage_object.GetSize();
 
     reply.SetInteger("Size", object_size);

@@ -52,9 +52,9 @@ USING_NCBI_SCOPE;
 // test will be disabled until the issue is fixed
 #undef TEST_ATTRIBUTES
 
-#undef TEST_NON_EXISTENT
-#undef TEST_RELOCATED
-#undef TEST_REMOVED
+#define TEST_NON_EXISTENT
+#define TEST_RELOCATED
+#define TEST_REMOVED
 
 
 // Configuration parameters
@@ -355,7 +355,7 @@ public:
 };
 
 // Large volume data to test APIs
-class CBigData : public IExpected
+class CRndData : public IExpected
 {
 public:
     struct SSource
@@ -370,7 +370,7 @@ public:
         }
     };
 
-    CBigData(CNetStorageObject)
+    CRndData(CNetStorageObject)
         : m_Begin(0),
           m_Length(m_Source.data.size())
     {}
@@ -410,7 +410,7 @@ public:
         : m_Object(object)
     {
         // Create a NetStorage object to use as a source
-        CBigData::SSource source;
+        CRndData::SSource source;
         m_Object.Write(&source.data[0], source.data.size());
         m_Object.Close();
 
@@ -1230,7 +1230,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 
     // Relocate the object to a different storage.
     Ctx("Relocating object");
-    string persistent_loc = netstorage.Relocate(object_loc, TLoc::relocate);
+    string relocated_loc = netstorage.Relocate(object_loc, TLoc::relocate);
 
     // Wait some time for changes to take effect
     g_Sleep();
@@ -1247,7 +1247,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
             netstorage.Open(object_loc));
     // or using the newly generated storage ID:
     ReadAndCompare<typename TLoc::TRelocate>("Reading using newly generated ID",
-            netstorage.Open(persistent_loc));
+            netstorage.Open(relocated_loc));
 
     ExistsAndRemoveTests<typename TLoc::TRelocate>(object_loc);
 }
@@ -1303,7 +1303,7 @@ NCBITEST_AUTO_INIT()
 }
 
 #define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
-#define SRC_LIST    (Str, (Big, (Nst, BOOST_PP_NIL)))
+#define SRC_LIST    (Str, (Rnd, (Nst, BOOST_PP_NIL)))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
 #define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
 

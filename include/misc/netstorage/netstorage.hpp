@@ -49,7 +49,12 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-// TODO: Merge every two into one (with icache_client = NULL)
+// TODO:
+// Replace following functions with CDirectNetStorage[ByKey] classes
+// These classes will have additional
+// 1) Constructors, with merge of similar into one (icache_client = NULL)
+// 2) Create methods
+// these will replace everything below
 
 /// Construct a CNetStorage object
 ///

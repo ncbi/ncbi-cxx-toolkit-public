@@ -164,8 +164,7 @@ inline void CNetStorageObject::Close()
 struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 {
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0) = 0;
-    virtual CNetStorageObject Open(const string& object_loc,
-            TNetStorageFlags flags = 0) = 0;
+    virtual CNetStorageObject Open(const string& object_loc) = 0;
     virtual string Relocate(const string& object_loc,
             TNetStorageFlags flags) = 0;
     virtual bool Exists(const string& object_loc) = 0;
@@ -177,10 +176,9 @@ inline CNetStorageObject CNetStorage::Create(TNetStorageFlags flags)
     return m_Impl->Create(flags);
 }
 
-inline CNetStorageObject CNetStorage::Open(const string& object_loc,
-        TNetStorageFlags flags)
+inline CNetStorageObject CNetStorage::Open(const string& object_loc)
 {
-    return m_Impl->Open(object_loc, flags);
+    return m_Impl->Open(object_loc);
 }
 
 inline string CNetStorage::Relocate(const string& object_loc,
@@ -266,7 +264,9 @@ public:
             const string& unique_key,
             const char* ft_site_name);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-            const string& object_loc, TNetStorageAttrFlags flags = 0);
+            const string& object_loc);
+    CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
+            const string& object_loc, TNetStorageAttrFlags flags);
 
     void SetObjectID(Uint8 object_id)
     {
@@ -322,7 +322,7 @@ public:
 
     Uint8 GetCacheChunkSize() const {return m_CacheChunkSize;}
 
-    void ResetLocation(const char* ft_site_name);
+    void ResetLocation();
 
     void SetLocation_NetCache(const string& service_name,
         Uint4 server_ip, unsigned short server_port,
@@ -349,7 +349,6 @@ public:
     }
 
     TNetStorageAttrFlags GetStorageAttrFlags() const;
-    void SetStorageAttrFlags(TNetStorageAttrFlags flags);
 
     // Serialize to a JSON object.
     void ToJSON(CJsonNode& root) const;
@@ -366,7 +365,16 @@ private:
         fLF_DevEnv              = (1 << 6),
         fLF_QAEnv               = (1 << 7),
 
-        eLF_AttrFlags = (fLF_NoMetaData | fLF_Movable | fLF_Cacheable)
+        eLF_AttrFlags = (
+                fLF_NoMetaData |
+                fLF_Movable |
+                fLF_Cacheable),
+        eLF_FieldFlags = (
+                fLF_NetStorageService |
+                fLF_HasObjectID |
+                fLF_HasUserKey |
+                fLF_DevEnv |
+                fLF_QAEnv)
     };
     typedef unsigned TLocatorFlags;
 
@@ -376,6 +384,7 @@ private:
     };
     typedef unsigned TNetCacheFlags;
 
+    void Parse(const string& object_loc);
     void x_SetFileTrackSite(const char* ft_site_name);
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();

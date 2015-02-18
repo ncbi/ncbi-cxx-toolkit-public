@@ -56,6 +56,11 @@ struct SContext : CObject
 
     SContext(const string&, CNetICacheClient, TNetStorageFlags);
     Uint8 GetRandomNumber() { return filetrack_api.m_Random.GetRandUint8(); }
+
+    TNetStorageFlags DefaultFlags(TNetStorageFlags flags)
+    {
+        return flags ? flags : default_flags;
+    }
 };
 
 // TODO: Add constness to methods where applicable
@@ -93,15 +98,14 @@ public:
     virtual ILocation* First() = 0;
     virtual ILocation* Next() = 0;
     virtual string Locator() = 0;
+    virtual void ResetLocator() = 0;
 
 
     typedef auto_ptr<ISelector> Ptr;
 
-    // TODO: It should be possible to reduce number of these methods
-    // TODO: It might be possible to use the same name for all overloads
     static Ptr Create(SContext*, TNetStorageFlags);
-    static Ptr CreateFromLoc(SContext*, const string&, TNetStorageFlags = 0);
-    static Ptr CreateFromKey(SContext*, const string&, TNetStorageFlags);
+    static Ptr Create(SContext*, const string&);
+    static Ptr Create(SContext*, const string&, TNetStorageFlags);
     static Ptr Create(SContext*, TNetStorageFlags, const string&, Int8);
     static Ptr Create(SContext*, TNetStorageFlags, const string&);
 };

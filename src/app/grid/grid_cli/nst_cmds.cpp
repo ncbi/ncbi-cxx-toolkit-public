@@ -228,7 +228,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetStorageObject netstorage_object(IsOptionSet(eOptionalObjectLoc) ?
-            m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
+            m_NetStorage.Open(m_Opts.id) :
             m_NetStorage.Create(m_Opts.netstorage_flags));
 
     if (IsOptionSet(eInput))
@@ -261,8 +261,7 @@ int CGridCommandLineInterfaceApp::Cmd_Download()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id,
-            m_Opts.netstorage_flags));
+    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id));
 
     char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
@@ -296,8 +295,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
             IsOptionSet(eObjectKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
-        netstorage_object = m_NetStorage.Open(m_Opts.id,
-                m_Opts.netstorage_flags);
+        netstorage_object = m_NetStorage.Open(m_Opts.id);
         break;
 
     case OPTION_N(1) + OPTION_N(2):
@@ -337,8 +335,7 @@ int CGridCommandLineInterfaceApp::Cmd_NetStorageObjectInfo()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id,
-            m_Opts.netstorage_flags));
+    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id));
 
     g_PrintJSON(stdout, netstorage_object.GetInfo().ToJSON());
 
@@ -358,8 +355,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetAttr()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    PrintLine(m_NetStorage.Open(m_Opts.id,
-            m_Opts.netstorage_flags).GetAttribute(m_Opts.attr_name));
+    PrintLine(m_NetStorage.Open(m_Opts.id).GetAttribute(m_Opts.attr_name));
 
     return 0;
 }
@@ -368,7 +364,7 @@ int CGridCommandLineInterfaceApp::Cmd_SetAttr()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags).
+    m_NetStorage.Open(m_Opts.id).
             SetAttribute(m_Opts.attr_name, m_Opts.attr_value);
 
     return 0;

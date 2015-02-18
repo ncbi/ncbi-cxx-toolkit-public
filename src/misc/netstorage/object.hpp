@@ -68,10 +68,9 @@ public:
     void SetAttribute(const string&, const string&);
     CNetStorageObjectInfo GetInfo();
 
+    string Relocate(ISelector::Ptr);
     bool Exists();
     void Remove();
-
-    string MoveTo(ISelector::Ptr);
 
 private:
     ERW_Result ReadImpl(void*, size_t, size_t*);
