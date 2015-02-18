@@ -240,6 +240,35 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     NCBITEST_CHECK_WITH_ARGS_IMPL( ne_impl, "", REQUIRE, CHECK_NE, (L)(R) )
 
 
+// Ensure Clang analysis tools (notably scan-build) recognize that a failed
+// {BOOST,NCBITEST}_REQUIRE* call will bail.
+#ifdef __clang_analyzer__
+#  undef  BOOST_REQUIRE
+#  define BOOST_REQUIRE(P)               _ASSERT(P)
+#  undef  BOOST_REQUIRE_MESSAGE
+#  define BOOST_REQUIRE_MESSAGE(P, M)    _ASSERT((FORMAT(M), (P)))
+#  undef  BOOST_REQUIRE_EQUAL
+#  define BOOST_REQUIRE_EQUAL(L, R)      _ASSERT((L) == (R))
+#  undef  BOOST_REQUIRE_NE
+#  define BOOST_REQUIRE_NE(L, R)         _ASSERT((L) != (R))
+#  undef  BOOST_REQUIRE_NO_THROW
+#  define BOOST_REQUIRE_NO_THROW(S)      try { S; } catch (...) { _TROUBLE; }
+#  undef  BOOST_REQUIRE_THROW
+#  define BOOST_REQUIRE_THROW(S, E) \
+    do { try { S; } catch (E const&) { break; } _TROUBLE; } while(false)
+#  undef  NCBITEST_REQUIRE
+#  define NCBITEST_REQUIRE(P)            BOOST_REQUIRE_NO_THROW(_ASSERT(P))
+#  undef  NCBITEST_REQUIRE_MESSAGE
+#  define NCBITEST_REQUIRE_MESSAGE(P, M) NCBITEST_REQUIRE((FORMAT(M), (P)))
+#  undef  NCBITEST_REQUIRE_EQUAL
+#  define NCBITEST_REQUIRE_EQUAL(L, R)   NCBITEST_REQUIRE((L) == (R))
+#  undef  NCBITEST_REQUIRE_NE
+#  define NCBITEST_REQUIRE_NE(L, R)      NCBITEST_REQUIRE((L) != (R))
+// Used but left as is: BOOST_REQUIRE_CLOSE, BOOST_REQUIRE_EQUAL_COLLECTIONS.
+// Irrelevant: BOOST_REQUIRE_CTX (custom, based on BOOST_REQUIRE),
+//             BOOST_REQUIRE_CUTPOINT (custom, based on throw).
+// Used only in BOOST_CHECK_... form: GE, GT, LT, SMALL.
+#endif
 
 
 /** @addtogroup Tests

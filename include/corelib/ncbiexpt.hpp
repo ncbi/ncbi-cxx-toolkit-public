@@ -511,7 +511,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Format message using iostreams library.
 /// This macro returns an object convertible to std::string.
 #define FORMAT(message) \
-    CNcbiOstrstreamToString(static_cast<CNcbiOstrstream&>(CNcbiOstrstream().flush() << message))
+    NCBI_NS_NCBI::CNcbiOstrstreamToString(static_cast<NCBI_NS_NCBI::CNcbiOstrstream&>(NCBI_NS_NCBI::CNcbiOstrstream().flush() << message))
 
 
 /// Create an exception instance to be thrown later, given the exception
