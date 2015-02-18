@@ -187,20 +187,10 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message                                          \
       << NCBI_NS_NCBI::Endm )
 
-
-/// Log message only without severity, location, prefix information.
-/// This macro is deprecated and it's strongly recomended to move
-/// in all projects (except tests) to macro LOG_POST_X to make possible more
-/// flexible error statistics and logging.
-///
-/// @sa
-///   LOG_POST_EX, LOG_POST_X
+// Legacy alias for ERR_POST (as well as all LOG_POST_xxxx flavors).
+// This macro is deprecated, use ERR_POST instead.
 #define LOG_POST(message)                                               \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
-      NCBI_NS_NCBI::eDiag_Error,                                        \
-      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()   \
-      << message                                                        \
-      << NCBI_NS_NCBI::Endm )
+    ERR_POST(message)
 
 /// Error posting with error codes.
 /// This macro should be used only when you need to make non-constant
@@ -216,26 +206,13 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message                                             \
       << NCBI_NS_NCBI::Endm )
 
-/// Log posting with error codes.
-/// This macro should be used only when you need to make non-constant
-/// error subcode. In all other cases it's strongly recomended to move
-/// in all projects (except tests) to macro LOG_POST_X to make possible more
-/// flexible error statistics and logging.
-///
-/// @sa
-///   LOG_POST, LOG_POST_X
 #define LOG_POST_EX(err_code, err_subcode, message)                     \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
-      NCBI_NS_NCBI::eDiag_Error,                                        \
-      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()   \
-      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )             \
-      << message << NCBI_NS_NCBI::Endm )
-
+    ERR_POST_EX(err_code, err_subcode, message)
 
 /// Define global error code name with given value (err_code) and given
 /// maximum value of error subcode within this code. To use defined error
 /// code you need to define symbol NCBI_USE_ERRCODE_X with name as its value.
-/// This error code is used only in macros LOG_POST_X and ERR_POST_X. Maximum
+/// This error code is used only in ERR_POST_X macro. Maximum
 /// value of error subcode is being checked during compilation and
 /// exists for developers to know what code they can use in next inserted
 /// ERR_POST_X call (i.e. when one want to insert new ERR_POST_X call he has
@@ -256,7 +233,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 ///
 /// @sa
-///   NCBI_DEFINE_ERR_SUBCODE_X, LOG_POST_X, ERR_POST_X,
+///   NCBI_DEFINE_ERR_SUBCODE_X, ERR_POST_X,
 ///   NCBI_ERRCODE_X, NCBI_MAX_ERR_SUBCODE_X
 #define NCBI_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)  \
     namespace err_code_x {                                      \
@@ -362,7 +339,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// maximum error subcode valid for active error code.
 ///
 /// @sa
-///   NCBI_DEFINE_ERRCODE_X, NCBI_DEFINE_ERR_SUBCODE_X, LOG_POST_X, ERR_POST_X
+///   NCBI_DEFINE_ERRCODE_X, NCBI_DEFINE_ERR_SUBCODE_X, ERR_POST_X
 template <int errorCode, int errorSubcode, int maxErrorSubcode, bool isWrong>
 struct WRONG_ERROR_SUBCODE_IN_POST_MACRO;
 
@@ -413,7 +390,7 @@ inline void CheckErrSubcodeX(int)
 /// For early versions of gcc used a bit different design to make error
 /// message more clear to understand.
 ///
-/// @sa LOG_POST_X, ERR_POST_X
+/// @sa ERR_POST_X
 #define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                  \
     NCBI_NS_NCBI::CheckErrSubcodeX(                                   \
         NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<              \
@@ -432,7 +409,7 @@ inline void CheckErrSubcodeX(int)
 /// Though for MIPSpro and ICC it's not enough to make error message clear
 /// (see addition below).
 ///
-/// @sa LOG_POST_X, ERR_POST_X
+/// @sa ERR_POST_X
 #define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                  \
     NCBI_NS_NCBI::CheckErrSubcodeX(                                   \
         (int)sizeof(NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<  \
@@ -492,7 +469,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 /// Error posting with default error code and given error subcode. Also
 /// checks subcode correctness. When error subcode is incorrect (greater than
 /// defined in NCBI_DEFINE_ERRCODE_X) compile-time error is issued.
-/// All calls to ERR_POST_X or LOG_POST_X under the same default error code
+/// All calls to ERR_POST_X under the same default error code
 /// MUST be with deferent error subcodes to make possible more
 /// flexible error statistics and logging.
 /// If using of macro leads to compile errors containing in message strings
@@ -528,13 +505,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 #define ERR_POST_X(err_subcode, message)                  \
     ERR_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
-/// Log posting with default error code and given error subcode. See comments
-/// to ERR_POST_X for clarifying the way of use and details of behaviour
-/// of this macro.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_X, LOG_POST_EX
 #define LOG_POST_X(err_subcode, message)                  \
-    LOG_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
+    ERR_POST_X(err_subcode, message)
 
 /// Error posting with error code having given name and with given error
 /// subcode. Macro must be placed in headers instead of ERR_POST_X to not
@@ -545,14 +517,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
       ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
 
-/// Log posting with error code having given name and with given error
-/// subcode. Macro must be placed in headers instead of LOG_POST_X to not
-/// confuse default error codes used in sources where this header is included.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_X
 #define LOG_POST_XX(error_name, err_subcode, message)                      \
-    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
-      LOG_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
+    ERR_POST_XX(error_name, err_subcode, message)
 
 
 /// Common code for making log or error posting only given number of times
@@ -569,27 +535,19 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     } while ( false )
 
 
-/// Log posting only given number of times during program execution.
-#define LOG_POST_N_TIMES(count, message)   \
-    NCBI_REPEAT_POST_N_TIMES( LOG_POST, count, (message) )
-
 /// Error posting only given number of times during program execution.
 #define ERR_POST_N_TIMES(count, message)   \
     NCBI_REPEAT_POST_N_TIMES( ERR_POST, count, (message) )
 
-/// Log posting only once during program execution.
-#define LOG_POST_ONCE(message) LOG_POST_N_TIMES(1, message)
+#define LOG_POST_N_TIMES(count, message)   \
+    ERR_POST_N_TIMES(count, message)
+
 
 /// Error posting only once during program execution.
 #define ERR_POST_ONCE(message) ERR_POST_N_TIMES(1, message)
 
+#define LOG_POST_ONCE(message) ERR_POST_ONCE(1, message)
 
-/// Log posting only given number of times during program execution
-/// with default error code and given error subcode.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, LOG_POST_X
-#define LOG_POST_X_N_TIMES(count, err_subcode, message)   \
-    NCBI_REPEAT_POST_N_TIMES( LOG_POST_X, count, (err_subcode, message) )
 
 /// Error posting only given number of times during program execution
 /// with default error code and given error subcode.
@@ -598,12 +556,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 #define ERR_POST_X_N_TIMES(count, err_subcode, message)   \
     NCBI_REPEAT_POST_N_TIMES( ERR_POST_X, count, (err_subcode, message) )
 
-/// Log posting only once during program execution with default
-/// error code and given error subcode.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, LOG_POST_X
-#define LOG_POST_X_ONCE(err_subcode, message)   \
-    LOG_POST_X_N_TIMES(1, err_subcode, message)
+#define LOG_POST_X_N_TIMES(count, err_subcode, message)   \
+    ERR_POST_X_N_TIMES(count, err_subcode, message)
 
 /// Error posting only once during program execution with default
 /// error code and given error subcode.
@@ -612,14 +566,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 #define ERR_POST_X_ONCE(err_subcode, message)   \
     ERR_POST_X_N_TIMES(1, err_subcode, message)
 
-
-/// Log posting only given number of times during program execution
-/// with given error code name and given error subcode.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_XX
-#define LOG_POST_XX_N_TIMES(count, error_name, err_subcode, message)   \
-    NCBI_REPEAT_POST_N_TIMES( LOG_POST_XX, count,                      \
-                              (error_name, err_subcode, message) )
+#define LOG_POST_X_ONCE(err_subcode, message)   \
+    ERR_POST_X_ONCE(err_subcode, message)
 
 /// Error posting only given number of times during program execution
 /// with given error code name and given error subcode.
@@ -629,12 +577,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     NCBI_REPEAT_POST_N_TIMES( ERR_POST_XX, count,                      \
                               (error_name, err_subcode, message) )
 
-/// Log posting only once during program execution with given
-/// error code name and given error subcode.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_XX
-#define LOG_POST_XX_ONCE(error_name, err_subcode, message)   \
-    LOG_POST_XX_N_TIMES(1, error_name, err_subcode, message)
+#define LOG_POST_XX_N_TIMES(count, error_name, err_subcode, message)   \
+    ERR_POST_XX_N_TIMES(count, error_name, err_subcode, message)
 
 /// Error posting only once during program execution with given
 /// error code name and given error subcode.
@@ -643,6 +587,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 #define ERR_POST_XX_ONCE(error_name, err_subcode, message)   \
     ERR_POST_XX_N_TIMES(1, error_name, err_subcode, message)
 
+#define LOG_POST_XX_ONCE(error_name, err_subcode, message)   \
+    ERR_POST_XX_ONCE(error_name, err_subcode, message)
 
 /// Severity level for the posted diagnostics.
 enum EDiagSev {
@@ -748,7 +694,8 @@ enum EDiagPostFlag {
     eDPF_OmitSeparator      = 1 << 23, ///< No '---' separator before message
 
     eDPF_AppLog             = 1 << 24, ///< Post message to application log
-    eDPF_IsMessage          = 1 << 25, ///< Print "Message" severity name.
+    eDPF_IsMessage          = 1 << 25, ///< Legacy name for eDPF_IsNote.
+    eDPF_IsNote             = 1 << 25, ///< Print "Note[X]" severity name.
 
     /// This flag is deprecated and ignored - all log writes are atomic.
     /// For compatibility IsSetDiagPostFlag always returns true when
@@ -1054,10 +1001,17 @@ public:
     /// Set IsMessage flag to indicate that the current post is a message.
     /// Do not flush current post or change the severity. The flag is reset
     /// by the next Flush().
+    /// @deprecated Use Note manipulator.
     friend const CNcbiDiag& Message (const CNcbiDiag& diag);
 
+    /// Set IsNote flag to indicate that the current post is a note.
+    /// Do not flush current post or change the severity. The flag is reset
+    /// by the next Flush().
+    friend const CNcbiDiag& Note    (const CNcbiDiag& diag);
+
     /// Set IsConsole flag to indicate that the current post should
-    /// go to console rather that to the default output (file etc.).
+    /// go to console regardless of its severity (in addition to the
+    /// default output -- file etc.).
     /// Do not flush current post or change the severity. The flag is reset
     /// by the next Flush().
     friend const CNcbiDiag& Console (const CNcbiDiag& diag);
@@ -1173,8 +1127,11 @@ public:
                              const char* expression,
                              const char* message);
 
-    /// Reset IsMessage flag.
-    void ResetIsMessageFlag(void) const { m_PostFlags &= ~eDPF_IsMessage; }
+    /// @deprecated Use ResetIsNoteFlag()
+    void ResetIsMessageFlag(void) const { ResetIsNoteFlag(); }
+
+    /// Reset IsNote flag.
+    void ResetIsNoteFlag(void) const { m_PostFlags &= ~eDPF_IsNote; }
 
     /// Reset IsConsole flag.
     void ResetIsConsoleFlag(void) const { m_PostFlags &= ~eDPF_IsConsole; }
@@ -1434,7 +1391,7 @@ NCBI_XNCBI_EXPORT
 extern int CompareDiagPostLevel(EDiagSev sev1, EDiagSev sev2);
 
 /// Check if the specified severity is higher or equal to the currently
-/// selected post level and will be printed by LOG_POST/ERR_POST.
+/// selected post level and will be printed by ERR_POST.
 NCBI_XNCBI_EXPORT
 extern bool IsVisibleDiagPostLevel(EDiagSev sev);
 

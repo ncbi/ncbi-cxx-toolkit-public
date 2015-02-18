@@ -81,7 +81,7 @@ bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
 bool CTestDiagApp::Thread_Init(int idx)
 {
     if (!s_CreateLine) s_CreateLine = __LINE__ + 1;
-    LOG_POST("Thread " + NStr::IntToString(idx) + " created");
+    ERR_POST(Note << "Thread " + NStr::IntToString(idx) + " created");
     return true;
 }
 
@@ -89,7 +89,7 @@ bool CTestDiagApp::Thread_Run(int idx)
 {
     if (!s_LogLine)
         s_LogLine = __LINE__ + 1;
-    LOG_POST("LOG message from thread " + NStr::IntToString(idx));
+    ERR_POST(Note << "NOTE message from thread " + NStr::IntToString(idx));
     if (!s_ErrLine)
         s_ErrLine = __LINE__ + 1;
     ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
@@ -162,7 +162,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         TStringList::iterator it = find(
             messages.begin(),
             messages.end(),
-            "Thread " + NStr::IntToString(i) + " created");
+            "Note[E]: Thread " + NStr::IntToString(i) + " created");
         assert(it != messages.end());
         messages.erase(it);
     }
@@ -179,12 +179,12 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
     }
     assert(messages.size() == s_NumThreads+m_LogMsgCount);
 
-    // Verify "Log" messages
+    // Verify "NOTE" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
         TStringList::iterator it = find(
             messages.begin(),
             messages.end(),
-            "LOG message from thread " + NStr::IntToString(i));
+            "Note[E]: NOTE message from thread " + NStr::IntToString(i));
         assert(it != messages.end());
         messages.erase(it);
     }
@@ -219,7 +219,7 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             assert(msg.m_Line == s_CreateLine);
             create_msg_count++;
         }
-        else if (msg_text.find("LOG ") == 0) {
+        else if (msg_text.find("NOTE ") == 0) {
             pos = msg_text.find_last_of(" ");
             assert(pos != NPOS);
 #if !defined(NCBI_NO_THREADS)

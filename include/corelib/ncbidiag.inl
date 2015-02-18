@@ -445,10 +445,15 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
     diag.m_Severity = eDiag_Trace;
     return diag;
 }
+NCBI_DEPRECATED
 inline
 const CNcbiDiag& Message(const CNcbiDiag& diag)  {
+    return diag;
+}
+inline
+const CNcbiDiag& Note(const CNcbiDiag& diag) {
     diag.x_EndMess();
-    diag.m_PostFlags |= eDPF_IsMessage;
+    diag.m_PostFlags |= eDPF_IsNote;
     return diag;
 }
 inline

@@ -4146,9 +4146,18 @@ bool SDiagMessage::ParseMessage(const string& message)
         size_t severity_pos = pos;
         tmp = s_ParseStr(message, pos, ':', true);
         if ( !tmp.empty() ) {
+            // Support both old (LOG_POST -> message) and new (NOTE_POST -> note) styles.
+            size_t sev_pos = NPOS;
             if (tmp.length() == 10  &&  tmp.find("Message[") == 0) {
+                sev_pos = 8;
+            }
+            else if (tmp.length() == 7  &&  tmp.find("Note[") == 0) {
+                sev_pos = 5;
+            }
+
+            if (sev_pos != NPOS) {
                 // Get the real severity
-                switch ( tmp[8] ) {
+                switch ( tmp[sev_pos] ) {
                 case 'T':
                     m_Severity = eDiag_Trace;
                     break;
@@ -4170,7 +4179,7 @@ bool SDiagMessage::ParseMessage(const string& message)
                 default:
                     return false;
                 }
-                m_Flags |= eDPF_IsMessage;
+                m_Flags |= eDPF_IsNote;
                 have_severity = true;
             }
             else {
@@ -4688,12 +4697,14 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
     // <severity>:
     if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
         (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev))) {
-        if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
-            os << "Message: ";
+        string sev = CNcbiDiag::SeverityName(m_Severity);
+        if ( IsSetDiagPostFlag(eDPF_IsNote, m_Flags) ) {
+            os << "Note[" << sev[0] << "]";
         }
         else {
-            os << CNcbiDiag::SeverityName(m_Severity) << ": ";
+            os << sev;
         }
+        os << ": ";
     }
 
     // (<err_code>.<err_subcode>) or (err_text)
@@ -4823,8 +4834,8 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         string sev = CNcbiDiag::SeverityName(m_Severity);
         os << setfill(' ') << setw(13) // add 1 for space
             << setiosflags(IOS_BASE::left) << setw(0);
-        if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
-            os << "Message[" << sev[0] << "]:";
+        if ( IsSetDiagPostFlag(eDPF_IsNote, m_Flags) ) {
+            os << "Note[" << sev[0] << "]:";
         }
         else {
             os << sev << ':';
