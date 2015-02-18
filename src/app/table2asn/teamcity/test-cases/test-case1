@@ -25,3 +25,4 @@
 -i sqd-1657.fsa -a s
 -i cxx-5556.fsa
 -i sqd-2175.fsa -a s
+-i sqd-2187.sqn -gaps-min 1 -l paired-ends
