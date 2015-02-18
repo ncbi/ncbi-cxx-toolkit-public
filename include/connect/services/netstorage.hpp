@@ -336,6 +336,15 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///                 the executable pathname.
     ///  * nst        - NetStorage server address or LBSM service name
     ///                 pointing to a group of NetStorage servers.
+    ///  * metadata   - Whether to request or disable the metadata DB.
+    ///                 Valid options:
+    ///                 - required    - Database access must be enabled
+    ///                                 for the specified NetStorage service
+    ///                                 name in the server configuration.
+    ///                 - disabled    - Database access is disabled for
+    ///                                 all operations.
+    ///                 - monitoring  - Read-only access to the metadata
+    ///                                 database.
     ///  * nc         - NetCache service name or server address.
     ///  * cache      - Synonym for "namespace".
     ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"

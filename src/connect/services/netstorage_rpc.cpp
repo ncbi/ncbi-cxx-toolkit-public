@@ -516,6 +516,10 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
                 }
             }
             break;
+        case 'm':
+            if (field->name == "metadata")
+                m_MetadataOption = field->value;
+            break;
         case 'n':
             if (field->name == "namespace")
                 m_AppDomain = field->value;
@@ -588,6 +592,8 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
 
     hello.SetString("Client", m_ClientName);
     hello.SetString("Service", m_NetStorageServiceName);
+    if (!m_MetadataOption.empty())
+        hello.SetString("Metadata", m_MetadataOption);
     {{
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();

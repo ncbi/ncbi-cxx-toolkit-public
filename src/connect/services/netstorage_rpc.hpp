@@ -91,6 +91,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     string m_NetCacheServiceName;
     string m_ClientName;
     string m_AppDomain;
+    string m_MetadataOption;
 
     CAtomicCounter m_RequestNumber;
 
