@@ -537,7 +537,7 @@ SSERV_Info* SERV_CreateNcbidInfoEx(unsigned int   host,
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
-        if (strcmp(args, "''") == 0) /* special case */
+        if (args  &&  strcmp(args, "''"/*special case*/) == 0)
             args = 0;
         strcpy(SERV_NCBID_ARGS(&info->u.ncbid), args ? args : "");
     }

@@ -3374,8 +3374,10 @@ static EIO_Status s_WriteData(SOCK        sock,
         EIO_Status status;
         FSSLWrite sslwrite = s_SSL ? s_SSL->Write : 0;
         assert(sock->session != SESSION_INVALID);
-        if (!sslwrite  ||  oob)
+        if (!sslwrite  ||  oob) {
+            *n_written = 0;
             return eIO_NotSupported;
+        }
         status = sslwrite(sock->session, data, size, n_written, &error);
         assert((status == eIO_Success) == (*n_written > 0));
         assert(status == eIO_Success  ||  error);
