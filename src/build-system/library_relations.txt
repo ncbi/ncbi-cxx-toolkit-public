@@ -371,7 +371,6 @@ gpinit needs entrez2cli
 gpinit needs gc_utils
 gpinit needs gpinit_access
 gpinit_access needs gpipe_common
-gpinit_asn_factory needs gpinit
 gpinit_bag_util needs bag_access
 gpinit_bag_util needs gpinit_access
 gpinit_register needs gc_utils
