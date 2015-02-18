@@ -1121,5 +1121,42 @@ BOOST_AUTO_TEST_CASE(Test_GB_3926)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2181)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(nuc);
+    misc1->ResetComment();
+    misc1->SetData().SetImp().SetKey("regulatory");
+    CRef<CGb_qual> q(new CGb_qual());
+    q->SetQual("regulatory_class");
+    q->SetVal("promoter");
+    misc1->SetQual().push_back(q);
+
+    AddTitle(nuc, "Sebaea microphylla fake protein name gene, promoter region and complete cds.");
+
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources (seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo ());
+
+    autodef.SetFeatureListType(CAutoDef::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDef::eDelete);    
+    autodef.SetUseFakePromoters(true);
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

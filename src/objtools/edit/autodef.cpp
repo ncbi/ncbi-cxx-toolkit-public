@@ -752,6 +752,19 @@ bool CAutoDef::x_Is5SList(CFeat_CI feat_ci)
 } 
 
 
+bool s_HasPromoter(CBioseq_Handle bh)
+{
+    bool has_promoter = false;
+    SAnnotSelector sel(CSeqFeatData::eSubtype_regulatory);
+    CFeat_CI f_ci (bh, sel);
+    while (f_ci && !has_promoter) {
+        has_promoter = CAutoDefFeatureClause::IsPromoter(*(f_ci->GetSeq_feat()));
+        ++f_ci;
+    }
+    return has_promoter;
+}
+
+
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 {
     CAutoDefFeatureClause_Base main_clause(m_SuppressLocusTags);
@@ -762,26 +775,21 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     GetMasterLocation(master_bh, range);
 
     // if no promoter, and fake promoters are requested, create one
-    if (m_UseFakePromoters) {
-        SAnnotSelector sel(CSeqFeatData::eSubtype_promoter);
-        CFeat_CI promoter_ci (bh, sel);
+    if (m_UseFakePromoters && !s_HasPromoter(bh)) {
+        CRef<CSeq_feat> fake_promoter(new CSeq_feat());
+        CRef<CSeq_loc> fake_promoter_loc(new CSeq_loc());
+        const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
+        CRef <CSeq_id> new_id(new CSeq_id);
+        new_id->Assign(*id);
+        fake_promoter_loc->SetInt().SetId(*new_id);
+        fake_promoter_loc->SetInt().SetFrom(0);
+        fake_promoter_loc->SetInt().SetTo(bh.GetInst_Length() - 1);
 
-        if (!promoter_ci) {
-            CRef<CSeq_feat> fake_promoter(new CSeq_feat());
-            CRef<CSeq_loc> fake_promoter_loc(new CSeq_loc());
-            const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
-            CRef <CSeq_id> new_id(new CSeq_id);
-            new_id->Assign(*id);
-            fake_promoter_loc->SetInt().SetId(*new_id);
-            fake_promoter_loc->SetInt().SetFrom(0);
-            fake_promoter_loc->SetInt().SetTo(bh.GetInst_Length() - 1);
+        fake_promoter->SetLocation(*fake_promoter_loc);
 
-            fake_promoter->SetLocation(*fake_promoter_loc);
-
-            main_clause.AddSubclause (new CAutoDefFakePromoterClause (master_bh, 
-                                                                      *fake_promoter,
-                                                                      *fake_promoter_loc));
-        }
+        main_clause.AddSubclause (new CAutoDefFakePromoterClause (master_bh, 
+                                                                    *fake_promoter,
+                                                                    *fake_promoter_loc));
     }
 
     // now create clauses for real features
