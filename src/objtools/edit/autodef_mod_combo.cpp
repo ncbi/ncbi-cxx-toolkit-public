@@ -664,24 +664,6 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
         }
     }
     
-#if 0
-    if (bsrc.CanGetSubtype()) {
-        for (k = 0; k < GetNumSubSources() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
-            if (x_AddSubsourceString (source_description, bsrc, GetSubSource(k))) {
-                mods_used++;
-            }
-        }
-    }
-
-    if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetOrgname() && bsrc.GetOrg().GetOrgname().IsSetMod()) {
-        for (k = 0; k < GetNumOrgMods() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
-            if (x_AddOrgModString (source_description, bsrc, GetOrgMod(k))) {
-                mods_used++;
-            }
-        }
-    }
-#endif
-    
     return source_description;
 }
 

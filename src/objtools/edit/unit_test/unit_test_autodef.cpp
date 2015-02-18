@@ -1157,6 +1157,21 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2181)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3949)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "ATCC:12345");
+
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    AddTitle(nuc, "Sebaea microphylla culture-collection ATCC:12345 fake protein name gene, complete cds.");
+
+    vector<CSubSource::ESubtype> subsrcs;
+    vector<COrgMod::ESubtype> orgmods;
+    orgmods.push_back(COrgMod::eSubtype_culture_collection);
+
+    CheckDeflineMatches(entry, subsrcs, orgmods);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

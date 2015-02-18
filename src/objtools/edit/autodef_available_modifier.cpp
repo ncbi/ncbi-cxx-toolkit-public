@@ -450,7 +450,7 @@ string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
             label = "organism note";
             break;
         default:
-            label = "";
+            label = COrgMod::GetSubtypeName(st);
             break;
     }
     return label;
