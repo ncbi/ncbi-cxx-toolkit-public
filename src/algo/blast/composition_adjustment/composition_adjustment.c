@@ -1253,7 +1253,7 @@ Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** pNRrecord)
 
         free(NRrecord);
     }
-    pNRrecord = NULL;
+    *pNRrecord = NULL;
 }
 
 
