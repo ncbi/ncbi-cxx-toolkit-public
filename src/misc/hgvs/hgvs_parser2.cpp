@@ -29,32 +29,29 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seqloc/Seq_point.hpp>
-#include <objects/general/Object_id.hpp>
+
+
+#include <serial/iterator.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
-#include <objmgr/seq_loc_mapper.hpp>
 
-
-#include <objects/seq/seqport_util.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/variation/Variation.hpp>
 #include <objects/variation/VariantPlacement.hpp>
 #include <objects/variation/VariationMethod.hpp>
 #include <objects/variation/VariationException.hpp>
 
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Ext_loc.hpp>
-
-
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Numbering.hpp>
@@ -62,13 +59,19 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
-#include <objects/seqfeat/BioSource.hpp>
+
+#include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
+
+#include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 
-#include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/align_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
+
 #include <misc/hgvs/hgvs_parser2.hpp>
 #include <misc/hgvs/variation_util2.hpp>
 
@@ -780,6 +783,43 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_fuzzy_pos(TIterator const& i, const CCo
 
 }
 
+CSeq_id_Handle GetUniquePrimaryTranscriptId(CBioseq_Handle& bsh)
+{
+    set<CSeq_id_Handle> annotated_transcript_feats;
+    set<CSeq_id_Handle> annotated_transcript_aligns;
+
+    SAnnotSelector sel;
+    sel.SetResolveTSE();
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+        const CMappedFeat& mf = *ci;
+        if(mf.IsSetProduct() && mf.GetProduct().GetId()) {
+            annotated_transcript_feats.insert(
+                    CSeq_id_Handle::GetHandle(*mf.GetProduct().GetId()));
+        }
+    }
+
+    for(CAlign_CI ci(bsh, sel); ci; ++ci) {
+        const CSeq_align& aln = *ci;
+        if(aln.GetSegs().IsSpliced()) {
+            annotated_transcript_aligns.insert(
+                    CSeq_id_Handle::GetHandle(aln.GetSeq_id(0)));
+        }
+    }
+
+    vector<CSeq_id_Handle> v;
+    set_intersection(annotated_transcript_feats.begin(),
+                     annotated_transcript_feats.end(),
+                     annotated_transcript_aligns.begin(),
+                     annotated_transcript_aligns.end(),
+                     back_inserter(v));
+
+    return v.size() != 1 ? CSeq_id_Handle() 
+        : sequence::GetId(v.front(), 
+                          bsh.GetScope(), 
+                          sequence::eGetId_ForceAcc);
+}
+
 
 CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& context)
 {
@@ -830,13 +870,26 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
                 if(already_found) {
                     HGVS_THROW(eSemantic, "Can't resolve to prot - multiple CDSes on " + idh.AsString());
                 } else {
-                    idh = sequence::GetId(*mf.GetProduct().GetId(), context.GetScope(), sequence::eGetId_ForceAcc);
+                    idh = sequence::GetId(
+                            *mf.GetProduct().GetId(), 
+                            context.GetScope(), 
+                            sequence::eGetId_ForceAcc);
                     already_found = true;
                 }
             }
         }
         if(!already_found) {
             HGVS_THROW(eSemantic, "Can't resolve to prot - can't find CDS on " + idh.AsString());
+        }
+    } else if(   (   mol_type == CVariantPlacement::eMol_cdna 
+                  || mol_type == CVariantPlacement::eMol_rna) 
+              && idh.IdentifyAccession() == CSeq_id::eAcc_refseq_genomic)  //e.g. NG_009822.1:c.1437+1G>A
+    {
+        CSeq_id_Handle idh2 = GetUniquePrimaryTranscriptId(bsh);
+        if(!idh2) {
+            HGVS_THROW(eSemantic, "Can't resolve to a unique transcript: " + idh.AsString());
+        } else {
+            idh = idh2;
         }
     }
 
