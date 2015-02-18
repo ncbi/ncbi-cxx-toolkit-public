@@ -399,6 +399,10 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  File to remove
     ///
     void Remove(const string& object_loc);
+
+    /// @deprecated To change flags use Relocate(object_loc, flags) instead.
+    NCBI_DEPRECATED
+    CNetStorageObject Open(const string& object_loc, TNetStorageFlags flags);
 };
 
 

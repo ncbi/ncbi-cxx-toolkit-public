@@ -181,6 +181,12 @@ inline CNetStorageObject CNetStorage::Open(const string& object_loc)
     return m_Impl->Open(object_loc);
 }
 
+inline CNetStorageObject CNetStorage::Open(const string& object_loc,
+        TNetStorageFlags flags)
+{
+    return m_Impl->Open(object_loc);
+}
+
 inline string CNetStorage::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
