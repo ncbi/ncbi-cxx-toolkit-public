@@ -686,17 +686,14 @@ static inline
 bool s_CheckIfMatchesBioseq( const CSeq_loc &loc, 
     const CSeq_loc::ISubLocFilter *filter )
 {
-    if( NULL == filter ) {
-        return true;
-    }
-    return (*filter)( loc.GetId() );
+    return !filter || (*filter)( loc.GetId() );
 }
 
 static inline
 bool s_CheckIfMatchesBioseq( const CSeq_interval &loc, 
     const CSeq_loc::ISubLocFilter *filter )
 {
-    return true;
+    return !filter || (*filter)( &loc.GetId() );
 }
 
 // Compare two ranges (reversed on minus strand)
