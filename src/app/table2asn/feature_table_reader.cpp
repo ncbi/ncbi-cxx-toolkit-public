@@ -247,7 +247,8 @@ namespace
             {
                 if ((**xref_it).IsSetData())
                 {
-                    if ((**xref_it).GetData().IsProt())
+                    if ((**xref_it).GetData().IsProt() &&
+                        (**xref_it).GetData().GetProt().IsSetName())
                     {
                         protein_name = (**xref_it).GetData().GetProt().GetName().front();
                         return true;
@@ -531,6 +532,20 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
         }
         break;
     case CSeq_entry::e_Set:
+        if (entry.GetSet().IsSetClass())
+        {
+            switch (entry.GetSet().GetClass())
+            {
+                case CBioseq_set::eClass_nuc_prot:
+                case CBioseq_set::eClass_gen_prod_set:
+                    //ParseCdregions(entry);
+                    return;
+                case CBioseq_set::eClass_genbank:
+                    break;
+                default:
+                    return;
+            }
+        }
         NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
             MergeCDSFeatures(**it);
@@ -824,7 +839,6 @@ bool CFeatureTableReader::CheckIfNeedConversion(const CSeq_entry& entry) const
                     switch ((**feat_it).GetData().Which())
                     {
                     case CSeqFeatData::e_Cdregion:
-                    case CSeqFeatData::e_Gene:
                         return true;
                     default:
                         break;
