@@ -1003,9 +1003,9 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
         failed = 1/*true*/;
     } else if (name[namesize - 1]) {
         if (log) {
-            CORE_LOG_X(104, eLOG_Error,
-                       "[SOCK_gethostname] "
-                       " Buffer too small");
+            CORE_LOGF_X(104, eLOG_Error,
+                        ("[SOCK_gethostname] "
+                         " Buffer too small (%lu)", (unsigned long) namesize));
         }
         failed = 1/*true*/;
     } else
