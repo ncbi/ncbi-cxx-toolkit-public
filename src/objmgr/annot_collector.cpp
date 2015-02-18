@@ -574,25 +574,23 @@ struct CAnnotObjectType_Less
 
         }
 
+        DECLARE_OPERATOR_BOOL(m_BioseqHandle);
+
         bool operator()( const CSeq_id *id ) const {
-            if( NULL == id ) {
-                return false;
-            }
-            return m_BioseqHandle.IsSynonym(*id);
+            return id && m_BioseqHandle.IsSynonym(*id);
         }
     private:
-        const CBioseq_Handle &m_BioseqHandle;
+        CBioseq_Handle m_BioseqHandle;
     };
 
     CNearnessTester m_TesterForIgnoreFarLocationsForSorting;
-    explicit CAnnotObjectType_Less(const SAnnotSelector* sel = 0,
+    explicit CAnnotObjectType_Less(const SAnnotSelector* sel,
                                    CScope* scope = 0)
-        : m_ByProduct(sel && sel->GetFeatProduct()),
-          m_FeatComparator(sel? sel->GetFeatComparator(): 0),
+        : m_ByProduct(sel->GetFeatProduct()),
+          m_FeatComparator(sel->GetFeatComparator()),
           m_Scope(scope),
-          m_TesterForIgnoreFarLocationsForSorting( sel->GetIgnoreFarLocationsForSorting() )
+          m_TesterForIgnoreFarLocationsForSorting(sel->GetIgnoreFarLocationsForSorting())
         {
-            m_DoWeIgnoreFarLocationsForSorting = (!! sel->GetIgnoreFarLocationsForSorting() );
         }
 
     bool operator()(const CAnnotObject_Ref& x,
@@ -915,7 +913,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
 
         if ( x_complex ) {
             int diff = 0;
-            if( m_DoWeIgnoreFarLocationsForSorting ) {
+            if( m_TesterForIgnoreFarLocationsForSorting ) {
                 diff = x_loc->CompareSubLoc(*y_loc, x_strand, &m_TesterForIgnoreFarLocationsForSorting);
             } else {
                 diff = x_loc->CompareSubLoc(*y_loc, x_strand);
@@ -1014,13 +1012,11 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
 
 struct CAnnotObject_Less
 {
-    explicit CAnnotObject_Less(const SAnnotSelector* sel = 0,
+    explicit CAnnotObject_Less(const SAnnotSelector* sel,
                                CScope* scope = 0)
-        : type_less(sel, scope)
+        : type_less(sel, scope),
+          ignore_far_handle(sel->GetIgnoreFarLocationsForSorting())
         {
-            if( sel ) {
-                ignore_far_handle = sel->GetIgnoreFarLocationsForSorting();
-            }
         }
 
     void x_GetExtremes( TSeqPos &out_from, TSeqPos &out_to, 
@@ -1181,7 +1177,7 @@ struct CAnnotObject_Less
 
 struct CAnnotObject_LessReverse
 {
-    explicit CAnnotObject_LessReverse(const SAnnotSelector* sel = 0,
+    explicit CAnnotObject_LessReverse(const SAnnotSelector* sel,
                                       CScope* scope = 0)
         : type_less(sel, scope)
         {
