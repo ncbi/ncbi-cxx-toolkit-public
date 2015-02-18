@@ -946,6 +946,11 @@ BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
     ss->SetName("[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
     ss->RemoveCultureNotes(false);
     BOOST_CHECK_EQUAL(ss->GetName(), "[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
+
+    ss->SetName("[BankIt_cultured16S_wizard]");
+    src->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
+
 }
 
 BOOST_AUTO_TEST_CASE(Test_DiscouragedEnums)

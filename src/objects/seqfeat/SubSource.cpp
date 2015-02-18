@@ -3948,6 +3948,7 @@ static const char * s_RemovableCultureNotes[] = {
  "[BankIt_uncultured16S_wizard]; [universal primers]; [tgge]",
  "[BankIt_uncultured16S_wizard]; [universal primers]; [dgge]",
  "[BankIt_uncultured16S_wizard]; [universal primers]",
+ "[BankIt_cultured16S_wizard]",
  "[uncultured (using universal primers)]",
  "[uncultured (using universal primers) bacterial source]",
  "[cultured bacterial source]",
