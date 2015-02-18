@@ -186,7 +186,8 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
                                         bool  dryrun)
 {
     CNetStorage     net_storage = g_CreateNetStorage(
-                        CNetICacheClient(CNetICacheClient::eAppRegistry), 0);
+                        CNetICacheClient(CNetICacheClient::eAppRegistry),
+                              kEmptyStr, 0);
     CRef<CRequestContext>   ctx;
 
     for (vector<string>::const_iterator  k = locators.begin();
