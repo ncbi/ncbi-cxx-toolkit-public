@@ -321,7 +321,6 @@ CBlastTracebackSearch::RunSimple()
 
     // When dealing with PSI-BLAST iterations, we need to keep a larger
     // alignment for the PSSM engine as to replicate blastpgp's behavior
-    int hitlist_size_backup = m_OptsMemento->m_HitSaveOpts->hitlist_size;
     if (m_OptsMemento->m_ProgramType == eBlastTypePsiBlast ) {
         SBlastHitsParameters* bhp = NULL;
         SBlastHitsParametersNew(m_OptsMemento->m_HitSaveOpts, 
