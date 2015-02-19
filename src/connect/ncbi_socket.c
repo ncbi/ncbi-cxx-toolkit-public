@@ -1028,7 +1028,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
     if (!hostname  ||  !*hostname) {
         if (s_gethostname(buf, sizeof(buf), log) != 0)
             return 0;
-#ifdef NCBI_OS_DARWIN
+#if 0/*def NCBI_OS_DARWIN*/
         {{
             char* p;
             if ((p = strchr(buf, '.')) != 0)
@@ -1082,6 +1082,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #    elif HAVE_GETHOSTBYNAME_R == 6
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                             &he, &error) != 0) {
+            /*NB: retval == errno on error*/
             assert(he == 0);
             he = 0;
         }
@@ -1089,8 +1090,8 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #      error "Unknown HAVE_GETHOSTBYNAME_R value"
 #    endif /*HAVE_GETHOSTNBYNAME_R == N*/
         if (!he) {
-            if (!error  &&  (error = SOCK_ERRNO) == ERANGE)
-                log = eOn;
+            if (!error)
+                error = SOCK_ERRNO;
             else
                 error += DNS_BASE;
         }
@@ -1118,21 +1119,23 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #    endif /*!SOCK_GHBX_MT_SAFE*/
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
-        if (!host  &&  log) {
-            const char* strerr;
+        if (!host) {
 #  ifdef NETDB_INTERNAL
             if (error == NETDB_INTERNAL + DNS_BASE)
                 error  = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
-            strerr = SOCK_STRERROR(error);
-            CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
-                                error, strerr ? strerr : "",
-                                ("[SOCK_gethostbyname] "
-                                 " Failed gethostbyname%s(\"%.*s\")",
-                                 suffix, MAXHOSTNAMELEN, hostname));
-            UTIL_ReleaseBuffer(strerr);
+            if (error == ERANGE)
+                log = eOn;
+            if (log) {
+                const char* strerr = SOCK_STRERROR(error);
+                CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
+                                    error, strerr ? strerr : "",
+                                    ("[SOCK_gethostbyname] "
+                                     " Failed gethostbyname%s(\"%.*s\")",
+                                     suffix, MAXHOSTNAMELEN, hostname));
+                UTIL_ReleaseBuffer(strerr);
+            }
         }
-
 #endif /*HAVE_GETADDRINFO && !__GLIBC__*/
     }
 
@@ -1239,10 +1242,9 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
                 name = 0;
             }
             if (!name  &&  log) {
-                const char* strerr;
+                const char* strerr = SOCK_STRERROR(error);
                 if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                     sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
-                strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(107, eLOG_Warning,
                                     error, strerr ? strerr : "",
                                     ("[SOCK_gethostbyaddr] "
@@ -1251,7 +1253,6 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
                 UTIL_ReleaseBuffer(strerr);
             }
         }
-
 #else /* use some variant of gethostbyaddr */
         struct hostent* he;
 #  ifdef HAVE_GETHOSTBYADDR_R
@@ -1266,6 +1267,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #    elif HAVE_GETHOSTBYADDR_R == 8
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                             x_buf, sizeof(x_buf), &he, &error) != 0) {
+            /*NB: retval == errno on error*/
             assert(he == 0);
             he = 0;
         }
@@ -1273,8 +1275,8 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #      error "Unknown HAVE_GETHOSTBYADDR_R value"
 #    endif /*HAVE_GETHOSTBYADDR_R == N*/
         if (!he) {
-            if (!error  &&  (error = SOCK_ERRNO) == ERANGE)
-                log = eOn;
+            if (!error)
+                error = SOCK_ERRNO;
             else
                 error += DNS_BASE;
         }
@@ -1309,23 +1311,25 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #    endif /*!SOCK_GHBX_MT_SAFE*/
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
-        if (!name  &&  log) {
-            const char* strerr;
+        if (!name) {
 #  ifdef NETDB_INTERNAL
             if (error == NETDB_INTERNAL + DNS_BASE)
                 error  = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
-            if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
-                sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
-            strerr = SOCK_STRERROR(error);
-            CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
-                                error, strerr ? strerr : "",
-                                ("[SOCK_gethostbyaddr] "
-                                 " Failed gethostbyaddr%s(%s)",
-                                 suffix, addr));
-            UTIL_ReleaseBuffer(strerr);
+            if (error == ERANGE)
+                log = eOn;
+            if (log) {
+                const char* strerr = SOCK_STRERROR(error);
+                if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+                    sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
+                CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
+                                    error, strerr ? strerr : "",
+                                    ("[SOCK_gethostbyaddr] "
+                                     " Failed gethostbyaddr%s(%s)",
+                                     suffix, addr));
+                UTIL_ReleaseBuffer(strerr);
+            }
         }
-
 #endif /*HAVE_GETNAMEINFO && !__GLIBC__*/
     } else {
         name[0] = 0;
@@ -1346,7 +1350,6 @@ static const char* s_gethostbyaddr(unsigned int host, char* name,
 {
     static int once = 1/*true*/;
     const char* retval = s_gethostbyaddr_(host, name, namesize, log);
-
     if (once  &&  retval
         &&  ((SOCK_IsLoopbackAddress(host)
               &&  strncasecmp(retval, "localhost", 9) != 0)  ||
@@ -7992,7 +7995,7 @@ extern int SOCK_gethostnameEx(char* buf, size_t bufsize, ESwitch log)
         return -1/*failure*/;
     }
 
-    return s_gethostname(buf, bufsize, log);
+    return s_gethostname(buf, bufsize, log == eDefault ? s_Log : log);
 }
 
 
@@ -8008,7 +8011,7 @@ extern unsigned int SOCK_gethostbynameEx(const char* hostname, ESwitch log)
     if (s_InitAPI(0) != eIO_Success)
         return 0;
 
-    return s_gethostbyname(hostname, log);
+    return s_gethostbyname(hostname, log == eDefault ? s_Log : log);
 }
 
 
@@ -8031,7 +8034,7 @@ extern const char* SOCK_gethostbyaddrEx(unsigned int host,
         return 0;
     }
 
-    return s_gethostbyaddr(host, buf, bufsize, log);
+    return s_gethostbyaddr(host, buf, bufsize, log == eDefault ? s_Log : log);
 }
 
 
