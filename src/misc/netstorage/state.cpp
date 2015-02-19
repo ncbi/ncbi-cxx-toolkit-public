@@ -746,8 +746,14 @@ ILocation* CSelector::Top()
 
 string CSelector::Locator()
 {
-    return m_ObjectLoc.GetLocation() != eNFL_Unknown ?
-        m_ObjectLoc.GetLocator() : kEmptyStr;
+    if (m_ObjectLoc.GetLocation() == eNFL_Unknown) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot return object locator, "
+                "its location has not been determined yet. "
+                "You must use the object (read/write/etc) before");
+    }
+
+    return m_ObjectLoc.GetLocator();
 }
 
 
