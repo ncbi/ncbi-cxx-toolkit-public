@@ -707,6 +707,7 @@ static bool s_IsDouble(const string& str)
 		    *iter != '+' &&
 			*iter != '-' &&
 			*iter != '.' &&
+			*iter != 'e' &&
 			*iter != ' ') {
             return false;
 	    }
