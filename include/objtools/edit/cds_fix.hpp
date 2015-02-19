@@ -60,6 +60,8 @@ NCBI_XOBJEDIT_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle 
 NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT void AdjustCDSFrameForStartChange(CCdregion& cds, int change);
+NCBI_XOBJEDIT_EXPORT bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat);
+NCBI_XOBJEDIT_EXPORT bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat);
 
 class NCBI_XOBJEDIT_EXPORT ApplyCDSFrame
 {

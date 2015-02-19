@@ -47,6 +47,7 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -1041,6 +1042,123 @@ void AdjustCDSFrameForStartChange(CCdregion& cds, int change)
     }
     cds.SetFrame((CCdregion::EFrame)new_frame);
 }
+
+
+bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat)
+{
+    // only move coding regions to nuc-prot set, and only do this if they
+    // have a product that is "local"
+    if (!orig_feat.IsSetData() || !orig_feat.GetData().IsCdregion()
+        || !orig_feat.IsSetProduct()) {
+        return false;
+    }
+    CBioseq_Handle nuc_bsh = orig_feat.GetScope().GetBioseqHandle(orig_feat.GetLocation());
+    if (!nuc_bsh) {
+        return false;
+    }
+    CBioseq_Handle p_bsh = orig_feat.GetScope().GetBioseqHandleFromTSE(*(orig_feat.GetProduct().GetId()), nuc_bsh);
+    if (!p_bsh) {
+        return false;
+    }
+
+    // This is necessary, to make sure that we are in "editing mode"
+    const CSeq_annot_Handle& annot_handle = orig_feat.GetAnnot();
+    CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+
+    CSeq_feat_EditHandle feh(orig_feat);
+    CSeq_entry_Handle parent_entry = feh.GetAnnot().GetParentEntry();
+
+    bool rval = false;
+
+    if (parent_entry.IsSet()
+            && parent_entry.GetSet().IsSetClass()
+            && parent_entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+        // already on nuc-prot set, leave it alone
+    } else {
+        CBioseq_set_Handle nuc_parent = parent_entry.GetParentBioseq_set();
+        if (nuc_parent && nuc_parent.IsSetClass() && nuc_parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+            CSeq_annot_Handle ftable;
+            CSeq_entry_Handle parent_seh = nuc_parent.GetParentEntry();
+            CSeq_annot_CI annot_ci(parent_seh, CSeq_annot_CI::eSearch_entry);
+            for (; annot_ci; ++annot_ci) {
+                if ((*annot_ci).IsFtable()) {
+                    ftable = *annot_ci;
+                    break;
+                }
+            }
+
+            if (!ftable) {
+                CRef<CSeq_annot> new_annot(new CSeq_annot());
+                new_annot->SetData().SetFtable();
+                CSeq_entry_EditHandle eh = parent_seh.GetEditHandle();
+                ftable = eh.AttachAnnot(*new_annot);
+            }
+
+            CSeq_annot_EditHandle old_annot = annot_handle.GetEditHandle();
+            CSeq_annot_EditHandle new_annot = ftable.GetEditHandle();
+            orig_feat = new_annot.TakeFeat(feh);
+            const list< CRef< CSeq_feat > > &feat_list = old_annot.GetSeq_annotCore()->GetData().GetFtable();
+            if (feat_list.empty())
+            {
+                old_annot.Remove();       
+            }
+            rval = true;
+        }
+    }    
+    return rval;
+}
+
+
+bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat)
+{
+    CSeq_feat_EditHandle feh(orig_feat);
+    CSeq_entry_Handle parent_entry = feh.GetAnnot().GetParentEntry();
+
+    if (!parent_entry.IsSet() || !parent_entry.GetSet().IsSetClass() ||
+        parent_entry.GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
+        // no change, not on nuc-prot set
+        return false;
+    }
+
+    CBioseq_CI bi(parent_entry, CSeq_inst::eMol_na);
+    if (!bi) {
+        // no nucleotide sequence to move to
+        return false;
+    }
+
+
+    // This is necessary, to make sure that we are in "editing mode"
+    const CSeq_annot_Handle& annot_handle = orig_feat.GetAnnot();
+    CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+
+    CSeq_annot_Handle ftable;
+    CSeq_entry_Handle nuc_seh = bi->GetSeq_entry_Handle();
+    CSeq_annot_CI annot_ci(nuc_seh, CSeq_annot_CI::eSearch_entry);
+    for (; annot_ci; ++annot_ci) {
+        if ((*annot_ci).IsFtable()) {
+            ftable = *annot_ci;
+            break;
+        }
+    }
+
+    if (!ftable) {
+        CRef<CSeq_annot> new_annot(new CSeq_annot());
+        new_annot->SetData().SetFtable();
+        CSeq_entry_EditHandle eh = nuc_seh.GetEditHandle();
+        ftable = eh.AttachAnnot(*new_annot);
+    }
+
+    CSeq_annot_EditHandle old_annot = annot_handle.GetEditHandle();
+    CSeq_annot_EditHandle new_annot = ftable.GetEditHandle();
+    orig_feat = new_annot.TakeFeat(feh);   
+    const list< CRef< CSeq_feat > > &feat_list = old_annot.GetSeq_annotCore()->GetData().GetFtable();
+    if (feat_list.empty())
+    {
+        old_annot.Remove();       
+    }
+    return true;
+}
+
 
 bool ApplyCDSFrame::s_SetCDSFrame(CSeq_feat& cds, ECdsFrame frame_type, CScope& scope)
 {

@@ -794,6 +794,75 @@ BOOST_AUTO_TEST_CASE(Test_FindMatchingFrame)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
+{
+    CScope scope(*CObjectManager::GetInstance());
+
+    CRef<CSeq_entry> nuc = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> nuc_id(new CSeq_id());
+    nuc_id->SetLocal().SetStr("nuc");
+    unit_test_util::ChangeId(nuc, nuc_id);
+    CRef<objects::CSeq_feat> cds = unit_test_util::AddMiscFeature(nuc);
+    cds->ResetComment();
+    cds->SetData().SetCdregion();
+
+    // should not change cdregion if not in nuc-prot set and product not set
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*nuc);
+    CSeq_feat_Handle fh = scope.GetSeq_featHandle(*cds);
+
+    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    // should not change cdregion if not in nuc-prot set and product is set
+    CRef<CSeq_id> product_id(new CSeq_id());
+    product_id->SetLocal().SetStr("prot");
+    cds->SetProduct().SetWhole().Assign(*product_id);
+    
+    seh = scope.AddTopLevelSeqEntry(*nuc);
+    fh = scope.GetSeq_featHandle(*cds);
+    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    // should not change cdregion if in nuc-prot set and product set but
+    // protein sequence not local
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+    entry->SetSet().SetSeq_set().push_back(nuc);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CBioseq_Handle n_bsh = scope.GetBioseqHandle(*nuc_id);
+    fh = scope.GetSeq_featHandle(*cds);
+    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == n_bsh.GetSeq_entry_Handle());
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    // should change cdregion if in nuc-prot set and product set
+    // and protein sequence is local
+    CRef<CSeq_entry> prot = unit_test_util::BuildGoodProtSeq();
+    unit_test_util::ChangeId(prot, product_id);
+    entry->SetSet().SetSeq_set().push_back(prot);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    fh = scope.GetSeq_featHandle(*cds);
+    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), true);
+    BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
+
+    // can't promote again
+    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+
+    // after demotion, should go back to nucleotide sequence
+    n_bsh = scope.GetBioseqHandle(*nuc_id);
+    BOOST_CHECK_EQUAL(edit::DemoteCDSToNucSeq(fh), true);
+    BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == n_bsh.GetSeq_entry_Handle());
+
+    // can't demote again
+    BOOST_CHECK_EQUAL(edit::DemoteCDSToNucSeq(fh), false);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////
 const char* sc_TestEntry ="\
 Seq-entry ::= set {\
