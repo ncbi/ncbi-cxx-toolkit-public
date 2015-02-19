@@ -178,7 +178,7 @@ public:
     /// Index into the current string and provide its character in a read-
     /// only fashion.  If the index is beyond the length of the string,
     /// a NULL character is returned.
-    const char& operator[](size_type pos) const;
+    char operator[](size_type pos) const;
 
     /// operator== for C-style strings
     bool operator==(const char* str) const;
@@ -302,13 +302,12 @@ bool CTempString::empty(void) const
 
 
 inline
-const char& CTempString::operator[](size_type pos) const
+char CTempString::operator[](size_type pos) const
 {
-    static const char kNul = '\0';
     if ( pos < m_Length ) {
         return m_String[pos];
     }
-    return kNul;
+    return '\0';
 }
 
 
