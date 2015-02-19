@@ -385,10 +385,27 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
             continue;
         }
 
+
         //truncate the exon-alignment to the query-cds-subloc
         CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(*cds_subloc, *cds_subloc, NULL));
-        CRef<CSeq_align> truncated_exon_aln = mapper->Map(*exon_aln);
-
+        CRef<CSeq_align> truncated_exon_aln;
+        try {
+            truncated_exon_aln = mapper->Map(*exon_aln);
+        } catch (CAnnotMapperException& e) {
+            // It used to be the case that the mapper would return an empty alignment,
+            // but in GP-11467 it was discovered that it can also throw
+            // "Mapping resulted in an empty alignment, can not initialize Seq-align."
+            if(e.GetErrCode() == CAnnotMapperException::eBadAlignment) {
+                truncated_exon_aln.Reset(new CSeq_align);
+                truncated_exon_aln->Assign(*exon_aln);
+                truncated_exon_aln->SetSegs().SetSpliced().SetExons().clear();
+            } else {
+                NcbiCerr << MSerial_AsnText << *cds_subloc;
+                NcbiCerr << MSerial_AsnText << *exon_aln;
+                NCBI_RETHROW_SAME(e, "Can't truncate alignment to CDS");
+            }
+        }
+        
         if(truncated_exon_aln->GetSegs().GetSpliced().GetExons().size() == 0) {
             // NcbiCerr << "gap-only cds-exon: " << MSerial_AsnText <<spliced_aln;
             // This is a rare case where the exon overlaps the CDS, but truncating the alignment to the CDS
