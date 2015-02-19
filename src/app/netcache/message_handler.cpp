@@ -3151,7 +3151,7 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
     LOG_CURRENT_FUNCTION
     if (m_LatestExist) {
         // if max age specified, check age
-        if (m_AgeMax != 0) {
+        if (m_AgeMax != 0 && m_BlobAccess->IsBlobExists()) {
             CSrvTime cur_srv_time = CSrvTime::Current();
             unsigned int vttl = m_BlobAccess->GetCurVersionTTL();
             Uint8 creation = vttl != 0 ?
