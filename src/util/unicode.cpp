@@ -203,7 +203,7 @@ void CUnicodeToAsciiTranslation::x_Initialize(const string& name)
     }
     if (poolpos == 0) {
         ERR_POST_X(1, "UnicodeToAscii table is empty: " << name);
-        delete m_pool;
+        free(m_pool);
         m_pool = nullptr;
         return;
     } else {
