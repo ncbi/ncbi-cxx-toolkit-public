@@ -212,7 +212,7 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->SetConstraint("type", constrain_querytype);
 
     CArgAllow_Strings * constrain_testtype (new CArgAllow_Strings);
-    constrain_testtype ->Allow(kTestType_20_28_90)->Allow(kTestType_20_28_90_cut20);
+    constrain_testtype ->Allow(kTestType_20_28)->Allow(kTestType_20_28_plus);
     argdescr->SetConstraint("test", constrain_testtype);
 }
 

@@ -47,8 +47,8 @@ BEGIN_NCBI_SCOPE
 
 class CBlastTabular;
 
-const string kTestType_20_28_90 = "20_28_90";
-const string kTestType_20_28_90_cut20 = "20_28_90_cut20";
+const string kTestType_20_28_plus = "20_28_plus";//add on to the 20_28_90_cut20 (aka test_plus mode)
+const string kTestType_20_28 = "20_28_90_cut20"; // aka "test mode"
 const string kTestType_production_default = "production_default";
 
 

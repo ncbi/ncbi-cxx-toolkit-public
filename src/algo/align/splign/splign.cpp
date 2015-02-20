@@ -1121,7 +1121,7 @@ void CSplign::Run(THitRefs* phitrefs)
                                       min_singleton_idty_final,
                                       true);
     comps.SetMaxIntron(m_MaxIntron);
-     if( GetTestType() == kTestType_20_28_90_cut20 ) {
+     if( GetTestType() == kTestType_20_28 ||  GetTestType() == kTestType_20_28_plus ) {
          comps.Run(hitrefs.begin(), hitrefs.end(), GetScope());
      } else {
          comps.Run(hitrefs.begin(), hitrefs.end());
@@ -1705,7 +1705,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size())) {//polya
                 m_polya_start = coord;
             } else {//gap
-                if(GetTestType() == kTestType_20_28_90_cut20) {
+                if( GetTestType() == kTestType_20_28 || GetTestType() == kTestType_20_28_plus ) {
                     if(  ( (int)mrna_size - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap, cut to splice 
                         int seq1_pos = (int)s.m_box[1];
                         int seq2_pos = (int)s.m_box[3];
@@ -1973,11 +1973,20 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
     m_segments.resize(0);
     
-    string test_type = GetTestType();
+    bool is_test = false;
+    //    bool is_test_plus = false;
+    if( GetTestType() == kTestType_20_28 ) {
+        is_test = true;
+    } else if( GetTestType() == kTestType_20_28_plus ) {
+        is_test = true;
+        //    is_test_plus = true;
+    } 
+
+
     
     //partial trimming near sequence gaps   
     {{
-        if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode    
+        if (is_test)  { // test mode    
             bool first = true;
             TSegmentDeque::iterator prev;
             NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
@@ -2004,13 +2013,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                cout<<endl; 
                             */
                             
-                            if(test_type == kTestType_20_28_90_cut20) {
-                                prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
-                                ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
-                            } else {
-                                prev->ImproveFromRight(Seq1, Seq2, m_aligner);
-                                ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                                                
-                            }                        
+                            prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                            ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
                             //add gaps if needed        
                             if( ii->m_box[0] > prev->m_box[1] + 1) {
                                 TSegment sgap;
@@ -2051,7 +2055,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         //extend 100% near gaps and flanks
-        if (test_type == kTestType_20_28_90_cut20 )  { // test mode
+        if ( is_test )  { // test mode
             bool first_exon = true;
             TSegment *last_exon = NULL;
             for(size_t k0 = 0; k0 < segments.size(); ++k0) {                
@@ -2138,7 +2142,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                       
 
         //PARTIAL TRIMMING OF TERMINAL EXONS
-        if( test_type == kTestType_production_default) {//default production
+        if( !is_test ) {//default production
             // Go from the ends and see if we can improve term exons
             //note that it continue trimming of exons until s.m_idty is high
             size_t k0 (0);
@@ -2176,47 +2180,36 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
                 --k1;
             }
-        } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
+        } else { // test mode
             //trim terminal exons only
             //first exon
             NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
                 if(ii->m_exon) {
-                    if(test_type == kTestType_20_28_90_cut20) {
-                        ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
-                    } else {
-                        ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                
-                    }
+                    ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
                     break;    
                 }
             }
             //last exon
             NON_CONST_REVERSE_ITERATE(TSegmentDeque, ii, segments) {
                 if(ii->m_exon) {
-                    if(test_type == kTestType_20_28_90_cut20) {
-                        ii->ImproveFromRight1(Seq1, Seq2, m_aligner);                
-                    } else {
-                        ii->ImproveFromRight(Seq1, Seq2, m_aligner);                
-                    }
+                    ii->ImproveFromRight1(Seq1, Seq2, m_aligner);                
                     break;    
                 }
             }
-        } else {
-              string msg = "test type \"" + test_type + "\" is not supported.";
-              NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
         }
 
         //partial trimming, exons near <GAP>s, terminal exons are trimmed already
         for(size_t k0 = 0; k0 < segments.size(); ++k0) {
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
-                    if(test_type == kTestType_20_28_90_cut20) {
+                    if(is_test) {
                             segments[k0-1].ImproveFromRight1(Seq1, Seq2, m_aligner);                
                     } else {
                             segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);                
                     }
                 }
                 if( k0 + 1 < segments.size() && segments[k0+1].m_exon) {
-                    if(test_type == kTestType_20_28_90_cut20) {
+                    if(is_test) {
                             segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
                     } else {
                             segments[k0+1].ImproveFromLeft(Seq1, Seq2, m_aligner);                
@@ -2289,7 +2282,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
             if(ii->m_exon == false) continue;
             if(ii->m_idty < m_MinExonIdty) {
-                if(test_type == kTestType_20_28_90_cut20) {//try to trim it first
+                if( is_test ) {//try to trim it first
                     TSegment sl(*ii), sr(*ii);
                     sl.ImproveFromLeft1(Seq1, Seq2, m_aligner);
                     sr.ImproveFromRight1(Seq1, Seq2, m_aligner);
@@ -2328,7 +2321,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     } else {
                         ii->SetToGap();//partial trimming did not help
                     }
-                } else {// end of kTestType_20_28_90_cut20
+                } else {// end of test mode
                     //old style, just throw away
                     ii->SetToGap();
                 } 
@@ -2357,7 +2350,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         //20_28_90 TEST MODE
         // turn to gaps exons with combination of shortness and low identity           
                 // deal with exons adjacent to gaps
-        if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode  
+        if ( is_test )  { // test mode  
             for(size_t k (0); k < segments.size(); ++k) {
                 TSegment& s (segments[k]);
                 if(s.m_exon == false) continue;
@@ -2539,7 +2532,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
     {{
 
       
-        if (test_type == kTestType_20_28_90_cut20 )  { // test mode
+        if ( is_test )  { // test mode
             bool first_exon = true;
             size_t sdim = m_segments.size();
             int last_exon_index = -1;
