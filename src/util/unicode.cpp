@@ -201,7 +201,14 @@ void CUnicodeToAsciiTranslation::x_Initialize(const string& name)
             ++poolpos;
         }
     }
-    m_pool = (char*)realloc( m_pool, poolpos);
+    if (poolpos == 0) {
+        ERR_POST_X(1, "UnicodeToAscii table is empty: " << name);
+        delete m_pool;
+        m_pool = nullptr;
+        return;
+    } else {
+        m_pool = (char*)realloc( m_pool, poolpos);
+    }
     
 // create translation table
     map<TUnicode, size_t>::const_iterator symend = symbolToOffset.end();
