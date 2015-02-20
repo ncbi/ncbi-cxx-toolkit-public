@@ -92,10 +92,9 @@ CNetStorageObject SNetStorageAPIImpl::Open(const string& object_loc)
 string SNetStorageAPIImpl::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
-    ISelector::Ptr orig_selector(ISelector::Create(m_Context, object_loc));
-    ISelector::Ptr new_selector(ISelector::Create(m_Context, object_loc, flags));
-    CRef<CObj> orig_file(new CObj(orig_selector));
-    return orig_file->Relocate(new_selector);
+    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
+    CRef<CObj> file(new CObj(selector));
+    return file->Relocate(flags);
 }
 
 
@@ -149,10 +148,9 @@ CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& key,
 string SNetStorageByKeyAPIImpl::Relocate(const string& key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
-    ISelector::Ptr orig_selector(ISelector::Create(m_Context, old_flags, key));
-    ISelector::Ptr new_selector(ISelector::Create(m_Context, flags, key));
-    CRef<CObj> orig_file(new CObj(orig_selector));
-    return orig_file->Relocate(new_selector);
+    ISelector::Ptr selector(ISelector::Create(m_Context, old_flags, key));
+    CRef<CObj> file(new CObj(selector));
+    return file->Relocate(flags);
 }
 
 

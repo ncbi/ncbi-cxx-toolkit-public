@@ -100,12 +100,11 @@ public:
     virtual string Locator() = 0;
     virtual void ResetLocator() = 0;
 
-
     typedef auto_ptr<ISelector> Ptr;
+    virtual Ptr Clone(TNetStorageFlags) = 0;
 
     static Ptr Create(SContext*, TNetStorageFlags);
     static Ptr Create(SContext*, const string&);
-    static Ptr Create(SContext*, const string&, TNetStorageFlags);
     static Ptr Create(SContext*, TNetStorageFlags, const string&, Int8);
     static Ptr Create(SContext*, TNetStorageFlags, const string&);
 };

@@ -68,7 +68,7 @@ public:
     void SetAttribute(const string&, const string&);
     CNetStorageObjectInfo GetInfo();
 
-    string Relocate(ISelector::Ptr);
+    string Relocate(TNetStorageFlags);
     bool Exists();
     void Remove();
 

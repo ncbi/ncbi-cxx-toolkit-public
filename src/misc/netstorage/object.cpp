@@ -92,12 +92,15 @@ CNetStorageObjectInfo CObj::GetInfo()
 }
 
 
-string CObj::Relocate(ISelector::Ptr selector)
+string CObj::Relocate(TNetStorageFlags flags)
 {
     // Use Read() to detect the current location
     char buffer[RELOCATION_BUFFER_SIZE];
     size_t bytes_read;
     Read(buffer, sizeof(buffer), &bytes_read);
+
+    // Selector can only be cloned after location is detected
+    ISelector::Ptr selector(m_Selector->Clone(flags));
 
     // TODO: typeid is not good, needs reconsidering
     // (maybe, location from object locator will do)

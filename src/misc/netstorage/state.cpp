@@ -206,10 +206,11 @@ public:
           m_Client(eVoid)
     {}
 
+    // TODO: This ctor is not used, investigate possible loss of functionality
     CNetCache(TObjLoc& object_loc, SContext* context, bool ctx_client)
         : CLocation(object_loc),
           m_Context(context),
-          m_Client(ctx_client ? context->icache_client : CNetICacheClient(eVoid))
+          m_Client(ctx_client ? m_Context->icache_client : CNetICacheClient(eVoid))
     {}
 
     bool Init();
@@ -221,7 +222,7 @@ public:
     void RemoveImpl();
 
 private:
-    CRef<SContext> m_Context;
+    SContext* m_Context;
     CNetICacheClient m_Client;
     CRONetCache m_Read;
     CWONetCache m_Write;
@@ -244,7 +245,7 @@ public:
     void RemoveImpl();
 
 private:
-    CRef<SContext> m_Context;
+    SContext* m_Context;
     CROFileTrack m_Read;
     CWOFileTrack m_Write;
 };
@@ -631,12 +632,14 @@ public:
     ILocation* Next();
     string Locator();
     void ResetLocator();
+    Ptr Clone(TNetStorageFlags);
 
 private:
     void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
     ILocation* Top();
 
     TObjLoc m_ObjectLoc;
+    CRef<SContext> m_Context;
     CNotFound m_NotFound;
     CNetCache m_NetCache;
     CFileTrack m_FileTrack;
@@ -646,18 +649,20 @@ private:
 
 CSelector::CSelector(const TObjLoc& loc, SContext* context)
     : m_ObjectLoc(loc),
+        m_Context(context),
         m_NotFound(m_ObjectLoc),
-        m_NetCache(m_ObjectLoc, context),
-        m_FileTrack(m_ObjectLoc, context)
+        m_NetCache(m_ObjectLoc, m_Context),
+        m_FileTrack(m_ObjectLoc, m_Context)
 {
     InitLocations(m_ObjectLoc.GetLocation(), m_ObjectLoc.GetStorageAttrFlags());
 }
 
 CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags flags)
     : m_ObjectLoc(loc),
+        m_Context(context),
         m_NotFound(m_ObjectLoc),
-        m_NetCache(m_ObjectLoc, context),
-        m_FileTrack(m_ObjectLoc, context)
+        m_NetCache(m_ObjectLoc, m_Context),
+        m_FileTrack(m_ObjectLoc, m_Context)
 {
     InitLocations(eNFL_Unknown, flags);
 }
@@ -763,6 +768,14 @@ void CSelector::ResetLocator()
 }
 
 
+ISelector::Ptr CSelector::Clone(TNetStorageFlags flags)
+{
+    flags = m_Context->DefaultFlags(flags);
+    return Ptr(new CSelector(TObjLoc(m_Context->compound_id_pool,
+                    m_ObjectLoc.GetLocator(), flags), m_Context, flags));
+}
+
+
 }
 
 
@@ -821,16 +834,6 @@ ISelector::Ptr ISelector::Create(SContext* context, const string& object_loc)
     _ASSERT(context);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool, object_loc),
                 context));
-}
-
-
-ISelector::Ptr ISelector::Create(SContext* context, const string& object_loc,
-        TNetStorageFlags flags)
-{
-    _ASSERT(context);
-    flags = context->DefaultFlags(flags);
-    return Ptr(new CSelector(TObjLoc(context->compound_id_pool, object_loc,
-                    flags), context, flags));
 }
 
 
