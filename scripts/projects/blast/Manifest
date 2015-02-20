@@ -45,7 +45,7 @@ Linux64-Centos     : icc : ICC.sh            --with-strip --without-debug --with
 Linux64-Centos     : gcc : GCC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 
-DEFAULT_CONFIGURATIONS: Linux32-Ubuntu:icc Linux64-Centos:icc
+DEFAULT_CONFIGURATIONS: Linux32-Ubuntu:gcc Linux64-Centos:icc
 
 Win32       : plain : static  32  ReleaseMT
 Win64       : plain : static  64  ReleaseMT
