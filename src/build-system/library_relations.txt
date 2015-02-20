@@ -1,8 +1,8 @@
 # $Id$
 # Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
+16S_common needs seqset
 16S_common needs xmlwrapp
-16S_common needs xutil
 16S_summaries needs 16S_common
 16S_summaries needs xregexp
 Assembly2Fscreen needs fscreen
@@ -73,6 +73,7 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
+an_core needs 16S_common
 an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
@@ -96,11 +97,13 @@ asngendefs needs xser
 asnmuxdblb needs dbloadb_asn
 asnmuxdblb needs generic_db_asn
 asnmuxdblb needs mux
+asnmuxdblb needs mux_cgi
 auxcomm_g needs muxex-C_g
 auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
+auxnet_g needs generic_db_utils_cgi
 backendcommon needs $(SDBAPI_LIB)
 backendcommon needs txxmldoc
 backendcommon needs xconnect
@@ -168,6 +171,7 @@ bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
 cache_blob needs xser
 cache_g needs generic_db_utils
+cache_g needs generic_db_utils_cgi
 cdd needs cn3d
 cdd needs scoremat
 clog needs3party $(ORIG_LIBS)
@@ -221,6 +225,9 @@ dbapi_util_blobstore needs xutil
 dbassist needs dbapi
 dbassist needs dbloadb
 dbassist needs ncbi_xdbapi_ftds
+dbassist_cgi needs dbapi
+dbassist_cgi needs dbloadb
+dbassist_cgi needs ncbi_xdbapi_ftds
 dbgap_data_access needs xid_utils
 dbinfoasncpp_g needs xser
 dbldasn_g needs splitdbasn_g
@@ -271,6 +278,7 @@ eutilsapp includes eueid
 eutilsapp needs ncqhst
 eutilsapp needs3party $(FASTCGI_LIBS)
 event_g needs generic_db_utils
+event_g needs generic_db_utils_cgi
 expat needs3party $(ORIG_LIBS)
 exslt needs3party $(GCRYPT_LIBS)
 exslt needs3party $(LIBXML_LIBS)
@@ -317,10 +325,15 @@ general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
 generic_db_core needs dbassist
+generic_db_core needs dbassist_cgi
 generic_db_tmpl_utils needs generic_db_utils
+generic_db_tmpl_utils needs generic_db_utils_cgi
 generic_db_utils needs $(COMPRESS_LIBS)
 generic_db_utils needs xconnect
 generic_db_utils needs xser
+generic_db_utils_cgi needs $(COMPRESS_LIBS)
+generic_db_utils_cgi needs xconnect
+generic_db_utils_cgi needs xser
 genesbyloc needs xser
 genome_collection needs $(SEQ_LIBS)
 genome_collection needs pub
@@ -418,9 +431,9 @@ gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs $(GPIPE_COMMON_LIBS)
 gpipe_jira needs gpinit_access
 gpipe_jira needs3party $(GSOAP_LIBS)
-gpipe_kmer includes sampling
 gpipe_kmer needs biotree
 gpipe_kmer needs kmer_metadata
+gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
 gpipe_meta_access needs gpipe_common
@@ -564,6 +577,7 @@ ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideocli
 idgen needs dbassist
+idgen needs dbassist_cgi
 idload needs3party ctutils
 idx needs $(CONNEXT)
 idx needs dbapi_driver
@@ -654,9 +668,14 @@ muparser needs3party $(ORIG_LIBS)
 muscleasn_g needs $(SEQ_LIBS)
 muscleasn_g needs pub
 mux needs generic_db_utils
+mux needs generic_db_utils_cgi
 mux needs xcgi
+mux_cgi needs generic_db_utils
+mux_cgi needs generic_db_utils_cgi
+mux_cgi needs xcgi
 muxex-C_g needs dbldasn_g
 muxex-C_g needs mux
+muxex-C_g needs mux_cgi
 muxex_g needs alndb_query
 muxex_g needs asnmuxdblb
 muxex_g needs bl2seqasn_g
@@ -987,6 +1006,7 @@ tds_ftds64 needs3party $(KRB5_LIBS)
 tds_ftds64 needs3party $(NETWORK_LIBS)
 tds_ftds64 needs3party $(ORIG_LIBS)
 tea_crypt needs generic_db_utils
+tea_crypt needs generic_db_utils_cgi
 test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
 test_dll needs3party $(ORIG_LIBS)
