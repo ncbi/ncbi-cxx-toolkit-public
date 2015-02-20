@@ -42,47 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 
-namespace
-{
-
 using namespace NImpl;
-
-
-class CNetCache
-{
-public:
-    CNetCache(SContext* context)
-        : m_Context(context)
-    {}
-
-    CNetStorageObject Open(const string& object_loc)
-    {
-        return CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
-                NULL, m_Context->compound_id_pool) ? DoOpen(object_loc) : NULL;
-    }
-
-private:
-    CNetStorageObject DoOpen(const string& object_loc);
-
-    CRef<SContext> m_Context;
-    CNetCacheAPI m_API;
-};
-
-
-CNetStorageObject CNetCache::DoOpen(const string& object_loc)
-{
-    if (!m_API) {
-        CNetCacheAPI nc_api(CNetCacheAPI::eAppRegistry);
-        nc_api.SetCompoundIDPool(m_Context->compound_id_pool);
-        nc_api.SetDefaultParameters(nc_use_compound_id = true);
-        m_API = nc_api;
-    }
-
-    return g_CreateNetStorage_NetCacheBlob(m_API, object_loc);
-}
-
-
-}
 
 
 struct SNetStorageAPIImpl : public SNetStorageImpl
@@ -90,8 +50,7 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
     SNetStorageAPIImpl(const string& app_domain,
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client = NULL)
-        : m_Context(new SContext(app_domain, icache_client, default_flags)),
-          m_NetCache(m_Context)
+        : m_Context(new SContext(app_domain, icache_client, default_flags))
     {}
 
     CNetStorageObject Create(TNetStorageFlags = 0);
@@ -103,7 +62,6 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
 
 private:
     CRef<SContext> m_Context;
-    CNetCache m_NetCache;
 };
 
 
@@ -126,12 +84,8 @@ CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags,
 
 CNetStorageObject SNetStorageAPIImpl::Open(const string& object_loc)
 {
-    if (CNetStorageObject object = m_NetCache.Open(object_loc)) {
-        return object;
-    } else {
-        ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
-        return new CObj(selector);
-    }
+    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
+    return new CObj(selector);
 }
 
 
