@@ -58,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 
 CObjectOStream* CObjectOStream::OpenObjectOStreamJson(CNcbiOstream& out,
-                                                     bool deleteOut)
+                                                     EOwnership deleteOut)
 {
     return new CObjectOStreamJson(out, deleteOut);
 }
@@ -66,6 +66,16 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamJson(CNcbiOstream& out,
 
 
 CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
+    : CObjectOStream(eSerial_Json, out, deleteOut ? eTakeOwnership : eNoOwnership),
+    m_BlockStart(false),
+    m_ExpectValue(false),
+    m_StringEncoding(eEncoding_Unknown),
+    m_BinaryFormat(eDefault),
+    m_WrapAt(0)
+{
+}
+
+CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, EOwnership deleteOut)
     : CObjectOStream(eSerial_Json, out, deleteOut),
     m_BlockStart(false),
     m_ExpectValue(false),

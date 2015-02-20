@@ -57,6 +57,18 @@ CObjectIStreamJson::CObjectIStreamJson(void)
 {
 }
 
+CObjectIStreamJson::CObjectIStreamJson(CNcbiIstream& in, EOwnership deleteIn)
+    : CObjectIStream(eSerial_Json),
+    m_FileHeader(false),
+    m_BlockStart(false),
+    m_ExpectValue(false),
+    m_Closing(0),
+    m_StringEncoding( eEncoding_Unknown ),
+    m_BinaryFormat(eDefault)
+{
+    Open(in, deleteIn);
+}
+
 CObjectIStreamJson::~CObjectIStreamJson(void)
 {
 }

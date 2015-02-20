@@ -56,6 +56,15 @@ public:
     CObjectIStreamJson(void);
     ~CObjectIStreamJson(void);
 
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param deleteIn
+    ///   When eTakeOwnership, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    CObjectIStreamJson(CNcbiIstream& in, EOwnership deleteIn);
+
     /// Get current stream position as string.
     /// Useful for diagnostic and information messages.
     ///

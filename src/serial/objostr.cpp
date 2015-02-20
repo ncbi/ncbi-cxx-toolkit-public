@@ -125,8 +125,9 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      CNcbiOstream& outStream,
-                                     bool deleteStream)
+                                     bool bdeleteStream)
 {
+    EOwnership deleteStream = bdeleteStream ? eTakeOwnership : eNoOwnership;
     switch ( format ) {
     case eSerial_AsnText:
         return OpenObjectOStreamAsn(outStream, deleteStream);
@@ -145,11 +146,10 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      CNcbiOstream& outStream,
-                                     EOwnership edeleteStream,
+                                     EOwnership deleteStream,
                                      TSerial_Format_Flags formatFlags)
 {
     CObjectOStream* os = NULL;
-    bool deleteStream = edeleteStream == eTakeOwnership;
     switch ( format ) {
     case eSerial_AsnText:
         os = OpenObjectOStreamAsn(outStream, deleteStream);
@@ -287,8 +287,8 @@ EFixNonPrint CObjectOStream::x_GetFixCharsMethodDefault(void) const
 /////////////////////////////////////////////////////////////////////////////
 
 CObjectOStream::CObjectOStream(ESerialDataFormat format,
-                               CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
+                               CNcbiOstream& out, EOwnership edeleteOut)
+    : m_Output(out, edeleteOut == eTakeOwnership), m_Fail(fNoError), m_Flags(fFlagNone),
       m_Separator(""), m_AutoSeparator(false),
       m_DataFormat(format),
       m_WriteNamedIntegersByValue(false),

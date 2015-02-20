@@ -58,7 +58,7 @@
 BEGIN_NCBI_SCOPE
 
 CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
-                                                     bool deleteOut)
+                                                     EOwnership deleteOut)
 {
     return new CObjectOStreamXml(out, deleteOut);
 }
@@ -71,6 +71,22 @@ const char* s_SchemaInstanceNamespace = "http://www.w3.org/2001/XMLSchema-instan
 
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
+    : CObjectOStream(eSerial_Xml, out, deleteOut ? eTakeOwnership : eNoOwnership),
+      m_LastTagAction(eTagClose), m_EndTag(true),
+      m_UseDefaultDTDFilePrefix( true),
+      m_UsePublicId( true),
+      m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
+      m_RealFmt( eRealScientificFormat ),
+      m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_Unknown ),
+      m_UseXmlDecl(true),
+      m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
+      m_DefaultSchemaNamespace( sm_DefaultSchemaNamespace ),
+      m_SkipIndent( false ), m_SkipNextTag(false)
+{
+    m_Output.SetBackLimit(1);
+}
+
+CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, EOwnership deleteOut)
     : CObjectOStream(eSerial_Xml, out, deleteOut),
       m_LastTagAction(eTagClose), m_EndTag(true),
       m_UseDefaultDTDFilePrefix( true),

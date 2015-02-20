@@ -56,7 +56,7 @@
 BEGIN_NCBI_SCOPE
 
 CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
-                                                     bool deleteOut)
+                                                     EOwnership deleteOut)
 {
     return new CObjectOStreamAsn(out, deleteOut);
 }
@@ -73,6 +73,17 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      bool deleteOut,
+                                     EFixNonPrint how)
+    : CObjectOStream(eSerial_AsnText, out, deleteOut ? eTakeOwnership : eNoOwnership)
+{
+    FixNonPrint(how);
+    m_Output.SetBackLimit(80);
+    SetSeparator("\n");
+    SetAutoSeparator(true);
+}
+
+CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
+                                     EOwnership deleteOut,
                                      EFixNonPrint how)
     : CObjectOStream(eSerial_AsnText, out, deleteOut)
 {

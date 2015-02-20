@@ -750,9 +750,10 @@ public:
     MLIOVIR void WriteClassMemberSpecialCase(
         const CMemberId& memberId, TTypeInfo memberType,
         TConstObjectPtr memberPtr, ESpecialCaseWrite how);
+
 protected:
     CObjectOStream(ESerialDataFormat format,
-                   CNcbiOstream& out, bool deleteOut = false);
+                   CNcbiOstream& out, EOwnership deleteOut = eNoOwnership);
 
     // low level writers
     typedef size_t TObjectIndex;
@@ -789,13 +790,13 @@ protected:
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
-                                                bool deleteOut);
+                                                EOwnership deleteOut);
     static CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out,
-                                                      bool deleteOut);
+                                                      EOwnership deleteOut);
     static CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out,
-                                                bool deleteOut);
+                                                EOwnership deleteOut);
     static CObjectOStream* OpenObjectOStreamJson(CNcbiOstream& out,
-                                                bool deleteOut);
+                                                EOwnership deleteOut);
     static ESerialVerifyData x_GetVerifyDataDefault(void);
 
     EFixNonPrint m_FixMethod; // method of fixing wrong (eg, non-printable) chars

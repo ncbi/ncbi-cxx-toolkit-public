@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 
 
 CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
-                                                           bool deleteOut)
+                                                           EOwnership deleteOut)
 {
     return new CObjectOStreamAsnBinary(out, deleteOut);
 }
@@ -84,6 +84,20 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut,
+                                                 EFixNonPrint how)
+    : CObjectOStream(eSerial_AsnBinary, out, deleteOut ? eTakeOwnership : eNoOwnership),
+      m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)
+{
+    FixNonPrint(how);
+#if CHECK_OUTSTREAM_INTEGRITY
+    m_CurrentPosition = 0;
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLimit = 0;
+#endif
+}
+
+CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
+                                                 EOwnership deleteOut,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out, deleteOut),
       m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)

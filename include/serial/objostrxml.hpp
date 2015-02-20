@@ -61,7 +61,18 @@ public:
     /// @param deleteOut
     ///   when TRUE, the output stream will be deleted automatically
     ///   when the writer is deleted
-    CObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
+    /// @deprecated
+    ///   Use one with EOwnership enum instead
+    NCBI_DEPRECATED_CTOR(CObjectOStreamXml(CNcbiOstream& out, bool deleteOut));
+
+    /// Constructor.
+    ///
+    /// @param out
+    ///   Output stream    
+    /// @param deleteOut
+    ///   When eTakeOwnership, the output stream will be deleted automatically
+    ///   when the writer is deleted
+    CObjectOStreamXml(CNcbiOstream& out, EOwnership deleteOut);
 
     /// Destructor.
     virtual ~CObjectOStreamXml(void);

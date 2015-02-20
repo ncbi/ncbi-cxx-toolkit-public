@@ -58,6 +58,15 @@ public:
     CObjectIStreamXml(void);
     ~CObjectIStreamXml(void);
 
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param deleteIn
+    ///   When eTakeOwnership, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    CObjectIStreamXml(CNcbiIstream& in, EOwnership deleteIn);
+
     /// Check if there is still some meaningful data that can be read;
     /// this function will skip white spaces and comments
     ///

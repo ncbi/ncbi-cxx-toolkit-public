@@ -65,6 +65,18 @@ CObjectIStreamXml::CObjectIStreamXml(void)
     m_Utf8Pos = m_Utf8Buf.begin();
 }
 
+CObjectIStreamXml::CObjectIStreamXml(CNcbiIstream& in, EOwnership deleteIn)
+    : CObjectIStream(eSerial_Xml),
+      m_TagState(eTagOutside), m_Attlist(false),
+      m_StdXml(false), m_Doctype_found(false), m_IsNil(false),
+      m_Encoding( eEncoding_Unknown ),
+      m_StringEncoding( eEncoding_Unknown ),
+      m_SkipNextTag(false)
+{
+    m_Utf8Pos = m_Utf8Buf.begin();
+    Open(in, deleteIn);
+}
+
 CObjectIStreamXml::~CObjectIStreamXml(void)
 {
 }

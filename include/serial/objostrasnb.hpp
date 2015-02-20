@@ -76,9 +76,26 @@ public:
     ///   when the writer is deleted
     /// @param how
     ///   Defines how to fix unprintable characters in ASN VisiableString
+    /// @deprecated
+    ///   Use one with EOwnership enum instead
+    NCBI_DEPRECATED_CTOR(CObjectOStreamAsnBinary(CNcbiOstream& out,
+                                                 bool deleteOut,
+                                                 EFixNonPrint how = eFNP_Default));
+
+    /// Constructor.
+    ///
+    /// @param out
+    ///   Output stream    
+    /// @param deleteOut
+    ///   When eTakeOwnership, the output stream will be deleted automatically
+    ///   when the writer is deleted
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectOStreamAsnBinary(CNcbiOstream& out,
-                            bool deleteOut,
+                            EOwnership deleteOut,
                             EFixNonPrint how = eFNP_Default);
+
+
     /// Destructor.
     virtual ~CObjectOStreamAsnBinary(void);
 
