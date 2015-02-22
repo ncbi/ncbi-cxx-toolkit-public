@@ -92,7 +92,7 @@ def svn_checkout(blast_version):
     svn_ncbi = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
 
     # Check out the sources
-    cmd = "svn -q co --username svnread --password allowed " + svn_ncbi
+    cmd = "svn -q co --username blastadm --password bl4stGu3ssm3 " + svn_ncbi
     cmd += "/release/blast/" + blast_version + " " + PACKAGE_NAME
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
