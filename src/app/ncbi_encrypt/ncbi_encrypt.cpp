@@ -170,6 +170,7 @@ void CNcbiEncryptApp::Decrypt(void)
     CNcbiOstrstream tmp;
     tmp << in.rdbuf();
     string data = CNcbiOstrstreamToString(tmp);
+    NStr::TruncateSpacesInPlace(data);
 
     if ( args["password"] ) {
         decr = CNcbiEncrypt::Decrypt(data, args["password"].AsString());
