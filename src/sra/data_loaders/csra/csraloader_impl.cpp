@@ -1847,7 +1847,11 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                 }
                 read_pos += seglen;
             }
-            else if ( type == 'D' || type == 'N' ) {
+            else if ( type == 'N' ) {
+                // intron
+                ref_pos += seglen;
+            }
+            else if ( type == 'D' ) {
                 // delete
                 for ( int i = 0; i < seglen; ++i ) {
                     if ( ref_pos < len ) {
