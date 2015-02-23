@@ -5519,7 +5519,7 @@ void CMemoryFileMap::x_Extend(Uint8 size, Uint8 new_size)
 CMemoryFileSegment* 
 CMemoryFileMap::x_GetMemoryFileSegment(void* ptr) const
 {
-    if ( !m_Handle  &&  (m_Handle->hMap == kInvalidHandle) ) {
+    if ( !m_Handle  ||  (m_Handle->hMap == kInvalidHandle) ) {
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " File is not mapped");
     }
