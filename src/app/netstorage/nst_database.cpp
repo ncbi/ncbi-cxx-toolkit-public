@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/resource_info.hpp>
 #include <connect/services/json_over_uttp.hpp>
 #include <connect/services/netstorage.hpp>
 #include <connect/services/netstorage_impl.hpp>
@@ -46,27 +47,48 @@ CNSTDatabase::CNSTDatabase(CNetStorageServer *  server)
     : m_Server(server), m_Db(NULL), m_Connected(false),
       m_RestoreConnectionThread(NULL)
 {
-    x_CreateDatabase();
+    // true: this is initialization time
+    x_CreateDatabase(true);
     try {
         m_RestoreConnectionThread.Reset(new CNSTDBConnectionThread(
-                                                m_Connected, m_Db));
+                                                m_Connected, m_Db, this));
         m_RestoreConnectionThread->Run();
     } catch (...) {
-        delete m_Db;
+        if (m_Db != NULL)
+            delete m_Db;
         throw;
     }
+
+    // It might be that the DB has not been created because the database
+    // password could not be decrypted. In this case we need to try again every
+    // 100 seconds. These tries are made in the restore connection thread so
+    // let's wake it up here.
+    if (m_Db == NULL)
+        m_RestoreConnectionThread->Wakeup();
 }
 
 
 void CNSTDatabase::InitialConnect(void)
 {
-    if (!m_Connected) {
+    if (m_Db != NULL && !m_Connected) {
         try {
             m_Db->Connect();
             m_Connected = true;
-        } catch (...) {
+        } catch (const CException &  ex) {
+            m_Server->RegisterAlert(eDBConnect, "DB connection error: " +
+                                                string(ex.what()));
+            ERR_POST(ex);
             m_RestoreConnectionThread->Wakeup();
-            throw;
+        } catch (const exception &  ex) {
+            m_Server->RegisterAlert(eDBConnect, "DB connection error: " +
+                                                string(ex.what()));
+            ERR_POST("Exception while connecting to the database: " <<
+                     ex.what());
+            m_RestoreConnectionThread->Wakeup();
+        } catch (...) {
+            m_Server->RegisterAlert(eDBConnect, "Unknown DB connection error");
+            ERR_POST("Unknown exception while connecting to the database");
+            m_RestoreConnectionThread->Wakeup();
         }
     }
 }
@@ -78,9 +100,11 @@ CNSTDatabase::~CNSTDatabase(void)
     m_RestoreConnectionThread->Join();
     m_RestoreConnectionThread.Reset(0);
 
-    if (m_Connected)
-        m_Db->Close();
-    delete m_Db;
+    if (m_Db != NULL) {
+        if (m_Connected)
+            m_Db->Close();
+        delete m_Db;
+    }
 }
 
 
@@ -878,7 +902,7 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
 
 void CNSTDatabase::x_PreCheckConnection(void)
 {
-    if (!m_Connected)
+    if (m_Db == NULL || !m_Connected)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
                    "There is no connection to metadata information database");
 
@@ -902,8 +926,13 @@ void CNSTDatabase::x_PreCheckConnection(void)
 
 void CNSTDatabase::x_PostCheckConnection(void)
 {
+    if (m_Db == NULL)
+        return;     // It must never happened - the existance of the m_Db is
+                    // checked in the pre condition
+
     if (!m_Db->IsConnected(CDatabase::eFastCheck)) {
         m_Connected = false;
+        m_Server->RegisterAlert(eDBConnect, "Database connection lost");
         ERR_POST(Critical << "Database connection has been lost");
         m_RestoreConnectionThread->Wakeup();
     }
@@ -923,30 +952,48 @@ int  CNSTDatabase::x_CheckStatus(CQuery &  query,
 }
 
 
-void  CNSTDatabase::x_ReadDbAccessInfo(void)
+bool  CNSTDatabase::x_ReadDbAccessInfo(bool  is_initialization)
 {
     CNetStorageDApp *       app = dynamic_cast<CNetStorageDApp*>
                                         (CNcbiApplication::Instance());
     const CNcbiRegistry &   reg  = app->GetConfig();
 
     m_DbAccessInfo.m_Service = reg.GetString("database", "service", "");
-    m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
-    m_DbAccessInfo.m_Password = reg.GetString("database", "password", "");
     m_DbAccessInfo.m_Database = reg.GetString("database", "database", "");
+    m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
+
+    if (reg.HasEntry("database", "encrypted_password")) {
+        // Try to decrypt
+        try {
+            string      encrypted = reg.GetString("database",
+                                                  "encrypted_password", "");
+            m_DbAccessInfo.m_Password = CNcbiEncrypt::Decrypt(encrypted);
+        } catch (const CNcbiEncryptException &  ex) {
+            if (is_initialization) {
+                m_Server->RegisterAlert(eDecryptDBPass, string(ex.what()));
+                ERR_POST(Critical << "Decrypting [database]/encrypted_password "
+                         "error: " << ex);
+            }
+            return false;
+        }
+    } else {
+        m_DbAccessInfo.m_Password = reg.GetString("database", "password", "");
+    }
+    return true;
 }
 
 
-void  CNSTDatabase::x_CreateDatabase(void)
+void  CNSTDatabase::x_CreateDatabase(bool  is_initialization)
 {
-    x_ReadDbAccessInfo();
+    if (x_ReadDbAccessInfo(is_initialization)) {
+        string  uri = "dbapi://" + m_DbAccessInfo.m_UserName +
+                      ":" + m_DbAccessInfo.m_Password +
+                      "@" + m_DbAccessInfo.m_Service +
+                      "/" + m_DbAccessInfo.m_Database;
 
-    string  uri = "dbapi://" + m_DbAccessInfo.m_UserName +
-                  ":" + m_DbAccessInfo.m_Password +
-                  "@" + m_DbAccessInfo.m_Service +
-                  "/" + m_DbAccessInfo.m_Database;
-
-    CSDB_ConnectionParam    db_params(uri);
-    m_Db = new CDatabase(db_params);
+        CSDB_ConnectionParam    db_params(uri);
+        m_Db = new CDatabase(db_params);
+    }
 }
 
 

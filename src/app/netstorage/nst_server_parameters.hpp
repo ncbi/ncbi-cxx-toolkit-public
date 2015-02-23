@@ -40,12 +40,14 @@
 
 BEGIN_NCBI_SCOPE
 
+
 //
 // NetStorage server parameters
 //
 struct SNetStorageServerParameters : SServer_Parameters
 {
-    void Read(const IRegistry& reg, const string& sname);
+    void Read(const IRegistry& reg, const string& sname,
+              string &  decrypt_warning);
 
     unsigned short  port;
     unsigned int    network_timeout;

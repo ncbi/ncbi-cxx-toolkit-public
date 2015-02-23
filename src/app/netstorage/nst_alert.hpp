@@ -56,7 +56,10 @@ enum EAlertType {
     ePidFile = 2,
     eDB = 3,
     eAccess = 4,
-    eConfigOutOfSync = 5
+    eConfigOutOfSync = 5,
+    eDecryptDBPass = 6,
+    eDecryptAdminNames = 7,
+    eDBConnect = 8
 };
 
 enum EAlertAckResult {

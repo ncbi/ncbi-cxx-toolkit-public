@@ -229,7 +229,7 @@ void CNetStorageHandler::OnWrite(void)
 {
     // This implementation is left to simplify the transition to
     // asynchronous replies. Currently this method will never be called
-    // because the GetEventsToPollFor(...) never returns amything but
+    // because the GetEventsToPollFor(...) never returns anything but
     // eIO_Read
 
     for (;;) {
@@ -554,6 +554,11 @@ void CNetStorageHandler::x_SendWriteConfirmation()
     }
 
     try {
+        if (m_ObjectSize == 0) {
+            // This is the object of zero size i.e. there were no write()
+            // calls. Thus the remote object was not really created.
+            m_ObjectBeingWritten.Write("", 0);
+        }
         m_ObjectBeingWritten.Close();
     }
     catch (const CException &  ex) {
@@ -1143,7 +1148,14 @@ CNetStorageHandler::x_ProcessReconfigure(
     // [server]: logging and admin name list
     // [metadata_conf]
     SNetStorageServerParameters     params;
-    params.Read(reg, "server");
+    string                          decrypt_warning;
+    params.Read(reg, "server", decrypt_warning);
+
+    if (!decrypt_warning.empty()) {
+        ERR_POST(decrypt_warning);
+        m_Server->RegisterAlert(eDecryptAdminNames, decrypt_warning);
+        NCBI_THROW(CNetStorageServerException, eInvalidConfig, decrypt_warning);
+    }
 
     CJsonNode   server_diff = m_Server->SetParameters(params, true);
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);

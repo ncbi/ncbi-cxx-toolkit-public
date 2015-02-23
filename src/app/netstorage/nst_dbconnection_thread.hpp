@@ -34,24 +34,31 @@
 #include <corelib/ncbithr.hpp>
 
 
-class CDatabase;
-
-
 BEGIN_NCBI_SCOPE
+
+
+class CDatabase;
+class CNSTDatabase;
+
+
 
 class CNSTDBConnectionThread : public CThread
 {
 public:
-    CNSTDBConnectionThread(bool &  connected, CDatabase *  db);
+    CNSTDBConnectionThread(bool &  connected, CDatabase * &  db,
+                           CNSTDatabase *  db_wrapper);
     ~CNSTDBConnectionThread();
 
     void Stop(void);
     void Wakeup(void);
 
 private:
-    volatile bool &                         m_Connected;
-    CDatabase *                             m_Database;
+    bool &                                  m_Connected;
+    CDatabase * &                           m_Database;
+    CNSTDatabase *                          m_DBWrapper;
+
     void x_RestoreConnection(void);
+    void x_CreateDatabase(void);
 
 private:
     mutable CSemaphore                      m_StopSignal;

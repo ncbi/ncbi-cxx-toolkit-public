@@ -150,17 +150,21 @@ int CNetStorageDApp::Run(void)
     NSTValidateConfigFile(reg, config_warnings, true);
 
 
+    // The server should be created before the parameters are read because an
+    // alert could be generated during reading parameters.
+    SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
+    auto_ptr<CNetStorageServer>     server(new CNetStorageServer());
+
     // [server] section
     SNetStorageServerParameters     params;
-    params.Read(reg, "server");
+    string                          decrypt_warning;
+    params.Read(reg, "server", decrypt_warning);
 
     m_ServerAcceptTimeout.sec  = 1;
     m_ServerAcceptTimeout.usec = 0;
     params.accept_timeout      = &m_ServerAcceptTimeout;
 
 
-    SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
-    auto_ptr<CNetStorageServer>     server(new CNetStorageServer());
     server->SaveCommandLine(m_CommandLine);
     server->SetCustomThreadSuffix("_h");
     server->SetParameters(params, false);
@@ -206,6 +210,10 @@ int CNetStorageDApp::Run(void)
         }
         server->RegisterAlert(eStartupConfig, msg);
     }
+    if (!decrypt_warning.empty()) {
+        ERR_POST(decrypt_warning);
+        server->RegisterAlert(eDecryptAdminNames, decrypt_warning);
+    }
 
     // Calculate the config file checksum and memorize it
     vector<string>  config_checksum_warnings;
@@ -228,15 +236,7 @@ int CNetStorageDApp::Run(void)
     // in turn creates a thread which restores the DB connection. If we have a
     // thread after the daemonization then the thread dies without any visible
     // signs and simply does not work.
-    try {
-        server->GetDb().InitialConnect();
-    } catch (const CException &  ex) {
-        ERR_POST(ex);
-    } catch (const std::exception &  ex) {
-        ERR_POST("Exception while connecting to the database: " << ex.what());
-    } catch (...) {
-        ERR_POST("Unknown exception while connecting to the database");
-    }
+    server->GetDb().InitialConnect();
 
     // Start auxiliary threads
     server->RunServiceThread();

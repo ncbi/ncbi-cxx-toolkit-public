@@ -141,8 +141,8 @@ public:
     int  ExecSP_GetClients(vector<string> &  names);
 
 private:
-    void x_ReadDbAccessInfo(void);
-    void x_CreateDatabase(void);
+    bool x_ReadDbAccessInfo(bool  is_initialization);
+    void x_CreateDatabase(bool  is_initialization);
     void x_PreCheckConnection(void);
     void x_PostCheckConnection(void);
     int  x_CheckStatus(CQuery &  query,
@@ -163,6 +163,8 @@ private:
 
     CNSTDatabase(const CNSTDatabase &  conn);
     CNSTDatabase & operator= (const CNSTDatabase &  conn);
+
+    friend class CNSTDBConnectionThread;
 };
 
 

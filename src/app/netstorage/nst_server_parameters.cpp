@@ -30,6 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/resource_info.hpp>
+
 #include "nst_server_parameters.hpp"
 #include "nst_exception.hpp"
 
@@ -49,15 +51,16 @@ static unsigned int     default_network_timeout = 10;
 static bool             default_log = true;
 
 
-void SNetStorageServerParameters::Read(const IRegistry &  reg,
-                                       const string &     sname)
+void SNetStorageServerParameters::Read(const IRegistry &    reg,
+                                       const string &       sname,
+                                       string &             decrypt_warning)
 {
     max_connections = GetIntNoErr("max_connections", default_max_connections);
     max_threads     = GetIntNoErr("max_threads", default_max_threads);
 
     init_threads = GetIntNoErr("init_threads", default_init_threads);
     if (init_threads > max_threads) {
-        LOG_POST(Message << Warning <<
+        ERR_POST(Warning <<
                  "INI file sets init_threads > max_threads. "
                  "Assume init_threads = max_threads(" << max_threads <<
                  ") instead of given " << init_threads);
@@ -72,13 +75,31 @@ void SNetStorageServerParameters::Read(const IRegistry &  reg,
 
     network_timeout = GetIntNoErr("network_timeout", default_network_timeout);
     if (network_timeout == 0) {
-        LOG_POST(Message << Warning <<
+        ERR_POST(Warning <<
             "INI file sets 0 sec. network timeout. Assume " <<
             default_network_timeout << " seconds.");
         network_timeout = default_network_timeout;
     }
 
     log = GetBoolNoErr("log", default_log);
-    admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
+
+    // Deal with encrypted admin client names if so
+    if (reg.HasEntry("encrypted_admin_client_name")) {
+        string      encrypted = reg.GetString(sname,
+                                              "encrypted_admin_client_name",
+                                              kEmptyStr);
+        try {
+            admin_client_names = CNcbiEncrypt::Decrypt(encrypted);
+        } catch (const exception &  ex) {
+            decrypt_warning = "[server]/encrypted_admin_client_name "
+                              "decrypting error detected. " + string(ex.what());
+        } catch (...) {
+            decrypt_warning = "[server]/encrypted_admin_client_name "
+                              "unknown error";
+        }
+    } else {
+        admin_client_names = reg.GetString(sname,
+                                           "admin_client_name", kEmptyStr);
+    }
 }
 
