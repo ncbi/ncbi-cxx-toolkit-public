@@ -411,17 +411,29 @@ void CFlatGatherer::x_GatherSourceOrganism(void) const
     CBioseq_Handle& hnd = ctx.GetHandle();
     const CFlatFileConfig& cfg = ctx.Config();
 
+    bool missing = true;
     CConstRef<IFlatItem> item;
     for (CSeqdesc_CI dit(hnd, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
         if (bsrc.IsSetOrg()) {
             if( cfg.IsShownGenbankBlock(CFlatFileConfig::fGenbankBlocks_Source) ) {
                 item.Reset( new CSourceItem(ctx, bsrc, *dit) );
-                ItemOS() << item;
+                *m_ItemOS << item;
+                missing = false;
                 if (! ctx.IsCrossKingdom()) break;
                 if (! ctx.IsRSUniqueProt()) break;
             }
         }
+    }
+
+    if ( missing ) {
+        CRef<CBioSource> src(new CBioSource);
+        src->SetOrg().SetTaxname("Unknown.");
+        src->SetOrg().SetOrgname().SetLineage("Unclassified.");
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->SetSource(*src);
+        item.Reset( new CSourceItem(ctx, *src, *desc) );
+        *m_ItemOS << item;
     }
 }
     
