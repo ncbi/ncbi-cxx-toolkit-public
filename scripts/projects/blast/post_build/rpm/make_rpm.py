@@ -90,9 +90,11 @@ def svn_checkout(blast_version):
     """Checkout BLAST sources for this release from SVN"""
     # NCBI SVN repository
     svn_ncbi = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
+    svnu = os.environ['SVNU']
+    svnp = os.environ['SVNP']
 
     # Check out the sources
-    cmd = "svn -q co --username blastadm --password bl4stGu3ssm3 " + svn_ncbi
+    cmd = "svn -q co --username " + svnu + " --password" + svnp + " " + svn_ncbi
     cmd += "/release/blast/" + blast_version + " " + PACKAGE_NAME
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
