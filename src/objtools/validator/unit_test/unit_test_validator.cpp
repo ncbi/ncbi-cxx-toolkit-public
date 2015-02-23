@@ -4690,10 +4690,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "TPA:experimental and TPA:inferential should not both be in the same set of keywords"));
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_dates [Mar 2009] and [Apr 2009]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_date [Apr 2009] and update_date [Feb 2009]"));
+    */
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "Inconsistent taxnames [Trichechus manatus] and [Sebaea microphylla]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
@@ -18592,9 +18594,16 @@ BOOST_AUTO_TEST_CASE(Test_SQD_292)
     update_date->SetUpdate_date().SetStd().SetYear(1998);
     entry->SetSet().SetDescr().Set().push_back(update_date);
 
+    CRef<CSeq_entry> nuc = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_id> gi_id(new CSeq_id());
+    gi_id->SetGi(GI_FROM(TIntId, 1322283));
+    nuc->SetSeq().SetId().push_front(gi_id);
+    CRef<CSeq_id> accv_id(new CSeq_id("gb|U54469.1"));
+    nuc->SetSeq().SetId().push_front (accv_id);
+
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InconsistentDates",
+    expected_errors.push_back(new CExpectedError("U54469.1", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_date [Jun 12, 1998] and update_date [Jun 11, 1998]"));
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_date [Jun 12, 1998] and update_date [Jun 11, 1998]"));

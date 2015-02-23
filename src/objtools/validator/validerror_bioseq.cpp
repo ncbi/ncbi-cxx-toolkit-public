@@ -7427,7 +7427,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             {
             const CDate& current = desc.GetCreate_date();
             if ( create_desc ) {
-                if ( create_desc->GetCreate_date().Compare(current) != CDate::eCompare_same ) {
+                if ( create_desc->GetCreate_date().Compare(current) != CDate::eCompare_same && m_Imp.HasGiOrAccnVer() ) {
                     string current_str;
                     GetDateString(current_str, current);
                     const CSeq_entry *use_ctx = ctx.GetParentEntry();
@@ -8318,7 +8318,7 @@ void CValidError_bioseq::ValidateUpdateDateContext
  const CBioseq& seq,
  const CSeqdesc& desc)
 {
-    if ( update.Compare(create) == CDate::eCompare_before ) {
+    if ( update.Compare(create) == CDate::eCompare_before && m_Imp.HasGiOrAccnVer() ) {
 
         string create_str;
         GetDateString(create_str, create);

@@ -239,6 +239,7 @@ void CValidError_imp::Reset(void)
     m_IsGB = false;
     m_IsGpipe = false;
     m_IsLocalGeneralOnly = true;
+    m_HasGiOrAccnVer = false;
     m_IsGenomic = false;
     m_IsSeqSubmit = false;
     m_IsSmallGenomeSet = false;
@@ -2560,6 +2561,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     for (CTypeConstIterator <CBioseq> bi (*m_TSE); bi; ++bi) {
         FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, *bi) {
             const CSeq_id& sid = **sid_itr;
+            const CTextseq_id* tsid = sid.GetTextseq_Id();
             CSeq_id::E_Choice typ = sid.Which();
             switch (typ) {
                 case CSeq_id::e_not_set:
@@ -2593,7 +2595,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     m_IsRefSeq = true;
                     // and do RefSeq subclasses up front as well
                     if (sid.GetOther().IsSetAccession()) {
-                        string acc =sid.GetOther().GetAccession().substr(0, 3);
+                        string acc = sid.GetOther().GetAccession().substr(0, 3);
                         if (acc == "NC_") {
                             m_IsNC = true;
                         } else if (acc == "NG_") {
@@ -2624,6 +2626,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     break;
                 case CSeq_id::e_Gi:
                     m_IsGI = true;
+                    m_HasGiOrAccnVer = true;
                     break;
                 case CSeq_id::e_Ddbj:
                     m_IsINSDInSep = true;
@@ -2650,6 +2653,9 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     break;
                 default:
                     break;
+            }
+            if ( tsid && tsid->IsSetAccession() && tsid->IsSetVersion() && tsid->GetVersion() >= 1 ) {
+                m_HasGiOrAccnVer = true;
             }
             if (typ != CSeq_id::e_Local && typ != CSeq_id::e_General) {
                 m_IsLocalGeneralOnly = false;
