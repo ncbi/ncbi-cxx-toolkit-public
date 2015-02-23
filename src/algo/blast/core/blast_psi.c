@@ -471,7 +471,7 @@ PSIMsaNew(const PSIMsaDimensions* dimensions)
         return NULL;
     }
 
-    retval = (PSIMsa*) malloc(sizeof(PSIMsa));
+    retval = (PSIMsa*) calloc(1, sizeof(PSIMsa));
     if ( !retval ) {
         return PSIMsaFree(retval);
     }
