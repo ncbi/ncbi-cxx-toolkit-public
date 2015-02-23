@@ -569,6 +569,7 @@ public:
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsGpipe(void) const { return m_IsGpipe; }
     inline bool IsLocalGeneralOnly(void) const { return m_IsLocalGeneralOnly; }
+    inline bool HasGiOrAccnVer(void) const { return m_HasGiOrAccnVer; }
     inline bool IsGenomic(void) const { return m_IsGenomic; }
     inline bool IsSeqSubmit(void) const { return m_IsSeqSubmit; }
     inline bool IsSmallGenomeSet(void) const { return m_IsSmallGenomeSet; }
@@ -795,6 +796,7 @@ private:
     bool m_IsGB;
     bool m_IsGpipe;
     bool m_IsLocalGeneralOnly;
+    bool m_HasGiOrAccnVer;
     bool m_IsGenomic;
     bool m_IsSeqSubmit;
     bool m_IsSmallGenomeSet;
