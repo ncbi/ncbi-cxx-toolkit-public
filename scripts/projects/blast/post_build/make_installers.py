@@ -33,9 +33,10 @@ def main(): #IGNORE:R0911
 
     if platform.startswith("Win"):
         return launch_win_installer_build(installdir, blast_version)                
-    if platform.startswith("Linux"):
+    if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version)
-    if platform == "FreeBSD32" or platform.startswith("SunOS"):
+    if platform == "FreeBSD32" or platform.startswith("SunOS") or \
+        platform.startsWith("Linux32"):
         return do_nothing(platform)
     if platform == "IntelMAC":
         return mac_post_build(installdir, blast_version)
