@@ -808,13 +808,18 @@ CBioSource::TNameValList CBioSource::x_GetSubtypeNameValPairs() const
     if (IsSetSubtype()) {
         ITERATE(CBioSource::TSubtype, it, GetSubtype()) {
             if ((*it)->IsSetName() && (*it)->IsSetSubtype()) {
+                CSubSource::TSubtype st = (*it)->GetSubtype();
                 string label;
-                if ((*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                if (st == CSubSource::eSubtype_other) {
                     label = kSubSrcNote;
                 } else {
-                    label = CSubSource::GetSubtypeName((*it)->GetSubtype());
+                    label = CSubSource::GetSubtypeName(st);
                 }
-                list.push_back(TNameVal(label, (*it)->GetName()));
+                string val = (*it)->GetName();
+                if (CSubSource::NeedsNoText(st) && NStr::IsBlank(val)) {
+                    val = "true";
+                }
+                list.push_back(TNameVal(label, val));
             }
         }
     }
@@ -895,12 +900,10 @@ typedef struct ignoreconflict {
 static IgnoreConflictData sIgnoreConflictList[] = {
   { "chromosome", eConflictIgnoreMissingInBioSample } ,
   { "endogenous-virus-name", eConflictIgnoreMissingInBioSample } ,
-  { "environmental-sample", eConflictIgnoreMissingInBioSample } ,
   { "germline", eConflictIgnoreMissingInBioSample } ,
   { "insertion-seq-name", eConflictIgnoreMissingInBioSample } ,
   { "linkage-group", eConflictIgnoreMissingInBioSample } ,
   { "map", eConflictIgnoreMissingInBioSample } ,
-  { "metagenomic", eConflictIgnoreMissingInBioSample } ,
   { "plasmid-name", eConflictIgnoreMissingInBioSample } ,
   { "pop-variant", eConflictIgnoreMissingInBioSample } ,
   { "rearranged", eConflictIgnoreMissingInBioSample } ,

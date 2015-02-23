@@ -1116,14 +1116,20 @@ void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSour
     if (src.IsSetSubtype()) {
         ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
             if ((*it)->IsSetSubtype() && (*it)->IsSetName()) {
+                CSubSource::TSubtype st = (*it)->GetSubtype();
                 string attribute_name = "";
-                if ((*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                if (st == CSubSource::eSubtype_other) {
                     attribute_name = "subsrc_note";
                 } else {
                     attribute_name = CSubSource::GetSubtypeName((*it)->GetSubtype()); 
                 }
-                if (!CBioSource::ShouldIgnoreConflict(attribute_name, (*it)->GetName(), "")) {
-                    s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetName());
+
+                string val = (*it)->GetName();
+                if (CSubSource::NeedsNoText(st) && NStr::IsBlank(val)) {
+                    val = "true";
+                }
+                if (!CBioSource::ShouldIgnoreConflict(attribute_name, val, "")) {
+                    s_AddSamplePair(sample_attrs, attribute_name, val);
                 }
             }
         }

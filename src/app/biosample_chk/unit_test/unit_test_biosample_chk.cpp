@@ -526,5 +526,41 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2028)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2189)
+{
+    // need to report diffs if one BioSource is metagenomic and the other is not
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Bacteria");
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->Assign(*src);
+
+    // both do not have metagenomic
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+
+    // only one has metagenomice
+    CRef<CSubSource> mt(new CSubSource());
+    mt->SetSubtype(CSubSource::eSubtype_metagenomic);
+    mt->SetName("");
+    src->SetSubtype().push_back(mt);
+
+    diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 1);
+    BOOST_CHECK_EQUAL(diff_list[0]->GetFieldName(), "metagenomic");
+    BOOST_CHECK_EQUAL(diff_list[0]->GetSrcVal(), "true");
+    BOOST_CHECK_EQUAL(diff_list[0]->GetSampleVal(), "");
+
+    // both have metagenomic
+    CRef<CSubSource> mt2(new CSubSource());
+    mt2->SetSubtype(CSubSource::eSubtype_metagenomic);
+    mt2->SetName("true");
+    smpl->SetSubtype().push_back(mt2);
+    diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+   
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
