@@ -185,7 +185,7 @@ void ICitationBase::NoteSup(string* label, const CImprint& ip)
         if (HasText(issue)) {
             *label += *issue;
         }
-        if (HasText(part_sup)) {
+        if (HasText(part_supi)) {
             *label += ' ' + *part_supi;
         }
         *label += ')';
