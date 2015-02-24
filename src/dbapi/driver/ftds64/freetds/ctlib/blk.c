@@ -135,6 +135,8 @@ blk_bind(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt, CS_VOID * buff
         colinfo->column_lenbind  = NULL;
 
         return CS_SUCCEED;
+    } else if (datafmt == NULL) {
+        return CS_FAIL;
     }
 
     /*
@@ -741,7 +743,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
         if (blkdesc->text_sent == 0) {
 
-            null_column = (srclen == 0 && *nullind == -1) ? 1: 0;
+            null_column = (srclen == 0 && nullind != NULL && *nullind == -1);
 
             bindcol->bcp_column_data->null_column = null_column;
 
@@ -2052,7 +2054,8 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 
     if (src) {
         tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data srctype = %d \n", srctype);
-        tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data datalen = %d \n", *datalen);
+        tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data datalen = %d \n",
+                    datalen ? *datalen : -1);
 
         if (*datalen) {
             if (*datalen == CS_UNUSED) {
