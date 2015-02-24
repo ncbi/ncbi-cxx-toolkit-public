@@ -119,12 +119,13 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     if (lsu != "Not found")
         comments.push_back("28S ribosomal RNA");
 
-    if ((r58S == "Not found"  || r58S == "No start" || r58S == "No end")&& 
+/*    if ((r58S == "Not found"  || r58S == "No start" || r58S == "No end")&& 
         (ssu  != "Not found" || its1  != "Not found" || its2  != "Not found" || lsu  != "Not found"))
     {
         msg = "5.8S not found, but flanking regions have been found.";
         return null_mrna;
     }
+    */
     string comment;
     switch(comments.size())
     {
