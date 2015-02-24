@@ -382,7 +382,7 @@ void CNetStorageObjectLoc::x_SetUniqueKeyFromUserDefinedKey()
     m_UniqueKey += m_UserKey;
 }
 
-void CNetStorageObjectLoc::x_Pack()
+void CNetStorageObjectLoc::x_Pack() const
 {
     // Allocate a new CompoundID object.
     CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageObjectLoc);

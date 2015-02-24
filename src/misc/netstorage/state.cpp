@@ -47,9 +47,6 @@ namespace
 using namespace NImpl;
 
 
-typedef CNetStorageObjectLoc TObjLoc;
-
-
 class CROState : public IState
 {
 public:
@@ -158,9 +155,6 @@ public:
 private:
     TRequest m_Request;
 };
-
-
-typedef CNetStorageObjectLoc TObjLoc;
 
 
 class CLocation : public ILocation
@@ -654,7 +648,7 @@ public:
 
     ILocation* First();
     ILocation* Next();
-    string Locator();
+    const TObjLoc& Locator();
     void ResetLocator();
     void SetLocator();
     Ptr Clone(TNetStorageFlags);
@@ -774,7 +768,7 @@ CLocation* CSelector::Top()
 }
 
 
-string CSelector::Locator()
+const TObjLoc& CSelector::Locator()
 {
     if (m_ObjectLoc.GetLocation() == eNFL_Unknown) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -783,7 +777,7 @@ string CSelector::Locator()
                 "You must use the object (read/write/etc) before");
     }
 
-    return m_ObjectLoc.GetLocator();
+    return m_ObjectLoc;
 }
 
 

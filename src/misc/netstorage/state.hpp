@@ -45,6 +45,8 @@ BEGIN_NCBI_SCOPE
 namespace NImpl
 {
 
+typedef CNetStorageObjectLoc TObjLoc;
+
 struct SContext : CObject
 {
     CNetICacheClient icache_client;
@@ -97,7 +99,7 @@ public:
 
     virtual ILocation* First() = 0;
     virtual ILocation* Next() = 0;
-    virtual string Locator() = 0;
+    virtual const TObjLoc& Locator() = 0;
     virtual void ResetLocator() = 0;
     virtual void SetLocator() = 0;
 

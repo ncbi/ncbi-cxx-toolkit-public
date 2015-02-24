@@ -68,6 +68,7 @@ public:
     void SetAttribute(const string&, const string&);
     CNetStorageObjectInfo GetInfo();
 
+    const TObjLoc& Locator() const;
     string Relocate(TNetStorageFlags);
     bool Exists();
     void Remove();

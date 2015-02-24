@@ -92,6 +92,12 @@ CNetStorageObjectInfo CObj::GetInfo()
 }
 
 
+const TObjLoc& CObj::Locator() const
+{
+    return m_Selector->Locator();
+}
+
+
 string CObj::Relocate(TNetStorageFlags flags)
 {
     // Use Read() to detect the current location
@@ -106,7 +112,7 @@ string CObj::Relocate(TNetStorageFlags flags)
     // (maybe, location from object locator will do)
     if (typeid(*m_Location) == typeid(*selector->First())) {
         LOG_POST(Trace << "locations are the same");
-        return selector->Locator();
+        return selector->Locator().GetLocator();
     }
 
     LOG_POST(Trace << "locations are different");
@@ -154,7 +160,7 @@ void CObj::Abort()
 
 string CObj::GetLoc()
 {
-    return m_Selector->Locator();
+    return m_Selector->Locator().GetLocator();
 }
 
 
@@ -170,7 +176,7 @@ ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
         }
     }
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << m_Selector->Locator() << "\" for reading.");
+            "Cannot open \"" << GetLoc() << "\" for reading.");
     // Not reached
     return result;
 }
@@ -194,7 +200,7 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
         }
     }
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << m_Selector->Locator() << "\" for writing.");
+            "Cannot open \"" << GetLoc() << "\" for writing.");
     // Not reached
     return result;
 }

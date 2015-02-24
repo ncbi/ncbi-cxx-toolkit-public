@@ -70,6 +70,12 @@ void CDirectNetStorageObject::Remove()
 }
 
 
+const CNetStorageObjectLoc& CDirectNetStorageObject::Locator()
+{
+    return Impl<CObj>(m_Impl)->Locator();
+}
+
+
 CDirectNetStorageObject::CDirectNetStorageObject(SNetStorageObjectImpl* impl)
     : CNetStorageObject(impl)
 {}

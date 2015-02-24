@@ -347,7 +347,7 @@ public:
 
     string GetFileTrackURL();
 
-    string GetLocator()
+    string GetLocator() const
     {
         if (m_Dirty)
             x_Pack();
@@ -395,14 +395,14 @@ private:
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();
 
-    void x_Pack();
+    void x_Pack() const;
     void SetLocatorFlags(TLocatorFlags flags) {m_LocatorFlags |= flags;}
     void ClearLocatorFlags(TLocatorFlags flags) {m_LocatorFlags &= ~flags;}
 
     TLocatorFlags x_StorageFlagsToLocatorFlags(
             TNetStorageAttrFlags storage_flags);
 
-    CCompoundIDPool m_CompoundIDPool;
+    mutable CCompoundIDPool m_CompoundIDPool;
 
     TLocatorFlags m_LocatorFlags;
 
@@ -431,9 +431,9 @@ private:
     Uint4 m_NetCacheIP;
     Uint2 m_NetCachePort;
 
-    bool m_Dirty;
+    mutable bool m_Dirty;
 
-    string m_Locator;
+    mutable string m_Locator;
 };
 
 NCBI_XCONNECT_EXPORT

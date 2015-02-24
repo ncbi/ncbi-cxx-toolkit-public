@@ -1347,7 +1347,7 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     ReadAndCompare<typename TLoc::TRelocate>("Reading relocated object",
             netstorage.Open(unique_key2, TLoc::relocate));
 
-    static const int relocate = TLoc::relocate;
+    const int relocate = TLoc::relocate;
     ExistsAndRemoveTests<typename TLoc::TRelocate>(TKey(unique_key2, relocate));
 }
 

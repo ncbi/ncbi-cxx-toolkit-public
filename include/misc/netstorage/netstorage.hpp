@@ -67,6 +67,10 @@ public:
     ///
     void Remove();
 
+    /// Return object locator
+    ///
+    const CNetStorageObjectLoc& Locator();
+
 private:
     CDirectNetStorageObject(SNetStorageObjectImpl* impl);
     friend class CDirectNetStorage;
