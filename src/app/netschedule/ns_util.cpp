@@ -107,7 +107,7 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                        " parameter.");
     }
 
-    ok = NS_ValidateBool(reg, section, "reinit", warnings);
+    NS_ValidateBool(reg, section, "reinit", warnings);
 
     ok = NS_ValidateInt(reg, section, "max_connections", warnings);
     if (ok) {
