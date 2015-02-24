@@ -385,8 +385,10 @@ ct_con_props(CS_CONNECTION * con, CS_INT action, CS_INT property, CS_VOID * buff
             int portno;
             host= strtok(set_buffer, " ");
             port= strtok(NULL, " ");
-            if (!host || !port)
+            if (host == NULL  ||  port == NULL) {
+                free (set_buffer);
                 return CS_FAIL;
+            }
 
             portno= (int)strtol(port, NULL, 10);
             tds_set_server_addr(tds_login, host);
@@ -591,7 +593,7 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
 
     if (!tds_dstr_isempty(&con->tds_login->server_addr)) {
         server = tds_dstr_cstr(&con->tds_login->server_addr);
-    } else if (snamelen == 0 || snamelen == CS_UNUSED) {
+    } else if (servername == NULL || snamelen == 0 || snamelen == CS_UNUSED) {
         server = NULL;
     } else if (snamelen == CS_NULLTERM) {
         server = (char *) servername;
@@ -4351,7 +4353,7 @@ paramrowalloc(TDSPARAMINFO * params, TDSCOLUMN * curcol, int param_num, void *va
         if (size > curcol->column_size)
             size = curcol->column_size;
 
-        if (is_blob_type(curcol->column_type)) {
+        if (is_blob_type(curcol->column_type)  &&  size > 0) {
             TDSBLOB *blob = (TDSBLOB*)&params->current_row[curcol->column_offset];
             blob->textvalue = (TDS_CHAR *) malloc(size);
             memcpy(blob->textvalue, value, size);
@@ -4655,10 +4657,12 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID 
                     } else if (*(param->datalen) < 0) {
                         return CS_FAIL;
                     }
-                    param->value = malloc(*(param->datalen));
-                    if (param->value == NULL)
-                        return CS_FAIL;
-                    memcpy(param->value, data, *(param->datalen));
+                    if (*(param->datalen) > 0) {
+                        param->value = malloc(*(param->datalen));
+                        if (param->value == NULL)
+                            return CS_FAIL;
+                        memcpy(param->value, data, *(param->datalen));
+                    }
                     param->param_by_value = 1;
                 } else {
                     param->value = NULL;
