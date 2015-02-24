@@ -3173,7 +3173,7 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             break;
         }
         // Write to the output file
-        char* ptr = buf;
+        const char* ptr = buf;
         do {
             ssize_t n_written = write(fd, ptr, n_read);
             if (n_written == 0) {
