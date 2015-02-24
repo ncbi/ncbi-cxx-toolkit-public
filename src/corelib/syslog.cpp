@@ -103,13 +103,13 @@ void CSysLog::Post(const SDiagMessage& mess)
     mess.Write(message_str, SDiagMessage::fNoEndl);
     EPriority priority;
     switch (mess.m_Severity) {
-    case eDiag_Info:      priority = eInfo;
-    case eDiag_Warning:   priority = eWarning;
-    case eDiag_Error:     priority = eError;
-    case eDiag_Critical:  priority = eCritical;
-    case eDiag_Fatal:     priority = eAlert;
-    case eDiag_Trace:     priority = eDebug;
-    default:              priority = eNotice;
+    case eDiag_Info:      priority = eInfo;      break;
+    case eDiag_Warning:   priority = eWarning;   break;
+    case eDiag_Error:     priority = eError;     break;
+    case eDiag_Critical:  priority = eCritical;  break;
+    case eDiag_Fatal:     priority = eAlert;     break;
+    case eDiag_Trace:     priority = eDebug;     break;
+    default:              priority = eNotice;    break;
     }
     Post(message_str, priority);
 }
