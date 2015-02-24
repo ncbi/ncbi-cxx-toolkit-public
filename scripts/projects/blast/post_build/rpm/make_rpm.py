@@ -149,8 +149,7 @@ def main():
         return 1
     
     # N.B.: srctarball may be an empty argument (i.e.: "") in case of local
-    # builds, but since we don't have any linux32 machines where to run these
-    # locally, this shouldn't be an issue
+    # builds, but this script shouldn't be invoked in that case
     blast_version, installdir, srctarball = args
     global VERBOSE, PACKAGE_NAME, TARBALL #IGNORE:W0603
     VERBOSE = options.VERBOSE
