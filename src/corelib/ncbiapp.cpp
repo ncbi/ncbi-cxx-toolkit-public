@@ -1101,8 +1101,9 @@ string CNcbiApplication::FindProgramExecutablePath
     CMutexGuard guard(GetInstanceMutex());
     CNcbiApplication* instance = Instance();
     string ret_val;
-    if (argc > 0  &&  argv != NULL  &&  argv[0] != NULL
-        &&  argv[0][0] != '\0') {
+    _ASSERT(argc >= 0); // formally signed for historical reasons
+    _ASSERT(argv != NULL  ||  argc == 0);
+    if (argc > 0  &&  argv[0] != NULL  &&  argv[0][0] != '\0') {
         ret_val = argv[0];
     } else if (instance) {
         ret_val = instance->GetArguments().GetProgramName();
