@@ -292,8 +292,6 @@ gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
 gc_ftp_ctl needs gpipe_objutil
-gc_load_utils needs $(OBJEDIT_LIBS)
-gc_load_utils needs $(XFORMAT_LIBS)
 gc_load_utils needs gc_utils
 gc_load_utils needs xid_utils
 gc_util_sdbapi needs gencoll_client
@@ -429,8 +427,9 @@ gpipe_kpi needs xncbi
 gpipe_meta_access needs gpipe_common
 gpipe_objutil needs $(GPIPE_COMMON_LIBS)
 gpipe_objutil needs $(GPIPE_LOADER_LIBS)
+gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
-gpipe_objutil needs pubmed
+gpipe_objutil needs $(XFORMAT_LIBS)
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
@@ -1299,8 +1298,6 @@ xgdsdata needs pub
 xgdsdata needs txxmldoc
 xgdsdata needs xconnect
 xgdsdata_misc needs xncbi
-xgencoll needs $(OBJEDIT_LIBS)
-xgencoll needs $(XFORMAT_LIBS)
 xgencoll needs aligndb_reader
 xgencoll needs gencoll_client
 xgencoll needs gpipe_objutil
