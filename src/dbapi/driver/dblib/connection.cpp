@@ -483,20 +483,20 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
 
 RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 {
-    unsigned int x_Status= 0x1;
-    CDB_Result* dbres;
-    impl::CResult* res= 0;
+    unsigned int            x_Status = 0x1;
+    auto_ptr<CDB_Result>    dbres;
+    auto_ptr<impl::CResult> res;
 
     while ((x_Status & 0x1) != 0) {
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec
             x_Status ^= 0x20;
             int n;
             if (GetResultProcessor() && (n = Check(dbnumrets(pLink))) > 0) {
-                res = new CDBL_ParamResult(*this, pLink, n);
-                dbres= Create_Result(*res);
+                res.reset(new CDBL_ParamResult(*this, pLink, n));
+                dbres.reset(Create_Result(*res));
                 GetResultProcessor()->ProcessResult(*dbres);
-                delete dbres;
-                delete res;
+                dbres.reset();
+                res.reset();
             }
             continue;
         }
@@ -504,17 +504,17 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
         if ((x_Status & 0x40) != 0) { // check for ret status
             x_Status ^= 0x40;
             if (GetResultProcessor() && Check(dbhasretstat(pLink))) {
-                res = new CDBL_StatusResult(*this, pLink);
-                dbres= Create_Result(*res);
+                res.reset(new CDBL_StatusResult(*this, pLink));
+                dbres.reset(Create_Result(*res));
                 GetResultProcessor()->ProcessResult(*dbres);
-                delete dbres;
-                delete res;
+                dbres.reset();
+                res.reset();
             }
             continue;
         }
         if ((x_Status & 0x10) != 0) { // we do have a compute result
-            res = new CDBL_ComputeResult(*this, pLink, &x_Status);
-            dbres= Create_Result(*res);
+            res.reset(new CDBL_ComputeResult(*this, pLink, &x_Status));
+            dbres.reset(Create_Result(*res));
             if(GetResultProcessor()) {
                 GetResultProcessor()->ProcessResult(*dbres);
             }
@@ -522,8 +522,8 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                 while(dbres->Fetch())
                     continue;
             }
-            delete dbres;
-            delete res;
+            dbres.reset();
+            res.reset();
         }
 
         RETCODE rc = Check(dbresults(pLink));
@@ -548,15 +548,15 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                 if (Check(dbnumcols(pLink)) == 1) {
                     int ct = Check(dbcoltype(pLink, 1));
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
-                        res = new CDBL_BlobResult(*this, pLink);
+                        res.reset(new CDBL_BlobResult(*this, pLink));
                     }
                 }
-                if (!res)
-                    res = new CDBL_RowResult(*this, pLink, &x_Status);
-                dbres= Create_Result(*res);
+                if ( !res.get() )
+                    res.reset(new CDBL_RowResult(*this, pLink, &x_Status));
+                dbres.reset(Create_Result(*res));
                 GetResultProcessor()->ProcessResult(*dbres);
-                delete dbres;
-                delete res;
+                dbres.reset();
+                res.reset();
             } else {
                 continue;
             }
