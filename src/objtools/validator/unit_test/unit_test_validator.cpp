@@ -18721,6 +18721,7 @@ BOOST_AUTO_TEST_CASE(Test_SexQualifiers)
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("m/f"), true);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("pooled males and females"), true);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("pooled male and female"), true);
+    BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("mixed"), true);
 
     BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("m/f"), "male and female");
     BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("m/f/neuter"), "male, female, and neuter");

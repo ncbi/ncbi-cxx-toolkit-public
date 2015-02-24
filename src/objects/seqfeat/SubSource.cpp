@@ -2064,6 +2064,7 @@ const char* sm_ValidSexQualifierTokens[] = {
   "hermaphrodite",
   "m",
   "male",
+  "mixed",
   "monecious",
   "monoecious",
   "neuter",
