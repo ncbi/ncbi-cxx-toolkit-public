@@ -552,7 +552,7 @@ void check_cnts(size_t expected = 0,
     else {
         expected = 1;
     }
-    if ( 0 ) {
+    if ( expected == 0 ) {
         if ( alloc_count.Get() != expected-expected_static )
             ERR_POST(Fatal<<"alloc_count: "<<alloc_count.Get());
         if ( object_count.Get() != expected )
