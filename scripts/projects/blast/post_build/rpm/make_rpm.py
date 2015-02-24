@@ -54,7 +54,7 @@ def cleanup_rpm():
     if os.path.exists(RPMMACROS):
         os.remove(RPMMACROS)
 
-def cleanup_svn_co():
+def cleanup_srctarball_contents():
     """ Remove unnecessary directories/files from svn checkout """
     import fnmatch
            
@@ -90,9 +90,13 @@ def cleanup_svn_co():
 def decompress_src_tarball(srctarball):
     """Decompreses the source tarball provided"""
     tar = tarfile.open(srctarball)
+    os.mkdir(PACKAGE_NAME)
+    cwd = os.getcwd()
+    os.chdir(os.path.join(cwd, PACKAGE_NAME))
     tar.list()
-    tar.extract()
-    cleanup_svn_co()
+    tar.extractall()
+    os.chdir(pwd)
+    cleanup_srctarball_contents()
 
 def compress_sources():
     """Compress sources to be included in source RPM"""

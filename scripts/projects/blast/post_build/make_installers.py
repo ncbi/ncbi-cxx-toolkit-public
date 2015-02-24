@@ -31,13 +31,14 @@ def main(): #IGNORE:R0911
         print "BLAST version", blast_version
         print "Platform:", platform
         print "Installation directory:", installdir
+        print "Source tarball:", srctarball
 
     if platform.startswith("Win"):
         return launch_win_installer_build(installdir, blast_version)                
     if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version, srctarball)
     if platform == "FreeBSD32" or platform.startswith("SunOS") or \
-        platform.startsWith("Linux32"):
+        platform.startswith("Linux32"):
         return do_nothing(platform)
     if platform == "IntelMAC":
         return mac_post_build(installdir, blast_version)
@@ -65,7 +66,8 @@ def launch_rpm_build(installdir, blast_version, srctarball):
     cmd += blast_version + " " + installdir + " " + srctarball
     if VERBOSE: 
         cmd += " -v"
-    blast_utils.safe_exec(cmd)
+    if len(srctarball) > 2:     # Skip for local builds
+        blast_utils.safe_exec(cmd)
     return 0
 
 def mac_post_build(installdir, blast_version):
