@@ -4048,7 +4048,6 @@ CRef<CVariation> CVariationUtil::AsVariation(const CSeq_feat& variation_feat)
     }
 
     s_ConvertInstOffsetsToPlacementOffsets(*v, *p);
-
     return v;
 }
 
@@ -4212,7 +4211,10 @@ void CVariationUtil::s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVari
     } else if(v.GetData().IsInstance() && v.GetData().GetInstance().GetDelta().size() > 0) {
         const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
 
-        if(p.GetLoc().IsPnt() && delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
+        if(p.GetLoc().IsPnt() 
+           && delta_first.IsSetAction() 
+           && delta_first.GetAction() == CDelta_item::eAction_offset) 
+        {
             int offset = delta_first.GetSeq().GetLiteral().GetLength()
                        * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
                        * (p.GetLoc().GetStrand() == eNa_strand_minus ? -1 : 1);
@@ -4241,7 +4243,7 @@ void CVariationUtil::s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVari
                            * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
                 if(!p.IsSetStop_offset() || offset == p.GetStop_offset()) {
                     p.SetStop_offset(offset);
-                    v.SetData().SetInstance().SetDelta().pop_front();
+                    v.SetData().SetInstance().SetDelta().pop_back();
                 }
             }
         }
