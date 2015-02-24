@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbidiag.hpp>
+#include <corelib/resource_info.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbistd.hpp>
 #include <connect/services/netstorage.hpp>
@@ -90,9 +91,16 @@ void  CNetStorageGCDatabase::x_ReadDbAccessInfo(const CNcbiRegistry &  reg)
         cout << "Reading the NetStorage meta info "
                 "database connection parameters..." << endl;
     m_DbAccessInfo.m_Service = reg.GetString("database", "service", "");
-    m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
-    m_DbAccessInfo.m_Password = reg.GetString("database", "password", "");
     m_DbAccessInfo.m_Database = reg.GetString("database", "database", "");
+    m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
+
+    if (reg.HasEntry("database", "encrypted_password")) {
+        string      encrypted = reg.GetString("database",
+                                              "encrypted_password", "");
+        m_DbAccessInfo.m_Password = CNcbiEncrypt::Decrypt(encrypted);
+    } else {
+        m_DbAccessInfo.m_Password = reg.GetString("database", "password", "");
+    }
     if (m_Verbose)
         cout << "Read" << endl;
 }
