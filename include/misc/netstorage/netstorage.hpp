@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 /// Direct serverless data object I/O
 /// @see CNetStorageObject
-class NCBI_XCONNECT_EXPORT CDirectNetStorageObject : public CNetStorageObject
+class CDirectNetStorageObject : public CNetStorageObject
 {
 public:
     /// Create uninitialized object
@@ -83,7 +83,7 @@ private:
 
 /// Direct serverless BLOB storage API
 /// @see CNetStorage
-class NCBI_XCONNECT_EXPORT CDirectNetStorage : public CNetStorage
+class CDirectNetStorage : public CNetStorage
 {
 public:
     /// Construct a CDirectNetStorage object
@@ -121,7 +121,7 @@ public:
 
 /// Direct serverless BLOB storage API -- with access by user-defined keys
 /// @see CNetStorageByKey
-class NCBI_XCONNECT_EXPORT CDirectNetStorageByKey : public CNetStorageByKey
+class CDirectNetStorageByKey : public CNetStorageByKey
 {
 public:
     /// Construct a CDirectNetStorageByKey object.
