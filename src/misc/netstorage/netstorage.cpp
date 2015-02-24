@@ -52,6 +52,12 @@ Derived* Impl(CRef<Base, CNetComponentCounterLocker<Base> >& base_ref)
 }
 
 
+CDirectNetStorageObject::CDirectNetStorageObject(EVoid)
+    : CNetStorageObject(eVoid)
+{
+}
+
+
 string CDirectNetStorageObject::Relocate(TNetStorageFlags flags)
 {
     return Impl<CObj>(m_Impl)->Relocate(flags);

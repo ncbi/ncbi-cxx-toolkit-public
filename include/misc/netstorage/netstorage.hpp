@@ -55,6 +55,10 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CDirectNetStorageObject : public CNetStorageObject
 {
 public:
+    /// Create uninitialized object
+    ///
+    CDirectNetStorageObject(EVoid);
+
     /// @see CNetStorage*::Relocate
     ///
     string Relocate(TNetStorageFlags flags);
