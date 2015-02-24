@@ -171,6 +171,7 @@ public:
     {}
 
     virtual bool Init() { return true; }
+    virtual void SetLocator() = 0;
 
 protected:
     TObjLoc& m_ObjectLoc;
@@ -184,6 +185,8 @@ public:
         : CLocation(object_loc),
           m_RW(object_loc)
     {}
+
+    void SetLocator();
 
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);
     IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
@@ -214,6 +217,8 @@ public:
     {}
 
     bool Init();
+    void SetLocator();
+
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);
     IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
     Uint8 GetSizeImpl();
@@ -236,6 +241,8 @@ public:
         : CLocation(object_loc),
           m_Context(context)
     {}
+
+    void SetLocator();
 
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);
     IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
@@ -374,6 +381,13 @@ void CWOFileTrack::CloseImpl()
 }
 
 
+void CNotFound::SetLocator()
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
+}
+
+
 IState* CNotFound::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
 {
@@ -438,6 +452,18 @@ bool CNetCache::Init()
 }
 
 
+void CNetCache::SetLocator()
+{
+    CNetService service(m_Client.GetService());
+    m_ObjectLoc.SetLocation_NetCache(
+            service.GetServiceName(), 0, 0,
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+            service.IsUsingXSiteProxy() ? true :
+#endif
+                    false);
+}
+
+
 IState* CNetCache::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
 {
@@ -474,15 +500,7 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
 
     m_Write.Set(writer);
     *result = m_Write.WriteImpl(buf, count, bytes_written);
-
-    CNetService service(m_Client.GetService());
-    m_ObjectLoc.SetLocation_NetCache(
-            service.GetServiceName(), 0, 0,
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-            service.IsUsingXSiteProxy() ? true :
-#endif
-                    false);
-
+    SetLocator();
     return &m_Write;
 }
 
@@ -547,6 +565,12 @@ void CNetCache::RemoveImpl()
 }
 
 
+void CFileTrack::SetLocator()
+{
+    m_ObjectLoc.SetLocation_FileTrack(TFileTrack_Site::GetDefault().c_str());
+}
+
+
 IState* CFileTrack::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
 {
@@ -579,7 +603,7 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
     CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(&m_ObjectLoc);
     m_Write.Set(request);
     *result = m_Write.WriteImpl(buf, count, bytes_written);
-    m_ObjectLoc.SetLocation_FileTrack(TFileTrack_Site::GetDefault().c_str());
+    SetLocator();
     return &m_Write;
 }
 
@@ -632,11 +656,12 @@ public:
     ILocation* Next();
     string Locator();
     void ResetLocator();
+    void SetLocator();
     Ptr Clone(TNetStorageFlags);
 
 private:
     void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
-    ILocation* Top();
+    CLocation* Top();
 
     TObjLoc m_ObjectLoc;
     CRef<SContext> m_Context;
@@ -740,7 +765,7 @@ ILocation* CSelector::Next()
 }
 
 
-ILocation* CSelector::Top()
+CLocation* CSelector::Top()
 {
     _ASSERT(m_Locations.size());
     CLocation* location = m_Locations.top();
@@ -765,6 +790,17 @@ string CSelector::Locator()
 void CSelector::ResetLocator()
 {
     m_ObjectLoc.ResetLocation();
+}
+
+
+void CSelector::SetLocator()
+{
+    if (CLocation* l = Top()) {
+        l->SetLocator();
+    } else {
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
+    }
 }
 
 

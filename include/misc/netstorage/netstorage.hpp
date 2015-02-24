@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Dmitry Kazimirov
+ * Authors:  Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:
  *   A generic API for accessing heterogeneous storage services
@@ -38,91 +38,149 @@
 ///
 
 #include <connect/services/netstorage.hpp>
-
 #include <corelib/ncbi_param.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
 /** @addtogroup NetStorage
+ *  @internal
  *
  * @{
  */
 
-// TODO:
-// Replace following functions with CDirectNetStorage[ByKey] classes
-// These classes will have additional
-// 1) Constructors, with merge of similar into one (icache_client = NULL)
-// 2) Create methods
-// these will replace everything below
 
-/// Construct a CNetStorage object
-///
-/// @param app_domain
-///  Namespace for new objects.
-/// @param icache_client
-///  NetCache service used for storing movable blobs and for caching
-/// @param default_flags
-///  Default storage preferences for files created by this object.
-///
+/// Direct serverless data object I/O
+/// @see CNetStorageObject
+class NCBI_XCONNECT_EXPORT CDirectNetStorageObject : public CNetStorageObject
+{
+public:
+    /// @see CNetStorage*::Relocate
+    ///
+    string Relocate(TNetStorageFlags flags);
+
+    /// @see CNetStorage*::Exists
+    ///
+    bool Exists();
+
+    /// @see CNetStorage*::Remove
+    ///
+    void Remove();
+
+private:
+    CDirectNetStorageObject(SNetStorageObjectImpl* impl);
+    friend class CDirectNetStorage;
+    friend class CDirectNetStorageByKey;
+};
+
+/// Direct serverless BLOB storage API
+/// @see CNetStorage
+class NCBI_XCONNECT_EXPORT CDirectNetStorage : public CNetStorage
+{
+public:
+    /// Construct a CDirectNetStorage object
+    ///
+    /// @param app_domain
+    ///  Namespace for new objects.
+    /// @param icache_client
+    ///  NetCache service used for storing movable blobs and for caching
+    /// @param default_flags
+    ///  Default storage preferences for files created by this object.
+    ///
+    CDirectNetStorage(
+        CNetICacheClient::TInstance icache_client,
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
+    /// Create a new CDirectNetStorageObject object.
+    ///
+    CDirectNetStorageObject Create(
+        const string& service_name,
+        Int8 object_id,
+        TNetStorageFlags flags);
+
+    /// @see CNetStorage::Create
+    ///
+    CNetStorageObject Create(TNetStorageFlags flags = 0)
+    {
+        return CNetStorage::Create(flags);
+    }
+
+    /// @see CNetStorage::Open
+    ///
+    CDirectNetStorageObject Open(const string& object_loc);
+};
+
+/// Direct serverless BLOB storage API -- with access by user-defined keys
+/// @see CNetStorageByKey
+class NCBI_XCONNECT_EXPORT CDirectNetStorageByKey : public CNetStorageByKey
+{
+public:
+    /// Construct a CDirectNetStorageByKey object.
+    ///
+    /// @param icache_client
+    ///  NetCache service used for storing movable blobs and for caching
+    /// @param app_domain
+    ///  Namespace for the keys that will be created by this object.
+    ///  If not specified, then the cache name from the 'icache_client' object
+    ///  will be used.
+    /// @param default_flags
+    ///  Default storage preferences for files created by this object.
+    ///
+    CDirectNetStorageByKey(
+        CNetICacheClient::TInstance icache_client,
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
+    /// @see CNetStorageByKey::Open
+    ///
+    CDirectNetStorageObject Open(const string& unique_key,
+            TNetStorageFlags flags = 0);
+};
+
+
+/** @deprecated Use classes above instead.
+ *
+ * @{
+ */
+
+NCBI_DEPRECATED
 CNetStorage g_CreateNetStorage(
         CNetICacheClient::TInstance icache_client,
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
-/// Construct a CNetStorage object for use with FileTrack only.
-///
-/// @param app_domain
-///  Namespace for new objects.
-/// @param default_flags
-///  Default storage preferences for files created by this object.
-///
+NCBI_DEPRECATED
 CNetStorage g_CreateNetStorage(
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
 
-/// Construct a CNetStorageByKey object.
-///
-/// @param icache_client
-///  NetCache service used for storing movable blobs and for caching
-/// @param app_domain
-///  Namespace for the keys that will be created by this object.
-///  If not specified, then the cache name from the 'icache_client' object
-///  will be used.
-/// @param default_flags
-///  Default storage preferences for files created by this object.
-///
+NCBI_DEPRECATED
 CNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
-/// Construct a CNetStorageByKey object for use with FileTrack only.
-///
-/// @param app_domain
-///  Namespace for the keys that will be created by this object
-/// @param default_flags
-///  Default storage preferences for files created by this object.
-///
+NCBI_DEPRECATED
 CNetStorageByKey g_CreateNetStorageByKey(
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
-
-
-/// @internal
+NCBI_DEPRECATED
 CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
         const string& service_name,
         Int8 object_id,
         TNetStorageFlags flags);
 
-/// @internal
+NCBI_DEPRECATED
 CNetStorageObject g_CreateNetStorageObject(
         CNetStorage netstorage_api,
         const string& service_name,
         TNetStorageFlags flags);
+
+/* @} */
 
 /* @} */
 

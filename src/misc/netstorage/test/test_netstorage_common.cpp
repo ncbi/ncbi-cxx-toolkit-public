@@ -1009,8 +1009,8 @@ struct SFixture
     template <class TLocation>
     string WriteTwoAndRead(CNetStorageObject object1, CNetStorageObject object2);
 
-    template <class TLocation>
-    void ExistsAndRemoveTests(const string& id);
+    template <class TLocation, class TId>
+    void ExistsAndRemoveTests(const TId& id);
 
     // The parameter is only used to select the implementation
     void Test(CNetStorage&);
@@ -1180,28 +1180,82 @@ string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
     return object1.GetLoc();
 }
 
+
+// Generic API is used by default by Relocate, Exists and Remove functions
+
+template <class TNetStorage>
+inline string Relocate(TNetStorage& netstorage, const string& object_loc,
+        TNetStorageFlags flags)
+{
+    return netstorage.Relocate(object_loc, flags);
+}
+
+template <class TNetStorage>
+inline bool Exists(TNetStorage& netstorage, const string& object_loc)
+{
+    return netstorage.Exists(object_loc);
+}
+
+template <class TNetStorage>
+inline CNetStorageObject Open(TNetStorage& netstorage, const string& object_loc)
+{
+    return netstorage.Open(object_loc);
+}
+
+template <class TNetStorage>
+inline void Remove(TNetStorage& netstorage, const string& object_loc)
+{
+    netstorage.Remove(object_loc);
+}
+
+template <class TNetStorageByKey>
+inline string Relocate(TNetStorageByKey& netstorage, const string& unique_key,
+        TNetStorageFlags flags, TNetStorageFlags old_flags)
+{
+    return netstorage.Relocate(unique_key, flags, old_flags);
+}
+
+template <class TNetStorageByKey>
+inline bool Exists(TNetStorageByKey& netstorage, const TKey& key)
+{
+    return netstorage.Exists(key.first, key.second);
+}
+
+template <class TNetStorageByKey>
+inline CNetStorageObject Open(TNetStorageByKey& netstorage, const TKey& key)
+{
+    return netstorage.Open(key.first, key.second);
+}
+
+template <class TNetStorageByKey>
+inline void Remove(TNetStorageByKey& netstorage, const TKey& key)
+{
+    netstorage.Remove(key.first, key.second);
+}
+
+
 // Tests Exists() and Remove() methods
 template <class TPolicy>
-template <class TLocation>
-void SFixture<TPolicy>::ExistsAndRemoveTests(const string& id)
+template <class TLocation, class TId>
+void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
 {
-    BOOST_CHECK_CTX(netstorage.Exists(id),
+    BOOST_CHECK_CTX(Exists(netstorage, id),
             Ctx("Checking existent object").Line(__LINE__));
-    CNetStorageObject object(netstorage.Open(id));
+    CNetStorageObject object(Open(netstorage, id));
     CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
             object, data->Size()).Check();
     LOG_POST(Trace << "Removing existent object");
-    netstorage.Remove(id);
+    Remove(netstorage, id);
 
     // Wait some time for changes to take effect
     g_Sleep();
 
-    BOOST_CHECK_CTX(!netstorage.Exists(id),
+    BOOST_CHECK_CTX(!Exists(netstorage, id),
             Ctx("Checking non-existent object").Line(__LINE__));
 
 #ifdef TEST_REMOVED
     ReadAndCompare<TLocationNotFound>("Trying to read removed object",
-        netstorage.Open(id));
+        Open(netstorage, id));
 #endif
 }
 
@@ -1226,11 +1280,11 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // with the same storage preferences (so the object should not
     // be actually relocated).
     Ctx("Creating immovable locator");
-    string immovable_loc = netstorage.Relocate(object_loc, TLoc::immovable);
+    string immovable_loc = Relocate(netstorage, object_loc, TLoc::immovable);
 
     // Relocate the object to a different storage.
     Ctx("Relocating object");
-    string relocated_loc = netstorage.Relocate(object_loc, TLoc::relocate);
+    string relocated_loc = Relocate(netstorage, object_loc, TLoc::relocate);
 
     // Wait some time for changes to take effect
     g_Sleep();
@@ -1285,7 +1339,7 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     // Relocate the object to a different storage and make sure
     // it can be read from there.
     Ctx("Relocating object");
-    netstorage.Relocate(unique_key2, TLoc::relocate, TLoc::create);
+    Relocate(netstorage, unique_key2, TLoc::relocate, TLoc::create);
 
     // Wait some time for changes to take effect
     g_Sleep();
@@ -1293,7 +1347,7 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     ReadAndCompare<typename TLoc::TRelocate>("Reading relocated object",
             netstorage.Open(unique_key2, TLoc::relocate));
 
-    ExistsAndRemoveTests<typename TLoc::TRelocate>(unique_key2);
+    ExistsAndRemoveTests<typename TLoc::TRelocate>(TKey(unique_key2, TLoc::relocate));
 }
 
 NCBITEST_AUTO_INIT()
@@ -1301,11 +1355,6 @@ NCBITEST_AUTO_INIT()
     boost::unit_test::framework::master_test_suite().p_name->assign(
             "CNetStorage Unit Test");
 }
-
-#define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
-#define SRC_LIST    (Str, (Rnd, (Nst, BOOST_PP_NIL)))
-#define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
-#define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
 
 #define TEST_CASE(ST, SRC, API, LOC) \
 typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, TAttrTesting, S##LOC> \
@@ -1318,5 +1367,20 @@ BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
+// Generic tests
+#define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
+#define SRC_LIST    (Str, (Rnd, (Nst, BOOST_PP_NIL)))
+#define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
+#define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
+
 BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
         (ST_LIST, SRC_LIST, API_LIST, LOC_LIST));
+
+// API specific tests
+//      SP_ST_LIST     defined in the header
+#define SP_SRC_LIST    (Str, BOOST_PP_NIL)
+#define SP_API_LIST    (Str, BOOST_PP_NIL)
+#define SP_LOC_LIST    LOC_LIST
+
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
+        (SP_ST_LIST, SP_SRC_LIST, SP_API_LIST, SP_LOC_LIST));

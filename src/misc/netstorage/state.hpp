@@ -99,6 +99,7 @@ public:
     virtual ILocation* Next() = 0;
     virtual string Locator() = 0;
     virtual void ResetLocator() = 0;
+    virtual void SetLocator() = 0;
 
     typedef auto_ptr<ISelector> Ptr;
     virtual Ptr Clone(TNetStorageFlags) = 0;

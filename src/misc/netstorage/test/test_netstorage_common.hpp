@@ -41,9 +41,11 @@ BEGIN_NCBI_SCOPE
 
 
 typedef boost::integral_constant<bool, false> TAttrTesting;
+typedef pair<string, TNetStorageFlags> TKey;
 
 
 #define APP_NAME                "test_netstorage"
+#define SP_ST_LIST (DirectNetStorage, (DirectNetStorageByKey, BOOST_PP_NIL))
 
 // NB: This parameter is not used here, but required for compilation
 NCBI_PARAM_DECL(string, netstorage, service_name);
@@ -61,7 +63,7 @@ inline TNetStorage g_GetNetStorage()
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    return g_CreateNetStorage(
+    return CDirectNetStorage(
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
             nst_app_domain);
@@ -72,7 +74,18 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    return g_CreateNetStorageByKey(
+    return CDirectNetStorageByKey(
+            CNetICacheClient(nc_service.c_str(),
+                    nst_app_domain.c_str(), APP_NAME),
+            nst_app_domain);
+}
+
+template <>
+inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>()
+{
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    return CDirectNetStorageByKey(
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
             nst_app_domain);
@@ -82,6 +95,48 @@ inline void g_Sleep()
 {
     SleepSec(2UL);
 }
+
+
+// Overloading is used to test specific API (CDirectNetStorage*)
+
+inline string Relocate(CDirectNetStorage& netstorage, const string& object_loc,
+        TNetStorageFlags flags)
+{
+    CDirectNetStorageObject object(netstorage.Open(object_loc));
+    return object.Relocate(flags);
+}
+
+inline bool Exists(CDirectNetStorage& netstorage, const string& object_loc)
+{
+    CDirectNetStorageObject object(netstorage.Open(object_loc));
+    return object.Exists();
+}
+
+inline void Remove(CDirectNetStorage& netstorage, const string& object_loc)
+{
+    CDirectNetStorageObject object(netstorage.Open(object_loc));
+    object.Remove();
+}
+
+inline string Relocate(CDirectNetStorageByKey& netstorage, const string& unique_key,
+        TNetStorageFlags flags, TNetStorageFlags old_flags)
+{
+    CDirectNetStorageObject object(netstorage.Open(unique_key, old_flags));
+    return object.Relocate(flags);
+}
+
+inline bool Exists(CDirectNetStorageByKey& netstorage, const TKey& key)
+{
+    CDirectNetStorageObject object(netstorage.Open(key.first, key.second));
+    return object.Exists();
+}
+
+inline void Remove(CDirectNetStorageByKey& netstorage, const TKey& key)
+{
+    CDirectNetStorageObject object(netstorage.Open(key.first, key.second));
+    object.Remove();
+}
+
 
 END_NCBI_SCOPE
 
