@@ -14,15 +14,16 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 def main(): #IGNORE:R0911
     """ Creates installers for selected platforms. """
-    parser = OptionParser("%prog <blast_version> <platform> <installation directory>")
+    parser = OptionParser("%prog <blast_version> <platform> \
+                          <installation directory> \"<src-tarball>\"")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 3:
+    if len(args) != 4:
         parser.error("Incorrect number of arguments")
         return 1
 
-    blast_version, platform, installdir = args
+    blast_version, platform, installdir, srctarball = args
 
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
@@ -34,7 +35,7 @@ def main(): #IGNORE:R0911
     if platform.startswith("Win"):
         return launch_win_installer_build(installdir, blast_version)                
     if platform.startswith("Linux64"):
-        return launch_rpm_build(installdir, blast_version)
+        return launch_rpm_build(installdir, blast_version, srctarball)
     if platform == "FreeBSD32" or platform.startswith("SunOS") or \
         platform.startsWith("Linux32"):
         return do_nothing(platform)
@@ -56,12 +57,12 @@ def launch_win_installer_build(installdir, blast_version):
     blast_utils.safe_exec(cmd)
     return 0
 
-def launch_rpm_build(installdir, blast_version):
+def launch_rpm_build(installdir, blast_version, srctarball):
     '''Linux post-build: create RPM'''
     if VERBOSE: 
         print "Packing linux RPM..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
-    cmd += blast_version + " " + installdir
+    cmd += blast_version + " " + installdir + " " + srctarball
     if VERBOSE: 
         cmd += " -v"
     blast_utils.safe_exec(cmd)

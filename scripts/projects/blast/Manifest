@@ -25,7 +25,7 @@ APP: makeprofiledb blast_formatter
 COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 
-POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir
+POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball"
 
 DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT
 

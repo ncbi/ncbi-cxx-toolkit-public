@@ -6,6 +6,7 @@
 import sys, os, shutil
 from optparse import OptionParser
 import subprocess
+import tarfile
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from blast_utils import *   #IGNORE:W0401
@@ -86,25 +87,15 @@ def cleanup_svn_co():
             shutil.rmtree(name)
             
 
-def svn_checkout(blast_version):
-    """Checkout BLAST sources for this release from SVN"""
-    # NCBI SVN repository
-    svn_ncbi = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
-    svnu = os.environ['SVNU']
-    svnp = os.environ['SVNP']
-
-    # Check out the sources
-    cmd = "svn -q co --username " + svnu + " --password" + svnp + " " + svn_ncbi
-    cmd += "/release/blast/" + blast_version + " " + PACKAGE_NAME
-    if os.path.exists(PACKAGE_NAME):
-        shutil.rmtree(PACKAGE_NAME)
-    safe_exec(cmd)
-
+def decompress_src_tarball(srctarball):
+    """Decompreses the source tarball provided"""
+    tar = tarfile.open(srctarball)
+    tar.list()
+    tar.extract()
     cleanup_svn_co()
 
 def compress_sources():
     """Compress sources to be included in source RPM"""
-    import tarfile
     tar = tarfile.open(TARBALL, "w:bz2")
     tar.add(PACKAGE_NAME)
     tar.close()
@@ -144,15 +135,19 @@ def move_rpms_to_installdir(installdir):
 
 def main():
     """ Creates RPMs for linux. """
-    parser = OptionParser("%prog <blast_version> <installation directory>")
+    parser = OptionParser("%prog <blast_version> <installation directory> \
+                          \"<srctarball>\"")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 2:
+    if len(args) != 3:
         parser.error("Incorrect number of arguments")
         return 1
     
-    blast_version, installdir = args
+    # N.B.: srctarball may be an empty argument (i.e.: "") in case of local
+    # builds, but since we don't have any linux32 machines where to run these
+    # locally, this shouldn't be an issue
+    blast_version, installdir, srctarball = args
     global VERBOSE, PACKAGE_NAME, TARBALL #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE: 
@@ -163,7 +158,7 @@ def main():
     
     setup_rpmbuild()
     cleanup()
-    svn_checkout(blast_version)
+    decompress_src_tarball(srctarball)
     compress_sources()
     run_rpm(blast_version)
     move_rpms_to_installdir(installdir)
