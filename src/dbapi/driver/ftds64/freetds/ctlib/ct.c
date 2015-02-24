@@ -4657,12 +4657,10 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID 
                     } else if (*(param->datalen) < 0) {
                         return CS_FAIL;
                     }
-                    if (*(param->datalen) > 0) {
-                        param->value = malloc(*(param->datalen));
-                        if (param->value == NULL)
-                            return CS_FAIL;
-                        memcpy(param->value, data, *(param->datalen));
-                    }
+                    param->value = malloc(*(param->datalen));
+                    if (param->value == NULL)
+                        return CS_FAIL;
+                    memcpy(param->value, data, *(param->datalen));
                     param->param_by_value = 1;
                 } else {
                     param->value = NULL;
