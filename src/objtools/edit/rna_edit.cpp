@@ -75,7 +75,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     string error = arr[7];  
     string strand = arr[8]; 
     arr.clear();
-
+    NStr::TruncateSpacesInPlace(error);  
     if (!error.empty() && error !=  "Broken or partial sequence, no 5.8S!" && error !=  "Broken or partial sequence, only partial 5.8S!")
     {
         msg = "Error returned for: "+accession+" "+error;
