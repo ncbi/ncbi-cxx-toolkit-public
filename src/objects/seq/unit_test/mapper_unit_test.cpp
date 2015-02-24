@@ -955,44 +955,94 @@ void TestMapper_ExonPartsOrder()
     CSeq_align orig;
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Both rows on plus, map genomic to plus" << endl;
+    cout << "  Both rows on plus, map genomic to plus, no trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(false);
     TestMappingSeq_align(mapper_plus, orig, in);
-    cout << "  Both rows on plus, map genomic to minus" << endl;
+    cout << "  Both rows on plus, map genomic to plus, trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Both rows on plus, map genomic to minus, no trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(false);
+    TestMappingSeq_align(mapper_minus, orig, in);
+    cout << "  Both rows on plus, map genomic to minus, trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(true);
     TestMappingSeq_align(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Both rows on plus, map product to plus" << endl;
+    cout << "  Both rows on plus, map product to plus, no trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(false);
     TestMappingSeq_align(mapper_plus, orig, in);
-    cout << "  Both rows on plus, map product to minus" << endl;
+    cout << "  Both rows on plus, map product to plus, trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Both rows on plus, map product to minus, no trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(false);
+    TestMappingSeq_align(mapper_minus, orig, in);
+    cout << "  Both rows on plus, map product to minus, trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(true);
     TestMappingSeq_align(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Genomic on minus, map genomic to minus" << endl;
+    cout << "  Genomic on minus, map genomic to minus, no trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(false);
     TestMappingSeq_align(mapper_plus, orig, in);
-    cout << "  Genomic on minus, map genomic to plus" << endl;
+    cout << "  Genomic on minus, map genomic to minus, trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Genomic on minus, map genomic to plus, no trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(false);
+    TestMappingSeq_align(mapper_minus, orig, in);
+    cout << "  Genomic on minus, map genomic to plus, trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(true);
     TestMappingSeq_align(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Genomic on minus, map product to plus" << endl;
+    cout << "  Genomic on minus, map product to plus, no trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(false);
     TestMappingSeq_align(mapper_plus, orig, in);
-    cout << "  Genomic on minus, map product to minus" << endl;
+    cout << "  Genomic on minus, map product to plus, trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Genomic on minus, map product to minus, no trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(false);
+    TestMappingSeq_align(mapper_minus, orig, in);
+    cout << "  Genomic on minus, map product to minus, trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(true);
     TestMappingSeq_align(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Product on minus, map genomic to plus" << endl;
+    cout << "  Product on minus, map genomic to plus, no trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(false);
     TestMappingSeq_align(mapper_plus, orig, in);
-    cout << "  Product on minus, map genomic to minus" << endl;
+    cout << "  Product on minus, map genomic to plus, trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Product on minus, map genomic to minus, no trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(false);
+    TestMappingSeq_align(mapper_minus, orig, in);
+    cout << "  Product on minus, map genomic to minus, trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(true);
     TestMappingSeq_align(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Product on minus, map product to minus" << endl;
+    cout << "  Product on minus, map product to minus, no trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(false);
     TestMappingSeq_align(mapper_plus, orig, in);
-    cout << "  Product on minus, map product to plus" << endl;
+    cout << "  Product on minus, map product to minus, trim" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Product on minus, map product to plus, no trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(false);
+    TestMappingSeq_align(mapper_minus, orig, in);
+    cout << "  Product on minus, map product to plus, trim" << endl;
+    mapper_minus.SetTrimSplicedSeg(true);
     TestMappingSeq_align(mapper_minus, orig, in);
 
     // CXX-5105 - if there's no global strand, per-exon one should be used.
-    // Run the same tests with local strand only.
+    // Run the same tests with local strand only. Indel trimming is enabled.
     cout << "Testing sort order of mapped exons, local strands" << endl;
+    mapper_plus.SetTrimSplicedSeg(true);
+    mapper_minus.SetTrimSplicedSeg(true);
 
     in >> MSerial_AsnText >> orig;
     cout << "  Both rows on plus, map genomic to plus" << endl;

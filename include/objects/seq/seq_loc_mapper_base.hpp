@@ -402,6 +402,11 @@ public:
     CSeq_loc_Mapper_Base& SetGapPreserve(void);
     CSeq_loc_Mapper_Base& SetGapRemove(void);
 
+    /// For mapping spliced-segs only: preserve or trim starting/ending
+    /// indels. By default indels are trimmed (only those at the whole
+    /// alignment start and end).
+    CSeq_loc_Mapper_Base& SetTrimSplicedSeg(bool trim);
+
     /// Keep ranges which can not be mapped. Does not affect truncation
     /// of partially mapped ranges. By default nonmapping ranges are
     /// removed.
@@ -801,6 +806,9 @@ private:
     EMergeFlags          m_MergeFlag;
     // How to treat gaps (Null sub-locations) if any.
     EGapFlags            m_GapFlag;
+    // Trim leading/trailing indels (gaps) from mapped spliced-seg alignments.
+    bool                 m_TrimSplicedSegs;
+
     // Wether to keep or discard ranges which can not be mapped.
     bool                 m_KeepNonmapping;
     // Wether to check or not if the original location is on the same strand
@@ -1024,6 +1032,14 @@ inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetGapRemove(void)
 {
     m_GapFlag = eGapRemove;
+    return *this;
+}
+
+
+inline
+CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetTrimSplicedSeg(bool trim)
+{
+    m_TrimSplicedSegs = trim;
     return *this;
 }
 

@@ -2243,136 +2243,138 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         }
     }
 
-    // Make sure the first and the last parts are not gaps. By now there should
-    // be no exons with only gaps in them, so no trimming should result in an
-    // empty exon.
-    CRef<CSpliced_exon> exon = spliced.SetExons().front();
-    bool ex_gen_reverse = false;
-    bool ex_prod_reverse = false;
-    if ( exon->IsSetGenomic_strand() ) {
-        ex_gen_reverse = IsReverse(exon->GetGenomic_strand());
-    }
-    else if ( spliced.IsSetGenomic_strand() ) {
-        ex_gen_reverse = IsReverse(spliced.GetGenomic_strand());
-    }
-    if ( exon->IsSetProduct_strand() ) {
-        ex_prod_reverse = IsReverse(exon->GetProduct_strand());
-    }
-    else if ( spliced.IsSetProduct_strand() ) {
-        ex_prod_reverse = IsReverse(spliced.GetProduct_strand());
-    }
-    TSeqPos gen_start = exon->GetGenomic_start();
-    TSeqPos gen_end = exon->GetGenomic_end();
-    TSeqPos prod_start, prod_end;
-    if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
-        _ASSERT(exon->GetProduct_start().IsProtpos());
-        _ASSERT(exon->GetProduct_end().IsProtpos());
-        prod_start = exon->GetProduct_start().GetProtpos().GetAmin()*3
-            + exon->GetProduct_start().GetProtpos().GetFrame() - 1;
-        prod_end = exon->GetProduct_end().GetProtpos().GetAmin()*3
-            + exon->GetProduct_end().GetProtpos().GetFrame() - 1;
-    }
-    else {
-        _ASSERT(exon->GetProduct_start().IsNucpos());
-        _ASSERT(exon->GetProduct_end().IsNucpos());
-        prod_start = exon->GetProduct_start().GetNucpos();
-        prod_end = exon->GetProduct_end().GetNucpos();
-    }
-    while ( IsExonGap(exon->GetParts().front()->Which()) ) {
-        const CSpliced_exon_chunk& chunk = *exon->GetParts().front();
-        if ( chunk.IsGenomic_ins() ) {
-            if ( ex_gen_reverse ) {
-                gen_end -= chunk.GetGenomic_ins();
-            }
-            else {
-                gen_start += chunk.GetGenomic_ins();
-            }
+    if ( m_LocMapper.m_TrimSplicedSegs ) {
+        // Make sure the first and the last parts are not gaps. By now there should
+        // be no exons with only gaps in them, so no trimming should result in an
+        // empty exon.
+        CRef<CSpliced_exon> exon = spliced.SetExons().front();
+        bool ex_gen_reverse = false;
+        bool ex_prod_reverse = false;
+        if ( exon->IsSetGenomic_strand() ) {
+            ex_gen_reverse = IsReverse(exon->GetGenomic_strand());
+        }
+        else if ( spliced.IsSetGenomic_strand() ) {
+            ex_gen_reverse = IsReverse(spliced.GetGenomic_strand());
+        }
+        if ( exon->IsSetProduct_strand() ) {
+            ex_prod_reverse = IsReverse(exon->GetProduct_strand());
+        }
+        else if ( spliced.IsSetProduct_strand() ) {
+            ex_prod_reverse = IsReverse(spliced.GetProduct_strand());
+        }
+        TSeqPos gen_start = exon->GetGenomic_start();
+        TSeqPos gen_end = exon->GetGenomic_end();
+        TSeqPos prod_start, prod_end;
+        if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+            _ASSERT(exon->GetProduct_start().IsProtpos());
+            _ASSERT(exon->GetProduct_end().IsProtpos());
+            prod_start = exon->GetProduct_start().GetProtpos().GetAmin()*3
+                + exon->GetProduct_start().GetProtpos().GetFrame() - 1;
+            prod_end = exon->GetProduct_end().GetProtpos().GetAmin()*3
+                + exon->GetProduct_end().GetProtpos().GetFrame() - 1;
         }
         else {
-            if ( ex_prod_reverse ) {
-                prod_end -= chunk.GetProduct_ins();
-            }
-            else {
-                prod_start += chunk.GetProduct_ins();
-            }
+            _ASSERT(exon->GetProduct_start().IsNucpos());
+            _ASSERT(exon->GetProduct_end().IsNucpos());
+            prod_start = exon->GetProduct_start().GetNucpos();
+            prod_end = exon->GetProduct_end().GetNucpos();
         }
-        exon->SetParts().pop_front();
-    }
-    exon->SetGenomic_start(gen_start);
-    exon->SetGenomic_end(gen_end);
-    if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
-        exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
-        exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
-        exon->SetProduct_end().SetProtpos().SetAmin(prod_end/3);
-        exon->SetProduct_end().SetProtpos().SetFrame(prod_end%3 + 1);
-    }
-    else {
-        exon->SetProduct_start().SetNucpos(prod_start);
-        exon->SetProduct_end().SetNucpos(prod_end);
-    }
-    // Trim the last exon.
-    exon = spliced.SetExons().back();
-    ex_gen_reverse = false;
-    ex_prod_reverse = false;
-    if ( exon->IsSetGenomic_strand() ) {
-        ex_gen_reverse = IsReverse(exon->GetGenomic_strand());
-    }
-    else if ( spliced.IsSetGenomic_strand() ) {
-        ex_gen_reverse = IsReverse(spliced.GetGenomic_strand());
-    }
-    if ( exon->IsSetProduct_strand() ) {
-        ex_prod_reverse = IsReverse(exon->GetProduct_strand());
-    }
-    else if ( spliced.IsSetProduct_strand() ) {
-        ex_prod_reverse = IsReverse(spliced.GetProduct_strand());
-    }
-    gen_start = exon->GetGenomic_start();
-    gen_end = exon->GetGenomic_end();
-    if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
-        _ASSERT(exon->GetProduct_start().IsProtpos());
-        _ASSERT(exon->GetProduct_end().IsProtpos());
-        prod_start = exon->GetProduct_start().GetProtpos().GetAmin()*3
-            + exon->GetProduct_start().GetProtpos().GetFrame() - 1;
-        prod_end = exon->GetProduct_end().GetProtpos().GetAmin()*3
-            + exon->GetProduct_end().GetProtpos().GetFrame() - 1;
-    }
-    else {
-        _ASSERT(exon->GetProduct_start().IsNucpos());
-        _ASSERT(exon->GetProduct_end().IsNucpos());
-        prod_start = exon->GetProduct_start().GetNucpos();
-        prod_end = exon->GetProduct_end().GetNucpos();
-    }
-    while ( IsExonGap(exon->GetParts().back()->Which()) ) {
-        const CSpliced_exon_chunk& chunk = *exon->GetParts().back();
-        if ( chunk.IsGenomic_ins() ) {
-            if ( ex_gen_reverse ) {
-                gen_start += chunk.GetGenomic_ins();
+        while (IsExonGap(exon->GetParts().front()->Which()) ) {
+            const CSpliced_exon_chunk& chunk = *exon->GetParts().front();
+            if ( chunk.IsGenomic_ins() ) {
+                if ( ex_gen_reverse ) {
+                    gen_end -= chunk.GetGenomic_ins();
+                }
+                else {
+                    gen_start += chunk.GetGenomic_ins();
+                }
             }
             else {
-                gen_end -= chunk.GetGenomic_ins();
+                if ( ex_prod_reverse ) {
+                    prod_end -= chunk.GetProduct_ins();
+                }
+                else {
+                    prod_start += chunk.GetProduct_ins();
+                }
             }
+            exon->SetParts().pop_front();
+        }
+        exon->SetGenomic_start(gen_start);
+        exon->SetGenomic_end(gen_end);
+        if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+            exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
+            exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
+            exon->SetProduct_end().SetProtpos().SetAmin(prod_end/3);
+            exon->SetProduct_end().SetProtpos().SetFrame(prod_end%3 + 1);
         }
         else {
-            if ( ex_prod_reverse ) {
-                prod_start += chunk.GetProduct_ins();
+            exon->SetProduct_start().SetNucpos(prod_start);
+            exon->SetProduct_end().SetNucpos(prod_end);
+        }
+        // Trim the last exon.
+        exon = spliced.SetExons().back();
+        ex_gen_reverse = false;
+        ex_prod_reverse = false;
+        if ( exon->IsSetGenomic_strand() ) {
+            ex_gen_reverse = IsReverse(exon->GetGenomic_strand());
+        }
+        else if ( spliced.IsSetGenomic_strand() ) {
+            ex_gen_reverse = IsReverse(spliced.GetGenomic_strand());
+        }
+        if ( exon->IsSetProduct_strand() ) {
+            ex_prod_reverse = IsReverse(exon->GetProduct_strand());
+        }
+        else if ( spliced.IsSetProduct_strand() ) {
+            ex_prod_reverse = IsReverse(spliced.GetProduct_strand());
+        }
+        gen_start = exon->GetGenomic_start();
+        gen_end = exon->GetGenomic_end();
+        if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+            _ASSERT(exon->GetProduct_start().IsProtpos());
+            _ASSERT(exon->GetProduct_end().IsProtpos());
+            prod_start = exon->GetProduct_start().GetProtpos().GetAmin()*3
+                + exon->GetProduct_start().GetProtpos().GetFrame() - 1;
+            prod_end = exon->GetProduct_end().GetProtpos().GetAmin()*3
+                + exon->GetProduct_end().GetProtpos().GetFrame() - 1;
+        }
+        else {
+            _ASSERT(exon->GetProduct_start().IsNucpos());
+            _ASSERT(exon->GetProduct_end().IsNucpos());
+            prod_start = exon->GetProduct_start().GetNucpos();
+            prod_end = exon->GetProduct_end().GetNucpos();
+        }
+        while (IsExonGap(exon->GetParts().back()->Which()) ) {
+            const CSpliced_exon_chunk& chunk = *exon->GetParts().back();
+            if ( chunk.IsGenomic_ins() ) {
+                if ( ex_gen_reverse ) {
+                    gen_start += chunk.GetGenomic_ins();
+                }
+                else {
+                    gen_end -= chunk.GetGenomic_ins();
+                }
             }
             else {
-                prod_end -= chunk.GetProduct_ins();
+                if ( ex_prod_reverse ) {
+                    prod_start += chunk.GetProduct_ins();
+                }
+                else {
+                    prod_end -= chunk.GetProduct_ins();
+                }
             }
+            exon->SetParts().pop_back();
         }
-        exon->SetParts().pop_back();
-    }
-    exon->SetGenomic_start(gen_start);
-    exon->SetGenomic_end(gen_end);
-    if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
-        exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
-        exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
-        exon->SetProduct_end().SetProtpos().SetAmin(prod_end/3);
-        exon->SetProduct_end().SetProtpos().SetFrame(prod_end%3 + 1);
-    }
-    else {
-        exon->SetProduct_start().SetNucpos(prod_start);
-        exon->SetProduct_end().SetNucpos(prod_end);
+        exon->SetGenomic_start(gen_start);
+        exon->SetGenomic_end(gen_end);
+        if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+            exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
+            exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
+            exon->SetProduct_end().SetProtpos().SetAmin(prod_end/3);
+            exon->SetProduct_end().SetProtpos().SetFrame(prod_end%3 + 1);
+        }
+        else {
+            exon->SetProduct_start().SetNucpos(prod_start);
+            exon->SetProduct_end().SetNucpos(prod_end);
+        }
     }
 
     // Try to propagate some properties to the alignment level.
