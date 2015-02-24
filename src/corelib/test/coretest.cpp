@@ -1402,10 +1402,21 @@ BOOST_AUTO_TEST_CASE(TestCheckMeType)
     {
         // test that it does not crash here
         bool v = chk1_True();
+        BOOST_CHECK(v);
+        v = !chk1_True();
+        BOOST_CHECK(!v);
         v = chk1_False();
+        BOOST_CHECK(!v);
+        v = !chk1_False();
+        BOOST_CHECK(v);
         v = chk2_False();
+        BOOST_CHECK(!v);
+        v = !chk2_False();
+        BOOST_CHECK(v);
         v = chk3_False();
         BOOST_CHECK(!v);
+        v = !chk3_False();
+        BOOST_CHECK(v);
     }
     {
         CCheckMe<bool> x = chk1_True();
