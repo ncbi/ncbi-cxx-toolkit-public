@@ -39,7 +39,7 @@ bool CSeqMaskerIstat::ParseVersionString( string const & vs ) {
     if( vs[0] != '(' ) return false;
     string::size_type p( vs.find( ')' ) ), pp;
     if( p == string::npos ) return false;
-    auto enc( vs.substr( 1, p - 1 ) );
+    string enc( vs.substr( 1, p - 1 ) );
 
     if( enc != "ascii" && 
         enc != "optimized ascii" &&
@@ -49,11 +49,11 @@ bool CSeqMaskerIstat::ParseVersionString( string const & vs ) {
     pp = p + 1;
     p = vs.find( ':', pp );
     if( p == string::npos ) return false;
-    auto name( vs.substr( pp, p - pp ) );
+    string name( vs.substr( pp, p - pp ) );
     pp = p + 1;
     p = vs.find( '.', pp );
     if( p == string::npos ) return false;
-    auto major_str( vs.substr( pp, p - pp ) );
+    string major_str( vs.substr( pp, p - pp ) );
 
     if( major_str.find_first_not_of( "0123456789" ) != string::npos ) {
         return false;
@@ -62,13 +62,13 @@ bool CSeqMaskerIstat::ParseVersionString( string const & vs ) {
     pp = p + 1;
     p = vs.find( '.', pp );
     if( p == string::npos ) return false;
-    auto minor_str( vs.substr( pp, p - pp ) );
+    string minor_str( vs.substr( pp, p - pp ) );
 
     if( minor_str.find_first_not_of( "0123456789" ) != string::npos ) {
         return false;
     }
 
-    auto patch_str( vs.substr( p + 1 ) );
+    string patch_str( vs.substr( p + 1 ) );
 
     if( patch_str.find_first_not_of( "0123456789" ) != string::npos ) {
         return false;
@@ -84,7 +84,7 @@ bool CSeqMaskerIstat::ParseVersionString( string const & vs ) {
 void CSeqMaskerIstat::ParseMetaDataString( string const & md ) {
     if( md.size() >= 2 && md.substr( 0, 2 ) == "##" ) {
         string d( md.substr( 2 ) );
-        auto comma_pos( d.find( ',' ) );
+        string::size_type comma_pos( d.find( ',' ) );
 
         if( comma_pos == string::npos ) {
             if( !ParseVersionString( d ) ) SetMetaData( d );
