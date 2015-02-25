@@ -658,6 +658,7 @@ muscleasn_g needs pub
 mux needs generic_db_utils
 mux needs xcgi
 mux_cgi includes mux
+mux_cgi needs generic_db_utils_cgi
 muxex-C_g needs dbldasn_g
 muxex-C_g needs mux
 muxex_g needs alndb_query
