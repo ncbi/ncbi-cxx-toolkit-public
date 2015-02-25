@@ -3132,7 +3132,6 @@ string CTimeSpan::x_AsSmartString_Precision(TSmartStringFlags flags) const
                 }
                 if ( !sum ) {
                     // all trailing parts are zeros -- skip all
-                    start = precision;
                     break;
                 }
             }

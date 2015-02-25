@@ -283,20 +283,20 @@ static void s_TestMisc(void)
         CTime time2("1/1/2008 20:00", "M/D/Y h:m");
         CTime time3("12/31/2007", "M/D/Y");
         CTime time4("1/1/2008", "M/D/Y");
-        LOG_POST("time1=" << time1.AsString("M/D/Y h:m:s")
-                 << "  time_t=" << time1.GetTimeT()
-                 << "  time-zone: " << time1.TimeZoneOffset());
-        LOG_POST("time2=" << time2.AsString("M/D/Y h:m:s")
-                 << "  time_t=" << time2.GetTimeT()
-                 << "  time-zone: " << time2.TimeZoneOffset());
+        _TRACE("time1=" << time1.AsString("M/D/Y h:m:s")
+               << "  time_t=" << time1.GetTimeT()
+               << "  time-zone: " << time1.TimeZoneOffset());
+        _TRACE("time2=" << time2.AsString("M/D/Y h:m:s")
+               << "  time_t=" << time2.GetTimeT()
+               << "  time-zone: " << time2.TimeZoneOffset());
         assert(time1.TimeZoneOffset() == time2.TimeZoneOffset());
-        LOG_POST("time3=" << time3.AsString("M/D/Y h:m:s")
-                 << "  time_t=" << time3.GetTimeT()
-                 << "  time-zone: " << time3.TimeZoneOffset());
+        _TRACE("time3=" << time3.AsString("M/D/Y h:m:s")
+               << "  time_t=" << time3.GetTimeT()
+               << "  time-zone: " << time3.TimeZoneOffset());
         assert(time2.TimeZoneOffset() == time3.TimeZoneOffset());
-        LOG_POST("time4=" << time4.AsString("M/D/Y h:m:s")
-                 << "  time_t=" << time4.GetTimeT()
-                 << "  time-zone: " << time4.TimeZoneOffset());
+        _TRACE("time4=" << time4.AsString("M/D/Y h:m:s")
+               << "  time_t=" << time4.GetTimeT()
+               << "  time-zone: " << time4.TimeZoneOffset());
         assert(time3.TimeZoneOffset() == time4.TimeZoneOffset());
     }}
 
@@ -989,11 +989,11 @@ static void s_TestGMT(void)
         time_t l_ = tloc.GetTimeT();
         time_t t_ = t.GetTimeT();
 
-        LOG_POST(STR(t));
-        LOG_POST(NStr::Int8ToString(g_/3600) + " - " +
-                 NStr::Int8ToString(l_/3600) + " - " +
-                 NStr::Int8ToString(t_/3600) + " - " +
-                 NStr::Int8ToString(timer/3600) + "\n");
+        _TRACE(STR(t));
+        _TRACE(NStr::Int8ToString(g_/3600) + " - " +
+               NStr::Int8ToString(l_/3600) + " - " +
+               NStr::Int8ToString(t_/3600) + " - " +
+               NStr::Int8ToString(timer/3600) + "\n");
 
         assert(timer == t_);
         assert(timer == g_);
@@ -1047,7 +1047,7 @@ static void s_TestGMT(void)
         tw.SetFormat("M/D/Y");
         for (; tw < ts; tw.AddDay()) {
             if ((tw.TimeZoneOffset() / 3600) == -4) {
-                LOG_POST("First daylight saving day = " + STR(tw));
+                _TRACE("First daylight saving day = " + STR(tw));
                 break;
             }
         }
@@ -1062,7 +1062,7 @@ static void s_TestGMT(void)
         tw.SetFormat("M/D/Y");
         for (; tw < ts; tw.AddDay()) {
             if ((tw.TimeZoneOffset() / 3600) == -5) {
-                LOG_POST("First non daylight saving day = " + STR(tw));
+                _TRACE("First non daylight saving day = " + STR(tw));
                 break;
              
             }
@@ -1175,7 +1175,7 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     for (long i = 0; i < kCount; i++) {
         t.AddMinute();
     }
-    LOG_POST(comment + ", duration = " + NStr::DoubleToString(timer.Elapsed()) + " sec.");
+    _TRACE(comment + ", duration = " + NStr::DoubleToString(timer.Elapsed()) + " sec.");
 }
 
 static void s_TestGMTSpeed(void)
@@ -2335,7 +2335,7 @@ static void s_DemoStopWatch(void)
         for (int i=0; i<10; i++) {
             s << sw << endl;
         }
-        //LOG_POST((string)CNcbiOstrstreamToString(s));
+        //_TRACE((string)CNcbiOstrstreamToString(s));
     }
 }
 
