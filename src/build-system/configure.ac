@@ -6805,7 +6805,7 @@ if test "$with_cereal" != no; then
       in_cereal=" in $CEREAL_PATH"
    fi
    CEREAL_INCLUDE=-I$CEREAL_PATH/include
-   AC_CACHE_CHECK([For USC Cereal$in_cereal], ncbi_cv_lib_cereal,
+   AC_CACHE_CHECK([for USC Cereal$in_cereal], ncbi_cv_lib_cereal,
       [CPPFLAGS="$CEREAL_INCLUDE $orig_CPPFLAGS"
        AC_COMPILE_IFELSE(
           [AC_LANG_PROGRAM([[#include <iostream>

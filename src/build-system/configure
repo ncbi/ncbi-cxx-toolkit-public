@@ -40249,8 +40249,8 @@ if test "$with_cereal" != no; then
       in_cereal=" in $CEREAL_PATH"
    fi
    CEREAL_INCLUDE=-I$CEREAL_PATH/include
-   { echo "$as_me:$LINENO: checking For USC Cereal$in_cereal" >&5
-echo $ECHO_N "checking For USC Cereal$in_cereal... $ECHO_C" >&6; }
+   { echo "$as_me:$LINENO: checking for USC Cereal$in_cereal" >&5
+echo $ECHO_N "checking for USC Cereal$in_cereal... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_cereal+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
