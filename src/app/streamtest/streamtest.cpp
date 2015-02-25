@@ -242,6 +242,8 @@ void CStreamTestApp::Init()
         "Show debugging information");
 
     SetupArgDescriptions(arg_desc.release());
+
+    GetConfig().Set("SERIAL", "DISABLE_DELAY_BUFFERS", "yes");
 }
 
 
