@@ -61,7 +61,7 @@ def cleanup_srctarball_contents():
     cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
     safe_exec(cmd) 
         
-    for path in ["builds", "scripts"]:
+    for path in ["builds", "scripts", "Makefile"]:
         path = os.path.join(PACKAGE_NAME, path)
         if os.path.exists(path):
             shutil.rmtree(path)
@@ -95,7 +95,7 @@ def decompress_src_tarball(srctarball):
     os.chdir(os.path.join(cwd, PACKAGE_NAME))
     tar.list()
     tar.extractall()
-    os.chdir(pwd)
+    os.chdir(cwd)
     cleanup_srctarball_contents()
 
 def compress_sources():
