@@ -76,7 +76,10 @@ bool CSeqMaskerIstat::ParseVersionString( string const & vs ) {
 
     SetFmtEncoding( enc );
     SetFmtVersion( 
-            name, stoi( major_str ), stoi( minor_str ), stoi( patch_str ) );
+            name, 
+            NStr::StringToInt( major_str ), 
+            NStr::StringToInt( minor_str ), 
+            NStr::StringToInt( patch_str ) );
     return true;
 }
 
