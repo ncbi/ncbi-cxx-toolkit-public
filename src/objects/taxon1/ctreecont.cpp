@@ -695,7 +695,7 @@ bool CTreeIterator::AddChild(CTreeContNodeBase* new_node,
         if( prev ) { // insert after prevtmp
             prev->m_sibling = new_node;
         } else { // insert as first child
-            prev->Parent()->m_child = next;
+            new_node->Parent()->m_child = new_node;
         }
         // Restore state
         GoParent();
