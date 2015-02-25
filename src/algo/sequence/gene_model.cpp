@@ -3669,8 +3669,44 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                 delete_sizes.find(delete_it->GetFrom())->second;
         }
         if(cds_feat && cds_feat->GetData().GetCdregion().IsSetCode_break()) {
-            code_breaks = cds_feat->GetData().GetCdregion()
-                              .GetCode_break().size();
+            ITERATE (CCdregion::TCode_break, it,
+                     cds_feat->GetData().GetCdregion().GetCode_break())
+            {
+                char aa = 0;
+                switch ((*it)->GetAa().Which()) {
+                case CCode_break::TAa::e_Ncbieaa:
+                    aa = (*it)->GetAa().GetNcbieaa();
+                    break;
+                    
+                case CCode_break::TAa::e_Ncbistdaa:
+                    {{
+                        string src_string(1, (*it)->GetAa().GetNcbistdaa()),
+                               dst_string;
+                        CSeqConvert::Convert(src_string, CSeqUtil::e_Ncbistdaa,
+                                             0, 1, dst_string,
+                                             CSeqUtil::e_Ncbieaa);
+                        aa = dst_string[0];
+                    }}
+                    break;
+
+                case CCode_break::TAa::e_Ncbi8aa:
+                    {{
+                        string src_string(1, (*it)->GetAa().GetNcbi8aa()),
+                               dst_string;
+                        CSeqConvert::Convert(src_string, CSeqUtil::e_Ncbi8aa,
+                                             0, 1, dst_string,
+                                             CSeqUtil::e_Ncbieaa);
+                        aa = dst_string[0];
+                    }}
+                    break;
+
+                default:
+                    break;
+                }
+                if (aa != 'U') {
+                    ++code_breaks;
+                }
+            }
         }
         if (inserted_bases || deleted_bases) {
             rna_comment = k_rna_comment;
