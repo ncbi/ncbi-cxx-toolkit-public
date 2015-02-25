@@ -2113,12 +2113,12 @@ static void s_TestTimeout(void)
         assert(tmo_infinite.IsInfinite());
         assert(tmo_zero.IsZero());
         try {
-            ds = tmo_default.GetAsDouble();
+            tmo_default.GetAsDouble();
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            ds = tmo_infinite.GetAsDouble();
+            tmo_infinite.GetAsDouble();
             _TROUBLE;
         }
         catch (CTimeException&) {}
