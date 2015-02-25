@@ -36,6 +36,7 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/version.hpp>
 
 #include <algo/winmask/seq_masker_window.hpp>
 #include <algo/winmask/seq_masker_istat.hpp>
@@ -51,6 +52,9 @@ class CSeqMaskerScore;
 class NCBI_XALGOWINMASK_EXPORT CSeqMasker
 {
 public:
+
+    /// Version of window masking algorithm.
+    static CComponentVersionInfo AlgoVersion;
 
     /**
      **\brief Type representing a masked interval within a sequence.

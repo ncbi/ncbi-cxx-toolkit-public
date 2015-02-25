@@ -63,9 +63,26 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define WIN_MASK_APP_VER_MAJOR 1
+#define WIN_MASK_APP_VER_MINOR 0
+#define WIN_MASK_APP_VER_PATCH 0
+
 //-------------------------------------------------------------------------
 const char * const 
 CWinMaskApplication::USAGE_LINE = "Window based sequence masker";
+
+//-------------------------------------------------------------------------
+CWinMaskApplication::CWinMaskApplication() {
+    CRef<CVersion> version(new CVersion());
+    version->SetVersionInfo( WIN_MASK_APP_VER_MAJOR,
+                             WIN_MASK_APP_VER_MINOR,
+                             WIN_MASK_APP_VER_PATCH );
+    version->AddComponentVersion( 
+            new CComponentVersionInfo( CSeqMasker::AlgoVersion ) );
+    version->AddComponentVersion( 
+            new CComponentVersionInfo( CSeqMaskerOstat::FormatVersion ) );
+    SetFullVersion(version);
+}
 
 //-------------------------------------------------------------------------
 void CWinMaskApplication::Init(void)

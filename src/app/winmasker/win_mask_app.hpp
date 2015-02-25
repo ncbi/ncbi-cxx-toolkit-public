@@ -46,11 +46,7 @@ class CWinMaskApplication : public CNcbiApplication
 public:
 
     /// Application constructor
-    CWinMaskApplication() {
-        CRef<CVersion> version(new CVersion());
-        version->SetVersionInfo(1, 0, 0);
-        SetFullVersion(version);
-    }
+    CWinMaskApplication();
 
     /** 
      **\brief Short description of the program.

@@ -89,10 +89,12 @@ void CSeqMaskerOstatOptBin::write_out( const params & p ) const
     out_stream.write( (const char *)(p.ht), sz*sizeof( Uint4 ) );
     out_stream.write( (const char *)(p.vt), p.M*sizeof( Uint2 ) );
 
-    if( !metadata.empty() ) {
-        Uint4 sz( metadata.size() );
+    string md( FormatMetaData( "optimized binary" ) );
+
+    if( !md.empty() ) {
+        Uint4 sz( md.size() );
         out_stream.write( (const char *)&sz, sizeof( Uint4 ) );
-        out_stream.write( metadata.c_str(), sz );
+        out_stream.write( md.c_str(), sz );
     }
 
     out_stream << flush;

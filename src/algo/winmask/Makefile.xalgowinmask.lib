@@ -16,7 +16,7 @@ SRC = seq_masker seq_masker_score_mean seq_masker_score_mean_glob \
     seq_masker_ostat_opt_ascii seq_masker_uset_hash seq_masker_istat_oascii \
     seq_masker_ostat_opt_bin seq_masker_istat_obinary seq_masker_cache_boost \
     win_mask_counts_converter win_mask_dup_table win_mask_gen_counts \
-    win_mask_util win_mask_config
+    win_mask_util win_mask_config seq_masker_istat
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

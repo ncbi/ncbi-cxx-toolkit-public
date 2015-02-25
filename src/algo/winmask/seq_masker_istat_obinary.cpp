@@ -213,7 +213,11 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
             md.push_back( c );
         }
 
-        SetMetaData( md );
+        if( md.size() < 2 || md.substr( 0, 2 ) != "##" ) {
+            md = string( "##" ) + md;
+        }
+
+        ParseMetaDataString( md );
     }
 }
 

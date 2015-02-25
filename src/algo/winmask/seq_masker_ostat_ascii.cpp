@@ -74,7 +74,8 @@ CSeqMaskerOstatAscii::~CSeqMaskerOstatAscii()
 void CSeqMaskerOstatAscii::doSetUnitSize( Uint4 us )
 { 
     out_stream << us << endl; 
-    if( !metadata.empty() ) out_stream << "##" << metadata << endl;
+    string md( FormatMetaData( "ascii" ) );
+    if( !md.empty() ) out_stream << md << endl;
 }
 
 //------------------------------------------------------------------------------

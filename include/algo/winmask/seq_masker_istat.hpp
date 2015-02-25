@@ -36,8 +36,11 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/version.hpp>
 
 #include <algo/winmask/seq_masker_window.hpp>
+
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -268,6 +271,14 @@ public:
     /**\brief Return the metadata string. */
     string const & GetMetaData() const { return metadata; }
 
+    /**\brief Return the encoding of the source statistics file. */
+    string const & GetFmtEncoding() const { return fmt_encoding; }
+
+    /**\brief Return the format version of the source statistics file. */
+    CComponentVersionInfo const * GetFmtVersion() const {
+        return fmt_version.get();
+    }
+
 protected:
     /**
         **\brief Set the count value for units with actual counts
@@ -303,8 +314,26 @@ protected:
     void set_optimization_data( const optimization_data & opt_data )
     { opt_data_ = opt_data; }
 
+    /** Parse metadata string and set format version, encoding, and
+        metadata.
+    */
+    void ParseMetaDataString( string const & md );
+
+    /** Parse a given string as a format version specification. */
+    bool ParseVersionString( string const & vs );
+
     /** Set metadata string. */
     void SetMetaData( string const & md ) { metadata = md; }
+
+    /** Set the statistics file format encoding. */
+    void SetFmtEncoding( string const & e ) { fmt_encoding = e; }
+
+    /** Set the statistics file format version. */
+    void SetFmtVersion( string const & name,
+                           int major, int minor, int patch ) {
+        fmt_version.reset( 
+                new CComponentVersionInfo( name, major, minor, patch ) );
+    }
 
 private:
 
@@ -323,6 +352,10 @@ private:
     Uint1 unit_size;        /**<\internal The unit size. */
 
     string metadata;        /**<\internal Metadata string. */
+    string fmt_encoding;    /**<\internal Encoding of the stats file from which the data was read. */
+
+    /** Format version of the statistics file from which the data was read. */
+    std::shared_ptr< CComponentVersionInfo > fmt_version;
 
     CSeqMaskerWindow::TUnit ambig_unit; /**<\internal Unit value to represent ambiguities. */
 

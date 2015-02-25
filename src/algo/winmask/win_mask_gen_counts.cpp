@@ -58,7 +58,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-
 //------------------------------------------------------------------------------
 static Uint4 letter( char c )
 {

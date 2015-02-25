@@ -96,7 +96,11 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
                 md[i] = c;
             }
 
-            SetMetaData( md );
+            if( md.size() < 2 || md.substr( 0, 2 ) != "##" ) {
+                md = string( "##" ) + md;
+            }
+
+            ParseMetaDataString( md );
             in_stream.read( (char *)&data, sizeof( Uint4 ) );
         }
 

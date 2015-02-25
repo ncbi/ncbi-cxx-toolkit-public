@@ -34,7 +34,24 @@
 
 #include <algo/winmask/seq_masker_ostat.hpp>
 
+#include <sstream>
+
 BEGIN_NCBI_SCOPE
+
+#define STAT_FILE_VER_MAJOR 1
+#define STAT_FILE_VER_MINOR 0
+#define STAT_FILE_VER_PATCH 0
+
+//------------------------------------------------------------------------------
+std::string const CSeqMaskerOstat::STAT_FILE_COMPONENT_NAME = 
+    "windowmasker statistics format version";
+
+CComponentVersionInfo CSeqMaskerOstat::FormatVersion(
+        STAT_FILE_COMPONENT_NAME, 
+        STAT_FILE_VER_MAJOR,
+        STAT_FILE_VER_MINOR,
+        STAT_FILE_VER_PATCH 
+);
 
 //------------------------------------------------------------------------------
 const char * CSeqMaskerOstat::CSeqMaskerOstatException::GetErrCodeString() const
@@ -46,6 +63,15 @@ const char * CSeqMaskerOstat::CSeqMaskerOstatException::GetErrCodeString() const
     }
 }
             
+//------------------------------------------------------------------------------
+string CSeqMaskerOstat::FormatMetaData( std::string const & encoding ) const {
+    std::ostringstream os;
+    os << "##(" << encoding << ')' << STAT_FILE_COMPONENT_NAME << ':'
+       << FormatVersion;
+    if( !metadata.empty() ) os << ',' << metadata;
+    return os.str();
+}
+
 //------------------------------------------------------------------------------
 void CSeqMaskerOstat::setUnitSize( Uint1 us )
 {

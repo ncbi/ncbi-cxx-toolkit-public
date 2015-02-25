@@ -80,9 +80,11 @@ void CSeqMaskerOstatBin::write_word( Uint4 word )
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatBin::doSetUnitSize( Uint4 us )
 { 
-    if( !metadata.empty() ) {
-        write_word( (Uint4)(metadata.size() + 16) );
-        out_stream.write( metadata.c_str(), metadata.size() );
+    string md( FormatMetaData( "binary" ) );
+    
+    if( !md.empty() ) {
+        write_word( (Uint4)(md.size() + 16) );
+        out_stream.write( md.c_str(), md.size() );
     }
 
     write_word( us ); 

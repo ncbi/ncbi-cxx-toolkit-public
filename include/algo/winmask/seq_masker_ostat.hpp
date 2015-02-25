@@ -38,6 +38,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/version.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -47,6 +48,10 @@ BEGIN_NCBI_SCOPE
 class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstat : public CObject
 {
 public:
+
+    /// Version of the statistics file format that this class generates.
+    static std::string const STAT_FILE_COMPONENT_NAME;
+    static CComponentVersionInfo FormatVersion;
 
     /**
         **\brief Exceptions that CSeqMaskerOstat can throw.
@@ -149,6 +154,9 @@ protected:
     virtual void doSetBlank() = 0;
     virtual void doFinalize() {}
     /**@}*/
+
+    /// Combine version data and metadata into a single string.
+    string FormatMetaData( string const & encoding ) const;
 
     /**
         **\brief Refers to the C++ stream that should be used to write

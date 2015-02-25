@@ -78,7 +78,8 @@ void CSeqMaskerOstatOptAscii::write_out( const params & p ) const
     for( Uint4 i = 0; i < p.M; ++i )
         out_stream << (Uint4)(p.vt[i]) << "\n";
 
-    if( !metadata.empty() ) out_stream << "##" << metadata << endl;
+    string md( FormatMetaData( "optimized ascii" ) );
+    if( !md.empty() ) out_stream << md << endl;
     out_stream << flush;
 }
 

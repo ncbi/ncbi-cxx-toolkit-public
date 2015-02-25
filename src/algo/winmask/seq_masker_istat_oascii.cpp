@@ -194,7 +194,7 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
 
     if( getline( input_stream, line ) ) {
         if( line.size() > 1 && line[0] == '#' && line[1] == '#' ) {
-            SetMetaData( line.substr( 2 ) );
+            ParseMetaDataString( line );
         }
     }
 }

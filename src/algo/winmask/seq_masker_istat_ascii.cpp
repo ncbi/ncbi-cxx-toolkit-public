@@ -81,7 +81,7 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
 
         if( line[0] == '#' ) {
             if( line.length() < 2 || line[1] != '#' ) continue;
-            SetMetaData( line.substr( 2 ) );
+            ParseMetaDataString( line );
             continue;
         }
 

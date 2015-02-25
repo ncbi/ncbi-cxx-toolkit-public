@@ -52,6 +52,18 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define WIN_MASK_ALGO_NAME "window masker algorithm"
+#define WIN_MASK_ALGO_VER_MAJOR 1
+#define WIN_MASK_ALGO_VER_MINOR 0
+#define WIN_MASK_ALGO_VER_PATCH 0
+
+//-------------------------------------------------------------------------
+CComponentVersionInfo CSeqMasker::AlgoVersion(
+        WIN_MASK_ALGO_NAME,
+        WIN_MASK_ALGO_VER_MAJOR,
+        WIN_MASK_ALGO_VER_MINOR,
+        WIN_MASK_ALGO_VER_PATCH
+);
 
 //-------------------------------------------------------------------------
 CSeqMasker::CSeqMasker( const string & lstat_name,
