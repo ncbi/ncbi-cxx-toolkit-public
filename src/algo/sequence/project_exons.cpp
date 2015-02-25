@@ -388,6 +388,8 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
 
         //truncate the exon-alignment to the query-cds-subloc
         CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(*cds_subloc, *cds_subloc, NULL));
+        mapper->SetTrimSplicedSeg(false);
+
         CRef<CSeq_align> truncated_exon_aln;
         try {
             truncated_exon_aln = mapper->Map(*exon_aln);
@@ -405,7 +407,14 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
                 NCBI_RETHROW_SAME(e, "Can't truncate alignment to CDS");
             }
         }
-        
+       
+#if 0 
+        NcbiCerr << MSerial_AsnText << *cds_subloc;
+        NcbiCerr << MSerial_AsnText << *exon_aln;
+        NcbiCerr << MSerial_AsnText << *truncated_exon_aln;
+        NcbiCerr << "\n";
+#endif
+
         if(truncated_exon_aln->GetSegs().GetSpliced().GetExons().size() == 0) {
             // NcbiCerr << "gap-only cds-exon: " << MSerial_AsnText <<spliced_aln;
             // This is a rare case where the exon overlaps the CDS, but truncating the alignment to the CDS
@@ -547,6 +556,7 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(const CSeq_align& spliced_aln,
     TSeqPos cds_start(kInvalidSeqPos), cds_stop(kInvalidSeqPos);
     if(product_cds_loc) {
         CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(spliced_aln, 1, NULL));
+        mapper->SetTrimSplicedSeg(false);
         CRef<CSeq_loc> genomic_cds_range = mapper->Map(*product_cds_loc);
         genomic_cds_range = sequence::Seq_loc_Merge(*genomic_cds_range, CSeq_loc::fMerge_SingleRange, NULL);
         cds_start = genomic_cds_range->GetStart(eExtreme_Positional);
