@@ -97,6 +97,7 @@ public:
     ///
     CDirectNetStorage(
         CNetICacheClient::TInstance icache_client,
+        CCompoundIDPool::TInstance  compound_id_pool,
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 
@@ -137,6 +138,7 @@ public:
     ///
     CDirectNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
+        CCompoundIDPool::TInstance  compound_id_pool,
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
 

@@ -349,6 +349,11 @@ public:
 
     string GetLocator() const
     {
+        if (m_Location == eNFL_Unknown) {
+            // Locator is not yet valid, return unique key at least
+            return m_UniqueKey;
+        }
+
         if (m_Dirty)
             x_Pack();
         return m_Locator;

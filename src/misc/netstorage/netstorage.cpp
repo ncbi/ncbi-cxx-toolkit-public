@@ -48,7 +48,7 @@ using namespace NImpl;
 template <class Derived, class Base>
 Derived* Impl(CRef<Base, CNetComponentCounterLocker<Base> >& base_ref)
 {
-    return static_cast<Derived*>(base_ref.GetPointerOrNull());
+    return static_cast<Derived*>(base_ref.GetNonNullPointer());
 }
 
 
@@ -91,9 +91,12 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
 {
     SNetStorageAPIImpl(const string& app_domain,
             TNetStorageFlags default_flags,
-            CNetICacheClient::TInstance icache_client = NULL)
-        : m_Context(new SContext(app_domain, icache_client, default_flags))
-    {}
+            CNetICacheClient::TInstance icache_client,
+            CCompoundIDPool::TInstance compound_id_pool)
+        : m_Context(new SContext(app_domain, icache_client, default_flags,
+                    compound_id_pool))
+    {
+    }
 
     CObj* OpenImpl(const string&);
 
@@ -172,8 +175,10 @@ struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
 {
     SNetStorageByKeyAPIImpl(const string& app_domain,
             TNetStorageFlags default_flags,
-            CNetICacheClient::TInstance icache_client = NULL)
-        : m_Context(new SContext(app_domain, icache_client, default_flags))
+            CNetICacheClient::TInstance icache_client,
+            CCompoundIDPool::TInstance compound_id_pool)
+        : m_Context(new SContext(app_domain, icache_client, default_flags,
+                    compound_id_pool))
     {
         if (app_domain.empty()) {
             NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -234,10 +239,12 @@ void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 
 CDirectNetStorage::CDirectNetStorage(
         CNetICacheClient::TInstance icache_client,
+        CCompoundIDPool::TInstance compound_id_pool,
         const string& app_domain,
         TNetStorageFlags default_flags)
     : CNetStorage(
-            new SNetStorageAPIImpl(app_domain, default_flags, icache_client))
+            new SNetStorageAPIImpl(app_domain, default_flags, icache_client,
+                compound_id_pool))
 {}
 
 
@@ -258,10 +265,12 @@ CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 
 CDirectNetStorageByKey::CDirectNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
+        CCompoundIDPool::TInstance compound_id_pool,
         const string& app_domain,
         TNetStorageFlags default_flags)
     : CNetStorageByKey(
-            new SNetStorageByKeyAPIImpl(app_domain, default_flags, icache_client))
+            new SNetStorageByKeyAPIImpl(app_domain, default_flags, icache_client,
+                compound_id_pool))
 {
 }
 
@@ -279,7 +288,7 @@ CNetStorageObject g_CreateNetStorageObject(
         Int8 object_id,
         TNetStorageFlags flags)
 {
-    // We cannot be sure here that it's CDirectNetStorage, so dynamic_cast
+    // We cannot be sure here that it's SNetStorageAPIImpl, so dynamic_cast
     SNetStorageImpl* impl = netstorage_api;
     SNetStorageAPIImpl* api_impl = dynamic_cast<SNetStorageAPIImpl*>(impl);
     _ASSERT(api_impl);
@@ -292,7 +301,7 @@ CNetStorageObject g_CreateNetStorageObject(
         const string& service_name,
         TNetStorageFlags flags)
 {
-    // We cannot be sure here that it's CDirectNetStorage, so dynamic_cast
+    // We cannot be sure here that it's SNetStorageAPIImpl, so dynamic_cast
     SNetStorageImpl* impl = netstorage_api;
     SNetStorageAPIImpl* api_impl = dynamic_cast<SNetStorageAPIImpl*>(impl);
     _ASSERT(api_impl);
@@ -305,14 +314,14 @@ CNetStorage g_CreateNetStorage(
         const string& app_domain,
         TNetStorageFlags default_flags)
 {
-    return CDirectNetStorage(icache_client, app_domain, default_flags);
+    return CDirectNetStorage(icache_client, NULL, app_domain, default_flags);
 }
 
 
 CNetStorage g_CreateNetStorage(const string& app_domain,
         TNetStorageFlags default_flags)
 {
-    return CDirectNetStorage(NULL, app_domain, default_flags);
+    return CDirectNetStorage(NULL, NULL, app_domain, default_flags);
 }
 
 
@@ -320,14 +329,14 @@ CNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
         const string& app_domain, TNetStorageFlags default_flags)
 {
-    return CDirectNetStorageByKey(icache_client, app_domain, default_flags);
+    return CDirectNetStorageByKey(icache_client, NULL, app_domain, default_flags);
 }
 
 
 CNetStorageByKey g_CreateNetStorageByKey(const string& app_domain,
         TNetStorageFlags default_flags)
 {
-    return CDirectNetStorageByKey(NULL, app_domain, default_flags);
+    return CDirectNetStorageByKey(NULL, NULL, app_domain, default_flags);
 }
 
 

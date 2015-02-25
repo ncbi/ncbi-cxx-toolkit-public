@@ -62,11 +62,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     }
 
     if (!IsOptionSet(eNetStorage)) {
-        m_NetStorage = g_CreateNetStorage(m_NetICacheClient,
+        m_NetStorage = CDirectNetStorage(m_NetICacheClient, m_CompoundIDPool,
                 m_Opts.app_domain, m_Opts.netstorage_flags);
         if (IsOptionSet(eNamespace))
-            m_NetStorageByKey = g_CreateNetStorageByKey(m_NetICacheClient,
-                    m_Opts.app_domain, m_Opts.netstorage_flags);
+            m_NetStorageByKey = CDirectNetStorageByKey(m_NetICacheClient,
+                    m_CompoundIDPool, m_Opts.app_domain, m_Opts.netstorage_flags);
     } else {
         string init_string = "nst=" + NStr::URLEncode(m_Opts.nst_service);
 

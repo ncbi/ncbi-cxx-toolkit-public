@@ -812,8 +812,10 @@ ISelector::Ptr CSelector::Clone(TNetStorageFlags flags)
 namespace NImpl
 {
 
-SContext::SContext(const string& domain, CNetICacheClient client, TNetStorageFlags flags)
+SContext::SContext(const string& domain, CNetICacheClient client,
+        TNetStorageFlags flags, CCompoundIDPool::TInstance id_pool)
     : icache_client(client),
+      compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
       default_flags(flags),
       valid_flags_mask(0),
       app_domain(domain)

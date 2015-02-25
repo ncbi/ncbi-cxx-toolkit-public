@@ -66,7 +66,7 @@ inline TNetStorage g_GetNetStorage()
     return CDirectNetStorage(
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
-            nst_app_domain);
+            NULL, nst_app_domain);
 }
 
 template <>
@@ -77,7 +77,7 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
     return CDirectNetStorageByKey(
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
-            nst_app_domain);
+            NULL, nst_app_domain);
 }
 
 template <>
@@ -88,7 +88,7 @@ inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>()
     return CDirectNetStorageByKey(
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
-            nst_app_domain);
+            NULL, nst_app_domain);
 }
 
 inline void g_Sleep()
