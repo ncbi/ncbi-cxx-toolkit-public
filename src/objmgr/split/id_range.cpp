@@ -258,11 +258,10 @@ void CSeqsRange::Add(const CDense_diag& diag,
         dim = min(dim, diag.GetStarts().size());
     }
     TSeqPos len = diag.GetLen();
-    CDense_diag::TStarts::const_iterator it_start = diag.GetStarts().begin();
-    ITERATE ( CDense_diag::TIds, it_id, diag.GetIds() ) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**it_id);
-        m_Ranges[idh].Add(*it_start, *it_start + len);
-        ++it_start;
+    for ( size_t i = 0; i < dim; ++i ) {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*diag.GetIds()[i]);
+        TSeqPos start = diag.GetStarts()[i];
+        m_Ranges[idh].Add(start, start + len);
     }
 }
 
