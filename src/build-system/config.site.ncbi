@@ -38,6 +38,7 @@ try_local() {
         test -f "$d/include/avro"          &&  : ${AVRO_PATH=$d}
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
+        test -d "$d/include/cereal"        &&  : ${CEREAL_PATH=$d}
         test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
@@ -98,6 +99,8 @@ case "$ncbi_platform" in
     SunOS*     ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
     *          ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
 esac
+
+: ${CEREAL_PATH=$NCBI/cereal-1.1.0}
 
 case "$ncbi_platform" in
     Linux32    ) : ${EXPAT_PATH=$NCBI/expat-1.95.6} ;;

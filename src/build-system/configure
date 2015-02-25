@@ -994,6 +994,7 @@ FREETYPE_INCLUDE
 FREETYPE_LIBS
 GSOAP_PATH
 AVRO_STATIC_LIBS
+CEREAL_INCLUDE
 MONGODB_STATIC_LIBS
 ncbi_xreader_pubseqos
 ncbi_xreader_pubseqos2
@@ -1552,7 +1553,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap avro mongodb 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1596,7 +1597,7 @@ for x_arg in "$@" ; do
       | --with-curl=* | --with-gsoap=* | --with-avro=* | --with-mongodb=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
-      | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
+      | --with-sqlite3=* | --with-expat=* | --with-sablot=* | --with-cereal=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
       | --with-bdb=* | --with-odbc=* | --with-python=* | --with-perl=* \
@@ -1874,6 +1875,8 @@ Optional Packages:
  --without-gsoap         do not use gSOAP++
  --with-avro=DIR         use Apache Avro installation in DIR
  --without-avro          do not use Apache Avro
+ --with-cereal=DIR       use USC Cereal installation in DIR
+ --without-cereal        do not use USC Cereal
  --with-mongodb=DIR      use MongoDB installation in DIR
  --without-mongodb       do not use MongoDB
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
@@ -2367,6 +2370,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_avro=no
+         fi
+        if test "${with_cereal-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-cereal but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_cereal=no
          fi
         if test "${with_mongodb-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-mongodb but --without-3psw" >&2
@@ -3754,6 +3763,18 @@ fi
 # Check whether --with-avro2 was given.
 if test "${with_avro2+set}" = set; then
   withval=$with_avro2;
+fi
+
+
+# Check whether --with-cereal was given.
+if test "${with_cereal+set}" = set; then
+  withval=$with_cereal;
+fi
+
+
+# Check whether --with-cereal2 was given.
+if test "${with_cereal2+set}" = set; then
+  withval=$with_cereal2;
 fi
 
 
@@ -40202,6 +40223,114 @@ fi
 
 fi
 
+
+# USC Cereal (header-only)
+case "$with_cereal" in
+   yes | no | '' ) ;;
+   *             ) CEREAL_PATH=$with_cereal ;;
+esac
+if test "$with_cereal" != no; then
+   in_cereal=
+   if test -d "$CEREAL_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $CEREAL_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $CEREAL_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            CEREAL_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$CEREAL_PATH" in
+               /*) ;;
+               * ) CEREAL_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) CEREAL_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+      in_cereal=" in $CEREAL_PATH"
+   fi
+   CEREAL_INCLUDE=-I$CEREAL_PATH/include
+   { echo "$as_me:$LINENO: checking For USC Cereal$in_cereal" >&5
+echo $ECHO_N "checking For USC Cereal$in_cereal... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_cereal+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$CEREAL_INCLUDE $orig_CPPFLAGS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <iostream>
+                             #include <cereal/archives/binary.hpp>
+int
+main ()
+{
+cereal::BinaryOutputArchive
+                             archive(std::cout);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_cereal=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_cereal=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_cereal" >&5
+echo "${ECHO_T}$ncbi_cv_lib_cereal" >&6; }
+    if test "$ncbi_cv_lib_cereal" = yes; then
+                 WithPackages="$WithPackages${WithPackagesSep}Cereal"; WithPackagesSep=" "
+    else
+       if test "${with_cereal:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-cereal explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-cereal explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+       CEREAL_INCLUDE=
+    fi
+fi
+
+
 # MongoDB
 case "$with_mongodb" in
    yes | no | '' ) ;;
@@ -40819,7 +40948,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS 
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO MONGODB; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -40927,6 +41056,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -42372,8 +42502,8 @@ FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
 AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
+CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
-ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42415,6 +42545,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
 PERL_INCLUDE!$PERL_INCLUDE$ac_delim
@@ -42454,7 +42585,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

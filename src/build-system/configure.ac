@@ -71,7 +71,7 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl, gsoap, avro, mongodb],
+                     magic, curl, gsoap, avro, cereal, mongodb],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -453,6 +453,10 @@ AC_ARG_WITH(avro,
    [ --with-avro=DIR         use Apache Avro installation in DIR])
 AC_ARG_WITH(avro2,
    [ --without-avro          do not use Apache Avro])
+AC_ARG_WITH(cereal,
+   [ --with-cereal=DIR       use USC Cereal installation in DIR])
+AC_ARG_WITH(cereal2,
+   [ --without-cereal        do not use USC Cereal])
 AC_ARG_WITH(mongodb,
    [ --with-mongodb=DIR      use MongoDB installation in DIR])
 AC_ARG_WITH(mongodb2,
@@ -516,7 +520,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap avro mongodb 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -561,7 +565,7 @@ for x_arg in "$@" ; do
       | --with-curl=* | --with-gsoap=* | --with-avro=* | --with-mongodb=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
-      | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
+      | --with-sqlite3=* | --with-expat=* | --with-sablot=* | --with-cereal=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
       | --with-bdb=* | --with-odbc=* | --with-python=* | --with-perl=* \
@@ -6788,6 +6792,36 @@ if test -n "$AVRO_LIBS"; then
    AC_PATH_PROG(AVROGENCPP, avrogencpp, [], [$AVRO_PATH/bin:$PATH])
 fi
 
+
+# USC Cereal (header-only)
+case "$with_cereal" in
+   yes | no | '' ) ;;
+   *             ) CEREAL_PATH=$with_cereal ;;
+esac
+if test "$with_cereal" != no; then
+   in_cereal=
+   if test -d "$CEREAL_PATH"; then
+      NCBI_FIX_DIR(CEREAL_PATH)
+      in_cereal=" in $CEREAL_PATH"
+   fi
+   CEREAL_INCLUDE=-I$CEREAL_PATH/include
+   AC_CACHE_CHECK([For USC Cereal$in_cereal], ncbi_cv_lib_cereal,
+      [CPPFLAGS="$CEREAL_INCLUDE $orig_CPPFLAGS"
+       AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[#include <iostream>
+                             #include <cereal/archives/binary.hpp>]],
+                           [[cereal::BinaryOutputArchive
+                             archive(std::cout);]])],
+          [ncbi_cv_lib_cereal=yes], [ncbi_cv_lib_cereal=no])])
+    if test "$ncbi_cv_lib_cereal" = yes; then
+       NCBI_PACKAGE(Cereal)
+    else
+       NCBI_MISSING_PACKAGE(cereal)
+       CEREAL_INCLUDE=
+    fi
+fi
+
+
 # MongoDB
 case "$with_mongodb" in
    yes | no | '' ) ;;
@@ -7495,6 +7529,7 @@ AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(GSOAP_PATH)
 AC_SUBST(AVRO_STATIC_LIBS)
+AC_SUBST(CEREAL_INCLUDE)
 AC_SUBST(MONGODB_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
