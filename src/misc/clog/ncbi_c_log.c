@@ -1341,7 +1341,6 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir)
     /* Check max possible file name (dir/basename.trace) */
     assert((n + 1 + nlen + 6) < sizeof(path));
     s_ConcatPathEx(dir, n,  sx_Info->app_base_name, nlen, path, FILENAME_MAX + 1);
-    n += (nlen + 1);
     return s_SetLogFiles(path);
 }
 
