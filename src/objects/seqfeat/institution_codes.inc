@@ -1269,6 +1269,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CSH	s	Shanghai Chenshan Botanical Garden",
 "CSIR	c	Council for Scientific and Industrial Research",
 "CSIRO	s	Commonwealth Science & Industrial Research Organization",
+"CSIRO:Ichthyology	s	Commonwealth Science & Industrial Research Organization, Australian National Fish Collection",
 "CSLA	s	California State University, Department of Biological Sciences",
 "CSLB	s	California State University at Long Beach",
 "CSMA	c	Centro di Studio dei Microorganismi Autotrofi - CNR",
