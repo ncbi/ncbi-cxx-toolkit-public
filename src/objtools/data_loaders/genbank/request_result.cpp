@@ -64,7 +64,7 @@ CFixedSeq_ids::CFixedSeq_ids(const TList& list, TState state)
       m_Ref(new TObject(list))
 {
     if ( list.empty() ) {
-        state |= CBioseq_Handle::fState_no_data;
+        m_State |= CBioseq_Handle::fState_no_data;
     }
 }
 
