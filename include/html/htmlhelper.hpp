@@ -218,7 +218,7 @@ void CIDs::Decode(const string& str)
         cmd = str[end];
         pos = end + 1;
     }
-    id = AddID(cmd, id, GetNumber(str.substr(pos)));
+    AddID(cmd, id, GetNumber(str.substr(pos)));
 }
 
 
