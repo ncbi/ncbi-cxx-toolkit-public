@@ -445,7 +445,6 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
     diag.m_Severity = eDiag_Trace;
     return diag;
 }
-NCBI_DEPRECATED
 inline
 const CNcbiDiag& Message(const CNcbiDiag& diag)  {
     return diag;
