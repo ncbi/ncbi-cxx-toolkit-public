@@ -198,12 +198,16 @@ public:
     ///
     /// @note The key must be generated using GenerateKey() method.
     /// @param encrypted_string
-    ///   The string to decrypt
+    ///   The string to decrypt. The string may contain domain suffix,
+    ///   e.g. "<checksum>:<encrypted data>/domain". In this case the function
+    ///   will try to find the decryption key for the specified domain rather
+    ///   than use the usual set of keys.
     /// @return
     ///   Decrypted string
+    /// @sa DecryptForDomain
     static string Decrypt(const string& encrypted_string);
 
-    /// Re-read key file locations, reload encryption keys.
+    /// Re-read key file locations and domain paths, reload encryption keys.
     static void Reload(void);
 
     /// Generate an encryption key from the password, encrypt the string
@@ -227,6 +231,35 @@ public:
     ///   Decrypted string
     static string Decrypt(const string& encrypted_string,
                           const string& password);
+
+    /// Encrypt data using domain key. Search NCBI_KEY_PATHS for a
+    /// file with the specified domain name, load the first key from
+    /// the file and use it for encryption. If no domain file is found
+    /// in the paths, throw exception.
+    /// @param original_string
+    ///   The string to encrypt
+    /// @param domain
+    ///   Domain file (relative to the paths from NCBI_KEY_PATHS) to read keys from.
+    /// @return
+    ///   Data encrypted using the first key from the first available domain file.
+    ///   The encrypted data include domain suffix which can be used for automatic
+    ///   decryption.
+    static string EncryptForDomain(const string& original_string,
+                                   const string& domain);
+
+    /// Decrypt data using domain key. Search NCBI_KEY_PATHS for a
+    /// fine with the specified domain name, find a key for the
+    /// checksum (from the encrypted string prefix), use it for
+    /// decryption. If no domain file is found, throw exception.
+    /// @param encrypted_string
+    ///   The string to decrypt. If the string includes domain suffix, it is
+    ///   checked as well as the domain passed as the second argument.
+    /// @param domain
+    ///   Domain file (relative to the paths from NCBI_KEY_PATHS) to read keys from.
+    /// @return
+    ///   Decrypted string.
+    static string DecryptForDomain(const string& encrypted_string,
+                                   const string& domain);
 
     /// Generate an encryption/decryption key from the seed string.
     /// @param seed
@@ -252,10 +285,47 @@ public:
     static string HexToBin(const string& hex);
 
 private:
+    // Encryption key info
+    struct SEncryptionKeyInfo
+    {
+        SEncryptionKeyInfo(void)
+            : m_Severity(eDiag_Trace), m_Line(0)
+        {}
+
+        SEncryptionKeyInfo(const string& key,
+                           EDiagSev      sev,
+                           const string& file,
+                           size_t        line)
+            : m_Key(key), m_Severity(sev), m_File(file), m_Line(line)
+        {}
+
+        string   m_Key;
+        EDiagSev m_Severity;
+        string   m_File;
+        size_t   m_Line;
+    };
+    
+    // Key storage
+    typedef map<string, SEncryptionKeyInfo> TKeyMap;
+
     // Load (if not yet loaded) and return key map.
     static void sx_InitKeyMap(void);
     // Calculate checksum for a binary (not printable hexadecimal) key.
     static string x_GetBinKeyChecksum(const string& key);
+    // Load keys from the file, put them in the map. Return the first key
+    // found in the file (or empty string if there are no valid keys).
+    static string x_LoadKeys(const string& filename, TKeyMap* keys);
+    // Load keys from the domain (search NCBI_KEY_PATHS for the domain
+    // file). Return the first key.
+    static string x_GetDomainKeys(const string& domain, TKeyMap* keys);
+    // Encrypt data using the provided binary key.
+    static string x_Encrypt(const string& data, const string& key);
+    // Find a matching key and decrypt data.
+    static string x_Decrypt(const string& data, const TKeyMap& keys);
+
+    static CSafeStatic<CNcbiEncrypt::TKeyMap> s_KeyMap;
+    static CSafeStatic<string> s_DefaultKey;
+    static volatile bool s_KeysInitialized;
 };
 
 
@@ -292,7 +362,8 @@ public:
     enum EErrCode {
         eMissingKey,   //< No keys found
         eBadPassword,  //< Bad password string (empty password).
-        eBadFormat     //< Invalid encrypted string format
+        eBadFormat,    //< Invalid encrypted string format
+        eBadDomain     //< Bad keys domain provided.
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -301,6 +372,7 @@ public:
         case eMissingKey:   return "eMissingKey";
         case eBadPassword:  return "eBadPassword";
         case eBadFormat:    return "eBadFormat";
+        case eBadDomain:    return "eBadDomain";
         default:         return CException::GetErrCodeString();
         }
     }

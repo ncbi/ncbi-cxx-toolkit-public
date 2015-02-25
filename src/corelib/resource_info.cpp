@@ -36,7 +36,6 @@
 #include <ncbiconf.h>
 #include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistr.hpp>
@@ -350,38 +349,25 @@ string CNcbiResourceInfo::x_GetEncoded(void) const
 
 // The default keys file if present in the user's home directory.
 const char* kDefaultKeysFile = ".ncbi_keys";
+const char* kDefaultKeysPath = "/opt/ncbi/config";
 
+// Key files to cache in memory.
 NCBI_PARAM_DECL(string, NCBI_KEY, FILES);
 NCBI_PARAM_DEF_EX(string, NCBI_KEY, FILES, kEmptyStr, eParam_NoThread,
     NCBI_KEY_FILES);
 typedef NCBI_PARAM_TYPE(NCBI_KEY, FILES) TKeyFiles;
 
-
-struct SEncryptionKeyInfo
-{
-    SEncryptionKeyInfo(void)
-        : m_Severity(eDiag_Trace), m_Line(0)
-    {}
-
-    SEncryptionKeyInfo(const string& key,
-                       EDiagSev      sev,
-                       const string& file,
-                       size_t        line)
-        : m_Key(key), m_Severity(sev), m_File(file), m_Line(line)
-    {}
-
-    string   m_Key;
-    EDiagSev m_Severity;
-    string   m_File;
-    size_t   m_Line;
-};
+// Paths to search for domain keys, colon separated. Special value '$$' can be
+// added to include the default path.
+NCBI_PARAM_DECL(string, NCBI_KEY, PATHS);
+NCBI_PARAM_DEF_EX(string, NCBI_KEY, PATHS, "$$", eParam_NoThread,
+    NCBI_KEY_PATHS);
+typedef NCBI_PARAM_TYPE(NCBI_KEY, PATHS) TKeyPaths;
 
 
-typedef map<string, SEncryptionKeyInfo> TKeyMap;
-
-static CSafeStatic<TKeyMap> s_KeyMap;
-static CSafeStatic<string> s_DefaultKey;
-static volatile bool s_KeysInitialized = false;
+CSafeStatic<CNcbiEncrypt::TKeyMap> CNcbiEncrypt::s_KeyMap;
+CSafeStatic<string> CNcbiEncrypt::s_DefaultKey;
+volatile bool CNcbiEncrypt::s_KeysInitialized = false;
 
 DEFINE_STATIC_MUTEX(s_EncryptMutex);
 
@@ -393,8 +379,7 @@ string CNcbiEncrypt::Encrypt(const string& original_string)
         NCBI_THROW(CNcbiEncryptException, eMissingKey,
             "No encryption keys found.");
     }
-    string checksum = x_GetBinKeyChecksum(key);
-    return checksum + ":" + BinToHex(x_BlockTEA_Encode(key, original_string));
+    return x_Encrypt(original_string, key);
 }
 
 
@@ -406,34 +391,13 @@ string CNcbiEncrypt::Decrypt(const string& encrypted_string)
         NCBI_THROW(CNcbiEncryptException, eMissingKey,
             "No decryption keys found.");
     }
-    // Parse the encrypted string, find key checksum.
-    // The checksum is in the first 16 bytes (32 hex chars), separated with a colon.
-    if (encrypted_string.size() < 33  ||  encrypted_string[32] != ':') {
-        NCBI_THROW(CNcbiEncryptException, eBadFormat,
-            "Invalid encrypted string format - missing key checksum.");
-    }
-    string checksum = HexToBin(encrypted_string.substr(0, 32));
-    TKeyMap::const_iterator key_it = keys.find(checksum);
-    if (key_it == keys.end()) {
-        NCBI_THROW(CNcbiEncryptException, eMissingKey,
-            "No decryption key found for the checksum.");
-    }
-    string key = key_it->second.m_Key;
-    EDiagSev sev = key_it->second.m_Severity;
-    // TRACE severity indicates there's no need to log key usage.
-    if (key != s_DefaultKey.Get()  &&  sev != eDiag_Trace) {
-        ERR_POST_ONCE(Severity(key_it->second.m_Severity) <<
-            "Decryption key accessed: checksum=" << x_GetBinKeyChecksum(key) <<
-            ", location=" << key_it->second.m_File << ":" << key_it->second.m_Line);
-    }
 
-    size_t comment = encrypted_string.find('/');
-    if (comment != NPOS) {
-        comment -= 33;
+    size_t domain_pos = encrypted_string.find('/');
+    if (domain_pos != NPOS) {
+        return DecryptForDomain(encrypted_string.substr(0, domain_pos),
+            encrypted_string.substr(domain_pos + 1));
     }
-    _ASSERT(!key.empty());
-    return x_BlockTEA_Decode(key,
-        HexToBin(encrypted_string.substr(33, comment)));
+    return x_Decrypt(encrypted_string, keys);
 }
 
 
@@ -456,6 +420,43 @@ string CNcbiEncrypt::Decrypt(const string& encrypted_string,
             "Encryption password can not be empty.");
     }
     return BlockTEA_Decode(password, HexToBin(encrypted_string));
+}
+
+
+string CNcbiEncrypt::EncryptForDomain(const string& original_string,
+                                      const string& domain)
+{
+    string key = x_GetDomainKeys(domain, NULL);
+    if ( key.empty() ) {
+        NCBI_THROW(CNcbiEncryptException, eBadDomain,
+            "No encryption keys found for domain " + domain);
+    }
+
+    return x_Encrypt(original_string, key) + "/" + domain;
+}
+
+
+string CNcbiEncrypt::DecryptForDomain(const string& encrypted_string,
+                                      const string& domain)
+{
+    TKeyMap keys;
+    x_GetDomainKeys(domain, &keys);
+
+    size_t domain_pos = encrypted_string.find('/');
+    if (domain_pos != NPOS) {
+        // If the data include domain, check it as well.
+        string domain2 = encrypted_string.substr(domain_pos + 1);
+        if (domain2 != domain) {
+            x_GetDomainKeys(domain2, &keys);
+        }
+    }
+
+    if ( keys.empty() ) {
+        NCBI_THROW(CNcbiEncryptException, eBadDomain,
+            "No decryption keys found for domain " + domain);
+    }
+
+    return x_Decrypt(encrypted_string.substr(0, domain_pos), keys);
 }
 
 
@@ -516,6 +517,7 @@ void CNcbiEncrypt::Reload(void)
     CMutexGuard guard(s_EncryptMutex);
     s_KeysInitialized = false;
     TKeyFiles::ResetDefault();
+    TKeyPaths::ResetDefault();
     s_KeyMap.Get().clear();
     s_DefaultKey.Get().clear();
     sx_InitKeyMap();
@@ -541,56 +543,10 @@ void CNcbiEncrypt::sx_InitKeyMap(void)
                 if (home_pos == 0  &&  fname.size() > 5  &&  CDirEntry::IsPathSeparator(fname[5])) {
                     fname = CDir::ConcatPath(CDir::GetHome(), fname.substr(6));
                 }
-                CNcbiIfstream in(fname.c_str());
-                if ( !in.good() ) continue;
-                size_t line = 0;
-                while ( in.good() && !in.eof() ) {
-                    line++;
-                    string s;
-                    getline(in, s);
-                    NStr::TruncateSpacesInPlace(s);
-                    // Ignore empty lines and comments.
-                    if (s.empty() || s[0] == '#') continue;
-                    string checksum, key;
-                    if ( !NStr::SplitInTwo(s, ":", checksum, key)  ||
-                        checksum.size() != 32 ) {
-                        ERR_POST(Warning <<
-                            "Invalid checksum/key format in " << fname << ", line " << line);
-                        continue;
-                    }
-                    checksum = HexToBin(checksum);
-
-                    EDiagSev sev = eDiag_Trace;
-                    size_t sevpos = key.find('/');
-                    if (sevpos != NPOS) {
-                        string sevname = key.substr(sevpos + 1);
-                        NStr::TruncateSpacesInPlace(sevname);
-                        if ( !CNcbiDiag::StrToSeverityLevel(sevname.c_str(), sev) ) {
-                            ERR_POST(Warning <<
-                                "Invalid key severity in " << fname << ", line " << line);
-                            continue;
-                        }
-                        key.resize(sevpos);
-                        NStr::TruncateSpacesInPlace(key);
-                    }
-                    if (key.size() != 32) {
-                        ERR_POST(Warning <<
-                            "Invalid key format in " << fname << ", line " << line);
-                        continue;
-                    }
-
-                    key = HexToBin(key);
-                    char md5[16];
-                    CalcMD5(key.c_str(), key.size(), (unsigned char*)md5);
-                    if (string(md5, 16) != checksum) {
-                        ERR_POST(Warning << "Invalid key checksum in " << fname << ", line " << line);
-                        continue;
-                    }
-                    // Set the first available key as the default one.
-                    if ( s_DefaultKey->empty() ) {
-                        *s_DefaultKey = key;
-                    }
-                    keys[checksum] = SEncryptionKeyInfo(key, sev, fname, line);
+                string first_key = x_LoadKeys(fname, &keys);
+                // Set the first available key as the default one.
+                if ( s_DefaultKey->empty() ) {
+                    *s_DefaultKey = first_key;
                 }
             }
             s_KeysInitialized = true;
@@ -604,6 +560,130 @@ string CNcbiEncrypt::x_GetBinKeyChecksum(const string& key)
     char md5[16];
     CalcMD5(key.c_str(), key.size(), (unsigned char*)md5);
     return BinToHex(string(md5, 16));
+}
+
+
+string CNcbiEncrypt::x_LoadKeys(const string& filename, TKeyMap* keys)
+{
+    string first_key;
+    CNcbiIfstream in(filename.c_str());
+    if ( !in.good() ) return first_key;
+    size_t line = 0;
+    while ( in.good() && !in.eof() ) {
+        line++;
+        string s;
+        getline(in, s);
+        NStr::TruncateSpacesInPlace(s);
+        // Ignore empty lines and comments.
+        if (s.empty() || s[0] == '#') continue;
+        string checksum, key;
+        if ( !NStr::SplitInTwo(s, ":", checksum, key)  ||
+            checksum.size() != 32 ) {
+            ERR_POST(Warning <<
+                "Invalid checksum/key format in " << filename << ", line " << line);
+            continue;
+        }
+        checksum = HexToBin(checksum);
+
+        EDiagSev sev = eDiag_Trace;
+        size_t sevpos = key.find('/');
+        if (sevpos != NPOS) {
+            string sevname = key.substr(sevpos + 1);
+            NStr::TruncateSpacesInPlace(sevname);
+            if ( !CNcbiDiag::StrToSeverityLevel(sevname.c_str(), sev) ) {
+                ERR_POST(Warning <<
+                    "Invalid key severity in " << filename << ", line " << line);
+                continue;
+            }
+            key.resize(sevpos);
+            NStr::TruncateSpacesInPlace(key);
+        }
+        if (key.size() != 32) {
+            ERR_POST(Warning <<
+                "Invalid key format in " << filename << ", line " << line);
+            continue;
+        }
+
+        key = HexToBin(key);
+        char md5[16];
+        CalcMD5(key.c_str(), key.size(), (unsigned char*)md5);
+        if (string(md5, 16) != checksum) {
+            ERR_POST(Warning << "Invalid key checksum in " << filename << ", line " << line);
+            continue;
+        }
+        // Set the first available key as the default one.
+        if ( first_key.empty() ) {
+            first_key = key;
+        }
+        if ( !keys ) {
+            // Found the first key, no need to parse the rest of the file.
+            break;
+        }
+        (*keys)[checksum] = SEncryptionKeyInfo(key, sev, filename, line);
+    }
+    return first_key;
+}
+
+
+string CNcbiEncrypt::x_GetDomainKeys(const string& domain, TKeyMap* keys)
+{
+    string first_key;
+    list<string> paths;
+    NStr::Split(TKeyPaths::GetDefault(), ":", paths);
+    ITERATE(list<string>, it, paths) {
+        string path = *it;
+        if (path == "$$") {
+            path = kDefaultKeysPath;
+        }
+        string fname = CDirEntry::MakePath(*it, domain);
+        string res = x_LoadKeys(fname, keys);
+        if ( first_key.empty() ) {
+            first_key = res;
+        }
+        if (!first_key.empty()  &&  !keys) {
+            // Found the first key, no need to check other files.
+            break;
+        }
+    }
+    return first_key;
+}
+
+
+string CNcbiEncrypt::x_Encrypt(const string& data, const string& key)
+{
+    _ASSERT(!key.empty());
+    string checksum = x_GetBinKeyChecksum(key);
+    return checksum + ":" + BinToHex(x_BlockTEA_Encode(key, data));
+}
+
+
+string CNcbiEncrypt::x_Decrypt(const string& data, const TKeyMap& keys)
+{
+    // Parse the encrypted string, find key checksum.
+    // The checksum is in the first 16 bytes (32 hex chars), separated with a colon.
+    if (data.size() < 33  ||  data[32] != ':') {
+        NCBI_THROW(CNcbiEncryptException, eBadFormat,
+            "Invalid encrypted string format - missing key checksum.");
+    }
+    string checksum = HexToBin(data.substr(0, 32));
+    TKeyMap::const_iterator key_it = keys.find(checksum);
+    if (key_it == keys.end()) {
+        NCBI_THROW(CNcbiEncryptException, eMissingKey,
+            "No decryption key found for the checksum.");
+    }
+    string key = key_it->second.m_Key;
+    EDiagSev sev = key_it->second.m_Severity;
+    // TRACE severity indicates there's no need to log key usage.
+    if (key != s_DefaultKey.Get()  &&  sev != eDiag_Trace) {
+        ERR_POST_ONCE(Severity(key_it->second.m_Severity) <<
+            "Decryption key accessed: checksum=" << x_GetBinKeyChecksum(key) <<
+            ", location=" << key_it->second.m_File << ":" << key_it->second.m_Line);
+    }
+
+    // Domain must be parsed by the caller.
+    _ASSERT(data.find('/') == NPOS);
+    _ASSERT(!key.empty());
+    return x_BlockTEA_Decode(key, HexToBin(data.substr(33)));
 }
 
 

@@ -158,8 +158,20 @@ int CResInfoTest::Run(void)
     // Test automatic key selection.
     encr = CNcbiEncrypt::Encrypt(data);
     _ASSERT(encr == "EA5F4753A86C69EACEDE867587A25D5D:B473B8AFF18B9CD8E6205DDF9030CA2527A5B5B03E22E04BF4035F0CD212DCE4D78A1EAECF8420889542277D18F9CE51386B49A7F734A6927E08A3703E7AFC5F");
-    // The comment (backslash and any text after it) should be ignored.
-    decr = CNcbiEncrypt::Decrypt(encr + "/comment");
+    decr = CNcbiEncrypt::Decrypt(encr);
+    _ASSERT(decr == data);
+
+    // Test domain encryption.
+    encr = CNcbiEncrypt::EncryptForDomain(data, ".ncbi_test_domain");
+    _ASSERT(encr == "70FB315127FA94AE8903ADE084F2F67B:7486292AA9212CCDF8DDE1AB6C824CB487D51A0E71557D22CE2AF5F941B8AF0C70EACDBAA0040CEA783B82663218EA159F44081857F36E7E59BE272615420786/.ncbi_test_domain");
+    // Automatic domain key selection.
+    decr = CNcbiEncrypt::Decrypt(encr);
+    _ASSERT(decr == data);
+    // Explicit domain
+    decr = CNcbiEncrypt::DecryptForDomain(encr, ".ncbi_test_domain");
+    _ASSERT(decr == data);
+    // Two domains
+    decr = CNcbiEncrypt::DecryptForDomain(encr, ".ncbi_test_domain2");
     _ASSERT(decr == data);
 
     cout << "All tests passed" << endl;
