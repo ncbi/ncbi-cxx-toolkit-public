@@ -1350,7 +1350,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
         m_Cache.erase(0, total);
         out_size -= total;
     }
-    if (x_in_len  &&  out_size)  {
+    if (x_in_buf  &&  x_in_len  &&  out_size)  {
         size_t n = min(x_in_len, out_size);
         memcpy(out_buf + total, x_in_buf, n);
         total += n;
