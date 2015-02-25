@@ -144,6 +144,15 @@ public:
     CNcbiOstream& WriteHeader(void)             const;
     CNcbiOstream& WriteHeader(CNcbiOstream& os) const;
     bool          IsHeaderWritten()             const;
+    /// Define if WriteHeader() must be called or can be skipped.
+    /// @param require
+    ///   true -  report (to application log) if WriteHeader has not
+    ///           been called by the end of ProcessRequest();
+    ///   false - allow to skip WriteHeader call (e.g when the user
+    ///           writes custom HTTP header directly to the output
+    ///           stream).
+    ///   The default setting is 'true'.
+    void RequireWriteHeader(bool require);
 
     void SetTrackingCookie(const string& name,   const string& value,
                            const string& domain, const string& path,
@@ -226,6 +235,7 @@ protected:
     CNcbiOstream*  m_Output;            // Default output stream
     int            m_OutputFD;          // Output file descriptor, if available
     mutable bool   m_HeaderWritten;     // Did we already complete the header?
+    bool           m_RequireWriteHeader; // Check if WriteHeader was called?
     CNcbiOstream::iostate m_OutputExpt; // Original output exceptions
     CCgiRequest::ERequestMethod m_RequestMethod; // Request method from CCgiRequest
 
@@ -340,6 +350,11 @@ inline int CCgiResponse::GetOutputFD(void) const
 inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
 {
     return WriteHeader(out());
+}
+
+inline void CCgiResponse::RequireWriteHeader(bool require)
+{
+    m_RequireWriteHeader = require;
 }
 
 inline bool CCgiResponse::IsHeaderWritten(void) const

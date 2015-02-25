@@ -115,7 +115,7 @@ class CCgiStreamWrapper : public CWStream
 {
 public:
     CCgiStreamWrapper(CNcbiOstream* out)
-        : CWStream(new CCgiStreamWrapperWriter, 0, 0, CRWStreambuf::fOwnWriter),
+        : CWStream(new CCgiStreamWrapperWriter, 1, 0, CRWStreambuf::fOwnWriter),
           m_Output(out),
           m_OldBuf(0),
           m_NewBuf(rdbuf())
@@ -162,6 +162,7 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
       m_Output(NULL),
       m_OutputFD(0),
       m_HeaderWritten(false),
+      m_RequireWriteHeader(true),
       m_RequestMethod(CCgiRequest::eMethod_Other),
       m_Session(NULL),
       m_DisableTrackingCookie(false)
@@ -339,8 +340,10 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         if (m_HeaderWritten) {
             NCBI_THROW(CCgiResponseException, eDoubleHeader,
                        "CCgiResponse::WriteHeader() -- called more than once");
-        } else
+        }
+        else {
             m_HeaderWritten = true;
+        }
     }
 
     // HTTP status line (if "raw CGI" response)
@@ -493,6 +496,10 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 
 void CCgiResponse::Finalize(void) const
 {
+    if (m_RequireWriteHeader  &&  !m_HeaderWritten) {
+        ERR_POST_X(5, "CCgiResponse::WriteHeader() has not been called - "
+            "HTTP header can be missing.");
+    }
     if (!m_JQuery_Callback.empty()  &&  m_Output  &&  m_HeaderWritten) {
         *m_Output <<  ')';
     }
