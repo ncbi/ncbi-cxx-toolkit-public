@@ -241,7 +241,8 @@ static void s_InitTest8(CArgDescriptions& arg_desc)
         ("k", "alphaNumericKey",
          "This is an optional argument with default value",
          CArgDescriptions::eString, "CORELIB",
-         CArgDescriptions::fOptionalSeparator);
+         CArgDescriptions::fOptionalSeparator | CArgDescriptions::fConfidential,
+         "", "xncbi core library");
 
     arg_desc.AddKey
         ("datasize", "MandatoryKey",

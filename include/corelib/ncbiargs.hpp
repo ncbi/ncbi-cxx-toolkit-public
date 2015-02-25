@@ -608,7 +608,19 @@ public:
         fMandatorySeparator = (1 << 7),
 
         /// Hide it in Usage
-        fHidden = (1 << 10)
+        fHidden = (1 << 10),
+        
+        /// Confidential argument
+        /// Such arguments can be read from command line, from file, or from
+        /// console.
+        /// On command line, they can appear in one of the following forms:
+        ///   -key                   -- read value from console, with automatically
+        ///                             generated prompt
+        ///   -key-file      fname   -- read value from file 'fname',
+        ///                             if 'fname' equals '-',  read value from
+        ///                             standard input (stdin) without any prompt
+        ///   -key-verbatim  value   -- read value from the command line, as is
+        fConfidential  = (1 << 13)
     };
     typedef unsigned int TFlags;  ///< Bitwise OR of "EFlags"
 
@@ -674,8 +686,11 @@ public:
                        EType         type,          ///< Argument type
                        const string& default_value, ///< Default value
                        TFlags        flags = 0,     ///< Optional flags
-    /// Optional name of environment variable that contains default value
-                       const string& env_var = kEmptyStr
+                       /// Optional name of environment variable that
+                       /// contains default value
+                       const string& env_var = kEmptyStr,
+                       /// Default value shown in Usage
+                       const char*   display_value = nullptr
                       );
 
     /// Add description for flag argument.
@@ -790,8 +805,11 @@ public:
                               EType         type,   ///< Argument type
                               const string& default_value, ///< Default value
                               TFlags        flags = 0, ///< Optional flags
-    /// Optional name of environment variable that contains default value
-                              const string& env_var = kEmptyStr
+                              /// Optional name of environment variable that
+                              /// contains default value
+                              const string& env_var = kEmptyStr,
+                              /// Default value shown in Usage
+                              const char*   display_value = nullptr
                              );
 
     /// Add description for the extra, unnamed positional arguments.

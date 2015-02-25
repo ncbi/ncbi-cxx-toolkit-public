@@ -46,6 +46,11 @@
 #  include <corelib/ncbi_os_mswin.hpp>
 #  include <io.h> 
 #  include <fcntl.h> 
+#  include <conio.h>
+#else
+#  include <termios.h>
+#  include <unistd.h>
+#  include <fcntl.h>
 #endif
 
 
@@ -885,6 +890,9 @@ const CArgAllow* CArgDesc::GetConstraint(void) const
 
 string CArgDesc::GetUsageConstraint(void) const
 {
+    if (GetFlags() & CArgDescriptions::fConfidential) {
+        return kEmptyStr;
+    }
     const CArgAllow* constraint = GetConstraint();
     if (!constraint)
         return kEmptyStr;
@@ -1005,11 +1013,14 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (flags & CArgDescriptions::fHidden) {
             out << "<" << "hidden" << "/>";
         }
+        if (flags & CArgDescriptions::fConfidential) {
+            out << "<" << "confidential" << "/>";
+        }
         out << "</" << "flags" << ">" << endl;
     }
     const CArgDescDefault* def = dynamic_cast<const CArgDescDefault*>(this);
     if (def) {
-        s_WriteXmlLine(     out, "default", def->GetDefaultValue());
+        s_WriteXmlLine(     out, "default", def->GetDisplayValue());
     } else if (s_IsFlag(*this)) {
         const CArgDesc_Flag* fl = dynamic_cast<const CArgDesc_Flag*>(this);
         if (fl && !fl->GetSetValue()) {
@@ -1153,14 +1164,19 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
         }
 
         if (err) {
-            string err_msg;
-            if (m_NegateConstraint == CArgDescriptions::eConstraintInvert) {
-                err_msg = "Illegal value, unexpected ";
+            if (GetFlags() & CArgDescriptions::fConfidential) {
+                NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
+                           "Disallowed value",value));
             } else {
-                err_msg = "Illegal value, expected ";
+                string err_msg;
+                if (m_NegateConstraint == CArgDescriptions::eConstraintInvert) {
+                    err_msg = "Illegal value, unexpected ";
+                } else {
+                    err_msg = "Illegal value, expected ";
+                }
+                NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
+                           err_msg + m_Constraint->GetUsage(),value));
             }
-            NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
-                       err_msg + m_Constraint->GetUsage(),value));
         }
     }
 
@@ -1239,11 +1255,16 @@ CArgDescDefault::CArgDescDefault(const string&            name,
                                  CArgDescriptions::EType  type,
                                  CArgDescriptions::TFlags flags,
                                  const string&            default_value,
-                                 const string&            env_var)
+                                 const string&            env_var,
+                                 const char*              display_value)
     : CArgDescMandatory(name, comment, type, flags),
       CArgDescOptional(name, comment, type, flags),
-      m_DefaultValue(default_value), m_EnvVar(env_var)
+      m_DefaultValue(default_value), m_EnvVar(env_var),
+      m_use_display(display_value != nullptr)
 {
+    if (m_use_display) {
+        m_DisplayValue = display_value;
+    }
     return;
 }
 
@@ -1263,6 +1284,11 @@ const string& CArgDescDefault::GetDefaultValue(void) const
         }
     }
     return m_DefaultValue;
+}
+
+const string& CArgDescDefault::GetDisplayValue(void) const
+{
+    return m_use_display ?  m_DisplayValue : GetDefaultValue();
 }
 
 CArgValue* CArgDescDefault::ProcessDefault(void) const
@@ -1460,10 +1486,11 @@ CArgDesc_PosDef::CArgDesc_PosDef(const string&            name,
                                  CArgDescriptions::EType  type,
                                  CArgDescriptions::TFlags flags,
                                  const string&            default_value,
-                                 const string&            env_var)
+                                 const string&            env_var,
+                                 const char*              display_value)
     : CArgDescMandatory (name, comment, type, flags),
       CArgDescOptional  (name, comment, type, flags),
-      CArgDescDefault   (name, comment, type, flags, default_value, env_var),
+      CArgDescDefault   (name, comment, type, flags, default_value, env_var, display_value),
       CArgDesc_PosOpt   (name, comment, type, flags)
 {
     return;
@@ -1562,10 +1589,11 @@ CArgDesc_KeyDef::CArgDesc_KeyDef(const string&            name,
                                  CArgDescriptions::TFlags flags,
                                  const string&            synopsis,
                                  const string&            default_value,
-                                 const string&            env_var)
+                                 const string&            env_var,
+                                 const char*              display_value)
     : CArgDescMandatory(name, comment, type, flags),
       CArgDescOptional (name, comment, type, flags),
-      CArgDesc_PosDef  (name, comment, type, flags, default_value, env_var),
+      CArgDesc_PosDef  (name, comment, type, flags, default_value, env_var, display_value),
       CArgDescSynopsis(synopsis)
 {
     return;
@@ -1829,6 +1857,200 @@ bool CArgs::IsEmpty(void) const
     return m_Args.empty();
 }
 
+enum EEchoInput {
+    eNoEcho,
+    eEchoInput
+};
+
+static string s_CArgs_ReadFromFile(const string& name, const string& filename)
+{
+    CArg_InputFile f(name, filename, CArgDescriptions::fBinary);
+    istreambuf_iterator<char> it( f.AsInputFile() );
+    vector<char> value;
+    std::copy( it, istreambuf_iterator<char>(), back_inserter(value));
+    while (value[ value.size()-1] == '\r' || value[ value.size()-1] == '\n') {
+        value.pop_back();
+    }
+    return string( value.data(), value.size());
+}
+
+static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, const char* cue)
+{
+    string thx("\n");
+    string prompt;
+    if (cue) {
+        prompt = cue;
+    } else {
+        prompt = "Please enter value of parameter '";
+        prompt += name;
+        prompt += "': ";
+    }
+    if (!prompt.empty()) {
+        cout << prompt;
+        cout.flush();
+    }
+
+    string value;
+#if defined(NCBI_OS_MSWIN)
+    DWORD dw = 0;
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn != INVALID_HANDLE_VALUE) {
+
+        DWORD mode = 0, silent_mode = 0;
+        if (echo_input == eNoEcho) {
+            GetConsoleMode(hIn, &mode);
+            silent_mode = mode & ~ENABLE_ECHO_INPUT;
+            SetConsoleMode(hIn, silent_mode);
+        }
+
+        char buffer[256];
+        while( ReadFile(hIn, buffer, 256, &dw, NULL) && dw != 0) {
+            bool eol = false;
+            while ( buffer[dw-1] == '\n' || buffer[dw-1] == '\r') {
+                --dw; eol = true;
+            }
+            value.append(buffer,dw);
+            if (eol) {
+                break;
+            }
+        }
+
+        if (echo_input == eNoEcho) {
+            SetConsoleMode(hIn, mode);
+        }
+    }
+#else
+    size_t i = 0;
+    char ch;
+
+    struct termios mode, silent_mode;
+    if (echo_input == eNoEcho) {
+        tcgetattr( STDIN_FILENO, &mode );
+        silent_mode = mode;
+        silent_mode.c_lflag &= ~ECHO;
+        tcsetattr( STDIN_FILENO, TCSANOW, &silent_mode );
+    }
+
+    for( i = 0; (ch = getchar()) != EOF && (ch != '\n') && (ch != '\r'); i++ ) {
+        if (ch == '\b') {
+            if (value.size() > 0) {
+                value.erase( value.size()-1, 1);
+            }
+        } else {
+            value.append(1, ch);
+        }
+    }
+
+    if (echo_input == eNoEcho) {
+        tcsetattr( STDIN_FILENO, TCSANOW, &mode );
+    }
+#endif
+    if (!prompt.empty()) {
+        cout << thx;
+    }
+    return value;
+}
+
+static string s_CArgs_ReadFromConsole(const string& name, EEchoInput echo_input, const char* cue)
+{
+    string thx("\n");
+    string prompt;
+    if (cue) {
+        prompt = cue;
+    } else {
+        prompt = "Please enter value of parameter '";
+        prompt += name;
+        prompt += "': ";
+    }
+
+    string value;
+#if defined(NCBI_OS_MSWIN)
+    DWORD dw = 0;
+    HANDLE hOut = INVALID_HANDLE_VALUE;
+    if (!prompt.empty()) {
+        hOut = CreateFile(_TX("CONOUT$"),
+            GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hOut != INVALID_HANDLE_VALUE) {
+            WriteFile(hOut,prompt.data(),prompt.length(), &dw, NULL);
+        }
+    }
+
+    HANDLE hIn = CreateFile(_TX("CONIN$"),
+        GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,  NULL);
+    if (hIn != INVALID_HANDLE_VALUE) {
+        DWORD mode = 0, silent_mode = 0;
+        if (echo_input == eNoEcho) {
+            GetConsoleMode(hIn, &mode);
+            silent_mode = mode & ~ENABLE_ECHO_INPUT;
+            SetConsoleMode(hIn, silent_mode);
+        }
+
+        char buffer[256];
+        while( ReadFile(hIn, buffer, 256, &dw, NULL) && dw != 0) {
+            bool eol = false;
+            while ( buffer[dw-1] == '\n' || buffer[dw-1] == '\r') {
+                --dw;
+                eol = true;
+            }
+            value.append(buffer,dw);
+            if (eol) {
+                break;
+            }
+        }
+
+        if (echo_input == eNoEcho) {
+            SetConsoleMode(hIn, mode);
+        }
+        CloseHandle(hIn);
+    }
+
+    if (hOut != INVALID_HANDLE_VALUE) {
+        WriteFile(hOut,thx.data(),thx.length(), &dw, NULL);
+        CloseHandle(hOut);
+    }
+#else
+    int tty = open("/dev/tty", O_RDWR);
+    if (tty >= 0) {
+        if (!prompt.empty()) {
+            write( tty, prompt.data(), prompt.length());
+        }
+
+        struct termios mode, silent_mode;
+        if (echo_input == eNoEcho) {
+            tcgetattr( tty, &mode );
+            silent_mode = mode;
+            silent_mode.c_lflag &= ~ECHO;
+            tcsetattr( tty, TCSANOW, &silent_mode );
+        }
+
+        char buffer[256];
+        ssize_t i = 0;
+        while ( (i = read(tty, buffer, 256)) > 0) {
+            bool eol = false;
+            while ( i > 0 && (buffer[i-1] == '\n' || buffer[i-1] == '\r')) {
+                --i;
+                eol = true;
+            }
+            value.append(buffer,i);
+            if (eol) {
+                break;
+            }
+        }
+
+        if (echo_input == eNoEcho) {
+            tcsetattr( tty, TCSANOW, &mode );
+        }
+        if (!prompt.empty()) {
+            write( tty, thx.data(), thx.length());
+        }
+        close(tty);
+    }
+#endif
+    return value;
+}
+
 
 ///////////////////////////////////////////////////////
 //  CArgErrorHandler::
@@ -1996,10 +2218,11 @@ void CArgDescriptions::AddDefaultKey
  EType         type,
  const string& default_value,
  TFlags        flags,
- const string& env_var)
+ const string& env_var,
+ const char*   display_value)
 {
     auto_ptr<CArgDesc_KeyDef> arg(new CArgDesc_KeyDef(name,
-        comment, type, flags, synopsis, default_value, env_var));
+        comment, type, flags, synopsis, default_value, env_var, display_value));
 
     x_AddDesc(*arg);
     arg.release();
@@ -2064,10 +2287,11 @@ void CArgDescriptions::AddDefaultPositional
  EType         type,
  const string& default_value,
  TFlags        flags,
- const string& env_var)
+ const string& env_var,
+ const char*   display_value)
 {
     auto_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
-        comment, type, flags, default_value, env_var));
+        comment, type, flags, default_value, env_var, display_value));
 
     x_AddDesc(*arg);
     arg.release();
@@ -2479,7 +2703,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
 
 
 bool CArgDescriptions::x_CreateArg(const string& arg1,
-                                   const string& name, 
+                                   const string& name_in, 
                                    bool          have_arg2,
                                    const string& arg2,
                                    unsigned      n_plain,
@@ -2490,6 +2714,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     if (new_value)
         *new_value = 0;
 
+    string name(name_in);
     bool arg2_used = false;
     bool no_separator = false;
     bool eq_separator = false;
@@ -2508,6 +2733,37 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
             throw;
         }
     }
+
+    // Check for '/' in the arg1
+    bool confidential = it != m_Args.end() &&
+        ((*it)->GetFlags() & CArgDescriptions::fConfidential) != 0;
+    char conf_method = confidential ? 't' : '\0';
+    size_t dash = name.rfind('-');
+    if (it == m_Args.end() && dash != NPOS && dash != 0) {
+        string test(name.substr(0, dash));
+        string suffix(name.substr(dash+1));
+        if (NStr::strcasecmp(suffix.c_str(), "file") == 0 ||
+            NStr::strcasecmp(suffix.c_str(), "verbatim") == 0)
+        {
+            try {
+                it = x_Find(test);
+            } catch (CArgException&) {
+                it = m_Args.end();
+            }
+            if (it != m_Args.end()) {
+// verify that it has Confidential flag
+// and there is something after dash
+                if (((*it)->GetFlags() & CArgDescriptions::fConfidential) &&
+                    name.size() > (dash+1)) {
+                    confidential = true;
+                    conf_method = name[dash+1];
+                    name = test;
+                }
+            }
+        }
+    }
+
+
     if (it == m_Args.end()  &&  m_NoSeparator.find(name[0]) != NPOS) {
         it = x_Find(name.substr(0, 1), &negative);
         _ASSERT(it != m_Args.end());
@@ -2533,7 +2789,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
 
     // Check value separated by '='
     string arg_val;
-    if ( s_IsKey(arg) ) {
+    if ( s_IsKey(arg) && !confidential) {
         eq_separator = arg1.length() > name.length()  &&
             (arg1[name.length() + 1] == '=');
         if ( !eq_separator ) {
@@ -2547,11 +2803,14 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     }
 
     // Get argument value
-    const string* value = 0;
+    string value;
     if ( !eq_separator  &&  !no_separator ) {
-        if ( s_IsKey(arg) ) {
+        if ( !s_IsKey(arg)  || (confidential && conf_method == 't')) {
+            value = arg1;
+        }
+        else {
             // <key> <value> arg  -- advance from the arg.name to the arg.value
-            if ( !have_arg2  &&  !value ) {
+            if ( !have_arg2 ) {
 
                 // if update specified we try to add default value
                 //  (mandatory throws an exception out of the ProcessDefault())
@@ -2565,10 +2824,8 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
                 NCBI_THROW(CArgException,eNoArg,s_ArgExptMsg(arg1,
                     "Value is missing", kEmptyStr));
             }
-            value = &arg2;
+            value = arg2;
             arg2_used = true;
-        } else {
-            value = &arg1;
         }
     }
     else {
@@ -2579,7 +2836,23 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         else {
             arg_val = arg1.substr(name.length() + 2);
         }
-        value = &arg_val;
+        value = arg_val;
+    }
+
+    if (confidential) {
+        switch (conf_method) {
+        default:
+            break;
+        case 'f':
+        case 'F':
+            value = (value != "-") ? s_CArgs_ReadFromFile(name, value)
+                                   : s_CArgs_ReadFromStdin(name, eNoEcho, "");
+            break;
+        case 't':
+        case 'T':
+            value = s_CArgs_ReadFromConsole(name, eNoEcho, nullptr);
+            break;
+        }
     }
 
     CArgValue* av = 0;
@@ -2591,7 +2864,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
             av = arg.ProcessDefault();
         }
         else {
-            av = arg.ProcessArgument(*value);
+            av = arg.ProcessArgument(value);
         }
     }
     catch (CArgException) {
@@ -2600,7 +2873,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
             err_handler = m_ErrorHandler.GetPointerOrNull();
         }
         _ASSERT(err_handler);
-        av = err_handler->HandleError(arg, *value);
+        av = err_handler->HandleError(arg, value);
     }
 
     if ( !av ) {
@@ -2910,6 +3183,14 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
         string t;
         t += separator;
         t += '<' + attr + '>';
+        if (arg.GetFlags() &  CArgDescriptions::fConfidential) {
+            arr.push_back( intro + "  - read value interactively from console");
+            arr.push_back( intro + "-file <" +
+                           CArgDescriptions::GetTypeName(CArgDescriptions::eInputFile) + "> - read value from file");
+            t = "-verbatim";
+            t += separator;
+            t += '<' + attr + '>';
+        }
         attr = t;
     }
 
@@ -2953,7 +3234,7 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     const CArgDescDefault* dflt = dynamic_cast<const CArgDescDefault*> (&arg);
     if ( dflt ) {
         s_PrintCommentBody
-            (arr, "Default = `" + dflt->GetDefaultValue() + '\'', width);
+            (arr, "Default = `" + dflt->GetDisplayValue() + '\'', width);
     }
 
     // Print required/excluded args
