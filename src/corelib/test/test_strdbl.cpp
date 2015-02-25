@@ -933,6 +933,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
     }
+    double sum = 0;
     for ( size_t t = 0; t < TESTS; ++t ) {
         NcbiCout << "Testing "<<ss[t]<<":" << endl;
         string s1 = ss[t];
@@ -947,6 +948,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 errno = 0;
                 v = NStr::StringToDouble(s, flags|NStr::fDecimalPosix);
                 if ( errno ) v = kConvertError;
+                sum += v;
             }
             time = sw.Elapsed();
             NcbiCout << "   StringToDouble(Posix): " << time << endl;
@@ -957,6 +959,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 errno = 0;
                 v = NStr::StringToDouble(s, flags);
                 if ( errno ) v = kConvertError;
+                sum += v;
             }
             time = sw.Elapsed();
             NcbiCout << "        StringToDouble(): " << time << endl;
@@ -968,6 +971,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 char* errptr;
                 v = NStr::StringToDoublePosix(s2, &errptr);
                 if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = kConvertError;
+                sum += v;
             }
             time = sw.Elapsed();
             NcbiCout << "   StringToDoublePosix(): " << time << endl;
@@ -979,6 +983,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 char* errptr;
                 v = StringToDoublePosixOld(s2, &errptr);
                 if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = kConvertError;
+                sum += v;
             }
             time = sw.Elapsed();
             NcbiCout << "StringToDoublePosixOld(): " << time << endl;
@@ -990,11 +995,13 @@ void CTestApp::RunSpeedBenchmark(void)
                 char* errptr;
                 v = strtod(s2, &errptr);
                 if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = kConvertError;
+                sum += v;
             }
             time = sw.Elapsed();
             NcbiCout << "                strtod(): " << time << endl;
         }
     }
+    if ( sum > 0 ) return;
 }
 
 
