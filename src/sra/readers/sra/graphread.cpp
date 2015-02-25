@@ -278,7 +278,7 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
                 max_v = v;
                 switch_to_real = v > kMaxIntValue;
             }
-            if ( switch_to_real ) {
+            if ( switch_to_real && int_vv ) {
                 // switch to real graph
                 CRef<CInt_graph> save_int_graph(int_graph);
                 real_graph = &graph->SetGraph().SetReal();
