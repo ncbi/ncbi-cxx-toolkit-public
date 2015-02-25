@@ -61,7 +61,8 @@ def cleanup_srctarball_contents():
     cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
     safe_exec(cmd) 
         
-    for path in ["builds", "scripts", "Makefile"]:
+    os.remove(os.path.join(PACKAGE_NAME, "Makefile"))
+    for path in ["builds", "scripts"]:
         path = os.path.join(PACKAGE_NAME, path)
         if os.path.exists(path):
             shutil.rmtree(path)
