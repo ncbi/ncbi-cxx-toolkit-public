@@ -4657,7 +4657,8 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID 
                     } else if (*(param->datalen) < 0) {
                         return CS_FAIL;
                     }
-                    param->value = malloc(*(param->datalen));
+                    param->value = malloc(*(param->datalen) ? *(param->datalen)
+                                          : 1);
                     if (param->value == NULL)
                         return CS_FAIL;
                     memcpy(param->value, data, *(param->datalen));
