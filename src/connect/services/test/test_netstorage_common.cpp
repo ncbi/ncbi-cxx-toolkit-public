@@ -50,7 +50,7 @@ USING_NCBI_SCOPE;
 
 // There is a known issue with attribute reading (JIRA CXX-5571),
 // test will be disabled until the issue is fixed
-#undef TEST_ATTRIBUTES
+#define TEST_ATTRIBUTES
 
 #define TEST_NON_EXISTENT
 #define TEST_RELOCATED
@@ -64,6 +64,8 @@ NCBI_PARAM_DEF(string, netstorage, app_domain, "nst_test");
 
 
 // ENetStorageObjectLocation to type mapping
+typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_Unknown>
+    TLocationRelocated;
 typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NotFound>
     TLocationNotFound;
 typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
@@ -221,6 +223,15 @@ private:
     {
         BOOST_CHECK_CTX(!GetStorageSpecificInfo(), m_Ctx);
     }
+};
+
+template <>
+class CGetInfo<TLocationRelocated> : public CGetInfo<TLocationNotFound>
+{
+public:
+    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 = 0U)
+        : CGetInfo<TLocationNotFound>(ctx, object, 0U)
+    {}
 };
 
 template <>
@@ -711,6 +722,12 @@ struct SReadHelper<TApi, TLocationNotFound> : SReadHelperBase
     }
 };
 
+template <class TApi>
+struct SReadHelper<TApi, TLocationRelocated> : SReadHelper<TApi, TLocationNotFound>
+{
+    SReadHelper(IExtReader& s) : SReadHelper<TApi, TLocationNotFound>(s) {}
+};
+
 typedef CApi<SIosApiImpl> TIosApi;
 
 template <>
@@ -726,6 +743,12 @@ struct SReadHelper<TIosApi, TLocationNotFound> : SReadHelperBase
 
         return false;
     }
+};
+
+template <>
+struct SReadHelper<TIosApi, TLocationRelocated> : SReadHelper<TIosApi, TLocationNotFound>
+{
+    SReadHelper(IExtReader& s) : SReadHelper<TIosApi, TLocationNotFound>(s) {}
 };
 
 // A helper to read from expected and write to object
@@ -1266,7 +1289,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 
 #ifdef TEST_NON_EXISTENT
     string not_found(
-            "akBZHDAuHAAeLCAJDR2qGyZd7WG8LXRxa4hCLFtLHE1bQ1thGg4uelAdPkVuBQ1SSxY");
+            "CiB5fBBOPGA-TABpLX2KezBRLG35vvgq5_umuK_f6Nmv16_17pra7qSJytGakfnGv4I");
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(not_found));
 #endif
@@ -1291,7 +1314,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 
 #ifdef TEST_RELOCATED
     // Verify that the object has disappeared from the original storage.
-    ReadAndCompare<TLocationNotFound>("Trying to read relocated object",
+    ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
         netstorage.Open(immovable_loc));
 #endif
 
@@ -1344,7 +1367,16 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     // Wait some time for changes to take effect
     g_Sleep();
 
-    ReadAndCompare<typename TLoc::TRelocate>("Reading relocated object",
+#ifdef TEST_RELOCATED
+    // Verify that the object has disappeared from the original storage.
+    ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
+            netstorage.Open(unique_key2, TLoc::immovable));
+#endif
+
+    ReadAndCompare<typename TLoc::TRelocate>("Reading using original flags",
+            netstorage.Open(unique_key2, TLoc::create));
+
+    ReadAndCompare<typename TLoc::TRelocate>("Reading using new flags",
             netstorage.Open(unique_key2, TLoc::relocate));
 
     const int relocate = TLoc::relocate;
