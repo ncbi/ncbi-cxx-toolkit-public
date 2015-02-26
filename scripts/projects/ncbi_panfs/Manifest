@@ -24,7 +24,7 @@ APP: ncbi_panfs
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux32-Centos : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
+#Linux32-Centos : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
 Linux64-Centos : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
 Linux64-Ubuntu : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
 
