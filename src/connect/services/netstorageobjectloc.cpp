@@ -277,18 +277,6 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
     }
 }
 
-void CNetStorageObjectLoc::ResetLocation()
-{
-    m_Dirty = true;
-
-    m_LocationCode.clear();
-    m_Location = eNFL_Unknown;
-
-    m_NCServiceName.clear();
-    m_NCFlags = 0;
-    m_CacheChunkSize = DEFAULT_CACHE_CHUNK_SIZE;
-}
-
 void CNetStorageObjectLoc::SetLocation_NetCache(
         const string& service_name,
         Uint4 server_ip, unsigned short server_port,
@@ -310,6 +298,8 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
         m_NCFlags |= fNCF_AllowXSiteConn;
     else
         m_NCFlags &= ~(TNetCacheFlags) fNCF_AllowXSiteConn;
+
+    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
 }
 
 void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
@@ -320,6 +310,10 @@ void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
 
     m_LocationCode = FILETRACK_STORAGE_CODE;
     m_Location = eNFL_FileTrack;
+
+    m_NCServiceName.clear();
+    m_NCFlags = 0;
+    m_CacheChunkSize = DEFAULT_CACHE_CHUNK_SIZE;
 
     m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
 

@@ -116,7 +116,6 @@ string CObj::Relocate(TNetStorageFlags flags)
     }
 
     LOG_POST(Trace << "locations are different");
-    selector->ResetLocator();
     CRef<CObj> new_file(new CObj(selector));
 
     for (;;) {

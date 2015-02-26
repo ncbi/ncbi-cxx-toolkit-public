@@ -649,7 +649,6 @@ public:
     ILocation* First();
     ILocation* Next();
     const TObjLoc& Locator();
-    void ResetLocator();
     void SetLocator();
     Ptr Clone(TNetStorageFlags);
 
@@ -771,12 +770,6 @@ CLocation* CSelector::Top()
 const TObjLoc& CSelector::Locator()
 {
     return m_ObjectLoc;
-}
-
-
-void CSelector::ResetLocator()
-{
-    m_ObjectLoc.ResetLocation();
 }
 
 

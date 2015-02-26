@@ -328,8 +328,6 @@ public:
 
     Uint8 GetCacheChunkSize() const {return m_CacheChunkSize;}
 
-    void ResetLocation();
-
     void SetLocation_NetCache(const string& service_name,
         Uint4 server_ip, unsigned short server_port,
         bool allow_xsite_conn);
