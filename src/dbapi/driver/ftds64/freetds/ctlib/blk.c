@@ -2057,7 +2057,7 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
         tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data datalen = %d \n",
                     datalen ? *datalen : -1);
 
-        if (*datalen) {
+        if (datalen) {
             if (*datalen == CS_UNUSED) {
                 switch (srctype) {
                     case CS_LONG_TYPE:	    srclen = 8; break;
