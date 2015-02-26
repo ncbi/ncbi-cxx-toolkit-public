@@ -180,9 +180,12 @@ tds_gss_get_auth(TDSSOCKET * tds)
 	/* Storage for reentrant getaddrby* calls */
 	char buffer[4096];
 
+    if (tds->connection == NULL)
+        return NULL;
+
 	struct tds_gss_auth *auth = (struct tds_gss_auth *) calloc(1, sizeof(struct tds_gss_auth));
 
-	if (!auth || !tds->connection)
+    if (auth == NULL)
 		return NULL;
 
 	auth->tds_auth.free = tds_gss_free;

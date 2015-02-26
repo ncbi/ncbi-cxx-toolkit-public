@@ -1106,7 +1106,7 @@ tds_process_col_name(TDSSOCKET * tds)
 
     cur = head;
 
-    if (memrc != 0) {
+    if (cur == NULL  ||  memrc != 0) {
         while (cur != NULL) {
             prev = cur;
             cur = cur->next;
@@ -1115,7 +1115,7 @@ tds_process_col_name(TDSSOCKET * tds)
         }
         return TDS_FAIL;
     } else {
-        for (col = 0; col < info->num_cols; col++) {
+        for (col = 0; col < /*info->*/num_cols; col++) {
             curcol = info->columns[col];
             tds_strlcpy(curcol->column_name, cur->column_name, sizeof(curcol->column_name));
             curcol->column_namelen = strlen(curcol->column_name);
@@ -2173,6 +2173,7 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
     } else if (is_blob_type(curcol->column_type)) {
         TDS_CHAR *p;
         int new_blob_size;
+        assert(curcol->column_varint_size == 4);
         assert(blob == (TDSBLOB *) dest);   /* cf. column_varint_size case 4, above */
 
         /*
@@ -3210,14 +3211,14 @@ tds_process_compute_names(TDSSOCKET * tds)
 
     tdsdump_log(TDS_DBG_INFO1, "processing tds5 compute names. num_comp_info = %d\n", tds->num_comp_info);
 
-    info = tds->comp_info[tds->num_comp_info - 1];
-    tds->current_results = info;
-
-    info->computeid = compute_id;
-
-    curptr = topptr;
-
     if (memrc == 0) {
+        info = tds->comp_info[tds->num_comp_info - 1];
+        tds->current_results = info;
+
+        info->computeid = compute_id;
+
+        curptr = topptr;
+
         for (col = 0; col < num_cols; col++) {
             curcol = info->columns[col];
 

@@ -300,14 +300,16 @@ tds_answer_challenge(TDSSOCKET * tds,
     user_name_len = user_name ? strlen(user_name) : 0;
 
     /* parse domain\username */
-    p = strchr(user_name, '\\');
+    p = user_name_len ? strchr(user_name, '\\') : NULL;
 
-    domain_len = p - user_name;
+    domain_len = p ? p - user_name : 0;
     memcpy(domain, user_name, domain_len);
     domain[domain_len] = '\0';
 
-    user_name = p + 1;
-    user_name_len = strlen(user_name);
+    if (p != NULL) {
+        user_name = p + 1;
+        user_name_len = strlen(user_name);
+    }
 
     ntlm_v = 2;
 

@@ -776,8 +776,9 @@ tds_cursor_deallocated(TDSSOCKET *tds, TDSCURSOR *cursor)
 	TDSCURSOR *victim = NULL;
 	TDSCURSOR *prev = NULL;
 	TDSCURSOR *next = NULL;
+    TDS_INT    cursor_id = cursor->cursor_id;
 
-	tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : freeing cursor_id %d\n", cursor->cursor_id);
+    tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : freeing cursor_id %d\n", cursor_id);
 
 	if (tds->cur_cursor == cursor) {
 		tds_release_cursor(tds, cursor);
@@ -787,7 +788,7 @@ tds_cursor_deallocated(TDSSOCKET *tds, TDSCURSOR *cursor)
 	victim = tds->cursors;
 
 	if (victim == NULL) {
-		tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : no allocated cursors %d\n", cursor->cursor_id);
+        tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : no allocated cursors\n");
 		return;
 	}
 
@@ -797,12 +798,12 @@ tds_cursor_deallocated(TDSSOCKET *tds, TDSCURSOR *cursor)
 		prev = victim;
 		victim = victim->next;
 		if (victim == NULL) {
-			tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : cannot find cursor_id %d\n", cursor->cursor_id);
+            tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : cannot find cursor_id %d\n", cursor_id);
 			return;
 		}
 	}
 
-	tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : cursor_id %d found\n", cursor->cursor_id);
+    tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : cursor_id %d found\n", cursor_id);
 
 	next = victim->next;
 

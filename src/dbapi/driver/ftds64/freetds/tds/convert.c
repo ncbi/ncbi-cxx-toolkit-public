@@ -1896,6 +1896,7 @@ string_to_datetime(const char *instr, int desttype, CONV_RESULT * cr)
 
 		case STRING_GARBLED:
 
+            free(in);
 			tdsdump_log(TDS_DBG_INFO1,
 				    "error_handler:  Attempt to convert data stopped by syntax error in source field \n");
 			return TDS_CONVERT_SYNTAX;

@@ -692,7 +692,7 @@ tds7_send_auth(TDSSOCKET * tds,
     password_len = tds_dstr_len(&connection->password);
 
     /* parse domain\username */
-    if ((p = strchr(user_name, '\\')) == NULL)
+    if (user_name == NULL  ||  (p = strchr(user_name, '\\')) == NULL)
         return TDS_FAIL;
 
     domain = user_name;
