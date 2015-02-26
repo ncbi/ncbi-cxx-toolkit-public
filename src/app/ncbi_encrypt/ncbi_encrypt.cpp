@@ -77,6 +77,8 @@ void CNcbiEncryptApp::Init(void)
         "output data file", CArgDescriptions::eOutputFile, "-");
     arg_desc->AddOptionalKey("password", "Password",
         "Password used for key generation", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("domain", "Domain",
+        "Domain to use for encryption", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("severity", "Severity",
         "Log message severity when reporting an outdated key usage",
@@ -92,6 +94,8 @@ void CNcbiEncryptApp::Init(void)
     arg_desc->SetDependency("generate_key", CArgDescriptions::eExcludes, "i");
     arg_desc->SetDependency("generate_key", CArgDescriptions::eExcludes, "encrypt");
     arg_desc->SetDependency("generate_key", CArgDescriptions::eExcludes, "decrypt");
+    arg_desc->SetDependency("generate_key", CArgDescriptions::eExcludes, "domain");
+    arg_desc->SetDependency("password", CArgDescriptions::eExcludes, "domain");
     arg_desc->SetDependency("severity", CArgDescriptions::eRequires, "generate_key");
 
     SetupArgDescriptions(arg_desc.release());
@@ -151,6 +155,9 @@ void CNcbiEncryptApp::Encrypt(void)
     if ( args["password"] ) {
         encr = CNcbiEncrypt::Encrypt(data, args["password"].AsString());
     }
+    else if ( args["domain"] ) {
+        encr = CNcbiEncrypt::EncryptForDomain(data, args["domain"].AsString());
+    }
     else {
         encr = CNcbiEncrypt::Encrypt(data);
     }
@@ -173,6 +180,9 @@ void CNcbiEncryptApp::Decrypt(void)
 
     if ( args["password"] ) {
         decr = CNcbiEncrypt::Decrypt(data, args["password"].AsString());
+    }
+    else if ( args["domain"] ) {
+        decr = CNcbiEncrypt::DecryptForDomain(data, args["domain"].AsString());
     }
     else {
         decr = CNcbiEncrypt::Decrypt(data);

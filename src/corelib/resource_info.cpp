@@ -467,6 +467,12 @@ string CNcbiEncrypt::Encrypt(const string& original_string)
 
 string CNcbiEncrypt::Decrypt(const string& encrypted_string)
 {
+    size_t domain_pos = encrypted_string.find('/');
+    if (domain_pos != NPOS) {
+        return DecryptForDomain(encrypted_string.substr(0, domain_pos),
+            encrypted_string.substr(domain_pos + 1));
+    }
+
     sx_InitKeyMap();
     const TKeyMap& keys = s_KeyMap.Get();
     if ( keys.empty() ) {
@@ -474,11 +480,6 @@ string CNcbiEncrypt::Decrypt(const string& encrypted_string)
             "No decryption keys found.");
     }
 
-    size_t domain_pos = encrypted_string.find('/');
-    if (domain_pos != NPOS) {
-        return DecryptForDomain(encrypted_string.substr(0, domain_pos),
-            encrypted_string.substr(domain_pos + 1));
-    }
     return x_Decrypt(encrypted_string, keys);
 }
 
