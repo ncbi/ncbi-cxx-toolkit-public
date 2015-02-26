@@ -11,7 +11,7 @@
 
 # USE_DEFAULT_COMPONENTS
 
-APP: ncbi_panfs
+LIB: ncbi_panfs
 
 # The -t key prevents inclusion of the tree builder into the release
 # SVN_TAG_RELEASE_ADD_FLAGS: -t
