@@ -881,8 +881,8 @@ refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
-refseq_ctl needs connssl
 refseq_ctl needs gencoll_client
+refseq_ctl needs xid_utils
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
