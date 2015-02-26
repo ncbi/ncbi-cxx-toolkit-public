@@ -1,0 +1,32 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Vladimir Ivanov
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# USE_DEFAULT_COMPONENTS
+
+APP: ncbi_panfs
+
+# The -t key prevents inclusion of the tree builder into the release
+# SVN_TAG_RELEASE_ADD_FLAGS: -t
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+Linux32-Centos : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
+Linux64-Centos : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
+Linux64-Ubuntu : plain  : GCC.sh   --without-debug --with-mt --without-runpath --with-flat-makefile
+
+
+#USE_COMPONENTS
