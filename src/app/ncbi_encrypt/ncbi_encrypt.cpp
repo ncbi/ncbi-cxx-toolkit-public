@@ -130,9 +130,8 @@ void CNcbiEncryptApp::GenerateKey(void)
         }
     }
     string key = CNcbiEncrypt::GenerateKey(seed);
-    string checksum = CNcbiEncrypt::GetKeyChecksum(key);
     CNcbiOstream& out = args["o"].AsOutputFile();
-    out << checksum << ':' << key;
+    out << key;
     if ( args["severity"] ) {
         out << "/" << args["severity"].AsString();
     }
