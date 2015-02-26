@@ -1231,7 +1231,9 @@ string CNcbiApplication::FindProgramExecutablePath
             }
         }
     }
-    ret_val = CDirEntry::NormalizePath(app_path.empty() ? argv[0] : app_path);
+    ret_val = CDirEntry::NormalizePath
+        ((app_path.empty() && argv != NULL && argv[0] != NULL) ? argv[0]
+         : app_path);
 
 #else  // defined (NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
