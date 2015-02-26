@@ -2765,6 +2765,7 @@ dbprrow(DBPROCESS * dbproc)
 	while ((status = dbnextrow(dbproc)) != NO_MORE_ROWS) {
 
 		if (status == FAIL) {
+            free(col_printlens);
 			return FAIL;
 		}
 
@@ -3299,6 +3300,7 @@ dbsetmaxprocs(int maxprocs)
 	/* do not restrict too much, i here contains minimun size */
 	if (maxprocs < i)
 		maxprocs = i;
+    assert(maxprocs > 0);
 
 	/*
 	 * Don't reallocate less memory.

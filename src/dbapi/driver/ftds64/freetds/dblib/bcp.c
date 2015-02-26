@@ -481,7 +481,7 @@ bcp_colfmt(DBPROCESS * dbproc, int host_colnum, int host_type, int host_prefixle
 	hostcol->datatype = host_type;
 	hostcol->prefix_len = host_prefixlen;
 	hostcol->column_len = host_collen;
-	if (host_term && host_termlen >= 0) {
+    if (host_term && host_termlen > 0) {
 		hostcol->terminator = (BYTE *) malloc(host_termlen);
 		memcpy(hostcol->terminator, host_term, host_termlen);
 	}
@@ -1476,6 +1476,7 @@ _bcp_measure_terminated_field(FILE * hostfile, BYTE * terminator, int term_len)
 					sample_size--;
 					if (0 != fseeko(hostfile, -sample_size, SEEK_CUR)) {
 						/* FIXME emit message */
+                        free(sample);
 						return -1;
 					}
 				}
@@ -2206,6 +2207,7 @@ _bcp_start_copy_in(DBPROCESS * dbproc)
 		tdsdump_log(TDS_DBG_FUNC, "current_record_size = %d\n", dbproc->bcpinfo->bindinfo->row_size);
 		tdsdump_log(TDS_DBG_FUNC, "bcp_record_size     = %d\n", bcp_record_size);
 
+        assert(dbproc->bcpinfo->bindinfo->row_size >= 0);
 		if (bcp_record_size > dbproc->bcpinfo->bindinfo->row_size) {
 			dbproc->bcpinfo->bindinfo->current_row = realloc(dbproc->bcpinfo->bindinfo->current_row, bcp_record_size);
 			if (dbproc->bcpinfo->bindinfo->current_row == NULL) {
@@ -2984,8 +2986,10 @@ bcp_bind(DBPROCESS * dbproc, BYTE * varaddr, int prefixlen, DBINT varlen,
 	colinfo->column_varaddr  = (char *)varaddr;
 	colinfo->column_bindtype = vartype;
 	colinfo->column_bindlen  = varlen;
-	colinfo->bcp_terminator =  malloc(termlen);
-	memcpy(colinfo->bcp_terminator, terminator, termlen);
+    if (termlen > 0) {
+        colinfo->bcp_terminator = malloc(termlen);
+        memcpy(colinfo->bcp_terminator, terminator, termlen);
+    }
 	colinfo->bcp_term_len = termlen;
 
 	return SUCCEED;

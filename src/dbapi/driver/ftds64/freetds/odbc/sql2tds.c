@@ -264,7 +264,7 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 		len = 0;
 		break;
 	case SQL_NTS:
-		len = strlen(src);
+        len = src ? strlen(src) : 0;
 		break;
 	case SQL_DEFAULT_PARAM:
 	case SQL_DATA_AT_EXEC:
@@ -312,6 +312,9 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 		return TDS_SUCCEED;
 	}
 
+    if (src == NULL) {
+        return SQL_ERROR;
+    }
 	/* convert special parameters (not libTDS compatible) */
 	switch (src_type) {
 	case SYBDATETIME:

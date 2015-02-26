@@ -1371,7 +1371,7 @@ SQLConnect(SQLHDBC hdbc, SQLCHAR FAR * szDSN, SQLSMALLINT cbDSN, SQLCHAR FAR * s
 	}
 
 	/* data source name */
-	if (szDSN || (*szDSN))
+    if (szDSN && (*szDSN))
 		tds_dstr_copyn(&dbc->dsn, (const char *) szDSN, odbc_get_string_size(cbDSN, szDSN));
 	else
 		tds_dstr_copy(&dbc->dsn, "DEFAULT");
@@ -1694,12 +1694,15 @@ SQLRETURN SQL_API
 SQLDisconnect(SQLHDBC hdbc)
 {
 	int i;
+    struct _hstmt *stmt, *next;
 
 	INIT_HDBC;
 
 	/* free all associated statements */
-	while (dbc->stmt_list)
+    for (stmt = dbc->stmt_list;  stmt != NULL;  stmt = next) {
+        next = stmt->next;
 		_SQLFreeStmt(dbc->stmt_list, SQL_DROP, 1);
+    }
 
 	/* free all associated descriptors */
 	for (i = 0; i < TDS_MAX_APP_DESC; ++i) {
@@ -4356,6 +4359,9 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType, SQLPOINTER rgbInfoValue, SQLSMA
 		break;
 #endif /* ODBCVER >= 0x0300 */
 	case SQL_DBMS_NAME:
+        if (tds == NULL) {
+            return SQL_ERROR;
+        }
 		p = tds->product_name;
 		break;
 	case SQL_DBMS_VER:
