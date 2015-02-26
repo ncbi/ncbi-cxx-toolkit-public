@@ -670,6 +670,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_BioProject, "http://www.ncbi.nlm.nih.gov/bioproject/" },
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
+    { CDbtag::eDbtagType_SRA, "http://www.ncbi.nlm.nih.gov/sra/" },
     { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_EnsemblGenomes, "http://ensemblgenomes.org/id/" },
     { CDbtag::eDbtagType_TubercuList, "http://tuberculist.epfl.ch/quicksearch.php?gene+name=" },
