@@ -50,23 +50,72 @@ BEGIN_NCBI_SCOPE
 //  Utility finctions
 //
 
+
 // Forward declarations
 void CalcMD5(const char* data, size_t len, unsigned char* digest);
-string x_BlockTEA_Encode(const string& str_key, const string& src);
-string x_BlockTEA_Decode(const string& str_key, const string& src);
+
+string x_BlockTEA_Encode(const string& str_key,
+                         const string& src,
+                         size_t block_size);
+string x_BlockTEA_Decode(const string& str_key,
+                         const string& src,
+                         size_t block_size);
 
 
 namespace {
 
-// Get encoded and hex-formatted string
-inline string EncodeString(const string& s, const string& pwd)
+inline char Hex(unsigned char c)
 {
-    return CNcbiEncrypt::BinToHex(BlockTEA_Encode(pwd, s));
+    if (c < 10) return c + '0';
+    return c - 10 + 'A';
+}
+
+
+// Convert binary data to a printable hexadecimal string.
+string BinToHex(const string& data)
+{
+    string ret;
+    ret.reserve(data.size()*2);
+    ITERATE(string, c, data) {
+        ret += Hex((unsigned char)(*c) >> 4);
+        ret += Hex((unsigned char)(*c) & 0x0f);
+    }
+    return ret;
+}
+
+
+// Convert hexadecimal string to binary data. Throw CNcbiEncryptException
+// if string format is not valid.
+string HexToBin(const string& hex)
+{
+    string ret;
+    _ASSERT(hex.size() % 2 == 0);
+    ret.reserve(hex.size()/2);
+    ITERATE(string, h, hex) {
+        char c1 = NStr::HexChar(*h);
+        h++;
+        char c2 = NStr::HexChar(*h);
+        if (c1 < 0  ||  c2 < 0) {
+            NCBI_THROW(CNcbiEncryptException, eBadFormat,
+                "Invalid hexadecimal string format: " + hex);
+            return kEmptyStr;
+        }
+        ret += ((c1 << 4) + c2);
+    }
+    return ret;
 }
 
 
 // Use 128-bit key
 const int kBlockTEA_KeySize = 4;
+
+// Block size is a multiple of key size. The longer the better (hides
+// the source length).
+// For historical reasons block sizes for NCBI resources and encryption
+// API are different.
+const int kResInfo_BlockSize = kBlockTEA_KeySize*sizeof(Int4)*4;
+const int kEncrypt_BlockSize = kBlockTEA_KeySize*sizeof(Int4);
+
 
 // Helper function converting a seed string to a 128 bit binary key.
 string GenerateBinaryKey(const string& seed)
@@ -89,6 +138,30 @@ string GenerateBinaryKey(const string& seed)
         CalcMD5(digest, 36, (unsigned char*)digest);
     }
     return string(digest, kBlockTEA_KeySize*sizeof(Int4)); // 16 bytes
+}
+
+
+string BlockTEA_Encode(const string& password,
+                       const string& src,
+                       size_t        block_size)
+{
+    return x_BlockTEA_Encode(GenerateBinaryKey(password), src, block_size);
+}
+
+
+string BlockTEA_Decode(const string& password,
+                       const string& src,
+                       size_t        block_size)
+{
+    return x_BlockTEA_Decode(GenerateBinaryKey(password), src, block_size);
+}
+
+
+// Get encoded and hex-formatted string, to be used for resource-info
+// only!
+inline string EncodeString(const string& s, const string& pwd)
+{
+    return BinToHex(BlockTEA_Encode(pwd, s, kResInfo_BlockSize));
 }
 
 } // namespace
@@ -277,7 +350,7 @@ string CNcbiResourceInfoFile::x_GetDataPassword(const string& name_pwd,
     // same value.
     // Name and password are swapped (name is used as encryption key)
     // so that the result is not equal to the encoded resource name.
-    return BlockTEA_Encode(res_name, name_pwd);
+    return BlockTEA_Encode(res_name, name_pwd, kResInfo_BlockSize);
 }
 
 
@@ -305,7 +378,7 @@ CNcbiResourceInfo::CNcbiResourceInfo(const string& res_name,
     // If it's not set, we are creating a new resource info
     // and values will be set later.
     if ( !enc.empty() ) {
-        string dec = BlockTEA_Decode(pwd, CNcbiEncrypt::HexToBin(enc));
+        string dec = BlockTEA_Decode(pwd, HexToBin(enc), kResInfo_BlockSize);
         if ( dec.empty() ) {
             // Error decoding data
             NCBI_THROW(CNcbiResourceInfoException, eDecrypt,
@@ -338,7 +411,7 @@ string CNcbiResourceInfo::x_GetEncoded(void) const
     string str = NStr::URLEncode(m_Value) +
         kResourceExtraSeparator +
         m_Extra.Merge();
-    return CNcbiEncrypt::BinToHex(BlockTEA_Encode(m_Password, str));
+    return BinToHex(BlockTEA_Encode(m_Password, str, kResInfo_BlockSize));
 }
 
 
@@ -350,6 +423,8 @@ string CNcbiResourceInfo::x_GetEncoded(void) const
 // The default keys file if present in the user's home directory.
 const char* kDefaultKeysFile = ".ncbi_keys";
 const char* kDefaultKeysPath = "/opt/ncbi/config";
+const char* kKeysDomainPrefix = ".ncbi_keys.";
+const char* kNcbiEncryptVersion = "1";
 
 // Key files to cache in memory.
 NCBI_PARAM_DECL(string, NCBI_KEY, FILES);
@@ -370,6 +445,13 @@ CSafeStatic<string> CNcbiEncrypt::s_DefaultKey;
 volatile bool CNcbiEncrypt::s_KeysInitialized = false;
 
 DEFINE_STATIC_MUTEX(s_EncryptMutex);
+
+
+const char* CNcbiEncrypt::GetVersion(void)
+{
+    return kNcbiEncryptVersion;
+}
+
 
 string CNcbiEncrypt::Encrypt(const string& original_string)
 {
@@ -408,7 +490,7 @@ string CNcbiEncrypt::Encrypt(const string& original_string,
         NCBI_THROW(CNcbiEncryptException, eBadPassword,
             "Encryption password can not be empty.");
     }
-    return BinToHex(BlockTEA_Encode(password, original_string));
+    return x_Encrypt(original_string, GenerateBinaryKey(password));
 }
 
 
@@ -419,7 +501,13 @@ string CNcbiEncrypt::Decrypt(const string& encrypted_string,
         NCBI_THROW(CNcbiEncryptException, eBadPassword,
             "Encryption password can not be empty.");
     }
-    return BlockTEA_Decode(password, HexToBin(encrypted_string));
+    TKeyMap keys;
+    string key = GenerateBinaryKey(password);
+    char md5[16];
+    CalcMD5(key.c_str(), key.size(), (unsigned char*)md5);
+    keys[string(md5, 16)] =
+        SEncryptionKeyInfo(key, eDiag_Trace, kEmptyStr, 0, *kNcbiEncryptVersion);
+    return x_Decrypt(encrypted_string, keys);
 }
 
 
@@ -463,52 +551,9 @@ string CNcbiEncrypt::DecryptForDomain(const string& encrypted_string,
 string CNcbiEncrypt::GenerateKey(const string& seed)
 {
     // This method is just a helper for storing keys as hexadecimal strings.
-    return BinToHex(GenerateBinaryKey(seed));
-}
-
-
-string CNcbiEncrypt::GetKeyChecksum(const string& key)
-{
-    return x_GetBinKeyChecksum(HexToBin(key));
-}
-
-
-inline char Hex(unsigned char c)
-{
-    if (c < 10) return c + '0';
-    return c - 10 + 'A';
-}
-
-
-string CNcbiEncrypt::BinToHex(const string& data)
-{
-    string ret;
-    ret.reserve(data.size()*2);
-    ITERATE(string, c, data) {
-        ret += Hex((unsigned char)(*c) >> 4);
-        ret += Hex((unsigned char)(*c) & 0x0f);
-    }
-    return ret;
-}
-
-
-string CNcbiEncrypt::HexToBin(const string& hex)
-{
-    string ret;
-    _ASSERT(hex.size() % 2 == 0);
-    ret.reserve(hex.size()/2);
-    ITERATE(string, h, hex) {
-        char c1 = NStr::HexChar(*h);
-        h++;
-        char c2 = NStr::HexChar(*h);
-        if (c1 < 0  ||  c2 < 0) {
-            NCBI_THROW(CNcbiEncryptException, eBadFormat,
-                "Invalid hexadecimal string format: " + hex);
-            return kEmptyStr;
-        }
-        ret += ((c1 << 4) + c2);
-    }
-    return ret;
+    string key = GenerateBinaryKey(seed);
+    string checksum = x_GetBinKeyChecksum(key);
+    return kNcbiEncryptVersion + checksum + ":" + BinToHex(key);
 }
 
 
@@ -576,14 +621,21 @@ string CNcbiEncrypt::x_LoadKeys(const string& filename, TKeyMap* keys)
         NStr::TruncateSpacesInPlace(s);
         // Ignore empty lines and comments.
         if (s.empty() || s[0] == '#') continue;
+        
+        char version = s[0];
+        if (version != '1') {
+            NCBI_THROW(CNcbiEncryptException, eBadVersion,
+                "Invalid or unsupported API version in encryption key.");
+        }
+
         string checksum, key;
         if ( !NStr::SplitInTwo(s, ":", checksum, key)  ||
-            checksum.size() != 32 ) {
+            checksum.size() != 33 ) {
             ERR_POST(Warning <<
-                "Invalid checksum/key format in " << filename << ", line " << line);
+                "Invalid encryption key format in " << filename << ", line " << line);
             continue;
         }
-        checksum = HexToBin(checksum);
+        checksum = HexToBin(checksum.substr(1));
 
         EDiagSev sev = eDiag_Trace;
         size_t sevpos = key.find('/');
@@ -619,7 +671,7 @@ string CNcbiEncrypt::x_LoadKeys(const string& filename, TKeyMap* keys)
             // Found the first key, no need to parse the rest of the file.
             break;
         }
-        (*keys)[checksum] = SEncryptionKeyInfo(key, sev, filename, line);
+        (*keys)[checksum] = SEncryptionKeyInfo(key, sev, filename, line, version);
     }
     return first_key;
 }
@@ -635,7 +687,7 @@ string CNcbiEncrypt::x_GetDomainKeys(const string& domain, TKeyMap* keys)
         if (path == "$$") {
             path = kDefaultKeysPath;
         }
-        string fname = CDirEntry::MakePath(*it, domain);
+        string fname = CDirEntry::MakePath(*it, kKeysDomainPrefix + domain);
         string res = x_LoadKeys(fname, keys);
         if ( first_key.empty() ) {
             first_key = res;
@@ -645,6 +697,11 @@ string CNcbiEncrypt::x_GetDomainKeys(const string& domain, TKeyMap* keys)
             break;
         }
     }
+    if ( keys ) {
+        // Reset severity of the first key to Trace so that it's not reported.
+        string first_checksum = x_GetBinKeyChecksum(first_key);
+        (*keys)[first_checksum].m_Severity = eDiag_Trace;
+    }
     return first_key;
 }
 
@@ -653,19 +710,34 @@ string CNcbiEncrypt::x_Encrypt(const string& data, const string& key)
 {
     _ASSERT(!key.empty());
     string checksum = x_GetBinKeyChecksum(key);
-    return checksum + ":" + BinToHex(x_BlockTEA_Encode(key, data));
+    return kNcbiEncryptVersion +
+        checksum + ":" +
+        BinToHex(x_BlockTEA_Encode(key, data, kEncrypt_BlockSize));
 }
 
 
 string CNcbiEncrypt::x_Decrypt(const string& data, const TKeyMap& keys)
 {
+    if (data.empty()) {
+        NCBI_THROW(CNcbiEncryptException, eBadFormat,
+            "Trying to decrypt an empty string.");
+    }
+
+    // API version
+    char version = data[0];
+    if (version != '1') {
+        NCBI_THROW(CNcbiEncryptException, eBadVersion,
+            "Invalid or unsupported API version in the encrypted data.");
+    }
+
     // Parse the encrypted string, find key checksum.
-    // The checksum is in the first 16 bytes (32 hex chars), separated with a colon.
-    if (data.size() < 33  ||  data[32] != ':') {
+    // The checksum is in the 16 bytes following version (32 hex chars),
+    // separated with a colon.
+    if (data.size() < 34  ||  data[33] != ':') {
         NCBI_THROW(CNcbiEncryptException, eBadFormat,
             "Invalid encrypted string format - missing key checksum.");
     }
-    string checksum = HexToBin(data.substr(0, 32));
+    string checksum = HexToBin(data.substr(1, 32));
     TKeyMap::const_iterator key_it = keys.find(checksum);
     if (key_it == keys.end()) {
         NCBI_THROW(CNcbiEncryptException, eMissingKey,
@@ -683,7 +755,7 @@ string CNcbiEncrypt::x_Decrypt(const string& data, const TKeyMap& keys)
     // Domain must be parsed by the caller.
     _ASSERT(data.find('/') == NPOS);
     _ASSERT(!key.empty());
-    return x_BlockTEA_Decode(key, HexToBin(data.substr(33)));
+    return x_BlockTEA_Decode(key, HexToBin(data.substr(34)), kEncrypt_BlockSize);
 }
 
 
@@ -695,9 +767,6 @@ string CNcbiEncrypt::x_Decrypt(const string& data, const TKeyMap& keys)
 namespace { // Hide the implementation
 
 const Uint4 kBlockTEA_Delta = 0x9e3779b9;
-// Block size is a multiple of key size. The longer the better (hides
-// the source length).
-const int kBlockTEA_BlockSize = kBlockTEA_KeySize*sizeof(Int4)*4;
 
 typedef Int4 TBlockTEA_Key[kBlockTEA_KeySize];
 
@@ -800,23 +869,10 @@ string Int4ArrayToString(const Int4* src, size_t len)
 } // namespace
 
 
-string BlockTEA_Encode(const string& password,
-                       const string& src)
-{
-    return x_BlockTEA_Encode(GenerateBinaryKey(password), src);
-}
-
-
-string BlockTEA_Decode(const string& password,
-                       const string& src)
-{
-    return x_BlockTEA_Decode(GenerateBinaryKey(password), src);
-}
-
-
 // The string key must contain a 128-bit value.
 string x_BlockTEA_Encode(const string& str_key,
-                         const string& src)
+                         const string& src,
+                         size_t        block_size)
 {
     if ( src.empty() ) {
         return kEmptyStr;
@@ -831,7 +887,7 @@ string x_BlockTEA_Encode(const string& str_key,
     // Add padding so that the src length is a multiple of key size.
     // Padding is always present even if the string size is already good -
     // this is necessary to remove it correctly after decoding.
-    size_t padlen = kBlockTEA_BlockSize - (src.size() % kBlockTEA_BlockSize);
+    size_t padlen = block_size - (src.size() % block_size);
     string padded = string(padlen, char(padlen)) + src;
     _ASSERT(padded.size() % sizeof(Int4) == 0);
     // Convert source string to array of integers
@@ -851,7 +907,8 @@ string x_BlockTEA_Encode(const string& str_key,
 
 // The string key must contain a 128-bit value.
 string x_BlockTEA_Decode(const string& str_key,
-                         const string& src)
+                         const string& src,
+                         size_t        block_size)
 {
     if ( src.empty() ) {
         return kEmptyStr;
@@ -862,7 +919,7 @@ string x_BlockTEA_Decode(const string& str_key,
     TBlockTEA_Key key;
     StringToInt4Array(str_key, key);
 
-    _ASSERT(src.size() % kBlockTEA_BlockSize == 0);
+    _ASSERT(src.size() % block_size == 0);
     // Convert source string to array of integers
     size_t buflen = src.size() / sizeof(Int4);
     Int4* buf = new Int4[buflen];

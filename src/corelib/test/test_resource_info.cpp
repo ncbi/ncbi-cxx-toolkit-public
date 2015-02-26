@@ -141,37 +141,34 @@ int CResInfoTest::Run(void)
     // Test string encryption/decrypton using an explicit password.
     string data = "Test CNcbiEncrypt class";
     string key = CNcbiEncrypt::GenerateKey("foobar");
-    _ASSERT(key == "0AA2C441A5F2F3DB7E9565E9349C18AB");
-    string checksum = CNcbiEncrypt::GetKeyChecksum(key);
-    _ASSERT(checksum == "BCB50C9A5FC53A1608242FE827BAE228");
+    _ASSERT(key == "1BCB50C9A5FC53A1608242FE827BAE228:0AA2C441A5F2F3DB7E9565E9349C18AB");
     string encr = CNcbiEncrypt::Encrypt(data, "foobar");
-    _ASSERT(encr == "E02EC2D472FEA8A346D24E87680C34DF9ADC038C04184BEB2911CB523D0CC5154540D39BCD7138F9D9430950E3127D43D0B92365D944384AD236238DFA7EEC0F");
+    _ASSERT(encr == "1BCB50C9A5FC53A1608242FE827BAE228:A8F7030E91CCF4E5FDF7C0F3F734BEBBDA2AAB8583729E9E5F438D1E569F2F21");
     string decr = CNcbiEncrypt::Decrypt(encr, "foobar");
     _ASSERT(decr == data);
 
     // Test decryption using ncbi keys file, the key is a non-default one
-    // (not the first key in the file). To do this add checksum to the
-    // encrypted data.
-    decr = CNcbiEncrypt::Decrypt(checksum + ":" + encr);
+    // (not the first key in the file).
+    decr = CNcbiEncrypt::Decrypt(encr);
     _ASSERT(decr == data);
 
     // Test automatic key selection.
     encr = CNcbiEncrypt::Encrypt(data);
-    _ASSERT(encr == "EA5F4753A86C69EACEDE867587A25D5D:B473B8AFF18B9CD8E6205DDF9030CA2527A5B5B03E22E04BF4035F0CD212DCE4D78A1EAECF8420889542277D18F9CE51386B49A7F734A6927E08A3703E7AFC5F");
+    _ASSERT(encr == "1E5606B599D707645329ABE4E0E3F6AC9:52CE4D659462C9ABA48CF7588D8E1FD9D5CD52EFCE578B0A40AF9B4D1208CF9F");
     decr = CNcbiEncrypt::Decrypt(encr);
     _ASSERT(decr == data);
 
     // Test domain encryption.
-    encr = CNcbiEncrypt::EncryptForDomain(data, ".ncbi_test_domain");
-    _ASSERT(encr == "70FB315127FA94AE8903ADE084F2F67B:7486292AA9212CCDF8DDE1AB6C824CB487D51A0E71557D22CE2AF5F941B8AF0C70EACDBAA0040CEA783B82663218EA159F44081857F36E7E59BE272615420786/.ncbi_test_domain");
+    encr = CNcbiEncrypt::EncryptForDomain(data, "domain");
+    _ASSERT(encr == "11BDF0BA7079A8C2BD6656D3CF2D79160:3F7930D402567001F058086D263539596792628CEEF15AFE9D7E84FCD9C7BC14/domain");
     // Automatic domain key selection.
     decr = CNcbiEncrypt::Decrypt(encr);
     _ASSERT(decr == data);
     // Explicit domain
-    decr = CNcbiEncrypt::DecryptForDomain(encr, ".ncbi_test_domain");
+    decr = CNcbiEncrypt::DecryptForDomain(encr, "domain");
     _ASSERT(decr == data);
     // Two domains
-    decr = CNcbiEncrypt::DecryptForDomain(encr, ".ncbi_test_domain2");
+    decr = CNcbiEncrypt::DecryptForDomain(encr, "domain2");
     _ASSERT(decr == data);
 
     cout << "All tests passed" << endl;

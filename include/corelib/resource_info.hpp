@@ -181,10 +181,6 @@ class NCBI_XNCBI_EXPORT CNcbiEncrypt
 {
 public:
     /// Encrypt a string using key from the 1st line of the 1st NCBI keys file.
-    /// @note The encrypted string has format:
-    ///         "key_checksum:encrypted_orig_string";
-    ///       the "key_checksum" part is later utilized to match the key that
-    ///       was used to encrypt the original string.
     /// @note The key must be generated using GenerateKey() method.
     /// @param original_string
     ///   The string to encrypt
@@ -193,15 +189,15 @@ public:
     static string Encrypt(const string& original_string);
 
     /// Decrypt a string using the matching key found in the NCBI keys files.
-    /// @note It looks up for the matching key (using "key_checksum" part of
-    ///       "encrypted_string") in all NCBI keys files.
+    /// @note It looks up for the matching key (using key checksum stored
+    ///       in the "encrypted_string") in all NCBI keys files.
     ///
     /// @note The key must be generated using GenerateKey() method.
     /// @param encrypted_string
     ///   The string to decrypt. The string may contain domain suffix,
-    ///   e.g. "<checksum>:<encrypted data>/domain". In this case the function
-    ///   will try to find the decryption key for the specified domain rather
-    ///   than use the usual set of keys.
+    ///   separated by slash ("<encrypted data>/<domain>"). In this case
+    ///   the function will try to find the decryption key for the specified
+    ///   domain rather than use the usual set of keys.
     /// @return
     ///   Decrypted string
     /// @sa DecryptForDomain
@@ -233,13 +229,13 @@ public:
                           const string& password);
 
     /// Encrypt data using domain key. Search NCBI_KEY_PATHS for a
-    /// file with the specified domain name, load the first key from
+    /// keys file for the specified domain, load the first key from
     /// the file and use it for encryption. If no domain file is found
     /// in the paths, throw exception.
     /// @param original_string
     ///   The string to encrypt
     /// @param domain
-    ///   Domain file (relative to the paths from NCBI_KEY_PATHS) to read keys from.
+    ///   Keys domain. The corresponding keys file name is ".ncbi_keys.<domain>".
     /// @return
     ///   Data encrypted using the first key from the first available domain file.
     ///   The encrypted data include domain suffix which can be used for automatic
@@ -248,14 +244,14 @@ public:
                                    const string& domain);
 
     /// Decrypt data using domain key. Search NCBI_KEY_PATHS for a
-    /// fine with the specified domain name, find a key for the
-    /// checksum (from the encrypted string prefix), use it for
+    /// keys file for the specified domain, find a key for the
+    /// checksum (stored in the encrypted string), use it for
     /// decryption. If no domain file is found, throw exception.
     /// @param encrypted_string
     ///   The string to decrypt. If the string includes domain suffix, it is
     ///   checked as well as the domain passed as the second argument.
     /// @param domain
-    ///   Domain file (relative to the paths from NCBI_KEY_PATHS) to read keys from.
+    ///   Keys domain. The corresponding keys file name is ".ncbi_keys.<domain>".
     /// @return
     ///   Decrypted string.
     static string DecryptForDomain(const string& encrypted_string,
@@ -270,39 +266,34 @@ public:
     ///   Hexadecimal string representation of the key.
     static string GenerateKey(const string& seed);
 
-    /// Get checksum for a key.
-    /// @param key
-    ///   Hexadecimal string (e.g. returned by GenerateKey).
-    /// @return
-    ///   Hexadecimal representation of the key checksum.
-    static string GetKeyChecksum(const string& key);
-
-    /// Convert binary data to a printable hexadecimal string.
-    static string BinToHex(const string& data);
-
-    /// Convert hexadecimal string to binary data. Throw CNcbiEncryptException
-    /// if string format is not valid.
-    static string HexToBin(const string& hex);
+    /// Get encryption API version.
+    static const char* GetVersion(void);
 
 private:
     // Encryption key info
     struct SEncryptionKeyInfo
     {
         SEncryptionKeyInfo(void)
-            : m_Severity(eDiag_Trace), m_Line(0)
+            : m_Severity(eDiag_Trace), m_Line(0), m_Version(0)
         {}
 
         SEncryptionKeyInfo(const string& key,
                            EDiagSev      sev,
                            const string& file,
-                           size_t        line)
-            : m_Key(key), m_Severity(sev), m_File(file), m_Line(line)
+                           size_t        line,
+                           char          ver)
+            : m_Key(key),
+              m_Severity(sev),
+              m_File(file),
+              m_Line(line),
+              m_Version(ver)
         {}
 
         string   m_Key;
         EDiagSev m_Severity;
         string   m_File;
         size_t   m_Line;
+        char     m_Version; // API version
     };
     
     // Key storage
@@ -363,7 +354,8 @@ public:
         eMissingKey,   //< No keys found
         eBadPassword,  //< Bad password string (empty password).
         eBadFormat,    //< Invalid encrypted string format
-        eBadDomain     //< Bad keys domain provided.
+        eBadDomain,    //< Bad keys domain provided.
+        eBadVersion    //< Bad API version in the data.
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -373,6 +365,7 @@ public:
         case eBadPassword:  return "eBadPassword";
         case eBadFormat:    return "eBadFormat";
         case eBadDomain:    return "eBadDomain";
+        case eBadVersion:   return "eBadVersion";
         default:         return CException::GetErrCodeString();
         }
     }
@@ -380,14 +373,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNcbiEncryptException, CException);
 };
 
-
-/// Encrypt the string using XXTEA and the password.
-NCBI_XNCBI_EXPORT string BlockTEA_Encode(const string& password,
-                                         const string& src);
-// Decrypt the string using XXTEA and the password. Return empty
-/// string on error.
-NCBI_XNCBI_EXPORT string BlockTEA_Decode(const string& password,
-                                         const string& src);
 
 END_NCBI_SCOPE
 
