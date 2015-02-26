@@ -11,7 +11,8 @@
 
 # USE_DEFAULT_COMPONENTS
 
-LIB: ncbi_panfs
+LIB: libncbi_panfs.so
+POSTBUILD: mv $installdir/lib/libncbi_panfs.so $installdir/lib/ncbi_panfs.so
 
 # The -t key prevents inclusion of the tree builder into the release
 # SVN_TAG_RELEASE_ADD_FLAGS: -t
