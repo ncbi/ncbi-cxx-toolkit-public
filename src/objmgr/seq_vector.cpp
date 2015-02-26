@@ -556,6 +556,9 @@ void x_Append2To2(string& dst, char& dst_c, TSeqPos dst_pos,
             // that the next dst_pos is aligned to 4.
             TSeqPos chunk = min(count, TSeqPos(kBufferSize-(dst_pos&3)));
             copy_2bit(buffer, chunk, src, src_pos);
+            // Array buffer[] is properly initialized in copy_2bit()
+            // but Clang static analyzer fails to notice it
+            // and issues false warning inside x_Append8To2() call.
             x_Append8To2(dst, dst_c, dst_pos, buffer, chunk);
             dst_pos += chunk;
             src_pos += chunk;
