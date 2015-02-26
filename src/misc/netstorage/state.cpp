@@ -736,7 +736,7 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     // No real locations, only CNotFound
     if (m_Locations.size() == 1) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "No storages available available for locator=\"" <<
+                "No storages available for locator=\"" <<
                 m_ObjectLoc.GetLocator() << "\" and flags=" << flags);
     }
 }
