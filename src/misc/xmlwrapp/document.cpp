@@ -568,6 +568,8 @@ void xml::document::save_to_string (std::string &s,
                                     save_option_flags flags) const {
     int compression_level = flags & 0xFFFF;
 
+    s.clear();
+
     // Compression level is currently not analyzed by libxml2
     // So this might work in the future implementations but is ignored now.
 

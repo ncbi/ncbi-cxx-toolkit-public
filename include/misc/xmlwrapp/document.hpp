@@ -647,8 +647,7 @@ public:
      * Convert the XML document tree into XML text data and place it into
      * the given string.
      *
-     * @param s The string to place the XML text data (the string is not
-     *          cleared; the content is appended to the string).
+     * @param s The string to place the XML text data (the string is cleared)
      * @param flags
      *        Bitwise mask of the save options. Does not affect XSLT result.
      *        documents.

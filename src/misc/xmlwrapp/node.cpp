@@ -1415,8 +1415,8 @@ void xml::node::sort_fo (cbfo_node_compare &cb) {
                   insert_node(pimpl_->xmlnode_));
 }
 //####################################################################
-void xml::node::node_to_string (std::string &xml,
-                                save_option_flags flags) const {
+void xml::node::append_to_string (std::string &xml,
+                                  save_option_flags flags) const {
     int compression_level = flags & 0xFFFF;
     node2doc n2d(pimpl_->xmlnode_);
     xmlDocPtr doc = n2d.get_doc();
@@ -1438,7 +1438,17 @@ void xml::node::node_to_string (std::string &xml,
         xmlSaveDoc(ctxt, doc);
         xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
     }
-    return;
+}
+//####################################################################
+void xml::node::save_to_string (std::string &xml,
+                                save_option_flags flags) const {
+    xml.clear();
+    append_to_string(xml, flags);
+}
+//####################################################################
+void xml::node::node_to_string (std::string &xml,
+                                save_option_flags flags) const {
+    append_to_string(xml, flags);
 }
 //####################################################################
 node_set xml::node::convert_to_nset(void *  object_as_void) const {
