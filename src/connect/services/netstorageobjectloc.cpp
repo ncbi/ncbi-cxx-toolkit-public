@@ -388,7 +388,9 @@ void CNetStorageObjectLoc::x_Pack() const
     CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageObjectLoc);
 
     // Save locator flags.
-    cid.AppendFlags(m_LocatorFlags);
+    // If its location is not set yet, add "Movable", so the locator can be used
+    cid.AppendFlags(m_Location != eNFL_Unknown ?
+            m_LocatorFlags : (m_LocatorFlags | fLF_Movable));
 
     // Save NetStorage service name.
     if (m_LocatorFlags & fLF_NetStorageService)
