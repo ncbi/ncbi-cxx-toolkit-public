@@ -1395,7 +1395,7 @@ typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, TAttrTesting, S##LOC
 BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
         SFixture<T##ST##SRC##API##LOC##Policy>) \
 { \
-    Test(netstorage); \
+    /* Test(netstorage); */ \
 }
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
