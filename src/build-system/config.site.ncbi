@@ -96,6 +96,7 @@ esac
 
 case "$ncbi_platform" in
     Linux32    ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi3} ;;
+    Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.57.0-ncbi1} ;;
     SunOS*     ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
     *          ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
 esac
