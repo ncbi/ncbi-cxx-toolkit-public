@@ -39,7 +39,6 @@
 
 #include <connect/services/netstorage.hpp>
 #include <connect/services/netstorage_impl.hpp>
-#include <misc/netstorage/netstorage.hpp>
 
 #include <../src/misc/netstorage/filetrack.hpp>
 
@@ -97,6 +96,7 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
       m_ReadMode(CNetStorageHandler::eReadMessages),
       m_WriteBuffer(NULL),
       m_JSONWriter(m_UTTPWriter),
+      m_ObjectBeingWritten(eVoid),
       m_DataMessageSN(-1),
       m_MetadataOption(eMetadataNotSpecified),
       m_DBClientID(-1),
@@ -525,7 +525,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
                                     CNetStorageServerException::eWriteError,
                                     message);
         x_SendSyncMessage(response);
-        m_ObjectBeingWritten = NULL;
+        m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
     }
     catch (...) {
@@ -539,7 +539,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
                                     CNetStorageServerException::eWriteError,
                                     message);
         x_SendSyncMessage(response);
-        m_ObjectBeingWritten = NULL;
+        m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
     }
 }
@@ -574,7 +574,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                                     CNetStorageServerException::eWriteError,
                                     message);
         x_SendSyncMessage(response);
-        m_ObjectBeingWritten = NULL;
+        m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
         return;
     }
@@ -582,10 +582,9 @@ void CNetStorageHandler::x_SendWriteConfirmation()
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Update of the meta DB is required. It differs depending it was an
         // object creation or writing into an existing one.
-        string object_loc = m_ObjectBeingWritten.GetLoc();
-        CNetStorageObjectLoc      object_loc_struct(
-                m_Server->GetCompoundIDPool(),
-                object_loc);
+        const CNetStorageObjectLoc &   object_loc_struct =
+                                                m_ObjectBeingWritten.Locator();
+        string                         locator = object_loc_struct.GetLocator();
 
         if (m_CreateRequest) {
             // It was creating an object.
@@ -594,7 +593,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             try {
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
                         m_DBObjectID, object_loc_struct.GetUniqueKey(),
-                        object_loc, m_ObjectSize, m_DBClientID, m_CreateTTL);
+                        locator, m_ObjectSize, m_DBClientID, m_CreateTTL);
             } catch (const CException &  ex) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 CJsonNode   response = CreateErrorResponseMessage(
@@ -606,7 +605,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 ERR_POST(ex);
                 x_PrintMessageRequestStop();
 
-                m_ObjectBeingWritten = NULL;
+                m_ObjectBeingWritten = eVoid;
                 m_DataMessageSN = -1;
                 return;
             } catch (...) {
@@ -619,7 +618,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 ERR_POST("Unknown metadata information DB error");
                 x_PrintMessageRequestStop();
 
-                m_ObjectBeingWritten = NULL;
+                m_ObjectBeingWritten = eVoid;
                 m_DataMessageSN = -1;
                 return;
             }
@@ -629,14 +628,14 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 if (object_loc_struct.HasUserKey()) {
                     m_Server->GetDb().ExecSP_UpdateUserKeyObjectOnWrite(
                                         object_loc_struct.GetUniqueKey(),
-                                        object_loc, m_ObjectSize, m_DBClientID,
+                                        locator, m_ObjectSize, m_DBClientID,
                                         m_WriteServiceProps.GetTTL(),
                                         m_WriteServiceProps.GetProlongOnWrite(),
                                         m_WriteObjectExpiration);
                 } else {
                     m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
                                         object_loc_struct.GetUniqueKey(),
-                                        object_loc, m_ObjectSize, m_DBClientID,
+                                        locator, m_ObjectSize, m_DBClientID,
                                         m_WriteServiceProps.GetTTL(),
                                         m_WriteServiceProps.GetProlongOnWrite(),
                                         m_WriteObjectExpiration);
@@ -648,7 +647,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 ERR_POST(ex);
                 x_PrintMessageRequestStop();
 
-                m_ObjectBeingWritten = NULL;
+                m_ObjectBeingWritten = eVoid;
                 m_DataMessageSN = -1;
                 return;
             } catch (...) {
@@ -659,7 +658,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 ERR_POST("Unknown updating object meta info error");
                 x_PrintMessageRequestStop();
 
-                m_ObjectBeingWritten = NULL;
+                m_ObjectBeingWritten = eVoid;
                 m_DataMessageSN = -1;
                 return;
             }
@@ -668,7 +667,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
 
     x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
     x_PrintMessageRequestStop();
-    m_ObjectBeingWritten = NULL;
+    m_ObjectBeingWritten = eVoid;
     m_DataMessageSN = -1;
 }
 
@@ -1301,7 +1300,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     bool        need_db_access = true;
     if (m_MetadataOption != eMetadataMonitoring)
         need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
-    SObjectID   object_id = x_GetObjectKey(message);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
 
     // First source of data - MS SQL database at hand
     if (need_db_access) {
@@ -1316,13 +1315,13 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             TNSTDBValue<Int8>   write_count;
             TNSTDBValue<string> client_name;
             int                 status = m_Server->GetDb().
-                                            ExecSP_GetObjectFixedAttributes(
-                                                object_id.object_key,
-                                                expiration, creation,
-                                                obj_read, obj_write,
-                                                attr_read, attr_write,
-                                                read_count, write_count,
-                                                client_name);
+                                    ExecSP_GetObjectFixedAttributes(
+                                        direct_object.Locator().GetUniqueKey(),
+                                        expiration, creation,
+                                        obj_read, obj_write,
+                                        attr_read, attr_write,
+                                        read_count, write_count,
+                                        client_name);
 
             if (status != 0) {
                 // The record in the meta DB for the object is not found
@@ -1450,14 +1449,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 
     // Second source of data - remote object info
     try {
-        CNetStorage       net_storage(g_CreateNetStorage(
-                              CNetICacheClient(CNetICacheClient::eAppRegistry),
-                              kEmptyStr,
-                              0));
-        CNetStorageObject net_storage_object = net_storage.Open(
-                                                    object_id.object_loc);
-
-        CJsonNode         object_info = net_storage_object.GetInfo().ToJSON();
+        CJsonNode         object_info = direct_object.GetInfo().ToJSON();
 
         for (CJsonIterator it = object_info.Iterate(); it; ++it) {
             string      key = it.GetKey();
@@ -1507,13 +1499,14 @@ CNetStorageHandler::x_ProcessGetAttrList(
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID   object_id = x_GetObjectKey(message);
-    x_CheckObjectExpiration(object_id.object_key, true, reply);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    x_CheckObjectExpiration(object_key, true, reply);
 
     vector<string>  attr_names;
     int             status = m_Server->GetDb().ExecSP_GetAttributeNames(
-                                        object_id.object_key,
-                                        attr_names);
+                                        object_key, attr_names);
 
     if (status == 0) {
         // Everything is fine, the attribute is found
@@ -1644,12 +1637,14 @@ CNetStorageHandler::x_ProcessGetAttr(
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID   object_id = x_GetObjectKey(message);
-    x_CheckObjectExpiration(object_id.object_key, true, reply);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    x_CheckObjectExpiration(object_key, true, reply);
 
     string      value;
     int         status = m_Server->GetDb().ExecSP_GetAttribute(
-                                        object_id.object_key, attr_name,
+                                        object_key, attr_name,
                                         m_MetadataOption != eMetadataMonitoring,
                                         value);
 
@@ -1717,14 +1712,16 @@ CNetStorageHandler::x_ProcessSetAttr(
     m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID   object_id = x_GetObjectKey(message);
-    x_CheckObjectExpiration(object_id.object_key, true, reply);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    x_CheckObjectExpiration(object_key, true, reply);
 
     string      value = message.GetString("AttrValue");
 
     // The SP will throw an exception if an error occured
     int         status = m_Server->GetDb().ExecSP_AddAttribute(
-                                          object_id.object_key,
+                                          object_key,
                                           attr_name, value,
                                           m_DBClientID);
     if (status == -1) {
@@ -1775,11 +1772,13 @@ CNetStorageHandler::x_ProcessDelAttr(
     m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID   object_id = x_GetObjectKey(message);
-    x_CheckObjectExpiration(object_id.object_key, true, reply);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    x_CheckObjectExpiration(object_key, true, reply);
 
     int         status = m_Server->GetDb().ExecSP_DelAttribute(
-                                            object_id.object_key, attr_name);
+                                            object_key, attr_name);
 
     if (status == -1) {
         // Object is not found
@@ -1845,12 +1844,9 @@ CNetStorageHandler::x_ProcessCreate(
     x_SendSyncMessage(reply);
 
     if (m_ConnContext.NotNull() && !message.HasKey("ObjectLoc")) {
-        CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
-                                                  locator);
-
         GetDiagContext().Extra()
             .Print("ObjectLoc", locator)
-            .Print("ObjectKey", object_loc_struct.GetUniqueKey());
+            .Print("ObjectKey", m_ObjectBeingWritten.Locator().GetUniqueKey());
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1893,20 +1889,15 @@ CNetStorageHandler::x_ProcessWrite(
 
     CJsonNode           reply = CreateResponseMessage(
                                                 common_args.m_SerialNumber);
-    SObjectID           object_id = x_GetObjectKey(message);
+    m_ObjectBeingWritten = x_GetObject(message);
+    const CNetStorageObjectLoc &    object_locator =
+                                                m_ObjectBeingWritten.Locator();
+    string              object_key = object_locator.GetUniqueKey();
+    string              locator = object_locator.GetLocator();
     TNSTDBValue<CTime>  object_expiration;
     if (m_WriteCreateNeedMetaDBUpdate)
-        m_WriteObjectExpiration = x_CheckObjectExpiration(object_id.object_key,
+        m_WriteObjectExpiration = x_CheckObjectExpiration(object_key,
                                                           true, reply);
-
-    CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry),
-                          kEmptyStr,
-                          0));
-
-    m_ObjectBeingWritten = net_storage.Open(object_id.object_loc);
-
-    string          locator = m_ObjectBeingWritten.GetLoc();
 
     reply.SetString("ObjectLoc", locator);
     x_SendSyncMessage(reply);
@@ -1914,7 +1905,7 @@ CNetStorageHandler::x_ProcessWrite(
     if (m_ConnContext.NotNull() && !message.HasKey("ObjectLoc")) {
         GetDiagContext().Extra()
             .Print("ObjectLoc", locator)
-            .Print("ObjectKey", object_id.object_key);
+            .Print("ObjectKey", object_key);
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1956,21 +1947,16 @@ CNetStorageHandler::x_ProcessRead(
 
     CJsonNode           reply = CreateResponseMessage(
                                                 common_args.m_SerialNumber);
-    SObjectID           object_id = x_GetObjectKey(message);
+    CDirectNetStorageObject         direct_object = x_GetObject(message);
+    const CNetStorageObjectLoc &    object_locator = direct_object.Locator();
+    string                          object_key = object_locator.GetUniqueKey();
+    string                          locator = object_locator.GetLocator();
+
     TNSTDBValue<CTime>  object_expiration;
     if (need_meta_db_update)
-        object_expiration = x_CheckObjectExpiration(object_id.object_key,
-                                                    true, reply);
+        object_expiration = x_CheckObjectExpiration(object_key, true, reply);
     else if (m_MetadataOption == eMetadataMonitoring)
-        x_CheckObjectExpiration(object_id.object_key, false, reply);
-
-
-    CNetStorage         net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry),
-                          kEmptyStr,
-                          0));
-    CNetStorageObject   net_storage_object = net_storage.Open(
-                                                    object_id.object_loc);
+        x_CheckObjectExpiration(object_key, false, reply);
 
     x_SendSyncMessage(reply);
 
@@ -1981,8 +1967,8 @@ CNetStorageHandler::x_ProcessRead(
     Int8            total_bytes = 0;
 
     try {
-        while (!net_storage_object.Eof()) {
-            bytes_read = net_storage_object.Read(buffer, sizeof(buffer));
+        while (!direct_object.Eof()) {
+            bytes_read = direct_object.Read(buffer, sizeof(buffer));
 
             m_UTTPWriter.SendChunk(buffer, bytes_read, false);
 
@@ -1993,7 +1979,7 @@ CNetStorageHandler::x_ProcessRead(
             total_bytes += bytes_read;
         }
 
-        net_storage_object.Close();
+        direct_object.Close();
 
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     }
@@ -2010,8 +1996,8 @@ CNetStorageHandler::x_ProcessRead(
 
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRead(
-                object_id.object_key,
-                object_id.object_loc, total_bytes, m_DBClientID,
+                object_key,
+                locator, total_bytes, m_DBClientID,
                 service_properties.GetTTL(),
                 service_properties.GetProlongOnRead(),
                 object_expiration
@@ -2049,20 +2035,16 @@ CNetStorageHandler::x_ProcessDelete(
         need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
                                                        service_properties);
 
-    SObjectID       object_id = x_GetObjectKey(message);
-    int             status = 0;
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    int                         status = 0;
 
     if (need_meta_db_update) {
         // Meta information is required so delete from the DB first
-        status = m_Server->GetDb().ExecSP_RemoveObject(object_id.object_key);
+        status = m_Server->GetDb().ExecSP_RemoveObject(
+                    direct_object.Locator().GetUniqueKey());
     }
 
-    CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry),
-                          kEmptyStr,
-                          0));
-
-    net_storage.Remove(object_id.object_loc);
+    direct_object.Remove();
     m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -2119,20 +2101,17 @@ CNetStorageHandler::x_ProcessRelocate(
     }
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID       object_id = x_GetObjectKey(message);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
     if (need_meta_db_update)
-        x_CheckObjectExpiration(object_id.object_key, true, reply);
+        x_CheckObjectExpiration(object_key, true, reply);
 
-    CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry),
-                          kEmptyStr,
-                          0));
-    string          new_object_loc = net_storage.Relocate(object_id.object_loc,
-                                                          new_location_flags);
+    string          new_object_loc = direct_object.Relocate(new_location_flags);
 
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
-                                    object_id.object_key,
+                                    object_key,
                                     new_object_loc,
                                     m_DBClientID);
     }
@@ -2159,19 +2138,18 @@ CNetStorageHandler::x_ProcessExists(
     // It was decided to check the object expiration
     m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
 
-    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID       object_id = x_GetObjectKey(message);
+    CJsonNode                   reply = CreateResponseMessage(
+                                                    common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
 
     if (m_MetadataOption == eMetadataMonitoring)
-        x_CheckObjectExpiration(object_id.object_loc, false, reply);
+        x_CheckObjectExpiration(direct_object.Locator().GetUniqueKey(),
+                                false, reply);
     else if (x_DetectMetaDBNeedOnGetObjectInfo(message))
-        x_CheckObjectExpiration(object_id.object_loc, true, reply);
+        x_CheckObjectExpiration(direct_object.Locator().GetUniqueKey(),
+                                true, reply);
 
-    CNetStorage     net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry),
-                          kEmptyStr,
-                          0));
-    bool            exists = net_storage.Exists(object_id.object_loc);
+    bool            exists = direct_object.Exists();
 
     reply.SetBoolean("Exists", exists);
     x_SendSyncMessage(reply);
@@ -2188,20 +2166,16 @@ CNetStorageHandler::x_ProcessGetSize(
     m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eReader);
 
     CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID         object_id = x_GetObjectKey(message);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
 
     if (m_MetadataOption == eMetadataMonitoring)
-        x_CheckObjectExpiration(object_id.object_loc, false, reply);
+        x_CheckObjectExpiration(object_key, false, reply);
     else if (x_DetectMetaDBNeedOnGetObjectInfo(message))
-        x_CheckObjectExpiration(object_id.object_loc, true, reply);
+        x_CheckObjectExpiration(object_key, true, reply);
 
-    CNetStorage       net_storage(g_CreateNetStorage(
-                        CNetICacheClient(CNetICacheClient::eAppRegistry),
-                        kEmptyStr,
-                        0));
-    CNetStorageObject net_storage_object = net_storage.Open(
-                        object_id.object_loc);
-    Uint8             object_size = net_storage_object.GetSize();
+    Uint8             object_size = direct_object.GetSize();
 
     reply.SetInteger("Size", object_size);
     x_SendSyncMessage(reply);
@@ -2257,14 +2231,16 @@ CNetStorageHandler::x_ProcessSetExpTime(
     x_ValidateWriteMetaDBAccess(message);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    SObjectID   object_id = x_GetObjectKey(message);
-    x_CheckObjectExpiration(object_id.object_key, true, reply);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    x_CheckObjectExpiration(object_key, true, reply);
 
     m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
 
     // The SP will throw an exception if an error occured
     int         status = m_Server->GetDb().ExecSP_SetExpiration(
-                                object_id.object_key, ttl);
+                                                            object_key, ttl);
     if (status == -1) {
         // Object is not found
         NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
@@ -2280,24 +2256,23 @@ CNetStorageHandler::x_ProcessSetExpTime(
 }
 
 
-SObjectID
-CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
+CDirectNetStorageObject
+CNetStorageHandler::x_GetObject(const CJsonNode &  message)
 {
-    SObjectID       ret_val;
-
     if (message.HasKey("ObjectLoc")) {
-        string  object_loc = message.GetString("ObjectLoc");
+        string      object_loc = message.GetString("ObjectLoc");
         x_CheckObjectLoc(object_loc);
 
-        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
-                              object_loc);
+        CDirectNetStorage   storage(
+                            CNetICacheClient(CNetICacheClient::eAppRegistry),
+                            m_Server->GetCompoundIDPool(), kEmptyStr);
+        CDirectNetStorageObject object(storage.Open(object_loc));
+
         if (m_ConnContext.NotNull())
             GetDiagContext().Extra()
-                .Print("ObjectKey", object_loc_struct.GetUniqueKey());
+                .Print("ObjectKey", object.Locator().GetUniqueKey());
 
-        ret_val.object_key = object_loc_struct.GetUniqueKey();
-        ret_val.object_loc = object_loc;
-        return ret_val;
+        return object;
     }
 
     // Take the arguments
@@ -2307,31 +2282,24 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
 
     x_GetStorageParams(message, &icache_settings, &user_key, &flags);
 
-
-    string      client_name(m_Client);
+    string              client_name(m_Client);
     if (client_name.empty())
         client_name = "anonymous";
-
     CNetICacheClient    icache_client(icache_settings.m_ServiceName,
                                       icache_settings.m_CacheName, client_name);
-    CNetStorageObjectLoc object_loc_struct(m_Server->GetCompoundIDPool(),
-                                       flags, user_key.m_AppDomain,
-                                       user_key.m_UniqueID,
-                                       TFileTrack_Site::GetDefault().c_str());
-    object_loc_struct.SetServiceName(m_Service);
-    //object_loc_struct.SetLocation_NetCache(icache_client);
 
-    ret_val.object_key = object_loc_struct.GetUniqueKey();
-    ret_val.object_loc = object_loc_struct.GetLocator();
+    CDirectNetStorageByKey    storage(icache_client,
+                                      m_Server->GetCompoundIDPool(),
+                                      user_key.m_AppDomain);
+    CDirectNetStorageObject   object(storage.Open(user_key.m_UniqueID, flags));
 
     // Log if needed
     if (m_ConnContext.NotNull()) {
         GetDiagContext().Extra()
-            .Print("ObjectLoc", ret_val.object_loc)
-            .Print("ObjectKey", ret_val.object_key);
+            .Print("ObjectKey", object.Locator().GetUniqueKey());
     }
 
-    return ret_val;
+    return object;
 }
 
 
@@ -2401,34 +2369,30 @@ CNetStorageHandler::x_GetStorageParams(
 }
 
 
-CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
+CDirectNetStorageObject
+CNetStorageHandler::x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags)
 {
-    CNetStorage     net_storage(eVoid);
+    if ((flags & fNST_NoMetaData) == 0) {
+        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
+    } else {
+        m_DBObjectID = 0;
+    }
+
+    CNetICacheClient icache_client;
+
     if (icache_settings.m_ServiceName.empty())
-        net_storage = g_CreateNetStorage(
-                CNetICacheClient(CNetICacheClient::eAppRegistry),
-                icache_settings.m_CacheName,
-                0);
+        icache_client = CNetICacheClient(CNetICacheClient::eAppRegistry);
     else {
-        CNetICacheClient icache_client(icache_settings.m_ServiceName,
+        icache_client = CNetICacheClient(icache_settings.m_ServiceName,
                 icache_settings.m_CacheName, m_Client);
-        net_storage = g_CreateNetStorage(icache_client,
-                icache_settings.m_CacheName,
-                0);
     }
 
-    if ((flags & fNST_NoMetaData) != 0) {
-        // Metadata is not required
-        g_CreateNetStorageObject(net_storage, m_Service, flags);
-    }
-
-    // Metadata is required, so get the new object id first
-    m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
-    return g_CreateNetStorageObject(net_storage,
-                                    m_Service,
-                                    m_DBObjectID, flags);
+    CDirectNetStorage   net_storage(icache_client,
+                                    m_Server->GetCompoundIDPool(),
+                                    icache_settings.m_CacheName);
+    return net_storage.Create(m_Service, m_DBObjectID, flags);
 }
 
 
@@ -2518,8 +2482,17 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
             service = m_Service;
         if (!m_Server->InMetadataServices(service))
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Service from the object locator is not in the list of "
+                       "Service (" + service +
+                       ") from the object locator is not in the list of "
                        "configured services anymore. DB access declined.");
+    } else {
+        // This is user key identification
+        TNetStorageFlags    flags = ExtractStorageFlags(message);
+        if (flags & fNST_NoMetaData) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Storage flags forbid access to the metainfo database. "
+                       "DB access declined.");
+        }
     }
 
     // Here: it is a user key, so there is no knowledge of the service and
@@ -2575,6 +2548,11 @@ CNetStorageHandler::x_DetectMetaDBNeedUpdate(
                        "Service from the object locator is not in the list of "
                        "configured services anymore. DB access declined.");
         return true;
+    } else {
+        // This is user key identification
+        TNetStorageFlags    flags = ExtractStorageFlags(message);
+        if (flags & fNST_NoMetaData)
+            return false;
     }
 
     // Here: it is a user key, so there is no knowledge of the service and
@@ -2642,7 +2620,13 @@ CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
         string  service = object_loc_struct.GetServiceName();
         if (!service.empty())
             return m_Server->InMetadataServices(service);
+    } else {
+        // This is user key identification
+        TNetStorageFlags    flags = ExtractStorageFlags(message);
+        if (flags & fNST_NoMetaData)
+            return false;
     }
+
 
     // In all the other cases the access depends on if the HELLO service is
     // configured for the metadata option

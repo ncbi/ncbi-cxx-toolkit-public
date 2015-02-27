@@ -38,6 +38,7 @@
 #include <corelib/request_ctx.hpp>
 #include <connect/server.hpp>
 #include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 
 #include "nst_clients.hpp"
 #include "nst_metadata_options.hpp"
@@ -54,12 +55,6 @@ struct SStorageFlags;
 struct SICacheSettings;
 struct SUserKey;
 
-
-struct SObjectID
-{
-    string      object_key;
-    string      object_loc;
-};
 
 
 class CNetStorageHandler : public IServer_ConnectionHandler
@@ -157,7 +152,7 @@ private:
 
 private:
     // Asynchronous write support
-    CNetStorageObject       m_ObjectBeingWritten;
+    CDirectNetStorageObject m_ObjectBeingWritten;
     Int8                    m_DataMessageSN;
     EMetadataOption         m_MetadataOption;
     bool                    m_CreateRequest;
@@ -236,7 +231,7 @@ private:
                              const SCommonRequestArguments &  common_args);
 
 private:
-    SObjectID x_GetObjectKey(const CJsonNode &  message);
+    CDirectNetStorageObject x_GetObject(const CJsonNode &  message);
     void x_CheckNonAnonymousClient(void) const;
     void x_CheckObjectLoc(const string &  object_loc) const;
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
@@ -245,7 +240,7 @@ private:
                             SICacheSettings *   icache_settings,
                             SUserKey *          user_key,
                             TNetStorageFlags *  flags);
-    CNetStorageObject x_CreateObjectStream(
+    CDirectNetStorageObject x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags);
     EIO_Status x_SendOverUTTP();
