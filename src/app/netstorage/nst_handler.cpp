@@ -1984,6 +1984,9 @@ CNetStorageHandler::x_ProcessRead(
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     }
     catch (const CException &  ex) {
+        // Prevent creation of an object in the database if there was none.
+        // NB: the object TTL will not be updated if there was an object
+        need_meta_db_update = false;
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
                        CNetStorageServerException::eReadError,
                        string("Object read error: ") + ex.what());
