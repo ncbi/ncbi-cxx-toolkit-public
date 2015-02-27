@@ -175,7 +175,7 @@ private:
 ///
 /// By default, the key file is ".ncbi_keys" in the user's home directory.
 /// This can be changed via env variable $NCBI_KEY_FILES. There can be more
-/// than one key file, e.g. $NCBI_KEY_FILES="/foo/.bar;/bar/.foo"
+/// than one key file, e.g. $NCBI_KEY_FILES="/foo/.bar:/bar/.foo"
 ///
 class NCBI_XNCBI_EXPORT CNcbiEncrypt
 {

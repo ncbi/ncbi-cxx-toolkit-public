@@ -582,7 +582,7 @@ void CNcbiEncrypt::sx_InitKeyMap(void)
                 files = CDirEntry::MakePath(CDir::GetHome(), kDefaultKeysFile);
             }
             list<string> file_list;
-            NStr::Split(files, ";", file_list);
+            NStr::Split(files, ":", file_list);
             ITERATE(list<string>, it, file_list) {
                 string fname = *it;
                 size_t home_pos = fname.find("$HOME");
