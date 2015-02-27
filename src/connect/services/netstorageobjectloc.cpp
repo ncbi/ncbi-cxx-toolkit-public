@@ -299,7 +299,7 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
     else
         m_NCFlags &= ~(TNetCacheFlags) fNCF_AllowXSiteConn;
 
-    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
+    // NB: FileTrack site must not be reset.
 }
 
 void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
