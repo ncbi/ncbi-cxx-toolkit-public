@@ -707,7 +707,7 @@ static void
 s_WriteXML2Object(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
-    auto_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (*out_stream,false));
+    auto_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (*out_stream, eNoOwnership));
     xml_out->SetEncoding(eEncoding_Ascii);
     xml_out->SetVerifyData( eSerialVerifyData_No );
     //xml_out->SetReferenceDTD();
@@ -781,7 +781,7 @@ static void
 s_WriteJSONObject(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
-    auto_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson (*out_stream,false));
+    auto_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson (*out_stream, eNoOwnership));
     json_out->SetDefaultStringEncoding(eEncoding_Ascii);
     //json_out.SetUseIndentation(true);
     //json_out.SetUseEol(true);
