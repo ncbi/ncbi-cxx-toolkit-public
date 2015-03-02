@@ -768,6 +768,8 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             if (!s_ChooseMonthAndDay(tokens[0], tokens[1], month_first, month, day, month_ambiguous)) {
                 return "";
             }
+            // mark month as ambiguous, since we are guessing about year
+            month_ambiguous = true;
         } catch ( ... ) {
             // threw exception while converting to int
             return "";
@@ -826,37 +828,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             return "";
         }
     } else {
-        try {
-            int val1 = NStr::StringToInt (tokens[0]); 
-            int val2 = NStr::StringToInt (tokens[1]);
-            if (val1 > 12 && val2 > 12) {
-                // both numbers too big for month
-                return "";
-            } else if (val1 < 13 && val2 < 13) {
-                if (val1 == val2) {
-                    // no need to call this ambiguous
-                    month = sm_LegalMonths[val1 - 1];
-                    day = val2;
-                } else {
-                    // both numbers could be month
-                    month_ambiguous = true;
-                    if (month_first) {
-                        month = sm_LegalMonths[val1 - 1];
-                        day = val2;
-                    } else {
-                        month = sm_LegalMonths[val2 - 1];
-                        day = val1;
-                    }
-                }
-            } else if (val1 < 13) {
-                month = sm_LegalMonths[val1 - 1];
-                day = val2;
-            } else {
-                month = sm_LegalMonths[val2 - 1];
-                day = val1;
-            }
-        } catch ( ... ) {
-            // threw exception while converting to int
+        if (!s_ChooseMonthAndDay(tokens[0], tokens[1], month_first, month, day, month_ambiguous)) {
             return "";
         }
     }
