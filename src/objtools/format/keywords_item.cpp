@@ -355,15 +355,26 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 }
 
 
-// Add a keyword to the list 
-void CKeywordsItem::x_AddKeyword(const string& keyword)
+// Add a keyword to the list
+static bool x_OkayToAddKeyword(const string& keyword, vector<string> keywords)
 {
-    ITERATE (TKeywords, it, m_Keywords) {
+    ITERATE (vector<string>, it, keywords) {
         if (NStr::EqualNocase(keyword, *it)) {
-            return;
+            return false;
         }
     }
-    m_Keywords.push_back(keyword);
+    return true;
+}
+void CKeywordsItem::x_AddKeyword(const string& keyword)
+{
+    list<string> kywds;
+    NStr::Split( keyword, ";", kywds );
+    FOR_EACH_STRING_IN_LIST ( k_itr, kywds ) {
+        const string& kw = *k_itr;
+        if (x_OkayToAddKeyword (kw, m_Keywords)) {
+            m_Keywords.push_back(kw);
+        }
+    }
 }
 
 
