@@ -55,7 +55,7 @@ bool AddValueToString (string& str, const string& value, EExistingText existing_
                 str = str + " " + value;
                 break;
             case eExistingText_append_colon:
-                str = str + ":" + value;
+                str = str + ": " + value;
                 break;
             case eExistingText_append_comma:
                 str = str + ", " + value;
@@ -70,7 +70,7 @@ bool AddValueToString (string& str, const string& value, EExistingText existing_
                 str = value + " " + str;
                 break;            
             case eExistingText_prefix_colon:
-                str = value + ":" + str;
+                str = value + ": " + str;
                 break; 
             case eExistingText_prefix_comma:
                 str = value + ", " + str;
