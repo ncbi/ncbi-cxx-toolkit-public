@@ -2216,8 +2216,8 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx,
 
         // when first part is minus, then it must be on this bioseq
         // when first part is plus, then *last* piece must be on this bioseq
-        const bool bMinus = (first.GetStrand() == eNa_strand_minus);
-        CSeq_loc_CI part_to_check = ( bMinus ? first : last );
+        const bool bMinus = (first_non_far.GetStrand() == eNa_strand_minus);
+        CSeq_loc_CI part_to_check = ( bMinus ? first_non_far : last_non_far );
 
         const bool endsOnThisBioseq = ( part_to_check  &&  
             seq.IsSynonym(part_to_check.GetSeq_id()) );
