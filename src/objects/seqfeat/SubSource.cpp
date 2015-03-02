@@ -633,6 +633,44 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
 }
 
 
+bool s_ChooseMonthAndDay(const string& token1, const string& token2, bool month_first, string& month, int& day, bool& month_ambiguous)
+{
+    try {
+        int val1 = NStr::StringToInt (token1); 
+        int val2 = NStr::StringToInt (token2);
+        if (val1 > 12 && val2 > 12) {
+            // both numbers too big for month
+            return false;
+        } else if (val1 < 13 && val2 < 13) {
+            if (val1 == val2) {
+                // no need to call this ambiguous
+                month = sm_LegalMonths[val1 - 1];
+                day = val2;
+            } else {
+                // both numbers could be month
+                month_ambiguous = true;
+                if (month_first) {
+                    month = sm_LegalMonths[val1 - 1];
+                    day = val2;
+                } else {
+                    month = sm_LegalMonths[val2 - 1];
+                    day = val1;
+                }
+            }
+        } else if (val1 < 13) {
+            month = sm_LegalMonths[val1 - 1];
+            day = val2;
+        } else {
+            month = sm_LegalMonths[val2 - 1];
+            day = val1;
+        }
+        return true;
+    } catch ( ... ) {
+        return false;
+    }
+}
+
+
 string CSubSource::FixDateFormat (const string& test, bool month_first, bool& month_ambiguous)
 {
     string orig_date = test;
@@ -721,8 +759,19 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     if (tokens.size() == 0) {
         // good - all tokens assigned to values
     } else if (tokens.size() > 2) {
-        // three numbers, none of them are year, can't resolve
-        return "";
+        // three numbers: treat last one as year
+        try {
+            year = NStr::StringToInt(tokens[2]);
+            if (year < 100) {
+                year += 2000;
+            }
+            if (!s_ChooseMonthAndDay(tokens[0], tokens[1], month_first, month, day, month_ambiguous)) {
+                return "";
+            }
+        } catch ( ... ) {
+            // threw exception while converting to int
+            return "";
+        }
     } else if (tokens.size() == 1) {
         try {
             int val = NStr::StringToInt (tokens[0]);

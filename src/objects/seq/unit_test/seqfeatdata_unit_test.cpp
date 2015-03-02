@@ -1043,3 +1043,11 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2164)
                       "Spain: Mediterranean, Malvarrosa Beach (Valencia)");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3965)
+{
+    bool ambig = false;
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("06/11/11", true, ambig), "11-Jun-2011");
+    BOOST_CHECK_EQUAL(ambig, true);
+}
