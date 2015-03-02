@@ -465,7 +465,7 @@ string SFileTrackAPI::LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc)
     if (session_key.empty()) {
         // Server will report this exception to clients, so API key needs jamming
         const size_t kSize = 8;
-        if (api_key > kSize) {
+        if (api_key.size() > kSize) {
             api_key.replace(kSize / 2, api_key.size() - kSize, "...");
         }
 
