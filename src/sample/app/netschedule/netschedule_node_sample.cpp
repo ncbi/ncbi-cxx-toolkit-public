@@ -145,8 +145,8 @@ int CSampleNetScheduleNode::Run(void)
             }
 
             if (jobs_processed.find(job.job_id) != jobs_processed.end()) {
-                LOG_POST(Error << "Job: " << job.job_id
-                               << " has already been processed.");
+                ERR_POST("Job: " << job.job_id
+                                 << " has already been processed.");
             } else {
                 jobs_processed.insert(job.job_id);
             }

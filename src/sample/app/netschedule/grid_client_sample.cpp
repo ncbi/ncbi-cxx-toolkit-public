@@ -162,14 +162,14 @@ int CGridClientSampleApp::Run(void)
                 vector<double> resvec;
                 for (int i = 0; i < count; ++i) {
                     if (!is.good()) {
-                        LOG_POST( "Input stream error. Index : " << i );
+                        ERR_POST( Note << "Input stream error. Index : " << i );
                         break;
                     }
                     double d;
                     is >> d;
                     resvec.push_back(d);
                 }
-                LOG_POST( "Job " << *it << " is done." );
+                ERR_POST( Info << Note << "Job " << *it << " is done." );
                 done_jobs.push_back(*it);
                 break;
             }
@@ -184,7 +184,7 @@ int CGridClientSampleApp::Run(void)
 
             // A job has been canceled
             if (status == CNetScheduleAPI::eCanceled) {
-                LOG_POST( "Job " << *it << " is canceled.");
+                ERR_POST( Warning << Note << "Job " << *it << " is canceled.");
                 done_jobs.push_back(*it);
                 break;
             }

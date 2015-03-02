@@ -60,7 +60,7 @@ private:
 void CSampleJobCleanupListener::HandleEvent(
     EWorkerNodeCleanupEvent cleanup_event)
 {
-    LOG_POST(m_CleanupType << (cleanup_event ==
+    ERR_POST(Info << m_CleanupType << (cleanup_event ==
         IWorkerNodeCleanupEventListener::eRegularCleanup ?
             " regular clean-up" : " clean-up during force exit"));
 }
@@ -91,8 +91,9 @@ public:
         context.GetCleanupEventSource()->AddListener(
             new CSampleJobCleanupListener("Job-do"));
 
-        LOG_POST( context.GetJobKey() + " " + context.GetJobInput());
-        LOG_POST( "This parameter is read from a config file: " << m_Param);
+        ERR_POST( Info << context.GetJobKey() + " " + context.GetJobInput());
+        ERR_POST( Info << Note << "This parameter is read from a config file: "
+                               << m_Param);
 
         // 1. Get an input data from the client
         //    (You can use ASN.1 de-serialization here)
@@ -102,12 +103,12 @@ public:
         
         string output_type;
         is >> output_type; // could be "doubles" or "html"
-        LOG_POST( "Output type: " << output_type);
+        ERR_POST( Info << "Output type: " << output_type);
         int count;
         is >> count;
         vector<double> dvec;
         dvec.reserve(count);
-        LOG_POST( "Getting " << count << " doubles from stream...");
+        ERR_POST( Info << "Getting " << count << " doubles from stream...");
         for (int i = 0; i < count; ++i) {
             if (!is.good()) {
                 ERR_POST( "Input stream error. Index : " << i );
@@ -192,7 +193,7 @@ public:
         //
         context.CommitJob();
 
-        LOG_POST( "Job " << context.GetJobKey() << " is done.");
+        ERR_POST( Info << "Job " << context.GetJobKey() << " is done.");
         return 0;
     }
 private:
@@ -214,16 +215,16 @@ public:
 
     virtual void Run(CWorkerNodeIdleTaskContext& context)
     {
-        LOG_POST( "Staring idle task...");
+        ERR_POST( Info << Note << "Staring idle task...");
         for (int i = 0; i < 10; ++i) {
-            LOG_POST( "Idle task: iteration: " << i);
+            ERR_POST( Info << Note << "Idle task: iteration: " << i);
             if (context.IsShutdownRequested() )
                 break;
             SleepSec(2);
         }
         if (++m_Count % 3 == 0)
             context.SetRunAgain();
-        LOG_POST( "Stopping idle task...");
+        ERR_POST( Info << Note << "Stopping idle task...");
     }
 private:
     int m_Count;

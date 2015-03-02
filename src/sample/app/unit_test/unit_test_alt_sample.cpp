@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(TestDependentOnArg)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     bool arg_value = args["disable_UsingArgs"];
 
-    LOG_POST("Argument value is " << arg_value);
+    ERR_POST(Info << Note << "Argument value is " << arg_value);
 }
 
 BOOST_AUTO_TEST_CASE(TestAlwaysDisabled)

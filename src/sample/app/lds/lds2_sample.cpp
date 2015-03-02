@@ -140,8 +140,7 @@ int CSampleLds2Application::Run(void)
             mgr->UpdateData();
         }
         catch(CException& e) {
-            LOG_POST(Error << "Error initializing local data storage: "
-                     << e.what());
+            ERR_POST("Error initializing local data storage: " << e.what());
             return 1;
         }
     }
@@ -153,8 +152,7 @@ int CSampleLds2Application::Run(void)
             db_path, -1, CObjectManager::eDefault);
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error registering LDS2 data loader: " 
-                       << e.what());
+        ERR_POST("Error registering LDS2 data loader: " << e.what());
         return 2;
     }
 

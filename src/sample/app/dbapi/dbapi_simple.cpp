@@ -618,7 +618,7 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
 
         // Sometimes the results have no rows - and that's ok.
         if ( ! stmt->HasRows() ) {
-            LOG_POST_X(1, Info << "No rows.");
+            ERR_POST_X(1, Info << Note << "No rows.");
             continue;
         }
 
@@ -672,7 +672,7 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
         // your code.
         case eDB_ComputeResult:
         case eDB_CursorResult:
-            LOG_POST_X(1, Warning << "Unhandled results type:"
+            ERR_POST_X(1, Warning << Note << "Unhandled results type:"
                 << rs->GetResultType());
             break;
 

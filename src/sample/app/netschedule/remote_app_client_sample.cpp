@@ -205,7 +205,7 @@ int CRemoteAppClientSampleApp::Run(void)
 
             // A job has been canceled
             if (status == CNetScheduleAPI::eCanceled) {
-                LOG_POST( "Job " << *it << " is canceled.");
+                ERR_POST( Warning << Note << "Job " << *it << " is canceled.");
                 done_jobs.push_back(it);
             }
         }
@@ -221,7 +221,8 @@ int CRemoteAppClientSampleApp::Run(void)
         }
     }
 
-    LOG_POST("==================== All finished ==================");
+    ERR_POST(Info << Note
+                  << "==================== All finished ==================");
     for(TJobKeys::iterator it = job_keys.begin();
         it != job_keys.end(); ++it) {
         PrintJobInfo(*it, netcache_api);
@@ -269,7 +270,7 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
     
     // A job has been canceled
     if (status == CNetScheduleAPI::eCanceled) {
-        LOG_POST( "Job " << job_key << " is canceled.");
+        ERR_POST( Warning << Note << "Job " << job_key << " is canceled.");
     }
 }
 
