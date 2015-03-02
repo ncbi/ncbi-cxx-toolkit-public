@@ -452,23 +452,27 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
 string SFileTrackAPI::LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc)
 {
     string api_key(TFileTrack_APIKey::GetDefault());
-
-    string url(object_loc->GetFileTrackURL() + "/accounts/api_login?key=");
-    url += api_key;
-
+    string url(object_loc->GetFileTrackURL());
     string session_key;
 
-    CConn_HttpStream http_stream(url, NULL, kEmptyStr,
-            s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
+    CConn_HttpStream http_stream(url + "/accounts/api_login?key=" + api_key,
+            NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
             fHTTP_AutoReconnect, &m_WriteTimeout);
 
     string dummy;
     http_stream >> dummy;
 
     if (session_key.empty()) {
+        // Server will report this exception to clients, so API key needs jamming
+        const size_t kSize = 8;
+        if (api_key > kSize) {
+            api_key.replace(kSize / 2, api_key.size() - kSize, "...");
+        }
+
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Error while uploading data to FileTrack: "
-                "authentication error (API key = " << api_key << ").");
+                "authentication error (API key = " << api_key <<
+                ", URL = " << url << ").");
     }
 
     return session_key;
