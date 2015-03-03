@@ -62,6 +62,7 @@
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
@@ -820,6 +821,19 @@ CSeq_id_Handle GetUniquePrimaryTranscriptId(CBioseq_Handle& bsh)
                           sequence::eGetId_ForceAcc);
 }
 
+bool IsLRG(CBioseq_Handle& bsh) 
+{
+    ITERATE(CBioseq_Handle::TId, it, bsh.GetId()) {
+        const CSeq_id& id = *it->GetSeqId();
+        if(   id.IsGeneral()
+           && id.GetGeneral().GetDb() == "LRG") 
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& context)
 {
@@ -885,9 +899,14 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
                   || mol_type == CVariantPlacement::eMol_rna) 
               && idh.IdentifyAccession() == CSeq_id::eAcc_refseq_genomic)  //e.g. NG_009822.1:c.1437+1G>A
     {
+        //VAR-861
+        if(!IsLRG(bsh)) {
+            HGVS_THROW(eSemantic, "Specifying c. expression in NG coordinates is only supported for LRG subset where NM/NG associations are stable");
+        }
+        
         CSeq_id_Handle idh2 = GetUniquePrimaryTranscriptId(bsh);
         if(!idh2) {
-            HGVS_THROW(eSemantic, "Can't resolve to a unique transcript: " + idh.AsString());
+            HGVS_THROW(eSemantic, "Can't resolve to a unique transcript on NG: " + idh.AsString());
         } else {
             idh = idh2;
         }
