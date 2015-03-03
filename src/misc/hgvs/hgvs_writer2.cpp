@@ -243,7 +243,8 @@ string CHgvsParser::x_AsHgvsExpression(
                 vset.GetType() == CVariation::TData::TSet::eData_set_type_compound    ? ""
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_haplotype   ? ";"
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_products    ? ","
-              : vset.GetType() == CVariation::TData::TSet::eData_set_type_mosaic       ? "/"
+              : vset.GetType() == CVariation::TData::TSet::eData_set_type_mosaic      ? "/"
+              : vset.GetType() == CVariation::TData::TSet::eData_set_type_chimeric    ? "//"
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_alleles
                 || vset.GetType() == CVariation::TData::TSet::eData_set_type_genotype
                 || vset.GetType() == CVariation::TData::TSet::eData_set_type_package  ? ";"

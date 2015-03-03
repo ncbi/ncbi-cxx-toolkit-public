@@ -1929,7 +1929,7 @@ CVariation::TData::TSet::EData_set_type CHgvsParser::x_list_delimiter(TIterator 
     TIterator it = i->children.begin();
     string s(it->value.begin(), it->value.end());
 
-    return s == "//" ? CVariation::TData::TSet::eData_set_type_other //chimeric - not represented in the schema
+    return s == "//" ? CVariation::TData::TSet::eData_set_type_chimeric
          : s == "/"  ? CVariation::TData::TSet::eData_set_type_mosaic
          : s == "+"  ? CVariation::TData::TSet::eData_set_type_genotype
          : s == ","  ? CVariation::TData::TSet::eData_set_type_products

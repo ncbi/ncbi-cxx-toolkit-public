@@ -236,6 +236,7 @@ Variation ::= SEQUENCE
                 package     (9), -- set represents a package of observations at
                                  -- a given location, generally containing
                                  -- asserted + reference
+                chimeric    (10), -- e.g. c.[1C>T//2G>T]
                 other       (255)
             },
             variations SET OF Variation,
