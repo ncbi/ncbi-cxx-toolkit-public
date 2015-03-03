@@ -200,6 +200,8 @@ public:
         eDbtagType_Trace,
         eDbtagType_RefSeq,
         eDbtagType_EnsemblGenomes,
+        eDbtagType_EnsemblGenomes_Gn,
+        eDbtagType_EnsemblGenomes_Tr,
         eDbtagType_TubercuList,
         eDbtagType_MedGen,
         eDbtagType_CGD,
