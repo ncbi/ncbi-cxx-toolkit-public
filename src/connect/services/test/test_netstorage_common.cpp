@@ -812,7 +812,7 @@ struct SAttrApiBase
 
         // Number of attributes
         const size_t kMinSize = 3;
-        const size_t kMaxSize = 100;
+        const size_t kMaxSize = 10;
         size_t size = r.GetRand(kMinSize, kMaxSize);
 
         // The probability of an attribute to be set:
