@@ -4497,6 +4497,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NPIB	s	Northwest Plateau Institute of Biology",
 "NPP	c	N.P.P",
 "NPRI	s	Seoul National University",
+"NPS	s	United States National Park Service",
 "NPSC	s	Northern Prairie Science Center",
 "NPT	s	Newport Museum and Art Gallery",
 "NPWRC	s	Northern Prairie Research Center",
