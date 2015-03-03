@@ -1421,22 +1421,29 @@ CRef<CVariation> CHgvsParser::x_no_change(TIterator const& i, const CContext& co
         CRef<CSeq_literal> seq_from = x_raw_seq(it, context);
         p.SetSeq(*seq_from);
         ++it;
+    } else if(p.GetLoc().IsWhole()) {
+        // will fall-back 'identity' inst-type instead of whole-seq mnp
     } else {
         CVariationUtil util(context.GetScope());
         util.AttachSeq(p);
-        if(p.IsSetExceptions()) {
-            HGVS_THROW(eSemantic, "Can't get sequence at location, and no asserted sequence specified in the expression");
-        }
+        p.ResetExceptions();
+            // if could not attach seq (e.g. too-large or intronic context)
+            // will fall-back on 'identity' inst-type below, so ignoring
+            // the exceptions.
     }
 
-    //var_inst.SetType(CVariation_inst::eType_identity);
     var_inst.SetType(
             p.GetMol() == CVariantPlacement::eMol_protein ? CVariation_inst::eType_prot_silent
+          : !p.IsSetSeq()                                 ? CVariation_inst::eType_identity
           : p.GetSeq().GetLength() == 1                   ? CVariation_inst::eType_snv 
           :                                                 CVariation_inst::eType_mnp);
 
     TDelta delta(new TDelta::TObjectType);
-    delta->SetSeq().SetLiteral().Assign(p.GetSeq());
+    if(p.IsSetSeq()) {
+        delta->SetSeq().SetLiteral().Assign(p.GetSeq());
+    } else {
+        delta->SetSeq().SetThis();
+    }
     var_inst.SetDelta().push_back(delta);
 
     return vr;
