@@ -37,4 +37,4 @@ CHECK_CMD =
 # CXXFLAGS = $(FAST_CXXFLAGS)
 # LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = chenj bollin
+WATCHERS = kachalos bollin
