@@ -2744,7 +2744,7 @@ void CDiagContext::FlushMessages(CDiagHandler& handler)
         return;
     }
     auto_ptr<TMessages> tmp(m_Messages.release());
-    //ERR_POST_X(1, Message << "***** BEGIN COLLECTED MESSAGES *****");
+    //ERR_POST_X(1, Note << "***** BEGIN COLLECTED MESSAGES *****");
     NON_CONST_ITERATE(TMessages, it, *tmp.get()) {
         it->m_NoTee = true; // Do not tee duplicate messages to console.
         handler.Post(*it);
@@ -2752,7 +2752,7 @@ void CDiagContext::FlushMessages(CDiagHandler& handler)
             handler.PostToConsole(*it);
         }
     }
-    //ERR_POST_X(2, Message << "***** END COLLECTED MESSAGES *****");
+    //ERR_POST_X(2, Note << "***** END COLLECTED MESSAGES *****");
     m_Messages.reset(tmp.release());
 }
 
@@ -5862,7 +5862,6 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
     }
     if (m_Perf == handler) {
         m_OwnPerf = own;
-        own = false;
     }
 }
 

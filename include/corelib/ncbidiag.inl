@@ -447,6 +447,8 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
 }
 inline
 const CNcbiDiag& Message(const CNcbiDiag& diag)  {
+    diag.x_EndMess();
+    diag.m_PostFlags |= eDPF_IsNote;
     return diag;
 }
 inline

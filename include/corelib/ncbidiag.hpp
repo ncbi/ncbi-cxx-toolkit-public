@@ -187,10 +187,17 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message                                          \
       << NCBI_NS_NCBI::Endm )
 
-// Legacy alias for ERR_POST (as well as all LOG_POST_xxxx flavors).
-// This macro is deprecated, use ERR_POST instead.
+// Most LOG_POST_xxxx flavors are aliases for the corresponding ERR_POST_xxxx
+// macros. LOG_POST is the only one which has special meaning for backward
+// compatibility: when printing a message in 'old' (human readable) format
+// it skips severity name.
+// This macro should be avoided in the new code, use ERR_POST instead.
 #define LOG_POST(message)                                               \
-    ERR_POST(message)
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
+      NCBI_NS_NCBI::eDiag_Error,                                        \
+      NCBI_NS_NCBI::eDPF_Log).GetRef()                                  \
+      << message                                                        \
+      << NCBI_NS_NCBI::Endm )
 
 /// Error posting with error codes.
 /// This macro should be used only when you need to make non-constant
@@ -694,8 +701,8 @@ enum EDiagPostFlag {
     eDPF_OmitSeparator      = 1 << 23, ///< No '---' separator before message
 
     eDPF_AppLog             = 1 << 24, ///< Post message to application log
-    eDPF_IsMessage          = 1 << 25, ///< Legacy name for eDPF_IsNote.
     eDPF_IsNote             = 1 << 25, ///< Print "Note[X]" severity name.
+    eDPF_IsMessage          = eDPF_IsNote, // Legacy name
 
     /// This flag is deprecated and ignored - all log writes are atomic.
     /// For compatibility IsSetDiagPostFlag always returns true when
