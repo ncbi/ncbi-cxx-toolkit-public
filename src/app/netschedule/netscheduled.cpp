@@ -333,7 +333,7 @@ void CNetScheduleDApp::x_WritePid(CNetScheduleServer *  server) const
         if (pid_file == "-") {
             string      msg = "pid file cannot be standard output and only "
                               "file name is accepted";
-            LOG_POST(Message << Warning << msg << ". Ignore and continue.");
+            ERR_POST(Warning << msg << ". Ignore and continue.");
             server->RegisterAlert(ePidFile, msg);
             return;
         }
@@ -343,7 +343,7 @@ void CNetScheduleDApp::x_WritePid(CNetScheduleServer *  server) const
             // File exists
             if (access(pid_file.c_str(), W_OK) != 0) {
                 string      msg = "pid file is not writable";
-                LOG_POST(Message << Warning << msg << ". Ignore and continue.");
+                ERR_POST(Warning << msg << ". Ignore and continue.");
                 server->RegisterAlert(ePidFile, msg);
                 return;
             }
@@ -353,7 +353,7 @@ void CNetScheduleDApp::x_WritePid(CNetScheduleServer *  server) const
         FILE *  f = fopen(pid_file.c_str(), "w");
         if (f == NULL) {
             string      msg = "error opening pid file for writing";
-            LOG_POST(Message << Warning << msg << ". Ignore and continue.");
+            ERR_POST(Warning << msg << ". Ignore and continue.");
             server->RegisterAlert(ePidFile, msg);
             return;
         }

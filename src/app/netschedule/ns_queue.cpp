@@ -187,9 +187,9 @@ public:
         CStopWatch      sw(CStopWatch::eStart);
         m_QueueDbBlock->Truncate();
         m_QueueDbBlock->allocated = false;
-        LOG_POST(Message << Warning << "Clean up of db block "
-                         << m_QueueDbBlock->pos << " complete, "
-                         << sw.Elapsed() << " elapsed");
+        LOG_POST(Note << "Clean up of db block "
+                      << m_QueueDbBlock->pos << " complete, "
+                      << sw.Elapsed() << " elapsed");
     }
 private:
     SQueueDbBlock* m_QueueDbBlock;
@@ -983,8 +983,8 @@ void  CQueue::CancelWaitGet(const CNSClientId &  client)
     }}
 
     if (result == false)
-        LOG_POST(Message << Warning << "Attempt to cancel WGET for the client "
-                                       "which does not wait anything (node: "
+        ERR_POST(Warning << "Attempt to cancel WGET for the client "
+                            "which does not wait anything (node: "
                          << client.GetNode() << " session: "
                          << client.GetSession() << ")");
 }
@@ -1001,9 +1001,8 @@ void  CQueue::CancelWaitRead(const CNSClientId &  client)
     }}
 
     if (result == false)
-        LOG_POST(Message << Warning << "Attempt to cancel waiting READ for the "
-                                       "client which does not wait anything "
-                                       "(node: "
+        ERR_POST(Warning << "Attempt to cancel waiting READ for the client "
+                            "which does not wait anything (node: "
                          << client.GetNode() << " session: "
                          << client.GetSession() << ")");
 }
@@ -1040,7 +1039,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
 
         if (aff_id == 0) {
             // The affinity is not known for NS at all
-            LOG_POST(Message << Warning << "Client '" << client.GetNode()
+            ERR_POST(Warning << "Client '" << client.GetNode()
                              << "' deletes unknown affinity '"
                              << *k << "'. Ignored.");
             msgs.push_back("eAffinityNotFound:"
@@ -1051,7 +1050,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
         if (!current_affinities.get_bit(aff_id)) {
             // This a try to delete something which has not been added or
             // deleted before.
-            LOG_POST(Message << Warning << "Client '" << client.GetNode()
+            ERR_POST(Warning << "Client '" << client.GetNode()
                              << "' deletes affinity '" << *k
                              << "' which is not in the list of the "
                                 "preferred client affinities. Ignored.");
@@ -1113,7 +1112,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
     for (vector<string>::const_iterator  j(already_added_affinities.begin());
          j != already_added_affinities.end(); ++j) {
         // That was a try to add something which has already been added
-        LOG_POST(Message << Warning << "Client '" << client.GetNode()
+        ERR_POST(Warning << "Client '" << client.GetNode()
                          << "' adds affinity '" << *j
                          << "' which is already in the list of the "
                             "preferred client affinities. Ignored.");
@@ -1128,7 +1127,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
                                                     cmd_group);
 
     if (m_ClientsRegistry.WasGarbageCollected(client, cmd_group)) {
-        LOG_POST(Message << Warning << "Client '" << client.GetNode()
+        ERR_POST(Warning << "Client '" << client.GetNode()
                          << "' has been garbage collected and tries to "
                             "update its preferred affinities.");
         msgs.push_back("eClientGarbageCollected:the client had been "
@@ -1456,8 +1455,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
             if (token_compare_result == CJob::ePassportOnlyMatch) {
                 // That means the job has been given to another worker node
                 // by whatever reason (expired/failed/returned before)
-                LOG_POST(Message << Warning << "Received RETURN2 with only "
-                                               "passport matched.");
+                ERR_POST(Warning << "Received RETURN2 with only "
+                                    "passport matched.");
                 warning = "eJobPassportOnlyMatch:Only job passport matched. "
                           "Command is ignored.";
                 return old_status;
@@ -2043,9 +2042,8 @@ CQueue::CancelSelectedJobs(const CNSClientId &         client,
             warnings.push_back("eGroupNotFound:job group " + group +
                                " is not found");
             if (logging)
-                LOG_POST(Message << Warning <<
-                         "Job group '" + group +
-                         "' is not found. No jobs are canceled.");
+                ERR_POST(Warning << "Job group '" + group +
+                                    "' is not found. No jobs are canceled.");
         }
     }
 
@@ -2056,9 +2054,8 @@ CQueue::CancelSelectedJobs(const CNSClientId &         client,
             warnings.push_back("eAffinityNotFound:affinity " + aff_token +
                                " is not found");
             if (logging)
-                LOG_POST(Message << Warning <<
-                         "Affinity '" + aff_token +
-                         "' is not found. No jobs are canceled.");
+                ERR_POST(Warning << "Affinity '" + aff_token +
+                                    "' is not found. No jobs are canceled.");
         }
         else
             jobs_to_cancel &= m_AffinityRegistry.GetJobsWithAffinity(aff_id);
@@ -2830,8 +2827,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                 if (token_compare_result == CJob::ePassportOnlyMatch) {
                     // That means the job has been given to another worker node
                     // by whatever reason (expired/failed/returned before)
-                    LOG_POST(Message << Warning << "Received FPUT2 with only "
-                                                   "passport matched.");
+                    ERR_POST(Warning << "Received FPUT2 with only "
+                                        "passport matched.");
                     warning = "eJobPassportOnlyMatch:Only job passport "
                               "matched. Command is ignored.";
                     return old_status;
@@ -2861,7 +2858,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                 event->SetStatus(CNetScheduleAPI::eFailed);
                 rescheduled = false;
                 if (m_Log)
-                    LOG_POST(Message << Warning << "Job failed "
+                    ERR_POST(Warning << "Job failed "
                                         "unconditionally, no_retries = 1");
             } else {
                 unsigned                run_count = job.GetRunCount();
@@ -2878,7 +2875,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                     new_status = CNetScheduleAPI::eFailed;
                     rescheduled = false;
                     if (m_Log)
-                        LOG_POST(Message << Warning << "Job failed, exceeded "
+                        ERR_POST(Warning << "Job failed, exceeded "
                                             "max number of retries ("
                                          << failed_retries << ")");
                 }
@@ -3708,9 +3705,8 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
             } catch (...) {
                 jobs_to_dump.clear();
                 if (logging)
-                    LOG_POST(Message << Warning <<
-                             "Job group '" + group +
-                             "' is not found. No jobs to dump.");
+                    ERR_POST(Warning << "Job group '" + group +
+                                        "' is not found. No jobs to dump.");
             }
         }
 
@@ -3719,9 +3715,8 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
             if (aff_id == 0) {
                 jobs_to_dump.clear();
                 if (logging)
-                    LOG_POST(Message << Warning <<
-                             "Affinity '" + aff_token +
-                             "' is not found. No jobs to dump.");
+                    ERR_POST(Warning << "Affinity '" + aff_token +
+                                        "' is not found. No jobs to dump.");
             } else
                 jobs_to_dump &= m_AffinityRegistry.GetJobsWithAffinity(aff_id);
         }
@@ -4272,8 +4267,8 @@ void CQueue::x_UpdateDB_PutResultNoLock(unsigned                job_id,
         if (token_compare_result == CJob::ePassportOnlyMatch) {
             // That means that the job has been executing by another worker
             // node at the moment, but we can accept the results anyway
-            LOG_POST(Message << Warning << "Received PUT2 with only "
-                                           "passport matched.");
+            ERR_POST(Warning << "Received PUT2 with only "
+                                "passport matched.");
         }
         // Here: the authorization token is OK, we can continue
     }

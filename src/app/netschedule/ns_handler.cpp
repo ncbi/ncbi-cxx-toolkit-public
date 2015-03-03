@@ -1478,7 +1478,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << m_CommandArguments.cmd
+        ERR_POST(Warning << m_CommandArguments.cmd
                          << " for unknown job: "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -1521,7 +1521,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << m_CommandArguments.cmd
+        ERR_POST(Warning << m_CommandArguments.cmd
                          << " for unknown job: "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -1561,7 +1561,7 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
 
     if (m_CommandArguments.aff_to_add.empty() &&
         m_CommandArguments.aff_to_del.empty()) {
-        LOG_POST(Message << Warning << m_CommandArguments.cmd
+        ERR_POST(Warning << m_CommandArguments.cmd
                          << " with neither add list nor del list");
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:eInvalidParameter:");
@@ -1762,7 +1762,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
         m_CommandArguments.affinity_token.empty() &&
         m_CommandArguments.job_statuses_string.empty()) {
         if (m_ConnContext.NotNull())
-            LOG_POST(Message << Warning <<
+            ERR_POST(Warning <<
                      "Neither job key nor a group nor an "
                      "affinity nor a status list is provided "
                      "for the CANCEL command");
@@ -1779,7 +1779,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
          !m_CommandArguments.affinity_token.empty() ||
          !m_CommandArguments.job_statuses_string.empty())) {
         if (m_ConnContext.NotNull())
-            LOG_POST(Message << Warning <<
+            ERR_POST(Warning <<
                      "CANCEL can accept either a job "
                      "key or any combination of a group "
                      "and an affinity and job statuses");
@@ -1812,7 +1812,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                         warnings.push_back("eInvalidJobStatus:unknown job "
                                            "status in the status list");
                         if (m_ConnContext.NotNull())
-                            LOG_POST(Message << Warning <<
+                            ERR_POST(Warning <<
                                      "Unknown job status in the status list. "
                                      "Ignore and continue.");
                         reported = true;
@@ -1833,7 +1833,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                     warnings.push_back("eIgnoringCanceledStatus:attempt to "
                                        "cancel jobs in the 'Canceled' status");
                     if (m_ConnContext.NotNull())
-                        LOG_POST(Message << Warning <<
+                        ERR_POST(Warning <<
                                  "Attempt to cancel jobs in the 'Canceled' "
                                  "status. Ignore and continue.");
                     statuses.erase(k);
@@ -1871,7 +1871,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                       m_CommandArguments.job_key, job)) {
         case CNetScheduleAPI::eJobNotFound:
             if (m_ConnContext.NotNull())
-                LOG_POST(Message << Warning <<
+                ERR_POST(Warning <<
                          "CANCEL for unknown job: " <<
                          m_CommandArguments.job_key);
             x_SetCmdRequestStatus(eStatus_NotFound);
@@ -1899,7 +1899,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     if (q->ReadAndTouchJob(m_CommandArguments.job_id,
                            job, &lifetime) == CNetScheduleAPI::eJobNotFound) {
         // Here: there is no such a job
-        LOG_POST(Message << Warning << m_CommandArguments.cmd
+        ERR_POST(Warning << m_CommandArguments.cmd
                          << " for unknown job: "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -2095,15 +2095,14 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     }
     if (old_status == CNetScheduleAPI::eFailed) {
         // Still accept the job results, but print a warning: CXX-3632
-        LOG_POST(Message << Warning << "Accepting results for a job "
-                                       "in the FAILED state.");
+        ERR_POST(Warning << "Accepting results for a job in the FAILED state.");
         x_WriteMessage("OK:");
         x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
     if (old_status == CNetScheduleAPI::eDone) {
-        LOG_POST(Message << Warning << "Cannot accept job "
+        ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
         x_WriteMessage("OK:WARNING:eJobAlreadyDone:Already done;");
@@ -2112,7 +2111,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         return;
     }
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "Cannot accept job "
+        ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -2122,7 +2121,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     }
 
     // Here: invalid job status, nothing will be done
-    LOG_POST(Message << Warning << "Cannot accept job "
+    ERR_POST(Warning << "Cannot accept job "
                      << m_CommandArguments.job_key
                      << " results; job is in "
                      << CNetScheduleAPI::StatusToString(old_status)
@@ -2158,18 +2157,17 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                                           m_CommandArguments.output);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "Cannot accept job "
+        ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
     } else if (old_status == CNetScheduleAPI::eFailed) {
         // Still accept the job results, but print a warning: CXX-3632
-        LOG_POST(Message << Warning << "Accepting results for a job "
-                                       "in the FAILED state.");
+        ERR_POST(Warning << "Accepting results for a job in the FAILED state.");
         x_LogCommandWithJob(job);
     } else if (old_status != CNetScheduleAPI::ePending &&
                old_status != CNetScheduleAPI::eRunning) {
         x_LogCommandWithJob(job);
-        LOG_POST(Message << Warning << "Cannot accept job "
+        ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
     } else {
@@ -2255,7 +2253,7 @@ void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
         x_WriteMessage("OK:");
         x_LogCommandWithJob(job);
     } else {
-        LOG_POST(Message << Warning << "MPUT for unknown job "
+        ERR_POST(Warning << "MPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2274,7 +2272,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
         x_WriteMessage("OK:" + NStr::PrintableString(job.GetProgressMsg()));
         x_LogCommandWithJob(job);
     } else {
-        LOG_POST(Message << Warning << m_CommandArguments.cmd
+        ERR_POST(Warning << m_CommandArguments.cmd
                          << "MGET for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -2308,7 +2306,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 warning);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "FPUT for unknown job "
+        ERR_POST(Warning << "FPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2317,7 +2315,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     }
 
     if (old_status == CNetScheduleAPI::eFailed) {
-        LOG_POST(Message << Warning << "FPUT for already failed job "
+        ERR_POST(Warning << "FPUT for already failed job "
                          << m_CommandArguments.job_key);
         x_WriteMessage("OK:WARNING:eJobAlreadyFailed:Already failed;");
         x_LogCommandWithJob(job);
@@ -2326,7 +2324,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     }
 
     if (old_status != CNetScheduleAPI::eRunning) {
-        LOG_POST(Message << Warning << "Cannot fail job "
+        ERR_POST(Warning << "Cannot fail job "
                          << m_CommandArguments.job_key
                          << "; job is in "
                          << CNetScheduleAPI::StatusToString(old_status)
@@ -2392,7 +2390,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
     }
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "RETURN for unknown job "
+        ERR_POST(Warning << "RETURN for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2400,7 +2398,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
         return;
     }
 
-    LOG_POST(Message << Warning << "Cannot return job "
+    ERR_POST(Warning << "Cannot return job "
                      << m_CommandArguments.job_key
                      << "; job is in "
                      << CNetScheduleAPI::StatusToString(old_status)
@@ -2432,7 +2430,7 @@ void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
                                         job);
 
     if (!auth_token_ok) {
-        LOG_POST(Message << Warning << "Invalid authorization token");
+        ERR_POST(Warning << "Invalid authorization token");
         x_SetCmdRequestStatus(eStatus_BadAuth);
         x_WriteMessage("ERR:eInvalidAuthToken:");
         x_PrintCmdRequestStop();
@@ -2447,7 +2445,7 @@ void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
     }
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "RESCHEDULE for unknown job "
+        ERR_POST(Warning << "RESCHEDULE for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2455,7 +2453,7 @@ void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
         return;
     }
 
-    LOG_POST(Message << Warning << "Cannot reschedule job "
+    ERR_POST(Warning << "Cannot reschedule job "
                      << m_CommandArguments.job_key
                      << "; job is in "
                      << CNetScheduleAPI::StatusToString(old_status)
@@ -2472,7 +2470,7 @@ void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
-        LOG_POST(Message << Warning << "Invalid timeout "
+        ERR_POST(Warning << "Invalid timeout "
                          << m_CommandArguments.timeout
                          << " in JDEX for job "
                          << m_CommandArguments.job_key);
@@ -2488,7 +2486,7 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
                                                    job, timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "JDEX for unknown job "
+        ERR_POST(Warning << "JDEX for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2496,7 +2494,7 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
         return;
     }
     if (status != CNetScheduleAPI::eRunning) {
-        LOG_POST(Message << Warning << "Cannot change expiration for job "
+        ERR_POST(Warning << "Cannot change expiration for job "
                          << m_CommandArguments.job_key
                          << " in status "
                          << CNetScheduleAPI::StatusToString(status));
@@ -2518,7 +2516,7 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobDelayReadExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
-        LOG_POST(Message << Warning << "Invalid timeout "
+        ERR_POST(Warning << "Invalid timeout "
                          << m_CommandArguments.timeout
                          << " in JDREX for job "
                          << m_CommandArguments.job_key);
@@ -2535,7 +2533,7 @@ void CNetScheduleHandler::x_ProcessJobDelayReadExpiration(CQueue* q)
                                             job, timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "JDREX for unknown job "
+        ERR_POST(Warning << "JDREX for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2543,7 +2541,7 @@ void CNetScheduleHandler::x_ProcessJobDelayReadExpiration(CQueue* q)
         return;
     }
     if (status != CNetScheduleAPI::eReading) {
-        LOG_POST(Message << Warning << "Cannot change read expiration for job "
+        ERR_POST(Warning << "Cannot change read expiration for job "
                          << m_CommandArguments.job_key
                          << " in status "
                          << CNetScheduleAPI::StatusToString(status));
@@ -2575,7 +2573,7 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
                                     &last_event_index);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << "LISTEN for unknown job "
+        ERR_POST(Warning << "LISTEN for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -2894,10 +2892,9 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
          !m_CommandArguments.affinity_token.empty() ||
          !m_CommandArguments.job_statuses_string.empty())) {
         if (m_ConnContext.NotNull())
-            LOG_POST(Message << Warning << "DUMP can accept either a job "
-                                           "key or no parameters or any "
-                                           "combination of a group "
-                                           "and an affinity and job statuses");
+            ERR_POST(Warning << "DUMP can accept either a job key or no "
+                                "parameters or any combination of a group and "
+                                "an affinity and job statuses");
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:eInvalidParameter:DUMP can accept either a job "
                        "key or no parameters or any combination of a group and "
@@ -2916,7 +2913,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
                 if (*k == CNetScheduleAPI::eJobNotFound) {
                     if (!reported) {
                         if (m_ConnContext.NotNull())
-                            LOG_POST(Message << Warning <<
+                            ERR_POST(Warning <<
                                      "Unknown job status in the status list. "
                                      "Ignore and continue.");
                         reported = true;
@@ -3544,7 +3541,7 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
                                                 const CJob &    job)
 {
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        LOG_POST(Message << Warning << command << " for unknown job "
+        ERR_POST(Warning << command << " for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
@@ -3559,7 +3556,7 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
         else if (command == "FRED") operation = "fail";
         else if (command == "RDRB") operation = "rollback";
 
-        LOG_POST(Message << Warning << "Cannot " << operation
+        ERR_POST(Warning << "Cannot " << operation
                          << " read job; job is in "
                          << CNetScheduleAPI::StatusToString(old_status)
                          << " state");
@@ -3588,7 +3585,7 @@ void CNetScheduleHandler::x_ProcessSetClientData(CQueue* q)
     unsigned int    data_size = m_CommandArguments.client_data.size();
 
     if (data_size > limit) {
-        LOG_POST(Message << Warning << "Client data is too long. It must be <= "
+        ERR_POST(Warning << "Client data is too long. It must be <= "
                          << limit
                          << " bytes. Received "
                          << data_size
@@ -3777,8 +3774,7 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
         m_CommandArguments.any_affinity == false &&
         m_CommandArguments.affinity_token.empty() &&
         m_CommandArguments.exclusive_new_aff == false) {
-        LOG_POST(Message << Warning <<
-                            "The job request without explicit affinities, "
+        ERR_POST(Warning << "The job request without explicit affinities, "
                             "without preferred affinities and "
                             "with any_aff flag set to false "
                             "will never match any job.");
@@ -3798,8 +3794,7 @@ void CNetScheduleHandler::x_CheckReadParameters(void)
         m_CommandArguments.any_affinity == false &&
         m_CommandArguments.affinity_token.empty() &&
         m_CommandArguments.exclusive_new_aff == false) {
-        LOG_POST(Message << Warning <<
-                            "The job read request without explicit affinities, "
+        ERR_POST(Warning << "The job read request without explicit affinities, "
                             "without preferred affinities and "
                             "with any_aff flag set to false "
                             "will never match any job.");
@@ -4277,7 +4272,7 @@ CNetScheduleHandler::x_RemoveDuplicateStatuses(const vector<TJobStatus> &  src,
                                CNetScheduleAPI::StatusToString(*k) +
                                " provided more than once");
             if (m_ConnContext.NotNull())
-                LOG_POST(Message << Warning <<
+                ERR_POST(Warning <<
                          "Job status " + CNetScheduleAPI::StatusToString(*k) +
                          " provided more than once");
         } else {

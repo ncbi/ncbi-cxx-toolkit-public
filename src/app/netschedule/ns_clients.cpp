@@ -220,7 +220,7 @@ CNSClientId::x_ConvertToClaimedType(const string &  claimed_type) const
     if (ci_claimed_type == "reset")
         return eClaimedReset;
 
-    LOG_POST(Message << Warning <<
+    ERR_POST(Warning <<
              "Unsupported client_type value at the handshake phase. Supported "
              "values are: submitter, worker node, reader, admin and auto. "
              "Received: " << m_ClientType);

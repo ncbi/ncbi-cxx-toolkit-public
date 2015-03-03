@@ -179,17 +179,15 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
 
     if (reinit) {
         CDir(db_path).Remove();
-        LOG_POST(Message << Warning
-                         << "Reinitialization. " << db_path << " removed.");
+        LOG_POST(Note << "Reinitialization. " << db_path << " removed.");
     }
 
     m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
 
     if (x_IsDBDrained()) {
         CDir(db_path).Remove();
-        LOG_POST(Message << Warning
-                         << "Reinitialization due to the DB was drained "
-                            "on last shutdown. " << db_path << " removed.");
+        LOG_POST(Note << "Reinitialization due to the DB was drained "
+                         "on last shutdown. " << db_path << " removed.");
     }
 
     string trailed_log_path = CDirEntry::AddTrailingPathSeparator(db_log_path);
@@ -301,7 +299,7 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     if (!params.private_env && !fl.empty()) {
         // Opening db with recover flags is unreliable.
         BDB_RecoverEnv(m_Path, false);
-        LOG_POST(Message << Warning << "Running recovery...");
+        LOG_POST(Note << "Running recovery...");
     }
 
     CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
@@ -1646,7 +1644,7 @@ void CQueueDataBase::Close(void)
         // - hard shutdown
         // - hard shutdown when drained shutdown is in process
         if (m_Server->IsDrainShutdown())
-            LOG_POST(Message << Warning <<
+            ERR_POST(Warning <<
                      "Drained shutdown: DB draining has not been completed "
                      "when a hard shutdown is received. "
                      "Shutting down immediately.");

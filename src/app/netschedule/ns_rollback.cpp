@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 void CNSSubmitRollback::Rollback(CQueue *  queue)
 {
-    LOG_POST(Message << Warning << "Cancelling the submitted job due to "
+    ERR_POST(Warning << "Cancelling the submitted job due to "
                         "a network error while reporting the job key.");
 
     try {
@@ -60,7 +60,7 @@ void CNSSubmitRollback::Rollback(CQueue *  queue)
 
 void CNSBatchSubmitRollback::Rollback(CQueue *  queue)
 {
-    LOG_POST(Message << Warning << "Cancelling the submitted job batch due to "
+    ERR_POST(Warning << "Cancelling the submitted job batch due to "
                         "a network error while reporting the job keys.");
 
     try {
@@ -81,7 +81,7 @@ void CNSBatchSubmitRollback::Rollback(CQueue *  queue)
 
 void CNSGetJobRollback::Rollback(CQueue *  queue)
 {
-    LOG_POST(Message << Warning << "Rolling back job request due to "
+    ERR_POST(Warning << "Rolling back job request due to "
                         "a network error while reporting the job key.");
 
     // It is basically the same as returning a job but without putting the job
@@ -104,7 +104,7 @@ void CNSGetJobRollback::Rollback(CQueue *  queue)
 
 void CNSReadJobRollback::Rollback(CQueue *  queue)
 {
-    LOG_POST(Message << Warning << "Rolling back reading job request due to "
+    ERR_POST(Warning << "Rolling back reading job request due to "
                         "a network error while reporting the job key.");
 
     // It is the same as read rollback but without putting the job
