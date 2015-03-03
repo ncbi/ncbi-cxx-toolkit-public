@@ -38,6 +38,8 @@
 #include <objects/biotree/BioTreeContainer.hpp>
 #include <objtools/alnmgr/alnmix.hpp>
 
+#include <util/range.hpp>
+
 /// Class used in unit tests
 class CTestPhyTreeCalc;
 
@@ -64,6 +66,8 @@ public:
         eFastME,  ///< Fast Minumum Evolution
     };
 
+    typedef COpenRange<TSeqPos> TRange;
+    typedef vector< vector<TRange> > TSegInfo;
 
     /// Distance matrix (square, symmetric with zeros on diagnol)
     class NCBI_XALGOPHYTREE_EXPORT CDistMatrix
@@ -167,6 +171,10 @@ public:
     ///
     void SetQuery(const CSeq_id& seqid);
 
+    /// Calculate summarized segment positions in mutliple alignment
+    /// @param s If true, calculate segment positions [in]
+    ///
+    void SetCalcAlnSegInfo(bool s) {m_CalcSegInfo = s;}
 
     //--- Getters ---
 
@@ -242,6 +250,12 @@ public:
     ///
     const vector<string>& GetMessages(void) const {return m_Messages;}
 
+    /// Get simplified segment positions in multiple or query anchored
+    /// alignment
+    /// @return Vector of vector of ranges for segments for each sequence
+    ///
+    const TSegInfo& GetAlnSegInfo(void) const {return m_SegInfo;}
+
     /// Check whether there are any messages
     /// @return True if there are messages, false otherwise
     ///
@@ -286,6 +300,12 @@ protected:
     /// included for tree computation), false otherwise
     ///
     bool x_CalcDivergenceMatrix(vector<int>& used_indices);
+
+    /// Calculate the alignment segemnts summary
+    /// @param aln Alignment as text [in]
+    /// @param seg_info Segment start and stop positions in the alignment [out]
+    ///
+    void x_CalcAlnSegInfo(const vector<string>& aln, TSegInfo& seg_info);
 
     /// Compute distance as evolutionary corrected dissimilarity
     void x_CalcDistMatrix(void);
@@ -366,6 +386,12 @@ protected:
 
     /// Error/warning messages
     vector<string> m_Messages;    
+
+    /// Positions of segments in mulitple or query anchored alignment
+    TSegInfo m_SegInfo;
+
+    /// Calculate segment positions
+    bool m_CalcSegInfo;
 
     friend class ::CTestPhyTreeCalc;
 };

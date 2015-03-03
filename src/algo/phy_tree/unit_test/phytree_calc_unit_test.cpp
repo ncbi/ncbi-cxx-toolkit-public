@@ -477,6 +477,29 @@ BOOST_AUTO_TEST_CASE(TestRejectPairWithGapInEachPosition)
     BOOST_REQUIRE_EQUAL(included_inds[0], 0);
 }
 
+// Test creation of the alignment segments summary
+BOOST_AUTO_TEST_CASE(TestCalcAlnSegInfo)
+{
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
+    BOOST_REQUIRE(istr);
+    CSeq_align seq_align;
+    istr >> MSerial_AsnText >> seq_align;
+
+    CPhyTreeCalc calc(seq_align, scope);
+    calc.SetCalcAlnSegInfo(true);
+    calc.CalcBioTree();
+    const CPhyTreeCalc::TSegInfo& seg_info = calc.GetAlnSegInfo();
+
+    BOOST_REQUIRE_EQUAL((int)seg_info.size(), seq_align.GetDim());
+    ITERATE (CPhyTreeCalc::TSegInfo, seq, seg_info) {
+        BOOST_REQUIRE(!seq->empty());
+        ITERATE (vector<CPhyTreeCalc::TRange>, it, *seq) {
+            BOOST_REQUIRE(it->NotEmpty());
+        }
+    }
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

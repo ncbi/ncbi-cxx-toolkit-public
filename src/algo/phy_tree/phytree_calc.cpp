@@ -242,10 +242,15 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
             links.push_back(SLink(query_idx, i, dist));
             bitvector.set(i);
         }
-        else {
+        else if (!m_CalcSegInfo) {
             // otherwise purge the sequence
             sequences[i].erase();
         }
+    }
+
+    // calculate segment positions, if requested
+    if (m_CalcSegInfo) {
+        x_CalcAlnSegInfo(sequences, m_SegInfo);
     }
 
     // Compute distances between incuded sequences
@@ -586,6 +591,7 @@ void CPhyTreeCalc::x_Init(void)
     m_TreeMethod = eFastME;
     m_MaxDivergence = 0.85;
     m_Tree = NULL;
+    m_CalcSegInfo = false;
 }
 
 
@@ -627,6 +633,69 @@ void CPhyTreeCalc::x_InitAlignDS(const CSeq_align& seq_aln)
                                         *m_Scope));
     m_AlignDataSource->SetGapChar('-');
     m_AlignDataSource->SetEndChar('-');
+}
+
+
+void CPhyTreeCalc::x_CalcAlnSegInfo(const vector<string>& aln,
+                                    CPhyTreeCalc::TSegInfo& seg_info)
+{
+    const char kGap = '-';
+    seg_info.clear();
+    seg_info.resize(aln.size());
+
+    // for each sequence
+    for (size_t i=0;i < aln.size();i++) {
+        const string& sequence = aln[i];
+        vector<TRange>& segs = seg_info[i];
+        size_t p = 0;        
+
+        // find the aligned sequence length
+        int seq_len = 0;
+        ITERATE (string, it, sequence) {
+            if (*it != kGap) {
+                seq_len++;
+            }
+        }
+        // minimum gap length 
+        const int kMinSplit = max(seq_len / 20, 4);
+        
+        while (p < sequence.length()) {
+
+            // find segment start
+            while (p < sequence.length() && sequence[p] == kGap) {
+                p++;
+            }
+
+            int from = p;
+            int to = p;
+            int gaps = 0;
+            // find segment end, treating short gaps as part of the segment
+            while (p < sequence.length() && gaps < kMinSplit) {
+                int residues = 0;
+                while (p < sequence.length() && sequence[p] != kGap) {
+                    p++;
+                    to++;
+                    residues++;
+                }
+                // disregard short gaps betweem segments of at least 4 residues
+                if (residues > 4) {
+                    gaps = 0;
+                }
+                while (p < sequence.length() && sequence[p] == kGap) {
+                    gaps++;
+                    p++;
+                }
+            }
+            // this is the segment
+            TRange seg(from, to);
+            // if the segment is long enough, report it, otherwise treat it as
+            // part of the gap
+            if (seg.GetLength() > 4 || segs.empty()) {
+                segs.push_back(seg);
+                gaps = 0;
+            }
+        }
+    }
 }
 
 END_NCBI_SCOPE
