@@ -124,6 +124,52 @@ string CGb_qual::BuildExperiment(const string& category, const string& experimen
 }
 
 
+bool CGb_qual::x_CleanupRptAndReplaceSeq(string& val)
+{
+    if (NStr::IsBlank(val)) {
+        return false;
+    }
+    bool changed = false;
+    string orig = val;
+    NStr::ToLower(val);
+    NStr::ReplaceInPlace(val, "u", "t");
+    return !NStr::Equal(orig, val);
+}
+
+
+bool CGb_qual::CleanupRptUnitSeq(string& val)
+{
+    return x_CleanupRptAndReplaceSeq(val);
+}
+
+
+bool CGb_qual::CleanupReplace(string& val)
+{
+    return x_CleanupRptAndReplaceSeq(val);
+}
+
+
+// converts dashes to a pair of dots, unless dots are already present
+// also makes no change if characters other than digits or dashes are found
+bool CGb_qual::CleanupRptUnitRange(string& val)
+{
+    if (NStr::IsBlank(val)) {
+        return false;
+    }
+    if (NStr::Find(val, ".") != string::npos) {
+        return false;
+    }
+    if (NStr::Find(val, "-") == string::npos) {
+        return false;
+    }
+    if (string::npos != val.find_first_not_of("0123456789-")) {
+        return false;
+    }
+    NStr::ReplaceInPlace(val, "-", "..");
+    return true;
+}
+
+
 // constructor
 CInferencePrefixList::CInferencePrefixList(void)
 {

@@ -3240,24 +3240,21 @@ void CNewCleanup_imp::GBQualBC (
 
     _ASSERT (FIELD_IS_SET (gbq, Qual) && FIELD_IS_SET (gbq, Val));
 
-    if (NStr::EqualNocase(GET_FIELD(gbq, Qual), "rpt_unit")  ||
-               NStr::EqualNocase(GET_FIELD(gbq, Qual), "rpt_unit_range")  ||
-               NStr::EqualNocase(GET_FIELD(gbq, Qual), "rpt_unit_seq")) {
-        bool range_qual = x_CleanupRptUnit(gbq);
-        if (NStr::EqualNocase(GET_FIELD(gbq, Qual), "rpt_unit")) {
-            if (range_qual) {
-                SET_FIELD( gbq, Qual, "rpt_unit_range" );
-            } else {
-                SET_FIELD( gbq, Qual, "rpt_unit_seq" );
-            }
+    if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit_seq")) {
+        if (CGb_qual::CleanupRptUnitSeq(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
-        if( NStr::EqualNocase(GET_FIELD(gbq, Qual), "rpt_unit_seq") ) {
-            string val_no_u = NStr::Replace( GET_FIELD(gbq, Val), "u", "t");
-            if (val_no_u != GET_FIELD(gbq, Val)) {
-                SET_FIELD( gbq, Val, val_no_u );
-                ChangeMade(CCleanupChange::eChangeQualifiers);
-            }
+    } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit_range")) {
+        if (CGb_qual::CleanupRptUnitRange(gbq.SetVal())) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
+    } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")) {
+        if (x_CleanupRptUnit(gbq)) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
+    } else if (NStr::EqualNocase(gbq.GetQual(), "replace")) {
+        if (CGb_qual::CleanupReplace(gbq.SetVal())) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     }
     x_ChangeTransposonToMobileElement(gbq);
@@ -3444,21 +3441,6 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
 
     if (NStr::EqualNocase(qual, "cons_splice")) {
         return eAction_Erase;
-    } else if (NStr::EqualNocase(qual, "replace")) {
-        if ( FIELD_IS(data, Imp)  &&
-             STRING_FIELD_MATCH_BUT_ONLY_CASE_INSENSITIVE( data.GetImp(), Key, "variation") )
-        {
-                NStr::ToLower(val);
-                ChangeMade(CCleanupChange::eChangeQualifiers);
-        }
-        if ( ! NStr::IsBlank(val) &&  val.find_first_not_of("ACGTUacgtu") == NPOS) {
-            const string original_val = val;
-            NStr::ToLower(val);
-            NStr::ReplaceInPlace(val, "u", "t");
-            if (original_val != val) {
-                ChangeMade(CCleanupChange::eChangeQualifiers);
-            }
-        }
     } else if (NStr::EqualNocase(qual, "partial")) {
         feat.SetPartial(true);
         ChangeMade(CCleanupChange::eChangeQualifiers);
@@ -3647,72 +3629,40 @@ bool s_HasUpper (const string &val)
     return false;
 }
 
-// return true if the val indicates this a range qualifier "[0-9]+..[0-9]+"
+
+
+bool CNewCleanup_imp::x_IsBaseRange(const string& val)
+{
+    if (val.length() > 25) {
+        return false;
+    }
+    size_t pos = NStr::Find (val, "..");
+    if (string::npos == pos) {
+        return false;
+    }
+    try {
+        long start = NStr::StringToLong(val.substr(0, pos));
+        long stop = NStr::StringToLong(val.substr(pos + 2));
+        if (start < 1 || stop < 1) {
+            return false;
+        }
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
 
 bool CNewCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
 {
-    CGb_qual::TVal& val = GET_MUTABLE(gbq, Val);
-    
-    if (NStr::IsBlank(val)) {
-        return false;
+    CGb_qual::CleanupRptUnitRange(gbq.SetVal());
+    if (x_IsBaseRange(gbq.GetVal())) {
+        gbq.SetQual("rpt_unit_range");
+    } else {
+        gbq.SetQual("rpt_unit_seq");
+        CGb_qual::CleanupRptUnitSeq(gbq.SetVal());
     }
-    if( string::npos != val.find_first_not_of("ACGTUNacgtun0123456789()") ) {
-        if (s_HasUpper(val)) {
-            val = NStr::ToLower(val);
-            ChangeMade(CCleanupChange::eChangeQualifiers);
-            return false;
-        }
-    } 
-    bool digits1 = false, sep = false, digits2 = false;
-    string cleaned_val;
-    string::const_iterator it = val.begin();
-    string::const_iterator end = val.end();
-    while (it != end) {
-        while (it != end  &&  (*it == '('  ||  *it == ')'  ||  *it == ',')) {
-            cleaned_val += *it++;
-        }
-        while (it != end  &&  isspace((unsigned char)(*it))) {
-            ++it;
-        }
-        while (it != end  &&  isdigit((unsigned char)(*it))) {
-            cleaned_val += *it++;
-            digits1 = true;
-        }
-        if (it != end  &&  (*it == '.'  ||  *it == '-')) {
-            while (it != end  &&  (*it == '.'  ||  *it == '-')) {
-                ++it;
-            }
-            cleaned_val += "..";
-            sep = true;
-        }
-        while (it != end  &&  isspace((unsigned char)(*it))) {
-            ++it;
-        }
-        while (it != end  &&  isdigit((unsigned char)(*it))) {
-            cleaned_val += *it++;
-            digits2 = true;
-        }
-        while (it != end  &&  isspace((unsigned char)(*it))) {
-            ++it;
-        }
-        if (it != end) {
-            char c = *it;
-            if (c != '('  &&  c != ')'  &&  c != ','  &&  c != '.'  &&
-                !isspace((unsigned char) c)  &&  !isdigit((unsigned char) c)) {
-                if (s_HasUpper(val)) {
-                    val = NStr::ToLower(val);
-                    ChangeMade(CCleanupChange::eChangeQualifiers);
-                }
-                return false;
-            }
-        }
-    }
-    if (val != cleaned_val) {
-        val = cleaned_val;
-        ChangeMade(CCleanupChange::eChangeQualifiers);
-    }
-    
-    return  (digits1 && sep && digits2);
+    return true;
 }
 
 void CNewCleanup_imp::x_ChangeTransposonToMobileElement(CGb_qual& gbq)

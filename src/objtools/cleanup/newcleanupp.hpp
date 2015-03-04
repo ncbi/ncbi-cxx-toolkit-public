@@ -336,7 +336,13 @@ private:
     void x_AddNcbiCleanupObject( CSeq_entry &seq_entry );
 
     void x_CleanupConsSplice(CGb_qual& gbq);
+
+    // for rpt_unit and replace GenBank qualifiers 
     bool x_CleanupRptUnit(CGb_qual& gbq);
+    bool x_CleanupRptUnitRange(string& val);
+    bool x_IsBaseRange(const string& val);
+
+
     void x_ChangeTransposonToMobileElement(CGb_qual& gbq);
     void x_ChangeInsertionSeqToMobileElement(CGb_qual& gbq);
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);

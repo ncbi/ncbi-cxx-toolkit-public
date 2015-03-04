@@ -71,10 +71,16 @@ public:
     static void ParseExperiment(const string& orig, string& category, string& experiment, string& doi);
     static string BuildExperiment(const string& category, const string& experiment, const string& doi);
 
+    static bool CleanupRptUnitSeq(string& val);
+    static bool CleanupReplace(string& val);
+    static bool CleanupRptUnitRange(string& val);
+
 private:
     // Prohibit copy constructor and assignment operator
     CGb_qual(const CGb_qual& value);
     CGb_qual& operator=(const CGb_qual& value);
+
+    static bool x_CleanupRptAndReplaceSeq(string& val);
 
 };
 
