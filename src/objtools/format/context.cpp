@@ -88,6 +88,7 @@ CBioseqContext::CBioseqContext
     m_PartNumber(0),
     m_IsDeltaLitOnly(false),
     m_IsProt(false),
+    m_IsInSGS(false),
     m_IsInGPS(false),
     m_IsInNucProt(false),
     m_IsGED(false),
@@ -145,6 +146,7 @@ CBioseqContext::CBioseqContext
     m_PartNumber(0),
     m_IsDeltaLitOnly(false),
     m_IsProt(false),
+    m_IsInSGS(false),
     m_IsInGPS(false),
     m_IsInNucProt(false),
     m_IsGED(false),
@@ -232,6 +234,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     m_IsProt = CSeq_inst::IsAa(seq.GetInst_Mol());
 
+    m_IsInSGS     = x_IsInSGS();
     m_IsInGPS     = x_IsInGPS();
     m_IsInNucProt = x_IsInNucProt();
 
@@ -910,6 +913,14 @@ bool CBioseqContext::x_IsDeltaLitOnly(void) const
 SIZE_TYPE CBioseqContext::x_GetPartNumber(void)
 {
     return m_Master ? m_Master->GetPartNumber(m_Handle) : 0;
+}
+
+
+bool CBioseqContext::x_IsInSGS(void) const
+{
+    CSeq_entry_Handle e = 
+        m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_small_genome_set);
+    return e;
 }
 
 

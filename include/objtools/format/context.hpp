@@ -163,6 +163,7 @@ public:
     bool DoContigStyle(void) const;
     bool ShowGBBSource(void) const { return m_ShowGBBSource; }
 
+    bool IsInSGS    (void) const { return m_IsInSGS;     }  // Is in a small-gen set?
     bool IsInGPS    (void) const { return m_IsInGPS;     }  // Is in a gene-prod set?
     bool IsInNucProt(void) const { return m_IsInNucProt; }  // Is in a nuc-prot set?
 
@@ -261,6 +262,7 @@ private:
     bool x_IsPart(void) const;
     CBioseq_Handle x_GetMasterForPart(void) const;
     SIZE_TYPE x_GetPartNumber(void);
+    bool x_IsInSGS(void) const;
     bool x_IsInGPS(void) const;
     bool x_IsInNucProt(void) const;
     void x_SetLocation(const CSeq_loc* user_loc = 0);
@@ -313,7 +315,8 @@ private:
     bool        m_IsDeltaLitOnly;
 
     bool m_IsProt;         // Protein
-    bool m_IsInGPS;        // Gene-Prod Set
+    bool m_IsInSGS;        // Small-Genome Set
+    bool m_IsInGPS;        // Genomic-Product Set
     bool m_IsInNucProt;    // Nuc-Prot Set
     bool m_IsGED;          // Genbank, Embl or Ddbj
     bool m_IsGenbank;      // Genbank

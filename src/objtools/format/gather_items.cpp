@@ -2128,11 +2128,14 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx,
 {
     const bool showOutOfBoundsFeats = ctx.Config().ShowOutOfBoundsFeats();
     const bool is_part = ctx.IsPart();
+    /*
     const bool is_small_genome_set = ( ctx.CanGetTLSeqEntryCtx() &&
         ctx.GetTLSeqEntryCtx().GetHasSmallGenomeSet() );
+    */
+    const bool is_small_genome_set = ctx.IsInSGS();
 
     // check certain case(s) that let us skip some work
-    if( showOutOfBoundsFeats && ! is_part ) {
+    if( showOutOfBoundsFeats && ! is_part && ! is_small_genome_set ) {
         return true;
     }
 
