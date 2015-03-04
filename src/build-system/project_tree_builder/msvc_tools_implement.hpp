@@ -221,12 +221,6 @@ public:
             defines += ';';
         }
 
-#if 0
-        defines += GetCompilerOpt(m_MsvcMetaMakefile,
-                                  m_MsvcProjectMakefile,
-                                  "PreprocessorDefinitions",
-                                  m_Config );
-#else
         string opt("PreprocessorDefinitions");
         string val;
         val = m_MsvcProjectMakefile.GetCompilerOpt(opt, m_Config);
@@ -234,32 +228,21 @@ public:
             defines += val;
             defines += ';';
         }
-        val = m_MsvcMetaMakefile.GetCompilerOpt(opt, m_Config);
-        if (!val.empty()) {
-            defines += val;
+
+        if ( CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ) {
+            val = m_MsvcMetaMakefile.GetCompilerOpt(opt, m_Config);
+            if (!val.empty()) {
+                defines += val;
+            }
+        } else {
+            defines += "%(PreprocessorDefinitions)";
         }
-#endif
         return defines;
     }
 
     SUPPORT_COMPILER_OPTION(MinimalRebuild)
-    virtual string BasicRuntimeChecks(void) const
-    {
-#if 0
-        if (m_Config.m_VTuneAddon) {
-            return CMsvcMetaMakefile::TranslateOpt("0", "Compiler", "BasicRuntimeChecks");
-        }
-#endif
-        return GetCompilerOpt(m_MsvcMetaMakefile,
-                              m_MsvcProjectMakefile,
-                              "BasicRuntimeChecks",
-                              m_Config );
-    }
-    virtual string RuntimeLibrary(void) const
-    {
-	    return m_RuntimeLibraryOption;
-    }
-
+    SUPPORT_COMPILER_OPTION(BasicRuntimeChecks)
+    SUPPORT_COMPILER_OPTION(RuntimeLibrary)
     SUPPORT_COMPILER_OPTION(RuntimeTypeInfo)
     SUPPORT_COMPILER_OPTION(UsePrecompiledHeader)
     SUPPORT_COMPILER_OPTION(WarningLevel)
@@ -280,8 +263,6 @@ public:
     SUPPORT_COMPILER_OPTION(StringPooling)
     SUPPORT_COMPILER_OPTION(EnableFunctionLevelLinking)
 
-
-    //Latest additions
     SUPPORT_COMPILER_OPTION(OptimizeForProcessor)
     SUPPORT_COMPILER_OPTION(StructMemberAlignment)
     SUPPORT_COMPILER_OPTION(CallingConvention)
@@ -294,20 +275,7 @@ public:
     SUPPORT_COMPILER_OPTION(GlobalOptimizations)
     SUPPORT_COMPILER_OPTION(FavorSizeOrSpeed)
     SUPPORT_COMPILER_OPTION(BrowseInformation)
-
-    virtual string ProgramDataBaseFileName(void) const
-    {
-        string pdb_file = 
-            GetCompilerOpt(m_MsvcMetaMakefile,
-                         m_MsvcProjectMakefile,
-                         "ProgramDataBaseFileName", 
-                         m_Config );
-        if( !pdb_file.empty() )
-            return pdb_file;
-
-	    return string("$(IntDir)") + m_ProjectId + ".pdb";
-//	    return string("$(OutDir)$(ProjectName).pdb");
-    }
+    SUPPORT_COMPILER_OPTION(ProgramDataBaseFileName)
 
 private:
     string                   m_AdditionalIncludeDirectories;
@@ -359,40 +327,19 @@ public:
     }
     virtual string AdditionalOptions(void) const
     {
-#if 0
-	    return m_AdditionalOptions + " " +
-               GetLinkerOpt(m_MsvcMetaMakefile,
-                            m_MsvcProjectMakefile,
-                            "AdditionalOptions", 
-                            m_Config );
-#else
         string options(m_AdditionalOptions);
-        string add = m_MsvcMetaMakefile.GetLinkerOpt("AdditionalOptions", m_Config);
-        if (!add.empty()) {
-            options += " " + add;
+        string add;
+        if ( CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ) {
+            add = m_MsvcMetaMakefile.GetLinkerOpt("AdditionalOptions", m_Config);
+            if (!add.empty()) {
+                options += " " + add;
+            }
         }
         add = m_MsvcProjectMakefile.GetLinkerOpt("AdditionalOptions", m_Config);
         if (!add.empty()) {
             options += " " + add;
         }
         return options;
-#endif
-    }
-    virtual string OutputFile(void) const
-    {
-        string output_file = 
-            GetLinkerOpt(m_MsvcMetaMakefile,
-                         m_MsvcProjectMakefile,
-                         "OutputFile", 
-                         m_Config );
-        if( !output_file.empty() )
-            return output_file;
-
-//	    return string("$(OutDir)") + m_ProjectId + ConfTrait::TargetExtension();
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-    	    return string("$(OutDir)$(TargetName)$(TargetExt)");
-        }
-	    return string("$(OutDir)$(ProjectName)");
     }
 
 #define SUPPORT_LINKER_OPTION(opt) \
@@ -404,6 +351,7 @@ public:
                             m_Config ); \
     }
     
+    SUPPORT_LINKER_OPTION(OutputFile)
     SUPPORT_LINKER_OPTION(LinkIncremental)
     SUPPORT_LINKER_OPTION(LargeAddressAware)
     virtual string GenerateDebugInformation(void) const
@@ -417,28 +365,9 @@ public:
                             m_Config );
     }
 
-    virtual string ProgramDatabaseFile(void) const
-    {
-        string pdb_file = 
-            GetLinkerOpt(m_MsvcMetaMakefile,
-                         m_MsvcProjectMakefile,
-                         "ProgramDatabaseFile", 
-                         m_Config );
-        if( !pdb_file.empty() )
-            return pdb_file;
-
-	    return string("$(OutDir)") + m_ProjectId + ".pdb";
-//	    return string("$(OutDir)$(ProjectName).pdb");
-    }
-
+    SUPPORT_LINKER_OPTION(ProgramDatabaseFile)
     SUPPORT_LINKER_OPTION(SubSystem)
-    
-    virtual string ImportLibrary(void) const
-    {
-	    return string("$(OutDir)") + m_ProjectId + ".lib";
-//	    return string("$(OutDir)$(ProjectName).lib");
-    }
-
+    SUPPORT_LINKER_OPTION(ImportLibrary)
     SUPPORT_LINKER_OPTION(TargetMachine)
     SUPPORT_LINKER_OPTION(ImageHasSafeExceptionHandlers)
     SUPPORT_LINKER_OPTION(OptimizeReferences)
@@ -460,18 +389,7 @@ public:
 	    return add + m_AdditionalLibraryDirectories;
     }
 
-    virtual string FixedBaseAddress(void) const
-    {
-#if 0
-        if (m_Config.m_VTuneAddon) {
-            return CMsvcMetaMakefile::TranslateOpt("1", "Linker", "FixedBaseAddress");
-        }
-#endif
-        return GetLinkerOpt(m_MsvcMetaMakefile,
-                            m_MsvcProjectMakefile,
-                            "FixedBaseAddress",
-                            m_Config );
-    }
+    SUPPORT_LINKER_OPTION(FixedBaseAddress)
     SUPPORT_LINKER_OPTION(GenerateManifest)
     SUPPORT_LINKER_OPTION(EmbedManifest)
 
@@ -527,16 +445,8 @@ public:
     SUPPORT_DUMMY_OPTION(ImageHasSafeExceptionHandlers)
     SUPPORT_DUMMY_OPTION(OptimizeReferences)
     SUPPORT_DUMMY_OPTION(EnableCOMDATFolding)
-
-    virtual string IgnoreAllDefaultLibraries(void) const
-    {
-        return "false";
-    }
-    virtual string IgnoreDefaultLibraryNames(void) const
-    {
-        return "";
-    }
-
+    SUPPORT_DUMMY_OPTION(IgnoreAllDefaultLibraries)
+    SUPPORT_DUMMY_OPTION(IgnoreDefaultLibraryNames)
     SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
     SUPPORT_DUMMY_OPTION(FixedBaseAddress)
     SUPPORT_DUMMY_OPTION(GenerateManifest)
@@ -572,15 +482,6 @@ public:
 	    return "VCLibrarianTool";
     }
 
-    virtual string OutputFile(void) const
-    {
-//	    return string("$(OutDir)") + m_ProjectId + ".lib";
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-    	    return string("$(OutDir)$(TargetName)$(TargetExt)");
-        }
-	    return string("$(OutDir)$(ProjectName)");
-    }
-
 #define SUPPORT_LIBRARIAN_OPTION(opt) \
     virtual string opt(void) const \
     { \
@@ -593,6 +494,7 @@ public:
     SUPPORT_LIBRARIAN_OPTION(AdditionalLibraryDirectories)
     SUPPORT_LIBRARIAN_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_LIBRARIAN_OPTION(IgnoreDefaultLibraryNames)
+    SUPPORT_LIBRARIAN_OPTION(OutputFile)
     SUPPORT_LIBRARIAN_OPTION(TargetMachine)
 
 private:

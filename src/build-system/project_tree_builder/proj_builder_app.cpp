@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,13,0) );
+    SetVersion( CVersionInfo(3,14,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -772,6 +772,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     }
     // Projects
     CMsvcProjectGenerator prj_gen(*configurations);
+    CMsvcProjectGenerator::GeneratePropertySheets(m_Solution);
     NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         prj_gen.Generate(p->second);
     }
@@ -2934,6 +2935,7 @@ string CProjBulderApp::GetUtilityProjectsDir(void) const
 
 string CProjBulderApp::GetUtilityProjectsSrcDir(void)
 {
+#if 0
     string prj = GetProjectTreeInfo().m_Compilers;
     prj = CDirEntry::ConcatPath(prj, GetRegSettings().m_CompilersSubdir);
     prj = CDirEntry::ConcatPath(prj, GetBuildType().GetTypeStr());
@@ -2944,6 +2946,8 @@ string CProjBulderApp::GetUtilityProjectsSrcDir(void)
     prj = CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, prj);
     prj = CDirEntry::ConcatPath(prj, "UtilityProjects");
     prj = CDirEntry::AddTrailingPathSeparator(prj);
+#endif
+    string prj = CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
     return prj;
 }
 

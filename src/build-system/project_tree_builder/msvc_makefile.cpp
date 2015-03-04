@@ -813,7 +813,7 @@ string GetCompilerOpt(const IMsvcMetaMakefile&    meta_file,
                       const SConfigInfo&          config)
 {
     string val = project_file.GetCompilerOpt(opt, config);
-    if ( val.empty() ) {
+    if ( val.empty() && CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ) {
         val = meta_file.GetCompilerOpt(opt, config);
     }
     if (val == "-") {
@@ -829,7 +829,7 @@ string GetLinkerOpt(const IMsvcMetaMakefile& meta_file,
                     const SConfigInfo&       config)
 {
     string val = project_file.GetLinkerOpt(opt, config);
-    if ( val.empty() ) {
+    if ( val.empty() && CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ) {
         val = meta_file.GetLinkerOpt(opt, config);
     }
     if (val == "-") {
@@ -845,7 +845,7 @@ string GetLibrarianOpt(const IMsvcMetaMakefile& meta_file,
                        const SConfigInfo&       config)
 {
     string val = project_file.GetLibrarianOpt(opt, config);
-    if ( val.empty() ) {
+    if ( val.empty() && CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ) {
         val = meta_file.GetLibrarianOpt(opt, config);
     }
     if (val == "-") {
@@ -860,7 +860,7 @@ string GetResourceCompilerOpt(const IMsvcMetaMakefile& meta_file,
                               const SConfigInfo&       config)
 {
     string val = project_file.GetResourceCompilerOpt(opt, config);
-    if ( val.empty() ) {
+    if ( val.empty() && CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ) {
         val = meta_file.GetResourceCompilerOpt(opt, config);
     }
     if (val == "-") {

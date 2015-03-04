@@ -823,6 +823,9 @@ void __SET_CLCOMPILE_ELEMENT(
     Container& container, const string& name, const string& value,
     const string& condition = kEmptyStr)
 {
+    if (value.empty()) {
+        return;
+    }
     CRef<msbuild::CClCompile::C_E> e(new msbuild::CClCompile::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
@@ -834,21 +837,33 @@ void __SET_CLCOMPILE_ELEMENT(
 #define __SET_CLCOMPILE(container, name) \
     __SET_CLCOMPILE_ELEMENT(container, #name,  msvc_tool.Compiler()->name())
 
+#define __SET_CLCOMPILE_BASE(container, name) \
+    __SET_CLCOMPILE_ELEMENT(container, #name,  meta_mk.GetCompilerOpt(#name, cfg_info));
+
 
 template<typename Container>
 void __SET_LIB_ELEMENT(
     Container& container, const string& name, const string& value)
 {
+    if (value.empty()) {
+        return;
+    }
     CRef<msbuild::CLib::C_E> e(new msbuild::CLib::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     container->SetLib().Set().push_back(e);
 }
 
+#define __SET_LIB_BASE(container, name) \
+    __SET_LIB_ELEMENT(container, #name,  meta_mk.GetLibrarianOpt(#name, cfg_info));
+
 template<typename Container>
 void __SET_LINK_ELEMENT(
     Container& container, const string& name, const string& value)
 {
+    if (value.empty()) {
+        return;
+    }
     CRef<msbuild::CLink::C_E> e(new msbuild::CLink::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
@@ -857,11 +872,18 @@ void __SET_LINK_ELEMENT(
 #define __SET_LINK(container, name) \
     __SET_LINK_ELEMENT(container, #name,  msvc_tool.Linker()->name())
 
+#define __SET_LINK_BASE(container, name) \
+    __SET_LINK_ELEMENT(container, #name,  meta_mk.GetLinkerOpt(#name, cfg_info));
+
+
 template<typename Container>
 void __SET_RC_ELEMENT(
     Container& container, const string& name, const string& value,
     const string& condition = kEmptyStr)
 {
+    if (value.empty()) {
+        return;
+    }
     CRef<msbuild::CResourceCompile::C_E> e(new msbuild::CResourceCompile::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
@@ -871,11 +893,18 @@ void __SET_RC_ELEMENT(
     container->SetResourceCompile().SetResourceCompile().push_back(e);
 }
 
+#define __SET_RC_BASE(container, name) \
+    __SET_RC_ELEMENT(container, #name,  meta_mk.GetResourceCompilerOpt(#name, cfg_info));
+
+
 template<typename Container>
 void __SET_NONE_ELEMENT(
     Container& container, const string& name, const string& value,
     const string& condition = kEmptyStr)
 {
+    if (value.empty()) {
+        return;
+    }
     CRef<msbuild::CNone::C_E> e(new msbuild::CNone::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
@@ -900,7 +929,263 @@ void __SET_CUSTOMBUILD_ELEMENT(
 }
 
 
+#define USE_PERCFG_PROPSHEET  1
 
+void CMsvcProjectGenerator::GeneratePropertySheets(const string& solution)
+{
+    string ps_dir( CDirEntry(solution).GetDir());
+    string ps_base(CDirEntry(solution).GetBase() + ".base.props");
+    const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
+    const CMsvcMetaMakefile&  meta_mk = GetApp().GetMetaMakefile();
+
+// user props
+#if USE_PERCFG_PROPSHEET
+    ITERATE(list<SConfigInfo>, c , all_cfgs) {
+
+        string ps_user(CDirEntry(solution).GetBase() + "." + c->GetConfigFullName() + ".user.props");
+        string file_user(CDirEntry::ConcatPath(ps_dir, ps_user));
+        if (!CDirEntry(file_user).Exists())
+        {
+            //default is very simple and empty
+            msbuild::CProject project;
+            project.SetAttlist().SetToolsVersion("4.0");
+
+            // NCBI base prop sheet
+            {
+                CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+                t->SetImportGroup().SetAttlist().SetLabel("PropertySheets");
+                {
+                    CRef<msbuild::CImportGroup::C_E> p(new msbuild::CImportGroup::C_E);
+                    p->SetImport().SetAttlist().SetProject(ps_base);
+                    t->SetImportGroup().SetImportGroup().push_back(p);
+                }
+                project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+            }
+            // UserMacros
+            {
+                CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+                t->SetPropertyGroup().SetAttlist().SetLabel("UserMacros");
+                project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+            }
+
+            // empty PropertyGroup
+            {
+                CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+                t->SetPropertyGroup();
+                project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+            }
+
+            // ItemDefinitionGroup
+            {
+                CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+                project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+                t->SetItemDefinitionGroup();
+#if 0
+                // compiler
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetClCompile();
+                }
+                // linker
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetLink();
+                }
+                // librarian
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetLib();
+                }
+#endif
+            }
+            SaveIfNewer(file_user, project);
+        }
+    }
+#else
+    string ps_user(CDirEntry(solution).GetBase() + ".user.props");
+    string file_user(CDirEntry::ConcatPath(ps_dir, ps_user));
+    if (!CDirEntry(file_user).Exists())
+    {
+        //default is very simple and empty
+        msbuild::CProject project;
+        project.SetAttlist().SetToolsVersion("4.0");
+
+        // NCBI base prop sheet
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetImportGroup().SetAttlist().SetLabel("PropertySheets");
+            {
+                CRef<msbuild::CImportGroup::C_E> p(new msbuild::CImportGroup::C_E);
+                p->SetImport().SetAttlist().SetProject(ps_base);
+                t->SetImportGroup().SetImportGroup().push_back(p);
+            }
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+        // UserMacros
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetPropertyGroup().SetAttlist().SetLabel("UserMacros");
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+
+        // empty PropertyGroup
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetPropertyGroup();
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+
+        ITERATE(list<SConfigInfo>, c , all_cfgs) {
+
+            string cfg_condition("'$(Configuration)|$(Platform)'=='");
+            const SConfigInfo& cfg_info = *c;
+            cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+
+            // ItemDefinitionGroup
+            {
+                CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+                project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+                t->SetItemDefinitionGroup().SetAttlist().SetCondition(cfg_condition);
+                // compiler
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetClCompile();
+                }
+                // linker
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetLink();
+                }
+                // librarian
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetLib();
+                }
+            }
+        }
+        SaveIfNewer(file_user, project);
+    }
+#endif
+
+// base props
+    string file_base(CDirEntry::ConcatPath(ps_dir, ps_base));
+    {
+        msbuild::CProject project;
+        project.SetAttlist().SetToolsVersion("4.0");
+
+        // NCBI base prop sheet
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetImportGroup().SetAttlist().SetLabel("PropertySheets");
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+        // UserMacros
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetPropertyGroup().SetAttlist().SetLabel("UserMacros");
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+        // empty PropertyGroup
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetPropertyGroup();
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+
+        ITERATE(list<SConfigInfo>, c , all_cfgs) {
+
+            string cfg_condition("'$(Configuration)|$(Platform)'=='");
+            const SConfigInfo& cfg_info = *c;
+            cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+
+
+            // ItemDefinitionGroup
+            {
+                CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+                t->SetItemDefinitionGroup().SetAttlist().SetCondition(cfg_condition);
+                project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+
+                // compiler
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetClCompile();
+                    __SET_CLCOMPILE_BASE(p, AdditionalOptions);
+                    __SET_CLCOMPILE_BASE(p, BasicRuntimeChecks);
+                    __SET_CLCOMPILE_BASE(p, BrowseInformation);
+                    __SET_CLCOMPILE_BASE(p, BufferSecurityCheck);
+                    __SET_CLCOMPILE_BASE(p, CallingConvention);
+                    __SET_CLCOMPILE_BASE(p, CompileAs);
+                    __SET_CLCOMPILE_BASE(p, DebugInformationFormat);
+                    __SET_CLCOMPILE_BASE(p, DisableSpecificWarnings);
+                    __SET_CLCOMPILE_BASE(p, EnableFunctionLevelLinking);
+                    __SET_CLCOMPILE_BASE(p, FavorSizeOrSpeed);
+                    __SET_CLCOMPILE_BASE(p, IgnoreStandardIncludePath);
+                    __SET_CLCOMPILE_BASE(p, InlineFunctionExpansion);
+                    __SET_CLCOMPILE_BASE(p, MinimalRebuild);
+                    __SET_CLCOMPILE_BASE(p, OmitFramePointers);
+                    __SET_CLCOMPILE_BASE(p, Optimization);
+                    __SET_CLCOMPILE_BASE(p, PreprocessorDefinitions);
+                    __SET_CLCOMPILE_BASE(p, ProgramDataBaseFileName);
+                    __SET_CLCOMPILE_BASE(p, RuntimeLibrary);
+                    __SET_CLCOMPILE_BASE(p, RuntimeTypeInfo);
+                    __SET_CLCOMPILE_BASE(p, StringPooling);
+                    __SET_CLCOMPILE_BASE(p, StructMemberAlignment);
+                    __SET_CLCOMPILE_BASE(p, UndefinePreprocessorDefinitions);
+                    __SET_CLCOMPILE_BASE(p, WarningLevel);
+                }
+                // linker
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetLink();
+                    __SET_LINK_BASE(p, AdditionalDependencies);
+                    __SET_LINK_BASE(p, AdditionalLibraryDirectories);
+                    __SET_LINK_BASE(p, AdditionalOptions);
+                    __SET_LINK_BASE(p, EnableCOMDATFolding);
+                    __SET_LINK_BASE(p, FixedBaseAddress);
+                    __SET_LINK_BASE(p, GenerateDebugInformation);
+                    __SET_LINK_BASE(p, ImportLibrary);
+                    __SET_LINK_BASE(p, IgnoreAllDefaultLibraries);
+                    __SET_LINK_BASE(p, IgnoreDefaultLibraryNames);
+                    __SET_LINK_BASE(p, LargeAddressAware);
+                    __SET_LINK_BASE(p, OptimizeReferences);
+                    __SET_LINK_BASE(p, SubSystem);
+                    __SET_LINK_BASE(p, TargetMachine);
+                    __SET_LINK_BASE(p, ImageHasSafeExceptionHandlers);
+                }
+                // librarian
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetLib();
+                    __SET_LIB_BASE(p, AdditionalLibraryDirectories);
+                    __SET_LIB_BASE(p, AdditionalOptions);
+                    __SET_LIB_BASE(p, IgnoreAllDefaultLibraries);
+                    __SET_LIB_BASE(p, IgnoreSpecificDefaultLibraries);
+                    __SET_LIB_BASE(p, OutputFile);
+                    __SET_LIB_BASE(p, TargetMachine);
+                }
+                // resource compiler
+                {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    p->SetResourceCompile();
+                    __SET_RC_BASE(p, AdditionalIncludeDirectories);
+                    __SET_RC_BASE(p, AdditionalOptions);
+                    __SET_RC_BASE(p, PreprocessorDefinitions);
+                }
+            }
+        }
+        SaveIfNewer(file_base, project);
+    }
+}
 
 void CMsvcProjectGenerator::GenerateMsbuild(
     CMsvcPrjFilesCollector& collector,
@@ -1001,6 +1286,19 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                 p->SetImport().SetAttlist().SetLabel("LocalAppDataPlatform");
                 t->SetImportGroup().SetImportGroup().push_back(p);
             }
+            {
+// NCBI user prop sheet
+                CRef<msbuild::CImportGroup::C_E> p(new msbuild::CImportGroup::C_E);
+                string ps_name = "$(ProjectDir)" + 
+                    CDirEntry::CreateRelativePath(project_context.ProjectDir(), GetApp().m_Solution);
+#if USE_PERCFG_PROPSHEET
+                ps_name = CDirEntry(ps_name).GetDir() + "$(SolutionName)." + c->GetConfigFullName() + ".user.props";
+#else
+                ps_name = CDirEntry(ps_name).GetDir() + "$(SolutionName)" + ".user.props";
+#endif
+                p->SetImport().SetAttlist().SetProject(ps_name);
+                t->SetImportGroup().SetImportGroup().push_back(p);
+            }
             project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
         }
     }
@@ -1025,6 +1323,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         }
 
         // OutDir/IntDir/TargetName
+        const CMsvcMetaMakefile&  meta_mk = GetApp().GetMetaMakefile();
         ITERATE(list<SConfigInfo>, c , all_cfgs) {
 
             const SConfigInfo& cfg_info = *c;
@@ -1049,8 +1348,18 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             __SET_PROPGROUP_ELEMENT(t, "OutDir",          customtargetname ? targetdir : msvc_tool.Configuration()->OutputDirectory(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "IntDir",          msvc_tool.Configuration()->IntermediateDirectory(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "TargetName",      customtargetname ? targetname : project_context.ProjectId(), cfg_condition);
-            __SET_PROPGROUP_ELEMENT(t, "LinkIncremental", msvc_tool.Linker()->LinkIncremental(), cfg_condition);
-            string prop = msvc_tool.Linker()->GenerateManifest();
+
+            string prop;
+            prop = msvc_tool.Linker()->LinkIncremental();
+            if (prop.empty()) {
+                prop = meta_mk.GetLinkerOpt("LinkIncremental", cfg_info);
+            }
+            __SET_PROPGROUP_ELEMENT(t, "LinkIncremental", prop, cfg_condition);
+
+            prop = msvc_tool.Linker()->GenerateManifest();
+            if (prop.empty()) {
+                prop = meta_mk.GetLinkerOpt("GenerateManifest", cfg_info);
+            }
 #if __USE_DISABLED_CFGS__
             if (all_cfgs.size() != m_project_configs.size() &&
                 find(m_project_configs.begin(), m_project_configs.end(), *c) == m_project_configs.end()) {
@@ -1058,7 +1367,13 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             }
 #endif
             __SET_PROPGROUP_ELEMENT(t, "GenerateManifest", prop, cfg_condition);
-            __SET_PROPGROUP_ELEMENT(t, "EmbedManifest", msvc_tool.Linker()->EmbedManifest(), cfg_condition);
+
+            prop = msvc_tool.Linker()->EmbedManifest();
+            if (prop.empty()) {
+                prop = meta_mk.GetLinkerOpt("EmbedManifest", cfg_info);
+            }
+            __SET_PROPGROUP_ELEMENT(t, "EmbedManifest", prop, cfg_condition);
+
             if (customtargetname) {
                 __SET_PROPGROUP_ELEMENT(t, "TargetExt", targetext, cfg_condition);
             }
@@ -1107,6 +1422,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             {
                 CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
                 t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                p->SetClCompile();
 
                 __SET_CLCOMPILE(p, AdditionalIncludeDirectories);
                 __SET_CLCOMPILE(p, AdditionalOptions);
@@ -1143,6 +1459,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             {
                 CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
                 t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                p->SetLink();
 
                 __SET_LINK(p, AdditionalDependencies);
                 __SET_LINK(p, AdditionalLibraryDirectories);
@@ -1167,14 +1484,13 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 #endif
                 __SET_LINK(p, SubSystem);
                 __SET_LINK(p, TargetMachine);
-                if (!msvc_tool.Linker()->ImageHasSafeExceptionHandlers().empty()) {
-                    __SET_LINK(p, ImageHasSafeExceptionHandlers);
-                }
+                __SET_LINK(p, ImageHasSafeExceptionHandlers);
             }
             // librarian
             {
                 CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
                 t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                p->SetLib();
                 __SET_LIB_ELEMENT(p, "AdditionalLibraryDirectories",   msvc_tool.Librarian()->AdditionalLibraryDirectories());
                 __SET_LIB_ELEMENT(p, "AdditionalOptions",              msvc_tool.Librarian()->AdditionalOptions());
                 __SET_LIB_ELEMENT(p, "IgnoreAllDefaultLibraries",      msvc_tool.Librarian()->IgnoreAllDefaultLibraries());
@@ -1186,6 +1502,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             {
                 CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
                 t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                p->SetResourceCompile();
                 __SET_RC_ELEMENT(p, "AdditionalIncludeDirectories", msvc_tool.ResourceCompiler()->AdditionalIncludeDirectories());
                 __SET_RC_ELEMENT(p, "AdditionalOptions",            msvc_tool.ResourceCompiler()->AdditionalOptions());
                 __SET_RC_ELEMENT(p, "PreprocessorDefinitions",      msvc_tool.ResourceCompiler()->PreprocessorDefinitions());

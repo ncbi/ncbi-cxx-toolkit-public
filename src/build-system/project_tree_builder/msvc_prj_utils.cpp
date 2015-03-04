@@ -77,7 +77,7 @@ void SaveToXmlFile(const string& file_path, const CSerialObject& project)
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
-    CObjectOStreamXml xs(ofs, false);
+    CObjectOStreamXml xs(ofs, eNoOwnership);
     if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
         xs.SetReferenceSchema();
         xs.SetUseSchemaLocation(false);
@@ -533,6 +533,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
                                   "runtimeLibraryOption","0"));
         configs->push_back(config);
 #if 0
+// per CXX-4211
         if (( config.m_Debug && GetApp().m_TweakVTuneD) ||
             (!config.m_Debug && GetApp().m_TweakVTuneR))
         {
