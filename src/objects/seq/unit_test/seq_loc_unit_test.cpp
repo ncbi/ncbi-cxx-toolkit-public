@@ -68,13 +68,13 @@ string MakeASN(const Obj& loc)
 }
 
 
-BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test1)
+BOOST_AUTO_TEST_CASE(TestSingle)
 {
     CRef<CSeq_loc> loc =
         MakeLoc("int { from 10, to 20, id gi 2 }");
     
     CSeq_loc_CI it(*loc);
-    BOOST_CHECK(!it.HasEquivParts());
+    BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
     BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
@@ -84,14 +84,21 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test1)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
 }
 
 
-BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test2)
+BOOST_AUTO_TEST_CASE(TestDouble)
 {
     CRef<CSeq_loc> loc =
         MakeLoc("mix {"
@@ -100,7 +107,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test2)
                 "}");
     
     CSeq_loc_CI it(*loc);
-    BOOST_CHECK(!it.HasEquivParts());
+    BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
     BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
@@ -111,7 +118,15 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test2)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -123,14 +138,21 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test2)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
 }
 
 
-BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
+BOOST_AUTO_TEST_CASE(TestEquiv)
 {
     CRef<CSeq_loc> loc =
         MakeLoc("mix {"
@@ -146,7 +168,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
                 "}");
     
     CSeq_loc_CI it(*loc);
-    BOOST_CHECK(it.HasEquivParts());
+    BOOST_CHECK(it.HasEquivSets());
 
     BOOST_REQUIRE(it);
     BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
@@ -157,7 +179,15 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -169,7 +199,20 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(it.IsInEquivPart());
+    BOOST_CHECK(it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(it.GetEquivSetsCount(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 2u);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 25,\n"
+                      "  to 27,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -181,7 +224,20 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(it.IsInEquivPart());
+    BOOST_CHECK(it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(it.GetEquivSetsCount(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 2u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 25,\n"
+                      "  to 26,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -193,7 +249,20 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
-    BOOST_CHECK(it.IsInEquivPart());
+    BOOST_CHECK(it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(it.GetEquivSetsCount(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 2u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 27,\n"
+                      "  to 27,\n"
+                      "  strand minus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -205,14 +274,21 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_CI_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
 }
 
 
-BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
+BOOST_AUTO_TEST_CASE(TestEdit1)
 {
     CRef<CSeq_loc> loc =
         MakeLoc("mix {"
@@ -221,7 +297,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
                 "}");
     
     CSeq_loc_I it(*loc);
-    BOOST_CHECK(!it.HasEquivParts());
+    BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
     BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
@@ -232,8 +308,23 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     it.SetTo(10);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -245,9 +336,22 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
     it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(2));
     it.SetStrand(eNa_strand_plus);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
@@ -265,7 +369,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test1)
 }
 
 
-BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
+BOOST_AUTO_TEST_CASE(TestEdit2)
 {
     CRef<CSeq_loc> loc =
         MakeLoc("mix {"
@@ -274,7 +378,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
                 "}");
     
     CSeq_loc_I it(*loc);
-    BOOST_CHECK(!it.HasEquivParts());
+    BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
     BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
@@ -285,8 +389,22 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
-    it.SetTo(10);
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
+    it.SetPoint(10);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -298,8 +416,21 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
     it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
@@ -323,7 +454,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test2)
 }
 
 
-BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
+BOOST_AUTO_TEST_CASE(TestEdit3)
 {
     CRef<CSeq_loc> loc =
         MakeLoc("mix {"
@@ -332,7 +463,7 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
                 "}");
     
     CSeq_loc_I it(*loc);
-    BOOST_CHECK(!it.HasEquivParts());
+    BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
     BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
@@ -343,8 +474,23 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(!it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     it.SetTo(10);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -356,8 +502,21 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
     BOOST_CHECK(!it.IsWhole());
     BOOST_CHECK(!it.IsEmpty());
     BOOST_CHECK(it.IsPoint());
-    BOOST_CHECK(!it.IsInEquivPart());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
     it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
@@ -378,3 +537,443 @@ BOOST_AUTO_TEST_CASE(CSeq_loc_I_Test3)
                       "  }\n"
                       "}\n");
 }
+
+
+BOOST_AUTO_TEST_CASE(TestBond)
+{
+    CRef<CSeq_loc> loc =
+        MakeLoc("bond {"
+                " a { point 10, strand plus, id gi 2 },"
+                " b { point 30, strand minus, id gi 3}"
+                "}");
+    
+    CSeq_loc_I it(*loc);
+    BOOST_CHECK(!it.HasEquivSets());
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(it.IsInBond());
+    BOOST_CHECK(it.IsBondA());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(it.IsInBond());
+    BOOST_CHECK(it.IsBondB());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
+    ++it;
+
+    BOOST_CHECK(!it);
+
+    string loc2 = MakeASN(*it.MakeSeq_loc(it.eMake_PreserveType));
+    BOOST_CHECK_EQUAL(loc2,
+                      "Seq-loc ::= bond {\n"
+                      "  a {\n"
+                      "    point 10,\n"
+                      "    strand plus,\n"
+                      "    id gi 2\n"
+                      "  },\n"
+                      "  b {\n"
+                      "    point 30,\n"
+                      "    strand minus,\n"
+                      "    id gi 3\n"
+                      "  }\n"
+                      "}\n");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestMakeBond)
+{
+    CRef<CSeq_loc> loc =
+        MakeLoc("mix {"
+                " pnt { point 10, strand plus, id gi 2 },"
+                " pnt { point 30, strand minus, id gi 3},"
+                " pnt { point 40, id gi 4}"
+                "}");
+    
+    CSeq_loc_I it(*loc);
+    BOOST_CHECK(!it.HasEquivSets());
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(4));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(40, 40));
+    BOOST_CHECK(!it.IsSetStrand());
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 40,\n"
+                      "  id gi 4\n"
+                      "}\n");
+    ++it;
+
+    BOOST_CHECK(!it);
+
+    it.SetPos(0);
+    it.MakeBondAB();
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(4));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(40, 40));
+    BOOST_CHECK(!it.IsSetStrand());
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 40,\n"
+                      "  id gi 4\n"
+                      "}\n");
+    ++it;
+
+    BOOST_CHECK(!it);
+
+    string loc2 = MakeASN(*it.MakeSeq_loc(it.eMake_PreserveType));
+    BOOST_CHECK_EQUAL(loc2,
+                      "Seq-loc ::= mix {\n"
+                      "  bond {\n"
+                      "    a {\n"
+                      "      point 10,\n"
+                      "      strand plus,\n"
+                      "      id gi 2\n"
+                      "    },\n"
+                      "    b {\n"
+                      "      point 30,\n"
+                      "      strand minus,\n"
+                      "      id gi 3\n"
+                      "    }\n"
+                      "  },\n"
+                      "  pnt {\n"
+                      "    point 40,\n"
+                      "    id gi 4\n"
+                      "  }\n"
+                      "}\n");
+
+    it.SetPos(0);
+    it.RemoveBond();
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 10,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(4));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(40, 40));
+    BOOST_CHECK(!it.IsSetStrand());
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 40,\n"
+                      "  id gi 4\n"
+                      "}\n");
+    ++it;
+
+    BOOST_CHECK(!it);
+
+    loc2 = MakeASN(*it.MakeSeq_loc(it.eMake_PreserveType));
+    BOOST_CHECK_EQUAL(loc2,
+                      "Seq-loc ::= mix {\n"
+                      "  pnt {\n"
+                      "    point 10,\n"
+                      "    strand plus,\n"
+                      "    id gi 2\n"
+                      "  },\n"
+                      "  pnt {\n"
+                      "    point 30,\n"
+                      "    strand minus,\n"
+                      "    id gi 3\n"
+                      "  },\n"
+                      "  pnt {\n"
+                      "    point 40,\n"
+                      "    id gi 4\n"
+                      "  }\n"
+                      "}\n");
+}
+
+/*
+BOOST_AUTO_TEST_CASE(TestMakeEquiv)
+{
+    CRef<CSeq_loc> loc =
+        MakeLoc("mix {"
+                " int { from 10, to 20, strand plus, id gi 2 },"
+                " equiv {"
+                "  int { from 25, to 27, strand plus, id gi 2 },"
+                "  mix {"
+                "   int { from 25, to 26, strand plus, id gi 2 },"
+                "   int { from 27, to 27, strand minus, id gi 2 }"
+                "  }"
+                " },"
+                " pnt { point 30, strand minus, id gi 3}"
+                "}");
+    
+    CSeq_loc_I it(*loc);
+    BOOST_CHECK(it.HasEquivSets());
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(!it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 27));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(!it.IsPoint());
+    BOOST_CHECK(it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(it.GetEquivSetsCount(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 2u);
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 26));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_plus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(!it.IsPoint());
+    BOOST_CHECK(it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(it.GetEquivSetsCount(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 2u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 4u);
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(27, 27));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(it.GetEquivSetsCount(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).first.GetPos(), 1u);
+    BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 2u);
+    BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 4u);
+    ++it;
+
+    BOOST_REQUIRE(it);
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK(it.GetSeq_id().IsGi());
+    BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
+    BOOST_CHECK(it.IsSetStrand());
+    BOOST_CHECK_EQUAL(int(it.GetStrand()), int(eNa_strand_minus));
+    BOOST_CHECK(!it.IsWhole());
+    BOOST_CHECK(!it.IsEmpty());
+    BOOST_CHECK(it.IsPoint());
+    BOOST_CHECK(!it.IsInEquivSet());
+    BOOST_CHECK(!it.IsInBond());
+    ++it;
+
+    BOOST_CHECK(!it);
+
+    string loc2 = MakeASN(*it.MakeSeq_loc());
+    BOOST_CHECK_EQUAL(loc2,
+                      "Seq-loc ::= mix {\n"
+                      "  int {\n"
+                      "    from 10,\n"
+                      "    to 20,\n"
+                      "    strand plus,\n"
+                      "    id gi 2\n"
+                      "  },\n"
+                      "  equiv {"
+                      "    int {\n"
+                      "      from 25,\n"
+                      "      to 27,\n"
+                      "      strand plus,\n"
+                      "      id gi 2\n"
+                      "    },\n"
+                      "    mix {"
+                      "      int {\n"
+                      "        from 25,\n"
+                      "        to 26,\n"
+                      "        strand plus,\n"
+                      "        id gi 2\n"
+                      "      },\n"
+                      "      int {\n"
+                      "        from 27,\n"
+                      "        to 27,\n"
+                      "        strand minus,\n"
+                      "        id gi 2\n"
+                      "      }\n"
+                      "    }\n"
+                      "  },\n"
+                      "  pnt {\n"
+                      "    point 30,\n"
+                      "    strand minus,\n"
+                      "    id gi 3\n"
+                      "  }\n"
+                      "}\n");
+}
+*/

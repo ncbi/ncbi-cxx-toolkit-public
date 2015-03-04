@@ -80,6 +80,7 @@ public:
         eBadLocation,    ///< Seq-loc is incorrectly formed
         eBadIterator,    ///< Seq-loc iterator is in bad state
         eIncomatible,    ///< Seq-loc type is incompatible with operation
+        eOutOfRange,     ///< parameter is out of valid range
 
         eOtherError
     };
@@ -416,8 +417,6 @@ struct NCBI_SEQLOC_EXPORT SSeq_loc_CI_RangeInfo {
     TRange              m_Range;
     bool                m_IsSetStrand;
     ENa_strand          m_Strand;
-    CSeq_loc::E_Choice  m_ParentType;
-    // The original seq-loc for the interval
     CConstRef<CSeq_loc> m_Loc;
     pair<CConstRef<CInt_fuzz>, CConstRef<CInt_fuzz> > m_Fuzz;
 };
@@ -439,13 +438,16 @@ public:
         eOrder_Positional,    /// Iterate sub-locations in positional order
         eOrder_Biological     /// Iterate sub-locations in biological order
     };
-    typedef SSeq_loc_CI_RangeInfo::TRange TRange;
+    typedef CSeq_loc::TRange TRange;
 
     /// constructors
     CSeq_loc_CI(void);
     CSeq_loc_CI(const CSeq_loc& loc,
                 EEmptyFlag empty_flag = eEmpty_Skip,
                 ESeqLocOrder order = eOrder_Biological);
+    /// construct iterator at a different position in the same location
+    /// @sa GetPos()
+    CSeq_loc_CI(const CSeq_loc_CI& iter, size_t pos);
     /// destructor
     virtual ~CSeq_loc_CI(void);
 
@@ -458,10 +460,40 @@ public:
     bool operator== (const CSeq_loc_CI& iter) const;
     bool operator!= (const CSeq_loc_CI& iter) const;
 
+    /// Location of type equiv define set of equivalent locations.
+    /// Each equiv set consist of several equivalent parts.
+    /// Each equiv part can contain equiv location too,
+    /// so equiv sets are recursive.
+
+    /// Return true if current position is part of a bond
+    bool IsInBond(void) const;
+    /// Return true if current position is A part of a bond
+    bool IsBondA(void) const;
+    /// Return true if current position is B part of a bond
+    bool IsBondB(void) const;
+    /// Return iterators that cover bond of current position
+    /// result.first is the first segment in the equiv set
+    /// result.second is the first segment after the equiv set
+    pair<CSeq_loc_CI, CSeq_loc_CI> GetBondRange(void) const;
+
     /// Return true if location has equiv parts
-    bool HasEquivParts(void) const;
+    bool HasEquivSets(void) const;
     /// Return true if current position is in some equiv part
-    bool IsInEquivPart(void) const;
+    bool IsInEquivSet(void) const;
+    /// Return number of recursuve equiv parts current position in
+    size_t GetEquivSetsCount(void) const;
+    /// Return iterators that cover equiv set of current position
+    /// result.first is the first segment in the equiv set
+    /// result.second is the first segment after the equiv set
+    /// level specify equiv set if there are more than one of them
+    /// level = 0 is the smallest equiv set (innermost)
+    pair<CSeq_loc_CI, CSeq_loc_CI> GetEquivSetRange(size_t level = 0) const;
+    /// Return iterators that cover equiv part of current position
+    /// result.first is the first segment in the equiv part
+    /// result.second is the first segment after the equiv part
+    /// level specify equiv set if there are more than one of them
+    /// level = 0 is the smallest equiv set (innermost)
+    pair<CSeq_loc_CI, CSeq_loc_CI> GetEquivPartRange(size_t level = 0) const;
 
     /// Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
@@ -507,6 +539,9 @@ public:
     /// Get number of ranges.
     size_t GetSize(void) const;
 
+    /// Get iterator's position.
+    size_t GetPos(void) const;
+
     /// Set iterator's position.
     void SetPos(size_t pos);
 
@@ -526,7 +561,6 @@ protected:
 };
 
 
-
 /// Seq-loc iterator class -- iterates all intervals from a seq-loc
 /// in the correct order.
 class NCBI_SEQLOC_EXPORT CSeq_loc_I : public CSeq_loc_CI
@@ -541,7 +575,10 @@ public:
 
     /// constructors
     CSeq_loc_I(void);
-    CSeq_loc_I(const CSeq_loc& loc);
+    CSeq_loc_I(CSeq_loc& loc);
+    /// construct iterator at a different position in the same location
+    /// @sa GetPos()
+    CSeq_loc_I(const CSeq_loc_I& iter, size_t pos);
     /// destructor
     virtual ~CSeq_loc_I(void);
 
@@ -614,6 +651,7 @@ public:
     void SetRange(const TRange& range);
     void SetFrom(TSeqPos from);
     void SetTo(TSeqPos to);
+    void SetPoint(TSeqPos pos);
 
     /// Set strand
     void ResetStrand(void);
@@ -621,23 +659,50 @@ public:
 
     // Change fuzz values
     void ResetFuzzFrom(void);
-    void SetFuzzFrom(const CInt_fuzz& fuzz);
+    void SetFuzzFrom(CInt_fuzz& fuzz);
     void ResetFuzzTo(void);
-    void SetFuzzTo(const CInt_fuzz& fuzz);
+    void SetFuzzTo(CInt_fuzz& fuzz);
+    // Point version
+    void ResetFuzz(void);
+    void SetFuzz(CInt_fuzz& fuzz);
+
+    /// Return iterators that cover equiv set of current position
+    /// result.first is the first segment in the equiv set
+    /// result.second is the first segment after the equiv set
+    /// level specify equiv set if there are more than one of them
+    /// level = 0 is the smallest equiv set (innermost)
+    pair<CSeq_loc_I, CSeq_loc_I> GetEquivSetRange(size_t level = 0) const;
+    /// Return iterators that cover equiv part of current position
+    /// result.first is the first segment in the equiv part
+    /// result.second is the first segment after the equiv part
+    /// level specify equiv set if there are more than one of them
+    /// level = 0 is the smallest equiv set (innermost)
+    pair<CSeq_loc_I, CSeq_loc_I> GetEquivPartRange(size_t level = 0) const;
+
+    /// Remove bond at current position - it may be either A or B part
+    void RemoveBond(void);
+    /// Make bond at current position (only A)
+    /// The current part must be a point
+    /// If current posision is already a bond A part, it will be updated
+    void MakeBondA(void);
+    /// Make bond at current position with the next position (A and B)
+    /// The current and next parts must be points
+    /// If current posision is already a bond A part, it will be updated
+    void MakeBondAB(void);
+    /// Make bond at previous position with the current position (A and B)
+    /// The current and previous parts must be points
+    /// If previous posision is already a bond A part, it will be updated
+    void MakeBondB(void);
 
 protected:
     using CSeq_loc_CI::x_GetRangeInfo;
     SSeq_loc_CI_RangeInfo& x_GetRangeInfo(void);
 
-    void x_SetHasChanges(void);
     void x_SetSeq_id_Handle(SSeq_loc_CI_RangeInfo& info,
                             const CSeq_id_Handle& id);
 
     virtual const char* x_GetIteratorType(void) const;
-
-    bool m_HasChanges;
 };
-
 
 
 /////////////////// CSeq_loc inline methods
@@ -855,19 +920,18 @@ bool CSeq_loc_CI::IsPoint(void) const
 }
 
 inline
+size_t CSeq_loc_CI::GetPos(void) const
+{
+    return m_Index;
+}
+
+inline
 void CSeq_loc_CI::Rewind(void)
 {
     m_Index = 0;
 }
 
 /////////////////// CSeq_loc_I inline methods
-
-inline
-bool CSeq_loc_I::HasChanges(void) const
-{
-    return m_HasChanges;
-}
-
 
 NCBISER_HAVE_POST_READ(CSeq_loc)
 
