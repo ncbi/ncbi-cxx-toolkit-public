@@ -3618,18 +3618,6 @@ void CNewCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
     }
 }
 
-static
-bool s_HasUpper (const string &val)
-{
-    FOR_EACH_CHAR_IN_STRING( str_itr, val ) {
-        if( isupper(*str_itr) ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 
 bool CNewCleanup_imp::x_IsBaseRange(const string& val)
 {
