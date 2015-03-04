@@ -5,4 +5,4 @@ NCBI_CONFIG__filetrack__api_key='bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pH
 NCBI_CONFIG__filetrack__site='dev'
 export NCBI_CONFIG__filetrack__api_key NCBI_CONFIG__filetrack__site
 
-$CHECK_EXEC test_netstorage --show_progress
+$CHECK_EXEC test_netstorage
