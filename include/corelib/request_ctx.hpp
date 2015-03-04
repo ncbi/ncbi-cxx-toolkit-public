@@ -109,7 +109,9 @@ public:
     /// Hit ID
     /// Get explicit hit id or the default one (from HTTP_NCBI_PHID or
     /// generated automatically at application start).
-    string        GetHitID(void) const;
+    string        GetHitID(void) const
+        { return x_GetHitID(CDiagContext::eHitID_Create); }
+
     /// Set explicit hit id.
     void          SetHitID(const string& hit);
     /// Check if there's an explicit hit id or the default one.
@@ -260,6 +262,8 @@ private:
     // Log current hit id if not yet logged and if the application state is
     // 'in request', otherwise postpone logging until StartRequest is executed.
     void x_LogHitID(void) const;
+
+    string x_GetHitID(CDiagContext::EDefaultHitIDFlag flag) const;
 
     static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
 

@@ -2168,7 +2168,8 @@ public:
     /// or Log.Http_Hit_Id/Log.Hit_Id values in the INI file. The Http-value
     /// has higher priority. If none of the values is set, the default hit id
     /// is generated automatically.
-    string GetDefaultHitID(void) const;
+    string GetDefaultHitID(void) const { return x_GetDefaultHitID(eHitID_Create); }
+
     /// Set new global default hit id. This value is used only if the per-request
     /// hit id is not set.
     void SetDefaultHitID(const string& hit_id);
@@ -2272,8 +2273,16 @@ private:
     static void sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
                                         void*                   cleanup_data);
     friend class CDiagContextThreadData;
-
     friend class CDiagBuffer;
+    friend class CRequestContext;
+
+    // Default hit id initialization flag.
+    enum EDefaultHitIDFlag {
+        eHitID_NoCreate, // Do not create new hit id.
+        eHitID_Create    // Create new hit id if it's not yet set.
+    };
+
+    string x_GetDefaultHitID(EDefaultHitIDFlag flag) const;
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;
@@ -2289,7 +2298,6 @@ private:
     mutable bool                        m_AppNameSet;
     mutable auto_ptr<CEncodedString>    m_DefaultSessionId;
     mutable auto_ptr<string>            m_DefaultHitId;
-    mutable bool                        m_LoggedHitId;
     int                                 m_ExitCode;
     bool                                m_ExitCodeSet;
     int                                 m_ExitSig;

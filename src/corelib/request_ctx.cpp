@@ -97,13 +97,13 @@ const string& CRequestContext::SetHitID(void)
 }
 
 
-string CRequestContext::GetHitID(void) const
+string CRequestContext::x_GetHitID(CDiagContext::EDefaultHitIDFlag flag) const
 {
     if ( x_IsSetProp(eProp_HitID) ) {
         x_LogHitID();
         return m_HitID;
     }
-    return GetDiagContext().GetDefaultHitID();
+    return GetDiagContext().x_GetDefaultHitID(flag);
 }
 
 
@@ -202,6 +202,14 @@ void CRequestContext::StartRequest(void)
 
 void CRequestContext::StopRequest(void)
 {
+    if ( !m_LoggedHitID ) {
+        // This is the last opportunity to log global hit id if the local
+        // was not set.
+        string phid = GetDiagContext().x_GetDefaultHitID(CDiagContext::eHitID_NoCreate);
+        if ( !phid.empty() ) {
+            s_LogHitID(phid);
+        }
+    }
     Reset();
     m_IsRunning = false;
 }
@@ -288,6 +296,11 @@ static bool IsValidHitID(const string& hit) {
 
 void CRequestContext::SetHitID(const string& hit)
 {
+    if ( m_LoggedHitID ) {
+        // Show warning when changing hit id after is has been logged.
+        ERR_POST_X(28, Warning << "Changing hit ID after one has been logged. "
+            "New hit id is: " << hit);
+    }
     static CSafeStatic<TOnBadHitId> action;
     if ( !IsValidHitID(hit) ) {
         switch ( action->Get() ) {
