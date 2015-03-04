@@ -26,6 +26,7 @@ RuntimeTypeInfo=true
 DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
 AdditionalOptions=
+ProgramDataBaseFileName=$(IntDir)$(TargetName).pdb
 
 [Compiler.800]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
@@ -58,6 +59,11 @@ BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=false
 
+[Compiler.debug.DebugDLL]
+RuntimeLibrary=3
+
+[Compiler.debug.DebugMT]
+RuntimeLibrary=1
 
 
 [Compiler.release]
@@ -72,6 +78,12 @@ OmitFramePointers=true
 BasicRuntimeChecks=0
 BrowseInformation=0
 EnableFunctionLevelLinking=true
+
+[Compiler.release.ReleaseDLL]
+RuntimeLibrary=2
+
+[Compiler.release.ReleaseMT]
+RuntimeLibrary=0
 
 [Compiler.800.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
@@ -90,7 +102,7 @@ AdditionalLibraryDirectories=
 SubSystem=1
 AdditionalOptions=
 ProgramDatabaseFile=
-ImportLibrary=
+ImportLibrary=$(OutDir)$(TargetName).lib
 IgnoreAllDefaultLibraries=false
 IgnoreDefaultLibraryNames=
 GenerateManifest=true
@@ -172,6 +184,10 @@ Compiler_InlineFunctionExpansion_1 = OnlyExplicitInline
 Compiler_InlineFunctionExpansion_2 = AnySuitable 
 Compiler_Optimization_0            = Disabled
 Compiler_Optimization_2            = MaxSpeed
+Compiler_RuntimeLibrary_0          = MultiThreaded
+Compiler_RuntimeLibrary_1          = MultiThreadedDebug
+Compiler_RuntimeLibrary_2          = MultiThreadedDLL
+Compiler_RuntimeLibrary_3          = MultiThreadedDebugDLL
 Compiler_UsePrecompiledHeader_0    = NotUsing
 Compiler_UsePrecompiledHeader_1    = Create
 Compiler_UsePrecompiledHeader_2    = Use
