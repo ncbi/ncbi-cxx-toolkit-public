@@ -71,7 +71,7 @@ static const char kEntrezUrl[] = "<a title=\"Show report for <@acc@>\" <@cssInf@
 static const char kEntrezTMUrl[] = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
 
 //.ncbirc alias: WGS
-static const char kWGSUrl[] = "http://www.ncbi.nlm.nih.gov/Traces/wgs/?val=<@wgsproj@>&page=1&display=contig&search=<@wgsacc@>";
+static const char kWGSUrl[] = "http://www.ncbi.nlm.nih.gov/Traces/wgs/?val=<@wgsproj@>&page=1&display=contigs&search=<@wgsacc@>";
 
 
 ///trace db
