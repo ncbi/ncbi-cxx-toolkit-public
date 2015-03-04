@@ -967,22 +967,22 @@ public:
             unsigned total_locks = 0;
             ITERATE ( TLocks, it, m_Locks ) {
                 ++total_locks;
-                LOG_POST("Locked<"<<sx_MonitorType->name()<<">"
+                ERR_POST(Note << "Locked<"<<sx_MonitorType->name()<<">"
                          "("<<it->first<<","<<m_Object<<")"
                          " @ " << *it->second);
             }
             unsigned total_unlocks = 0;
             ITERATE ( TUnlocks, it, m_Unlocks ) {
                 ++total_unlocks;
-                LOG_POST("Unlocked<"<<sx_MonitorType->name()<<">"
+                ERR_POST(Note << "Unlocked<"<<sx_MonitorType->name()<<">"
                          "("<<it->first<<","<<m_Object<<")"
                          " @ " << *it->second);
             }
             if ( total_locks ) {
-                LOG_POST("Total locks for "<<m_Object<<": "<<total_locks);
+                ERR_POST(Note << "Total locks for "<<m_Object<<": "<<total_locks);
             }
             if ( total_unlocks ) {
-                LOG_POST("Total unlocks for "<<m_Object<<": "<<total_unlocks);
+                ERR_POST(Note << "Total unlocks for "<<m_Object<<": "<<total_unlocks);
             }
         }
         int LockCount(void) const
@@ -1082,7 +1082,7 @@ void CObjectCounterLocker::Unlock(const CObject* object) const
 void CObjectCounterLocker::UnlockRelease(const CObject* object) const
 {
     if ( MonitoredType(object) ) {
-        LOG_POST("UnlockRelease<"<<typeid(*object).name()<<">"
+        ERR_POST(Note << "UnlockRelease<"<<typeid(*object).name()<<">"
                  "("<<this<<", "<<object<<")"
                  " @ " << StackTrace);
         sx_LocksMonitor.Get().Unlocked(this, object);

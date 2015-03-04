@@ -761,7 +761,7 @@ TClass* CPluginManager<TClass>::CreateInstanceFromList(
             drv = CreateInstance(drv_name, version, driver_params);
         }
         catch ( exception& e ) {
-            LOG_POST_XX(Corelib_PluginMgr, 1,
+            ERR_POST_XX(Corelib_PluginMgr, 1,
                         drv_name << " is not available ::" << e.what());
         }
         if ( drv ) {

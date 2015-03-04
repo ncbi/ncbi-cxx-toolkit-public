@@ -107,7 +107,7 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
                                      );
     } catch (CPluginManagerException& ex) {
         if (ex.GetErrCode() == CPluginManagerException::eResolveFailure) {
-            LOG_POST_X(1, Warning << ex);
+            ERR_POST_X(1, Warning << ex);
         } else if (ex.GetErrCode() == CPluginManagerException::eNullInstance) {
         } else {
             throw;

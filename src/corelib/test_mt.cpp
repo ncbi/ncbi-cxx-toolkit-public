@@ -55,7 +55,7 @@ int           s_SpawnBy    = 6;
 // Next test thread index
 static volatile unsigned int s_NextIndex = 0;
 
-#define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; LOG_POST(x); } while (0)
+#define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; ERR_POST(x); } while (0)
 
 /////////////////////////////////////////////////////////////////////////////
 // Randomization paramaters

@@ -112,7 +112,7 @@ namespace {
 #define DUMP_CONFIG(code, data) \
     if ( !s_InConfigDump ) { \
         s_InConfigDump = true; \
-        LOG_POST_X(code, data); \
+        ERR_POST_X(code, Note << data); \
         s_InConfigDump = false; \
     }
 

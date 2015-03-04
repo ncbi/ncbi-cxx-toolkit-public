@@ -204,13 +204,13 @@ static void s_ExitHandler(void)
 #endif
             if (tick == (clock_t)(-1))
                 tick = 0;
-            LOG_POST_X(4, "\tuser CPU time   : " << 
+            ERR_POST_X(4, Note << "\tuser CPU time   : " << 
                           buffer.tms_utime/(tick ? tick : 1) <<
                           (tick ? " sec" : " tick"));
-            LOG_POST_X(5, "\tsystem CPU time : " << 
+            ERR_POST_X(5, Note << "\tsystem CPU time : " << 
                           buffer.tms_stime/(tick ? tick : 1) <<
                           (tick ? " sec" : " tick"));
-            LOG_POST_X(6, "\ttotal CPU time  : " <<
+            ERR_POST_X(6, Note << "\ttotal CPU time  : " <<
                           (buffer.tms_stime + buffer.tms_utime)/(tick ? tick : 1) <<
                           (tick ? " sec" : " tick"));
             break;
@@ -224,11 +224,11 @@ static void s_ExitHandler(void)
     CTime ct(CTime::eCurrent);
     CTime et(2000, 1, 1);
     et.AddSecond((int) (ct.GetTimeT() - s_TimeSet->GetTimeT()));
-    LOG_POST_X(7, "Program's time: " << Endm <<
+    ERR_POST_X(7, Note << "Program's time: " << Endm <<
                   "\tstart limit - " << s_TimeSet->AsString() << Endm <<
                   "\ttermination - " << ct.AsString() << Endm);
     et.SetFormat("h:m:s");
-    LOG_POST_X(8, "\texecution   - " << et.AsString());
+    ERR_POST_X(8, Note << "\texecution   - " << et.AsString());
 }
 
 

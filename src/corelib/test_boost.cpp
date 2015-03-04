@@ -976,7 +976,7 @@ CNcbiTestApplication::CollectTestUnit(but::test_unit* tu)
         if (!tu_val) {
             tu_val = tu;
             if (test_name != unit_name) {
-                LOG_POST_X(3, Info << "Duplicate name found: '" << unit_name
+                ERR_POST_X(3, Info << "Duplicate name found: '" << unit_name
                                    << "' - renamed to '" << test_name << "'");
                 tu->p_name.set(test_name);
             }
