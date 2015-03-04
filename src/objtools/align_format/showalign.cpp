@@ -3817,9 +3817,12 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                     }
                     else {                        
                         deflines += alnDefLine;	//this contains all deflines except the first one
-                    }                    
-                    					
-                    isFirst = false;					
+                    }      
+                    if(isFirst) {
+                        isFirst = false;	
+                        if(m_AlignTemplates->alnTitlesTmpl.empty()) break;
+                    }
+                    
 					delete alnDispParams;
                 }
             }            

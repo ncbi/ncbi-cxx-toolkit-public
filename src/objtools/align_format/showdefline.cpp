@@ -118,7 +118,8 @@ I\" VALUE = \"%d\">";
 static const string  kPsiblastCheckbox =  "<INPUT TYPE=\"checkbox\" NAME=\"ch\
 ecked_GI\" VALUE=\"%d\">  ";
 
-
+//Max length of title string for the the link
+static const int kMaxDescrLength = 4096;
 
 string 
 CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
@@ -266,6 +267,17 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
             }
         }
     }
+}
+
+static void s_LimitDescrLength(string &descr)
+{
+	if(descr.length() > kMaxDescrLength) {
+        size_t end = NStr::Find(descr," ",0,kMaxDescrLength,NStr::eLast);
+        if(end != NPOS) {            
+            descr = descr.substr(0,end);                                        
+            descr += "...";
+        }                
+    }           	
 }
 
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
@@ -441,13 +453,15 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                 " " + 
                                 (*iter)->GetTitle();
                         }
+                        if(sdl->fullDefline.length() > kMaxDescrLength) {                            
+                            break;
+                        }
                     }
                 }
             }
         }
     }
 }
-
 
 //Constructor
 CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
@@ -1467,17 +1481,7 @@ string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHea
     return subHeader;            
 }
 
-static void s_LimitDescrLength(string &descr)
-{
-	const int kMaxDescrLength = 4096;
-	if(descr.length() > kMaxDescrLength) {
-        size_t end = NStr::Find(descr," ",0,kMaxDescrLength,NStr::eLast);
-        if(end != NPOS) {            
-            descr = descr.substr(0,end);                                        
-            descr += "...";
-        }                
-    }           	
-}
+
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
     string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
