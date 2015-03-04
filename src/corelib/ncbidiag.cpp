@@ -2949,9 +2949,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         old_log_name = old_handler->GetLogName();
     }
 
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    CNcbiApplication* app = CNcbiApplication::Instance();
-
     string config_logfile = s_GetLogConfigString("FILE", kEmptyStr, config);
     if ( config_logfile.empty() ) {
         // Try the old-style name
@@ -3025,10 +3022,14 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             collect = eDCM_Discard;
             break;
         case eDS_AppSpecific:
-            if ( app ) {
-                app->SetupDiag_AppSpecific(); /* NCBI_FAKE_WARNING */
+            {
+                CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+                CNcbiApplication* app = CNcbiApplication::Instance();
+                if ( app ) {
+                    app->SetupDiag_AppSpecific(); /* NCBI_FAKE_WARNING */
+                }
+                collect = eDCM_Discard;
             }
-            collect = eDCM_Discard;
             break;
         case eDS_ToSyslog:
             if (old_log_name != CSysLog::kLogName_Syslog) {
@@ -3046,12 +3047,19 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         case eDS_ToStdlog:
         case eDS_Default:
             {
-                string log_base = app ?
-                    app->GetProgramExecutablePath() : kEmptyStr;
+                string log_base;
+                string def_log_dir;
+                {{
+                    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+                    CNcbiApplication* app = CNcbiApplication::Instance();
+                    if ( app ) {
+                        log_base = app->GetProgramExecutablePath();
+                        def_log_dir = GetDefaultLogLocation(*app);
+                    }
+                }}
                 if ( !log_base.empty() ) {
                     log_base = CFile(log_base).GetBase() + ".log";
                     string log_name;
-                    string def_log_dir = GetDefaultLogLocation(*app);
                     // Try /log/<port>
                     if ( !def_log_dir.empty() ) {
                         log_name = CFile::ConcatPath(def_log_dir, log_base);
