@@ -58,7 +58,7 @@
     "sra25:sra24:sra23:sra22:sra21:sra20:"                              \
     "sra19:sra18:sra17:sra16:sra15:sra14:sra13:sra12:sra11:sra10:"      \
     "sra9:sra8:sra7:sra6:sra5:sra4:sra3:sra2:sra1:sra0"                 \
-    "era10:era9:era8:era7:era6:era5:era4:era3:era2:era1:era0:"          \
+    "era11:era10:era9:era8:era7:era6:era5:era4:era3:era2:era1:era0:"    \
     "dra2:dra1:dra0"
 
 #define NCBI_SRZ_REP_PATH NCBI_TRACES04_PATH ":" NCBI_TRACES01_PATH
