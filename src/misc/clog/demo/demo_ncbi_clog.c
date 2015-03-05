@@ -90,7 +90,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
        NcbiLog_SetLogSite("");
     */
 
-    /* Set app-wide client.
+    /* Set app-wide client
        Use value from environment variables or "UNK_CLIENT" by default.
        NcbiLog_AppSetClient("192.168.1.0");
     */
@@ -102,8 +102,8 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
     */
 
     /* Set app-wide hit ID
-       Use value from environment variables, or generate new one by default.
-       NcbiLog_AppSetHitID("APP-WIDE-HIT-ID");
+       Use value from environment variables (if any) by default.
+       NcbiLog_AppSetHitID("APP-HIT-ID");
     */
 
     /* Start application */
@@ -135,10 +135,17 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
     /* Request without parameters */
     {{
         /* Set request hit ID if necessary
-            NcbiLog_SetHitID("REQUEST-HIT-ID");
-            NcbiLog_NewHitID(); -- generate new one
+           NcbiLog_SetHitID("REQUEST-HIT-ID");
         */
+        NcbiLog_SetHitID("REQUEST-HIT-ID");
         NcbiLog_ReqStart(NULL);
+        /* Next call to NcbiLog_ReqRun() can be skipped, but still recommended */
+        NcbiLog_ReqRun(); 
+        /* 
+           ... 
+           request specific logging going here 
+           ...
+        */
         NcbiLog_ReqStop(200, 1, 2);
     }}
 

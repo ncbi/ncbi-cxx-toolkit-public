@@ -116,9 +116,15 @@
 #  ifndef   __STDC_FORMAT_MACROS
 #    define __STDC_FORMAT_MACROS
 #  endif
+#  ifndef   NCBI_DEPRECATED
+#    define NCBI_DEPRECATED __attribute__((__deprecated__))
+#  endif
 #  include <inttypes.h>
 #  include <sys/types.h>
 #elif defined(NCBI_OS_MSWIN)
+#  ifndef   NCBI_DEPRECATED
+#    define NCBI_DEPRECATED __declspec(deprecated)
+#  endif
 #endif
 
 
@@ -630,43 +636,27 @@ extern void NcbiLog_NewSession(void);
 
 /** Set hit ID (HID, a.k.a. PHID) for the whole application.
  *
- *  This setting is effective in between requests, and for the requests
- *  for which the client was not explicitly set (by calling either
- *  NcbiLog_SetHitID() or NcbiLog_NewHitID()).
+ *  This setting is effective in between of requests, and for the requests
+ *  for which the (P)HID was not explicitly set by calling NcbiLog_SetHitID().
  *
  *  By default, (P)HID is taken from the HTTP_NCBI_PHID environment variable;
- *  if that is not set, then -- from NCBI_LOG_HIT_ID environment variable;
- *  if that is not set, then -- it is set to an empty string.
+ *  if that is not set, then from NCBI_LOG_HIT_ID environment variable;
+ *  if that is not set also -- not used at all until any of *SetHitID() calls.
+ *
+ *  This function have a priority over default value in the environment
+ *  variables and lead to logging hit ID, but only if it has not been logged yet.
+ *  So, it is recommended to call it before NcbiLog_AppRun().
  *
  *  @attention
- *    If hit ID has been logged for application, the call will be ignored.
- *    See NcbiLog_GetNextSubHitID().
+ *    If hit ID has been already logged for application, the call have no effect.
  *  @param hit_id
  *    New (P)HID. (It will be URL-encoded.)
  *    (P)HID will be unset if the parameter is NULL or point to empty string,
- *    and PHID has not logged yet.
+ *    and PHID has not been logged yet.
  *  @sa
- *    NcbiLog_AppNewHitID, NcbiLog_SetHitID, NcbiLog_NewHitID,
- *    NcbiLog_GetNextSubHitID
+ *    NcbiLog_AppStart, NcbiLog_AppRun, NcbiLog_SetHitID, NcbiLog_GetNextSubHitID
  */
 extern void NcbiLog_AppSetHitID(const char* hit_id);
-
-
-/** Auto-generate and then set brand-new application-wide hit ID
- *  (HID, a.k.a. PHID).
- *
- *  @attention
- *    It calls by default on NcbiLog_AppStart() if no user defined PHID
- *    or environment variables are available. So usually you don't need
- *    to call it manually. PHID can be redefined with NcbiLog_AppSetHitID()
- *    at any time if not logged yet.
- *  @attention
- *    If hit ID has been already logged for application, the call
- *    will be ignored. See NcbiLog_GetNextSubHitID().
- *  @sa 
- *    NcbiLog_AppSetHitID, NcbiLog_GetNextSubHitID
- */
-extern void NcbiLog_AppNewHitID(void);
 
 
 /** Set hit ID (HID, a.k.a. PHID) for the request.
@@ -677,43 +667,38 @@ extern void NcbiLog_AppNewHitID(void);
  *   - or for the very next request -- if the call is made between
  *     NcbiLog_ReqStop() and NcbiLog_ReqStart().
  *
- *  If (P)HID is not explicitly set for a request, then the application-
- *  wide value (per NcbiLog_AppSetHitID() or
- *  NcbiLog_AppNewHitID()) will be used for the request.
+ *  If (P)HID has not been explicitly set for a request, that the application-
+ *  wide value (per NcbiLog_AppSetHitID() or env.variable) if any,
+ *  will be used for the request as well. So, it is recommended to call
+ *  it before NcbiLog_ReqRun().
+ *
+ *  If NcbiLog_SetHitID() is used and the application-wide (P)HID has
+ *  been not logged yet, it will be automatically logged after NcbiLog_ReqStop().
+ *  Auto-generated value will be used for app-wide (P)HID if it is undefined.
  *
  *  @attention
- *    NcbiLog_ReqStop() resets the (P)HID back to the application-wide value!
+ *    NcbiLog_ReqStop() resets the request-specific (P)HID back
+ *    to the unset state and the application-wide value will be used
+ *    for the next request if not specified again.
  *  @attention
- *    If hit ID has been already logged for the current request, the call
- *    will be ignored. See NcbiLog_GetNextSubHitID().
+ *    If hit ID has been already logged for the current request,
+ *    the call have no effect.
  *  @param hit_id
  *    New (P)HID. (It will be URL-encoded.)
  *    (P)HID will be unset if the parameter is NULL or point to empty string,
- *    and PHID has not logged yet.
+ *    and PHID has not been logged yet.
  *  @sa
- *    NcbiLog_AppSetHitID, NcbiLog_AppNewHitID,
- *    NcbiLog_ReqStart, NcbiLog_ReqStop, NcbiLog_GetNextSubHitID
+ *    NcbiLog_AppSetHitID, NcbiLog_ReqStart, NcbiLog_ReqRun, NcbiLog_ReqStop,
+ *    NcbiLog_GetNextSubHitID
  */
 extern void NcbiLog_SetHitID(const char* hit_id);
-
-
-/** Auto-generate and then set brand-new hit ID (HID, a.k.a. PHID)
- *  for the request.
- *
- *  @attention
- *    If hit ID has been already logged for the current request, the call
- *    will be ignored. See NcbiLog_GetNextSubHitID().
- *  @sa
- *    NcbiLog_SetHitID, NcbiLog_GetNextSubHitID
- */
-extern void NcbiLog_NewHitID(void);
 
 
 /** Generate a sub-hit ID based on the currently effective
  *  (whether it's request-specific or application-wide) hit ID.
  *
- *  This function automatically log current app/request hit ID if not logged yet.
- *  This is a single method that do logging such information.
+ *  This function automatically log current app/request hit ID
+ *  if not logged yet.
  *
  *  @return
  *    Generated sub-hit ID.
@@ -725,6 +710,19 @@ extern void NcbiLog_NewHitID(void);
   *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory
  */
 extern char* NcbiLog_GetNextSubHitID(void);
+
+
+/** 
+ *  @deprecated  This method do nothing and will be removed later.
+ */
+NCBI_DEPRECATED 
+extern void NcbiLog_AppNewHitID(void);
+
+/** 
+ *  @deprecated  This method do nothing and will be removed later.
+ */
+NCBI_DEPRECATED 
+extern void NcbiLog_NewHitID(void);
 
 
 /** Free memory allocated inside the C logging API.
@@ -853,8 +851,8 @@ extern void NcbiLog_AppStart(const char* argv[]);
 
 
 /** Should be called after the application is initialized and before its
- *  main part.Just changes the application state shown in the log to 'A'.
- *  It does not cause any information to be logged.
+ *  main part. It changes the application state shown in the log to 'P'
+ *  and log app-wide extra information, if any.
  *
  *  @sa NcbiLog_AppStart, NcbiLog_AppStop
  */
@@ -896,8 +894,8 @@ extern void NcbiLog_ReqStart(const SNcbiLog_Param* params);
 
 
 /** Should be called once request processing initialization is complete.
- *  It does not cause any information to be logged. Just changes
- *  the application state shown in the log to 'R'. 
+ *  It changes the application state shown in the log to 'R'
+ *  and log request-specific extra information, if any.
  *
  *  @sa NcbiLog_ReqStart, NcbiLog_ReqStop
  */

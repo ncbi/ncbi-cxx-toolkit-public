@@ -1533,7 +1533,7 @@ static void s_SetSession(char* dst, const char* session)
 
 static void s_SetHitID(char* dst, const char* hit_id)
 {
-    if (hit_id &&  *hit_id) {
+    if (hit_id  &&  *hit_id) {
         /*TODO: Validate hit ID ?? */
         /* URL-encode */
         size_t len, r_len, w_len;
@@ -2391,7 +2391,7 @@ extern void NcbiLog_NewSession(void)
 }
 
 
-/* Log request/app-wide hit id. See NcbiLog_GetNextSubHitID().
+/* Log request/app-wide hit ID. See NcbiLog_GetNextSubHitID().
  */
 static void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
 {
@@ -2442,45 +2442,46 @@ extern void NcbiLog_SetHitID(const char* hit_id)
 }
 
 
+/* @deprecated */
 extern void NcbiLog_AppNewHitID(void)
 {
-    char phid_str[NCBILOG_HITID_MAX+1]; 
-
-    MT_LOCK_API;
-    if ( !sx_Info->phid_is_logged ) {
-        s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
-    }
-    MT_UNLOCK;
+    return;
 }
 
 
+/* @deprecated */
 extern void NcbiLog_NewHitID(void)
 {
-    char phid_str[NCBILOG_HITID_MAX+1]; 
-    TNcbiLog_Context ctx = NULL;
-
-    MT_LOCK_API;
-    ctx = s_GetContext();
-    if ( !ctx->phid_is_logged ) {
-        s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str));
-    }
-    MT_UNLOCK;
+    return;
 }
 
 
 extern char* NcbiLog_GetNextSubHitID(void)
 {
     TNcbiLog_Context ctx = NULL;
-    char* hit_id = NULL;
-    unsigned int* sub_id = NULL;
-    char  buf[NCBILOG_HITID_MAX+1];
+    char*            hit_id = NULL;
+    unsigned int*    sub_id = NULL;
+    char             buf[NCBILOG_HITID_MAX+1];
     int n;
 
     MT_LOCK_API;
     ctx = s_GetContext();
 
-    /* Take request specific hit ID if set */
-    if (s_IsInsideRequest(ctx)  &&  ctx->phid[0]) {
+    /* Enforce calling this method after NcbiLog_AppStart() */
+    if (sx_Info->state == eNcbiLog_NotSet ||
+        sx_Info->state == eNcbiLog_AppBegin) {
+        TROUBLE;
+    }
+
+    /* Automatically generate app-wide hit ID if necessary */
+    if (!sx_Info->phid[0]) {
+        s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(buf));
+    }
+    if ( s_IsInsideRequest(ctx) ) {
+        /* If no request-specific hit ID, set it to app-wide */
+        if ( !ctx->phid[0] ) {
+            s_SetHitID(ctx->phid, (char*)sx_Info->phid);
+        }
         hit_id = ctx->phid;
         sub_id = &ctx->phid_sub_id;
         if( !ctx->phid_is_logged ) {
@@ -2551,15 +2552,9 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     if (!sx_Info->session[0]) {
         s_SetSession((char*)sx_Info->session, s_GetSession_Env());
     }
-    /* Try to get app-wide hit ID from environment, or generate it */
+    /* Try to get app-wide hit ID from environment */
     if (!sx_Info->phid[0]) {
-        const char* phid_env = s_GetHitID_Env();
-        if (phid_env) {
-            s_SetHitID((char*)sx_Info->phid, phid_env);
-        } else {
-            char phid_str[NCBILOG_HITID_MAX+1]; 
-            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
-        }
+        s_SetHitID((char*)sx_Info->phid, s_GetHitID_Env());
     }
 
     s_SetState(ctx, eNcbiLog_AppBegin);
@@ -2604,8 +2599,16 @@ extern void NcbiLog_AppRun(void)
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
     ctx = s_GetContext();
+
+    /* Start app, if not started yet */
     CHECK_APP_START(ctx);
     s_SetState(ctx, eNcbiLog_AppRun);
+
+    /* Log app-wide hit ID, if any */
+    if ( sx_Info->phid[0] ) {
+        s_LogHitID(ctx, (char*)sx_Info->phid);
+        sx_Info->phid_is_logged = 1;
+    }
     MT_UNLOCK;
 }
 
@@ -2626,6 +2629,12 @@ extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
     MT_LOCK_API;
     ctx = s_GetContext();
     CHECK_APP_START(ctx);
+
+    /* Log app-wide hit ID, if not logged yet -- due late call to *SetHitID() */
+    if (!sx_Info->phid_is_logged  &&  sx_Info->phid[0]) {
+        s_LogHitID(ctx, (char*)sx_Info->phid);
+        sx_Info->phid_is_logged = 1;
+    }
 
     s_SetState(ctx, eNcbiLog_AppEnd);
     /* Prefix */
@@ -2815,8 +2824,22 @@ extern void NcbiLog_ReqRun(void)
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
     ctx = s_GetContext();
+
     CHECK_APP_START(ctx);
     s_SetState(ctx, eNcbiLog_Request);
+
+    /* Log request-specific hit ID if specified,
+       and only if app-wide hit ID is used.
+    */
+    if (sx_Info->phid[0]) {
+        /* If no request-specific hit ID, set it to app-wide */
+        if (!ctx->phid[0]) {
+            s_SetHitID(ctx->phid, (char*)sx_Info->phid);
+        }
+        s_LogHitID(ctx, ctx->phid);
+        ctx->phid_is_logged = 1;
+    }
+
     MT_UNLOCK;
 }
 
@@ -2833,6 +2856,20 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     CHECK_APP_START(ctx);
     s_SetState(ctx, eNcbiLog_RequestEnd);
 
+    /* Log request-specific hit ID, if not logged yet
+       -- due late call to *SetHitID() or skipped ReqRun().
+       Log it if specified or app-wide ID is used.
+    */
+
+    /* If no request-specific hit ID, set it to app-wide */
+    if (sx_Info->phid[0]  &&  !ctx->phid[0]) {
+        s_SetHitID(ctx->phid, (char*)sx_Info->phid);
+    }
+    if (ctx->phid[0]  &&  !ctx->phid_is_logged) {
+        s_LogHitID(ctx, ctx->phid);
+        ctx->phid_is_logged = 1;
+    }
+
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos);
@@ -2847,14 +2884,20 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     /* Reset state */
     s_SetState(ctx, eNcbiLog_AppRun);
 
-    /* Special case: request hit id has logged, but not app-wide one */
+    /* Special case: the request hit ID has logged, but not app-wide one */
     if ( ctx->phid_is_logged  &&  !sx_Info->phid_is_logged ) {
-        /* Log app-wide hit id after current request */
-        s_LogHitID(ctx, (char*)sx_Info->phid);
-        sx_Info->phid_is_logged = 1;
+        /* Generate and log app-wide hit ID if necessary */
+        if (!sx_Info->phid_is_logged) {
+            if (!sx_Info->phid[0]) {
+                char phid_str[NCBILOG_HITID_MAX + 1];
+                s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
+            }
+            s_LogHitID(ctx, (char*)sx_Info->phid);
+            sx_Info->phid_is_logged = 1;
+        }
     }
 
-    /* Reset request, client, session and hit id's */
+    /* Reset request, client, session and hit ID */
     ctx->rid = 0;
     ctx->client[0]  = '\0';  ctx->is_client_set  = 0;
     ctx->session[0] = '\0';  ctx->is_session_set = 0;
