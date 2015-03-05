@@ -129,7 +129,6 @@ bool CGb_qual::x_CleanupRptAndReplaceSeq(string& val)
     if (NStr::IsBlank(val)) {
         return false;
     }
-    bool changed = false;
     string orig = val;
     NStr::ToLower(val);
     NStr::ReplaceInPlace(val, "u", "t");
