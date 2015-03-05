@@ -433,7 +433,7 @@ static inline
 bool sx_DownCastInt8(DstInt& v, const Int8& value, const char* type_name)
 {
     v = DstInt(value);
-    if ( v != value ) {
+    if ( Int8(v) != value ) {
         NCBI_THROW_FMT(CSeqTableException, eIncompatibleValueType,
                        "CSeqTable_multi_data::TryGet"<<type_name<<"(): "
                        "value is too big for requested type: "<<value);

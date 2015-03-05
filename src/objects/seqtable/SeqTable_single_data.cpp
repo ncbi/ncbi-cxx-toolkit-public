@@ -75,7 +75,7 @@ static inline
 bool sx_DownCast(DstInt& v, const SrcInt& value, const char* type_name)
 {
     v = DstInt(value);
-    if ( v != value ) {
+    if ( SrcInt(v) != value ) {
         CSeqTable_single_data::ThrowOverflowError(value, type_name);
     }
     return true;
