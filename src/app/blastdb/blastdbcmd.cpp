@@ -185,9 +185,11 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     vector<int> gis;
     m_BlastDb->GetGis(oid, gis);
     if (gis.empty()) {
-        CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId());
-        blastdb_seqid->SetOID(oid);
-        retval.push_back(blastdb_seqid);
+	list< CRef<CSeq_id> > ids = m_BlastDb->GetSeqIDs(oid);
+	ITERATE(list< CRef<CSeq_id> > , id, ids) {
+		CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId((*id)->AsFastaString()));
+        	retval.push_back(blastdb_seqid);
+	}
         return;
     }
 
