@@ -284,8 +284,15 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
     if ( !m_Writer )
         return 0;
 
+    if (m == 0 && (m_Flags & fZeroLenWrite)) {
+        RWSTREAMBUF_HANDLE_EXCEPTIONS(
+                m_Writer->Write(buf, 0, 0), 13,
+                "CRWStreambuf::xsputn(): IWriter::Write()", ((void)0));
+    }
+
     if (m <= 0)
         return 0;
+
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
 

@@ -354,6 +354,17 @@ private:
 };
 
 
+// Empty data to test APIs
+class CEmpData : public CStrReader<IExpected>
+{
+public:
+    CEmpData(CNetStorageObject)
+        : TStrReader(string())
+    {}
+
+    size_t Size() { return 0; }
+};
+
 // String data to test APIs
 class CStrData : public CStrReader<IExpected>
 {
@@ -664,8 +675,6 @@ struct SReadHelperBase
 
         switch (m_Result) {
         case eRW_Success:
-            BOOST_REQUIRE_CTX(length, ctx);
-            /* FALL THROUGH */
         case eRW_Eof:
             return true;
         default:
@@ -756,7 +765,8 @@ struct SWriteHelper
 {
     SWriteHelper(IExtWriter& dest)
         : m_Dest(dest),
-          m_Result(eRW_Success)
+          m_Result(eRW_Success),
+          m_Empty(true)
     {}
 
     void Close(const SCtx& ctx)
@@ -770,7 +780,8 @@ struct SWriteHelper
     {
         size_t total = reader.length;
 
-        while (total) {
+        while (total || m_Empty) {
+            m_Empty = false;
             size_t length = 0;
             m_Result = m_Dest.Write(reader.buf, total, &length);
 
@@ -791,6 +802,7 @@ struct SWriteHelper
 private:
     IExtWriter& m_Dest;
     ERW_Result m_Result;
+    bool m_Empty;
 };
 
 
@@ -1402,7 +1414,7 @@ BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
 
 // Generic tests
 #define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
-#define SRC_LIST    (Str, (Rnd, (Nst, BOOST_PP_NIL)))
+#define SRC_LIST    (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
 #define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
 

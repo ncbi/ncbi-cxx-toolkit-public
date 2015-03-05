@@ -77,7 +77,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectRWStream : public CRWStream
 {
     SNetStorageObjectRWStream(SNetStorageObjectImpl* nst_object) :
         CRWStream(nst_object, nst_object, /*buf_size*/ 0, /*buf*/ NULL,
-            CRWStreambuf::fLeakExceptions),
+            CRWStreambuf::fLeakExceptions | CRWStreambuf::fZeroLenWrite),
         m_NetStorageObject(nst_object)
     {
     }
