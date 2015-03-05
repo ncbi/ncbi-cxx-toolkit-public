@@ -91,7 +91,7 @@ int CBlastpApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
-	SetDiagPostPrefix("blastp"):
+        SetDiagPostPrefix("blastp");
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
