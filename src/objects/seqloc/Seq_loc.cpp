@@ -1043,25 +1043,45 @@ public:
 
     struct SEquivSet {
         size_t m_StartIndex;
-        size_t m_EndIndex;
-        vector<size_t> m_PartsIndexes;
+
+        // parts' end offsets within the equiv set
+        // must contain at least one element - the only part
+        vector<size_t> m_PartsEnds;
+
+        size_t RangesCount(void) const
+            {
+                _ASSERT(!m_PartsEnds.empty());
+                return m_PartsEnds.back();
+            }
+        size_t StartIndex(void) const
+            {
+                return m_StartIndex;
+            }
+        size_t EndIndex(void) const // exclusive
+            {
+                return StartIndex()+RangesCount();
+            }
+        size_t PartsCount(void) const
+            {
+                return m_PartsEnds.size();
+            }
 
         bool contains(size_t idx) const
             {
-                return idx >= m_StartIndex && idx < m_EndIndex;
+                return idx >= StartIndex() && idx < EndIndex();
             }
     };
     struct PByLevel {
         bool operator()(const SEquivSet* e1, const SEquivSet* e2) const
             {
-                size_t s1 = e1->m_EndIndex-e1->m_StartIndex;
-                size_t s2 = e2->m_EndIndex-e2->m_StartIndex;
+                size_t s1 = e1->RangesCount();
+                size_t s2 = e2->RangesCount();
                 if ( s1 != s2 ) {
                     // smallest first
                     return s1 < s2;
                 }
-                s1 = e1->m_PartsIndexes.size();
-                s2 = e2->m_PartsIndexes.size();
+                s1 = e1->PartsCount();
+                s2 = e2->PartsCount();
                 if ( s1 != s2 ) {
                     // more parts first
                     return s1 > s2;
@@ -1076,13 +1096,8 @@ public:
 
     bool IsEnd(size_t idx) const { return idx >= m_Ranges.size(); }
 
-    void DeleteRange(size_t idx)
-        {
-            SetHasChanges();
-            m_Ranges.erase(m_Ranges.begin()+idx);
-        }
-    SSeq_loc_CI_RangeInfo& InsertRange(size_t idx);
-
+    void DeleteRange(size_t idx);
+    SSeq_loc_CI_RangeInfo& InsertRange(size_t idx, CSeq_loc::E_Choice type);
 
     // Point/Interval support
     
@@ -1228,22 +1243,24 @@ public:
     pair<size_t, size_t> GetEquivSetRange(size_t idx, size_t level) const
         {
             const SEquivSet& s = GetEquivSet(idx, level);
-            return make_pair(s.m_StartIndex, s.m_EndIndex);
+            return make_pair(s.StartIndex(), s.EndIndex());
         }
     pair<size_t, size_t> GetEquivPartRange(size_t idx, size_t level) const
         {
             const SEquivSet& s = GetEquivSet(idx, level);
-            size_t start_idx = s.m_StartIndex;
-            ITERATE ( vector<size_t>, it, s.m_PartsIndexes ) {
-                size_t end_idx = *it;
+            _ASSERT(s.contains(idx));
+            size_t start_idx = s.StartIndex();
+            ITERATE ( vector<size_t>, it, s.m_PartsEnds ) {
+                size_t end_idx = s.StartIndex()+*it;
                 if ( idx < end_idx ) {
                     return make_pair(start_idx, end_idx);
                 }
                 start_idx = end_idx;
             }
-            return make_pair(start_idx, s.m_EndIndex);
+            return make_pair(start_idx, s.EndIndex());
         }
-
+    size_t HasEquivBreak(size_t begin, size_t end) const;
+    const SEquivSet* FindInnerEquivSet(size_t begin, size_t end) const;
 
     CRef<CSeq_loc> MakeLocOther(const SSeq_loc_CI_RangeInfo& info) const;
     CRef<CSeq_loc> MakeRangeLoc(const SSeq_loc_CI_RangeInfo& info) const;
@@ -1402,12 +1419,17 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
             const CSeq_loc_equiv::Tdata& data = loc.GetEquiv().Get();
             m_Ranges.reserve(m_Ranges.size() + data.size());
             SEquivSet eq_set;
-            eq_set.m_StartIndex = m_Ranges.size();
+            size_t start = m_Ranges.size();
+            eq_set.m_StartIndex = start;
             ITERATE(CSeq_loc_equiv::Tdata, li, data) {
-                eq_set.m_PartsIndexes.push_back(m_Ranges.size());
                 x_ProcessLocation(**li);
+                size_t end = m_Ranges.size()-start;
+                eq_set.m_PartsEnds.push_back(end);
             }
-            eq_set.m_EndIndex = m_Ranges.size();
+            if ( eq_set.m_PartsEnds.empty() ) {
+                // no parts, add one default part
+                eq_set.m_PartsEnds.push_back(0);
+            }
             m_EquivSets.push_back(eq_set);
             return;
         }
@@ -1469,16 +1491,148 @@ void CSeq_loc_CI_Impl::x_ProcessPoint(const CSeq_point& seq_pnt,
 }
 
 
-SSeq_loc_CI_RangeInfo& CSeq_loc_CI_Impl::InsertRange(size_t idx)
+size_t CSeq_loc_CI_Impl::HasEquivBreak(size_t begin,
+                                       size_t end) const
+{
+    size_t ret = 0;
+    ITERATE ( TEquivSets, it, m_EquivSets ) {
+        const SEquivSet& eq_set = *it;
+        size_t eq_begin = eq_set.StartIndex();
+        size_t eq_end = eq_set.EndIndex();
+        if ( eq_end <= begin || eq_begin >= end ) {
+            continue;
+        }
+        if ( eq_begin > begin && eq_begin < end ) {
+            if ( !ret || eq_begin < ret ) {
+                ret = eq_begin;
+            }
+            continue;
+        }
+        ITERATE ( vector<size_t>, it2, eq_set.m_PartsEnds ) {
+            size_t pos = eq_begin+*it2;
+            if ( pos > begin && pos < end ) {
+                if ( !ret || pos < ret ) {
+                    ret = pos;
+                }
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+
+const CSeq_loc_CI_Impl::SEquivSet*
+CSeq_loc_CI_Impl::FindInnerEquivSet(size_t begin,
+                                    size_t end) const
+{
+    const SEquivSet* ret = 0;
+    ITERATE ( TEquivSets, it, m_EquivSets ) {
+        const SEquivSet& eq_set = *it;
+        size_t eq_begin = eq_set.StartIndex();
+        size_t eq_end = eq_set.EndIndex();
+        if ( eq_begin < begin || eq_end > end ) {
+            continue;
+        }
+        if ( !ret || PByLevel()(ret, &eq_set) ) {
+            ret = &eq_set;
+        }
+    }
+    return ret;
+}
+
+
+void CSeq_loc_CI_Impl::DeleteRange(size_t idx)
+{
+    SetHasChanges();
+    m_Ranges.erase(m_Ranges.begin()+idx);
+    // update equiv sets
+    NON_CONST_ITERATE ( TEquivSets, it, m_EquivSets ) {
+        SEquivSet& eq_set = *it;
+        if ( eq_set.contains(idx) ) {
+            size_t offset = idx - eq_set.m_StartIndex;
+            NON_CONST_ITERATE ( vector<size_t>, it2, eq_set.m_PartsEnds ) {
+                if ( *it2 > offset ) {
+                    --*it2;
+                }
+            }
+        }
+        else if ( idx < eq_set.m_StartIndex ) {
+            --eq_set.m_StartIndex;
+        }
+    }
+}
+
+
+static inline bool s_InsertExpands(size_t idx, size_t start, size_t end)
+{
+    return (idx > start && idx <= end) || (idx == start && idx == 0);
+}
+
+
+SSeq_loc_CI_RangeInfo& CSeq_loc_CI_Impl::InsertRange(size_t idx,
+                                                     CSeq_loc::E_Choice type)
 {
     SetHasChanges();
     SSeq_loc_CI_RangeInfo& info =
         *m_Ranges.insert(m_Ranges.begin()+idx, SSeq_loc_CI_RangeInfo());
+    CConstRef<CSeq_loc> loc;
+    // connect with previous or next part (if any)
     if ( idx > 0 ) {
-        info.m_Loc = m_Ranges[idx-1].m_Loc;
+        loc = m_Ranges[idx-1].m_Loc;
     }
     else if ( idx < m_Ranges.size() ) {
-        info.m_Loc = m_Ranges[idx].m_Loc;
+        loc = m_Ranges[idx].m_Loc;
+    }
+    if ( loc ) {
+        // if type is incompatible with part it's connected to, do not connect
+        switch ( loc->Which() ) {
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Whole:
+        case CSeq_loc::e_Pnt:
+        case CSeq_loc::e_Int:
+            loc = null;
+            break;
+        case CSeq_loc::e_Bond:
+            if ( type != CSeq_loc::e_Pnt ) {
+                loc = null;
+            }
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            if ( type != CSeq_loc::e_Pnt ) {
+                loc = null;
+            }
+            break;
+        case CSeq_loc::e_Packed_int:
+            if ( type != CSeq_loc::e_Pnt || type != CSeq_loc::e_Int ) {
+                loc = null;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    info.m_Loc = loc;
+    // update equiv sets
+    NON_CONST_ITERATE ( TEquivSets, it, m_EquivSets ) {
+        SEquivSet& eq_set = *it;
+        if ( s_InsertExpands(idx, eq_set.StartIndex(), eq_set.EndIndex()) ) {
+            size_t part_start = eq_set.StartIndex();
+            bool inserted = false;
+            NON_CONST_ITERATE ( vector<size_t>, it2, eq_set.m_PartsEnds ) {
+                size_t part_end = eq_set.StartIndex()+*it2;
+                if ( inserted || s_InsertExpands(idx, part_start, part_end) ) {
+                    ++*it2;
+                    ++part_end;
+                    inserted = true;
+                }
+                part_start = part_end;
+            }
+        }
+        else if ( idx <= eq_set.StartIndex() ) {
+            ++eq_set.m_StartIndex;
+        }
     }
     return info;
 }
@@ -1529,6 +1683,9 @@ bool CSeq_loc_CI_Impl::CanBeBond(size_t idx_begin, size_t idx_end) const
         if ( !CanBePoint(info) ) {
             return false;
         }
+    }
+    if ( HasEquivBreak(idx_begin, idx_end) ) {
+        return false;
     }
     return true;
 }
@@ -1889,6 +2046,9 @@ bool CSeq_loc_CI_Impl::CanBePacked_pnt(size_t idx_begin,
             }
         }
     }
+    if ( HasEquivBreak(idx_begin, idx_end) ) {
+        return false;
+    }
     return true;
 }
 
@@ -1904,6 +2064,9 @@ bool CSeq_loc_CI_Impl::CanBePacked_int(size_t idx_begin,
         if ( !CanBeInterval(idx) ) {
             return false;
         }
+    }
+    if ( HasEquivBreak(idx_begin, idx_end) ) {
+        return false;
     }
     return true;
 }
@@ -1973,10 +2136,43 @@ CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(size_t idx_begin,
         NCBI_THROW(CSeqLocException, eNotSet,
                    "CSeq_loc_I::MakeSeq_loc: no any parts");
     }
-    if ( !m_EquivSets.empty() ) {
-        NCBI_THROW(CSeqLocException, eUnsupported,
-                   "CSeq_loc_I::MakeSeq_loc: equiv not supported yet");
+
+    if ( const SEquivSet* eq_set = FindInnerEquivSet(idx_begin, idx_end) ) {
+        size_t idx = eq_set->StartIndex();
+        CRef<CSeq_loc> loc;
+        if ( idx > idx_begin ) {
+            loc = MakeLoc(idx_begin, idx, make_type);
+        }
+        CRef<CSeq_loc> loc2(new CSeq_loc);
+        CSeq_loc_equiv& equiv = loc2->SetEquiv();
+        ITERATE ( vector<size_t>, it2, eq_set->m_PartsEnds ) {
+            size_t part_end = eq_set->StartIndex()+*it2;
+            if ( part_end > idx ) {
+                CRef<CSeq_loc> part = MakeLoc(idx, part_end, make_type);
+                equiv.Set().push_back(part);
+                idx = part_end;
+            }
+        }
+        AddLoc(loc, loc2);
+        if ( idx < idx_end ) {
+            loc2 = MakeLoc(idx, idx_end, make_type);
+            if ( loc2->IsMix() ) {
+                ITERATE ( CSeq_loc_mix::Tdata, it, loc2->GetMix().Get() ) {
+                    AddLoc(loc, *it);
+                }
+            }
+            else {
+                AddLoc(loc, loc2);
+            }
+        }
+        return loc;
     }
+
+    if ( HasEquivBreak(idx_begin, idx_end) ) {
+        NCBI_THROW(CSeqLocException, eBadLocation,
+                   "CSeq_loc_I::MakeSeq_loc: equiv set overlaps with range");
+    }
+
     // check bonds
     const SSeq_loc_CI_RangeInfo& info0 = m_Ranges[idx_begin];
     if ( make_type == CSeq_loc_I::eMake_PreserveType && info0.m_Loc ) {
@@ -1990,7 +2186,8 @@ CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(size_t idx_begin,
             return MakeLocPacked_int(idx_begin, idx_end);
         }
     }
-    if ( make_type == CSeq_loc_I::eMake_CompactType ) {
+    if ( make_type == CSeq_loc_I::eMake_CompactType &&
+         idx_end - idx_begin > 1 ) {
         // try to make compact variants
         if ( CanBePacked_pnt(idx_begin, idx_end) ) {
             return MakeLocPacked_pnt(idx_begin, idx_end);
@@ -2326,14 +2523,15 @@ void CSeq_loc_I::Delete(void)
 void CSeq_loc_I::InsertNull(void)
 {
     x_CheckNotValid("InsertNull()");
-    m_Impl->InsertRange(m_Index);
+    m_Impl->InsertRange(m_Index, CSeq_loc::e_Null);
 }
 
 
 void CSeq_loc_I::InsertEmpty(const CSeq_id_Handle& id)
 {
     x_CheckNotValid("InsertEmpty()");
-    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    SSeq_loc_CI_RangeInfo& info =
+        m_Impl->InsertRange(m_Index, CSeq_loc::e_Empty);
     x_SetSeq_id_Handle(info, id);
 }
 
@@ -2341,7 +2539,8 @@ void CSeq_loc_I::InsertEmpty(const CSeq_id_Handle& id)
 void CSeq_loc_I::InsertWhole(const CSeq_id_Handle& id)
 {
     x_CheckNotValid("InsertWhole()");
-    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    SSeq_loc_CI_RangeInfo& info =
+        m_Impl->InsertRange(m_Index, CSeq_loc::e_Whole);
     x_SetSeq_id_Handle(info, id);
     info.m_Range = TRange::GetWhole();
 }
@@ -2352,7 +2551,8 @@ void CSeq_loc_I::InsertPoint(const CSeq_id_Handle& id,
                              ENa_strand strand)
 {
     x_CheckNotValid("InsertPoint()");
-    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    SSeq_loc_CI_RangeInfo& info =
+        m_Impl->InsertRange(m_Index, CSeq_loc::e_Pnt);
     x_SetSeq_id_Handle(info, id);
     info.m_Range.SetFrom(pos).SetLength(1);
     if ( strand != eNa_strand_unknown ) {
@@ -2367,7 +2567,8 @@ void CSeq_loc_I::InsertInterval(const CSeq_id_Handle& id,
                                 ENa_strand strand)
 {
     x_CheckNotValid("InsertPoint()");
-    SSeq_loc_CI_RangeInfo& info = m_Impl->InsertRange(m_Index);
+    SSeq_loc_CI_RangeInfo& info =
+        m_Impl->InsertRange(m_Index, CSeq_loc::e_Int);
     x_SetSeq_id_Handle(info, id);
     info.m_Range = range;
     if ( strand != eNa_strand_unknown ) {

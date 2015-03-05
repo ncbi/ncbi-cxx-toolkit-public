@@ -837,7 +837,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
                       "}\n");
 }
 
-/*
+
 BOOST_AUTO_TEST_CASE(TestMakeEquiv)
 {
     CRef<CSeq_loc> loc =
@@ -867,6 +867,13 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
     BOOST_CHECK(!it.IsPoint());
     BOOST_CHECK(!it.IsInEquivSet());
     BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 10,\n"
+                      "  to 20,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -885,6 +892,13 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
     BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
     BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 1u);
     BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 2u);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 25,\n"
+                      "  to 27,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -903,6 +917,13 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
     BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
     BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 2u);
     BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 25,\n"
+                      "  to 26,\n"
+                      "  strand plus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -921,6 +942,13 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
     BOOST_CHECK_EQUAL(it.GetEquivSetRange(0).second.GetPos(), 4u);
     BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).first.GetPos(), 2u);
     BOOST_CHECK_EQUAL(it.GetEquivPartRange(0).second.GetPos(), 4u);
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= int {\n"
+                      "  from 27,\n"
+                      "  to 27,\n"
+                      "  strand minus,\n"
+                      "  id gi 2\n"
+                      "}\n");
     ++it;
 
     BOOST_REQUIRE(it);
@@ -934,11 +962,17 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
     BOOST_CHECK(it.IsPoint());
     BOOST_CHECK(!it.IsInEquivSet());
     BOOST_CHECK(!it.IsInBond());
+    BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
+                      "Seq-loc ::= pnt {\n"
+                      "  point 30,\n"
+                      "  strand minus,\n"
+                      "  id gi 3\n"
+                      "}\n");
     ++it;
 
     BOOST_CHECK(!it);
 
-    string loc2 = MakeASN(*it.MakeSeq_loc());
+    string loc2 = MakeASN(*it.MakeSeq_loc(CSeq_loc_I::eMake_PreserveType));
     BOOST_CHECK_EQUAL(loc2,
                       "Seq-loc ::= mix {\n"
                       "  int {\n"
@@ -947,14 +981,14 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
                       "    strand plus,\n"
                       "    id gi 2\n"
                       "  },\n"
-                      "  equiv {"
+                      "  equiv {\n"
                       "    int {\n"
                       "      from 25,\n"
                       "      to 27,\n"
                       "      strand plus,\n"
                       "      id gi 2\n"
                       "    },\n"
-                      "    mix {"
+                      "    mix {\n"
                       "      int {\n"
                       "        from 25,\n"
                       "        to 26,\n"
@@ -976,4 +1010,3 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv)
                       "  }\n"
                       "}\n");
 }
-*/
