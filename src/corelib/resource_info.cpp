@@ -558,6 +558,47 @@ string CNcbiEncrypt::GenerateKey(const string& seed)
 }
 
 
+bool CNcbiEncrypt::IsEncrypted(const string& data)
+{
+    if ( data.empty() ) {
+        return false;
+    }
+
+    // Domain, if present, must be not empty.
+    size_t domain_pos = data.find('/');
+    if (domain_pos == data.size() - 1) {
+        return false;
+    }
+
+    string encr = data.substr(0, domain_pos);
+
+    if (encr.empty()) {
+        return false;
+    }
+
+    // Check API version. Currently only version 1 is supported.
+    if (encr[0] != '1') {
+        return false;
+    }
+
+    // Check if key checksum is present and the possibly encrypted part
+    // has the correct length (a multiple of kEncrypt_BlockSize).
+    if (encr.size() <= 34  ||  encr[33] != ':'  ||
+        (encr.size() - 34) % kEncrypt_BlockSize) {
+        return false;
+    }
+    for (size_t pos = 1; pos < encr.size(); ++pos) {
+        // Skip colon between checksum and the encrypted data.
+        if (pos == 33) continue;
+        // All other chars must be [0-9a-f].
+        if (NStr::HexChar(encr[pos]) < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 void CNcbiEncrypt::Reload(void)
 {
     CMutexGuard guard(s_EncryptMutex);

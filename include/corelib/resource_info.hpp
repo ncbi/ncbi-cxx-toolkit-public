@@ -266,6 +266,17 @@ public:
     ///   Hexadecimal string representation of the key.
     static string GenerateKey(const string& seed);
 
+    /// Check if the string contains valid encrypted data.
+    /// No actual decryption is performed, so some false-positives
+    /// are possible if the string format matches that of the encrypted
+    /// data.
+    /// @param data
+    ///   The string to check.
+    /// @return
+    ///   True if the string contains data encrypted with CNcbiEncrypt,
+    ///   false otherwise.
+    static bool IsEncrypted(const string& data);
+
     /// Get encryption API version.
     static const char* GetVersion(void);
 
