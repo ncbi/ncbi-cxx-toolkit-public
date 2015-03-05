@@ -839,6 +839,7 @@ objtax1 needs3party ncbiobj
 odbc_ftds64 needs tds_ftds64
 omssa needs $(SEQ_LIBS)
 omssa needs pub
+osutils needs3party $(RT_LIBS)
 osutils needs3party ctutils
 pathogen_connection needs connssl
 pathogen_connection needs gpipe_common
