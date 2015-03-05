@@ -93,6 +93,7 @@ int CRPSBlastApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
+	SetDiagPostPrefix("rpsblast");
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();

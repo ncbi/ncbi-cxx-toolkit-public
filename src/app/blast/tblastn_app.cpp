@@ -87,6 +87,7 @@ int CTblastnApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
+	SetDiagPostPrefix("tblastn");
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();

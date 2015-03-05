@@ -336,6 +336,7 @@ int BlastdbCopyApplication::Run(void)
     if (args["logfile"]) {
         SetDiagPostLevel(eDiag_Info);
         SetDiagPostFlag(eDPF_All);
+	SetDiagPostPrefix("blastdbcp");
         time_t now = time(0);
         LOG_POST( Info << string(72,'-') << "\n" << "NEW LOG - " << ctime(&now) );
     }

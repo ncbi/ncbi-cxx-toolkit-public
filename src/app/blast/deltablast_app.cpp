@@ -195,6 +195,7 @@ int CDeltaBlastApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
+	SetDiagPostPrefix("deltablast");
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();

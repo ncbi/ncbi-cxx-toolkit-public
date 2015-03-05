@@ -1360,6 +1360,8 @@ int CBlastDbCheckApplication::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
     int status = 0;
+
+    SetDiagPostPrefix("blastdbcheck");
     
     try {
         // Do run

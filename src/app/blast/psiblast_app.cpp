@@ -398,6 +398,7 @@ int CPsiBlastApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
+	SetDiagPostPrefix("psiblast");
 
         const CArgs& args = GetArgs();
         const bool recovered_from_search_strategy =

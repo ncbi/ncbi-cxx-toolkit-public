@@ -1150,6 +1150,9 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
 int CMakeBlastDBApp::Run(void)
 {
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostPrefix("makeblastdb");
+
     int status = 0;
     try { x_BuildDatabase(); }
     CATCH_ALL(status)

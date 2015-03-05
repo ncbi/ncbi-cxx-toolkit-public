@@ -687,6 +687,9 @@ int CBlastDBCmdApp::Run(void)
 
     // Silences warning in CSeq_id for CSeq_id::fParse_PartialOK
     SetDiagFilter(eDiagFilter_Post, "!(1306.10)");
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostPrefix("blastdbcmd");
+
 
     try {
         CNcbiOstream& out = args["out"].AsOutputFile();
