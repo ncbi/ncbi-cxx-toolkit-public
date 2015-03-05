@@ -338,7 +338,7 @@ void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
 {
     // Open connection to ID1 server
     if ( m_ID2Conn ) {
-        CObjectOStreamAsnBinary id2_server_output(*m_ID2Conn, false);
+        CObjectOStreamAsnBinary id2_server_output(*m_ID2Conn);
         // Send request packet to the server
         id2_server_output << packet;
         id2_server_output.Flush();
