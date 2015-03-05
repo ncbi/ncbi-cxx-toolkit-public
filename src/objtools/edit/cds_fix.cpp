@@ -669,8 +669,6 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
       
         bool found3 = false;
         bool found5 = false;
-        bool test_was_trivial = true;
-
         int cd_start = cd_loc.GetStart(eExtreme_Positional);
         int cd_stop = cd_loc.GetStop(eExtreme_Positional);
  
@@ -679,25 +677,21 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
             {
                 s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
                                new_mrna->SetLocation(), found5, found3, scope);
-                test_was_trivial = false;
             }
         } else if (sah) {
             for (CFeat_CI utr(sah, CSeqFeatData::e_Imp); utr; ++utr) {
                 s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
                                 new_mrna->SetLocation(), found5, found3, scope);
-                test_was_trivial = false;
             }
         }
 
-        //mss-329:
-        // only make an assertion if there was an actual test
-        if (!test_was_trivial) {
-            if (!found5)
-                new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional); 
-            if (!found3)
-                new_mrna->SetLocation().SetPartialStop(true, eExtreme_Positional); 
-            new_mrna->SetPartial(!found5 || !found3);
-        }
+
+        if (!found5)
+            new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional); 
+        if (!found3)
+            new_mrna->SetLocation().SetPartialStop(true, eExtreme_Positional); 
+
+        new_mrna->SetPartial(new_mrna->GetLocation().IsPartialStart(eExtreme_Positional) || new_mrna->GetLocation().IsPartialStop(eExtreme_Positional));
     }
     return new_mrna;
 } 
