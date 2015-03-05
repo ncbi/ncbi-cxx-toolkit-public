@@ -2066,7 +2066,6 @@ void CNewCleanup_imp::DbtagBC (
             dbtag.SetTag().SetStr(str);
             ChangeMade(CCleanupChange::eChangeDbxrefs);
         }
-        return;
     }
 
     if (! FIELD_IS (oid, Str)) return;
@@ -2075,29 +2074,43 @@ void CNewCleanup_imp::DbtagBC (
     if (NStr::IsBlank (str)) return;
     x_CleanupStringMarkChanged( str );
 
-    if (NStr::EqualNocase(dbtag.GetDb(), "HPRD") && NStr::StartsWith (dbtag.GetTag().GetStr(), "HPRD_")) {
-        dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (5));
+    db = dbtag.GetDb();
+    str = dbtag.GetTag().GetStr();
+    if (NStr::EqualNocase(db, "HPRD") && NStr::StartsWith (str, "HPRD_")) {
+        dbtag.SetTag().SetStr (str.substr (5));
         ChangeMade(CCleanupChange::eChangeDbxrefs);
-    } else if (NStr::EqualNocase (dbtag.GetDb(), "MGI") ) {
-        if(NStr::StartsWith (dbtag.GetTag().GetStr(), "MGI:") || NStr::StartsWith (dbtag.GetTag().GetStr(), "MGD:")) {
+    } else if (NStr::EqualNocase (db, "MGI") ) {
+        if(NStr::StartsWith (str, "MGI:")) {
             /*
             dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
             */
-        } else if( NStr::StartsWith( dbtag.GetTag().GetStr(), "J:", NStr::eNocase ) ) {
+        } else if( NStr::StartsWith (str, "MGD:") ) {
+            /*
+            dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+            */
+        } else if( NStr::StartsWith( str, "J:", NStr::eNocase ) ) {
             dbtag.SetTag().SetStr("J");
             ChangeMade(CCleanupChange::eChangeDbxrefs);
+        } else {
+            string newstr = "MGI:" + str;
+            dbtag.SetTag().SetStr(newstr);
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
         }
-    } else if (NStr::EqualNocase (dbtag.GetDb(), "HGNC") ) {
-        if(NStr::StartsWith (dbtag.GetTag().GetStr(), "HGNC:")) {
+    } else if (NStr::EqualNocase (db, "HGNC") ) {
+        if(! NStr::StartsWith (str, "HGNC:")) {
+            string newstr = "HGNC:" + str;
+            dbtag.SetTag().SetStr(newstr);
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
             /*
             dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (5));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
             */
         }
-    } else if (NStr::EqualNocase (dbtag.GetDb(), "RGD") ) {
-        if(NStr::StartsWith (dbtag.GetTag().GetStr(), "RGD:")) {
-            dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
+    } else if (NStr::EqualNocase (db, "RGD") ) {
+        if(NStr::StartsWith (str, "RGD:")) {
+            dbtag.SetTag().SetStr (str.substr (4));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
         }
     }
