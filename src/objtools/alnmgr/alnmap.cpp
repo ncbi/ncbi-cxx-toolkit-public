@@ -1448,7 +1448,6 @@ CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
             if (seg_flag == eSegment_Trim) {
                 from_trim = aln_from - aln_seg_from;
                 len -= from_trim;
-                aln_seg_from = aln_from;
             }
         }
         // Check trimming of the last segment
@@ -1460,7 +1459,6 @@ CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
                 }
                 if (seg_flag == eSegment_Trim) {
                     len -= aln_seg_to - aln_to;
-                    aln_seg_to = aln_to;
                 }
             }
         }

@@ -763,7 +763,6 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
 
         seg_lens.push_back(0);
         TSeqPos& seg_len = seg_lens.back();
-        row_len = 0;
         row_lens.clear();
         widths_determined.push_back(false);
 
@@ -831,11 +830,7 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
                                        "Inconsistent strands!");
                         }
                     }
-                } else {
-                    strand = eNa_strand_unknown;
                 }
-
-                    
             } else if ((*i)->IsEmpty()) {
                 starts.push_back(-1);
                 if (seg == 0) {
@@ -843,7 +838,6 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
                 }
                 seq_id = &(*i)->GetEmpty();
                 row_lens.push_back(0);
-
             }
 
             // determine/check the id

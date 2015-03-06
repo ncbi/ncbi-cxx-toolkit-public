@@ -5999,12 +5999,16 @@ CNcbiOstream* CFileDiagHandler::GetLogStream(EDiagFileType file_type)
     switch ( file_type ) {
     case eDiagFile_Err:
         handler = m_Err;
+        break;
     case eDiagFile_Log:
         handler = m_Log;
+        break;
     case eDiagFile_Trace:
         handler = m_Trace;
+        break;
     case eDiagFile_Perf:
         handler = m_Perf;
+        break;
     case eDiagFile_All:
         return 0;
     }

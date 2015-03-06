@@ -131,6 +131,7 @@ SCigarAlignment::EFormat SCigarAlignment::GuessFormat(const string& s,
             case eLengthFirst:
             case eLengthFirstIfAmbiguous:
                 result = eLengthFirst;
+                break;
             case eOpFirst:
             case eOpFirstIfAmbiguous:
                 result = eOpFirst;

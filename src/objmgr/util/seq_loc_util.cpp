@@ -430,7 +430,6 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
                 strand_set = true;
             } else if (strand == eNa_strand_plus  &&
                 istrand == eNa_strand_unknown) {
-                istrand = eNa_strand_plus;
                 strand_set = true;
             } else if (!strand_set) {
                 strand = istrand;
@@ -455,7 +454,6 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
                 strand_set = true;
             } else if (strand == eNa_strand_plus  &&
                 istrand == eNa_strand_unknown) {
-                istrand = eNa_strand_plus;
                 strand_set = true;
             } else if (!strand_set) {
                 strand = istrand;
