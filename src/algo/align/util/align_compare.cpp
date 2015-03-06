@@ -51,6 +51,7 @@
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 
 #include <cmath>
+#include <ctype.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -105,8 +106,60 @@ static void s_GetAlignmentMismatches(const CSeq_align& align,
                                      CAlignCompare::ERowComparison row)
 {
     if (!align.GetSegs().IsSpliced()) {
-        NCBI_THROW(CException, eUnknown,
-                   "full comparison supported only for Spliced-seg alignments");
+        CScoreLookup lookup;
+        string traceback = lookup.GetTraceback(align, 0);
+        if (traceback.empty()) {
+            NCBI_THROW(CException, eUnknown,
+                       "Comparing mismatches for dense-seg alignments requires "
+                       "traceback information");
+        }
+        int product_dir = align.GetSeqStrand(0) == eNa_strand_minus
+                           ? -1 : 1;
+        TSeqPos product_pos = product_dir == 1 ? align.GetSeqStart(0)
+                                                : align.GetSeqStop(0);
+        int genomic_dir = align.GetSeqStrand(1) == eNa_strand_minus
+                           ? -1 : 1;
+        TSeqPos genomic_pos = product_dir == 1 ? align.GetSeqStart(1)
+                                                : align.GetSeqStop(1);
+        unsigned match = 0;
+        ITERATE (string, it, traceback) {
+            if (isdigit(*it)) {
+                match = match * 10 + (*it - '0');
+                continue;
+            }
+            product_pos += match * product_dir;
+            genomic_pos += match * genomic_dir;
+            match = 0;
+            bool genomic_ins = *it == '-';
+            bool product_ins = *++it == '-';
+            if (!genomic_ins && !product_ins) {
+                /// mismatch
+                if (row != CAlignCompare::e_Subject) {
+                    align_info.query_mismatches += TSeqRange(
+                        product_pos, product_pos);
+
+                }
+                if (row != CAlignCompare::e_Query) {
+                    align_info.subject_mismatches += TSeqRange(
+                        genomic_pos, genomic_pos);
+                }
+            }
+            if (!genomic_ins) {
+                product_pos += product_dir;
+            }
+            if (!product_ins) {
+                genomic_pos += genomic_dir;
+            }
+        }
+        if (product_pos != (product_dir == 1 ? align.GetSeqStop(0)+1
+                                              : align.GetSeqStart(0)-1)
+         || genomic_pos != (genomic_dir == 1 ? align.GetSeqStop(1)+1
+                                              : align.GetSeqStart(1)-1))
+        {
+           NCBI_THROW(CException, eUnknown,
+                      "Inconsistent length of traceback string " + traceback);
+        }
+        return;
     }
 
     bool is_product_minus = align.GetSegs().GetSpliced().IsSetProduct_strand() &&
@@ -123,14 +176,14 @@ static void s_GetAlignmentMismatches(const CSeq_align& align,
                           (exon.IsSetProduct_strand() &&
                            exon.GetProduct_strand() == eNa_strand_minus)
                            ? -1 : 1;
-        TSeqPos product_pos = (product_dir == -1 ? exon.GetProduct_start()
+        TSeqPos product_pos = (product_dir == 1 ? exon.GetProduct_start()
                                                  : exon.GetProduct_end())
                               . AsSeqPos();
         int genomic_dir = is_genomic_minus ||
                           (exon.IsSetGenomic_strand() &&
                            exon.GetGenomic_strand() == eNa_strand_minus)
                            ? -1 : 1;
-        TSeqPos genomic_pos = genomic_dir == -1 ? exon.GetGenomic_start()
+        TSeqPos genomic_pos = genomic_dir == 1 ? exon.GetGenomic_start()
                                                 : exon.GetGenomic_end();
         ITERATE (CSpliced_exon::TParts, part_it, exon.GetParts()) {
             switch ((*part_it)->Which()) {
