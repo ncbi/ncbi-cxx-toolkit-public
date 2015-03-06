@@ -81,7 +81,7 @@ public:
                             CMsvcPrjProjectContext& project_context,
                             CProjItem& prj);
 
-    static void GeneratePropertySheets(const string& solution);
+    static void GeneratePropertySheets(void);
 private:
     list<SConfigInfo> m_Configs;
     list<SConfigInfo> m_project_configs;

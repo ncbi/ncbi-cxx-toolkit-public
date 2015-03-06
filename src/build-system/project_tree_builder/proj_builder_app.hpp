@@ -217,6 +217,8 @@ public:
     string GetUtilityProjectsDir(void) const;
     string GetUtilityProjectsSrcDir(void);
     void SetConfFileData(const string& src, const string& dest);
+
+    string GetBuildDir(void);
     
     void  UpdateDepGraph( CProjectTreeBuilder::TFiles& files);
 private:

@@ -931,10 +931,11 @@ void __SET_CUSTOMBUILD_ELEMENT(
 
 #define USE_PERCFG_PROPSHEET  1
 
-void CMsvcProjectGenerator::GeneratePropertySheets(const string& solution)
+void CMsvcProjectGenerator::GeneratePropertySheets()
 {
-    string ps_dir( CDirEntry(solution).GetDir());
-    string ps_base(CDirEntry(solution).GetBase() + ".base.props");
+    string ps_dir( GetApp().GetBuildDir());
+    string ps_name("ncbi_sln");
+    string ps_base(ps_name + ".base.props");
     const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
     const CMsvcMetaMakefile&  meta_mk = GetApp().GetMetaMakefile();
 
@@ -942,7 +943,7 @@ void CMsvcProjectGenerator::GeneratePropertySheets(const string& solution)
 #if USE_PERCFG_PROPSHEET
     ITERATE(list<SConfigInfo>, c , all_cfgs) {
 
-        string ps_user(CDirEntry(solution).GetBase() + "." + c->GetConfigFullName() + ".user.props");
+        string ps_user(ps_name + "." + c->GetConfigFullName() + ".user.props");
         string file_user(CDirEntry::ConcatPath(ps_dir, ps_user));
         if (!CDirEntry(file_user).Exists())
         {
@@ -1290,11 +1291,11 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 // NCBI user prop sheet
                 CRef<msbuild::CImportGroup::C_E> p(new msbuild::CImportGroup::C_E);
                 string ps_name = "$(ProjectDir)" + 
-                    CDirEntry::CreateRelativePath(project_context.ProjectDir(), GetApp().m_Solution);
+                    CDirEntry::CreateRelativePath(project_context.ProjectDir(), GetApp().GetBuildDir());
 #if USE_PERCFG_PROPSHEET
-                ps_name = CDirEntry(ps_name).GetDir() + "$(SolutionName)." + c->GetConfigFullName() + ".user.props";
+                ps_name += "ncbi_sln." + c->GetConfigFullName() + ".user.props";
 #else
-                ps_name = CDirEntry(ps_name).GetDir() + "$(SolutionName)" + ".user.props";
+                ps_name += "ncbi_sln.user.props";
 #endif
                 p->SetImport().SetAttlist().SetProject(ps_name);
                 t->SetImportGroup().SetImportGroup().push_back(p);

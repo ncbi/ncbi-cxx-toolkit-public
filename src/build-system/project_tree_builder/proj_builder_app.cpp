@@ -772,7 +772,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     }
     // Projects
     CMsvcProjectGenerator prj_gen(*configurations);
-    CMsvcProjectGenerator::GeneratePropertySheets(m_Solution);
+    CMsvcProjectGenerator::GeneratePropertySheets();
     NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         prj_gen.Generate(p->second);
     }
@@ -2955,6 +2955,14 @@ void CProjBulderApp::SetConfFileData(const string& src, const string& dest)
 {
     m_ConfSrc = src;
     m_ConfDest= dest;
+}
+
+string CProjBulderApp::GetBuildDir(void)
+{
+    return  CDirEntry::AddTrailingPathSeparator(
+        CDirEntry::ConcatPath( CDirEntry::ConcatPath( CDirEntry::ConcatPath(
+            GetProjectTreeInfo().m_Compilers, GetRegSettings().m_CompilersSubdir),
+            GetBuildType().GetTypeStr()), GetRegSettings().m_ProjectsSubdir));
 }
 
 CProjBulderApp& GetApp(void)
