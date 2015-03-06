@@ -705,6 +705,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     }
     if ( !ex_prod_id ) {
         ERR_POST_X(15, Warning << "Missing product id in spliced-seg");
+        return;
     }
     m_HaveStrands = m_HaveStrands  ||
         exon.IsSetGenomic_strand() || exon.IsSetProduct_strand();
