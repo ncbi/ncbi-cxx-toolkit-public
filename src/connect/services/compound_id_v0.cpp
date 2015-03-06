@@ -267,7 +267,7 @@ struct SIDUnpacking
 
 Uint8 SIDUnpacking::ExtractNumber()
 {
-    Uint8 number;
+    Uint8 number = 0;
 
     unsigned number_len = g_UnpackInteger(m_Ptr, m_RemainingBytes, &number);
 

@@ -37,6 +37,8 @@
 
 #include <string.h>
 
+#include <corelib/ncbidbg.hpp>
+
 BEGIN_NCBI_SCOPE
 
 unsigned g_PackInteger(void* dst, size_t dst_size, Uint8 number)
@@ -115,6 +117,8 @@ unsigned g_UnpackInteger(const void* src, size_t src_size, Uint8* number)
 
     if (src_size == 0)
         return 0;
+
+    _ASSERT(number);
 
     if ((signed char) *ptr >= 0) {
         *number = (Uint8) *ptr;
