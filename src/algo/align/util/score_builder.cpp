@@ -791,7 +791,7 @@ void CScoreBuilder::AddTracebacks(CScope& scope,
     }
 }
 
-string CScoreBuilder::GetTraceback(CScope& scope, const CSeq_align& align,
+string CScoreBuilder::GetTraceback(const CSeq_align& align,
                                    CSeq_align::TDim row)
 {
     if (align.IsSetExt()) {
@@ -806,6 +806,16 @@ string CScoreBuilder::GetTraceback(CScope& scope, const CSeq_align& align,
                 break;
             }
         }
+    }
+    return "";
+}
+
+string CScoreBuilder::GetTraceback(CScope& scope, const CSeq_align& align,
+                                   CSeq_align::TDim row)
+{
+    string stored_traceback = GetTraceback(align, row);
+    if (!stored_traceback.empty()) {
+        return stored_traceback;
     }
 
     /// Tracebacks user object not found; need to calculate on the fly

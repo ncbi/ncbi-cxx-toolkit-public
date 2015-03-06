@@ -126,6 +126,8 @@ public:
 
     void AddTracebacks(CScope& scope, list< CRef<CSeq_align> >& aligns);
 
+    string GetTraceback(const CSeq_align& align, CSeq_align::TDim row);
+
     string GetTraceback(CScope& scope, const CSeq_align& align,
                         CSeq_align::TDim row);
 
