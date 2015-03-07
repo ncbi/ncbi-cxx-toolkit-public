@@ -89,7 +89,7 @@ an_prok_pipeline needs gpipe_xml
 an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
-asn_build_config needs build_config
+asn_build_config needs build_config_base
 asn_build_config needs gpinit
 asn_cache includes id_dump
 asn_sample_lib needs xser
@@ -161,10 +161,12 @@ bob_g needs splitdbasn_g
 bob_g needs3party netblast
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs bacterial_pipeline_proc
+build_config needs build_config_base
 build_config needs gcaccess_utils
-build_config needs gpinit_bag_util
-build_config needs gpinit_register
 build_config needs gpipe_xml
+build_config_base needs gencoll_client
+build_config_base needs gpinit_bag_util
+build_config_base needs gpinit_register
 bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
 cache_blob needs xser
@@ -884,13 +886,12 @@ refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs gencoll_client
 refseq_ctl needs xid_utils
+reftrack_access needs gpipe_common
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
 remapcli needs xconnect
 rt needs3party $(ORIG_LIBS)
-sablot needs3party $(EXPAT_LIBS)
-sablot needs3party $(ORIG_LIBS)
 sage_mappings needs xser
 sample_asn needs general
 sampling needs3party $(ORIG_LIBS)
@@ -1405,8 +1406,6 @@ xser needs xutil
 xslt needs3party $(LIBXML_LIBS)
 xslt needs3party $(ORIG_LIBS)
 xslt_libxml needs xid_utils
-xslt_sablotron needs xid_utils
-xslt_sablotron needs3party $(SABLOT_LIBS)
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
