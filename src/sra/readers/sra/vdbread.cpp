@@ -31,6 +31,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_package_ver.h>
+#include <common/ncbi_source_ver.h>
 #include <sra/readers/sra/vdbread.hpp>
 
 #include <klib/rc.h>
@@ -375,16 +377,27 @@ void CVDBMgr::x_Init(void)
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot get VDBManager version", rc);
     }
-    string app_name = CNcbiApplication::GetAppName();
     CKNSManager kns_mgr(CVFSManager(*this));
-    if ( app_name.empty() ) {
-        KNSManagerSetUserAgent(kns_mgr, "SRA Toolkit %V",
-                               sdk_ver);
+    CNcbiOstrstream str;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if ( app ) {
+        str << app->GetAppName() << ": " << app->GetVersion().Print() << "; ";
     }
-    else {
-        KNSManagerSetUserAgent(kns_mgr, "%s, SRA Toolkit %V",
-                               app_name.c_str(), sdk_ver);
-    }
+#if NCBI_PACKAGE
+    str << "Package: " << NCBI_PACKAGE_NAME << ' ' <<
+        NCBI_PACKAGE_VERSION << "; ";
+#endif
+    str << "C++ ";
+#ifdef NCBI_PRODUCTION_VER
+    str << NCBI_PRODUCTION_VER << "/";
+#endif
+#ifdef NCBI_DEVELOPMENT_VER
+    str << NCBI_DEVELOPMENT_VER;
+#endif
+    string prefix = CNcbiOstrstreamToString(str);
+    KNSManagerSetUserAgent(kns_mgr, "%s; SRA Toolkit %V",
+                           prefix.c_str(),
+                           sdk_ver);
 }
 
 

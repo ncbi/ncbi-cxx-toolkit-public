@@ -60,7 +60,9 @@ USING_SCOPE(objects);
 
 class CCSRATestApp : public CNcbiApplication
 {
-private:
+public:
+    CCSRATestApp();
+
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
@@ -72,6 +74,11 @@ private:
 
 //#define DEFAULT_FILE NCBI_TRACES01_PATH "/compress/DATA/ASW/NA19909.mapped.illumina.mosaik.ASW.exome.20110411/s-quantized.csra"
 #define DEFAULT_FILE NCBI_TRACES01_PATH "/compress/1KG/ASW/NA19909/exome.ILLUMINA.MOSAIK.csra"
+
+CCSRATestApp::CCSRATestApp()
+{
+    SetVersion( CVersionInfo(1,23,45) );
+}
 
 void CCSRATestApp::Init(void)
 {
