@@ -453,7 +453,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
 #if BITSTRING_AS_VECTOR
     bool compressed = false;
 #else
-    bool compressed = TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed();
+    bool compressed = IsCompressed();
 #endif
     char* buf=0;
     unsigned int len = obj.size();

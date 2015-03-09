@@ -848,7 +848,7 @@ void CObjectOStreamXml::WriteBitString(const CBitString& obj)
         m_Output.PutChar(ToHex[data]);
     }
 #else
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         bm::word_t* tmp_block = obj.allocate_tempblock();
         CBitString::statistics st;
         obj.calc_stat(&st);
@@ -1623,7 +1623,7 @@ static const char* const HEX = "0123456789ABCDEF";
 void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         WriteBase64Bytes(bytes,length);
         return;
     }

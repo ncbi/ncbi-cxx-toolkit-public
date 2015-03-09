@@ -625,7 +625,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
     obj.reserve(obj.size());
 #else
     obj.resize(0);
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         ReadCompressedBitString(obj);
         return;
     }

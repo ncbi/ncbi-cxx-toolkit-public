@@ -328,7 +328,7 @@ void CObjectOStreamJson::WriteBitString(const CBitString& obj)
         m_Output.PutChar(ToHex[data]);
     }
 #else
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         bm::word_t* tmp_block = obj.allocate_tempblock();
         CBitString::statistics st;
         obj.calc_stat(&st);
@@ -524,7 +524,7 @@ void CObjectOStreamJson::WriteBytes(const ByteBlock& block,
         WriteCustomBytes(bytes,length);
         return;
     }
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         WriteBase64Bytes(bytes,length);
         return;
     }

@@ -1711,7 +1711,7 @@ void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
 {
     obj.clear();
 #if !BITSTRING_AS_VECTOR
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         ReadCompressedBitString(obj);
         return;
     }

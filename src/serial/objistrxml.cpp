@@ -1160,7 +1160,7 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
     if (EndOpeningTagSelfClosed()) {
         return;
     }
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         ReadCompressedBitString(obj);
         return;
     }
@@ -2475,7 +2475,7 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
                                     char* dst, size_t length)
 {
     size_t count = 0;
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         bool end_of_data = false;
         const size_t chunk_in = 80;
         char src_buf[chunk_in];

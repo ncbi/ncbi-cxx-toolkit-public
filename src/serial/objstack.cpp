@@ -179,6 +179,18 @@ bool CObjectStack::IsNsQualified(void)
     return true;
 }
 
+bool CObjectStack::IsCompressed(void) const
+{
+    size_t i, count = GetStackDepth();
+    for (i=0; i<count; ++i) {
+        const CObjectStack::TFrame& frame = FetchFrameFromTop(i);
+        if (frame.HasMemberId()) {
+            return frame.GetMemberId().IsCompressed();
+        }
+    }
+    return false;
+}
+
 void CObjectStack::x_PushStackPath(void)
 {
     if (!m_WatchPathHooks) {

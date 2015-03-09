@@ -1430,8 +1430,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << ")";
             }
             if (i->dataType) {
+                const CUniSequenceDataType* uniseq =
+                    dynamic_cast<const CUniSequenceDataType*>(i->dataType);
                 const COctetStringDataType* octets =
                     dynamic_cast<const COctetStringDataType*>(i->dataType);
+                if (!octets && uniseq) {
+                    octets = dynamic_cast<const COctetStringDataType*>(uniseq->GetElementType());
+                }
                 if (octets) {
                     if (octets->IsCompressed()) {
                         methods << "->SetCompressed()";

@@ -598,7 +598,7 @@ void CObjectIStreamJson::ReadBitString(CBitString& obj)
 #if BITSTRING_AS_VECTOR
     ThrowError(fNotImplemented, "Not Implemented");
 #else
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         ThrowError(fNotImplemented, "Not Implemented");
         return;
     }
@@ -931,7 +931,7 @@ size_t CObjectIStreamJson::ReadBytes(
     if (m_BinaryFormat != CObjectIStreamJson::eDefault) {
         return ReadCustomBytes(block,dst,length);
     }
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         return ReadBase64Bytes( block, dst, length );
     }
     return ReadHexBytes( block, dst, length );

@@ -318,7 +318,7 @@ void CObjectOStreamAsn::WriteBitString(const CBitString& obj)
         }
     }
 #else
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+    if (IsCompressed()) {
         bm::word_t* tmp_block = obj.allocate_tempblock();
         CBitString::statistics st;
         obj.calc_stat(&st);

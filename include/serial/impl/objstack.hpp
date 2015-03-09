@@ -135,6 +135,8 @@ public:
     void SetTopMemberId(const CMemberId& memberId);
     bool IsNsQualified(void);
 
+    bool IsCompressed(void) const;
+
 #if defined(NCBI_SERIAL_IO_TRACE)
     void TracePushFrame(bool push) const;
 #endif
