@@ -1257,6 +1257,9 @@ void Blast_HSPListSortByScore(BlastHSPList* hsp_list)
 static int 
 s_FuzzyEvalueComp(double evalue1, double evalue2)
 {
+   if (evalue1 < 1.0e-180 && evalue2 < 1.0e-180)
+	return 0;
+
    if (evalue1 < (1-FUZZY_EVALUE_COMPARE_FACTOR)*evalue2)
       return -1;
    else if (evalue1 > (1+FUZZY_EVALUE_COMPARE_FACTOR)*evalue2)
