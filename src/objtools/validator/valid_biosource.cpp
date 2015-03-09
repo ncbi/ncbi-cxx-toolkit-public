@@ -1034,7 +1034,9 @@ void CValidError_imp::ValidateBioSource
                 && bsrc.GetGenome() != CBioSource::eGenome_genomic
                 && bsrc.GetGenome() != CBioSource::eGenome_plasmid
                 && bsrc.GetGenome() != CBioSource::eGenome_chromosome) {
-                if (NStr::EqualCase(div, "VRL") && bsrc.GetGenome() == CBioSource::eGenome_proviral) {
+                if (NStr::EqualCase(div, "BCT") && bsrc.GetGenome() == CBioSource::eGenome_extrachrom) {
+                    // it's ok
+                } else if (NStr::EqualCase(div, "VRL") && bsrc.GetGenome() == CBioSource::eGenome_proviral) {
                     // it's ok
                 } else {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
