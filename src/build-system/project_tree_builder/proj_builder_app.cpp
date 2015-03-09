@@ -2935,7 +2935,6 @@ string CProjBulderApp::GetUtilityProjectsDir(void) const
 
 string CProjBulderApp::GetUtilityProjectsSrcDir(void)
 {
-#if 0
     string prj = GetProjectTreeInfo().m_Compilers;
     prj = CDirEntry::ConcatPath(prj, GetRegSettings().m_CompilersSubdir);
     prj = CDirEntry::ConcatPath(prj, GetBuildType().GetTypeStr());
@@ -2946,8 +2945,6 @@ string CProjBulderApp::GetUtilityProjectsSrcDir(void)
     prj = CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, prj);
     prj = CDirEntry::ConcatPath(prj, "UtilityProjects");
     prj = CDirEntry::AddTrailingPathSeparator(prj);
-#endif
-    string prj = CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
     return prj;
 }
 
