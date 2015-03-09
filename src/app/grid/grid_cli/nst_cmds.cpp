@@ -25,7 +25,7 @@
  *
  * Authors:  Dmitry Kazimirov
  *
- * File Description: FileTrack interface.
+ * File Description: NetStorage-specific commands of the grid_cli application.
  *
  */
 

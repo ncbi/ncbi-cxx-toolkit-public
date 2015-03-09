@@ -30,17 +30,14 @@
  *
  */
 
-// TODO: Check all my files for unnecessary includes
-
 #include <connect/services/compound_id.hpp>
 #include <connect/services/neticache_client.hpp>
 #include <connect/services/netstorage.hpp>
-
 #include "filetrack.hpp"
 
-// TODO: Move internal classes to unnamed namespaces to avoid clashing
 
 BEGIN_NCBI_SCOPE
+
 
 namespace NImpl
 {
@@ -60,7 +57,7 @@ struct SContext : CObject
             CCompoundIDPool::TInstance);
     Uint8 GetRandomNumber() { return filetrack_api.m_Random.GetRandUint8(); }
 
-    TNetStorageFlags DefaultFlags(TNetStorageFlags flags)
+    TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
     {
         return flags ? flags : default_flags;
     }

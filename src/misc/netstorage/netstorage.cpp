@@ -32,11 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <misc/netstorage/netstorage.hpp>
-#include <misc/netstorage/error_codes.hpp>
-#include <util/util_exception.hpp>
 #include "object.hpp"
-
-#define NCBI_USE_ERRCODE_X  NetStorage
 
 
 BEGIN_NCBI_SCOPE

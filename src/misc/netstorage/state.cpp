@@ -29,13 +29,6 @@
 
 #include <ncbi_pch.hpp>
 #include "state.hpp"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#ifndef NCBI_OS_MSWIN
-#  include <unistd.h>
-#endif
 
 
 BEGIN_NCBI_SCOPE

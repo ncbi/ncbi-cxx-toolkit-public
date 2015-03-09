@@ -38,7 +38,6 @@
 #include <connect/services/ns_output_parser.hpp>
 
 #include <misc/netstorage/netstorage.hpp>
-#include <misc/netstorage/error_codes.hpp>
 
 #include <connect/ncbi_gnutls.h>
 
@@ -49,8 +48,6 @@
 #include <corelib/request_status.hpp>
 
 #include <time.h>
-
-#define NCBI_USE_ERRCODE_X  NetStorage_FileTrack
 
 #define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
 
