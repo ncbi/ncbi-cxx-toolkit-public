@@ -129,6 +129,10 @@ bool CGb_qual::x_CleanupRptAndReplaceSeq(string& val)
     if (NStr::IsBlank(val)) {
         return false;
     }
+    // do not clean if val contains non-sequence characters
+    if (string::npos != val.find_first_not_of("ACGTUacgtu")) {
+        return false;
+    }
     string orig = val;
     NStr::ToLower(val);
     NStr::ReplaceInPlace(val, "u", "t");
