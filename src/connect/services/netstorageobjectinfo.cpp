@@ -131,7 +131,7 @@ private:
 template <>
 CTime SLazyInitData::GetTime<eNFL_FileTrack>()
 {
-    const char* const kISO8601TimeFormat = "Y-M-DTh:m:s.r:z";
+    const char* const kISO8601TimeFormat = "Y-M-DTh:m:s.ro";
 
     if (st_info) {
         if (CJsonNode ctime = st_info.GetByKeyOrNull("ctime")) {

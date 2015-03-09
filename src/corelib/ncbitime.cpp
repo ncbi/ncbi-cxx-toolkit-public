@@ -127,7 +127,7 @@ static const char* kDefaultFormatStopWatch = "S.n";
 // Set of the checked format symbols.
 // For CStopWatch class the format symbols are equal
 // to kFormatSymbolsSpan also.
-static const char* kFormatSymbolsTime = "yYMbBDdhHmsSlrgGzZwWpP";
+static const char* kFormatSymbolsTime = "yYMbBDdhHmsSlrgGzZwWpPo";
 static const char* kFormatSymbolsSpan = "-dhHmMsSnNgG";
 
 // Character used to escape formatted symbols.
@@ -453,20 +453,14 @@ CTime::CTime(int year, int yearDayNumber,
     while (isspace((unsigned char)(*s))) ++s;
 
 
-// The helper to check string with ':z' format symbol specified
+// The helper to check string with 'o' format symbol specified
 struct STzFormatCheck
 {
     STzFormatCheck() : m_Active(false) {}
 
-    void fmt(const char*& f) {
+    bool fmt(const char*& f) {
         _ASSERT(f);
-        if (*f == ':') {
-            if (*++f == 'z') {
-                m_Active = true;
-            } else {
-                --f;
-            }
-        }
+        return m_Active = *f == 'o';
     }
     bool str(const char*& s) {
         _ASSERT(s);
@@ -481,21 +475,13 @@ private:
     bool m_Active;
 };
 
-// The helper to compose string with ':z' format symbol specified
+// The helper to compose string with 'o' format symbol specified
 struct STzFormatMake
 {
-    typedef string::const_iterator T_CI;
-
     STzFormatMake() : m_Active(false) {}
 
-    void fmt(string& s, T_CI i, T_CI end) {
-        _ASSERT(i != end);
-        T_CI j = i + 1;
-        if (j != end  &&  *j == 'z') {
-            m_Active = true;
-        } else {
-            s += ':';
-        }
+    void activate() {
+        m_Active = true;
     }
     void str(string& s) {
         if (m_Active) {
@@ -591,9 +577,6 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             }
         }
 
-        // Special checks for ':z' format
-        tz_fmt_check.fmt(fff);
-
         // Match non-format symbols
 
         if (is_escaped_fmt) {
@@ -670,7 +653,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         }
 
         // Timezone (local time in format 'GMT+HHMM' or '+/-HH:MM')
-        if (*fff == 'z') {
+        if (*fff == 'z' || tz_fmt_check.fmt(fff)) {
             m_Data.tz = eGmt;
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 sss += 3;
@@ -1597,7 +1580,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   break;
         case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
-        case ':': tz_fmt_make.fmt(str, it, fmt.end());      break;
+        case 'o': tz_fmt_make.activate(); /* FALL THROUGH */
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
                   ERR_POST_X(5, "Format symbol 'z' is unsupported "

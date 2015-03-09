@@ -601,7 +601,7 @@ public:
     ///
     ///   following available on POSIX platforms only:
     ///   - z = timezone shift                 ([GMT]+/-HHMM)
-    ///   - :z = timezone shift                (+/-HH:MM)
+    ///   - o = timezone shift                 (+/-HH:MM)
     ///
     ///   Format string can represent date/time partially, in this case
     ///   current time, or default values, will be used to amplify time
