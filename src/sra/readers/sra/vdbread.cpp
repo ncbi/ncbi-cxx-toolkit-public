@@ -35,10 +35,25 @@
 
 #include <klib/rc.h>
 #include <kfg/config.h>
-#include <vdb/vdb-priv.h>
+#include <kdb/manager.h>
+#include <kdb/kdb-priv.h>
+#include <kns/manager.h>
+
+#include <vfs/manager-priv.h>
+#include <vfs/manager.h>
+#include <vfs/path.h>
+#include <vfs/resolver.h>
+
 #include <sra/sradb-priv.h>
-#include <vdb/schema.h>
 #include <sra/sraschema.h>
+
+#include <vdb/vdb-priv.h>
+#include <vdb/manager.h>
+#include <vdb/database.h>
+#include <vdb/schema.h>
+#include <vdb/table.h>
+#include <vdb/cursor.h>
+
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
@@ -63,15 +78,40 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
+DEFINE_SRA_REF_TRAITS(VDBManager, const);
+DEFINE_SRA_REF_TRAITS(VDatabase, const);
+DEFINE_SRA_REF_TRAITS(VTable, const);
+DEFINE_SRA_REF_TRAITS(VCursor, const);
+DEFINE_SRA_REF_TRAITS(KConfig, const);
+DEFINE_SRA_REF_TRAITS(KDBManager, const);
+DEFINE_SRA_REF_TRAITS(KNSManager, );
+DEFINE_SRA_REF_TRAITS(VFSManager, );
+DEFINE_SRA_REF_TRAITS(VPath, );
+DEFINE_SRA_REF_TRAITS(VPath, const); // for constant path in CVPathRet
+DEFINE_SRA_REF_TRAITS(VResolver, );
+
 /////////////////////////////////////////////////////////////////////////////
 // CKConfig
 
 CKConfig::CKConfig(void)
 {
-    if ( rc_t rc = KConfigMake(x_InitPtr(), 0) ) {
+    KConfig* cfg;
+    if ( rc_t rc = KConfigMake(&cfg, 0) ) {
         *x_InitPtr() = 0;
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot create KConfig", rc);
+    }
+    *x_InitPtr() = cfg;
+}
+
+
+CKConfig::CKConfig(const CVDBMgr& mgr)
+{
+    *x_InitPtr() = VFSManagerGetConfig(CVFSManager(mgr));
+    if ( rc_t rc = KConfigAddRef(*this) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot get reference to KConfig", rc);
     }
 }
 
@@ -81,10 +121,60 @@ CKConfig::CKConfig(void)
 
 CVFSManager::CVFSManager(void)
 {
+    x_InitNew();
+}
+
+
+CVFSManager::CVFSManager(ECreateNew)
+{
+    x_InitNew();
+}
+
+
+void CVFSManager::x_InitNew(void)
+{
     if ( rc_t rc = VFSManagerMake(x_InitPtr()) ) {
         *x_InitPtr() = 0;
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot create VFSManager", rc);
+    }
+}
+
+
+CVFSManager::CVFSManager(const CVDBMgr& mgr)
+{
+    if ( rc_t rc = KDBManagerGetVFSManager(CKDBManager(mgr), x_InitPtr()) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot get VFSManager", rc);
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CKDBManager
+
+
+CKDBManager::CKDBManager(const CVDBMgr& mgr)
+{
+    if ( rc_t rc = VDBManagerGetKDBManagerRead(mgr, x_InitPtr()) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot get KDBManager", rc);
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CKNSManager
+
+
+CKNSManager::CKNSManager(const CVFSManager& mgr)
+{
+    if ( rc_t rc = VFSManagerGetKNSMgr(mgr, x_InitPtr()) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot get KNSManager", rc);
     }
 }
 
@@ -100,7 +190,7 @@ CVPath::CVPath(const CVFSManager& mgr, const string& path, EType type)
 
 CVPath::CVPath(const string& path, EType type)
 {
-    x_Init(CVFSManager(), path, type);
+    x_Init(CVFSManager(CVFSManager::eCreateNew), path, type);
 }
 
 
@@ -245,7 +335,7 @@ CVDBMgr::CVDBMgr(void)
 string CVDBMgr::FindAccPath(const string& acc) const
 {
     if ( !m_Resolver ) {
-        m_Resolver = CVResolver(CVFSManager(), CKConfig());
+        m_Resolver = CVResolver(CVFSManager(*this), CKConfig(*this));
     }
     return m_Resolver.Resolve(acc);
 }
@@ -279,6 +369,21 @@ void CVDBMgr::x_Init(void)
         *x_InitPtr() = 0;
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot open VDBManager", rc);
+    }
+    uint32_t sdk_ver;
+    if ( rc_t rc = VDBManagerVersion(*this, &sdk_ver) ) {
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot get VDBManager version", rc);
+    }
+    string app_name = CNcbiApplication::GetAppName();
+    CKNSManager kns_mgr(CVFSManager(*this));
+    if ( app_name.empty() ) {
+        KNSManagerSetUserAgent(kns_mgr, "SRA Toolkit %V",
+                               sdk_ver);
+    }
+    else {
+        KNSManagerSetUserAgent(kns_mgr, "%s, SRA Toolkit %V",
+                               app_name.c_str(), sdk_ver);
     }
 }
 

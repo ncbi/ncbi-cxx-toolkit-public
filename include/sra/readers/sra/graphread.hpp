@@ -33,13 +33,10 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <util/range.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqres/Seq_graph.hpp>
-#include <ncbi/ncbi.h>
-#include <ncbi/wgs-contig.h>
 #include <map>
 #include <list>
 

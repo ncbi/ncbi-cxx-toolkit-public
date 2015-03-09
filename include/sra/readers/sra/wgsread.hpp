@@ -33,7 +33,6 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <util/range.hpp>
 #include <util/rangemap.hpp>
 #include <sra/readers/sra/vdbread.hpp>
@@ -42,13 +41,12 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
-#include <ncbi/ncbi.h>
-#include <ncbi/wgs-contig.h>
-
-typedef int32_t NCBI_WGS_gap_linkage;
-
 #include <map>
 #include <list>
+
+#include <ncbi/ncbi.h>
+#include <ncbi/wgs-contig.h>
+#include <insdc/insdc.h>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);

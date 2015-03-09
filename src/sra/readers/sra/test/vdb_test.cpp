@@ -44,15 +44,6 @@
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <klib/rc.h>
-#include <klib/writer.h>
-#include <align/align-access.h>
-#include <vdb/manager.h>
-#include <vdb/database.h>
-#include <vdb/table.h>
-#include <vdb/cursor.h>
-#include <vdb/vdb-priv.h>
-
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
 #include <serial/objostrasnb.hpp>
@@ -271,12 +262,27 @@ string Reverse(const string& s)
 }
 
 #if 0
-#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
-
+#include <klib/rc.h>
+#include <klib/writer.h>
+#include <align/align-access.h>
+#include <vdb/manager.h>
+#include <vdb/database.h>
+#include <vdb/table.h>
+#include <vdb/cursor.h>
+#include <vdb/vdb-priv.h>
 #ifdef _MSC_VER
 # include <io.h>
 CRITICAL_SECTION sdk_mutex;
+# define SDKLock() EnterCriticalSection(&sdk_mutex)
+# define SDKUnlock() LeaveCriticalSection(&sdk_mutex)
+#else
+# include <unistd.h>
+# define SDKLock() do{}while(0)
+# define SDKUnlock() do{}while(0)
 #endif
+
+#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
+
 // low level SRA SDK test
 void CheckRc(rc_t rc, const char* code, const char* file, int line)
 {
@@ -337,20 +343,20 @@ struct SThreadInfo
         const bool lock_col_mutex = 0;
         const bool lock_get_mutex = 0;
         if ( columns.empty() ) {
-            if ( lock_col_mutex ) EnterCriticalSection(&sdk_mutex);
+            if ( lock_col_mutex ) SDKLock();
             init_columns();
-            if ( lock_col_mutex ) LeaveCriticalSection(&sdk_mutex);
+            if ( lock_col_mutex ) SDKUnlock();
         }
         for ( uint64_t row = row_start; row < row_end; ++row ) {
             for ( size_t i = 0; i < columns.size(); ++i ) {
                 const void* data;
                 uint32_t bit_offset, bit_length;
                 uint32_t elem_count;
-                if ( lock_get_mutex ) EnterCriticalSection(&sdk_mutex);
+                if ( lock_get_mutex ) SDKLock();
                 CALL(VCursorCellDataDirect(cursor, row, columns[i],
                                            &bit_length, &data, &bit_offset,
                                            &elem_count));
-                if ( lock_get_mutex ) LeaveCriticalSection(&sdk_mutex);
+                if ( lock_get_mutex ) SDKUnlock();
             }
         }
     }
@@ -889,7 +895,11 @@ int CCSRATestApp::Run(void)
                             }
                             read_pos += seglen;
                         }
-                        else if ( type == 'D' || type == 'N' ) {
+                        else if ( type == 'N' ) {
+                            // intron
+                            ref_pos += seglen;
+                        }
+                        else if ( type == 'D' ) {
                             // delete
                             for ( int i = 0; i < seglen; ++i ) {
                                 if ( ref_pos < ss.size() ) {

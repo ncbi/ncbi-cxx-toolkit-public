@@ -33,32 +33,38 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <sra/readers/sra/sdk.hpp>
+#include <vector>
 
-#include <sra/readers/sra/sraread.hpp>
+// for String
+#include <klib/text.h>
 
-#include <vdb/manager.h>
-#include <vdb/database.h>
-#include <vdb/table.h>
-#include <vdb/cursor.h>
-#include <kfg/config.h>
-#include <vfs/manager.h>
-#include <vfs/path.h>
-#include <vfs/resolver.h>
+// SRA SDK structures
+struct KConfig;
+struct KDBManager;
+struct KNSManager;
+struct VFSManager;
+struct VDBManager;
+struct VPath;
+struct VResolver;
+struct VDatabase;
+struct VTable;
+struct VCursor;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-SPECIALIZE_SRA_REF_TRAITS(VDBManager, const);
-SPECIALIZE_SRA_REF_TRAITS(VDatabase, const);
-SPECIALIZE_SRA_REF_TRAITS(VTable, const);
-SPECIALIZE_SRA_REF_TRAITS(VCursor, const);
-SPECIALIZE_SRA_REF_TRAITS(KConfig, );
-SPECIALIZE_SRA_REF_TRAITS(VFSManager, );
-SPECIALIZE_SRA_REF_TRAITS(VPath, );
-SPECIALIZE_SRA_REF_TRAITS(VPath, const);
-SPECIALIZE_SRA_REF_TRAITS(VResolver, );
+DECLARE_SRA_REF_TRAITS(VDBManager, const);
+DECLARE_SRA_REF_TRAITS(VDatabase, const);
+DECLARE_SRA_REF_TRAITS(VTable, const);
+DECLARE_SRA_REF_TRAITS(VCursor, const);
+DECLARE_SRA_REF_TRAITS(KConfig, const);
+DECLARE_SRA_REF_TRAITS(KDBManager, const);
+DECLARE_SRA_REF_TRAITS(KNSManager, );
+DECLARE_SRA_REF_TRAITS(VFSManager, );
+DECLARE_SRA_REF_TRAITS(VPath, );
+DECLARE_SRA_REF_TRAITS(VPath, const); // for constant path in CVPathRet
+DECLARE_SRA_REF_TRAITS(VResolver, );
 
 
 class CVFSManager;
@@ -73,11 +79,34 @@ class CVDBCursor;
 class CVDBStringValue;
 
 class NCBI_SRAREAD_EXPORT CKConfig
-    : public CSraRef<KConfig>
+    : public CSraRef<const KConfig>
 {
 public:
-    CKConfig(void);
+    NCBI_DEPRECATED_CTOR(CKConfig(void));
+    CKConfig(const CVDBMgr& mgr);
     explicit CKConfig(ENull /*null*/)
+        {
+        }
+};
+
+
+class NCBI_SRAREAD_EXPORT CKDBManager
+    : public CSraRef<const KDBManager>
+{
+public:
+    CKDBManager(const CVDBMgr& mgr);
+    explicit CKDBManager(ENull /*null*/)
+        {
+        }
+};
+
+
+class NCBI_SRAREAD_EXPORT CKNSManager
+    : public CSraRef<KNSManager>
+{
+public:
+    CKNSManager(const CVFSManager& mgr);
+    explicit CKNSManager(ENull /*null*/)
         {
         }
 };
@@ -87,10 +116,18 @@ class NCBI_SRAREAD_EXPORT CVFSManager
     : public CSraRef<VFSManager>
 {
 public:
-    CVFSManager(void);
+    NCBI_DEPRECATED_CTOR(CVFSManager(void));
+    CVFSManager(const CVDBMgr& mgr);
+    enum ECreateNew {
+        eCreateNew
+    };
+    CVFSManager(ECreateNew);
     explicit CVFSManager(ENull /*null*/)
         {
         }
+
+private:
+    void x_InitNew(void);
 };
 
 
@@ -108,7 +145,7 @@ public:
         eAcc
     };
     CVPath(const CVFSManager& mgr, const string& path, EType type = eSys);
-    explicit CVPath(const string& path, EType type = eSys);
+    NCBI_DEPRECATED_CTOR(explicit CVPath(const string& path, EType type = eSys));
 
     const char* data(void) const
         {
@@ -169,6 +206,7 @@ class NCBI_SRAREAD_EXPORT CVResolver
 public:
     CVResolver(const CVFSManager& mgr, const CKConfig& cfg);
     explicit CVResolver(ENull /*null*/)
+        : m_Mgr(null)
         {
         }
 

@@ -43,15 +43,6 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
 
-#include <klib/rc.h>
-#include <klib/writer.h>
-#include <align/align-access.h>
-#include <vdb/manager.h>
-#include <vdb/database.h>
-#include <vdb/table.h>
-#include <vdb/cursor.h>
-#include <vdb/vdb-priv.h>
-
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
 #include <serial/objostrasnb.hpp>

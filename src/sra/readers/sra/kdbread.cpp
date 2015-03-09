@@ -36,10 +36,23 @@
 #include <sra/readers/sra/vdbread.hpp>
 #include <vdb/vdb-priv.h>
 #include <klib/rc.h>
+#include <klib/namelist.h>
+#include <kdb/table.h>
+#include <kdb/meta.h>
 #include <kdb/namelist.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+class CSeq_entry;
+
+
+DEFINE_SRA_REF_TRAITS(KTable, const);
+DEFINE_SRA_REF_TRAITS(KMetadata, const);
+DEFINE_SRA_REF_TRAITS(KMDataNode, const);
+DEFINE_SRA_REF_TRAITS(KNamelist, );
+
 
 CKTable::CKTable(const CVDBTable& table)
 {

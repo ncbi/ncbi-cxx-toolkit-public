@@ -63,6 +63,11 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
+DEFINE_SRA_REF_TRAITS(SRAMgr, const);
+DEFINE_SRA_REF_TRAITS(SRAColumn, const);
+DEFINE_SRA_REF_TRAITS(SRATable, const);
+
+
 CSraException::CSraException(void)
     : m_RC(0)
 {

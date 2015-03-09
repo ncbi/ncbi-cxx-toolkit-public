@@ -33,22 +33,24 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <sra/readers/sra/sdk.hpp>
 
-#include <sra/readers/sra/sraread.hpp>
-
-#include <kdb/table.h>
-#include <kdb/meta.h>
-#include <klib/namelist.h>
+// SRA SDK structures
+struct KTable;
+struct KMetadata;
+struct KMDataNode;
+struct KNamelist;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-SPECIALIZE_SRA_REF_TRAITS(KTable, const);
-SPECIALIZE_SRA_REF_TRAITS(KMetadata, const);
-SPECIALIZE_SRA_REF_TRAITS(KMDataNode, const);
-SPECIALIZE_SRA_REF_TRAITS(KNamelist, );
+
+class CSeq_entry;
+
+DECLARE_SRA_REF_TRAITS(KTable, const);
+DECLARE_SRA_REF_TRAITS(KMetadata, const);
+DECLARE_SRA_REF_TRAITS(KMDataNode, const);
+DECLARE_SRA_REF_TRAITS(KNamelist, );
 
 
 class CVDB;

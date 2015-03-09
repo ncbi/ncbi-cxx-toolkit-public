@@ -48,10 +48,12 @@
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
-#include <vdb/vdb-priv.h>
 #include <kdb/table.h>
 #include <kdb/meta.h>
 #include <kdb/namelist.h>
+#include <kdb/index.h>
+#include <vdb/vdb-priv.h>
+#include <vdb/table.h>
 
 BEGIN_NCBI_NAMESPACE;
 
