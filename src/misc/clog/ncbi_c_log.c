@@ -650,20 +650,22 @@ static TNcbiLog_Int8 s_CreateUID(void)
 }
 
 
+/** Update current UID with new timestamp.
+ *  This functions don't change global UID, just return a copy.
+ */
 static TNcbiLog_Int8 s_UpdateUID(void)
 {
     time_t t;
-    if ( !sx_Info->guid ) {
-        sx_Info->guid = s_CreateUID();
-        return sx_Info->guid;
-    }
+    TNcbiLog_Int8 guid;
     /* Update with current timestamp */
+    assert(sx_Info->guid);
+    guid = sx_Info->guid;
     t = time(0);
     /* Clear old timestamp */
-    sx_Info->guid &= ~((TNcbiLog_Int8)0xFFFFFFF << 4);
+    guid &= ~((TNcbiLog_Int8)0xFFFFFFF << 4);
     /* Add current timestamp */
-    sx_Info->guid |= (((TNcbiLog_Int8)t & 0xFFFFFFF) << 4);
-    return sx_Info->guid;
+    guid |= (((TNcbiLog_Int8)t & 0xFFFFFFF) << 4);
+    return guid;
 }
 
 
@@ -1565,12 +1567,16 @@ static int/*bool*/ s_IsInsideRequest(TNcbiLog_Context ctx)
 
 static char* s_GenerateSID_Str(char* dst)
 {
-    int x_guid_hi, x_guid_lo;
-    int n;
-    x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
-    x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
-    n = sprintf(dst, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", 
-        x_guid_hi, x_guid_lo, sx_Info->rid);
+    TNcbiLog_UInt8 guid;
+    int hi, lo, n;
+
+    if (!sx_Info->guid) {
+        sx_Info->guid = s_CreateUID();
+    }
+    guid = sx_Info->guid;
+    hi = (int)((guid >> 32) & 0xFFFFFFFF);
+    lo = (int) (guid & 0xFFFFFFFF);
+    n = sprintf(dst, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", hi, lo, sx_Info->rid);
     if (n <= 0) {
         return NULL;
     }
@@ -1731,7 +1737,7 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
         x_client = sx_Info->client[0] ? (char*)sx_Info->client : UNKNOWN_CLIENT;
     }
     /* session */
-    if (inside_request  &&  ctx->is_client_set) {
+    if (inside_request  &&  ctx->is_session_set) {
         x_session = ctx->session[0] ? (char*)ctx->session : UNKNOWN_SESSION;
     } else {
         x_session = sx_Info->session[0] ? (char*)sx_Info->session : UNKNOWN_SESSION;
@@ -2372,7 +2378,6 @@ extern void NcbiLog_AppNewSession(void)
 {
     char session[NCBILOG_SESSION_MAX+1]; 
     MT_LOCK_API;
-    s_UpdateUID();
     s_SetSession((char*)sx_Info->session, s_GenerateSID_Str(session));
     MT_UNLOCK;
 }
@@ -2384,7 +2389,6 @@ extern void NcbiLog_NewSession(void)
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
     ctx = s_GetContext();
-    s_UpdateUID();
     s_SetSession(ctx->session, s_GenerateSID_Str(session));
     ctx->is_session_set = 1;
     MT_UNLOCK;
@@ -2687,7 +2691,6 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
         } else {
             /* Unknown, create new session id */
             char session[NCBILOG_SESSION_MAX+1]; 
-            s_UpdateUID();
             s_SetSession(ctx->session, s_GenerateSID_Str(session));
         }
         ctx->is_session_set = 1;
