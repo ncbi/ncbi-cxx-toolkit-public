@@ -200,6 +200,36 @@ int CResInfoTest::Run(void)
     _ASSERT(!CNcbiEncrypt::IsEncrypted("10123456789ABCDEF0123456789ABCDEF:0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEFF"));
     // Data is not a HEX string
     _ASSERT(!CNcbiEncrypt::IsEncrypted("10123456789ABCDEF0123456789ABCDEF:0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEz"));
+
+    // Test registry glue
+    bool caught_exception = false;
+    CNcbiRegistry& reg = GetConfig();
+    string s = reg.GetEncryptedString("NCBI_KEY", "Paths",
+                                      IRegistry::fPlaintextAllowed);
+    _ASSERT(s == ".");
+    try {
+        reg.GetEncryptedString("NCBI_KEY", "Paths");
+    } catch (CRegistryException&) {
+        caught_exception = true;
+    }
+    _ASSERT(caught_exception);
+
+    s = reg.GetEncryptedString("sect", "val1", 0, "foobar");
+    _ASSERT(s == data);
+    try {
+        caught_exception = false;
+        reg.GetEncryptedString("sect", "val1", 0, "baz");
+    } catch (CRegistryException&) {
+        caught_exception = true;
+    }
+    _ASSERT(caught_exception);
+    s = reg.GetEncryptedString("sect", "val1");
+    _ASSERT(s == data);
+    s = reg.GetEncryptedString("sect", "val2");
+    _ASSERT(s == data);
+    s = reg.GetEncryptedString("sect", "val3");
+    _ASSERT(s == data);
+
     cout << "All tests passed" << endl;
 
     return 0;

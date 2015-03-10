@@ -40,6 +40,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/error_codes.hpp>
+#include <corelib/resource_info.hpp>
 #include "ncbisys.hpp"
 
 #include <algorithm>
@@ -315,6 +316,39 @@ string IRegistry::GetString(const string& section, const string& name,
 {
     const string& value = Get(section, name, flags);
     return value.empty() ? default_value : value;
+}
+
+
+string IRegistry::GetEncryptedString(const string& section, const string& name,
+                                     TFlags flags, const string& password)
+    const
+{
+    string        clean_section = NStr::TruncateSpaces(section);
+    string        clean_name    = NStr::TruncateSpaces(name);
+    const string& raw_value     = Get(clean_section, clean_name,
+                                      flags & ~fPlaintextAllowed);
+
+    if (CNcbiEncrypt::IsEncrypted(raw_value)) {
+        try {
+            if (password.empty()) {
+                return CNcbiEncrypt::Decrypt(raw_value);
+            } else {
+                return CNcbiEncrypt::Decrypt(raw_value, password);
+            }
+        } catch (CException& e) {
+            NCBI_RETHROW2(e, CRegistryException, eDecryptionFailed,
+                          "Decryption failed for configuration value ["
+                          + clean_section + "] " + clean_name + '.',
+                          0);
+        }
+    } else if ( !raw_value.empty()  &&  (flags & fPlaintextAllowed) == 0) {
+        NCBI_THROW2(CRegistryException, eUnencrypted,
+                    "Configuration value for [" + clean_section + "] "
+                    + clean_name + " should have been encrypted but wasn't.",
+                    0);
+    } else {
+        return raw_value;
+    }
 }
 
 
@@ -1867,11 +1901,13 @@ void CCompoundRWRegistry::x_Add(const IRegistry& reg, TPriority prio,
 const char* CRegistryException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eSection: return "eSection";
-    case eEntry:   return "eEntry";
-    case eValue:   return "eValue";
-    case eErr:     return "eErr";
-    default:       return CException::GetErrCodeString();
+    case eSection:          return "eSection";
+    case eEntry:            return "eEntry";
+    case eValue:            return "eValue";
+    case eUnencrypted:      return "eUnencrypted";
+    case eDecryptionFailed: return "eDecryptionFailed";
+    case eErr:              return "eErr";
+    default:                return CException::GetErrCodeString();
     }
 }
 

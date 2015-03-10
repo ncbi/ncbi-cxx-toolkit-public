@@ -96,11 +96,12 @@ public:
         fCountCleared   = 0x80,  ///< Let explicitly cleared entries stand
         fSectionCase    = 0x1000,///< Create with case-sensitive section names
         fEntryCase      = 0x2000,///< Create with case-sensitive entry names
+        fSectionlessEntries = 0x4000,///< Allow empty section names (for test_res framework)
+        fSections       = 0x8000,///< Indicates that we want sections from x_Enumerate
+        fPlaintextAllowed = 0x10000,///< @sa GetEncryptedString()
         fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore,
-        fCaseFlags      = fSectionCase | fEntryCase,
-        fSectionlessEntries = 0x4000,   ///< Allow empty section names (for test_res framework)
-        fSections = 0x8000              ///< Indicates that we want sections from x_Enumerate
+        fCaseFlags      = fSectionCase | fEntryCase
     };
     typedef int TFlags;  ///< Binary OR of "EFlags"
 
@@ -155,7 +156,7 @@ public:
     /// @return
     ///   The parameter value, or empty string if the parameter is not found.
     /// @sa
-    ///   GetString()
+    ///   GetString(), GetEncryptedString()
     const string& Get(const string& section,
                       const string& name,
                       TFlags        flags = 0) const;
@@ -169,11 +170,26 @@ public:
     /// Similar to the "Get()", but if the configuration parameter is not
     /// found, then return 'default_value' rather than empty string.
     /// @sa
-    ///   Get()
+    ///   Get(), GetEncryptedString()
     string GetString(const string& section,
                      const string& name,
                      const string& default_value,
                      TFlags        flags = 0) const;
+
+    /// Get a value that was (potentially) stored encrypted.
+    ///
+    /// Similar to Get(), but if the value appears to have been
+    /// encrypted, return the corresponding plaintext.  Otherwise, unless
+    /// flags contains fPlaintextAllowed, throw an exception to let the
+    /// user know of inappropriate plaintext in the configuration file.
+    /// @param password
+    ///   Explicitly supply a password.  If absent, will try standard keys,
+    ///   honoring any key domain recorded in the value.
+    /// @sa Get(), GetString(), CNcbiEncrypt
+    string GetEncryptedString(const string& section,
+                            const string& name,
+                            TFlags        flags = 0,
+                            const string& password = kEmptyStr) const;
 
     /// What to do if parameter value is present but cannot be converted into
     /// the requested type.
@@ -866,10 +882,12 @@ class NCBI_XNCBI_EXPORT CRegistryException : public CParseTemplException<CCoreEx
 public:
     /// Error types that the Registry can generate.
     enum EErrCode {
-        eSection,   ///< Section error
-        eEntry,     ///< Entry error
-        eValue,     ///< Value error
-        eErr        ///< Other error
+        eSection,          ///< Section name format error
+        eEntry,            ///< Entry name format error
+        eValue,            ///< General value format error
+        eUnencrypted,      ///< Value should have been encrypted, but wasn't
+        eDecryptionFailed, ///< Value looked encrypted, but decryption failed
+        eErr               ///< Other error
     };
 
     /// Translate from the error code value to its string representation.
