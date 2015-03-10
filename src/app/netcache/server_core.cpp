@@ -77,8 +77,6 @@ string s_AppBaseName;
 static CMiniMutex s_SDListLock;
 static TShutdownList s_ShutdownList;
 
-//extern Uint4 s_TotalSockets;
-
 
 
 

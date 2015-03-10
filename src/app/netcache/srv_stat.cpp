@@ -37,9 +37,9 @@
 BEGIN_NCBI_SCOPE;
 
 
-extern Uint4 s_TotalSockets;
-extern Uint2 s_SoftSocketLimit;
-extern Uint2 s_HardSocketLimit;
+extern int s_TotalSockets;
+extern int s_SoftSocketLimit;
+extern int s_HardSocketLimit;
 extern SSrvThread** s_Threads;
 
 

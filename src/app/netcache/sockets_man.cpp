@@ -155,9 +155,9 @@ static Uint4 s_ListenEvents[kMaxCntListeningSocks];
 static Uint4 s_ListenErrors[kMaxCntListeningSocks];
 static CSrvListener s_Listener;
 static int s_EpollFD = -1;
-Uint4 s_TotalSockets = 0;
-Uint2 s_SoftSocketLimit = 0;
-Uint2 s_HardSocketLimit = 0;
+int s_TotalSockets = 0;
+int s_SoftSocketLimit = 0;
+int s_HardSocketLimit = 0;
 static int s_SocketTimeout = 0;
 static Uint1 s_OldSocksDelBatch = 0;
 static Uint4 s_ConnTimeout = 10;
@@ -174,8 +174,8 @@ extern SSrvThread** s_Threads;
 void
 ConfigureSockets(CNcbiRegistry* reg, CTempString section)
 {
-    s_SoftSocketLimit = Uint2(reg->GetInt(section, "soft_sockets_limit", 1000));
-    s_HardSocketLimit = Uint2(reg->GetInt(section, "hard_sockets_limit", 2000));
+    s_SoftSocketLimit = reg->GetInt(section, "soft_sockets_limit", 1000);
+    s_HardSocketLimit = reg->GetInt(section, "hard_sockets_limit", 2000);
     s_ConnTimeout = Uint4(Uint8(reg->GetInt(section, "connection_timeout", 100))
                             * kNSecsPerMSec / s_JiffyTime.NSec());
     s_SocketTimeout = reg->GetInt(section, "min_socket_inactivity", 300);
@@ -743,7 +743,10 @@ MoveAllSockets(SSocketsData* dst_socks, SSocketsData* src_socks)
 void
 PromoteSockAmount(SSocketsData* socks)
 {
-    AtomicAdd(s_TotalSockets, socks->sock_cnt);
+    int total = AtomicAdd(s_TotalSockets, socks->sock_cnt);
+    if (total < 0) {
+        AtomicAdd(s_TotalSockets, -total);
+    }
     socks->sock_cnt = 0;
 }
 

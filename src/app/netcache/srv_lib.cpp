@@ -67,7 +67,17 @@ class CDiagContextThreadData {
 public:
     static bool IsInitialized(void) {return false;}
 };
+#if !defined(Note)
+#define Note ""
+#define __nc__undefNote
+#endif
+
 #include "../../corelib/ncbi_param.cpp"
+#if defined(__nc__undefNote)
+#undef Note
+#undef __nc__undefNote
+#endif
+
 #undef NCBI_USE_ERRCODE_X
 #ifdef NCBI_OS_LINUX
 # include "../../corelib/ncbi_system.cpp"

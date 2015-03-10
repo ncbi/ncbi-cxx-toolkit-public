@@ -260,6 +260,10 @@ public:
     static bool IsCtxRunning(CRequestContext* ctx);
 
 public:
+    enum EDefaultHitIDFlag {
+        eHitID_NoCreate, // Do not create new hit id.
+        eHitID_Create    // Create new hit id if it's not yet set.
+    };
     enum FOnForkAction {
         fOnFork_PrintStart = 1 << 0,   ///< Log app-start.
         fOnFork_ResetTimer = 1 << 1    ///< Reset execution timer.
@@ -285,6 +289,7 @@ public:
     void PrintStop(void) {
     }
     const string& GetDefaultHitID(void) { return m_hid; }
+    const string& x_GetDefaultHitID(CDiagContext::EDefaultHitIDFlag) { return m_hid; }
 private:
     string m_hid;
 };
