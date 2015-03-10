@@ -38,6 +38,17 @@
 USING_NCBI_SCOPE;
 
 
+bool s_CompareSign(int n1, int n2)
+{
+    if (n1 < 0) {
+        return n2 < 0;
+    }
+    if (n1 > 0) {
+        return n2 > 0;
+    }
+    return n2 == 0;
+}
+
 
 BOOST_AUTO_TEST_CASE(TestTempString)
 {
@@ -313,24 +324,24 @@ BOOST_AUTO_TEST_CASE(TestTempString)
     /// Constructing std::string(NULL) is not possible, but allowed for CTempString.
     {{
         const char*  c_null  = NULL;
-        const char*  c_empty = '\0';
+        const char*  c_empty = "\0";
         CTempString  t_empty;
         const string s_empty;
 
         // Empty CTempString
-        BOOST_CHECK( t_empty.compare(c_null)  == s_empty.compare(s_empty) );
-        BOOST_CHECK( t_empty.compare(c_empty) == s_empty.compare(s_empty) );
-        BOOST_CHECK( t_empty.compare(s_empty) == s_empty.compare(s_empty) );
+        BOOST_CHECK( s_CompareSign(t_empty.compare(c_null),  s_empty.compare(s_empty)) );
+        BOOST_CHECK( s_CompareSign(t_empty.compare(c_empty), s_empty.compare(s_empty)) );
+        BOOST_CHECK( s_CompareSign(t_empty.compare(s_empty), s_empty.compare(s_empty)) );
 
         // Non-empty CTempString
-        BOOST_CHECK( tmp.compare(c_null)  == str.compare(s_empty)  );
-        BOOST_CHECK( tmp.compare(c_empty) == str.compare(s_empty) );
-        BOOST_CHECK( tmp.compare(s_empty) == str.compare(s_empty) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(c_null),  str.compare(s_empty)) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(c_empty), str.compare(s_empty)) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(s_empty), str.compare(s_empty)) );
     }}
 
     /// Comparing to self / equal
     {{
-        BOOST_CHECK(tmp.compare(tmp) == str.compare(str));
+        BOOST_CHECK( s_CompareSign(tmp.compare(tmp), str.compare(str)) );
 
         BOOST_CHECK(tmp == tmp);
         BOOST_CHECK(tmp == str);
@@ -348,9 +359,9 @@ BOOST_AUTO_TEST_CASE(TestTempString)
         const char*  str1_c = str1.c_str();
         CTempString tmp1(str1);
 
-        BOOST_CHECK( tmp.compare(str1)   == str.compare(str1) );
-        BOOST_CHECK( tmp.compare(str1_c) == str.compare(str1) );
-        BOOST_CHECK( tmp.compare(tmp1)   == str.compare(str1) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(str1),   str.compare(str1)) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(str1_c), str.compare(str1)) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(tmp1),   str.compare(str1)) );
 
         BOOST_CHECK( (tmp  < tmp1) == (str  < str1) );
         BOOST_CHECK( (tmp1 < tmp ) == (str1 < str ) );
@@ -370,9 +381,9 @@ BOOST_AUTO_TEST_CASE(TestTempString)
         const char*  str1_c = str1.c_str();
         CTempString tmp1(str1);
 
-        BOOST_CHECK( tmp.compare(str1)   == str.compare(str1) );
-        BOOST_CHECK( tmp.compare(str1_c) == str.compare(str1) );
-        BOOST_CHECK( tmp.compare(tmp1)   == str.compare(str1) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(str1),   str.compare(str1)) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(str1_c), str.compare(str1)) );
+        BOOST_CHECK( s_CompareSign(tmp.compare(tmp1),   str.compare(str1)) );
 
         BOOST_CHECK( (tmp  < tmp1) == (str  < str1) );
         BOOST_CHECK( (tmp1 < tmp ) == (str1 < str ) );

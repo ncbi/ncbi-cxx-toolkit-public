@@ -8,4 +8,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = vasilche
+WATCHERS = vasilche ivanov
