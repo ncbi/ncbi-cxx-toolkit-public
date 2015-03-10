@@ -3568,6 +3568,12 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         x_CleanupECNumber(val);
     } else if( qual == "satellite" ) {
         x_MendSatelliteQualifier( val );
+    } else if ( NStr::EqualNocase(qual, "replace") && data.GetSubtype() == CSeqFeatData::eSubtype_variation) {
+        string orig = val;
+        NStr::ToLower(val);
+        if (!NStr::Equal(orig, val)) {
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
     }
 
     if( NStr::EqualNocase( qual, "mobile_element_type" ) ) {
@@ -3821,6 +3827,9 @@ void CNewCleanup_imp::x_ExpandCombinedQuals(CSeq_feat::TQual& quals)
     if ( ! new_quals.empty() ) {
         quals.insert(quals.end(), new_quals.begin(), new_quals.end());
         ChangeMade(CCleanupChange::eChangeQualifiers);
+        NON_CONST_ITERATE (CSeq_feat::TQual, it, quals) {
+            GBQualBC(**it);
+        }
     }
 }
 

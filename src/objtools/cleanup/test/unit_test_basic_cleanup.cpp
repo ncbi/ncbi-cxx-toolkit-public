@@ -711,3 +711,22 @@ BOOST_AUTO_TEST_CASE(Test_CleanBioSource)
     changes = cleanup.BasicCleanup (*src);
     BOOST_CHECK_EQUAL(src->GetOrg().GetTaxname(), "Homo sapiens");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SplitGBQual)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetGene();
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("foo");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(5);
+    CRef<CGb_qual> q(new CGb_qual("rpt_unit_seq", "(1,UUUAGC,3)"));
+    feat->SetQual().push_back(q);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup (*feat);
+    BOOST_CHECK_EQUAL(feat->GetQual().size(), 3);
+    BOOST_CHECK_EQUAL(feat->GetQual()[2]->GetVal(), "tttagc");
+}
