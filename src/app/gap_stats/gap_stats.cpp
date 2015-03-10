@@ -941,7 +941,7 @@ void CGapStatsApplication::x_PrintSummaryView(void)
     ITERATE( TGapLengthVec, gap_length_it, all_gap_lengths_list ) {
 
         const GA::TGapLength gap_len = *gap_length_it;
-        
+
         xml::node one_gap_len_info("one_gap_len_info");
         xml::attributes & one_gap_len_attributes =
             one_gap_len_info.get_attributes();
@@ -958,7 +958,6 @@ void CGapStatsApplication::x_PrintSummaryView(void)
             if( ! x_IncludeGapType(eGapType) ) {
                 continue;
             }
-
 
             // get the info for this gap type
             CConstRef<GA::SOneGapLengthSummary> p_one_summary;
@@ -980,18 +979,22 @@ void CGapStatsApplication::x_PrintSummaryView(void)
 
             // XML for info about just this gap type
             // (convert gap name to reasonable XML node name)
-            xml::node gap_type_info(
+            xml::node one_gap_len_type_info(
+                "one_gap_len_type_info");
+            xml::attributes & one_gap_len_type_info_attributes =
+                one_gap_len_type_info.get_attributes();
+
+            one_gap_len_type_info_attributes.insert(
+                "gap_type",
                 x_GapNameToGapXMLNodeName(pchGapName).c_str());
-            xml::attributes & gap_type_info_attributes =
-                gap_type_info.get_attributes();
-            gap_type_info_attributes.insert(
-                    "num_seqs",
-                    NStr::NumericToString(p_one_summary->num_seqs).c_str());
-            gap_type_info_attributes.insert(
+            one_gap_len_type_info_attributes.insert(
+                "num_seqs",
+                NStr::NumericToString(p_one_summary->num_seqs).c_str());
+            one_gap_len_type_info_attributes.insert(
                 "num_gaps",
                 NStr::NumericToString(p_one_summary->num_gaps).c_str());
 
-            one_gap_len_info.insert(gap_type_info);
+            one_gap_len_info.insert(one_gap_len_type_info);
         }
 
         gap_len_infos_node.insert(one_gap_len_info);
