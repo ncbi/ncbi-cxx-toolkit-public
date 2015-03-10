@@ -390,22 +390,17 @@ void CGapStatsApplication::Init(void)
         "ASN.1, XML, and FASTA are some of the supported file formats.",
         CArgDescriptions::eString);
 
-    // TODO consider removing and always showing all??
-    arg_desc->AddOptionalKey(
-        "add-gap-type",
-        "GapTypes",
-        "This indicates which types of gaps we look at.  If none specified, "
-        "all types will be shown.",
-        CArgDescriptions::eString,
-        CArgDescriptions::fAllowMultiple);
-    AutoPtr<CArgAllow_Strings> add_gap_types_allow_strings(
-        new CArgAllow_Strings);
+    vector<string> gap_types;
     ITERATE(TAddGapTypeMap, add_gap_type_it, sc_addgaptypename) {
-        const string add_gap_type_key(add_gap_type_it->first);
-        add_gap_types_allow_strings->Allow(add_gap_type_key);
+        gap_types.push_back(add_gap_type_it->first);
     }
-    arg_desc->SetConstraint(
-        "add-gap-type", add_gap_types_allow_strings.release());
+    arg_desc->AddOptionalKey(
+        "gap-types",
+        "GapTypes",
+        "A comma-separated list of types of gaps we look at.  "
+        "If none specified, all types will be shown.  Possibilities: " +
+        NStr::Join(gap_types, ", "),
+        CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey(
         "out-format", "Format",
@@ -575,21 +570,37 @@ int CGapStatsApplication::RunNoCatch(void)
         NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
     }
 
-    // if add-gap-type's specified, use those instead of defaulting to "all"
-    if( args["add-gap-type"].HasValue() ) {
+    // if gap-types specified, use those instead of defaulting to "all"
+    if( args["gap-types"].HasValue() ) {
         m_IncludedGapTypes.clear();
         m_fGapAddFlags = 0;
         m_fFastaFlags = 0;
 
-        const CArgValue::TStringArray & add_gap_types_chosen =
-            args["add-gap-type"].GetStringList();
-        ITERATE(CArgValue::TStringArray, add_gap_type_choice_it,
-                add_gap_types_chosen)
+        vector< string > gap_types;
+        NStr::Tokenize(args["gap-types"].AsString(), ",", gap_types);
+        if( gap_types.empty() ) {
+            throw SOutMessage(
+                kEmptyStr, SOutMessage::kFatalStr,
+                "NO_GAP_TYPES_GIVEN",
+                "-gap-types must be given at least one gap");
+        }
+
+        ITERATE(vector< string >, gap_type, gap_types)
         {
-            const string add_gap_type_choice = *add_gap_type_choice_it;
+            const string & gap_type_str = *gap_type;
+
+            TAddGapTypeMap::const_iterator find_it =
+                sc_addgaptypename.find(gap_type_str.c_str());
+            if( find_it == sc_addgaptypename.end() ) {
+                throw SOutMessage(
+                    kEmptyStr,
+                    SOutMessage::kFatalStr,
+                    "UNKNOWN_GAP_TYPE",
+                    "This gap type is not recognized: '" + gap_type_str + "'");
+            }
+
             const SGapRelatedInfo & gap_related_flags =
-                find_attr_or_die(
-                    sc_addgaptypename, add_gap_type_choice.c_str());
+                find_it->second;
             m_IncludedGapTypes.insert(gap_related_flags.gap_type);
             m_fGapAddFlags |= gap_related_flags.gap_add_flag;
             m_fFastaFlags |= gap_related_flags.fasta_flag;
