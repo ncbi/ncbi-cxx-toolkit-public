@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Mike DiCuccio, Eugene Vasilchenko, Aaron Ucko
+ * Authors:  Mike DiCuccio, Eugene Vasilchenko, Aaron Ucko, Vladimir Ivanov
  *
  * File Description:
  *
@@ -85,9 +85,9 @@ public:
     CTempString(const CTempString& str, size_type pos);
     CTempString(const CTempString& str, size_type pos, size_type len);
 
-    /// copy a substring into a string
+    /// Copy a substring into a string
     /// Somewhat similar to basic_string::assign()
-    void Copy(string& dst, size_type pos, size_type length) const;
+    void Copy(string& dst, size_type pos, size_type len) const;
 
     /// @name std::basic_string<> compatibility interface
     /// @{
@@ -95,9 +95,7 @@ public:
     /// Assign new values to the content of the a string
     CTempString& assign(const char* src_str, size_type len);
     CTempString& assign(const CTempString& src_str);
-    CTempString& assign(const CTempString& src_str,
-                        size_type          off, 
-                        size_type          count);
+    CTempString& assign(const CTempString& src_str, size_type pos, size_type len);
     CTempString& operator=(const CTempString& str);
     
 
@@ -110,18 +108,17 @@ public:
 
     /// Return a pointer to the array represented.  As with
     /// std::basic_string<>, this is not guaranteed to be NULL terminated.
-    const char* data(void)   const;
+    const char* data(void) const;
 
     /// Return the length of the represented array.
-    size_type   length(void) const;
+    size_type length(void) const;
 
     /// Return the length of the represented array.
-    size_type   size(void) const;
-
+    size_type size(void) const;
 
     /// Return true if the represented string is empty (i.e., the length is
     /// zero)
-    bool        empty(void)  const;
+    bool empty(void)  const;
 
     /// Clears the string
     void clear(void);
@@ -180,43 +177,27 @@ public:
     /// a NULL character is returned.
     char operator[](size_type pos) const;
 
-    /// operator== for C-style strings
-    bool operator==(const char* str) const;
-    /// operator== for std::string strings
-    bool operator==(const string& str) const;
-    /// operator== for CTempString strings
+    /// Compare the current string with a given string.
+    int compare(const CTempString& str) const;
+
+    // Comparison operators, see compare().
     bool operator==(const CTempString& str) const;
-
-    /// operator!= for C-style strings
-    bool operator!=(const char* str) const;
-    /// operator!= for std::string strings
-    bool operator!=(const string& str) const;
-    /// operator!= for CTempString strings
     bool operator!=(const CTempString& str) const;
-
-    /// operator< for C-style strings
-    bool operator<(const char* str) const;
-    /// operator< for std::string strings
-    bool operator<(const string& str) const;
-    /// operator< for CTempString strings
-    bool operator<(const CTempString& str) const;
+    bool operator< (const CTempString& str) const;
+    bool operator> (const CTempString& str) const;
 
     /// @}
 
     operator string(void) const;
 
 private:
-
     const char* m_String;  ///< Stored pointer to string
     size_type   m_Length;  ///< Length of string
 
+private:
     // Initialize CTempString with bounds checks
-    void x_Init(const char* str, size_type str_len,
-                size_type pos, size_type len);
-    void x_Init(const char* str, size_type str_len,
-                size_type pos);
-    bool x_Equals(const_iterator it2, size_type len2) const;
-    bool x_Less(const_iterator it2, size_type len2) const;
+    void x_Init(const char* str, size_type str_len, size_type pos, size_type len);
+    void x_Init(const char* str, size_type str_len, size_type pos);
 
 #if defined(NCBI_TEMPSTR_USE_A_COPY)
     /// @attention This (making copy of the string) is turned off by default!
@@ -231,11 +212,54 @@ NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, const CTempString& str);
 
 
-/// Global operator== for string and CTempString
+// Global comparison operators (counterparts for CTempString::operator's).
+
+inline
+bool operator==(const char* str1, const CTempString& str2)
+{
+    return str2.compare(str1) == 0;
+}
+
 inline
 bool operator==(const string& str1, const CTempString& str2)
 {
-    return str2 == str1;
+    return str2.compare(str1) == 0;
+}
+
+inline
+bool operator!=(const char* str1, const CTempString& str2)
+{
+    return str2.compare(str1) != 0;
+}
+
+inline
+bool operator!=(const string& str1, const CTempString& str2)
+{
+    return str2.compare(str1) != 0;
+}
+
+inline
+bool operator<(const char* str1, const CTempString& str2)
+{
+    return str2.compare(str1) > 0;
+}
+
+inline
+bool operator<(const string& str1, const CTempString& str2)
+{
+    return str2.compare(str1) > 0;
+}
+
+inline
+bool operator>(const char* str1, const CTempString& str2)
+{
+    return str2.compare(str1) < 0;
+}
+
+inline
+bool operator>(const string& str1, const CTempString& str2)
+{
+    return str2.compare(str1) < 0;
 }
 
 /*
@@ -474,8 +498,8 @@ void CTempString::erase(size_type pos)
 }
 
 
-/// copy a substring into a string
-/// These are analogs of basic_string::assign()
+/// Copy a substring into a string.
+/// These are analogs of basic_string::assign().
 inline
 void CTempString::Copy(string& dst, size_type pos, size_type len) const
 {
@@ -710,11 +734,11 @@ CTempString& CTempString::assign(const CTempString& src_str)
 
 inline
 CTempString& CTempString::assign(const CTempString& src_str,
-                                 size_type          off, 
-                                 size_type          count)
+                                 size_type          pos, 
+                                 size_type          len)
 {
     NCBI_TEMPSTR_DESTROY_COPY();
-    x_Init(src_str.data(), src_str.size(), off, count);
+    x_Init(src_str.data(), src_str.size(), pos, len);
     NCBI_TEMPSTR_MAKE_COPY();
     return *this;
 }
@@ -749,91 +773,59 @@ CTempString::operator string(void) const
 
 
 inline
-bool CTempString::x_Equals(const_iterator it2, size_type len2) const
+int CTempString::compare(const CTempString& str) const
 {
-    return len2 == length() && memcmp(data(), it2, len2) == 0;
-}
+    const int kLess    = -1;
+    const int kEqual   =  0;
+    const int kGreater =  1;
 
+    size_type n1 = length();
+    size_type n2 = str.length();
 
-inline
-bool CTempString::operator==(const char* str) const
-{
-    if ( !str || !m_String ) {
-        return !str && !m_String;
+    if ( !n1 ) {
+        return n2 ? kLess : kEqual;
     }
-    return x_Equals(str, strlen(str));
-}
-
-
-inline
-bool CTempString::operator==(const string& str) const
-{
-    return x_Equals(str.data(), str.size());
+    if ( !n2 ) {
+        return n1 ? kGreater : kEqual;
+    }
+    int res = memcmp(data(), str.data(), min(n1, n2));
+    if ( res ) {
+        return res;
+    }
+    if (n1 < n2) {
+        return kLess;
+    }
+    if (n1 > n2) {
+        return kGreater;
+    }
+    return kEqual;
 }
 
 
 inline
 bool CTempString::operator==(const CTempString& str) const
 {
-    return x_Equals(str.data(), str.size());
+    return compare(str) == 0;
 }
-
-
-inline
-bool CTempString::operator!=(const char* str) const
-{
-    return !(*this == str);
-}
-
-
-inline
-bool CTempString::operator!=(const string& str) const
-{
-    return !(*this == str);
-}
-
 
 inline
 bool CTempString::operator!=(const CTempString& str) const
 {
-    return !(*this == str);
+    return compare(str) != 0;
 }
-
-
-inline
-bool CTempString::x_Less(const_iterator it2, size_type other_len) const
-{
-    size_type comp_len = min(other_len, length());
-    int res = memcmp(begin(), it2, comp_len);
-    if ( res != 0 ) {
-        return res < 0;
-    }
-    return length() < other_len;
-}
-
-
-inline
-bool CTempString::operator<(const char* str) const
-{
-    if ( !str || !m_String ) {
-        return str  &&  !m_String;
-    }
-    return x_Less(str, strlen(str));
-}
-
-
-inline
-bool CTempString::operator<(const string& str) const
-{
-    return x_Less(str.data(), str.size());
-}
-
 
 inline
 bool CTempString::operator<(const CTempString& str) const
 {
-    return x_Less(str.data(), str.size());
+    return compare(str) < 0;
 }
+
+inline
+bool CTempString::operator>(const CTempString& str) const
+{
+    return compare(str) > 0;
+}
+
 
 
 class CTempStringEx : public CTempString
@@ -913,11 +905,11 @@ public:
             return *this = str;
         }
     CTempStringEx& assign(const CTempString& str,
-                          size_type          off, 
+                          size_type          pos, 
                           size_type          count)
         {
             m_ZeroAtEnd = eNoZeroAtEnd;
-            CTempString::assign(str, off, count);
+            CTempString::assign(str, pos, count);
             return *this;
         }
 
