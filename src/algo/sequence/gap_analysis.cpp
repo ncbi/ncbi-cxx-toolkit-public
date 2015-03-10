@@ -42,26 +42,45 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+CTempString CGapAnalysis::s_GapTypeToStr(
+    EGapType eGapType)
+{
+    switch (eGapType) 
+    {
+    case eGapType_All:
+        return "All Gaps";
+    case eGapType_SeqGap:
+        return "Seq Gaps";
+    case eGapType_UnknownBases:
+        return "Unknown Bases";
+    default:
+        return "UNKNOWN GAP TYPE";
+    }
+}
+
 void CGapAnalysis::AddSeqEntryGaps(
     const CSeq_entry_Handle & entry_h,
     CSeq_inst::EMol filter,
     CBioseq_CI::EBioseqLevelFlag level,
-    TAddFlag add_flags)
+    TAddFlag add_flags,
+    TFlag fFlags)
 {
     CBioseq_CI bioseq_ci(entry_h, filter, level);
     for( ; bioseq_ci; ++bioseq_ci ) {
-        AddBioseqGaps(*bioseq_ci, add_flags);
+        AddBioseqGaps(*bioseq_ci, add_flags, fFlags);
     }
 }
 
 void CGapAnalysis::AddBioseqGaps(
     const CBioseq_Handle & bioseq_h,
-    TAddFlag add_flags)
+    TAddFlag add_flags,
+    TFlag fFlags)
 {
     // get CSeq_id of CBioseq
     TSeqIdConstRef pSeqId = bioseq_h.GetSeqId();
+    const TSeqPos bioseq_len = bioseq_h.GetBioseqLength();
 
-    // flags control  what we look at
+    // fFlags control  what we look at
     CSeqMap::TFlags seq_map_flags = 0;
     if( add_flags & fAddFlag_IncludeSeqGaps ) {
         seq_map_flags |= CSeqMap::fFindGap;
@@ -77,10 +96,17 @@ void CGapAnalysis::AddBioseqGaps(
         CSeqMap::ESegmentType seg_type = seqmap_ci.GetType();
         if(seg_type == CSeqMap::eSeqGap) {
             _ASSERT(add_flags & fAddFlag_IncludeSeqGaps);
-            AddGap( pSeqId, seqmap_ci.GetLength() );
+            AddGap(
+                eGapType_SeqGap, pSeqId,
+                seqmap_ci.GetLength(),
+                bioseq_len,
+                seqmap_ci.GetPosition(), seqmap_ci.GetEndPosition(),
+                fFlags);
         } else if( seg_type == CSeqMap::eSeqData) {
             _ASSERT(add_flags & fAddFlag_IncludeUnknownBases);
-            x_AddGapsFromBases(seqmap_ci, bioseq_h);
+            x_AddGapsFromBases(
+                seqmap_ci, pSeqId,
+                bioseq_len, fFlags);
         } else {
             ERR_POST(
                 Warning << 
@@ -90,27 +116,83 @@ void CGapAnalysis::AddBioseqGaps(
     }
 }
 
-void CGapAnalysis::AddGap( TSeqIdConstRef pSeqId, TGapLength iGapLength )
+void CGapAnalysis::AddGap(
+    EGapType eGapType,
+    TSeqIdConstRef pSeqId,
+    TGapLength iGapLength,
+    TSeqPos iBioseqLength,
+    TSeqPos iGapStartPos,
+    TSeqPos iGapEndPosExclusive,
+    TFlag fFlags)
 {
-    m_mapGapLengthToSeqIds[iGapLength].insert(pSeqId);
-    ++m_mapGapLengthToNumAppearances[iGapLength];
-    m_histogramBinner.AddNumber(iGapLength);
+    // filter out edge gaps if requested
+    _ASSERT(iGapStartPos < iGapEndPosExclusive);
+    _ASSERT((iGapEndPosExclusive - iGapStartPos) == iGapLength);
+
+    if( ! (fFlags & fFlag_IncludeEndGaps) ) {
+        if( iGapStartPos == 0 ||
+            iGapEndPosExclusive == iBioseqLength )
+        {
+            // skip since it's an end gap
+            return;
+        }
+    }
+
+    m_gapTypeAndLengthToSeqIds[eGapType][iGapLength].insert(pSeqId);
+    m_gapTypeAndLengthToSeqIds[eGapType_All][iGapLength].insert(pSeqId);
+
+    ++m_gapTypeAndLengthToNumAppearances[eGapType][iGapLength];
+    ++m_gapTypeAndLengthToNumAppearances[eGapType_All][iGapLength];
+
+    x_GetOrCreateHistogramBinner(eGapType).AddNumber(iGapLength);
+    x_GetOrCreateHistogramBinner(eGapType_All).AddNumber(iGapLength);
 }
 
 void CGapAnalysis::clear(void)
 {
-    m_mapGapLengthToSeqIds.clear();
-    m_mapGapLengthToNumAppearances.clear();
-    m_histogramBinner.clear();
+    m_gapTypeAndLengthToSeqIds.clear();
+    m_gapTypeAndLengthToNumAppearances.clear();
+    m_gapTypeToHistogramBinner.clear();
 }
 
-CGapAnalysis::TVectorGapLengthSummary *
+ostream& operator<<(
+    ostream& s,
+    const CGapAnalysis::SOneGapLengthSummary & one_gap_len_summary )
+{
+    s << "SOneGapLengthSummary("
+      << "gap_length: " << one_gap_len_summary.gap_length
+      << ", num_seqs: " << one_gap_len_summary.num_seqs
+      << ", num_gaps: " << one_gap_len_summary.num_gaps
+      << ")";
+    return s;
+}
+
+ostream& operator<<(
+    ostream& s,
+    const CGapAnalysis::TVectorGapLengthSummary& gap_len_summary)
+{
+    s << "TVectorGapLengthSummary(" << endl;
+    ITERATE(CGapAnalysis::TVectorGapLengthSummary, summ_it, gap_len_summary )
+    {
+        s << **summ_it << endl;
+    }
+
+    s << ")";
+    return s;
+}
+
+AutoPtr<CGapAnalysis::TVectorGapLengthSummary>
 CGapAnalysis::GetGapLengthSummary(
+    EGapType eGapType,
     ESortGapLength eSortGapLength,
     ESortDir eSortDir) const
 {
     AutoPtr<TVectorGapLengthSummary> pAnswer( new TVectorGapLengthSummary );
-    ITERATE( TMapGapLengthToSeqIds, gap_map_iter, m_mapGapLengthToSeqIds ) {
+    const TMapGapLengthToSeqIds & mapGapLengthToSeqIds =
+        GetGapLengthSeqIds(eGapType);
+    const TMapGapLengthToNumAppearances & m_mapGapLengthToNumAppearances =
+        GetGapLengthToNumAppearances(eGapType);
+    ITERATE( TMapGapLengthToSeqIds, gap_map_iter, mapGapLengthToSeqIds ) {
         const TGapLength iGapLength = gap_map_iter->first;
         const TSetSeqIdConstRef & setSeqIds = gap_map_iter->second;
 
@@ -121,11 +203,11 @@ CGapAnalysis::GetGapLengthSummary(
         _ASSERT( find_iter != m_mapGapLengthToNumAppearances.end() );
         num_gaps = find_iter->second;
 
-        SOneGapLengthSummary gap_length_summary(
-            iGapLength,
-            setSeqIds.size(),
-            num_gaps );
-        pAnswer->push_back(gap_length_summary);
+        pAnswer->push_back(
+            Ref(new SOneGapLengthSummary(
+                    iGapLength,
+                    setSeqIds.size(),
+                    num_gaps )));
     }
 
     // sort if user uses non-default ordering
@@ -136,16 +218,45 @@ CGapAnalysis::GetGapLengthSummary(
         stable_sort(pAnswer->begin(), pAnswer->end(), sorter );
     }
 
-    return pAnswer.release();
+    return pAnswer;
 }
 
-CHistogramBinning::TListOfBins *
-CGapAnalysis::GetGapHistogram(
-    Uint8 num_bins,
-    CHistogramBinning::EHistAlgo eHistAlgo )
+const CGapAnalysis::TMapGapLengthToSeqIds & 
+CGapAnalysis::GetGapLengthSeqIds(EGapType eGapType) const
 {
-    m_histogramBinner.SetNumBins(num_bins);
-    return m_histogramBinner.CalcHistogram(eHistAlgo);
+    static const TMapGapLengthToSeqIds empty_map;
+    TGapTypeAndLengthToSeqIds::const_iterator find_it =
+        m_gapTypeAndLengthToSeqIds.find(eGapType);
+    if( find_it != m_gapTypeAndLengthToSeqIds.end() ) {
+        return find_it->second;
+    } else {
+        return empty_map;
+    }
+}
+
+const CGapAnalysis::TMapGapLengthToNumAppearances &
+CGapAnalysis::GetGapLengthToNumAppearances(EGapType eGapType) const
+{
+    static TMapGapLengthToNumAppearances empty_map;
+    TGapTypeAndLengthToNumAppearances::const_iterator find_it =
+        m_gapTypeAndLengthToNumAppearances.find(eGapType);
+    if( find_it != m_gapTypeAndLengthToNumAppearances.end() ) {
+        return find_it->second;
+    } else {
+        return empty_map;
+    }
+}
+
+AutoPtr<CHistogramBinning::TListOfBins>
+CGapAnalysis::GetGapHistogram(
+    EGapType eGapType,
+    Uint8 num_bins,
+    CHistogramBinning::EHistAlgo eHistAlgo)
+{
+    CHistogramBinning & histogramBinner =
+        x_GetOrCreateHistogramBinner(eGapType);
+    histogramBinner.SetNumBins(num_bins);
+    return histogramBinner.CalcHistogram(eHistAlgo);
 }
 
 CGapAnalysis::SOneGapLengthSummarySorter::SOneGapLengthSummarySorter(
@@ -157,12 +268,12 @@ CGapAnalysis::SOneGapLengthSummarySorter::SOneGapLengthSummarySorter(
 }
 
 bool CGapAnalysis::SOneGapLengthSummarySorter::operator()(
-    const SOneGapLengthSummary & lhs,
-    const SOneGapLengthSummary & rhs ) const
+    const CConstRef<SOneGapLengthSummary> & lhs,
+    const CConstRef<SOneGapLengthSummary> & rhs ) const
 {
     // handle if sorting reversed
-    const SOneGapLengthSummary & real_lhs = (sort_dir == eSortDir_Ascending ? lhs : rhs);
-    const SOneGapLengthSummary & real_rhs = (sort_dir == eSortDir_Ascending ? rhs : lhs);
+    const SOneGapLengthSummary & real_lhs = (sort_dir == eSortDir_Ascending ? *lhs : *rhs);
+    const SOneGapLengthSummary & real_rhs = (sort_dir == eSortDir_Ascending ? *rhs : *lhs);
 
     switch(sort_gap_length) {
     case eSortGapLength_Length:
@@ -177,10 +288,32 @@ bool CGapAnalysis::SOneGapLengthSummarySorter::operator()(
     }
 }
 
-void CGapAnalysis::x_AddGapsFromBases(
-    const CSeqMap_CI & seqmap_ci, const CBioseq_Handle & bioseq_h)
+CHistogramBinning &
+CGapAnalysis::x_GetOrCreateHistogramBinner(EGapType eGapType)
 {
-    TSeqIdConstRef bioseq_seq_id = bioseq_h.GetSeqId();
+    TGapTypeToHistogramBinner::iterator find_iter =
+        m_gapTypeToHistogramBinner.find(eGapType);
+    if( find_iter != m_gapTypeToHistogramBinner.end() ) {
+        return find_iter->second->GetData();
+    }
+
+    // not found, so create
+    TRefHistogramBinning new_value(
+        Ref(new CObjectFor<CHistogramBinning>()));
+    typedef pair<TGapTypeToHistogramBinner::iterator, bool> TInsertResult;
+    TInsertResult insert_result = m_gapTypeToHistogramBinner.insert(
+        make_pair(eGapType, new_value));
+    _ASSERT(insert_result.second);
+
+    return insert_result.first->second->GetData();
+}
+
+void CGapAnalysis::x_AddGapsFromBases(
+    const CSeqMap_CI & seqmap_ci,
+    TSeqIdConstRef bioseq_seq_id,
+    TSeqPos iBioseqLength,
+    TFlag fFlags)
+{
     const TSeqPos begin_pos = seqmap_ci.GetPosition();
 
     // get location representing this segment's bases
@@ -196,18 +329,33 @@ void CGapAnalysis::x_AddGapsFromBases(
 
     // a simple "runs of unknown bases" algo
     size_t size_of_curr_gap = 0;
+    size_t start_pos_of_curr_gap = kInvalidSeqPos;
+
     CSeqVector_CI seq_vec_ci = seq_vec.begin();
     for( ; seq_vec_ci; ++seq_vec_ci ) {
         if( *seq_vec_ci == kGapChar ) {
             ++size_of_curr_gap;
+            if( start_pos_of_curr_gap == kInvalidSeqPos ) {
+                start_pos_of_curr_gap = (begin_pos + seq_vec_ci.GetPos());
+            }
         } else if( size_of_curr_gap > 0 ) {
-            AddGap(bioseq_seq_id, size_of_curr_gap);
+            _ASSERT(start_pos_of_curr_gap != kInvalidSeqPos);
+            AddGap(
+                eGapType_UnknownBases, bioseq_seq_id, size_of_curr_gap,
+                iBioseqLength,
+                start_pos_of_curr_gap, (begin_pos + seq_vec_ci.GetPos()),
+                fFlags);
             size_of_curr_gap = 0;
+            start_pos_of_curr_gap = kInvalidSeqPos;
         }
     }
-    if( size_of_curr_gap > 0 ){
-        AddGap(bioseq_seq_id, size_of_curr_gap);
-        size_of_curr_gap = 0;
+    if( size_of_curr_gap > 0 ) {
+        _ASSERT(start_pos_of_curr_gap != kInvalidSeqPos);
+        AddGap(
+            eGapType_UnknownBases, bioseq_seq_id, size_of_curr_gap,
+            iBioseqLength,
+            start_pos_of_curr_gap, (begin_pos + seq_vec_ci.GetPos()),
+            fFlags);
     }
 }
 

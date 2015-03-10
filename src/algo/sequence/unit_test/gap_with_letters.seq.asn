@@ -1,5 +1,5 @@
 Seq-entry ::= seq {
-    id { local str "Seq1" },
+    id { local str "Seq_all_letters_with_a_few_runs_of_Ns" },
     descr {
         molinfo {
             biomol genomic } },

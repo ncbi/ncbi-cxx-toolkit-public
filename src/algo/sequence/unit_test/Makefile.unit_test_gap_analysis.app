@@ -13,7 +13,7 @@ REQUIRES = Boost.Test.Included
 
 # Uncomment if you do not want it to run automatically as part of
 # "make check".
-CHECK_CMD = unit_test_gap_analysis -in-data gap_analysis.seq.asn -in-letter-gap-data gap_with_letters.seq.asn
+CHECK_CMD = unit_test_gap_analysis -basic-data gap_analysis.seq.asn -in-letter-gap-data gap_with_letters.seq.asn -mixed-gap-type-data mixed_gap_type_data.seq.asn
 CHECK_COPY = gap_analysis.seq.asn gap_with_letters.seq.asn
 
 WATCHERS = kornbluh

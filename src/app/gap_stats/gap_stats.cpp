@@ -45,6 +45,7 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 
 #include <util/format_guess.hpp>
 #include <util/table_printer.hpp>
@@ -59,29 +60,111 @@ USING_SCOPE(objects);
 namespace {
     typedef CTablePrinter::SEndOfCell CellEnd;
 
-    // this is for cases where the lack of a key in a map represents
-    // a programming bug.
-    Uint8 find_uint8_attr_or_die(
-        const xml::attributes & attrs,
-        const char * key)
+    // some types used so often that we give them an abbreviation
+    typedef CGapAnalysis GA;
+    typedef CFastaReader FR;
+
+    template<typename T1, typename T2>
+    ostream & operator << (ostream & ostr, const pair<T1, T2> & a_pair )
     {
-        xml::attributes::const_iterator find_iter = attrs.find(key);
-        _ASSERT(find_iter != attrs.end());
-        return NStr::StringToNumeric<Uint8>(find_iter->get_value());
+        ostr << '(' << a_pair.first << ", " << a_pair.second << ')';
+        return ostr;
     }
 
+    template<typename TMap>
+    const typename TMap::mapped_type &
+    find_attr_or_die(
+        const TMap & a_map, const typename TMap::key_type & key )
+    {
+        typename TMap::const_iterator find_it =
+            a_map.find(key);
+        if( find_it == a_map.end() ) {
+            NCBI_USER_THROW_FMT(
+                "Could not find map key: " << key);
+        }
+        return find_it->second;
+    }
+
+    const CTempString 
+    find_attrib_attr_or_die(
+        const xml::attributes & attribs, const CTempString & key)
+    {
+        xml::attributes::const_iterator find_it = attribs.find(key.data());
+        if( find_it == attribs.end() ) {
+            NCBI_USER_THROW_FMT(
+                "Could not find map key: " << key);
+        }
+        return find_it->get_value();
+    }
+
+    const CTempString 
+    find_node_attr_or_die(
+        const xml::node & node, const CTempString & key )
+    {
+        return find_attrib_attr_or_die(node.get_attributes(), key);
+    }
+
+    Uint8 to_uint8(const CTempString & str_of_num)
+    {
+        return NStr::StringToUInt8(str_of_num);
+    }
+    
+    // translate gap types to string for ASCII output
+    typedef SStaticPair<GA::EGapType, const char *> TGapTypeNameElem;
+    static const TGapTypeNameElem sc_gaptypename_map[] = {
+        { GA::eGapType_All,          "All Gaps"},
+        { GA::eGapType_SeqGap,       "Seq Gaps"},
+        { GA::eGapType_UnknownBases, "Unknown Bases Gaps"},
+    };
+    typedef CStaticArrayMap<
+        GA::EGapType, const char *> TGapTypeNameMap;
+    DEFINE_STATIC_ARRAY_MAP(
+        TGapTypeNameMap, sc_gaptypename, sc_gaptypename_map);
+
+    // we iterate through sc_gaptypename many times and we also
+    // want to keep the same order each time because there are a
+    // number of places that assume the same order each time.
+    #define ITERATE_GAP_TYPES(iter_name) \
+        ITERATE(TGapTypeNameMap, iter_name, sc_gaptypename)
+    
+    // map each flag value to an enum for CGapAnalysis
+    struct SGapRelatedInfo {
+        GA::EGapType gap_type;
+        GA::TAddFlag gap_add_flag;
+        FR::TFlags fasta_flag;
+    };
+    typedef SStaticPair<const char *, SGapRelatedInfo> TAddGapTypeElem;
+    static const TAddGapTypeElem sc_addgaptypename_map[] = {
+        { "all",
+          { GA::eGapType_All,
+            ( GA::fAddFlag_IncludeSeqGaps | GA::fAddFlag_IncludeUnknownBases),
+            ( FR::fParseGaps | FR::fLetterGaps) } },
+        { "seq-gaps",
+          { GA::eGapType_SeqGap,
+            GA::fAddFlag_IncludeSeqGaps, FR::fParseGaps } },
+        { "unknown-bases",
+          { GA::eGapType_UnknownBases,
+            GA::fAddFlag_IncludeUnknownBases, FR::fLetterGaps } },
+    };
+    typedef CStaticArrayMap<
+        const char *, SGapRelatedInfo, PCase_CStr> TAddGapTypeMap;
+    DEFINE_STATIC_ARRAY_MAP(
+        TAddGapTypeMap, sc_addgaptypename, sc_addgaptypename_map);
+    
     /// Prints start_str when constructed and end_str
     /// when destroyed.  Example usage would be
     /// to print start and end tags of XML
-    class CBeginEndStrRAII
+    class CBeginEndStrToCoutRAII
     {
     public:
-        CBeginEndStrRAII(string start_str, string end_str) : m_end_str(end_str)
+        CBeginEndStrToCoutRAII(
+            const string & start_str, const string & end_str)
+            : m_end_str(end_str)
         {
             cout << start_str << endl;
         }
 
-        ~CBeginEndStrRAII()
+        ~CBeginEndStrToCoutRAII()
         {
             cout << m_end_str << endl;
         }
@@ -209,15 +292,21 @@ class CGapStatsApplication : public CNcbiApplication
 {
 public:
 
-    CGapStatsApplication(void) ;
+    CGapStatsApplication(void);
 
     virtual void Init(void);
     virtual int  Run(void);
 private:
     CSeq_inst::EMol m_MolFilter;
-    CGapAnalysis m_gapAnalysis;
-    CGapAnalysis::TAddFlag m_fGapAddFlags;
-    CFastaReader::TFlags m_fFastaFlags;
+    GA m_gapAnalysis;
+    GA::ESortGapLength m_eSort;
+    GA::ESortDir m_eSortDir;
+
+    typedef set<GA::EGapType> TGapTypeCont;
+    TGapTypeCont m_IncludedGapTypes;
+    bool x_IncludeGapType(GA::EGapType eGapType) const;
+    GA::TAddFlag m_fGapAddFlags;
+    FR::TFlags m_fFastaFlags;
 
     enum EOutFormat {
         eOutFormat_ASCIITable = 1,
@@ -233,11 +322,16 @@ private:
     int RunNoCatch(void);
 
     CRef<CScope> x_GetScope(void);
+    static string x_GapNameToGapXMLNodeName(const CTempString & gap_name);
 
+    typedef vector<GA::TGapLength> TGapLengthVec;
+    /// Returns a vector of all possible gap lengths we've seen
+    AutoPtr<TGapLengthVec> x_CalcAllGapLens(void) const;
+
+
+    /// Reads and loads into m_gapAnalysis
     void x_ReadFileOrAccn(const string & sFileOrAccn);
-    void x_PrintSummaryView( 
-        CGapAnalysis::ESortGapLength eSort,
-        CGapAnalysis::ESortDir eSortDir);
+    void x_PrintSummaryView(void);
     void x_PrintSeqsForGapLengths(void);
     void x_PrintHistogram(Uint8 num_bins,
         CHistogramBinning::EHistAlgo eHistAlgo);
@@ -250,15 +344,27 @@ private:
 
 CGapStatsApplication::CGapStatsApplication(void) :
     m_MolFilter(CSeq_inst::eMol_na),
+    // default to all unless user adds the gap types manually
     m_fGapAddFlags(
-        CGapAnalysis::fAddFlag_Default |
-        CGapAnalysis::fAddFlag_IncludeUnknownBases),
+        // all by default
+        GA::fAddFlag_All),
     m_fFastaFlags(
-        CFastaReader::fParseGaps |
-        CFastaReader::fLetterGaps),
+        // all by default
+        FR::fParseGaps |
+        FR::fLetterGaps),
     m_eOutFormat(eOutFormat_ASCIITable)
 {
-    SetVersion(CVersionInfo(2, 0, 1));
+    int build_num =
+#ifdef NCBI_PRODUCTION_VER
+    NCBI_PRODUCTION_VER
+#else
+    0
+#endif
+    ;
+
+    m_IncludedGapTypes.insert(GA::eGapType_All);
+
+    SetVersion(CVersionInfo(2,1,build_num));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -282,7 +388,24 @@ void CGapStatsApplication::Init(void)
         1, kMax_UInt,
         "The files or accessions to do gap analysis on.  "
         "ASN.1, XML, and FASTA are some of the supported file formats.",
-        CArgDescriptions::eString );
+        CArgDescriptions::eString);
+
+    // TODO consider removing and always showing all??
+    arg_desc->AddOptionalKey(
+        "add-gap-type",
+        "GapTypes",
+        "This indicates which types of gaps we look at.  If none specified, "
+        "all types will be shown.",
+        CArgDescriptions::eString,
+        CArgDescriptions::fAllowMultiple);
+    AutoPtr<CArgAllow_Strings> add_gap_types_allow_strings(
+        new CArgAllow_Strings);
+    ITERATE(TAddGapTypeMap, add_gap_type_it, sc_addgaptypename) {
+        const string add_gap_type_key(add_gap_type_it->first);
+        add_gap_types_allow_strings->Allow(add_gap_type_key);
+    }
+    arg_desc->SetConstraint(
+        "add-gap-type", add_gap_types_allow_strings.release());
 
     arg_desc->AddDefaultKey(
         "out-format", "Format",
@@ -376,7 +499,7 @@ int CGapStatsApplication::Run(void)
 
     // must check out-format arg _first_ because it may set up start and end
     // strings which must occur.
-    AutoPtr<CBeginEndStrRAII> pResultBeginEndStr;
+    AutoPtr<CBeginEndStrToCoutRAII> pResultBeginEndStr;
     const string & sOutFormat = args["out-format"].AsString();
     if( "ascii-table" == sOutFormat ) {
         m_eOutFormat = eOutFormat_ASCIITable;
@@ -385,7 +508,7 @@ int CGapStatsApplication::Run(void)
         // outermost XML node to hold everything.  Use AutoPtr to be
         // sure the closing tag is printed at the end.
         pResultBeginEndStr.reset(
-            new CBeginEndStrRAII("<result>", "</result>"));
+            new CBeginEndStrToCoutRAII("<result>", "</result>"));
     } else {
         _TROUBLE;
     }
@@ -419,7 +542,7 @@ int CGapStatsApplication::Run(void)
 int CGapStatsApplication::RunNoCatch(void)
 {
     // Get arguments
-    const CArgs & args = GetArgs();\
+    const CArgs & args = GetArgs();
 
     // if requested, trigger an internal error for testing
     // purposes.
@@ -428,7 +551,6 @@ int CGapStatsApplication::RunNoCatch(void)
             "This runtime_error was specifically requested "
             "via a program parameter");
     }
-
 
     // load variables set by args
     const string & sMol = args["mol"].AsString();
@@ -445,15 +567,56 @@ int CGapStatsApplication::RunNoCatch(void)
 
     const string & sAssumeMol = args["assume-mol"].AsString();
     if( sAssumeMol == "na" ) {
-        m_fFastaFlags |= CFastaReader::fAssumeNuc;
+        m_fFastaFlags |= FR::fAssumeNuc;
     } else if( sAssumeMol == "aa" ) {
-        m_fFastaFlags |= CFastaReader::fAssumeProt;
+        m_fFastaFlags |= FR::fAssumeProt;
     } else {
         // shouldn't happen
         NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
     }
 
+    // if add-gap-type's specified, use those instead of defaulting to "all"
+    if( args["add-gap-type"].HasValue() ) {
+        m_IncludedGapTypes.clear();
+        m_fGapAddFlags = 0;
+        m_fFastaFlags = 0;
 
+        const CArgValue::TStringArray & add_gap_types_chosen =
+            args["add-gap-type"].GetStringList();
+        ITERATE(CArgValue::TStringArray, add_gap_type_choice_it,
+                add_gap_types_chosen)
+        {
+            const string add_gap_type_choice = *add_gap_type_choice_it;
+            const SGapRelatedInfo & gap_related_flags =
+                find_attr_or_die(
+                    sc_addgaptypename, add_gap_type_choice.c_str());
+            m_IncludedGapTypes.insert(gap_related_flags.gap_type);
+            m_fGapAddFlags |= gap_related_flags.gap_add_flag;
+            m_fFastaFlags |= gap_related_flags.fasta_flag;
+        }
+    }
+    _ASSERT( ! m_IncludedGapTypes.empty() );
+    _ASSERT(m_fGapAddFlags != 0);
+    _ASSERT(m_fFastaFlags != 0);
+
+    m_eSort = GA::eSortGapLength_Length;
+    const string sSortOn = args["sort-on"].AsString();
+    if( "length" == sSortOn ) {
+        m_eSort = GA::eSortGapLength_Length;
+    } else if( "num_seqs" == sSortOn ) {
+        m_eSort = GA::eSortGapLength_NumSeqs;
+    } else if( "num_gaps" == sSortOn ) {
+        m_eSort = GA::eSortGapLength_NumGaps;
+    } else {
+        // shouldn't happen
+        NCBI_USER_THROW_FMT("Unsupported sort-on: " << sSortOn);
+    }
+
+    m_eSortDir = ( 
+        args["rev-sort"] ?
+        GA::eSortDir_Descending : 
+        GA::eSortDir_Ascending );
+    
     // load given data into m_gapAnalysis
     // (Note that extra-arg indexing is 1-based )
     for(size_t ii = 1; ii <= args.GetNExtra(); ++ii ) {
@@ -482,27 +645,7 @@ int CGapStatsApplication::RunNoCatch(void)
     }
 
     // summary view is always shown
-    {
-        CGapAnalysis::ESortGapLength eSort = 
-            CGapAnalysis::eSortGapLength_Length;
-        const string sSortOn = args["sort-on"].AsString();
-        if( "length" == sSortOn ) {
-            eSort = CGapAnalysis::eSortGapLength_Length;
-        } else if( "num_seqs" == sSortOn ) {
-            eSort = CGapAnalysis::eSortGapLength_NumSeqs;
-        } else if( "num_gaps" == sSortOn ) {
-            eSort = CGapAnalysis::eSortGapLength_NumGaps;
-        } else {
-            // shouldn't happen
-            NCBI_USER_THROW_FMT("Unsupported sort-on: " << sSortOn);
-        }
-
-        CGapAnalysis::ESortDir eSortDir = ( 
-            args["rev-sort"] ?
-            CGapAnalysis::eSortDir_Descending : 
-        CGapAnalysis::eSortDir_Ascending );
-        x_PrintSummaryView(eSort, eSortDir);
-    }
+    x_PrintSummaryView();
 
     if( args["show-seqs-for-gap-lengths"] ) {
         x_PrintSeqsForGapLengths();
@@ -548,6 +691,51 @@ CGapStatsApplication::x_GetScope(void)
     }
 
     return s_scope;
+}
+
+string CGapStatsApplication::x_GapNameToGapXMLNodeName(
+    const CTempString & gap_name)
+{
+    string answer = gap_name;
+    NStr::ReplaceInPlace(answer, " ", "_");
+    NStr::ToLower(answer);
+    return answer;
+}
+
+bool
+CGapStatsApplication::x_IncludeGapType(GA::EGapType eGapType) const
+{
+    if( m_IncludedGapTypes.find(eGapType) != m_IncludedGapTypes.end() ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//  x_CalcAllGapLens
+
+AutoPtr<CGapStatsApplication::TGapLengthVec>
+CGapStatsApplication::x_CalcAllGapLens(void) const
+{
+    AutoPtr<TGapLengthVec> all_gap_lengths_list(new TGapLengthVec);
+    {
+        AutoPtr<GA::TVectorGapLengthSummary> pGapLenSummary( 
+            m_gapAnalysis.GetGapLengthSummary(
+                GA::eGapType_All, m_eSort, m_eSortDir) );
+        ITERATE( GA::TVectorGapLengthSummary,
+                 summary_unit_it, *pGapLenSummary )
+        {
+            all_gap_lengths_list->push_back((*summary_unit_it)->gap_length);
+        }
+        sort(BEGIN_COMMA_END(*all_gap_lengths_list));
+        // make sure unique
+        _ASSERT(
+            unique(BEGIN_COMMA_END(*all_gap_lengths_list))
+            == all_gap_lengths_list->end());
+    }
+
+    return all_gap_lengths_list;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -624,6 +812,7 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         } 
             
         if( ! pSeqEntry ) {
+            // try to parse as CSeq_entry
             try {
                 in_file.seekg(0);
                 CRef<CSeq_entry> pNewSeqEntry( new CSeq_entry );
@@ -636,6 +825,7 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         }
             
         if( ! pSeqEntry ) {
+            // try to parse as CBioseq
             try {
                 in_file.seekg(0);
                 CRef<CBioseq> pBioseq( new CBioseq );
@@ -697,9 +887,7 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
 /////////////////////////////////////////////////////////////////////////////
 //  x_PrintSummaryView
 
-void CGapStatsApplication::x_PrintSummaryView(
-    CGapAnalysis::ESortGapLength eSort,
-    CGapAnalysis::ESortDir eSortDir)
+void CGapStatsApplication::x_PrintSummaryView(void)
 {
     // turn the data into XML, then into whatever output format is
     // appropriate
@@ -708,37 +896,114 @@ void CGapStatsApplication::x_PrintSummaryView(
 
     xml::node gap_len_infos_node("gap_len_infos");
 
-    AutoPtr<CGapAnalysis::TVectorGapLengthSummary> pGapLenSummary( 
-        m_gapAnalysis.GetGapLengthSummary(eSort, eSortDir) );
-    ITERATE( CGapAnalysis::TVectorGapLengthSummary, 
-        summary_unit_it, *pGapLenSummary ) 
-    {
-        const CGapAnalysis::SOneGapLengthSummary & summary_unit =
-            *summary_unit_it;
-        const CGapAnalysis::TGapLength gap_len =
-            summary_unit.gap_length;
+    // map pair of (gap-len, gap-type) to GA::SOneGapLengthSummary for
+    // all gap types.
+    typedef pair<GA::TGapLength, GA::EGapType>
+        TGapLenTypeKey;
+    typedef map<TGapLenTypeKey, CConstRef<GA::SOneGapLengthSummary> >
+        TGapLenTypeToSummaryMap;
+    TGapLenTypeToSummaryMap gap_len_type_to_summary_map;
 
+    // loop loads gap_len_type_to_summary_map
+    ITERATE_GAP_TYPES(gap_type_name_it) {
+        const GA::EGapType eGapType = gap_type_name_it->first;
+
+        if( ! x_IncludeGapType(eGapType) ) {
+            continue;
+        }
+
+        AutoPtr<GA::TVectorGapLengthSummary> p_gap_len_summary =
+            m_gapAnalysis.GetGapLengthSummary(eGapType, m_eSort, m_eSortDir);
+        ITERATE(GA::TVectorGapLengthSummary, gap_summary_it,
+                *p_gap_len_summary )
+        {
+            CConstRef<GA::SOneGapLengthSummary> p_one_summary =
+                      *gap_summary_it;
+            TGapLenTypeKey gap_len_type(p_one_summary->gap_length, eGapType);
+            pair<TGapLenTypeToSummaryMap::iterator, bool> insert_ret =
+                gap_len_type_to_summary_map.insert(
+                    make_pair(
+                        gap_len_type,
+                        p_one_summary));
+            // there shouldn't be dups
+            _ASSERT( insert_ret.second );
+        }
+    }
+
+    //  use eGapType_All to determine all possible gap lengths
+    typedef vector<GA::TGapLength> TGapLengthVec;
+    AutoPtr<TGapLengthVec> p_all_gap_lengths_list = x_CalcAllGapLens();
+    // for convenience
+    TGapLengthVec & all_gap_lengths_list = *p_all_gap_lengths_list;
+
+    // each iteration creates an XML node for one gap length
+    // with all the relevant info inside
+    ITERATE( TGapLengthVec, gap_length_it, all_gap_lengths_list ) {
+
+        const GA::TGapLength gap_len = *gap_length_it;
+        
         xml::node one_gap_len_info("one_gap_len_info");
-
         xml::attributes & one_gap_len_attributes =
             one_gap_len_info.get_attributes();
+
         one_gap_len_attributes.insert(
             "len", NStr::NumericToString(gap_len).c_str());
-        one_gap_len_attributes.insert(
-            "num_seqs", NStr::NumericToString(summary_unit.num_seqs).c_str());
-        one_gap_len_attributes.insert(
-            "num_gaps", NStr::NumericToString(summary_unit.num_gaps).c_str());
+
+        // get information about each kind of gap for the gap length
+        // set by the loop above
+        ITERATE_GAP_TYPES(gap_type_name_it) {
+            const GA::EGapType eGapType = gap_type_name_it->first;
+            const CTempString pchGapName = gap_type_name_it->second;
+
+            if( ! x_IncludeGapType(eGapType) ) {
+                continue;
+            }
+
+
+            // get the info for this gap type
+            CConstRef<GA::SOneGapLengthSummary> p_one_summary;
+            {
+                TGapLenTypeToSummaryMap::const_iterator find_it =
+                    gap_len_type_to_summary_map.find(
+                        make_pair(gap_len, eGapType));
+                if( find_it != gap_len_type_to_summary_map.end() ) {
+                    p_one_summary = find_it->second;
+                } else {
+                    p_one_summary.Reset(
+                        new GA::SOneGapLengthSummary(
+                            // make sure no one uses that first arg
+                            numeric_limits<GA::TGapLength>::max(),
+                            0, 0));
+                }
+            }
+            _ASSERT(p_one_summary);
+
+            // XML for info about just this gap type
+            // (convert gap name to reasonable XML node name)
+            xml::node gap_type_info(
+                x_GapNameToGapXMLNodeName(pchGapName).c_str());
+            xml::attributes & gap_type_info_attributes =
+                gap_type_info.get_attributes();
+            gap_type_info_attributes.insert(
+                    "num_seqs",
+                    NStr::NumericToString(p_one_summary->num_seqs).c_str());
+            gap_type_info_attributes.insert(
+                "num_gaps",
+                NStr::NumericToString(p_one_summary->num_gaps).c_str());
+
+            one_gap_len_info.insert(gap_type_info);
+        }
 
         gap_len_infos_node.insert(one_gap_len_info);
     }
     gap_info_root_node.insert(gap_len_infos_node);
 
+    // output to summary cout
     if( m_eOutFormat == eOutFormat_XML ) {
         // XML case is trivial since we've already formed it
         gap_info_doc.save_to_stream(cout, xml::save_op_no_decl);
     } else if( m_eOutFormat == eOutFormat_ASCIITable) {
         // turn XML into an ASCII table
-
         cout << "SUMMARY:" << endl;
 
         bool bAnyGapOfLenZero = false;
@@ -747,29 +1012,50 @@ void CGapStatsApplication::x_PrintSummaryView(
         CTablePrinter::SColInfoVec vecColInfos;
         vecColInfos.AddCol("Gap Length", kDigitsInUint8, 
                            CTablePrinter::eJustify_Right);
-        vecColInfos.AddCol("Num Seqs With Len", kDigitsInUint8, 
-                           CTablePrinter::eJustify_Right);
-        vecColInfos.AddCol("Num Gaps with Len", kDigitsInUint8, 
-                           CTablePrinter::eJustify_Right);
+
+        ITERATE_GAP_TYPES(gap_type_name_it) {
+            const GA::EGapType eGapType = gap_type_name_it->first;
+            string pchGapName = gap_type_name_it->second;
+
+            if( ! x_IncludeGapType(eGapType) ) {
+                continue;
+            }
+
+            vecColInfos.AddCol(
+                "Num Seqs With Len For " + pchGapName, kDigitsInUint8, 
+                CTablePrinter::eJustify_Right);
+            vecColInfos.AddCol(
+                "Num with Len for " + pchGapName, kDigitsInUint8, 
+                CTablePrinter::eJustify_Right);
+        }
+
         CTablePrinter table_printer(vecColInfos, cout);
 
         ITERATE(xml::node, one_gap_len_it, gap_len_infos_node) {
             const xml::node & one_gap_len_node = *one_gap_len_it;
             const xml::attributes & one_gap_len_info =
                 one_gap_len_node.get_attributes();
-            const CGapAnalysis::TGapLength gap_len =
-                find_uint8_attr_or_die(one_gap_len_info, "len");
-            const Uint8 num_seqs =
-                find_uint8_attr_or_die(one_gap_len_info, "num_seqs");
-            const Uint8 num_gaps =
-                find_uint8_attr_or_die(one_gap_len_info, "num_gaps");
 
+            const GA::TGapLength gap_len =
+                to_uint8(find_attrib_attr_or_die(one_gap_len_info, "len"));
+            table_printer << gap_len << CellEnd();
             if( 0 == gap_len ) {
                 bAnyGapOfLenZero = true;
             }
-            table_printer << gap_len << CellEnd();
-            table_printer << num_seqs << CellEnd();
-            table_printer << num_gaps << CellEnd();
+
+            // children of one_gap_len_info represent the info for
+            // each gap type
+            ITERATE( xml::node, child_it, one_gap_len_node ) {
+                const xml::node & gap_len_summary_node = *child_it;
+                const Uint8 num_seqs = to_uint8(
+                    find_node_attr_or_die(
+                        gap_len_summary_node, "num_seqs"));
+                table_printer << num_seqs << CellEnd();
+
+                const Uint8 num_gaps = to_uint8(find_node_attr_or_die(
+                    gap_len_summary_node, "num_gaps"));
+                table_printer << num_gaps << CellEnd();
+            }
         }
         cout << endl;
 
@@ -789,48 +1075,112 @@ void CGapStatsApplication::x_PrintSummaryView(
 
 void CGapStatsApplication::x_PrintSeqsForGapLengths(void)
 {
-    const CGapAnalysis::TMapGapLengthToSeqIds & len_to_id_map =
-        m_gapAnalysis.GetGapLengthSeqIds();
-
+    AutoPtr<TGapLengthVec> p_all_gap_lengths_list = x_CalcAllGapLens();
+    
     // turn into XML
 
     xml::document gap_seqs_doc("seqs_for_gap_lens");
     xml::node & gap_seqs_root_node = gap_seqs_doc.get_root_node();
 
-    ITERATE(CGapAnalysis::TMapGapLengthToSeqIds, map_iter, len_to_id_map) {
-        const CGapAnalysis::TGapLength iGapLength = map_iter->first;
+    // each loop iteration handles one gap length (all gap types)
+    ITERATE(TGapLengthVec, all_gap_lens_it, *p_all_gap_lengths_list ) {
+        const GA::TGapLength gap_len = *all_gap_lens_it;
 
-        xml::node gap_len_seq_ids("gap_len_seq_ids");
-        gap_len_seq_ids.get_attributes().insert(
-            "len", NStr::NumericToString(iGapLength).c_str());
+        xml::node gap_seqs_one_len_node(xml::node("gap_length_info"));
+        gap_seqs_one_len_node.get_attributes().insert(
+            "len", NStr::NumericToString(gap_len).c_str());
 
-        const CGapAnalysis::TSetSeqIdConstRef & seq_ids = map_iter->second;
-        ITERATE( CGapAnalysis::TSetSeqIdConstRef, seq_id_it, seq_ids ) {
-            gap_len_seq_ids.insert(
-                xml::node("seq_id", (*seq_id_it)->AsFastaString().c_str()));
+        ITERATE_GAP_TYPES(gap_type_name_it) {
+            const GA::EGapType eGapType = gap_type_name_it->first;
+            const char * pchGapName = gap_type_name_it->second;
+
+            if( ! x_IncludeGapType(eGapType) ) {
+                continue;
+            }
+
+            xml::node gap_seqs_one_len_and_gap_type("gap_type_seq_ids");
+            gap_seqs_one_len_and_gap_type.get_attributes().insert(
+                "gap_type", pchGapName);
+
+            const GA::TMapGapLengthToSeqIds & map_len_to_seq_ids =
+                m_gapAnalysis.GetGapLengthSeqIds(eGapType);
+
+            GA::TMapGapLengthToSeqIds::const_iterator find_seq_ids_it =
+                map_len_to_seq_ids.find(gap_len);
+
+            // add a node for each seq_id for this gap type
+            if( find_seq_ids_it != map_len_to_seq_ids.end() ) {
+                const GA::TSetSeqIdConstRef & set_seq_id_const_ref =
+                    find_seq_ids_it->second;
+                ITERATE(
+                    GA::TSetSeqIdConstRef, seq_id_ref_it, set_seq_id_const_ref)
+                {
+                    xml::node one_seq_node("seq_info");
+                    one_seq_node.get_attributes().insert(
+                        "seq_id", (*seq_id_ref_it)->AsFastaString().c_str());
+
+                    gap_seqs_one_len_and_gap_type.push_back(one_seq_node);
+                }
+            }
+
+            gap_seqs_one_len_node.push_back(gap_seqs_one_len_and_gap_type);
         }
 
-        gap_seqs_root_node.insert(gap_len_seq_ids);
+        gap_seqs_root_node.push_back(gap_seqs_one_len_node);
     }
 
     // output
     if( m_eOutFormat == eOutFormat_XML ) {
+        // TODO: give example output
+        
         // trivial since already XML
         gap_seqs_doc.save_to_stream(cout, xml::save_op_no_decl);
     } else if ( m_eOutFormat == eOutFormat_ASCIITable ) {
         // convert XML to ASCII table
 
+        // example output:
+        //   SEQ-IDS FOR EACH GAP-LENGTH:
+        //           Seq-ids with a gap of length 10:
+        //                   Seq gaps:
+        //                           lcl|scaffold17
+        //                           lcl|scaffold33
+        //                           lcl|scaffold35
+        //                           lcl|scaffold37
+        //                   Run of Unknown Bases:
+        //                           lcl|scaffold40
+        //                           lcl|scaffold41
+        //                           lcl|scaffold43
+        //                           lcl|scaffold5
+        //                           lcl|scaffold6
+        //           Seq-ids with a gap of length 68:
+        //                   Seq gaps:
+        //                           lcl|scaffold6
+        //           Seq-ids with a gap of length 72:
+        //                   Seq gaps:
+        //                           lcl|scaffold43
+        //                           lcl|scaffold88
+        //                   Run of Unknown Bases:
+        //                           lcl|scaffold88
+
         cout << "SEQ-IDS FOR EACH GAP-LENGTH:" << endl;
 
         ITERATE(xml::node, gap_len_node_it, gap_seqs_root_node) {
-            const CGapAnalysis::TGapLength iGapLength =
-                find_uint8_attr_or_die(
-                    gap_len_node_it->get_attributes(), "len");
+            const GA::TGapLength iGapLength = 
+                to_uint8(find_node_attr_or_die(
+                     *gap_len_node_it, "len"));
             cout << "\tSeq-ids with a gap of length "
                  << iGapLength << ':' << endl;
 
-            ITERATE(xml::node, seq_id_node_it, *gap_len_node_it) {
-                cout << "\t\t" << seq_id_node_it->get_content() << endl;
+            ITERATE(xml::node, gap_type_seq_ids_it, *gap_len_node_it) {
+                const CTempString pchGapName = find_node_attr_or_die(
+                    *gap_type_seq_ids_it, "gap_type");
+                cout << "\t\t" << pchGapName << ":" << endl;
+
+                ITERATE(xml::node, seq_info_it, *gap_type_seq_ids_it) {
+                    cout << "\t\t\t"
+                         << find_node_attr_or_die(*seq_info_it, "seq_id")
+                         << endl;
+                }
             }
         }
         cout << endl;
@@ -847,30 +1197,48 @@ void CGapStatsApplication::x_PrintHistogram(
     Uint8 num_bins,
     CHistogramBinning::EHistAlgo eHistAlgo)
 {
-    AutoPtr<CHistogramBinning::TListOfBins> pListOfBins(
-        m_gapAnalysis.GetGapHistogram(num_bins, eHistAlgo) );
-
-    // convert histogram into XML
-    xml::document hist_doc("histogram");
+    // convert histograms into XML
+    xml::document hist_doc("histogram_list");
     xml::node & hist_root_node = hist_doc.get_root_node();
 
-    ITERATE( CHistogramBinning::TListOfBins, bin_iter, *pListOfBins ) {
-        const CHistogramBinning::SBin & bin = *bin_iter;
+    // build the histogram for each gap type
+    ITERATE_GAP_TYPES(gap_type_it) {
+        const GA::EGapType eGapType = gap_type_it->first;
+        const char * pchGapName = gap_type_it->second;
 
-        xml::node bin_node("bin");
-        xml::attributes & bin_node_attrs =
+        if( ! x_IncludeGapType(eGapType) ) {
+            continue;
+        }
+
+        xml::node histogram_node("histogram");
+        xml::attributes & histogram_node_attrs =
+            histogram_node.get_attributes();
+        histogram_node_attrs.insert("gap_type", pchGapName);
+
+        AutoPtr<CHistogramBinning::TListOfBins> pListOfBins(
+            m_gapAnalysis.GetGapHistogram(eGapType, num_bins, eHistAlgo));
+
+        // load each histogram bin into the histogram_node
+        ITERATE( CHistogramBinning::TListOfBins, bin_iter, *pListOfBins ) {
+            const CHistogramBinning::SBin & bin = *bin_iter;
+
+            xml::node bin_node("bin");
+            xml::attributes & bin_node_attrs =
                 bin_node.get_attributes();
-        bin_node_attrs.insert(
-            "start_inclusive",
-            NStr::NumericToString(bin.first_number).c_str());
-        bin_node_attrs.insert(
-            "end_inclusive",
-            NStr::NumericToString(bin.last_number).c_str());
-        bin_node_attrs.insert(
-            "num_appearances",
-            NStr::NumericToString(bin.total_appearances).c_str());
+            bin_node_attrs.insert(
+                "start_inclusive",
+                NStr::NumericToString(bin.first_number).c_str());
+            bin_node_attrs.insert(
+                "end_inclusive",
+                NStr::NumericToString(bin.last_number).c_str());
+            bin_node_attrs.insert(
+                "num_appearances",
+                NStr::NumericToString(bin.total_appearances).c_str());
 
-        hist_root_node.insert(bin_node);
+            histogram_node.insert(bin_node);
+        }
+
+        hist_root_node.insert(histogram_node);
     }
 
     // output
@@ -881,27 +1249,33 @@ void CGapStatsApplication::x_PrintHistogram(
         // convert XML to ASCII table
 
         const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
-        CTablePrinter::SColInfoVec vecColInfos;
-        vecColInfos.AddCol("Range", 1 + 2*kDigitsInUint8);
-        vecColInfos.AddCol("Number in Range", kDigitsInUint8,
-                           CTablePrinter::eJustify_Right);
-        CTablePrinter table_printer(vecColInfos, cout);
 
-        cout << "HISTOGRAM:" << endl;
+        // a histogram for each gap type
+        ITERATE_GAP_TYPES(gap_type_it) {
+            const char * pchGapName = gap_type_it->second;
 
-        ITERATE(xml::node, bin_node_it, hist_root_node) {
-            const xml::attributes & bin_node_attrs =
-                bin_node_it->get_attributes();
+            CTablePrinter::SColInfoVec vecColInfos;
+            vecColInfos.AddCol("Range", 1 + 2*kDigitsInUint8);
+            vecColInfos.AddCol("Number in Range", kDigitsInUint8,
+                               CTablePrinter::eJustify_Right);
+            CTablePrinter table_printer(vecColInfos, cout);
 
-            const Uint8 start = find_uint8_attr_or_die(
-                bin_node_attrs, "start_inclusive");
-            const Uint8 end = find_uint8_attr_or_die(
-                bin_node_attrs, "end_inclusive");
-            const Uint8 num_appearances = find_uint8_attr_or_die(
-                bin_node_attrs, "num_appearances");
+            cout << "HISTOGRAM FOR " << pchGapName << ":" << endl;
 
-            table_printer << start << '-' << end << CellEnd();
-            table_printer << num_appearances << CellEnd();
+            ITERATE(xml::node, bin_node_it, hist_root_node) {
+                const xml::attributes & bin_node_attrs =
+                    bin_node_it->get_attributes();
+
+                const Uint8 start = to_uint8(find_attrib_attr_or_die(
+                    bin_node_attrs, "start_inclusive"));
+                const Uint8 end = to_uint8(find_attrib_attr_or_die(
+                    bin_node_attrs, "end_inclusive"));
+                const Uint8 num_appearances = to_uint8(find_attrib_attr_or_die(
+                    bin_node_attrs, "num_appearances"));
+
+                table_printer << start << '-' << end << CellEnd();
+                table_printer << num_appearances << CellEnd();
+            }
         }
     }
 }
@@ -931,4 +1305,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CGapStatsApplication().AppMain(argc, argv);
 }
-

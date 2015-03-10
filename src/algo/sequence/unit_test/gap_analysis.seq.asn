@@ -2,7 +2,7 @@ Seq-entry ::= set {
     class genbank,
     seq-set {
         seq {
-            id { local str "Seq1" },
+            id { local str "Seq_no_gaps" },
             inst { 
                 repr raw,
                 mol dna,
@@ -11,7 +11,7 @@ Seq-entry ::= set {
             }
         },
         seq {
-            id { local str "Seq2" },
+            id { local str "Seq_misc_seq_gaps_and_raw_bases" },
             inst {
                 repr delta,
                 mol dna,
@@ -27,7 +27,7 @@ Seq-entry ::= set {
             }
         },
         seq {
-            id { local str "Seq3" },
+            id { local str "Seq_just_one_seq_gap_of_len_101" },
             inst {
                 repr delta,
                 mol dna,
@@ -38,7 +38,7 @@ Seq-entry ::= set {
             }
         },
         seq {
-            id { local str "Seq4" },
+            id { local str "Seq_just_two_seq_gaps_of_len_101" },
             inst {
                 repr delta,
                 mol dna,
