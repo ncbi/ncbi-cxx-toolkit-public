@@ -71,6 +71,53 @@ static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
     return (flags & IFlatQVal::fIsNote)  &&  !ctx.Config().IsModeDump();
 }
 
+static void s_CleanAndCompress (string& str)
+{
+    if (str.empty()) {
+        return;
+    }
+
+    size_t pos = str.find (" ,");
+    if (pos != NPOS) {
+        str [pos] = ',';
+        str [pos+1] = ' ';
+    }
+    pos = str.find (",,");
+    if (pos != NPOS) {
+        str [pos+1] = ' ';
+    }
+    pos = str.find ("( ");
+    if (pos != NPOS) {
+        str [pos] = ' ';
+        str [pos+1] = '(';
+    }
+    pos = str.find (" )");
+    if (pos != NPOS) {
+        str [pos] = ')';
+        str [pos+1] = ' ';
+    }
+
+    string::iterator end = str.end();
+    string::iterator it = str.begin();
+    string::iterator new_str = it;
+    while (it != end) {
+        *new_str++ = *it;
+        if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
+            for (++it; (it != end) && (*it == ' ' || *it == '\t'); ++it) continue;
+            if ((it != end) && (*it == ')' || *it == ',') ) {
+                // this "if" protects against the case "(...bunch of spaces and tabs...)".
+                // Otherwise, the first '(' is unintentionally erased
+                if( *(new_str - 1) != '(' ) { 
+                    --new_str;
+                }
+            }
+        } else {
+            ++it;
+        }
+    }
+    str.erase(new_str, str.end());
+}
+
 
 static bool s_StringIsJustQuotes(const string& str)
 {
@@ -194,6 +241,7 @@ static string s_GetGOText(
             go_text += "]";
         }
     }
+    s_CleanAndCompress(go_text);
     NStr::TruncateSpacesInPlace(go_text);
     return go_text;
 }
@@ -317,6 +365,7 @@ CFormatQual::CFormatQual
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
     m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
+    s_CleanAndCompress(m_Value);
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
 
@@ -325,6 +374,7 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, 
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
     m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
+    s_CleanAndCompress(m_Value);
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
 
@@ -335,6 +385,7 @@ CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style, ETrim trim)
     :  IFlatQVal(&kSpace, &kSemicolon),
        m_Value(value), m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
+    s_CleanAndCompress(m_Value);
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
@@ -349,6 +400,7 @@ CFlatStringQVal::CFlatStringQVal
         m_Value(value),
         m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
+    s_CleanAndCompress(m_Value);
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
@@ -357,6 +409,7 @@ CFlatStringQVal::CFlatStringQVal(const string& value,
 :   IFlatQVal(&kSpace, &kSemicolon),
     m_Value(value), m_Style(CFormatQual::eQuoted), m_Trim(trim), m_AddPeriod(0)
 {
+    s_CleanAndCompress(m_Value);
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
