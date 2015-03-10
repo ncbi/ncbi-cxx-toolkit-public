@@ -1459,6 +1459,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     }
 
     //stop codon anywhere between start of V and end of J
+    //This checks for stop codon between start of top matched V and and end of top matched J only 
     if (annot->m_FrameInfo[0] >= 0) {
         int v_start = annot->m_FrameInfo[0];
         int v_j_length = max(max(annot->m_GeneInfo[5], annot->m_GeneInfo[3]), annot->m_GeneInfo[1]) - annot->m_FrameInfo[0];
