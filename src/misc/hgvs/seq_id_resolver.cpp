@@ -107,7 +107,11 @@ CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
     CSeq_id_Handle product_idh;
     SAnnotSelector sel;
     sel.SetResolveTSE();
-    for (CFeat_CI ci(m_scope->GetBioseqHandle(ng_idh)); ci; ++ci) {
+    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+
+    for (CFeat_CI ci(m_scope->GetBioseqHandle(ng_idh), sel); ci; ++ci) {
         const CMappedFeat& mf = *ci;
         if (!mf.IsSetDbxref()) {
             continue;

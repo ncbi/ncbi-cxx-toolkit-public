@@ -591,7 +591,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
     TSeqPos first_pos = 0;
     TSeqPos cds_last_pos = 0;
     if(vp.GetMol() == CVariantPlacement::eMol_cdna) {
-        for(CFeat_CI ci(bsh); ci; ++ci) {
+        for(CFeat_CI ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion)); ci; ++ci) {
             const CMappedFeat& mf = *ci;
             if(mf.GetData().IsCdregion()) {
                 first_pos = sequence::GetStart(mf.GetLocation(), NULL, eExtreme_Biological);

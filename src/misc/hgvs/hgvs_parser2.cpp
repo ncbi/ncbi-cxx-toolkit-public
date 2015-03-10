@@ -401,6 +401,7 @@ void CHgvsParser::CContext::SetId(const CSeq_id& id, CVariantPlacement::TMol mol
     if(mol == CVariantPlacement::eMol_cdna) {
         SAnnotSelector sel;
         sel.SetResolveTSE();
+        sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
         for(CFeat_CI ci(m_bsh, sel); ci; ++ci) {
             const CMappedFeat& mf = *ci;
             if(mf.GetData().IsCdregion()) {
