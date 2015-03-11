@@ -1184,6 +1184,7 @@ template <class TLocation>
 string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
         CNetStorageObject object2)
 {
+    Ctx("Creating two objects").Line(__LINE__);
     SReadHelper<TApi, TShouldWork> source_reader(*data);
     TApi api1(object1);
     SWriteHelper dest_writer1(api1.GetWriter());
@@ -1274,8 +1275,8 @@ template <class TPolicy>
 template <class TLocation, class TId>
 void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
 {
-    BOOST_CHECK_CTX(Exists(netstorage, id),
-            Ctx("Checking existent object").Line(__LINE__));
+    Ctx("Checking existent object").Line(__LINE__);
+    BOOST_CHECK_CTX(Exists(netstorage, id), ctx);
     CNetStorageObject object(Open(netstorage, id));
     CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
             object, data->Size()).Check();
@@ -1285,8 +1286,8 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     // Wait some time for changes to take effect
     g_Sleep();
 
-    BOOST_CHECK_CTX(!Exists(netstorage, id),
-            Ctx("Checking non-existent object").Line(__LINE__));
+    Ctx("Checking non-existent object").Line(__LINE__);
+    BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
 
 #ifdef TEST_REMOVED
     ReadAndCompare<TLocationNotFound>("Trying to read removed object",
