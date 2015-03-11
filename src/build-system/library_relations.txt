@@ -84,6 +84,7 @@ an_euk_pipeline needs bag_access
 an_euk_pipeline needs gpipe_an_base
 an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs gpipe_xml
+an_euk_pipeline needs reftrack_access
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_xml
 an_prok_pipeline needs pathogen_connection
