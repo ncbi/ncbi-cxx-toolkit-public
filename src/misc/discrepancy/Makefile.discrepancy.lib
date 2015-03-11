@@ -1,0 +1,18 @@
+# $Id$
+
+# Build library "xdiscrepancy_report"
+###############################
+
+SRC = discrepancy_core discrepancy_case report_object
+
+LIB = xdiscrepancy
+
+DLL_LIB = xmlwrapp
+LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS)
+
+ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
+
+WATCHERS = kachalos
+
+USES_LIBRARIES =  \
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xmlwrapp xvalidate
