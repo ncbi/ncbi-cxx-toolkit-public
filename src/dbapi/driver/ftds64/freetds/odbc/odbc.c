@@ -1701,7 +1701,7 @@ SQLDisconnect(SQLHDBC hdbc)
 	/* free all associated statements */
     for (stmt = dbc->stmt_list;  stmt != NULL;  stmt = next) {
         next = stmt->next;
-		_SQLFreeStmt(dbc->stmt_list, SQL_DROP, 1);
+        _SQLFreeStmt(stmt, SQL_DROP, 1);
     }
 
 	/* free all associated descriptors */
