@@ -283,8 +283,7 @@ CVariant::ReleaseITDescriptor(void) const
 inline
 void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const
 {
-    if( db_type != GetType() )
-    {
+    if (db_type == eDB_UnsupportedType  ||  db_type != GetType()) {
         NCBI_THROW(CVariantException, eVariant,
              "Cannot assign type '" + string(cxx_type) + "' to type '"
              + string(CDB_Object::GetTypeName(GetType())) + "'");
