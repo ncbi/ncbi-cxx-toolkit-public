@@ -52,8 +52,9 @@ static const string s_kQueryNodeBgColor = "255 255 0";
 static const string s_kSeqOfTypeNodeBgColor = "204 255 204";
 static const string s_kSeqFromVerifiedMatNodeBgColor = "181 228 240";
 
-static const string s_kSeqReferenceDBNodeBgColor = "102 255 255";
-static const string s_kSeqKmerBlastNodeBgColor = "255 204 255";
+static const string s_kSeqQueryNodeBgColor = " 255 200 87";
+static const string s_kSeqReferenceDBNodeBgColor = "114 168 101";
+static const string s_kSeqKmerBlastNodeBgColor = "83 149 208";
 
 
 map<int,string> linkotTypeToBGColor;
@@ -655,7 +656,10 @@ void CPhyTreeFormatter::x_InitTreeLabels(CBioTreeContainer &btc,
             else if (lblType == eBlastName) {
                 featureSelectedID = eBlastNameId;
             }
-            
+            else if (lblType == eCommonName) {
+                featureSelectedID = eCommonNameID;
+            }
+
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
                                (*node)->SetFeatures().Set()) {
 
@@ -827,6 +831,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     vector<string> blast_names(num_rows);    
     vector<string> tax_node_colors(num_rows);
     vector<CBioseq_Handle> bio_seq_handles(num_rows);
+    vector<string> common_names(num_rows);
 
     for (int i=0;i < num_rows;i++) {
         bio_seq_handles[i] = scope.GetBioseqHandle(*seqids[i]);        
@@ -834,6 +839,10 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         try{
             const COrg_ref& org_ref = sequence::GetOrg_ref(bio_seq_handles[i]);                                
             organisms[i] = org_ref.GetTaxname();
+
+            common_names[i] = org_ref.GetCommon();
+            common_names[i] = (common_names[i].empty()) ? organisms[i] : common_names[i];
+
             tax_id = org_ref.GetTaxId();
             if (success) {
                 tax.GetBlastName(tax_id, blast_names[i]);
@@ -846,6 +855,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         catch(CException&) {            
             organisms[i] = s_kUnknown;
             blast_names[i]= s_kUnknown;
+            common_names[i] = s_kUnknown;
         }
 
         try{
@@ -887,7 +897,11 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
 
         case eTaxNameAndAccession:
             labels[i] = organisms[i] + "(" + accession_nbrs[i] + ")";
-            break;        
+            break;
+
+        case eCommonName:
+            labels[i] = common_names[i];
+            break;            
         }
      
         if (labels[i].empty()) {
@@ -916,7 +930,9 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eNodeInfoId, GetFeatureTag(eNodeInfoId), btc);
     x_AddFeatureDesc(eLeafCountId,
                      GetFeatureTag(eLeafCountId), btc);
-
+    x_AddFeatureDesc(eCommonNameID,
+                     GetFeatureTag(eCommonNameID), btc);
+    
     
     int num_leaves = 0;
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
@@ -960,8 +976,8 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                     // add organism attribute if possible
                     if (!organisms[seq_number].empty()) {
                         x_AddFeature(eOrganismId, organisms[seq_number], node);
-                    }
-
+                    }                    
+                    
                     // add seq-title attribute if possible
                     if (!titles[seq_number].empty()) {
                         x_AddFeature(eTitleId, titles[seq_number], node); 
@@ -971,31 +987,44 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                         x_AddFeature(eAccessionNbrId, accession_nbrs[seq_number],
                                      node);
                     }
-
                     // add blast-name attribute if possible
                     if (!blast_names[seq_number].empty()) {
                         x_AddFeature(eBlastNameId, blast_names[seq_number],
                                      node);
-                    }                   
+                    }
+                    // add common name attribute if possible
+                    if (!common_names[seq_number].empty()) {
+                        x_AddFeature(eCommonNameID, common_names[seq_number], node);
+                    }
 
                     x_AddFeature(eAlignIndexId, NStr::IntToString(seq_number),
                                  node); 
-
-                    x_AddFeature(eNodeColorId,
+                    if (seqTypeMap.empty()) {
+                        x_AddFeature(eNodeColorId,
                                  tax_node_colors[seq_number], node);
+                    }
 
+                    int seqType = eSeqTypeNotFound;
+                    if (!seqTypeMap.empty()) {
+                        seqType = x_FindSeqType(seqTypeMap,id_string);
+                    }
                     // mark query node
                     if (!mark_leaves.empty()
                         && binary_search(mark_leaves.begin(),
                                          mark_leaves.end(), seq_number)) {
 
                         // color for query node
-                        x_AddFeature(eLabelBgColorId,
+                        if(seqType == eSeqTypeQuery) {                            
+                            x_AddFeature(eNodeColorId,s_kSeqQueryNodeBgColor, node);
+                            x_AddFeature(eLabelBgColorId,s_kSeqQueryNodeBgColor, node); 
+                        }
+                        else {
+                            x_AddFeature(eLabelBgColorId,
                                      s_kQueryNodeBgColor, node); 
-
+                        }
                         x_AddFeature(eLabelTagColorId,
                                      s_kQueryNodeColor, node);
-
+                        
                         x_AddFeature(eNodeInfoId, kNodeInfoQuery, node);
 
                     }
@@ -1027,10 +1056,10 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                         else if(seqType == eSeqTypeKmerBlast) {
                             bgColor = seqTypeToBGColor[eSeqTypeKmerBlast];
                             nodeInfo = kNodeInfoSeqKmerBlast;
-                        }
+                        }                        
                         //color for ReferenceDB KmerBlast
                         if(!bgColor.empty()) {
-                            x_AddFeature(eLabelBgColorId,bgColor, node);                                 
+                            x_AddFeature(eNodeColorId,bgColor, node);
                             x_AddFeature(eNodeInfoId,nodeInfo,node);
                         }                     
                     }
