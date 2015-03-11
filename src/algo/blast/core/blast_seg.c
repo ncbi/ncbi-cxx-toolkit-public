@@ -1305,6 +1305,16 @@ double lnfact[] =
    82108.927837 
   }; 
 
+/* Nat log values for 0.1, 0.2, 0.3, etc. */ 
+/* Used instead of repeatedly calculating them. */
+double log_win10[] = 
+{
+   0.0, -2.30258509, -1.60943791, -1.203982804, -0.91629073, -0.6931478, -0.510825623, -0.356674944,
+   -0.22314355, -0.105360515, 0.0
+}; 
+
+
+
 
 const int kProtAlphabet = 2;   /**< identifies protein alphabet (FIXME: needed?). */
 
@@ -1596,11 +1606,21 @@ s_Entropy(Int4* sv)
    if (total==0) return(0.);
 
    ent = 0.0;
-   for (i=0; sv[i]!=0; i++)
-     {
-      ent += ((double)sv[i])*log(((double)sv[i])/(double)total)/NCBIMATH_LN2;
-     }
-
+   if (total == 10)
+   { /* Use precomputed table. */
+   	for (i=0; sv[i]!=0; i++)
+     	{
+      		ent += ((double)sv[i])*log_win10[sv[i]]/NCBIMATH_LN2;
+     	}
+	
+   }
+   else
+   {
+   	for (i=0; sv[i]!=0; i++)
+     	{
+      		ent += ((double)sv[i])*log(((double)sv[i])/(double)total)/NCBIMATH_LN2;
+     	}
+   }
    ent = fabs(ent/(double)total);
 
    return(ent);
