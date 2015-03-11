@@ -3733,13 +3733,26 @@ static bool s_IsCompoundRptTypeValue(
 //  not been retro-fixed yet (as of 2006-03-17).
 //
 {
-    if( value.length() < 3 ) {
+    if (NStr::IsBlank(value) || value.length() < 3 || 
+        !NStr::StartsWith(value, "(") || !NStr::EndsWith(value, ")")) {
         return false;
     }
-
-    return ( NStr::StartsWith( value, '(' ) && NStr::EndsWith( value, ')' ) ) ||
-           ( NStr::StartsWith( value, '{' ) && NStr::EndsWith( value, '}' ) );
-};
+    
+    bool last_char_was_close_paren = false;
+    string::const_iterator s = value.cbegin();
+    ++s;
+    while (s != value.cend()) {
+        if (*s == '(') {
+            return false;
+        } else if (last_char_was_close_paren) {
+            return false;
+        } else if (*s == ')') {
+            last_char_was_close_paren = true;
+        }
+        ++s;
+    }
+    return true;
+}
 
 static
 void s_ExpandThisQual( 
@@ -3786,6 +3799,7 @@ void s_ExpandThisQual(
         new_quals.push_back( newQual ); 
     }
 }
+
 
 void CNewCleanup_imp::x_ExpandCombinedQuals(CSeq_feat::TQual& quals)
 {

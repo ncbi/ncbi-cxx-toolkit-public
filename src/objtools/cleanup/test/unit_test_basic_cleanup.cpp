@@ -730,3 +730,26 @@ BOOST_AUTO_TEST_CASE(Test_SplitGBQual)
     BOOST_CHECK_EQUAL(feat->GetQual().size(), 3);
     BOOST_CHECK_EQUAL(feat->GetQual()[2]->GetVal(), "tttagc");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_RptUnit)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetGene();
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("foo");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(5);
+
+    feat->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("rpt_unit", "  ()(),    4235  . 236  ()")));
+    feat->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("rpt_unit", "(abc,def,hjusdf sdf)")));
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup (*feat);
+    BOOST_CHECK_EQUAL(feat->GetQual().size(), 4);
+    BOOST_CHECK_EQUAL(feat->GetQual()[0]->GetVal(), "()(),    4235  . 236  ()");
+    BOOST_CHECK_EQUAL(feat->GetQual()[1]->GetVal(), "abc");
+    BOOST_CHECK_EQUAL(feat->GetQual()[2]->GetVal(), "def");
+    BOOST_CHECK_EQUAL(feat->GetQual()[3]->GetVal(), "hjusdf sdf");
+}
