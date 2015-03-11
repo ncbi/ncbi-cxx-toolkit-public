@@ -3303,7 +3303,7 @@ CDS\tfake protein name\tlcl|nuc:1-27\t\n\
 CDS\tfake protein name_1_2\tlcl|nuc:3-27\t\n\
 ");
 
-    BOOST_CHECK_EQUAL(report_maker->Autofix(seh), TRUE);
+    BOOST_CHECK_EQUAL(report_maker->Autofix(seh), true);
     report_maker->ResetData();
     report_maker->CollectData(seh);
     report_maker->Collate();
