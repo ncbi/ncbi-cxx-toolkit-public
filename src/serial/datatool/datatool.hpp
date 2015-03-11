@@ -51,6 +51,7 @@ public:
     int Run(void);
     
     string GetConfigValue(const string& section, const string& name) const;
+    bool HasConfig(void) const;
 
 private:
     bool ProcessModules(void);

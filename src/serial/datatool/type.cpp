@@ -46,6 +46,7 @@
 #include "enumtype.hpp"
 #include "fileutil.hpp"
 #include "srcutil.hpp"
+#include "datatool.hpp"
 #include <serial/error_codes.hpp>
 #include <algorithm>
 
@@ -334,6 +335,9 @@ bool CDataType::CheckType(void) const
 
 const string CDataType::GetVar(const string& varName, int collect /*= 0*/) const
 {
+    if ( !((CDataTool*)CNcbiApplication::Instance())->HasConfig()) {
+        return kEmptyStr;
+    }
     const CDataType* parent = GetParentType();
     if (collect >=0 && GetDataMember()) {
 #if 0

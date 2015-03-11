@@ -815,6 +815,11 @@ string CDataTool::GetConfigValue(const string& section, const string& name) cons
     return generator.GetConfig().Get(section,name);
 }
 
+bool CDataTool::HasConfig(void) const
+{
+    return !generator.GetConfig().Empty();
+}
+
 END_NCBI_SCOPE
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
