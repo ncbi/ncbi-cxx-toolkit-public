@@ -3739,9 +3739,9 @@ static bool s_IsCompoundRptTypeValue(
     }
     
     bool last_char_was_close_paren = false;
-    string::const_iterator s = value.cbegin();
+    string::const_iterator s = value.begin();
     ++s;
-    while (s != value.cend()) {
+    while (s != value.end()) {
         if (*s == '(') {
             return false;
         } else if (last_char_was_close_paren) {
