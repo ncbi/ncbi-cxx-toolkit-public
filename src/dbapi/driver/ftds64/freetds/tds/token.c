@@ -3232,6 +3232,7 @@ tds_process_compute_names(TDSSOCKET * tds)
         }
         return TDS_SUCCEED;
     } else {
+        curptr = topptr;
         while (curptr != NULL) {
             freeptr = curptr;
             curptr = curptr->nextptr;
