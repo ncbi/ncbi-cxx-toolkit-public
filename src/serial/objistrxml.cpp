@@ -1110,6 +1110,11 @@ bool CObjectIStreamXml::SkipAnyContent(void)
         //EndSelfClosedTag();
         return true;
     }
+    if ( m_Attlist && InsideOpeningTag() ) {
+        ReadUndefinedAttributes();
+        m_Attlist = true;
+        return true;
+    }
     while (!NextTagIsClosing()) {
         while (NextIsTag()) {
             string tagName = ReadName(BeginOpeningTag());
