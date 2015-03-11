@@ -349,9 +349,8 @@ size_t CMemStore::Truncate(size_t size)
             // we have to delete the whole block
             delete [] m_Last->body;
             SMemBlock* t = m_Last->prev;
-            if ( t ) {
-                t->next = 0;
-            }
+            _ASSERT(t != NULL);
+            t->next = NULL;
             delete m_Last;
             _ASSERT(m_Last != t);
             m_Last = t;
@@ -360,7 +359,7 @@ size_t CMemStore::Truncate(size_t size)
             continue;
         }
         // we have to free some bytes
-        m_Last->free_space -= nof_bytes;
+        m_Last->free_space += nof_bytes;
         m_Size             -= nof_bytes;
         break;
     }
@@ -438,7 +437,8 @@ size_t CMemStore::Insert(const void* buff, size_t size)
 
     // try to merge the two last blocks
     SMemBlock* t_block = m_Current->next;
-    if ((m_Current->free_space + t_block->free_space) >= m_BlockSize) {
+    if (t_block != NULL
+        &&  (m_Current->free_space + t_block->free_space) >= m_BlockSize) {
         TSize f_free = m_BlockSize - m_Current->free_space;
         TSize k      = m_BlockSize - t_block->free_space;
         memcpy(&m_Current->body[f_free], t_block->body, k);
