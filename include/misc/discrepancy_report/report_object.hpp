@@ -49,8 +49,8 @@ typedef vector<CRef< CReportObject> > TReportObjectList;
 class NCBI_DISCREPANCY_REPORT_EXPORT CReportObject : public CObject
 {
 public:
-    CReportObject() : m_Text(""), m_FeatureTable(""), m_XML(""), m_Object(NULL) {}
-    CReportObject(CConstRef<CObject> obj) : m_Text(""), m_FeatureTable(""), m_XML(""), m_Object(obj) {}
+    CReportObject() : m_Object(NULL) {}
+    CReportObject(CConstRef<CObject> obj) : m_Object(obj) {}
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
