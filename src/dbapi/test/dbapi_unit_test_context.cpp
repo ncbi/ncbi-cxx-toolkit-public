@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(Test_SetMaxTextImageSize)
 
         // Set textsize ...
         {
-            rs = auto_stmt->ExecuteQuery("set textsize 123456");
+            auto_stmt->ExecuteQuery("set textsize 123456");
             DumpResults(auto_stmt.get());
         }
 

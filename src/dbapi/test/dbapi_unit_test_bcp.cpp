@@ -524,7 +524,6 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
                     BOOST_CHECK_EQUAL(result, data);
 
                     // Second record ...
-                    read_bytes = 0;
                     is_null = true;
 
                     BOOST_CHECK(rs->Fetch());
