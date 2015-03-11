@@ -283,7 +283,7 @@ protected:
 CStopWatch sw(CStopWatch::eStart);
         CPerfLogGuard pl("x_GetJobRepliesById");
         do {
-            ERASE_ITERATE(decltype(_job_ids), it, _job_ids) {
+            ERASE_ITERATE(list<string>, it, _job_ids) {
                 const auto& job_id = *it;
                 //CNetScheduleAPI::EJobStatus job_status;
                 int last_event_index;
