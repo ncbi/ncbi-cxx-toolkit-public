@@ -75,7 +75,7 @@ unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec, unsigned cha
             l_num = l_num/256;
             number--;
             if (number <= cs_num) {
-                if(needs_del) delete cs_num;
+                if (needs_del) delete[] cs_num;
                 return 0;
             }
         }
