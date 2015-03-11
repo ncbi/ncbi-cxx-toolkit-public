@@ -1827,7 +1827,8 @@ CMultiAligner::x_BuildAlignmentIterative(
             // either the best score stops improving or we've done
             // too many bipartitions
 
-            for (int i = 0; i < 5; i++) {
+            int num_tries = m_Options->GetRealign() ? 5 : 0;
+            for (int i = 0; i < num_tries; i++) {
                 new_score = realign_score;
 
                 // a single bipartition consists of systematically

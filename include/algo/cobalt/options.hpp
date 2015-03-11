@@ -236,6 +236,10 @@ public:
         // Iterative alignment
         fNoIterate = 1<<4,          ///< Do not use Iterative alignment
 
+        fNoRealign = 1<<5,    ///< Do not realign with different tree root
+
+        /// Set options for very fast alignment (speed over accuracy)
+        fFast = fNoRpsBlast | fNoIterate | fNoRealign,
         
         // Other
         fNonStandard = 1<<7   ///< Not used as input, indicates that
@@ -317,6 +321,12 @@ public:
     void SetIterate(bool use)
     {m_Iterate = use; m_Mode = fNonStandard;}
 
+    /// Set realigning MSA with different root nodes in the progressive
+    /// alignment tree
+    /// @param r Do realignment if true [in]
+    ///
+    void SetRealign(bool r)
+    {m_Realign = r; m_Mode = fNonStandard;}
 
     /// Check if iterative alignmnet option is used
     /// @return 
@@ -324,6 +334,12 @@ public:
     ///   - False otherwise
     ///
     bool GetIterate(void) const {return m_Iterate;}
+
+    /// Check if MSA is to be realigned for different rooting of progressive
+    /// alignment tree
+    /// @return True if MSA is to be realigned, false otherwise
+    ///
+    bool GetRealign(void) const {return m_Realign;}
 
 
     /// Use RPS Blast with given database
@@ -752,6 +768,9 @@ private:
     bool m_Iterate;
     double m_ConservedCutoff;
     double m_Pseudocount;
+
+    // Realign MSA for different progressive alignment tree rooting
+    bool m_Realign;
 
     // User constraints
     TConstraints m_UserHits;

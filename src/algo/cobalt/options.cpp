@@ -238,6 +238,8 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_ConservedCutoff = COBALT_CONSERVED_CUTOFF;
     m_Pseudocount = COBALT_PSEUDO_COUNT;
 
+    m_Realign = !(mode & fNoRealign);
+
     m_TreeMethod = COBALT_TREE_METHOD;
     m_LocalResFreqBoost = COBALT_LOCAL_BOOST;
 
