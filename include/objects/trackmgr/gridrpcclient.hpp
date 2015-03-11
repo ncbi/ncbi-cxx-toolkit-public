@@ -41,6 +41,7 @@
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <corelib/perf_log.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/compress/zlib.hpp>
 
@@ -229,18 +230,28 @@ public:
         m_Grid_cli->CloseStream();
 
         CNetScheduleJob& job = m_Grid_cli->GetJob();
-
-        CDeadline deadline(m_Timeout, 0);
+        x_PrepareJob(job);
 
         CNetScheduleNotificationHandler submit_job_handler;
         submit_job_handler.SubmitJob(m_NS_api.GetSubmitter(),
                                      job,
                                      m_Timeout
                                     );
-        LOG_POST(Trace << "job: " << job.job_id);
+        LOG_POST(Trace << "submitted job: " << job.job_id);
+        x_GetJobReply(submit_job_handler, job, reply);
+    }
 
+protected:
+    virtual void x_PrepareJob(CNetScheduleJob& job) const
+    {
+    }
+
+    template <class TReply>
+    void x_GetJobReply(CNetScheduleNotificationHandler& job_handler, CNetScheduleJob& job, TReply& reply) const
+    {
+        CDeadline deadline(m_Timeout, 0);
         CNetScheduleAPI::EJobStatus status(
-            submit_job_handler.WaitForJobCompletion(job, deadline, m_NS_api)
+            job_handler.WaitForJobCompletion(job, deadline, m_NS_api)
         );
 
         // TODO The wait is over; the current job status is in the status
@@ -250,13 +261,61 @@ public:
             // TODO The job has completed successfully.
             CStringOrBlobStorageReader reader(job.output, m_NC_api);
             CRStream rstr(&reader);
-            auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
+            unique_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
             *instr >> reply;
         }
         else {
             // TODO Check 'status' to see if the job's still running or
             // it has failed.
             NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, kEmptyStr);
+        }
+    }
+
+    template <class TReply>
+    void x_GetJobRepliesById(const vector<string> job_ids, vector<CRef<TReply>>& replies) const
+    {
+        CDeadline deadline(m_Timeout, 0);
+        static const CDeadline kTimeSlice = { 0, 100L * 1000000 }; // 100ms
+        CDeadline timeslice = kTimeSlice;
+
+        CNetScheduleNotificationHandler job_handler;
+        list<string> _job_ids(begin(job_ids), end(job_ids));
+CStopWatch sw(CStopWatch::eStart);
+        CPerfLogGuard pl("x_GetJobRepliesById");
+        do {
+            ERASE_ITERATE(decltype(_job_ids), it, _job_ids) {
+                const auto& job_id = *it;
+                //CNetScheduleAPI::EJobStatus job_status;
+                int last_event_index;
+            CNetScheduleJob job;
+            job.job_id = job_id;
+                const auto job_status = job_handler.WaitForJobCompletion(job, timeslice, m_NS_api);
+                if (job_status == CNetScheduleAPI::eDone) {
+                    VECTOR_ERASE(it, _job_ids);
+                    CStringOrBlobStorageReader reader(job.output, m_NC_api);
+                    CRStream rstr(&reader);
+                    unique_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
+                    auto reply = Ref(new TReply());
+                    *instr >> *reply;
+                    replies.push_back(reply);
+                }
+            }
+        } while (!deadline.IsExpired() && !_job_ids.empty());
+        pl.Post(CRequestStatus::e200_Ok, kEmptyStr);
+cerr << "x_GetJobRepliesById finished waiting: " << sw.Elapsed() << "s\n";
+    }
+
+    template <class TReply>
+    void x_GetJobById(const string job_id, TReply& reply) const
+    {
+        CDeadline deadline(m_Timeout, 0);
+        CNetScheduleNotificationHandler job_handler;
+        CNetScheduleAPI::EJobStatus job_status;
+        int last_event_index;
+        if (job_handler.RequestJobWatching(m_NS_api, job_id, deadline, &job_status, &last_event_index)) {
+            CNetScheduleJob job;
+            job.job_id = job_id;
+            x_GetJobReply(job_handler, job, reply);
         }
     }
 
