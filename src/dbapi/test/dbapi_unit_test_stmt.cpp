@@ -43,13 +43,13 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
         // 1) Select recordset with just one record
         // 2) Retrive only one record.
         // 3) Select another recordset with just one record
-        {
+        try {
             auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             // 1) Select recordset with just one record
             rs = auto_stmt->ExecuteQuery( "select qq = 57 + 33" );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
 
             // 2) Retrive a record.
             BOOST_CHECK( rs->Next() );
@@ -57,19 +57,20 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 
             // 3) Select another recordset with just one record
             rs = auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
+        } catch (boost::execution_aborted) {
         }
 
         // Same as before but uses two differenr connections ...
-        if (false) {
+        if (false) try {
             auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             // 1) Select recordset with just one record
             rs = auto_stmt->ExecuteQuery( "select qq = 57 + 33" );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
 
             // 2) Retrive only one record.
             BOOST_CHECK( rs->Next() );
@@ -78,26 +79,28 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             // 3) Select another recordset with just one record
             auto_ptr<IStatement> auto_stmt2( GetConnection().CreateStatement() );
             rs = auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
+        } catch (boost::execution_aborted) {
         }
 
         // Check column name ...
-        {
+        try {
             auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             IResultSet* rs(
                 auto_stmt->ExecuteQuery( "select @@version as oops" )
                 );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
             auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
             BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
+        } catch (boost::execution_aborted) {
         }
 
         // Check resultset ...
-        {
+        try {
             int num = 0;
             string sql = "select user_id(), convert(varchar(64), user_name()), "
                 "convert(nvarchar(64), user_name())";
@@ -106,7 +109,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 
             // 1) Select recordset with just one record
             IResultSet* rs( auto_stmt->ExecuteQuery( sql ) );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
 
             while (rs->Next()) {
                 BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
@@ -116,6 +119,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             }
 
             BOOST_CHECK_EQUAL(num, 1);
+        } catch (boost::execution_aborted) {
         }
 
         // Check sequent call of ExecuteQuery ...
@@ -126,17 +130,23 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             // Run first time ...
             rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
             BOOST_CHECK( rs != NULL );
-            BOOST_CHECK( rs->Next() );
+            if (rs != NULL) {
+                BOOST_CHECK( rs->Next() );
+            }
 
             // Run second time ...
             rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
             BOOST_CHECK( rs != NULL );
-            BOOST_CHECK( rs->Next() );
+            if (rs != NULL) {
+                BOOST_CHECK( rs->Next() );
+            }
 
             // Run third time ...
             rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
             BOOST_CHECK( rs != NULL );
-            BOOST_CHECK( rs->Next() );
+            if (rs != NULL) {
+                BOOST_CHECK( rs->Next() );
+            }
         } else {
             GetArgs().PutMsgDisabled("Check sequent call of ExecuteQuery");
         }
@@ -301,328 +311,354 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
         // First test ...
         {
             // bit
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(bit, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // tinyint
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(tinyint, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smallint
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(smallint, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // int
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(int, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // numeric
             if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
 
                     BOOST_CHECK(rs->Next());
                     BOOST_CHECK(!rs->Next());
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
 
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(numeric(18, 2), 2843113322)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
 
                     BOOST_CHECK(rs->Next());
                     BOOST_CHECK(!rs->Next());
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
             }
 
             // decimal
             if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // float
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(float(4), 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // double
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // real
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(real, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smallmoney
             // Unsupported type ...
-        //     {
+        //     try {
         //         rs = auto_stmt->ExecuteQuery("select convert(smallmoney, 1)");
-        //         BOOST_CHECK(rs != NULL);
+        //         BOOST_REQUIRE(rs != NULL);
         //
         //         BOOST_CHECK(rs->Next());
         //         BOOST_CHECK(!rs->Next());
         //
         //         DumpResults(auto_stmt.get());
+        //     } catch (boost::execution_aborted) {
         //     }
 
             // money
             // Unsupported type ...
-        //     {
+        //     try {
         //         rs = auto_stmt->ExecuteQuery("select convert(money, 1)");
-        //         BOOST_CHECK(rs != NULL);
+        //         BOOST_REQUIRE(rs != NULL);
         //
         //         BOOST_CHECK(rs->Next());
         //         BOOST_CHECK(!rs->Next());
         //
         //         DumpResults(auto_stmt.get());
+        //     } catch (boost::execution_aborted) {
         //     }
 
             // smalldatetime
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // datetime
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // char
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(char(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // varchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // nchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // nvarchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // binary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // varbinary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // text
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // image
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK(!rs->Next());
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
         }
 
         // Second test ...
         {
             // bit
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(bit, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_Bit* data = dynamic_cast<CDB_Bit*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // tinyint
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(tinyint, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_TinyInt* data = dynamic_cast<CDB_TinyInt*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smallint
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(smallint, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_SmallInt* data = dynamic_cast<CDB_SmallInt*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // int
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(int, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_Int* data = dynamic_cast<CDB_Int*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // numeric
             if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
 
                     BOOST_CHECK(rs->Next());
                     const CVariant& variant = rs->GetVariant(1);
@@ -647,12 +683,13 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     }
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
 
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(numeric(18, 2), 2843113322)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
 
                     BOOST_CHECK(rs->Next());
                     const CVariant& variant = rs->GetVariant(1);
@@ -682,14 +719,15 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     }
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
             }
 
             // decimal
             if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -714,17 +752,18 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 // CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
-                // BOOST_CHECK(data);
+                // BOOST_REQUIRE(data != NULL);
 
                 // BOOST_CHECK_EQUAL(data->Value(), string("1"));
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // float
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(float(4), 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -748,103 +787,110 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // double
             {
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
 
                     BOOST_CHECK(rs->Next());
                     const CVariant& variant = rs->GetVariant(1);
 
                     CDB_Double* data = dynamic_cast<CDB_Double*>(variant.GetData());
-                    BOOST_CHECK(data);
+                    BOOST_REQUIRE(data != NULL);
 
                     BOOST_CHECK_EQUAL(data->Value(), 1);
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
 
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(double precision, 2843113322)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
 
                     BOOST_CHECK(rs->Next());
                     const CVariant& variant = rs->GetVariant(1);
 
                     CDB_Double* data = dynamic_cast<CDB_Double*>(variant.GetData());
-                    BOOST_CHECK(data);
+                    BOOST_REQUIRE(data != NULL);
 
                     BOOST_CHECK_EQUAL(data->Value(), 2843113322U);
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
             }
 
             // real
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(real, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_Float* data = dynamic_cast<CDB_Float*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smallmoney
             // Unsupported type ...
-        //     {
+        //     try {
         //         rs = auto_stmt->ExecuteQuery("select convert(smallmoney, 1)");
-        //         BOOST_CHECK(rs != NULL);
+        //         BOOST_REQUIRE(rs != NULL);
         //
         //         BOOST_CHECK(rs->Next());
         //         BOOST_CHECK(!rs->Next());
         //
         //         DumpResults(auto_stmt.get());
+        //     } catch (boost::execution_aborted) {
         //     }
 
             // money
             // Unsupported type ...
-        //     {
+        //     try {
         //         rs = auto_stmt->ExecuteQuery("select convert(money, 1)");
-        //         BOOST_CHECK(rs != NULL);
+        //         BOOST_REQUIRE(rs != NULL);
         //
         //         BOOST_CHECK(rs->Next());
         //         BOOST_CHECK(!rs->Next());
         //
         //         DumpResults(auto_stmt.get());
+        //     } catch (boost::execution_aborted) {
         //     }
 
             // smalldatetime
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_SmallDateTime* data = dynamic_cast<CDB_SmallDateTime*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 // BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // datetime
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -856,18 +902,19 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     GetArgs().PutMsgExpected("CDB_DateTime", "CDB_SmallDateTime");
 
                     CDB_SmallDateTime* data = dynamic_cast<CDB_SmallDateTime*>(variant.GetData());
-                    BOOST_CHECK(data);
+                    BOOST_REQUIRE(data != NULL);
                 }
 
                 // BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // char
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(char(10), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -907,12 +954,13 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
 
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // varchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(varchar(10), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -951,12 +999,13 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // nchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(nchar(10), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -992,12 +1041,13 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // nvarchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(nvarchar(10), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -1036,12 +1086,13 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // binary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(10), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -1103,14 +1154,15 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // long binary
             // dblib cannot transfer more than 255 bytes ...
             if (GetArgs().GetDriverName() != dblib_driver
-                ) {
+                ) try {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(1000), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -1171,14 +1223,15 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             } else {
                 GetArgs().PutMsgDisabled("Test_Recordset: Second test - long binary");
             }
 
             // varbinary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(varbinary(10), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
@@ -1198,7 +1251,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
 
                 //
                 CDB_VarBinary* data = dynamic_cast<CDB_VarBinary*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 BOOST_CHECK_EQUAL(data->Size(), size_t(5));
                 BOOST_CHECK_EQUAL(string(static_cast<const char*>(data->Value()),
@@ -1221,28 +1274,30 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // text
-            if (GetArgs().GetDriverName() != dblib_driver) {
+            if (GetArgs().GetDriverName() != dblib_driver) try {
                 rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_Text* data = dynamic_cast<CDB_Text*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 // BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             } else {
                 GetArgs().PutMsgDisabled("Test_Recordset: Second test - text");
             }
 
             // image
-            if (GetArgs().GetDriverName() != dblib_driver) {
+            if (GetArgs().GetDriverName() != dblib_driver) try {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
                 BOOST_CHECK(rs != NULL);
 
@@ -1250,11 +1305,12 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 const CVariant& variant = rs->GetVariant(1);
 
                 CDB_Image* data = dynamic_cast<CDB_Image*>(variant.GetData());
-                BOOST_CHECK(data);
+                BOOST_REQUIRE(data != NULL);
 
                 // BOOST_CHECK_EQUAL(data->Value(), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             } else {
                 GetArgs().PutMsgDisabled("Test_Recordset: Second test - image");
             }
@@ -1279,12 +1335,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
         // Check non-empty results ...
         {
             // bit
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery
                     ("select convert(bit, 1) as [x y]");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
                 // 1-based, sensitive to case and internal whitespace
                 BOOST_CHECK( !md->HasColumn(0) );
                 BOOST_CHECK(md->HasColumn(1));
@@ -1300,14 +1356,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 1);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // tinyint
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(tinyint, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_TinyInt);
@@ -1317,14 +1374,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK_EQUAL(md->GetMaxSize(1), 1);
                 }
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smallint
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(smallint, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_SmallInt);
@@ -1336,14 +1394,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // int
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(int, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Int);
@@ -1355,16 +1414,17 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // numeric
             {
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
                     md = rs->GetMetaData();
-                    BOOST_CHECK(md);
+                    BOOST_REQUIRE(md != NULL);
 
                     EDB_Type curr_type = md->GetType(1);
                     BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
@@ -1376,14 +1436,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     }
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
 
                 //
-                {
+                try {
                     rs = auto_stmt->ExecuteQuery("select convert(numeric(18, 2), 2843113322)");
-                    BOOST_CHECK(rs != NULL);
+                    BOOST_REQUIRE(rs != NULL);
                     md = rs->GetMetaData();
-                    BOOST_CHECK(md);
+                    BOOST_REQUIRE(md != NULL);
 
                     EDB_Type curr_type = md->GetType(1);
                     BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
@@ -1395,29 +1456,31 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     }
 
                     DumpResults(auto_stmt.get());
+                } catch (boost::execution_aborted) {
                 }
             }
 
             // decimal
             // There is no eDB_Decimal ...
-            if (false) {
+            if (false) try {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // float
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(float(4), 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Float);
@@ -1429,14 +1492,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // double
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
@@ -1448,14 +1512,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // real
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(real, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Float);
@@ -1467,44 +1532,47 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smallmoney
             // Unsupported type ...
-            if (false) {
+            if (false) try {
                 rs = auto_stmt->ExecuteQuery("select convert(smallmoney, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // money
             // Unsupported type ...
-            if (false) {
+            if (false) try {
                 rs = auto_stmt->ExecuteQuery("select convert(money, 1)");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // smalldatetime
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_SmallDateTime);
@@ -1516,14 +1584,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // datetime
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
@@ -1535,14 +1604,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // char
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(char(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 if (GetArgs().GetDriverName() == odbc_driver) {
@@ -1554,14 +1624,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // long char
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(char(8000), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 if (GetArgs().GetDriverName() == ftds_driver ||
@@ -1582,28 +1653,30 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // varchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
                 // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // nchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 if (GetArgs().GetDriverName() == odbc_driver) {
@@ -1614,28 +1687,30 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // nvarchar
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
                 // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // binary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 if (GetArgs().GetDriverName() == odbc_driver) {
@@ -1646,14 +1721,15 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // long binary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(8000), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 if ((GetArgs().GetDriverName() == ftds_driver &&
@@ -1683,20 +1759,22 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // varbinary
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // Explicitly set max LOB size ...
@@ -1720,31 +1798,33 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
             }
 
             // text
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Text);
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2147483647);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
 
             // image
-            {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
                 md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Image);
                 BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2147483647);
 
                 DumpResults(auto_stmt.get());
+            } catch (boost::execution_aborted) {
             }
         }
 

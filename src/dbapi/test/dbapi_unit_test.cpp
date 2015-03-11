@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
         sql += "for xml explicit";
 
         rs = auto_stmt->ExecuteQuery(sql);
-        BOOST_CHECK(rs != NULL);
+        BOOST_REQUIRE(rs != NULL);
 
 //         if (rs->Next()) {
 //             const CVariant& value = rs->GetVariant(1);
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
 
         sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
         rs = auto_stmt->ExecuteQuery(sql);
-        BOOST_CHECK(rs != NULL);
+        BOOST_REQUIRE(rs != NULL);
 
 //         if (rs->Next()) {
 //             const CVariant& value = rs->GetVariant(1);

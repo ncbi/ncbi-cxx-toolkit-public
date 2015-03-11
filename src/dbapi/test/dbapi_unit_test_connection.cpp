@@ -965,7 +965,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
         const string target_db_name("DBAPI_Sample");
 
         // Check method Connect() ...
-        {
+        try {
             auto_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
             conn->Connect(
                 GetArgs().GetConnParams().GetUserName(),
@@ -976,10 +976,11 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
             auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
             IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
             const  string db_name = rs->GetVariant(1).GetString();
             BOOST_CHECK_EQUAL(db_name, target_db_name);
+        } catch (boost::execution_aborted) {
         }
 
         // Check method ConnectValidated() ...
@@ -996,7 +997,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
             auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
             IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
             const  string db_name = rs->GetVariant(1).GetString();
             BOOST_CHECK_EQUAL(db_name, target_db_name);
@@ -1028,7 +1029,7 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
         // Check that database was set correctly with the new connection ...
         {
             IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
             const  string db_name = rs->GetVariant(1).GetString();
             BOOST_CHECK_EQUAL(db_name, target_db_name);

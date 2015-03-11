@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(Test_SetMaxTextImageSize)
         // Check what we've got ...
         {
             rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
-            BOOST_CHECK(rs != NULL);
+            BOOST_REQUIRE(rs != NULL);
             md = rs->GetMetaData();
             BOOST_CHECK(md);
 

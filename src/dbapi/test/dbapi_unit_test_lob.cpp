@@ -772,7 +772,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
         bool rc = false;
         auto_ptr<CDB_LangCmd> auto_stmt;
         CDB_Connection* conn = GetConnection().GetCDB_Connection();
-        BOOST_CHECK(conn != NULL);
+        BOOST_REQUIRE(conn != NULL);
 
         // Clean table ...
         {
@@ -897,7 +897,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
         bool rc = false;
         auto_ptr<CDB_LangCmd> auto_stmt;
         CDB_Connection* conn = GetConnection().GetCDB_Connection();
-        BOOST_CHECK(conn != NULL);
+        BOOST_REQUIRE(conn != NULL);
 
         // Prepare data ...
         {
