@@ -48,6 +48,7 @@ public:
     virtual ~AbstractParser(void);
 
     virtual string GetLocation(void);
+    NCBI_NORETURN
     virtual void ParseError(const char* error, const char* expected,
                             const AbstractToken& token);
     virtual void EndCommentBlock(void) {}
