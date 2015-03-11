@@ -85,7 +85,8 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
 
     void AddAssociation(int cmd_id, int opt_id);
 
-    /// Parse the command line. 
+    /// Parse the command line. Print program version or the help screen
+    /// if requested by the command line arguments.
     /// @return One of the command identifiers or -1 if the requested
     ///         command is either help or version command, in which
     ///         case it has been already processed by this method, and
