@@ -1854,7 +1854,9 @@ CMultiAligner::x_BuildAlignmentIterative(
                 }
                 realign_score = new_score;
             }
-            realign_score = max(realign_score, new_score);
+            if (m_Options->GetRealign()) {
+                realign_score = max(realign_score, new_score);
+            }
 
             //-------------------------------------------------
             if (m_Options->GetVerbose()) {
