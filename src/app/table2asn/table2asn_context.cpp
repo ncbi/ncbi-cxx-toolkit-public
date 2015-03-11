@@ -483,6 +483,7 @@ void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
     {
         bioseq = &entry.SetSet().SetSeq_set().front()->SetSeq();
     }
+    _ASSERT(bioseq);
     bioseq->SetId().clear();
     bioseq->SetId().push_back(id);
     // now it's good to rename features ....

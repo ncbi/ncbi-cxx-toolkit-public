@@ -915,6 +915,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
         int ext = args["Mext"].AsInteger();
         if ( ext == 0 || (ext & (ext-1)) != 0 ) {
             ERR_POST(Fatal<<"Only single external annotation bit is allowed.");
+            Abort();
         }
     }
     bool readHook = args["ih"];

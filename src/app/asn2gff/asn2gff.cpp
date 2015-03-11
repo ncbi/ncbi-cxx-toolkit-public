@@ -439,7 +439,7 @@ CAsn2GffApp::x_SeqIdToGiNumber(
         // multiple hits? Unexpected and definitely not a good thing...
         ERR_POST( Fatal << "Unexpected: The ID " << seq_id.c_str() 
             << " turned up multiple hits." );
-       break;
+        Abort();
     }
 
     return 0;
@@ -475,6 +475,7 @@ CAsn2GffApp::HandleSeqID(
     }
     catch ( CException& ) {
         ERR_POST( Fatal << "The ID " << seq_id.c_str() << " is not a valid seq ID." );
+        Abort();
     }
     
     unsigned int gi_number = NStr::StringToUInt( seq_id, NStr::fConvErr_NoThrow );
@@ -492,6 +493,7 @@ CAsn2GffApp::HandleSeqID(
     if ( 0 == gi_number ) {
         ERR_POST(Fatal << "Given ID \"" << seq_id.c_str() 
           << "\" does not resolve to a GI number." );
+        Abort();
     }
        
     //
@@ -505,6 +507,7 @@ CAsn2GffApp::HandleSeqID(
     if ( ! bsh ) {
         ERR_POST(Fatal << "Unable to obtain data on ID \"" << seq_id.c_str() 
           << "\"." );
+        Abort();
     }
     
     //
@@ -524,6 +527,7 @@ CAsn2GffApp::HandleSeqID(
             }
         } catch (CException& ) {
             ERR_POST( Fatal << "Flat file generation failed on " << id.DumpAsFasta() );
+            Abort();
         }
     }
     return true;

@@ -122,6 +122,7 @@ int CDemoApp::Run(void)
     // Check if the handle is valid
     if ( !handle ) {
         ERR_POST(Fatal << "Bioseq not found");
+        Abort();
     }
 
     size_t count = 0;

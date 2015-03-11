@@ -403,7 +403,7 @@ int CCleanupApp::x_SeqIdToGiNumber(
         // multiple hits? Unexpected and definitely not a good thing...
         ERR_POST( Fatal << "Unexpected: The ID " << seq_id.c_str() 
             << " turned up multiple hits." );
-       break;
+        Abort();
     }
 
     return 0;
@@ -421,6 +421,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     }
     catch ( CException& ) {
         ERR_POST( Fatal << "The ID " << seq_id.c_str() << " is not a valid seq ID." );
+        Abort();
     }
     
     unsigned int gi_number = NStr::StringToUInt( seq_id, NStr::fConvErr_NoThrow );
@@ -438,6 +439,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     if ( 0 == gi_number ) {
         ERR_POST(Fatal << "Given ID \"" << seq_id.c_str() 
           << "\" does not resolve to a GI number." );
+        Abort();
     }
        
     //

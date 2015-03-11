@@ -587,6 +587,7 @@ bool CId1FetchApp::LookUpGI(TGi gi)
         handle = m_Scope->GetBioseqHandle(id);
         if ( !handle ) {
             ERR_POST(Fatal << "Bioseq not found: " << id.DumpAsFasta());
+            Abort();
         }
         reply_object = handle.GetTopLevelEntry().GetCompleteSeq_entry();
     }
@@ -604,6 +605,7 @@ bool CId1FetchApp::LookUpGI(TGi gi)
         handle = m_Scope->GetBioseqHandleFromTSE(id, tse);
         if ( !handle ) {
             ERR_POST(Fatal << "Bioseq not found: " << id.DumpAsFasta());
+            Abort();
         }
     }
 

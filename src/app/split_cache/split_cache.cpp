@@ -414,6 +414,7 @@ void CSplitCacheApp::SetupCache(void)
             CCacheWriter* cwriter = dynamic_cast<CCacheWriter*>(writer);
             if ( !cwriter ) {
                 ERR_POST(Fatal<<"failed to get writer");
+                Abort();
             }
             m_IdCache.reset(cwriter->GetIdCache(), eNoOwnership);
             m_Cache.reset(cwriter->GetBlobCache(), eNoOwnership);
@@ -567,6 +568,7 @@ void CSplitCacheApp::Process(void)
         NStr::Tokenize(args["blob_id"].AsString(), ",", vv);
         if ( vv.size() != 2 && vv.size() != 3 ) {
             ERR_POST(Fatal<<"Bad blob_id");
+            Abort();
         }
         CBlob_id blob_id;
         blob_id.SetSat(NStr::StringToInt(vv[0]));
