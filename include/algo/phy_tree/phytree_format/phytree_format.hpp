@@ -68,7 +68,7 @@ public:
     /// Information shown as labels in the guide tree
     ///
     enum ELabelType {
-        eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName, eTaxNameAndAccession
+        eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName, eTaxNameAndAccession, eCommonName
     };
 
     /// Feature IDs used in guide tree
@@ -89,7 +89,8 @@ public:
         eTreeSimplificationTagId, ///< Is subtree collapsed
         eNodeInfoId,     ///< Used for denoting query nodes
         eLeafCountId,
-        eLastId = eLeafCountId ///< Last Id (with largest index)
+        eCommonNameID,
+        eLastId = eCommonNameID ///< Last Id (with largest index)
     };
 
     enum eSeqType {
@@ -255,6 +256,7 @@ public:
         case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
         case eNodeInfoId : return "node-info";
         case eLeafCountId : return "leaf-count";
+        case eCommonNameID : return "common-name";        
         default: return "";
         }
     }
