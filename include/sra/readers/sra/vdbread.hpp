@@ -204,7 +204,8 @@ class NCBI_SRAREAD_EXPORT CVResolver
     : public CSraRef<VResolver>
 {
 public:
-    CVResolver(const CVFSManager& mgr, const CKConfig& cfg);
+    CVResolver(const CVFSManager& mgr);
+    NCBI_DEPRECATED_CTOR(CVResolver(const CVFSManager& mgr, const CKConfig& cfg));
     explicit CVResolver(ENull /*null*/)
         : m_Mgr(null)
         {

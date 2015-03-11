@@ -288,6 +288,17 @@ string CVPath::ConvertAccOrSysPathToPOSIX(const string& acc_or_path)
 /////////////////////////////////////////////////////////////////////////////
 // CVResolver
 
+CVResolver::CVResolver(const CVFSManager& mgr)
+    : m_Mgr(mgr)
+{
+    if ( rc_t rc = VFSManagerGetResolver(mgr, x_InitPtr()) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot get VResolver", rc);
+    }
+}
+
+
 CVResolver::CVResolver(const CVFSManager& mgr, const CKConfig& cfg)
     : m_Mgr(mgr)
 {
@@ -337,7 +348,7 @@ CVDBMgr::CVDBMgr(void)
 string CVDBMgr::FindAccPath(const string& acc) const
 {
     if ( !m_Resolver ) {
-        m_Resolver = CVResolver(CVFSManager(*this), CKConfig(*this));
+        m_Resolver = CVResolver(CVFSManager(*this));
     }
     return m_Resolver.Resolve(acc);
 }
