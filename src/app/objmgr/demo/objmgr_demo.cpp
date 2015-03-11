@@ -960,7 +960,7 @@ int CDemoApp::Run(void)
                  << NcbiEndl;
     }
     if ( handle && args["get_title"] ) {
-        NcbiCout << "Title: \"" << sequence::GetTitle(handle) << "\""
+        NcbiCout << "Title: \"" << sequence::CDeflineGenerator().GenerateDefline(handle) << "\""
                  << NcbiEndl;
     }
     // Check if the handle is valid
@@ -1239,7 +1239,7 @@ int CDemoApp::Run(void)
             if ( scan_whole_sequence2 ) {
                 CStopWatch sw(CStopWatch::eStart);
                 NcbiCout << "Scanning sequence..." << NcbiFlush;
-                size_t pos = 0;
+                TSeqPos pos = 0;
                 try {
                     string buffer;
                     CSeqVector::TMutexGuard guard(seq_vect.GetMutex());
@@ -1260,7 +1260,7 @@ int CDemoApp::Run(void)
                             continue;
                         }
                         if ( (pos & 0xffff) == 0 ) {
-                            size_t cnt = min(size_t(99), seq_vect.size()-pos);
+                            TSeqPos cnt = min(TSeqPos(99), seq_vect.size()-pos);
                             seq_vect.GetSeqData(pos, pos+cnt, buffer);
                             pos += cnt;
                         }
@@ -1353,7 +1353,7 @@ int CDemoApp::Run(void)
             base_sel.SetMaxSearchSegments(args["max_search_segments"].AsInteger());
         }
         if ( args["max_search_time"] ) {
-            base_sel.SetMaxSearchTime(args["max_search_time"].AsDouble());
+            base_sel.SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
         }
         if ( no_feat_policy ) {
             base_sel.SetAdaptiveDepthFlags(base_sel.GetAdaptiveDepthFlags()&
