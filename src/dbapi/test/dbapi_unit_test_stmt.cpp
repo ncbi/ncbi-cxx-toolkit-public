@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmtXML)
 
             sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
             rs = auto_stmt->ExecuteQuery( sql );
-            BOOST_CHECK( rs != NULL );
+            BOOST_REQUIRE( rs != NULL );
 
             if ( !rs->Next() ) {
                 BOOST_FAIL( msg_record_expected );
@@ -1299,7 +1299,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             // image
             if (GetArgs().GetDriverName() != dblib_driver) try {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
-                BOOST_CHECK(rs != NULL);
+                BOOST_REQUIRE(rs != NULL);
 
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
