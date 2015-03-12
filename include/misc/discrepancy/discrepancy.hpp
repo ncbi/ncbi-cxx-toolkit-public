@@ -30,6 +30,8 @@
 #ifndef _MISC_DISCREPANCY_DISCREPANCY_H_
 #define _MISC_DISCREPANCY_DISCREPANCY_H_
 
+#include <corelib/ncbistd.hpp>
+#include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE

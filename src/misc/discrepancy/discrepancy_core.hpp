@@ -160,11 +160,11 @@ protected:
 // MACRO definitions
 
 #define DISCREPANCY_LINK_MODULE(name) \
-    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=0;} }; \
+    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=0;} };            \
     static CDiscrepancyModule_##name module_##name;
 
 #define DISCREPANCY_MODULE(name) \
-    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=0;} }; \
+    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=0;} };            \
     void* CDiscrepancyModule_##name::dummy=0;
 
 
