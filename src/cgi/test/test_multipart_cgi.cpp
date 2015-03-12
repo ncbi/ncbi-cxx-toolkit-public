@@ -105,6 +105,5 @@ int CTestMultipartCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, char** argv)
 {
-    return CTestMultipartCgiApplication().AppMain(argc, argv, 0,
-                                                  eDS_Default, 0);
+    return CTestMultipartCgiApplication().AppMain(argc, argv);
 }

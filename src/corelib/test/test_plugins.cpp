@@ -389,11 +389,10 @@ int CTest::Run(void)
 }
 
 
-///////////////////////////////////
-// APPLICATION OBJECT  and  MAIN
-//
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
 
 int main(int argc, const char* argv[])
 {
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv);
 }

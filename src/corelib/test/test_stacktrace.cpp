@@ -103,7 +103,10 @@ int CTestStackTrace::Run(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
+
 int main(int argc, const char* argv[])
 {
-    return CTestStackTrace().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestStackTrace().AppMain(argc, argv);
 }

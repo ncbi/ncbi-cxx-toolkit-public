@@ -438,5 +438,5 @@ int main(int argc, const char* argv[])
 {
     CDiagContext::SetLogTruncate(true);
     SetDiagPostFlag(eDPF_DateTime);
-    return CThreadPoolTester().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CThreadPoolTester().AppMain(argc, argv);
 }

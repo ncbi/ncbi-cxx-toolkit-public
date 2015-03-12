@@ -1401,5 +1401,5 @@ int CNcbiApplogApp::Run(void)
 int main(int argc, const char* argv[]) 
 {
     CNcbiApplogApp app;
-    return app.AppMain(argc, argv, 0, eDS_User);
+    return app.AppMain(argc, argv, 0, eDS_User /* do not redefine */);
 }

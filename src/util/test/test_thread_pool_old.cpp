@@ -145,5 +145,5 @@ int CThreadPoolTester::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CThreadPoolTester().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CThreadPoolTester().AppMain(argc, argv);
 }

@@ -267,5 +267,5 @@ int CTestICClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestICClient().AppMain(argc, argv, 0, eDS_Default);
+    return CTestICClient().AppMain(argc, argv);
 }

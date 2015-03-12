@@ -669,5 +669,5 @@ void CArgTestApplication::Exit(void)
 
 int main(int argc, const char* argv[])
 {
-    return CArgTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CArgTestApplication().AppMain(argc, argv);
 }

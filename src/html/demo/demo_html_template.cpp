@@ -317,5 +317,5 @@ static CDemoApplication theDemoApplication;
 int main(int argc, const char* argv[])
 {
     // Execute main application function.
-    return theDemoApplication.AppMain(argc, argv, 0, eDS_Default, 0);
+    return theDemoApplication.AppMain(argc, argv);
 }

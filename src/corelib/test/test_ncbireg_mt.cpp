@@ -387,5 +387,5 @@ bool CTestRegApp::TestApp_Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    return CTestRegApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestRegApp().AppMain(argc, argv);
 }

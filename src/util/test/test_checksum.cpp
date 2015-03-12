@@ -550,5 +550,5 @@ int CChecksumTestApp::Run(void)
 
 int main(int argc, char** argv)
 {
-    return CChecksumTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CChecksumTestApp().AppMain(argc, argv);
 }

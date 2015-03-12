@@ -263,7 +263,7 @@ int main(int argc, const char* argv[])
 
     if (argc == 1) {
         // Execute main application function
-        return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+        return CTest().AppMain(argc, argv);
     }
 
     x_SetupDiag("Child");

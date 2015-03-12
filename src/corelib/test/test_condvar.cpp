@@ -376,5 +376,5 @@ int main(int argc, const char* argv[])
             return 0;
     }
     // Execute main application function
-    return CTestCondVarApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestCondVarApp().AppMain(argc, argv);
 }

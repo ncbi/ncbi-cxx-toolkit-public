@@ -234,5 +234,5 @@ int main(int argc, const char* argv[])
     assert(CLZOCompression::Initialize());
 #  endif
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv);
 }

@@ -411,5 +411,5 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[]) 
 {
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv);
 }

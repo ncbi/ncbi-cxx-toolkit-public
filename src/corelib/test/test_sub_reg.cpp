@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
+
 int main(int argc, char** argv)
 {
     return CTestSubRegApp().AppMain(argc, argv, 0, eDS_ToStderr);

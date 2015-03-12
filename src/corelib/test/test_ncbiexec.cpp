@@ -327,5 +327,5 @@ int main(int argc, const char* argv[], const char* envp[])
     LOG_POST("Start tests:\n");
 
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv);
 }

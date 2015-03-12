@@ -188,5 +188,5 @@ bool CTestSemaphoreApp::TestApp_Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    return CTestSemaphoreApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestSemaphoreApp().AppMain(argc, argv);
 }

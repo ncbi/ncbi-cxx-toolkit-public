@@ -121,5 +121,5 @@ int CConfigTestApplication::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CConfigTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CConfigTestApplication().AppMain(argc, argv);
 }

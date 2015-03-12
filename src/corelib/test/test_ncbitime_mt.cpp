@@ -732,5 +732,5 @@ int main(int argc, const char* argv[])
 {
     // Reinit global timezone variables
     tzset();
-    return CTestRegApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestRegApp().AppMain(argc, argv);
 }

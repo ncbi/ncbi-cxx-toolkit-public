@@ -141,5 +141,5 @@ void CSubImageApp::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CSubImageApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSubImageApp().AppMain(argc, argv);
 }

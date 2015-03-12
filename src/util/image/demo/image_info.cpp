@@ -135,5 +135,5 @@ void CImageTestApp::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CImageTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CImageTestApp().AppMain(argc, argv);
 }

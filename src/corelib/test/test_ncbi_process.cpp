@@ -242,5 +242,5 @@ int CTestApplication::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain(argc, argv);
 }

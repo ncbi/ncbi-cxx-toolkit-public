@@ -80,5 +80,5 @@ static int s_Demo(void)
 int main() 
 {
     IOS_BASE::sync_with_stdio(false);
-	return s_Demo();
+    return s_Demo();
 }

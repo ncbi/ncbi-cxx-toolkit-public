@@ -254,5 +254,5 @@ int CRegexApplication::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CRegexApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CRegexApplication().AppMain(argc, argv);
 }

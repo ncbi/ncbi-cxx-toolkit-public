@@ -62,5 +62,5 @@ void CApp::Init(void)
 
 int main(int argc, const char* argv[])
 {
-    return CApp().AppMain(argc, argv, 0, eDS_Default);
+    return CApp().AppMain(argc, argv);
 }

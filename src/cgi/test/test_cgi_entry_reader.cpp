@@ -144,6 +144,5 @@ int CTestCgiEntryReaderApplication::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, char** argv)
 {
-    return CTestCgiEntryReaderApplication().AppMain(argc, argv, 0,
-                                                    eDS_Default, 0);
+    return CTestCgiEntryReaderApplication().AppMain(argc, argv);
 }

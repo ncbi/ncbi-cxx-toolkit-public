@@ -135,7 +135,7 @@ CTestApplication::~CTestApplication()
 }
 
 
-int main(int argc, const char* argv[] /*, const char* envp[]*/)
+int main(int argc, const char* argv[])
 {
-    return CTestApplication().AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
+    return CTestApplication().AppMain(argc, argv);
 }

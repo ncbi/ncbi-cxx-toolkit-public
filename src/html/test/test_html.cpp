@@ -213,5 +213,5 @@ static CTestApplication theTestApplication;
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
+    return theTestApplication.AppMain(argc, argv);
 }

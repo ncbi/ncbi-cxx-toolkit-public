@@ -480,5 +480,5 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv);
 }

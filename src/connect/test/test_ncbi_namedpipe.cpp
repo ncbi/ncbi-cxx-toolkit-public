@@ -363,5 +363,5 @@ void CTest::Server(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv);
 }

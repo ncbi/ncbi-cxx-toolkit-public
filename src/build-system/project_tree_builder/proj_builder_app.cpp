@@ -2978,5 +2978,5 @@ int NcbiSys_main(int argc, TXChar* argv[])
     // Execute main application function
     CDiagContext::SetLogTruncate(true);
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err, (unsigned int)-1);
-    return GetApp().AppMain(argc, argv, 0, eDS_Default);
+    return GetApp().AppMain(argc, argv);
 }

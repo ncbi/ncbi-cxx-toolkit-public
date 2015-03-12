@@ -373,5 +373,5 @@ bool CTestQueueApp::TestApp_Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CTestQueueApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestQueueApp().AppMain(argc, argv);
 }

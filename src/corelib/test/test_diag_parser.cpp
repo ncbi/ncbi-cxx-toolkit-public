@@ -364,5 +364,5 @@ void CDiagParserApp::x_CheckMessage(const string& message, bool valid)
 
 int main(int argc, const char* argv[]) 
 {
-    return CDiagParserApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CDiagParserApp().AppMain(argc, argv);
 }

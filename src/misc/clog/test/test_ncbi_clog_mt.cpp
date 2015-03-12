@@ -154,5 +154,5 @@ bool CTestRegApp::Thread_Exit(int idx)
 int main(int argc, const char* argv[]) 
 {
     CTestRegApp app;
-    return app.AppMain(argc, argv, 0, eDS_Default, 0);
+    return app.AppMain(argc, argv);
 }

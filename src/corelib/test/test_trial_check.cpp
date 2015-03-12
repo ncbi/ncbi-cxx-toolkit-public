@@ -53,6 +53,7 @@ bool CTestApplication::GoodProgram(const string& check_program_name) const
     }
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 

@@ -961,11 +961,12 @@ int RecursiveNewTLS(int level)
     return 1;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
 int main(int argc, const char* argv[]) 
 {
     // Execute main application function
-    return CTestTlsObjectApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestTlsObjectApp().AppMain(argc, argv);
 }

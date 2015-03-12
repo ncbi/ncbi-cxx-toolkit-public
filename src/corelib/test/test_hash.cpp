@@ -329,6 +329,7 @@ int CTestHash::Run(void)
 
 END_NCBI_SCOPE
 
+
 int main(int argc, const char* argv[])
 {
     return NCBI_NS_NCBI::CTestHash().AppMain(argc, argv);

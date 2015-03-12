@@ -804,5 +804,5 @@ int CTestNetCacheClient::Run(void)
 int main(int argc, const char* argv[])
 {
     SetDiagPostLevel(eDiag_Warning);
-    return CTestNetCacheClient().AppMain(argc, argv, 0, eDS_Default);
+    return CTestNetCacheClient().AppMain(argc, argv);
 }
