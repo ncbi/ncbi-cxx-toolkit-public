@@ -83,7 +83,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux64    ) : ${AVRO_PATH=$NCBI/avro-cpp-1.7.7} ;;
+    Linux64    ) : ${AVRO_PATH=$NCBI/avro-cpp-1.7.7-ncbi1} ;;
 esac
 
 case "$ncbi_platform" in
@@ -159,7 +159,7 @@ esac
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
 case "$ncbi_platform" in
-    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.0-rc0} ;;
+    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.0} ;;
 esac
 
 case "$ncbi_platform" in
