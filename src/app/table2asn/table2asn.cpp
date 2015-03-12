@@ -765,8 +765,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         entry = op.LoadXML(m_context.m_current_file, m_context);
         if (entry.IsNull())
             return;
-
-        m_context.ApplyFileTracks(*entry);
     }
     else
     {
@@ -791,8 +789,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         default:
             break;
         }
-
     }
+
+    m_context.ApplyFileTracks(*entry);
 
     if (m_context.m_descriptors.NotNull())
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
