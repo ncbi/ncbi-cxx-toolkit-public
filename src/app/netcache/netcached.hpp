@@ -213,6 +213,8 @@ class CNCServer
 public:
     static const SNCSpecificParams* GetAppSetup(const TStringMap& client_params);
     static void WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* app);
+    static void WriteEnvInfo(CSrvSocketTask& task);
+
     /// Get inactivity timeout for each connection
     //static unsigned GetDefConnTimeout(void);
     static int GetDefBlobTTL(void);

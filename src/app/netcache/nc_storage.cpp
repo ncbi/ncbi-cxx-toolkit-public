@@ -1064,6 +1064,15 @@ void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText(kNCStorage_FailedWriteSize  ).WriteText(is ).WriteNumber( CNCBlobAccessor::GetFailedWriteCount());
 }
 
+void CNCBlobStorage::WriteEnvInfo(CSrvSocketTask& task)
+{
+    string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
+    task.WriteText(eol).WriteText("storagepath"  ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_GuardNameParam   ).WriteText(iss).WriteText(   s_GuardName).WriteText(eos);
+    task.WriteText(eol).WriteText("diskfreespace").WriteText(is   ).WriteText(iss).WriteText(
+        NStr::UInt8ToString_DataSize(GetDiskFree())).WriteText(eos);
+}
+
 string
 CNCBlobStorage::PrintablePassword(const string& pass)
 {

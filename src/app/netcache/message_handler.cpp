@@ -1259,6 +1259,20 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+    // Get state information,  added in v6.8.6
+    { "INFO",
+        {&CNCMessageHandler::x_DoCmd_GetConfig,      "INFO"},
+        { 
+          // Netcached.ini section name
+          { "section", eNSPT_Str,  fNSPA_Required },
+          // when section name is "netcache", setup for this port
+          { "port",    eNSPT_Str,  eNSPA_Optional },
+          // when section name is "netcache", setup for this cache
+          { "cache",   eNSPT_Str,  eNSPA_Optional },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     // Read full ini-file used by NetCache for configuration.
     { "GETCONF",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "GETCONF"},
@@ -3410,6 +3424,10 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             CNCBlobStorage::WriteSetup(*this);
         } else if (section == "mirror") {
             CNCDistributionConf::WriteSetup(*this);
+        } else if (section == "env") {
+            CNCServer::WriteEnvInfo(*this);
+            CNCBlobStorage::WriteEnvInfo(*this);
+            CNCDistributionConf::WriteEnvInfo(*this);
         } else if (section == "stat") {
             CSrvRef<CNCStat> stat = CNCStat::GetStat("1min", false);
             if (stat) {
@@ -3417,7 +3435,7 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             }
             CNCPeerControl::PrintState(*this);
         } else {
-            WriteText(",\n\"error\": \"Unknown section name, valid names: netcache, storage, mirror\"");
+            WriteText(",\n\"error\": \"Unknown section name, valid names: netcache, storage, mirror, env, stat\"");
         }
         WriteText("\n}}");
     } else {

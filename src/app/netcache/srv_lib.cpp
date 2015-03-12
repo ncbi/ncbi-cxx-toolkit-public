@@ -67,17 +67,7 @@ class CDiagContextThreadData {
 public:
     static bool IsInitialized(void) {return false;}
 };
-#if !defined(Note)
-#define Note ""
-#define __nc__undefNote
-#endif
-
 #include "../../corelib/ncbi_param.cpp"
-#if defined(__nc__undefNote)
-#undef Note
-#undef __nc__undefNote
-#endif
-
 #undef NCBI_USE_ERRCODE_X
 #ifdef NCBI_OS_LINUX
 # include "../../corelib/ncbi_system.cpp"
@@ -115,6 +105,24 @@ void  ncbi::CNcbiError::SetFromWindowsError( const ncbi::CTempString&)         {
 
 #endif
 
+
+#if 1
+std::string ncbi::CNcbiEncrypt::Encrypt(const std::string& str, const std::string& password) {
+    return str;
+}
+std::string ncbi::CNcbiEncrypt::Encrypt(const std::string& str) {
+    return str;
+}
+std::string ncbi::CNcbiEncrypt::Decrypt(const std::string& str, const std::string& password) {
+    return str;
+}
+std::string ncbi::CNcbiEncrypt::Decrypt(const std::string& str) {
+    return str;
+}
+bool ncbi::CNcbiEncrypt::IsEncrypted(const std::string& ) {
+    return false;
+}
+#endif
 
 BEGIN_NCBI_SCOPE
 

@@ -513,7 +513,7 @@ public:
     { return false; }
 };
 
- #endif
+#endif
 
 END_NCBI_SCOPE
 

@@ -87,6 +87,7 @@ public:
     static void Finalize(void);
 
     static void WriteSetup(CSrvSocketTask& task);
+    static void WriteEnvInfo(CSrvSocketTask& task);
 
     static bool IsCleanStart(void);
     static bool NeedStopWrite(void);

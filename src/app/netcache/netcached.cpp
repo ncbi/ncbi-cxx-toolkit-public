@@ -33,6 +33,8 @@
 
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/ncbistr.hpp>
 #include <db/sqlite/sqlitewrapp.hpp>
 
 #include "task_server.hpp"
@@ -119,6 +121,7 @@ static bool s_InitiallySynced = false;
 static bool s_CachingComplete = false;
 static CNCMsgHandler_Factory s_MsgHandlerFactory;
 static CNCHeartBeat* s_HeartBeat;
+static string s_PidFile;
 
 
 CNCBlobKeyLight& CNCBlobKeyLight::operator=(const CTempString& packed_key)
@@ -628,6 +631,19 @@ void CNCServer::WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* par
     task.WriteText(eol).WriteText(kNCReg_Quorum     ).WriteText(is).WriteNumber(params->quorum);
 }
 
+void CNCServer::WriteEnvInfo(CSrvSocketTask& task)
+{
+    string is("\": "),iss("\": \""), eol(",\n\""), eos("\"");
+    task.WriteText(eol).WriteText("hostname"    ).WriteText(iss).WriteText(   CTaskServer::GetHostName()).WriteText(eos);
+    task.WriteText(eol).WriteText("workdir"     ).WriteText(iss).WriteText(   CDir::GetCwd()).WriteText(eos);
+    task.WriteText(eol).WriteText("pid"         ).WriteText(is ).WriteNumber( CProcess::GetCurrentPid());
+    task.WriteText(eol).WriteText("pidfile"     ).WriteText(iss).WriteText(   s_PidFile).WriteText(eos);
+    task.WriteText(eol).WriteText("conffile"    ).WriteText(iss).WriteText(   GetConfName()).WriteText(eos);
+    task.WriteText(eol).WriteText("logfile"     ).WriteText(iss).WriteText(   GetLogFileName()).WriteText(eos);
+    task.WriteText(eol).WriteText("logfile_size").WriteText(iss).WriteText(
+        NStr::UInt8ToString_DataSize(CFile(GetLogFileName()).GetLength())).WriteText(eos);
+}
+
 bool
 CNCServer::IsInitiallySynced(void)
 {
@@ -707,6 +723,7 @@ CNCServer::ReadCurState(SNCStateStat& state)
 
 bool s_ReportPid(const string& pid_file)
 {
+    s_PidFile = pid_file;
     CNcbiOfstream ofs(pid_file.c_str(), IOS_BASE::out | IOS_BASE::trunc );
     if (!ofs.is_open()) {
         return false;

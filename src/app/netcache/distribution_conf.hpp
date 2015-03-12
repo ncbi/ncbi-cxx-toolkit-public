@@ -51,6 +51,7 @@ public:
     static void Finalize(void);
 
     static void WriteSetup(CSrvSocketTask& task);
+    static void WriteEnvInfo(CSrvSocketTask& task);
 
     // Provides the slot number for the given key
     static bool GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket);

@@ -539,6 +539,15 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("blob_update_hotline").WriteText(is ).WriteText( NStr::BoolToString(s_BlobUpdateHotline));
 }
 
+void CNCDistributionConf::WriteEnvInfo(CSrvSocketTask& task)
+{
+    string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
+    task.WriteText(eol).WriteText("mirroring_log_file" ).WriteText(iss).WriteText(s_MirroringSizeFile).WriteText("\"");
+    task.WriteText(eol).WriteText("periodic_log_file"  ).WriteText(iss).WriteText(s_PeriodicLogFile  ).WriteText("\"");
+    task.WriteText(eol).WriteText("copy_delay_log_file").WriteText(iss).WriteText(s_CopyDelayLogFile ).WriteText("\"");
+    task.WriteText(eol).WriteText("sync_log_file"      ).WriteText(iss).WriteText(s_SyncLogFileName  ).WriteText("\"");
+}
+
 size_t
 CNCDistributionConf::CountServersForSlot(Uint2 slot)
 {
