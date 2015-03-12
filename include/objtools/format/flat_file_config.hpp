@@ -87,7 +87,8 @@ public:
         eFormat_GFF, // version 2, w/GTF
         eFormat_GFF3,
         eFormat_FeaturesOnly,
-        eFormat_SAM
+        eFormat_SAM,
+        eFormat_AGP
     };
 
     enum EMode {
@@ -351,15 +352,17 @@ public:
     bool IsFormatFTable (void) const { return m_Format == eFormat_FTable;  }
     bool IsFormatGFF    (void) const { return m_Format == eFormat_GFF;     }
     bool IsFormatGFF3   (void) const { return m_Format == eFormat_GFF3;    }
+	bool IsFormatAGP    (void) const { return m_Format == eFormat_AGP;     }
     // setters
     void SetFormat(const TFormat& format) { m_Format = format; }
-    void SetFormatGenbank(void) { m_Format = eFormat_GenBank; }
-    void SetFormatEMBL   (void) { m_Format = eFormat_EMBL;    }
-    void SetFormatDDBJ   (void) { m_Format = eFormat_DDBJ;    }
-    void SetFormatGBSeq  (void) { m_Format = eFormat_GBSeq;   }
-    void SetFormatFTable (void) { m_Format = eFormat_FTable;  }
-    void SetFormatGFF    (void) { m_Format = eFormat_GFF;     }
+    void SetFormatGenbank(void) { m_Format = eFormat_GenBank;  }
+    void SetFormatEMBL   (void) { m_Format = eFormat_EMBL;     }
+    void SetFormatDDBJ   (void) { m_Format = eFormat_DDBJ;     }
+    void SetFormatGBSeq  (void) { m_Format = eFormat_GBSeq;    }
+    void SetFormatFTable (void) { m_Format = eFormat_FTable;   }
+    void SetFormatGFF    (void) { m_Format = eFormat_GFF;      }
     void SetFormatGFF3   (void) { m_Format = eFormat_GFF3;     }
+    void SetFormatAGP    (void) { m_Format = eFormat_AGP;      }
 
     // -- Mode
     // getters
@@ -473,7 +476,7 @@ public:
     bool UseEmblMolType      (void) const;
     bool HideBankItComment   (void) const;
     bool CheckCDSProductId   (void) const;
-    bool FrequencyToNote      (void) const;
+    bool FrequencyToNote     (void) const;
     bool SrcQualsToNote      (void) const;
     bool HideEmptySource     (void) const;
     bool GoQualsToNote       (void) const;
