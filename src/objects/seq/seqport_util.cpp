@@ -2391,7 +2391,7 @@ TSeqPos CSeqportUtil_implementation::Complement
         retval = CSeqManip::Complement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
         CSeq_data temp(out_str, in_code);
         out_seq->Assign(temp);
-    } else {
+    } else if (in_vec != 0) {
         vector<char> out_vec;
         retval = CSeqManip::Complement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_vec);
         CSeq_data temp(out_vec, in_code);
@@ -2446,7 +2446,7 @@ TSeqPos CSeqportUtil_implementation::Reverse
         retval = CSeqManip::Reverse(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
         CSeq_data temp(out_str, in_code);
         out_seq->Assign(temp);
-    } else {
+    } else if (in_vec != NULL) {
         vector<char> out_vec;
         retval = CSeqManip::Reverse(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_vec);
         CSeq_data temp(out_vec, in_code);
@@ -2478,7 +2478,7 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
 
     if ( in_str ) {
         return CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
-    } else {
+    } else if (in_vec != NULL) {
         return CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
     }
 }
@@ -2511,7 +2511,7 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
         retval = CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
         CSeq_data temp(out_str, in_code);
         out_seq->Assign(temp);
-    } else {
+    } else if (in_vec != NULL) {
         vector<char> out_vec;
         retval = CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_vec);
         CSeq_data temp(out_vec, in_code);
