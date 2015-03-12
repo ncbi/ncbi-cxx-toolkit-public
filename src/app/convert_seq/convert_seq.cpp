@@ -43,6 +43,7 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
@@ -55,60 +56,8 @@
 #include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/agp_read.hpp>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbitime.hpp>
-
-#include <serial/iterator.hpp>
-#include <serial/objistr.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/objectiter.hpp>
-#include <serial/objectio.hpp>
-
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/submit/Seq_submit.hpp>
-#include <objects/seqset/gb_release_file.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/misc/sequence_macros.hpp>
-#include <objects/valerr/ValidErrItem.hpp>
-#include <objects/valerr/ValidError.hpp>
-
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_vector_ci.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/util/seq_loc_util.hpp>
-
-#include <objtools/cleanup/cleanup.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/validator/validator.hpp>
 #include <objtools/writers/agp_write.hpp>
 
-#include <sra/data_loaders/wgs/wgsloader.hpp>
-
-#include <algo/align/prosplign/prosplign.hpp>
 // On Mac OS X 10.3, FixMath.h defines ff as a one-argument macro(!)
 #ifdef ff
 #  undef ff
