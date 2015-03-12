@@ -59,6 +59,10 @@ BioTreeContainer ::= {
     {
       id 14,
       name "leaf-count"
+    },
+    {
+      id 15,
+      name "common-name"
     }
   },
   nodes {

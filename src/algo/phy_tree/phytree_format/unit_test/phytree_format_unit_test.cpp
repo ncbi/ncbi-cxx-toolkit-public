@@ -771,6 +771,9 @@ static bool s_TestFeatureDict(const CFeatureDictSet& dict)
     feature_ids[CPhyTreeFormatter::eLeafCountId]
         = CPhyTreeFormatter::eLeafCountId;
 
+    feature_ids[CPhyTreeFormatter::eCommonNameID]
+        = CPhyTreeFormatter::eCommonNameID;
+
     vector<bool> found(CPhyTreeFormatter::eLastId + 1, false);
 
     // for each feature in the dictionary
