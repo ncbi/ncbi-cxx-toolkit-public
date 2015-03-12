@@ -753,3 +753,18 @@ BOOST_AUTO_TEST_CASE(Test_RptUnit)
     BOOST_CHECK_EQUAL(feat->GetQual()[2]->GetVal(), "def");
     BOOST_CHECK_EQUAL(feat->GetQual()[3]->GetVal(), "hjusdf sdf");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2231)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Homo sapiens");
+    src->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_country, "New Zealand: Natural CO2 spring , Hakanoa, Northland")));
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup (*src);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetName(), "New Zealand: Natural CO2 spring, Hakanoa, Northland");
+
+}
