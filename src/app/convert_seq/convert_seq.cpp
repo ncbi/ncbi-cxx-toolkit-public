@@ -45,6 +45,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -55,6 +56,59 @@
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/agp_read.hpp>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbitime.hpp>
+
+#include <serial/iterator.hpp>
+#include <serial/objistr.hpp>
+#include <serial/typeinfo.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/objectio.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/gb_release_file.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/misc/sequence_macros.hpp>
+#include <objects/valerr/ValidErrItem.hpp>
+#include <objects/valerr/ValidError.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
+
+#include <objtools/cleanup/cleanup.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/validator/validator.hpp>
+#include <objtools/writers/agp_write.hpp>
+
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
+#include <algo/align/prosplign/prosplign.hpp>
 // On Mac OS X 10.3, FixMath.h defines ff as a one-argument macro(!)
 #ifdef ff
 #  undef ff
@@ -121,7 +175,7 @@ void CConversionApp::Init(void)
     arg_desc->SetConstraint
         ("outfmt", &(*new CArgAllow_Strings,
                      "asn", "asnb", "xml", "ddbj", "embl", "genbank", "fasta",
-                     "gff", "gff3", "tbl", "gbseq/xml"));
+                     "gff", "gff3", "tbl", "gbseq/xml", "agp"));
     arg_desc->AddOptionalKey
         ("outflags", "Flags",
          "Format-specific output flags, in C-style decimal, hex, or octal"
@@ -133,6 +187,11 @@ void CConversionApp::Init(void)
     arg_desc->AddFlag
         ("no-objmgr", "Bypass the object manager for FASTA output");
 
+    arg_desc->AddFlag("gbload",
+        "Use GenBank data loader");
+    arg_desc->AddFlag("wgsload",
+        "Use WGS data loader");
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -142,7 +201,12 @@ int CConversionApp::Run(void)
     const CArgs& args = GetArgs();
 
     m_ObjMgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+    if ( args["wgsload"] ) {
+        CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr, CObjectManager::eDefault);
+    }
+	if ( args["gbload"] || !args["no-objmgr"] ) {
+        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+	}
 
     m_Scope.Reset(new CScope(*m_ObjMgr));
     m_Scope->AddDefaults();
@@ -181,6 +245,7 @@ ESerialDataFormat CConversionApp::GetSerialFormat(const string& name)
 typedef CFlatFileConfig::TFormat TFFFormat;
 typedef pair<const char*, TFFFormat> TFormatElem;
 static const TFormatElem sc_FormatArray[] = {
+    TFormatElem("agp",       CFlatFileConfig::eFormat_AGP),
     TFormatElem("ddbj",      CFlatFileConfig::eFormat_DDBJ),
     TFormatElem("embl",      CFlatFileConfig::eFormat_EMBL),
     TFormatElem("gbseq/xml", CFlatFileConfig::eFormat_GBSeq),
@@ -289,7 +354,6 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
     }
 }
 
-
 void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
 {
     const string& outfmt = args["outfmt"].AsString();
@@ -322,7 +386,26 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
         } else {
             out.Write(m_Scope->GetSeq_entryHandle(entry));
         }
-    } else {
+    } else if (outfmt == "agp") {
+        CNcbiOstream& out = args["out"].AsOutputFile();
+
+		//m_topseh = m_Scope->AddTopLevelSeqEntry( *m_entry );
+		unsigned long long num = 0;
+		VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, entry) {
+			const CBioseq& bioseq = *bit;
+			if (bioseq.IsNa()) {
+				++num;
+				const CBioseq_Handle& bs = (*m_Scope).GetBioseqHandle (bioseq);
+				string id; // = bs.GetSeqId()->GetSeqIdString(&version);
+				bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
+				if (id.empty())
+				{
+					id = "chr" + std::to_string(num);
+				}
+				AgpWrite( out, bs, id, vector<char>(), nullptr );
+			}
+		}
+	} else {
         auto_ptr<CObjectOStream> out
             (CObjectOStream::Open(GetSerialFormat(outfmt),
                                   args["out"].AsString(),
