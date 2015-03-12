@@ -318,7 +318,7 @@ public:
             << "problem=\"" << NStr::XmlEncode(ProblemStr()) << "\" ";
         const string & seqid = SeqId();
         if (!seqid.empty()) {
-            out << "seqid\"" << NStr::XmlEncode(seqid) << "\" ";
+            out << "seqid=\"" << NStr::XmlEncode(seqid) << "\" ";
         }
         out << "line=\"" << Line() << "\" ";
         const string & feature = FeatureName();
