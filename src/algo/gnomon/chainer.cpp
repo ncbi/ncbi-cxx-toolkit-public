@@ -839,7 +839,7 @@ void CChainer::CChainerImpl::ReplacePseudoGeneSeeds(list<CGene>& alts, TChainPoi
         
         CGene& gene = *included_in.front();
         CChain& model = *gene.front();
-        if(!model.PStop(false) || algn.PStop(false))
+        if((!model.PStop(false) && model.FrameShifts().empty()) || algn.PStop(false) || !algn.FrameShifts().empty())
             continue;
 
         int algn_cds_len = algn.FShiftedLen(algn.GetCdsInfo().Cds(),false);
@@ -1365,27 +1365,27 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
         if(chain.Status()&CGeneModel::ePolyA) {
             if(chain.Strand() == ePlus) {
                 if(chain.m_coverage_drop_right < 0)
-                    noclip_limits.SetTo(chain.m_polya_cap_right_soft_limit);
+                    noclip_limits.SetTo(max(noclip_limits.GetTo(),chain.m_polya_cap_right_soft_limit));
                 else
-                    noclip_limits.SetTo(chain.m_coverage_drop_right);
+                    noclip_limits.SetTo(max(noclip_limits.GetTo(),chain.m_coverage_drop_right));
             } else {
                 if(chain.m_coverage_drop_left < 0)
-                    noclip_limits.SetFrom(chain.m_polya_cap_left_soft_limit);
+                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),chain.m_polya_cap_left_soft_limit));
                 else
-                    noclip_limits.SetFrom(chain.m_coverage_drop_left);
+                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),chain.m_coverage_drop_left));
             }
         }
         if(chain.Status()&CGeneModel::eCap) {
             if(chain.Strand() == ePlus) {
                 if(chain.m_coverage_drop_left < 0)
-                    noclip_limits.SetFrom(chain.m_polya_cap_left_soft_limit);
+                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),chain.m_polya_cap_left_soft_limit));
                 else
-                    noclip_limits.SetFrom(chain.m_coverage_drop_left);
+                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),chain.m_coverage_drop_left));
             } else {
                 if(chain.m_coverage_drop_right < 0)
-                    noclip_limits.SetTo(chain.m_polya_cap_right_soft_limit);
+                    noclip_limits.SetTo(max(noclip_limits.GetTo(),chain.m_polya_cap_right_soft_limit));
                 else
-                    noclip_limits.SetTo(chain.m_coverage_drop_right);
+                    noclip_limits.SetTo(max(noclip_limits.GetTo(),chain.m_coverage_drop_right));
             }
         }
 
@@ -2782,6 +2782,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         mi.MarkPostponedForChain();
 
         m_gnomon->GetScore(chain);
+        if(chain.Score() == BadScore())
+            continue;
 
         chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
