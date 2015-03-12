@@ -143,6 +143,6 @@ int main(int argc, const char* argv[])
 // Still, it is possible to pass an empty string here -
 // in case you do not want to disclose the WSDL specification
         "soapserver.wsdl",
-        "http://www.ncbi.nlm.nih.gov/").AppMain(argc, argv, 0, eDS_Default);
+        "http://www.ncbi.nlm.nih.gov/").AppMain(argc, argv);
     return result;
 }

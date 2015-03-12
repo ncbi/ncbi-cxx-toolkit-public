@@ -128,5 +128,5 @@ int CBDB_CacheVerifyApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_CacheVerifyApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_CacheVerifyApp().AppMain(argc, argv);
 }

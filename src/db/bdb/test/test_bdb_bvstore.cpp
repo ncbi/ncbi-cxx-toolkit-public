@@ -362,5 +362,5 @@ int CBDB_TestThreads::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CBDB_TestThreads().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_TestThreads().AppMain(argc, argv);
 }

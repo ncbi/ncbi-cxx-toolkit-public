@@ -257,5 +257,5 @@ int CBDB_BLobDemo1::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_BLobDemo1().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_BLobDemo1().AppMain(argc, argv);
 }

@@ -2614,7 +2614,7 @@ int CBDB_Test::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CBDB_Test().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_Test().AppMain(argc, argv);
 }
 
 

@@ -208,5 +208,5 @@ int CDBAPI_CacheAdmin::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDBAPI_CacheAdmin().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CDBAPI_CacheAdmin().AppMain(argc, argv);
 }

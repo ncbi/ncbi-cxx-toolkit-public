@@ -83,5 +83,5 @@ int CSampleLibtestApplication::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleLibtestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleLibtestApplication().AppMain(argc, argv);
 }

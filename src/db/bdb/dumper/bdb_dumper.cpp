@@ -507,5 +507,5 @@ int CBDB_FileDumperApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_FileDumperApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_FileDumperApp().AppMain(argc, argv);
 }

@@ -237,5 +237,5 @@ int CDBAPI_CacheTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDBAPI_CacheTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CDBAPI_CacheTest().AppMain(argc, argv);
 }

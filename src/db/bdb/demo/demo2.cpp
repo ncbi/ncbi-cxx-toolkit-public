@@ -242,5 +242,5 @@ int CBDB_PhoneBookDemo2::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_PhoneBookDemo2().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_PhoneBookDemo2().AppMain(argc, argv);
 }

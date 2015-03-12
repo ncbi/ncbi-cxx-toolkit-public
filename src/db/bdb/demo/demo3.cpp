@@ -304,5 +304,5 @@ int CBDB_PhoneBookDemo3::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_PhoneBookDemo3().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_PhoneBookDemo3().AppMain(argc, argv);
 }

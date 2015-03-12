@@ -76,8 +76,7 @@ int CDriverTest::Run()
 
 int main(int argc, char * argv[])
 {
-	// Execute main application function
-	return CDriverTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CDriverTest().AppMain(argc, argv);
 }
 
 
