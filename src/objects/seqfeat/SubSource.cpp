@@ -1868,6 +1868,11 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
 
     string wguess = id->GetGuessWater();
     string cguess = id->GetGuessCountry();
+
+    if (NStr::EqualNocase (country, "China") && NStr::EqualNocase (cguess, "Hong Kong")) {
+        return "";
+    }
+
     if (NStr::IsBlank (cguess) && (! NStr::IsBlank (wguess))) {
         string parent = x_FindSurroundingOcean (wguess);
         if ((! NStr::IsBlank (parent)) && NStr::EqualNocase (country, parent)) {
