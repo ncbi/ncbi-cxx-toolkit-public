@@ -659,11 +659,12 @@ void CPhyTreeCalc::x_CalcAlnSegInfo(const vector<string>& aln,
         const string& sequence = aln[i];
         vector<TRange>& segs = seg_info[i];
         size_t p = 0;        
+        _ASSERT(query_end < sequence.length());
 
         // find the aligned sequence length
         int seq_len = 0;
-        ITERATE (string, it, sequence) {
-            if (*it != kGap) {
+        for (size_t k=query_start;k <= query_end;k++) {
+            if (sequence[k] != kGap) {
                 seq_len++;
             }
         }
@@ -682,9 +683,10 @@ void CPhyTreeCalc::x_CalcAlnSegInfo(const vector<string>& aln,
             int to = p;
             int gaps = 0;
             // find segment end, treating short gaps as part of the segment
-            while (p < sequence.length() && gaps < kMinSplit && p < query_end) {
+            while (p < sequence.length() && gaps < kMinSplit && p <= query_end) {
                 int residues = 0;
-                while (p < sequence.length() && p < query_end &&
+                to = p;
+                while (p < sequence.length() && p <= query_end &&
                        sequence[p] != kGap) {
                     p++;
                     to++;
@@ -694,7 +696,7 @@ void CPhyTreeCalc::x_CalcAlnSegInfo(const vector<string>& aln,
                 if (residues > 4) {
                     gaps = 0;
                 }
-                while (p < sequence.length() && p < query_end &&
+                while (p < sequence.length() && p <= query_end &&
                        sequence[p] == kGap) {
                     gaps++;
                     p++;
@@ -710,7 +712,7 @@ void CPhyTreeCalc::x_CalcAlnSegInfo(const vector<string>& aln,
             }
 
             // skip positions not aligned to the query
-            if (p >= query_end) {
+            if (p > query_end) {
                 break;
             }
         }
