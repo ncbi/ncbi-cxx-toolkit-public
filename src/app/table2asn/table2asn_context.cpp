@@ -693,8 +693,11 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
 
 void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
 {
+  if (!m_ft_url.empty()) 
     AddUserTrack(entry.SetDescr(), "FileTrack", "Map-FileTrackURL", m_ft_url);
+  if (!m_ft_url_mod.empty()) 
     AddUserTrack(entry.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", m_ft_url_mod);
+
 }
 
 END_NCBI_SCOPE
