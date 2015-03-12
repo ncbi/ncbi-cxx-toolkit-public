@@ -962,22 +962,20 @@ bool  CNSTDatabase::x_ReadDbAccessInfo(bool  is_initialization)
     m_DbAccessInfo.m_Database = reg.GetString("database", "database", "");
     m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
 
-    if (reg.HasEntry("database", "encrypted_password")) {
-        // Try to decrypt
-        try {
-            string      encrypted = reg.GetString("database",
-                                                  "encrypted_password", "");
-            m_DbAccessInfo.m_Password = CNcbiEncrypt::Decrypt(encrypted);
-        } catch (const CNcbiEncryptException &  ex) {
-            if (is_initialization) {
+    // Try to decrypt
+    try {
+        m_DbAccessInfo.m_Password = reg.GetEncryptedString("database",
+                                              "password",
+                                              IRegistry::fPlaintextAllowed);
+    } catch (const CRegistryException &  ex) {
+        if (is_initialization) {
+            if (ex.GetErrCode() == CRegistryException::eDecryptionFailed) {
                 m_Server->RegisterAlert(eDecryptDBPass, string(ex.what()));
-                ERR_POST(Critical << "Decrypting [database]/encrypted_password "
+                ERR_POST(Critical << "Decrypting [database]/password "
                          "error: " << ex);
             }
-            return false;
         }
-    } else {
-        m_DbAccessInfo.m_Password = reg.GetString("database", "password", "");
+        return false;
     }
     return true;
 }

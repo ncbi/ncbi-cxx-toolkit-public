@@ -83,23 +83,17 @@ void SNetStorageServerParameters::Read(const IRegistry &    reg,
 
     log = GetBoolNoErr("log", default_log);
 
-    // Deal with encrypted admin client names if so
-    if (reg.HasEntry("encrypted_admin_client_name")) {
-        string      encrypted = reg.GetString(sname,
-                                              "encrypted_admin_client_name",
-                                              kEmptyStr);
-        try {
-            admin_client_names = CNcbiEncrypt::Decrypt(encrypted);
-        } catch (const exception &  ex) {
-            decrypt_warning = "[server]/encrypted_admin_client_name "
-                              "decrypting error detected. " + string(ex.what());
-        } catch (...) {
-            decrypt_warning = "[server]/encrypted_admin_client_name "
-                              "unknown error";
-        }
-    } else {
-        admin_client_names = reg.GetString(sname,
-                                           "admin_client_name", kEmptyStr);
+    // Deal with potentially encrypted admin client names
+    try {
+        admin_client_names = reg.GetEncryptedString(
+                                        sname, "admin_client_name",
+                                        IRegistry::fPlaintextAllowed);
+    } catch (const CRegistryException &  ex) {
+        decrypt_warning = "[server]/admin_client_name "
+                          "decrypting error detected. " + string(ex.what());
+    } catch (...) {
+        decrypt_warning = "[server]/admin_client_name "
+                          "unknown error";
     }
 }
 

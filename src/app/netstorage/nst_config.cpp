@@ -178,12 +178,7 @@ void NSTValidateServerSection(const IRegistry &  reg,
     }
 
     NSTValidateBool(reg, section, "log", warnings);
-
-    if (reg.HasEntry("encrypted_admin_client_name"))
-        NSTValidateString(reg, section, "encrypted_admin_client_name",
-                          warnings);
-    else
-        NSTValidateString(reg, section, "admin_client_name", warnings);
+    NSTValidateString(reg, section, "admin_client_name", warnings);
 }
 
 
@@ -210,38 +205,13 @@ void NSTValidateDatabaseSection(const IRegistry &  reg,
                                " must not be empty");
     }
 
-    bool        password_found = false;
-    if (reg.HasEntry(section, "encrypted_password")) {
-        ok = NSTValidateString(reg, section, "encrypted_password", warnings);
-        if (ok) {
-            string      value = reg.GetString(section,
-                                              "encrypted_password", "");
-            if (value.empty())
-                warnings.push_back(g_LogPrefix + " value " +
-                                   NSTRegValName(section,
-                                                 "encrypted_password") +
-                                   " must not be empty");
-        }
-        password_found = true;
-    }
-    else if (reg.HasEntry(section, "password")) {
-        ok = NSTValidateString(reg, section, "password", warnings);
-        if (ok) {
-            string      value = reg.GetString(section, "password", "");
-            if (value.empty())
-                warnings.push_back(g_LogPrefix + " value " +
-                                   NSTRegValName(section, "password") +
-                                   " must not be empty");
-        }
-        password_found = true;
-    }
-    if (password_found == false) {
-        warnings.push_back(g_LogPrefix + " neither value " +
-                           NSTRegValName(section, "password") +
-                           " nor " +
-                           NSTRegValName(section, "encrypted_password") +
-                           " was found in a configuration file. A database "
-                           "password must be provided");
+    ok = NSTValidateString(reg, section, "password", warnings);
+    if (ok) {
+        string      value = reg.GetString(section, "password", "");
+        if (value.empty())
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "password") +
+                               " must not be empty");
     }
 
     ok = NSTValidateString(reg, section, "database", warnings);
