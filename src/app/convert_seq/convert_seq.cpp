@@ -400,7 +400,7 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
 				bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
 				if (id.empty())
 				{
-					id = "chr" + std::to_string(num);
+					id = "chr" + NStr::NumericToString(num);
 				}
 				AgpWrite( out, bs, id, vector<char>(), nullptr );
 			}
