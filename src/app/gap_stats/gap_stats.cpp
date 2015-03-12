@@ -937,7 +937,9 @@ void CGapStatsApplication::x_PrintSummaryView(void)
                         gap_len_type,
                         p_one_summary));
             // there shouldn't be dups
-            _ASSERT( insert_ret.second );
+            if( ! insert_ret.second ) {
+                _TROUBLE;
+            }
         }
     }
 
@@ -1100,7 +1102,7 @@ void CGapStatsApplication::x_PrintSeqsForGapLengths(void)
     ITERATE(TGapLengthVec, all_gap_lens_it, *p_all_gap_lengths_list ) {
         const GA::TGapLength gap_len = *all_gap_lens_it;
 
-        xml::node gap_seqs_one_len_node(xml::node("gap_length_info"));
+        xml::node gap_seqs_one_len_node("gap_length_info");
         gap_seqs_one_len_node.get_attributes().insert(
             "len", NStr::NumericToString(gap_len).c_str());
 
