@@ -21,7 +21,7 @@ APP: $srcdir/src/app/netschedule/test/ns.py+ $srcdir/src/app/netschedule/test/te
 APP: $srcdir/src/app/netschedule/utils/ns_health_check.py
 ETC: src/app/netschedule/netscheduled.ini
 
-DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb4520-Release
+DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb4520-O2g
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -32,6 +32,7 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb4520-Release
 # --with-distcc, --with-action etc.
 Linux64-Centos : Bdb4520-Release : GCC.sh 4.8.1 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64-Centos : Bdb4520-Debug   : GCC.sh 4.8.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
+Linux64-Centos : Bdb4520-O2g : GCC.sh 4.8.1 --without-debug --with-symbols --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 
 USE_COMPONENTS
 
