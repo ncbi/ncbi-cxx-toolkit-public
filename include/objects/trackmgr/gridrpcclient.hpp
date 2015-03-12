@@ -275,8 +275,8 @@ protected:
     void x_GetJobRepliesById(const vector<string> job_ids, vector< CRef<TReply> >& replies) const
     {
         CDeadline deadline(m_Timeout, 0);
-        static const CDeadline kTimeSlice(0, 100L * 1000000); // 100ms
-        CDeadline timeslice = kTimeSlice;
+        static const CTimeout kTimeout(0, 100L * 1000000); // 100ms
+        CDeadline timeslice(kTimeout);
 
         CNetScheduleNotificationHandler job_handler;
         list<string> _job_ids(job_ids.begin(), job_ids.end());
