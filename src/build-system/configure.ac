@@ -6847,7 +6847,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb, MONGODB, mongoclient,
 # MongoDB's own library is normally static, but its supporting Boost
 # libraries might not be by default.
 if test -n "$MONGODB_LIBS"; then
-   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongodb $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEXP_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS"
+   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEXP_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS"
 else
    MONGODB_STATIC_LIBS=
 fi
