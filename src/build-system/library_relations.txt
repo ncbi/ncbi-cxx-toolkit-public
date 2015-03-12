@@ -85,6 +85,8 @@ an_euk_pipeline needs gpipe_an_base
 an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs gpipe_xml
 an_euk_pipeline needs reftrack_access
+an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
+an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_xml
 an_prok_pipeline needs pathogen_connection
@@ -160,6 +162,9 @@ blk64 needs3party comn64
 blk64 needs3party intl64
 bob_g needs splitdbasn_g
 bob_g needs3party netblast
+boost_filesystem-gcc44-mt-d-64 needs3party $(BOOST_SYSTEM_LIBS)
+boost_filesystem-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
+boost_system-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
@@ -888,6 +893,7 @@ refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs gencoll_client
 refseq_ctl needs xid_utils
 reftrack_access needs gpipe_common
+reftrack_admin needs reftrack_access
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
