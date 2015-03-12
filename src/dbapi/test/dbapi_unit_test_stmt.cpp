@@ -1793,7 +1793,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
             // SetMaxTextImageSize() method doesn't work in case of ctlib
             // driver.
             {
-                rs = auto_stmt->ExecuteQuery("set textsize 2147483647");
+                auto_stmt->ExecuteQuery("set textsize 2147483647");
                 DumpResults(auto_stmt.get());
             }
 
