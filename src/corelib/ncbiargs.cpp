@@ -1085,9 +1085,13 @@ CArgDescMandatory::~CArgDescMandatory(void)
 
 string CArgDescMandatory::GetUsageCommentAttr(void) const
 {
+    CArgDescriptions::EType type = GetType();
     // Print type name
-    string str = CArgDescriptions::GetTypeName(GetType());
+    string str = CArgDescriptions::GetTypeName(type);
 
+    if (type == CArgDescriptions::eDateTime) {
+        str += ", format: \"Y-M-DTh:m:gZ\" or \"Y/M/D h:m:gZ\"";
+    }
     // Print constraint info, if any
     string constr = GetUsageConstraint();
     if ( !constr.empty() ) {
