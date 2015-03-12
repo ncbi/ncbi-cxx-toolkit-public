@@ -100,11 +100,19 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
+			unsigned long long num = 0;
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
                 if (bioseq.IsNa()) {
+					++num;
                     const CBioseq_Handle& bs = (*m_scope).GetBioseqHandle (bioseq);
-                    AgpWrite( *m_out, bs, "chr1", vector<char>(), comp_id_mapper.get() );
+					string id; // = bs.GetSeqId()->GetSeqIdString(&version);
+					bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
+					if (id.empty())
+					{
+						id = "chr" + std::to_string(num);
+					}
+                    AgpWrite( *m_out, bs, id, vector<char>(), comp_id_mapper.get() );
                 }
             }
         }
