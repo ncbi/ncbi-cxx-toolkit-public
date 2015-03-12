@@ -110,7 +110,7 @@ public:
 					bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
 					if (id.empty())
 					{
-						id = "chr" + std::to_string(num);
+						id = "chr" + NStr::NumericToString(num);
 					}
                     AgpWrite( *m_out, bs, id, vector<char>(), comp_id_mapper.get() );
                 }

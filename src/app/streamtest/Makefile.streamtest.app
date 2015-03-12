@@ -19,4 +19,4 @@ LIBS = $(SRA_SDK_SYSLIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(NETWORK
 
 REQUIRES = objects algo LIBXSLT -BSD -Cygwin
 
-WATCHERS = kans kornbluh
+WATCHERS = kans kornbluh drozdov
