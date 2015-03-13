@@ -121,7 +121,7 @@ void bNNI(meTree *T, double **avgDistArray, int *count)
   double *weights;
   p = initPerm(T->size+1);
   q = initPerm(T->size+1);
-  edgeArray = (meEdge **) malloc((T->size+1)*sizeof(double));
+  edgeArray = (meEdge **) malloc((T->size+1)*sizeof(meEdge*));
   weights = (double *) malloc((T->size+1)*sizeof(double));
   location = (int *) malloc((T->size+1)*sizeof(int));
   for (i=0;i<T->size+1;i++)
