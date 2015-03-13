@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <util/static_map.hpp>
 #include <util/xregexp/arg_regexp.hpp>
 #include <serial/iterator.hpp>
@@ -151,7 +152,11 @@ int CConversionApp::Run(void)
 
     m_ObjMgr = CObjectManager::GetInstance();
     if ( args["wgsload"] ) {
-        CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr, CObjectManager::eDefault);
+        CPluginManager_DllResolver::EnableGlobally();
+        if (m_ObjMgr->RegisterDataLoader(NULL /* params */, "wgs") != NULL) {
+            m_ObjMgr->SetLoaderOptions("wgs", CObjectManager::eDefault);
+        }
+        //CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr, CObjectManager::eDefault);
     }
 	if ( args["gbload"] || !args["no-objmgr"] ) {
         CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
@@ -347,8 +352,7 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
 				const CBioseq_Handle& bs = (*m_Scope).GetBioseqHandle (bioseq);
 				string id; // = bs.GetSeqId()->GetSeqIdString(&version);
 				bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
-				if (id.empty())
-				{
+				if (id.empty())	{
 					id = "chr" + NStr::NumericToString(num);
 				}
 				AgpWrite( out, bs, id, vector<char>(), nullptr );
