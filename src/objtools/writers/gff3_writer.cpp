@@ -723,9 +723,8 @@ bool CGff3Writer::xWriteAlignDenseg(
     const CSeq_id& sourceId = alnMap.GetSeqId(0);
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
 
-    size_t numRows = alnMap.GetNumRows();
     //string nextAlignId = xNextAlignId();
-    for (size_t sourceRow = 1; sourceRow < numRows; ++sourceRow) {
+    for (CAlnMap::TDim sourceRow = 1; sourceRow < alnMap.GetNumRows(); ++sourceRow) {
         CRef<CGffAlignRecord> pSource(new CGffAlignRecord(alignId));
         const CSeq_id& targetId = alnMap.GetSeqId(sourceRow);
         CBioseq_Handle targetH = m_pScope->GetBioseqHandle(targetId);
