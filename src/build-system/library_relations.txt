@@ -84,7 +84,7 @@ an_euk_pipeline needs bag_access
 an_euk_pipeline needs gpipe_an_base
 an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs gpipe_xml
-an_euk_pipeline needs reftrack_access
+an_euk_pipeline needs reftrack_admin
 an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
 an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_prok_pipeline needs gpipe_an_base
@@ -544,6 +544,7 @@ hgvs needs xregexp
 hgvs_name needs $(OBJMGR_LIBS)
 hgvs_name needs gui_objutils
 hgvs_name needs sv_objects
+hmm_hit_handle needs xncbi
 hogweed needs3party $(ORIG_LIBS)
 hogweed needs3party gmp
 hogweed needs3party nettle
@@ -1282,6 +1283,10 @@ xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
+xdiscrepancy needs $(OBJEDIT_LIBS)
+xdiscrepancy needs $(XFORMAT_LIBS)
+xdiscrepancy needs macro
+xdiscrepancy needs xalnmgr
 xdiscrepancy_report needs $(OBJMGR_LIBS)
 xdiscrepancy_report needs macro
 xdiscrepancy_report needs xmlwrapp
