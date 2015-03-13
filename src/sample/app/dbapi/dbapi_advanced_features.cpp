@@ -241,7 +241,7 @@ end";
                                 b.Read(buf, b.GetBlobSize());
                                 buf[b.GetBlobSize()] = '\0';
                                 NcbiCout << buf << "|";
-                                delete buf;
+                                delete[] buf;
                                 
                             }
                             else
@@ -309,7 +309,7 @@ end";
                                 b->Read(buf, b->Size());
                                 buf[b->Size()] = '\0';
                                 NcbiCout << buf << "|";
-                                delete buf;
+                                delete[] buf;
                                 
                             }
                             else
@@ -505,7 +505,6 @@ end";
 
         cstmt->Close();
         delete cstmt;
-        cstmt = conn->GetCallableStatement("SampleProc");
 
         // call stored procedure using language call
         NcbiCout << endl << "Calling stored procedure using language call..." << endl;
@@ -733,7 +732,7 @@ end";
         delete newConn;
 #endif
 
-        delete buf;
+        delete[] buf;
 
         // check if Blob is there
         stmt = conn->CreateStatement();
