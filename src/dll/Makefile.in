@@ -13,6 +13,7 @@ SUB_PROJ =  \
     ncbi_xgrid2cgi \
     objects \
     objtools \
+    misc \
     util
 
 
