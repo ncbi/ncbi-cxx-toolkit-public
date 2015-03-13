@@ -43,12 +43,6 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_PARAM_DECL(string, filetrack, site);
-typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
-
-NCBI_PARAM_DECL(string, filetrack, api_key);
-typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_APIKey;
-
 struct SFileTrackAPI;
 
 struct SFileTrackRequest : public CObject
@@ -95,7 +89,7 @@ struct SFileTrackPostRequest : public SFileTrackRequest
 
 struct SFileTrackAPI
 {
-    SFileTrackAPI();
+    SFileTrackAPI(const IRegistry&);
 
     string LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc);
 
@@ -114,10 +108,24 @@ struct SFileTrackAPI
     string GenerateUniqueBoundary();
     string MakeMutipartFormDataHeader(const string& boundary);
 
-    CRandom m_Random;
+    Uint8 GetRandUint8(void) { return m_Random.GetRandUint8(); }
 
-    STimeout m_WriteTimeout;
-    STimeout m_ReadTimeout;
+    static string GetSite(const IRegistry&);
+    static bool SetSite(IRWRegistry&, const string&);
+
+    static string GetKey(const IRegistry&);
+    static bool SetKey(IRWRegistry&, const string&);
+
+    const STimeout write_timeout;
+    const STimeout read_timeout;
+
+    const string site;
+    const string key;
+
+private:
+    const STimeout GetTimeout();
+
+    CRandom m_Random;
 };
 
 END_NCBI_SCOPE

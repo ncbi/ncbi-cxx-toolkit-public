@@ -123,12 +123,12 @@ SFileTrackRequest::SFileTrackRequest(
     m_URL(url),
     m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
             NULL, fHTTP_AutoReconnect | fHTTP_SuppressMessages,
-            &storage_impl->m_WriteTimeout),
+            &storage_impl->write_timeout),
     m_HTTPStatus(0),
     m_ContentLength((size_t) -1)
 {
-    m_HTTPStream.SetTimeout(eIO_Close, &storage_impl->m_ReadTimeout);
-    m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->m_ReadTimeout);
+    m_HTTPStream.SetTimeout(eIO_Close, &storage_impl->read_timeout);
+    m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->read_timeout);
 }
 
 SFileTrackPostRequest::SFileTrackPostRequest(
@@ -403,12 +403,13 @@ void SFileTrackRequest::FinishDownload()
     CheckIOStatus();
 }
 
-SFileTrackAPI::SFileTrackAPI()
+SFileTrackAPI::SFileTrackAPI(const IRegistry& registry)
+    : write_timeout(GetTimeout()),
+      read_timeout(GetTimeout()),
+      site(GetSite(registry)),
+      key(GetKey(registry))
 {
     m_Random.Randomize();
-
-    m_WriteTimeout.sec = m_ReadTimeout.sec = 5;
-    m_WriteTimeout.usec = m_ReadTimeout.usec = 0;
 
 #ifdef HAVE_LIBGNUTLS
     DEFINE_STATIC_FAST_MUTEX(s_TLSSetupMutex);
@@ -448,13 +449,13 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
 
 string SFileTrackAPI::LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc)
 {
-    string api_key(TFileTrack_APIKey::GetDefault());
+    string api_key(key);
     string url(object_loc->GetFileTrackURL());
     string session_key;
 
     CConn_HttpStream http_stream(url + "/accounts/api_login?key=" + api_key,
             NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
-            fHTTP_AutoReconnect, &m_WriteTimeout);
+            fHTTP_AutoReconnect, &write_timeout);
 
     string dummy;
     http_stream >> dummy;
@@ -607,7 +608,33 @@ string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
     return header;
 }
 
-NCBI_PARAM_DEF(string, filetrack, site, "prod");
-NCBI_PARAM_DEF(string, filetrack, api_key, kEmptyStr);
+const STimeout SFileTrackAPI::GetTimeout()
+{
+    STimeout result;
+    result.sec = 5;
+    result.usec = 0;
+    return result;
+}
+
+string SFileTrackAPI::GetSite(const IRegistry& registry)
+{
+    return registry.GetString("filetrack", "site", "prod");
+}
+
+bool SFileTrackAPI::SetSite(IRWRegistry& registry, const string& value)
+{
+    return registry.Set("filetrack", "site", value);
+}
+
+string SFileTrackAPI::GetKey(const IRegistry& registry)
+{
+    return registry.GetEncryptedString("filetrack", "api_key",
+            IRegistry::fPlaintextAllowed);
+}
+
+bool SFileTrackAPI::SetKey(IRWRegistry& registry, const string& value)
+{
+    return registry.Set("filetrack", "api_key", value);
+}
 
 END_NCBI_SCOPE

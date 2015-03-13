@@ -96,6 +96,7 @@ public:
     ///  Default storage preferences for files created by this object.
     ///
     CDirectNetStorage(
+        const IRegistry&            registry,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance  compound_id_pool,
         const string&               app_domain,
@@ -137,6 +138,7 @@ public:
     ///  Default storage preferences for files created by this object.
     ///
     CDirectNetStorageByKey(
+        const IRegistry&            registry,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance  compound_id_pool,
         const string&               app_domain,
@@ -149,13 +151,30 @@ public:
 };
 
 
+/// NetStorage registry related methods
+///
+class CDirectNetStorageRegistry
+{
+public:
+    class CFileTrack
+    {
+    public:
+        static string GetSite(const IRegistry&);
+        static bool SetSite(IRWRegistry&, const string&);
+
+        static string GetKey(const IRegistry&);
+        static bool SetKey(IRWRegistry&, const string&);
+    };
+};
+
+
 /** @deprecated Use classes above instead.
  *
  * @{
  */
 
 NCBI_DEPRECATED
-CNetStorage g_CreateNetStorage(
+CDirectNetStorage g_CreateNetStorage(
         CNetICacheClient::TInstance icache_client,
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);
@@ -167,7 +186,7 @@ CNetStorage g_CreateNetStorage(
 
 
 NCBI_DEPRECATED
-CNetStorageByKey g_CreateNetStorageByKey(
+CDirectNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
         const string&               app_domain,
         TNetStorageFlags            default_flags = 0);

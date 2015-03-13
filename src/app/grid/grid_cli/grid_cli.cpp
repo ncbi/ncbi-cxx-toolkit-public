@@ -37,8 +37,6 @@
 #include <connect/services/clparser.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
-#include <../src/misc/netstorage/filetrack.hpp>
-
 #ifdef WIN32
 #include <io.h>
 #include <fcntl.h>
@@ -1561,10 +1559,12 @@ int CGridCommandLineInterfaceApp::Run()
                         output_file_helper.CreateTemporaryFile(opt_value);
                 break;
             case eFileTrackSite:
-                TFileTrack_Site::SetDefault(opt_value);
+                CDirectNetStorageRegistry::CFileTrack::SetSite(
+                        GetConfig(), opt_value);
                 break;
             case eFileTrackAPIKey:
-                TFileTrack_APIKey::SetDefault(opt_value);
+                CDirectNetStorageRegistry::CFileTrack::SetKey(
+                        GetConfig(), opt_value);
                 break;
             case eServiceName:
                 m_Opts.service_name = opt_value;
@@ -1785,10 +1785,12 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
             if (value_field.GetBoolean())
                 MarkOptionAsSet(eNoConnRetries);
         } else if (label == LOGIN_TOKEN_FILETRACK_SITE) {
-            TFileTrack_Site::SetDefault(value_field.GetString());
+            CDirectNetStorageRegistry::CFileTrack::SetSite(
+                    GetConfig(), value_field.GetString());
             MarkOptionAsSet(eFileTrackSite);
         } else if (label == LOGIN_TOKEN_FILETRACK_API_KEY) {
-            TFileTrack_APIKey::SetDefault(value_field.GetString());
+            CDirectNetStorageRegistry::CFileTrack::SetKey(
+                    GetConfig(), value_field.GetString());
             MarkOptionAsSet(eFileTrackAPIKey);
         }
 

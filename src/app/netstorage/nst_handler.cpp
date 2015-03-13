@@ -2266,9 +2266,15 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
         string      object_loc = message.GetString("ObjectLoc");
         x_CheckObjectLoc(object_loc);
 
+        /* TODO: Redo using IRegistry and ctor
         CDirectNetStorage   storage(
+                            registry,
                             CNetICacheClient(CNetICacheClient::eAppRegistry),
                             m_Server->GetCompoundIDPool(), kEmptyStr);
+         */
+        CDirectNetStorage   storage(g_CreateNetStorage(
+                            CNetICacheClient(CNetICacheClient::eAppRegistry),
+                            kEmptyStr));
         CDirectNetStorageObject object(storage.Open(object_loc));
 
         if (m_ConnContext.NotNull())
@@ -2291,9 +2297,13 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
     CNetICacheClient    icache_client(icache_settings.m_ServiceName,
                                       icache_settings.m_CacheName, client_name);
 
-    CDirectNetStorageByKey    storage(icache_client,
+    /* TODO: Redo using IRegistry and ctor
+    CDirectNetStorageByKey    storage(registry, icache_client,
                                       m_Server->GetCompoundIDPool(),
                                       user_key.m_AppDomain);
+     */
+    CDirectNetStorageByKey    storage(g_CreateNetStorageByKey(icache_client,
+                                      user_key.m_AppDomain));
     CDirectNetStorageObject   object(storage.Open(user_key.m_UniqueID, flags));
 
     // Log if needed
@@ -2392,9 +2402,13 @@ CNetStorageHandler::x_CreateObjectStream(
                 icache_settings.m_CacheName, m_Client);
     }
 
-    CDirectNetStorage   net_storage(icache_client,
+    /* TODO: Redo using IRegistry and ctor
+    CDirectNetStorage   net_storage(registry, icache_client,
                                     m_Server->GetCompoundIDPool(),
                                     icache_settings.m_CacheName);
+     */
+    CDirectNetStorage   net_storage(g_CreateNetStorage(icache_client,
+                                    icache_settings.m_CacheName));
     return net_storage.Create(m_Service, m_DBObjectID, flags);
 }
 

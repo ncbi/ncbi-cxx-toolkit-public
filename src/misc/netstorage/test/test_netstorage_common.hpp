@@ -64,6 +64,7 @@ inline TNetStorage g_GetNetStorage()
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     return CDirectNetStorage(
+            CNcbiApplication::Instance()->GetConfig(),
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
             NULL, nst_app_domain);
@@ -75,6 +76,7 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     return CDirectNetStorageByKey(
+            CNcbiApplication::Instance()->GetConfig(),
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
             NULL, nst_app_domain);
@@ -86,6 +88,7 @@ inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>()
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     return CDirectNetStorageByKey(
+            CNcbiApplication::Instance()->GetConfig(),
             CNetICacheClient(nc_service.c_str(),
                     nst_app_domain.c_str(), APP_NAME),
             NULL, nst_app_domain);

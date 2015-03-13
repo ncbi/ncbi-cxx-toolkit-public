@@ -38,8 +38,6 @@
 
 #include <connect/services/netstorage_impl.hpp>
 
-#include <../src/misc/netstorage/filetrack.hpp>
-
 USING_NCBI_SCOPE;
 
 #define TOKEN_TYPE__NETCACHE_BLOB_KEY "NetCacheBlobKey"
@@ -195,11 +193,13 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
 
     if (IsOptionSet(eFileTrackSite)) {
         cid.AppendLabel(LOGIN_TOKEN_FILETRACK_SITE);
-        cid.AppendString(TFileTrack_Site::GetDefault());
+        cid.AppendString(
+                CDirectNetStorageRegistry::CFileTrack::GetSite(GetConfig()));
     }
     if (IsOptionSet(eFileTrackAPIKey)) {
         cid.AppendLabel(LOGIN_TOKEN_FILETRACK_API_KEY);
-        cid.AppendString(TFileTrack_APIKey::GetDefault());
+        cid.AppendString(
+                CDirectNetStorageRegistry::CFileTrack::GetKey(GetConfig()));
     }
 
     PrintLine(cid.ToString());

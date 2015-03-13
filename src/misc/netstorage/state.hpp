@@ -54,8 +54,8 @@ struct SContext : CObject
     string app_domain;
 
     SContext(const string&, CNetICacheClient, TNetStorageFlags,
-            CCompoundIDPool::TInstance);
-    Uint8 GetRandomNumber() { return filetrack_api.m_Random.GetRandUint8(); }
+            CCompoundIDPool::TInstance, const IRegistry&);
+    Uint8 GetRandomNumber() { return filetrack_api.GetRandUint8(); }
 
     TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
     {
