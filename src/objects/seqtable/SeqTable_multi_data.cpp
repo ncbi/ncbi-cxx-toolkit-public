@@ -575,7 +575,7 @@ bool CSeqTable_multi_data::TryGetReal(size_t row, double& v) const
         if ( !x_TryGetInt8(row, value_int8, "Real") ) {
             return false;
         }
-        v = value_int8;
+        v = double(value_int8);
         return true;
     }
 }
