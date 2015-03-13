@@ -826,5 +826,5 @@ int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     USING_NCBI_SCOPE;
     CException::EnableBackgroundReporting(false);
-    return CDataTool().AppMain(argc, argv, 0, eDS_Default, "", _T_XSTRING("datatool"));
+    return CDataTool().AppMain(argc, argv, 0, eDS_Default, _T_XSTRING(""), _T_XSTRING("datatool"));
 }
