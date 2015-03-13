@@ -928,6 +928,14 @@
 #  define NCBI_DISCREPANCY_REPORT_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library discrepancy
+ */
+#ifdef NCBI_DISCREPANCY_EXPORTS
+#  define NCBI_DISCREPANCY_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_DISCREPANCY_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library cleanup
  */
 #ifdef NCBI_CLEANUP_EXPORTS

@@ -38,7 +38,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
 
-class NCBI_DISCREPANCY_REPORT_EXPORT CReportObject : public CObject
+class NCBI_DISCREPANCY_EXPORT CReportObject : public CObject
 {
 public:
     virtual ~CReportObject(){}
@@ -47,7 +47,7 @@ public:
 typedef vector<CRef<CReportObject> > TReportObjectList;
 
 
-class NCBI_DISCREPANCY_REPORT_EXPORT CReportItem : public CObject
+class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
 {
 public:
     virtual ~CReportItem(){}
@@ -58,7 +58,7 @@ typedef vector<CRef<CReportItem> > TReportItemList;
 
 
 /// Pass default values to the test
-struct NCBI_DISCREPANCY_REPORT_EXPORT CContext
+struct NCBI_DISCREPANCY_EXPORT CContext
 {
     string m_File;
     string m_Lineage;
@@ -66,7 +66,7 @@ struct NCBI_DISCREPANCY_REPORT_EXPORT CContext
 };
 
 
-class NCBI_DISCREPANCY_REPORT_EXPORT CDiscrepancyCase : public CObject
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
     virtual ~CDiscrepancyCase(){}
@@ -77,11 +77,11 @@ public:
 };
 
 
-NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyCaseName(const string&);
-NCBI_DISCREPANCY_REPORT_EXPORT CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
-NCBI_DISCREPANCY_REPORT_EXPORT bool DiscrepancyCaseNotImplemented(const string&);
-NCBI_DISCREPANCY_REPORT_EXPORT vector<string> GetDiscrepancyNames();
-NCBI_DISCREPANCY_REPORT_EXPORT vector<string> GetDiscrepancyAliases(const string&);
+NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
+NCBI_DISCREPANCY_EXPORT CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
+NCBI_DISCREPANCY_EXPORT bool DiscrepancyCaseNotImplemented(const string&);
+NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames();
+NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

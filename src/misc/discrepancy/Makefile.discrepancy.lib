@@ -1,6 +1,6 @@
 # $Id$
 
-# Build library "xdiscrepancy_report"
+# Build library "xdiscrepancy"
 ###############################
 
 SRC = discrepancy_core discrepancy_case report_object

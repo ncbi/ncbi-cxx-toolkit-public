@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <misc/discrepancy_report/report_object.hpp>
+#include <misc/discrepancy/report_object.hpp>
 
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
