@@ -514,7 +514,7 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(const CSeq_loc& loc, TSeqPos cds_sta
             
             size_t count_terminals_within_cds =
                 (last_interval.GetFrom() >= cds_start && last_interval.GetFrom() <= cds_stop ? 1 : 0)
-              + (     interval.GetFrom() >= cds_start && last_interval.GetFrom() <= cds_stop ? 1 : 0)
+              + (     interval.GetFrom() >= cds_start &&      interval.GetFrom() <= cds_stop ? 1 : 0)
               + (last_interval.GetTo()   >= cds_start && last_interval.GetTo()   <= cds_stop ? 1 : 0)
               + (     interval.GetTo()   >= cds_start &&      interval.GetTo()   <= cds_stop ? 1 : 0);
  
@@ -527,6 +527,13 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(const CSeq_loc& loc, TSeqPos cds_sta
                 last_interval.SetFrom(union_from);
                 last_interval.SetTo(union_to);
             } else {
+#if 0
+                NcbiCerr << "Retaining UTR indel: "
+                         << "cds: " << cds_start << ".." << cds_stop << "; "
+                         << "terminals_in_cds: " << count_terminals_within_cds << "; "
+                         << "last: " << MSerial_AsnText << last_interval
+                         << "this: " << MSerial_AsnText << interval;
+#endif
                 collapsed_loc->SetPacked_int().Set().push_back(CRef<CSeq_interval>(SerialClone(interval)));
             }
         }
