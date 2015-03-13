@@ -690,7 +690,7 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
         if (windows[k] == NULL)
             goto error_return;
     }
-    qsort(windows, hspcnt, sizeof(BlastCompo_SequenceRange*),
+    qsort(windows, hspcnt, sizeof(s_WindowInfo*),
         s_LocationCompareWindows);
 
     /* Join windows that overlap or are too close together.  */
@@ -736,7 +736,7 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
     for (k = 0;  k < length_joined;  k++) {
         s_DistinctAlignmentsSort(&windows[k]->align, windows[k]->hspcnt);
     }
-    qsort(windows, *nWindows, sizeof(BlastCompo_SequenceRange*),
+    qsort(windows, *nWindows, sizeof(s_WindowInfo*),
           s_SubjectCompareWindows);
     return 0; /* normal return */
 
@@ -810,7 +810,7 @@ s_WindowsFromProteinAligns(BlastCompo_Alignment * alignments,
     /* shrink to fit */
     {
         s_WindowInfo ** new_windows =
-            realloc(windows, window_index * sizeof(BlastCompo_SequenceRange*));
+            realloc(windows, window_index * sizeof(s_WindowInfo*));
         if (new_windows == NULL) {
             goto error_return;
         } else {
@@ -818,7 +818,7 @@ s_WindowsFromProteinAligns(BlastCompo_Alignment * alignments,
             *nWindows = window_index;
         }
     }
-    qsort(windows, *nWindows, sizeof(BlastCompo_SequenceRange*),
+    qsort(windows, *nWindows, sizeof(s_WindowInfo*),
           s_SubjectCompareWindows);
     *pwindows = windows;
     /* Normal return */
