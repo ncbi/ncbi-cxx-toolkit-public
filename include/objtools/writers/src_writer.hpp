@@ -72,7 +72,7 @@ class NCBI_XOBJWRITE_EXPORT CSrcWriter:
 //  ============================================================================
 {    
 public:
-    typedef map<string, int> COLUMNMAP;
+    typedef map<string, size_t> COLUMNMAP;
     typedef map<string, string> NAMEMAP;
     typedef list<string> NAMELIST;
     typedef vector<string> FIELDS;

@@ -221,7 +221,7 @@ void CSrcWriter::xPrepareTableColumn(
         mColnameToIndex[colName] = mSrcTable->GetColumns().size();
         mSrcTable->SetColumns().push_back(pColumn);
     }
-    unsigned int index = mColnameToIndex[colName];
+    size_t index = mColnameToIndex[colName];
     CSeqTable_column& column = *mSrcTable->SetColumns().at(index);
     column.SetData().SetString();
     while (column.GetData().GetString().size() < mSrcTable->GetNum_rows()) {
@@ -1149,7 +1149,7 @@ void CSrcWriter::xAppendColumnValue(
     const string& colValue)
 //  ----------------------------------------------------------------------------
 {
-    unsigned int index = mColnameToIndex[colName];
+    size_t index = mColnameToIndex[colName];
     CSeqTable_column& column = *mSrcTable->SetColumns().at(index);
     column.SetData().SetString().push_back(colValue);
 }
