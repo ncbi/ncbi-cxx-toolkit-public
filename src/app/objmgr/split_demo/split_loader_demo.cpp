@@ -121,8 +121,7 @@ int CDemoApp::Run(void)
     CBioseq_Handle handle = scope.GetBioseqHandle(idh);
     // Check if the handle is valid
     if ( !handle ) {
-        ERR_POST(Fatal << "Bioseq not found");
-        Abort();
+        ERR_FATAL("Bioseq not found: "<<idh);
     }
 
     size_t count = 0;

@@ -194,7 +194,7 @@ retry:
     }
     if (end_pos == s_InReadSize) {
         if (s_InPos == 0  &&  s_InReadSize == sizeof(s_InBuf)) {
-            LOG_POST(Fatal << "Too long line in the input file");
+            ERR_FATAL("Too long line in the input file");
         }
         memmove(s_InBuf, s_InBuf + s_InPos, s_InReadSize - s_InPos);
         s_InReadSize -= s_InPos;

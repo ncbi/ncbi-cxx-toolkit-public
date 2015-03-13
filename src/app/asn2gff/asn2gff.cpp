@@ -437,9 +437,8 @@ CAsn2GffApp::x_SeqIdToGiNumber(
     }    
     default:
         // multiple hits? Unexpected and definitely not a good thing...
-        ERR_POST( Fatal << "Unexpected: The ID " << seq_id.c_str() 
-            << " turned up multiple hits." );
-        Abort();
+        ERR_FATAL("Unexpected: The ID " << seq_id
+                  << " turned up multiple hits." );
     }
 
     return 0;
@@ -474,8 +473,7 @@ CAsn2GffApp::HandleSeqID(
         CSeq_id SeqId( seq_id );
     }
     catch ( CException& ) {
-        ERR_POST( Fatal << "The ID " << seq_id.c_str() << " is not a valid seq ID." );
-        Abort();
+        ERR_FATAL("The ID " << seq_id << " is not a valid seq ID." );
     }
     
     unsigned int gi_number = NStr::StringToUInt( seq_id, NStr::fConvErr_NoThrow );
@@ -491,9 +489,8 @@ CAsn2GffApp::HandleSeqID(
         gi_number = x_SeqIdToGiNumber( seq_id, database_names[ i ] );
     }
     if ( 0 == gi_number ) {
-        ERR_POST(Fatal << "Given ID \"" << seq_id.c_str() 
+        ERR_FATAL("Given ID \"" << seq_id
           << "\" does not resolve to a GI number." );
-        Abort();
     }
        
     //
@@ -505,9 +502,7 @@ CAsn2GffApp::HandleSeqID(
     scope->AddDefaults();
     CBioseq_Handle bsh = scope->GetBioseqHandle( id );
     if ( ! bsh ) {
-        ERR_POST(Fatal << "Unable to obtain data on ID \"" << seq_id.c_str() 
-          << "\"." );
-        Abort();
+        ERR_FATAL("Unable to obtain data on ID \"" << seq_id << "\".");
     }
     
     //
@@ -526,8 +521,7 @@ CAsn2GffApp::HandleSeqID(
                 m_FFGenerator->Generate( bsh.GetTopLevelEntry(), *m_Os);
             }
         } catch (CException& ) {
-            ERR_POST( Fatal << "Flat file generation failed on " << id.DumpAsFasta() );
-            Abort();
+            ERR_FATAL("Flat file generation failed on " << id.DumpAsFasta() );
         }
     }
     return true;

@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 #define INFOMSG(stream) ERR_POST(Info << stream)
 #define WARNINGMSG(stream) ERR_POST(Warning << stream)
 #define ERRORMSG(stream) ERR_POST(Error << stream)
-#define FATALMSG(stream) ERR_POST(Fatal << stream)
+#define FATALMSG(stream) ERR_FATAL(stream)
 
 
 FileMessenger::FileMessenger(FileMessagingManager *parentManager,

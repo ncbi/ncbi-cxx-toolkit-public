@@ -579,9 +579,7 @@ bool CAsn2FastaApp::HandleSeqID( const string& seq_id )
     CSeq_id id(seq_id);
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle( id );
     if ( ! bsh ) {
-        ERR_POST(Fatal << "Unable to obtain data on ID \"" << seq_id.c_str()
-          << "\"." );
-        Abort();
+        ERR_FATAL("Unable to obtain data on ID \"" << seq_id << "\".");
     }
 
     //

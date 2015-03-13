@@ -839,10 +839,8 @@ void CWig2tableApplication::ResetChromValues(void)
 
 void CWig2tableApplication::x_Error(const char* msg)
 {
-    ERR_POST(Fatal<<
-             GetArgs()["input"].AsString()<<":"<<m_Input->GetLineNumber()<<
-             ": "<<msg<<": \""<<m_CurLine<<"\"");
-    Abort();
+    ERR_FATAL(GetArgs()["input"].AsString()<<":"<<m_Input->GetLineNumber()<<
+              ": "<<msg<<": \""<<m_CurLine<<"\"");
 }
 
 

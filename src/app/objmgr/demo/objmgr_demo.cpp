@@ -649,13 +649,11 @@ int CDemoApp::Run(void)
             id = SerialClone(*range_loc->GetId());
         }
         else {
-            ERR_POST(Fatal << "Unknown asn_id type: "<<args["asn_id"].AsString());
-            Abort();
+            ERR_FATAL("Unknown asn_id type: "<<args["asn_id"].AsString());
         }
     }
     else {
-        ERR_POST(Fatal << "One of -gi, -id or -asn_id arguments is required");
-        Abort();
+        ERR_FATAL("One of -gi, -id or -asn_id arguments is required");
     }
 
     SAnnotSelector::EResolveMethod resolve = SAnnotSelector::eResolve_TSE;
@@ -909,12 +907,10 @@ int CDemoApp::Run(void)
         vector<string> keys;
         NStr::Tokenize(str, "/", keys);
         if ( keys.size() < 2 || keys.size() > 3 ) {
-            ERR_POST(Fatal<<"Bad blob_id: "<<str<<". Should be sat/satkey(/subsat)?");
-            Abort();
+            ERR_FATAL("Bad blob_id: "<<str<<". Should be sat/satkey(/subsat)?");
         }
         if ( !gb_loader ) {
-            ERR_POST(Fatal<<"Cannot load by blob_id without Genbank loader");
-            Abort();
+            ERR_FATAL("Cannot load by blob_id without Genbank loader");
         }
         int sat, satkey, subsat = 0;
         sat = NStr::StringToInt(keys[0]);
@@ -926,8 +922,7 @@ int CDemoApp::Run(void)
             gb_loader->GetBlobIdFromSatSatKey(sat, satkey, subsat);
         CSeq_entry_Handle seh = scope.GetSeq_entryHandle(gb_loader, blob_id);
         if ( !seh ) {
-            ERR_POST(Fatal<<"Genbank entry with blob_id "<<str<<" not found");
-            Abort();
+            ERR_FATAL("Genbank entry with blob_id "<<str<<" not found");
         }
     }
 

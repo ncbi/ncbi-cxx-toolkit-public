@@ -246,14 +246,12 @@ void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
     string errmsg;
     I_DriverContext* context = drvMgr.GetDriverContext("ftds", &errmsg, &args);
     if ( !context ) {
-        ERR_POST(Fatal<<"Failed to create ftds context: "<<errmsg);
-        Abort();
+        ERR_FATAL("Failed to create ftds context: "<<errmsg);
     }
 
     m_PubSeqOS.reset(context->Connect(server_name, "anyone", "allowed", 0));
     if ( !m_PubSeqOS.get() ) {
-        ERR_POST(Fatal<<"Failed to open PubSeqOS connection: "<<server_name);
-        Abort();
+        ERR_FATAL("Failed to open PubSeqOS connection: "<<server_name);
     }
 
     {{
@@ -359,8 +357,7 @@ void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
                 obj_str << packet;
             }}
             if ( !mem_str ) {
-                ERR_POST(Fatal<<"PubSeqOS: packet size overflow");
-                Abort();
+                ERR_FATAL("PubSeqOS: packet size overflow");
             }
             size = mem_str.pcount();
         }}
@@ -382,8 +379,7 @@ void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
         AutoPtr<CDB_Result> dbr;
         while( cmd->HasMoreResults() ) {
             if ( cmd->HasFailed() ) {
-                ERR_POST(Fatal<<"PubSeqOS: failed RPC");
-                Abort();
+                ERR_FATAL("PubSeqOS: failed RPC");
             }
             dbr = cmd->Result();
             if ( !dbr.get() || dbr->ResultType() != eDB_RowResult ) {
@@ -398,8 +394,7 @@ void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
                 return;
             }
         }
-        ERR_POST(Fatal<<"PubSeqOS: no more results");
-        Abort();
+        ERR_FATAL("PubSeqOS: no more results");
     }
 }
 
@@ -580,8 +575,7 @@ namespace {
                 obj_type = CID2S_Chunk::GetTypeInfo();
                 break;
             default:
-                ERR_POST(Fatal << "Unknown data type in ID2_Reply_Data");
-                Abort();
+                ERR_FATAL("Unknown data type in ID2_Reply_Data");
             }
                 
             ESerialDataFormat format;
@@ -596,8 +590,7 @@ namespace {
                 format = eSerial_Xml;
                 break;
             default:
-                ERR_POST(Fatal << "Unknown data format in ID2_Reply_Data");
-                Abort();
+                ERR_FATAL("Unknown data format in ID2_Reply_Data");
             }
                 
             {{
@@ -623,8 +616,7 @@ namespace {
                     break;
                 }
                 default:
-                    ERR_POST(Fatal << "Unknown data compression in ID2_Reply_Data");
-                    Abort();
+                    ERR_FATAL("Unknown data compression in ID2_Reply_Data");
                 }
                 _ASSERT( obj_stream.get() );
                 obj_stream->UseMemoryPool();
@@ -761,8 +753,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
         obj_type = CID2S_Chunk::GetTypeInfo();
         break;
     default:
-        ERR_POST(Fatal << "Unknown data type in ID2_Reply_Data");
-        Abort();
+        ERR_FATAL("Unknown data type in ID2_Reply_Data");
     }
 
     ESerialDataFormat format;
@@ -777,8 +768,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
         format = eSerial_Xml;
         break;
     default:
-        ERR_POST(Fatal << "Unknown data format in ID2_Reply_Data");
-        Abort();
+        ERR_FATAL("Unknown data format in ID2_Reply_Data");
     }
 
     COSSReader reader(data.GetData());
@@ -800,8 +790,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
         break;
     }
     default:
-        ERR_POST(Fatal << "Unknown data compression in ID2_Reply_Data");
-        Abort();
+        ERR_FATAL("Unknown data compression in ID2_Reply_Data");
     }
     _ASSERT( obj_stream.get() );
     obj_stream->UseMemoryPool();
@@ -919,8 +908,7 @@ int CId2FetchApp::Run(void)
         vector<string> vv;
         NStr::Tokenize(args["blob_id"].AsString(), ",", vv);
         if ( vv.size() != 2 ) {
-            ERR_POST(Fatal<<"Bad blob_id format: "<<args["blob_id"]);
-            Abort();
+            ERR_FATAL("Bad blob_id format: "<<args["blob_id"]);
         }
         int sat = NStr::StringToInt(vv[0]);
         int sat_key = NStr::StringToInt(vv[1]);
@@ -982,15 +970,12 @@ int CId2FetchApp::Run(void)
                                 CObjectIStream::eNoFileHeader);
             }
             else {
-                ERR_POST(Fatal <<
-                    "Object type must be ID2-Request or ID2-Request-Packet.");
-                Abort();
+                ERR_FATAL("Object type must be ID2-Request or ID2-Request-Packet.");
             }
         }
     }
     else {
-        ERR_POST(Fatal << "No ID2-Request specified.");
-        Abort();
+        ERR_FATAL("No ID2-Request specified.");
     }
 
 

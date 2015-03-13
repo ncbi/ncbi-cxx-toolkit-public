@@ -167,7 +167,7 @@ int CLDS2IndexerApplication::Run(void)
 /*
     if ( args["keep_path"] ) {
         if ( args["abs_path"] ) {
-            ERR_POST(Fatal<<"Conflicting options: -abs_path and -keep_path");
+            ERR_FATAL("Conflicting options: -abs_path and -keep_path");
         }
         flags = (flags & ~CLDS_Manager::fPathMask) |
             CLDS_Manager::fOriginalPath;

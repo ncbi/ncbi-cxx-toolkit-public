@@ -186,8 +186,7 @@ int CLDSIndexerApplication::Run(void)
         (crc32? CLDS_Manager::fComputeControlSum: CLDS_Manager::fNoControlSum);
     if ( args["keep_path"] ) {
         if ( args["abs_path"] ) {
-            ERR_POST(Fatal<<"Conflicting options: -abs_path and -keep_path");
-            Abort();
+            ERR_FATAL("Conflicting options: -abs_path and -keep_path");
         }
         flags = (flags & ~CLDS_Manager::fPathMask) |
             CLDS_Manager::fOriginalPath;

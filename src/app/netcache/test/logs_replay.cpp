@@ -445,7 +445,7 @@ retry:
     }
     if (end_pos == m_InReadSize) {
         if (m_InPos == 0  &&  m_InReadSize == sizeof(m_InBuf)) {
-            LOG_POST(Fatal << "Too long line in the input file");
+            ERR_FATAL("Too long line in the input file");
         }
         memmove(m_InBuf, m_InBuf + m_InPos, m_InReadSize - m_InPos);
         m_InReadSize -= m_InPos;
@@ -745,7 +745,7 @@ CReplayThread::Main(void)
                               " %d %" NCBI_UINT8_FORMAT_SPEC,
                               &m_ReqTime, cmd, &key_id, &gen_key, &size);
         if (n_scaned != 5) {
-            LOG_POST(Fatal << "Incorrect line format: " << line);
+            ERR_FATAL("Incorrect line format: " << line);
         }
         if (m_ReqTime < s_StartTime)
             continue;

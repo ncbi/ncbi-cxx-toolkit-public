@@ -84,7 +84,7 @@ BEGIN_SCOPE(Cn3D)
 #define INFOMSG(stream) ERR_POST(ncbi::Info << stream)
 #define WARNINGMSG(stream) ERR_POST(ncbi::Warning << stream)
 #define ERRORMSG(stream) ERR_POST(ncbi::Error << stream)
-#define FATALMSG(stream) do { ERR_POST(ncbi::Fatal << stream); Abort(); } while(0)
+#define FATALMSG(stream) ERR_FATAL(stream)
 
 // turn on/off dialog box for errors (on by default)
 void SetDialogSevereErrors(bool status);
