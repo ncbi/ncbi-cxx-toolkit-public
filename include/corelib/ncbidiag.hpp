@@ -199,6 +199,17 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message                                                        \
       << NCBI_NS_NCBI::Endm )
 
+/// Posting fatal error and abort.
+/// This macro is deprecated and it's strongly recomended to move in all
+/// projects (except tests) to macro ERR_FATAL_X to make possible more
+/// flexible error statistics and logging.
+///
+/// @sa
+///   ERR_FATAL_X, ERR_POST
+#define ERR_FATAL(message)                                              \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Fatal) \
+      .GetRef() << message << NCBI_NS_NCBI::EndmFatal )
+
 /// Error posting with error codes.
 /// This macro should be used only when you need to make non-constant
 /// error subcode. In all other cases it's strongly recomended to move
@@ -215,6 +226,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 
 #define LOG_POST_EX(err_code, err_subcode, message)                     \
     ERR_POST_EX(err_code, err_subcode, message)
+
+#define ERR_FATAL_EX(err_code, err_subcode, message)                    \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Fatal) \
+      .GetRef()  << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )  \
+      << message << NCBI_NS_NCBI::EndmFatal )
 
 /// Define global error code name with given value (err_code) and given
 /// maximum value of error subcode within this code. To use defined error
@@ -515,6 +531,9 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 #define LOG_POST_X(err_subcode, message)                  \
     ERR_POST_X(err_subcode, message)
 
+#define ERR_FATAL_X(err_subcode, message)                 \
+    ERR_FATAL_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
+
 /// Error posting with error code having given name and with given error
 /// subcode. Macro must be placed in headers instead of ERR_POST_X to not
 /// confuse default error codes used in sources where this header is included.
@@ -527,6 +546,9 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 #define LOG_POST_XX(error_name, err_subcode, message)                      \
     ERR_POST_XX(error_name, err_subcode, message)
 
+#define ERR_FATAL_XX(error_name, err_subcode, message)                     \
+    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
+      ERR_FATAL_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
 
 /// Common code for making log or error posting only given number of times
 /// during program execution. This macro MUST not be used outside

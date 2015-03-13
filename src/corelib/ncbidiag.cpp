@@ -7134,21 +7134,13 @@ extern void Abort(void)
     else if (value  &&  (*value == _TX('N')  ||  *value == _TX('n') || *value == _TX('0'))) {
         ::abort();
     }
-    else
-#define NCBI_TOTALVIEW_ABORT_WORKAROUND 1
-#if defined(NCBI_TOTALVIEW_ABORT_WORKAROUND)
-        // The condition in the following if statement is always 'true'.
-        // It's a workaround for TotalView 6.5 (beta) to properly display
-        // stacktrace at this point.
-//        if ( !(value && *value == 'Y') )
-#endif
-            {
+    else {
 #if defined(_DEBUG)
-                ::abort();
+        ::abort();
 #else
-                ::exit(255);
+        ::exit(255);
 #endif
-            }
+    }
 }
 
 
@@ -7328,6 +7320,16 @@ CDiagContext_Extra g_PostPerf(int                       status,
                               SDiagMessage::TExtraArgs& args)
 {
     return CDiagContext_Extra(status, timespan, args);
+}
+
+
+const CNcbiDiag& EndmFatal(const CNcbiDiag& diag)
+{
+    Endm(diag);
+    Abort();
+    // the function is no-return and the most portable method to make it so
+    // is to throw an exception
+    throw exception();
 }
 
 
