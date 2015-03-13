@@ -207,8 +207,8 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// @sa
 ///   ERR_FATAL_X, ERR_POST
 #define ERR_FATAL(message)                                              \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Fatal) \
-      .GetRef() << message << NCBI_NS_NCBI::EndmFatal )
+    NCBI_NS_NCBI::EndmFatal(NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,  \
+        NCBI_NS_NCBI::eDiag_Fatal).GetRef() << message )
 
 /// Error posting with error codes.
 /// This macro should be used only when you need to make non-constant
@@ -228,9 +228,9 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
     ERR_POST_EX(err_code, err_subcode, message)
 
 #define ERR_FATAL_EX(err_code, err_subcode, message)                    \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Fatal) \
-      .GetRef()  << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )  \
-      << message << NCBI_NS_NCBI::EndmFatal )
+    NCBI_NS_NCBI::EndmFatal(NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,  \
+        NCBI_NS_NCBI::eDiag_Fatal).GetRef() <<                          \
+        NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) << message )
 
 /// Define global error code name with given value (err_code) and given
 /// maximum value of error subcode within this code. To use defined error

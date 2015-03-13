@@ -7323,13 +7323,10 @@ CDiagContext_Extra g_PostPerf(int                       status,
 }
 
 
-const CNcbiDiag& EndmFatal(const CNcbiDiag& diag)
+void EndmFatal(const CNcbiDiag& diag)
 {
     Endm(diag);
     Abort();
-    // the function is no-return and the most portable method to make it so
-    // is to throw an exception
-    throw exception();
 }
 
 
