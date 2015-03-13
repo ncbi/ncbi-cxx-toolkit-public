@@ -1831,7 +1831,7 @@ void OrderThdTbl(Thd_Tbl* pResults) {
   /* mem allocation for array where order of results is stored */
   Order = (int*) calloc(1,sizeof(int) * pResults->n);
   /* mem allocation for checklist to tell which results have been ordered */
-  CheckList = (Boolean*) calloc(1,sizeof(int) * pResults->n);
+  CheckList = (Boolean*) calloc(1,sizeof(Boolean) * pResults->n);
 
   /* look through the list n times */
   for (i=0; i<pResults->n; i++) {
