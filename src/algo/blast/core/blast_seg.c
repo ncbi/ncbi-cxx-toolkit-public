@@ -2197,7 +2197,7 @@ s_AA20alphaStd (void)
    palpha->lnalphasize = kLn20;
 
    alphaindex = (Int4*) calloc(kCharSet , sizeof(Int4));
-   alphaflag = (unsigned char*) calloc(kCharSet , sizeof(char));
+   alphaflag = (unsigned char*) calloc(kCharSet , sizeof(unsigned char));
 
    for (c=0, i=0; c<kCharSet; c++)
      {
