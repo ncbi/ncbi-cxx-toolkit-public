@@ -522,8 +522,9 @@ string NS_GetConfigFileChecksum(const string &  file_name,
 
     try {
         string      checksum_as_string;
-        CChecksum   checksum = ComputeFileChecksum(file_name, CChecksum::eMD5);
+        CChecksum   checksum(CChecksum::eMD5);
 
+        checksum.AddFile(file_name);
         checksum.GetMD5Digest(checksum_as_string);
         return checksum_as_string;
     } catch (const exception &  ex) {
