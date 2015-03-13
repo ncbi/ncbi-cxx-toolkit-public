@@ -459,7 +459,7 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
             Uint4 index;
             if (itr->chunk_sz < new_sz) { 
                 sfree(itr->oid_list);
-                itr->oid_list = (int *) malloc (new_sz * sizeof(unsigned int));
+                itr->oid_list = (int *) malloc (new_sz * sizeof(int));
             }
             itr->chunk_sz = new_sz;
             for (index = 0; index < new_sz; ++index)
