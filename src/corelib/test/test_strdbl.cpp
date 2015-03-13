@@ -895,7 +895,7 @@ void CTestApp::RunSpeedBenchmark(void)
             v = NStr::StringToDouble(ss[t], flags|NStr::fDecimalPosix);
             if ( errno ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -903,7 +903,7 @@ void CTestApp::RunSpeedBenchmark(void)
             v = NStr::StringToDouble(ss[t], flags);
             if ( errno ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -912,7 +912,7 @@ void CTestApp::RunSpeedBenchmark(void)
             v = NStr::StringToDoublePosix(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -921,7 +921,7 @@ void CTestApp::RunSpeedBenchmark(void)
             v = StringToDoublePosixOld(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -930,7 +930,7 @@ void CTestApp::RunSpeedBenchmark(void)
             v = strtod(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
     }
     double sum = 0;
@@ -1416,7 +1416,7 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
     }
     NcbiCout << "Roundtrip (string-double-string) errors: " << roundtrip << NcbiEndl;
     if (errors != 0) {
-        ERR_POST(Fatal<< "ERRORS (need immediate attention!): " << errors);
+        ERR_FATAL("ERRORS (need immediate attention!): " << errors);
     }
     NcbiCout << NcbiEndl;
 }

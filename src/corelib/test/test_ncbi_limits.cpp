@@ -124,7 +124,7 @@ int main()
     try {
         s_Test();
     } catch (exception& e) {
-        ERR_POST(Fatal << e.what());
+        ERR_FATAL(e.what());
     }
 
     unsigned char c = 10;

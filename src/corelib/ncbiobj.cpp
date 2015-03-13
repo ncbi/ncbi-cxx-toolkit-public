@@ -1141,12 +1141,11 @@ void CObjectCounterLocker::ReportLockedObjects(bool )
 void CObjectCounterLocker::ReportIncompatibleType(const type_info& type)
 {
 #ifdef _DEBUG
-    ERR_POST_X(8, Fatal <<
-                  "Type " << type.name() << " must be derived from CObject" <<
-                  StackTrace);
+    ERR_FATAL_X(8, "Type "<<type.name()<<" must be derived from CObject"
+                << StackTrace);
 #else
-    NCBI_THROW(CCoreException, eInvalidArg,
-               string("Type ")+type.name()+" must be derived from CObject");
+    NCBI_THROW_FMT(CCoreException, eInvalidArg,
+                   "Type "<<type.name()<<" must be derived from CObject");
 #endif
 }
 
@@ -1247,12 +1246,11 @@ CObject* CPtrToObjectProxy::GetLockedObject(void)
 void CPtrToObjectProxy::ReportIncompatibleType(const type_info& type)
 {
 #ifdef _DEBUG
-    ERR_POST_X(8, Fatal <<
-               "Type " << type.name() << " must be derived from CWeakObject"<<
-               StackTrace);
+    ERR_FATAL_X(8, "Type "<<type.name()<<" must be derived from CWeakObject"
+                << StackTrace);
 #else
-    NCBI_THROW(CCoreException, eInvalidArg, string("Type ") +
-               type.name() + " must be derived from CWeakObject");
+    NCBI_THROW_FMT(CCoreException, eInvalidArg,
+                   "Type "<<type.name()<<" must be derived from CWeakObject");
 #endif
 }
 

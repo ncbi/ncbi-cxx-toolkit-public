@@ -2370,7 +2370,7 @@ int main()
         s_TestTimeout();
         s_DemoStopWatch();
     } catch (CException& e) {
-        ERR_POST(Fatal << e);
+        ERR_FATAL(e);
     }
     // Success
     return 0;

@@ -111,7 +111,7 @@ inline void add_step()
 
 void error(const char* msg)
 {
-    ERR_POST(Fatal<<msg);
+    ERR_FATAL(msg);
 }
 
 void message(const char* msg)
@@ -169,7 +169,7 @@ class CObjectWithNew
                 (objectPtr > stackObjectPtr) &&
                 (objectPtr < stackObjectPtr + STACK_THRESHOLD);
             if ( inStack ) {
-                ERR_POST(Fatal<<"!!!InStack,"
+                ERR_FATAL("!!!InStack,"
                          " s_CurrentStep: "<<s_CurrentStep<<
                          " s_CurrentInHeap: "<<s_CurrentInHeap<<
                          " stackObjectPtr: "<<(void*)stackObjectPtr<<
@@ -554,9 +554,9 @@ void check_cnts(size_t expected = 0,
     }
     if ( expected == 0 ) {
         if ( alloc_count.Get() != expected-expected_static )
-            ERR_POST(Fatal<<"alloc_count: "<<alloc_count.Get());
+            ERR_FATAL("alloc_count: "<<alloc_count.Get());
         if ( object_count.Get() != expected )
-            ERR_POST(Fatal<<"object_count: "<<object_count.Get());
+            ERR_FATAL("object_count: "<<object_count.Get());
     }
     _VERIFY(!sx_HaveLastNewPtr());
 }

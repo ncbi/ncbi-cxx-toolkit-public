@@ -483,7 +483,7 @@ int CThreadedApp::Run(void)
 
     unsigned int threshold = NCBI_PARAM_TYPE(TEST_MT, Cascading)::GetDefault();
     if (threshold > 100) {
-        ERR_POST(Fatal << "Cascading threshold must be less than 100");
+        ERR_FATAL("Cascading threshold must be less than 100");
     }
     bool cascading = ((unsigned int)(rand() % 100)) < threshold;
 #if !defined(NCBI_THREADS)
@@ -569,13 +569,13 @@ void CThreadedApp::x_InitializeThreadGroups(void)
     }
 
     if(count > s_NumThreads) {
-        ERR_POST(Fatal << "Thread groups with no threads are not allowed");
+        ERR_FATAL("Thread groups with no threads are not allowed");
     }
 
     unsigned int threshold =
         NCBI_PARAM_TYPE(TEST_MT, IntragroupSyncPoint)::GetDefault();
     if (threshold > 100) {
-        ERR_POST(Fatal << "IntragroupSyncPoint threshold must be less than 100");
+        ERR_FATAL("IntragroupSyncPoint threshold must be less than 100");
     }
 
     unsigned int threads_left = s_NumThreads;

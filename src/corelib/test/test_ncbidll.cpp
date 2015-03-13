@@ -65,19 +65,19 @@ static void s_TEST_SimpleDll(void)
     // Get addresses from DLL
     DllVar_Counter = dll.GetEntryPoint_Data("DllVar_Counter", &DllVar_Counter);
     if ( !DllVar_Counter ) {
-        ERR_POST(Fatal << "Error get address of variable DllVar_Counter.");
+        ERR_FATAL("Error get address of variable DllVar_Counter.");
     }
     Dll_Inc = dll.GetEntryPoint_Func("Dll_Inc", &Dll_Inc );
     if ( !Dll_Inc ) {
-        ERR_POST(Fatal << "Error get address of function Dll_Inc().");
+        ERR_FATAL("Error get address of function Dll_Inc().");
     }
     Dll_Add = dll.GetEntryPoint_Func("Dll_Add", &Dll_Add );
     if ( !Dll_Add ) {
-        ERR_POST(Fatal << "Error get address of function Dll_Add().");
+        ERR_FATAL("Error get address of function Dll_Add().");
     }
     Dll_StrRepeat = dll.GetEntryPoint_Func("Dll_StrRepeat", &Dll_StrRepeat );
     if ( !Dll_StrRepeat ) {
-        ERR_POST(Fatal << "Error get address of function Dll_StrRepeat().");
+        ERR_FATAL("Error get address of function Dll_StrRepeat().");
     }
 
     // Call loaded function
@@ -142,7 +142,7 @@ static void s_TEST_WinSystemDll(void)
 
     dllMessageBeep = dll_user32.GetEntryPoint_Func("MessageBeep", &dllMessageBeep );
     if ( !dllMessageBeep ) {
-        ERR_POST(Fatal << "Error get address of function MessageBeep().");
+        ERR_FATAL("Error get address of function MessageBeep().");
     }
     // Call loaded function
     dllMessageBeep(-1);
@@ -153,8 +153,7 @@ static void s_TEST_WinSystemDll(void)
     dll_userenv.GetEntryPoint_Func("GetProfilesDirectoryA", &dllGetProfilesDirectory);
     #endif
     if ( !dllGetProfilesDirectory ) {
-        ERR_POST(Fatal <<
-                 "Error get address of function GetUserProfileDirectory().");
+        ERR_FATAL("Error get address of function GetUserProfileDirectory().");
     }
     // Call loaded function
     TCHAR szProfilePath[1024];
@@ -162,7 +161,7 @@ static void s_TEST_WinSystemDll(void)
     if ( dllGetProfilesDirectory(szProfilePath, &cchPath) ) {
         cout << "Profile dir: " << szProfilePath << endl;
     } else {
-        ERR_POST(Fatal << "GetProfilesDirectory() failed");
+        ERR_FATAL("GetProfilesDirectory() failed");
     }
 
     // Unload USER32.DLL (our work copy)

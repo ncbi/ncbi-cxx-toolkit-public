@@ -3559,7 +3559,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             v = NStr::StringToDouble(ss[t], flags|NStr::fDecimalPosix);
             if ( errno ) v = -1;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -3567,7 +3567,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             v = NStr::StringToDouble(ss[t], flags);
             if ( errno ) v = -1;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -3576,7 +3576,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             v = NStr::StringToDoublePosix(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
         if ( 1 ) {
@@ -3585,7 +3585,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             v = strtod(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
             if ( v < ssr_min[t] || v > ssr_max[t] )
-                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+                ERR_FATAL(v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
     }
     for ( size_t t = 0; t < TESTS; ++t ) {

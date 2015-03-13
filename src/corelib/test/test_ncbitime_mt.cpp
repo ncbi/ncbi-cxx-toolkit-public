@@ -698,8 +698,7 @@ bool CTestRegApp::Thread_Run(int idx)
             s_TestGMT(idx);
         }
     } catch (CException& e) {
-        ERR_POST(Fatal << e);
-        return false;
+        ERR_FATAL(e);
     }
 
     return true;

@@ -347,7 +347,7 @@ int main(int argc, char* argv[])
 
     for (size_t n = 0;  n < kHugeBufsize;  n++) {
         if (hugedata[n] != hugedata[n + kHugeBufsize])
-            ERR_POST(Fatal << "Mismatch @ " << n);
+            ERR_FATAL("Mismatch @ " << n);
     }
 
     ERR_POST(Info << "Checking tied I/O");
@@ -406,7 +406,7 @@ int main(int argc, char* argv[])
     for (size_t n = 0;  n < kHugeBufsize;  n++) {
         if (hugedata[n] != hugedata[n + kHugeBufsize]  ||
             hugedata[n] != hugedata[n + kHugeBufsize*2]) {
-            ERR_POST(Fatal << "Mismatch @ " << n);
+            ERR_FATAL("Mismatch @ " << n);
         }
     }
 
