@@ -316,7 +316,7 @@ bool CGtfWriter::x_SplitCdsLocation(
 
     for ( size_t u = 0; u < 3; ++u ) {
 
-        size_t uLowest = pLocCode2->GetTotalRange().GetFrom();
+        TSeqPos uLowest = pLocCode2->GetTotalRange().GetFrom();
         interval.SetInt().SetFrom( uLowest );
         interval.SetInt().SetTo( uLowest );
         pLocStartCodon = pLocStartCodon->Add( 
@@ -324,7 +324,7 @@ bool CGtfWriter::x_SplitCdsLocation(
         pLocCode2 = pLocCode2->Subtract( 
             interval, CSeq_loc::fSortAndMerge_All, 0, 0 );    
 
-        size_t uHighest = pLocCode->GetTotalRange().GetTo();
+        TSeqPos uHighest = pLocCode->GetTotalRange().GetTo();
         interval.SetInt().SetFrom( uHighest );
         interval.SetInt().SetTo( uHighest );
         pLocStopCodon = pLocStopCodon->Add( 
