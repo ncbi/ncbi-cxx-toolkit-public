@@ -404,7 +404,7 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorNewEx(unsigned int chunk_sz)
     }
 
     /* Should employ lazy initialization? */
-    itr->oid_list = (int*)malloc(chunk_sz * sizeof(unsigned int));
+    itr->oid_list = (int*)malloc(chunk_sz * sizeof(int));
     if (!itr->oid_list) {
         sfree(itr);
         return NULL;
