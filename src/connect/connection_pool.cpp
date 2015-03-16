@@ -41,6 +41,20 @@
 
 BEGIN_NCBI_SCOPE
 
+std::string g_ServerConnTypeToString(enum EServerConnType  conn_type)
+{
+    switch (conn_type) {
+        case eInactiveSocket:       return "eInactiveSocket";
+        case eActiveSocket:         return "eActiveSocket";
+        case eListener:             return "eListener";
+        case ePreDeferredSocket:    return "ePreDeferredSocket";
+        case eDeferredSocket:       return "eDeferredSocket";
+        case ePreClosedSocket:      return "ePreClosedSocket";
+        case eClosedSocket:         return "eClosedSocket";
+    }
+    return "UnknownServerConnType";
+}
+
 
 // CServer_ControlConnection
 CStdRequest* CServer_ControlConnection::CreateRequest(
@@ -186,7 +200,11 @@ void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
     if (conn->type != eActiveSocket  &&  conn->type != ePreDeferredSocket
         &&  conn->type != ePreClosedSocket)
     {
-        abort();
+        ERR_POST(Critical << "Unexpected connection type (" <<
+                 g_ServerConnTypeToString(conn->type) <<
+                 ") when closing the connection. Ignore and continue.");
+        conn->type_lock.Unlock();
+        return;
     }
     conn->type = ePreClosedSocket;
     conn->type_lock.Unlock();

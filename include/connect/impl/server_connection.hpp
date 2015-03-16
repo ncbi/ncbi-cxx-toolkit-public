@@ -34,6 +34,7 @@
 /// Internal header for threaded server connections.
 
 #include <connect/server.hpp>
+#include <string>
 
 
 /** @addtogroup ThreadedServer
@@ -54,6 +55,7 @@ enum EServerConnType {
     ePreClosedSocket,
     eClosedSocket
 };
+std::string g_ServerConnTypeToString(enum EServerConnType  conn_type);
 
 
 class CServer_ConnectionPool;
