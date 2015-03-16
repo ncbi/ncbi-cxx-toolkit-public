@@ -35,9 +35,13 @@
 
 #include <util/value_convert.hpp>
 #include <corelib/test_boost.hpp>
-#include <math.h>
+#include <boost/test/floating_point_comparison.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
+// Tolerances in percentage units, for use with BOOST_CHECK_CLOSE.
+static const float       kFloatTolerance      = 1e-3F;
+static const double      kDoubleTolerance     = 1e-5;
+static const long double kLongDoubleTolerance = 1e-7L;
 
 USING_NCBI_SCOPE;
 
@@ -914,8 +918,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             float value;
 
             value = ConvertSafe(value_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, float(value_Int8));
+            BOOST_CHECK_CLOSE(value, float(value_Int8), kFloatTolerance);
 
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -992,8 +995,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             double value;
 
             value = ConvertSafe(value_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, double(value_Int8));
+            BOOST_CHECK_CLOSE(value, double(value_Int8), kDoubleTolerance);
 
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1027,8 +1029,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // BOOST_CHECK_EQUAL(value, value_CTime);
 
             value = ConvertSafe(str_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, double(value_Int8));
+            BOOST_CHECK_CLOSE(value, double(value_Int8), kDoubleTolerance);
 
             value = ConvertSafe(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1052,7 +1053,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // value = ConvertSafe(str_bool);
 
             value = ConvertSafe(str_float);
-            BOOST_CHECK_EQUAL(float(value), value_float);
+            BOOST_CHECK_CLOSE(float(value), value_float, kFloatTolerance);
 
             value = ConvertSafe(str_double);
             BOOST_CHECK_EQUAL(value, value_double);
@@ -1063,8 +1064,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             long double value;
 
             value = ConvertSafe(value_Int8);
-            // Won't pass on 32-bit Windows + MSVC.
-            BOOST_CHECK_EQUAL(value, (long double)value_Int8);
+            BOOST_CHECK_CLOSE(value, (long double)value_Int8,
+                              kLongDoubleTolerance);
 
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1098,12 +1099,12 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // BOOST_CHECK_EQUAL(value, value_CTime);
 
             value = ConvertSafe(str_Int8);
-            // Rounding issue. Differ in last digit.
-            BOOST_CHECK(fabs(value-value_Int8) <= 1);
+            BOOST_CHECK_CLOSE(value, (long double)value_Int8,
+                              kLongDoubleTolerance);
 
             value = ConvertSafe(str_Uint8);
-            // Rounding issue. Differ in last digit.
-            BOOST_CHECK(fabs(value-value_Uint8) <= 1);
+            BOOST_CHECK_CLOSE(value, (long double)value_Uint8,
+                              kLongDoubleTolerance);
 
             value = ConvertSafe(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1127,10 +1128,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // value = ConvertSafe(str_bool);
 
             value = ConvertSafe(str_float);
-            BOOST_CHECK_EQUAL(float(value), value_float);
+            BOOST_CHECK_CLOSE(float(value), value_float, kFloatTolerance);
 
             value = ConvertSafe(str_double);
-            BOOST_CHECK_EQUAL(double(value), value_double);
+            BOOST_CHECK_CLOSE(double(value), value_double, kDoubleTolerance);
         }
     }
     catch(const CException& ex) {
@@ -1912,12 +1913,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             float value;
 
             value = Convert(value_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, float(value_Int8));
+            BOOST_CHECK_CLOSE(value, float(value_Int8), kFloatTolerance);
             
             value = Convert(value_Uint8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, float(value_Uint8));
+            BOOST_CHECK_CLOSE(value, float(value_Uint8), kFloatTolerance);
 
             value = Convert(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1941,22 +1940,20 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = Convert(value_float);
-            BOOST_CHECK_EQUAL(value, value_float);
+            BOOST_CHECK_CLOSE(value, value_float, kFloatTolerance);
 
             value = Convert(value_double);
-            // BOOST_CHECK_EQUAL(value, value_double);
+            BOOST_CHECK_CLOSE(value, value_double, kFloatTolerance);
 
             // Won't compile ...
             // value = Convert(value_CTime);
             // BOOST_CHECK_EQUAL(value, value_CTime);
 
             value = Convert(str_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, float(value_Int8));
+            BOOST_CHECK_CLOSE(value, float(value_Int8), kFloatTolerance);
 
             value = Convert(str_Uint8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, float(value_Uint8));
+            BOOST_CHECK_CLOSE(value, float(value_Uint8), kFloatTolerance);
 
             value = Convert(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1980,10 +1977,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // value = Convert(str_bool);
 
             value = Convert(str_float);
-            BOOST_CHECK_EQUAL(value, value_float);
+            BOOST_CHECK_CLOSE(value, value_float, kFloatTolerance);
 
             value = Convert(str_double);
-            BOOST_CHECK_EQUAL(value, float(value_double));
+            BOOST_CHECK_CLOSE(value, float(value_double), kFloatTolerance);
         }
 
         // double
@@ -1991,12 +1988,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             double value;
 
             value = Convert(value_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, double(value_Int8));
+            BOOST_CHECK_CLOSE(value, double(value_Int8), kDoubleTolerance);
             
             value = Convert(value_Uint8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, double(value_Uint8));
+            BOOST_CHECK_CLOSE(value, double(value_Uint8), kDoubleTolerance);
 
             value = Convert(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -2030,12 +2025,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // BOOST_CHECK_EQUAL(value, value_CTime);
 
             value = Convert(str_Int8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, double(value_Int8));
+            BOOST_CHECK_CLOSE(value, double(value_Int8), kDoubleTolerance);
 
             value = Convert(str_Uint8);
-            // Won't pass on 32-bit platforms.
-            BOOST_CHECK_EQUAL(value, double(value_Uint8));
+            BOOST_CHECK_CLOSE(value, double(value_Uint8), kDoubleTolerance);
 
             value = Convert(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -2059,7 +2052,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // value = Convert(str_bool);
 
             value = Convert(str_float);
-            BOOST_CHECK_EQUAL(float(value), value_float);
+            BOOST_CHECK_CLOSE(float(value), value_float, kFloatTolerance);
 
             value = Convert(str_double);
             BOOST_CHECK_EQUAL(value, value_double);
@@ -2070,8 +2063,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             long double value;
 
             value = Convert(value_Int8);
-            // Won't pass on 32-bit Windows + MSVC.
-            BOOST_CHECK_EQUAL(value, (long double)value_Int8);
+            BOOST_CHECK_CLOSE(value, (long double)value_Int8,
+                              kLongDoubleTolerance);
             
             value = Convert(value_Uint8);
             BOOST_CHECK_EQUAL(value, value_Uint8);
@@ -2108,12 +2101,12 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // BOOST_CHECK_EQUAL(value, value_CTime);
 
             value = Convert(str_Int8);
-            // Rounding issue. Differ in last digit.
-            BOOST_CHECK(fabs(value-value_Int8) <= 1);
+            BOOST_CHECK_CLOSE(value, (long double)value_Int8,
+                              kLongDoubleTolerance);
 
             value = Convert(str_Uint8);
-            // Rounding issue. Differ in last digit.
-            BOOST_CHECK(fabs(value-value_Uint8) <= 1);
+            BOOST_CHECK_CLOSE(value, (long double)value_Uint8,
+                              kLongDoubleTolerance);
 
             value = Convert(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -2137,10 +2130,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // value = Convert(str_bool);
 
             value = Convert(str_float);
-            BOOST_CHECK_EQUAL(float(value), value_float);
+            BOOST_CHECK_CLOSE(float(value), value_float, kFloatTolerance);
 
             value = Convert(str_double);
-            BOOST_CHECK_EQUAL(double(value), value_double);
+            BOOST_CHECK_CLOSE(double(value), value_double, kDoubleTolerance);
         }
     }
     catch(const CException& ex) {
