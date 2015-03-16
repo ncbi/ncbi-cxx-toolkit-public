@@ -1940,7 +1940,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = Convert(value_float);
-            BOOST_CHECK_CLOSE(value, value_float, kFloatTolerance);
+            BOOST_CHECK_EQUAL(value, value_float);
 
             value = Convert(value_double);
             BOOST_CHECK_CLOSE(value, value_double, kFloatTolerance);
@@ -1977,7 +1977,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // value = Convert(str_bool);
 
             value = Convert(str_float);
-            BOOST_CHECK_CLOSE(value, value_float, kFloatTolerance);
+            BOOST_CHECK_EQUAL(value, value_float);
 
             value = Convert(str_double);
             BOOST_CHECK_CLOSE(value, float(value_double), kFloatTolerance);
@@ -2133,7 +2133,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_CLOSE(float(value), value_float, kFloatTolerance);
 
             value = Convert(str_double);
-            BOOST_CHECK_CLOSE(double(value), value_double, kDoubleTolerance);
+            BOOST_CHECK_EQUAL(value, value_double);
         }
     }
     catch(const CException& ex) {
