@@ -1,3 +1,10 @@
+Release 4.20.2 cloned from 4.20.1 (2015-03-16)
+
+Improvements:
+    * CServer does not abort if a socket to be closed is not of an expected
+      type (log message is produced) (JIRA: CXX-5770)
+
+
 Release 4.20.1 cloned from 4.20.0 (2014-10-21)
 
 Improvements:
