@@ -35,6 +35,7 @@
 
 #include <util/value_convert.hpp>
 #include <corelib/test_boost.hpp>
+#include <math.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -1098,11 +1099,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             value = ConvertSafe(str_Int8);
             // Rounding issue. Differ in last digit.
-            BOOST_CHECK(abs(value-value_Int8) <= 1);
+            BOOST_CHECK(fabs(value-value_Int8) <= 1);
 
             value = ConvertSafe(str_Uint8);
             // Rounding issue. Differ in last digit.
-            BOOST_CHECK(abs(value-value_Uint8) <= 1);
+            BOOST_CHECK(fabs(value-value_Uint8) <= 1);
 
             value = ConvertSafe(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -2108,11 +2109,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             value = Convert(str_Int8);
             // Rounding issue. Differ in last digit.
-            BOOST_CHECK(abs(value-value_Int8) <= 1);
+            BOOST_CHECK(fabs(value-value_Int8) <= 1);
 
             value = Convert(str_Uint8);
             // Rounding issue. Differ in last digit.
-            BOOST_CHECK(abs(value-value_Uint8) <= 1);
+            BOOST_CHECK(fabs(value-value_Uint8) <= 1);
 
             value = Convert(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
