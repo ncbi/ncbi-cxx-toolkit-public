@@ -3,7 +3,7 @@
 APP = test_diff
 SRC = test_diff
 
-LIB = xdiff xncbi
+LIB = xdiff xutil xncbi
 LIBS = $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS)
 

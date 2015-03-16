@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <util/diff/diff.hpp>
+#include <util/dictionary_util.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -169,6 +170,7 @@ void s_CleanupAndMerge_MergeEquities(void)
         assert(*it == CDiffOperation(DIFF_EQUAL,  "d dog")); it++; 
         assert(diffs.GetEditDistance() == 3);
         assert(diffs.GetLongestCommonSubstring() == "d dog");
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 3);
     }}
     {{
         string s1 = "This";
@@ -188,6 +190,7 @@ void s_CleanupAndMerge_MergeEquities(void)
         assert(*it == CDiffOperation(DIFF_INSERT, "at")); it++;
         assert(diffs.GetEditDistance() == 2);
         assert(diffs.GetLongestCommonSubstring() == "Th");
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 2);
     }}
     {{
         string s1 = "This dog";
@@ -210,6 +213,7 @@ void s_CleanupAndMerge_MergeEquities(void)
         assert(*it == CDiffOperation(DIFF_EQUAL,  " dog")); it++; 
         assert(diffs.GetEditDistance() == 2);
         assert(diffs.GetLongestCommonSubstring() == " dog");
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 2);
     }}
 }
 
@@ -231,6 +235,7 @@ void s_CleanupAndMerge_Cleanup(void)
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(*it == CDiffOperation(DIFF_INSERT, "AB")); it++;
         assert(*it == CDiffOperation(DIFF_EQUAL,  "AC")); it++;
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 2);
     }}
     {{
         // A<BA>C --> <AB>AC
@@ -247,6 +252,7 @@ void s_CleanupAndMerge_Cleanup(void)
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(*it == CDiffOperation(DIFF_DELETE, "AB")); it++;
         assert(*it == CDiffOperation(DIFF_EQUAL,  "AC")); it++;
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 2);
     }}
     {{
         // A<CB>C --> AC<BC>
@@ -263,6 +269,7 @@ void s_CleanupAndMerge_Cleanup(void)
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(*it == CDiffOperation(DIFF_EQUAL,  "AC")); it++;
         assert(*it == CDiffOperation(DIFF_INSERT, "BC")); it++;
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 2);
     }}
     {{
         // A<CB>C --> AC<BC>
@@ -279,6 +286,7 @@ void s_CleanupAndMerge_Cleanup(void)
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(*it == CDiffOperation(DIFF_EQUAL,  "AC")); it++;
         assert(*it == CDiffOperation(DIFF_DELETE, "BC")); it++;
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 2);
     }}
 }
 
@@ -314,6 +322,7 @@ void s_Diff(void)
         it++;
         assert(diffs.GetEditDistance() == 8);
         assert(diffs.GetLongestCommonSubstring() == "d dog ");
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 8);
     }}
     {{
         string s1 = "mouse";
@@ -331,6 +340,7 @@ void s_Diff(void)
         assert(*it == CDiffOperation(DIFF_DELETE, "e" )); it++;
         assert(diffs.GetEditDistance() == 4);
         assert(diffs.GetLongestCommonSubstring() == "o");
+        assert(CDictionaryUtil::GetEditDistance(s1, s2) == 4);
     }}
 }
 
