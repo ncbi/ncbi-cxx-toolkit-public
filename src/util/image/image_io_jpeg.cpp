@@ -132,22 +132,16 @@ static void s_JpegOutputHandler(j_common_ptr ptr)
 // specialized internal structs used for reading/writing from streams
 //
 
-struct SJpegInput
+struct SJpegInput : jpeg_source_mgr // the input data elements
 {
-    // the input data elements
-    struct jpeg_source_mgr pub;
-
     // our buffer and stream
     CNcbiIstream* stream;
     JOCTET* buffer;
 };
 
 
-struct SJpegOutput
+struct SJpegOutput : jpeg_destination_mgr // the input data elements
 {
-    // the input data elements
-    struct jpeg_destination_mgr pub;
-
     // our buffer and stream
     CNcbiOstream* stream;
     JOCTET* buffer;
@@ -164,8 +158,8 @@ static void s_JpegReadInit(j_decompress_ptr cinfo)
     struct SJpegInput* sptr = (SJpegInput*)cinfo->src;
 
     // set up our buffer for the first read
-    sptr->pub.bytes_in_buffer = 0;
-    sptr->pub.next_input_byte = sptr->buffer;
+    sptr->bytes_in_buffer = 0;
+    sptr->next_input_byte = sptr->buffer;
 }
 
 
@@ -181,10 +175,10 @@ static boolean s_JpegReadBuffer(j_decompress_ptr cinfo)
     sptr->stream->read(reinterpret_cast<char*>(sptr->buffer), sc_JpegBufLen);
 
     // reset our counts
-    sptr->pub.bytes_in_buffer = sptr->stream->gcount();
-    sptr->pub.next_input_byte = sptr->buffer;
+    sptr->bytes_in_buffer = sptr->stream->gcount();
+    sptr->next_input_byte = sptr->buffer;
 
-    return sptr->pub.bytes_in_buffer ? TRUE : FALSE;
+    return sptr->bytes_in_buffer ? TRUE : FALSE;
 }
 
 
@@ -195,13 +189,13 @@ static void s_JpegReadSkipData(j_decompress_ptr cinfo, long bytes)
 
     if (bytes > 0) {
         while (*(sptr->stream)  &&
-               bytes > (long)sptr->pub.bytes_in_buffer) {
-            bytes -= sptr->pub.bytes_in_buffer;
+               bytes > (long)sptr->bytes_in_buffer) {
+            bytes -= sptr->bytes_in_buffer;
             s_JpegReadBuffer(cinfo);
         }
 
-        sptr->pub.next_input_byte += (size_t) bytes;
-        sptr->pub.bytes_in_buffer -= (size_t) bytes;
+        sptr->next_input_byte += (size_t) bytes;
+        sptr->bytes_in_buffer -= (size_t) bytes;
     }
 }
 
@@ -219,8 +213,8 @@ static void s_JpegWriteInit(j_compress_ptr cinfo)
     struct SJpegOutput* sptr = (SJpegOutput*)cinfo->dest;
 
     // set up our buffer for the first read
-    sptr->pub.next_output_byte = sptr->buffer;
-    sptr->pub.free_in_buffer   = sc_JpegBufLen;
+    sptr->next_output_byte = sptr->buffer;
+    sptr->free_in_buffer   = sc_JpegBufLen;
 }
 
 
@@ -234,8 +228,8 @@ static boolean s_JpegWriteBuffer(j_compress_ptr cinfo)
                         sc_JpegBufLen);
 
     // reset our counts
-    sptr->pub.next_output_byte = sptr->buffer;
-    sptr->pub.free_in_buffer  = sc_JpegBufLen;
+    sptr->next_output_byte = sptr->buffer;
+    sptr->free_in_buffer  = sc_JpegBufLen;
 
     return TRUE;
 }
@@ -246,7 +240,7 @@ static void s_JpegWriteTerminate(j_compress_ptr cinfo)
 {
     // don't need to do anything here
     struct SJpegOutput* sptr = (SJpegOutput*)cinfo->dest;
-    size_t datacount = sc_JpegBufLen - sptr->pub.free_in_buffer;
+    size_t datacount = sc_JpegBufLen - sptr->free_in_buffer;
 
     // read data from the stream
     if (datacount > 0) {
@@ -267,28 +261,24 @@ static void s_JpegWriteTerminate(j_compress_ptr cinfo)
 static void s_JpegReadSetup(j_decompress_ptr cinfo,
                             CNcbiIstream& istr, JOCTET* buffer)
 {
-    struct SJpegInput* sptr = NULL;
-    if (cinfo->src == NULL) {
-        cinfo->src =
-            (struct jpeg_source_mgr*)malloc(sizeof(SJpegInput));
-        memset(cinfo->src, 0, sizeof(SJpegInput));
-        sptr = (SJpegInput*)cinfo->src;
-    }
+    _ASSERT(cinfo->src == NULL);
+    struct SJpegInput* sptr = (SJpegInput*)calloc(1, sizeof(SJpegInput));
+    cinfo->src = sptr;
 
     // allocate buffer and save our stream
     sptr->stream = &istr;
     sptr->buffer = buffer;
 
     // set our callbacks
-    sptr->pub.init_source       = s_JpegReadInit;
-    sptr->pub.fill_input_buffer = s_JpegReadBuffer;
-    sptr->pub.skip_input_data   = s_JpegReadSkipData;
-    sptr->pub.resync_to_restart = jpeg_resync_to_restart;
-    sptr->pub.term_source       = s_JpegReadTerminate;
+    sptr->init_source       = s_JpegReadInit;
+    sptr->fill_input_buffer = s_JpegReadBuffer;
+    sptr->skip_input_data   = s_JpegReadSkipData;
+    sptr->resync_to_restart = jpeg_resync_to_restart;
+    sptr->term_source       = s_JpegReadTerminate;
 
     // make sure the structure knows we're just starting now
-    sptr->pub.bytes_in_buffer = 0;
-    sptr->pub.next_input_byte = buffer;
+    sptr->bytes_in_buffer = 0;
+    sptr->next_input_byte = buffer;
 }
 
 
@@ -300,26 +290,22 @@ static void s_JpegReadSetup(j_decompress_ptr cinfo,
 static void s_JpegWriteSetup(j_compress_ptr cinfo,
                              CNcbiOstream& ostr, JOCTET* buffer)
 {
-    struct SJpegOutput* sptr = NULL;
-    if (cinfo->dest == NULL) {
-        cinfo->dest =
-            (struct jpeg_destination_mgr*)malloc(sizeof(SJpegOutput));
-        memset(cinfo->dest, 0, sizeof (SJpegOutput));
-        sptr = (SJpegOutput*)cinfo->dest;
-    }
+    _ASSERT(cinfo->dest == NULL);
+    struct SJpegOutput* sptr = (SJpegOutput*)calloc(1, sizeof(SJpegOutput));
+    cinfo->dest = sptr;
 
     // allocate buffer and save our stream
     sptr->stream = &ostr;
     sptr->buffer = buffer;
 
     // set our callbacks
-    sptr->pub.init_destination    = s_JpegWriteInit;
-    sptr->pub.empty_output_buffer = s_JpegWriteBuffer;
-    sptr->pub.term_destination    = s_JpegWriteTerminate;
+    sptr->init_destination    = s_JpegWriteInit;
+    sptr->empty_output_buffer = s_JpegWriteBuffer;
+    sptr->term_destination    = s_JpegWriteTerminate;
 
     // make sure the structure knows we're just starting now
-    sptr->pub.free_in_buffer = sc_JpegBufLen;
-    sptr->pub.next_output_byte = buffer;
+    sptr->free_in_buffer = sc_JpegBufLen;
+    sptr->next_output_byte = buffer;
 }
 
 
@@ -675,10 +661,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
     vector<JOCTET> buffer(sc_JpegBufLen);
     JOCTET* buf_ptr = &buffer[0];
 
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-    memset(&cinfo, 0, sizeof(cinfo));
-    memset(&jerr, 0, sizeof(jerr));
+    struct jpeg_compress_struct cinfo = {};
+    struct jpeg_error_mgr jerr = {};
 
     try {
         // standard libjpeg setup
@@ -774,10 +758,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
     vector<JOCTET> buffer(sc_JpegBufLen);
     JOCTET* buf_ptr = &buffer[0];
 
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-    memset(&cinfo, 0, sizeof(cinfo));
-    memset(&jerr, 0, sizeof(jerr));
+    struct jpeg_compress_struct cinfo = {};
+    struct jpeg_error_mgr jerr = {};
 
     try {
         // standard libjpeg setup
