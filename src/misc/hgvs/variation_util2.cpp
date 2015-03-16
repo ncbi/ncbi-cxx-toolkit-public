@@ -3888,6 +3888,20 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
         vr->SetVariant_prop().Assign(v.GetVariant_prop());
     }
 
+    //Note: Variation.frameshift <-> Variation-ref.consequence[].frameshift
+    if(v.IsSetFrameshift()) {
+        CVariation_ref::TConsequence::value_type fr_cons(
+                new CVariation_ref::TConsequence::value_type::TObjectType);
+        vr->SetConsequence().push_back(fr_cons);
+        fr_cons->SetFrameshift();
+        if(v.GetFrameshift().IsSetPhase()) {
+            fr_cons->SetFrameshift().SetPhase(v.GetFrameshift().GetPhase());
+        }
+        if(v.GetFrameshift().IsSetX_length()) {
+            fr_cons->SetFrameshift().SetX_length(v.GetFrameshift().GetX_length());
+        }
+    }
+
     if(v.GetData().IsComplex()) {
         vr->SetData().SetComplex();
     } else if(v.GetData().IsInstance()) {
@@ -3917,7 +3931,8 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
         vr->SetConsequence();
         ITERATE(CVariation::TConsequence, it, v.GetConsequence()) {
             const CVariation::TConsequence::value_type::TObjectType& v_cons = **it;
-            CVariation_ref::TConsequence::value_type vr_cons(new CVariation_ref::TConsequence::value_type::TObjectType);
+            CVariation_ref::TConsequence::value_type vr_cons(
+                    new CVariation_ref::TConsequence::value_type::TObjectType);
             vr->SetConsequence().push_back(vr_cons);
             vr_cons->SetUnknown();
 
@@ -3928,25 +3943,15 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
             } else if(v_cons.IsVariation()) {
                 CRef<CVariation_ref> cons_variation = x_AsVariation_ref(v_cons.GetVariation(), p);
                 vr_cons->SetVariation(*cons_variation);
-
-                if(v_cons.GetVariation().IsSetFrameshift()) {
-                    CVariation_ref::TConsequence::value_type fr_cons(new CVariation_ref::TConsequence::value_type::TObjectType);
-                    vr->SetConsequence().push_back(fr_cons);
-                    fr_cons->SetFrameshift();
-                    if(v_cons.GetVariation().GetFrameshift().IsSetPhase()) {
-                        fr_cons->SetFrameshift().SetPhase(v_cons.GetVariation().GetFrameshift().GetPhase());
-                    }
-                    if(v_cons.GetVariation().GetFrameshift().IsSetX_length()) {
-                        fr_cons->SetFrameshift().SetX_length(v_cons.GetVariation().GetFrameshift().GetPhase());
-                    }
-                }
             } else if(v_cons.IsLoss_of_heterozygosity()) {
                 vr_cons->SetLoss_of_heterozygosity();
                 if(v_cons.GetLoss_of_heterozygosity().IsSetReference()) {
-                    vr_cons->SetLoss_of_heterozygosity().SetReference(v_cons.GetLoss_of_heterozygosity().GetReference());
+                    vr_cons->SetLoss_of_heterozygosity().SetReference(
+                            v_cons.GetLoss_of_heterozygosity().GetReference());
                 }
                 if(v_cons.GetLoss_of_heterozygosity().IsSetTest()) {
-                    vr_cons->SetLoss_of_heterozygosity().SetTest(v_cons.GetLoss_of_heterozygosity().GetTest());
+                    vr_cons->SetLoss_of_heterozygosity().SetTest(
+                            v_cons.GetLoss_of_heterozygosity().GetTest());
                 }
             }
         }
@@ -4128,6 +4133,21 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
         v->SetConsequence();
         ITERATE(CVariation_ref::TConsequence, it, vr.GetConsequence()) {
             const CVariation_ref::TConsequence::value_type::TObjectType& vr_cons = **it;
+
+            if(vr_cons.IsFrameshift()) {
+                // frameshift is represented in consequence in Variation-ref, and
+                // directly as an attribute in Variation.
+                CVariation& cons_variation = *v;
+                cons_variation.SetFrameshift();
+                if(vr_cons.GetFrameshift().IsSetPhase()) {
+                    cons_variation.SetFrameshift().SetPhase(vr_cons.GetFrameshift().GetPhase());
+                }
+                if(vr_cons.GetFrameshift().IsSetX_length()) {
+                    cons_variation.SetFrameshift().SetX_length(vr_cons.GetFrameshift().GetX_length());
+                }
+                continue;
+            }
+
             CVariation::TConsequence::value_type v_cons(new CVariation::TConsequence::value_type::TObjectType);
 
             if(vr_cons.IsUnknown()) {
@@ -4139,19 +4159,6 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
             } else if(vr_cons.IsVariation()) {
                 CRef<CVariation> cons_variation = x_AsVariation(vr_cons.GetVariation());
                 v_cons->SetVariation(*cons_variation);
-            } else if(vr_cons.IsFrameshift()) {
-                //expecting previous consequnece to be a protein variation.
-                if(v->GetConsequence().size() == 0 || !v->GetConsequence().back()->IsVariation()) {
-                    NCBI_THROW(CException, eUnknown, "Did not find target variation to attach frameshift");
-                }
-                CVariation& cons_variation = v->SetConsequence().back()->SetVariation();
-                cons_variation.SetFrameshift();
-                if(vr_cons.GetFrameshift().IsSetPhase()) {
-                    cons_variation.SetFrameshift().SetPhase(vr_cons.GetFrameshift().GetPhase());
-                }
-                if(vr_cons.GetFrameshift().IsSetX_length()) {
-                    cons_variation.SetFrameshift().SetX_length(vr_cons.GetFrameshift().GetPhase());
-                }
             } else if(vr_cons.IsLoss_of_heterozygosity()) {
                 v_cons->SetLoss_of_heterozygosity();
                 if(vr_cons.GetLoss_of_heterozygosity().IsSetReference()) {
@@ -4163,6 +4170,9 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
             }
 
             v->SetConsequence().push_back(v_cons);
+        }
+        if(v->GetConsequence().empty()) {
+            v->ResetConsequence();
         }
     }
 
