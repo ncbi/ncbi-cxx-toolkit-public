@@ -333,7 +333,8 @@ CNetStorageObject g_CreateNetStorageObject(
 }
 
 
-CDirectNetStorage g_CreateNetStorage(
+static
+CDirectNetStorage s_CreateNetStorage(
         CNetICacheClient::TInstance icache_client,
         const string& app_domain,
         TNetStorageFlags default_flags)
@@ -341,17 +342,47 @@ CDirectNetStorage g_CreateNetStorage(
     CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
 
     if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        return CDirectNetStorage(app->GetConfig(), icache_client, NULL, app_domain, default_flags);
+        return CDirectNetStorage(app->GetConfig(),
+                icache_client, NULL, app_domain, default_flags);
     } else {
-        return CDirectNetStorage(CMemoryRegistry(), icache_client, NULL, app_domain, default_flags);
+        CMemoryRegistry empty;
+        return CDirectNetStorage(empty,
+                icache_client, NULL, app_domain, default_flags);
     }
+}
+
+
+CDirectNetStorage g_CreateNetStorage(
+        CNetICacheClient::TInstance icache_client,
+        const string& app_domain,
+        TNetStorageFlags default_flags)
+{
+    return s_CreateNetStorage(icache_client, app_domain, default_flags);
 }
 
 
 CNetStorage g_CreateNetStorage(const string& app_domain,
         TNetStorageFlags default_flags)
 {
-    return g_CreateNetStorage(NULL, app_domain, default_flags);
+    return s_CreateNetStorage(NULL, app_domain, default_flags);
+}
+
+
+static
+CDirectNetStorageByKey s_CreateNetStorageByKey(
+        CNetICacheClient::TInstance icache_client,
+        const string& app_domain, TNetStorageFlags default_flags)
+{
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+
+    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
+        return CDirectNetStorageByKey(app->GetConfig(),
+                icache_client, NULL, app_domain, default_flags);
+    } else {
+        CMemoryRegistry empty;
+        return CDirectNetStorageByKey(empty,
+                icache_client, NULL, app_domain, default_flags);
+    }
 }
 
 
@@ -359,20 +390,14 @@ CDirectNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
         const string& app_domain, TNetStorageFlags default_flags)
 {
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        return CDirectNetStorageByKey(app->GetConfig(), icache_client, NULL, app_domain, default_flags);
-    } else {
-        return CDirectNetStorageByKey(CMemoryRegistry(), icache_client, NULL, app_domain, default_flags);
-    }
+    return s_CreateNetStorageByKey(icache_client, app_domain, default_flags);
 }
 
 
 CNetStorageByKey g_CreateNetStorageByKey(const string& app_domain,
         TNetStorageFlags default_flags)
 {
-    return g_CreateNetStorageByKey(NULL, app_domain, default_flags);
+    return s_CreateNetStorageByKey(NULL, app_domain, default_flags);
 }
 
 
