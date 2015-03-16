@@ -127,13 +127,11 @@ void CBoyerMooreMatcher::AddDelimiters(char ch)
     if (m_WholeWord == 0) {
         m_WholeWord = eWholeWordMatch;
     }
-    m_WordDelimiters[ch] = true;
+    m_WordDelimiters[(unsigned char)ch] = true;
 
     if (m_CaseSensitive == NStr::eNocase) {
-        ch = toupper((unsigned char) ch);
+        m_WordDelimiters[toupper((unsigned char) ch)] = true;
     }
-    
-    m_WordDelimiters[ch] = true;
 }
 
 void CBoyerMooreMatcher::InitCommonDelimiters()
@@ -171,7 +169,7 @@ void CBoyerMooreMatcher::x_InitPattern(void)
     // compute right-most occurrence
     for ( int j = 0;  j < (int)m_PatLen - 1;  ++j ) {
         /* int lo = */
-		m_LastOccurrence[(int)m_Pattern[j]] = m_PatLen - j - 1;
+        m_LastOccurrence[(unsigned char)m_Pattern[j]] = m_PatLen - j - 1;
    }
 }
 
@@ -188,23 +186,21 @@ SIZE_TYPE CBoyerMooreMatcher::Search(const char*  text,
         while (shift + m_PatLen <= text_len) {
             int j = (int)m_PatLen - 1;
 
-            for(char text_char = text[shift + j];
-                j >= 0 && m_Pattern[j]==(text_char=text[shift + j]);
-                --j) {}
+            for( ; j >= 0 && m_Pattern[j]==text[shift + j]; --j )
+                {}
 
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
             } else {
-                shift += (unsigned int)m_LastOccurrence[text[shift + (int)m_PatLen - 1]];
+                shift += (unsigned int)m_LastOccurrence[(unsigned char)text[shift + (int)m_PatLen - 1]];
             }
         }
     } else { // case insensitive NStr::eNocase
         while (shift + m_PatLen <= text_len) {
             int j = (int)m_PatLen - 1;
 
-            for(char text_char = toupper((unsigned char) text[shift + j]);
-                j >= 0 && m_Pattern[j]==(text_char=toupper((unsigned char) text[shift + j]));
-                --j) {}
+            for( ; j >= 0 && m_Pattern[j]==char(toupper((unsigned char) text[shift + j])); --j )
+                {}
 
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
@@ -238,14 +234,14 @@ bool CBoyerMooreMatcher::IsWholeWord(const char*  text,
     // check on the left  
     if (m_WholeWord & ePrefixMatch) {
         left = (pos == 0) ||
-               ((pos > 0) && m_WordDelimiters[text[pos - 1]]);
+            ((pos > 0) && m_WordDelimiters[(unsigned char)text[pos - 1]]);
     }
 
     // check on the right
     if (m_WholeWord & eSuffixMatch) {
         pos += (unsigned int)m_PatLen;
         right = (pos == text_len) || 
-                ((pos < text_len) && m_WordDelimiters[text[pos]]);
+            ((pos < text_len) && m_WordDelimiters[(unsigned char)text[pos]]);
     }
 
 

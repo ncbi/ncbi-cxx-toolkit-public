@@ -115,6 +115,83 @@ BOOST_AUTO_TEST_CASE(Test_BoyerMooreMatcher)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_BoyerMooreMatcher_8bit)
+{
+    const char* str = "123 567 \342\342";
+    size_t len = strlen(str);
+    {{    
+        CBoyerMooreMatcher matcher("\342\342", NStr::eCase);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 8U);
+    }}
+    {{    
+        CBoyerMooreMatcher matcher("\342\342", NStr::eNocase);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 8U);
+    }}
+    {{    
+        CBoyerMooreMatcher matcher("\342\342", NStr::eCase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 8U);
+    }}
+    {{    
+        CBoyerMooreMatcher matcher("\342\342", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 8U);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("123", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 0U);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("1234", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(static_cast<int>(pos), -1);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("bb", NStr::eCase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(static_cast<int>(pos), -1);
+    }}
+    {{    
+        CBoyerMooreMatcher matcher("67", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(static_cast<int>(pos), -1);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("67", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eSubstrMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 5U);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("67", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eSuffixMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 5U);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("56", NStr::eNocase, 
+                                   CBoyerMooreMatcher::ePrefixMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 4U);
+    }}
+    {{
+        CBoyerMooreMatcher matcher("123", NStr::eNocase, 
+                                   CBoyerMooreMatcher::ePrefixMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        BOOST_CHECK_EQUAL(pos, 0U);
+    }}
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_CTextFsa)
 {
     static const char* const s_SourceQualPrefixes[] = {
