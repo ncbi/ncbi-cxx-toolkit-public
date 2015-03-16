@@ -1041,8 +1041,9 @@ Uint4 s_UpdateCRC32CIntel(Uint4 checksum, const char *str, size_t count)
     }
     if ( count >= 1 ) {
         checksum = s_CRC32C(checksum, str);
-        count -= 1;
-        str += 1;
+        //last count and str updates aren't necessary
+        //count -= 1;
+        //str += 1;
     }
     return checksum;
 }
