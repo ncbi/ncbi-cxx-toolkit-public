@@ -111,9 +111,9 @@ USING_NCBI_SCOPE;
 
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
-const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
+//const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 //#if DEBUG
-//const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
+const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
 //#endif
 
 
@@ -145,7 +145,9 @@ struct SInfo {
     string            host;             ///< Name of the host where the process runs
     string            client;           ///< Client IP address (UNK_CLIENT if unknown)
     string            sid_app;          ///< Application-wide session ID (set in "start_app")
-    string            sid_req;          ///< Session (request) ID (UNK_SESSION if unknown)
+    string            sid_req;          ///< Request session ID (UNK_SESSION if unknown)
+    string            phid_app;         ///< Application-wide hit ID (set in "start_app")
+    string            phid_req;         ///< Request hit ID
     string            logsite;          ///< Application-wide LogSite value (set in "start_app")
     string            host_role;        ///< Host role (CGI mode only, ignored for local host)
     string            host_location;    ///< Host location (CGI mode only, ignored for local host)
@@ -490,6 +492,7 @@ int CNcbiApplogApp::Redirect()
     // Get URL of logging CGI (from registry file, env.variable or default value)
     string url = NCBI_PARAM_TYPE(NCBI, NcbiApplogCGI)::GetDefault();
     string s_args;
+    const char* ev;
 
     if ( !m_IsRaw ) {
         // We need host name, sid and log_site in the command line for 'start_app' command,
@@ -497,6 +500,7 @@ int CNcbiApplogApp::Redirect()
         bool is_start_app   = (GetArgs().GetCommand() == "start_app");
         bool need_hostname  = true;
         bool need_sid       = true;
+        bool need_phid      = true;
         bool need_logsite   = true;
         bool skip_next_arg  = false;
 
@@ -519,6 +523,9 @@ int CNcbiApplogApp::Redirect()
                     }
                     if (need_sid  &&  NStr::StartsWith(raw_args[i], "-sid")) {
                         need_sid = false;
+                    }
+                    if (need_sid  &&  NStr::StartsWith(raw_args[i], "-phid")) {
+                        need_phid = false;
                     }
                     if (need_logsite  &&  NStr::StartsWith(raw_args[i], "-logsite")) {
                         need_logsite = false;
@@ -548,9 +555,14 @@ int CNcbiApplogApp::Redirect()
         if (is_start_app) {
             // Global SID
             if (need_sid) {
-                string sid = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
-                if (!sid.empty()) {
-                    s_args += string(" \"-sid=") + sid + "\"";
+                if (ev = NcbiLogP_GetSessionID_Env()) {
+                    s_args += string(" \"-sid=") + ev + "\"";
+                }
+            }
+            // Global PHID
+            if (need_phid) {
+                if (ev = NcbiLogP_GetHitID_Env()) {
+                    s_args += string(" \"-phid=") + ev + "\"";
                 }
             }
             // Global log_site information
@@ -604,10 +616,16 @@ int CNcbiApplogApp::Redirect()
         }
         // We already have first line in m_Raw_line,
         // process it and all remaining lines.
+
+        CRegexp re(kApplogRegexp);
         do {
-            cgi << m_Raw_line << endl;
+            if (re.IsMatch(m_Raw_line)) {
+                // TODO: sanitize each line (replace all not printable symbols: '\n' and etc)
+                cgi << m_Raw_line << endl;
+            }
         } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
     } else {
+        // TODO: sanitize (replace all not printable symbols: '\n' and etc)
         cgi << s_args << endl;
     }
 
@@ -794,7 +812,7 @@ int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
         } else if (arg == "-req_start_time") {
             if (m_Info.req_start_time.sec) cout << m_Info.req_start_time.sec;
         } else {
-            _TROUBLE;
+            ERR_POST(Fatal << "Unknown command line argument: " << arg);
         }
         if (need_eol) {
             cout << endl;
@@ -859,6 +877,13 @@ void CNcbiApplogApp::SetInfo()
     if (!m_Info.sid_req.empty()) {
         NcbiLog_SetSession(m_Info.sid_req.c_str());
     }
+    // Hit ID
+    if (!m_Info.phid_app.empty()) {
+        NcbiLog_AppSetHitID(m_Info.phid_app.c_str());
+    }
+    if (!m_Info.phid_req.empty()) {
+        NcbiLog_SetHitID(m_Info.phid_req.c_str());
+    }
     // Host role/location
     if (m_IsRemoteLogging) {
         if (!m_Info.host_role.empty()) {
@@ -888,11 +913,6 @@ void CNcbiApplogApp::UpdateInfo()
     if (!m_Info.client.empty()  &&  g_ctx->client[0]) {
         m_Info.client = g_ctx->client;
     }
-/*
-    if (g_ctx->session[0]) {
-        m_Info.sid_req = g_ctx->session;
-    }
-*/
 }
 
 
@@ -1102,17 +1122,19 @@ int CNcbiApplogApp::Run(void)
     // ncbi_applog start_app -pid PID -appname NAME [-host HOST] [-sid SID] [-phid PHID] [-logsite SITE] -> token
 
     if (cmd == "start_app") {
+        const char* ev;
         m_Info.pid  = args["pid"].AsInteger();
         m_Info.host = args["host"].AsString();
         if (m_Info.host.empty()) {
             m_Info.host = NcbiLog_GetHostName();
         }
         m_Info.sid_app = args["sid"].AsString();
-        if (m_Info.sid_app.empty()) {
-            m_Info.sid_app = GetEnvironment().Get("HTTP_NCBI_SID");
-            if (m_Info.sid_app.empty()) {
-                m_Info.sid_app = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
-            }
+        if (m_Info.sid_app.empty()  &&  (ev = NcbiLogP_GetSessionID_Env())) {
+            m_Info.sid_app = ev;
+        }
+        m_Info.phid_app = args["phid"].AsString();
+        if (m_Info.phid_app.empty()  &&  (ev = NcbiLogP_GetHitID_Env())) {
+            m_Info.phid_app = ev;
         }
         m_Info.logsite = args["logsite"].AsString();
         if (m_Info.logsite.empty()) {
@@ -1129,17 +1151,7 @@ int CNcbiApplogApp::Run(void)
             string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
             NcbiLogP_ExtraStr(extra.c_str());
         }
-        // Print hit id if specified
-        string phid = args["phid"].AsString();
-        if (phid.empty()) {
-            phid = GetEnvironment().Get("HTTP_NCBI_PHID");
-            if (phid.empty()) {
-                phid = GetEnvironment().Get("NCBI_LOG_HIT_ID");
-            }
-        }
-        if (!phid.empty()) {
-            NcbiLogP_LogHitID(NStr::URLEncode(phid).c_str());
-        }
+        NcbiLog_AppRun();
         token_gen_type = eApp;
     } else 
 
@@ -1156,7 +1168,8 @@ int CNcbiApplogApp::Run(void)
     // ncbi_applog start_request <token> [-sid SID] [-phid PHID] [-rid RID] [-client IP] [-param PAIRS] -> request_token
 
     if (cmd == "start_request") {
-        m_Info.sid_req = args["sid"].AsString();
+        m_Info.sid_req  = args["sid"].AsString();
+        m_Info.phid_req = args["phid"].AsString();
         m_Info.rid = args["rid"].AsInteger();
         // Adjust request identifier.
         // It will be increased back inside the C Logging API
@@ -1179,11 +1192,7 @@ int CNcbiApplogApp::Run(void)
                 NcbiLogP_ReqStartStr(params.c_str());
             }
         }
-        // Print hit id if specified
-        string phid = args["phid"].AsString();
-        if (!phid.empty()) {
-            NcbiLogP_LogHitID(NStr::URLEncode(phid).c_str());
-        }
+        NcbiLog_ReqRun();
         token_gen_type = eRequest;
     } else 
 
@@ -1358,9 +1367,13 @@ int CNcbiApplogApp::Run(void)
             }
         } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
 
-    } else  
+    }
 
-    _TROUBLE;
+    else {
+        // Unknown command - should never happens
+        _TROUBLE;
+    }
+
 
     // -----------------------------------------------------------------------
 

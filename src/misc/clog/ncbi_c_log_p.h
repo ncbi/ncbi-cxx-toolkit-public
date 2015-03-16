@@ -247,6 +247,18 @@ extern void NcbiLogP_LogHitID(const char* hit_id);
 extern void NcbiLogP_Raw(const char* line);
 
 
+/** Get value of session ID from the environment.
+ *  Return NULL if not found.
+ */
+extern const char* NcbiLogP_GetSessionID_Env(void);
+
+
+/** Get value of hit ID from the environment.
+ *  Return NULL if not found.
+ */
+extern const char* NcbiLogP_GetHitID_Env(void);
+
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

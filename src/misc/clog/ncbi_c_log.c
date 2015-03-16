@@ -85,12 +85,8 @@
 #ifdef TROUBLE
 #  undef TROUBLE
 #endif
-
-#if defined(NDEBUG)
-#  define TROUBLE  ((void)0)
-#else
-#  define TROUBLE  s_Abort()
-#endif
+#define TROUBLE           s_Abort(__LINE__, 0)
+#define TROUBLE_MSG(msg)  s_Abort(__LINE__, msg)
 
 /* Verify an expression and abort on error */
 #ifdef VERIFY
@@ -100,7 +96,7 @@
 #if defined(NDEBUG)
 #  define VERIFY(expr)  while ( expr ) break
 #else
-#  define VERIFY(expr)  do  { if ( !(expr) )  s_Abort(); }  while ( 0 )
+#  define VERIFY(expr)  do  { if ( !(expr) )  s_Abort(__LINE__, #expr); }  while ( 0 )
 #endif
 
 
@@ -160,16 +156,20 @@ static volatile TNcbiLog_Context  sx_ContextST = NULL;
  *  Abort  (for the locally defined ASSERT, VERIFY and TROUBLE macros)
  */
 
-static void s_Abort(void)
+static void s_Abort(long line, const char* msg)
 {
     /* Check environment variable for silent exit */
-    char* value = getenv("DIAG_SILENT_ABORT");
+    char* v = getenv("DIAG_SILENT_ABORT");
 
-    if (value  &&  (*value == 'Y'  ||  *value == 'y'  ||  *value == '1')) {
+    if (msg  &&  *msg) {
+        fprintf(stderr, "Critical error: %s, %s, line %ld\n", msg, __FILE__, line);
+    } else {
+        fprintf(stderr, "Critical error at %s, line %ld\n", __FILE__, line);
+    }
+    if (v  &&  (*v == 'Y' || *v == 'y' || *v == '1')) {
         exit(255);
     }
-
-    if (value  &&  (*value == 'N'  ||  *value == 'n' || *value == '0')) {
+    if (v  &&  (*v == 'N' || *v == 'n' || *v == '0')) {
         abort();
     }
 
@@ -804,7 +804,7 @@ static const char* s_GetClient_Env(void)
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
  */
-static const char* s_GetSession_Env(void)
+extern const char* NcbiLogP_GetSessionID_Env(void)
 {
     static const char* session = NULL;
 
@@ -820,7 +820,7 @@ static const char* s_GetSession_Env(void)
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
  */
-static const char* s_GetHitID_Env(void)
+extern const char* NcbiLogP_GetHitID_Env(void)
 {
     static const char* phid = NULL;
 
@@ -1233,7 +1233,7 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
             /* Nothing to do here */
             return;
         default:
-            TROUBLE;
+            TROUBLE_MSG("unknown destination");
     }
     if (sx_Info->file_trace) {
         fclose(sx_Info->file_trace);
@@ -1373,7 +1373,7 @@ static void s_InitDestination(const char* logfile_path)
             sx_Info->reuse_file_names = 1;
             return;
         }
-        TROUBLE;
+        TROUBLE_MSG("error opening logging location");
         return;
     }
 
@@ -1904,7 +1904,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
 
     MT_UNLOCK;
     if (severity == eNcbiLog_Fatal) {
-        s_Abort();
+        s_Abort(0,0); /* no additional error reporting */
     }
 }
 
@@ -2301,7 +2301,7 @@ extern void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
     /* Enforce setting request id only after NcbiLog_AppRun() */
     if (sx_Info->state == eNcbiLog_NotSet  ||
         sx_Info->state == eNcbiLog_AppBegin) {
-        TROUBLE;
+        TROUBLE_MSG("NcbiLog_SetRequestId() can be used after NcbiLog_AppRun() only");
     }
     sx_Info->rid = rid;
     MT_UNLOCK;
@@ -2474,7 +2474,7 @@ extern char* NcbiLog_GetNextSubHitID(void)
     /* Enforce calling this method after NcbiLog_AppStart() */
     if (sx_Info->state == eNcbiLog_NotSet ||
         sx_Info->state == eNcbiLog_AppBegin) {
-        TROUBLE;
+        TROUBLE_MSG("NcbiLog_GetNextSubHitID() can be used after NcbiLog_AppStart() only");
     }
 
     /* Automatically generate app-wide hit ID if necessary */
@@ -2554,11 +2554,11 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     }
     /* Try to get app-wide session from environment */
     if (!sx_Info->session[0]) {
-        s_SetSession((char*)sx_Info->session, s_GetSession_Env());
+        s_SetSession((char*)sx_Info->session, NcbiLogP_GetSessionID_Env());
     }
     /* Try to get app-wide hit ID from environment */
     if (!sx_Info->phid[0]) {
-        s_SetHitID((char*)sx_Info->phid, s_GetHitID_Env());
+        s_SetHitID((char*)sx_Info->phid, NcbiLogP_GetHitID_Env());
     }
 
     s_SetState(ctx, eNcbiLog_AppBegin);
@@ -2685,7 +2685,7 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
     /* Try to get session id from environment, or generate new one,
        if not set by user */
     if (!ctx->is_session_set) {
-        const char* sid = s_GetSession_Env();
+        const char* sid = NcbiLogP_GetSessionID_Env();
         if (sid && *sid) {
             s_SetSession(ctx->session, sid);
         } else {
