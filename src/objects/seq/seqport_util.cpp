@@ -2480,6 +2480,8 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
         return CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
     } else if (in_vec != NULL) {
         return CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
+    } else {
+        return 0;
     }
 }
 
