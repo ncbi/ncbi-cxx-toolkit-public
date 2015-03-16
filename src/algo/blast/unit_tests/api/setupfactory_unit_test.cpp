@@ -110,7 +110,9 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockMaskedSequence)
      BOOST_REQUIRE(sbp != NULL);
  
      sbp = BlastScoreBlkFree(sbp);
+     BOOST_REQUIRE(sbp == NULL);
      blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
+     BOOST_REQUIRE(blast_seq_loc == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(CreateScoreBlockOK)
@@ -142,7 +144,9 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockOK)
      BOOST_REQUIRE(sbp != NULL);
  
      sbp = BlastScoreBlkFree(sbp);
+     BOOST_REQUIRE(sbp == NULL);
      blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
+     BOOST_REQUIRE(blast_seq_loc == NULL);
 }
 
 

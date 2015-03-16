@@ -80,6 +80,7 @@ public:
         Blast_SetPHIPatternInfo(m_Program, pattern_blk, query_blk, 
                                 location, m_QueryInfo, &blast_msg);
         location = BlastSeqLocFree(location);
+        BOOST_REQUIRE(location == NULL);
     }
 
     void x_CheckGappedAlignmentResults(BlastGapAlignStruct* gap_align) {
@@ -304,6 +305,7 @@ BOOST_AUTO_TEST_CASE(testPHICalcEvalues) {
     BOOST_REQUIRE_CLOSE(7.568e-59, hsp->evalue, 1);
 
     hsp_list = Blast_HSPListFree(hsp_list);
+    BOOST_REQUIRE(hsp_list == NULL);
 }
 
 /// Tests finding of pattern occurrences in subject.
@@ -393,7 +395,9 @@ BOOST_AUTO_TEST_CASE(testPHIBlastHSPResultsSplit) {
 
     x_CheckSplitResults(results_array, pattern_info->num_patterns);
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     pattern_info = SPHIQueryInfoFree(pattern_info);
+    BOOST_REQUIRE(pattern_info == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testPHIBlastHSPResultsSplitNoHits) {
@@ -409,7 +413,9 @@ BOOST_AUTO_TEST_CASE(testPHIBlastHSPResultsSplitNoHits) {
 
     sfree(results_array);
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     pattern_info = SPHIQueryInfoFree(pattern_info);
+    BOOST_REQUIRE(pattern_info == NULL);
 }
 
 // mainly tests cutoff score.  Would more logically belong in blastoptions-cppunit.cpp,
@@ -435,8 +441,11 @@ BOOST_AUTO_TEST_CASE(testPHIBlastHitSavingParameters) {
     BOOST_REQUIRE_EQUAL(28, hit_params->cutoff_score_min);
 
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
 }
 
 

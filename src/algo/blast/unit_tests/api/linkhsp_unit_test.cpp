@@ -166,6 +166,7 @@ struct LinkHspTestFixture {
         status = Blast_ScoreBlkKbpUngappedCalc(m_ProgramType, m_ScoreBlk, 
                                            seqbuf, m_QueryInfo, &message);
         message = Blast_MessageFree(message);
+        BOOST_REQUIRE(message == NULL);
 
         BOOST_REQUIRE(status == 0);
 
@@ -464,6 +465,7 @@ struct LinkHspTestFixture {
                                     m_QueryInfo, &ext_params);
         fillEffectiveLengths(score_options, (Int8)db_length, db_num_seq);
         score_options = BlastScoringOptionsFree(score_options);
+        BOOST_REQUIRE(score_options == NULL);
 
         BlastHitSavingParametersNew(m_ProgramType, hit_options,
                                     m_ScoreBlk, m_QueryInfo, subj_length, 0, &m_HitParams);
@@ -477,14 +479,18 @@ struct LinkHspTestFixture {
         LookupTableOptionsNew(m_ProgramType, &lookup_options);
         LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, m_ScoreBlk, &lookup_wrap, NULL, NULL);
         query_options = BlastQuerySetUpOptionsFree(query_options);
+        BOOST_REQUIRE(query_options == NULL);
 
         Uint4 avg_subj_length = (Uint4)(db_length/db_num_seq);
         BlastInitialWordParametersNew(m_ProgramType, word_options, m_HitParams, lookup_wrap, 
            m_ScoreBlk, m_QueryInfo, avg_subj_length, &word_params);
 
         blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
+        BOOST_REQUIRE(blast_seq_loc == NULL);
         lookup_wrap = LookupTableWrapFree(lookup_wrap);
+        BOOST_REQUIRE(lookup_wrap == NULL);
         lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 
         BlastLinkHSPParametersUpdate(word_params, m_HitParams, (gapped ? TRUE : FALSE));
 

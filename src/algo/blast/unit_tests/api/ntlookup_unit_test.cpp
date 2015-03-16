@@ -189,6 +189,7 @@ BOOST_AUTO_TEST_CASE(testStdLookupTable) {
                              lookup_options, query_options, lookup_segments, 
                              0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
     BOOST_REQUIRE_EQUAL(eSmallNaLookupTable,
                         (ELookupTableType)lookup_wrap_ptr->lut_type);
 
@@ -202,7 +203,9 @@ BOOST_AUTO_TEST_CASE(testStdLookupTable) {
 	BOOST_REQUIRE_EQUAL((Int2)(-345), lookup->final_backbone[21076]);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testMegablastLookupTable)
@@ -221,6 +224,7 @@ BOOST_AUTO_TEST_CASE(testMegablastLookupTable)
                                        lookup_options, query_options, lookup_segments, 
                                        0, &lookup_wrap_ptr, NULL, NULL), 0);
         query_options = BlastQuerySetUpOptionsFree(query_options);
+        BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL((ELookupTableType)lookup_wrap_ptr->lut_type, 
                              eMBLookupTable);
 
@@ -242,7 +246,9 @@ BOOST_AUTO_TEST_CASE(testMegablastLookupTable)
 	BOOST_REQUIRE_EQUAL(-729205454, pv_array_hash);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
  	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize11) {
@@ -262,6 +268,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize11) {
                                           lookup_options, query_options, lookup_segments, 
                                           0, &lookup_wrap_ptr, NULL, NULL), 0);
         query_options = BlastQuerySetUpOptionsFree(query_options);
+        BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eMBLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -285,7 +292,9 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize11) {
 	BOOST_REQUIRE_EQUAL(-160576483, pv_array_hash);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize12) {
@@ -305,6 +314,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize12) {
                                         lookup_options, query_options, lookup_segments, 
                                         0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eMBLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -328,7 +338,9 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize12) {
 	BOOST_REQUIRE_EQUAL(-630452942, pv_array_hash);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize11) {
@@ -348,6 +360,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize11) {
                                            lookup_options, query_options, lookup_segments, 
                                            0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eMBLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -371,7 +384,9 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize11) {
 	BOOST_REQUIRE_EQUAL(932347030, pv_array_hash);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize12) {
@@ -391,6 +406,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize12) {
                                             lookup_options, query_options, lookup_segments, 
                                             0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eMBLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -414,7 +430,9 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize12) {
 	BOOST_REQUIRE_EQUAL(558099690, pv_array_hash);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableTwoTemplatesWordSize11) {
@@ -434,6 +452,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableTwoTemplatesWordSize11) {
                                          lookup_options, query_options, lookup_segments, 
                                          0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eMBLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -461,7 +480,9 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableTwoTemplatesWordSize11) {
 	BOOST_REQUIRE_EQUAL(-36132604, pv_array_hash);
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 
@@ -484,6 +505,7 @@ BOOST_AUTO_TEST_CASE(testStdLookupTableDebruijn) {
                                             lookup_options, query_options, lookup_segments, 
                                             0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eNaLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastNaLookupTable* lookup = (BlastNaLookupTable*) lookup_wrap_ptr->lut;
@@ -505,7 +527,9 @@ BOOST_AUTO_TEST_CASE(testStdLookupTableDebruijn) {
 	}
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testMegablastLookupTableDebruijn) {
@@ -527,6 +551,7 @@ BOOST_AUTO_TEST_CASE(testMegablastLookupTableDebruijn) {
                                            lookup_options, query_options, lookup_segments, 
                                            0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eMBLookupTable, (ELookupTableType)lookup_wrap_ptr->lut_type);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -550,7 +575,9 @@ BOOST_AUTO_TEST_CASE(testMegablastLookupTableDebruijn) {
 	}
 
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 }
 
 // Test that nothing is put into the lookup table if contiguous unmasked
@@ -574,6 +601,7 @@ BOOST_AUTO_TEST_CASE(testStdTableSmallUnmaskedRegion) {
                                               lookup_options, query_options, segments, 
                                               0, &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL(eSmallNaLookupTable, 
                              (ELookupTableType)lookup_wrap_ptr->lut_type);
 
@@ -592,8 +620,11 @@ BOOST_AUTO_TEST_CASE(testStdTableSmallUnmaskedRegion) {
 	}
         
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 	segments = BlastSeqLocFree(segments);
+        BOOST_REQUIRE(segments == NULL);
 }
 
 // Test that nothing is put into the lookup table if contiguous unmasked regions are smaller than user specified word size.
@@ -624,6 +655,7 @@ BOOST_AUTO_TEST_CASE(testMegablastTableSmallUnmaskedRegion) {
                                             lookup_options, query_options, segments, 0, 
                                             &lookup_wrap_ptr, NULL, NULL), 0);
     query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
 	BOOST_REQUIRE_EQUAL((ELookupTableType)lookup_wrap_ptr->lut_type, eMBLookupTable);
 
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
@@ -643,8 +675,11 @@ BOOST_AUTO_TEST_CASE(testMegablastTableSmallUnmaskedRegion) {
 	}
         
 	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 	segments = BlastSeqLocFree(segments);
+        BOOST_REQUIRE(segments == NULL);
 }
 
 

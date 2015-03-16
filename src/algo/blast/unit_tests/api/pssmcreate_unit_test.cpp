@@ -1241,6 +1241,7 @@ BOOST_AUTO_TEST_CASE(testPsiLowerCaseMatrix) {
 	SFreqRatios* freq_ratios = _PSIMatrixFrequencyRatiosNew("blosum62");
         BOOST_REQUIRE(freq_ratios != NULL);
 	freq_ratios = _PSIMatrixFrequencyRatiosFree(freq_ratios);
+        BOOST_REQUIRE(freq_ratios == NULL);
 
 }
 

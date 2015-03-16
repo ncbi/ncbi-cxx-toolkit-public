@@ -114,6 +114,7 @@ s_TestGetGis(BlastSeqSrc* seqsrc, const pair<string, bool>& dbinfo) {
         BOOST_REQUIRE_EQUAL(gilist->data[i], gis[i]);
     }
     gilist = Blast_GiListFree(gilist);
+    BOOST_REQUIRE(gilist == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testGetGisSeqDb) {
@@ -185,6 +186,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqSrc) {
         max_len = MAX(max_len, length);
     }
     itr = BlastSeqSrcIteratorFree(itr);
+    BOOST_REQUIRE(itr == NULL);
     BOOST_REQUIRE_EQUAL(kNumSeqs, last_index);
     
     avg_len /= kNumSeqs;
@@ -275,6 +277,7 @@ s_checkDbSeqSrcFunctions(BlastSeqSrc* seq_src, const char* dbname)
         total_length += (Int8) length;
     }
     itr = BlastSeqSrcIteratorFree(itr);
+    BOOST_REQUIRE(itr == NULL);
    
     BOOST_REQUIRE_EQUAL(kRealNumSeqs, last_index);
     BOOST_REQUIRE_EQUAL(kTotLenRange, (int)total_length);

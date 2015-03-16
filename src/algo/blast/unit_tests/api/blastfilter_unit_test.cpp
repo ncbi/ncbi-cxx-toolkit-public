@@ -490,6 +490,7 @@ BOOST_AUTO_TEST_CASE(SegFilter) {
                                     filtering_options,
                                     & filter_slp, NULL);
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
     BOOST_REQUIRE(status == 0);
         
     Int4 loc_index;
@@ -1320,6 +1321,7 @@ BOOST_AUTO_TEST_CASE(FilterLocProtein) {
                                          eBlastTypeBlastp, filter_options,
                                          &filter_out, &blast_message);
     filter_options = SBlastFilterOptionsFree(filter_options);
+    BOOST_REQUIRE(filter_options == NULL);
     BOOST_REQUIRE(status == 0);
 
     BlastSeqLoc *filter_slp = filter_out->seqloc_array[0];
@@ -1335,6 +1337,7 @@ BOOST_AUTO_TEST_CASE(FilterLocProtein) {
     BOOST_REQUIRE_EQUAL(kNumLocs, loc_index);
 
     filter_out = BlastMaskLocFree(filter_out);
+    BOOST_REQUIRE(filter_out == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(MaskProteinSequence) {
@@ -1369,6 +1372,7 @@ BOOST_AUTO_TEST_CASE(MaskProteinSequence) {
     BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, 
                          eBlastTypeBlastp);
     filter_maskloc = BlastMaskLocFree(filter_maskloc);
+    BOOST_REQUIRE(filter_maskloc == NULL);
 
     Uint1* buffer = &query_blk->sequence[0];
     Int4 query_length = query_info->contexts[0].query_length;
@@ -1420,6 +1424,7 @@ BOOST_AUTO_TEST_CASE(MaskNucleotideBothStrands) {
     BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, 
                          eBlastTypeBlastn);
     filter_maskloc = BlastMaskLocFree(filter_maskloc);
+    BOOST_REQUIRE(filter_maskloc == NULL);
 
     Uint1* buffer = &query_blk->sequence[0];
     Int4 query_length = query_info->contexts[0].query_length;
@@ -1702,6 +1707,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromNULLString)
     BOOST_REQUIRE(filtering_options->segOptions == NULL);
     BOOST_REQUIRE(filtering_options->dustOptions == NULL);
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
     
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringDustMaskAtHash)
@@ -1719,6 +1725,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringDustMaskAtHash)
     BOOST_REQUIRE_EQUAL(string("L;m;"), string(retval.get()));
 
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringDust)
@@ -1736,6 +1743,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringDust)
     BOOST_REQUIRE(strcmp(retval.get(), "L;") == 0);
 
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringSEGWithParams)
@@ -1755,6 +1763,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringSEGWithParams)
     BOOST_REQUIRE(strcmp(retval.get(), "S 10 1.0 1.5;") == 0);
 
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(FilterOptionsFromBadStringSEGWithParams)
@@ -1781,6 +1790,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnL)
     BOOST_REQUIRE(strcmp(retval.get(), "L;") == 0);
 
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastpL)
 {
@@ -1796,6 +1806,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastpL)
     BOOST_REQUIRE(strcmp(retval.get(), "L;") == 0);
 
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnW)
 {
@@ -1813,6 +1824,7 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnW)
     BOOST_REQUIRE(strcmp(retval.get(), "W -t 9606;") == 0);
 
     filtering_options = SBlastFilterOptionsFree(filtering_options);
+    BOOST_REQUIRE(filtering_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(FilterMerge)
@@ -1839,6 +1851,7 @@ BOOST_AUTO_TEST_CASE(FilterMerge)
     BOOST_REQUIRE_EQUAL(kNewWindow, result->dustOptions->window);
     BOOST_REQUIRE(result->repeatFilterOptions);
     result = SBlastFilterOptionsFree(result);
+    BOOST_REQUIRE(result == NULL);
 
     status = SBlastFilterOptionsMerge(&result, opt1, NULL);
     BOOST_REQUIRE_EQUAL(0, (int) status);
@@ -1846,6 +1859,7 @@ BOOST_AUTO_TEST_CASE(FilterMerge)
     BOOST_REQUIRE_EQUAL(kNewLevel, result->dustOptions->level);
     BOOST_REQUIRE_EQUAL(kNewWindow, result->dustOptions->window);
     result = SBlastFilterOptionsFree(result);
+    BOOST_REQUIRE(result == NULL);
 
     status = SBlastFilterOptionsMerge(&result, NULL, opt2);
     BOOST_REQUIRE_EQUAL(0, (int) status);
@@ -1853,6 +1867,7 @@ BOOST_AUTO_TEST_CASE(FilterMerge)
     BOOST_REQUIRE_EQUAL(true, !!result->mask_at_hash);
     BOOST_REQUIRE(result->repeatFilterOptions);
     result = SBlastFilterOptionsFree(result);
+    BOOST_REQUIRE(result == NULL);
 
     SBlastFilterOptionsFree(opt1);
     SBlastFilterOptionsFree(opt2);
@@ -1972,6 +1987,7 @@ BOOST_AUTO_TEST_CASE(BlastSeqLocCombineTest) {
         }
 
     result = BlastSeqLocFree(result);
+    BOOST_REQUIRE(result == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(GetSeqLocInfoVector_AllPrograms) {
@@ -2080,6 +2096,7 @@ BOOST_AUTO_TEST_CASE(TestBlastSeqLocCombine_MergeElems)
     BOOST_REQUIRE(mask_itr == NULL);
 
     mask = BlastSeqLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(TestBlastSeqLocCombine_MergeIdenticals) 
@@ -2110,6 +2127,7 @@ BOOST_AUTO_TEST_CASE(TestBlastSeqLocCombine_MergeIdenticals)
     BOOST_REQUIRE(mask_itr == NULL);
 
     mask = BlastSeqLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(TestBlastSeqLocCombine_NoMerging) 
@@ -2136,6 +2154,7 @@ BOOST_AUTO_TEST_CASE(TestBlastSeqLocCombine_NoMerging)
     BOOST_REQUIRE(mask_itr == NULL);
 
     mask = BlastSeqLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
 }
 
 extern "C" void BlastSeqLocListReverse(BlastSeqLoc** head);
@@ -2161,6 +2180,7 @@ BOOST_AUTO_TEST_CASE(TestBlastSeqLocListReverse)
     BOOST_REQUIRE(mask_itr == NULL);
 
     mask = BlastSeqLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(TestGetTaxIdWithWindowMaskerSupport) 

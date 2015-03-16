@@ -54,7 +54,9 @@ BlastHSPBestHitParams* s_GetBestHitParams()
     BlastHSPBestHitParams* best_hit_params = 
          BlastHSPBestHitParamsNew(hit_options, best_hit_opts, false, kIsGapped);
     best_hit_opts = BlastHSPBestHitOptionsFree(best_hit_opts);
+    BOOST_REQUIRE(best_hit_opts == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     return best_hit_params;
 }
 

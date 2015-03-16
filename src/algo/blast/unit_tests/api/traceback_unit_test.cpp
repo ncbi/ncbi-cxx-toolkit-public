@@ -196,6 +196,7 @@ BOOST_AUTO_TEST_CASE(testHSPUpdateWithTraceback) {
     new_hsp = Blast_HSPFree(new_hsp);
     BOOST_REQUIRE(new_hsp == NULL);
     gap_align = BLAST_GapAlignStructFree(gap_align);
+    BOOST_REQUIRE(gap_align == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
@@ -323,7 +324,9 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
     }
 
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     seq_src = BlastSeqSrcFree(seq_src);
+    BOOST_REQUIRE(seq_src == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testBLASTNTraceBackLargeXDrop) {
@@ -457,7 +460,9 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBackLargeXDrop) {
     }
 
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     seq_src = BlastSeqSrcFree(seq_src);
+    BOOST_REQUIRE(seq_src == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testBLASTPTraceBack) {
@@ -579,7 +584,9 @@ BOOST_AUTO_TEST_CASE(testBLASTPTraceBack) {
     }
 
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     seq_src = BlastSeqSrcFree(seq_src);
+    BOOST_REQUIRE(seq_src == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testTBLASTNTraceBack) {
@@ -727,7 +734,9 @@ BOOST_AUTO_TEST_CASE(testTBLASTNTraceBack) {
     }
 
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     seq_src = BlastSeqSrcFree(seq_src);
+    BOOST_REQUIRE(seq_src == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
@@ -792,8 +801,11 @@ BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
 			kProgramType, ext_options, FALSE, 1, writer);
 
      hit_options = BlastHitSavingOptionsFree(hit_options);
+     BOOST_REQUIRE(hit_options == NULL);
      scoring_options = BlastScoringOptionsFree(scoring_options);
+     BOOST_REQUIRE(scoring_options == NULL);
      ext_options = BlastExtensionOptionsFree(ext_options);
+     BOOST_REQUIRE(ext_options == NULL);
      // needed after tie-breaking algorithm for scores was changed in
      // ScoreCompareHSP (blast_hits.c, revision 1.139)
      Blast_HSPListSortByScore(hsp_list); 
@@ -922,7 +934,9 @@ BOOST_AUTO_TEST_CASE(testFilterBlastResults_QueryCov) {
    BOOST_REQUIRE_EQUAL(k_num_hsps_filtered, hsp_list->hspcnt);
 
    results = Blast_HSPResultsFree(results);
+   BOOST_REQUIRE(results == NULL);
    seq_src = BlastSeqSrcFree(seq_src);
+   BOOST_REQUIRE(seq_src == NULL);
 
 }
 
@@ -1027,7 +1041,9 @@ BOOST_AUTO_TEST_CASE(testFilterBlastResults_MaxHsps) {
     BOOST_REQUIRE_EQUAL(k_num_hsps_filtered, hsp_list->hspcnt);
 
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
     seq_src = BlastSeqSrcFree(seq_src);
+    BOOST_REQUIRE(seq_src == NULL);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -102,6 +102,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockNucl) {
     BOOST_REQUIRE_EQUAL(1, (int) sbp->reward);
 
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 
 }
 
@@ -144,6 +145,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockProtein) {
     BOOST_REQUIRE_EQUAL(11, (int) sbp->hiscore);
 
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(GetScoreBlockPHI) {
@@ -199,6 +201,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockPHI) {
 
     BOOST_REQUIRE_EQUAL(-1, (int)status);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     
     BOOST_REQUIRE(!strncmp(kErrorMsg.c_str(), blast_message->message,
                            kErrorMsg.size()));
@@ -225,6 +228,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockPHI) {
     BOOST_REQUIRE(sbp->kbp[0]->H > 0);
 
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(GetScoreBlockForFullyMaskedProtein) {
@@ -262,6 +266,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockForFullyMaskedProtein) {
 
     BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, kProgram);
     filter_maskloc = BlastMaskLocFree(filter_maskloc);
+    BOOST_REQUIRE(filter_maskloc == NULL);
 
 
     BlastScoreBlk* sbp;
@@ -283,7 +288,9 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockForFullyMaskedProtein) {
     BOOST_REQUIRE_EQUAL(11, (int) sbp->hiscore);
 
     blast_message = Blast_MessageFree(blast_message);
+    BOOST_REQUIRE(blast_message == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(BlastResFreqStdCompProteinTest) {
@@ -309,6 +316,7 @@ BOOST_AUTO_TEST_CASE(BlastResFreqStdCompProteinTest) {
     BOOST_REQUIRE_EQUAL(3216, (int)BLAST_Nint(100000*stdrfp->prob[22])); 
 
     stdrfp = Blast_ResFreqFree(stdrfp);
+    BOOST_REQUIRE(stdrfp == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(BlastResFreqStdCompNucleotideTest) {
@@ -332,6 +340,7 @@ BOOST_AUTO_TEST_CASE(BlastResFreqStdCompNucleotideTest) {
         BOOST_REQUIRE_EQUAL(0, (int)(100*stdrfp->prob[index])); 
 
     stdrfp = Blast_ResFreqFree(stdrfp);
+    BOOST_REQUIRE(stdrfp == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(EqualRewardPenaltyLHtoK) 
@@ -526,6 +535,7 @@ BOOST_AUTO_TEST_CASE(NuclGappedCalc)
     BOOST_REQUIRE_EQUAL(-2.0, beta);
 
     kbp = Blast_KarlinBlkFree(kbp);
+    BOOST_REQUIRE(kbp == NULL);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

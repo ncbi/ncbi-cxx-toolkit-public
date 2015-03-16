@@ -334,7 +334,9 @@ void CRedoAlignmentTestFixture::
     BOOST_REQUIRE(query_info->contexts[0].eff_searchsp == effective_searchsp);
 
     eff_len_opts = BlastEffectiveLengthsOptionsFree(eff_len_opts);
+    BOOST_REQUIRE(eff_len_opts == NULL);
     eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
+    BOOST_REQUIRE(eff_len_params == NULL);
 
     BlastExtensionParameters* ext_params=NULL;
     BlastExtensionParametersNew(program, ext_options, sbp, query_info, 
@@ -365,12 +367,19 @@ void CRedoAlignmentTestFixture::
     BOOST_REQUIRE_MESSAGE(rv == (Int2)0, "Blast_RedoAlignmentCore failed!");
 
     hsp_stream = BlastHSPStreamFree(hsp_stream);
+    BOOST_REQUIRE(hsp_stream == NULL);
     ext_params = BlastExtensionParametersFree(ext_params);
+    BOOST_REQUIRE(ext_params == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     scoring_params = BlastScoringParametersFree(scoring_params);
+    BOOST_REQUIRE(scoring_params == NULL);
     psi_options = PSIBlastOptionsFree(psi_options);
+    BOOST_REQUIRE(psi_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 
     BOOST_REQUIRE(results && results->num_queries == 1);
     BOOST_REQUIRE(*results->hitlist_array != NULL);
@@ -429,6 +438,7 @@ void CRedoAlignmentTestFixture::
     }
 
     results = Blast_HSPResultsFree(results);
+    BOOST_REQUIRE(results == NULL);
 }
 
 BOOST_FIXTURE_TEST_SUITE(RedoAlignment, CRedoAlignmentTestFixture)
@@ -491,6 +501,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStats) {
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testRedoAlignmentWithConditionalAdjust) {
@@ -550,6 +561,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithConditionalAdjust) {
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
@@ -612,6 +624,7 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
                                     kEffSearchSp, eCompositionBasedStats,
                                     kSmithWaterman);
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
@@ -685,6 +698,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
                                     kEffSearchSp, eCompositionMatrixAdjust,
                                     kSmithWaterman);
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
@@ -744,6 +758,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
                                     kEffSearchSp, eNoCompositionBasedStats,
                                     kSmithWaterman);
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsAndSW) {
@@ -799,6 +814,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsAndSW) {
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
@@ -872,6 +888,7 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 // Tests following changes from Mike Gertz and Alejandro Schaffer (rev 1.14
@@ -946,6 +963,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentUseXdropEvalue) {
                                     kHitListSize);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+    BOOST_REQUIRE(ending_hsp_list == NULL);
 }
 
 // N.B.: the absence of a testPSIRedoAlignmentWithSW is due to the fact

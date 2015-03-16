@@ -202,6 +202,7 @@ struct CBlastExtendTestFixture
                      m_iclsQueryBlk->sequence, m_iclsQueryInfo,
                      &message);
         message = Blast_MessageFree(message);
+        BOOST_REQUIRE(message == NULL);
 
         BOOST_REQUIRE(status == 0);
         status = Blast_ScoreBlkKbpGappedCalc(m_ipScoreBlk, m_ScoringOpts,
@@ -391,6 +392,7 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
     // does not influence the BLAST_MbGetGappedScore behavior.
     // Free the HSPList
     hsp_list = Blast_HSPListFree(hsp_list);
+    BOOST_REQUIRE(hsp_list == NULL);
     // The initial seeds have been modified if they were on reverse strand,
     // so setup the initial hit list again.
     m_ipInitHitlist = BLAST_InitHitListFree(m_ipInitHitlist);

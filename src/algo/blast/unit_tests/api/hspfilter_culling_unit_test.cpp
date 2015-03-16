@@ -53,7 +53,9 @@ BlastHSPCullingParams* s_GetCullingParams()
     BlastHSPCullingParams* culling_params = 
          BlastHSPCullingParamsNew(hit_options, culling_opts, false, kIsGapped);
     culling_opts = BlastHSPCullingOptionsFree(culling_opts);
+    BOOST_REQUIRE(culling_opts == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     return culling_params;
 
 }

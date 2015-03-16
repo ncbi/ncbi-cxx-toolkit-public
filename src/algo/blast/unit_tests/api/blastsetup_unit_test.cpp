@@ -902,6 +902,7 @@ BOOST_AUTO_TEST_CASE(testCalcEffLengths)
                                     &sbp, 1.0, &blast_message,
                                     &BlastFindMatrixPath);
         blast_message = Blast_MessageFree(blast_message);
+        BOOST_REQUIRE(blast_message == NULL);
         BOOST_REQUIRE(status == 0);
         
         BlastEffectiveLengthsParameters* eff_len_params = NULL;
@@ -1104,8 +1105,11 @@ BOOST_AUTO_TEST_CASE(testMainSetup)
     BOOST_REQUIRE_EQUAL(-2, sbp->matrix->data[0][11]);
 
     lookup_segments = BlastSeqLocFree(lookup_segments);
+    BOOST_REQUIRE(lookup_segments == NULL);
     mask = BlastMaskLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 
     // supported options.
     score_opts->reward = 1;
@@ -1121,8 +1125,11 @@ BOOST_AUTO_TEST_CASE(testMainSetup)
     BOOST_REQUIRE_EQUAL(0, sbp->matrix->data[0][11]);
 
     lookup_segments = BlastSeqLocFree(lookup_segments);
+    BOOST_REQUIRE(lookup_segments == NULL);
     mask = BlastMaskLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 
     // NOT supported options.
     score_opts->reward = 1;
@@ -1136,8 +1143,11 @@ BOOST_AUTO_TEST_CASE(testMainSetup)
     BOOST_REQUIRE_EQUAL(1, (int) st);
 
     lookup_segments = BlastSeqLocFree(lookup_segments);
+    BOOST_REQUIRE(lookup_segments == NULL);
     mask = BlastMaskLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 
     // NOT supported options.
     score_opts->reward = 3124;
@@ -1149,11 +1159,17 @@ BOOST_AUTO_TEST_CASE(testMainSetup)
     BOOST_REQUIRE_EQUAL(-1, (int) st);
 
     lookup_segments = BlastSeqLocFree(lookup_segments);
+    BOOST_REQUIRE(lookup_segments == NULL);
     mask = BlastMaskLocFree(mask);
+    BOOST_REQUIRE(mask == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     blast_msg = Blast_MessageFree(blast_msg);
+    BOOST_REQUIRE(blast_msg == NULL);
     qsup_opts = BlastQuerySetUpOptionsFree(qsup_opts);
+    BOOST_REQUIRE(qsup_opts == NULL);
     score_opts = BlastScoringOptionsFree(score_opts);
+    BOOST_REQUIRE(score_opts == NULL);
 }
 
 
@@ -1197,10 +1213,12 @@ BOOST_AUTO_TEST_CASE(testDeltaSeqSetup)
                                     &sbp, 1.0, &blast_message,
                                     &BlastFindMatrixPath);
     blast_message = Blast_MessageFree(blast_message);
+    BOOST_REQUIRE(blast_message == NULL);
     BOOST_REQUIRE(status == 0);
     sbp->kbp_std[0] = Blast_KarlinBlkNew();
     status = Blast_KarlinBlkUngappedCalc(sbp->kbp_std[0], sbp->sfp[0]);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     BOOST_REQUIRE(status == 0);
 
     

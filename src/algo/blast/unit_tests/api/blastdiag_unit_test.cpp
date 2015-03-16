@@ -75,6 +75,7 @@ BOOST_AUTO_TEST_CASE(testDiagClear) {
      }
    
      ewp = BlastExtendWordFree(ewp);
+     BOOST_REQUIRE(ewp == NULL);
   }
 
 // This test is for a full diag that does get reset.
@@ -111,6 +112,7 @@ BOOST_AUTO_TEST_CASE(testDiagUpdateFull) {
      }
    
      ewp = BlastExtendWordFree(ewp);
+     BOOST_REQUIRE(ewp == NULL);
   }
 
 // This test is for a not full diag that does not get reset.
@@ -148,6 +150,7 @@ BOOST_AUTO_TEST_CASE(testDiagUpdateNotFull) {
      }
    
      ewp = BlastExtendWordFree(ewp);
+     BOOST_REQUIRE(ewp == NULL);
   }
 
 BOOST_AUTO_TEST_SUITE_END()

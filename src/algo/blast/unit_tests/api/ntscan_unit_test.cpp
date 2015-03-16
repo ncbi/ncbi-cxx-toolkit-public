@@ -271,6 +271,7 @@ struct TestFixture {
                                          &blast_message, NULL);
         BOOST_REQUIRE_EQUAL(0, status);
         blast_message = Blast_MessageFree(blast_message);
+        BOOST_REQUIRE(blast_message == NULL);
         
         // set discontiguous megablast (if applicable)
 
@@ -292,6 +293,7 @@ struct TestFixture {
         BOOST_REQUIRE_EQUAL(0, status);
         BlastChooseNaExtend(lookup_wrap_ptr);
         query_options = BlastQuerySetUpOptionsFree(query_options);
+        BOOST_REQUIRE(query_options == NULL);
 
         // create the hit collection arrays
 
@@ -301,7 +303,9 @@ struct TestFixture {
         BOOST_REQUIRE(offset_pairs != NULL);
 
         lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
         score_options = BlastScoringOptionsFree(score_options);
+        BOOST_REQUIRE(score_options == NULL);
         BlastInitialWordOptionsNew(program_number, &word_options);
         BlastExtensionOptionsNew(program_number, &ext_options, TRUE);
         BlastHitSavingOptionsNew(program_number, &hitsaving_options, TRUE);
@@ -777,9 +781,13 @@ struct TestFixture {
         }
 
         hit_params = BlastHitSavingParametersFree(hit_params);
+        BOOST_REQUIRE(hit_params == NULL);
         word_params = BlastInitialWordParametersFree(word_params);
+        BOOST_REQUIRE(word_params == NULL);
         ewp = BlastExtendWordFree(ewp);
+        BOOST_REQUIRE(ewp == NULL);
         init_hitlist = BLAST_InitHitListFree(init_hitlist);
+        BOOST_REQUIRE(init_hitlist == NULL);
     }
 };
 

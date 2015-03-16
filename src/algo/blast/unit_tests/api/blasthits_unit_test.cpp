@@ -210,8 +210,11 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
     }
 
     hsp = Blast_HSPFree(hsp);
+    BOOST_REQUIRE(hsp == NULL);
     subject_blk = BlastSequenceBlkFree(subject_blk);
+    BOOST_REQUIRE(subject_blk == NULL);
     target_t = BlastTargetTranslationFree(target_t);
+    BOOST_REQUIRE(target_t == NULL);
 }
 
 
@@ -252,6 +255,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         }
 
         combined_hsp_list = Blast_HSPListFree(combined_hsp_list);
+        BOOST_REQUIRE(combined_hsp_list == NULL);
     }
 
     /* Test that purge of newly created HSPList works. */
@@ -261,6 +265,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
        /* Nothing was put on list, nothing should be purged off. */
        BOOST_REQUIRE_EQUAL(0, hsp_list->hspcnt);
        hsp_list = Blast_HSPListFree(hsp_list);
+       BOOST_REQUIRE(hsp_list == NULL);
     }
 
     /* Create new HSPList and set the hspcnt to 5, even though all HSP's are NULL.
@@ -273,6 +278,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
        /* Nothing was put on list, nothing should be purged off. */
        BOOST_REQUIRE_EQUAL(0, hsp_list->hspcnt);
        hsp_list = Blast_HSPListFree(hsp_list);
+       BOOST_REQUIRE(hsp_list == NULL);
     }
 
     /* Check that an HSPList with no missing HSP's is not affected. */
@@ -290,6 +296,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
        /* Nothing was NULL on list, everything should be there. */
        BOOST_REQUIRE_EQUAL(kNumHsps, hsp_list->hspcnt);
        hsp_list = Blast_HSPListFree(hsp_list);
+       BOOST_REQUIRE(hsp_list == NULL);
     }
 
     /* Check that a number of HSP's all with same score are saved correctly if there
@@ -318,6 +325,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
        BOOST_REQUIRE_EQUAL(30, hsp->subject.offset);
        BOOST_REQUIRE_EQUAL(kNumHsps, hsp_list->hspcnt);
        hsp_list = Blast_HSPListFree(hsp_list);
+       BOOST_REQUIRE(hsp_list == NULL);
     }
 
     /* Check that an HSPList with some missing HSP's is treated correctly. */
@@ -354,6 +362,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
        }
        
        hsp_list = Blast_HSPListFree(hsp_list);
+       BOOST_REQUIRE(hsp_list == NULL);
     }
 
     /* Check that an HSP is correctly created by Blast_HSPInit. */
@@ -537,13 +546,17 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         LookupTableOptionsNew(program_number, &lookup_options);
         LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL);
         query_options = BlastQuerySetUpOptionsFree(query_options);
+        BOOST_REQUIRE(query_options == NULL);
         BlastInitialWordOptionsNew(program_number, &word_options);
         BlastInitialWordParametersNew(program_number, word_options, hit_params, 
               lookup_wrap, sbp, query_info, kSubjLength, &word_params);
 
         blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
+        BOOST_REQUIRE(blast_seq_loc == NULL);
         lookup_wrap = LookupTableWrapFree(lookup_wrap);
+        BOOST_REQUIRE(lookup_wrap == NULL);
         lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 
         word_params->cutoff_score_min = kWordCutoff;
 
@@ -682,13 +695,17 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         LookupTableOptionsNew(program_number, &lookup_options);
         LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL);
         query_options = BlastQuerySetUpOptionsFree(query_options);
+        BOOST_REQUIRE(query_options == NULL);
         BlastInitialWordOptionsNew(program_number, &word_options);
         BlastInitialWordParametersNew(program_number, word_options, hit_params, 
               lookup_wrap, sbp, query_info, kSubjLength, &word_params);
 
         blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
+        BOOST_REQUIRE(blast_seq_loc == NULL);
         lookup_wrap = LookupTableWrapFree(lookup_wrap);
+        BOOST_REQUIRE(lookup_wrap == NULL);
         lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
 
         BOOST_REQUIRE_EQUAL(kWordCutoff, word_params->cutoff_score_min);
 
@@ -956,12 +973,19 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE(delete_hsp == TRUE);
 
         hsp = Blast_HSPFree(hsp);
+        BOOST_REQUIRE(hsp == NULL);
         sbp = BlastScoreBlkFree(sbp);
+        BOOST_REQUIRE(sbp == NULL);
         score_params = BlastScoringParametersFree(score_params);
+        BOOST_REQUIRE(score_params == NULL);
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
         score_opts = BlastScoringOptionsFree(score_opts);
+        BOOST_REQUIRE(score_opts == NULL);
         hit_params = BlastHitSavingParametersFree(hit_params);
+        BOOST_REQUIRE(hit_params == NULL);
         hit_opts = BlastHitSavingOptionsFree(hit_opts);
+        BOOST_REQUIRE(hit_opts == NULL);
     }
 
     BOOST_AUTO_TEST_CASE(testGetOOFNumIdentities)
@@ -1169,6 +1193,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         }
         
         hsp_list = Blast_HSPListFree(hsp_list);
+        BOOST_REQUIRE(hsp_list == NULL);
    }
 
    BOOST_AUTO_TEST_CASE(testSBlastHitsParamsGapped) {
@@ -1191,14 +1216,19 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                 &blasthit_params);
 
         scoring_options = BlastScoringOptionsFree(scoring_options);
+        BOOST_REQUIRE(scoring_options == NULL);
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
 
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size, 
              hit_options->hitlist_size+50);
 
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
         blasthit_params = SBlastHitsParametersFree(blasthit_params);
+        BOOST_REQUIRE(blasthit_params == NULL);
         hit_options = BlastHitSavingOptionsFree(hit_options);
+        BOOST_REQUIRE(hit_options == NULL);
    }
 
    BOOST_AUTO_TEST_CASE(testSBlastHitsParamsUngapped) {
@@ -1222,14 +1252,19 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                 &blasthit_params);
 
         scoring_options = BlastScoringOptionsFree(scoring_options);
+        BOOST_REQUIRE(scoring_options == NULL);
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
 
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size, 
              hit_options->hitlist_size);
 
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
         blasthit_params = SBlastHitsParametersFree(blasthit_params);
+        BOOST_REQUIRE(blasthit_params == NULL);
         hit_options = BlastHitSavingOptionsFree(hit_options);
+        BOOST_REQUIRE(hit_options == NULL);
    }
 
    BOOST_AUTO_TEST_CASE(testSBlastHitsParamsCompStats) {
@@ -1255,14 +1290,19 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                 &blasthit_params);
 
         scoring_options = BlastScoringOptionsFree(scoring_options);
+        BOOST_REQUIRE(scoring_options == NULL);
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
 
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size, 
              (2*hit_options->hitlist_size)+50);
 
         ext_options = BlastExtensionOptionsFree(ext_options);
+        BOOST_REQUIRE(ext_options == NULL);
         blasthit_params = SBlastHitsParametersFree(blasthit_params);
+        BOOST_REQUIRE(blasthit_params == NULL);
         hit_options = BlastHitSavingOptionsFree(hit_options);
+        BOOST_REQUIRE(hit_options == NULL);
     }
 
     BOOST_AUTO_TEST_CASE(testAdjustOddBlastnScores) {
@@ -1315,6 +1355,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(60, (int) hit_list->low_score);
         BOOST_REQUIRE(hit_list->hsplist_array != NULL);
         hit_list = Blast_HitListFree(hit_list);
+        BOOST_REQUIRE(hit_list == NULL);
     }
 
    static void

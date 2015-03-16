@@ -93,7 +93,9 @@ void testHSPStream(EHSPStreamType stream_type) {
 	BlastHSPStreamRegisterMTLock(hsp_stream, lock);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     /* One written HSP list will be split into one per query. */
     num_reads = kNumQueries;
     num_hsps = 1;
@@ -138,6 +140,7 @@ void testHSPStream(EHSPStreamType stream_type) {
         last_oid = hsp_list->oid;
         BOOST_REQUIRE_EQUAL(num_hsps, hsp_list->hspcnt);
         hsp_list = Blast_HSPListFree(hsp_list);
+        BOOST_REQUIRE(hsp_list == NULL);
     }
 
     /* Check whether we can write more results. */
@@ -149,6 +152,7 @@ void testHSPStream(EHSPStreamType stream_type) {
         status = BlastHSPStreamRead(hsp_stream, &hsp_list);
     }
     hsp_list = Blast_HSPListFree(hsp_list);
+    BOOST_REQUIRE(hsp_list == NULL);
 
     /* Close the stream for writing. Do it here, to imitate the situation
        when reading starts before the stream is explicitly closed for 
@@ -161,7 +165,9 @@ void testHSPStream(EHSPStreamType stream_type) {
     BOOST_REQUIRE_EQUAL(kBlastHSPStream_Eof, status);
     BOOST_REQUIRE(hsp_list == NULL);
     hsp_stream = BlastHSPStreamFree(hsp_stream);
+    BOOST_REQUIRE(hsp_stream == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(testCollectorHSPStream) {
@@ -198,7 +204,9 @@ BOOST_AUTO_TEST_CASE(testMultiSeqHSPCollector) {
         kProgram, ext_options, FALSE, 1, writer);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
 
     BlastHSPList* hsp_list = NULL;
     // Create HSPLists for all odd subjects
@@ -223,7 +231,9 @@ BOOST_AUTO_TEST_CASE(testMultiSeqHSPCollector) {
     BOOST_REQUIRE_EQUAL(kBlastHSPStream_Eof, status);
     BOOST_REQUIRE(hsp_list == NULL);
     hsp_stream = BlastHSPStreamFree(hsp_stream);
+    BOOST_REQUIRE(hsp_stream == NULL);
     Blast_HSPResultsFree(results);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
 }
 BOOST_AUTO_TEST_SUITE_END()

@@ -240,6 +240,7 @@ BOOST_AUTO_TEST_CASE( FilterSetUpOptionsDustTest )
     BOOST_CHECK(filter_options->dustOptions);
     BOOST_CHECK(filter_options->segOptions == NULL);
     filter_options = SBlastFilterOptionsFree(filter_options);
+    BOOST_REQUIRE(filter_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE( FilterSetUpOptionsSegTest )
@@ -252,6 +253,7 @@ BOOST_AUTO_TEST_CASE( FilterSetUpOptionsSegTest )
     BOOST_CHECK(filter_options->dustOptions == NULL);
     BOOST_CHECK(filter_options->segOptions);
     filter_options = SBlastFilterOptionsFree(filter_options);
+    BOOST_REQUIRE(filter_options == NULL);
 }
 
 BOOST_AUTO_TEST_CASE( FilterSetUpOptionsNULLInput )
@@ -309,9 +311,13 @@ s_GetInitialWordParameters(EBlastProgramType program_number,
       lookup_wrap, sbp, query_info, subject_length, &word_params);
 
    blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
+   BOOST_REQUIRE(blast_seq_loc == NULL);
    lookup_wrap = LookupTableWrapFree(lookup_wrap);
+   BOOST_REQUIRE(lookup_wrap == NULL);
    lookup_options = LookupTableOptionsFree(lookup_options);
+   BOOST_REQUIRE(lookup_options == NULL);
    query_options = BlastQuerySetUpOptionsFree(query_options);
+   BOOST_REQUIRE(query_options == NULL);
 
    return word_params;
 }
@@ -388,12 +394,19 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffs )
     BOOST_CHECK_EQUAL(41, link_hsp_params->cutoff_small_gap); 
 
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     word_params = BlastInitialWordParametersFree(word_params);
+    BOOST_REQUIRE(word_params == NULL);
     word_options = BlastInitialWordOptionsFree(word_options);
+    BOOST_REQUIRE(word_options == NULL);
     return;
 }
 
@@ -468,9 +481,13 @@ BOOST_AUTO_TEST_CASE( testBadKbpForLinkHSPCutoffs )
     BOOST_CHECK_EQUAL(0, link_hsp_params->cutoff_small_gap); 
 
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     return;
 }
 
@@ -546,12 +563,19 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffsSmallDB )
     BOOST_CHECK_EQUAL(0, link_hsp_params->cutoff_small_gap);
 
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     word_params = BlastInitialWordParametersFree(word_params);
+    BOOST_REQUIRE(word_params == NULL);
     word_options = BlastInitialWordOptionsFree(word_options);
+    BOOST_REQUIRE(word_options == NULL);
     return;
 }
 
@@ -633,13 +657,21 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPResetGapProb )
     BOOST_CHECK_EQUAL(41, link_hsp_params->cutoff_small_gap); 
 
     query_blk = BlastSequenceBlkFree(query_blk);
+    BOOST_REQUIRE(query_blk == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     word_params = BlastInitialWordParametersFree(word_params);
+    BOOST_REQUIRE(word_params == NULL);
     word_options = BlastInitialWordOptionsFree(word_options);
+    BOOST_REQUIRE(word_options == NULL);
     return;
 }
 
@@ -737,7 +769,9 @@ BOOST_AUTO_TEST_CASE( testExtParamNewSomeInvalidKbp )
     sfree(sb.kbp);
     sfree(sb.kbp_gap);
     ext_params = BlastExtensionParametersFree(ext_params);
+    BOOST_REQUIRE(ext_params == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
 }
 
 static void MakeSomeValidKBP(Blast_KarlinBlk** kbp_array, Int4 num,
@@ -787,6 +821,7 @@ BOOST_AUTO_TEST_CASE( testExtensionParamsNew )
     BOOST_CHECK_EQUAL(11, ext_params->gap_x_dropoff_final);
 
     ext_params = BlastExtensionParametersFree(ext_params);
+    BOOST_REQUIRE(ext_params == NULL);
 
     // gap_x_dropoff_final less than gap_x_dropoff, gap_x_dropoff_final should be adjusted.
     ext_options->gap_x_dropoff = 25;
@@ -806,7 +841,9 @@ BOOST_AUTO_TEST_CASE( testExtensionParamsNew )
     sfree(sb.kbp);
     sfree(sb.kbp_gap);
     ext_params = BlastExtensionParametersFree(ext_params);
+    BOOST_REQUIRE(ext_params == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
    }
 
 BOOST_AUTO_TEST_CASE( testHitSavingParamNewSomeInvalidKbp )
@@ -881,10 +918,15 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewSomeInvalidKbp )
     BOOST_CHECK_EQUAL(10, hit_params->cutoff_score_min);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 // This simulates values calculated by for the human genomic database.
@@ -946,10 +988,15 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnLargeSubjectSequence )
     BOOST_CHECK_EQUAL(50, hit_params->prelim_evalue);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 
@@ -1011,10 +1058,15 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnMidsizeSubjectSequence )
     BOOST_CHECK_EQUAL(50, hit_params->prelim_evalue);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 // This checks that for repeated calls to BlastHitSavingParametersUpdate the
@@ -1093,10 +1145,15 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamUpdateMultipleCalls )
 
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 // This simulates values calculated by for an EST database.
@@ -1158,10 +1215,15 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnSmallSubjectSequence )
     BOOST_CHECK_EQUAL(19, hit_params->cutoffs[0].cutoff_score_max);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 
@@ -1242,12 +1304,19 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
     BOOST_CHECK_EQUAL(11, word_params->x_dropoff_max);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    BOOST_REQUIRE(scoring_options == NULL);
     hit_params = BlastHitSavingParametersFree(hit_params);
+    BOOST_REQUIRE(hit_params == NULL);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    BOOST_REQUIRE(hit_options == NULL);
     word_params = BlastInitialWordParametersFree(word_params);
+    BOOST_REQUIRE(word_params == NULL);
     word_options = BlastInitialWordOptionsFree(word_options);
+    BOOST_REQUIRE(word_options == NULL);
     ext_options = BlastExtensionOptionsFree(ext_options);
+    BOOST_REQUIRE(ext_options == NULL);
     sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(sbp == NULL);
 }
 
 BOOST_AUTO_TEST_CASE( testRemoteFilterString)
