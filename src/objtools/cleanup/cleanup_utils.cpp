@@ -335,13 +335,10 @@ bool CleanVisStringJunk( string &str )
         if (isPeriod) {
             suffix = ".";
         } else if (isTilde ) {
-            // allow tilde(s)
-            // (This should work on single- AND double-tildes because
-            // we don't know whether or not tilde-expansion was called before this 
-            // point )
+            // allow double tilde(s) at the end
             if ( str[start_of_junk_pos] == '~' ) {
                 const bool doubleTilde = ( (chars_in_junk >= 2) && str[start_of_junk_pos+1] == '~' );
-                suffix = ( doubleTilde  ? "~~" : "~" );
+                suffix = ( doubleTilde  ? "~~" : "" );
             }
         }
         if( suffix[0] != '\0' ) {

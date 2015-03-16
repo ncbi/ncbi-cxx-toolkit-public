@@ -1094,6 +1094,21 @@ void CNewCleanup_imp::GBblockBC (
         ChangeMade (CCleanupChange::eCleanQualifiers);
     }
 
+    // split keywords at semicolons
+    if (gbk.IsSetKeywords()) {
+        CGB_block::TKeywords::iterator it = gbk.SetKeywords().begin();
+        while (it != gbk.SetKeywords().end()) {
+            vector<string> tokens;
+            NStr::Tokenize(*it, ";", tokens);
+            if (tokens.size() > 1) {
+                it = gbk.SetKeywords().erase(it);
+                gbk.SetKeywords().insert(it, tokens.begin(), tokens.end());
+            } else {
+                ++it;
+            }
+        }
+    }
+
     CLEAN_STRING_LIST (gbk, Keywords);
 
     CCachedRegexp reassembly_regex = regexpCache.Get(
@@ -3775,6 +3790,10 @@ void s_ExpandThisQual(
     CGb_qual& qual = **it;
     string  qual_type = qual.GetQual();
     string& val = qual.SetVal();
+    if (NStr::Equal(val, "()")) {
+        val = "";
+        return;
+    }
     if ( ! s_IsCompoundRptTypeValue( val ) ) {
         //
         //  nothing to do ...
@@ -5102,6 +5121,15 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
         // reset middle if it's blank
         if ( FIELD_EQUALS(name, Middle, kEmptyStr) ) {
             RESET_FIELD(name, Middle);
+        }
+
+        // side effect of C Toolkit converting to tabbed string and back
+        // is that some fields are removed
+        if ( name.IsSetFull()) {
+            name.ResetFull();
+        }
+        if (name.IsSetTitle()) {
+            name.ResetTitle();
         }
     }
 
