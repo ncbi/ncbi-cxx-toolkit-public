@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     try {
         // Int8
         {
-            Int8 value = 0;
+            Int8 value;
 
             value = ConvertSafe(value_Int8);
             BOOST_CHECK_EQUAL(value, value_Int8);
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Uint8
         {
-            Uint8 value = 0;
+            Uint8 value;
 
             value = ConvertSafe(value_Uint8);
             BOOST_CHECK_EQUAL(value, value_Uint8);
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Int4
         {
-            Int4 value = 0;
+            Int4 value;
 
             // Doesn't compile ...
             // value = ConvertSafe(value_Uint8);
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Uint4
         {
-            Uint4 value = 0;
+            Uint4 value;
 
             value = ConvertSafe(value_Uint4);
             BOOST_CHECK_EQUAL(value, value_Uint4);
@@ -313,7 +313,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Int2
         {
-            Int2 value = 0;
+            Int2 value;
 
             value = ConvertSafe(value_Int2);
             BOOST_CHECK_EQUAL(value, value_Int2);
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Uint2
         {
-            Uint2 value = 0;
+            Uint2 value;
 
             value = ConvertSafe(value_Uint2);
             BOOST_CHECK_EQUAL(value, value_Uint2);
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Int1
         {
-            Int1 value = 0;
+            Int1 value;
 
             value = ConvertSafe(value_Int1);
             BOOST_CHECK_EQUAL(value, value_Int1);
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // Uint1
         {
-            Uint1 value = 0;
+            Uint1 value;
 
             value = ConvertSafe(value_Uint1);
             BOOST_CHECK_EQUAL(value, value_Uint1);
@@ -534,7 +534,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // bool
         {
-            bool value = false;
+            bool value;
 
             value = ConvertSafe(value_Int8);
             BOOST_CHECK_EQUAL(value, true);
@@ -910,11 +910,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // float
         {
-            float value = 0.0;
+            float value;
 
             value = ConvertSafe(value_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, float(value_Int8));
 
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -988,11 +988,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // double
         {
-            double value = 0.0;
+            double value;
 
             value = ConvertSafe(value_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, double(value_Int8));
 
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1027,7 +1027,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             value = ConvertSafe(str_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, double(value_Int8));
 
             value = ConvertSafe(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1051,7 +1051,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // value = ConvertSafe(str_bool);
 
             value = ConvertSafe(str_float);
-            // BOOST_CHECK_EQUAL(value, value_float);
+            BOOST_CHECK_EQUAL(float(value), value_float);
 
             value = ConvertSafe(str_double);
             BOOST_CHECK_EQUAL(value, value_double);
@@ -1059,11 +1059,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // long double
         {
-            long double value = 0.0;
+            long double value;
 
             value = ConvertSafe(value_Int8);
             // Won't pass on 32-bit Windows + MSVC.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, (long double)value_Int8);
 
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1097,7 +1097,12 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // BOOST_CHECK_EQUAL(value, value_CTime);
 
             value = ConvertSafe(str_Int8);
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            // Rounding issue. Differ in last digit.
+            BOOST_CHECK(abs(value-value_Int8) <= 1);
+
+            value = ConvertSafe(str_Uint8);
+            // Rounding issue. Differ in last digit.
+            BOOST_CHECK(abs(value-value_Uint8) <= 1);
 
             value = ConvertSafe(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1121,10 +1126,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // value = ConvertSafe(str_bool);
 
             value = ConvertSafe(str_float);
-            // BOOST_CHECK_EQUAL(value, value_float);
+            BOOST_CHECK_EQUAL(float(value), value_float);
 
             value = ConvertSafe(str_double);
-            // BOOST_CHECK_EQUAL(value, value_double);
+            BOOST_CHECK_EQUAL(double(value), value_double);
         }
     }
     catch(const CException& ex) {
@@ -1166,7 +1171,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     try {
         // Int8
         {
-            Int8 value = 0;
+            Int8 value;
 
             value = Convert(value_Int8);
             BOOST_CHECK_EQUAL(value, value_Int8);
@@ -1239,7 +1244,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Uint8
         {
-            Uint8 value = 0;
+            Uint8 value;
 
             value = Convert(value_Uint8);
             BOOST_CHECK_EQUAL(value, value_Uint8);
@@ -1296,7 +1301,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Int4
         {
-            Int4 value = 0;
+            Int4 value;
 
             BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
             BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
@@ -1363,7 +1368,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Uint4
         {
-            Uint4 value = 0;
+            Uint4 value;
 
             BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
             BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
@@ -1420,7 +1425,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Int2
         {
-            Int2 value = 0;
+            Int2 value;
 
             BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
             BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
@@ -1480,7 +1485,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Uint2
         {
-            Uint2 value = 0;
+            Uint2 value;
 
             BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
             BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
@@ -1535,7 +1540,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Int1
         {
-            Int1 value = 0;
+            Int1 value;
 
             BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
             BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
@@ -1589,7 +1594,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // Uint1
         {
-            Uint1 value = 0;
+            Uint1 value;
 
             BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
             BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
@@ -1650,7 +1655,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // bool
         {
-            bool value = false;
+            bool value;
 
             value = Convert(value_Int8);
             BOOST_CHECK_EQUAL(value, true);
@@ -1903,15 +1908,15 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // float
         {
-            float value = 0.0;
+            float value;
 
             value = Convert(value_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, float(value_Int8));
             
             value = Convert(value_Uint8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Uint8);
+            BOOST_CHECK_EQUAL(value, float(value_Uint8));
 
             value = Convert(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1946,11 +1951,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             value = Convert(str_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, float(value_Int8));
 
             value = Convert(str_Uint8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Uint8);
+            BOOST_CHECK_EQUAL(value, float(value_Uint8));
 
             value = Convert(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -1977,20 +1982,20 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_float);
 
             value = Convert(str_double);
-            // BOOST_CHECK_EQUAL(value, value_double);
+            BOOST_CHECK_EQUAL(value, float(value_double));
         }
 
         // double
         {
-            double value = 0.0;
+            double value;
 
             value = Convert(value_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, double(value_Int8));
             
             value = Convert(value_Uint8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Uint8);
+            BOOST_CHECK_EQUAL(value, double(value_Uint8));
 
             value = Convert(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -2025,11 +2030,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             value = Convert(str_Int8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, double(value_Int8));
 
             value = Convert(str_Uint8);
             // Won't pass on 32-bit platforms.
-            // BOOST_CHECK_EQUAL(value, value_Uint8);
+            BOOST_CHECK_EQUAL(value, double(value_Uint8));
 
             value = Convert(str_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -2053,7 +2058,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // value = Convert(str_bool);
 
             value = Convert(str_float);
-            // BOOST_CHECK_EQUAL(value, value_float);
+            BOOST_CHECK_EQUAL(float(value), value_float);
 
             value = Convert(str_double);
             BOOST_CHECK_EQUAL(value, value_double);
@@ -2061,11 +2066,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // long double
         {
-            long double value = 0.0;
+            long double value;
 
             value = Convert(value_Int8);
             // Won't pass on 32-bit Windows + MSVC.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK_EQUAL(value, (long double)value_Int8);
             
             value = Convert(value_Uint8);
             BOOST_CHECK_EQUAL(value, value_Uint8);
@@ -2103,11 +2108,14 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             value = Convert(str_Int8);
             // Rounding issue. Differ in last digit.
-            // BOOST_CHECK_EQUAL(value, value_Int8);
+            BOOST_CHECK(abs(value-value_Int8) <= 1);
+
+            value = Convert(str_Uint8);
+            // Rounding issue. Differ in last digit.
+            BOOST_CHECK(abs(value-value_Uint8) <= 1);
 
             value = Convert(str_Int4);
-            // Rounding issue. Differ in last digit.
-            // BOOST_CHECK_EQUAL(value, value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
 
             value = Convert(str_Uint4);
             BOOST_CHECK_EQUAL(value, value_Uint4);
@@ -2128,10 +2136,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // value = Convert(str_bool);
 
             value = Convert(str_float);
-            // BOOST_CHECK_EQUAL(value, value_float);
+            BOOST_CHECK_EQUAL(float(value), value_float);
 
             value = Convert(str_double);
-            BOOST_CHECK_EQUAL(value, value_double);
+            BOOST_CHECK_EQUAL(double(value), value_double);
         }
     }
     catch(const CException& ex) {
