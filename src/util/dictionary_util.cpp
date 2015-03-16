@@ -479,15 +479,17 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
 
             const string* short_str = &str1;
             const string* long_str = &str2;
-            if (str2.length() < str1.length()) {
+            if (long_str->size() < short_str->size()) {
                 swap(short_str, long_str);
             }
+            size_t short_size = short_str->size();
+            size_t long_size = long_str->size();
 
             size_t* row0_ptr = buf0;
             size_t* row1_ptr = buf1;
-            if (short_str->size() > kMaxMetaphoneStack) {
-                row0.resize(short_str->size() + 1);
-                row1.resize(short_str->size() + 1);
+            if (short_size > kMaxMetaphoneStack) {
+                row0.resize(short_size + 1);
+                row1.resize(short_size + 1);
                 row0_ptr = &row0[0];
                 row1_ptr = &row1[0];
             }
@@ -496,17 +498,17 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
             size_t j;
 
             //cout << "   ";
-            for (i = 0;  i < short_str->size() + 1;  ++i) {
+            for (i = 0;  i <= short_size;  ++i) {
                 //cout << (*short_str)[i] << "  ";
                 row0_ptr[i] = i;
                 row1_ptr[i] = i;
             }
             //cout << endl;
 
-            for (i = 0;  i < long_str->size();  ++i) {
+            for (i = 0;  i < long_size;  ++i) {
                 row1_ptr[0] = i + 1;
                 //cout << (*long_str)[i] << " ";
-                for (j = 0;  j < short_str->size();  ++j) {
+                for (j = 0;  j < short_size;  ++j) {
                     int c0 = tolower((unsigned char) (*short_str)[j]);
                     int c1 = tolower((unsigned char) (*long_str)[i]);
                     size_t cost = (c0 == c1 ? 0 : 1);
@@ -521,7 +523,7 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
                 swap(row0_ptr, row1_ptr);
             }
 
-            return row0_ptr[short_str->size()];
+            return row0_ptr[short_size];
          }}
     }
 
