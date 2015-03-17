@@ -358,6 +358,9 @@ inline CStackTrace* Endm(void)
 #define ERR_POST(msg)   \
     CSrvDiagMsg().StartOldStyle(__FILE__, __LINE__, NCBI_CURRENT_FUNCTION) << msg
 
+#define ERR_FATAL(msg)   \
+    do { ERR_POST(Fatal<<msg); abort(); } while(0)
+
 #define LOG_POST(msg)   ERR_POST(msg)
 
 #define ERR_POST_ONCE(msg)  ERR_POST(msg)
@@ -367,17 +370,26 @@ inline CStackTrace* Endm(void)
                   << ErrCode(err_code, err_subcode) << msg                  \
 /**/
 
+#define ERR_FATAL_EX(err_code, err_subcode, msg)        \
+    do { ERR_POST_EX(err_code, err_subcode, Fatal<<msg); abort(); } while(0)
+
 #define LOG_POST_EX(err_code, err_subcode, msg)     \
     ERR_POST_EX(err_code, err_subcode, msg)
 
 #define ERR_POST_XX(error_name, err_subcode, message)   \
     ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message)
 
+#define ERR_FATAL_XX(error_name, err_subcode, message)   \
+    ERR_FATAL_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message)
+
 #define LOG_POST_XX(error_name, err_subcode, message)   \
     ERR_POST_XX(error_name, err_subcode, message)
 
 #define ERR_POST_X(err_subcode, message)    \
     ERR_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
+
+#define ERR_FATAL_X(err_subcode, message)    \
+    ERR_FATAL_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 #define LOG_POST_X(err_subcode, message)    \
     ERR_POST_X(err_subcode, message)
@@ -405,6 +417,11 @@ inline
 const CSrvDiagMsg& operator<< (const CSrvDiagMsg& msg, const CStackTrace&)
 {
     return msg;
+}
+inline
+const CSrvDiagMsg& operator<< (const CSrvDiagMsg& msg, const CSrvDiagMsg& (*manip)(const CSrvDiagMsg&))
+{
+    return manip(msg);
 }
 
 
