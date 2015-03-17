@@ -1709,7 +1709,10 @@ CRef<CVariation> CHgvsParser::x_prot_ext(TIterator const& i, const CContext& con
         SetFirstPlacement(*vr).SetLoc().SetPnt().SetPoint(0);
         //extension precedes first AA
         var_inst.SetDelta().push_back(delta);
-    } else if(ext_type_str == "extX" || ext_type_str == "ext*") {
+    } else if(ext_type_str == "extX" 
+           || ext_type_str == "ext*" 
+           || ext_type_str == "extTer") 
+    {
         if(ext_len < 0) {
             HGVS_THROW(eSemantic, "exX must be followed by a non-negative integer");
         }

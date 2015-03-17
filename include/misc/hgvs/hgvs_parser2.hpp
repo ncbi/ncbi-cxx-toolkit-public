@@ -675,10 +675,16 @@ protected:
 
                 //note: frameshift is optionally followed by new translation length,
                 //e.g. fs, fsX, fsX10, fs*, fs*10 ("X" in HGVS-1.0; "*" in HGVS-2.0)
-                prot_fs         = str_p("fs") >> !(chset<>("*X") >> !int_p);
+                //MSS350: current spec allows 'Ter' as well. Apparently, fsX is no longer
+                //valid, but leaving it for backward-compatibility.
+                prot_fs         = str_p("fs") >> !((str_p("Ter") | chset<>("*X")) >> !int_p);
 
                 //note: stop-loss is extX in HGVS-1.0 and ext* in HGVS 2.0
-                prot_ext        = (str_p("extMet") | str_p("extX") | str_p("ext*")) >> int_p;
+                //Note: added extTer to be consistent with above.
+                prot_ext        = (  str_p("extMet") 
+                                   | str_p("extX") 
+                                   | str_p("ext*") 
+                                   | str_p("extTer")) >> int_p;
 
                 prot_missense   = raw_seq;
 
