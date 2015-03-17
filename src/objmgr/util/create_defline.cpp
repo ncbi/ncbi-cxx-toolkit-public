@@ -2078,7 +2078,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 {
     CBioSource::TGenome   genome;
     size_t                pos;
-    int                   len;
+    int                   len1, len2, idx;
     bool                  partial = false;
     CConstRef<CBioSource> src;
 
@@ -2104,10 +2104,39 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
     s_TrimMainTitle (m_MainTitle);
 
-    len = m_MainTitle.length();
+    len1 = m_MainTitle.length();
+    len2 = m_Taxname.length();
 
     // remove [taxname]
-    if (len > 2 && m_MainTitle [len - 1] == ']') {
+    if (len1 > len2 + 4) {
+        idx = len1 - len2 - 3;
+        if (m_MainTitle [idx] == ' ' && m_MainTitle [idx + 1] == '[' && m_MainTitle [len1 - 1] == ']') {
+            pos = NStr::FindNoCase(m_MainTitle, m_Taxname, 0, NPOS, NStr::eLast);
+            if (pos == idx + 2) {
+                m_MainTitle.erase (idx + 1);
+                s_TrimMainTitle (m_MainTitle);
+                len1 = m_MainTitle.length();
+            }
+        } else if (m_IsCrossKingdom) {
+            pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
+            if (pos != NPOS) {
+                m_MainTitle.erase (pos + 1);
+                s_TrimMainTitle (m_MainTitle);
+                len1 = m_MainTitle.length();
+                idx = len1 - len2 - 3;
+                if (len1 > len2 + 4 && m_MainTitle [idx] == ' ' && m_MainTitle [idx + 1] == '[' && m_MainTitle [len1 - 1] == ']') {
+                    pos = NStr::FindNoCase(m_MainTitle, m_Taxname, 0, NPOS, NStr::eLast);
+                    if (pos == idx + 2) {
+                        m_MainTitle.erase (idx + 1);
+                        s_TrimMainTitle (m_MainTitle);
+                        len1 = m_MainTitle.length();
+                    }
+                }
+            }
+        }
+    }
+    /*
+    if (len1 > 2 && m_MainTitle [len1 - 1] == ']') {
         pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
         if (pos != NPOS) {
             m_MainTitle.erase (pos + 1);
@@ -2117,11 +2146,12 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
             m_MainTitle.erase (pos);
         }
         s_TrimMainTitle (m_MainTitle);
-        len = m_MainTitle.length();
+        len1 = m_MainTitle.length();
     }
+    */
 
     // remove (organelle)
-    if (len > 2 && m_MainTitle [len - 1] == ')') {
+    if (len1 > 2 && m_MainTitle [len1 - 1] == ')') {
         pos = m_MainTitle.find_last_of ("(");
         if (pos != NPOS) {
             for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(chromatophore); genome++ ) {
@@ -2136,7 +2166,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
             }
         }
         s_TrimMainTitle (m_MainTitle);
-        len = m_MainTitle.length();
+        len1 = m_MainTitle.length();
     }
 
     if ( NStr::EndsWith (m_MainTitle, ", partial")) {
