@@ -242,6 +242,7 @@ class CNCHeartBeat : public CSrvTask
 public:
     virtual ~CNCHeartBeat(void);
 
+    static void CheckConfFile(void);
 private:
     virtual void ExecuteSlice(TSrvThreadNum thr_num);
 };

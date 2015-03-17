@@ -395,7 +395,7 @@ inline CStackTrace* Endm(void)
     ERR_POST_X(err_subcode, message)
 
 #define ERR_POST_X_ONCE(err_subcode, msg)  ERR_POST_X(err_subcode, msg)
-
+#define ERR_FATAL_X(err_subcode, msg)      SRV_FATAL(msg)
 
 #define _TRACE(msg) do {} while (0)
 #define NCBI_TROUBLE(msg) SRV_FATAL(msg)
@@ -423,6 +423,15 @@ const CSrvDiagMsg& operator<< (const CSrvDiagMsg& msg, const CSrvDiagMsg& (*mani
 {
     return manip(msg);
 }
+
+#if 1
+#define Note ""
+#else
+inline
+const CSrvDiagMsg& Note(const CSrvDiagMsg& diag) {
+    return diag;
+}
+#endif
 
 
 class CNcbiDiag : public CSrvDiagMsg

@@ -270,6 +270,7 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
                     m_HostIPname = CTaskServer::IPToString(m_HostIP);
                     m_HostAlias = CNCDistributionConf::CreateHostAlias(m_HostIP, Uint4(m_SrvId));
                     m_HostProtocol = 0;
+                    CNCAlerts::Register(CNCAlerts::ePeerIpChanged, CNCDistributionConf::GetFullPeerName(m_SrvId));
                     SRV_LOG(Warning, "IP address change: host "
                         << CNCDistributionConf::GetFullPeerName(m_SrvId));
                 }
@@ -906,6 +907,7 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted)
     if (cnt_slots != 0  &&  m_SlotsToInitSync != 0) {
         bool succeeded = true;
         if (cnt_slots != 1) {
+            CNCAlerts::Register(CNCAlerts::eSyncFailed, CNCDistributionConf::GetFullPeerName(m_SrvId));
             INFO("Initial sync: Server "
                 << CNCDistributionConf::GetFullPeerName(m_SrvId) << " is out of reach (timeout)");
             succeeded = false;

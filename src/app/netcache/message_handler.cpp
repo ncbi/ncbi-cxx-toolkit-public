@@ -1259,20 +1259,6 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    // Get state information,  added in v6.8.6
-    { "INFO",
-        {&CNCMessageHandler::x_DoCmd_GetConfig,      "INFO"},
-        { 
-          // Netcached.ini section name
-          { "section", eNSPT_Str,  fNSPA_Required },
-          // when section name is "netcache", setup for this port
-          { "port",    eNSPT_Str,  eNSPA_Optional },
-          // when section name is "netcache", setup for this cache
-          { "cache",   eNSPT_Str,  eNSPA_Optional },
-          // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          // Session ID for application sending the command.
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     // Read full ini-file used by NetCache for configuration.
     { "GETCONF",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "GETCONF"},
@@ -1287,6 +1273,35 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+    // Get state information,  added in v6.8.6
+    { "INFO",
+        {&CNCMessageHandler::x_DoCmd_GetConfig,      "INFO"},
+        { 
+          // Netcached.ini section name
+          { "section", eNSPT_Str,  fNSPA_Required },
+          // when section name is "netcache", setup for this port
+          { "port",    eNSPT_Str,  eNSPA_Optional },
+          // when section name is "netcache", setup for this cache
+          { "cache",   eNSPT_Str,  eNSPA_Optional },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+    // Acknowledge alert,  added in v6.8.6
+    { "ACKALERT",
+        {&CNCMessageHandler::x_DoCmd_AckAlert,  "ACKALERT", fNeedsAdminClient},
+        { 
+          // Alert name
+          { "alert", eNSPT_Str,  fNSPA_Required },
+          // User name
+          { "user", eNSPT_Str,  fNSPA_Required },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Re-read ini-file used by NetCache for configuration.
     // Find changes and reconfigure
     // Only few changes are supported
@@ -1967,6 +1982,11 @@ CNCMessageHandler::x_StartCommand(void)
         &&  m_ClientParams["client"] != CNCServer::GetAdminClient()
         &&  m_ClientParams["client"] != kNCPeerClientName)
     {
+        string msg;
+        msg += "command: " + string(m_ParsedCmd.command->cmd);
+        msg += ", peer: " + m_ClientParams["peer"];
+        msg += ", client: " + m_ClientParams["client"];
+        CNCAlerts::Register(CNCAlerts::eAccessDenied, msg);
         diag_msg.Flush();
         WriteText("ERR:Command requires administrative privileges\n");
         GetDiagCtx()->SetRequestStatus(eStatus_NeedAdmin);
@@ -3434,8 +3454,13 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
                 stat->PrintState(*this);
             }
             CNCPeerControl::PrintState(*this);
+        } else if (section == "allalerts") {
+            CNCAlerts::Report(*this, true);
+        } else if (section == "alerts") {
+            CNCAlerts::Report(*this, false);
         } else {
-            WriteText(",\n\"error\": \"Unknown section name, valid names: netcache, storage, mirror, env, stat\"");
+            WriteText(",\n\"error\": \"Unknown section name, valid names: ");
+            WriteText("netcache, storage, mirror, allalerts, alerts, env, stat\"");
         }
         WriteText("\n}}");
     } else {
@@ -3445,6 +3470,27 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         WriteText(conf);
     }
     WriteText("\nOK:END\n");
+    return &CNCMessageHandler::x_FinishCommand;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_DoCmd_AckAlert(void)
+{
+    LOG_CURRENT_FUNCTION
+    CNCAlerts::EAlertAckResult res = CNCAlerts::eNotFound;
+    TNSProtoParams& params = m_ParsedCmd.params;
+    if (params.find("alert") != params.end()) {
+        string alert(params["alert"]);
+        if (params.find("user") != params.end()) {
+            string user(params["user"]);
+            res = CNCAlerts::Acknowledge(alert, user);
+        }
+    }
+    if (res == CNCAlerts::eNotFound) {
+        WriteText("ERR:Not found\n");
+    } else {
+        WriteText("OK:END\n");
+    }
     return &CNCMessageHandler::x_FinishCommand;
 }
 

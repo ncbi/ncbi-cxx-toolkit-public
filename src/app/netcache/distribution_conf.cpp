@@ -505,10 +505,10 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
         ++idx;
     }
 
-    task.WriteText(eol).WriteText("mirroring_log_file" ).WriteText(iss).WriteText(s_MirroringSizeFile).WriteText("\"");
-    task.WriteText(eol).WriteText("periodic_log_file"  ).WriteText(iss).WriteText(s_PeriodicLogFile  ).WriteText("\"");
-    task.WriteText(eol).WriteText("copy_delay_log_file").WriteText(iss).WriteText(s_CopyDelayLogFile ).WriteText("\"");
-    task.WriteText(eol).WriteText("sync_log_file"      ).WriteText(iss).WriteText(s_SyncLogFileName  ).WriteText("\"");
+    task.WriteText(eol).WriteText("mirroring_log_file" ).WriteText(iss).WriteText(s_MirroringSizeFile).WriteText(eos);
+    task.WriteText(eol).WriteText("periodic_log_file"  ).WriteText(iss).WriteText(s_PeriodicLogFile  ).WriteText(eos);
+    task.WriteText(eol).WriteText("copy_delay_log_file").WriteText(iss).WriteText(s_CopyDelayLogFile ).WriteText(eos);
+    task.WriteText(eol).WriteText("sync_log_file"      ).WriteText(iss).WriteText(s_SyncLogFileName  ).WriteText(eos);
 
     task.WriteText(eol).WriteText("cnt_slot_buckets"           ).WriteText(is).WriteNumber(s_CntSlotBuckets);
     task.WriteText(eol).WriteText("max_active_syncs"           ).WriteText(is).WriteNumber(s_CntActiveSyncs);
@@ -542,10 +542,10 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
 void CNCDistributionConf::WriteEnvInfo(CSrvSocketTask& task)
 {
     string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
-    task.WriteText(eol).WriteText("mirroring_log_file" ).WriteText(iss).WriteText(s_MirroringSizeFile).WriteText("\"");
-    task.WriteText(eol).WriteText("periodic_log_file"  ).WriteText(iss).WriteText(s_PeriodicLogFile  ).WriteText("\"");
-    task.WriteText(eol).WriteText("copy_delay_log_file").WriteText(iss).WriteText(s_CopyDelayLogFile ).WriteText("\"");
-    task.WriteText(eol).WriteText("sync_log_file"      ).WriteText(iss).WriteText(s_SyncLogFileName  ).WriteText("\"");
+    task.WriteText(eol).WriteText("mirroring_log_file" ).WriteText(iss).WriteText(s_MirroringSizeFile).WriteText(eos);
+    task.WriteText(eol).WriteText("periodic_log_file"  ).WriteText(iss).WriteText(s_PeriodicLogFile  ).WriteText(eos);
+    task.WriteText(eol).WriteText("copy_delay_log_file").WriteText(iss).WriteText(s_CopyDelayLogFile ).WriteText(eos);
+    task.WriteText(eol).WriteText("sync_log_file"      ).WriteText(iss).WriteText(s_SyncLogFileName  ).WriteText(eos);
 }
 
 size_t

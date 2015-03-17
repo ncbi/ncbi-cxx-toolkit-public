@@ -421,6 +421,7 @@ s_LockInstanceGuard(void)
         if (!s_CleanStart  &&  CFile(s_GuardName).GetLength() == 0)
             s_CleanStart = true;
         if (!s_CleanStart) {
+            CNCAlerts::Register(CNCAlerts::eStartAfterCrash, "InstanceGuard file was present on startup");
             INFO("NetCache wasn't finished cleanly in previous run. "
                  "Will try to work with storage as is.");
         }
@@ -529,6 +530,7 @@ delete_file:
 static void
 s_CleanDatabase(void)
 {
+    CNCAlerts::Register(CNCAlerts::eStorageReinit, "Data storage was reinitialized");
     INFO("Reinitializing storage " << s_Prefix << " at " << s_Path);
 
     s_DBFiles->clear();
@@ -2619,9 +2621,10 @@ CNCBlobStorage::CheckDiskSpace(void)
     if (s_IsStopWrite == eNoStop
         &&  cur_db_size * 100 >= allowed_db_size * s_WarnLimitOnPct)
     {
-        ERR_POST(Critical << "ALERT! Database is too large. "
-                 << "Current db size is " << g_ToSizeStr(cur_db_size)
-                 << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
+        string msg("Current db size is " + g_ToSizeStr(cur_db_size) +
+                   ", allowed db size is " + g_ToSizeStr(allowed_db_size));
+        CNCAlerts::Register(CNCAlerts::eDatabaseTooLarge, msg);
+        ERR_POST(Critical << "ALERT! Database is too large. " << msg);
         s_IsStopWrite = eStopWarning;
         Logging_DiskSpaceAlert();
     }
@@ -2629,10 +2632,11 @@ CNCBlobStorage::CheckDiskSpace(void)
     if (s_IsStopWrite == eStopWarning) {
         if (s_StopWriteOnSize != 0  &&  cur_db_size >= s_StopWriteOnSize) {
             s_IsStopWrite = eStopDBSize;
+            string msg("Current db size is "  + g_ToSizeStr(cur_db_size) +
+                       ", stopwrite size is " + g_ToSizeStr(s_StopWriteOnSize));
+            CNCAlerts::Register(CNCAlerts::eDatabaseOverLimit, msg);
             ERR_POST(Critical << "Database size exceeded its limit. "
-                              << "Current db size is " << g_ToSizeStr(cur_db_size)
-                              << ", stopwrite size is "            << g_ToSizeStr(s_StopWriteOnSize)
-                              <<   "Will no longer accept any writes from clients.");
+                              << msg << ". Will no longer accept any writes from clients.");
         }
     }
     else if (s_IsStopWrite ==  eStopDBSize  &&  cur_db_size <= s_StopWriteOffSize)
@@ -2641,17 +2645,19 @@ CNCBlobStorage::CheckDiskSpace(void)
     }
     if (free_space <= s_DiskCritical) {
         s_IsStopWrite = eStopDiskCritical;
+        string msg("free " + g_ToSizeStr(free_space) +
+                   ", limit " + g_ToSizeStr(s_DiskCritical));
+        CNCAlerts::Register(CNCAlerts::eDiskSpaceCritical, msg);
         ERR_POST(Critical << "Free disk space is below CRITICAL threshold: "
-                          << "  free " << g_ToSizeStr(free_space)
-                          << ", limit " << g_ToSizeStr(s_DiskCritical)
-                          << "Will no longer accept any writes.");
+                          << msg << ". Will no longer accept any writes.");
     }
     else if (free_space <= s_DiskFreeLimit) {
         s_IsStopWrite = eStopDiskSpace;
+        string msg("free " + g_ToSizeStr(free_space) +
+                   ", limit " + g_ToSizeStr(s_DiskFreeLimit));
+        CNCAlerts::Register(CNCAlerts::eDiskSpaceLow, msg);
         ERR_POST(Critical << "Free disk space is below threshold: "
-                          << "  free " << g_ToSizeStr(free_space)
-                          << ", limit " << g_ToSizeStr(s_DiskFreeLimit)
-                          << "Will no longer accept any writes from clients.");
+                          << msg << ". Will no longer accept any writes from clients.");
     }
     else if (s_IsStopWrite == eStopDiskSpace
              ||  s_IsStopWrite == eStopDiskCritical)

@@ -237,6 +237,36 @@ void CNCBlobKey::Assign( const CTempString& cache_name,
 CNCHeartBeat::~CNCHeartBeat(void)
 {}
 
+void CNCHeartBeat::CheckConfFile(void)
+{
+    static time_t modified = 0;
+    CFile cfg(GetConfName());
+    if (modified == 0) {
+        if (cfg.Exists()) {
+            cfg.GetTimeT(&modified);
+        }
+        return;
+    }
+    if (!cfg.Exists()) {
+        CNCAlerts::Register(CNCAlerts::eStartupConfigChanged, "file not found");
+        return;
+    }
+    time_t mod = 0;
+    cfg.GetTimeT(&mod);
+    if (mod == modified) {
+        return;
+    }
+    modified = mod;
+    string msg("modified on ");
+    CTime tm;
+    if (cfg.GetTime(&tm)) {
+        msg += tm.AsString();
+    } else {
+        msg += " GetTime() failed";
+    }
+    CNCAlerts::Register(CNCAlerts::eStartupConfigChanged, msg);
+}
+
 void
 CNCHeartBeat::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
@@ -244,6 +274,7 @@ CNCHeartBeat::ExecuteSlice(TSrvThreadNum /* thr_num */)
         return;
 
 // save server state into statistics
+    CheckConfFile();
     CNCBlobStorage::CheckDiskSpace();
     SNCStateStat state;
     CNCServer::ReadCurState(state);
@@ -791,6 +822,7 @@ int main(int argc, const char* argv[])
                 pid_file = argv[++i];
                 ok = !pid_file.empty() && pid_file[0] != '-' && s_ReportPid(pid_file);
                 if (!ok) {
+                    CNCAlerts::Register(CNCAlerts::ePidFileFailed, pid_file);
                     cerr << "Cannot write into pidfile: " << pid_file << endl;
                     ERR_POST(Critical << "Cannot write into pidfile: " << pid_file);
                 }

@@ -148,10 +148,6 @@ public:
     /// Flag showing if "old style" message was started.
     bool m_OldStyle;
 };
-inline
-const CSrvDiagMsg& Note(const CSrvDiagMsg& diag) {
-    return diag;
-}
 
 
 /// Macro to be used for printing log messages.

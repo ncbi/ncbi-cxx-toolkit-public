@@ -168,6 +168,7 @@ public:
     State x_DoCmd_Shutdown(void);
     State x_DoCmd_Version(void);
     State x_DoCmd_GetConfig(void);
+    State x_DoCmd_AckAlert(void);
     State x_DoCmd_ReConfig(void);
     State x_DoCmd_GetStat(void);
     State x_DoCmd_Put(void);
