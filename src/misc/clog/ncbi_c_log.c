@@ -652,7 +652,10 @@ static TNcbiLog_Int8 s_CreateUID(void)
 
 /** Update current UID with new timestamp.
  *  This functions don't change global UID, just return a copy.
+ *
+ * -- not used at this moment, but can be usable later.
  */
+#if 0
 static TNcbiLog_Int8 s_UpdateUID(void)
 {
     time_t t;
@@ -667,6 +670,7 @@ static TNcbiLog_Int8 s_UpdateUID(void)
     guid |= (((TNcbiLog_Int8)t & 0xFFFFFFF) << 4);
     return guid;
 }
+#endif
 
 
 /** Get current GMT time with nanoseconds
