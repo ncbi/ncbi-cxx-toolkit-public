@@ -117,7 +117,7 @@ class CMultiReaderApp
 public:
     CMultiReaderApp(): m_pErrors( 0 ) 
     {
-        SetVersion(CVersionInfo(1, 0, 1));
+        SetVersion(CVersionInfo(1, 0, 2));
     };
 
     // Create quick simple messages
