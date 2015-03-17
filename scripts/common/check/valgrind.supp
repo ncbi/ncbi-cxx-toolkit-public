@@ -34,6 +34,17 @@
 
 
 {
+    corelib/CFileUtil::GetTotalDiskSpace, PANFS, CXX-5713 because DLL is not supposed to be closed
+    Memcheck:Leak
+    fun:malloc
+    ...
+    fun:_dl_open
+    ...
+    fun:*s_GetDiskSpace_PANFS*
+    fun:*s_GetFileSystemInfo*
+}
+
+{
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack
    Memcheck:Param
    pwrite64(buf)
