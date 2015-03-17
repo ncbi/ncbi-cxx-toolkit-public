@@ -286,6 +286,13 @@ string CHgvsParser::x_AsHgvsExpression(
     }
 
     if(variation.IsSetFrameshift()) {
+        if(hgvs_data_str == "Xaa" || hgvs_data_str == "delinsXaa") {
+            //short-form of frameshift, e.g. p.Ser20fs is internally 
+            //represented in "long form", ie. p.Ser20Xaafs.
+            //When writing we'll drop Xaa to convert back to short-form
+            hgvs_data_str = "";
+        }
+
         hgvs_data_str += "fs";
         if(variation.GetFrameshift().IsSetX_length()) {
             hgvs_data_str += "*" + NStr::NumericToString(variation.GetFrameshift().GetX_length());

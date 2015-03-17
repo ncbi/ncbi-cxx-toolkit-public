@@ -1906,14 +1906,26 @@ CRef<CVariation> CHgvsParser::x_expr3(TIterator const& i, const CContext& contex
             CRef<CVariation> inst_ref = x_mut_inst(it, context);
 
             if(inst_ref->GetData().IsNote()
-              && inst_ref->GetData().GetNote() == "Frameshift"
-              && vr->SetData().SetSet().SetVariations().size() > 0)
+              && inst_ref->GetData().GetNote() == "Frameshift")
             {
-                //if inst_ref is a frameshift subexpression, we need to attach it as attribute of the
-                //previous variation in a compound inst-list, since frameshift is not a subtype of
-                //Variation.data, and thus not represented as a separate subvariation.
+               if(vr->SetData().SetSet().SetVariations().size() > 0) {
+                    //if inst_ref is a frameshift subexpression, we need to attach it as attribute of the
+                    //previous variation in a compound inst-list, since frameshift is not a subtype of
+                    //Variation.data, and thus not represented as a separate subvariation.
+                    //e.g. p.Ile20Serfs - frameshift an attribute of Ile20Ser
+                    vr->SetData().SetSet().SetVariations().back()->SetFrameshift().Assign(inst_ref->GetFrameshift());
+                } else {
+                    //in updated HGVS spec fs can be a standalone, e.g. p.Ile20fs.
+                    //In this case we'll represent it as p.Ile20Xaafs
+                    CVariation_inst& inst = inst_ref->SetData().SetInstance();
+                    inst.SetType(CVariation_inst::eType_prot_other);
 
-                vr->SetData().SetSet().SetVariations().back()->SetFrameshift().Assign(inst_ref->GetFrameshift());
+                    CRef<CDelta_item> delta(new CDelta_item);
+                    delta->SetSeq().SetLiteral().SetLength(1);
+                    delta->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set("X");
+                    inst.SetDelta().push_back(delta);
+                    vr->SetData().SetSet().SetVariations().push_back(inst_ref);
+                }
             } else {
                 vr->SetData().SetSet().SetVariations().push_back(inst_ref);
             }
