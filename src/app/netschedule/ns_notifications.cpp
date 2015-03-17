@@ -308,6 +308,7 @@ CNSNotificationList::NotifyJobStatus(
              (long int)last_event_index);
 
 
+    CFastMutexGuard     guard(m_StatusNotificationSocketLock);
     m_StatusNotificationSocket.Send(
                                 buffer,
                                 strlen(buffer) + 1,
@@ -743,6 +744,8 @@ CNSNotificationList::x_SendNotificationPacket(
                                 bool                    new_format,
                                 ECommandGroup           reason)
 {
+    CFastMutexGuard     guard(m_GetAndReadNotificationSocketLock);
+
     if (new_format) {
         // Read notifications could only be of a new format
         if (reason == eGet)

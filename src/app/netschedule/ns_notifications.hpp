@@ -227,6 +227,7 @@ class CNSNotificationList
                                ECommandGroup                      cmd_group);
 
         CDatagramSocket     m_GetAndReadNotificationSocket;
+        CFastMutex          m_GetAndReadNotificationSocketLock;
         char                m_GetMsgBuffer[k_MessageBufferSize];
         size_t              m_GetMsgLength;
         char                m_GetMsgBufferObsoleteVersion[k_MessageBufferSize];
@@ -235,6 +236,7 @@ class CNSNotificationList
         size_t              m_ReadMsgLength;
 
         CDatagramSocket     m_StatusNotificationSocket;
+        CFastMutex          m_StatusNotificationSocketLock;
         char                m_JobStateConstPart[k_MessageBufferSize];
         size_t              m_JobStateConstPartLength;
 
