@@ -136,7 +136,7 @@ typedef struct SAlignFileRaw {
 static EBool s_AfrpInitLineData( 
     SAlignRawFilePtr afrp, FReadLineFunction readfunc, void* pfile);
 static void s_AfrpProcessFastaGap(
-    SAlignRawFilePtr afrp, SLengthListPtr patterns, char* plinestr, int overall_line_count);
+    SAlignRawFilePtr afrp, SLengthListPtr * patterns, EBool * last_line_was_marked_id, char* plinestr, int overall_line_count);
 
 /* These functions are used for storing and transmitting information
  * about errors encountered while reading the alignment data.
@@ -3532,17 +3532,28 @@ s_AfrpInitLineData(
 static void
 s_AfrpProcessFastaGap(
     SAlignRawFilePtr afrp,
-    SLengthListPtr patterns,
+    SLengthListPtr * patterns,
+    EBool * last_line_was_marked_id,
     char* linestr,
     int overall_line_count)
 {
-    static EBool last_line_was_marked_id = eFalse;
-    static SLengthListPtr last_pattern = NULL;
-
     TIntLinkPtr new_offset = NULL;
     SLengthListPtr this_pattern = NULL;
     int len = 0;
     char* cp;
+    SLengthListPtr last_pattern;
+
+    if (patterns == NULL || last_line_was_marked_id == NULL) {
+        return;
+    }
+    last_pattern = *patterns;
+
+    /* find last pattern in list */
+    if (last_pattern != NULL) {
+        while (last_pattern->next != NULL) {
+            last_pattern = last_pattern->next;
+        }
+    }
 
     /*  ID line
      */
@@ -3551,7 +3562,7 @@ s_AfrpProcessFastaGap(
             * NEXUS file.  If there is no sequence data between
             * the lines, don't process this file for marked IDs.
             */
-        if (last_line_was_marked_id)
+        if (*last_line_was_marked_id)
         {
             afrp->marked_ids = eFalse;
 //            eFormat = ALNFMT_UNKNOWN;
@@ -3564,13 +3575,13 @@ s_AfrpProcessFastaGap(
         new_offset = s_IntLinkNew (overall_line_count + 1,
                                     afrp->offset_list);
         if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
-        last_line_was_marked_id = eTrue;
+        *last_line_was_marked_id = eTrue;
         return;
     }
 
     /*  Data line
      */
-    last_line_was_marked_id = eFalse;
+    *last_line_was_marked_id = eFalse;
     /* add to length list for interleaved block search */
     len = strcspn (linestr, " \t\r");
     if (len > 0) {
@@ -3589,7 +3600,7 @@ s_AfrpProcessFastaGap(
     }
             
     if (last_pattern == NULL) {
-        patterns = this_pattern;
+        *patterns = this_pattern;
         last_pattern = this_pattern;
     } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
         last_pattern->num_appearances ++;
@@ -3650,7 +3661,7 @@ s_ReadAlignFileRaw
 
         s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
         if (*pformat == ALNFMT_FASTAGAP) {
-            s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
+            s_AfrpProcessFastaGap(afrp, & pattern_list, & last_line_was_marked_id, linestring, overall_line_count);
             continue;
         }
         /* we want to remove the comment from the line for the purpose 
@@ -3745,7 +3756,7 @@ s_ReadAlignFileRaw
             else
             {
                 *pformat = ALNFMT_FASTAGAP;
-                s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
+                s_AfrpProcessFastaGap(afrp, & pattern_list, & last_line_was_marked_id, linestring, overall_line_count);
                 continue;
             }
             new_offset = s_IntLinkNew (overall_line_count + 1,
@@ -4156,7 +4167,6 @@ s_CreateSequencesBasedOnTokenPatterns
 
     line_counter = 0;
     lip = token_list;
-    offset_ptr = offset_list;
     curr_seg = 0;
   
     for (offset_ptr = offset_list;
@@ -5096,7 +5106,7 @@ s_CountCharactersBetweenOffsets
     if (lip == NULL  ||  line_diff == distance) {
         return 0;
     }
-    num_starts = 1;
+
     list = lip->next;
     start_of_unknown = line_diff;
 
@@ -5836,7 +5846,8 @@ s_ConvertDataToOutput
     TLineInfoPtr      lip;
     int               curr_seg;
 
-    if (afrp == NULL  ||  sip == NULL  ||  afrp->sequences == NULL) {
+    if (afrp == NULL  ||  sip == NULL  ||  afrp->sequences == NULL ||
+        afrp->num_segments == 0) {
         return NULL;
     }
     afp = AlignmentFileNew ();
