@@ -119,13 +119,19 @@ public:
     {
         SetVersion(CVersionInfo(1, 0, 1));
     };
-    
+
+    // Create quick simple messages
+    static AutoPtr<ILineError> sCreateSimpleMessage(
+        EDiagSev eDiagSev, const string & msg);
+    void WriteMessageImmediately(
+        ostream & ostr, const ILineError & line_error_p);
+
 protected:
-       
+
 private:
     virtual void Init(void);
     virtual int  Run(void);
-    
+
     void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -148,8 +154,8 @@ private:
     void xSetFlags(const CArgs&, CNcbiIstream&);
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
-            
-	void xPostProcessAnnot(const CArgs&, CSeq_annot&);
+
+    void xPostProcessAnnot(const CArgs&, CSeq_annot&);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
     void xDumpTrack(const CArgs&, const CSeq_annot&, CNcbiOstream&);
@@ -160,7 +166,7 @@ private:
     int  m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
-    bool m_bXMLErrors;
+    bool m_bXmlMessages;
 
     auto_ptr<CIdMapper> m_pMapper;
     CRef<CMessageListenerBase> m_pErrors;
@@ -174,8 +180,10 @@ class CMessageListenerCustom:
 public:
     CMessageListenerCustom(
         int iMaxCount,
-        int iMaxLevel ): 
-        m_iMaxCount(iMaxCount), m_iMaxLevel(iMaxLevel)
+        int iMaxLevel,
+        CMultiReaderApp & multi_reader_app) 
+        : m_iMaxCount(iMaxCount), m_iMaxLevel(iMaxLevel),
+          m_multi_reader_app(multi_reader_app)
     {};
 
     ~CMessageListenerCustom() {};
@@ -185,7 +193,7 @@ public:
         const ILineError& err ) 
     {
         if (err.Problem() == ILineError::eProblem_ProgressInfo) {
-            cerr << err.Message();
+            m_multi_reader_app.WriteMessageImmediately(cerr, err);
             return true;
         }
         StoreError(err);
@@ -198,7 +206,11 @@ public:
         const Uint8 bytesDone,
         const Uint8 dummy)
     {
-        cerr << "Progress: " << bytesDone << " bytes done." << endl;
+        AutoPtr<ILineError> line_error_p =
+            m_multi_reader_app.sCreateSimpleMessage(
+                eDiag_Info,
+                FORMAT("Progress: " << bytesDone << " bytes done."));
+        m_multi_reader_app.WriteMessageImmediately(cerr, *line_error_p);
         //if (bytesDone > 1000000) {
         //    bIsCanceled = true;
         //}
@@ -206,7 +218,8 @@ public:
 
 protected:
     size_t m_iMaxCount;
-    int m_iMaxLevel; 
+    int m_iMaxLevel;
+    CMultiReaderApp & m_multi_reader_app;
 };    
         
 //  ============================================================================
@@ -215,8 +228,10 @@ class CMessageListenerCustomLevel:
     public CMessageListenerLevel
 {
 public:
-    CMessageListenerCustomLevel(int level):
-        CMessageListenerLevel(level) {};
+    CMessageListenerCustomLevel(
+        int level, CMultiReaderApp & multi_reader_app)
+        : CMessageListenerLevel(level),
+          m_multi_reader_app(multi_reader_app) {};
 
     void
     PutProgress(
@@ -224,7 +239,11 @@ public:
         const Uint8 bytesDone,
         const Uint8 dummy)
     {
-        cerr << msg << " (" << bytesDone << " bytes)" << endl;
+        AutoPtr<ILineError> line_error_p =
+            m_multi_reader_app.sCreateSimpleMessage(
+                eDiag_Info,
+                FORMAT(msg << " (" << bytesDone << " bytes)"));
+        m_multi_reader_app.WriteMessageImmediately(cerr, *line_error_p);
         //if (bytesDone > 1000000) {
         //    bIsCanceled = true;
         //}
@@ -232,7 +251,8 @@ public:
 
 protected:
     size_t m_iMaxCount;
-    int m_iMaxLevel; 
+    int m_iMaxLevel;
+    CMultiReaderApp & m_multi_reader_app;
 };    
         
 //  ----------------------------------------------------------------------------
@@ -351,8 +371,8 @@ void CMultiReaderApp::Init(void)
         true );
 
     arg_desc->AddFlag(
-        "xmlerrors",
-        "where possible, print errors as XML",
+        "xmlmessages",
+        "where possible, print errors, warnings, etc. as XML",
         true );
         
     arg_desc->AddFlag(
@@ -618,8 +638,25 @@ CMultiReaderApp::Run(void)
             //    break;
         }
     }
-    catch(CObjReaderLineException& ) {
-        cerr << "Reading aborted due to fatal error ." << endl << endl;
+    catch(const ILineError & reader_ex) {
+        AutoPtr<ILineError> line_error_p =
+            sCreateSimpleMessage(
+                eDiag_Fatal, "Reading aborted due to fatal error.");
+        m_pErrors->PutError(*line_error_p);
+
+        m_pErrors->PutError(reader_ex);
+    } catch(const std::exception & std_ex) {
+        AutoPtr<ILineError> line_error_p =
+            sCreateSimpleMessage(
+                eDiag_Fatal,
+                FORMAT(
+                    "Reading aborted due to fatal error: " << std_ex.what()));
+        m_pErrors->PutError(*line_error_p);
+    } catch(...) {
+        AutoPtr<ILineError> line_error_p =
+            sCreateSimpleMessage(
+                eDiag_Fatal, "Unknown Fatal Error occurred");
+        m_pErrors->PutError(*line_error_p);
     }
     xDumpErrors( cerr );
     return 0;
@@ -1110,7 +1147,7 @@ void CMultiReaderApp::xSetFlags(
     m_AnnotName = args["name"].AsString();
     m_AnnotTitle = args["title"].AsString();
     m_bCheckOnly = args["checkonly"];
-    m_bXMLErrors = args["xmlerrors"];
+    m_bXmlMessages = args["xmlmessages"];
 }
 
 //  ----------------------------------------------------------------------------
@@ -1161,6 +1198,42 @@ void CMultiReaderApp::xDumpTrack(
     }
     ostr << offset;
     ostr << "]" << endl;
+}
+
+//  ----------------------------------------------------------------------------
+AutoPtr<ILineError> CMultiReaderApp::sCreateSimpleMessage(
+    EDiagSev eDiagSev, const string & msg)
+//  ----------------------------------------------------------------------------
+{
+    // For creating quick messages generated by CMultiReaderApp itself
+    class CLineErrorForMsg : public CLineError
+    {
+    public:
+        CLineErrorForMsg(EDiagSev eDiagSev, const string & msg)
+            : CLineError(
+                CLineError::eProblem_GeneralParsingError,
+                eDiagSev,
+                kEmptyStr, 0, kEmptyStr, kEmptyStr, kEmptyStr,
+                NStr::TruncateSpaces(msg),
+                CLineError::TVecOfLines()) { }
+    };
+    return AutoPtr<ILineError>(new CLineErrorForMsg(eDiagSev, msg));
+}
+
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::WriteMessageImmediately(
+    ostream & ostr, const ILineError & line_error)
+//  ----------------------------------------------------------------------------
+{
+    // For example, progress messages and fatal errors should be written
+    // immediately.
+    if( m_bXmlMessages ) {
+        line_error.DumpAsXML(ostr);
+    } else {
+        line_error.Dump(ostr);
+    }
+    ostr.flush();
 }
 
 //  ----------------------------------------------------------------------------
@@ -1247,9 +1320,12 @@ CMultiReaderApp::xSetMessageListener(
         }
 
         if ( iMaxErrorCount == -1 ) {
-            m_pErrors.Reset(new CMessageListenerCustomLevel(iMaxErrorLevel));
+            m_pErrors.Reset(
+                new CMessageListenerCustomLevel(iMaxErrorLevel, *this));
         } else {
-            m_pErrors.Reset(new CMessageListenerCustom(iMaxErrorCount, iMaxErrorLevel));
+            m_pErrors.Reset(
+                new CMessageListenerCustom(
+                    iMaxErrorCount, iMaxErrorLevel, *this));
         }
     }
 
@@ -1264,8 +1340,8 @@ void CMultiReaderApp::xDumpErrors(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    if (m_pErrors) {
-        if( m_bXMLErrors ) {
+    if (m_pErrors && m_pErrors->Count() > 0 ) {
+        if( m_bXmlMessages ) {
             m_pErrors->DumpAsXML(ostr);
         } else {
             m_pErrors->Dump(ostr);
