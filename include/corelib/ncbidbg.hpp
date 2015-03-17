@@ -62,32 +62,30 @@ BEGIN_NCBI_SCOPE
 
 
 /// Define macros to support debugging.
-#ifdef _DEBUG
-
-#  define _TRACE(message)                        \
+#define _ALWAYS_TRACE(message)                   \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
       NCBI_NS_NCBI::eDiag_Trace).GetRef()        \
       << message << NCBI_NS_NCBI::Endm )
 
-#  define _TRACE_EX(err_code, err_subcode, message)         \
+#define _ALWAYS_TRACE_EX(err_code, err_subcode, message)    \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO             \
       NCBI_NS_NCBI::eDiag_Trace).GetRef()                   \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
 
-#  define _TRACE_X(err_subcode, message)                    \
-    _TRACE_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
+#define _ALWAYS_TRACE_X(err_subcode, message)               \
+    _ALWAYS_TRACE_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
-#  define _TRACE_XX(error_name, err_subcode, message)                      \
+#define _ALWAYS_TRACE_XX(error_name, err_subcode, message)                 \
     ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
-      _TRACE_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
+      _ALWAYS_TRACE_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
 
-#  define NCBI_TROUBLE(mess) \
+#define NCBI_ALWAYS_TROUBLE(mess) \
     NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
 
-#  ifdef NCBI_COMPILER_MSVC
+#ifdef NCBI_COMPILER_MSVC
     // Use standard _ASSERT macro on MSVC in Debug modes
-#    define NCBI_ASSERT(expr, mess) \
+#  define NCBI_ALWAYS_ASSERT(expr, mess) \
       do { \
           bool x_expr = ((expr)? true : false); \
           const char* x_mess = (mess); \
@@ -103,18 +101,33 @@ BEGIN_NCBI_SCOPE
                   DIAG_COMPILE_INFO, #expr, mess); \
           } \
       } while ( 0 )
-#    define NCBI_ASSERT_EXPR(expr, mess)                                \
+#  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess)                           \
     ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
-#  else  /* NCBI_COMPILER_MSVC */
-#    define NCBI_ASSERT(expr, mess) \
+#else  /* NCBI_COMPILER_MSVC */
+#  define NCBI_ALWAYS_ASSERT(expr, mess) \
       do { if ( !(expr) ) \
           NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
       } while ( 0 )
-#    define NCBI_ASSERT_EXPR(expr, mess)                                \
+#  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess)                           \
     ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
-#  endif
+#endif
 
-#  define NCBI_VERIFY(expr, mess) NCBI_ASSERT(expr, mess)
+#define NCBI_ALWAYS_VERIFY(expr, mess) NCBI_ALWAYS_ASSERT(expr, mess)
+
+
+#ifdef _DEBUG
+
+#  define _TRACE(message) _ALWAYS_TRACE(message)
+#  define _TRACE_EX(err_code, err_subcode, message) \
+    _ALWAYS_TRACE_EX(err_code, err_subcode, message)
+#  define _TRACE_X(err_subcode, message) _ALWAYS_TRACE_X(err_subcode, message)
+#  define _TRACE_XX(error_name, err_subcode, message) \
+    _ALWAYS_TRACE_XX(error_name, err_subcode, message)
+
+#  define NCBI_TROUBLE(mess)           NCBI_ALWAYS_TROUBLE(mess)
+#  define NCBI_ASSERT(expr, mess)      NCBI_ALWAYS_ASSERT(expr, mess)
+#  define NCBI_ASSERT_EXPR(expr, mess) NCBI_ALWAYS_ASSERT_EXPR(expr, mess)
+#  define NCBI_VERIFY(expr, mess)      NCBI_ALWAYS_VERIFY(expr, mess)
 
 #  define _DEBUG_ARG(arg) arg
 
@@ -145,6 +158,10 @@ BEGIN_NCBI_SCOPE
 #define _ASSERT(expr)   NCBI_ASSERT(expr, NULL)
 #define _VERIFY(expr)   NCBI_VERIFY(expr, NULL)
 #define _TROUBLE        NCBI_TROUBLE(NULL)
+
+#define _ALWAYS_ASSERT(expr)   NCBI_ALWAYS_ASSERT(expr, NULL)
+#define _ALWAYS_VERIFY(expr)   NCBI_ALWAYS_VERIFY(expr, NULL)
+#define _ALWAYS_TROUBLE        NCBI_ALWAYS_TROUBLE(NULL)
 
 
 /// Which action to perform.

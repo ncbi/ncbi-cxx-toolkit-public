@@ -244,20 +244,20 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 // {BOOST,NCBITEST}_REQUIRE* call will bail.
 #ifdef __clang_analyzer__
 #  undef  BOOST_REQUIRE
-#  define BOOST_REQUIRE(P)               _ASSERT(P)
+#  define BOOST_REQUIRE(P)               _ALWAYS_ASSERT(P)
 #  undef  BOOST_REQUIRE_MESSAGE
-#  define BOOST_REQUIRE_MESSAGE(P, M)    _ASSERT((FORMAT(M), (P)))
+#  define BOOST_REQUIRE_MESSAGE(P, M)    _ALWAYS_ASSERT((FORMAT(M), (P)))
 #  undef  BOOST_REQUIRE_EQUAL
-#  define BOOST_REQUIRE_EQUAL(L, R)      _ASSERT((L) == (R))
+#  define BOOST_REQUIRE_EQUAL(L, R)      _ALWAYS_ASSERT((L) == (R))
 #  undef  BOOST_REQUIRE_NE
-#  define BOOST_REQUIRE_NE(L, R)         _ASSERT((L) != (R))
+#  define BOOST_REQUIRE_NE(L, R)         _ALWAYS_ASSERT((L) != (R))
 #  undef  BOOST_REQUIRE_NO_THROW
-#  define BOOST_REQUIRE_NO_THROW(S)      try { S; } catch (...) { _TROUBLE; }
+#  define BOOST_REQUIRE_NO_THROW(S) try { S; } catch (...) { _ALWAYS_TROUBLE; }
 #  undef  BOOST_REQUIRE_THROW
 #  define BOOST_REQUIRE_THROW(S, E) \
-    do { try { S; } catch (E const&) { break; } _TROUBLE; } while(false)
+    do { try { S; } catch (E const&) { break; } _ALWAYS_TROUBLE; } while(false)
 #  undef  NCBITEST_REQUIRE
-#  define NCBITEST_REQUIRE(P)            BOOST_REQUIRE_NO_THROW(_ASSERT(P))
+#  define NCBITEST_REQUIRE(P) BOOST_REQUIRE_NO_THROW(_ALWAYS_ASSERT(P))
 #  undef  NCBITEST_REQUIRE_MESSAGE
 #  define NCBITEST_REQUIRE_MESSAGE(P, M) NCBITEST_REQUIRE((FORMAT(M), (P)))
 #  undef  NCBITEST_REQUIRE_EQUAL
