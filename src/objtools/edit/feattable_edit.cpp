@@ -279,8 +279,11 @@ void CFeatTableEdit::GenerateOrigProteinAndOrigTranscriptIds()
 void CFeatTableEdit::GenerateLocusTags()
 //  ----------------------------------------------------------------------------
 {
-	CRef<CGb_qual> pLocusTag;
+    if (mLocusTagPrefix.empty()) {
+        return;
+    }
 
+	CRef<CGb_qual> pLocusTag;
     SAnnotSelector selGenes;
     selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itGenes(mHandle, selGenes);
