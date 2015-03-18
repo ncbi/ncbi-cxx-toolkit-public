@@ -131,7 +131,7 @@ NCBITEST_AUTO_INIT()
         .Get("NCBI_AUTOMATED_BUILD") == "1") {
         // Suppress timeout
         typedef SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID(TestPerformance)> TTimeout;
-        TTimeout new_timeout(kMax_Int);
+        static TTimeout new_timeout(kMax_Int);
     }
 }
 
