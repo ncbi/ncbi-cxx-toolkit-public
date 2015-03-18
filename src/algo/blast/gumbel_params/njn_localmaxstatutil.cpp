@@ -160,15 +160,12 @@ const double *q_) // q_ [0...dimension_) : distribution of independent letters
 
     flatten (dimension_, scoreMatrix_, prob, &dim, &score, &p);
 
-    for (i = 0; i < dimension_; i++) 
-    {
-        delete prob [i];
-    }
+    MemUtil::deleteMatrix <double> (prob, dimension_, dimension_); prob = 0;
 
     double lambdaHat = LocalMaxStatUtil::lambda (dim, score, p);
 
-    delete p; p = 0;
-    delete score; score = 0;
+    delete [] p; p = 0;
+    delete [] score; score = 0;
 
     return lambdaHat;
 }
