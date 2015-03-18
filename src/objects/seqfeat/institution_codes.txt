@@ -3471,7 +3471,7 @@ MBAB	s	Museo Biblioteca Archivio
 MBAC	s	Museo del Dipartimento di Biologia Animale dell'Universita
 MBAP	s	Museo del Dipartimento di Biologia Animale dell'Universita
 MBBJ	s	Museum Zoologicum Bogoriense, Entomology Collection
-MBC<USA>	b	Montgomery Botanical Center
+MBC	sb	Montgomery Botanical Center
 MBCG	s	Museo di Scienze Naturali "Enrico Caffi"
 MBCSC	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences
 MBCSC:Fish	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences, Fish Collection
