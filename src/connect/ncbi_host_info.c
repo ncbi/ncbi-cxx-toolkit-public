@@ -71,10 +71,8 @@ HOST_INFO HINFO_Create(unsigned int addr, const void* hinfo, size_t hinfo_size,
         host_info->arg = (const char*) memcpy(s, arg, a_s);
         s += a_s;
     }
-    if (v_s) {
+    if (v_s)
         host_info->val = (const char*) memcpy(s, val, v_s);
-        s += v_s;
-    }
     host_info->pad = HINFO_MAGIC;
     return host_info;
 }
