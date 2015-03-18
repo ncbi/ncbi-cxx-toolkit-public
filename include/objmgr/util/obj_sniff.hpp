@@ -72,9 +72,9 @@ public:
 
         SObjectDescription(const CObjectTypeInfo& object_info,
                            CNcbiStreampos         pos)
-        : info(object_info),
-          stream_pos(pos)
-        {}
+            : info(object_info),
+              stream_pos(pos)
+            {}
     };
 
     // Specifies how the OnObjectFoundPre and OnObjectFoundPost events will
@@ -92,9 +92,9 @@ public:
         EEventCallBackMode  event_mode;
 
         SCandidateInfo(CObjectTypeInfo tinfo, EEventCallBackMode emode)
-        : type_info(tinfo),
-          event_mode(emode)
-        {}
+            : type_info(tinfo),
+              event_mode(emode)
+            {}
     };
 
     typedef vector<SObjectDescription>  TTopLevelMapVector;
@@ -103,11 +103,9 @@ public:
     // List of objects, reflects objects serialization hierarchy
     typedef list<const CObjectInfo*> TObjectStack;
 
-
-
 public:
-    CObjectsSniffer() : m_StreamPos(0), m_DiscardCurrObj(false) {}
-    virtual ~CObjectsSniffer() {}
+    CObjectsSniffer(void);
+    virtual ~CObjectsSniffer();
 
     /// Add new possible type to the recognition list.
     void AddCandidate(CObjectTypeInfo ti, 
@@ -121,11 +119,14 @@ public:
     /// deserializer cannot recognize the input file format.
     void Probe(CObjectIStream& input);
 
-    /// Get map of all top level objects
-    const TTopLevelMapVector& GetTopLevelMap() const { return m_TopLevelMap; }
+    /// Return number of top level objects found
+    Uint8 GetTopObjectCount() const { return m_TopLevelObjectCount; }
 
     /// Return TRUE if Probe found at least one top level objects
-    bool IsTopObjectFound() const { return m_TopLevelMap.size() != 0; }
+    bool IsTopObjectFound() const { return GetTopObjectCount() > 0; }
+
+    /// Get map of all top level objects
+    const TTopLevelMapVector& GetTopLevelMap() const { return m_TopLevelMap; }
 
     /// Return stream offset of the most recently found top object.
     /// Note: If the top object has not been found return value is undefined.
@@ -133,8 +134,8 @@ public:
 
     /// Event handling virtual function, called when candidate is found but 
     /// before deserialization. This function can be overloaded in child
-    /// classes to implement some custom actions. This function is called before
-    /// deserialization.
+    /// classes to implement some custom actions.
+    /// This function is called before deserialization.
     virtual void OnObjectFoundPre(const CObjectInfo& object, 
                                   CNcbiStreampos     stream_pos);
     
@@ -144,13 +145,22 @@ public:
 
     /// Event indicates that sniffer objects needs to reset it's status and
     /// get ready for the next probing.
-    virtual void Reset() {}
+    virtual void Reset();
 
     /// Set the discard flag. If set TRUE current deserialized object is not
     /// deserialized. 
     /// The mechanizm is based on CObjectIStream::SetDiscardCurrObject
-    void SetDiscardCurrObject(bool discard=true) { m_DiscardCurrObj = discard; }
-    bool GetDiscardCurrObject() const { return m_DiscardCurrObj; }
+    void SetDiscardCurrObject(bool discard=true)
+        { m_DiscardCurrObj = discard; }
+    bool GetDiscardCurrObject() const
+        { return m_DiscardCurrObj; }
+
+    /// Set the discard object info flag.
+    /// If set TRUE object info is not stored in m_TopLevelMap.
+    void SetDiscardObjectInfo(bool discard=true)
+        { m_DiscardObjInfo = discard; }
+    bool GetDiscardObjectInfo() const
+        { return m_DiscardObjInfo; }
 
 protected:
     void ProbeText(CObjectIStream& input);
@@ -161,14 +171,25 @@ protected:
     
     friend class COffsetReadHook;
 private:
+
+    void x_ReadObject(CObjectIStream& input,
+                      CObjectTypeInfo object_info);
+    bool x_TryReadObject(CObjectIStream& input,
+                         CObjectTypeInfo object_info);
+
+
     /// Possible candidates for type probing
-    TCandidates         m_Candidates;    
+    TCandidates         m_Candidates;
+    /// Count of objects found
+    Uint8               m_TopLevelObjectCount;
     /// Vector of level object descriptions
     TTopLevelMapVector  m_TopLevelMap;   
     /// Stream offset of the top level object
     CNcbiStreampos      m_StreamPos;  
     /// Flag indicates that current object should be discarded
     bool                m_DiscardCurrObj;
+    /// Flag indicates that object info should be discarded
+    bool                m_DiscardObjInfo;
 };
 
 
