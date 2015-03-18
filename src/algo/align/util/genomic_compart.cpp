@@ -166,8 +166,32 @@ TSeqPos Difference(const pair<TSeqRange, TSeqRange>& r1,
     return diff;
 }
 
+
 typedef pair<TSeqRange, TSeqRange> TRange;
 typedef pair<TRange, CRef<CSeq_align> > TAlignRange;
+
+struct SRangesByStart
+{
+    bool operator() (const TAlignRange& r1,
+                     const TAlignRange& r2) const
+    {
+        // First the simple sorts, by query start, 
+        //  and subject start
+        if(r1.first.first != r2.first.first) {
+            return (r1.first.first < r2.first.first);
+        }
+        if(r1.first.second != r2.first.second) {
+            return (r1.first.second < r2.first.second);
+        }
+        
+        // after these what else to sort by? The goal is simply to stable, 
+        //  and never sort by alignment pointer.
+        // Return false ought to always be maintain original order, 
+        //  so as long as the input is stable, this sort won't break it.
+        return false;        
+    }
+};
+typedef multiset<TAlignRange, SRangesByStart> TAlignRangeMultiSet;
 
 struct SRangesBySize
 {
@@ -410,7 +434,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 
         vector< CRef<CSeq_align> >& aligns = align_it->second;
 		if(options & fCompart_SortByScore) {
-			std::sort(aligns.begin(), aligns.end(), SSeqAlignsByScore());
+			std::stable_sort(aligns.begin(), aligns.end(), SSeqAlignsByScore());
         }
         else if(options & fCompart_SortByPctIdent) {
 			std::sort(aligns.begin(), aligns.end(), SSeqAlignsByPctIdent());
@@ -472,7 +496,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                      << it->first.first << ", "
                      << it->first.second << ")"
                      << " [" << it->first.first.GetLength()
-                     << ", " << it->first.second.GetLength() << "]";
+                     << ", " << it->first.second.GetLength() << "]"
+                     << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")";
                  if (prev_it != align_ranges.end()) {
                      cerr << "  consistent="
                          << (IsConsistent(prev_it->first, it->first,
@@ -505,7 +530,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                       SRangesBySize());
         }
 
-        list< multiset<TAlignRange> > compartments;
+        list< TAlignRangeMultiSet > compartments;
 
         // iteration through this list now gives us a natural assortment by
         // largest alignment.  we iterate through this list and inspect the
@@ -514,14 +539,14 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         NON_CONST_ITERATE (vector<TAlignRange>, it, align_ranges) {
 
             bool found = false;
-            list< multiset<TAlignRange> >::iterator best_compart =
+            list<TAlignRangeMultiSet>::iterator best_compart =
                 compartments.end();
             TSeqPos best_diff = kMax_Int;
             size_t comp_id = 0;
-            NON_CONST_ITERATE (list< multiset<TAlignRange> >,
+            NON_CONST_ITERATE (list<TAlignRangeMultiSet>,
                                compart_it, compartments) {
                 ++comp_id;
-                multiset<TAlignRange>::iterator place =
+                TAlignRangeMultiSet::iterator place =
                     compart_it->lower_bound(*it);
 
                 TSeqPos diff = 0;
@@ -627,7 +652,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
             }
 
             if ( !found  ||  best_compart == compartments.end() ) {
-                compartments.push_back(multiset<TAlignRange>());
+                compartments.push_back(TAlignRangeMultiSet());
                 compartments.back().insert(*it);
             }
             else {
@@ -638,15 +663,16 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
             {{
                  cerr << "compartments: found " << compartments.size() << endl;
                  size_t count = 0;
-                 ITERATE (list< multiset<TAlignRange> >, it, compartments) {
+                 ITERATE (list<TAlignRangeMultiSet>, it, compartments) {
                      ++count;
                      cerr << "  compartment " << count << endl;
-                     ITERATE (multiset<TAlignRange>, i, *it) {
+                     ITERATE (TAlignRangeMultiSet, i, *it) {
                          cerr << "    ("
                              << i->first.first << ", "
                              << i->first.second << ")"
                              << " [" << i->first.first.GetLength()
                              << ", " << i->first.second.GetLength() << "]"
+                             << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
                              << endl;
                      }
                  }
@@ -658,15 +684,16 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         {{
              cerr << "found " << compartments.size() << endl;
              size_t count = 0;
-             ITERATE (list< multiset<TAlignRange> >, it, compartments) {
+             ITERATE (list<TAlignRangeMultiSet>, it, compartments) {
                  ++count;
                  cerr << "  compartment " << count << endl;
-                 ITERATE (multiset<TAlignRange>, i, *it) {
+                 ITERATE (TAlignRangeMultiSet, i, *it) {
                      cerr << "    ("
                          << i->first.first << ", "
                          << i->first.second << ")"
                          << " [" << i->first.first.GetLength()
                          << ", " << i->first.second.GetLength() << "]"
+                         << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
                          << endl;
                  }
              }
@@ -674,10 +701,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #endif
 
         // pack into seq-align-sets
-        ITERATE (list< multiset<TAlignRange> >, it, compartments) {
+        ITERATE (list<TAlignRangeMultiSet>, it, compartments) {
             CRef<CSeq_align_set> sas(new CSeq_align_set);
             SCompartScore score;
-            ITERATE (multiset<TAlignRange>, i, *it) {
+            ITERATE (TAlignRangeMultiSet, i, *it) {
                 sas->Set().push_back(i->second);
                 score.total_size += i->second->GetAlignLength();
                 score.total_range.first += i->first.first;
