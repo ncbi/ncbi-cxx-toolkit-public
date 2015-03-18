@@ -41,18 +41,19 @@
 BEGIN_NCBI_SCOPE
 
 
+typedef boost::integral_constant<bool, true> TAttrTesting;
 typedef pair<string, TNetStorageFlags> TKey;
 
 
 #define APP_NAME                    "test_netstorage_rpc"
+#define ST_ST_LIST      BOOST_PP_NIL
 
-#ifdef TEST_DIRECT_NC_API
-#define MODE_LIST  (Rpc, (Dnc, BOOST_PP_NIL))
+// TODO: Enable after direct NC API is fixed
+#ifdef TEST_DIRECT_NC
+#define LOC_LOC_LIST    (DirectNC, BOOST_PP_NIL)
 #else
-#define MODE_LIST  (Rpc, BOOST_PP_NIL)
+#define LOC_LOC_LIST    BOOST_PP_NIL
 #endif
-
-#define SP_ST_LIST BOOST_PP_NIL
 
 NCBI_PARAM_DECL(string, netstorage, service_name);
 typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
@@ -63,18 +64,29 @@ typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
 NCBI_PARAM_DECL(string, netstorage, app_domain);
 typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
 
-// NetStorage RPC API
-struct CRpc
+struct SDirectNC
 {
-    typedef boost::integral_constant<bool, true> TAttrTesting;
-    operator const char*() const { return ""; }
-};
+    static const TNetStorageFlags source = 0;
 
-// NetStorage direct NC API
-struct CDnc
-{
+    static const TNetStorageFlags non_existent = 0;
+
+    typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
+        TCreate;
+
+    static const TNetStorageFlags create = 0;
+
+    static const TNetStorageFlags immovable = 0;
+
+    static const TNetStorageFlags readable = 0;
+
+    typedef TCreate TRelocate;
+    static const TNetStorageFlags relocate = 0;
+
     typedef boost::integral_constant<bool, false> TAttrTesting;
-    operator const char*() const { return "&default_storage=nc"; }
+
+    static const bool check_relocate = false;
+
+    static const char* init_string() { return "&default_storage=nc"; }
 };
 
 

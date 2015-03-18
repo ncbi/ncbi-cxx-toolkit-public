@@ -937,52 +937,59 @@ struct SAttrApi<TAttrTestingEnabled> : SAttrApiBase
 
 // Locations and flags used for tests
 
-struct SNC2FT
+struct SLocBase
 {
-    static const int source = fNST_Persistent;
+    typedef ::TAttrTesting TAttrTesting;
 
-    static const int non_existent = fNST_Fast | fNST_Movable;
+    static const bool check_relocate = true;
 
-    typedef TLocationNetCache TCreate;
-    static const int create = fNST_Fast | fNST_Movable;
-
-    static const int immovable = fNST_Fast;
-
-    static const int readable = fNST_Persistent | fNST_Movable;
-
-    typedef TLocationFileTrack TRelocate;
-    static const int relocate = fNST_Persistent;
+    static const char* init_string() { return ""; }
 };
 
-struct SFT2NC
+struct SNC2FT : SLocBase
 {
-    static const int source = fNST_Fast;
+    static const TNetStorageFlags source = fNST_Persistent;
 
-    static const int non_existent = fNST_Persistent | fNST_Movable;
+    static const TNetStorageFlags non_existent = fNST_Fast | fNST_Movable;
+
+    typedef TLocationNetCache TCreate;
+    static const TNetStorageFlags create = fNST_Fast | fNST_Movable;
+
+    static const TNetStorageFlags immovable = fNST_Fast;
+
+    static const TNetStorageFlags readable = fNST_Persistent | fNST_Movable;
+
+    typedef TLocationFileTrack TRelocate;
+    static const TNetStorageFlags relocate = fNST_Persistent;
+};
+
+struct SFT2NC : SLocBase
+{
+    static const TNetStorageFlags source = fNST_Fast;
+
+    static const TNetStorageFlags non_existent = fNST_Persistent | fNST_Movable;
 
     typedef TLocationFileTrack TCreate;
-    static const int create = fNST_Persistent | fNST_Movable;
+    static const TNetStorageFlags create = fNST_Persistent | fNST_Movable;
 
-    static const int immovable = fNST_Persistent;
+    static const TNetStorageFlags immovable = fNST_Persistent;
 
-    static const int readable = fNST_Fast | fNST_Movable;
+    static const TNetStorageFlags readable = fNST_Fast | fNST_Movable;
 
     typedef TLocationNetCache TRelocate;
-    static const int relocate = fNST_Fast;
+    static const TNetStorageFlags relocate = fNST_Fast;
 };
 
 
 // Just a convenience wrapper
 template <
     class TNetStorage,
-    class TMode,
     class TExpected,
     class TApi,
     class TLoc>
 struct SPolicy
 {
     typedef TNetStorage NetStorage;
-    typedef TMode Mode;
     typedef TExpected Expected;
     typedef TApi Api;
     typedef TLoc Loc;
@@ -994,18 +1001,17 @@ struct SFixture
 {
     // Unwrapping the policy
     typedef typename TPolicy::NetStorage TNetStorage;
-    typedef typename TPolicy::Mode TMode;
     typedef typename TPolicy::Expected TExpected;
     typedef typename TPolicy::Api TApi;
     typedef typename TPolicy::Loc TLoc;
 
     TNetStorage netstorage;
     auto_ptr<TExpected> data;
-    SAttrApi<typename TMode::TAttrTesting> attr_tester;
+    SAttrApi<typename TLoc::TAttrTesting> attr_tester;
     SCtx ctx;
 
     SFixture()
-        : netstorage(g_GetNetStorage<TNetStorage>(TMode()))
+        : netstorage(g_GetNetStorage<TNetStorage>(TLoc::init_string()))
     {
     }
 
@@ -1293,30 +1299,32 @@ void SFixture<TPolicy>::Test(CNetStorage&)
             netstorage.Create(TLoc::create),
             netstorage.Create(TLoc::create));
 
-    // Generate a "non-movable" object ID by calling Relocate()
-    // with the same storage preferences (so the object should not
-    // be actually relocated).
-    Ctx("Creating immovable locator");
-    string immovable_loc = Relocate(netstorage, object_loc, TLoc::immovable);
+    if (TLoc::check_relocate) {
+        // Generate a "non-movable" object ID by calling Relocate()
+        // with the same storage preferences (so the object should not
+        // be actually relocated).
+        Ctx("Creating immovable locator");
+        string immovable_loc = Relocate(netstorage, object_loc, TLoc::immovable);
 
-    // Relocate the object to a different storage.
-    Ctx("Relocating object");
-    string relocated_loc = Relocate(netstorage, object_loc, TLoc::relocate);
+        // Relocate the object to a different storage.
+        Ctx("Relocating object");
+        string relocated_loc = Relocate(netstorage, object_loc, TLoc::relocate);
 
-    // Wait some time for changes to take effect
-    g_Sleep();
+        // Wait some time for changes to take effect
+        g_Sleep();
 
-    // Verify that the object has disappeared from the original storage.
-    ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
-        netstorage.Open(immovable_loc));
+        // Verify that the object has disappeared from the original storage.
+        ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
+            netstorage.Open(immovable_loc));
 
-    // However, the object must still be accessible
-    // either using the original ID:
-    ReadAndCompare<typename TLoc::TRelocate>("Reading using original ID",
-            netstorage.Open(object_loc));
-    // or using the newly generated storage ID:
-    ReadAndCompare<typename TLoc::TRelocate>("Reading using newly generated ID",
-            netstorage.Open(relocated_loc));
+        // However, the object must still be accessible
+        // either using the original ID:
+        ReadAndCompare<typename TLoc::TRelocate>("Reading using original ID",
+                netstorage.Open(object_loc));
+        // or using the newly generated storage ID:
+        ReadAndCompare<typename TLoc::TRelocate>("Reading using newly generated ID",
+                netstorage.Open(relocated_loc));
+    }
 
     ExistsAndRemoveTests<typename TLoc::TRelocate>(object_loc);
 }
@@ -1377,34 +1385,45 @@ NCBITEST_AUTO_INIT()
             "CNetStorage Unit Test");
 }
 
-#define TEST_CASE(ST, MODE, SRC, API, LOC) \
-typedef SPolicy<C##ST, C##MODE, C##SRC##Data, CApi<S##API##ApiImpl>, \
-    S##LOC> \
-    T##ST##MODE##SRC##API##LOC##Policy; \
-BOOST_FIXTURE_TEST_CASE(Test##ST##MODE##SRC##API##LOC, \
-        SFixture<T##ST##MODE##SRC##API##LOC##Policy>) \
+#define TEST_CASE(ST, SRC, API, LOC) \
+typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, S##LOC> \
+    T##ST##SRC##API##LOC##Policy; \
+BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
+        SFixture<T##ST##SRC##API##LOC##Policy>) \
 { \
     Test(netstorage); \
 }
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
+
 // Generic tests
+
 #define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
-//      MODE_LIST   defined in the header
 #define SRC_LIST    (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
 #define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
 
-BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 5, \
-        (ST_LIST, MODE_LIST, SRC_LIST, API_LIST, LOC_LIST));
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
+        (ST_LIST, SRC_LIST, API_LIST, LOC_LIST));
+
 
 // API specific tests
-//      SP_ST_LIST     defined in the header
-#define SP_MODE_LIST   MODE_LIST
-#define SP_SRC_LIST    (Str, BOOST_PP_NIL)
-#define SP_API_LIST    (Str, BOOST_PP_NIL)
-#define SP_LOC_LIST    LOC_LIST
 
-BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 5, \
-        (SP_ST_LIST, SP_MODE_LIST, SP_SRC_LIST, SP_API_LIST, SP_LOC_LIST));
+// Storage specific tests
+//      ST_ST_LIST      defined in the header
+#define ST_SRC_LIST     (Str, BOOST_PP_NIL)
+#define ST_API_LIST     (Str, BOOST_PP_NIL)
+#define ST_LOC_LIST     LOC_LIST
+
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
+        (ST_ST_LIST, ST_SRC_LIST, ST_API_LIST, ST_LOC_LIST));
+
+// Location specific tests
+#define LOC_ST_LIST     (NetStorage, BOOST_PP_NIL)
+#define LOC_SRC_LIST    SRC_LIST
+#define LOC_API_LIST    API_LIST
+//      LOC_LOC_LIST    defined in the header
+
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
+        (LOC_ST_LIST, LOC_SRC_LIST, LOC_API_LIST, LOC_LOC_LIST));
