@@ -1698,11 +1698,16 @@ extern SOCK URL_Connect
             size_t x_len = host  &&  *host ? strlen(host) : 0; 
             char* x_host = x_len ? (char*) malloc(x_len + 16) : 0;
             if (x_host) {
-                memcpy(x_host, host, x_len);
-                if (port)
-                    x_len += (size_t) sprintf(x_host + x_len, ":%hu", port);
-                if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr)))
+                memcpy(x_host, kHost, sizeof(kHost) - 1);
+                memcpy(x_host + sizeof(kHost), host, x_len);
+                if (port) {
+                    x_len += sizeof(kHost);
+                    sprintf(x_host + x_len, ":%hu", port);
+                }
+                if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr))) {
                     x_hdr = user_hdr;
+                    free(x_host);
+                }
             }
         } else
             x_hdr = user_hdr;
