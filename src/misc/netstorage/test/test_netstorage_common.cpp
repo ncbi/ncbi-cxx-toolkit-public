@@ -48,15 +48,6 @@
 USING_NCBI_SCOPE;
 
 
-// There is a known issue with attribute reading (JIRA CXX-5571),
-// test will be disabled until the issue is fixed
-#define TEST_ATTRIBUTES
-
-#define TEST_NON_EXISTENT
-#define TEST_RELOCATED
-#define TEST_REMOVED
-
-
 // Configuration parameters
 NCBI_PARAM_DEF(string, netstorage, service_name, "ST_Test");
 NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
@@ -900,26 +891,21 @@ struct SAttrApi : SAttrApiBase
     template <class TLocation>
     void Read(TLocation, const SCtx& ctx, CNetStorageObject& object)
     {
-#ifdef TEST_ATTRIBUTES
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Read(ctx, object),
                 CNetStorageException, ctx);
-#endif
     }
 
     template <class TLocation>
     void Write(TLocation, const SCtx& ctx, CNetStorageObject& object)
     {
-#ifdef TEST_ATTRIBUTES
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Write(ctx, object),
                 CNetStorageException, ctx);
-#endif
     }
 };
 
 typedef boost::integral_constant<bool, true> TAttrTestingEnabled;
 
 // Attribute testing is enabled
-#ifdef TEST_ATTRIBUTES
 template <>
 struct SAttrApi<TAttrTestingEnabled> : SAttrApiBase
 {
@@ -947,7 +933,6 @@ struct SAttrApi<TAttrTestingEnabled> : SAttrApiBase
                 CNetStorageException, ctx);
     }
 };
-#endif
 
 
 // Locations and flags used for tests
@@ -1289,10 +1274,8 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     Ctx("Checking non-existent object").Line(__LINE__);
     BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
 
-#ifdef TEST_REMOVED
     ReadAndCompare<TLocationNotFound>("Trying to read removed object",
         Open(netstorage, id));
-#endif
 }
 
 template <class TPolicy>
@@ -1300,12 +1283,10 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 {
     data.reset(new TExpected(netstorage.Create(TLoc::source)));
 
-#ifdef TEST_NON_EXISTENT
     string not_found(
             "CiB5fBBOPGA-TABpLX2KezBRLG35vvgq5_umuK_f6Nmv16_17pra7qSJytGakfnGv4I");
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(not_found));
-#endif
 
     // Create a NetStorage object
     string object_loc = WriteTwoAndRead<typename TLoc::TCreate>(
@@ -1325,11 +1306,9 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     // Wait some time for changes to take effect
     g_Sleep();
 
-#ifdef TEST_RELOCATED
     // Verify that the object has disappeared from the original storage.
     ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
         netstorage.Open(immovable_loc));
-#endif
 
     // However, the object must still be accessible
     // either using the original ID:
@@ -1358,10 +1337,8 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
 
     data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
 
-#ifdef TEST_NON_EXISTENT
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(unique_key2, TLoc::non_existent));
-#endif
 
     // Write and read test data using a user-defined key.
     WriteTwoAndRead<typename TLoc::TCreate>(
@@ -1380,11 +1357,9 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     // Wait some time for changes to take effect
     g_Sleep();
 
-#ifdef TEST_RELOCATED
     // Verify that the object has disappeared from the original storage.
     ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
             netstorage.Open(unique_key2, TLoc::immovable));
-#endif
 
     ReadAndCompare<typename TLoc::TRelocate>("Reading using original flags",
             netstorage.Open(unique_key2, TLoc::create));
