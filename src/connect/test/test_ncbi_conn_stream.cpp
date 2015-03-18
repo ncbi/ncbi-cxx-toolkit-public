@@ -522,11 +522,9 @@ int main(int argc, const char* argv[])
 
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(2*kBufferSize)));
 
-    j = 0;
     buflen = 0;
     for (i = 0, l = 0;  i < kBufferSize;  i += j, l++) {
         k = rand() % 15 + 1;
-
         if (i + k > kBufferSize + 1)
             k = kBufferSize + 1 - i;
         ios.read(&buf2.get()[i], k);
@@ -537,7 +535,7 @@ int main(int argc, const char* argv[])
             LOG_POST(Info << "Bytes requested: " << k << ", received: " << j);
         buflen += j;
         l++;
-        if (!j && ios.eof())
+        if (!j  &&  ios.eof())
             break;
     }
 
