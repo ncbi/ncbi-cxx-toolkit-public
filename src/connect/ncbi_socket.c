@@ -3817,11 +3817,13 @@ static EIO_Status s_Close_(SOCK sock, int abort)
 
         if (!abort) {
             /* orderly shutdown in both directions */
-            s_Shutdown(sock, eIO_Close, SOCK_GET_TIMEOUT(sock, c));
+            status = s_Shutdown(sock, eIO_Close, SOCK_GET_TIMEOUT(sock, c));
             assert(sock->r_status == eIO_Closed  &&
                    sock->w_status == eIO_Closed);
-        } else
+        } else {
             sock->r_status = sock->w_status = eIO_Closed;
+            status = eIO_Success;
+        }
 
 #ifdef NCBI_OS_MSWIN
         WSAEventSelect(sock->sock, sock->event/*ignored*/, 0/*cancel*/);
@@ -3860,7 +3862,6 @@ static EIO_Status s_Close_(SOCK sock, int abort)
             s_DoLog(eLOG_Note, sock, eIO_Close, 0, 0, abort ? "Aborting" : 0);
     }
 
-    status = eIO_Success;
     if (abort  ||  !sock->keep) {
         if (abort < 0)
             abort = 1;
@@ -4772,7 +4773,6 @@ static EIO_Status s_CreateListening(const char*    path,
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
         strcpy(addr.un.sun_path, path);
-        cp = path;
         u = umask(0);
     } else
 #endif /*NCBI_OS_UNIX*/
@@ -6654,7 +6654,6 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
     }
 
     cr_seen = done = 0/*false*/;
-    status = eIO_Success;
     len = 0;
     do {
         size_t i;

@@ -336,7 +336,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    if (data  &&  data->cand) {
+    assert(data);
+    if (data->cand) {
         size_t i;
         assert(data->a_cand);
         for (i = 0; i < data->n_cand; i++)
@@ -350,15 +351,16 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    assert(!data->n_cand  &&  data->reset); /* s_Reset() has been called */
+    /* NB: s_Reset() must have been called before */
+    assert(data &&  !data->n_cand  &&  data->reset);
     if (data->cand) {
         assert(data->a_cand);
         data->a_cand = 0;
         free(data->cand);
         data->cand = 0;
     }
-    free(data);
     iter->data = 0;
+    free(data);
 }
 
 
