@@ -40,11 +40,11 @@
 BEGIN_NCBI_SCOPE
 
 
-typedef boost::integral_constant<bool, false> TAttrTesting;
 typedef pair<string, TNetStorageFlags> TKey;
 
 
 #define APP_NAME                "test_netstorage"
+#define MODE_LIST  (D, BOOST_PP_NIL)
 #define SP_ST_LIST (DirectNetStorage, (DirectNetStorageByKey, BOOST_PP_NIL))
 
 // NB: This parameter is not used here, but required for compilation
@@ -57,9 +57,16 @@ typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
 NCBI_PARAM_DECL(string, netstorage, app_domain);
 typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
 
+// NetStorage direct API
+struct CD
+{
+    typedef boost::integral_constant<bool, false> TAttrTesting;
+    operator const char*() const { return NULL; }
+};
+
 
 template <class TNetStorage>
-inline TNetStorage g_GetNetStorage()
+inline TNetStorage g_GetNetStorage(const char*)
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
@@ -71,7 +78,7 @@ inline TNetStorage g_GetNetStorage()
 }
 
 template <>
-inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
+inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char*)
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
@@ -83,7 +90,7 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>()
 }
 
 template <>
-inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>()
+inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>(const char*)
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());

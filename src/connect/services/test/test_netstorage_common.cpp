@@ -990,16 +990,16 @@ struct SFT2NC
 // Just a convenience wrapper
 template <
     class TNetStorage,
+    class TMode,
     class TExpected,
     class TApi,
-    class TAttrTesting,
     class TLoc>
 struct SPolicy
 {
     typedef TNetStorage NetStorage;
+    typedef TMode Mode;
     typedef TExpected Expected;
     typedef TApi Api;
-    typedef TAttrTesting AttrTesting;
     typedef TLoc Loc;
 };
 
@@ -1009,18 +1009,18 @@ struct SFixture
 {
     // Unwrapping the policy
     typedef typename TPolicy::NetStorage TNetStorage;
+    typedef typename TPolicy::Mode TMode;
     typedef typename TPolicy::Expected TExpected;
     typedef typename TPolicy::Api TApi;
-    typedef typename TPolicy::AttrTesting TAttrTesting;
     typedef typename TPolicy::Loc TLoc;
 
     TNetStorage netstorage;
     auto_ptr<TExpected> data;
-    SAttrApi<TAttrTesting> attr_tester;
+    SAttrApi<typename TMode::TAttrTesting> attr_tester;
     SCtx ctx;
 
     SFixture()
-        : netstorage(g_GetNetStorage<TNetStorage>())
+        : netstorage(g_GetNetStorage<TNetStorage>(TMode()))
     {
     }
 
@@ -1402,11 +1402,12 @@ NCBITEST_AUTO_INIT()
             "CNetStorage Unit Test");
 }
 
-#define TEST_CASE(ST, SRC, API, LOC) \
-typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, TAttrTesting, S##LOC> \
-    T##ST##SRC##API##LOC##Policy; \
-BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
-        SFixture<T##ST##SRC##API##LOC##Policy>) \
+#define TEST_CASE(ST, MODE, SRC, API, LOC) \
+typedef SPolicy<C##ST, C##MODE, C##SRC##Data, CApi<S##API##ApiImpl>, \
+    S##LOC> \
+    T##ST##MODE##SRC##API##LOC##Policy; \
+BOOST_FIXTURE_TEST_CASE(Test##ST##MODE##SRC##API##LOC, \
+        SFixture<T##ST##MODE##SRC##API##LOC##Policy>) \
 { \
     Test(netstorage); \
 }
@@ -1415,18 +1416,20 @@ BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
 
 // Generic tests
 #define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
+//      MODE_LIST   defined in the header
 #define SRC_LIST    (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
 #define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
 
-BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-        (ST_LIST, SRC_LIST, API_LIST, LOC_LIST));
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 5, \
+        (ST_LIST, MODE_LIST, SRC_LIST, API_LIST, LOC_LIST));
 
 // API specific tests
 //      SP_ST_LIST     defined in the header
+#define SP_MODE_LIST   MODE_LIST
 #define SP_SRC_LIST    (Str, BOOST_PP_NIL)
 #define SP_API_LIST    (Str, BOOST_PP_NIL)
 #define SP_LOC_LIST    LOC_LIST
 
-BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-        (SP_ST_LIST, SP_SRC_LIST, SP_API_LIST, SP_LOC_LIST));
+BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 5, \
+        (SP_ST_LIST, SP_MODE_LIST, SP_SRC_LIST, SP_API_LIST, SP_LOC_LIST));
