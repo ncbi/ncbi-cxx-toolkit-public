@@ -1193,5 +1193,5 @@ extern TCONN_Flags CONN_GetFlags(CONN conn)
 {
     CONN_CALLTRACE(GetFlags);
 
-    return conn ? 0 : conn->flags & ~fCONN_Flush;
+    return conn ? conn->flags & ~fCONN_Flush : 0;
 }
