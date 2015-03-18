@@ -91,8 +91,10 @@ public:
     static bool IsValidSubtypeName(const string& str,
                                    EVocabulary vocabulary = eVocabulary_raw);              
 
-	  // identify whether subsource value should be blank
-	  static bool NeedsNoText (const TSubtype& subtype);
+    static bool IsMultipleValuesAllowed(TSubtype);
+
+    // identify whether subsource value should be blank
+    static bool NeedsNoText (const TSubtype& subtype);
 
     // some subsources are discouraged and should not be offered to the user as an option
     static bool IsDiscouraged (const TSubtype subtype);

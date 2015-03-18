@@ -4501,14 +4501,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleChromosomes)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleChromosomes",
-                              "Multiple identical chromosome qualifiers"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
+                              "Multiple identical chromosome qualifiers present"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     unit_test_util::SetChromosome (entry, "2");
-    expected_errors[0]->SetErrMsg("Multiple conflicting chromosome qualifiers");
+    expected_errors[0]->SetErrMsg("Multiple conflicting chromosome qualifiers present");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6453,26 +6453,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleComments)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Descr_LatLonProblem)
-{
-    // prepare entry
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "40 N 50 E");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "50 N 40 E");
-    
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonProblem",
-                              "Multiple lat_lon on BioSource"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
-                              "Multiple lat_lon qualifiers present"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
 BOOST_AUTO_TEST_CASE(Test_Descr_LatLonFormat)
 {
     // prepare entry
@@ -7324,8 +7304,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceQualifiers)
     
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadCountryCode",
-                              "Multiple country names on BioSource"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
                               "Multiple country qualifiers present"));
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "USA");
@@ -7334,9 +7312,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceQualifiers)
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
 
-    expected_errors[0]->SetErrMsg("Multiple lat_lon on BioSource");
-    expected_errors[0]->SetErrCode("LatLonProblem");
-    expected_errors[1]->SetErrMsg("Multiple lat_lon qualifiers present");
+    expected_errors[0]->SetErrMsg("Multiple lat_lon qualifiers present");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 N 50 W");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "50 N 35 W");
     eval = validator.Validate(seh, options);
@@ -7344,12 +7320,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceQualifiers)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
 
     expected_errors[0]->SetErrMsg("Multiple fwd_primer_seq qualifiers present");
-    expected_errors[0]->SetErrCode("MultipleSourceQualifiers");
-    expected_errors[1]->SetErrMsg("Multiple rev_primer_seq qualifiers present");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
-                              "Multiple fwd_primer_name qualifiers present"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
-                              "Multiple rev_primer_name qualifiers present"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers", "Multiple rev_primer_seq qualifiers present"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers", "Multiple fwd_primer_name qualifiers present"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers", "Multiple rev_primer_name qualifiers present"));
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "AATTGGCC");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "CCTTAAAA");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "AATTGGCC");

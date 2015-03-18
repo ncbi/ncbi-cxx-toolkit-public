@@ -407,6 +407,8 @@ bool CBioSourceKind::IsSourceOrganelle() const
 class NCBI_VALIDATOR_EXPORT CValidError_imp
 {
 public:
+    typedef map<int, int> TCount;
+
     // Interface to be used by the CValidError class
 
     // Constructor & Destructor

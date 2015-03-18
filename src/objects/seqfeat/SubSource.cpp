@@ -167,6 +167,29 @@ string CSubSource::GetSubtypeName(CSubSource::TSubtype stype,
 
 
 
+bool CSubSource::IsMultipleValuesAllowed(TSubtype subtype)
+{
+    return subtype != eSubtype_chromosome
+        && subtype != eSubtype_germline
+        && subtype != eSubtype_rearranged
+        && subtype != eSubtype_plastid_name
+        && subtype != eSubtype_segment
+        && subtype != eSubtype_country
+        && subtype != eSubtype_transgenic
+        && subtype != eSubtype_environmental_sample
+        && subtype != eSubtype_lat_lon
+        && subtype != eSubtype_collection_date
+        && subtype != eSubtype_collected_by
+        && subtype != eSubtype_identified_by
+        && subtype != eSubtype_fwd_primer_seq
+        && subtype != eSubtype_rev_primer_seq
+        && subtype != eSubtype_fwd_primer_name
+        && subtype != eSubtype_rev_primer_name
+        && subtype != eSubtype_metagenomic
+        && subtype != eSubtype_altitude;
+}
+
+
 
 bool CSubSource::NeedsNoText(const TSubtype& subtype)
 {

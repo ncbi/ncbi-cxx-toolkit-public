@@ -608,35 +608,19 @@ void CValidError_imp::ValidateBioSource
         }
     }
 
-    int chrom_count = 0;
+    TCount count;
     bool chrom_conflict = false;
-    int country_count = 0, lat_lon_count = 0, altitude_count = 0, collection_date_count = 0;
-    int fwd_primer_seq_count = 0, rev_primer_seq_count = 0;
-    int fwd_primer_name_count = 0, rev_primer_name_count = 0;
     CPCRSetList pcr_set_list;
     const CSubSource *chromosome = 0;
     string countryname;
     string lat_lon;
     double lat_value = 0.0, lon_value = 0.0;
-    bool germline = false;
-    bool rearranged = false;
-    bool transgenic = false;
-    bool env_sample = false;
-    bool metagenomic = false;
-    bool sex = false;
-    bool mating_type = false;
-    bool iso_source = false;
-    bool has_plasmid_name = false;
-    int collected_by_count = 0;
-    int identified_by_count = 0;
-    int segment_count = 0;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
         ValidateSubSource (**ssit, obj, ctx);
         if (!(*ssit)->IsSetSubtype()) {
             continue;
         }
-
 
         if ((*ssit)->IsSetName()) {
             string str = (*ssit)->GetName();
@@ -648,14 +632,11 @@ void CValidError_imp::ValidateBioSource
         }
 
         int subtype = (*ssit)->GetSubtype();
+        count[subtype]++;
+
         switch ( subtype ) {
 
         case CSubSource::eSubtype_country:
-            ++country_count;
-            if (!NStr::IsBlank (countryname)) {
-                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode, 
-                            "Multiple country names on BioSource", obj, ctx);
-            }
             countryname = (**ssit).GetName();
             break;
 
@@ -667,16 +648,9 @@ void CValidError_imp::ValidateBioSource
                          lat_in_range, lon_in_range,
                          lat_value, lon_value);
             }
-
-            ++lat_lon_count;
-            if (lat_lon_count > 1) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonProblem, 
-                           "Multiple lat_lon on BioSource", obj, ctx);
-            }
             break;
 
         case CSubSource::eSubtype_altitude:
-            ++altitude_count;
             if (!(*ssit)->IsSetName() || !CSubSource::IsAltitudeValid ((*ssit)->GetName())) {
                 string val = "";
                 if ((*ssit)->IsSetName()) {
@@ -689,7 +663,6 @@ void CValidError_imp::ValidateBioSource
             break;
 
         case CSubSource::eSubtype_chromosome:
-            ++chrom_count;
             if ( chromosome != 0 ) {
                 if ( NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
                     chrom_conflict = true;
@@ -703,67 +676,28 @@ void CValidError_imp::ValidateBioSource
             if ((*ssit)->IsSetName()) {
                 pcr_set_list.AddFwdName((*ssit)->GetName());
             }
-            ++fwd_primer_name_count;
             break;
 
         case CSubSource::eSubtype_rev_primer_name:
             if ((*ssit)->IsSetName()) {
                 pcr_set_list.AddRevName((*ssit)->GetName());
             }
-            ++rev_primer_name_count;
             break;
 
         case CSubSource::eSubtype_fwd_primer_seq:
             if ((*ssit)->IsSetName()) {
                 pcr_set_list.AddFwdSeq((*ssit)->GetName());
             }
-            ++fwd_primer_seq_count;
             break;
 
         case CSubSource::eSubtype_rev_primer_seq:
             if ((*ssit)->IsSetName()) {
                 pcr_set_list.AddRevSeq((*ssit)->GetName());
             }
-            ++rev_primer_seq_count;
-            break;
-
-        case CSubSource::eSubtype_transposon_name:
-        case CSubSource::eSubtype_insertion_seq_name:
-            break;
-
-        case 0:
-            break;
-
-        case CSubSource::eSubtype_other:
-            break;
-
-        case CSubSource::eSubtype_germline:
-            germline = true;
-            break;
-
-        case CSubSource::eSubtype_rearranged:
-            rearranged = true;
-            break;
-
-        case CSubSource::eSubtype_transgenic:
-            transgenic = true;
-            break;
-
-        case CSubSource::eSubtype_metagenomic:
-            metagenomic = true;
-            break;
-
-        case CSubSource::eSubtype_environmental_sample:
-            env_sample = true;
-            break;
-
-        case CSubSource::eSubtype_isolation_source:
-            iso_source = true;
             break;
 
         case CSubSource::eSubtype_sex:
             {
-                sex = true;
                 EDiagSev sev = eDiag_Warning;
                 if (IsGpipe() && IsGenomic()) {
                     sev = eDiag_Error;
@@ -790,11 +724,9 @@ void CValidError_imp::ValidateBioSource
                     }
                 }
             }
-
             break;
 
         case CSubSource::eSubtype_mating_type:
-            mating_type = true;
             if (isAnimal || isPlant || isViral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Unexpected use of /mating_type qualifier", obj, ctx);
@@ -810,7 +742,6 @@ void CValidError_imp::ValidateBioSource
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Plasmid subsource but not plasmid location", obj, ctx);
             }
-            has_plasmid_name = true;
             break;
 
         case CSubSource::eSubtype_plastid_name:
@@ -847,25 +778,6 @@ void CValidError_imp::ValidateBioSource
             }
             break;
 
-        case CSubSource::eSubtype_frequency:
-            break;
-
-        case CSubSource::eSubtype_collection_date:
-            ++collection_date_count;
-            break;
-
-        case CSubSource::eSubtype_collected_by:
-            ++collected_by_count;
-            break;
-
-        case CSubSource::eSubtype_identified_by:
-            ++identified_by_count;
-            break;
-
-        case CSubSource::eSubtype_segment:
-            ++segment_count;
-            break;
-
         case CSubSource::eSubtype_cell_line:
             if ((*ssit)->IsSetName() && orgref.IsSetTaxname()) {
                 string warning = CSubSource::CheckCellLine((*ssit)->GetName(), orgref.GetTaxname());
@@ -874,9 +786,6 @@ void CValidError_imp::ValidateBioSource
                               warning, obj, ctx);
                 }
             }
-            break;
-
-        default:
             break;
         }
 
@@ -889,86 +798,77 @@ void CValidError_imp::ValidateBioSource
               "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }            
     }
-    if ( germline  &&  rearranged ) {
+
+    ITERATE (TCount, it, count) {
+        if (it->second <= 1) continue;
+        if (CSubSource::IsMultipleValuesAllowed(it->first)) continue;
+        string qual = "***";
+        switch (it->first) {
+            case CSubSource::eSubtype_chromosome:
+                qual = chrom_conflict ? "conflicting chromosome" : "identical chromosome"; break;
+            case CSubSource::eSubtype_germline:
+                qual = "germline"; break;
+            case CSubSource::eSubtype_rearranged:
+                qual = "rearranged"; break;
+            case CSubSource::eSubtype_plastid_name:
+                qual = "plastid_name"; break;
+            case CSubSource::eSubtype_segment:
+                qual = "segment"; break;
+            case CSubSource::eSubtype_country:
+                qual = "country"; break;
+            case CSubSource::eSubtype_transgenic:
+                qual = "transgenic"; break;
+            case CSubSource::eSubtype_environmental_sample:
+                qual = "environmental_sample"; break;
+            case CSubSource::eSubtype_lat_lon:
+                qual = "lat_lon"; break;
+            case CSubSource::eSubtype_collection_date:
+                qual = "collection_date"; break;
+            case CSubSource::eSubtype_collected_by:
+                qual = "collected_by"; break;
+            case CSubSource::eSubtype_identified_by:
+                qual = "identified_by"; break;
+            case CSubSource::eSubtype_fwd_primer_seq:
+                qual = "fwd_primer_seq"; break;
+            case CSubSource::eSubtype_rev_primer_seq:
+                qual = "rev_primer_seq"; break;
+            case CSubSource::eSubtype_fwd_primer_name:
+                qual = "fwd_primer_name"; break;
+            case CSubSource::eSubtype_rev_primer_name:
+                qual = "rev_primer_name"; break;
+            case CSubSource::eSubtype_metagenomic:
+                qual = "metagenomic"; break;
+            case CSubSource::eSubtype_altitude:
+                qual = "altitude"; break;
+        }
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, "Multiple " + qual + " qualifiers present", obj, ctx);
+    }
+
+    if (count[CSubSource::eSubtype_germline] && count[CSubSource::eSubtype_rearranged]) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
             "Germline and rearranged should not both be present", obj, ctx);
     }
-    if (transgenic && env_sample) {
+    if (count[CSubSource::eSubtype_transgenic] && count[CSubSource::eSubtype_environmental_sample]) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
             "Transgenic and environmental sample should not both be present", obj, ctx);
     }
-    if (metagenomic && (! env_sample)) {
+    if (count[CSubSource::eSubtype_metagenomic] && !count[CSubSource::eSubtype_environmental_sample]) {
         PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BioSourceInconsistency, 
             "Metagenomic should also have environmental sample annotated", obj, ctx);
     }
-    if (sex && mating_type) {
+    if (count[CSubSource::eSubtype_sex] && count[CSubSource::eSubtype_mating_type]) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
              "Sex and mating type should not both be present", obj, ctx);
     }
-    if (bsrc.IsSetGenome() && bsrc.GetGenome() == CBioSource::eGenome_plasmid && !has_plasmid_name) {
+    if (bsrc.IsSetGenome() && bsrc.GetGenome() == CBioSource::eGenome_plasmid && !count[CSubSource::eSubtype_plasmid_name]) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
              "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known.",
              obj, ctx);
     }
 
-    if ( chrom_count > 1 ) {
-        string msg = 
-            chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
-                             "Multiple identical chromosome qualifiers";
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj, ctx);
-    }
-
-    if (country_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple country qualifiers present", obj, ctx);
-    }
-    if (lat_lon_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple lat_lon qualifiers present", obj, ctx);
-    }
-    if (altitude_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple altitude qualifiers present", obj, ctx);
-    }
-    if (fwd_primer_seq_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple fwd_primer_seq qualifiers present", obj, ctx);
-    }
-    if (rev_primer_seq_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple rev_primer_seq qualifiers present", obj, ctx);
-    }
-    if (fwd_primer_name_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple fwd_primer_name qualifiers present", obj, ctx);
-    }
-    if (rev_primer_name_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple rev_primer_name qualifiers present", obj, ctx);
-    }
-    if (collection_date_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple collection_date qualifiers present", obj, ctx);
-    }
-
-    if (collected_by_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple collected_by qualifiers present", obj, ctx);
-    }
-
-    if (identified_by_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple identified_by qualifiers present", obj, ctx);
-    }
-
-    if (segment_count > 1) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
-                   "Multiple segment qualifiers present", obj, ctx);
-    }
-
-    if ((fwd_primer_seq_count > 0 && rev_primer_seq_count == 0)
-        || (fwd_primer_seq_count == 0 && rev_primer_seq_count > 0)) {
-        if (fwd_primer_name_count == 0 && rev_primer_name_count == 0) {
+    if ((count[CSubSource::eSubtype_fwd_primer_seq] && !count[CSubSource::eSubtype_rev_primer_seq])
+        || (!count[CSubSource::eSubtype_fwd_primer_seq] && count[CSubSource::eSubtype_rev_primer_seq])) {
+        if (!count[CSubSource::eSubtype_fwd_primer_name] && !count[CSubSource::eSubtype_rev_primer_name]) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence, 
                        "PCR primer does not have both sequences", obj, ctx);
         }
@@ -1020,7 +920,7 @@ void CValidError_imp::ValidateBioSource
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
                     "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs", obj, ctx);
             }
-    } else if ( bsrc.GetGenome() == CBioSource::eGenome_macronuclear) {
+        } else if ( bsrc.GetGenome() == CBioSource::eGenome_macronuclear) {
             if ( lineage.find("Ciliophora") == string::npos ) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
                     "Only Ciliophora have macronuclear locations", obj, ctx);
@@ -1043,14 +943,14 @@ void CValidError_imp::ValidateBioSource
                                "Bacterial or viral source should not have organelle location",
                                obj, ctx);
                 }
-            } else if (NStr::EqualCase(div, "ENV") && !env_sample) {
+            } else if (NStr::EqualCase(div, "ENV") && !count[CSubSource::eSubtype_environmental_sample]) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, 
                            "BioSource with ENV division is missing environmental sample subsource",
                            obj, ctx);
             }
         }
 
-        if (!metagenomic && NStr::FindNoCase(lineage, "metagenomes") != string::npos) {
+        if (!count[CSubSource::eSubtype_metagenomic] && NStr::FindNoCase(lineage, "metagenomes") != string::npos) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
                        "If metagenomes appears in lineage, BioSource should have metagenomic qualifier",
                        obj, ctx);
@@ -1069,12 +969,12 @@ void CValidError_imp::ValidateBioSource
         if (subtype == COrgMod::eSubtype_nat_host) {
             specific_host = true;
         } else if (subtype == COrgMod::eSubtype_strain) {
-            if (env_sample) {
+            if (count[CSubSource::eSubtype_environmental_sample]) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, "Strain should not be present in an environmental sample",
                            obj, ctx);
             }
         } else if (subtype == COrgMod::eSubtype_metagenome_source) {
-            if (!metagenomic) {
+            if (!count[CSubSource::eSubtype_metagenomic]) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, "Metagenome source should also have metagenomic qualifier",
                            obj, ctx);
             }
@@ -1088,7 +988,7 @@ void CValidError_imp::ValidateBioSource
               "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }            
     }
-    if (env_sample && !iso_source && !specific_host) {
+    if (count[CSubSource::eSubtype_environmental_sample] && !count[CSubSource::eSubtype_isolation_source] && !specific_host) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
                    "Environmental sample should also have isolation source or specific host annotated",
                    obj, ctx);
@@ -1599,6 +1499,7 @@ void CValidError_imp::ValidateOrgName
 {
     if ( orgname.IsSetMod() ) {
         bool has_strain = false;
+        vector<string> vouchers;
         FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
             const COrgMod& omd = **omd_itr;
             int subtype = omd.GetSubtype();
@@ -1698,6 +1599,7 @@ void CValidError_imp::ValidateOrgName
                 case COrgMod::eSubtype_culture_collection:
                 case COrgMod::eSubtype_specimen_voucher:
                     ValidateOrgModVoucher (omd, obj, ctx);
+                    vouchers.push_back(omd.GetSubname());
                     break;
 
                 default:
@@ -1719,70 +1621,8 @@ void CValidError_imp::ValidateOrgName
             }
         }
 
-        // look for multiple source vouchers
-        FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
-            if(!(*omd_itr)->IsSetSubtype() || !(*omd_itr)->IsSetSubname()) {
-                continue;
-            }
-            const COrgMod& omd = **omd_itr;
-            int subtype = omd.GetSubtype();
-
-            if (subtype != COrgMod::eSubtype_specimen_voucher
-                && subtype != COrgMod::eSubtype_bio_material
-                && subtype != COrgMod::eSubtype_culture_collection) {
-                continue;
-            }
-
-            string inst1 = "", coll1 = "", id1 = "";
-            if (!COrgMod::ParseStructuredVoucher(omd.GetSubname(), inst1, coll1, id1)) {
-                continue;
-            }
-            if (NStr::EqualNocase(inst1, "personal")
-                || NStr::EqualCase(coll1, "DNA")) {
-                continue;
-            }
-
-            COrgName::TMod::const_iterator it_next = omd_itr;
-            ++it_next;
-            while (it_next != orgname.GetMod().end()) {
-                if (!(*it_next)->IsSetSubtype() || !(*it_next)->IsSetSubname() || (*it_next)->GetSubtype() != subtype) {
-                    ++it_next;
-                    continue;
-                }
-                int subtype_next = (*it_next)->GetSubtype();
-                if (subtype_next != COrgMod::eSubtype_specimen_voucher
-                    && subtype_next != COrgMod::eSubtype_bio_material
-                    && subtype_next != COrgMod::eSubtype_culture_collection) {
-                    ++it_next;
-                    continue;
-                }
-                string inst2 = "", coll2 = "", id2 = "";
-                if (!COrgMod::ParseStructuredVoucher((*it_next)->GetSubname(), inst2, coll2, id2)
-                    || NStr::IsBlank(inst2)
-                    || NStr::EqualNocase(inst2, "personal")
-                    || NStr::EqualCase(coll2, "DNA")
-                    || !NStr::EqualNocase (inst1, inst2)) {
-                    ++it_next;
-                    continue;
-                }
-                // at this point, we have identified two vouchers 
-                // with the same institution codes
-                // that are not personal and not DNA collections
-                if (!NStr::IsBlank(coll1) && !NStr::IsBlank(coll2) 
-                    && NStr::EqualNocase(coll1, coll2)) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceVouchers, 
-                                "Multiple vouchers with same institution:collection",
-                                obj, ctx);
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceVouchers, 
-                                "Multiple vouchers with same institution",
-                                obj, ctx);
-                }
-                ++it_next;
-            }
-
-        }
-
+        string err = COrgMod::CheckMultipleVouchers(vouchers);
+        if (!err.empty()) PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceVouchers, err, obj, ctx);
     }
 }
 

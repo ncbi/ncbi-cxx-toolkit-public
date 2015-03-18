@@ -575,6 +575,27 @@ COrgMod::GetInstitutionShortName( const string &full_name )
 }
 
 
+// look for multiple source vouchers
+string COrgMod::CheckMultipleVouchers(const vector<string>& vouchers)
+{
+    ITERATE(vector<string>, it, vouchers) {
+        string inst1 = "", coll1 = "", id1 = "";
+        if (!COrgMod::ParseStructuredVoucher(*it, inst1, coll1, id1)) continue;
+        if (NStr::EqualNocase(inst1, "personal") || NStr::EqualCase(coll1, "DNA")) continue;
+
+        vector<string>::const_iterator it_next = it;
+        for (++it_next; it_next != vouchers.end(); ++it_next) {
+            string inst2 = "", coll2 = "", id2 = "";
+            if (!COrgMod::ParseStructuredVoucher(*it_next, inst2, coll2, id2)) continue;
+            if (NStr::EqualNocase(inst2, "personal") || NStr::EqualCase(coll2, "DNA")) continue;
+            if (!NStr::EqualNocase (inst1, inst2) || NStr::IsBlank(inst1)) continue;
+            return NStr::EqualNocase(coll1, coll2) && !NStr::IsBlank(coll1) ? "Multiple vouchers with same institution:collection" : "Multiple vouchers with same institution";
+        }
+    }
+    return "";
+}
+
+
 bool s_IsAllDigits(string str)
 {
     return (str.find_first_not_of("0123456789") == NPOS);
