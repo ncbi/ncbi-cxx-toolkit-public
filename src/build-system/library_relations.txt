@@ -73,6 +73,7 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
+an_core includes gencoll_client
 an_core needs 16S_common
 an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
@@ -80,6 +81,8 @@ an_core needs gpipe_an_base
 an_core needs gpipe_kmer
 an_core needs gpipe_val
 an_core needs ncbi_xcache_netcache
+an_core needs reftrack_access
+an_euk_pipeline includes gencoll_client
 an_euk_pipeline needs bag_access
 an_euk_pipeline needs gpipe_an_base
 an_euk_pipeline needs gpipe_val
@@ -87,10 +90,14 @@ an_euk_pipeline needs gpipe_xml
 an_euk_pipeline needs reftrack_admin
 an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
 an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
+an_prok_pipeline includes gencoll_client
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_xml
 an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs xobjwrite
+an_rnaseq needs gpipe_an_base
+an_rnaseq needs matchhits
+an_worker_nodes includes gencoll_client
 an_worker_nodes needs gpipe_an_base
 asn_build_config needs build_config_base
 asn_build_config needs gpinit
@@ -166,9 +173,9 @@ boost_filesystem-gcc44-mt-d-64 needs3party $(BOOST_SYSTEM_LIBS)
 boost_filesystem-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 boost_system-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
+build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
-build_config needs gcaccess_utils
 build_config needs gpipe_xml
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
@@ -355,6 +362,8 @@ geomyncbi needs xmlwrapp
 geostat needs xncbi
 gif needs3party $(ORIG_LIBS)
 gif needs3party X11
+gmap needs xlinear_prog
+gmap needs xmlwrapp
 gmp needs3party $(ORIG_LIBS)
 gnomon_access needs sqlitewrapp
 gnomon_access needs xalgognomon
@@ -544,7 +553,7 @@ hgvs needs xregexp
 hgvs_name needs $(OBJMGR_LIBS)
 hgvs_name needs gui_objutils
 hgvs_name needs sv_objects
-hmm_hit_handle needs xncbi
+hmm_hit_handle needs $(SOBJMGR_LIBS)
 hogweed needs3party $(ORIG_LIBS)
 hogweed needs3party gmp
 hogweed needs3party nettle
@@ -637,6 +646,8 @@ mapview needs mv_entrez
 mapview needs mvobjutil
 mapview needs seqset
 mapviewcli needs mapview
+matchhits needs $(COMPRESS_LIBS)
+matchhits needs seqdb
 medlars needs biblio
 medline needs biblio
 mghbn needs connect
@@ -934,6 +945,12 @@ sequtil needs xncbi
 smartasn_g needs submit
 smartnet needs3party vibrant
 smartnetclient needs xconnect
+snphgvs needs $(GPIPE_LOADER_LIBS)
+snphgvs needs $(SDBAPI_LIB)
+snphgvs needs hgvs
+snphgvs needs ncbi_xcache_netcache
+snphgvs needs refseq_aln_source
+snphgvs needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 snputil needs $(SOBJMGR_LIBS)
 snputil needs variation
 soap_dataobj needs xser
@@ -954,6 +971,11 @@ sqlitewrapp needs3party $(SQLITE3_LIBS)
 sraread needs $(SRA_LIBS)
 sraread needs seqset
 sraread needs3party $(SRA_SDK_SYSLIBS)
+srprism needs srprism_seq
+srprism_common needs $(COMPRESS_LIBS)
+srprism_common needs xutil
+srprism_seq needs srprism_common
+srprism_setup needs xncbi
 ssl needs $(Z_LIB)
 ssl needs3party $(KRB5_LIBS)
 ssl needs3party $(NETWORK_LIBS)
@@ -1355,6 +1377,7 @@ xid_utils_noncorelib needs xid_utils
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
+xlinear_prog needs xncbi
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
