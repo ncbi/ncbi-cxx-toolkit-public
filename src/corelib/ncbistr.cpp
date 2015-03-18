@@ -3629,6 +3629,8 @@ string NStr::HtmlEncode(const CTempString& str, THtmlEncode flags)
 // Character entity references
 // http://www.w3.org/TR/html4/sgml/entities.html
 // http://www.w3.org/TR/1998/REC-html40-19980424/charset.html#h-5.3
+// only some entities from here were added (those shifted to right):
+// http://dev.w3.org/html5/html-author/charref
 
 static struct tag_HtmlEntities
 {
@@ -3636,11 +3638,38 @@ static struct tag_HtmlEntities
     const char*    s;
 
 } const s_HtmlEntities[] = {
+        {  9, "Tab" }, 
+        { 10, "NewLine" }, 
+        { 33, "excl" }, 
     {   34, "quot" }, 
+        { 35, "num" }, 
+        { 36, "dollar" }, 
+        { 37, "percnt" }, 
     {   38, "amp" }, 
     {   39, "apos" }, 
+        { 40, "lpar" }, 
+        { 41, "rpar" }, 
+        { 42, "ast" }, 
+        { 43, "plus" }, 
+        { 44, "comma" }, 
+        { 46, "period" }, 
+        { 47, "sol" }, 
+        { 58, "colon" }, 
+        { 59, "semi" }, 
     {   60, "lt" }, 
+        { 61, "equals" }, 
     {   62, "gt" }, 
+        { 63, "quest" }, 
+        { 64, "commat" }, 
+        { 91, "lsqb" }, 
+        { 92, "bsol" }, 
+        { 93, "rsqb" }, 
+        { 94, "Hat" }, 
+        { 95, "lowbar" }, 
+        { 96, "grave" }, 
+        {123, "lcub" }, 
+        {124, "verbar" }, 
+        {125, "rcub" }, 
     {  160, "nbsp" }, 
     {  161, "iexcl" }, 
     {  162, "cent" }, 
@@ -3892,6 +3921,16 @@ static struct tag_HtmlEntities
     {    0, 0 }
 };
 
+string NStr::HtmlEntity(TUnicodeSymbol uch)
+{
+    const struct tag_HtmlEntities* p = s_HtmlEntities;
+    for ( ; p->u != 0; ++p) {
+        if (uch == p->u) {
+            return p->s;
+        }
+    }
+    return kEmptyStr;
+}
 
 string NStr::HtmlDecode(const CTempString& str, EEncoding encoding, THtmlDecode* result_flags)
 {

@@ -138,6 +138,11 @@ const SIZE_TYPE NPOS = static_cast<SIZE_TYPE>(-1);
 /////////////////////////////////////////////////////////////////////////////
 // Unicode-related definitions and conversions
 
+/// Unicode character
+typedef Uint4 TUnicodeSymbol;
+/// Unicode string
+typedef basic_string<TUnicodeSymbol> TStringUnicode;
+
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
 
 typedef wchar_t TXChar;
@@ -2577,6 +2582,11 @@ public:
                              EEncoding encoding = eEncoding_Unknown,
                              THtmlDecode* result_flags = NULL);
 
+    /// Returns HTML entity name for this symbol if one exists
+    /// (without leading ampersand and trailing semicolon);
+    /// or empty string if suitable HTML entity was not found
+    static string HtmlEntity(TUnicodeSymbol uch);
+
     /// Encode a string for JSON.
     static string JsonEncode(const CTempString& str);
 
@@ -2897,11 +2907,6 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 ///
 
-
-/// Unicode character
-typedef Uint4 TUnicodeSymbol;
-/// Unicode string
-typedef basic_string<TUnicodeSymbol> TStringUnicode;
 
 #define NCBITOOLKIT_USE_LONG_UCS4 0
 #if NCBITOOLKIT_USE_LONG_UCS4
