@@ -77,12 +77,12 @@ public:
     static SAnnotTypeSelector GetTypeSelector(size_t index);
 
 private:
-    enum {
+    enum ETypeSizes {
         kAnnotType_size   = CSeq_annot::C_Data::e_MaxChoice,
         kFeatType_size    = CSeqFeatData::e_MaxChoice,
         kFeatSubtype_size = CSeqFeatData::eSubtype_max
     };
-    enum {
+    enum EAnnotIndexValues {
         kAnnotIndex_Align,
         kAnnotIndex_Graph,
         kAnnotIndex_Seq_table,
