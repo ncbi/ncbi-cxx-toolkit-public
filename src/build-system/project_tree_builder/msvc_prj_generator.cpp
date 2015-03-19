@@ -823,7 +823,7 @@ void __SET_CLCOMPILE_ELEMENT(
     Container& container, const string& name, const string& value,
     const string& condition = kEmptyStr)
 {
-    if (value.empty()) {
+    if (value.empty() || value == "-") {
         return;
     }
     CRef<msbuild::CClCompile::C_E> e(new msbuild::CClCompile::C_E);
@@ -845,7 +845,7 @@ template<typename Container>
 void __SET_LIB_ELEMENT(
     Container& container, const string& name, const string& value)
 {
-    if (value.empty()) {
+    if (value.empty() || value == "-") {
         return;
     }
     CRef<msbuild::CLib::C_E> e(new msbuild::CLib::C_E);
@@ -861,7 +861,7 @@ template<typename Container>
 void __SET_LINK_ELEMENT(
     Container& container, const string& name, const string& value)
 {
-    if (value.empty()) {
+    if (value.empty() || value == "-") {
         return;
     }
     CRef<msbuild::CLink::C_E> e(new msbuild::CLink::C_E);
@@ -881,7 +881,7 @@ void __SET_RC_ELEMENT(
     Container& container, const string& name, const string& value,
     const string& condition = kEmptyStr)
 {
-    if (value.empty()) {
+    if (value.empty() || value == "-") {
         return;
     }
     CRef<msbuild::CResourceCompile::C_E> e(new msbuild::CResourceCompile::C_E);
@@ -902,7 +902,7 @@ void __SET_NONE_ELEMENT(
     Container& container, const string& name, const string& value,
     const string& condition = kEmptyStr)
 {
-    if (value.empty()) {
+    if (value.empty() || value == "-") {
         return;
     }
     CRef<msbuild::CNone::C_E> e(new msbuild::CNone::C_E);
