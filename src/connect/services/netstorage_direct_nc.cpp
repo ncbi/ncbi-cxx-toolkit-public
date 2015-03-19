@@ -137,13 +137,22 @@ ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
 
 void SNetStorage_NetCacheBlob::Read(string* data)
 {
-    m_NetCacheAPI.ReadData(m_BlobKey, *data);
+    try {
+        m_NetCacheAPI.ReadData(m_BlobKey, *data);
+    }
+    CONVERT_NETSERVICEEXCEPTION("reading");
 }
 
 IReader& SNetStorage_NetCacheBlob::GetReader()
 {
     if (m_State != eReading)
-        x_InitReader();
+        try {
+            x_InitReader();
+        }
+        catch (CNetStorageException& e) {
+            m_DelayedFail.reset(new CDelayedFail(e));
+            return *m_DelayedFail;
+        }
 
     return *m_NetCacheReader;
 }
@@ -203,7 +212,13 @@ ERW_Result SNetStorage_NetCacheBlob::Flush()
 IEmbeddedStreamWriter& SNetStorage_NetCacheBlob::GetWriter()
 {
     if (m_State != eWriting)
-        x_InitWriter();
+        try {
+            x_InitWriter();
+        }
+        catch (CNetStorageException& e) {
+            m_DelayedFail.reset(new CDelayedFail(e));
+            return *m_DelayedFail;
+        }
 
     return *m_NetCacheWriter;
 }
