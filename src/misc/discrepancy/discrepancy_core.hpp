@@ -37,50 +37,42 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
 /// Housekeeping classes
-class CDiscrepancyCaseConstructor;
-
-class CDiscrepancyCaseMngr
+class CDiscrepancyCaseConstructor : public CObject
 {
 protected:
-friend string GetDiscrepancyCaseName(const string&);
-friend CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
-friend bool DiscrepancyCaseNotImplemented(const string&);
-friend vector<string> GetDiscrepancyNames();
-friend vector<string> GetDiscrepancyAliases(const string&);
-friend class CDiscrepancyCaseConstructor;
-friend class CDiscrepancyAlias;
+    virtual CRef<CDiscrepancyCase> Create() const = 0;
+    virtual bool NotImplemented() const { return false;}
+    static void Register(const string& name, CDiscrepancyCaseConstructor* ptr);
     static map<string, CDiscrepancyCaseConstructor*> sm_Table;
     static map<string, string> sm_AliasTable;
     static map<string, vector<string> > sm_AliasListTable;
     static string GetDiscrepancyCaseName(const string&);
     static const CDiscrepancyCaseConstructor* GetDiscrepancyCaseConstructor(const string&);
-};
-
-
-class CDiscrepancyCaseConstructor
-{
-protected:
-    virtual CRef<CDiscrepancyCase> Create() const = 0;
-    virtual bool NotImplemented() const { return false;}
-    static void Register(const string& name, CDiscrepancyCaseConstructor* ptr)
-    {
-        CDiscrepancyCaseMngr::sm_Table[name] = ptr;
-        CDiscrepancyCaseMngr::sm_AliasListTable[name] = vector<string>();
-    }
-friend class CDiscrepancyCaseMngr;
+friend string GetDiscrepancyCaseName(const string&);
 friend CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
 friend bool DiscrepancyCaseNotImplemented(const string&);
+friend vector<string> GetDiscrepancyNames();
+friend vector<string> GetDiscrepancyAliases(const string&);
+friend class CDiscrepancyAlias;
 };
 
 
-class CDiscrepancyAlias
+inline void CDiscrepancyCaseConstructor::Register(const string& name, CDiscrepancyCaseConstructor* ptr)
+{
+    sm_Table[name] = ptr;
+    sm_AliasListTable[name] = vector<string>();
+}
+
+
+class CDiscrepancyAlias : public CDiscrepancyCaseConstructor
 {
 protected:
+    CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(0);}
     static void Register(const string& name, const string& alias)
     {
-        if (CDiscrepancyCaseMngr::sm_AliasTable.find(alias) != CDiscrepancyCaseMngr::sm_AliasTable.end()) return;
-        CDiscrepancyCaseMngr::sm_AliasTable[alias] = name;
-        CDiscrepancyCaseMngr::sm_AliasListTable[name].push_back(alias);
+        if (CDiscrepancyCaseConstructor::sm_AliasTable.find(alias) != CDiscrepancyCaseConstructor::sm_AliasTable.end()) return;
+        CDiscrepancyCaseConstructor::sm_AliasTable[alias] = name;
+        CDiscrepancyCaseConstructor::sm_AliasListTable[name].push_back(alias);
     }
 };
 
