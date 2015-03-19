@@ -384,7 +384,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
         }
         c = line[0];
 
-        if (c == '!'  ||  c == '#') {
+        if (c == '!'  ||  c == '#' || c == ';') {
             // no content, just a comment or blank line
             continue;
         } else if (need_defline) {

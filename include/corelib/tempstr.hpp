@@ -559,7 +559,7 @@ inline
 CTempString::size_type CTempString::find_last_of(const CTempString& match,
                                                  size_type pos) const
 {
-    if (match.length()  &&  match.length() <= length() ) {
+    if (match.length()) {
         if (pos >= length()) {
             pos = length() - 1;
         }
@@ -589,7 +589,7 @@ inline
 CTempString::size_type CTempString::find_last_not_of(const CTempString& match,
                                                      size_type pos) const
 {
-    if (match.length()  &&  match.length() <= length() ) {
+    if (match.length()) {
         if (pos >= length()) {
             pos = length() - 1;
         }

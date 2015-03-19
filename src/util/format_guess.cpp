@@ -1220,6 +1220,21 @@ CFormatGuess::TestFormatTable(
 }
 
 //  -----------------------------------------------------------------------------
+void SkipCommentAndBlank(CTempString &text)
+{
+	const CTempString COMMENT_SYMBOLS(";#!");
+	const CTempString NEW_LINE_SYMBOLS("\r\n");
+	while (true) {
+		text = NStr::TruncateSpaces_Unsafe(text, NStr::eTrunc_Begin);
+		if ( COMMENT_SYMBOLS.find(text[0]) != CTempString::npos ) {
+			CTempString::size_type pos = text.find_first_of(NEW_LINE_SYMBOLS, 1);
+			text = text.substr(pos);
+		} else {
+			break;
+		}
+	}
+}
+
 bool
 CFormatGuess::TestFormatFasta(
     EMode /* not used */ )
@@ -1229,7 +1244,9 @@ CFormatGuess::TestFormatFasta(
     }
 
     // reject obvious misfits:
-    if ( m_iTestDataSize == 0 || m_pTestBuffer[0] != '>' ) {
+	CTempString header(m_pTestBuffer, m_iTestDataSize);
+	SkipCommentAndBlank(header);
+    if ( m_iTestDataSize == 0 || header[0] != '>' ) {
         return false;
     }
     if ( m_iStatsCountData == 0 ) {

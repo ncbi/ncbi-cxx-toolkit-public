@@ -619,7 +619,7 @@ public:
 
     // -- BasicCleanup
     // getters
-    const bool BasicCleanup(void) const { return m_BasicCleanup; }
+    bool BasicCleanup(void) const { return m_BasicCleanup; }
     // setters
     void BasicCleanup(bool clean) { m_BasicCleanup = clean; }
 
