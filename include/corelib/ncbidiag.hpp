@@ -450,6 +450,14 @@ inline void CheckErrSubcodeX(int)
 #define NCBI_CHECK_ERR_SUBCODE_X(subcode)   \
     NCBI_CHECK_ERR_SUBCODE_X_NAME(NCBI_USE_ERRCODE_X, subcode)
 
+/// Pass subcode as argument with check of its validity for given error code.
+#define NCBI_ERR_SUBCODE_X_NAME(name, subcode)                  \
+    (NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode), subcode)
+
+/// Pass subcode as argument with check of its validity for current error code.
+#define NCBI_ERR_SUBCODE_X(subcode)                     \
+    (NCBI_CHECK_ERR_SUBCODE_X(subcode), subcode)
+
 #if defined(NCBI_COMPILER_ICC) || defined(NCBI_COMPILER_MIPSPRO)
 
 /// Additional not implemented template structure for use in
@@ -539,16 +547,18 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 /// confuse default error codes used in sources where this header is included.
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, ERR_POST_X
-#define ERR_POST_XX(error_name, err_subcode, message)                      \
-    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
-      ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
+#define ERR_POST_XX(error_name, err_subcode, message)                   \
+    ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name),                        \
+                NCBI_ERR_SUBCODE_X_NAME(error_name, err_subcode),       \
+                message)
 
-#define LOG_POST_XX(error_name, err_subcode, message)                      \
+#define LOG_POST_XX(error_name, err_subcode, message)   \
     ERR_POST_XX(error_name, err_subcode, message)
 
-#define ERR_FATAL_XX(error_name, err_subcode, message)                     \
-    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
-      ERR_FATAL_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
+#define ERR_FATAL_XX(error_name, err_subcode, message)                  \
+    ERR_FATAL_EX(NCBI_ERRCODE_X_NAME(error_name),                       \
+                 NCBI_ERR_SUBCODE_X_NAME(error_name, err_subcode),      \
+                 message)
 
 /// Common code for making log or error posting only given number of times
 /// during program execution. This macro MUST not be used outside
