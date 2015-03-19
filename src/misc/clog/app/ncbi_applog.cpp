@@ -555,13 +555,13 @@ int CNcbiApplogApp::Redirect()
         if (is_start_app) {
             // Global SID
             if (need_sid) {
-                if (ev = NcbiLogP_GetSessionID_Env()) {
+                if ((ev = NcbiLogP_GetSessionID_Env()) != NULL) {
                     s_args += string(" \"-sid=") + ev + "\"";
                 }
             }
             // Global PHID
             if (need_phid) {
-                if (ev = NcbiLogP_GetHitID_Env()) {
+                if ((ev = NcbiLogP_GetHitID_Env()) != NULL) {
                     s_args += string(" \"-phid=") + ev + "\"";
                 }
             }
