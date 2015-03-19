@@ -74,6 +74,8 @@ static void s_TestMisc(void)
     {{
         assert(CTime::MonthNameToNum("Jan")              == CTime::eJanuary); 
         assert(CTime::MonthNameToNum("January")          == 1); 
+        assert(CTime::MonthNameToNum("JAN")              == CTime::eJanuary); 
+        assert(CTime::MonthNameToNum("JANUARY")          == 1); 
         assert(CTime::MonthNameToNum("Dec")              == CTime::eDecember); 
         assert(CTime::MonthNameToNum("December")         == 12); 
         assert(CTime::MonthNumToName(CTime::eJanuary)    == "January"); 
@@ -84,6 +86,8 @@ static void s_TestMisc(void)
 
         assert(CTime::DayOfWeekNameToNum("Sun")          == CTime::eSunday); 
         assert(CTime::DayOfWeekNameToNum("Sunday")       == 0); 
+        assert(CTime::DayOfWeekNameToNum("SUN")          == CTime::eSunday); 
+        assert(CTime::DayOfWeekNameToNum("SUNDAY")       == 0); 
         assert(CTime::DayOfWeekNameToNum("Sat")          == CTime::eSaturday);
         assert(CTime::DayOfWeekNameToNum("Saturday")     == 6); 
         assert(CTime::DayOfWeekNumToName(CTime::eSunday) == "Sunday"); 

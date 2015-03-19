@@ -1200,7 +1200,7 @@ int CTime::MonthNameToNum(const string& month)
 {
     const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull;
     for (int i = 0; i < 12; ++i) {
-        if (month == name[i]) {
+        if ( NStr::CompareNocase(month, name[i]) == 0 ) {
             return i+1;
         }
     }
@@ -1229,7 +1229,7 @@ int CTime::DayOfWeekNameToNum(const string& day)
 {
     const char** name = day.length() == 3 ? kWeekdayAbbr : kWeekdayFull;
     for (int i = 0; i <= 6; ++i) {
-        if (day == name[i]) {
+        if (NStr::CompareNocase(day, name[i]) == 0) {
             return i;
         }
     }
