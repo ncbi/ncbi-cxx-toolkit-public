@@ -46,24 +46,13 @@ BEGIN_SCOPE(objects)
 
 // All ranges are in format [x, y)
 
-const size_t kAnnotTypeMax = CSeq_annot::C_Data::e_MaxChoice - 1;
-const size_t kFeatTypeMax = CSeqFeatData::e_MaxChoice - 1;
-const size_t kFeatSubtypeMax = CSeqFeatData::eSubtype_max;
-const size_t kAlignIndex = 0;
-const size_t kGraphIndex = 1;
-const size_t kTableIndex = 2;
-const size_t kFtableIndex = 3;
-
-CAnnotType_Index::TIndexRangeTable CAnnotType_Index::sm_AnnotTypeIndexRange;
-
-CAnnotType_Index::TIndexRangeTable CAnnotType_Index::sm_FeatTypeIndexRange;
-
-CAnnotType_Index::TIndexTable CAnnotType_Index::sm_FeatSubtypeIndex;
-CAnnotType_Index::TSubtypes CAnnotType_Index::sm_IndexSubtype;
-
 DEFINE_STATIC_FAST_MUTEX(sm_TablesInitializeMutex);
 bool CAnnotType_Index::sm_TablesInitialized = false;
 
+Uint1 CAnnotType_Index::sm_AnnotTypeIndexRange[CAnnotType_Index::kAnnotType_size][2];
+Uint1 CAnnotType_Index::sm_FeatTypeIndexRange[CAnnotType_Index::kFeatType_size][2];
+Uint1 CAnnotType_Index::sm_FeatSubtypeIndex[CAnnotType_Index::kFeatSubtype_size];
+Uint1 CAnnotType_Index::sm_IndexSubtype[CAnnotType_Index::kAnnotIndex_size];
 
 void CAnnotType_Index::x_InitIndexTables(void)
 {
@@ -73,56 +62,67 @@ void CAnnotType_Index::x_InitIndexTables(void)
     }
     // Check flag, lock tables
     _ASSERT(!sm_TablesInitialized);
-    sm_AnnotTypeIndexRange.resize(kAnnotTypeMax + 1);
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].first = 0;
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] =
-        TIndexRange(kAlignIndex, kAlignIndex+1);
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] =
-        TIndexRange(kGraphIndex, kGraphIndex+1);
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Seq_table] =
-        TIndexRange(kTableIndex, kTableIndex+1);
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first =
-        kFtableIndex;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set][0] = 0;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align][0] = kAnnotIndex_Align;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align][1] = kAnnotIndex_Align+1;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph][0] = kAnnotIndex_Graph;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph][1] = kAnnotIndex_Graph+1;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Seq_table][0] = kAnnotIndex_Seq_table;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Seq_table][1] = kAnnotIndex_Seq_table+1;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable][0] = kAnnotIndex_Ftable;
 
-    vector< vector<size_t> > type_subtypes(kFeatTypeMax+1);
-    for ( size_t subtype = 0; subtype <= kFeatSubtypeMax; ++subtype ) {
-        size_t type = CSeqFeatData::
-            GetTypeFromSubtype(CSeqFeatData::ESubtype(subtype));
+    vector< vector<size_t> > type_subtypes(kFeatType_size);
+    for ( size_t subtype = 0; subtype < kFeatSubtype_size; ++subtype ) {
+        size_t type =
+            CSeqFeatData::GetTypeFromSubtype(CSeqFeatData::ESubtype(subtype));
         if ( type != CSeqFeatData::e_not_set ||
              subtype == CSeqFeatData::eSubtype_bad ) {
             type_subtypes[type].push_back(subtype);
         }
     }
 
-    sm_FeatTypeIndexRange.resize(kFeatTypeMax + 1);
-    sm_FeatSubtypeIndex.resize(kFeatSubtypeMax + 1);
-
-    size_t cur_idx = kFtableIndex;
-    sm_IndexSubtype.assign(cur_idx, CSeqFeatData::eSubtype_bad);
-    for ( size_t type = 0; type <= kFeatTypeMax; ++type ) {
-        sm_FeatTypeIndexRange[type].first = cur_idx;
-        if ( type != CSeqFeatData::e_not_set ) {
-            sm_FeatTypeIndexRange[type].second =
-                cur_idx + type_subtypes[type].size();
-        }
+    size_t cur_idx = kAnnotIndex_Ftable;
+    fill_n(sm_IndexSubtype, cur_idx,
+           CSeqFeatData::eSubtype_bad);
+    for ( size_t type = 0; type < kFeatType_size; ++type ) {
+        sm_FeatTypeIndexRange[type][0] = cur_idx;
         ITERATE ( vector<size_t>, it, type_subtypes[type] ) {
-            sm_FeatSubtypeIndex[*it] = cur_idx++;
-            sm_IndexSubtype.push_back(CSeqFeatData::ESubtype(*it));
+            _ASSERT(cur_idx < kAnnotIndex_size);
+            sm_FeatSubtypeIndex[*it] = cur_idx;
+            sm_IndexSubtype[cur_idx] = *it;
+            ++cur_idx;
         }
+        sm_FeatTypeIndexRange[type][1] = cur_idx;
     }
 
-    sm_FeatTypeIndexRange[CSeqFeatData::e_not_set].second = cur_idx;
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].second = cur_idx;
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].second = cur_idx;
+    sm_FeatTypeIndexRange[CSeqFeatData::e_not_set][1] = cur_idx;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable][1] = cur_idx;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set][1] = cur_idx;
+    _ASSERT(cur_idx <= kAnnotIndex_size);
+    fill(sm_IndexSubtype+cur_idx, sm_IndexSubtype+kAnnotIndex_size,
+         CSeqFeatData::eSubtype_bad);
     
     sm_TablesInitialized = true;
 
 #if defined(_DEBUG)
-    for ( size_t type = 1; type <= kFeatTypeMax; ++type ) {
+    _TRACE("Index size: "<<cur_idx<<" of "<<kAnnotIndex_size);
+    _ASSERT(GetAnnotTypeRange(CSeq_annot::C_Data::e_not_set) == TIndexRange(0, cur_idx));
+    _ASSERT(GetAnnotTypeRange(CSeq_annot::C_Data::e_Locs) == TIndexRange(0, 0));
+    _ASSERT(GetAnnotTypeRange(CSeq_annot::C_Data::e_Ids) == TIndexRange(0, 0));
+    //_ASSERT(GetAnnotTypeRange(CSeq_annot::C_Data::e_MaxChoice) == TIndexRange(0, 0));
+    _ASSERT(GetFeatTypeRange(CSeqFeatData::e_not_set) == TIndexRange(kAnnotIndex_Ftable, cur_idx));
+    //_ASSERT(GetFeatTypeRange(CSeqFeatData::e_MaxChoice) == TIndexRange(0, 0));
+    _ASSERT(GetSubtypeIndex(CSeqFeatData::eSubtype_bad) == kAnnotIndex_Ftable);
+    _ASSERT(GetSubtypeIndex(CSeqFeatData::eSubtype_max) == 0);
+    _ASSERT(GetSubtypeIndex(CSeqFeatData::eSubtype_any) == 0);
+    for ( size_t type = 0; type < kFeatType_size; ++type ) {
         CSeqFeatData::E_Choice feat_type = CSeqFeatData::E_Choice(type);
         TIndexRange range = GetFeatTypeRange(feat_type);
         _TRACE("type: "<<feat_type
                << " range: "<<range.first<<"-"<<range.second);
+        if ( type == 0 ) {
+            continue;
+        }
         for ( size_t ind = range.first; ind < range.second; ++ind ) {
             SAnnotTypeSelector sel = GetTypeSelector(ind);
             _TRACE("index: "<<ind
@@ -198,11 +198,14 @@ SAnnotTypeSelector CAnnotType_Index::GetTypeSelector(size_t index)
 {
     SAnnotTypeSelector sel;
     switch (index) {
-    case 0:
+    case kAnnotIndex_Align:
         sel.SetAnnotType(CSeq_annot::C_Data::e_Align);
         break;
-    case 1:
+    case kAnnotIndex_Graph:
         sel.SetAnnotType(CSeq_annot::C_Data::e_Graph);
+        break;
+    case kAnnotIndex_Seq_table:
+        sel.SetAnnotType(CSeq_annot::C_Data::e_Seq_table);
         break;
     default:
         sel.SetFeatSubtype(GetSubtypeForIndex(index));

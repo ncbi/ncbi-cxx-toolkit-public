@@ -77,9 +77,18 @@ public:
     static SAnnotTypeSelector GetTypeSelector(size_t index);
 
 private:
-    typedef vector<TIndexRange> TIndexRangeTable;
-    typedef vector<size_t>      TIndexTable;
-    typedef vector<CSeqFeatData::ESubtype> TSubtypes;
+    enum {
+        kAnnotType_size   = CSeq_annot::C_Data::e_MaxChoice,
+        kFeatType_size    = CSeqFeatData::e_MaxChoice,
+        kFeatSubtype_size = CSeqFeatData::eSubtype_max
+    };
+    enum {
+        kAnnotIndex_Align,
+        kAnnotIndex_Graph,
+        kAnnotIndex_Seq_table,
+        kAnnotIndex_Ftable,
+        kAnnotIndex_size = kAnnotIndex_Ftable + kFeatSubtype_size
+    };
 
     static void x_InitIndexTables(void);
 
@@ -87,13 +96,13 @@ private:
     static bool sm_TablesInitialized;
     // Table: annot type -> index
     // (for Ftable it's just the first feature type index)
-    static TIndexRangeTable sm_AnnotTypeIndexRange;
+    static Uint1 sm_AnnotTypeIndexRange[kAnnotType_size][2];
     // Table: feat type -> index range, [)
-    static TIndexRangeTable sm_FeatTypeIndexRange;
+    static Uint1 sm_FeatTypeIndexRange[kFeatType_size][2];
     // Table feat subtype -> index
-    static TIndexTable sm_FeatSubtypeIndex;
+    static Uint1 sm_FeatSubtypeIndex[kFeatSubtype_size];
     // Table index -> subtype
-    static TSubtypes sm_IndexSubtype;
+    static Uint1 sm_IndexSubtype[kAnnotIndex_size];
 };
 
 
@@ -111,12 +120,15 @@ CAnnotType_Index::TIndexRange
 CAnnotType_Index::GetAnnotTypeRange(CSeq_annot::C_Data::E_Choice type)
 {
     Initialize();
-    if ( size_t(type) < sm_AnnotTypeIndexRange.size() ) {
-        return sm_AnnotTypeIndexRange[type];
+    size_t start, end;
+    if ( size_t(type) < kAnnotType_size ) {
+        start = sm_AnnotTypeIndexRange[type][0];
+        end = sm_AnnotTypeIndexRange[type][1];
     }
     else {
-        return TIndexRange(0, 0);
+        start = end = 0;
     }
+    return TIndexRange(start, end);
 }
 
 
@@ -125,12 +137,15 @@ CAnnotType_Index::TIndexRange
 CAnnotType_Index::GetFeatTypeRange(CSeqFeatData::E_Choice type)
 {
     Initialize();
-    if ( size_t(type) < sm_FeatTypeIndexRange.size() ) {
-        return sm_FeatTypeIndexRange[type];
+    size_t start, end;
+    if ( size_t(type) < kFeatType_size ) {
+        start = sm_FeatTypeIndexRange[type][0];
+        end = sm_FeatTypeIndexRange[type][1];
     }
     else {
-        return TIndexRange(0, 0);
+        start = end = 0;
     }
+    return TIndexRange(start, end);
 }
 
 
@@ -138,7 +153,7 @@ inline
 size_t CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::ESubtype subtype)
 {
     Initialize();
-    if ( size_t(subtype) < sm_FeatSubtypeIndex.size() ) {
+    if ( size_t(subtype) < kFeatSubtype_size ) {
         return sm_FeatSubtypeIndex[subtype];
     }
     else {
@@ -151,8 +166,8 @@ inline
 CSeqFeatData::ESubtype CAnnotType_Index::GetSubtypeForIndex(size_t index)
 {
     Initialize();
-    if ( index < sm_IndexSubtype.size() ) {
-        return sm_IndexSubtype[index];
+    if ( index < kAnnotIndex_size ) {
+        return CSeqFeatData::ESubtype(sm_IndexSubtype[index]);
     }
     else {
         return CSeqFeatData::eSubtype_bad;
