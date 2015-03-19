@@ -68,6 +68,8 @@ string SNSAlertAttributes::Serialize(void) const
            "OK:acknowledged_time: " + acknowledged + "\n"
            "OK:on: " + NStr::BoolToString(m_On) + "\n"
            "OK:count: " + NStr::NumericToString(m_Count) + "\n"
+           "OK:count_since_acknowledge: " +
+                          NStr::NumericToString(m_CountSinceAck) + "\n"
            "OK:user: " + m_User + "\n"
            "OK:message: \"" + NStr::PrintableString(m_Message) + "\"";
 }
@@ -86,6 +88,7 @@ void CNSAlerts::Register(enum EAlertType  alert_type,
         found->second.m_LastDetectedTimestamp = CNSPreciseTime::Current();
         found->second.m_On = true;
         ++found->second.m_Count;
+        ++found->second.m_CountSinceAck;
         found->second.m_Message = message;
         return;
     }
@@ -125,6 +128,7 @@ enum EAlertAckResult CNSAlerts::Acknowledge(enum EAlertType alert_type,
     found->second.m_AcknowledgedTimestamp = CNSPreciseTime::Current();
     found->second.m_On = false;
     found->second.m_User = user;
+    found->second.m_CountSinceAck = 0;
     return eAcknowledged;
 }
 
@@ -164,7 +168,9 @@ string CNSAlerts::GetURLEncoded(void) const
         result += "alert_" + x_TypeToId(k->first) + "=";
         if (!k->second.m_On)
             result += "-";
-        result += NStr::NumericToString(k->second.m_Count);
+        result += NStr::NumericToString(k->second.m_CountSinceAck) +
+                  "/" +
+                  NStr::NumericToString(k->second.m_Count);
     }
     return result;
 }

@@ -70,13 +70,15 @@ struct SNSAlertAttributes
     CNSPreciseTime      m_LastDetectedTimestamp;
     CNSPreciseTime      m_AcknowledgedTimestamp;
     bool                m_On;
-    size_t              m_Count;
+    size_t              m_Count;            // total, i.e. since startup
+    size_t              m_CountSinceAck;    // since acknowledge
     string              m_User;
     string              m_Message;
 
     SNSAlertAttributes() :
         m_LastDetectedTimestamp(CNSPreciseTime::Current()),
-        m_AcknowledgedTimestamp(), m_On(true), m_Count(1)
+        m_AcknowledgedTimestamp(), m_On(true), m_Count(1),
+        m_CountSinceAck(1)
     {}
 
     string Serialize(void) const;
