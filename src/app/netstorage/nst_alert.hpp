@@ -59,7 +59,8 @@ enum EAlertType {
     eConfigOutOfSync = 5,
     eDecryptDBPass = 6,
     eDecryptAdminNames = 7,
-    eDBConnect = 8
+    eDBConnect = 8,
+    eDecryptInNetStorageAPI = 9
 };
 
 enum EAlertAckResult {
@@ -74,7 +75,7 @@ struct SNSTAlertAttributes
     CNSTPreciseTime     m_LastDetectedTimestamp;
     CNSTPreciseTime     m_AcknowledgedTimestamp;
     bool                m_On;
-    size_t              m_Count;
+    size_t              m_Count;    // total
     string              m_User;
     string              m_Message;
 

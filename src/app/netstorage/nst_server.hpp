@@ -157,6 +157,16 @@ private:
 
     CNSTClientRegistry          m_ClientRegistry;
 
+    // Filetrack API keys support - decrypt may fail
+private:
+    bool                        m_NeedDecryptCacheReset;
+    CNSTPreciseTime             m_LastDecryptCacheReset;
+
+public:
+    void  ResetDecryptCacheIfNeed(void);
+    void  RegisterNetStorageAPIDecryptError(const string &  message);
+    void  ReportNetStorageAPIDecryptSuccess(void);
+
 private:
     string  x_GenerateGUID(void) const;
     set<string> x_GetAdminClientNames(const string &  client_names);

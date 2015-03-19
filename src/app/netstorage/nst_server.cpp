@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/resource_info.hpp>
 
 #include "nst_server.hpp"
 #include "nst_service_thread.hpp"
@@ -51,7 +52,9 @@ CNetStorageServer::CNetStorageServer()
      m_Log(true),
      m_SessionID("s" + x_GenerateGUID()),
      m_NetworkTimeout(0),
-     m_StartTime(CNSTPreciseTime::Current())
+     m_StartTime(CNSTPreciseTime::Current()),
+     m_NeedDecryptCacheReset(false),
+     m_LastDecryptCacheReset(0.0)
 {
     sm_netstorage_server = this;
 }
@@ -150,6 +153,35 @@ CNetStorageServer *  CNetStorageServer::GetInstance(void)
 
 void CNetStorageServer::Exit()
 {}
+
+
+// Resets the decrypt keys cache if necessary
+void CNetStorageServer::ResetDecryptCacheIfNeed(void)
+{
+    const CNSTPreciseTime   k_ResetInterval(100.0);
+
+    if (m_NeedDecryptCacheReset) {
+        CNSTPreciseTime     current = CNSTPreciseTime::Current();
+        if ((current - m_LastDecryptCacheReset) >= k_ResetInterval) {
+            CNcbiEncrypt::Reload();
+            m_LastDecryptCacheReset = current;
+        }
+    }
+}
+
+
+void CNetStorageServer::RegisterNetStorageAPIDecryptError(
+                                                const string &  message)
+{
+    m_NeedDecryptCacheReset = true;
+    RegisterAlert(eDecryptInNetStorageAPI, message);
+}
+
+
+void CNetStorageServer::ReportNetStorageAPIDecryptSuccess(void)
+{
+    m_NeedDecryptCacheReset = false;
+}
 
 
 string  CNetStorageServer::x_GenerateGUID(void) const

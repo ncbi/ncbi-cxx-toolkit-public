@@ -2268,17 +2268,27 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
         string      object_loc = message.GetString("ObjectLoc");
         x_CheckObjectLoc(object_loc);
 
-        CDirectNetStorage   storage(
+        try {
+            // There could be a decryption exception so there is this try {}
+            m_Server->ResetDecryptCacheIfNeed();
+            CDirectNetStorage   storage(
                               app->GetConfig(),
                               CNetICacheClient(CNetICacheClient::eAppRegistry),
                               m_Server->GetCompoundIDPool(), kEmptyStr);
-        CDirectNetStorageObject object(storage.Open(object_loc));
+            m_Server->ReportNetStorageAPIDecryptSuccess();
 
-        if (m_ConnContext.NotNull())
-            GetDiagContext().Extra()
-                .Print("ObjectKey", object.Locator().GetUniqueKey());
+            CDirectNetStorageObject object(storage.Open(object_loc));
 
-        return object;
+            if (m_ConnContext.NotNull())
+                GetDiagContext().Extra()
+                    .Print("ObjectKey", object.Locator().GetUniqueKey());
+
+            return object;
+        } catch (const CRegistryException &  ex) {
+            if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
+                m_Server->RegisterNetStorageAPIDecryptError(ex.what());
+            throw;
+        }
     }
 
     // Take the arguments
@@ -2294,18 +2304,29 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
     CNetICacheClient    icache_client(icache_settings.m_ServiceName,
                                       icache_settings.m_CacheName, client_name);
 
-    CDirectNetStorageByKey    storage(app->GetConfig(), icache_client,
-                                      m_Server->GetCompoundIDPool(),
-                                      user_key.m_AppDomain);
-    CDirectNetStorageObject   object(storage.Open(user_key.m_UniqueID, flags));
+    try {
+        // There could be a decryption exception so there is this try {}
+        m_Server->ResetDecryptCacheIfNeed();
+        CDirectNetStorageByKey    storage(app->GetConfig(), icache_client,
+                                          m_Server->GetCompoundIDPool(),
+                                          user_key.m_AppDomain);
+        m_Server->ReportNetStorageAPIDecryptSuccess();
 
-    // Log if needed
-    if (m_ConnContext.NotNull()) {
-        GetDiagContext().Extra()
-            .Print("ObjectKey", object.Locator().GetUniqueKey());
+        CDirectNetStorageObject   object(storage.Open(user_key.m_UniqueID,
+                                                      flags));
+
+        // Log if needed
+        if (m_ConnContext.NotNull()) {
+            GetDiagContext().Extra()
+                .Print("ObjectKey", object.Locator().GetUniqueKey());
+        }
+
+        return object;
+    } catch (const CRegistryException &  ex) {
+        if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
+            m_Server->RegisterNetStorageAPIDecryptError(ex.what());
+        throw;
     }
-
-    return object;
 }
 
 
@@ -2395,11 +2416,22 @@ CNetStorageHandler::x_CreateObjectStream(
                 icache_settings.m_CacheName, m_Client);
     }
 
-    CNcbiApplication *  app = CNcbiApplication::Instance();
-    CDirectNetStorage   net_storage(app->GetConfig(), icache_client,
-                                    m_Server->GetCompoundIDPool(),
-                                    icache_settings.m_CacheName);
-    return net_storage.Create(m_Service, m_DBObjectID, flags);
+    try {
+        // There could be a decryption exception so there is this try {}
+        CNcbiApplication *  app = CNcbiApplication::Instance();
+
+        m_Server->ResetDecryptCacheIfNeed();
+        CDirectNetStorage   net_storage(app->GetConfig(), icache_client,
+                                        m_Server->GetCompoundIDPool(),
+                                        icache_settings.m_CacheName);
+        m_Server->ReportNetStorageAPIDecryptSuccess();
+
+        return net_storage.Create(m_Service, m_DBObjectID, flags);
+    } catch (const CRegistryException &  ex) {
+        if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
+            m_Server->RegisterNetStorageAPIDecryptError(ex.what());
+        throw;
+    }
 }
 
 
