@@ -138,7 +138,7 @@ public:
     const string&    GetUserName(void)         const { return m_UserName;      }
     const string&    GetGroupName(void)        const { return m_GroupName;     }
     const string&    GetComment(void)          const { return m_Comment;       }
-    const size_t     GetIndex(void)            const { return m_Index;         }
+    size_t           GetIndex(void)            const { return m_Index;         }
     time_t           GetModificationTime(void) const { return m_Stat.st_mtime; }
     time_t           GetLastAccessTime(void)   const { return m_Stat.st_atime; }
     time_t           GetCreationTime(void)     const { return m_Stat.st_ctime; }
