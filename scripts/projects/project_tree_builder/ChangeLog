@@ -282,3 +282,8 @@ version 3.13.0
 Fixed errors in library dependency graph loading.
 Added support of external scripts on XCode.
 
+March 19, 2015
+Added possibility of customization of BINPATH in component description
+Corrected project dependecies analysis to exclude unneeded projects
+Changed the way Microsoft Visual Studio project are generated to use property sheets.
+
