@@ -3751,6 +3751,7 @@ static EIO_Status s_Close_(SOCK sock, int abort)
     BUF_Erase(sock->r_buf);
     if (sock->type == eDatagram) {
         sock->r_len = 0;
+        status = eIO_Success;
         BUF_Erase(sock->w_buf);
     } else if (abort  ||  !sock->keep) {
         int/*bool*/ linger = 0/*false*/;
