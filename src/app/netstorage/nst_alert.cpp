@@ -66,6 +66,7 @@ CJsonNode SNSTAlertAttributes::Serialize(void) const
 
     alert.SetBoolean("Acknowledged", !m_On);
     alert.SetInteger("Count", m_Count);
+    alert.SetInteger("CountSinceAcknowledge", m_CountSinceAck);
     alert.SetString("LastOccured",
                     NST_FormatPreciseTime(m_LastDetectedTimestamp));
     if (double(m_AcknowledgedTimestamp) == 0.0)
@@ -95,6 +96,7 @@ void CNSTAlerts::Register(enum EAlertType alert_type,
         found->second.m_On = true;
         found->second.m_Message = message;
         ++found->second.m_Count;
+        ++found->second.m_CountSinceAck;
         return;
     }
 
@@ -133,6 +135,7 @@ enum EAlertAckResult CNSTAlerts::Acknowledge(enum EAlertType alert_type,
     found->second.m_AcknowledgedTimestamp = CNSTPreciseTime::Current();
     found->second.m_On = false;
     found->second.m_User = user;
+    found->second.m_CountSinceAck = 0;
     return eAcknowledged;
 }
 
