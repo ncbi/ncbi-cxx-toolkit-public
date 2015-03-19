@@ -47,7 +47,7 @@ string Identifier(const string& typeName, bool capitalize)
             s += capitalize? toupper((unsigned char)(*i)): *i;
         } else {
             string ent(NStr::HtmlEntity((unsigned char)(*i)));
-            if (*i != '_' && !ent.empty()) {
+            if (!ent.empty()) {
                 s += ent;
             } else {
                 s += '_';
@@ -62,7 +62,7 @@ string Identifier(const string& typeName, bool capitalize)
                 c = '_';
             } else if (!isalnum((unsigned char)c)) {
                 string ent(NStr::HtmlEntity((unsigned char)(*i)));
-                if (*i != '_' && !ent.empty()) {
+                if (!ent.empty()) {
                     s += ent;
                     continue;
                 }

@@ -1200,7 +1200,7 @@ CDataType* DTDParser::TypesBlock(
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         if (*i == s_SpecialName) {
             AutoPtr<CDataType> stype(new CStringDataType());
-            AutoPtr<CDataMember> smember(new CDataMember("_CharData", stype));
+            AutoPtr<CDataMember> smember(new CDataMember("-CharData", stype));
             smember->SetNotag();
             smember->SetNoPrefix();
             container->AddMember(smember);
@@ -1209,7 +1209,7 @@ CDataType* DTDParser::TypesBlock(
         DTDElement& refNode = m_MapElement[*i];
         if (refNode.GetName().empty()) {
             if (refNode.GetType() == DTDElement::eAny) {
-                refNode.SetName("_Any");
+                refNode.SetName("-Any");
             } else {
                 ERR_POST_X(7, Warning << "Element with no name: " << *i);
                 refNode.SetName(*i);
