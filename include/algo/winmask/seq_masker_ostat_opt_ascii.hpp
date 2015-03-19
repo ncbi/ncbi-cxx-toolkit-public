@@ -46,6 +46,9 @@ CSeqMaskerOstatOptAscii : public CSeqMaskerOstatOpt
 {
     public:
 
+        /// Format version.
+        static CSeqMaskerVersion FormatVersion;
+
         /**
          **\brief Object constructor.
          **\param name output file name
@@ -68,6 +71,11 @@ CSeqMaskerOstatOptAscii : public CSeqMaskerOstatOpt
          **\brief Object destructor.
          **/
         virtual ~CSeqMaskerOstatOptAscii() {}
+
+        /** Get actual counts format version. */
+        virtual CSeqMaskerVersion const & GetStatFmtVersion() const { 
+            return FormatVersion; 
+        }
 
     protected:
 

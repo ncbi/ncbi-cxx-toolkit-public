@@ -56,6 +56,10 @@
 #include <algo/winmask/win_mask_util.hpp>
 #include <algo/winmask/win_mask_counts_converter.hpp>
 #include <algo/winmask/win_mask_config.hpp>
+#include <algo/winmask/seq_masker_ostat_ascii.hpp>
+#include <algo/winmask/seq_masker_ostat_bin.hpp>
+#include <algo/winmask/seq_masker_ostat_opt_ascii.hpp>
+#include <algo/winmask/seq_masker_ostat_opt_bin.hpp>
 #include "win_mask_app.hpp"
 #include "win_mask_sdust_masker.hpp"
 
@@ -77,10 +81,18 @@ CWinMaskApplication::CWinMaskApplication() {
     version->SetVersionInfo( WIN_MASK_APP_VER_MAJOR,
                              WIN_MASK_APP_VER_MINOR,
                              WIN_MASK_APP_VER_PATCH );
-    version->AddComponentVersion( 
-            new CComponentVersionInfo( CSeqMasker::AlgoVersion ) );
-    version->AddComponentVersion( 
-            new CComponentVersionInfo( CSeqMaskerOstat::FormatVersion ) );
+    version->AddComponentVersion( new CSeqMaskerVersion( 
+                CSeqMasker::AlgoVersion ) );
+    version->AddComponentVersion( new CSeqMaskerVersion( 
+                CSeqMaskerOstat::StatAlgoVersion ) );
+    version->AddComponentVersion( new CSeqMaskerVersion( 
+                CSeqMaskerOstatAscii::FormatVersion ) );
+    version->AddComponentVersion( new CSeqMaskerVersion( 
+                CSeqMaskerOstatBin::FormatVersion ) );
+    version->AddComponentVersion( new CSeqMaskerVersion( 
+                CSeqMaskerOstatOptAscii::FormatVersion ) );
+    version->AddComponentVersion( new CSeqMaskerVersion( 
+                CSeqMaskerOstatOptBin::FormatVersion ) );
     SetFullVersion(version);
 }
 

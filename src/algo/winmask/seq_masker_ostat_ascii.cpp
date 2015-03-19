@@ -38,6 +38,21 @@
 
 BEGIN_NCBI_SCOPE
 
+#define STAT_FMT_COMPONENT_NAME "windowmasker-statistics-format-version"
+#define STAT_FMT_VER_MAJOR 1
+#define STAT_FMT_VER_MINOR 0
+#define STAT_FMT_VER_PATCH 0
+#define STAT_FMT_VER_PFX "ascii "
+
+//------------------------------------------------------------------------------
+CSeqMaskerVersion CSeqMaskerOstatAscii::FormatVersion(
+        STAT_FMT_COMPONENT_NAME, 
+        STAT_FMT_VER_MAJOR,
+        STAT_FMT_VER_MINOR,
+        STAT_FMT_VER_PATCH,
+        STAT_FMT_VER_PFX
+);
+
 //------------------------------------------------------------------------------
 const char * 
 CSeqMaskerOstatAscii::CSeqMaskerOstatAsciiException::GetErrCodeString() const
@@ -71,14 +86,6 @@ CSeqMaskerOstatAscii::~CSeqMaskerOstatAscii()
 }
 
 //------------------------------------------------------------------------------
-void CSeqMaskerOstatAscii::doSetUnitSize( Uint4 us )
-{ 
-    out_stream << us << endl; 
-    string md( FormatMetaData( "ascii" ) );
-    if( !md.empty() ) out_stream << md << endl;
-}
-
-//------------------------------------------------------------------------------
 void CSeqMaskerOstatAscii::doSetUnitCount( Uint4 unit, Uint4 count )
 { 
     static Uint4 punit = 0;
@@ -92,19 +99,38 @@ void CSeqMaskerOstatAscii::doSetUnitCount( Uint4 unit, Uint4 count )
         NCBI_THROW( CSeqMaskerOstatAsciiException, eBadOrder, s );
     }
 
-    out_stream << hex << unit << " " << dec << count << "\n"; 
+    counts.push_back( std::make_pair( unit, count ) );
     punit = unit;
 }
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatAscii::doSetComment( const string & msg )
-{ out_stream << "#" << msg << "\n"; }
+{ 
+    comments.push_back( msg );
+}
 
 //------------------------------------------------------------------------------
-void CSeqMaskerOstatAscii::doSetParam( const string & name, Uint4 value )
-{ out_stream << ">" << name << " " << value << "\n"; }
+void CSeqMaskerOstatAscii::doFinalize() {
+    out_stream << FormatMetaData();
+    out_stream << (Uint4)unit_size << endl; 
 
-//------------------------------------------------------------------------------
-void CSeqMaskerOstatAscii::doSetBlank() { out_stream << "\n"; }
+    for( size_t i( 0 ); i < counts.size(); ++i ) {
+        out_stream << hex << counts[i].first << ' ' 
+                   << dec << counts[i].second << '\n';
+    }
+
+    out_stream << '\n';
+
+    for( size_t i( 0 ); i < comments.size(); ++i ) {
+        out_stream << '#' << comments[i] << '\n';
+    }
+
+    out_stream << '\n';
+    out_stream << '>' << PARAMS[0] << ' ' << pvalues[0] << '\n';
+    out_stream << '>' << PARAMS[1] << ' ' << pvalues[1] << '\n';
+    out_stream << '>' << PARAMS[2] << ' ' << pvalues[2] << '\n';
+    out_stream << '>' << PARAMS[3] << ' ' << pvalues[3] << '\n';
+    out_stream << endl;
+}
 
 END_NCBI_SCOPE

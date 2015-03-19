@@ -156,10 +156,6 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
         arg_desc.AddDefaultKey( "text_match", "text_match_ids",
                                  "match ids as strings",
                                  CArgDescriptions::eBoolean, "T" );
-        arg_desc.AddDefaultKey( "use_ba", "use_bit_array_optimization",
-                                 "whether to use extra bit array optimization "
-                                 "for optimized binary counts format",
-                                 CArgDescriptions::eBoolean, "T" );
         CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
         for (size_t i = 0; i < kNumInputFormats; i++) {
             strings_allowed->Allow(kInputFormats[i]);
@@ -235,7 +231,6 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
         arg_desc.CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "exclude_ids" );
         arg_desc.CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "ids" );
         arg_desc.CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "text_match" );
-        arg_desc.CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "use_ba" );
     }
 }
 
@@ -338,7 +333,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
       sformat( app_type < eGenerateMasks ? args["sformat"].AsString() : "" ),
       smem( app_type < eGenerateMasks ? args["smem"].AsInteger() : 0 ),
       ids( 0 ), exclude_ids( 0 ),
-      use_ba( app_type != eConvertCounts && args["use_ba"].AsBoolean() ),
+      use_ba( app_type != eConvertCounts ),
       text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() )
 {
     if (args.Exist("meta")  &&  args["meta"]) {

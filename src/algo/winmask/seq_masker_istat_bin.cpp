@@ -59,7 +59,8 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
                                         Uint4 arg_max_count,
                                         Uint4 arg_use_max_count,
                                         Uint4 arg_min_count,
-                                        Uint4 arg_use_min_count )
+                                        Uint4 arg_use_min_count,
+                                        Uint4 skip )
     : CSeqMaskerIstat(  arg_threshold, arg_textend, 
                         arg_max_count, arg_use_max_count,
                         arg_min_count, arg_use_min_count )
@@ -79,31 +80,19 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
     }
 
     CNcbiIfstream in_stream( name.c_str(), IOS_BASE::binary );
+
+    {
+        char * data( new char[skip] );
+        in_stream.read( data, skip );
+        delete[] data;
+    }
+
+    streamsize adj( in_stream.tellg() );
     Uint4 data;
     in_stream.read( (char *)&data, sizeof( Uint4 ) );
-    streamsize adj( 0 );
 
     {
         in_stream.read( (char *)&data, sizeof( Uint4 ) );
-
-        if( data > 16 ) {
-            adj = sizeof( Uint4 ) + data - 16;
-            string md( data - 16, 0 );
-            char c;
-
-            for( Uint4 i( 0 ); i < data - 16; ++i ) {
-                in_stream.read( &c, 1 );
-                md[i] = c;
-            }
-
-            if( md.size() < 2 || md.substr( 0, 2 ) != "##" ) {
-                md = string( "##" ) + md;
-            }
-
-            ParseMetaDataString( md );
-            in_stream.read( (char *)&data, sizeof( Uint4 ) );
-        }
-
         Uint1 us = (Uint1)data;
         
         if( us == 0 || us > 16 )

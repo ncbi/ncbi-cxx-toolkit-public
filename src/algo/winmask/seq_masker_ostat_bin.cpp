@@ -36,39 +36,38 @@
 
 BEGIN_NCBI_SCOPE
 
+#define STAT_FMT_COMPONENT_NAME "windowmasker-statistics-format-version"
+#define STAT_FMT_VER_MAJOR 1
+#define STAT_FMT_VER_MINOR 0
+#define STAT_FMT_VER_PATCH 0
+#define STAT_FMT_VER_PFX "binary "
+
 //------------------------------------------------------------------------------
-/**\internal
- **\brief Names and order of allowed parameters.
- **/
-static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
+CSeqMaskerVersion CSeqMaskerOstatBin::FormatVersion(
+        STAT_FMT_COMPONENT_NAME, 
+        STAT_FMT_VER_MAJOR,
+        STAT_FMT_VER_MINOR,
+        STAT_FMT_VER_PATCH,
+        STAT_FMT_VER_PFX
+);
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatBin::CSeqMaskerOstatBin( 
         const string & name, string const & metadata )
     : CSeqMaskerOstat( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), true, metadata ),
-      pvalues( sizeof( PARAMS )/sizeof( const char * ) )
-{ write_word( (Uint4)0 ); } // Format identifier.
+        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), 
+        true, metadata )
+{}
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatBin::CSeqMaskerOstatBin( 
         CNcbiOstream & os, string const & metadata )
-    : CSeqMaskerOstat( os, false, metadata ),
-      pvalues( sizeof( PARAMS )/sizeof( const char * ) )
+    : CSeqMaskerOstat( os, false, metadata )
 { write_word( (Uint4)0 ); } // Format identifier.
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatBin::~CSeqMaskerOstatBin()
 {
-  try{
-    for( vector< Uint4 >::const_iterator i = pvalues.begin();
-         i != pvalues.end(); ++i )
-         write_word( *i );
-  }
-  catch( std::exception & e )
-  { LOG_POST( Error<< "Error writing trailer: " << e.what() ); }
-
-  out_stream.flush();
 }
 
 //------------------------------------------------------------------------------
@@ -78,40 +77,29 @@ void CSeqMaskerOstatBin::write_word( Uint4 word )
 }
 
 //------------------------------------------------------------------------------
-void CSeqMaskerOstatBin::doSetUnitSize( Uint4 us )
-{ 
-    string md( FormatMetaData( "binary" ) );
-    
-    if( !md.empty() ) {
-        write_word( (Uint4)(md.size() + 16) );
-        out_stream.write( md.c_str(), md.size() );
-    }
-
-    write_word( us ); 
-}
-
-//------------------------------------------------------------------------------
 void CSeqMaskerOstatBin::doSetUnitCount( Uint4 unit, Uint4 count )
 {
-  write_word( unit );
-  write_word( count );
+  counts.push_back( std::make_pair( unit, count ) );
 }
 
 //------------------------------------------------------------------------------
-void CSeqMaskerOstatBin::doSetParam( const string & name, Uint4 value )
-{
-    string::size_type pos = name.find_first_of( ' ' );
-    string real_name = name.substr( 0, pos );
+void CSeqMaskerOstatBin::doFinalize() {
+    write_word( (Uint4)3 ); // new binary id
+    WriteBinMetaData( out_stream );
+    write_word( (Uint4)0 ); // Format identifier.
+    write_word( (Uint4)unit_size );
 
-    for( unsigned ind = 0; 
-         ind < sizeof( PARAMS )/sizeof( const char * ); ++ind )
-        if( real_name == PARAMS[ind] )
-        {
-            pvalues[ind] = value;
-            return;
-        }
+    for( size_t i( 0 ); i < counts.size(); ++i ) {
+        write_word( counts[i].first );
+        write_word( counts[i].second );
+    }
 
-    LOG_POST( Error << "Unknown parameter name " << real_name );
+    for( vector< Uint4 >::const_iterator i = pvalues.begin(); 
+            i != pvalues.end(); ++i ) {
+         write_word( *i );
+    }
+
+    out_stream.flush();
 }
 
 END_NCBI_SCOPE

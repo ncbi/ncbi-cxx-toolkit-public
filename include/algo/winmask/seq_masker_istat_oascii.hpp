@@ -88,6 +88,7 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOAscii
          **\param arg_use_max_count value to use for units with count > T_high
          **\param arg_min_count T_low
          **\param arg_use_min_count value to use for units with count < T_low
+         **\param start_line number of initial lines to skip
          **/
         explicit CSeqMaskerIstatOAscii(  const string & name,
                                          Uint4 arg_threshold,
@@ -95,7 +96,8 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOAscii
                                          Uint4 arg_max_count,
                                          Uint4 arg_use_max_count,
                                          Uint4 arg_min_count,
-                                         Uint4 arg_use_min_count );
+                                         Uint4 arg_use_min_count,
+                                         Uint4 start_line = 0 );
 
         /**
          **\brief Object destructor.

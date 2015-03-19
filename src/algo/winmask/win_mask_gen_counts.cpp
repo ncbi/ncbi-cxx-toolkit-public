@@ -306,7 +306,6 @@ void CWinMaskCountsGenerator::operator()()
 
     if( no_extra_pass )
     {
-        ustat->setBlank();
         ostringstream s;
         s << " " << total_ecodes << " ecodes";
         ustat->setComment( s.str() );
@@ -360,7 +359,6 @@ void CWinMaskCountsGenerator::operator()()
         offset = total_ecodes - score_counts[max_count - 1];
 
         {
-            ustat->setBlank();
             ostringstream s;
             s << " " << total_ecodes << " ecodes";
             ustat->setComment( s.str() );
@@ -387,12 +385,10 @@ void CWinMaskCountsGenerator::operator()()
         ustat->setComment( s.str() );
     }
 
-    ustat->setBlank();
     ustat->setParam( "t_low      ", index[0] );
     ustat->setParam( "t_extend   ", index[1] );
     ustat->setParam( "t_threshold", index[2] );
     ustat->setParam( "t_high     ", index[3] );
-    ustat->setBlank();
     ustat->finalize();
 }
 

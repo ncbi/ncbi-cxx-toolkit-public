@@ -74,7 +74,8 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
                                                 Uint4 arg_use_max_count,
                                                 Uint4 arg_min_count,
                                                 Uint4 arg_use_min_count,
-                                                bool arg_use_ba )
+                                                bool arg_use_ba,
+                                                Uint4 skip )
     :   CSeqMaskerIstat(    arg_threshold, arg_textend, 
                             arg_max_count, arg_use_max_count,
                             arg_min_count, arg_use_min_count )
@@ -85,6 +86,12 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
     if( !input_stream )
         NCBI_THROW( Exception, eStreamOpenFail,
                     string( "could not open " ) + name );
+
+    {
+        char * data( new char[skip] );
+        input_stream.read( data, skip );
+        delete[] data;
+    }
 
     Uint4 word;
     Uint1 unit_size;
@@ -202,23 +209,6 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
                     "not enough data to fill the values table" );
 
     uset.add_vt_info( M, vt );
-    Uint4 mdsz( 0 );
-
-    if( input_stream.read( (char *)&mdsz, sizeof( Uint4 ) ) ) {
-        string md;
-        char c;
-
-        for( Uint4 i( 0 ); i < mdsz; ++i ) {
-            input_stream.read( &c, 1 );
-            md.push_back( c );
-        }
-
-        if( md.size() < 2 || md.substr( 0, 2 ) != "##" ) {
-            md = string( "##" ) + md;
-        }
-
-        ParseMetaDataString( md );
-    }
 }
 
 //------------------------------------------------------------------------------

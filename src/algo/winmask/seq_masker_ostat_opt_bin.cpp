@@ -36,6 +36,21 @@
 
 BEGIN_NCBI_SCOPE
 
+#define STAT_FMT_COMPONENT_NAME "windowmasker-statistics-format-version"
+#define STAT_FMT_VER_MAJOR 1
+#define STAT_FMT_VER_MINOR 0
+#define STAT_FMT_VER_PATCH 0
+#define STAT_FMT_VER_PFX "obinary "
+
+//------------------------------------------------------------------------------
+CSeqMaskerVersion CSeqMaskerOstatOptBin::FormatVersion(
+        STAT_FMT_COMPONENT_NAME, 
+        STAT_FMT_VER_MAJOR,
+        STAT_FMT_VER_MINOR,
+        STAT_FMT_VER_PATCH,
+        STAT_FMT_VER_PFX
+);
+
 //------------------------------------------------------------------------------
 CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( 
         const string & name, Uint2 sz, bool arg_use_ba, 
@@ -45,9 +60,6 @@ CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin(
         sz, true, metadata ),
       use_ba( arg_use_ba )
 { 
-    if( use_ba )
-        write_word( (Uint4)2 ); 
-    else write_word( (Uint4)1 );
 } 
 
 //------------------------------------------------------------------------------
@@ -56,14 +68,18 @@ CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin(
     : CSeqMaskerOstatOpt( os, sz, false, metadata ),
       use_ba( arg_use_ba )
 { 
-    if( use_ba )
-        write_word( (Uint4)2 ); 
-    else write_word( (Uint4)1 );
 } 
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatOptBin::write_out( const params & p ) const
 {
+    write_word( (Uint4)3 ); // new binary id
+    WriteBinMetaData( out_stream );
+
+    if( use_ba )
+        write_word( (Uint4)2 ); 
+    else write_word( (Uint4)1 );
+
     write_word( (Uint4)UnitSize() );
     write_word( p.M );
     write_word( (Uint4)p.k );
@@ -88,15 +104,6 @@ void CSeqMaskerOstatOptBin::write_out( const params & p ) const
     Uint4 sz = (1<<p.k);
     out_stream.write( (const char *)(p.ht), sz*sizeof( Uint4 ) );
     out_stream.write( (const char *)(p.vt), p.M*sizeof( Uint2 ) );
-
-    string md( FormatMetaData( "optimized binary" ) );
-
-    if( !md.empty() ) {
-        Uint4 sz( md.size() );
-        out_stream.write( (const char *)&sz, sizeof( Uint4 ) );
-        out_stream.write( md.c_str(), sz );
-    }
-
     out_stream << flush;
 }
 

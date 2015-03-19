@@ -39,6 +39,8 @@
 #include <corelib/version.hpp>
 
 #include <algo/winmask/seq_masker_window.hpp>
+#include <algo/winmask/seq_masker_version.hpp>
+#include <algo/winmask/seq_masker_ostat.hpp>
 
 #include <memory>
 
@@ -100,7 +102,8 @@ public:
             min_count( arg_min_count ),
             use_min_count( arg_use_min_count ),
             ambig_unit( 0 ),
-            opt_data_( 0, 0 )
+            opt_data_( 0, 0 ),
+            fmt_gen_algo_ver( CSeqMaskerOstat::StatAlgoVersion )
     { total_ = 0; }
 
     /**
@@ -151,6 +154,16 @@ public:
      */
     const optimization_data * get_optimization_data() const
     { return opt_data_.cba_ == 0 ? 0 : &opt_data_; }
+
+    /** Return the version of the algorithm used to generate counts */
+    CSeqMaskerVersion const & GetStatAlgoVersion() const {
+        return fmt_gen_algo_ver;
+    }
+
+    /** Set the version of the algorithm used to generate counts */
+    void SetStatAlgoVersion( CSeqMaskerVersion const & v ) {
+        fmt_gen_algo_ver = v;
+    }
 
     mutable Uint8 total_;
 
@@ -314,16 +327,12 @@ protected:
     void set_optimization_data( const optimization_data & opt_data )
     { opt_data_ = opt_data; }
 
-    /** Parse metadata string and set format version, encoding, and
-        metadata.
-    */
-    void ParseMetaDataString( string const & md );
-
-    /** Parse a given string as a format version specification. */
-    bool ParseVersionString( string const & vs );
+public:
 
     /** Set metadata string. */
     void SetMetaData( string const & md ) { metadata = md; }
+
+protected:
 
     /** Set the statistics file format encoding. */
     void SetFmtEncoding( string const & e ) { fmt_encoding = e; }
@@ -360,6 +369,9 @@ private:
     CSeqMaskerWindow::TUnit ambig_unit; /**<\internal Unit value to represent ambiguities. */
 
     optimization_data opt_data_; /**<\internal Optimization parameters. */
+
+    /** version of the algorithm used to generate counts */
+    CSeqMaskerVersion fmt_gen_algo_ver;
 };
 
 END_NCBI_SCOPE

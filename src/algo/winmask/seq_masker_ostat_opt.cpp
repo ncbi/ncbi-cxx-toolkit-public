@@ -46,13 +46,21 @@ BEGIN_NCBI_SCOPE
 
 static const unsigned long MB = 1024L*1024L;
 static const unsigned long GROW_CHUNK = MB;
-static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
+const char * CSeqMaskerOstat::PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
+
+//------------------------------------------------------------------------------
+CSeqMaskerOstat::CSeqMaskerOstat( 
+        CNcbiOstream & os, bool alloc, string const & metadata ) 
+    : out_stream( os ), alloc( alloc ), metadata( metadata ), 
+      pvalues( sizeof( PARAMS )/sizeof( const char * ) ),
+      fmt_gen_algo_ver( StatAlgoVersion ),
+      state( start )
+{}
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatOpt::CSeqMaskerOstatOpt( 
         CNcbiOstream & os, Uint2 sz, bool alloc, string const & metadata ) 
-    : CSeqMaskerOstat( os, alloc, metadata ), size_requested( sz ),
-      pvalues( sizeof( PARAMS )/sizeof( const char * ) )
+    : CSeqMaskerOstat( os, alloc, metadata ), size_requested( sz )
 {}
 
 //------------------------------------------------------------------------------
@@ -65,7 +73,10 @@ const vector< Uint4 > & CSeqMaskerOstatOpt::GetParams() const
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatOpt::doSetUnitSize( Uint4 us )
-{ unit_bit_size = 2*us; }
+{ 
+    CSeqMaskerOstat::doSetUnitSize( us );
+    unit_bit_size = 2*us; 
+}
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatOpt::doSetUnitCount( Uint4 unit, Uint4 count )
@@ -88,7 +99,8 @@ void CSeqMaskerOstatOpt::doSetUnitCount( Uint4 unit, Uint4 count )
 }
 
 //------------------------------------------------------------------------------
-void CSeqMaskerOstatOpt::doSetParam( const string & name, Uint4 value )
+// void CSeqMaskerOstatOpt::doSetParam( const string & name, Uint4 value )
+void CSeqMaskerOstat::doSetParam( const string & name, Uint4 value )
 {
     string::size_type pos = name.find_first_of( ' ' );
     string real_name = name.substr( 0, pos );

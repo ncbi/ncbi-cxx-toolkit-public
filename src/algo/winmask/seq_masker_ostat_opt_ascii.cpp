@@ -36,17 +36,27 @@
 
 BEGIN_NCBI_SCOPE
 
+#define STAT_FMT_COMPONENT_NAME "windowmasker-statistics-format-version"
+#define STAT_FMT_VER_MAJOR 1
+#define STAT_FMT_VER_MINOR 0
+#define STAT_FMT_VER_PATCH 0
+#define STAT_FMT_VER_PFX "oascii "
+
+//------------------------------------------------------------------------------
+CSeqMaskerVersion CSeqMaskerOstatOptAscii::FormatVersion(
+        STAT_FMT_COMPONENT_NAME, 
+        STAT_FMT_VER_MAJOR,
+        STAT_FMT_VER_MINOR,
+        STAT_FMT_VER_PATCH,
+        STAT_FMT_VER_PFX
+);
+
 //------------------------------------------------------------------------------
 CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( 
         const string & name, Uint2 sz, string const & metadata )
     : CSeqMaskerOstatOpt( static_cast< CNcbiOstream& >(
         *new CNcbiOfstream( name.c_str() ) ), sz, true, metadata ) 
 { 
-    // File format identifier
-    out_stream << (char)65; 
-    out_stream << (char)65; 
-    out_stream << (char)65; 
-    out_stream << (char)65 << endl; 
 }
 
 //------------------------------------------------------------------------------
@@ -54,16 +64,19 @@ CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii(
         CNcbiOstream & os, Uint2 sz, string const & metadata )
     : CSeqMaskerOstatOpt( os, sz, false, metadata ) 
 { 
-    // File format identifier
-    out_stream << (char)65; 
-    out_stream << (char)65; 
-    out_stream << (char)65; 
-    out_stream << (char)65 << endl; 
 }
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatOptAscii::write_out( const params & p ) const
 {
+    out_stream << FormatMetaData();
+
+    // File format identifier
+    out_stream << (char)65; 
+    out_stream << (char)65; 
+    out_stream << (char)65; 
+    out_stream << (char)65 << endl; 
+
     out_stream << (Uint4)UnitSize() << "\n";
     out_stream << p.M << " "
                << (Uint4)p.k << " " << (Uint4)p.roff << " " << (Uint4)p.bc
@@ -78,8 +91,6 @@ void CSeqMaskerOstatOptAscii::write_out( const params & p ) const
     for( Uint4 i = 0; i < p.M; ++i )
         out_stream << (Uint4)(p.vt[i]) << "\n";
 
-    string md( FormatMetaData( "optimized ascii" ) );
-    if( !md.empty() ) out_stream << md << endl;
     out_stream << flush;
 }
 

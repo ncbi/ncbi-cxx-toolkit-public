@@ -38,19 +38,21 @@
 
 BEGIN_NCBI_SCOPE
 
-#define STAT_FILE_VER_MAJOR 1
-#define STAT_FILE_VER_MINOR 0
-#define STAT_FILE_VER_PATCH 0
+#define STAT_ALGO_VER_MAJOR 1
+#define STAT_ALGO_VER_MINOR 0
+#define STAT_ALGO_VER_PATCH 0
 
 //------------------------------------------------------------------------------
-std::string const CSeqMaskerOstat::STAT_FILE_COMPONENT_NAME = 
-    "windowmasker statistics format version";
+char const * CSeqMaskerOstat::STAT_ALGO_COMPONENT_NAME = 
+    "windowmasker-statistics-algorithm-version";
 
-CComponentVersionInfo CSeqMaskerOstat::FormatVersion(
-        STAT_FILE_COMPONENT_NAME, 
-        STAT_FILE_VER_MAJOR,
-        STAT_FILE_VER_MINOR,
-        STAT_FILE_VER_PATCH 
+
+//------------------------------------------------------------------------------
+CSeqMaskerVersion CSeqMaskerOstat::StatAlgoVersion(
+        STAT_ALGO_COMPONENT_NAME, 
+        STAT_ALGO_VER_MAJOR,
+        STAT_ALGO_VER_MINOR,
+        STAT_ALGO_VER_PATCH 
 );
 
 //------------------------------------------------------------------------------
@@ -64,11 +66,54 @@ const char * CSeqMaskerOstat::CSeqMaskerOstatException::GetErrCodeString() const
 }
             
 //------------------------------------------------------------------------------
-string CSeqMaskerOstat::FormatMetaData( std::string const & encoding ) const {
+string CSeqMaskerOstat::FormatParameters() const {
     std::ostringstream os;
-    os << "##(" << encoding << ')' << STAT_FILE_COMPONENT_NAME << ':'
-       << FormatVersion;
-    if( !metadata.empty() ) os << ',' << metadata;
+    Uint4 t_low( pvalues[0] == 0 ? 1 : pvalues[0] ), t_high( pvalues[3] );
+    os << "##parameters:unit=" << (Uint4)unit_size  << ' '
+       << "t_low=" << t_low << ' ' << "t_high=" << t_high;
+    return os.str();
+}
+
+//------------------------------------------------------------------------------
+void CSeqMaskerOstat::WriteBinMetaData( std::ostream & os ) const {
+    Uint4 sz( 0 );
+    string s1( "##" );
+    s1 += GetStatFmtVersion().Print();
+    sz += s1.size() + 1;
+    string s2( "##" );
+    s2 += fmt_gen_algo_ver.Print();
+    sz += s2.size() + 1;
+    string s3( FormatParameters() ),
+           s4;
+    sz += s3.size() + 1;
+
+    if( !metadata.empty() ) {
+        s4 = string( "##note:" ) + metadata;
+        sz += s4.size() + 1;
+    }
+
+    char zero( 0 );
+    os.write( (char *)&sz, sizeof( sz ) );
+    os.write( s1.c_str(), s1.size() );
+    os.write( &zero, 1 );
+    os.write( s2.c_str(), s2.size() );
+    os.write( &zero, 1 );
+    os.write( s3.c_str(), s3.size() );
+    os.write( &zero, 1 );
+    
+    if( !s4.empty() ) { 
+        os.write( s4.c_str(), s4.size() );
+        os.write( &zero, 1 );
+    }
+}
+
+//------------------------------------------------------------------------------
+string CSeqMaskerOstat::FormatMetaData() const {
+    std::ostringstream os;
+    os << "##" << GetStatFmtVersion().Print() << endl;
+    os << "##" << fmt_gen_algo_ver.Print() << endl;
+    os << FormatParameters() << endl;
+    if( !metadata.empty() ) os << "##note:" << metadata << endl;
     return os.str();
 }
 

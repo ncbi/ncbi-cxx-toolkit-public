@@ -56,7 +56,8 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
                                             Uint4 arg_max_count,
                                             Uint4 arg_use_max_count,
                                             Uint4 arg_min_count,
-                                            Uint4 arg_use_min_count )
+                                            Uint4 arg_use_min_count,
+                                            Uint4 start_line )
     :   CSeqMaskerIstat(    arg_threshold, arg_textend, 
                             arg_max_count, arg_use_max_count,
                             arg_min_count, arg_use_min_count )
@@ -68,9 +69,10 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
                     string( "could not open " ) + name );
 
     bool start = true;
-    Uint4 linenum = 0UL;
+    Uint4 linenum = start_line;
     Uint4 ambig_len = kMax_UI4;
     string line;
+    for( Uint4 i( 0 ); i < start_line; ++i ) getline( input_stream, line );
 
     while( input_stream )
     {
@@ -78,12 +80,7 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
         getline( input_stream, line );
         ++linenum;
         if( line.length() == 0 ) continue;
-
-        if( line[0] == '#' ) {
-            if( line.length() < 2 || line[1] != '#' ) continue;
-            ParseMetaDataString( line );
-            continue;
-        }
+        if( line[0] == '#' ) continue;
 
         // Check if we have a precomputed parameter.
         if( line[0] == '>' )

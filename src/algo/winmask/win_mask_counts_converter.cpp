@@ -113,9 +113,7 @@ int CWinMaskCountsConverter::operator()()
     }
 
     LOG_POST( "converting parameters..." );
-    ostat->setBlank();
 
-    ostat->setBlank();
     Uint4 t_low       = istat->get_min_count();
     Uint4 t_extend    = istat->get_textend();
     Uint4 t_threshold = istat->get_threshold();
@@ -124,8 +122,8 @@ int CWinMaskCountsConverter::operator()()
     ostat->setParam( "t_extend   ", t_extend );
     ostat->setParam( "t_threshold", t_threshold );
     ostat->setParam( "t_high     ", t_high );
-    ostat->setBlank();
     LOG_POST( "final processing..." );
+    ostat->SetStatAlgoVersion( istat->GetStatAlgoVersion() );
     ostat->finalize();
     return 0;
 }

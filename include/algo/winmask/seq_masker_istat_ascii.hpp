@@ -87,6 +87,7 @@ public:
         **\param arg_use_max_count value to use for units with count > T_high
         **\param arg_min_count T_low
         **\param arg_use_min_count value to use for units with count < T_low
+        **\param start_line skip this many lines in the beginning
         **/
     explicit CSeqMaskerIstatAscii(  const string & name,
                                     Uint4 arg_threshold,
@@ -94,7 +95,8 @@ public:
                                     Uint4 arg_max_count,
                                     Uint4 arg_use_max_count,
                                     Uint4 arg_min_count,
-                                    Uint4 arg_use_min_count );
+                                    Uint4 arg_use_min_count,
+                                    Uint4 start_line = 0 );
 
     /**
         **\brief Object destructor.

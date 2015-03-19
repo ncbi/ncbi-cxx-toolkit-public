@@ -34,6 +34,7 @@
 #define C_WIN_MASK_USTAT_ASCII_H
 
 #include <string>
+#include <vector>
 
 #include <corelib/ncbistre.hpp>
 
@@ -48,6 +49,9 @@ BEGIN_NCBI_SCOPE
 class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatAscii : public CSeqMaskerOstat
 {
 public:
+
+    /// Format version.
+    static CSeqMaskerVersion FormatVersion;
 
     /** 
         **\brief Exceptions that CSeqMaskerOstatAscii might throw.
@@ -89,13 +93,12 @@ public:
         **/
     virtual ~CSeqMaskerOstatAscii();
 
-protected:
+    /** Get actual counts format version. */
+    virtual CSeqMaskerVersion const & GetStatFmtVersion() const { 
+        return FormatVersion; 
+    }
 
-    /**
-        **\brief Output a line containing the unit size.
-        **\param us the value of the unit size
-        **/
-    virtual void doSetUnitSize( Uint4 us );
+protected:
 
     /**
         **\brief Output a line with information about the given unit count.
@@ -117,21 +120,14 @@ protected:
     virtual void doSetComment( const string & msg );
 
     /**
-        **\brief Output a line with information about the given parameter value.
-        **
-        ** The line starts with '>' and contains 2 words: the name of the
-        ** parameter and the decimal integer value of the parameter.
-        ** This method should be called after all unit counts are reported.
-        **
-        **\param name the parameter name
-        **\param value the parameter value
-        **/
-    virtual void doSetParam( const string & name, Uint4 value );
+     **\brief Write data to output file.
+     **/
+    virtual void doFinalize();
 
-    /**
-        **\brief Create a blank line in the output file.
-        **/
-    virtual void doSetBlank();
+private:
+
+    /** Set of comments to print in the end of the stats file. */
+    std::vector< std::string > comments;
 };
 
 END_NCBI_SCOPE

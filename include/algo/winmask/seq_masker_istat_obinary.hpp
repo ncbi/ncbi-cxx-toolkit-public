@@ -89,6 +89,7 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOBinary
          **\param arg_min_count T_low
          **\param arg_use_min_count value to use for units with count < T_low
          **\param arg_use_ba use bit array optimization if available
+         **\param skip skip this many bytes in the beginning
          **/
         explicit CSeqMaskerIstatOBinary( const string & name,
                                          Uint4 arg_threshold,
@@ -97,7 +98,8 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOBinary
                                          Uint4 arg_use_max_count,
                                          Uint4 arg_min_count,
                                          Uint4 arg_use_min_count,
-                                         bool arg_use_ba );
+                                         bool arg_use_ba,
+                                         Uint4 skip = 0 );
 
         /**
          **\brief Object destructor.

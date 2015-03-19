@@ -45,6 +45,9 @@ class NCBI_XALGOWINMASK_EXPORT
 CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
 {
     public:
+    
+        /// Format version.
+        static CSeqMaskerVersion FormatVersion;
 
         /**
          **\brief Object constructor.
@@ -72,6 +75,11 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
          **\brief Object destructor.
          **/
         virtual ~CSeqMaskerOstatOptBin() {}
+
+        /** Get actual counts format version. */
+        virtual CSeqMaskerVersion const & GetStatFmtVersion() const { 
+            return FormatVersion; 
+        }
 
     protected:
 

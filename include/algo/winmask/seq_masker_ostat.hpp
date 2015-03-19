@@ -38,7 +38,8 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/version.hpp>
+
+#include <algo/winmask/seq_masker_version.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,9 +50,10 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstat : public CObject
 {
 public:
 
-    /// Version of the statistics file format that this class generates.
-    static std::string const STAT_FILE_COMPONENT_NAME;
-    static CComponentVersionInfo FormatVersion;
+    static char const * STAT_ALGO_COMPONENT_NAME;
+
+    /// Version of the statistics generation algorithm.
+    static CSeqMaskerVersion StatAlgoVersion;
 
     /**
         **\brief Exceptions that CSeqMaskerOstat can throw.
@@ -79,9 +81,7 @@ public:
         **\param os C++ stream that should be used to save the unit counts data
         **/
     explicit CSeqMaskerOstat( 
-            CNcbiOstream & os, bool alloc, string const & metadata )
-        : out_stream( os ), alloc( alloc ), metadata( metadata ), state( start )
-    {}
+            CNcbiOstream & os, bool alloc, string const & metadata );
 
     /**
         **\brief Trivial object destructor.
@@ -130,33 +130,44 @@ public:
     void setParam( const string & name, Uint4 value );
 
     /**
-        **\brief Create a blank line in the unit counts file.
-        **
-        ** It is possible that this method is NOP for some unit counts
-        ** formats.
-        **/
-    void setBlank() { doSetBlank(); }
-
-    /**
         **\brief Perform any final tasks required to generate unit
         **       counts in the particular format.
         **/
     void finalize();
 
+    /** Set the counts generation algorithm version explicitly
+        (needed for convertions).
+    */
+    void SetStatAlgoVersion( CSeqMaskerVersion const & v ) {
+        fmt_gen_algo_ver = v;
+    }
+
+    /** Get actual counts format version. */
+    virtual CSeqMaskerVersion const & GetStatFmtVersion() const = 0;
+
 protected:
+
+    /** Algorithm parameter names. */
+    static const char * PARAMS[];
 
     /**\name Methods used to delegate functionality to derived classes */
     /**@{*/
-    virtual void doSetUnitSize( Uint4 us ) = 0;
+    virtual void doSetUnitSize( Uint4 us ) { unit_size = (Uint1)us; }
     virtual void doSetUnitCount( Uint4 unit, Uint4 count ) = 0;
-    virtual void doSetComment( const string & msg ) = 0;
-    virtual void doSetParam( const string & name, Uint4 value ) = 0;
-    virtual void doSetBlank() = 0;
+    virtual void doSetComment( const string & msg ) {}
+    virtual void doSetParam( const string & name, Uint4 value );
+    // virtual void doSetBlank() {}
     virtual void doFinalize() {}
     /**@}*/
 
+    /// Format algorithm parameters into a string.
+    string FormatParameters() const;
+
     /// Combine version data and metadata into a single string.
-    string FormatMetaData( string const & encoding ) const;
+    string FormatMetaData() const;
+
+    /// Write metadata in binary format.
+    void WriteBinMetaData( std::ostream & os ) const;
 
     /**
         **\brief Refers to the C++ stream that should be used to write
@@ -169,6 +180,20 @@ protected:
 
     /** metadata string */
     string metadata;
+
+    /** unit size */
+    Uint1 unit_size;
+
+    /**\internal
+        **\brief Parameter values.
+        **/
+    vector< Uint4 > pvalues;
+
+    /** Unit counts */
+    vector< pair< Uint4, Uint4 > > counts;
+
+    /** version of the algorithm used to generate counts */
+    CSeqMaskerVersion fmt_gen_algo_ver;
 
 private:
 

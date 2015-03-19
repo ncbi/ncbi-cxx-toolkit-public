@@ -63,7 +63,8 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
                                               Uint4 arg_max_count,
                                               Uint4 arg_use_max_count,
                                               Uint4 arg_min_count,
-                                              Uint4 arg_use_min_count )
+                                              Uint4 arg_use_min_count,
+                                              Uint4 start_line )
     :   CSeqMaskerIstat(    arg_threshold, arg_textend, 
                             arg_max_count, arg_use_max_count,
                             arg_min_count, arg_use_min_count )
@@ -76,6 +77,7 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
 
     Uint4 linenum = 0;
     string line;
+    for( Uint4 i( 0 ); i < start_line; ++i ) getline( input_stream, line );
     Uint1 unit_size;
     Uint4 k, roff, bc;
     Uint4 t_low    = 0, 
@@ -191,12 +193,6 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
                     "not enough lines to fill the values table" );
 
     uset.add_vt_info( M, vt );
-
-    if( getline( input_stream, line ) ) {
-        if( line.size() > 1 && line[0] == '#' && line[1] == '#' ) {
-            ParseMetaDataString( line );
-        }
-    }
 }
 
 //------------------------------------------------------------------------------

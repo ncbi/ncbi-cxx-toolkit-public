@@ -142,26 +142,6 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatOpt : public CSeqMaskerOstat
         virtual void doSetUnitCount( Uint4 unit, Uint4 count );
 
         /**
-         **\brief Noop.
-         **/
-        virtual void doSetComment( const string & msg ) {}
-
-        /**
-         **\brief Set a parameter value.
-         **
-         ** Only recognized parameters will be accepted.
-         **
-         **\param name the parameter name
-         **\param value the parameter value
-         **/
-        virtual void doSetParam( const string & name, Uint4 value );
-
-        /**
-         **\brief Noop.
-         **/
-        virtual void doSetBlank() {}
-
-        /**
          **\brief Generate a hash function and dump the optimized unit counts
          **       data to the output stream.
          **/
@@ -195,8 +175,6 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatOpt : public CSeqMaskerOstat
 
         vector< Uint4 > units;      /**<\internal Array of units with counts >= T_low. */
         vector< Uint2 > counts;     /**<\internal Array of corresponding counts. */
-
-        vector< Uint4 > pvalues;    /**<\internal Array of threshold parameters. */
 };
 
 END_NCBI_SCOPE

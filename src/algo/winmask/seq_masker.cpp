@@ -52,13 +52,13 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-#define WIN_MASK_ALGO_NAME "window masker algorithm"
+#define WIN_MASK_ALGO_NAME "window-masker-algorithm"
 #define WIN_MASK_ALGO_VER_MAJOR 1
 #define WIN_MASK_ALGO_VER_MINOR 0
 #define WIN_MASK_ALGO_VER_PATCH 0
 
 //-------------------------------------------------------------------------
-CComponentVersionInfo CSeqMasker::AlgoVersion(
+CSeqMaskerVersion CSeqMasker::AlgoVersion(
         WIN_MASK_ALGO_NAME,
         WIN_MASK_ALGO_VER_MAJOR,
         WIN_MASK_ALGO_VER_MINOR,
@@ -162,18 +162,6 @@ CSeqMasker::DoMask(
 {
     ustat->total_ = 0;
     auto_ptr<TMaskList> mask(new TMaskList);
-
-    /* This message is confusing. Particularly because DUST later
-       can still mask part of the sequence.
-    */
-    /*
-    if( window_size > data.size() )
-    {
-        ERR_POST( Warning 
-                  << "length of data is shorter than the window size" );
-    }
-    */
-
     Uint4 cutoff_score = ustat->get_threshold();
     Uint4 textend = ustat->get_textend();
     Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
