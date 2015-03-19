@@ -277,11 +277,15 @@ void CMultiReaderApp::Init(void)
         "Input filename",
         CArgDescriptions::eInputFile);
 
+    arg_desc->AddAlias("i", "input");
+
     arg_desc->AddDefaultKey(
         "output", 
         "File_Out",
         "Output filename",
         CArgDescriptions::eOutputFile, "-"); 
+
+    arg_desc->AddAlias("o", "output");
 
     arg_desc->AddDefaultKey(
         "format", 
