@@ -119,6 +119,12 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
 }
 
 
+bool COrgMod::IsMultipleValuesAllowed(TSubtype subtype)
+{
+    return subtype != eSubtype_strain;
+}
+
+
 bool COrgMod::IsDiscouraged(const TSubtype subtype)
 {
     if (subtype == eSubtype_dosage

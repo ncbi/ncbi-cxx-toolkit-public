@@ -212,6 +212,10 @@ bool CSubSource::IsDiscouraged(const TSubtype subtype)
         || subtype == eSubtype_phenotype
         || subtype == eSubtype_plastid_name
         || subtype == eSubtype_transposon_name
+        || subtype == eSubtype_fwd_primer_seq
+        || subtype == eSubtype_rev_primer_seq
+        || subtype == eSubtype_fwd_primer_name
+        || subtype == eSubtype_rev_primer_name
         || subtype == eSubtype_whole_replicon) {  // metagenomic subsrc qualifier taken off this list: GB-3384
         return true;
     } else {

@@ -78,6 +78,7 @@ public:
                                    EVocabulary vocabulary = eVocabulary_raw);
 
     static bool IsDiscouraged(const TSubtype stype);
+    static bool IsMultipleValuesAllowed(TSubtype);
 
     /// This indicates if the given Org-mod subtype is supposed to hold an 
     /// institution code (Example: "ATCC:27305")
