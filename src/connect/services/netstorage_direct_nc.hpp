@@ -38,23 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CDelayedFail : public IReader, public IEmbeddedStreamWriter
-{
-public:
-    CDelayedFail(const CNetStorageException& e) : m_E(e) {}
-    ~CDelayedFail() {}
-    ERW_Result Read(void*, size_t, size_t* = 0)         { return Throw(); }
-    ERW_Result PendingCount(size_t*)                    { return Throw(); }
-    ERW_Result Write(const void*, size_t, size_t* = 0)  { return Throw(); }
-    ERW_Result Flush(void)                              { return Throw(); }
-    void Close()                                        {        Throw(); }
-    void Abort()                                        {        Throw(); }
-
-private:
-    ERW_Result Throw() { throw m_E; return eRW_Error; }
-    CNetStorageException m_E;
-};
-
 struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
 {
     enum EObjectIdentification {
@@ -85,9 +68,6 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     virtual void Close();
     virtual void Abort();
 
-    virtual IReader& GetReader();
-    virtual IEmbeddedStreamWriter& GetWriter();
-
     virtual string GetLoc();
     virtual void Read(string* data);
     virtual bool Eof();
@@ -107,7 +87,6 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
 
     auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
     auto_ptr<CNetCacheReader> m_NetCacheReader;
-    auto_ptr<CDelayedFail> m_DelayedFail;
     size_t m_BlobSize;
 };
 

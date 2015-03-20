@@ -143,20 +143,6 @@ void SNetStorage_NetCacheBlob::Read(string* data)
     CONVERT_NETSERVICEEXCEPTION("reading");
 }
 
-IReader& SNetStorage_NetCacheBlob::GetReader()
-{
-    if (m_State != eReading)
-        try {
-            x_InitReader();
-        }
-        catch (CNetStorageException& e) {
-            m_DelayedFail.reset(new CDelayedFail(e));
-            return *m_DelayedFail;
-        }
-
-    return *m_NetCacheReader;
-}
-
 bool SNetStorage_NetCacheBlob::Eof()
 {
     switch (m_State) {
@@ -202,25 +188,7 @@ ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
 
 ERW_Result SNetStorage_NetCacheBlob::Flush()
 {
-    if (m_State != eWriting) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "The blob is not being written; cannot flush.");
-    }
-    return m_NetCacheWriter->Flush();
-}
-
-IEmbeddedStreamWriter& SNetStorage_NetCacheBlob::GetWriter()
-{
-    if (m_State != eWriting)
-        try {
-            x_InitWriter();
-        }
-        catch (CNetStorageException& e) {
-            m_DelayedFail.reset(new CDelayedFail(e));
-            return *m_DelayedFail;
-        }
-
-    return *m_NetCacheWriter;
+    return m_State != eWriting ? eRW_Success : m_NetCacheWriter->Flush();
 }
 
 Uint8 SNetStorage_NetCacheBlob::GetSize()
@@ -264,15 +232,18 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
                 (Uint8) size_node.AsInteger() :
                 m_NetCacheAPI.GetBlobSize(m_BlobKey);
 
-        return g_CreateNetStorageObjectInfo(m_BlobKey,
-                eNFL_NetCache, NULL, blob_size, blob_info);
+        if (m_NetCacheAPI.HasBlob(m_BlobKey)) {
+            return g_CreateNetStorageObjectInfo(m_BlobKey,
+                    eNFL_NetCache, NULL, blob_size, blob_info);
+        }
     }
     catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
-        return g_CreateNetStorageObjectInfo(m_BlobKey,
-                eNFL_NotFound, NULL, 0, NULL);
     }
+
+    return g_CreateNetStorageObjectInfo(m_BlobKey,
+            eNFL_NotFound, NULL, 0, NULL);
 }
 
 void SNetStorage_NetCacheBlob::Close()
