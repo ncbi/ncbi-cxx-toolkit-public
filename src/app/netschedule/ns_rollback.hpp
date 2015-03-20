@@ -35,6 +35,7 @@
 
 
 #include "ns_clients.hpp"
+#include "ns_precise_time.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -56,8 +57,11 @@ class CNSSubmitRollback : public CNSRollbackInterface
 {
     public:
         CNSSubmitRollback(const CNSClientId &  client,
-                          unsigned int         job_id) :
-            m_Client(client), m_JobId(job_id)
+                          unsigned int         job_id,
+                          const CNSPreciseTime &  op_begin,
+                          const CNSPreciseTime &  written_to_db) :
+            m_Client(client), m_JobId(job_id),
+            m_OpBegin(op_begin), m_WrittenToDB(written_to_db)
         {}
 
         virtual ~CNSSubmitRollback() {}
@@ -68,6 +72,8 @@ class CNSSubmitRollback : public CNSRollbackInterface
     private:
         CNSClientId     m_Client;
         unsigned int    m_JobId;
+        CNSPreciseTime  m_OpBegin;
+        CNSPreciseTime  m_WrittenToDB;
 };
 
 

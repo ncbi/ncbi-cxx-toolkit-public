@@ -42,8 +42,15 @@ BEGIN_NCBI_SCOPE
 
 void CNSSubmitRollback::Rollback(CQueue *  queue)
 {
+    CNSPreciseTime      report_time = CNSPreciseTime::Current();
+
     ERR_POST(Warning << "Cancelling the submitted job due to "
-                        "a network error while reporting the job key.");
+                        "a network error while reporting the job key. "
+                        "Time to write to berkley DB: "
+                     << NS_FormatPreciseTimeAsSec(m_WrittenToDB - m_OpBegin)
+                     << " sec. Time on socket write: "
+                     << NS_FormatPreciseTimeAsSec(report_time - m_WrittenToDB)
+                     << " sec.");
 
     try {
         CJob        job;    // Not used here

@@ -544,18 +544,18 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
 
     unsigned int    aff_id = 0;
     unsigned int    group_id = 0;
-    CNSPreciseTime  current_time = CNSPreciseTime::Current();
+    CNSPreciseTime  op_begin_time = CNSPreciseTime::Current();
     unsigned int    job_id = GetNextId();
     CJobEvent &     event = job.AppendEvent();
 
     job.SetId(job_id);
     job.SetPassport(rand());
-    job.SetLastTouch(current_time);
+    job.SetLastTouch(op_begin_time);
 
     event.SetNodeAddr(client.GetAddress());
     event.SetStatus(CNetScheduleAPI::ePending);
     event.SetEvent(CJobEvent::eSubmit);
-    event.SetTimestamp(current_time);
+    event.SetTimestamp(op_begin_time);
     event.SetClientNode(client.GetNode());
     event.SetClientSession(client.GetSession());
 
@@ -605,20 +605,23 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
                                        m_HandicapTimeout,
                                        eGet);
 
-        m_GCRegistry.RegisterJob(job_id, current_time,
+        m_GCRegistry.RegisterJob(job_id, op_begin_time,
                                  aff_id, group_id,
                                  job.GetExpirationTime(m_Timeout,
                                                        m_RunTimeout,
                                                        m_ReadTimeout,
                                                        m_PendingTimeout,
-                                                       current_time));
+                                                       op_begin_time));
     }}
+
+    rollback_action = new CNSSubmitRollback(client, job_id,
+                                            op_begin_time,
+                                            CNSPreciseTime::Current());
 
     m_StatisticsCounters.CountSubmit(1);
     if (logging)
         x_LogSubmit(job);
 
-    rollback_action = new CNSSubmitRollback(client, job_id);
     return job_id;
 }
 
