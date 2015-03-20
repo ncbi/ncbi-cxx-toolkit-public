@@ -105,6 +105,7 @@ static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
     size_t alloc_size = ((data_size + chunk_size - 1)
                          / chunk_size) * chunk_size;
     SBufChunk* chunk = (SBufChunk*) malloc(sizeof(*chunk) + alloc_size);
+    assert(!data_size == !alloc_size);
     if (!chunk)
         return 0;
 
@@ -235,6 +236,7 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
         SBufChunk* next;
         if (!(next = s_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
+        assert(next->data);
         memcpy(next->data, (const char*) src + pending, size);
         next->size = size;
         next->next = 0;
@@ -278,11 +280,14 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
     head = (*buf)->list;
 
     /* allocate and link a new chunk at the beginning of the chunk list */
-    if (!head  ||  !head->extent  ||  head->skip < size) {
+    if (!head  ||  !head->extent  ||  size > head->skip) {
         size_t     skip = head  &&  head->extent ? head->skip : 0;
         SBufChunk* next = head;
-        if (!(head = s_AllocChunk(size -= skip, (*buf)->unit)))
+        size -= skip;
+        assert(size);
+        if (!(head = s_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
+        assert(head->data);
         if (skip) {
             /* fill up the skip area */
             memcpy(next->data, (const char*) src + size, skip);

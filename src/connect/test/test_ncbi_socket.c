@@ -96,6 +96,7 @@ static void TEST__client_1(SOCK sock)
     SOCK_SetDataLogging(sock, eOn);
     n_io = strlen(s_S1) + 1;
     status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPeek);
+    assert(status >= eIO_Success);
     status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPlain);
     if (status == eIO_Closed)
         CORE_LOG(eLOG_Fatal, "TC1:: connection closed");

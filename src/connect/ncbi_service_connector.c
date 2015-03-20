@@ -331,11 +331,16 @@ static const char* s_AdjustNetParams(const char*    service,
             char* temp = (char*) malloc(++len/*w/EOL*/);
             if (temp) {
                 retval = temp;
-                memcpy(temp, static_header, sh_len);
-                temp += sh_len;
-                memcpy(temp, extend_header, eh_len);
-                temp += eh_len;
+                if (static_header) {
+                    memcpy(temp, static_header, sh_len);
+                    temp += sh_len;
+                }
+                if (extend_header) {
+                    memcpy(temp, extend_header, eh_len);
+                    temp += eh_len;
+                }
                 strcpy(temp, c_t);
+                assert(*retval);
             }
         } else
             retval = "";
@@ -601,7 +606,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
         uuu->user_header = user_header;
         if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
             return 0/*false - not adjusted*/;
-    } else
+    } else /*NB: special case ""*/
         uuu->user_header = 0;
 
     if (info->type == fSERV_Ncbid  ||  (info->type & fSERV_Http)) {

@@ -332,8 +332,13 @@ static CONNECTOR s_Init
     } else {
         char* temp     = (char*) xxx + sizeof(*xxx);
         xxx->sock      = 0;
-        xxx->size      = data ? size : 0;
-        xxx->data      = memcpy(temp, data, xxx->size);
+        if (data) {
+            xxx->size  = size;
+            xxx->data  = size ? memcpy(temp, data, size) : 0;
+        } else {
+            xxx->size  = 0;
+            xxx->data  = 0;
+        }
         xxx->host      = strcpy(temp + xxx->size, host);
         xxx->port      = port;
         xxx->try_own   = try_own   ? try_own   : 1;
