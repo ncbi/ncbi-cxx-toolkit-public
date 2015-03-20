@@ -123,10 +123,10 @@ public:
 
     virtual ~CGetInfoBase() {}
 
-    void Check()
+    void Check(bool loc_info)
     {
         CheckGetLocation();
-        CheckGetObjectLocInfo();
+        CheckGetObjectLocInfo(loc_info);
         CheckGetCreationTime();
         CheckGetSize();
         CheckGetStorageSpecificInfo();
@@ -143,13 +143,21 @@ private:
         BOOST_CHECK_CTX(GetLocation() == TLocation::value, m_Ctx);
     }
 
-    virtual void CheckGetObjectLocInfo()
+    virtual void CheckGetObjectLocInfo(bool loc_info)
     {
-        if (CJsonNode node = GetObjectLocInfo()) {
-            m_ObjectLocInfoRepr = node.Repr();
-            BOOST_CHECK_CTX(m_ObjectLocInfoRepr.size(), m_Ctx);
+        CJsonNode node = GetObjectLocInfo();
+
+        if (loc_info) {
+            if (node) {
+                m_ObjectLocInfoRepr = node.Repr();
+                BOOST_CHECK_CTX(m_ObjectLocInfoRepr.size(), m_Ctx);
+            } else {
+                BOOST_ERROR_CTX("GetObjectLocInfo() == NULL", m_Ctx);
+            }
         } else {
-            BOOST_ERROR_CTX("!GetObjectLocInfo()", m_Ctx);
+            if (node) {
+                BOOST_ERROR_CTX("GetObjectLocInfo() != NULL", m_Ctx);
+            }
         }
     }
 
@@ -942,6 +950,7 @@ struct SLocBase
     typedef ::TAttrTesting TAttrTesting;
 
     static const bool check_relocate = true;
+    static const bool loc_info = true;
 
     static const char* init_string() { return ""; }
 };
@@ -1095,7 +1104,7 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
 
     attr_tester.Read(TLocation(), Line(__LINE__), object);
 
-    CGetInfo<TLocation>(Line(__LINE__), object, data->Size()).Check();
+    CGetInfo<TLocation>(Line(__LINE__), object, data->Size()).Check(TLoc::loc_info);
 }
 
 template <class TPolicy>
@@ -1166,8 +1175,8 @@ void SFixture<TPolicy>::ReadTwoAndCompare(const string& ctx,
     attr_tester.Read(TLocation(), Line(__LINE__), object1);
     attr_tester.Read(TLocation(), Line(__LINE__), object2);
 
-    CGetInfo<TLocation>(Line(__LINE__), object1, data->Size()).Check();
-    CGetInfo<TLocation>(Line(__LINE__), object2, data->Size()).Check();
+    CGetInfo<TLocation>(Line(__LINE__), object1, data->Size()).Check(TLoc::loc_info);
+    CGetInfo<TLocation>(Line(__LINE__), object2, data->Size()).Check(TLoc::loc_info);
 }
 
 template <class TPolicy>
@@ -1270,7 +1279,7 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     BOOST_CHECK_CTX(Exists(netstorage, id), ctx);
     CNetStorageObject object(Open(netstorage, id));
     CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
-            object, data->Size()).Check();
+            object, data->Size()).Check(TLoc::loc_info);
     LOG_POST(Trace << "Removing existent object");
     Remove(netstorage, id);
 

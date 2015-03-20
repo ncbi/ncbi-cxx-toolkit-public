@@ -47,13 +47,7 @@ typedef pair<string, TNetStorageFlags> TKey;
 
 #define APP_NAME                    "test_netstorage_rpc"
 #define ST_ST_LIST      BOOST_PP_NIL
-
-// TODO: Enable after direct NC API is fixed
-#ifdef TEST_DIRECT_NC
 #define LOC_LOC_LIST    (DirectNC, BOOST_PP_NIL)
-#else
-#define LOC_LOC_LIST    BOOST_PP_NIL
-#endif
 
 NCBI_PARAM_DECL(string, netstorage, service_name);
 typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
@@ -85,6 +79,7 @@ struct SDirectNC
     typedef boost::integral_constant<bool, false> TAttrTesting;
 
     static const bool check_relocate = false;
+    static const bool loc_info = false;
 
     static const char* init_string() { return "&default_storage=nc"; }
 };
