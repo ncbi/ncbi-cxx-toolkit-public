@@ -430,6 +430,12 @@ AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
 
 AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
 {
+    ITERATE ( TValues, i, m_Values ) {
+        string id = GetVar( Identifier( i->GetEnumId() ), false);
+        if (!id.empty()) {
+            i->SetEnumId(id);
+        }
+    }
 // in case client wants std type instead of enum.
 // I must be accurate here to not to mess with GetEnumCInfo()
     string type = GetAndVerifyVar("_type");

@@ -58,11 +58,11 @@ string Identifier(const string& typeName, bool capitalize)
             if ( c == ':' ) {
                 continue;
             }
-            if ( c == '-' || c == '.' ) {
+            if ( c == '-' || c == '.' || c == '_') {
                 c = '_';
             } else if (!isalnum((unsigned char)c)) {
                 string ent(NStr::HtmlEntity((unsigned char)(*i)));
-                if (c != '_' && !ent.empty()) {
+                if (!ent.empty()) {
                     s += ent;
                     continue;
                 }

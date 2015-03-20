@@ -42,7 +42,7 @@ class CEnumDataTypeValue
 {
 public:
     CEnumDataTypeValue(const string& name, TEnumValueType value)
-        : m_SourceLine(0), m_Name(name), m_Value(value)
+        : m_SourceLine(0), m_Name(name), m_Value(value), m_IdName(name)
         {
         }
     
@@ -71,11 +71,19 @@ public:
         {
             return m_SourceLine;
         }
+
+    const string& GetEnumId(void) const {
+        return m_IdName;
+    }
+    void SetEnumId(const string& id) const {
+        m_IdName = id;
+    }
 private:
     int m_SourceLine;
     string m_Name;
     TEnumValueType m_Value;
     CComments m_Comments;
+    mutable string m_IdName;
 };
 
 class CEnumDataType : public CDataType

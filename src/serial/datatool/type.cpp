@@ -335,7 +335,8 @@ bool CDataType::CheckType(void) const
 
 const string CDataType::GetVar(const string& varName, int collect /*= 0*/) const
 {
-    if ( !((CDataTool*)CNcbiApplication::Instance())->HasConfig()) {
+    if ( !((CDataTool*)CNcbiApplication::Instance())->HasConfig() &&
+         !CNcbiApplication::Instance()->GetArgs()["ods"].HasValue()) {
         return kEmptyStr;
     }
     const CDataType* parent = GetParentType();

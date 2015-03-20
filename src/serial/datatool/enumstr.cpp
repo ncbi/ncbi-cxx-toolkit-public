@@ -119,7 +119,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         }
         hpp << " {";
         ITERATE ( TValues, i, m_Values ) {
-            string id = Identifier( i->GetName(), false );
+            string id = Identifier( i->GetEnumId(), false );
             hpp << "\n    " << m_ValuesPrefix << id;
             hpp << string( maxlen - i->GetName().size(),' ' ) << " = ";
             hpp.width( maxwidth );
@@ -190,7 +190,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
                 "    SET_ENUM_BITSET;\n";
         }
         ITERATE ( TValues, i, m_Values ) {
-            string id = Identifier(i->GetName(), false);
+            string id = Identifier(i->GetEnumId(), false);
             cpp <<
                 "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";
         }
