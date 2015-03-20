@@ -82,6 +82,11 @@ struct SDirectNC
     static const bool loc_info = false;
 
     static const char* init_string() { return "&default_storage=nc"; }
+
+    static const char* not_found()
+    {
+        return "o-c8TRwX3VuFSZnf5BuKLelYjHcUK5xKpizKXbIX8EmNDNle";
+    }
 };
 
 

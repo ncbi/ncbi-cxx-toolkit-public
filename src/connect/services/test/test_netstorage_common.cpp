@@ -953,6 +953,12 @@ struct SLocBase
     static const bool loc_info = true;
 
     static const char* init_string() { return ""; }
+
+    static const char* not_found()
+    {
+        return
+            "CiB5fBBOPGA-TABpLX2KezBRLG35vvgq5_umuK_f6Nmv16_17pra7qSJytGakfnGv4I";
+    }
 };
 
 struct SNC2FT : SLocBase
@@ -1298,10 +1304,8 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 {
     data.reset(new TExpected(netstorage.Create(TLoc::source)));
 
-    string not_found(
-            "CiB5fBBOPGA-TABpLX2KezBRLG35vvgq5_umuK_f6Nmv16_17pra7qSJytGakfnGv4I");
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
-        netstorage.Open(not_found));
+        netstorage.Open(TLoc::not_found()));
 
     // Create a NetStorage object
     string object_loc = WriteTwoAndRead<typename TLoc::TCreate>(
