@@ -14,7 +14,6 @@
 -^/c++/include
 -^/c++/src
 -^/c++/configure
--^/scripts
 
 # Leave a bit less projects
 -^/c++/scripts/common
