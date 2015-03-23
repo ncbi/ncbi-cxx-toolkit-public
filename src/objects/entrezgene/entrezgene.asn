@@ -43,7 +43,7 @@ Entrezgene ::= SEQUENCE {
         transposon  (8) ,
         miscRNA  (9) ,
         ncRNA (10) ,
-        biological_region (11),
+        biological-region (11),
         other (255) } ,
     source BioSource , 
     gene Gene-ref ,                     -- for locus-tag see note 3
