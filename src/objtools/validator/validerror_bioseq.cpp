@@ -2375,9 +2375,10 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
         if (mi.GetCompleteness() != CMolInfo::eCompleteness_complete) {
             if (m_Imp.IsGenbank()) {
                 if (NStr::Find(title, "complete genome") != NPOS) {
+                    const CSeq_entry& ctx = *seq.GetParentEntry();
                     PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem,
                         "Complete genome in title without complete flag set",
-                        seq);
+                        ctx, *desc);
                 }
             }
             if (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular && (! s_IsConWithGaps (seq))) {
