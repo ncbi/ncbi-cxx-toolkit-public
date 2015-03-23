@@ -284,8 +284,16 @@ void SNetStorage_NetCacheBlob::Abort()
     }
 }
 
-CNetStorageObject g_CreateNetStorage_NetCacheBlob(
-        CNetCacheAPI::TInstance nc_api, const string& blob_key)
+CNetStorageObject CDNCNetStorage::Create(CNetCacheAPI::TInstance nc_api)
+{
+    auto_ptr<SNetStorage_NetCacheBlob> result(
+            new SNetStorage_NetCacheBlob(nc_api, kEmptyStr));
+    result->x_InitWriter();
+    return result.release();
+}
+
+CNetStorageObject CDNCNetStorage::Open(CNetCacheAPI::TInstance nc_api,
+        const string& blob_key)
 {
     return new SNetStorage_NetCacheBlob(nc_api, blob_key);
 }

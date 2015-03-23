@@ -619,7 +619,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 
     case eDefaultStorage_NetCache:
         x_InitNetCacheAPI();
-        return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, kEmptyStr);
+        return CDNCNetStorage::Create(m_NetCacheAPI);
 
     default: /* eDefaultStorage_NoCreate */
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
@@ -644,7 +644,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 {
     if (x_NetCacheMode(object_loc))
-        return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, object_loc);
+        return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
 
     return new SNetStorageObjectRPC(this, NULL, NULL,
             SNetStorageObjectRPC::eByGeneratedID,

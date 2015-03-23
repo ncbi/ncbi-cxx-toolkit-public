@@ -434,10 +434,14 @@ private:
     mutable string m_Locator;
 };
 
-NCBI_XCONNECT_EXPORT
-CNetStorageObject g_CreateNetStorage_NetCacheBlob(
-        CNetCacheAPI::TInstance nc_api,
+/// @internal
+class NCBI_XCONNECT_EXPORT CDNCNetStorage
+{
+public:
+    static CNetStorageObject Create(CNetCacheAPI::TInstance nc_api);
+    static CNetStorageObject Open(CNetCacheAPI::TInstance nc_api,
         const string& blob_key);
+};
 
 NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
