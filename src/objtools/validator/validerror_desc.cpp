@@ -317,6 +317,7 @@ bool CValidError_desc::ValidateStructuredComment
 
 static string s_OfficialPrefixList[] = {
     "Assembly-Data",
+    "BWP:1.0",
     "EpifluData",
     "Evidence-Data",
     "FluData",

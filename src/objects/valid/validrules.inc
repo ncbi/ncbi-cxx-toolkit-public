@@ -26,7 +26,7 @@
  * Author:  Jonathan Kans et al.
  *
  * File Description:
- *   Built-in copy of validrules.txt.
+ *   Built-in copy of validrules.prt.
  *
  */
 
@@ -997,7 +997,35 @@ static const char* const s_Defaultvalidrules[] = {
     "      {",
     "        field-name \"Transcript_exon_combination_evidence\" ,",
     "        required FALSE } } ,",
-    "    allow-unlisted TRUE } ",
+    "    allow-unlisted TRUE } ,",
+    "  {",
+    "    prefix \"##BWP:1.0-START##\" ,",
+    "    fields {",
+    "      {",
+    "        field-name \"chainOfCustody\" ,",
+    "        required FALSE } , ",
+    "      {",
+    "        field-name \"typeStatus\" ,",
+    "        required TRUE ,",
+    "        severity info } ,",
+    "      {",
+    "        field-name \"basisOfIdentification\" ,",
+    "        required TRUE ,",
+    "        severity info } ,",
+    "      {",
+    "        field-name \"identificationConfidence\" ,",
+    "        match-expression \"^\\([Hh]igh\\|[Mm]edium\\|[Pp]reliminary\\)$\" ,",
+    "        required TRUE ,",
+    "        severity info } ,",
+    "      {",
+    "        field-name \"identificationDate\" ,",
+    "        required TRUE ,",
+    "        severity info } ,",
+    "      {",
+    "        field-name \"coordinatePrecision\" ,",
+    "        required FALSE } } ,",
+    "    require-order FALSE ,",
+    "    allow-unlisted TRUE }",
     "}",
     ""
 };
