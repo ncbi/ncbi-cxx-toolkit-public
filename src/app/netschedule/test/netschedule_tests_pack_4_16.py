@@ -935,7 +935,6 @@ class Scenario1110( TestBase ):
 
         output = execAny( ns_client, 'HEALTH' )
         values = parse_qs( output, True, True )
-        print values
         if 'alert_startaftercrash' in values:
             if values[ 'alert_startaftercrash' ][ 0 ] != '1' and \
                values[ 'alert_startaftercrash' ][ 0 ] != '1/1':
