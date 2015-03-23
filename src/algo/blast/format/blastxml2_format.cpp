@@ -235,20 +235,13 @@ s_SeqAlignSetToXMLHsps(list<CRef<blastxml2::CHsp> >& xhsp_list,
 
         if (!kTranslated && query_is_na && subject_is_na) {
            	xhsp->SetQuery_strand("Plus");
+           	xhsp->SetHit_strand("Plus");
             if (eNa_strand_minus == kAlign.GetSeqStrand(0)){
-            	xhsp->SetQuery_strand("Minus");
+            	xhsp->SetHit_strand("Minus");
                 int tmp = s_start;
                 s_start = s_end;
                 s_end = tmp;
             }
-            else {
-            	xhsp->SetQuery_strand("Plus");
-            }
-
-            if (eNa_strand_minus == kAlign.GetSeqStrand(1))
-            	xhsp->SetQuery_strand("Minus");
-            else
-            	xhsp->SetHit_strand("Plus");
 
         } else if (kTranslated) {
         	align_length = final_aln->GetAlignLength();
@@ -282,9 +275,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<blastxml2::CHsp> >& xhsp_list,
         }
        else
        {
-          	  CDisplaySeqalign::SeqLocCharOption kMaskCharOpt =
-                                 (kIsBlastn ? CDisplaySeqalign::eN : CDisplaySeqalign::eX);
-
+          	  CDisplaySeqalign::SeqLocCharOption kMaskCharOpt = CDisplaySeqalign::eLowerCase;
                 CBlastFormatUtil::GetWholeAlnSeqStrings(query_seq,
               		  	  	  	  	  	  	  	  	  masked_query_seq,
                  								   	   	  subject_seq,
