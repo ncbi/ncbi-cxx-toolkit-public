@@ -2308,13 +2308,18 @@ private:
     friend class CDiagBuffer;
     friend class CRequestContext;
 
-    // Default hit id initialization flag.
-    enum EDefaultHitIDFlag {
+    // Default hit id initialization flags.
+    enum EDefaultHitIDFlags {
         eHitID_NoCreate, // Do not create new hit id.
         eHitID_Create    // Create new hit id if it's not yet set.
     };
 
-    string x_GetDefaultHitID(EDefaultHitIDFlag flag) const;
+    // Check if current state is 'PB/P/PE'.
+    bool x_DiagAtApplicationLevel(void) const;
+    bool x_IsSetDefaultHitID(void) const;
+    string x_GetDefaultHitID(EDefaultHitIDFlags flag) const;
+    void x_LogHitID(void) const;
+    void x_LogHitID_WithLock(void) const; // Same as above but with mutex lock.
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;
@@ -2330,6 +2335,7 @@ private:
     mutable bool                        m_AppNameSet;
     mutable auto_ptr<CEncodedString>    m_DefaultSessionId;
     mutable auto_ptr<string>            m_DefaultHitId;
+    mutable bool                        m_LoggedHitId;
     int                                 m_ExitCode;
     bool                                m_ExitCodeSet;
     int                                 m_ExitSig;

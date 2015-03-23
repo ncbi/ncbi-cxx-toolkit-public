@@ -73,18 +73,21 @@ CRequestContext::TCount CRequestContext::GetNextRequestID(void)
 }
 
 
-static void s_LogHitID(const string& phid)
+void CRequestContext::x_LogHitID(bool ignore_app_state) const
 {
-    GetDiagContext().Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), phid);
-}
+    if (m_LoggedHitID || m_HitID.empty()) return;
 
+    // ignore_app_state can be set by CDiagContext in case if hit-id
+    // was set for request context only (no default one), but request
+    // start/stop never happened and the hit id may be lost. If this
+    // happens, CDiagContext may force logging of the request's hit id
+    // on application stop.
 
-void CRequestContext::x_LogHitID(void) const
-{
-    if (m_LoggedHitID  ||  m_HitID.empty()) return;
-    if (m_AppState != eDiagAppState_Request  &&
-        m_AppState != eDiagAppState_RequestBegin) return;
-    s_LogHitID(m_HitID);
+    if (!ignore_app_state  &&
+        m_AppState != eDiagAppState_Request  &&
+        m_AppState != eDiagAppState_RequestBegin  &&
+        m_AppState != eDiagAppState_RequestEnd) return;
+    GetDiagContext().Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), m_HitID);
     m_LoggedHitID = true;
 }
 
@@ -92,18 +95,26 @@ void CRequestContext::x_LogHitID(void) const
 const string& CRequestContext::SetHitID(void)
 {
     SetHitID(GetDiagContext().GetNextHitID());
-    x_LogHitID();
     return m_HitID;
 }
 
 
-string CRequestContext::x_GetHitID(CDiagContext::EDefaultHitIDFlag flag) const
+string CRequestContext::x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const
 {
     if ( x_IsSetProp(eProp_HitID) ) {
         x_LogHitID();
         return m_HitID;
     }
-    return GetDiagContext().x_GetDefaultHitID(flag);
+    string phid = GetDiagContext().x_GetDefaultHitID(CDiagContext::eHitID_NoCreate);
+    if (!phid.empty()) {
+        const_cast<CRequestContext*>(this)->SetHitID(phid);
+        return phid;
+    }
+    if (flag != CDiagContext::eHitID_NoCreate) {
+        // If there's no hit id available, create (and log) a new one.
+        return const_cast<CRequestContext*>(this)->SetHitID();
+    }
+    return kEmptyStr;
 }
 
 
@@ -197,18 +208,15 @@ void CRequestContext::StartRequest(void)
     }
     GetRequestTimer().Restart();
     m_IsRunning = true;
+    x_LogHitID();
 }
 
 
 void CRequestContext::StopRequest(void)
 {
-    if ( !m_LoggedHitID ) {
-        // This is the last opportunity to log global hit id if the local
-        // was not set.
-        string phid = GetDiagContext().x_GetDefaultHitID(CDiagContext::eHitID_NoCreate);
-        if ( !phid.empty() ) {
-            s_LogHitID(phid);
-        }
+    if (!m_LoggedHitID) {
+        // Hit id has not been set or logged yet. Try to log the default one.
+        x_GetHitID(CDiagContext::eHitID_NoCreate);
     }
     Reset();
     m_IsRunning = false;
@@ -326,6 +334,8 @@ void CRequestContext::SetHitID(const string& hit)
         m_SubHitID = 0;
     }
     m_HitID = hit;
+    m_LoggedHitID = false;
+    x_LogHitID();
 }
 
 
@@ -333,15 +343,16 @@ const string& CRequestContext::GetNextSubHitID(void)
 {
     static CSafeStatic<CAtomicCounter_WithAutoInit> s_DefaultSubHitCounter;
 
-    if ( !IsSetHitID() ) return kEmptyStr;
+    _ASSERT(IsSetHitID());
 
     // Use global sub-hit counter for default hit id to prevent
     // duplicate phids in different threads.
-    int sub_hit_id = GetHitID() == GetDiagContext().GetDefaultHitID() ?
+    m_SubHitIDCache = GetHitID();
+    int sub_hit_id = m_SubHitIDCache == GetDiagContext().GetDefaultHitID() ?
         s_DefaultSubHitCounter->Add(1) : ++m_SubHitID;
 
     // Cache the string so that C code can use it.
-    m_SubHitIDCache = GetHitID() + "." + NStr::NumericToString(sub_hit_id);
+    m_SubHitIDCache += "." + NStr::NumericToString(sub_hit_id);
     return m_SubHitIDCache;
 }
 

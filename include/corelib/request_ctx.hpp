@@ -107,17 +107,40 @@ public:
     string        GetEncodedSessionID(void) const;
 
     /// Hit ID
-    /// Get explicit hit id or the default one (from HTTP_NCBI_PHID or
-    /// generated automatically at application start).
+    /// Allowed source of the current hit id
+    /// @sa IsSetHitID
+    enum EHitIDSource {
+        eHitID_Any = 0,        ///< Any hit id - always return true.
+        eHitID_Request = 0x01, ///< Check if per-request hit id is set.
+        eHitID_Default = 0x02, ///< Check if default hit id is set.
+
+        /// Check if any hit is already available (will not be generated
+        /// on request).
+        eHidID_Existing = eHitID_Default | eHitID_Request
+    };
+
+    /// Get explicit hit id or the default one (from HTTP_NCBI_PHID etc).
+    /// If none of the above is available, generate a new id for the current
+    /// request.
+    /// If using the default hit id, it is cached in the request context and
+    /// becomes local one.
     string        GetHitID(void) const
         { return x_GetHitID(CDiagContext::eHitID_Create); }
-
-    /// Set explicit hit id.
+    /// Set explicit hit id. The id is reset on request end.
     void          SetHitID(const string& hit);
     /// Check if there's an explicit hit id or the default one.
-    bool          IsSetHitID(void) const;
+    /// @param src
+    ///   Allowed source(s) of hit id.
+    /// @return
+    ///   If 'src' is eHitID_Any, always return 'true' because GetHitID
+    ///   always returns a non-empty value. For other options return true
+    ///   if the selected hit id source is already not empty.
+    bool          IsSetHitID(EHitIDSource src = eHitID_Any) const;
     /// Check if there's an explicit hit id.
-    bool          IsSetExplicitHitID(void) const;
+    /// @deprecated Use IsSetHitID(eHitID_Request) instead.
+    NCBI_DEPRECATED
+    bool          IsSetExplicitHitID(void) const
+        { return IsSetHitID(eHitID_Request); }
     /// Reset explicit hit id.
     void          UnsetHitID(void);
     /// Generate unique hit id, assign it to this request, return
@@ -261,9 +284,10 @@ private:
 
     // Log current hit id if not yet logged and if the application state is
     // 'in request', otherwise postpone logging until StartRequest is executed.
-    void x_LogHitID(void) const;
+    // If 'ignore_app_state' is set, log any available hit id anyway.
+    void x_LogHitID(bool ignore_app_state = false) const;
 
-    string x_GetHitID(CDiagContext::EDefaultHitIDFlag flag) const;
+    string x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const;
 
     static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
 
@@ -399,18 +423,21 @@ void CRequestContext::UnsetSessionID(void)
 
 
 inline
-bool CRequestContext::IsSetHitID(void) const
+bool CRequestContext::IsSetHitID(EHitIDSource src) const
 {
-    // Either explicit or default hit id is always available.
-    return true;
+    if (src == eHitID_Any) {
+        // Local, default or auto-created hit id is always available.
+        return true;
+    }
+    if ((src & eHitID_Request)  &&  x_IsSetProp(eProp_HitID)) {
+        return true;
+    }
+    if ((src & eHitID_Default) && GetDiagContext().x_IsSetDefaultHitID()) {
+        return true;
+    }
+    return false;
 }
 
-
-inline
-bool CRequestContext::IsSetExplicitHitID(void) const
-{
-    return x_IsSetProp(eProp_HitID);
-}
 
 inline
 void CRequestContext::UnsetHitID(void)

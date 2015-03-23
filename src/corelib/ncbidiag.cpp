@@ -1139,6 +1139,7 @@ CDiagContext::CDiagContext(void)
       m_Username(new CEncodedString),
       m_AppName(new CEncodedString),
       m_AppNameSet(false),
+      m_LoggedHitId(false),
       m_ExitCode(0),
       m_ExitCodeSet(false),
       m_ExitSig(0),
@@ -1874,11 +1875,24 @@ void CDiagContext::PrintProperties(void)
 void CDiagContext::PrintStart(const string& message)
 {
     x_PrintMessage(SDiagMessage::eEvent_Start, message);
+    // Log hit id if already available.
+    x_GetDefaultHitID(eHitID_NoCreate);
 }
 
 
 void CDiagContext::PrintStop(void)
 {
+    // If no hit id has been logged until app-stop,
+    // try to force logging now.
+    if (x_IsSetDefaultHitID()) {
+        x_LogHitID_WithLock();
+    }
+    else {
+        CRequestContext& ctx = GetRequestContext();
+        if (ctx.IsSetHitID(CRequestContext::eHitID_Request)) {
+            ctx.x_LogHitID(true);
+        }
+    }
     x_PrintMessage(SDiagMessage::eEvent_Stop, kEmptyStr);
 }
 
@@ -2238,6 +2252,9 @@ void CDiagContext::PrintRequestStop(void)
     x_PrintMessage(SDiagMessage::eEvent_RequestStop, kEmptyStr);
     if ( app_state_updated ) {
         SetAppState(eDiagAppState_AppRun);
+        // Now back at application level check if a default hit id
+        // needs to be logged.
+        x_LogHitID_WithLock();
     }
 }
 
@@ -2405,7 +2422,45 @@ typedef NCBI_PARAM_TYPE(Log, Hit_Id) TParamHitId;
 
 DEFINE_STATIC_FAST_MUTEX(s_DefaultHidMutex);
 
-string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlag flag) const
+bool CDiagContext::x_DiagAtApplicationLevel(void) const
+{
+    EDiagAppState state = GetAppState();
+    return (state == eDiagAppState_AppBegin) ||
+        (state == eDiagAppState_AppRun) ||
+        (state == eDiagAppState_AppEnd);
+}
+
+
+void CDiagContext::x_LogHitID(void) const
+{
+    // NOTE: The method must be always called with s_DefaultHidMutex locked.
+
+    // Log the default hit id only when at application level. Otherwise
+    // pospone it untill request-stop/app-stop.
+    if (m_LoggedHitId || !m_DefaultHitId.get() || m_DefaultHitId->empty() ||
+        !x_DiagAtApplicationLevel()) {
+        return;
+    }
+    Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), *m_DefaultHitId);
+    m_LoggedHitId = true;
+}
+
+
+void CDiagContext::x_LogHitID_WithLock(void) const
+{
+    CFastMutexGuard guard(s_DefaultHidMutex);
+    x_LogHitID();
+}
+
+
+bool CDiagContext::x_IsSetDefaultHitID(void) const
+{
+    CFastMutexGuard guard(s_DefaultHidMutex);
+    return m_DefaultHitId.get() && !m_DefaultHitId->empty();
+}
+
+
+string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
 {
     CFastMutexGuard guard(s_DefaultHidMutex);
     if (m_DefaultHitId.get()  &&  !m_DefaultHitId->empty()) {
@@ -2422,10 +2477,13 @@ string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlag flag) const
             *m_DefaultHitId = CRequestContext::SelectLastHitID(
                 TParamHitId::GetDefault());
         }
-        if (m_DefaultHitId->empty()  &&  (flag & eHitID_Create)) {
+        if (m_DefaultHitId->empty()  &&  (flag == eHitID_Create)) {
             *m_DefaultHitId = GetNextHitID();
         }
     }
+    _ASSERT(!m_LoggedHitId);
+    // Log hit id if at application level.
+    x_LogHitID();
     return *m_DefaultHitId;
 }
 
@@ -2437,6 +2495,9 @@ void CDiagContext::SetDefaultHitID(const string& hit_id)
         m_DefaultHitId.reset(new string);
     }
     *m_DefaultHitId = hit_id;
+    // Log new hit id when at application level.
+    m_LoggedHitId = false;
+    x_LogHitID();
 }
 
 
@@ -2609,8 +2670,6 @@ void CDiagContext::x_StartRequest(void)
         }
         extra.Flush();
     }
-    // Log hit id on request start.
-    ctx.x_LogHitID();
 }
 
 
@@ -2678,16 +2737,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     mess.m_Event = event;
     CDiagBuffer::DiagHandler(mess);
 
-    if (event == SDiagMessage::eEvent_Start) {
-        // After app start log any PHID already set.
-        // Check request context first, if it has an explicit PHID set, use that.
-        // Otherwise check the default PHID, but do not generate a new one.
-        string phid = ctx.x_GetHitID(eHitID_NoCreate);
-        if ( !phid.empty() ) {
-            Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), phid);
-        }
-    }
-    else if (event == SDiagMessage::eEvent_RequestStop) {
+    if (event == SDiagMessage::eEvent_RequestStop) {
         // Reset request context after stopping the request.
         ctx.StopRequest();
     }
