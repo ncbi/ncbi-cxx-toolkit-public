@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin
+* Authors:  Yuri Kapustin, Boris Kiryutin
 *
 * File Description:
 *   CSplign class implementation
@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "splign_util.hpp"
+#include "splign_exon_trim.hpp"
 #include "messages.hpp"
 
 #include <algo/align/util/hit_comparator.hpp>
@@ -1833,8 +1834,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
 // at this level and below, plus strand is assumed for both sequences
 float CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
-    typedef deque<TSegment> TSegmentDeque;
-    TSegmentDeque segments;
+    typedef TSegments TSegmentVector;
+    TSegmentVector segments;
 
 //#define DBG_DUMP_PATTERN
 #ifdef  DBG_DUMP_PATTERN
@@ -1939,7 +1940,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 //#define DUMP_ORIG_SEGS
 #ifdef DUMP_ORIG_SEGS
     cerr << "Orig segments:" << endl;
-    ITERATE(TSegmentDeque, ii, segments) {
+    ITERATE(TSegmentVector, ii, segments) {
         cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
              << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
@@ -1961,7 +1962,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
     // if the limiting range is set, clear all segments beyond the range
     if(m_BoundingRange.second > 0) {
 
-        NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+        NON_CONST_ITERATE(TSegmentVector, ii, segments) {
             if(ii->m_exon  &&
                (ii->m_box[3] < m_BoundingRange.first
                 || ii->m_box[2] > m_BoundingRange.second))
@@ -1974,22 +1975,22 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
     m_segments.resize(0);
     
     bool is_test = false;
-    //    bool is_test_plus = false;
+    bool is_test_plus = false;
     if( GetTestType() == kTestType_20_28 ) {
         is_test = true;
     } else if( GetTestType() == kTestType_20_28_plus ) {
         is_test = true;
-        //    is_test_plus = true;
+        is_test_plus = true;
     } 
 
-
+    CSplignTrim trim(&m_genomic.front(), (int)m_genomic.size(), m_aligner); 
     
     //partial trimming near sequence gaps   
     {{
         if (is_test)  { // test mode    
             bool first = true;
-            TSegmentDeque::iterator prev;
-            NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+            TSegmentVector::iterator prev;
+            NON_CONST_ITERATE(TSegmentVector, ii, segments) {
                 if(ii->m_exon == false) continue;
                 if(first) {
                     first = false;
@@ -2013,8 +2014,13 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                cout<<endl; 
                             */
                             
-                            prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
-                            ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                            if(is_test_plus) {
+                                trim.ImproveFromRight(*prev);                
+                                trim.ImproveFromLeft(*ii);                
+                            } else {
+                                prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                                ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                            }
                             //add gaps if needed        
                             if( ii->m_box[0] > prev->m_box[1] + 1) {
                                 TSegment sgap;
@@ -2050,7 +2056,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         size_t exon_count0 (0);
-        ITERATE(TSegmentDeque, ii, segments) {
+        ITERATE(TSegmentVector, ii, segments) {
             if(ii->m_exon) ++exon_count0;
         }
 
@@ -2091,7 +2097,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             //extension sometimes leads to gap dissapearance
             //remove/correct gaps after extension of exons
             {{
-                TSegmentDeque tmp_segments;
+                TSegmentVector tmp_segments;
                 TSegment g;
                 g.SetToGap();
                 int prev_exon_index = -1;
@@ -2183,16 +2189,24 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         } else { // test mode
             //trim terminal exons only
             //first exon
-            NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+            NON_CONST_ITERATE(TSegmentVector, ii, segments) {
                 if(ii->m_exon) {
-                    ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                    if(is_test_plus) {
+                        trim.Cut50FromLeft(*ii);
+                    } else {
+                        ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                    }                    
                     break;    
                 }
             }
             //last exon
-            NON_CONST_REVERSE_ITERATE(TSegmentDeque, ii, segments) {
+            NON_CONST_REVERSE_ITERATE(TSegmentVector, ii, segments) {
                 if(ii->m_exon) {
-                    ii->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                    if(is_test_plus) {
+                        trim.Cut50FromRight(*ii);                
+                    } else {
+                        ii->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                    }                                    
                     break;    
                 }
             }
@@ -2203,14 +2217,30 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
                     if(is_test) {
+                        if(is_test_plus) {
+                            if( ( (int)SeqLen1 - (int)segments[k0-1].m_box[1] - 1 ) >= kFlankExonProx ) {
+                                trim.ImproveFromRight(segments[k0-1]);
+                            } else {
+                                trim.Cut50FromRight(segments[k0-1]);
+                            }
+                        } else {
                             segments[k0-1].ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                        }   
                     } else {
                             segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);                
                     }
                 }
                 if( k0 + 1 < segments.size() && segments[k0+1].m_exon) {
                     if(is_test) {
-                            segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                            if(is_test_plus) {
+                                if( (int)segments[k0+1].m_box[0] >= kFlankExonProx ) {
+                                    trim.ImproveFromLeft(segments[k0+1]);                
+                                } else {
+                                    trim.Cut50FromLeft(segments[k0+1]);
+                                }
+                            } else {
+                                segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                            }
                     } else {
                             segments[k0+1].ImproveFromLeft(Seq1, Seq2, m_aligner);                
                     }
@@ -2234,7 +2264,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             g.m_box[2] = 0;
             g.m_box[3] = segments[0].m_box[2] - 1;
             g.SetToGap();
-            segments.push_front(g);
+            segments.insert(segments.begin(), g);
         }
         
         // same on the right        
@@ -2256,7 +2286,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         {{
             bool first_exon = true;
             TSegment *last_exon = NULL;
-            NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+            NON_CONST_ITERATE(TSegmentVector, ii, segments) {
                 if(ii->m_exon) {
                     //first exon
                     if(first_exon) {
@@ -2279,22 +2309,46 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
 
         //throw away low identity exons       
-        NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+        NON_CONST_ITERATE(TSegmentVector, ii, segments) {
             if(ii->m_exon == false) continue;
             if(ii->m_idty < m_MinExonIdty) {
                 if( is_test ) {//try to trim it first
                     TSegment sl(*ii), sr(*ii);
-                    sl.ImproveFromLeft1(Seq1, Seq2, m_aligner);
-                    sr.ImproveFromRight1(Seq1, Seq2, m_aligner);
-                    if(sl.m_details != ii->m_details || sr.m_details != ii->m_details){
-                        //pick better one
-                        if(sl.m_details == ii->m_details ||
-                           (sr.m_details != ii->m_details && sr.m_score > sl.m_score ) ) {
-                            *ii = sr;
+                    if(is_test_plus) {
+                        trim.ImproveFromLeft(sl);
+                        trim.ImproveFromRight(sr);
+                    } else {
+                        sl.ImproveFromLeft1(Seq1, Seq2, m_aligner);
+                        sr.ImproveFromRight1(Seq1, Seq2, m_aligner);
+                    }
+                    if( sl.m_details == ii->m_details && sr.m_details == ii->m_details ) {//did not help
+                        ii->SetToGap();
+                    } else {
+                        //pick better one   
+                        if(is_test_plus) {
+                            //there is a splice on left, but no splice on right     
+                            if( sr.m_details != ii->m_details && ii != segments.begin() && (ii-1)->m_exon && ( (ii+1) == segments.end() || !(ii+1)->m_exon ) ) {
+                                *ii = sr;
+                                //splice on right, no splice on left    
+                            } else if( sl.m_details != ii->m_details && (ii+1) != segments.end() && (ii+1)->m_exon && ( ii == segments.begin() || !(ii-1)->m_exon) ) {
+                                *ii = sl;
+                            } else if(sl.m_details == ii->m_details ||
+                                      (sr.m_details != ii->m_details && sr.m_score > sl.m_score ) ) {
+                                *ii = sr;
+                            } else {
+                                *ii = sl;
+                            }
                         } else {
-                            *ii = sl;
+                            if(sl.m_details != ii->m_details || sr.m_details != ii->m_details){
+                                if(sl.m_details == ii->m_details ||
+                                   (sr.m_details != ii->m_details && sr.m_score > sl.m_score ) ) {
+                                    *ii = sr;
+                                } else {
+                                    *ii = sl;
+                                }
+                            }
                         }
-                        //add gaps if needed
+                        //add gaps if needed    
                         if(ii != segments.begin() && (ii)->m_box[0] > (ii - 1)->m_box[1] + 1) {
                             TSegment sgap;
                             sgap.m_box[0] = (ii - 1)->m_box[1] + 1;
@@ -2317,12 +2371,9 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                             ii = segments.insert(ii, sgap);
                             continue_iterations = true;
                         }
-
-                    } else {
-                        ii->SetToGap();//partial trimming did not help
                     }
-                } else {// end of test mode
-                    //old style, just throw away
+                } else {// end of test mode 
+                    //old style, just throw away        
                     ii->SetToGap();
                 } 
             } else if(ii->m_idty < .9 && ii->m_len < 20) {
@@ -2670,6 +2721,34 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
     }}
 
+    //throw away bad stand alone exons
+    {{
+      if(is_test_plus) {
+          bool adjust = false;
+          bool prev_exon = false;
+          size_t ssize = m_segments.size();
+          for(size_t pp = 0; pp <ssize ; ++pp) {
+              if(m_segments[pp].m_exon) {
+                  if( !prev_exon && ( pp == ssize - 1 || !m_segments[pp+1].m_exon ) ) { //stand alone exon  
+                      if(trim.ThrowAway20_28_90(m_segments[pp])) {
+                          adjust = true;
+                      }
+                  }
+                  prev_exon = true;
+              } else {
+                  prev_exon = false;
+              }
+          }          
+          if(adjust) {
+              trim.AdjustGaps(m_segments);
+          }
+      }
+    }}
+
+    if( m_segments.size() == 0 ) {
+        NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons         
+    }
+    
 
 //#define DUMP_PROCESSED_SEGS
 #ifdef DUMP_PROCESSED_SEGS

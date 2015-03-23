@@ -747,7 +747,7 @@ int CNWFormatter::SSegment::CanExtendRight(const vector<char>& mrna, const vecto
     int mind0 = m_box[1] + 1;
     int mind = mind0;
     int gind = m_box[3] + 1;
-    for(; mind < mrna.size() && gind < genomic.size(); ++gind, ++mind) {
+    for(; mind < (int)mrna.size() && gind < (int)genomic.size(); ++gind, ++mind) {
         if( toupper(mrna[mind]) == 'N' || mrna[mind] != genomic[gind] ) break;
     }
     return mind - mind0;
@@ -866,15 +866,22 @@ bool CNWFormatter::SSegment::s_IsConsensusSplice(const char* donor,
 
     return rv;
 }
-
 void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
+{
+    vector<SSegment> v;
+    MakeSegments(&v);
+    psegments->clear();
+    copy(v.begin(), v.end(), psegments->begin());
+}
+
+void CNWFormatter::MakeSegments(vector<SSegment>* psegments) const
 {
     const CNWAligner::TTranscript transcript (m_aligner->GetTranscript());
     if(transcript.size() == 0) {
         NCBI_THROW(CAlgoAlignException, eNoSeqData, g_msg_NoAlignment);
     }
 
-    deque<SSegment>& segments (*psegments);
+    vector<SSegment>& segments(*psegments);
     segments.resize(0);
 
     bool esfL1, esfR1, esfL2, esfR2;

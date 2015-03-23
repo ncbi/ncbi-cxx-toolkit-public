@@ -147,7 +147,8 @@ public:
     };
 
     // partition a spliced alignment into SSegment's
-    void MakeSegments(deque<SSegment>* psegments) const;
+    void MakeSegments(vector<SSegment>* psegments) const;
+    void MakeSegments(deque<SSegment>* psegments) const;//should be deprecated
 
 private:
 
