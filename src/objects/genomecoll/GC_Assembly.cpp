@@ -317,6 +317,29 @@ void CGC_Assembly::Find(const CSeq_id_Handle& id,
     }
 }
 
+void CGC_Assembly::GetRepliconTypeLocRole(const CSeq_id_Handle& id, string& type, string& location, int& role) const
+{
+    CGC_Assembly::TSequenceList seqs;
+    Find(id, seqs);
+
+    role = 0;
+
+    ITERATE(CGC_Assembly::TSequenceList, its, seqs)
+    {
+        CConstRef<CGC_Replicon> repl((*its)->GetReplicon());
+        if(repl)
+        {
+            type = repl->GetMoleculeType();
+            location = repl->GetMoleculeLocation();
+        }
+        if     ((*its)->HasRole(eGC_SequenceRole_chromosome) && (!role || role > eGC_SequenceRole_chromosome)) role = eGC_SequenceRole_chromosome;
+        else if((*its)->HasRole(eGC_SequenceRole_scaffold)   && (!role || role > eGC_SequenceRole_scaffold  )) role = eGC_SequenceRole_scaffold;
+
+        if(!type.empty() && !location.empty() && role > 0)
+            return;
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 void CGC_Assembly::PreWrite() const
