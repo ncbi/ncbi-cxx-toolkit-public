@@ -1,3 +1,15 @@
+Release 4.21.0 cloned from 4.20.3 (2015-03-23)
+
+Improvements:
+    * NetSchedule: new alert counter - since the last acknowledge
+      (JIRA: CXX-5794)
+    * NetSchedule: debug mode only features to support failure imitation
+      (JIRA: CXX-5445)
+    * NetSchedule: SUBMIT rollback timestamps in the error message
+      (JIRA: CXX-5427)
+    * NetSchedule: ability to specify a client type explicitly
+      (JIRA: CXX-5326)
+
 Release 4.20.3 cloned from 4.20.2 (2015-03-17)
 
 Improvements:
