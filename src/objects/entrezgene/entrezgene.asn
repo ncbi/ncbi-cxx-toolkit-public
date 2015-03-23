@@ -138,9 +138,9 @@ Gene-commentary ::= SEQUENCE {
     products SEQUENCE OF Gene-commentary OPTIONAL ,
     properties SEQUENCE OF Gene-commentary OPTIONAL ,
     comment SEQUENCE OF Gene-commentary OPTIONAL ,
-    rna RNA-ref OPTIONAL ,
     create-date Date OPTIONAL ,   
-    update-date Date OPTIONAL } 
+    update-date Date OPTIONAL ,   
+    rna RNA-ref OPTIONAL } 
  
 Other-source ::= SEQUENCE { 
     src Dbtag OPTIONAL ,                -- key to non-ncbi source 
