@@ -935,12 +935,12 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
     static const string kUnverifiedPrefix = "GenBank staff is unable to verify ";
     static const string kUnverifiedSuffix = " provided by the submitter.";
 
-    typedef pair<CBioseqContext::TUnverified, const string>  TUnverifiedElem;
+    typedef SStaticPair<CBioseqContext::TUnverified, const char*> TUnverifiedElem;
     static const TUnverifiedElem sc_unverified_map[] = {
-        TUnverifiedElem(CBioseqContext::fUnverified_Organism,              "source organism"),
-        TUnverifiedElem(CBioseqContext::fUnverified_SequenceOrAnnotation,  "sequence and/or annotation")
+        { CBioseqContext::fUnverified_Organism,              "source organism" },
+        { CBioseqContext::fUnverified_SequenceOrAnnotation,  "sequence and/or annotation" }
     };
-    typedef CStaticArrayMap<CBioseqContext::TUnverified, const string> TUnverifiedMap;
+    typedef CStaticArrayMap<CBioseqContext::TUnverified, const char*> TUnverifiedMap;
     DEFINE_STATIC_ARRAY_MAP(TUnverifiedMap, sc_UnverifiedMap, sc_unverified_map);
 
     vector<string> arr_type_string;
