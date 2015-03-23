@@ -935,12 +935,13 @@ class Scenario1110( TestBase ):
 
         output = execAny( ns_client, 'HEALTH' )
         values = parse_qs( output, True, True )
+        print values
         if 'alert_startaftercrash' in values:
-            if values[ 'alert_startaftercrash' ][ 0 ] != '1' or \
+            if values[ 'alert_startaftercrash' ][ 0 ] != '1' and \
                values[ 'alert_startaftercrash' ][ 0 ] != '1/1':
                 raise Exception( "Unexpected alert_startaftercrash alert value" )
         elif 'alert_StartedAfterCrash' in values:
-            if values[ 'alert_StartedAfterCrash' ][ 0 ] != '1' or \
+            if values[ 'alert_StartedAfterCrash' ][ 0 ] != '1' and \
                values[ 'alert_StartedAfterCrash' ][ 0 ] != '1/1':
                 raise Exception( "Unexpected alert_StartedAfterCrash alert value" )
         else:
