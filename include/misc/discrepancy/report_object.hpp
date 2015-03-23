@@ -89,7 +89,7 @@ public:
     static string GetTextObjectDescription(const CSeqdesc& sd);
     static string GetTextObjectDescription(CBioseq_Handle bsh);
 
-    static bool AlreadyInList(TReportObjectList list, const CReportObject& new_obj);
+    static bool AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj);
 
     /// Do CReportObjects represent the same object?
     bool Equal(const CReportObject& other) const;

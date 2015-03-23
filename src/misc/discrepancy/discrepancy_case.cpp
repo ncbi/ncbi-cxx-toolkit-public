@@ -54,9 +54,9 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES)
     }
 
     m_ReportItems.clear();
-    stringstream ss;
+    CNcbiOstrstream ss;
     ss << GetName() << ": " << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(ss.str()));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
     item->SetDetails(m_Objs);
     m_ReportItems.push_back(CRef<CReportItem>(item.Release()));
     return true;
@@ -77,9 +77,9 @@ DISCREPANCY_CASE(COUNT_PROTEINS)
     }
 
     m_ReportItems.clear();
-    stringstream ss;
+    CNcbiOstrstream ss;
     ss << GetName() << ": " << m_Objs.size() << " protein sequence" << (m_Objs.size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(ss.str()));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
     item->SetDetails(m_Objs);
     m_ReportItems.push_back(CRef<CReportItem>(item.Release()));
     return true;
@@ -258,9 +258,9 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)
     if (!n) return false;
 
     m_ReportItems.clear();
-    stringstream ss;
+    CNcbiOstrstream ss;
     ss << GetName() << ": " << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(ss.str()));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
     TReportObjectList Objs(m_Objs);
     copy(m_ObjsNoNote.begin(), m_ObjsNoNote.end(), back_inserter(Objs));
     item->SetDetails(Objs);
@@ -446,9 +446,9 @@ DISCREPANCY_CASE(CONTAINED_CDS, TReportObjectList m_ObjsSameStrand; TReportObjec
     if (!n) return false;
 
     m_ReportItems.clear();
-    stringstream ss;
+    CNcbiOstrstream ss;
     ss << GetName() << ": " << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(ss.str()));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
     TReportObjectList Objs(m_Objs);
     copy(m_ObjsSameStrand.begin(), m_ObjsSameStrand.end(), back_inserter(Objs));
     copy(m_ObjsDiffStrand.begin(), m_ObjsDiffStrand.end(), back_inserter(Objs));

@@ -34,19 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
 #include <objects/submit/Seq_submit.hpp>
-
-//#include <objects/seq/Bioseq.hpp>
-//#include <objects/seqset/Seq_entry.hpp>
-
-//#include <objects/submit/Seq_submit.hpp>
-
-// Object Manager includes
 #include <objmgr/object_manager.hpp>
-//#include <objmgr/scope.hpp>
-//#include <objtools/data_loaders/genbank/readers.hpp>
-//#include <objtools/data_loaders/genbank/gbloader.hpp>
-
-//#include <dbapi/driver/drivers.hpp>
 #include <serial/objistr.hpp>
 #include <util/format_guess.hpp>
 #include <util/compress/stream_util.hpp>
@@ -71,7 +59,6 @@ protected:
     void x_ProcessAll(const string& outname);
     void x_Output(const string& filename, vector<CRef<CDiscrepancyCase> >& tests);
 
-    CRef<CObjectManager> m_ObjMgr;
     CScope m_Scope;
     string m_Lineage;   // override lineage
     vector<string> m_Files;
@@ -80,8 +67,7 @@ protected:
 
 
 CDiscRepApp::CDiscRepApp(void) :
-    m_ObjMgr(CObjectManager::GetInstance()),
-    m_Scope(*m_ObjMgr)
+    m_Scope(*CObjectManager::GetInstance())
 {
 }
 
@@ -99,18 +85,20 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
     if (detailed)
     {
         str+="TESTS\n";
-        vector<string> Name = GetDiscrepancyNames();
-        for (int i=0; i<Name.size(); i++)
+        const vector<string> Name = GetDiscrepancyNames();
+        for (size_t i=0; i<Name.size(); i++)
         {
             str += "   ";
             str += Name[i];
-            vector<string> Alias = GetDiscrepancyAliases(Name[i]);
-            for (int j=0; j<Alias.size(); j++)
+            const vector<string> Alias = GetDiscrepancyAliases(Name[i]);
+            for (size_t j=0; j<Alias.size(); j++) // ITERATE
             {
                 str += " / ";
                 str += Alias[j];
             }
-            if (DiscrepancyCaseNotImplemented(Name[i])) str += " (not implemented)";
+            if (DiscrepancyCaseNotImplemented(Name[i])) {
+                str += " (not implemented)";
+            }
             str += "\n";
         }
     }
@@ -137,7 +125,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("d", "DisableTests",  "List of disabled tests, seperated by ','", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("a", "Asn1Type", "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry", CArgDescriptions::eString);
-
+    // use CArgAllow_Strings
     arg_desc->AddFlag("S", "SummaryReport");
 
     arg_desc->AddOptionalKey("L", "LineageToUse", "Default lineage", CArgDescriptions::eString);
@@ -170,7 +158,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
 }
 
 
-auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
+auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CXX open the ticket 
 {
     auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
     CCompressStream::EMethod method;
@@ -185,9 +173,7 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     }
     if (method != CCompressStream::eNone)
     {
-        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, eTakeOwnership));
-        InputStream.release();
-        InputStream.reset(decompress);
+        InputStream.reset(new CDecompressIStream(*InputStream.release(), method, CCompressStream::fDefault, eTakeOwnership));
         format = CFormatGuess::Format(*InputStream);
     }
 
@@ -196,8 +182,7 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     {
         case CFormatGuess::eBinaryASN:
         case CFormatGuess::eTextASN:
-            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, eTakeOwnership));
-            InputStream.release();
+            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream.release(), eTakeOwnership));
             break;
         default:
             break;

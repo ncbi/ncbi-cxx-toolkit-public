@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
 /// Housekeeping classes
-class CDiscrepancyCaseConstructor : public CObject
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyCaseConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create() const = 0;

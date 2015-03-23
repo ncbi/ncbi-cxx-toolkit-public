@@ -578,7 +578,7 @@ bool CReportObject::Equal(const CReportObject& other) const
 }
 
 
-bool CReportObject::AlreadyInList(TReportObjectList list, const CReportObject& new_obj)
+bool CReportObject::AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj)
 {
     ITERATE(TReportObjectList, it, list) {
         if ((*it)->Equal(new_obj)) {
