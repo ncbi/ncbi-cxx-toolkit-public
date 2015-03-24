@@ -72,6 +72,7 @@ struct SMMStat
 
     void PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy);
     void PrintToSocket(CSrvPrintProxy& proxy);
+    void PrintState(CSrvSocketTask& task);
 
     void x_PrintUnstructured(CSrvPrintProxy& proxy);
 

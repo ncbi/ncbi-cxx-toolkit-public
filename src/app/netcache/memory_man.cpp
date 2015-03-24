@@ -120,6 +120,7 @@ static SMMFreePageGrades s_FreePages[kMMCntBlockSizes];
 static SMMMemPoolsSet s_MainPoolsSet;
 static CMMFlusher* s_Flusher;
 static Uint8 s_TotalSysMem = 0;
+static Uint8 s_TotalPageCount = 0;
 static SMMStateStat s_StartState;
 
 static const Uint4 kMMPageDataSize = kMMAllocPageSize - sizeof(SMMPageHeader);
@@ -234,6 +235,7 @@ static void*
 s_SysAlloc(size_t size)
 {
     AtomicAdd(s_TotalSysMem, size);
+    AtomicAdd(s_TotalPageCount, 1);
     size_t ptr = (size_t)s_DoMmap(size);
     if ((ptr & kMMAllocPageMask) == ptr)
         return (void*)ptr;
@@ -246,6 +248,7 @@ static void
 s_SysFree(void* ptr, size_t size)
 {
     AtomicSub(s_TotalSysMem, size);
+    AtomicSub(s_TotalPageCount, 1);
     s_DoUnmap(ptr, size);
 }
 
@@ -1015,6 +1018,19 @@ SMMStat::PrintToSocket(CSrvPrintProxy& proxy)
     proxy << endl;
 
     x_PrintUnstructured(proxy);
+}
+
+void SMMStat::PrintState(CSrvSocketTask& task)
+{
+    string is("\": "), iss("\": \""), eol(",\n\""), qt("\"");
+    task.WriteText(eol).WriteText("total_sys_memory").WriteText(iss)
+                                     .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_TotalSys)).WriteText(qt);
+    task.WriteText(eol).WriteText("total_data_memory").WriteText(iss)
+                                     .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_TotalData)).WriteText(qt);
+    task.WriteText(eol).WriteText("big_blocks_cnt").WriteText(is).WriteNumber(m_EndState.m_BigBlocksCnt);
+    task.WriteText(eol).WriteText("big_blocks_size" ).WriteText(iss)
+                                     .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_BigBlocksSize)).WriteText(qt);
+    task.WriteText(eol).WriteText("mmap_page_usage").WriteText(is).WriteNumber(s_TotalPageCount);
 }
 
 END_NCBI_SCOPE;
