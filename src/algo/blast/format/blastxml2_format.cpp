@@ -358,8 +358,7 @@ s_SeqAlignToXMLHit(CRef<blastxml2::CHit>& hit,
     try {
         const CBioseq_Handle& subj_handle = scope->GetBioseqHandle(kSeqId);
 
-        CRef<CBlast_def_line_set> bdlRef =
-                                       CSeqDB::ExtractBlastDefline(subj_handle);
+        CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(subj_handle);
         list <CRef<blastxml2::CHitDescr> >  & descr_list = hit->SetDescription();
         
         if(bdlRef.NotEmpty() && bdlRef->IsSet() && (!bdlRef->Get().empty())) {
@@ -394,6 +393,14 @@ s_SeqAlignToXMLHit(CRef<blastxml2::CHit>& hit,
         	list<CRef<objects::CSeq_id> > ids;
         	CShowBlastDefline::GetSeqIdList(subj_handle, ids);
         	hit_exp->SetId(CShowBlastDefline::GetSeqIdListString(ids, true));
+        	CRef<CSeq_id> best_id = FindBestChoice(ids, CSeq_id::Score);
+        	if(!best_id->IsLocal()) {
+        		CSeq_id_Handle id_handle = CSeq_id_Handle::GetHandle(*best_id);
+        		string accession = CAlignFormatUtil::GetLabel(id_handle.GetSeqId());
+        		if(accession != kEmptyStr)
+        			hit_exp->SetAccession(accession);
+        	}
+
    			hit_exp->SetTitle(sequence::CDeflineGenerator().GenerateDefline(subj_handle));
         	descr_list.push_back(hit_exp);
         }
