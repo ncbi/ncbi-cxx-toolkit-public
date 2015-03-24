@@ -29,6 +29,7 @@ internal/asn_cache
 internal/trackmgr
 internal/gpipe/common
 internal/gpipe/grid_wrapper
+internal/gpipe/gpinit
 sra
 -objtools/snputil
 -misc/hgvs/test
