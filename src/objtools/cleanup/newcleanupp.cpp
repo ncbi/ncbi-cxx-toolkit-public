@@ -7805,11 +7805,32 @@ static const TInTrSpElem sc_its_map[] = {
 typedef CStaticArrayMap<string, string, PNocase> TInTrSpMap;
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TInTrSpMap, sc_ITSMap, sc_its_map);
 
-void CNewCleanup_imp::x_TranslateITSName( string &in_out_name )
+
+bool CNewCleanup_imp::IsInternalTranscribedSpacer(const string& name)
+{
+    if (NStr::Equal(name, "internal transcribed spacer 1") ||
+        NStr::Equal(name, "internal transcribed spacer 2") ||
+        NStr::Equal(name, "internal transcribed spacer 3")) {
+        return true;
+    }
+}
+
+
+bool CNewCleanup_imp::TranslateITSName( string &in_out_name )
 {
     TInTrSpMap::const_iterator its_iter = sc_ITSMap.find(in_out_name);
     if( its_iter != sc_ITSMap.end() ) {
         in_out_name = its_iter->second;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CNewCleanup_imp::x_TranslateITSNameAndFlag( string &in_out_name )
+{
+    if (TranslateITSName( in_out_name )) {
         ChangeMade(CCleanupChange::eChangeITS);
     }
 }
@@ -7979,7 +8000,7 @@ void CNewCleanup_imp::RnarefBC (
                             case CRNA_ref::eType_other:
                             case CRNA_ref::eType_miscRNA:
                                 {{
-                                    x_TranslateITSName(name); 
+                                    x_TranslateITSNameAndFlag(name); 
 
                                     // convert to RNA-gen
                                     string name_copy; // copy because name is about to be destroyed
@@ -8464,12 +8485,25 @@ void CNewCleanup_imp::RnaFeatBC (
     if( FIELD_EQUALS( rna, Type, NCBI_RNAREF(other)) || 
         FIELD_EQUALS( rna, Type, NCBI_RNAREF(miscRNA) ) ) 
     {
-        if( FIELD_IS_SET_AND_IS(rna, Ext, Name) ) {
-            x_TranslateITSName( GET_MUTABLE(rna.SetExt(), Name) );
-        } else if( FIELD_IS_SET(rna, Ext) && FIELD_IS( rna.GetExt(), Gen) &&
-            FIELD_IS_SET(rna.GetExt().GetGen(), Product) ) 
-        {
-            x_TranslateITSName( rna.SetExt().SetGen().SetProduct() );
+        
+        if ( !rna.IsSetExt()) {
+            if ( seq_feat.IsSetComment() && 
+                 (IsInternalTranscribedSpacer(seq_feat.GetComment()) || 
+                  TranslateITSName(seq_feat.SetComment()))) {
+                rna.SetExt().SetName(seq_feat.GetComment());
+                seq_feat.ResetComment();
+                ChangeMade(CCleanupChange::eChangeITS);
+            }
+        } else if (rna.GetExt().IsName()) {
+            if (IsInternalTranscribedSpacer(rna.GetExt().GetName()) ||
+                TranslateITSName(rna.SetExt().SetName())) {
+                rna.SetExt().SetName(rna.GetExt().GetName());
+                ChangeMade(CCleanupChange::eChangeITS);
+            }
+        } else if (rna.GetExt().IsGen() && rna.GetExt().GetGen().IsSetProduct()) {
+            if (TranslateITSName(rna.SetExt().SetGen().SetProduct())) {
+                ChangeMade(CCleanupChange::eChangeITS);
+            }
         }
     }
 
@@ -8602,7 +8636,7 @@ void CNewCleanup_imp::RnaFeatBC (
                     ChangeMade( CCleanupChange::eChangeRNAref );
                 } else if ( qual == "product" ) {
                     // e.g. "its1" to "internal transcribed spacer 1"
-                    x_TranslateITSName( (*qual_iter)->SetVal() );
+                    x_TranslateITSNameAndFlag( (*qual_iter)->SetVal() );
                 }
             }
         }

@@ -288,6 +288,9 @@ private:
 
     void MolInfoBC( CMolInfo &molinfo );
 
+    static bool IsInternalTranscribedSpacer(const string& name);
+    static bool TranslateITSName( string &in_out_name );
+
 
     // Extended Cleanup functions
     void BioSourceEC ( CBioSource& biosrc );
@@ -434,7 +437,7 @@ private:
     void x_PostOrgRef( COrg_ref& org );
     void x_PostBiosource( CBioSource& biosrc );
 
-    void x_TranslateITSName( string &in_out_name ) ;
+    void x_TranslateITSNameAndFlag( string &in_out_name ) ;
 
     void x_PCRPrimerSetBC( CPCRPrimerSet &primer_set );
 
