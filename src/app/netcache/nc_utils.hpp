@@ -170,6 +170,7 @@ public:
         eAccessDenied,          ///< Command was rejected because client lacks administrative privileges
         eSyncFailed,            ///< Synchronization failed
         ePeerIpChanged,         ///< Peer IP address changed
+        eDiskSpaceNormal,       ///< Free disk space is back to normal
         eDatabaseTooLarge,      ///< Database is too large (warning)
         eDatabaseOverLimit,     ///< Database size exceeded its limit (error, stop write)
         eDiskSpaceLow,          ///< Free disk space is below threshold

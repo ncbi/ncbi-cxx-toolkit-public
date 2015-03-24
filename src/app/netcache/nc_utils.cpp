@@ -127,11 +127,12 @@ void NCAlertData::Report(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("acknowledged_time" );
     if (m_AcknowledgedTimestamp.Compare(CSrvTime()) == 0) {
         task.WriteText("\": null");
+        task.WriteText(eol).WriteText("user" ).WriteText("\": null");;
     } else {
         m_AcknowledgedTimestamp.Print(time_buf, CSrvTime::eFmtHumanSeconds);
         task.WriteText(iss).WriteText(time_buf).WriteText(eos);
+        task.WriteText(eol).WriteText("user" ).WriteText(iss).WriteText(m_User).WriteText(eos);
     }
-    task.WriteText(eol).WriteText("user" ).WriteText(iss).WriteText(m_User).WriteText(eos);
     task.WriteText("\n}");
 }
 
@@ -197,6 +198,7 @@ static const AlertToId  s_alertToIdMap[] = {
     {CNCAlerts::eAccessDenied,         "AccessDenied"},
     {CNCAlerts::eSyncFailed,           "SyncFailed"},
     {CNCAlerts::ePeerIpChanged,        "PeerIpChanged"},
+    {CNCAlerts::eDiskSpaceNormal,      "DiskSpaceNormal"},
     {CNCAlerts::eDatabaseTooLarge,     "DatabaseTooLarge"},
     {CNCAlerts::eDatabaseOverLimit,    "DatabaseOverLimit"},
     {CNCAlerts::eDiskSpaceLow,         "DiskSpaceLow"},

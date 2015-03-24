@@ -2621,8 +2621,9 @@ CNCBlobStorage::CheckDiskSpace(void)
     if (s_IsStopWrite == eNoStop
         &&  cur_db_size * 100 >= allowed_db_size * s_WarnLimitOnPct)
     {
-        string msg("Current db size is " + g_ToSizeStr(cur_db_size) +
-                   ", allowed db size is " + g_ToSizeStr(allowed_db_size));
+        string msg("Current db size is "   + g_ToSizeStr(cur_db_size) +
+                   ", allowed db size is " + g_ToSizeStr(allowed_db_size) +
+                   " (" + g_ToSmartStr(cur_db_size * 100 / allowed_db_size) + "%)");
         CNCAlerts::Register(CNCAlerts::eDatabaseTooLarge, msg);
         ERR_POST(Critical << "ALERT! Database is too large. " << msg);
         s_IsStopWrite = eStopWarning;
@@ -2633,7 +2634,8 @@ CNCBlobStorage::CheckDiskSpace(void)
         if (s_StopWriteOnSize != 0  &&  cur_db_size >= s_StopWriteOnSize) {
             s_IsStopWrite = eStopDBSize;
             string msg("Current db size is "  + g_ToSizeStr(cur_db_size) +
-                       ", stopwrite size is " + g_ToSizeStr(s_StopWriteOnSize));
+                       ", stopwrite size is " + g_ToSizeStr(s_StopWriteOnSize) +
+                       " (" + g_ToSmartStr(cur_db_size * 100 / s_StopWriteOnSize) + "%)");
             CNCAlerts::Register(CNCAlerts::eDatabaseOverLimit, msg);
             ERR_POST(Critical << "Database size exceeded its limit. "
                               << msg << ". Will no longer accept any writes from clients.");
@@ -2644,23 +2646,26 @@ CNCBlobStorage::CheckDiskSpace(void)
         s_IsStopWrite = eStopWarning;
     }
     if (free_space <= s_DiskCritical) {
-        s_IsStopWrite = eStopDiskCritical;
-        string msg("free " + g_ToSizeStr(free_space) +
-                   ", limit " + g_ToSizeStr(s_DiskCritical));
-        CNCAlerts::Register(CNCAlerts::eDiskSpaceCritical, msg);
-        ERR_POST(Critical << "Free disk space is below CRITICAL threshold: "
-                          << msg << ". Will no longer accept any writes.");
+        if (s_IsStopWrite < eStopDiskCritical) {
+            s_IsStopWrite = eStopDiskCritical;
+            string msg("free "    + g_ToSizeStr(free_space) +
+                       ", limit " + g_ToSizeStr(s_DiskCritical));
+            CNCAlerts::Register(CNCAlerts::eDiskSpaceCritical, msg);
+            ERR_POST(Critical << "Free disk space is below CRITICAL threshold: "
+                              << msg << ". Will no longer accept any writes.");
+        }
     }
     else if (free_space <= s_DiskFreeLimit) {
-        s_IsStopWrite = eStopDiskSpace;
-        string msg("free " + g_ToSizeStr(free_space) +
-                   ", limit " + g_ToSizeStr(s_DiskFreeLimit));
-        CNCAlerts::Register(CNCAlerts::eDiskSpaceLow, msg);
-        ERR_POST(Critical << "Free disk space is below threshold: "
-                          << msg << ". Will no longer accept any writes from clients.");
+        if (s_IsStopWrite < eStopDiskSpace) {
+            s_IsStopWrite = eStopDiskSpace;
+            string msg("free "    + g_ToSizeStr(free_space) +
+                       ", limit " + g_ToSizeStr(s_DiskFreeLimit));
+            CNCAlerts::Register(CNCAlerts::eDiskSpaceLow, msg);
+            ERR_POST(Critical << "Free disk space is below threshold: "
+                              << msg << ". Will no longer accept any writes from clients.");
+        }
     }
-    else if (s_IsStopWrite == eStopDiskSpace
-             ||  s_IsStopWrite == eStopDiskCritical)
+    else if (s_IsStopWrite == eStopDiskSpace || s_IsStopWrite == eStopDiskCritical)
     {
         s_IsStopWrite = eStopWarning;
     }
@@ -2668,9 +2673,11 @@ CNCBlobStorage::CheckDiskSpace(void)
     if (s_IsStopWrite == eStopWarning
         &&  cur_db_size * 100 < allowed_db_size * s_WarnLimitOffPct)
     {
-        ERR_POST(Critical << "OK. Database is back to normal size. "
-                 << "Current db size is " << g_ToSizeStr(cur_db_size)
-                 << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
+        string msg("Current db size is "   + g_ToSizeStr(cur_db_size) +
+                   ", allowed db size is " + g_ToSizeStr(allowed_db_size) +
+                   " (" + g_ToSmartStr(cur_db_size * 100 / allowed_db_size) + "%)");
+        CNCAlerts::Register(CNCAlerts::eDiskSpaceNormal, msg);
+        ERR_POST(Critical << "OK. Database is back to normal size. " << msg);
         s_IsStopWrite = eNoStop;
     }
 }
