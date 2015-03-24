@@ -70,7 +70,8 @@ string JoinString(const list<string>& l,
 // with one space. Strips all spaces after '(' and before ')'
 void StripSpaces(string& str);
 bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
-void TrimSpaces(string& str, int indent = 0);
+void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allow_ellipsis = false);
+void TrimSpaces(string& str, size_t indent = 0);
 string &CompressSpaces( string& str, const bool trim_beginning = true, const bool trim_end = true );
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
@@ -192,7 +193,8 @@ bool ConvertQuotesNotInHTMLTags( string &str );
 // We use the word "try" in the name because this is NOT airtight security,
 // but rather a net that catches the majority of cases.
 void TryToSanitizeHtml( std::string &str );
-void TryToSanitizeHtmlList( std::list<std::string> &strs );
+void TryToSanitizeHtml(std::string &result, const CTempString& str);
+void TryToSanitizeHtmlList(std::list<std::string> &strs);
 
 bool CommentHasSuspiciousHtml( const string &str );
 

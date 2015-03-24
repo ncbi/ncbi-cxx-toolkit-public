@@ -132,16 +132,24 @@ namespace {
 
         virtual void AddParagraph(const list< string > &text, const CSerialObject *obj)
         {
+            size_t add_size = m_block_text_str.size();
             ITERATE(list<string>, line, text) {
-                m_block_text_str += *line;
-                m_block_text_str += '\n';
+                add_size += (line->size() + 1);
+            }
+            m_block_text_str.reserve(max(m_block_text_str.capacity(), add_size));
+            ITERATE(list<string>, line, text) {
+                AddLine(*line, obj, eAddNewline_Yes);
             }
         }
 
         virtual void AddLine( const CTempString &line, const CSerialObject *obj,
             EAddNewline add_newline )
         {
-            m_block_text_str += line;
+            m_block_text_str.reserve(max(m_block_text_str.capacity(), 
+                m_block_text_str.length() + 
+                line.size() + 
+                (add_newline == eAddNewline_Yes?1:0) ) );
+            m_block_text_str.append(line.data(), line.size());
             if( add_newline == eAddNewline_Yes ) {
                 m_block_text_str += '\n';
             }
@@ -1139,9 +1147,10 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     first_line = CNcbiOstrstreamToString(result);
 }
 
-string 
+void 
 CGenbankFormatter::x_GetFeatureSpanAndScriptStart( 
-    const char * strKey, 
+    IFlatTextOStream& text_os,
+    const CTempString& strKey, 
     const CSeq_loc &feat_loc,
     CBioseqContext& ctx )
 {
@@ -1176,7 +1185,9 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
     s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
     pre_feature_html << ");</script>";
 
-    return CNcbiOstrstreamToString(pre_feature_html);
+    pre_feature_html.freeze();
+    CTempString temp(pre_feature_html.str(), pre_feature_html.pcount());
+	text_os.AddLine(temp, 0, IFlatTextOStream::eAddNewline_No);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1318,7 +1329,7 @@ void CGenbankFormatter::FormatFeatHeader
 
 //  ============================================================================
 bool s_GetFeatureKeyLinkLocation(
-    CMappedFeat feat,
+    const CMappedFeat& feat,
     TGi& iGi,
     unsigned int& iFrom,                    // one based
     unsigned int& iTo )                     // one based
@@ -1347,17 +1358,18 @@ bool s_GetFeatureKeyLinkLocation(
 }
     
 //  ============================================================================
-string s_GetLinkFeatureKey( 
+bool s_GetLinkFeatureKey( 
     const CFeatureItemBase& item,
+	const CFlatFeature& feat,
+	const string& strRawKey,
+	string& strLink,
     unsigned int uItemNumber = 0 )
 //  ============================================================================
 {
-    CConstRef<CFlatFeature> feat = item.Format();
-    string strRawKey = feat->GetKey();
     if ( strRawKey == "gap" || strRawKey == "assembly_gap" || 
         strRawKey == "source" ) 
     {
-        return strRawKey;
+        return false;
     }
 
     TGi iGi = ZERO_GI;
@@ -1367,7 +1379,7 @@ string s_GetLinkFeatureKey(
         iGi = item.GetContext()->GetGI();
     }
     if ( iFrom == 0 && iFrom == iTo ) {
-        return strRawKey;
+        return false;
     }
 
     // check if this is a protein or nucleotide link
@@ -1386,38 +1398,134 @@ string s_GetLinkFeatureKey(
         }
     }}
 
-    // link base
-    string strLinkbase;
-    if( is_prot ) {
-        strLinkbase += strLinkBaseProt;
-    } else {
-        strLinkbase += strLinkBaseNuc;
-    }
-
-    // id
-    string strId = NStr::NumericToString(iGi);
-
-    // location
-    string strLocation;
-    if( item.GetFeat().GetLocation().IsInt() || item.GetFeat().GetLocation().IsPnt() ) {
-        strLocation += "?from=";
-        strLocation += NStr::IntToString( iFrom );
-        strLocation += "&amp;to=";
-        strLocation += NStr::IntToString( iTo );
-    } else if(strRawKey != "Precursor") {
-        // TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
-        strLocation += "?itemid=TBD";
-    }
-
     // assembly of the actual string:
-    string strLink = "<a href=\"";
-    strLink += strLinkbase;
-    strLink += strId;
-    strLink += strLocation;
-    strLink += "\">";
+	strLink.reserve(100); // euristical URL length
+
+    strLink = "<a href=\"";
+
+	// link base
+	if (is_prot) {
+		strLink += strLinkBaseProt;
+	}
+	else {
+		strLink += strLinkBaseNuc;
+	}
+	strLink += NStr::NumericToString(iGi);
+
+	// location
+	if (item.GetFeat().GetLocation().IsInt() || item.GetFeat().GetLocation().IsPnt()) {
+		strLink += "?from=";
+		strLink += NStr::IntToString(iFrom);
+		strLink += "&amp;to=";
+		strLink += NStr::IntToString(iTo);
+	}
+	else if (strRawKey != "Precursor") {
+		// TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
+		strLink += "?itemid=TBD";
+	}
+
+	strLink += "\">";
     strLink += strRawKey;
     strLink += "</a>";
-    return strLink;
+    return true;
+}
+
+class CGenbankFormatterWrapDest : public NStr::IWrapDest
+{
+public:
+	CGenbankFormatterWrapDest(IFlatTextOStream& s) : m_text_os(s) {};
+	IFlatTextOStream& m_text_os;
+	virtual void Append(const string& s)
+	{
+		Append(CTempString(s));
+	}
+	virtual void Append(const CTempString& s)
+	{
+		m_text_os.AddLine(NStr::TruncateSpaces_Unsafe(s, NStr::eTrunc_End));
+	}
+};
+
+void CGenbankFormatter::x_SmartWrapQuals(const CFeatureItemBase& feat, const CFlatFeature& ff, IFlatTextOStream& text_os)
+{
+	// reuse some variable in the loop
+	string prefix1;
+	string value;
+	string sanitized;
+
+	const vector<CRef<CFormatQual> > & quals = ff.GetQuals();
+	bool bHtml = feat.GetContext()->Config().DoHTML();
+
+	ITERATE(vector<CRef<CFormatQual> >, it, quals) {
+		const string& qual = (*it)->GetName();
+		const string& prefix = GetFeatIndent();
+
+		prefix1 = prefix;
+
+		switch ((*it)->GetTrim()) {
+		case CFormatQual::eTrim_Normal:
+			TrimSpacesAndJunkFromEnds(value, (*it)->GetValue(), true);
+			break;
+		case CFormatQual::eTrim_WhitespaceOnly:
+			value = NStr::TruncateSpaces_Unsafe((*it)->GetValue());
+			break;
+		default:
+			value = (*it)->GetValue();
+		}
+
+		if (bHtml) {
+			TryToSanitizeHtml(sanitized, value);
+		}
+
+		switch ((*it)->GetStyle()) {
+		case CFormatQual::eEmpty:
+			value = qual;
+			break;
+		case CFormatQual::eQuoted:
+			if (bHtml) sanitized += '"'; else value += '"';
+			prefix1 += '/';
+			prefix1 += qual;
+			prefix1 += "=\"";
+			break;
+		case CFormatQual::eUnquoted:
+			prefix1 += '/';
+			prefix1 += qual;
+			prefix1 += '=';
+			break;
+		}
+		// Call NStr::Wrap directly to avoid unwanted line breaks right
+		// before the start of the value (in /translation, e.g.)
+#if 1
+		CGenbankFormatterWrapDest dest(text_os);
+		NStr::Wrap((bHtml) ? sanitized : value, GetWidth(), dest, SetWrapFlags(), &prefix, &prefix1);
+#else
+		NStr::Wrap((bHtml) ? sanitized : value, GetWidth(), l_new, SetWrapFlags(), prefix, prefix1);
+
+		if (l_new.size() > 1) {
+			const string &last_line = l_new.back();
+
+			list<string>::const_iterator end_iter = l_new.end();
+			end_iter--;
+			end_iter--;
+			const string &second_to_last_line = *end_iter;
+
+			if (NStr::TruncateSpaces(last_line) == "\"" && second_to_last_line.length() < GetWidth()) {
+				l_new.pop_back();
+				l_new.back() += "\"";
+			}
+		}
+		// Values of qualifiers coming down this path do not carry additional
+		// internal format (at least, they aren't supposed to). So we strip extra
+		// blanks from both the begin and the end of qualifier lines.
+		// (May have to be amended once sizeable numbers of violators are found
+		// in existing data).
+		NON_CONST_ITERATE(list<string>, it, l_new) {
+			//NStr::TruncateSpacesInPlace(*it, NStr::eTrunc_End);
+			text_os.AddLine(NStr::TruncateSpaces_Unsafe(*it, NStr::eTrunc_End));
+		}
+		//l.insert(l.end(), l_new.begin(), l_new.end());
+		//l_new.clear();
+#endif
+	}
 }
 
 //  ============================================================================
@@ -1427,35 +1535,42 @@ void CGenbankFormatter::FormatFeature
 //  ============================================================================
 { 
     CRef<IFlatTextOStream> p_text_os;
-    IFlatTextOStream *ostrm = NULL;
-    {
-        // this works differently from the others because we have to check
-        // the underlying type
-        const CSourceFeatureItem *p_source_feature_item = 
-            dynamic_cast<const CSourceFeatureItem *>(&f);
-        if( ostrm == NULL && p_source_feature_item ) {
-            ostrm = &s_WrapOstreamIfCallbackExists(p_text_os, *p_source_feature_item, orig_text_os);
-        }
-        const CFeatureItem *p_feature_item =
-            dynamic_cast<const CFeatureItem *>(&f);
-        if( ostrm == NULL && p_feature_item ) {
-            ostrm = &s_WrapOstreamIfCallbackExists(p_text_os, *p_feature_item, orig_text_os);
-        }
-        _ASSERT( ostrm != NULL );
+	IFlatTextOStream *text_os = NULL;
+	{
+		// this works differently from the others because we have to check
+		// the underlying type
+		const CSourceFeatureItem *p_source_feature_item =
+			dynamic_cast<const CSourceFeatureItem *>(&f);
+		if (p_source_feature_item) {
+			text_os = &s_WrapOstreamIfCallbackExists(p_text_os, *p_source_feature_item, orig_text_os);
+		}
+		else
+		{
+			const CFeatureItem *p_feature_item =
+				dynamic_cast<const CFeatureItem *>(&f);
+			if (text_os == NULL && p_feature_item) {
+				text_os = &s_WrapOstreamIfCallbackExists(p_text_os, *p_feature_item, orig_text_os);
+			}
+		}
+		_ASSERT(text_os != NULL);
     }
-    IFlatTextOStream & text_os = *ostrm;
     
     bool bHtml = f.GetContext()->Config().DoHTML();
 
     CConstRef<CFlatFeature> feat = f.Format();
-    const vector<CRef<CFormatQual> > & quals = feat->GetQuals();
-    list<string>        l, l_new;
 
     if ( feat->GetKey() != "source" ) {
         ++ m_uFeatureCount;
     }
 
-    string strKey = feat->GetKey(); 
+	const string& strKey = feat->GetKey();
+	// write <span...> and <script...> in HTML mode
+	if (bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans()) {
+		x_GetFeatureSpanAndScriptStart(*text_os, strKey, f.GetLoc(), *f.GetContext());
+	}
+
+#if 1
+	list<string>        l;
     Wrap(l, strKey, feat->GetLoc().GetString(), eFeat );
 
     // In HTML mode, if not taking a "slice" (i.e. -from and -to args )
@@ -1464,80 +1579,27 @@ void CGenbankFormatter::FormatFeature
         // we will need to pad since the feature's key might be smaller than strDummy
         // negative padding means we need to remove spaces.
         // const int padding_needed = (int)strDummy.length() - (int)feat->GetKey().length();
-        string strFeatKey = s_GetLinkFeatureKey( f, m_uFeatureCount );
-        // strFeatKey += string( padding_needed, ' ' );
-
-        NON_CONST_ITERATE( list<string>, it, l ) {
-            // string::size_type dummy_loc = (*it).find(strDummy);
-            NStr::ReplaceInPlace( *it, strKey, strFeatKey );
-        }
+		string strFeatKey;
+		if (s_GetLinkFeatureKey(f, *feat, strKey, strFeatKey, m_uFeatureCount))
+		{
+			// strFeatKey += string( padding_needed, ' ' );
+			NON_CONST_ITERATE(list<string>, it, l) {
+				// string::size_type dummy_loc = (*it).find(strDummy);
+				NStr::ReplaceInPlace( *it, strKey, strFeatKey );
+			}
+		}
     }
 
-    // write <span...> and <script...> in HTML mode
-    if( bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans() ) {
-        *l.begin() = x_GetFeatureSpanAndScriptStart(strKey.c_str(), f.GetLoc(),  *f.GetContext() ) + *l.begin();
-    }
+#else
+#endif
 
-    ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
-        string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
-        switch ( (*it)->GetTrim() ) {
-        case CFormatQual::eTrim_Normal:
-            TrimSpacesAndJunkFromEnds( value, true );
-            break;
-        case CFormatQual::eTrim_WhitespaceOnly:
-            NStr::TruncateSpacesInPlace( value );
-            break;
-        }
-        if( bHtml ) {
-            TryToSanitizeHtml( value );
-        }
+    text_os->AddParagraph(l, f.GetObject());
 
-        switch ((*it)->GetStyle()) {
-        case CFormatQual::eEmpty:
-            value = qual;
-            qual.erase();
-            break;
-        case CFormatQual::eQuoted:
-            qual += "=\"";  value += '"';
-            break;
-        case CFormatQual::eUnquoted:
-            qual += '=';
-            break;
-        }
-        // Call NStr::Wrap directly to avoid unwanted line breaks right
-        // before the start of the value (in /translation, e.g.)
-        NStr::Wrap(value, GetWidth(), l_new, SetWrapFlags(), GetFeatIndent(),
-            GetFeatIndent() + qual);
-        if ( l_new.size() > 1 ) {
-            const string &last_line = l_new.back();
-
-            list<string>::const_iterator end_iter = l_new.end();
-            end_iter--;
-            end_iter--;
-            const string &second_to_last_line = *end_iter;
-
-            if( NStr::TruncateSpaces( last_line ) == "\"" && second_to_last_line.length() < GetWidth() ) {
-                l_new.pop_back();
-                l_new.back() += "\"";
-            }
-        }
-        // Values of qualifiers coming down this path do not carry additional
-        // internal format (at least, they aren't supposed to). So we strip extra
-        // blanks from both the begin and the end of qualifier lines.
-        // (May have to be amended once sizeable numbers of violators are found
-        // in existing data).
-        NON_CONST_ITERATE (list<string>, it, l_new) {
-            NStr::TruncateSpacesInPlace( *it, NStr::eTrunc_End );
-        }
-        l.insert( l.end(), l_new.begin(), l_new.end() );
-        l_new.clear();
-    }
-        
-    text_os.AddParagraph(l, f.GetObject());
+	x_SmartWrapQuals(f, *feat, *text_os);
 
     if( bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans() ) {
         // close the <span...>, without an endline
-        text_os.AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
+        text_os->AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
     }
 }
 

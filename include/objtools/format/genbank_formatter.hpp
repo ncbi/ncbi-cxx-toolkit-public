@@ -119,9 +119,11 @@ private:
 
     // HTML
     void   x_LocusHtmlPrefix( std::string &first_line,      CBioseqContext& ctx );
-    string x_GetFeatureSpanAndScriptStart( const char * strKey, 
+    void x_GetFeatureSpanAndScriptStart(IFlatTextOStream& os, const CTempString& strKey, 
         const CSeq_loc &feat_loc, 
         CBioseqContext& ctx );
+
+    void x_SmartWrapQuals(const class CFeatureItemBase& f, const class CFlatFeature& feat, IFlatTextOStream& text_os);
 
     // processing data
     unsigned int m_uFeatureCount;

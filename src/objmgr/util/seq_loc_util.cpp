@@ -73,11 +73,15 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
     if ( !scope ) {
         return numeric_limits<TSeqPos>::max();
     }
+#if 0
     CBioseq_Handle hnd = scope->GetBioseqHandle(id);
     if ( !hnd ) {
         return numeric_limits<TSeqPos>::max();
     }
     return hnd.GetBioseqLength();
+#else
+	return scope->GetSequenceLength(id);
+#endif
 }
 
 

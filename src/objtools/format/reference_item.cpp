@@ -1124,7 +1124,6 @@ void CReferenceItem::GetAuthNames(const CAuth_list& alp, TStrList& authors)
     authors.clear();
 
     const CAuth_list::TNames& names = alp.GetNames();
-    string name;
     switch (names.Which()) {
     case CAuth_list::TNames::e_Std:
         ITERATE (CAuth_list::TNames::TStd, it, names.GetStd()) {
@@ -1133,9 +1132,9 @@ void CReferenceItem::GetAuthNames(const CAuth_list& alp, TStrList& authors)
             }
             const CPerson_id& pid = (*it)->GetName();
             if (pid.IsName()  ||  pid.IsMl()  ||  pid.IsStr()) {
-                name.erase();
+                authors.push_back(kEmptyStr);               
+                string& name = authors.back();
                 pid.GetLabel(&name, CPerson_id::eGenbank);
-                authors.push_back(name);
             }
         }
         break;

@@ -273,16 +273,14 @@ void CDate_std::GetDate(string* label, const string& format) const
                     *label += GetSeason();
                 }
             } else { // just a number
-                if (length > 0) {
-                    // We want exactly <length> digits.
-                    CNcbiOstrstream oss;
-                    oss << setfill('0') << setw(length) << value;
-                    string s = CNcbiOstrstreamToString(oss);
-                    label->append(s, s.size() > length ? s.size() - length : 0,
-                                  length);
-                } else {
-                    *label += NStr::IntToString(value);
-                }
+                // We want exactly <length> digits.
+                string s;
+                NStr::IntToString(s, value);
+                size_t zeropad = length < s.length() ? 0 : length-s.length();
+                size_t start   = (length > 0 && length < s.length() ) ? s.size() - length : 0;
+                if (zeropad>0)
+                   label->append(zeropad, '0');
+                label->append(s, start, s.size() - start);
             }
         } else {
             // missing...roll back label and look for alternatives, or

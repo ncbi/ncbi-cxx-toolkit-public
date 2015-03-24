@@ -2516,7 +2516,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
         CSeq_id seq_id;
         seq_id.Assign( *ctx.GetHandle().GetSeqId() );
 
-        const size_t new_len = sequence::GetLength( ctx.GetLocation(), &scope );
+        const TSeqPos new_len = sequence::GetLength( ctx.GetLocation(), &scope );
 
         CSeq_loc old_loc;
         old_loc.SetInt().SetId( seq_id );
@@ -2955,8 +2955,8 @@ void s_FixIntervalProtToCds(
     //  [3] Coordintates are relative to coding region + codon_start.
     //
 
-    size_t uRawFrom = srcInt.GetFrom() * 3;
-    size_t uRawTo = srcInt.GetTo() * 3 + 2;
+    TSeqPos uRawFrom = srcInt.GetFrom() * 3;
+    TSeqPos uRawTo = srcInt.GetTo() * 3 + 2;
 
     const CSeqFeatData::TCdregion& srcCdr = srcFeat.GetData().GetCdregion();
     if ( srcInt.CanGetStrand() ) {

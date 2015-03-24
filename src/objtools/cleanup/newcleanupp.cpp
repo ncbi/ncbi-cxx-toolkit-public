@@ -4944,6 +4944,8 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
     }
 
     string first_initials;
+    string sDot(".");
+    //string sSpace(" ");
     // like in C: str = NameStdPtrToTabbedString (nsp, fixInitials);
     {
         if ( ! FIELD_IS_SET(name, Suffix) && FIELD_IS_SET(name, Initials) ) {
@@ -4951,7 +4953,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
         }
         TRUNCATE_SPACES(name, First);
         if( FIELD_IS_SET(name, Initials) ) {
-            NStr::ReplaceInPlace( GET_MUTABLE(name, Initials), ".", "" );
+            NStr::ReplaceInPlace( GET_MUTABLE(name, Initials), sDot, kEmptyStr);
             NStr::TruncateSpacesInPlace( GET_MUTABLE(name, Initials), NStr::eTrunc_Begin );
         }
         if( FIELD_IS_SET(name, Last) ) {
@@ -4988,7 +4990,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
         }
 
         if( FIELD_IS_SET(name, First) ) {
-            NStr::ReplaceInPlace( GET_MUTABLE(name, First), ".", "" );
+            NStr::ReplaceInPlace( GET_MUTABLE(name, First), sDot, kEmptyStr);
             NStr::TruncateSpacesInPlace( GET_MUTABLE(name, First), NStr::eTrunc_Begin );
         }
 
@@ -5015,7 +5017,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
         }
 
         if( FIELD_IS_SET(name, Suffix) ) {
-            NStr::ReplaceInPlace( GET_MUTABLE(name, Suffix), ".", "" );
+            NStr::ReplaceInPlace( GET_MUTABLE(name, Suffix), sDot, kEmptyStr );
             NStr::TruncateSpacesInPlace( GET_MUTABLE(name, Suffix), NStr::eTrunc_Begin );
         }
 

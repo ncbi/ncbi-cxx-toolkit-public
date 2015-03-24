@@ -3006,6 +3006,50 @@ string NStr::Replace(const string& src,
     return dst;
 }
 
+static
+string& _replace_reduct(string& src,
+                             const string& search, const string& replace,
+                             SIZE_TYPE start_pos, SIZE_TYPE max_replace)
+{
+    size_t remove_len = 0;
+
+    const char* start_ptr = src.c_str() + start_pos;
+    char* write_pos = (char*) start_ptr;
+
+    for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++) {
+
+        const char* found = strstr(start_ptr, search.c_str());
+
+        SIZE_TYPE len = (found?found:(src.c_str() + src.size())) - start_ptr;
+        if (len && write_pos != start_ptr)
+        {
+            memcpy(write_pos, start_ptr, len);
+        }
+
+        if (found == 0)
+            break;
+
+        write_pos += len;
+        start_ptr = found + search.size();
+
+        if (replace.size() == 1)
+        {
+           *write_pos++ = replace[0];
+        } else
+        if (replace.size() > 0)
+        {
+            memcpy(write_pos, replace.c_str(), replace.size());
+            write_pos += replace.size();
+        }
+
+        remove_len += (search.size() - replace.size());
+    }
+
+    if (remove_len)
+       src.resize(src.size() - remove_len);
+
+    return src;
+}
 
 string& NStr::ReplaceInPlace(string& src,
                              const string& search, const string& replace,
@@ -3014,6 +3058,9 @@ string& NStr::ReplaceInPlace(string& src,
     if ( start_pos + search.size() > src.size()  ||
          search == replace )
         return src;
+
+    if (search.size() >= replace.size())
+        return _replace_reduct(src, search, replace, start_pos, max_replace);
 
     bool equal_len = (search.size() == replace.size());
     for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
@@ -3031,6 +3078,28 @@ string& NStr::ReplaceInPlace(string& src,
     }
     return src;
 }
+
+#if 0
+struct unit_test
+{
+    string test(const string& str, const string& search, const string& replace)
+    {
+        string s = str;
+        NStr::ReplaceInPlace(s, search, replace);
+        return s;
+    };
+    unit_test()
+    {
+        test("11 222 3333 4444", " ", "");
+        test("11 222 3333 4444", " ", ".");
+        test("11 222 3333 4444", "222", "x");
+        test("11 222 3333 4444", "222", "xxx");
+        test("11 222 3333 4444", "222", "xxxx");
+    }
+};
+
+unit_test t;
+#endif
 
 
 template<typename TString, typename TContainer>
@@ -4404,250 +4473,284 @@ static SIZE_TYPE s_VisibleHtmlWidth(const string& str)
     return width;
 }
 
-list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
-                         list<string>& arr, NStr::TWrapFlags flags,
-                         const string* prefix, const string* prefix1)
+static
+inline bool _isspace(unsigned char c)
 {
-    if (prefix == 0) {
-        prefix = &kEmptyStr ;
-    }
+    return ((c>=0x09 && c<=0x0D) || (c==0x20));
+}
 
-    const string* pfx = prefix1 ? prefix1 : prefix;
-    SIZE_TYPE     pos = 0, len = str.size(), nl_pos = 0;
-    
-    const bool          is_html  = flags & fWrap_HTMLPre ? true : false;
-    const bool          do_flat = (flags & fWrap_FlatFile) != 0;
+template<typename _D>
+void NStr::WrapIt(const string& str, SIZE_TYPE width,
+	_D& dest, TWrapFlags flags,
+	const string* prefix,
+	const string* prefix1)
+{
+	if (prefix == 0) {
+		prefix = &kEmptyStr;
+	}
 
-    enum EScore { // worst to best
-        eForced,
-        ePunct,
-        eComma,
-        eSpace,
-        eNewline
-    };
+	if (prefix1 == 0)
+		prefix1 = prefix;
 
-    // To avoid copying parts of str when we need to store a 
-    // substr of str, we store the substr as a pair
-    // representing start (inclusive) and end (exclusive).
-    typedef pair<SIZE_TYPE, SIZE_TYPE> TWrapSubstr;
+	SIZE_TYPE     pos = 0, len = str.size(), nl_pos = 0;
 
-    // This variable is used for HTML links that cross line boundaries.
-    // Since it's aesthetically displeasing for a link to cross a boundary, we 
-    // close it at the end of each line and re-open it after the next line's 
-    // prefix
-    // (This is needed in, e.g. AE017351)
-    TWrapSubstr best_link(0, 0); // last link found before current best_pos
-    TWrapSubstr latest_link(0, 0); // last link found at all
+	const bool          is_html = flags & fWrap_HTMLPre ? true : false;
+	const bool          do_flat = (flags & fWrap_FlatFile) != 0;
+	string temp_back; temp_back.reserve(width);
 
-    while (pos < len) {
-        bool      hyphen     = false; // "-" or empty
-        SIZE_TYPE column     = is_html? s_VisibleHtmlWidth(*pfx) : pfx->size();
-        SIZE_TYPE column0    = column;
-        // the next line will start at best_pos
-        SIZE_TYPE best_pos   = NPOS;
-        EScore    best_score = eForced;
+	enum EScore { // worst to best
+		eForced,
+		ePunct,
+		eComma,
+		eSpace,
+		eNewline
+	};
 
-        // certain logic can be skipped if this part has no backspace,
-        // which is, by far, the most common case
-        bool thisPartHasBackspace = false;
+	// To avoid copying parts of str when we need to store a 
+	// substr of str, we store the substr as a pair
+	// representing start (inclusive) and end (exclusive).
+	typedef pair<SIZE_TYPE, SIZE_TYPE> TWrapSubstr;
 
-        arr.push_back("");
-        arr.back().reserve( width );
-        arr.back() = *pfx;
+	// This variable is used for HTML links that cross line boundaries.
+	// Since it's aesthetically displeasing for a link to cross a boundary, we 
+	// close it at the end of each line and re-open it after the next line's 
+	// prefix
+	// (This is needed in, e.g. AE017351)
+	TWrapSubstr best_link(0, 0); // last link found before current best_pos
+	TWrapSubstr latest_link(0, 0); // last link found at all
 
-        // append any still-open links from previous lines
-        if( is_html && best_link.second != 0 ) {
-            arr.back().append( 
-                str.begin() + best_link.first,
-                str.begin() + best_link.second );
-        }
+	while (pos < len) {
+		bool      hyphen = false; // "-" or empty
+		SIZE_TYPE column = is_html ? s_VisibleHtmlWidth(*prefix1) : prefix1->size();
+		SIZE_TYPE column0 = column;
+		// the next line will start at best_pos
+		SIZE_TYPE best_pos = NPOS;
+		EScore    best_score = eForced;
 
-        SIZE_TYPE pos0 = pos;
+		// certain logic can be skipped if this part has no backspace,
+		// which is, by far, the most common case
+		bool thisPartHasBackspace = false;
 
-        // we can't do this in HTML mode because we might have to deal with
-        // link tags that go across lines.
-        if( ! is_html ) {
-            if (nl_pos <= pos) {
-                nl_pos = str.find('\n', pos);
-                if (nl_pos == NPOS) {
-                    nl_pos = len;
-                }
-            }
-            if (column + (nl_pos-pos) <= width ) {
-                pos0 = nl_pos;
-            }
-        }
+		temp_back = *prefix1;
 
-        for (SIZE_TYPE pos2 = pos0;  pos2 < len  &&  column <= width;
-             ++pos2, ++column) {
-            EScore    score     = eForced;
-            SIZE_TYPE score_pos = pos2;
-            const char      c         = str[pos2];
+		// append any still-open links from previous lines
+		if (is_html && best_link.second != 0) {
+			temp_back.append(
+				str.begin() + best_link.first,
+				str.begin() + best_link.second);
+		}
 
-            if (c == '\n') {
-                best_pos   = pos2;
-                best_score = eNewline;
-                best_link = latest_link;
-                break;
-            } else if (isspace((unsigned char) c)) {
-                if ( !do_flat  &&  pos2 > 0  &&
-                     isspace((unsigned char) str[pos2 - 1])) {
-                    if(pos2 < len - 1  &&  str[pos2 + 1] == '\b') {
-                        thisPartHasBackspace = true;
-                    }
-                    continue; // take the first space of a group
-                }
-                score = eSpace;
-            } else if (is_html && c == '<') {
-                // treat tags as zero-width...
-                SIZE_TYPE start_of_tag = pos2;
-                pos2 = s_EndOfTag(str, pos2);
-                --column;
-                if (pos2 == NPOS) {
-                    break;
-                }
+		SIZE_TYPE pos0 = pos;
 
-                if( (pos2 - start_of_tag) >= 6 &&
-                    str[start_of_tag+1] == 'a' && 
-                    str[start_of_tag+2] == ' ' && 
-                    str[start_of_tag+3] == 'h' &&
-                    str[start_of_tag+4] == 'r' &&
-                    str[start_of_tag+5] == 'e' &&
-                    str[start_of_tag+6] == 'f' )
-                {
-                    // remember current link in case of line wrap
-                    latest_link.first  = start_of_tag;
-                    latest_link.second = pos2 + 1;
-                }
-                if( (pos2 - start_of_tag) >= 3 &&
-                    str[start_of_tag+1] == '/' && 
-                    str[start_of_tag+2] == 'a' && 
-                    str[start_of_tag+3] == '>') 
-                {
-                    // link is closed
-                    latest_link.first  = 0;
-                    latest_link.second = 0;
-                }
-            } else if (is_html && c == '&') {
-                // ...and references as single characters
-                pos2 = s_EndOfReference(str, pos2);
-                if (pos2 == NPOS) {
-                    break;
-                }
-            } else if ( c == ','  && column < width && score_pos < len - 1 ) {
-                score = eComma;
-                ++score_pos;
-            } else if (do_flat ? c == '-' : ispunct((unsigned char) c)) {
-                // For flat files, only whitespace, hyphens and commas
-                // are special.
-                switch(c) {
-                    case '(': case '[': case '{': case '<': case '`':
-                        score = ePunct;
-                        break;
-                    default:
-                        if( score_pos < len - 1  &&  column < width ) {
-                            score = ePunct;
-                            ++score_pos;
-                        }
-                        break;
-                }
-            }
+		// we can't do this in HTML mode because we might have to deal with
+		// link tags that go across lines.
+		if (!is_html) {
+			if (nl_pos <= pos) {
+				nl_pos = str.find('\n', pos);
+				if (nl_pos == NPOS) {
+					nl_pos = len;
+				}
+			}
+			if (column + (nl_pos - pos) <= width) {
+				pos0 = nl_pos;
+			}
+		}
 
-            if (score >= best_score  &&  score_pos > pos0) {
-                best_pos   = score_pos;
-                best_score = score;
-                best_link = latest_link;
-            }
+		for (SIZE_TYPE pos2 = pos0;  pos2 < len  &&  column <= width;
+			++pos2, ++column) {
+			EScore    score = eForced;
+			SIZE_TYPE score_pos = pos2;
+			const char      c = str[pos2];
 
-            while (pos2 < len - 1  &&  str[pos2 + 1] == '\b') {
-                // Account for backspaces
-                ++pos2;
-                if (column > column0) {
-                    --column;
-                }
-                thisPartHasBackspace = true;
-            }
-        }
+			if (c == '\n') {
+				best_pos = pos2;
+				best_score = eNewline;
+				best_link = latest_link;
+				break;
+			}
+			else if (_isspace((unsigned char)c)) {
+				if (!do_flat  &&  pos2 > 0 &&
+					_isspace((unsigned char)str[pos2 - 1])) {
+					if (pos2 < len - 1 && str[pos2 + 1] == '\b') {
+						thisPartHasBackspace = true;
+					}
+					continue; // take the first space of a group
+				}
+				score = eSpace;
+			}
+			else if (is_html && c == '<') {
+				// treat tags as zero-width...
+				SIZE_TYPE start_of_tag = pos2;
+				pos2 = s_EndOfTag(str, pos2);
+				--column;
+				if (pos2 == NPOS) {
+					break;
+				}
 
-        if ( best_score != eNewline  &&  column <= width ) {
-            if( best_pos != len ) {
-                // If the whole remaining text can fit, don't split it...
-                best_pos = len;
-                best_link = latest_link;
-                // Force backspace checking, to play it safe
-                thisPartHasBackspace = true;
-            }
-        } else if ( best_score == eForced  &&  (flags & fWrap_Hyphenate) ) {
-            hyphen = true;
-            --best_pos;
-        }
+				if ((pos2 - start_of_tag) >= 6 &&
+					str[start_of_tag + 1] == 'a' &&
+					str[start_of_tag + 2] == ' ' &&
+					str[start_of_tag + 3] == 'h' &&
+					str[start_of_tag + 4] == 'r' &&
+					str[start_of_tag + 5] == 'e' &&
+					str[start_of_tag + 6] == 'f')
+				{
+					// remember current link in case of line wrap
+					latest_link.first = start_of_tag;
+					latest_link.second = pos2 + 1;
+				}
+				if ((pos2 - start_of_tag) >= 3 &&
+					str[start_of_tag + 1] == '/' &&
+					str[start_of_tag + 2] == 'a' &&
+					str[start_of_tag + 3] == '>')
+				{
+					// link is closed
+					latest_link.first = 0;
+					latest_link.second = 0;
+				}
+			}
+			else if (is_html && c == '&') {
+				// ...and references as single characters
+				pos2 = s_EndOfReference(str, pos2);
+				if (pos2 == NPOS) {
+					break;
+				}
+			}
+			else if (c == ','  && column < width && score_pos < len - 1) {
+				score = eComma;
+				++score_pos;
+			}
+			else if (do_flat ? c == '-' : ispunct((unsigned char)c)) {
+				// For flat files, only whitespace, hyphens and commas
+				// are special.
+				switch (c) {
+				case '(': case '[': case '{': case '<': case '`':
+					score = ePunct;
+					break;
+				default:
+					if (score_pos < len - 1 && column < width) {
+						score = ePunct;
+						++score_pos;
+					}
+					break;
+				}
+			}
 
-        {{ 
-            string::const_iterator begin = str.begin() + pos;
-            string::const_iterator end = str.begin() + best_pos;
-            if( thisPartHasBackspace ) {
-                // eat backspaces and the characters (if any) that precede them
+			if (score >= best_score  &&  score_pos > pos0) {
+				best_pos = score_pos;
+				best_score = score;
+				best_link = latest_link;
+			}
 
-                string::const_iterator bs; // position of next backspace
-                while ((bs = find(begin, end, '\b')) != end) {
-                    if (bs != begin) {
-                        // add all except the last one
-                        arr.back().append(begin, bs - 1);
-                    }
-                    else {
-                        // The backspace is at the beginning of next substring,
-                        // so we should remove previously added symbol if any.
-                        SIZE_TYPE size = arr.back().size();
-                        if (size > pfx->size()) { // current size > prefix size
-                            arr.back().resize(size - 1);
-                        }
-                    }
-                    // skip over backspace
-                    begin = bs + 1;
-                }
-            }
-            if (begin != end) {
-                // add remaining characters
-                arr.back().append(begin, end);
-            }
-        }}
+			while (pos2 < len - 1 && str[pos2 + 1] == '\b') {
+				// Account for backspaces
+				++pos2;
+				if (column > column0) {
+					--column;
+				}
+				thisPartHasBackspace = true;
+			}
+		}
 
-        // if we didn't close the link on this line, we 
-        // close it here
-        if( is_html && best_link.second != 0 ) {
-            arr.back() += "</a>";
-        }
+		if (best_score != eNewline  &&  column <= width) {
+			if (best_pos != len) {
+				// If the whole remaining text can fit, don't split it...
+				best_pos = len;
+				best_link = latest_link;
+				// Force backspace checking, to play it safe
+				thisPartHasBackspace = true;
+			}
+		}
+		else if (best_score == eForced && (flags & fWrap_Hyphenate)) {
+			hyphen = true;
+			--best_pos;
+		}
 
-        if ( hyphen ) {
-            arr.back() += '-';
-        }
-        pos = best_pos;
-        pfx = prefix;
+		{{
+			string::const_iterator begin = str.begin() + pos;
+			string::const_iterator end = str.begin() + best_pos;
+			if (thisPartHasBackspace) {
+				// eat backspaces and the characters (if any) that precede them
 
-        if (do_flat) {
-            if (best_score == eSpace) {
-                while (str[pos] == ' ') {
-                    ++pos;
-                }
-                if (str[pos] == '\n') {
-                    ++pos;
-                }
-            }
-            if (best_score == eNewline) {
-                ++pos;
-            }
-        }
-        else {
-            if ( best_score == eSpace  ||  best_score == eNewline ) {
-                ++pos;
-            }
-        }
-        while (pos < len  &&  str[pos] == '\b') {
-            ++pos;
-        }
-    }
+				string::const_iterator bs; // position of next backspace
+				while ((bs = find(begin, end, '\b')) != end) {
+					if (bs != begin) {
+						// add all except the last one
+						temp_back.append(begin, bs - 1);
+					}
+					else {
+						// The backspace is at the beginning of next substring,
+						// so we should remove previously added symbol if any.
+						SIZE_TYPE size = temp_back.size();
+						if (size > prefix1->size()) { // current size > prefix size
+							temp_back.resize(size - 1);
+						}
+					}
+					// skip over backspace
+					begin = bs + 1;
+				}
+			}
+			if (begin != end) {
+				// add remaining characters
+				temp_back.append(begin, end);
+			}
+			}}
 
-    return arr;
+		// if we didn't close the link on this line, we 
+		// close it here
+		if (is_html && best_link.second != 0) {
+			temp_back += "</a>";
+		}
+
+		if (hyphen) {
+			temp_back += '-';
+		}
+		pos = best_pos;
+		prefix1 = prefix;
+
+		if (do_flat) {
+			if (best_score == eSpace) {
+				while (str[pos] == ' ') {
+					++pos;
+				}
+				if (str[pos] == '\n') {
+					++pos;
+				}
+			}
+			if (best_score == eNewline) {
+				++pos;
+			}
+		}
+		else {
+			if (best_score == eSpace || best_score == eNewline) {
+				++pos;
+			}
+		}
+		while (pos < len  &&  str[pos] == '\b') {
+			++pos;
+		}
+
+		dest.Append(temp_back);
+	}
+}
+
+
+void NStr::Wrap(const string& str, SIZE_TYPE width,
+	IWrapDest& dest, TWrapFlags flags,
+	const string* prefix,
+	const string* prefix1)
+{
+	WrapIt(str, width, dest, flags, prefix, prefix1);
+}
+
+
+list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
+	list<string>& arr2, NStr::TWrapFlags flags,
+	const string* prefix, const string* prefix1)
+{
+	CWrapDestStringList d(arr2);
+	WrapIt(str, width, d, flags, prefix, prefix1);
+	return arr2;
 }
 
 

@@ -91,7 +91,7 @@ public:
     const CFlatSeqLoc& GetLoc  (void) const { return *m_Loc;  }
     const TQuals&      GetQuals(void) const { return m_Quals; }
     //const CSeq_feat&   GetFeat (void) const { return m_Feat.GetOriginalFeature(); }
-    CMappedFeat        GetFeat (void) const { return m_Feat; }
+    const CMappedFeat& GetFeat (void) const { return m_Feat; }
 
     TQuals& SetQuals(void) { return m_Quals; }
 
@@ -117,8 +117,8 @@ public:
         //return m_Feat.Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; 
         return m_Feat < f2.m_Feat;
     }
-    CMappedFeat      GetFeat(void)  const { return m_Feat; }
-    const CSeq_loc&  GetLoc(void)   const { return *m_Loc; }
+    const CMappedFeat& GetFeat(void)  const { return m_Feat; }
+    const CSeq_loc&    GetLoc(void)   const { return *m_Loc; }
 
     virtual string GetKey(void) const { 
         return m_Feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
@@ -296,7 +296,7 @@ protected:
     // format
     void x_FormatQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
-    void x_FormatQual(EFeatureQualifier slot, const CTempString & name,
+    void x_FormatQual(EFeatureQualifier slot, const char* name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
     void x_FormatNoteQual(EFeatureQualifier slot, const CTempString & name, 
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
@@ -419,7 +419,7 @@ private:
     void x_FormatQuals(CFlatFeature& ff) const;
     void x_FormatGBNoteQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
-    void x_FormatQual(ESourceQualifier slot, const string& name,
+    void x_FormatQual(ESourceQualifier slot, const CTempString& name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
     void x_FormatNoteQual(ESourceQualifier slot, const char* name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const {

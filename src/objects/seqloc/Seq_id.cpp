@@ -773,11 +773,14 @@ private:
 void SAccGuide::AddRule(const CTempString& rule)
 {
     CTempString         tmp1, tmp2;
-    vector<CTempString> tokens;
+    vector<CTempStringEx> tokens;
     SIZE_TYPE           pos, pos2;
 
     ++count;
-    tmp1.assign(rule, 0, rule.find("#")); // strip comment
+    tmp1.assign(rule, 0, rule.find('#')); // strip comment
+    if (tmp1.empty())
+        return;
+    tokens.reserve(3);
     NStr::Tokenize(tmp1, " \t", tokens, NStr::eMergeDelims);
     if (tokens.empty()) {
         return;

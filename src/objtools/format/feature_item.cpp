@@ -2118,15 +2118,19 @@ void CFeatureItem::x_AddQualProteinConflict(
     static const string conflict_msg = 
         "Protein sequence is in conflict with the conceptual translation";
 
-    if ( !ctx.IsProt() || !IsMappedFromCDNA() ) {
-        bool has_prot = false;
-        if ( m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId() != 0 ) {
-            has_prot = ( sequence::GetLength( m_Feat.GetProduct(), &ctx.GetScope() ) > 0 );
-        }
-        const bool conflict_set = ( cdr.IsSetConflict()  &&  cdr.GetConflict() );
-        if ( has_prot && conflict_set ) {
-            x_AddQual( eFQ_prot_conflict, new CFlatStringQVal( conflict_msg ) );
-        }
+	const bool conflict_set = (cdr.IsSetConflict() && cdr.GetConflict());
+
+	if (conflict_set) 
+	{
+		if (!ctx.IsProt() || !IsMappedFromCDNA()) {
+			bool has_prot = false;
+			if (m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId() != 0) {
+				has_prot = (sequence::GetLength(m_Feat.GetProduct(), &ctx.GetScope()) > 0);
+			}
+			if (has_prot) {
+				x_AddQual(eFQ_prot_conflict, new CFlatStringQVal(conflict_msg));
+			}
+		}
     } 
 }
 
@@ -4101,12 +4105,12 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
 void CFeatureItem::x_FormatQual
 (EFeatureQualifier slot,
- const CTempString & name,
+ const char* name,
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
-    TQCI it = const_cast<const TQuals&>(m_Quals).LowerBound(slot);
-    TQCI end = const_cast<const TQuals&>(m_Quals).end();
+    TQCI it = m_Quals.LowerBound(slot);
+    TQCI end = m_Quals.end();
     while (it != end  &&  it->first == slot) {
         it->second->Format(qvec, name, *GetContext(), flags);
         ++it;
@@ -4122,8 +4126,8 @@ void CFeatureItem::x_FormatNoteQual
 {
     flags |= IFlatQVal::fIsNote;
 
-    TQCI it = const_cast<const TQuals&>(m_Quals).LowerBound(slot);
-    TQCI end = const_cast<const TQuals&>(m_Quals).end();
+    TQCI it = m_Quals.LowerBound(slot);
+    TQCI end = m_Quals.end();
     while (it != end  &&  it->first == slot) {
         it->second->Format(qvec, name, *GetContext(), flags);
         ++it;
@@ -4141,8 +4145,8 @@ void CFeatureItem::x_FormatGOQualCombined
     // copy all the given quals with that name since we need to sort them
     vector<CConstRef<CFlatGoQVal> > goQuals;
 
-    TQCI it = const_cast<const TQuals&>(m_Quals).LowerBound(slot);
-    TQCI end = const_cast<const TQuals&>(m_Quals).end();
+    TQCI it = m_Quals.LowerBound(slot);
+    TQCI end = m_Quals.end();
     while (it != end  &&  it->first == slot) {
         goQuals.push_back( CConstRef<CFlatGoQVal>( dynamic_cast<const CFlatGoQVal*>( it->second.GetNonNullPointer() ) ) );
         ++it;
@@ -5329,7 +5333,8 @@ static string s_GetSpecimenVoucherText(
 
 void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) const
 {
-    string taxname, common;
+    CTempString taxname;
+    CTempString common;
     if ( org.IsSetTaxname() ) {
         taxname = org.GetTaxname();
     }
@@ -5346,7 +5351,7 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
         x_AddQual(eSQ_common_name, new CFlatStringQVal(common));
     }
     if ( org.IsSetOrgname() ) {
-        set<string> ecotypesSeen;  // holds the ones we've seen so don't show them again
+        set<CTempString> ecotypesSeen;  // holds the ones we've seen so don't show them again
         ecotypesSeen.insert(kEmptyStr); // empty string is always considered seen so we hide it
         ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
             
@@ -5791,12 +5796,12 @@ CSourceFeatureItem::CSourceFeatureItem
 
 void CSourceFeatureItem::x_FormatQual
 (ESourceQualifier slot,
- const string& name,
+ const CTempString& name,
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
-    TQCI it = const_cast<const TQuals&>(m_Quals).LowerBound(slot);
-    TQCI end = const_cast<const TQuals&>(m_Quals).end();
+    TQCI it = m_Quals.LowerBound(slot);
+    TQCI end = m_Quals.end();
     while (it != end  &&  it->first == slot) {
         const IFlatQVal* qual = it->second;
         qual->Format(qvec, name, *GetContext(),

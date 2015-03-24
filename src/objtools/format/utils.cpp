@@ -346,16 +346,13 @@ void AddPeriod(string& str)
 }
 
 
-void TrimSpaces(string& str, int indent)
+void TrimSpaces(string& str, size_t indent)
 {
-    if (str.empty()  ||  str.length()  <= (size_t)indent) {
+    if (str.empty()  ||  str.length() <= indent) {
         return;
     }
-    if (indent < 0) {
-        indent = 0;
-    }
 
-    int end = str.length() - 1;
+    size_t end = str.length() - 1;
     while (end >= indent  &&  isspace((unsigned char) str[end])) {
         end--;
     }
@@ -380,7 +377,7 @@ public:
 // If trim_beginning, strips all spaces and unprintables from beginning of string.
 // If trim_end, strips all spaces and unprintables from end of string.
 // returns the string you gave it.
-string &CompressSpaces( string& str, const bool trim_beginning, const bool trim_end )
+string& CompressSpaces( string& str, const bool trim_beginning, const bool trim_end )
 {
     if( str.empty() ) {
         return str;
@@ -610,6 +607,193 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     return changed;
 }
 
+// this is copy-pasted method and optimized to use CTempString
+void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allow_ellipsis)
+{
+    // TODO: This commented out code represents how ellipsis trimming
+    // should work.  However, for compatibility with C, we're using a
+    // (in my opinion) suboptimal algorithm.  We can switch over later.
+
+    //if (str.empty()) {
+    //    return;
+    //}
+
+    //size_t strlen = str.length();
+    //size_t begin = 0;
+
+    //// trim unprintable characters (and space) off the beginning
+    //while (begin != strlen) {
+    //    unsigned char ch = str[begin];
+    //    if (ch > ' ') {
+    //        break;
+    //    } else {
+    //        ++begin;
+    //    }
+    //}
+
+    //// we're done if we trimmed the string to nothing
+    //if (begin == strlen) {
+    //    str.erase();
+    //    return;
+    //}
+
+    //// trim junk off the end (while we're at it, record whether we're chopping off a period)
+    //size_t end = strlen - 1;
+    //bool has_period = false;
+    //while (end > begin) {
+    //    unsigned char ch = str[end];
+    //    if (ch <= ' '  ||  ch == '.'  ||  ch ==  ','  ||  ch == '~'  ||  ch == ';') {
+    //        has_period = (has_period  ||  ch == '.');
+    //        --end;
+    //    } else {
+    //        break;
+    //    }
+    //}
+
+    //// check whether we're about to chop off an ellipsis, so we remember to add it back
+    //// TODO: There's got to be a more efficient way of doing this
+    //const bool weChoppedOffAnEllipsis = ( NPOS != NStr::Find(str, "...", end) );
+
+    //// do the actual chopping here
+    //str = str.substr( begin, end + 1 );
+
+    //// restore chopped off ellipsis or period, if any
+    //if ( allow_ellipsis && weChoppedOffAnEllipsis ) {
+    //    str += "...";
+    //} else if (has_period) {
+    //    // re-add any periods if we had one before
+    //    str += '.';
+    //}
+
+    // This is based on the C function TrimSpacesAndJunkFromEnds.
+    // Although it's updated to use iterators and such and to
+    // return whether it changed the string, it should
+    // have the same output, except:
+    // - We do NOT chop off a semicolon if we determine that it's
+    //   part of an HTML escape char (e.g. "&bgr;" ).
+    // - There are some changes in how tildes are handled;
+    //   this algo is less likely to remove them.
+
+    if (str.empty()) {
+        result.clear();
+        return;
+    }
+
+    // make start_of_junk_pos hold the beginning of the "junk" at the end
+    // (where junk is defined as one of several characters)
+    // while we're at it, also check if the junk contains a tilde and/or period
+    bool isPeriod = false;
+    bool isTilde = false;
+    size_t start_of_junk_pos = 0;
+    for (size_t len = str.length(); len && start_of_junk_pos == 0; len--)
+    {
+        char ch = str[len-1];
+        if (ch <= ' ') ch = ' ';
+        switch (ch)
+        {
+          case '.':
+              isPeriod = true;
+              break;
+          case '~':
+              isTilde = true;
+              break;
+          case ';':
+          case ',':
+          case ' ':
+              break;
+          default:
+              // found non-junk character.  Last junk character is just after this
+              start_of_junk_pos = len;
+              break;
+        }        
+    }
+
+    // check for ';' that's part of an HTML escape char like "&bgr;" and
+    // skip over it (i.e., don't remove it) if so
+    if (start_of_junk_pos < str.length() && str[start_of_junk_pos] == ';') {
+        // we assume no HTML escape char will be longer than this
+        static const int kMaxCharsToLookAt = 20;
+
+        // go backwards, looking for the ampersand
+        int amp_iter = (start_of_junk_pos - 1);
+        for (; amp_iter >= 0 && ((start_of_junk_pos - amp_iter) < kMaxCharsToLookAt); --amp_iter) {
+            const char ch = str[amp_iter];
+            if (isalnum(ch) || ch == '#') {
+                // just keep going
+            }
+            else if (ch == '&') {
+                // The semicolon ends an HTML escape character, so we skip it
+                ++start_of_junk_pos;
+                break;
+            }
+            else {
+                // The semicolon does NOT end an HTML escape character, so we might remove it
+                break;
+            }
+        }
+    }
+
+    // holds the suffix to add after we remove the junk
+    CTempString suffix; // by default, just remove junk
+
+    // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
+    if (start_of_junk_pos < str.length()) {
+
+        const int chars_in_junk = (str.length() - start_of_junk_pos);
+        _ASSERT(chars_in_junk >= 1);
+
+        // allow one period at end
+        if (isPeriod) {
+            // check if we should put an ellipsis, or just a period
+            const bool putEllipsis = (allow_ellipsis && (chars_in_junk >= 3) &&
+                str[start_of_junk_pos + 1] == '.' && str[start_of_junk_pos + 2] == '.');
+
+            suffix = (putEllipsis ? "..." : ".");
+        }
+        else if (isTilde) {
+            // allow tilde(s)
+            // (This should work on single- AND double-tildes because
+            // we don't know whether or not tilde-expansion was called before this 
+            // point )
+            if (str[start_of_junk_pos] == '~') {
+                const bool doubleTilde = ((chars_in_junk >= 2) && str[start_of_junk_pos + 1] == '~');
+                suffix = (doubleTilde ? "~~" : "~");
+            }
+        }
+    }
+    const char* ptr = str.data();
+    size_t len = start_of_junk_pos;
+    while (len && *ptr <= ' ')
+    {
+        len--; ptr++;
+    }
+    result.reserve(len + suffix.length());
+    result.assign(ptr, len);
+    result.append(suffix.data(), suffix.length());
+}
+
+#if 0
+struct CJunkUnitTest
+{
+    void test(CTempString v, bool a_e)
+    {
+        string res(v);
+        TrimSpacesAndJunkFromEnds(res, a_e);
+        TrimSpacesAndJunkFromEnds(res, v, a_e);
+    }
+    CJunkUnitTest()
+    {
+        test(" .", true);
+        test(" aaa bbb.....", true);
+        test(" aaa bbb.....", false);
+        test(" aaa bbb~~~~~", true);
+        test(" aaa bbb,,,,,", true);
+        test(" aaa bbb;;;;;;", true);
+    }
+};
+
+static CJunkUnitTest c;
+#endif
 
 static bool s_IsWholeWord(const string& str, size_t pos)
 {
@@ -1235,14 +1419,118 @@ const string strLinkBaseUSPTO(
 const string strDocLink(
     "http://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/" );
 
-bool ConvertQuotesNotInHTMLTags( string &str )
-{   
+namespace {
+    // make sure we're not "double-sanitizing"
+    // (e.g. "&gt;" to "&amp;gt;")
+    //  ============================================================================
+    template<typename _T>
+    bool s_ShouldWeEscapeAmpersand(
+        _T str_iter, // yes, COPY not reference
+        const _T &str_iter_end)
+        //  ============================================================================
+    {
+        _ASSERT(*str_iter == '&');
+
+        // This is a long-winded way of checking if str_iter
+        // is at "&gt;", "&lt;", "&quot;" or "&amp;"
+        // I'm concerned about regexes being too slow.
+
+        ++str_iter;
+        if (str_iter != str_iter_end) {
+            switch (*str_iter) {
+            case 'g':
+            case 'l':
+                ++str_iter;
+                if (str_iter != str_iter_end && *str_iter == 't') {
+                    ++str_iter;
+                    if (str_iter != str_iter_end && *str_iter == ';') {
+                        return false;
+                    }
+                }
+                break;
+            case 'a':
+                ++str_iter;
+                if (str_iter != str_iter_end && *str_iter == 'm') {
+                    ++str_iter;
+                    if (str_iter != str_iter_end && *str_iter == 'p') {
+                        ++str_iter;
+                        if (str_iter != str_iter_end && *str_iter == ';') {
+                            return false;
+                        }
+                    }
+                }
+                break;
+            case 'q':
+                ++str_iter;
+                if (str_iter != str_iter_end && *str_iter == 'u') {
+                    ++str_iter;
+                    if (str_iter != str_iter_end && *str_iter == 'o') {
+                        ++str_iter;
+                        if (str_iter != str_iter_end && *str_iter == 't') {
+                            ++str_iter;
+                            if (str_iter != str_iter_end && *str_iter == ';') {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                return true;
+            }
+        }
+        return true;
+    }
+
+    // see if the '<' opens an HTML tag (currently we 
+    // only check for a few kinds of tags )
+    //  ============================================================================
+    template<typename _T>
+    bool s_IsTagStart(
+        const _T &str_iter,
+        const _T &str_iter_end)
+        //  ============================================================================
+    {
+        static const string possible_tag_starts[] = {
+            "<a href=",
+            "<acronym title",
+            "</a>",
+            "</acronym"
+        };
+        static const size_t num_possible_tag_starts =
+            (sizeof(possible_tag_starts) / sizeof(possible_tag_starts[0]));
+
+        // check every string it might start with
+        for (int possible_str_idx = 0; possible_str_idx < num_possible_tag_starts; ++possible_str_idx) {
+            const string &expected_str = possible_tag_starts[possible_str_idx];
+
+            string::size_type idx = 0;
+            _T check_str_iter = str_iter;
+            for (; check_str_iter != str_iter_end && idx < expected_str.length(); ++idx, ++check_str_iter) {
+                if (*check_str_iter != expected_str[idx]) {
+                    break;
+                }
+            }
+
+            if (idx == expected_str.length()) {
+                return true;
+            }
+        }
+
+        // we're in a tag if we matched the whole expected_str
+        return false;
+    }
+
+}
+
+bool ConvertQuotesNotInHTMLTags(string &str)
+{
     bool changes_made = false;
 
     bool in_tag = false;
     size_t idx = 0;
-    for( ; idx < str.length(); ++idx ) {
-        switch( str[idx] ) {
+    for (; idx < str.length(); ++idx) {
+        switch (str[idx]) {
         case '<':
             // heuristic
             in_tag = true;
@@ -1251,7 +1539,7 @@ bool ConvertQuotesNotInHTMLTags( string &str )
             in_tag = false;
             break;
         case '"':
-            if( ! in_tag ) {
+            if (!in_tag) {
                 str[idx] = '\'';
                 changes_made = true;
             }
@@ -1262,136 +1550,44 @@ bool ConvertQuotesNotInHTMLTags( string &str )
     return changes_made;
 }
 
-// make sure we're not "double-sanitizing"
-// (e.g. "&gt;" to "&amp;gt;")
-//  ============================================================================
-static bool
-s_ShouldWeEscapeAmpersand( 
-    string::const_iterator str_iter, // yes, COPY not reference
-    const string::const_iterator &str_iter_end )
-//  ============================================================================
-{
-    _ASSERT(*str_iter == '&');
-    
-    // This is a long-winded way of checking if str_iter
-    // is at "&gt;", "&lt;", "&quot;" or "&amp;"
-    // I'm concerned about regexes being too slow.
-
-    ++str_iter;
-    if( str_iter != str_iter_end ) {
-        switch( *str_iter ) {
-            case 'g':
-            case 'l':
-                ++str_iter;
-                if( str_iter != str_iter_end && *str_iter == 't' ) {
-                    ++str_iter;
-                    if( str_iter != str_iter_end && *str_iter == ';'  ) {
-                        return false;
-                    }
-                }
-                break;
-            case 'a':
-                ++str_iter;
-                if( str_iter != str_iter_end && *str_iter == 'm' ) {
-                    ++str_iter;
-                    if( str_iter != str_iter_end && *str_iter == 'p' ) {
-                        ++str_iter;
-                        if( str_iter != str_iter_end && *str_iter == ';' ) {
-                            return false;
-                        }
-                    }
-                }
-                break;
-            case 'q':
-                ++str_iter;
-                if( str_iter != str_iter_end && *str_iter == 'u' ) {
-                    ++str_iter;
-                    if( str_iter != str_iter_end && *str_iter == 'o' ) {
-                        ++str_iter;
-                        if( str_iter != str_iter_end && *str_iter == 't' ) {
-                            ++str_iter;
-                            if( str_iter != str_iter_end && *str_iter == ';' ) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-                break;
-            default:
-                return true;
-        }
-    }
-    return true;
-}
-
-// see if the '<' opens an HTML tag (currently we 
-// only check for a few kinds of tags )
-//  ============================================================================
-static bool
-s_IsTagStart( 
-    const string::const_iterator &str_iter,
-    const string::const_iterator &str_iter_end )
-//  ============================================================================
-{
-    static const string possible_tag_starts[] = {
-        "<a href=",
-        "<acronym title",
-        "</a>",
-        "</acronym"
-    }; 
-    static const size_t num_possible_tag_starts = 
-        (sizeof(possible_tag_starts) / sizeof(possible_tag_starts[0]));
-
-    // check every string it might start with
-    for( int possible_str_idx = 0; possible_str_idx < num_possible_tag_starts; ++possible_str_idx ) {
-        const string &expected_str = possible_tag_starts[possible_str_idx];
-
-        string::size_type idx = 0;
-        string::const_iterator check_str_iter = str_iter;
-        for( ; check_str_iter != str_iter_end && idx < expected_str.length(); ++idx, ++check_str_iter ) {
-            if( *check_str_iter != expected_str[idx] ) {
-                break;
-            }
-        }
-
-        if( idx == expected_str.length() ) {
-            return true;
-        }
-    }
-
-    // we're in a tag if we matched the whole expected_str
-    return false;
-}
 
 //  ============================================================================
-void
-TryToSanitizeHtml( string &str )
-//  ============================================================================
+void TryToSanitizeHtml(string &str)
 {
     string result;
-    
     // The "* 1.1" should keep up efficient in most cases since data tends not to have
     // too many characters that need escaping.
-    result.reserve( 1 + (int)( str.length() * 1.1 ) ); 
+    result.reserve(1 + (int)(str.length() * 1.1));
+    TryToSanitizeHtml(result, str);
+
+    // swap is faster than assignment
+    str.swap(result);
+}
+
+void TryToSanitizeHtml(std::string &result, const CTempString& str)
+//  ============================================================================
+{
+    result.clear();
 
     // we only sanitize when we're not in an url
     bool in_html_tag = false;
-    ITERATE( string, str_iter, str ) {
+    ITERATE(CTempString, str_iter, str) {
         // see if we're entering an HTML tag
-        if( ! in_html_tag && *str_iter =='<' && s_IsTagStart(str_iter, str.end()) ) {
+        if (!in_html_tag && *str_iter == '<' && s_IsTagStart(str_iter, str.end())) {
             in_html_tag = true;
         }
 
         // now that we know whether we're in a tag,
         // process characters appropriately.
-        if( in_html_tag ) {
-            switch( *str_iter ) {
+        if (in_html_tag) {
+            switch (*str_iter) {
             case '&':
                 // make sure we're not "double-sanitizing"
                 // (e.g. "&gt;" to "&amp;gt;")
-                if( s_ShouldWeEscapeAmpersand(str_iter, str.end()) ) {
+                if (s_ShouldWeEscapeAmpersand(str_iter, str.end())) {
                     result += "&amp;";
-                } else {
+                }
+                else {
                     result += '&';
                 }
                 break;
@@ -1399,8 +1595,9 @@ TryToSanitizeHtml( string &str )
                 result += *str_iter;
                 break;
             }
-        } else {
-            switch( *str_iter ) {
+        }
+        else {
+            switch (*str_iter) {
             case '<':
                 result += "&lt;";
                 break;
@@ -1414,15 +1611,12 @@ TryToSanitizeHtml( string &str )
         }
 
         // see if we're exiting an HTML tag
-        if( in_html_tag && *str_iter == '>' ) {
+        if (in_html_tag && *str_iter == '>') {
             // tag is closed now
             // (Note: does this consider cases where '>' is in quotes?)
             in_html_tag = false;
         }
     }
-
-    // swap is faster than assignment
-    str.swap( result );
 }
 
 void 

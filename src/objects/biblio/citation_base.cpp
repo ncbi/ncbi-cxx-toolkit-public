@@ -287,17 +287,33 @@ bool ICitationBase::x_GetLabelV1(string*            label,
     // constructed from the first character of each whitespace separated
     // word in titleunique
     if (unique) {
-        string tag;
+        //string tag;
+        // NB: add '|' even if tag is empty to maintain backward compatibility.
+        *label += '|';
         if (titleunique  &&  !titleunique->empty()) {
+#if 0
             CNcbiIstrstream is(titleunique->c_str(), titleunique->size());
             string word;
             int cnt = 0;
             while ( (is >> word) && (cnt++ < 40) ) {
-                tag += word[0];
+                *label += word[0];
             }
+#else
+            size_t pos;
+            CTempString temp = *titleunique;
+            CTempString space(" \t\r\n");
+            while ( (pos = temp.find_first_not_of(space)) != CTempString::npos)
+            {
+                *label += temp[pos];
+                temp.assign(temp, pos, temp.size() - pos);
+                pos = temp.find_first_of(space);
+                if (pos != CTempString::npos)
+                    temp.assign(temp, pos, temp.size() - pos);
+                else
+                    break;
+            }
+#endif
         }
-        // NB: add '|' even if tag is empty to maintain backward compatibility.
-        *label += "|" + tag;
     }
 
     return true;
