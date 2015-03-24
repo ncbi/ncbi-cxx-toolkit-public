@@ -2205,7 +2205,7 @@ void CFeatureItem::x_GetAssociatedProtInfo(
     if ( protId ) {
         if ( !cfg.AlwaysTranslateCDS() ) {
             CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
-            if ( cfg.ShowFarTranslations() || ctx.IsGED() ) {
+            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() ) {
                 get_flag = CScope::eGetBioseq_All;
             }
             protHandle =  scope.GetBioseqHandle(*protId, get_flag);
