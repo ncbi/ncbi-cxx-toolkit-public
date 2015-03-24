@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 // Server section values
 const unsigned int      default_max_connections = 100;
 const unsigned int      max_connections_low_limit = 1;
-const unsigned int      max_connections_high_limit = 1000;
+const unsigned int      max_connections_high_limit = 4000;
 
 const unsigned int      default_max_threads = 25;
 const unsigned int      max_threads_low_limit = 1;

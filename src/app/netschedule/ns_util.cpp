@@ -114,11 +114,20 @@ void NS_ValidateServerSection(const IRegistry &  reg,
         int     val = reg.GetInt(section, "max_connections",
                                  default_max_connections);
         if (val < int(max_connections_low_limit) ||
-            val > int(max_connections_high_limit))
-            warnings.push_back(
-                    NS_OutOfLimitMessage(section, "max_connections",
-                                         max_connections_low_limit,
-                                         max_connections_high_limit));
+            val > int(max_connections_high_limit)) {
+            string  message = NS_OutOfLimitMessage(section, "max_connections",
+                                                   max_connections_low_limit,
+                                                   max_connections_high_limit);
+            // See the logic in SNS_Parameters::Read()::ns_server_params.cpp
+            if (val < int(max_connections_low_limit))
+                message += " Value " + NStr::NumericToString(
+                                (int)((max_connections_low_limit +
+                                       max_connections_high_limit) / 2));
+            else
+                message += " Value " + NStr::NumericToString(
+                                            max_connections_high_limit);
+            warnings.push_back(message + " will be used when restarted");
+        }
     }
 
     ok = NS_ValidateInt(reg, section, "max_threads", warnings);

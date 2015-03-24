@@ -151,6 +151,12 @@ void SNS_Parameters::Read(const IRegistry &  reg)
 
     reinit          = GetBoolNoErr("reinit", false);
     max_connections = GetIntNoErr("max_connections", default_max_connections);
+    if (max_connections < max_connections_low_limit)
+        max_connections = (max_connections_low_limit +
+                           max_connections_high_limit) / 2;
+    else if (max_connections > max_connections_high_limit)
+        max_connections = max_connections_high_limit;
+
     max_threads     = GetIntNoErr("max_threads", default_max_threads);
 
     init_threads = GetIntNoErr("init_threads", default_init_threads);
