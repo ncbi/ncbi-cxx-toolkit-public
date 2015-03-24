@@ -1246,7 +1246,7 @@ CFormatGuess::TestFormatFasta(
     // reject obvious misfits:
 	CTempString header(m_pTestBuffer, m_iTestDataSize);
 	SkipCommentAndBlank(header);
-    if ( m_iTestDataSize == 0 || header[0] != '>' ) {
+	if ( m_iTestDataSize == 0 || header.length() == 0 || header[0] != '>' ) {
         return false;
     }
     if ( m_iStatsCountData == 0 ) {
