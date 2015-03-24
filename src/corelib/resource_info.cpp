@@ -424,7 +424,7 @@ string CNcbiResourceInfo::x_GetEncoded(void) const
 const char* kDefaultKeysFile = ".ncbi_keys";
 const char* kDefaultKeysPath = "/opt/ncbi/config";
 const char* kKeysDomainPrefix = ".ncbi_keys.";
-const char* kNcbiEncryptVersion = "1";
+const char* kNcbiEncryptVersion = "2";
 
 // Key files to cache in memory.
 NCBI_PARAM_DECL(string, NCBI_KEY, FILES);
@@ -576,8 +576,9 @@ bool CNcbiEncrypt::IsEncrypted(const string& data)
         return false;
     }
 
-    // Check API version. Currently only version 1 is supported.
-    if (encr[0] != '1') {
+    // Check API version. Currently supported versions are 1 and 2.
+    char version = encr[0];
+    if (version < '1' || version > '2') {
         return false;
     }
 
@@ -665,7 +666,7 @@ string CNcbiEncrypt::x_LoadKeys(const string& filename, TKeyMap* keys)
         if (s.empty() || s[0] == '#') continue;
         
         char version = s[0];
-        if (version != '1') {
+        if (version < '1' || version > '2') {
             NCBI_THROW(CNcbiEncryptException, eBadVersion,
                 "Invalid or unsupported API version in encryption key.");
         }
@@ -753,8 +754,8 @@ string CNcbiEncrypt::x_Encrypt(const string& data, const string& key)
     _ASSERT(!key.empty());
     string checksum = x_GetBinKeyChecksum(key);
     return kNcbiEncryptVersion +
-        checksum + ":" +
-        BinToHex(x_BlockTEA_Encode(key, data, kEncrypt_BlockSize));
+        checksum + ":" + BinToHex(x_BlockTEA_Encode(key,
+        x_AddSalt(data, *kNcbiEncryptVersion), kEncrypt_BlockSize));
 }
 
 
@@ -767,7 +768,7 @@ string CNcbiEncrypt::x_Decrypt(const string& data, const TKeyMap& keys)
 
     // API version
     char version = data[0];
-    if (version != '1') {
+    if (version < '1' || version > '2') {
         NCBI_THROW(CNcbiEncryptException, eBadVersion,
             "Invalid or unsupported API version in the encrypted data.");
     }
@@ -797,7 +798,46 @@ string CNcbiEncrypt::x_Decrypt(const string& data, const TKeyMap& keys)
     // Domain must be parsed by the caller.
     _ASSERT(data.find('/') == NPOS);
     _ASSERT(!key.empty());
-    return x_BlockTEA_Decode(key, HexToBin(data.substr(34)), kEncrypt_BlockSize);
+    return x_RemoveSalt(
+        x_BlockTEA_Decode(key, HexToBin(data.substr(34)), kEncrypt_BlockSize),
+        version);
+}
+
+
+const size_t kSaltLength = 16; // sizeof(time_t) + sizeof(long)
+
+
+string CNcbiEncrypt::x_AddSalt(const string& data, char version)
+{
+    if (version < '2') return data;
+    // Add salt
+    string salt;
+    salt.reserve(kSaltLength);
+    static time_t tt = 0;
+    static long ns = 0;
+    if (tt == 0) {
+        CTime::GetCurrentTimeT(&tt, &ns);
+    }
+    time_t ttmp = tt;
+    for (size_t i = 0; i < sizeof(ttmp) && salt.size() < kSaltLength; ++i) {
+        salt += ttmp & 0xFF;
+        ttmp >>= 8;
+    }
+    while (salt.size() < kSaltLength) {
+        long ntmp = ++ns;
+        for (size_t i = 0; i < sizeof(ntmp) && salt.size() < kSaltLength; ++i) {
+            salt += ntmp & 0xFF;
+            ntmp >>= 8;
+        }
+    }
+    return salt + data;
+}
+
+
+string CNcbiEncrypt::x_RemoveSalt(const string& data, char version)
+{
+    if (version < '2') return data;
+    return data.substr(kSaltLength);
 }
 
 

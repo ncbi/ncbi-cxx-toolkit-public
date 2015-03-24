@@ -325,6 +325,10 @@ private:
     // Find a matching key and decrypt data.
     static string x_Decrypt(const string& data, const TKeyMap& keys);
 
+    // Salt handling - used starting API version 2.
+    static string x_AddSalt(const string& data, char version);
+    static string x_RemoveSalt(const string& data, char version);
+
     static CSafeStatic<CNcbiEncrypt::TKeyMap> s_KeyMap;
     static CSafeStatic<string> s_DefaultKey;
     static volatile bool s_KeysInitialized;

@@ -141,10 +141,13 @@ int CResInfoTest::Run(void)
     // Test string encryption/decrypton using an explicit password.
     string data = "Test CNcbiEncrypt class";
     string key = CNcbiEncrypt::GenerateKey("foobar");
-    _ASSERT(key == "1BCB50C9A5FC53A1608242FE827BAE228:0AA2C441A5F2F3DB7E9565E9349C18AB");
+    _ASSERT(key == "2BCB50C9A5FC53A1608242FE827BAE228:0AA2C441A5F2F3DB7E9565E9349C18AB");
     string encr = CNcbiEncrypt::Encrypt(data, "foobar");
-    _ASSERT(encr == "1BCB50C9A5FC53A1608242FE827BAE228:A8F7030E91CCF4E5FDF7C0F3F734BEBBDA2AAB8583729E9E5F438D1E569F2F21");
     string decr = CNcbiEncrypt::Decrypt(encr, "foobar");
+    _ASSERT(decr == data);
+    // Test v1 decryption
+    string v1_encr = "1BCB50C9A5FC53A1608242FE827BAE228:A8F7030E91CCF4E5FDF7C0F3F734BEBBDA2AAB8583729E9E5F438D1E569F2F21";
+    decr = CNcbiEncrypt::Decrypt(v1_encr, "foobar");
     _ASSERT(decr == data);
 
     // Test decryption using ncbi keys file, the key is a non-default one
@@ -154,13 +157,14 @@ int CResInfoTest::Run(void)
 
     // Test automatic key selection.
     encr = CNcbiEncrypt::Encrypt(data);
-    _ASSERT(encr == "1E5606B599D707645329ABE4E0E3F6AC9:52CE4D659462C9ABA48CF7588D8E1FD9D5CD52EFCE578B0A40AF9B4D1208CF9F");
     decr = CNcbiEncrypt::Decrypt(encr);
+    _ASSERT(decr == data);
+    v1_encr = "1E5606B599D707645329ABE4E0E3F6AC9:52CE4D659462C9ABA48CF7588D8E1FD9D5CD52EFCE578B0A40AF9B4D1208CF9F";
+    decr = CNcbiEncrypt::Decrypt(v1_encr);
     _ASSERT(decr == data);
 
     // Test domain encryption.
     encr = CNcbiEncrypt::EncryptForDomain(data, "domain");
-    _ASSERT(encr == "11BDF0BA7079A8C2BD6656D3CF2D79160:3F7930D402567001F058086D263539596792628CEEF15AFE9D7E84FCD9C7BC14/domain");
     // Automatic domain key selection.
     decr = CNcbiEncrypt::Decrypt(encr);
     _ASSERT(decr == data);
@@ -169,6 +173,8 @@ int CResInfoTest::Run(void)
     _ASSERT(decr == data);
     // Two domains
     decr = CNcbiEncrypt::DecryptForDomain(encr, "domain2");
+    _ASSERT(decr == data);
+    v1_encr == "11BDF0BA7079A8C2BD6656D3CF2D79160:3F7930D402567001F058086D263539596792628CEEF15AFE9D7E84FCD9C7BC14/domain";
     _ASSERT(decr == data);
 
     // Test IsEncrypted()
@@ -223,10 +229,13 @@ int CResInfoTest::Run(void)
         caught_exception = true;
     }
     _ASSERT(caught_exception);
+    // Decrypt with the default key
     s = reg.GetEncryptedString("sect", "val1");
     _ASSERT(s == data);
+    // Decrypt with a non-default key
     s = reg.GetEncryptedString("sect", "val2");
     _ASSERT(s == data);
+    // Decryt with a domain key
     s = reg.GetEncryptedString("sect", "val3");
     _ASSERT(s == data);
 
