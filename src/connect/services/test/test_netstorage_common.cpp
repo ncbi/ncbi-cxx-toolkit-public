@@ -266,7 +266,7 @@ private:
 template <class TContainer>
 void RandomFill(CRandom& random, TContainer& container, size_t length, bool printable = true)
 {
-    const char kMin = printable ? ' ' : numeric_limits<char>::min();
+    const char kMin = printable ? '!' : numeric_limits<char>::min();
     const char kMax = printable ? '~' : numeric_limits<char>::max();
     container.clear();
     container.reserve(length);
@@ -887,7 +887,7 @@ struct SAttrApiBase
         if (failed) {
             BOOST_ERROR_CTX("" << failed << " attribute(s) missing", ctx);
         } else if (size_t size = attrs_copy.size()) {
-            BOOST_ERROR_CTX("Got " << size << " more attributes than expected", ctx);
+            BOOST_ERROR_CTX("Got " << size << " less attributes than expected", ctx);
         }
     }
 
