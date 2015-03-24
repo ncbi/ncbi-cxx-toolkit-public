@@ -136,12 +136,16 @@ bool ValidExonTerminal(
         TSeqPos exon_anchor_pos,
         int offset_pos)
 {
-    const set<TSeqPos>& exon_terminals = offset_pos < 0 ?
-                        exon_biostarts 
-                      : exon_biostops; //VAR-1379
+    // VAR-1379, VAR-1500
+    // Note: offset=0 may appear in cases like NM_000535.5:c.1145-?_2174+?del
+    // We don't know here whether we're dealing with lt or gt, so will optimistically
+    // allow if we find the anchor in either starts or stops.
+    bool found_in_starts = exon_biostarts.find(exon_anchor_pos) != exon_biostarts.end();
+    bool found_in_stops  = exon_biostops.find(exon_anchor_pos)  != exon_biostops.end();
 
-    return offset_pos != 0 
-        && exon_terminals.find(exon_anchor_pos) != exon_terminals.end();
+    return (offset_pos  < 0 && found_in_starts)
+        || (offset_pos  > 0 && found_in_stops)
+        || (offset_pos == 0 && (found_in_starts || found_in_stops));
 }
 
 bool ValidExonTerminals(
@@ -153,7 +157,6 @@ bool ValidExonTerminals(
 
     // if offset's sign is consistent with location's strand, we expect to find
     // the anchor in exon-stops, otherwise in exon-starts. //VAR-1379
-
     bool start_ok = !p.IsSetStart_offset() || ValidExonTerminal(
                 exon_biostarts, 
                 exon_biostops,
