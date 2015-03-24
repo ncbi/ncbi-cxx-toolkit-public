@@ -264,10 +264,10 @@ private:
 
 // Convenience function to fill container with random char data
 template <class TContainer>
-void RandomFill(CRandom& random, TContainer& container, size_t length)
+void RandomFill(CRandom& random, TContainer& container, size_t length, bool printable = true)
 {
-    const char kMin = ' ';
-    const char kMax = '~';
+    const char kMin = printable ? ' ' : numeric_limits<char>::min();
+    const char kMax = printable ? '~' : numeric_limits<char>::max();
     container.clear();
     container.reserve(length);
     while (length-- > 0) {
@@ -387,7 +387,7 @@ public:
         SSource()
         {
             random.Randomize();
-            RandomFill(random, data, 20 * 1024 * 1024); // 20MB
+            RandomFill(random, data, 20 * 1024 * 1024, false); // 20MB
         }
     };
 
@@ -808,8 +808,9 @@ private:
 // Random attributes set
 struct SAttrApiBase
 {
-    typedef pair<string, string> TStrPair;
-    typedef vector<TStrPair> TData;
+    typedef map<string, string> TAttrs;
+    TAttrs attrs;
+    typedef vector<pair<const string*, const string*> > TData;
     TData data;
 
     SAttrApiBase()
@@ -832,21 +833,24 @@ struct SAttrApiBase
 
         string name;
         string value;
-        string not_set;
 
         name.reserve(kMaxLength);
         value.reserve(kMaxLength);
-        data.reserve(size);
 
         while (size-- > 0) {
             RandomFill(r, name, r.GetRand(kMinLength, kMaxLength));
 
             if (r.GetRandIndex(kSetProbability)) {
                 RandomFill(r, value, r.GetRand(kMinLength, kMaxLength));
-                data.push_back(TStrPair(name, value));
+                attrs.insert(make_pair(name, value));
             } else {
-                data.push_back(TStrPair(name, not_set));
+                attrs.insert(make_pair(name, kEmptyStr));
             }
+        }
+
+        data.reserve(attrs.size());
+        ITERATE(TAttrs, i, attrs) {
+            data.push_back(make_pair(&i->first, &i->second));
         }
     }
 
@@ -861,13 +865,29 @@ struct SAttrApiBase
 
         try {
             ITERATE(TData, i, data) {
-                BOOST_CHECK_CTX(object.GetAttribute(i->first) == i->second, ctx);
+                BOOST_CHECK_CTX(object.GetAttribute(*i->first) == *i->second, ctx);
             }
         }
         catch (...) {
             // Restore test context
             BOOST_TEST_CHECKPOINT(ctx.desc);
             throw;
+        }
+
+        CNetStorageObject::TAttributeList read_attrs(object.GetAttributeList());
+        TAttrs attrs_copy(attrs);
+        int failed = 0;
+
+        ITERATE(CNetStorageObject::TAttributeList, i, read_attrs) {
+            if (!attrs_copy.erase(*i)) {
+                ++failed;
+            }
+        }
+
+        if (failed) {
+            BOOST_ERROR_CTX("" << failed << " attribute(s) missing", ctx);
+        } else if (size_t size = attrs_copy.size()) {
+            BOOST_ERROR_CTX("Got " << size << " more attributes than expected", ctx);
         }
     }
 
@@ -877,9 +897,9 @@ struct SAttrApiBase
 
         try {
             NON_CONST_ITERATE(TData, i, data) {
-                object.SetAttribute(i->first, i->first);
-                BOOST_CHECK_CTX(object.GetAttribute(i->first) == i->first, ctx);
-                object.SetAttribute(i->first, i->second);
+                object.SetAttribute(*i->first, *i->first);
+                BOOST_CHECK_CTX(object.GetAttribute(*i->first) == *i->first, ctx);
+                object.SetAttribute(*i->first, *i->second);
             }
         }
         catch (...) {
