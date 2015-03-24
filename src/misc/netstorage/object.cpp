@@ -72,7 +72,14 @@ Uint8 CObj::GetSize()
 }
 
 
-string CObj::GetAttribute(const string& attr_name)
+list<string> CObj::GetAttributeList() const
+{
+    NCBI_THROW(CNetStorageException, eInvalidArg,
+        "Attribute support is only implemented in NetStorage server.");
+}
+
+
+string CObj::GetAttribute(const string& attr_name) const
 {
     NCBI_THROW(CNetStorageException, eInvalidArg,
         "Attribute support is only implemented in NetStorage server.");

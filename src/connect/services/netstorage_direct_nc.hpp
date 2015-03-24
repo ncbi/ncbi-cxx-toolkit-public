@@ -72,7 +72,8 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     virtual void Read(string* data);
     virtual bool Eof();
     virtual Uint8 GetSize();
-    virtual string GetAttribute(const string& attr_name);
+    virtual list<string> GetAttributeList() const;
+    virtual string GetAttribute(const string& attr_name) const;
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
     virtual CNetStorageObjectInfo GetInfo();

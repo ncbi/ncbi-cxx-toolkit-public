@@ -280,13 +280,22 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     ///
     Uint8 GetSize(void);
 
+    /// Get list of names of all attributes set on this object.
+    /// To get value of particular attribute, GetAttribute should be called.
+    ///
+    /// @throw If the underlying storage does not support attributes,
+    /// a CNetStorageException will be thrown.
+    ///
+    typedef list<string> TAttributeList;
+    TAttributeList GetAttributeList() const;
+
     /// Get the current value of the specified attribute. Attribute
     /// values are not cached by this method.
     ///
     /// @throw If the underlying storage does not support attributes,
     /// a CNetStorageException will be thrown.
     ///
-    string GetAttribute(const string& attr_name);
+    string GetAttribute(const string& attr_name) const;
 
     /// Set the new value for the specified attribute.
     ///

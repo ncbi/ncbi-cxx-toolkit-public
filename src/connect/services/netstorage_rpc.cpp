@@ -408,7 +408,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     CJsonNode ExchangeUsingOwnService(const CJsonNode& request,
             CNetServerConnection* conn = NULL,
-            CNetServer::TInstance server_to_use = NULL)
+            CNetServer::TInstance server_to_use = NULL) const
     {
         return m_NetStorageRPC->Exchange(m_OwnService,
                 request, conn, server_to_use);
@@ -424,12 +424,13 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     virtual string GetLoc();
     virtual bool Eof();
     virtual Uint8 GetSize();
-    virtual string GetAttribute(const string& attr_name);
+    virtual list<string> GetAttributeList() const;
+    virtual string GetAttribute(const string& attr_name) const;
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
     virtual CNetStorageObjectInfo GetInfo();
 
-    CJsonNode x_MkRequest(const string& request_type);
+    CJsonNode x_MkRequest(const string& request_type) const;
 
     CRef<SNetStorageRPC,
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
@@ -722,7 +723,7 @@ void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
 CJsonNode SNetStorageRPC::Exchange(CNetService service,
         const CJsonNode& request,
         CNetServerConnection* conn,
-        CNetServer::TInstance server_to_use)
+        CNetServer::TInstance server_to_use) const
 {
     CNetServer server(server_to_use != NULL ? server_to_use :
             (CNetServer::TInstance)
@@ -768,7 +769,7 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
     node.SetByKey("StorageFlags", storage_flags);
 }
 
-void SNetStorageRPC::x_SetICacheNames(CJsonNode& node)
+void SNetStorageRPC::x_SetICacheNames(CJsonNode& node) const
 {
     if (!m_NetCacheServiceName.empty() && !m_AppDomain.empty()) {
         CJsonNode icache(CJsonNode::NewObjectNode());
@@ -778,7 +779,7 @@ void SNetStorageRPC::x_SetICacheNames(CJsonNode& node)
     }
 }
 
-CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type)
+CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type) const
 {
     CJsonNode new_request(CJsonNode::NewObjectNode());
 
@@ -798,7 +799,7 @@ CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type)
 }
 
 CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
-        const string& object_loc)
+        const string& object_loc) const
 {
     CJsonNode new_request(MkStdRequest(request_type));
 
@@ -808,7 +809,7 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
 }
 
 CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
-        const string& unique_key, TNetStorageFlags flags)
+        const string& unique_key, TNetStorageFlags flags) const
 {
     CJsonNode new_request(MkStdRequest(request_type));
 
@@ -1088,7 +1089,29 @@ Uint8 SNetStorageObjectRPC::GetSize()
     return (Uint8) ExchangeUsingOwnService(request).GetInteger("Size");
 }
 
-string SNetStorageObjectRPC::GetAttribute(const string& attr_name)
+list<string> SNetStorageObjectRPC::GetAttributeList() const
+{
+    if (m_State != eReady) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot get object attribute while reading or writing");
+    }
+
+    CJsonNode request(x_MkRequest("GETATTRLIST"));
+
+    CJsonNode reply(ExchangeUsingOwnService(request));
+    CJsonNode names(reply.GetByKeyOrNull("AttributeNames"));
+    list<string> result;
+
+    if (names) {
+        for (CJsonIterator it = names.Iterate(); it; ++it) {
+            result.push_back((*it).AsString());
+        }
+    }
+
+    return result;
+}
+
+string SNetStorageObjectRPC::GetAttribute(const string& attr_name) const
 {
     if (m_State != eReady) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -1160,7 +1183,7 @@ void SNetStorageObjectRPC::Close()
     }
 }
 
-CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type)
+CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type) const
 {
     if (m_ObjectIdentification == eByGeneratedID)
         return m_NetStorageRPC->MkObjectRequest(request_type, m_Locator);
@@ -1257,7 +1280,7 @@ string SNetStorageByKeyRPC::Relocate(const string& unique_key,
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
 
-    m_NetStorageRPC->x_SetStorageFlags(new_location, flags);
+    SNetStorageRPC::x_SetStorageFlags(new_location, flags);
 
     request.SetByKey("NewLocation", new_location);
 

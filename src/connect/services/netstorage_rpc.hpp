@@ -59,15 +59,15 @@ struct SNetStorageRPC : public SNetStorageImpl
     CJsonNode Exchange(CNetService service,
             const CJsonNode& request,
             CNetServerConnection* conn = NULL,
-            CNetServer::TInstance server_to_use = NULL);
+            CNetServer::TInstance server_to_use = NULL) const;
 
-    void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
-    void x_SetICacheNames(CJsonNode& node);
-    CJsonNode MkStdRequest(const string& request_type);
+    static void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
+    void x_SetICacheNames(CJsonNode& node) const;
+    CJsonNode MkStdRequest(const string& request_type) const;
     CJsonNode MkObjectRequest(const string& request_type,
-            const string& object_loc);
+            const string& object_loc) const;
     CJsonNode MkObjectRequest(const string& request_type,
-            const string& unique_key, TNetStorageFlags flags);
+            const string& unique_key, TNetStorageFlags flags) const;
     void x_InitNetCacheAPI();
     bool x_NetCacheMode(const string& object_loc);
 
@@ -93,7 +93,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     string m_AppDomain;
     string m_MetadataOption;
 
-    CAtomicCounter m_RequestNumber;
+    mutable CAtomicCounter m_RequestNumber;
 
     CCompoundIDPool m_CompoundIDPool;
 

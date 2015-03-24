@@ -61,7 +61,8 @@ public:
     string GetLoc();
     bool Eof();
     Uint8 GetSize();
-    string GetAttribute(const string&);
+    list<string> GetAttributeList() const;
+    string GetAttribute(const string&) const;
     void SetAttribute(const string&, const string&);
     CNetStorageObjectInfo GetInfo();
 

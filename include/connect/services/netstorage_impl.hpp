@@ -67,7 +67,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
     virtual void Read(string* data);
     virtual bool Eof() = 0;
     virtual Uint8 GetSize() = 0;
-    virtual string GetAttribute(const string& attr_name) = 0;
+    virtual list<string> GetAttributeList() const = 0;
+    virtual string GetAttribute(const string& attr_name) const = 0;
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
@@ -139,7 +140,12 @@ inline Uint8 CNetStorageObject::GetSize()
     return m_Impl->GetSize();
 }
 
-inline string CNetStorageObject::GetAttribute(const string& attr_name)
+inline CNetStorageObject::TAttributeList CNetStorageObject::GetAttributeList() const
+{
+    return m_Impl->GetAttributeList();
+}
+
+inline string CNetStorageObject::GetAttribute(const string& attr_name) const
 {
     return m_Impl->GetAttribute(attr_name);
 }

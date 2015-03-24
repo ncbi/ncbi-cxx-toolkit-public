@@ -199,7 +199,13 @@ Uint8 SNetStorage_NetCacheBlob::GetSize()
         return m_NetCacheReader->GetBlobSize();
 }
 
-string SNetStorage_NetCacheBlob::GetAttribute(const string& /*attr_name*/)
+list<string> SNetStorage_NetCacheBlob::GetAttributeList() const
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+            ": attribute retrieval is not implemented for NetCache blobs");
+}
+
+string SNetStorage_NetCacheBlob::GetAttribute(const string& /*attr_name*/) const
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
             ": attribute retrieval is not implemented for NetCache blobs");
