@@ -443,6 +443,40 @@ public:
         const string& blob_key);
 };
 
+/// @internal
+class CNetStorageServerError
+{
+public:
+    enum EErrCode {
+        eInvalidArgument                    = 1001,
+        eMandatoryFieldsMissed              = 1002,
+        eHelloRequired                      = 1003,
+        eInvalidMessageType                 = 1004,
+        eInvalidIncomingMessage             = 1005,
+        ePrivileges                         = 1006,
+        eInvalidMessageHeader               = 1007,
+        eShuttingDown                       = 1008,
+        eMessageAfterBye                    = 1009,
+        eStorageError                       = 1010,
+        eWriteError                         = 1011,
+        eReadError                          = 1012,
+        eInternalError                      = 1013,
+        eNetStorageObjectNotFound           = 1014,
+        eNetStorageAttributeNotFound        = 1015,
+        eNetStorageAttributeValueNotFound   = 1016,
+        eNetStorageClientNotFound           = 1017,
+        eNetStorageObjectExpired            = 1018,
+        eDatabaseError                      = 1019,
+        eInvalidConfig                      = 1020,
+        eRemoteObjectNotFound               = 1021,
+
+        // Meta info involving operation requested while the service
+        // is not configured for meta or HELLO metadata option conflict
+        eInvalidMetaInfoRequest             = 1022,
+        eUnknownError                       = 1023
+    };
+};
+
 NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         ENetStorageObjectLocation location,

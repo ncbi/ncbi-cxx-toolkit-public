@@ -281,10 +281,12 @@ static void s_TrapErrors(const CJsonNode& request,
 
             for (CJsonIterator it = issues.Iterate(); it; ++it) {
                 errors += prefix;
-                Int8 server_error_code = (*it).GetInteger("Code");
-                if (server_error_code == 14)
-                    file_not_found = true;
-                errors += NStr::NumericToString(server_error_code);
+                Int8 code = (*it).GetInteger("Code");
+                file_not_found = file_not_found ||
+                    code == CNetStorageServerError::eNetStorageObjectNotFound ||
+                    code == CNetStorageServerError::eRemoteObjectNotFound;
+
+                errors += NStr::NumericToString(code);
                 errors += ": ";
                 errors += (*it).GetString("Message");
                 prefix = ", error ";
