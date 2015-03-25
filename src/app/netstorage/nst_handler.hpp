@@ -102,6 +102,9 @@ private:
     // It closes the connection if there were socket writing errors
     EIO_Status  x_SendSyncMessage(const CJsonNode &  message);
     EIO_Status  x_SendOutputBuffer(void);
+    void  x_OnSocketWriteError(EIO_Status  status, size_t  bytes_written,
+                               const char *  output_buffer,
+                               size_t  output_buffer_size);
     void  x_PrintMessageRequestStart(const CJsonNode &  message);
     void  x_PrintMessageRequestStop(void);
 

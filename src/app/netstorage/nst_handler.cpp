@@ -702,6 +702,44 @@ void CNetStorageHandler::x_SendAsyncMessage(const CJsonNode & par)
 }
 
 
+// Log what we can, set the status code and close the connection
+void  CNetStorageHandler::x_OnSocketWriteError(
+        EIO_Status  status, size_t  bytes_written,
+        const char * output_buffer, size_t  output_buffer_size)
+{
+    string  report =
+        "Error writing message to the client. "
+        "Peer: " +  GetSocket().GetPeerAddress() + ". "
+        "Socket write error status: " + IO_StatusStr(status) + ". "
+        "Written bytes: " + NStr::NumericToString(bytes_written) +
+        ". Message begins with: ";
+
+    if (output_buffer_size > 32) {
+        CTempString     buffer_head(output_buffer, 32);
+        report += NStr::PrintableString(buffer_head) + " (TRUNCATED)";
+    }
+    else {
+        CTempString     buffer_head(output_buffer, output_buffer_size);
+        report += NStr::PrintableString(buffer_head);
+    }
+
+    ERR_POST(report);
+
+    if (m_ConnContext.NotNull()) {
+        if (m_ConnContext->GetRequestStatus() == eStatus_OK)
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+        if (m_CmdContext.NotNull()) {
+            if (m_CmdContext->GetRequestStatus() == eStatus_OK)
+                m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+        }
+    }
+
+    // Register the socket error with the client
+    m_Server->GetClientRegistry().RegisterSocketWriteError(m_Client);
+    m_Server->CloseConnection(&GetSocket());
+}
+
+
 EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
 {
     const char *    output_buffer;
@@ -715,43 +753,10 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
                                                    output_buffer_size,
                                                    &bytes_written);
             if (status != eIO_Success) {
-                // Error writing to the socket.
-                // Log what we can.
-                string  report =
-                    "Error writing message to the client. "
-                    "Peer: " +  GetSocket().GetPeerAddress() + ". "
-                    "Socket write error status: " + IO_StatusStr(status) + ". "
-                    "Written bytes: " + NStr::NumericToString(bytes_written) +
-                    ". Message begins with: ";
-
-                if (output_buffer_size > 32) {
-                    CTempString     buffer_head(output_buffer, 32);
-                    report += NStr::PrintableString(buffer_head) +
-                              " (TRUNCATED)";
-                }
-                else {
-                    CTempString     buffer_head(output_buffer,
-                                                output_buffer_size);
-                    report += NStr::PrintableString(buffer_head);
-                }
-
-                ERR_POST(report);
-
-                if (m_ConnContext.NotNull()) {
-                    if (m_ConnContext->GetRequestStatus() == eStatus_OK)
-                        m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
-                    if (m_CmdContext.NotNull()) {
-                        if (m_CmdContext->GetRequestStatus() == eStatus_OK)
-                            m_CmdContext->SetRequestStatus(
-                                                        eStatus_SocketIOError);
-                    }
-                }
-
-                // Register the socket error with the client
-                m_Server->GetClientRegistry().RegisterSocketWriteError(
-                                                                    m_Client);
-
-                m_Server->CloseConnection(&GetSocket());
+                // Error writing to the socket. Log what we can and close the
+                // connection.
+                x_OnSocketWriteError(status, bytes_written,
+                                     output_buffer, output_buffer_size);
                 return status;
             }
 
@@ -2449,10 +2454,10 @@ CNetStorageHandler::x_SendOverUTTP()
             EIO_Status result =
                 GetSocket().Write(output_buffer, output_buffer_size, &written);
             if (result != eIO_Success) {
-                ERR_POST("Error writing to the client socket. "
-                         "The connection will be closed.");
-                x_SetConnRequestStatus(eStatus_SocketIOError);
-                m_Server->CloseConnection(&GetSocket());
+                // Error writing to the socket. Log what we can and close the
+                // connection.
+                x_OnSocketWriteError(result, written,
+                                     output_buffer, output_buffer_size);
                 return result;
             }
         }
