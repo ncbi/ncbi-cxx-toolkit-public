@@ -8287,8 +8287,8 @@ void CNewCleanup_imp::x_CleanupStringJunkMarkChanged( std::string &str )
 
 bool CNewCleanup_imp::x_CompressSpaces( string &str )
 {
-    bool rval = s_RegexpReplace( str, " [ ]+", " " );
-    rval |= s_RegexpReplace( str, " ,", "," );
+    bool rval = s_RegexpReplace( str, " ,", ", " );
+    rval |= s_RegexpReplace( str, " [ ]+", " " );
     return rval;
 }
 
