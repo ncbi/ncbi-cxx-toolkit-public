@@ -1057,6 +1057,7 @@ string CFeatureItem::GetKey(void) const
         case CSeqFeatData::eSubtype_polyA_signal:
         case CSeqFeatData::eSubtype_attenuator:
         case CSeqFeatData::eSubtype_terminator:
+        case CSeqFeatData::eSubtype_misc_signal:
             return "regulatory";
         default:
             break;
@@ -1185,6 +1186,9 @@ void CFeatureItem::x_AddQualsRegulatoryClass(
         break;
     case CSeqFeatData::eSubtype_terminator:
         x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("terminator"));
+        break;
+    case CSeqFeatData::eSubtype_misc_signal:
+        x_AddQual(eFQ_regulatory_class, new CFlatStringQVal("other"));
         break;
     default:
         break;
