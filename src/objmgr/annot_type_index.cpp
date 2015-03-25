@@ -71,22 +71,25 @@ void CAnnotType_Index::x_InitIndexTables(void)
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Seq_table][1] = kAnnotIndex_Seq_table+1;
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable][0] = kAnnotIndex_Ftable;
 
-    vector< vector<size_t> > type_subtypes(kFeatType_size);
-    for ( size_t subtype = 0; subtype < kFeatSubtype_size; ++subtype ) {
-        size_t type =
+    _ASSERT(kFeatType_size < kMax_UI1);
+    _ASSERT(kFeatSubtype_size < kMax_UI1);
+    _ASSERT(kAnnotIndex_size < kMax_UI1);
+    vector< vector<Uint1> > type_subtypes(kFeatType_size);
+    for ( Uint1 subtype = 0; subtype < kFeatSubtype_size; ++subtype ) {
+        Uint1 type =
             CSeqFeatData::GetTypeFromSubtype(CSeqFeatData::ESubtype(subtype));
         if ( type != CSeqFeatData::e_not_set ||
              subtype == CSeqFeatData::eSubtype_bad ) {
             type_subtypes[type].push_back(subtype);
         }
     }
-
-    size_t cur_idx = kAnnotIndex_Ftable;
+    
+    Uint1 cur_idx = kAnnotIndex_Ftable;
     fill_n(sm_IndexSubtype, cur_idx,
            CSeqFeatData::eSubtype_bad);
-    for ( size_t type = 0; type < kFeatType_size; ++type ) {
+    for ( Uint1 type = 0; type < kFeatType_size; ++type ) {
         sm_FeatTypeIndexRange[type][0] = cur_idx;
-        ITERATE ( vector<size_t>, it, type_subtypes[type] ) {
+        ITERATE ( vector<Uint1>, it, type_subtypes[type] ) {
             _ASSERT(cur_idx < kAnnotIndex_size);
             sm_FeatSubtypeIndex[*it] = cur_idx;
             sm_IndexSubtype[cur_idx] = *it;
