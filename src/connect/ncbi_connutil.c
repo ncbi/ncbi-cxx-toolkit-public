@@ -1699,7 +1699,7 @@ extern SOCK URL_Connect
             char* x_host = x_len ? (char*) malloc(x_len + 16) : 0;
             if (x_host) {
                 memcpy(x_host, kHost, sizeof(kHost) - 1);
-                memcpy(x_host + sizeof(kHost), host, x_len);
+                memcpy(x_host + sizeof(kHost) - 1, host, x_len);
                 if (port) {
                     x_len += sizeof(kHost);
                     sprintf(x_host + x_len, ":%hu", port);
