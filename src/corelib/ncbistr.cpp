@@ -3006,6 +3006,7 @@ string NStr::Replace(const string& src,
     return dst;
 }
 
+#if 0
 static
 string& _replace_reduct(string& src,
                              const string& search, const string& replace,
@@ -3050,6 +3051,7 @@ string& _replace_reduct(string& src,
 
     return src;
 }
+#if 0
 
 string& NStr::ReplaceInPlace(string& src,
                              const string& search, const string& replace,
@@ -3059,8 +3061,10 @@ string& NStr::ReplaceInPlace(string& src,
          search == replace )
         return src;
 
+#if 0
     if (search.size() >= replace.size())
         return _replace_reduct(src, search, replace, start_pos, max_replace);
+#endif
 
     bool equal_len = (search.size() == replace.size());
     for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
