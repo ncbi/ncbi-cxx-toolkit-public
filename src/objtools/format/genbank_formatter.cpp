@@ -1185,8 +1185,7 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
     s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
     pre_feature_html << ");</script>";
 
-    pre_feature_html.freeze();
-    CTempString temp(pre_feature_html.str(), pre_feature_html.pcount());
+    string temp = CNcbiOstrstreamToString(pre_feature_html);
 	text_os.AddLine(temp, 0, IFlatTextOStream::eAddNewline_No);
 }
 
