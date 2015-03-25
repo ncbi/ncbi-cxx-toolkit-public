@@ -542,7 +542,7 @@ public:
         swap(m_Data, a.m_Data);
     }
 
-    bool IfOwned(void) const { return m_Ptr  &&  m_Data.second(); }
+    bool IsOwned(void) const { return m_Ptr  &&  m_Data.second(); }
 
 private:
     element_type* m_Ptr;                  ///< Internal pointer representation.
