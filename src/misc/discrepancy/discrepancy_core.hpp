@@ -37,17 +37,36 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
 /// Housekeeping classes
+class CDiscrepancyTable  // singleton!
+{
+friend class CDiscrepancyCaseConstructor;
+private:
+    static map<string, CDiscrepancyCaseConstructor*> *sm_Table;
+    static map<string, string> *sm_AliasTable;
+    static map<string, vector<string> > *sm_AliasListTable;
+
+    CDiscrepancyTable(){}
+    ~CDiscrepancyTable()
+    {
+        delete sm_Table;
+        delete sm_AliasTable;
+        delete sm_AliasListTable;
+    }
+};
+
+
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyCaseConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create() const = 0;
     virtual bool NotImplemented() const { return false;}
     static void Register(const string& name, CDiscrepancyCaseConstructor* ptr);
-    static map<string, CDiscrepancyCaseConstructor*> sm_Table;
-    static map<string, string> sm_AliasTable;
-    static map<string, vector<string> > sm_AliasListTable;
     static string GetDiscrepancyCaseName(const string&);
     static const CDiscrepancyCaseConstructor* GetDiscrepancyCaseConstructor(const string&);
+    static map<string, CDiscrepancyCaseConstructor*>& GetTable();
+    static map<string, string>& GetAliasTable();
+    static map<string, vector<string> >& GetAliasListTable();
+    static CDiscrepancyTable m_Table;
 friend string GetDiscrepancyCaseName(const string&);
 friend CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
 friend bool DiscrepancyCaseNotImplemented(const string&);
@@ -59,8 +78,8 @@ friend class CDiscrepancyAlias;
 
 inline void CDiscrepancyCaseConstructor::Register(const string& name, CDiscrepancyCaseConstructor* ptr)
 {
-    sm_Table[name] = ptr;
-    sm_AliasListTable[name] = vector<string>();
+    GetTable()[name] = ptr;
+    GetAliasListTable()[name] = vector<string>();
 }
 
 
@@ -70,9 +89,11 @@ protected:
     CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(0);}
     static void Register(const string& name, const string& alias)
     {
-        if (CDiscrepancyCaseConstructor::sm_AliasTable.find(alias) != CDiscrepancyCaseConstructor::sm_AliasTable.end()) return;
-        CDiscrepancyCaseConstructor::sm_AliasTable[alias] = name;
-        CDiscrepancyCaseConstructor::sm_AliasListTable[name].push_back(alias);
+        map<string, string>& AliasTable = GetAliasTable();
+        if (AliasTable.find(alias) != AliasTable.end()) return;
+        AliasTable[alias] = name;
+        map<string, vector<string> >& AliasListTable = GetAliasListTable();
+        AliasListTable[name].push_back(alias);
     }
 };
 

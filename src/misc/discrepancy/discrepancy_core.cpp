@@ -35,15 +35,39 @@ BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-map<string, CDiscrepancyCaseConstructor*> CDiscrepancyCaseConstructor::sm_Table;
-map<string, string> CDiscrepancyCaseConstructor::sm_AliasTable;
-map<string, vector<string> > CDiscrepancyCaseConstructor::sm_AliasListTable;
+CDiscrepancyTable CDiscrepancyCaseConstructor::m_Table;
+map<string, CDiscrepancyCaseConstructor*>* CDiscrepancyTable::sm_Table = 0;
+map<string, string>* CDiscrepancyTable::sm_AliasTable = 0;
+map<string, vector<string> >* CDiscrepancyTable::sm_AliasListTable = 0;
+
+
+map<string, CDiscrepancyCaseConstructor*>& CDiscrepancyCaseConstructor::GetTable()
+{
+    if(!m_Table.sm_Table) m_Table.sm_Table = new map<string, CDiscrepancyCaseConstructor*>;
+    return *m_Table.sm_Table;
+}
+
+
+map<string, string>& CDiscrepancyCaseConstructor::GetAliasTable()
+{
+    if(!m_Table.sm_AliasTable) m_Table.sm_AliasTable = new map<string, string>;
+    return *m_Table.sm_AliasTable;
+}
+
+
+map<string, vector<string> >& CDiscrepancyCaseConstructor::GetAliasListTable()
+{
+    if(!m_Table.sm_AliasListTable) m_Table.sm_AliasListTable = new map<string, vector<string> >;
+    return *m_Table.sm_AliasListTable;
+}
 
 
 string CDiscrepancyCaseConstructor::GetDiscrepancyCaseName(const string& name)
 {
-    if (sm_Table.find(name) != sm_Table.end()) return name;
-    if (sm_AliasTable.find(name) != sm_AliasTable.end()) return sm_AliasTable[name];
+    map<string, CDiscrepancyCaseConstructor*>& Table = GetTable();
+    map<string, string>& AliasTable = GetAliasTable();
+    if (Table.find(name) != Table.end()) return name;
+    if (AliasTable.find(name) != AliasTable.end()) return AliasTable[name];
     if (name.substr(0, 5) == "DISC_") return GetDiscrepancyCaseName(name.substr(5));
     return "";
 }
@@ -52,7 +76,7 @@ string CDiscrepancyCaseConstructor::GetDiscrepancyCaseName(const string& name)
 const CDiscrepancyCaseConstructor* CDiscrepancyCaseConstructor::GetDiscrepancyCaseConstructor(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
-    return str.empty() ? 0 : sm_Table[str];
+    return str.empty() ? 0 : GetTable()[str];
 }
 
 
@@ -79,8 +103,9 @@ bool DiscrepancyCaseNotImplemented(const string& name)
 vector<string> GetDiscrepancyNames()
 {
     typedef map<string, CDiscrepancyCaseConstructor*> MyMap;
+    map<string, CDiscrepancyCaseConstructor*>& Table = CDiscrepancyCaseConstructor::GetTable();
     vector<string> V;
-    ITERATE (MyMap, J, CDiscrepancyCaseConstructor::sm_Table) {
+    ITERATE (MyMap, J, Table) {
         if (J->first == "NOT_IMPL") continue;
         V.push_back(J->first);
     }
@@ -90,7 +115,8 @@ vector<string> GetDiscrepancyNames()
 
 vector<string> GetDiscrepancyAliases(const string& name)
 {
-    return CDiscrepancyCaseConstructor::sm_AliasListTable.find(name)!=CDiscrepancyCaseConstructor::sm_AliasListTable.end() ? CDiscrepancyCaseConstructor::sm_AliasListTable[name] : vector<string>();
+    map<string, vector<string> >& AliasListTable = CDiscrepancyCaseConstructor::GetAliasListTable();
+    return AliasListTable.find(name)!=AliasListTable.end() ? AliasListTable[name] : vector<string>();
 }
 
 
