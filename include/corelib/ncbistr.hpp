@@ -2441,10 +2441,56 @@ public:
     /// @return
     ///   Return a printable version of "str".
     /// @sa
-    ///   ParseEscapes, CEncode, CParse
+    ///   ParseEscapes, CEncode, CParse, Sanitize
     static string PrintableString(const CTempString& str,
                                   TPrintableMode     mode =
                                   fNewLine_Quote | fNonAscii_Passthru);
+
+    /// Flags for Sanitize().
+    enum ESS_Flags {
+        // Character filters (if no filters are set, then use fSS_print)
+        fSS_alpha = 1 << 1,    ///< Check on ::isalpha()
+        fSS_digit = 1 << 2,    ///< Check on ::isdigit()
+        fSS_alnum = 1 << 3,    ///< Check on ::isalnum()
+        fSS_print = 1 << 4,    ///< Check on ::isprint()
+        fSS_cntrl = 1 << 5,    ///< Check on ::iscntrl()
+        fSS_punct = 1 << 6,    ///< Check on ::ispunct()
+
+        // Filter: in or out?
+        fSS_Reject = 1 << 11,  ///< Reject specified characters, allow all other.
+                               ///< Revert default behavior, that allow specified
+                               ///< characters and reject all other.
+        // Utility flags
+        fSS_Remove           = 1 << 12,  ///< Remove (rather than replace) rejected chars
+        fSS_NoMerge          = 1 << 13,  ///< Do not merge adjacent spaces
+        fSS_NoTruncate_Begin = 1 << 14,  ///< Do not truncate leading spaces
+        fSS_NoTruncate_End   = 1 << 15,  ///< Do not truncate trailing spaces
+        fSS_NoTruncate       = fSS_NoTruncate_Begin | fSS_NoTruncate_End
+    };
+    typedef int TSS_Flags;  ///< Bitwise OR of ESS_Flags
+    
+    /// Sanitize a string, allowing only specified classes of characters.
+    ///
+    /// By default:
+    ///    - replace all non-printable characters with spaces;
+    ///    - merge coalescent spaces;
+    ///    - truncate leading and trailing spaces.
+    /// @note
+    ///   - All coalescent leading/trailing spaces also will be merged
+    ///     by default if fSS_NoMerge has not specified.
+    ///   - The truncation of leading/trailing spaces is doing after
+    ///     allowing/rejecting characters. Defending on the specified flags,
+    ///     all rejected characters adjacent to it can be treat as part
+    ///     of leading/trailing spaces.
+    /// @param str
+    ///   String to sanitize
+    /// @param flags
+    ///   Alternative sanitation options
+    /// @return
+    ///   Sanitized string
+    /// @sa
+    ///   PrintableString
+    static string Sanitize(CTempString str, TSS_Flags flags = 0);
 
     /// C-style escape sequences parsing mode.
     /// For escape sequences with a value outside the range of [0-255] 

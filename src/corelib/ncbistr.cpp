@@ -3346,6 +3346,155 @@ string NStr::Join(const set<CTempString>& arr, const CTempString& delim)
 }
 
 
+// Auxiliary macros for NStr::Sanitize()
+
+#define SS_WRITE_SUBSTR \
+    if (!out.get()) { \
+        out.reset(new CNcbiOstrstream); \
+    } \
+    out->write(str.data() + pos, n_good); \
+    n_good = 0; \
+    pos = i
+
+#define SS_WRITE_SPACES \
+    if (!out.get()) { \
+        out.reset(new CNcbiOstrstream); \
+    } \
+    SIZE_TYPE n = (flags & fSS_NoMerge) ? n_spaces : 1; \
+    for (SIZE_TYPE i = n; i > 0; i--) { \
+        out->put(' '); \
+    } 
+
+string NStr::Sanitize(CTempString str, TSS_Flags flags)
+{
+    auto_ptr<CNcbiOstrstream> out;
+    SIZE_TYPE i;
+    SIZE_TYPE pos      = 0;  // start position of the substring
+    SIZE_TYPE n_good   = 0;  // length of substring (good symbols)
+    SIZE_TYPE n_spaces = 0;  // number of accumulated spaces
+
+    // Use fSS_print by default if no any other filter
+    if ( !(flags & (fSS_alpha | fSS_digit | fSS_alnum |
+                    fSS_print | fSS_cntrl | fSS_punct)) ) {
+        flags |= fSS_print;
+    }
+
+    for (i = 0;  i < str.size();  i++) 
+    {
+        char c = str[i];
+
+        // Check on bare space.
+        // Do not use ::isspace() here due it interference with ::iscntrl().
+        if ( c == ' ' )  {
+            // Spaces starts and we have good chars before? -- write it immediately
+            if ( n_good ) {
+                SS_WRITE_SUBSTR;
+            }
+            // Count and skip all consecutive spaces
+            ++n_spaces;
+            continue;
+        }
+
+        // Check against filters
+        bool allowed = ((flags & fSS_Reject) != 0);
+        if (((flags & fSS_print)  &&  isprint((unsigned char)c)) ||
+            ((flags & fSS_alnum)  &&  isalnum((unsigned char)c)) ||
+            ((flags & fSS_alpha)  &&  isalpha((unsigned char)c)) ||
+            ((flags & fSS_digit)  &&  isdigit((unsigned char)c)) ||
+            ((flags & fSS_cntrl)  &&  iscntrl((unsigned char)c)) ||
+            ((flags & fSS_punct)  &&  ispunct((unsigned char)c)) ) {
+
+            // If matched and reverse logic -- treat char as rejected
+            allowed = ((flags & fSS_Reject) == 0);
+        }
+
+        // Good character and no spaces before?
+        if ( allowed  &&  !n_spaces )  {
+            // Continue to build substring or start new one
+            if ( n_good ) {
+                ++n_good;
+            } else {
+                n_good = 1;
+                pos = i;
+            }
+            continue;
+        }
+
+        // Rejected character?
+        if ( !allowed ) {
+            // Write previously accumulated substring
+            if ( n_good ) {
+                SS_WRITE_SUBSTR;
+            }
+            // Increase space pool or just ignore
+            if ( !(flags & fSS_Remove) ) {
+                ++n_spaces;
+            }
+            continue;
+        }
+
+        _ASSERT( allowed );
+        _ASSERT( !n_good );
+
+        // Otherwise need to process accumulated spaces first
+        if ( n_spaces ) {
+            // Don't write leading spaces
+            if ( pos  ||  (!pos && (flags & fSS_NoTruncate_Begin))) {
+                SS_WRITE_SPACES;
+            }
+            n_spaces = 0;
+        }
+        // Start new substring
+        n_good = 1;
+        pos = i;
+
+    } /* for */
+
+    // Some good characters?
+    if ( n_good ) {
+        if (i == n_good) {
+            // All are good - return (a copy of) the original string
+            return str;
+        }
+        if ( !out.get() ) {
+            // All leading characters are bad - return a second part of
+            // the original string, to avoid copying (below).
+            return str.substr(pos, n_good);
+        }
+        // Write last accumulated substring
+        SS_WRITE_SUBSTR;
+    }
+
+    // Empty string, or all spaces (or rejected chars replaced with spaces)?
+    if ( (i == n_spaces) || (n_spaces  &&  !out.get()) ) {
+        if (!n_spaces  ||  ((flags & fSS_NoTruncate) != fSS_NoTruncate) ) {
+            return kEmptyStr;
+        }
+        if (flags & fSS_NoMerge) {
+            SS_WRITE_SPACES;
+            return CNcbiOstrstreamToString(*out);
+        } else {
+            return " ";
+        }
+        return kEmptyStr;
+    }
+
+    // Trailing spaces?
+    if ( n_spaces ) {
+        _ASSERT(out.get());
+        if (flags & fSS_NoTruncate_End) {
+            SS_WRITE_SPACES;
+        } 
+    }
+    if (out.get()) {
+        // Return sanitized string
+        return CNcbiOstrstreamToString(*out);
+    }
+
+    // All rejected
+    return kEmptyStr;
+}
+
 
 enum ELanguage {
     eLanguage_C,

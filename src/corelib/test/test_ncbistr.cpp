@@ -2063,6 +2063,355 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
 
 
 //----------------------------------------------------------------------------
+// NStr::Sanitize()
+//----------------------------------------------------------------------------
+
+struct SSanitizeTest {
+    const char*     str;
+    NStr::TSS_Flags flags;
+    const char*     allowed;    // flags
+    const char*     rejected;   // flags + fSS_Reject
+};
+
+// Abbreviations to shorten tests description
+const NStr::TSS_Flags A   = NStr::fSS_alpha;
+const NStr::TSS_Flags D   = NStr::fSS_digit;
+const NStr::TSS_Flags AD  = NStr::fSS_alnum;
+const NStr::TSS_Flags P   = NStr::fSS_print;
+const NStr::TSS_Flags C   = NStr::fSS_cntrl;
+const NStr::TSS_Flags I   = NStr::fSS_punct;
+const NStr::TSS_Flags RM  = NStr::fSS_Remove;
+const NStr::TSS_Flags NM  = NStr::fSS_NoMerge;
+const NStr::TSS_Flags NT  = NStr::fSS_NoTruncate;
+const NStr::TSS_Flags NTB = NStr::fSS_NoTruncate_Begin;
+const NStr::TSS_Flags NTE = NStr::fSS_NoTruncate_End;
+
+static const SSanitizeTest s_SanitizeTests[] = {
+
+    // Default flags
+    { "",                 0,   "",         "" },
+    { "   ",              0,   "",         "" },
+    { "ABC",              0,   "ABC",      "" },
+    { "  ABC",            0,   "ABC",      "" },
+    { "ABC  ",            0,   "ABC",      "" },
+    { " ABC ",            0,   "ABC",      "" },
+    { "   ABC   ",        0,   "ABC",      "" },
+    { "   A B C   ",      0,   "A B C",    "" },
+    { "   A  B  C   ",    0,   "A B C",    "" },
+    { "   AB CD EF   ",   0,   "AB CD EF", "" },
+    { "   AB  CD  EF   ", 0,   "AB CD EF", "" },
+    { "\nA\tB""\x01 ""C", 0,   "A B C",    "\n \t \x01"     },
+    { "\n \nA B\nC\n \n", 0,   "A B C",    "\n \n \n \n \n" },
+    { "\n\nA B\nC\n\n",   0,   "A B C",    "\n\n \n \n\n"   },
+    { "  \nA B\nC\n  ",   0,   "A B C",    "\n \n \n"       },
+
+    // Simple filters
+    { "A123,BC45\nD6!",   0,   "A123,BC45 D6!", "\n"            },
+    { "A123,BC45\nD6!",   P,   "A123,BC45 D6!", "\n"            },
+    { "A123,BC45\nD6!",   A,   "A BC D",        "123, 45\n 6!"  },
+    { "A123,BC45\nD6!",   D,   "123 45 6",      "A ,BC \nD !"   },
+    { "A123,BC45\nD6!",   AD,  "A123 BC45 D6",  ", \n !"        },
+    { "A123,BC45\nD6!",   A+D, "A123 BC45 D6",  ", \n !"        },
+    { "A123,BC45\nD6!",   I,   ", !",           "A123 BC45\nD6" },
+    { "A123,BC45\nD6!",   C,   "\n",            "A123,BC45 D6!" },
+    { "A123,BC45\nD6!",   I+C, ", \n !",        "A123 BC45 D6"  },
+
+    // fSS_NoMerge
+    { "",                 NM,     "",              "" },
+    { "   ",              NM,     "",              "" },
+    { "ABC",              NM,     "ABC",           "" },
+    { "  ABC",            NM,     "ABC",           "" },
+    { "ABC  ",            NM,     "ABC",           "" },
+    { " ABC ",            NM,     "ABC",           "" },
+    { "   ABC   ",        NM,     "ABC",           "" },
+    { "   A B C   ",      NM,     "A B C",         "" },
+    { "   A  B  C   ",    NM,     "A  B  C",       "" },
+    { "   AB CD EF   ",   NM,     "AB CD EF",      "" },
+    { "   AB  CD  EF   ", NM,     "AB  CD  EF",    "" },
+    { "\nA\tB""\x01 ""C", NM,     "A B  C",        "\n \t \x01"       },
+    { "\n \nA B\nC\n \n", NM,     "A B C",         "\n \n   \n \n \n" },
+    { "\n\nA B\nC\n\n",   NM,     "A B C",         "\n\n   \n \n\n"   },
+    { "  \nA B\nC\n  ",   NM,     "A B C",         "\n   \n \n"       },
+    { "A123,BC45\nD6!",   NM,     "A123,BC45 D6!", "\n"               },
+    { "A123,BC45\nD6!",   NM+P,   "A123,BC45 D6!", "\n"               },
+    { "A123,BC45\nD6!",   NM+A,   "A    BC   D",   "123,  45\n 6!"    },
+    { "A123,BC45\nD6!",   NM+D,   "123   45  6",   "A   ,BC  \nD !"   },
+    { "A123,BC45\nD6!",   NM+AD,  "A123 BC45 D6",  ",    \n  !"       },
+    { "A123,BC45\nD6!",   NM+A+D, "A123 BC45 D6",  ",    \n  !"       },
+    { "A123,BC45\nD6!",   NM+I,   ",       !",     "A123 BC45\nD6"    },
+    { "A123,BC45\nD6!",   NM+C,   "\n",            "A123,BC45 D6!"    },
+    { "A123,BC45\nD6!",   NM+I+C, ",    \n  !",    "A123 BC45 D6"     },
+
+    // fSS_Remove (remove not allowed + merge spaces by default)
+    { "",                 RM,     "",              "" },
+    { "   ",              RM,     "",              "" },
+    { "ABC",              RM,     "ABC",           "" },
+    { "  ABC",            RM,     "ABC",           "" },
+    { "ABC  ",            RM,     "ABC",           "" },
+    { " ABC ",            RM,     "ABC",           "" },
+    { "   ABC   ",        RM,     "ABC",           "" },
+    { "   A B C   ",      RM,     "A B C",         "" },
+    { "   A  B  C   ",    RM,     "A B C",         "" },
+    { "   AB CD EF   ",   RM,     "AB CD EF",      "" },
+    { "   AB  CD  EF   ", RM,     "AB CD EF",      "" },
+    { "\nA\tB""\x01 ""C", RM,     "AB C",          "\n\t\x01"     },
+    { "\n \nA B\nC\n \n", RM,     "A BC",          "\n \n \n\n \n"},
+    { "\n\nA B\nC\n\n",   RM,     "A BC",          "\n\n \n\n\n"  },
+    { "  \nA B\nC\n  ",   RM,     "A BC",          "\n \n\n"      },
+    { "A123,BC45\nD6!",   RM,     "A123,BC45D6!",  "\n"           },
+    { "A123,BC45\nD6!",   RM+P,   "A123,BC45D6!",  "\n"           },
+    { "A123,BC45\nD6!",   RM+A,   "ABCD",          "123,45\n6!"   },
+    { "A123,BC45\nD6!",   RM+D,   "123456",        "A,BC\nD!"     },
+    { "A123,BC45\nD6!",   RM+AD,  "A123BC45D6",    ",\n!"         },
+    { "A123,BC45\nD6!",   RM+A+D, "A123BC45D6",    ",\n!"         },
+    { "A123,BC45\nD6!",   RM+I,   ",!",            "A123BC45\nD6" },
+    { "A123,BC45\nD6!",   RM+C,   "\n",            "A123,BC45D6!" },
+    { "A123,BC45\nD6!",   RM+I+C, ",\n!",          "A123BC45D6"   },
+
+    // fSS_Remove + fSS_NoMerge
+    { "",                 NM+RM,     "",              "" },
+    { "   ",              NM+RM,     "",              "" },
+    { "ABC",              NM+RM,     "ABC",           "" },
+    { "  ABC",            NM+RM,     "ABC",           "" },
+    { "ABC  ",            NM+RM,     "ABC",           "" },
+    { " ABC ",            NM+RM,     "ABC",           "" },
+    { "   ABC   ",        NM+RM,     "ABC",           "" },
+    { "   A B C   ",      NM+RM,     "A B C",         "" },
+    { "   A  B  C   ",    NM+RM,     "A  B  C",       "" },
+    { "   AB CD EF   ",   NM+RM,     "AB CD EF",      "" },
+    { "   AB  CD  EF   ", NM+RM,     "AB  CD  EF",    "" },
+    { "\nA\tB""\x01 ""C", NM+RM,     "AB C",          "\n\t\x01"       },
+    { "\n \nA B\nC\n \n", NM+RM,     "A BC",          "\n \n \n\n \n"  },
+    { "\n\nA B\nC\n\n",   NM+RM,     "A BC",          "\n\n \n\n\n"    },
+    { "  \nA B\nC\n  ",   NM+RM,     "A BC",          "\n \n\n"        },
+    { "A123,BC45\nD6!",   NM+RM,     "A123,BC45D6!",  "\n"             },
+    { "A123,BC45\nD6!",   NM+RM+P,   "A123,BC45D6!",  "\n"             },
+    { "A123,BC45\nD6!",   NM+RM+A,   "ABCD",          "123,45\n6!"     },
+    { "A123,BC45\nD6!",   NM+RM+D,   "123456",        "A,BC\nD!"       },
+    { "A123,BC45\nD6!",   NM+RM+AD,  "A123BC45D6",    ",\n!"           },
+    { "A123,BC45\nD6!",   NM+RM+A+D, "A123BC45D6",    ",\n!"           },
+    { "A123,BC45\nD6!",   NM+RM+I,   ",!",            "A123BC45\nD6"   },
+    { "A123,BC45\nD6!",   NM+RM+C,   "\n",            "A123,BC45D6!"   },
+    { "A123,BC45\nD6!",   NM+RM+I+C, ",\n!",          "A123BC45D6"     },
+
+    // fSS_NoTruncate_* (+ merge spaces by default)
+
+    { "",                 NTB,   "",            "" },
+    { "   ",              NTB,   "",            "" },
+    { "ABC",              NTB,   "ABC",         "" },
+    { "  ABC",            NTB,   " ABC",        "" },
+    { "ABC  ",            NTB,   "ABC",         "" },
+    { " ABC ",            NTB,   " ABC",        "" },
+    { "   ABC   ",        NTB,   " ABC",        "" },
+    { "   A B C   ",      NTB,   " A B C",      "" },
+    { "   A  B  C   ",    NTB,   " A B C",      "" },
+    { "   AB CD EF   ",   NTB,   " AB CD EF",   "" },
+    { "   AB  CD  EF   ", NTB,   " AB CD EF",   "" },
+    { "\n\nA  B\nC\n\n",  NTB,   " A B C",      "\n\n \n \n\n"   },
+    { "\n \nA B\nC\n \n", NTB,   " A B C",      "\n \n \n \n \n" },
+    { " \nA  B\nC\n ",    NTB,   " A B C",      " \n \n \n"      },
+    { "  \nA B\nC\n  ",   NTB,   " A B C",      " \n \n \n"      },
+
+    { "",                 NTE,   "",            "" },
+    { "   ",              NTE,   "",            "" },
+    { "ABC",              NTE,   "ABC",         "" },
+    { "  ABC",            NTE,   "ABC",         "" },
+    { "ABC  ",            NTE,   "ABC ",        "" },
+    { " ABC ",            NTE,   "ABC ",        "" },
+    { "   ABC   ",        NTE,   "ABC ",        "" },
+    { "   A B C   ",      NTE,   "A B C ",      "" },
+    { "   A  B  C   ",    NTE,   "A B C ",      "" },
+    { "   AB CD EF   ",   NTE,   "AB CD EF ",   "" },
+    { "   AB  CD  EF   ", NTE,   "AB CD EF ",   "" },
+    { "\n\nA  B\nC\n\n",  NTE,   "A B C ",      "\n\n \n \n\n"   },
+    { "\n \nA B\nC\n \n", NTE,   "A B C ",      "\n \n \n \n \n" },
+    { " \nA  B\nC\n ",    NTE,   "A B C ",      "\n \n \n "      },
+    { "  \nA B\nC\n  ",   NTE,   "A B C ",      "\n \n \n "      },
+
+    { "",                 NT,    "",            ""  },
+    { "   ",              NT,    " ",           " " },
+    { "ABC",              NT,    "ABC",         " " },
+    { "  ABC",            NT,    " ABC",        " " },
+    { "ABC  ",            NT,    "ABC ",        " " },
+    { " ABC ",            NT,    " ABC ",       " " },
+    { "   ABC   ",        NT,    " ABC ",       " " },
+    { "   A B C   ",      NT,    " A B C ",     " " },
+    { "   A  B  C   ",    NT,    " A B C ",     " " },
+    { "   AB CD EF   ",   NT,    " AB CD EF ",  " " },
+    { "   AB  CD  EF   ", NT,    " AB CD EF ",  " " },
+    { "\n\nA  B\nC\n\n",  NT,    " A B C ",     "\n\n \n \n\n"   },
+    { "\n \nA B\nC\n \n", NT,    " A B C ",     "\n \n \n \n \n" },
+    { " \nA  B\nC\n ",    NT,    " A B C ",     " \n \n \n "     },
+    { "  \nA B\nC\n  ",   NT,    " A B C ",     " \n \n \n "     },
+
+    // fSS_NoTruncate_* + fSS_NoMerge
+
+    { "",                 NTB+NM,  "",               "" },
+    { "   ",              NTB+NM,  "",               "" },
+    { "ABC",              NTB+NM,  "ABC",            "" },
+    { "  ABC",            NTB+NM,  "  ABC",          "" },
+    { "ABC  ",            NTB+NM,  "ABC",            "" },
+    { " ABC ",            NTB+NM,  " ABC",           "" },
+    { "   ABC   ",        NTB+NM,  "   ABC",         "" },
+    { "   A B C   ",      NTB+NM,  "   A B C",       "" },
+    { "   A  B  C   ",    NTB+NM,  "   A  B  C",     "" },
+    { "   AB CD EF   ",   NTB+NM,  "   AB CD EF",    "" },
+    { "   AB  CD  EF   ", NTB+NM,  "   AB  CD  EF",  "" },
+    { "\n\nA  B\nC\n\n",  NTB+NM,  "  A  B C",       "\n\n    \n \n\n"  },
+    { "\n \nA B\nC\n \n", NTB+NM,  "   A B C",       "\n \n   \n \n \n" },
+    { " \nA  B\nC\n ",    NTB+NM,  "  A  B C",       " \n    \n \n"     },
+    { "  \nA B\nC\n  ",   NTB+NM,  "   A B C",       "  \n   \n \n"     },
+
+    { "",                 NTE+NM,  "",               "" },
+    { "   ",              NTE+NM,  "",               "" },
+    { "ABC",              NTE+NM,  "ABC",            "" },
+    { "  ABC",            NTE+NM,  "ABC",            "" },
+    { "ABC  ",            NTE+NM,  "ABC  ",          "" },
+    { " ABC ",            NTE+NM,  "ABC ",           "" },
+    { "   ABC   ",        NTE+NM,  "ABC   ",         "" },
+    { "   A B C   ",      NTE+NM,  "A B C   ",       "" },
+    { "   A  B  C   ",    NTE+NM,  "A  B  C   ",     "" },
+    { "   AB CD EF   ",   NTE+NM,  "AB CD EF   ",    "" },
+    { "   AB  CD  EF   ", NTE+NM,  "AB  CD  EF   ",  "" },
+    { "\n\nA  B\nC\n\n",  NTE+NM,  "A  B C  ",       "\n\n    \n \n\n"  },
+    { "\n \nA B\nC\n \n", NTE+NM,  "A B C   ",       "\n \n   \n \n \n" },
+    { " \nA  B\nC\n ",    NTE+NM,  "A  B C  ",       "\n    \n \n "     },
+    { "  \nA B\nC\n  ",   NTE+NM,  "A B C   ",       "\n   \n \n  "     },
+
+    { "",                 NT+NM,   "",                 ""       },
+    { "   ",              NT+NM,   "   ",              "   "    },
+    { "ABC",              NT+NM,   "ABC",              "   "    },
+    { "  ABC",            NT+NM,   "  ABC",            "     "  },
+    { "ABC  ",            NT+NM,   "ABC  ",            "     "  },
+    { " ABC ",            NT+NM,   " ABC ",            "     "  },
+    { "   ABC   ",        NT+NM,   "   ABC   ",        "         "        },
+    { "   A B C   ",      NT+NM,   "   A B C   ",      "           "      },
+    { "   A  B  C   ",    NT+NM,   "   A  B  C   ",    "             "    },
+    { "   AB CD EF   ",   NT+NM,   "   AB CD EF   ",   "              "   },
+    { "   AB  CD  EF   ", NT+NM,   "   AB  CD  EF   ", "                " },
+    { "\n\nA  B\nC\n\n",  NT+NM,   "  A  B C  ",       "\n\n    \n \n\n"  },
+    { "\n \nA B\nC\n \n", NT+NM,   "   A B C   ",      "\n \n   \n \n \n" },
+    { " \nA  B\nC\n ",    NT+NM,   "  A  B C  ",       " \n    \n \n "    },
+    { "  \nA B\nC\n  ",   NT+NM,   "   A B C   ",      "  \n   \n \n  "   },
+
+    // fSS_NoTruncate_* + fSS_Remove
+
+    { "",                 NTB+RM,  "",            ""  },
+    { "   ",              NTB+RM,  "",            ""  },
+    { "ABC",              NTB+RM,  "ABC",         ""  },
+    { "  ABC",            NTB+RM,  " ABC",        ""  },
+    { "ABC  ",            NTB+RM,  "ABC",         ""  },
+    { " ABC ",            NTB+RM,  " ABC",        ""  },
+    { "   ABC   ",        NTB+RM,  " ABC",        ""  },
+    { "   A B C   ",      NTB+RM,  " A B C",      ""  },
+    { "   A  B  C   ",    NTB+RM,  " A B C",      ""  },
+    { "   AB CD EF   ",   NTB+RM,  " AB CD EF",   ""  },
+    { "   AB  CD  EF   ", NTB+RM,  " AB CD EF",   ""  },
+    { "\n\nA  B\nC\n\n",  NTB+RM,  "A BC",        "\n\n \n\n\n"   },
+    { "\n \nA B\nC\n \n", NTB+RM,  " A BC",       "\n \n \n\n \n" },
+    { " \nA  B\nC\n ",    NTB+RM,  " A BC",       " \n \n\n"      },
+    { "  \nA B\nC\n  ",   NTB+RM,  " A BC",       " \n \n\n"      },
+
+    { "",                 NTE+RM,  "",            ""  },
+    { "   ",              NTE+RM,  "",            ""  },
+    { "ABC",              NTE+RM,  "ABC",         ""  },
+    { "  ABC",            NTE+RM,  "ABC",         ""  },
+    { "ABC  ",            NTE+RM,  "ABC ",        ""  },
+    { " ABC ",            NTE+RM,  "ABC ",        ""  },
+    { "   ABC   ",        NTE+RM,  "ABC ",        ""  },
+    { "   A B C   ",      NTE+RM,  "A B C ",      ""  },
+    { "   A  B  C   ",    NTE+RM,  "A B C ",      ""  },
+    { "   AB CD EF   ",   NTE+RM,  "AB CD EF ",   ""  },
+    { "   AB  CD  EF   ", NTE+RM,  "AB CD EF ",   ""  },
+    { "\n\nA  B\nC\n\n",  NTE+RM,  "A BC",        "\n\n \n\n\n"   },
+    { "\n \nA B\nC\n \n", NTE+RM,  "A BC ",       "\n \n \n\n \n" },
+    { " \nA  B\nC\n ",    NTE+RM,  "A BC ",       "\n \n\n "      },
+    { "  \nA B\nC\n  ",   NTE+RM,  "A BC ",       "\n \n\n "      },
+
+    { "",                 NT+RM,   "",            ""  },
+    { "   ",              NT+RM,   " ",           " " },
+    { "ABC",              NT+RM,   "ABC",         ""  },
+    { "  ABC",            NT+RM,   " ABC",        " " },
+    { "ABC  ",            NT+RM,   "ABC ",        " " },
+    { " ABC ",            NT+RM,   " ABC ",       " " },
+    { "   ABC   ",        NT+RM,   " ABC ",       " " },
+    { "   A B C   ",      NT+RM,   " A B C ",     " " },
+    { "   A  B  C   ",    NT+RM,   " A B C ",     " " },
+    { "   AB CD EF   ",   NT+RM,   " AB CD EF ",  " " },
+    { "   AB  CD  EF   ", NT+RM,   " AB CD EF ",  " " },
+    { "\n\nA  B\nC\n\n",  NT+RM,   "A BC",        "\n\n \n\n\n"   },
+    { "\n \nA B\nC\n \n", NT+RM,   " A BC ",      "\n \n \n\n \n" },
+    { " \nA  B\nC\n ",    NT+RM,   " A BC ",      " \n \n\n "     },
+    { "  \nA B\nC\n  ",   NT+RM,   " A BC ",      " \n \n\n "     },
+
+    // fSS_NoTruncate_* + fSS_NoMerge + fSS_Remove
+
+    { "",                 NTB+NM+RM,  "",               ""  },
+    { "   ",              NTB+NM+RM,  "",               ""  },
+    { "ABC",              NTB+NM+RM,  "ABC",            ""  },
+    { "  ABC",            NTB+NM+RM,  "  ABC",          ""  },
+    { "ABC  ",            NTB+NM+RM,  "ABC",            ""  },
+    { " ABC ",            NTB+NM+RM,  " ABC",           ""  },
+    { "   ABC   ",        NTB+NM+RM,  "   ABC",         ""  },
+    { "   A B C   ",      NTB+NM+RM,  "   A B C",       ""  },
+    { "   A  B  C   ",    NTB+NM+RM,  "   A  B  C",     ""  },
+    { "   AB CD EF   ",   NTB+NM+RM,  "   AB CD EF",    ""  },
+    { "   AB  CD  EF   ", NTB+NM+RM,  "   AB  CD  EF",  ""  },
+    { "\n\nA  B\nC\n\n",  NTB+NM+RM,  "A  BC",          "\n\n  \n\n\n"  },
+    { "\n \nA B\nC\n \n", NTB+NM+RM,  " A BC",          "\n \n \n\n \n" },
+    { " \nA  B\nC\n ",    NTB+NM+RM,  " A  BC",         " \n  \n\n"     },
+    { "  \nA B\nC\n  ",   NTB+NM+RM,  "  A BC",         "  \n \n\n"     },
+
+    { "",                 NTE+NM+RM,  "",               ""  },
+    { "   ",              NTE+NM+RM,  "",               ""  },
+    { "ABC",              NTE+NM+RM,  "ABC",            ""  },
+    { "  ABC",            NTE+NM+RM,  "ABC",            ""  },
+    { "ABC  ",            NTE+NM+RM,  "ABC  ",          ""  },
+    { " ABC ",            NTE+NM+RM,  "ABC ",           ""  },
+    { "   ABC   ",        NTE+NM+RM,  "ABC   ",         ""  },
+    { "   A B C   ",      NTE+NM+RM,  "A B C   ",       ""  },
+    { "   A  B  C   ",    NTE+NM+RM,  "A  B  C   ",     ""  },
+    { "   AB CD EF   ",   NTE+NM+RM,  "AB CD EF   ",    ""  },
+    { "   AB  CD  EF   ", NTE+NM+RM,  "AB  CD  EF   ",  ""  },
+    { "\n\nA  B\nC\n\n",  NTE+NM+RM,  "A  BC",          "\n\n  \n\n\n"  },
+    { "\n \nA B\nC\n \n", NTE+NM+RM,  "A BC ",          "\n \n \n\n \n" },
+    { " \nA  B\nC\n ",    NTE+NM+RM,  "A  BC ",         "\n  \n\n "     },
+    { "  \nA B\nC\n  ",   NTE+NM+RM,  "A BC  ",         "\n \n\n  "     },
+
+    { "",                 NT+NM+RM,   "",                  ""              },
+    { "   ",              NT+NM+RM,   "   ",               "   "           },
+    { "ABC",              NT+NM+RM,   "ABC",               ""              },
+    { "  ABC",            NT+NM+RM,   "  ABC",             "  "            },
+    { "ABC  ",            NT+NM+RM,   "ABC  ",             "  "            },
+    { " ABC ",            NT+NM+RM,   " ABC ",             "  "            },
+    { "   ABC   ",        NT+NM+RM,   "   ABC   ",         "      "        },
+    { "   A B C   ",      NT+NM+RM,   "   A B C   ",       "        "      },
+    { "   A  B  C   ",    NT+NM+RM,   "   A  B  C   ",     "          "    },
+    { "   AB CD EF   ",   NT+NM+RM,   "   AB CD EF   ",    "        "      },
+    { "   AB  CD  EF   ", NT+NM+RM,   "   AB  CD  EF   ",  "          "    },
+    { "\n\nA  B\nC\n\n",  NT+NM+RM,   "A  BC",             "\n\n  \n\n\n"  },
+    { "\n \nA B\nC\n \n", NT+NM+RM,   " A BC ",            "\n \n \n\n \n" },
+    { " \nA  B\nC\n ",    NT+NM+RM,   " A  BC ",           " \n  \n\n "    },
+    { "  \nA B\nC\n  ",   NT+NM+RM,   "  A BC  ",          "  \n \n\n  "   }
+};
+
+BOOST_AUTO_TEST_CASE(s_Sanitize)
+{
+    const size_t count = sizeof(s_SanitizeTests) / sizeof(s_SanitizeTests[0]);
+    for (size_t i = 0;  i < count;  ++i)
+    {
+        const SSanitizeTest* test = &s_SanitizeTests[i];
+        BOOST_CHECK_EQUAL(
+            NStr::Sanitize(test->str, test->flags)
+            .compare(test->allowed), 0);
+        BOOST_CHECK_EQUAL(
+            NStr::Sanitize(test->str, test->flags | NStr::fSS_Reject)
+            .compare(test->rejected), 0);
+    }
+}
+
+
+//----------------------------------------------------------------------------
 // NStr::CEncode|CParse()
 //----------------------------------------------------------------------------
 
@@ -2085,7 +2434,7 @@ static const SCEncodeTest s_CEncodeTests[] = {
 
 BOOST_AUTO_TEST_CASE(s_CEncode)
 {
-    const size_t count = sizeof(s_CEncodeTests)/sizeof(s_CEncodeTests[0]);
+    const size_t count = sizeof(s_CEncodeTests) / sizeof(s_CEncodeTests[0]);
     for (size_t i = 0;  i < count;  ++i)
     {
         const SCEncodeTest* test = &s_CEncodeTests[i];
