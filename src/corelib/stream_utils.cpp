@@ -597,9 +597,8 @@ ERW_Result CStreamReader::Read(void*   buf,
         *bytes_read = (size_t) r;
     }
     if (!r) {
-        m_Stream->setstate(!sb
-                           ? NcbiBadbit
-                           : NcbiFailbit | (ok ? NcbiEofbit : NcbiGoodbit));
+        m_Stream->setstate(!sb  ? NcbiBadbit
+                           : ok ? NcbiEofbit : NcbiFailbit);
         return ok ? eRW_Eof : eRW_Error;
     }
     return eRW_Success;

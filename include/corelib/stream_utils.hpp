@@ -139,6 +139,14 @@ private:
 /// into a single bi-directional one, e.g.:
 ///     CRWStream rw(new CStreamReader(cin), new CStreamWriter(cout),
 ///                  0, 0, CRWStreambuf::fOwnAll);
+///
+/// @note If a CRStream is built buffered on top of this CStreamReader, then
+///       the contents of "is" becomes undefined after the first read operation
+///       (because the underlying buffering may pull in more data than actually
+///       necessary for the top-level CRStream).  A workaround would be to add
+///       an IReader::Pushback() method (that calls CStreamUtils::Pushback() in
+///       this case), which is to be called by the stream buffer destructor.
+///
 /// @sa
 ///   CStreamWriter
 class NCBI_XNCBI_EXPORT CStreamReader : public IReader
