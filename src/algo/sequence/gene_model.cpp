@@ -1204,8 +1204,8 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
     CSeq_loc_Mapper to_mrna(align, CSeq_loc_Mapper::eSplicedRow_Prod);
     CSeq_loc_Mapper to_genomic(align, CSeq_loc_Mapper::eSplicedRow_Gen);
 
-    to_mrna.SetMergeNone();
-    to_genomic.SetMergeNone();
+    to_mrna.SetMergeAll();
+    to_genomic.SetMergeAll();
 
     int seq_size = 0;
     int prev_product_to = -1;
@@ -1231,12 +1231,14 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                 inst.ResetSeq_data();
             }
             int gap_len = add_unaligned_parts ? mrna_loc->GetTotalRange().GetFrom()-(prev_product_to+1) : 0;
+            if (gap_len >= 0) {
             seq_size += gap_len;
             prev_product_to += gap_len;
             inst.SetExt().SetDelta().AddLiteral(gap_len);
             if (gap_len == 0)
                 inst.SetExt().SetDelta().Set().back()
                     ->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            }
         }
 
         int part_count = 0;

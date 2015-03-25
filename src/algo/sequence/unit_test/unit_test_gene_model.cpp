@@ -1682,4 +1682,49 @@ Seq-loc ::= packed-int { \
 
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseConvertLocToAnnotSlippage)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+string buf = " \
+Seq-loc ::= packed-int { \
+            { \
+              from 3815880, \
+              to 3816548, \
+              strand minus, \
+              id gi 545778205 \
+            }, \
+            { \
+              from 3815833, \
+              to 3815880, \
+              strand minus, \
+              id gi 545778205 \
+            } \
+          } \
+";
+    CNcbiIstrstream istrs(buf.c_str());
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    CSeq_loc loc;
+    *istr >> loc;
+
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    CBioseq_set& seqs = seq_entry->SetSet();
+    seqs.SetSeq_set();
+    CSeq_annot annot;
+    annot.SetData().SetFtable();
+    CFeatureGenerator feat_gen(*scope);
+    int flags =
+        CFeatureGenerator::fCreateGene |
+        CFeatureGenerator::fCreateCdregion |
+        CFeatureGenerator::fForceTranslateCds |
+        CFeatureGenerator::fForceTranscribeMrna;
+    feat_gen.SetFlags(flags);
+
+
+    BOOST_CHECK_NO_THROW(feat_gen.ConvertLocToAnnot(loc, annot, seqs));
+}
+
 BOOST_AUTO_TEST_SUITE_END();
