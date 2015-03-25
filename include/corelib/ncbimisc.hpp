@@ -427,18 +427,18 @@ struct CDeleter
 /// Define an "auto_ptr" like class that can be used inside STL containers.
 ///
 /// The Standard auto_ptr template from STL doesn't allow the auto_ptr to be
-/// put in STL containers (list, vector, map etc.). The reason for this is
+/// put in STL containers (list, vector, map etc.).  The reason for this is
 /// the absence of copy constructor and assignment operator.
 /// We decided that it would be useful to have an analog of STL's auto_ptr
 /// without this restriction - AutoPtr.
 ///
-/// Due to nature of AutoPtr its copy constructor and assignment operator
-/// modify the state of the source AutoPtr object as it transfers ownership
-/// to the target AutoPtr object. Also, we added possibility to redefine the
-/// way pointer will be deleted: the second argument of template allows
+/// Due to the nature of AutoPtr its copy constructor and assignment operator
+/// modify the state of the source AutoPtr object as it transfers the ownership
+/// to the target AutoPtr object.  Also, we added possibility to redefine the
+/// way pointer will be deleted:  the second argument of the template allows
 /// pointers from "malloc" in AutoPtr, or you can use "ArrayDeleter" (see
 /// above) to properly delete an array of objects using "delete[]" instead
-/// of "delete". By default, the internal pointer will be deleted by C++
+/// of "delete".  By default, the internal pointer is deleted by the C++
 /// "delete" operator.
 ///
 /// @sa
@@ -454,26 +454,22 @@ public:
     /// Constructor.
     AutoPtr(element_type* p = 0)
         : m_Ptr(p), m_Data(true)
-    {
-    }
+    { }
 
     /// Constructor.
     AutoPtr(element_type* p, const deleter_type& deleter)
         : m_Ptr(p), m_Data(deleter, true)
-    {
-    }
+    { }
 
     /// Constructor, own the pointed object if ownership == eTakeOwnership
     AutoPtr(element_type* p, EOwnership ownership)
         : m_Ptr(p), m_Data(ownership != eNoOwnership)
-    {
-    }
+    { }
 
     /// Constructor, own the pointed object if ownership == eTakeOwnership
     AutoPtr(element_type* p, const deleter_type& deleter, EOwnership ownership)
         : m_Ptr(p), m_Data(deleter, ownership != eNoOwnership)
-    {
-    }
+    { }
 
     /// Copy constructor.
     AutoPtr(const AutoPtr<X, Del>& p)
@@ -527,8 +523,8 @@ public:
         return m_Ptr;
     }
 
-    /// Reset will delete old pointer, set content to new value,
-    /// and assume the ownership upon the new pointer.
+    /// Reset will delete the old pointer (if owned), set content to the new
+    /// value, and assume the ownership upon the new pointer by default.
     void reset(element_type* p = 0, EOwnership ownership = eTakeOwnership)
     {
         if ( m_Ptr != p ) {
@@ -537,7 +533,7 @@ public:
             }
             m_Ptr   = p;
         }
-        m_Data.second() = p != 0  &&  ownership == eTakeOwnership;
+        m_Data.second() = ownership != eNoOwnership;
     }
 
     void Swap(AutoPtr<X, Del>& a)
@@ -545,6 +541,8 @@ public:
         swap(m_Ptr,  a.m_Ptr);
         swap(m_Data, a.m_Data);
     }
+
+    bool IfOwned(void) const { return m_Ptr  &&  m_Data.second(); }
 
 private:
     element_type* m_Ptr;                  ///< Internal pointer representation.
@@ -565,8 +563,8 @@ private:
 /// "AutoPtr" like class for using with arrays
 ///
 /// vector<> template comes with a performance penalty, since it always
-/// initializes its content. This template is not a vector replacement,
-/// it's a version of AutoPtr<> tuned for array pointers. For convenience
+/// initializes its content.  This template is not a vector replacement,
+/// it's a version of AutoPtr<> tuned for array pointers.  For convenience
 /// it defines array style access operator [] and size based contructor.
 ///
 /// @sa AutoPtr
@@ -585,16 +583,15 @@ public:
     /// @note In this case you should use ArrayDeleter<> or compatible
     explicit AutoArray(size_t size)
         : m_Ptr(new element_type[size]), m_Data(true)
-    {}
+    { }
 
     explicit AutoArray(element_type* p = 0)
         : m_Ptr(p), m_Data(true)
-    {}
+    { }
 
     AutoArray(element_type* p, const deleter_type& deleter)
         : m_Ptr(p), m_Data(deleter, true)
-    {
-    }
+    { }
 
     AutoArray(const AutoArray<X, Del>& p)
         : m_Ptr(0), m_Data(p.m_Data)
@@ -624,11 +621,12 @@ public:
         reset(p);
         return *this;
     }
+
     /// Bool operator for use in if() clause.
     DECLARE_OPERATOR_BOOL_PTR(m_Ptr);
 
     /// Get pointer.
-    element_type* get       (void) const { return  m_Ptr; }
+    element_type* get (void) const { return  m_Ptr; }
 
     /// Release will release ownership of pointer to caller.
     element_type* release(void)
@@ -637,26 +635,28 @@ public:
         return m_Ptr;
     }
 
-    /// array style dereference (returns value)
+    /// Array style dereference (returns value)
     const element_type& operator[](size_t pos) const { return m_Ptr[pos]; }
 
-    /// array style dereference (returns reference)
-    element_type& operator[](size_t pos) { return m_Ptr[pos]; }
+    /// Array style dereference (returns reference)
+    element_type&       operator[](size_t pos)       { return m_Ptr[pos]; }
 
-    /// Reset will delete old pointer, set content to new value,
-    /// and accept ownership upon the new pointer.
+    /// Reset will delete the old pointer, set content to the new value,
+    /// and assume the ownership upon the new pointer.
     void reset(element_type* p = 0)
     {
-        if (m_Ptr  &&  m_Data.second()) {
-            m_Data.first().Delete(release());
+        if (m_Ptr != p) {
+            if (m_Ptr  &&  m_Data.second()) {
+                m_Data.first().Delete(release());
+            }
+            m_Ptr  = p;
         }
-        m_Ptr   = p;
         m_Data.second() = true;
     }
 
     void Swap(AutoPtr<X, Del>& a)
     {
-        swap(m_Ptr, a.m_Ptr);
+        swap(m_Ptr,  a.m_Ptr);
         swap(m_Data, a.m_Data);
     }
 
@@ -668,7 +668,7 @@ private:
     }
 
 private:
-    element_type*  m_Ptr;
+    element_type* m_Ptr;
     mutable pair_base_member<deleter_type, bool> m_Data; ///< State info.
 };
 
