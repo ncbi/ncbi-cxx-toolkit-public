@@ -772,6 +772,54 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
     result.append(suffix.data(), suffix.length());
 }
 
+void CleanAndCompress (string& str)
+{
+    if (str.empty()) {
+        return;
+    }
+
+    size_t pos = str.find (" ,");
+    if (pos != NPOS) {
+        str [pos] = ',';
+        str [pos+1] = ' ';
+    }
+    pos = str.find (",,");
+    if (pos != NPOS) {
+        str [pos+1] = ' ';
+    }
+    pos = str.find ("( ");
+    if (pos != NPOS) {
+        str [pos] = ' ';
+        str [pos+1] = '(';
+    }
+    pos = str.find (" )");
+    if (pos != NPOS) {
+        str [pos] = ')';
+        str [pos+1] = ' ';
+    }
+
+    string::iterator end = str.end();
+    string::iterator it = str.begin();
+    string::iterator new_str = it;
+    while (it != end) {
+        *new_str++ = *it;
+        if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
+            for (++it; (it != end) && (*it == ' ' || *it == '\t'); ++it) continue;
+            if ((it != end) && (*it == ')' || *it == ',') ) {
+                // this "if" protects against the case "(...bunch of spaces and tabs...)".
+                // Otherwise, the first '(' is unintentionally erased
+                if( *(new_str - 1) != '(' ) { 
+                    --new_str;
+                }
+            }
+        } else {
+            ++it;
+        }
+    }
+    str.erase(new_str, str.end());
+}
+
+
 #if 0
 struct CJunkUnitTest
 {

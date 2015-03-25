@@ -144,54 +144,6 @@ struct s_CleanAndCompress_unit_test
 s_CleanAndCompress_unit_test t;
 #endif
 
-static void s_CleanAndCompress (string& str)
-{
-    if (str.empty()) {
-        return;
-    }
-
-    size_t pos = str.find (" ,");
-    if (pos != NPOS) {
-        str [pos] = ',';
-        str [pos+1] = ' ';
-    }
-    pos = str.find (",,");
-    if (pos != NPOS) {
-        str [pos+1] = ' ';
-    }
-    pos = str.find ("( ");
-    if (pos != NPOS) {
-        str [pos] = ' ';
-        str [pos+1] = '(';
-    }
-    pos = str.find (" )");
-    if (pos != NPOS) {
-        str [pos] = ')';
-        str [pos+1] = ' ';
-    }
-
-    string::iterator end = str.end();
-    string::iterator it = str.begin();
-    string::iterator new_str = it;
-    while (it != end) {
-        *new_str++ = *it;
-        if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
-            for (++it; (it != end) && (*it == ' ' || *it == '\t'); ++it) continue;
-            if ((it != end) && (*it == ')' || *it == ',') ) {
-                // this "if" protects against the case "(...bunch of spaces and tabs...)".
-                // Otherwise, the first '(' is unintentionally erased
-                if( *(new_str - 1) != '(' ) { 
-                    --new_str;
-                }
-            }
-        } else {
-            ++it;
-        }
-    }
-    str.erase(new_str, str.end());
-}
-
-
 static bool s_StringIsJustQuotes(const string& str)
 {
     ITERATE(string, it, str) {
@@ -314,7 +266,7 @@ static string s_GetGOText(
             go_text += "]";
         }
     }
-    s_CleanAndCompress(go_text);
+    CleanAndCompress(go_text);
     NStr::TruncateSpacesInPlace(go_text);
     return go_text;
 }

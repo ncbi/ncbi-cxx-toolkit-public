@@ -159,6 +159,7 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_s
     if (gen_sub) {
         ConvertQuotes(result);
     }
+    CleanAndCompress(result);
     NStr::TruncateSpacesInPlace(result);
 }
 
