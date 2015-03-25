@@ -3051,7 +3051,7 @@ string& _replace_reduct(string& src,
 
     return src;
 }
-#if 0
+#endif
 
 string& NStr::ReplaceInPlace(string& src,
                              const string& search, const string& replace,
