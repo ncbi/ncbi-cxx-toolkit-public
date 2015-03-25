@@ -1910,8 +1910,8 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     " 11 = BLAST archive format (ASN.1),\n"
     " 12 = JSON Seqalign output,\n"
     " 13 = JSON Blast output,\n"
-    " 14 = XML2 Blast output,\n"
-    " 15 = SAM format \n\n"
+    " 14 = XML2 Blast output\n\n"
+    /* " 15 = SAM format \n\n" */
     "Options 6, 7, and 10 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
