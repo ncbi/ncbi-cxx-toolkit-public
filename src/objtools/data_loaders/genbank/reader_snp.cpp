@@ -181,7 +181,7 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 {
     if ( CollectSNPStat() ) {
         size_t total =
-            accumulate(m_Count, m_Count+SSNP_Info::eSNP_Type_last, 0);
+            accumulate(m_Count, m_Count+SSNP_Info::eSNP_Type_last, size_t(0));
         NcbiCout << "CSeq_annot_SNP_Info statistic (gi = " <<
             m_Seq_annot_SNP_Info.GetGi() << "):\n";
         for ( size_t i = 0; i < SSNP_Info::eSNP_Type_last; ++i ) {
@@ -194,7 +194,7 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
         NcbiCout << NcbiEndl;
 
         total =
-            accumulate(s_TotalCount, s_TotalCount+SSNP_Info::eSNP_Type_last,0);
+            accumulate(s_TotalCount, s_TotalCount+SSNP_Info::eSNP_Type_last,size_t(0));
         NcbiCout << "cumulative CSeq_annot_SNP_Info statistic:\n";
         for ( size_t i = 0; i < SSNP_Info::eSNP_Type_last; ++i ) {
             NcbiCout <<
