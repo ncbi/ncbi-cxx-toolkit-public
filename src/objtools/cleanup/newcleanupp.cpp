@@ -10244,10 +10244,14 @@ public:
             }
         }
 
+        if( r1->IsSetReverse() != r2->IsSetReverse() ) {
+            // note where the "!" operator is and isn't
+            return ! r1->IsSetReverse() && r2->IsSetReverse(); 
+        }
         if( ! r1->IsSetReverse() && ! r2->IsSetReverse() ) {
             // note where the "!" operator is and isn't
             return ! r1->IsSetReverse() && r2->IsSetReverse();
-        }
+        } 
         return ( s_PcrPrimerSetCompare( r1->GetReverse(), r2->GetReverse() ) < 0 );
     }
 
