@@ -820,7 +820,8 @@ struct SAttrApiBase
 
         // Attribute name/value length range
         const size_t kMinLength = 5;
-        const size_t kMaxLength = 1000;
+        const size_t kNameMaxLength = 256;
+        const size_t kValueMaxLength = 1024;
 
         // Number of attributes
         const size_t kMinSize = 3;
@@ -834,14 +835,14 @@ struct SAttrApiBase
         string name;
         string value;
 
-        name.reserve(kMaxLength);
-        value.reserve(kMaxLength);
+        name.reserve(kNameMaxLength);
+        value.reserve(kValueMaxLength);
 
         while (size-- > 0) {
-            RandomFill(r, name, r.GetRand(kMinLength, kMaxLength));
+            RandomFill(r, name, r.GetRand(kMinLength, kNameMaxLength));
 
             if (r.GetRandIndex(kSetProbability)) {
-                RandomFill(r, value, r.GetRand(kMinLength, kMaxLength));
+                RandomFill(r, value, r.GetRand(kMinLength, kValueMaxLength));
                 attrs.insert(make_pair(name, value));
             } else {
                 attrs.insert(make_pair(name, kEmptyStr));
