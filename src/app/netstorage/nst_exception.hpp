@@ -40,7 +40,8 @@
 BEGIN_NCBI_SCOPE
 
 
-class CNetStorageServerException : public CException, public CNetStorageServerError
+class CNetStorageServerException : public CException,
+                                   public CNetStorageServerError
 {
     public:
         typedef CNetStorageServerError::EErrCode EErrCode;

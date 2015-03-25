@@ -448,7 +448,13 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         error = false;
     }
     catch (const CNetStorageServerException &  ex) {
-        ERR_POST(ex);
+        if (ex.GetErrCode() !=
+                CNetStorageServerException::eNetStorageAttributeNotFound &&
+            ex.GetErrCode() !=
+                CNetStorageServerException::eNetStorageAttributeValueNotFound) {
+            // Choke the error printout for this specific case, see CXX-5818
+            ERR_POST(ex);
+        }
         http_error_code = ex.ErrCodeToHTTPStatusCode();
         error_code = ex.GetErrCode();
         error_client_message = ex.what();
