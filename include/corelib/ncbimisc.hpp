@@ -528,7 +528,7 @@ public:
     }
 
     /// Reset will delete old pointer, set content to new value,
-    /// and accept ownership upon the new pointer.
+    /// and assume the ownership upon the new pointer.
     void reset(element_type* p = 0, EOwnership ownership = eTakeOwnership)
     {
         if ( m_Ptr != p ) {
@@ -537,12 +537,12 @@ public:
             }
             m_Ptr   = p;
         }
-        m_Data.second() = p != 0 && ownership == eTakeOwnership;
+        m_Data.second() = p != 0  &&  ownership == eTakeOwnership;
     }
 
     void Swap(AutoPtr<X, Del>& a)
     {
-        swap(m_Ptr, a.m_Ptr);
+        swap(m_Ptr,  a.m_Ptr);
         swap(m_Data, a.m_Data);
     }
 
