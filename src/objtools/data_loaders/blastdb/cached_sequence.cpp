@@ -47,36 +47,6 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static void
-s_ReplaceProvidedSeqIdsForRequestedSeqIds(const CSeq_id_Handle& idh, CBioseq&
-                                          bioseq)
-{
-    CRef<CBlast_def_line_set> deflines = CSeqDB::ExtractBlastDefline(bioseq);
-    _ASSERT(deflines.NotEmpty());
-
-    CRef<CBlast_def_line> target_defline;
-    NON_CONST_ITERATE(CBlast_def_line_set::Tdata, one_defline,
-                      deflines->Set()) {
-        if (! (*one_defline)->CanGetSeqid()) {
-            continue;
-        }
-        NON_CONST_ITERATE(CBlast_def_line::TSeqid, seqid, 
-                          (*one_defline)->SetSeqid()) {
-            if ((*seqid)->Match(*idh.GetSeqId())) {
-                target_defline = *one_defline;
-                break;
-            }
-        }
-        if (target_defline.NotEmpty()) {
-            break;
-        }
-    }
-
-    if (target_defline.NotEmpty()) {
-        bioseq.SetId() = target_defline->SetSeqid();
-    }
-}
-
 CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
                                  const CSeq_id_Handle&  idh,
                                  int oid,
@@ -91,8 +61,6 @@ CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
 
     CRef<CBioseq> bioseq(m_BlastDb.GetBioseqNoData(m_OID, 0, &*(m_SIH.GetSeqId())));
 
-    //s_ReplaceProvidedSeqIdsForRequestedSeqIds(m_SIH, *bioseq);
-    
     CConstRef<CSeq_id> first_id( bioseq->GetFirstId() );
     _ASSERT(first_id);
     if ( first_id ) {
