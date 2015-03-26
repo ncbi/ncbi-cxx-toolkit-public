@@ -4061,6 +4061,13 @@ ERW_Result CTarReader::PendingCount(size_t* count)
     if (m_Tar->m_BufferPos) {
         avail += m_Tar->m_BufferSize - m_Tar->m_BufferPos;
     }
+    if (!avail  &&  m_Tar->m_Stream.good()) {
+        // NB: good() subsumes there's streambuf (bad() otherwise)
+        streamsize sb_avail = m_Tar->m_Stream.rdbuf()->in_avail();
+        if (sb_avail != -1) {
+            avail = (size_t) sb_avail;
+        }
+    }
     *count = avail > left ? (size_t) left : avail;
     return eRW_Success;
 }
