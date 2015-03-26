@@ -249,6 +249,7 @@ enum EErrType {
     eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
     eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
     eErr_SEQ_DESCR_WrongBiomolForTechnique,
+    eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
     ERR_CODE_END(SEQ_DESCR),
 
 

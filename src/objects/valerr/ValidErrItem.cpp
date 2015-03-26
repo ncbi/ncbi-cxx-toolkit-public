@@ -665,6 +665,9 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_WrongBiomolForTechnique,
    { "WrongBiomolForTechnique",
 "TSA records are expected to make use of a very limited set of MolInfo.biomol values: transcribed-RNA, mRNA, rRNA, ncRNA." } },
+   { eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
+   { "WrongOrganismFor16SrRNA",
+"16S ribosomal RNA is not present in eukaryotic ribosomes." } },
 
 /* SEQ_GENERIC */
 
