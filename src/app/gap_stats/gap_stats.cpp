@@ -112,9 +112,9 @@ namespace {
     // translate gap types to string for ASCII output
     typedef SStaticPair<GA::EGapType, const char *> TGapTypeNameElem;
     static const TGapTypeNameElem sc_gaptypename_map[] = {
-        { GA::eGapType_All,          "All Gaps"},
+        { GA::eGapType_All,          "Any Kind"},
         { GA::eGapType_SeqGap,       "Seq Gaps"},
-        { GA::eGapType_UnknownBases, "Unknown Bases Gaps"},
+        { GA::eGapType_UnknownBases, "Runs of Ns"},
     };
     typedef CStaticArrayMap<
         GA::EGapType, const char *> TGapTypeNameMap;
@@ -364,7 +364,7 @@ CGapStatsApplication::CGapStatsApplication(void) :
 
     m_IncludedGapTypes.insert(GA::eGapType_All);
 
-    SetVersion(CVersionInfo(3,0,build_num));
+    SetVersion(CVersionInfo(4,0,build_num));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -394,12 +394,17 @@ void CGapStatsApplication::Init(void)
     ITERATE(TAddGapTypeMap, add_gap_type_it, sc_addgaptypename) {
         gap_types.push_back(add_gap_type_it->first);
     }
+    // special gap-types
     arg_desc->AddOptionalKey(
         "gap-types",
         "GapTypes",
         "A comma-separated list of types of gaps we look at.  "
-        "If none specified, all types will be shown.  Possibilities: " +
-        NStr::Join(gap_types, ", "),
+        "If none are specified, all types will be shown.  Possibilities: " +
+        NStr::Join(gap_types, ", ") + " but note that 'all' means adding "
+        "one column that combines all types.  Also, there is "
+        "the gap-type 'both' as a shortcut for showing a column "
+        "for every possible gap type "
+        "(except 'all', unless you also add that to -gap-types)",
         CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey(
@@ -572,38 +577,76 @@ int CGapStatsApplication::RunNoCatch(void)
 
     // if gap-types specified, use those instead of defaulting to "all"
     if( args["gap-types"].HasValue() ) {
+        string gap_type_arg = args["gap-types"].AsString();
+
         m_IncludedGapTypes.clear();
         m_fGapAddFlags = 0;
         m_fFastaFlags = 0;
 
-        vector< string > gap_types;
-        NStr::Tokenize(args["gap-types"].AsString(), ",", gap_types);
-        if( gap_types.empty() ) {
+        vector< string > raw_gap_types;
+        NStr::Tokenize(args["gap-types"].AsString(), ",", raw_gap_types);
+        if( raw_gap_types.empty() ) {
             throw SOutMessage(
                 kEmptyStr, SOutMessage::kFatalStr,
                 "NO_GAP_TYPES_GIVEN",
                 "-gap-types must be given at least one gap");
         }
 
-        ITERATE(vector< string >, gap_type, gap_types)
+        // handle each part of the comma-separated gap-types arg
+        ITERATE(vector< string >, raw_gap_types_it, raw_gap_types)
         {
-            const string & gap_type_str = *gap_type;
+            const string & raw_gap_type_str = *raw_gap_types_it;
 
-            TAddGapTypeMap::const_iterator find_it =
-                sc_addgaptypename.find(gap_type_str.c_str());
-            if( find_it == sc_addgaptypename.end() ) {
-                throw SOutMessage(
-                    kEmptyStr,
-                    SOutMessage::kFatalStr,
-                    "UNKNOWN_GAP_TYPE",
-                    "This gap type is not recognized: '" + gap_type_str + "'");
+            // unpack gap-types that actually represent multiple gap
+            // types (e.g. the choice "both") and put them all into
+            // gap_types_from_this_arg.  Plain gap-types remain unchanged
+            // and aren't "unpacked" per se.
+            vector<string> gap_types_from_this_arg;
+            if( raw_gap_type_str == "both" ) {
+                // a special case
+
+                const size_t old_num_gap_types =
+                    gap_types_from_this_arg.size();
+                ITERATE(TAddGapTypeMap, add_gap_type_it, sc_addgaptypename) {
+                    const string & gap_type_str = add_gap_type_it->first;
+                    if( gap_type_str != "all" ) {
+                        gap_types_from_this_arg.push_back(gap_type_str);
+                    }
+                }
+                const size_t new_num_gap_types =
+                    gap_types_from_this_arg.size();
+
+                if( (old_num_gap_types + 2) != new_num_gap_types ) {
+                    // "both" doesn't make sense unless exactly 2 choices
+                    // are added.
+                    _TROUBLE;
+                }
+            } else {
+                // generally a gap type string just represents itself as-is
+                // and isn't "unpacked" per se.
+                gap_types_from_this_arg.push_back(raw_gap_type_str);
             }
 
-            const SGapRelatedInfo & gap_related_flags =
-                find_it->second;
-            m_IncludedGapTypes.insert(gap_related_flags.gap_type);
-            m_fGapAddFlags |= gap_related_flags.gap_add_flag;
-            m_fFastaFlags |= gap_related_flags.fasta_flag;
+            ITERATE(vector<string>, gap_type_str_it,  gap_types_from_this_arg)
+            {
+                const string & gap_type_str = *gap_type_str_it;
+                TAddGapTypeMap::const_iterator find_it =
+                    sc_addgaptypename.find(gap_type_str.c_str());
+                if( find_it == sc_addgaptypename.end() ) {
+                    throw SOutMessage(
+                        kEmptyStr,
+                        SOutMessage::kFatalStr,
+                        "UNKNOWN_GAP_TYPE",
+                        "This gap type is not recognized: '" +
+                        gap_type_str + "'");
+                }
+
+                const SGapRelatedInfo & gap_related_flags =
+                    find_it->second;
+                m_IncludedGapTypes.insert(gap_related_flags.gap_type);
+                m_fGapAddFlags |= gap_related_flags.gap_add_flag;
+                m_fFastaFlags |= gap_related_flags.fasta_flag;
+            }
         }
     }
     _ASSERT( ! m_IncludedGapTypes.empty() );
@@ -1038,10 +1081,10 @@ void CGapStatsApplication::x_PrintSummaryView(void)
             }
 
             vecColInfos.AddCol(
-                "Num Seqs With Len For " + pchGapName, kDigitsInUint8, 
+                "#Seqs with " + pchGapName, kDigitsInUint8,
                 CTablePrinter::eJustify_Right);
             vecColInfos.AddCol(
-                "Num with Len for " + pchGapName, kDigitsInUint8, 
+                "# of " + pchGapName, kDigitsInUint8,
                 CTablePrinter::eJustify_Right);
         }
 
