@@ -1017,6 +1017,10 @@ CNSTDatabase::x_CalculateExpiration(
                 exp_record_not_found.m_Value = current_time + ttl.m_Value;
             }
         } else {
+            // May not happened but the upper level code is generic so to
+            // be on the safe side set exp_record_not_found to NULL
+            exp_record_not_found.m_IsNull = true;
+
             exp_record_found.m_IsNull = false;
             exp_record_found.m_Value = object_expiration.m_Value;
         }
@@ -1033,6 +1037,10 @@ CNSTDatabase::x_CalculateExpiration(
                     exp_record_not_found.m_Value = current_time + prolong;
             }
         } else {
+            // May not happened but the upper level code is generic so to
+            // be on the safe side set exp_record_not_found to NULL
+            exp_record_not_found.m_IsNull = true;
+
             exp_record_found.m_IsNull = false;
             if (object_expiration.m_Value > current_time + prolong)
                 exp_record_found.m_Value = object_expiration.m_Value;
