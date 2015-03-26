@@ -671,6 +671,10 @@ public:
     /// Translate a GI to an OID.
     bool GiToOid(int gi, int & oid) const;
 
+    /// GiToOis is meant to simply return oid for a gi if one exisits
+    /// This method finds the oid and checks if the oid is being filtered or not.
+    bool GiToOidwFilterCheck(int gi, int & oid);
+
     /// Translate a GI to an OID.
     bool OidToGi(int oid, int & gi);
 

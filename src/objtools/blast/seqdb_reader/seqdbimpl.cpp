@@ -1201,6 +1201,24 @@ bool CSeqDBImpl::GiToOid(int gi, int & oid) const
     return false;
 }
 
+bool CSeqDBImpl::GiToOidwFilterCheck(int gi, int & oid)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+
+    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+    	oid =-1;
+        if (m_VolSet.GetVol(i)->GiToOid(gi, oid, locked)) {
+           	oid += m_VolSet.GetVolOIDStart(i);
+            int oid0 = oid;
+            if (CheckOrFindOID(oid) && (oid==oid0)) {
+            	return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool CSeqDBImpl::OidToGi(int oid, int & gi)
 {
     CHECK_MARKER();
