@@ -52,6 +52,7 @@ static char const rcsid[] = "$Id$";
 #include <util/format_guess.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
+#include <algo/winmask/seq_masker_istat_factory.hpp>    // for CSeqMaskerIstatFactory::DiscoverStatType
 #include <connect/ncbi_connutil.h>
 
 #include <algo/blast/api/msa_pssm_input.hpp>    // for CPsiBlastInputClustalW
@@ -411,10 +412,15 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
     
     if (args.Exist(kArgWindowMaskerDatabase) &&
         args[kArgWindowMaskerDatabase]) {
+        const string& stat_file = args[kArgWindowMaskerDatabase].AsString();
+        const CSeqMaskerIstatFactory::EStatType type =
+            CSeqMaskerIstatFactory::DiscoverStatType(stat_file);
+        if (type != CSeqMaskerIstatFactory::eOBinary) {
+            string msg("Only optimized binary windowmasker stat files are supported");
+            NCBI_THROW(CInputException, eInvalidInput, msg);
+        }
         
-        opt.SetWindowMaskerDatabase
-            (args[kArgWindowMaskerDatabase].AsString().c_str());
-        
+        opt.SetWindowMaskerDatabase(stat_file.c_str());
         filter_dbs++;
     }
     
