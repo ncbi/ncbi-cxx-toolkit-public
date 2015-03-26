@@ -36,6 +36,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
+class CDiscrepancyCaseConstructor;
+
 /// Housekeeping classes
 class CDiscrepancyTable  // singleton!
 {
