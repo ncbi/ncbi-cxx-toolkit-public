@@ -841,7 +841,7 @@ void s_CleanSeqAlign(CSeq_align& align)
     // These seg specific parts are probably incomplete
     // but denseg, disc, and spliced ought to handle 99.9%
     if (align.CanGetSegs()) { 
-        if (align.GetSegs().IsDense_seg()) {
+        if (align.GetSegs().IsDenseg()) {
             align.SetSegs().SetDenseg().SetScores().clear();
             // ...
         }
