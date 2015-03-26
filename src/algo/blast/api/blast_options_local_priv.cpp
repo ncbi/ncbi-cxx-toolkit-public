@@ -103,6 +103,8 @@ void CBlastOptionsLocal::x_DoDeepCopy(const CBlastOptionsLocal& optsLocal)
                             optsLocal.m_HitSaveOpts);
         x_Copy_CPSIBlastOptions(m_PSIBlastOpts,
                             optsLocal.m_PSIBlastOpts);
+        x_Copy_CPSIBlastOptions(m_DeltaBlastOpts,
+                            optsLocal.m_DeltaBlastOpts);
         x_Copy_CBlastDatabaseOptions(m_DbOpts,
                             optsLocal.m_DbOpts);
         x_Copy_CBlastScoringOptions(m_ScoringOpts,
