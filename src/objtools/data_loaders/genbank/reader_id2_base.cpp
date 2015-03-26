@@ -1661,14 +1661,21 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
     case CID2_Error::eSeverity_warning:
         error_flags |= fError_warning;
         if ( error.IsSetMessage() ) {
-            if ( NStr::FindNoCase(error.GetMessage(), "obsolete") != NPOS ) {
+            if ( !(error_flags & fError_warning_dead) &&
+                 NStr::FindNoCase(error.GetMessage(), "obsolete") != NPOS ) {
                 error_flags |= fError_warning_dead;
             }
-            if ( NStr::FindNoCase(error.GetMessage(), "removed") != NPOS ) {
-                error_flags |= fError_warning_suppressed;
+            if ( !(error_flags & fError_suppressed_perm) &&
+                 NStr::FindNoCase(error.GetMessage(), "removed") != NPOS ) {
+                error_flags |= fError_suppressed_perm;
             }
-            if ( NStr::FindNoCase(error.GetMessage(), "suppressed") != NPOS ) {
-                error_flags |= fError_warning_suppressed;
+            if ( !(error_flags & fError_suppressed_perm) &&
+                 NStr::FindNoCase(error.GetMessage(), "suppressed") != NPOS ) {
+                error_flags |= fError_suppressed_perm;
+            }
+            if ( !(error_flags & fError_suppressed_temp) &&
+                 NStr::FindNoCase(error.GetMessage(), "superseded") != NPOS ) {
+                error_flags |= fError_suppressed_temp;
             }
         }
         break;
@@ -1755,7 +1762,10 @@ CId2ReaderBase::x_GetBlobState(const CID2_Reply& reply,
     if ( errors & fError_warning_dead ) {
         blob_state |= CBioseq_Handle::fState_dead;
     }
-    if ( errors & fError_warning_suppressed ) {
+    if ( errors & fError_suppressed_temp ) {
+        blob_state |= CBioseq_Handle::fState_suppress_temp;
+    }
+    if ( errors & fError_suppressed_perm ) {
         blob_state |= CBioseq_Handle::fState_suppress_perm;
     }
     return blob_state;
