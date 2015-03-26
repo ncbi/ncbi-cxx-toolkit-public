@@ -161,6 +161,49 @@ string ExtractMetaDataStr( vector< string > const & md ) {
 }
 
 //------------------------------------------------------------------------------
+CSeqMaskerIstatFactory::EStatType CSeqMaskerIstatFactory::DiscoverStatType(
+        string const & name, vector< string > & md, size_t & skip ) {
+    GetMetaDataLines( name, md, skip );
+    CNcbiIfstream check( name.c_str() );
+
+    if( !check ) {
+        NCBI_THROW( Exception, eOpen, string( "could not open " ) + name );
+    }
+
+    if( skip > 0 ) {
+        char * buf( new char[skip] );
+        check.read( buf, skip );
+        delete[] buf;
+    }
+    else if( !md.empty() ) {
+        string line;
+        for( size_t i( 0 ); i < md.size(); ++i ) getline( check, line );
+    }
+
+    if( check ) {
+        Uint4 data = 1;
+
+        if( check.readsome( 
+                    (char *)&data, sizeof( Uint4 ) ) == sizeof( Uint4 ) ) {
+            if( data == 0 ) return eBinary;
+            if( data == 0x41414141 ) return eOAscii;
+            if( data == 1 || data == 2 ) return eOBinary;
+            return eAscii;
+        }
+    }
+
+    return eUnknown;
+}
+
+//------------------------------------------------------------------------------
+CSeqMaskerIstatFactory::EStatType CSeqMaskerIstatFactory::DiscoverStatType(
+        string const & name ) {
+    size_t skip( 0 );
+    vector< string > md;
+    return DiscoverStatType( name, md, skip );
+}
+
+//------------------------------------------------------------------------------
 CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                                   Uint4 threshold,
                                                   Uint4 textend,
@@ -174,56 +217,42 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
     {
         size_t skip( 0 );
         vector< string > md;
-        GetMetaDataLines( name, md, skip );
+        EStatType stat_type( DiscoverStatType( name , md, skip ) );
         CSeqMaskerIstat * res( 0 );
 
-        {
-            CNcbiIfstream check( name.c_str() );
+        switch( stat_type ) {
+            case eAscii: res = new CSeqMaskerIstatAscii( 
+                                 name,
+                                 threshold, textend,
+                                 max_count, use_max_count,
+                                 min_count, use_min_count,
+                                 md.size() );
+                         break;
 
-            if( !check )
-                NCBI_THROW( Exception, eOpen, 
-                            string( "could not open " ) + name );
+            case eBinary: res = new CSeqMaskerIstatBin( 
+                                  name, threshold, textend,
+                                  max_count, use_max_count,
+                                  min_count, use_min_count,
+                                  skip );
+                          break;
 
-            if( skip > 0 ) {
-                char * buf( new char[skip] );
-                check.read( buf, skip );
-                delete[] buf;
-            }
-            else if( !md.empty() ) {
-                string line;
+            case eOAscii: res = new CSeqMaskerIstatOAscii( 
+                                  name,
+                                  threshold, textend,
+                                  max_count, use_max_count,
+                                  min_count, use_min_count,
+                                  md.size() );
+                          break;
 
-                for( size_t i( 0 ); i < md.size(); ++i ) {
-                    getline( check, line );
-                }
-            }
+            case eOBinary: res = new CSeqMaskerIstatOBinary( 
+                                   name,
+                                   threshold, textend,
+                                   max_count, use_max_count,
+                                   min_count, use_min_count,
+                                   use_ba, skip );
+                           break;
 
-            Uint4 data = 1;
-            check.read( (char *)&data, sizeof( Uint4 ) );
-
-            if( data == 0 )
-                res = new CSeqMaskerIstatBin( name,
-                                              threshold, textend,
-                                              max_count, use_max_count,
-                                              min_count, use_min_count,
-                                              skip );
-            else if( data == 0x41414141 )
-                res = new CSeqMaskerIstatOAscii( name,
-                                                 threshold, textend,
-                                                 max_count, use_max_count,
-                                                 min_count, use_min_count,
-                                                 md.size() );
-            else if( data == 1 || data == 2 ) 
-                res = new CSeqMaskerIstatOBinary( name,
-                                                  threshold, textend,
-                                                  max_count, use_max_count,
-                                                  min_count, use_min_count,
-                                                  use_ba, skip );
-            else res = new CSeqMaskerIstatAscii( 
-                                        name,
-                                        threshold, textend,
-                                        max_count, use_max_count,
-                                        min_count, use_min_count,
-                                        md.size() );
+            default: break;
         }
 
         {

@@ -51,6 +51,16 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatFactory
 {
 public:
 
+    /// Counts statistics formats.
+    ///
+    enum EStatType {
+        eAscii,
+        eBinary,
+        eOAscii,
+        eOBinary,
+        eUnknown
+    };
+
     /** 
         **\brief Exceptions that CSeqMaskerIstatFactory might throw.
         **/
@@ -74,6 +84,10 @@ public:
             NCBI_EXCEPTION_DEFAULT( Exception, CException );
 
     };
+
+    /// Return the format of the counts statistics file.
+    ///
+    static EStatType DiscoverStatType( string const & name );
 
     /**
         **\brief Create a unit counts container from a file.
@@ -100,6 +114,13 @@ public:
                                         bool use_ba );
 
 private:
+
+    /// Return the format of the counts statistics file. At the same time
+    /// return the number of metadata lines (for text formats) and size
+    /// of metadata in bytes (for binary formats).
+    ///
+    static EStatType DiscoverStatType( 
+            string const & name, vector< string > & md, size_t & skip );
 };
 
 END_NCBI_SCOPE
