@@ -449,7 +449,11 @@ void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
 
     CConstRef<CUser_field> pBaseModURLField = uo.GetFieldRef("BaseModification-FileTrackURL");
     if ( pBaseModURLField) {
-        if ( FIELD_IS_SET_AND_IS(*pBaseModURLField, Data, Strs) ) {
+        if ( FIELD_IS_SET_AND_IS(*pBaseModURLField, Data, Str) ) {
+            if ( ! pBaseModURLField->GetData().GetStr().empty() ) {
+                m_BasemodURLs.push_back(pBaseModURLField->GetData().GetStr());
+            }
+        } else if ( FIELD_IS_SET_AND_IS(*pBaseModURLField, Data, Strs) ) {
             m_BasemodURLs = pBaseModURLField->GetData().GetStrs();
         }
     }
