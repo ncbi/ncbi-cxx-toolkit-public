@@ -49,6 +49,7 @@
 
 #elif defined(NCBI_OS_UNIX)
 #  include "ncbi_os_unix_p.hpp"
+#  include <corelib/impl/ncbi_panfs.h>
 #  include <dirent.h>
 #  include <fcntl.h>
 #  include <unistd.h>
@@ -74,6 +75,14 @@
 #  error "File API defined for MS Windows and UNIX platforms only"
 
 #endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX */
+
+
+// Define platforms on which we support PANFS
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
+#  define SUPPORT_PANFS
+#  include <sys/types.h>
+#  include <sys/wait.h>
+#endif
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_File
@@ -217,6 +226,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
         errno = saved_error; \
         return false; \
     }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -2786,8 +2796,8 @@ string CDirEntry::GetTmpName(ETmpFileCreationMode mode)
 #else
     if (mode == eTmpFileCreate) {
         ERR_POST_X(2, Warning << 
-                   "Temporary file cannot be auto-created on this platform,"
-                   " so return its name only");
+                   "Temporary file cannot be auto-created on this platform, "
+                   "return its name only");
     }
     TXChar* filename = NcbiSys_tempnam(0,0);
     if ( !filename ) {
@@ -4407,6 +4417,7 @@ static const SFileSystem s_FileSystem[] = {
     if (statvfs(path.c_str(), &st) != 0) {                     \
         NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
     }                                                          \
+    info->total_space  = (Uint8)st.f_bsize * st.f_blocks       \
     if (st.f_frsize) {                                         \
         info->free_space = (Uint8)st.f_frsize * st.f_bavail;   \
         info->block_size = (unsigned long)st.f_frsize;         \
@@ -4414,7 +4425,7 @@ static const SFileSystem s_FileSystem[] = {
         info->free_space = (Uint8)st.f_bsize * st.f_bavail;    \
         info->block_size = (unsigned long)st.f_bsize;          \
     }                                                          \
-    info->total_space  = (Uint8)st.f_bsize * st.f_blocks
+    info->used_space   = info->total_space - info->free_space
 
 
 #define GET_STATFS_INFO                                        \
@@ -4423,88 +4434,283 @@ static const SFileSystem s_FileSystem[] = {
     if (statfs(path.c_str(), &st) != 0) {                      \
         NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
     }                                                          \
-    info->free_space   = (Uint8)st.f_bsize * st.f_bavail;      \
     info->total_space  = (Uint8)st.f_bsize * st.f_blocks;      \
+    info->free_space   = (Uint8)st.f_bsize * st.f_bavail;      \
+    info->used_space   = info->total_space - info->free_space; \
     info->block_size   = (unsigned long)st.f_bsize
 
 
 
-#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
+#if defined(SUPPORT_PANFS)
+
+// Auxiliary function to exit from forked process with reporting errno
+// on errors to specified file descriptor 
+static void s_PipeExit(int status, int fd)
+{
+    int errcode = errno;
+    (void) ::write(fd, &errcode, sizeof(errcode));
+    ::close(fd);
+    ::_exit(status);
+}
+
+// Close pipe handle
+#define CLOSE_PIPE_END(fd) \
+    if (fd != -1) {        \
+        ::close(fd);       \
+        fd = -1;           \
+    }
 
 // Standard kernel calls cannot get correct information 
 // about PANFS mounts, so we use workaround for that.
-
+//
+// Use external method fist, if 'ncbi_panfs.so' exists and can be loaded.
+// Fall back to 'pan_df' utuility (if present).
+// Fall back to use standard OS info if none of above works.
+//
 void s_GetDiskSpace_PANFS(const string&               path,
                           CFileUtil::SFileSystemInfo* info)
 {
-    typedef Uint8 panfs_ui64_t;
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard guard_mutex(s_Mutex);
+
+    // TRUE if initialization has done for DLL/EXE methods
+    static bool s_InitDLL  = false;
+    static bool s_InitEXE  = false;
+    static bool s_ExistEXE = false;
     
-    struct panfs_extended_v1_t {
-        unsigned int  struct_version;
-        char          mount_from_name[256];
-        int           mount_from_name_len;
-        unsigned long volume_id;
-        unsigned long bladeset_id;
-        unsigned long bladeset_storageblade_count;
-        panfs_ui64_t  bladeset_total_bytes;
-        panfs_ui64_t  bladeset_free_bytes;
-        panfs_ui64_t  bladeset_unreserved_total_bytes;
-        panfs_ui64_t  bladeset_unreserved_free_bytes;
-        panfs_ui64_t  bladeset_recon_spare_total_bytes;
-        panfs_ui64_t  volume_live_bytes_used;
-        panfs_ui64_t  volume_snapshot_bytes_used;
-        panfs_ui64_t  volume_hard_quota_bytes;
-        panfs_ui64_t  volume_soft_quota_bytes;
-        unsigned long filler[16];
-    };    
-    typedef struct panfs_extended_v1_t panfs_extended_t;
-    
-    // An ioctl used to collect extended information about a mountpoint
-    #define PANFS_IOCTL    ((unsigned int)0x24)
-    #define PANFS_EXTENDED _IOWR(PANFS_IOCTL,80,panfs_extended_t)
-    
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd == -1) {
-        NCBI_THROW(CFileErrnoException, eFileSystemInfo,
-                   string("Cannot open ") + path);
-    }
-    panfs_extended_t panfs;
-    int ret = ioctl(fd, PANFS_EXTENDED, &panfs);
-    close(fd);
-    if ( ret ) {
-        NCBI_THROW(CFileErrnoException, eFileSystemInfo,
-                   string("Cannot get extended information for PANFS mount ") +
-                   path);
-    }
-#if 0
-    // Only version 1 is now supported
-    if (panfs.struct_version != 1) {
-        NCBI_THROW(CFileErrnoException, eFileSystemInfo,
-                   string("Unsupported version of PANFS extended information ") +
-                   NStr::NumericToString(panfs.struct_version));
-    }
-#endif
-    // Compute disk space
-    if (panfs.volume_hard_quota_bytes > 0) {
-        if (panfs.volume_hard_quota_bytes >= panfs.volume_live_bytes_used) {
-            info->free_space = 
-                min(panfs.bladeset_unreserved_free_bytes,
-                    panfs.volume_hard_quota_bytes - panfs.volume_live_bytes_used);
+#if defined(ALLOW_USE_NCBI_PANFS_DLL)
+
+    static FGetDiskSpace_PANFS f_GetDiskSpace = NULL;
+   
+    if ( !s_InitDLL ) {
+        s_InitDLL = true;
+
+        #define STRINGIFY(x) #x
+        #define TOSTRING(x) STRINGIFY(x)
+        const char* kNcbiPanfsDLL = 
+            "/opt/ncbi/" TOSTRING(NCBI_PLATFORM_BITS) "/lib/ncbi_panfs.so";
+        
+        // Check if 'ncbi_panfs.so' exists and can be loaded
+        if ( CFile(kNcbiPanfsDLL).Exists() ) {
+            void* handle = dlopen(kNcbiPanfsDLL, RTLD_NOW | RTLD_GLOBAL);
+            const char* err = NULL;
+            if ( handle ) {
+                f_GetDiskSpace = (FGetDiskSpace_PANFS)
+                    dlsym(handle, "ncbi_GetDiskSpace_PANFS");
+                if ( !f_GetDiskSpace ) {
+                    err = "Undefined symbol";
+                }
+            } else {
+                err = "Cannot open shared object file";
+            }
+
+            if ( err ) {
+                char* dlerr = dlerror();
+                string msg = "Trying to get ncbi_GetDiskSpace_PANFS() function from '" +
+                             string(kNcbiPanfsDLL) + "': " + err;
+                if ( dlerr ) {
+                    msg = msg + " (" + dlerr + ")";
+                }
+                LOG_ERROR(msg);
+                CNcbiError::Set(CNcbiError::eUnknown, msg);
+                if ( handle) {
+                    dlclose(handle);
+                }
+            }
         }
-        else {
-            info->free_space = panfs.volume_hard_quota_bytes - panfs.volume_live_bytes_used;
-        }
-        info->total_space = min(panfs.bladeset_unreserved_free_bytes,
-                                panfs.volume_hard_quota_bytes);
     }
-    else {
-        info->free_space = panfs.bladeset_unreserved_free_bytes;
-        info->total_space = panfs.bladeset_unreserved_total_bytes;
-    }     
+   
+    if ( f_GetDiskSpace ) {
+        const char* err_msg = NULL;
+        bool do_throw = false;
+        
+        int res = f_GetDiskSpace(path.c_str(),
+                                 &info->total_space,
+                                 &info->free_space,
+                                 &err_msg);
+        switch ( res ) {
+
+        case NCBI_PANFS_OK:
+            info->used_space = info->total_space - info->free_space;
+            // All done, return
+            return;
+
+        case NCBI_PANFS_THROW:
+             do_throw = true;
+             // fall through
+             
+        // Same processing for all errors codes, but could be detailed
+        case NCBI_PANFS_ERR:
+        case NCBI_PANFS_ERR_OPEN:
+        case NCBI_PANFS_ERR_QUERY:
+        case NCBI_PANFS_ERR_VERSION:
+        default:
+            {
+                string msg = "Cannot get information for PANFS mount '"+ path + "'";
+                if ( err_msg ) {
+                    msg += string(": ") + err_msg;
+                }
+
+                if ( do_throw ) {
+                    NCBI_THROW(CFileException, eFileSystemInfo, msg);
+                }
+
+                LOG_ERROR(msg);
+            }
+        }
+    }
+#endif // defined(ALLOW_USE_NCBI_PANFS_DLL)
+
+
+    // Cannot use DLL, so -- fall through to use pan_df.
+
+    // -----------------------------------------
+    // Call 'pan_df' utility and parse results
+    // -----------------------------------------
+
+    const char* kPanDF = "/opt/panfs/bin/pan_df";
+
+    if ( !s_InitEXE ) {
+        s_InitEXE = true;
+        // Check if 'pan_df' exists
+        if ( CFile(kPanDF).Exists() ) {
+            s_ExistEXE = true;
+        }
+    }
+    
+    if ( s_ExistEXE ) {
+        // Child process I/O handles
+        int status_pipe[2] = {-1,-1};
+        int pipe_fd[2]     = {-1,-1};
+        
+        try {
+            ::fflush(NULL);
+            // Create pipe for child's stdout
+            if (::pipe(pipe_fd) < 0) {
+                throw "failed to create pipe for stdout";
+            }
+            // Create temporary pipe to get status of execution
+            // of the child process
+            if (::pipe(status_pipe) < 0) {
+                throw "failed to create status pipe";
+            }
+            if (::fcntl(status_pipe[1], F_SETFD, 
+                ::fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC) < 0) {
+                throw "failed to set close-on-exec mode for status pipe";
+            }
+
+            // Fork child process
+            pid_t pid = ::fork();
+            if (pid == -1) {
+                throw "fork() failed";
+            }
+            if (pid == 0) {
+                // -- Now we are in the child process
+
+                // Close unused pipe handle
+                ::close(status_pipe[0]);
+                // stdin/stderr -- don't use
+                ::freopen("/dev/null", "r", stdin);
+                ::freopen("/dev/null", "a", stderr);
+                // stdout
+                if (pipe_fd[1] != STDOUT_FILENO) {
+                    if (::dup2(pipe_fd[1], STDOUT_FILENO) < 0) {
+                        s_PipeExit(-1, status_pipe[1]);
+                    }
+                    ::close(pipe_fd[1]);
+                }
+                ::close(pipe_fd[0]);
+                int status = ::execl(kPanDF, kPanDF, "--block-size=1",
+                                     path.c_str(), NULL);
+                s_PipeExit(status, status_pipe[1]);
+
+                // -- End of child process
+            }
+        
+            // Close unused pipes' ends
+            CLOSE_PIPE_END(pipe_fd[1]);
+            CLOSE_PIPE_END(status_pipe[1]);
+
+            // Check status pipe.
+            // If it have some data, this is an errno from the child process.
+            // If EOF in status pipe, that child executed successful.
+            // Retry if either blocked or interrupted
+
+            // Try to read errno from forked process
+            ssize_t n;
+            int errcode;
+            while ((n = read(status_pipe[0], &errcode, sizeof(errcode))) < 0) {
+                if (errno != EINTR)
+                    break;
+            }
+            CLOSE_PIPE_END(status_pipe[0]);
+            if (n > 0) {
+                // Child could not run -- reap it and exit with error
+                ::waitpid(pid, 0, 0);
+                errno = (size_t) n >= sizeof(errcode) ? errcode : 0;
+                throw "failed to run pan_df";
+            }
+
+            // Read data from pipe
+            char buf[1024];
+            while ((n = read(pipe_fd[0], &buf, sizeof(buf)-1)) < 0) {
+                if (errno != EINTR)
+                    break;
+            }
+            CLOSE_PIPE_END(pipe_fd[0]);
+            if ( !n ) {
+                throw "error reading from pipe";
+            }
+            buf[n] = '\0';
+            
+            // Parse resilt
+            const char* kParseError = "results parse error";
+            const char* data = strchr(buf, '\n');
+            if ( !data ) {
+                throw kParseError;
+            }
+            vector<string> tokens;
+            NStr::Tokenize(data + 1, " ", tokens, NStr::fSplit_MergeDelims);
+            if ( tokens.size() != 6 ) {
+                throw kParseError;
+            }
+            Uint8 x_total = 1, x_free = 2, x_used = 3; // dummy values
+            try {
+                x_total = NStr::StringToUInt8(tokens[1]);
+                x_free  = NStr::StringToUInt8(tokens[2]);
+                x_used  = NStr::StringToUInt8(tokens[3]);
+            } catch (CException& e) {
+                throw kParseError;
+            }
+            // Check
+            if ( x_free + x_used != x_total ) {
+                throw kParseError;
+            }
+            info->total_space = x_total;
+            info->free_space  = x_free;
+            info->used_space  = x_used;
+            return;
+        }
+        catch (const char* what) {
+            CLOSE_PIPE_END(pipe_fd[0]);
+            CLOSE_PIPE_END(pipe_fd[1]);
+            CLOSE_PIPE_END(status_pipe[0]);
+            CLOSE_PIPE_END(status_pipe[1]);
+            ERR_POST_X_ONCE(3, Warning << 
+                           "Failed to use 'pan_df' : " << what);
+        }           
+    } // if ( s_ExistEXE ) 
+    
+    // Failed
+    ERR_POST_X_ONCE(3, Warning << 
+                    "Cannot use any external method to get information about "
+                    "PANFS mount, fall back to use standard OS info "
+                    "(NOTE: it can be incorrect)");
     return;
 }
 
-#endif // defined(NCBI_OS_UNIX)
+#endif // defined(SUPPORT_PANFS)
+
 
 
 void s_GetFileSystemInfo(const string&               path,
@@ -4723,7 +4929,7 @@ void s_GetFileSystemInfo(const string&               path,
         }
     }
 
-#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
+#if defined(SUPPORT_PANFS)
     // Standard kernel calls cannot get correct information 
     // about PANFS mounts, so we use workaround for that.
     if ((info->fs_type == CFileUtil::ePANFS) && (flags & fFSI_DiskSpace)) {
@@ -4745,6 +4951,14 @@ Uint8 CFileUtil::GetFreeDiskSpace(const string& path)
     SFileSystemInfo info;
     s_GetFileSystemInfo(path, &info, fFSI_DiskSpace);
     return info.free_space;
+}
+
+
+Uint8 CFileUtil::GetUsedDiskSpace(const string& path)
+{
+    SFileSystemInfo info;
+    s_GetFileSystemInfo(path, &info, fFSI_DiskSpace);
+    return info.used_space;
 }
 
 

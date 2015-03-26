@@ -142,6 +142,7 @@ public:
         eMemoryMap,
         eRelativePath,
         eNotExists,
+        eFileSystemInfo,
         eFileIO,
         eTmpFile
     };
@@ -2049,6 +2050,7 @@ public:
         EFileSystemType  fs_type;       ///< Type of filesystem
         Uint8            total_space;   ///< Total disk space in bytes
         Uint8            free_space;    ///< Free disk space in bytes
+        Uint8            used_space;    ///< Used disk space in bytes
         unsigned long    block_size;    ///< Allocation unit (block) size
         unsigned long    filename_max;  ///< Maximum filename length
                                         ///< (part between slashes)
@@ -2075,8 +2077,22 @@ public:
     /// @return
     ///   The amount of free space in bytes.
     /// @sa
-    ///   GetFileSystemInfo, GetTotalDiskSpace
+    ///   GetFileSystemInfo, GetTotalDiskSpace, GetUsedDiskSpace
     static Uint8 GetFreeDiskSpace(const string& path);
+
+    /// Get used disk space information.
+    ///
+    /// Get information for the user associated with the calling thread only.
+    /// If per-user quotas are in use, then the returned values may be less
+    /// than the actual number of free bytes available on disk.
+    /// @param path
+    ///   String that specifies the file system for which to return
+    ///   the number of used bytes on disk.
+    /// @return
+    ///   The amount of used space in bytes.
+    /// @sa
+    ///   GetFileSystemInfo, GetTotalDiskSpace, GetFreeDiskSpace
+    static Uint8 GetUsedDiskSpace(const string& path);
 
     /// Get total disk space information.
     ///
@@ -2089,7 +2105,7 @@ public:
     /// @return
     ///   The amount of total disk space in bytes.
     /// @sa
-    ///   GetFileSystemInfo, GetFreeDiskSpace
+    ///   GetFileSystemInfo, GetFreeDiskSpace, GetUsedDiskSpace
     static Uint8 GetTotalDiskSpace(const string& path);
 };
 
