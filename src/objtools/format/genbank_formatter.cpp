@@ -1477,6 +1477,7 @@ void CGenbankFormatter::x_SmartWrapQuals(const CFeatureItemBase& feat, const CFl
 
 		switch ((*it)->GetStyle()) {
 		case CFormatQual::eEmpty:
+			prefix1 += '/';
 			value = qual;
 			break;
 		case CFormatQual::eQuoted:
