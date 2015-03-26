@@ -164,7 +164,7 @@ CSeqDBPerfApp::x_ScanDatabase()
             }
             for (int i = 0; i < seqlen; i++) {
                 char base = buffer[i];
-                base = base;    // dummy statement
+                (void)base;    // pacify compiler warnings
             }
             if (m_DbIsProtein || kScanUncompressed) {
                 m_DbHandles[thread_id]->RetAmbigSeq(&buffer);
