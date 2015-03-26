@@ -189,6 +189,27 @@ public:
         eFilteredRange
     };
 
+    /// File type for which mmap strategy may be set.
+    enum EMmapFileTypes {
+        /// Index files (name ends with ".pin" or ".nin").
+        eMmap_IndexFile,
+
+        /// Sequence files (name ends with ".psq" or ".nsq").
+        eMmap_SequenceFile
+    };
+
+    /// Permitted mmap strategies.
+    enum EMmapStrategies {
+        /// Normal, no special behavior (should undo next two options).
+        eMmap_Normal,
+
+        /// Expect sequential page references.
+        eMmap_Sequential,
+
+        /// Expect access in the near future.
+        eMmap_WillNeed
+    };
+
     /// Sequence type accepted and returned for OID indices.
     typedef int TOID;
 
@@ -427,6 +448,17 @@ public:
     /// any gotten by the GetSequence() call, whether or not they have
     /// been returned by RetSequence().
     ~CSeqDB();
+
+    /// Sets mmap strategy to be used when mapping index or sequence files.
+    ///
+    /// This method sets internal flags of type EMemoryAdvise for a call to
+    /// MemoryAdvise in CRegionMap::MapMmap.
+    /// Note that these are only hints, the system may or may not
+    /// actually alter its behavior when mapping these files.
+    static void SetMmapStrategy(
+            EMmapFileTypes  filetype,
+            EMmapStrategies strategy
+    );
 
     /// Returns the default BLAST database search path
     /// configured for this local installation of BLAST

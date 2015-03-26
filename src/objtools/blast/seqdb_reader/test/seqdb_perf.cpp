@@ -32,7 +32,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -87,7 +87,7 @@ private:
     virtual void Init();
     /** @inheritDoc */
     virtual int Run();
-    
+
     typedef vector< CRef<CSeqDBExpert> > TDbHandles;
     /// Handle to BLAST database
     CRef<CSeqDBExpert> m_BlastDb;
@@ -112,7 +112,7 @@ private:
     int x_ScanDatabase();
 };
 
-void 
+void
 CSeqDBPerfApp::x_UpdateMemoryUsage(const int thread_id /* = 0 */)
 {
     SMemUsage mu;
@@ -121,7 +121,7 @@ CSeqDBPerfApp::x_UpdateMemoryUsage(const int thread_id /* = 0 */)
     }
 }
 
-void 
+void
 CSeqDBPerfApp::x_ReportMemUsage() const
 {
     SMemUsage total = std::accumulate(m_MemoryUsage.begin(),
@@ -144,7 +144,7 @@ CSeqDBPerfApp::x_ScanDatabase()
 
     #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
                          shared(oids2iterate) if(m_DbHandles.size() > 1)
-    { 
+    {
         int thread_id = 0;
 #ifdef _OPENMP
         thread_id = omp_get_thread_num();
@@ -177,8 +177,8 @@ CSeqDBPerfApp::x_ScanDatabase()
 
     sw.Stop();
     Uint8 bases = static_cast<Uint8>(num_letters / sw.Elapsed());
-    cout << "Scanning rate: " 
-         << NStr::NumericToString(bases, NStr::fWithCommas) 
+    cout << "Scanning rate: "
+         << NStr::NumericToString(bases, NStr::fWithCommas)
          << " bases/second" << endl;
     return 0;
 }
@@ -191,6 +191,16 @@ CSeqDBPerfApp::x_InitApplicationData()
     const CArgs& args = GetArgs();
     const CSeqDB::ESeqType kSeqType = ParseMoleculeTypeString(args["dbtype"].AsString());
     const string& kDbName(args["db"].AsString());
+
+    // To test the use of CSeqDB::SetMmapStrategy, uncomment one of the two
+    // pairs of statements below.
+
+//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_IndexFile, CSeqDB::eMmap_Sequential);
+//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_SequenceFile, CSeqDB::eMmap_Sequential);
+
+//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_IndexFile, CSeqDB::eMmap_WillNeed);
+//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_SequenceFile, CSeqDB::eMmap_WillNeed);
+
     m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
     m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
@@ -226,13 +236,13 @@ CSeqDBPerfApp::x_PrintBlastDatabaseInformation()
 
     // Print basic database information
     out << "Database: " << m_BlastDb->GetTitle() << endl
-        << "\t" << NStr::IntToString(m_BlastDb->GetNumSeqs(), kFlags) 
+        << "\t" << NStr::IntToString(m_BlastDb->GetNumSeqs(), kFlags)
         << " sequences; "
         << NStr::UInt8ToString(m_BlastDb->GetTotalLength(), kFlags)
         << " total " << kLetters << endl << endl
-        << "Date: " << m_BlastDb->GetDate() 
-        << "\tLongest sequence: " 
-        << NStr::IntToString(m_BlastDb->GetMaxLength(), kFlags) << " " 
+        << "Date: " << m_BlastDb->GetDate()
+        << "\tLongest sequence: "
+        << NStr::IntToString(m_BlastDb->GetMaxLength(), kFlags) << " "
         << kLetters << endl;
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -261,11 +271,11 @@ void CSeqDBPerfApp::Init()
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                   "CSeqDB performance testing client");
 
     arg_desc->SetCurrentGroup("BLAST database options");
-    arg_desc->AddDefaultKey("db", "dbname", "BLAST database name", 
+    arg_desc->AddDefaultKey("db", "dbname", "BLAST database name",
                             CArgDescriptions::eString, "nr");
 
     arg_desc->AddDefaultKey("dbtype", "molecule_type",
@@ -275,21 +285,21 @@ void CSeqDBPerfApp::Init()
                                         "nucl", "prot", "guess"));
 
     arg_desc->SetCurrentGroup("Retrieval options");
-    arg_desc->AddFlag("scan_uncompressed", 
+    arg_desc->AddFlag("scan_uncompressed",
                       "Do a full database scan of uncompressed sequence data", true);
-    arg_desc->AddFlag("scan_compressed", 
+    arg_desc->AddFlag("scan_compressed",
                       "Do a full database scan of compressed sequence data", true);
-    arg_desc->AddFlag("get_metadata", 
+    arg_desc->AddFlag("get_metadata",
                       "Retrieve BLAST database metadata", true);
-    
-    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes, 
-                            "scan_uncompressed");
-    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes, 
-                            "get_metadata");
-    arg_desc->SetDependency("scan_uncompressed", CArgDescriptions::eExcludes, 
-                            "get_metadata"); 
 
-    arg_desc->AddDefaultKey("num_threads", "number", 
+    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes,
+                            "scan_uncompressed");
+    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes,
+                            "get_metadata");
+    arg_desc->SetDependency("scan_uncompressed", CArgDescriptions::eExcludes,
+                            "get_metadata");
+
+    arg_desc->AddDefaultKey("num_threads", "number",
                             "Number of threads to use (requires OpenMP)",
                             CArgDescriptions::eInteger, "1");
     arg_desc->SetConstraint("num_threads", new CArgAllow_Integers(0, kMax_Int));
@@ -297,7 +307,7 @@ void CSeqDBPerfApp::Init()
     //arg_desc->SetDependency("one_db_handle", CArgDescriptions::eRequires, "num_threads");
 
     arg_desc->SetCurrentGroup("Output configuration options");
-    arg_desc->AddDefaultKey("out", "output_file", "Output file name", 
+    arg_desc->AddDefaultKey("out", "output_file", "Output file name",
                             CArgDescriptions::eOutputFile, "-");
 
     SetupArgDescriptions(arg_desc.release());

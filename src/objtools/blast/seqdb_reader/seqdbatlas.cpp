@@ -1141,6 +1141,10 @@ void CRegionMap::Show()
     }
 }
 
+EMemoryAdvise CRegionMap::sm_MmapStrategy_Index    = eMADV_Normal;
+
+EMemoryAdvise CRegionMap::sm_MmapStrategy_Sequence = eMADV_Normal;
+
 CRegionMap::CRegionMap(const string * fname, int fid, TIndx begin, TIndx end)
     : m_Data     (0),
       m_MemFile  (0),
@@ -1201,16 +1205,27 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
             }
 
             m_Data = (const char*) m_MemFile->Map(m_Begin, m_End - m_Begin);
-/*
+
             string last2 = m_Fname->substr(m_Fname->length() - 2);
-            if (last2 == "in"  ||  last2 == "sq") {
+            EMemoryAdvise strategy = eMADV_Normal;
+            if (last2 == "in") {
+                strategy = sm_MmapStrategy_Index;
+            } else if (last2 == "sq") {
+                strategy = sm_MmapStrategy_Sequence;
+            }
+
+            // If "normal" is set, don't call MemoryAdvise at all.  We cannot
+            // guarantee that a call to MemoryAdvise with eMADV_Normal gives
+            // identical behavior to not calling MemoryAdvise in the first
+            // place, even if eMADV_Normal is the default.
+            if (strategy != eMADV_Normal) {
                 MemoryAdvise(
                         (void*) m_Data,
                         (unsigned long) (m_End - m_Begin),
-                        eMADV_WillNeed
+                        strategy
                 );
             }
-*/
+
         }
         catch(std::bad_alloc&) {
             expt = "\nstd::bad_alloc.";

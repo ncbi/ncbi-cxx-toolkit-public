@@ -324,6 +324,28 @@ CSeqDB::CSeqDB()
     m_Impl->Verify();
 }
 
+void CSeqDB::SetMmapStrategy(
+        EMmapFileTypes  filetype,
+        EMmapStrategies strategy
+)
+{
+    // If this construct looks odd, it's a Perl-ish technique,
+    // chaining the ternary ?: operator.
+    // Read it as
+    // thing = (if this) then that
+    //         else (if this) then that
+    //         else that
+    EMemoryAdvise st =
+            (strategy == eMmap_Sequential) ? eMADV_Sequential
+            : (strategy == eMmap_WillNeed) ? eMADV_WillNeed
+            : eMADV_Normal;
+    if (filetype == eMmap_IndexFile) {
+        CRegionMap::SetMmapStrategy_Index(st);
+    } else if (filetype == eMmap_SequenceFile) {
+        CRegionMap::SetMmapStrategy_Sequence(st);
+    }
+}
+
 int CSeqDB::GetSeqLength(int oid) const
 {
     m_Impl->Verify();
