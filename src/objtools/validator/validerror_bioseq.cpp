@@ -5061,7 +5061,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         bool is_virtual = (m_CurrentHandle.GetInst_Repr() == CSeq_inst::eRepr_virtual);
         TSeqPos len = m_CurrentHandle.IsSetInst_Length() ? m_CurrentHandle.GetInst_Length() : 0;
 
-        bool is_nc = false, is_emb = false, is_refseq = false;
+        bool is_nc = false, is_emb = false, is_refseq = false, non_pseudo_16S_rRNA = false;
         FOR_EACH_SEQID_ON_BIOSEQ (seq_it, seq) {
             if ((*seq_it)->IsEmbl()) {
                 is_emb = true;
@@ -5191,6 +5191,16 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         }
                     }
 
+                } else if (fi->GetFeatSubtype() == CSeqFeatData::eSubtype_rRNA) {
+                    if (! feat.IsSetPseudo() || ! feat.GetPseudo()) {
+                        const CRNA_ref& rref = feat.GetData().GetRna();
+                        if (rref.CanGetExt() && rref.GetExt().IsName()) {
+                            const string& rna_name = rref.GetExt().GetName();
+                            if (NStr::EqualNocase(rna_name, "16S ribosomal RNA")) {
+                                non_pseudo_16S_rRNA = true;
+                            }
+                        }
+                    }
                 }
 
                 m_FeatValidator.ValidateSeqFeatContext(feat, seq);
@@ -5309,6 +5319,42 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
                 }
             }  // end of for loop
+
+            if (non_pseudo_16S_rRNA && m_CurrentHandle) {
+                CSeqdesc_CI src_desc(m_CurrentHandle, CSeqdesc::e_Source);
+                if ( src_desc ) {
+                    const CBioSource& biosrc = src_desc->GetSource();
+                    int genome = 0;
+                    bool isEukaryote = false;
+                    bool isMicrosporidia = false;
+                    if ( biosrc.IsSetGenome() ) {
+                        genome = biosrc.GetGenome();
+                    }
+                    if ( biosrc.IsSetLineage() ) {
+                        string lineage = biosrc.GetLineage();
+                        if (NStr::StartsWith(lineage, "Eukaryota; ", NStr::eNocase)) {
+                            isEukaryote = true;
+                            if (NStr::StartsWith(lineage, "Eukaryota; Fungi; Microsporidia; ", NStr::eNocase)) {
+                                isMicrosporidia = true;
+                            }
+                        }
+                    }
+                    if (isEukaryote && (! isMicrosporidia) &&
+                        genome != CBioSource::eGenome_mitochondrion &&
+                        genome != CBioSource::eGenome_chloroplast &&
+                        genome != CBioSource::eGenome_chromoplast &&
+                        genome != CBioSource::eGenome_kinetoplast &&
+                        genome != CBioSource::eGenome_plastid &&
+                        genome != CBioSource::eGenome_apicoplast &&
+                        genome != CBioSource::eGenome_leucoplast &&
+                        genome != CBioSource::eGenome_proplastid &&
+                        genome != CBioSource::eGenome_chromatophore) {
+                        PostErr(eDiag_Error, eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
+                            "Improper 16S ribosomal RNA",
+                            seq);
+                    }
+                }
+            }
         } // end of branch where features are present
 
         if (mixedcdsgencodes) {
