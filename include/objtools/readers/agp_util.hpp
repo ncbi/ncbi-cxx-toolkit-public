@@ -645,7 +645,7 @@ public:
     };
 
     //static const char* GetMsgEx(int code);
-    static string GetPrintableCode(int code); // Returns a string like e01 w12
+    static string GetPrintableCode(int code, bool strict=false); // Returns a string like e01 w12
     static void PrintAllMessages(CNcbiOstream& out);
 
 
@@ -664,6 +664,28 @@ public:
     static void PrintLine   (CNcbiOstream& ostr,
         const string& filename, int linenum, const string& content);
     static void PrintLineXml(CNcbiOstream& ostr, const string& filename, int linenum, const string& content, bool two_lines_involved);
+
+    // Most warnings are treated as errors in the strict mode.
+    bool m_strict;
+    // A bit mask for warnings that are still warnings in the strict mode.
+    // The lowest bit stands for W_First (aka w31, W_GapObjBegin),
+    // the highest, as of 2015/03/25  - W_Last, w66, W_GnlId.
+    static const Int8 s_StrictModeWarningMask =
+      (0x1l << (W_ExtraTab                    -W_First)) |
+      (0x1l << (W_GapLineMissingCol9          -W_First)) |
+      (0x1l << (W_NoEolAtEof                  -W_First)) |
+      (0x1l << (W_GapLineIgnoredCol9          -W_First)) |
+      (0x1l << (W_ObjOrderNotNumerical        -W_First)) |
+      (0x1l << (W_GapSizeNot100               -W_First)) |
+      (0x1l << (W_ShortGap                    -W_First)) |
+      (0x1l << (W_CommentsAfterStart          -W_First)) |
+      (0x1l << (W_AGPVersionCommentInvalid    -W_First)) |
+      (0x1l << (W_AGPVersionCommentUnnecessary-W_First)) ;
+    static inline bool IsStrictModeWarning(int code)
+    {
+        return s_StrictModeWarningMask & (0x1l << (code-W_First));
+    }
+    const char* ErrorWarningOrNoteEx(int code);
 
     /// Print the message by code, preceded by "ERROR" or "WARNING".
     /// See also: CAgpErr::FormatMessage().

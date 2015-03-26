@@ -1189,12 +1189,13 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         "#\tcomponents with incorrect taxids\n";
 }
 
-string CAgpErrEx::GetPrintableCode(int code)
+string CAgpErrEx::GetPrintableCode(int code, bool strict)
 {
     string res =
         (code<E_Last) ? "e" :
         (code<W_Last) ? "w" :
         (code<G_Last) ? "g" : "x";
+    if( res[0]=='w' && strict && !IsStrictModeWarning(code) ) res = "e";
     if(code<10) res += "0";
     res += NStr::IntToString(code);
     return res;
@@ -1259,18 +1260,18 @@ void CAgpErrEx::PrintLineXml(CNcbiOstream& ostr,
 void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
         const string& details)
 {
-    ostr<< "\t" << ErrorWarningOrNote(code)
+    ostr<< "\t" << ErrorWarningOrNoteEx(code)
         << (code <=E_LastToSkipLine ? ", line skipped" : "")
         << ": " << FormatMessage( GetMsg(code), details ) << "\n";
 }
 
 void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo)
 {
-    ostr<< " <message severity=\"" << ErrorWarningOrNote(code) << "\"";
+    ostr<< " <message severity=\"" << ErrorWarningOrNoteEx(code) << "\"";
     if(code <=E_LastToSkipLine) ostr << " line_skipped=\"1\"";
     ostr<<">\n";
 
-    ostr << " <code>"     << GetPrintableCode(code) << "</code>\n";
+    ostr << " <code>"     << GetPrintableCode(code, m_strict) << "</code>\n";
     if(appliesTo & CAgpErr::fAtPpLine  ) ostr << " <line_num>" << m_line_num_pp    << "</line_num>\n";
     if(appliesTo & CAgpErr::fAtPrevLine) ostr << " <line_num>" << m_line_num_prev  << "</line_num>\n";
     if(appliesTo & CAgpErr::fAtThisLine) ostr << " <line_num>current</line_num>\n";
@@ -1285,6 +1286,7 @@ void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& deta
 //// class CAgpErrEx - constructor
 CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
     m_use_xml(use_xml),
+    m_strict(false),
     m_messages( new CNcbiOstrstream() ),
     m_out(out)
 {
@@ -1342,6 +1344,14 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
 
 
 //// class CAgpErrEx - non-static functions
+const char* CAgpErrEx::ErrorWarningOrNoteEx(int code)
+{
+    const char* t = ErrorWarningOrNote(code);
+    //                          (s_StrictModeWarningMask & (0x1l << (code-W_First)))==0
+    if(m_strict && t[0]=='W' && !IsStrictModeWarning(code) ) t = "ERROR";
+    return t;
+}
+
 void CAgpErrEx::ResetTotals()
 {
     memset(m_MsgCount, 0, sizeof(m_MsgCount));
@@ -1527,12 +1537,20 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
 int CAgpErrEx::CountTotals(int from, int to)
 {
     int count=0;
+
+    // filtering by s_StrictModeWarningMask
+    bool strictModeErrors  =false;
+    bool strictModeWarningsOnly=false;
+
     if(to==E_First) {
         //// One argument: count errors/warnings/genbank errors/given type
-        if     (from==E_Last) { from=E_First; to=E_Last; }
+        if     (from==E_Last) { from=E_First; to=E_Last;
+            strictModeErrors=m_strict; // usual errors + an extra loop for warnings turned into errors
+        }
         else if(from==W_Last) { from=W_First; to=W_Last;
             // out of range warning
             count = m_MsgCount[G_NsWithinCompSpan];
+            strictModeWarningsOnly=m_strict; // filter within the general loop
         }
         else if(from==G_Last) {
             from=G_First; to=G_Last;
@@ -1544,7 +1562,12 @@ int CAgpErrEx::CountTotals(int from, int to)
     }
 
     for(int i=from; i<to; i++) {
-        count += m_MsgCount[i];
+        if( !strictModeWarningsOnly || IsStrictModeWarning(i) ) count += m_MsgCount[i];
+    }
+    if(strictModeErrors) {
+        for(int i=W_First; i<W_Last; i++) {
+            if( !IsStrictModeWarning(i) ) count += m_MsgCount[i];
+        }
     }
     return count;
 }
@@ -1566,7 +1589,7 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
         for(int i=from; i<to; i++) {
             if( m_MsgCount[i] ) {
                 ostr << "<msg_summary>\n";
-                ostr << " <code>" << GetPrintableCode(i)            << "</code>\n";
+                ostr << " <code>" << GetPrintableCode(i, m_strict)  << "</code>\n";
                 ostr << " <text>" << NStr::XmlEncode(GetMsg(i))     << "</text>\n";
                 ostr << " <cnt>"  << m_MsgCount[i]                  << "</cnt>\n";
                 ostr << "</msg_summary>\n";
@@ -1580,7 +1603,7 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
         for(int i=from; i<to; i++) {
             if( m_MsgCount[i] ) {
                 ostr<< setw(7) << m_MsgCount[i] << "  "
-                        << GetPrintableCode(i) << "  "
+                        << GetPrintableCode(i, m_strict) << "  "
                         << GetMsg(i) << "\n";
             }
             // ouside of previous "if" because one hint may apply to one or more of several consequitive warnings
