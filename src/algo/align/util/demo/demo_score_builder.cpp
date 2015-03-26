@@ -114,6 +114,7 @@ int CDemoApplication::Run(void)
              << identities << " / " << mismatches << endl;
      }}
 
+    ostr << "tiebreaker: " << sb.ComputeTieBreaker(align) << endl;
 
     return 0;
 }

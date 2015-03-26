@@ -130,6 +130,9 @@ public:
 
     string GetTraceback(CScope& scope, const CSeq_align& align,
                         CSeq_align::TDim row);
+    
+    int ComputeTieBreaker(const CSeq_align& align);
+    void AddTieBreaker(CSeq_align& align);
 
     /// @}
 

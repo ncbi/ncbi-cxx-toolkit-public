@@ -44,8 +44,12 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Score_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 
 #include <util/sequtil/sequtil_manip.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -54,6 +58,9 @@
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/aln_generators.hpp>
+
+#include <util/checksum.hpp>
+#include <sstream>
 
 
 BEGIN_NCBI_SCOPE
@@ -822,5 +829,78 @@ string CScoreBuilder::GetTraceback(CScope& scope, const CSeq_align& align,
     pair<string,string> traceback_strings = s_ComputeTraceback(scope, align);
     return row == 0 ? traceback_strings.first : traceback_strings.second;
 }
+
+
+
+// clear out all of the parts of a seq-align
+//  that might mess with the CRC but don't effect 
+//  the important parts of the alignment
+void s_CleanSeqAlign(CSeq_align& align)
+{
+
+    // These seg specific parts are probably incomplete
+    // but denseg, disc, and spliced ought to handle 99.9%
+    if (align.CanGetSegs()) { 
+        if (align.GetSegs().IsDense_seg()) {
+            align.SetSegs().SetDenseg().SetScores().clear();
+            // ...
+        }
+        else if (align.GetSegs().IsDisc()) {
+            NON_CONST_ITERATE(CSeq_align_set::Tdata, align_iter, 
+                align.SetSegs().SetDisc().Set()) {
+                s_CleanSeqAlign(**align_iter);
+            }
+        }
+        else if (align.GetSegs().IsSpliced()) {
+            NON_CONST_ITERATE(CSpliced_seg::TExons, exon_iter, 
+                align.SetSegs().SetSpliced().SetExons()) {
+                (*exon_iter)->SetScores().Set().clear();
+            }
+        }
+        else if (align.GetSegs().IsSparse()) {
+            align.SetSegs().SetSparse().SetRow_scores().clear();
+            // ...
+        }  
+        else if (align.GetSegs().IsStd()) {
+            NON_CONST_ITERATE(CSeq_align::C_Segs::TStd, std_iter, 
+                align.SetSegs().SetStd()) {
+                (*std_iter)->SetScores().clear();
+            }
+        }
+    }
+
+
+    align.SetScore().clear();
+    align.SetId().clear();
+    align.SetBounds().clear();
+    align.SetExt().clear();
+}
+
+int CScoreBuilder::ComputeTieBreaker(const CSeq_align& align) 
+{
+    CChecksum checksum;
+    
+    CSeq_align clean;
+    clean.Assign(align);
+    s_CleanSeqAlign(clean);
+
+    stringstream cleanStr;
+    cleanStr << MSerial_AsnText << clean;
+
+    checksum.AddLine(cleanStr.str());
+
+    int result = 0;
+    Uint4* result_ptr = (Uint4*)&result;
+    *result_ptr = checksum.GetChecksum(); 
+
+    return result;
+}
+
+void CScoreBuilder::AddTieBreaker(CSeq_align& align) 
+{
+    int tiebreaker = ComputeTieBreaker(align);
+    align.SetNamedScore("tiebreaker", tiebreaker);
+}
+
 
 END_NCBI_SCOPE
