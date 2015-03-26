@@ -208,20 +208,21 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
     if ( !m_Writer )
         return CT_EOF;
 
-    ERW_Result result;
     size_t n_written;
     size_t n_towrite = (size_t)(pbase() ? pptr() - pbase() : 0);
 
+    ERW_Result result;
     if ( n_towrite ) {
         // send buffer
         do {
+            n_written = 0;
             RWSTREAMBUF_HANDLE_EXCEPTIONS(
                 result = m_Writer->Write(pbase(), n_towrite, &n_written),
                 5, "CRWStreambuf::overflow(): IWriter::Write()",
                 (n_written = 0, result = eRW_Error));
             _ASSERT(n_written <= n_towrite);
             if ( !n_written ) {
-                _ASSERT(result == eRW_Error);
+                _ASSERT(result != eRW_Success);
                 break;
             }
             // update buffer content (get rid of the data just sent)
@@ -244,6 +245,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         }
     } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // send char
+        n_written = 0;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
             m_Writer->Write(&b, 1, &n_written),
@@ -281,30 +283,19 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 
 streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 {
-    if ( !m_Writer )
-        return 0;
-
-    if (m == 0 && (m_Flags & fZeroLenWrite)) {
-        RWSTREAMBUF_HANDLE_EXCEPTIONS(
-                m_Writer->Write(buf, 0, 0), 13,
-                "CRWStreambuf::xsputn(): IWriter::Write()", ((void)0));
-    }
-
-    if (m <= 0)
+    if (!m_Writer  ||  m < 0)
         return 0;
 
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
-    size_t n = (size_t) m;
-
     ERW_Result result = eRW_Success;
+    size_t n = (size_t) m;
     size_t n_written = 0;
     size_t x_written;
     x_Err = false;
 
     do {
-        _ASSERT( n );
         if (pbase()) {
-            if (pbase() + n < epptr()) {
+            if (n  &&  pbase() + n < epptr()) {
                 // Would entirely fit into the buffer not causing an overflow
                 x_written = (size_t)(epptr() - pptr());
                 if (x_written > n)
@@ -322,6 +313,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
             size_t x_towrite = (size_t)(pptr() - pbase());
             if ( x_towrite ) {
+                x_written = 0;
                 RWSTREAMBUF_HANDLE_EXCEPTIONS(
                     result = m_Writer->Write(pbase(), x_towrite, &x_written),
                     8, "CRWStreambuf::xsputn(): IWriter::Write()",
@@ -339,13 +331,14 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             }
         }
 
-        _ASSERT(n  &&  result == eRW_Success);
+        x_written = 0;
+        _ASSERT(result == eRW_Success);
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
             result = m_Writer->Write(buf, n, &x_written),
             9, "CRWStreambuf::xsputn(): IWriter::Write()",
             x_written = 0);
         _ASSERT(x_written <= n);
-        if ( !x_written ) {
+        if (!x_written  &&  n) {
             x_Err    = true;
             x_ErrPos = x_GetPPos();
             break;
@@ -391,7 +384,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 #endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read from device
-    size_t n_read;
+    size_t n_read = 0;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
         m_Reader->Read(m_ReadBuf, m_BufSize, &n_read),
         10, "CRWStreambuf::underflow(): IReader::Read()",
@@ -417,26 +410,33 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     if (!(m_Flags & fUntie)  &&  x_sync() != 0)
         return 0;
 
-    if (m <= 0)
+    if (m < 0)
         return 0;
+
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
+    size_t n_read;
 
-    // first, read from the memory buffer
-    size_t n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
-    if (n_read > n)
-        n_read = n;
-    memcpy(buf, gptr(), n_read);
-    gbump((int) n_read);
-    buf += n_read;
-    n   -= n_read;
+    if ( n ) {
+        // first, read from the memory buffer
+        n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
+        if (n_read > n)
+            n_read = n;
+        memcpy(buf, gptr(), n_read);
+        gbump((int) n_read);
+        n   -= n_read;
+        if ( !n )
+            return (streamsize) n_read;
+        buf += n_read;
+    } else
+        n_read = 0;
 
-    while ( n ) {
+    do {
         // next, read directly from the device
         size_t     x_toread = n < m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
-        size_t       x_read;
+        size_t       x_read = 0;
 
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
             result = m_Reader->Read(x_buf, x_toread, &x_read),
@@ -464,7 +464,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             break;
         buf    += x_read;
         n      -= x_read;
-    }
+    } while ( n );
 
     return (streamsize) n_read;
 }
@@ -481,7 +481,7 @@ streamsize CRWStreambuf::showmanyc(void)
     if (!(m_Flags & fUntie))
         x_sync();
 
-    size_t count;
+    size_t count = 0;
     ERW_Result result;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
         result = m_Reader->PendingCount(&count),

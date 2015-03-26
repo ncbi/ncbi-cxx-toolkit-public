@@ -68,8 +68,7 @@ public:
         fOwnAll         = fOwnReader + fOwnWriter,
         fUntie          = 1 << 5,    ///< Do not flush before reading
         fLogExceptions  = 1 << 8,    ///< Exceptions logged only
-        fLeakExceptions = 1 << 9,    ///< Exceptions leaked out
-        fZeroLenWrite   = 1 << 10    ///< Call write even if length is zero
+        fLeakExceptions = 1 << 9     ///< Exceptions leaked out
     };
     typedef int TFlags;              ///< Bitwise OR of EFlags
 

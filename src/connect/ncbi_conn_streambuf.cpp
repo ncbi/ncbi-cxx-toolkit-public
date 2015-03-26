@@ -300,22 +300,18 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
 streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 {
-    if (!m_Conn)
+    if (!m_Conn  ||  m < 0)
         return 0;
 
-    if (m <= 0)
-        return 0;
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
-    size_t n = (size_t) m;
-
     m_Status = eIO_Success;
+    size_t n = (size_t) m;
     size_t n_written = 0;
     size_t x_written;
 
     do {
-        _ASSERT(n);
         if (pbase()) {
-            if (pbase() + n < epptr()) {
+            if (n  &&  pbase() + n < epptr()) {
                 // Would entirely fit into the buffer not causing an overflow
                 x_written = (size_t)(epptr() - pptr());
                 if (x_written > n)
@@ -349,10 +345,10 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             }
         }
 
-        _ASSERT(n  &&  m_Status == eIO_Success);
+        _ASSERT(m_Status == eIO_Success);
         m_Status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePlain);
         _ASSERT(x_written <= n);
-        if (!x_written) {
+        if (!x_written  &&  n) {
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(7, x_Message("xsputn(): "
                                     " CONN_Write(direct) failed"));
@@ -427,21 +423,28 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     if (m_Tie  &&  x_sync() != 0)
         return 0;
 
-    if (m <= 0)
+    if (m < 0)
         return 0;
+
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
+    size_t n_read;
 
-    // first, read from the memory buffer
-    size_t n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
-    if (n_read > n)
-        n_read = n;
-    memcpy(buf, gptr(), n_read);
-    gbump(int(n_read));
-    buf += n_read;
-    n   -= n_read;
+    if (n) {
+        // first, read from the memory buffer
+        n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
+        if (n_read > n)
+            n_read = n;
+        memcpy(buf, gptr(), n_read);
+        gbump(int(n_read));
+        n   -= n_read;
+        if (!n)
+            return (streamsize) n_read;
+        buf += n_read;
+    } else
+        n_read = 0;
 
-    while (n) {
+    do {
         // next, read from the connection
         size_t     x_toread = n < m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < m_BufSize ? m_ReadBuf : buf;
@@ -451,8 +454,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                              &x_read, eIO_ReadPlain);
         _ASSERT(x_read <= x_toread);
         if (!x_read) {
-            _ASSERT(m_Status != eIO_Success);
-            if (m_Status != eIO_Closed)
+            if (m_Status != eIO_Success  &&  m_Status != eIO_Closed)
                 ERR_POST_X(10, x_Message("xsgetn():  CONN_Read() failed"));
             break;
         }
@@ -475,7 +477,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             break;
         buf    += x_read;
         n      -= x_read;
-    }
+    } while (n);
 
     return (streamsize) n_read;
 }
