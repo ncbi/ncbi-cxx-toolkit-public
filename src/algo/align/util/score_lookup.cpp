@@ -1519,6 +1519,31 @@ private:
     int m_Row;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+
+class CScore_TieBreaker : public CScoreLookup::IScore
+{
+public:
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "CRC of the strucural parts of the alignment";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+    
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        CScoreBuilder Builder;
+        return Builder.ComputeTieBreaker(align);
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+
 void CScoreLookup::x_Init()
 {
     m_Scores.insert
@@ -1769,6 +1794,11 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("min_indel_to_splice",
           CIRef<IScore>(new CScore_IndelToSplice())));
+    
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("tiebreaker",
+          CIRef<IScore>(new CScore_TieBreaker())));
 }
 
 
