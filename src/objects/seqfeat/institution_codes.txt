@@ -1998,6 +1998,7 @@ GMUG	s	Universitat Gottingen, Geologisches-Palaatologisches Museum
 GMUM	s	Institut fuer Palaeontologie und Geologisches Museum der Universitat
 GMUV	s	Geological Museum, University of Vienna
 GNA	s	Gannan Arboretum of Jiangxi
+GNE	c	Genentech
 GNHM	s	Goulandris Natural History Museum
 GNHNA	s	Gallery of Natural History and Native Art
 GNHS	s	Guildford Natural History Society
@@ -2827,6 +2828,7 @@ JBWM	s	J.B. Wallis Museum of Entomology
 JCB	s	St. Joseph's College
 JCE	s	Jiangxi College of Education, Biology Department
 JCM	c	Japan Collection of Microorganisms
+JCRB	c	Japanese Collection of Research Bioresources Cell Bank
 JCT	c	James Cook Townsville
 JE	s	Friedrich-Schiller-Universitaet Jena
 JEF	s	Indiana University Southeast, Biology Department
