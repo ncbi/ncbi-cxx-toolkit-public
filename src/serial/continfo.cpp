@@ -207,29 +207,22 @@ CContainerTypeInfo::GetMayContainType(TTypeInfo type) const
 void CContainerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
                                 ESerialRecursionMode how) const
 {
-    //SetDefault(dst); // clear destination container
     if (how == eShallowChildless) {
+        SetDefault(dst); // clear destination container
         return;
     }
     CIterator idst;
     CConstIterator isrc;
     bool old_element = InitIterator(idst,dst);
     if ( InitIterator(isrc, src) ) {
+        TTypeInfo elementType = GetElementType();
         do {
-            if (GetElementType()->GetTypeFamily() == eTypeFamilyPointer) {
-                const CPointerTypeInfo* pointerType =
-                    CTypeConverter<CPointerTypeInfo>::SafeCast(GetElementType());
-                _ASSERT(pointerType->GetObjectPointer(GetElementPtr(isrc)));
-                if ( !pointerType->GetObjectPointer(GetElementPtr(isrc)) ) {
-                    ERR_POST_X(2, Warning << " NULL pointer found in container: skipping");
-                    continue;
-                }
-            }
+            TConstObjectPtr elementPtr = GetElementPtr(isrc);
             if (old_element) {
-                GetElementType()->Assign(GetElementPtr(idst), GetElementPtr(isrc), how);
+                elementType->Assign(GetElementPtr(idst), elementPtr, how);
                 old_element = NextElement(idst);
             } else {
-                AddElement(dst, GetElementPtr(isrc), how);
+                AddElement(dst, elementPtr, how);
             }
         } while ( NextElement(isrc) );
     }

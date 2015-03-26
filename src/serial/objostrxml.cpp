@@ -1221,18 +1221,22 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
     CContainerTypeInfo::CConstIterator i;
     if ( WillHaveName(elementType) ) {
         if ( cType->InitIterator(i, containerPtr) ) {
+
+            const CPointerTypeInfo* pointerType =
+                dynamic_cast<const CPointerTypeInfo*>(elementType);
             do {
-                if (elementType->GetTypeFamily() == eTypeFamilyPointer) {
-                    const CPointerTypeInfo* pointerType =
-                        CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
-                    _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
-                    if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
-                        ERR_POST_X(11, Warning << " NULL pointer found in container: skipping");
-                        continue;
+                TConstObjectPtr elementPtr = cType->GetElementPtr(i);
+                if ( pointerType &&
+                     !pointerType->GetObjectPointer(elementPtr) ) {
+                    if ( GetVerifyData() == eSerialVerifyData_Yes ) {
+                        ThrowError(fUnassigned,
+                                   "NULL element while writing container "+
+                                   cType->GetName());
                     }
+                    continue;
                 }
 
-                WriteObject(cType->GetElementPtr(i), elementType);
+                WriteObject(elementPtr, elementType);
 
             } while ( cType->NextElement(i) );
         }
@@ -1241,9 +1245,23 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
         if ( cType->InitIterator(i, containerPtr) ) {
+
+            const CPointerTypeInfo* pointerType =
+                dynamic_cast<const CPointerTypeInfo*>(elementType);
             do {
+                TConstObjectPtr elementPtr = cType->GetElementPtr(i);
+                if ( pointerType &&
+                     !pointerType->GetObjectPointer(elementPtr) ) {
+                    if ( GetVerifyData() == eSerialVerifyData_Yes ) {
+                        ThrowError(fUnassigned,
+                                   "NULL element while writing container "+
+                                   cType->GetName());
+                    }
+                    continue;
+                }
+
                 BeginArrayElement(elementType);
-                WriteObject(cType->GetElementPtr(i), elementType);
+                WriteObject(elementPtr, elementType);
                 EndArrayElement();
             } while ( cType->NextElement(i) );
         } else {

@@ -795,10 +795,23 @@ void CObjectOStream::WriteContainer(const CContainerTypeInfo* cType,
         TTypeInfo elementType = cType->GetElementType();
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
+        const CPointerTypeInfo* pointerType =
+            dynamic_cast<const CPointerTypeInfo*>(elementType);
         do {
+            TConstObjectPtr elementPtr = cType->GetElementPtr(i);
+            if ( pointerType &&
+                 !pointerType->GetObjectPointer(elementPtr) ) {
+                if ( GetVerifyData() == eSerialVerifyData_Yes ) {
+                    ThrowError(fUnassigned,
+                               "NULL element while writing container "+
+                               cType->GetName());
+                }
+                continue;
+            }
+
             BeginContainerElement(elementType);
             
-            WriteObject(cType->GetElementPtr(i), elementType);
+            WriteObject(elementPtr, elementType);
             
             EndContainerElement();
         } while ( cType->NextElement(i) );

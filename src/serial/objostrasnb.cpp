@@ -1154,17 +1154,21 @@ void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
         TTypeInfo elementType = cType->GetElementType();
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
+        const CPointerTypeInfo* pointerType =
+            dynamic_cast<const CPointerTypeInfo*>(elementType);
         do {
-            if (elementType->GetTypeFamily() == eTypeFamilyPointer) {
-                const CPointerTypeInfo* pointerType =
-                    CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
-                _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
-                if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
-                    ERR_POST_X(10, Warning << " NULL pointer found in container: skipping");
-                    continue;
+            TConstObjectPtr elementPtr = cType->GetElementPtr(i);
+            if ( pointerType &&
+                 !pointerType->GetObjectPointer(elementPtr) ) {
+                if ( GetVerifyData() == eSerialVerifyData_Yes ) {
+                    ThrowError(fUnassigned,
+                               "NULL element while writing container "+
+                               cType->GetName());
                 }
+                continue;
             }
-            WriteObject(cType->GetElementPtr(i), elementType);
+
+            WriteObject(elementPtr, elementType);
 
         } while ( cType->NextElement(i) );
 
