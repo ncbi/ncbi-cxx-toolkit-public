@@ -148,6 +148,18 @@ bool ValidExonTerminal(
         || (offset_pos == 0 && (found_in_starts || found_in_stops));
 }
 
+
+int GetFuzzSign(const CInt_fuzz& fuzz, int loc_sign)
+{
+    return !fuzz.IsLim()                       ? 0
+         : fuzz.GetLim() == CInt_fuzz::eLim_lt ? -1
+         : fuzz.GetLim() == CInt_fuzz::eLim_tl ? -1 * loc_sign
+         : fuzz.GetLim() == CInt_fuzz::eLim_gt ? 1
+         : fuzz.GetLim() == CInt_fuzz::eLim_tr ? 1 * loc_sign
+         :                                       0;
+}
+
+
 bool ValidExonTerminals(
         const set<TSeqPos>& exon_biostarts, 
         const set<TSeqPos>& exon_biostops, 
@@ -155,19 +167,45 @@ bool ValidExonTerminals(
 {
     int sign = sequence::GetStrand(p.GetLoc(), NULL) == eNa_strand_minus ? -1 : 1;
 
+    const int start_offset_sign = //VAR-1500
+              p.IsSetStart_offset() 
+           && p.GetStart_offset() > 0    ? 1
+
+         :    p.IsSetStart_offset()
+           && p.GetStart_offset() < 0    ? -1
+     
+         :    p.IsSetStart_offset_fuzz() ? GetFuzzSign(p.GetStart_offset_fuzz(), sign)
+
+         :                                 0;
+
+    const int stop_offset_sign =
+              p.IsSetStop_offset() 
+           && p.GetStop_offset() > 0     ? 1
+
+         :    p.IsSetStop_offset()
+           && p.GetStop_offset() < 0     ? -1
+     
+         :    p.IsSetStop_offset_fuzz()  ? GetFuzzSign(p.GetStop_offset_fuzz(), sign)
+
+         :                                 0;
+
     // if offset's sign is consistent with location's strand, we expect to find
     // the anchor in exon-stops, otherwise in exon-starts. //VAR-1379
-    bool start_ok = !p.IsSetStart_offset() || ValidExonTerminal(
-                exon_biostarts, 
-                exon_biostops,
-                sequence::GetStart(p.GetLoc(), NULL, eExtreme_Biological),
-                p.GetStart_offset() * sign);
+    const bool start_ok = 
+        (!p.IsSetStart_offset() && !p.IsSetStart_offset_fuzz())
+     || ValidExonTerminal(
+             exon_biostarts, 
+             exon_biostops,
+             sequence::GetStart(p.GetLoc(), NULL, eExtreme_Biological),
+             start_offset_sign * sign);
 
-    bool stop_ok = !p.IsSetStop_offset() || ValidExonTerminal(
-                exon_biostarts, 
-                exon_biostops,
-                sequence::GetStop(p.GetLoc(), NULL, eExtreme_Biological),
-                p.GetStop_offset() * sign);
+    const bool stop_ok = 
+        (!p.IsSetStop_offset() && !p.IsSetStop_offset_fuzz())
+     || ValidExonTerminal(
+             exon_biostarts, 
+             exon_biostops,
+             sequence::GetStop(p.GetLoc(), NULL, eExtreme_Biological),
+             stop_offset_sign * sign);
 
     return start_ok && stop_ok;
 }
