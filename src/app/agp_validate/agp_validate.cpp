@@ -95,7 +95,10 @@ private:
   //CAgpContextValidator* m_ContextValidator;
   CAgpValidateReader m_reader;
 
-  void x_ValidateUsingFiles(const CArgs& args);
+  // out is only for printing headers: "Reading Chromosome from scaffold / Scaffold from component AGP"
+  // (which are only used with -scaf and -chr)
+  void x_ValidateUsingFiles(const CArgs& args, CNcbiOstream* out=NULL);
+
   void x_ValidateFile(CNcbiIstream& istr);
   void x_ReportFastaSeqCount();
 
@@ -146,6 +149,7 @@ public:
     "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
     "  -xml       Report results in XML format.\n"
+    "  -sub       Treat serious warnings as errors, put summary and stats at the top.\n"
     "\n"
     "  Extra checks specific to an object type:\n"
     "  -un        Unplaced/unlocalized scaffolds:\n"
@@ -195,6 +199,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("chr" , "");
   arg_desc->AddFlag("comp", "");
   arg_desc->AddFlag("xml" , "");
+  arg_desc->AddFlag("sub" , "");
 
   // -comp args
   arg_desc->AddOptionalKey( "loadlog", "FILE",
@@ -253,7 +258,7 @@ int CAgpValidateApplication::Run(void)
   //// Setup registry, error log, MT-lock for CONNECT library
   CONNECT_Init(&GetConfig());
 
- //// Get command line arguments
+ //// Process command line arguments
   const CArgs& args = GetArgs();
 
   if( args["list"].HasValue() ) {
@@ -264,7 +269,16 @@ int CAgpValidateApplication::Run(void)
   if( args["xml"].HasValue() ) {
     m_use_xml=true;
     pAgpErr->m_use_xml=true;
-    pAgpErr->m_out = &cout;
+    pAgpErr->m_out = &cout; // not the default &cerr
+  }
+
+  CNcbiOstrstream* error_details_out=NULL; // using cerr or cout directly
+  if( args["sub"].HasValue() ) {
+    pAgpErr->m_strict=true;
+    if(!m_use_xml) {
+      error_details_out = new CNcbiOstrstream();
+      pAgpErr->m_out = error_details_out;
+    }
   }
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
@@ -413,7 +427,7 @@ int CAgpValidateApplication::Run(void)
       if(m_use_xml) {
         cout << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<page>\n";
       }
-      x_ValidateUsingFiles(args);
+      x_ValidateUsingFiles(args, error_details_out);
       if(m_ValidationType == VT_Context) {
         m_reader.PrintTotals(cout, m_use_xml);
       }
@@ -424,8 +438,14 @@ int CAgpValidateApplication::Run(void)
       }
       if(m_use_xml) {
         cout << "</page>\n";
+        // return 0;
       }
-      return pAgpErr->CountTotals(CAgpErrEx::E_Last)>0 || taxid_check_failed ? 2 : 0;
+      else if(error_details_out) {
+        cout << "\n\n===== Details =====" << endl;
+        cout << (string)CNcbiOstrstreamToString(*error_details_out);
+        delete error_details_out;
+      }
+      return pAgpErr->CountTotals(CAgpErrEx::E_Last, error_details_out!=NULL /*strict mode*/ )>0 || taxid_check_failed ? 2 : 0;
   }
   else {
       // Note: traditional validation (now in the "if" clause above) used to be done regardless of args["comp"].
@@ -492,16 +512,23 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
 
 }
 
-void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
+void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args, CNcbiOstream* out)
 {
   if(m_reader.m_is_chr) {
     if(m_reader.m_explicit_scaf) {
-      if(!m_use_xml) cout << "===== Reading Chromosome from scaffold AGP =====" << endl;
+      if(!m_use_xml) {
+        cout << "===== Reading Chromosome from scaffold AGP =====" << endl;
+        // second header - for details that are printed below the summary and stats
+        if(out) *out << "===== Chromosome from scaffold AGP =====" << endl;
+      }
     }
     // else: cout << "===== Reading Chromosome from component AGP =====" << endl;
   }
   else if(m_reader.m_explicit_scaf) {
-    if(!m_use_xml) cout << "===== Reading Scaffold from component AGP =====" << endl;
+    if(!m_use_xml) {
+      cout << "===== Reading Scaffold from component AGP =====" << endl;
+      if(out) *out << "===== Scaffold from component AGP =====" << endl; // header for details that are printed below
+    }
   }
 
   if( 0==(m_ValidationType&VT_Acc) && args["out"].HasValue()) {
@@ -524,7 +551,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
           exit(1);
         }
         if(!m_reader.m_explicit_scaf) {
-          cerr << "Error -- -chr after a file, but no preceding-scaf. Expecting:\n"
+          cerr << "Error -- -chr after a file, but no preceding -scaf. Expecting:\n"
                << "    -scaf Scaffold_AGP_file(s) -chr Chromosome_AGP_file(s)\n";
           exit(1);
         }
@@ -533,7 +560,10 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
         m_reader.Reset(true);
         pAgpErr->ResetTotals();
 
-        if(!m_use_xml) cout << "\n===== Reading Chromosome from scaffold AGP =====" << endl;
+        if(!m_use_xml) {
+          cout << "\n===== Reading Chromosome from scaffold AGP =====" << endl;
+          if(out) *out << "\n===== Chromosome from scaffold AGP =====" << endl;// header for details that are printed below
+        }
         continue;
       }
 

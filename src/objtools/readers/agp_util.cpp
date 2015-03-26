@@ -1160,9 +1160,12 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         out << "\n";
     }
 
-    out << "### Warnings ###\n";
+    out << "### Warnings (some are errors in -sub mode) ###\n";
     for(int i=W_First; i<W_Last; i++) {
-        out << GetPrintableCode(i) << "\t";
+        string lbl = GetPrintableCode(i);
+        string lbl_strict = GetPrintableCode(i, true);
+        if(lbl!=lbl_strict) lbl+="/"+lbl_strict;
+        out << lbl << "\t";
         if(i==W_GapLineMissingCol9) {
             out << GetMsg(i) << " (no longer reported)";
             //out << " (only the total count is printed unless you specify: -only " << GetPrintableCode(i) << ")";
@@ -1519,7 +1522,7 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
     // Error or warning codes, substrings of the messages.
     res="";
     for( int i=E_First; i<CODE_Last; i++ ) {
-        bool matchesCode = ( str==GetPrintableCode(i) );
+        bool matchesCode = ( str==GetPrintableCode(i) || str==GetPrintableCode(i, true) );
         if( matchesCode || NStr::Find(GetMsg(i), str) != NPOS) {
             m_MustSkip[i] = !skip_other;
             res += "  ";
