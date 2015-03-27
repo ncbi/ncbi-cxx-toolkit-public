@@ -2834,6 +2834,7 @@ extern void NcbiLog_ReqRun(void)
        will be generated and set for the request.
     */
     if (!ctx->phid[0]) {
+        char phid_str[NCBILOG_HITID_MAX + 1];
         if (sx_Info->phid[0]) {
             /* Just log copy of app-wide PHID, do not set it as request-specific
                value to allow NcbiLog_GetNextSubHitID() works correctly
@@ -2844,7 +2845,6 @@ extern void NcbiLog_ReqRun(void)
             return;
         }
         /* Generate and set new request-specific PHID */
-        char phid_str[NCBILOG_HITID_MAX + 1];
         s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str));
     }
     s_LogHitID(ctx, ctx->phid);
