@@ -137,9 +137,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
         /* Set request hit ID if necessary
            NcbiLog_SetHitID("REQUEST-HIT-ID");
         */
-        NcbiLog_SetHitID("REQUEST-HIT-ID");
         NcbiLog_ReqStart(NULL);
-        /* Next call to NcbiLog_ReqRun() can be skipped, but still recommended */
+        /* Next call to NcbiLog_ReqRun() can be skipped, but still recommended 
+           if you want to use full functionality
+        */
         NcbiLog_ReqRun(); 
         /* 
            ... 

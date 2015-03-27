@@ -122,7 +122,6 @@ struct SInfo_tag {
 
     char              phid[3*NCBILOG_HITID_MAX+1];    
                                                 /**< App-wide hit ID (empty string if unknown)           */
-    int/*bool*/       phid_is_logged;           /**< 1 if request 'phid' has already logged              */
     unsigned int      phid_sub_id;              /**< App-wide sub-hit ID counter                         */
     const char*       host_role;                /**< Host role (NULL if unknown or not set)              */
     const char*       host_location;            /**< Host location (NULL if unknown or not set)          */
@@ -167,7 +166,6 @@ struct SContext_tag {
     char  session[3*NCBILOG_SESSION_MAX+1];     /**< Request specific session ID                         */
     int/*bool*/  is_session_set;                /**< 1 if request 'session' has set, even to empty       */
     char  phid   [3*NCBILOG_HITID_MAX+1];       /**< Request specific hit ID                             */
-    int/*bool*/  phid_is_logged;                /**< 1 if request 'phid' has already logged              */
     unsigned int phid_sub_id;                   /**< Request specific sub-hit ID counter                 */
 
     STime req_start_time;                       /**< Request start time                                  */
@@ -230,14 +228,6 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
  *  @sa NcbiLog_Extra
  */
 extern void NcbiLogP_ExtraStr(const char* params);
-
-
-/** Force log specified hit ID.
- *  This method is not used in the C Logging API, but needed for
- *  ncbi_applog utility. 
- *  'hit_id' parameter should be preliminary URL-encoded.
- */
-extern void NcbiLogP_LogHitID(const char* hit_id);
 
 
 /** Post already prepared line in applog format to the applog.
