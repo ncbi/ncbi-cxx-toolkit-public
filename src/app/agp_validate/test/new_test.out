@@ -23,8 +23,10 @@
 23:LACBIscaffold_1	1104	3435	2	U	2332	fragment	yes
 	WARNING: gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
 
-24:LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
 25:LACBIscaffold_1	4637	5256	4	N	620	contig	no
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+24:LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
 26:LACBIscaffold_1	5257	6500	5	W	LACBIscaffold_1_Cont2	1202	2445	+
 	WARNING: duplicate component with non-draft type; preceding span: 1..1201 at line 24
 	WARNING: component lines with the same component_id found on different scaffolds (a scaffold-breaking gap in between)
@@ -36,8 +38,9 @@
 30:LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-
 	WARNING: in unplaced singleton scaffold, component orientation is not "+"
 
-No errors, 12 warnings, 1 note.
+1 error, 12 warnings, 1 note.
   Count Code  Description
+      1  e19  in "Scaffold from component" file, invalid scaffold-breaking gap
       1  w37  duplicate component with non-draft type
       6  w47  object name (column 1) is the same as component_id (column 6)
       1  w48  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)

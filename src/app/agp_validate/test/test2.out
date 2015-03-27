@@ -20,6 +20,12 @@ test/bad_test.agp:12:chrY	170573	170672	6	n	100	fragment	no
 test/bad_test.agp:13:chrY	170673	198341	7	-	AADB02037554.1	1	27669	+
 	ERROR, line skipped: invalid value for component_type (column 5)
 
+test/bad_test.agp:15:chrY	198442	201393	9	O	AADB02037555.1	1	2952	+
+	WARNING: component_id looks like a WGS accession, component_type is not W
+
+test/bad_test.agp:17:chrY	201494	205642	11	P	AADB02037556.1	1	4149	-
+	WARNING: component_id looks like a WGS accession, component_type is not W
+
 test/bad_test.agp:18:chrY	205643	205742	12	u	100	fragment	yes	
 	ERROR, line skipped: invalid value for component_type (column 5)
 
@@ -163,6 +169,9 @@ test/bad_test.agp:219:chrY	218658	223697	6	F	AC163728.2	4033	9072	-
 test/bad_test.agp:221:chrY	223798	277847	8	F	AC163728.2	65081	119130	-
 	WARNING: component span appears out of order; preceding span: 4033..9072 at test/bad_test.agp:219
 
+test/bad_test.agp:222:chrY	277848	443135	9	F	AC16371.2	1	165288	+
+	WARNING: component_id AC16371.2 is not an HTG accession, but is used with component_type A, D, or F
+
 test/bad_test.agp:225:chrY	452891	462370	12	F	AC158542.1	11304	20783	+
 	WARNING: duplicate component with non-draft type; preceding span: 1549..11203 at test/bad_test.agp:223
 
@@ -196,7 +205,7 @@ test/alt_bad_test.agp:2:scaffold_0	2107	4201	2	N	2095	fragment	yes
 test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
 	WARNING: gap at the end of object (OK if scaffold_0 is the circular chromosome/plasmid)
 
-50 errors, 21 warnings, 2 notes; 4 not printed.
+50 errors, 21 warnings, 2 notes; 1 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty

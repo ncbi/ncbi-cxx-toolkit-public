@@ -4,6 +4,15 @@
 2:chr22	11330001	13570000	2	N	2240000	centromere	no
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
+1304:chr22	18718881	18718887	1304	N	7	contig	no
+	NOTE: gap shorter than 10 bp
+
+2178:chr22	22290994	22291002	2178	N	9	contig	no
+	NOTE: gap shorter than 10 bp
+
+8082:chr22	46284893	46284901	8082	N	9	contig	no
+	NOTE: gap shorter than 10 bp
+
 8171:scaffold1.1|size2787216	1	509	1	W	Contig_1	1	509	+
 	ERROR: invalid use of "|" character in object_id (column 1)
 
@@ -22,7 +31,7 @@
 8189:
 	ERROR, line skipped: empty line
 
-3 errors, 4 warnings, 4 notes; 3 not printed.
+3 errors, 4 warnings, 4 notes.
   Count Code  Description
       1  e03  empty line
       2  e24  invalid use of "|" character
