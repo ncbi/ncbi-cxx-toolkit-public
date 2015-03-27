@@ -73,6 +73,9 @@ struct STransactionInfo
     size_t    blob_size;
     double    transaction_time;
     double    connection_time;
+    size_t    fails;
+
+    STransactionInfo() : fails(0) {}
 };
 
 
@@ -144,6 +147,7 @@ string s_PutBlob(
     sw.Restart();
     info.key = nc_client.PutData(buf, size, nc_blob_ttl = 60 * 8);
     info.transaction_time = sw.Elapsed();
+    if (!nc_client.HasBlob(info.key)) ++info.fails;
 
     log->push_back(info);
     return info.key;
@@ -154,21 +158,22 @@ static
 void s_ReportStatistics(const vector<STransactionInfo>& log)
 {
     NcbiCout << "Statistical records=" << log.size() << NcbiEndl;
-    double sum, sum_conn, sum_tran;
-    sum = sum_conn = sum_tran = 0.0;
+    double sum, sum_conn, sum_tran, sum_fails;
+    sum = sum_conn = sum_tran = sum_fails = 0.0;
 
     double max_time = 0.0;
 
     ITERATE(vector<STransactionInfo>, it, log) {
         sum_conn += it->connection_time;
         sum_tran += it->transaction_time;
+        sum_fails += it->fails;
         double t = it->connection_time + it->transaction_time;
         sum += t;
         if (t > max_time) {
             max_time = t;
         }
     }
-    double avg, avg_conn, avg_tran;
+    double avg, avg_conn, avg_tran, avg_fails;
     avg = sum / double(log.size());
     if (avg > 0.0000001) {
         avg_conn = sum_conn / double(log.size());
@@ -176,6 +181,7 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
         avg_conn = 0;
     }
     avg_tran = sum_tran / double(log.size());
+    avg_fails = sum_fails / double(log.size());
 
 
     double slow_median = avg + (avg / 2.0);
@@ -189,11 +195,11 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     }
 
 
-    NcbiCout << "Sum, Conn, Trans" << endl;
+    NcbiCout << "Sum, Conn, Trans, Fails" << endl;
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << sum << ", " << sum_conn << ", " << sum_tran << NcbiEndl;
-    NcbiCout << "Avg, Conn, Trans" << endl;
-    NcbiCout << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
+    NcbiCout << sum << ", " << sum_conn << ", " << sum_tran << ", " << sum_fails << NcbiEndl;
+    NcbiCout << "Avg, Conn, Trans, Fails" << endl;
+    NcbiCout << avg << ", " << avg_conn << ", " << avg_tran << ", " << avg_fails << NcbiEndl;
 
     NcbiCout << "Max(slowest) turnaround time:" << max_time
              << "  " << slow_cnt << " transactions in ["
