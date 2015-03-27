@@ -218,22 +218,31 @@ static void s_AgpWrite(CNcbiOstream& os,
             // col 5; Should be A, D, F, G, P, O, or W
             os << '\t';
             if (component_types.empty()) {
-                os <<
-                    s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
-                                             scope);
+                char comp_type = s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(), scope);
+                os << comp_type;
             } else {
                 os << component_types[count];
             }
             // col 6a
             os << '\t';
             {{
+                // Ideally this will be a valid accession.version identifier as assigned by GenBank/EMBL/DDBJ. 
+                // If the sequence has not been submitted to a public repository yet a local identifier should be used.
                 CSeq_id_Handle idh =
                     sequence::GetId(*iter.GetRefSeqid().GetSeqId(), scope,
-                                    sequence::eGetId_ForceAcc);
+                                    sequence::eGetId_Best);
                 string id_str;
-                idh.GetSeqId()->GetLabel(&id_str, CSeq_id::eContent);
-                if( comp_id_mapper != NULL ) {
-                    comp_id_mapper->do_map( id_str );
+                if (idh)
+                {
+                    idh.GetSeqId()->GetLabel(&id_str, CSeq_id::eContent);
+                    if( comp_id_mapper != NULL ) {
+                        comp_id_mapper->do_map( id_str );
+                    }
+                }
+                else
+                {
+                    id_str = "na";
+                    //NCBI_THROW(CObjWriterException, eArgErr, "Unknown component_id (field 6a)");
                 }
                 os << id_str;
             }}
@@ -410,43 +419,48 @@ static char s_DetermineComponentType(const CSeq_id& id, CScope& scope)
     ch.push_back(CSeqdesc::e_Molinfo);
     ch.push_back(CSeqdesc::e_Genbank);
 
-    CSeqdesc_CI desc_iter(scope.GetBioseqHandle(id), ch);
-    for ( ;  desc_iter;  ++desc_iter) {
-        switch (desc_iter->Which()) {
-        case CSeqdesc::e_Molinfo:
-            switch (desc_iter->GetMolinfo().GetTech()) {
-            case CMolInfo::eTech_wgs:
-                return 'W';
-            case CMolInfo::eTech_htgs_0:
-            case CMolInfo::eTech_htgs_1:
-            case CMolInfo::eTech_htgs_2:
-                type = max(type, eP);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+    if ( !bsh) {
+        //NCBI_THROW(CObjWriterException, eBadInput, "Can't determine component type (invalid bioseq handle)");
+    } else {
+        CSeqdesc_CI desc_iter(bsh, ch);
+        for ( ;  desc_iter;  ++desc_iter) {
+            switch (desc_iter->Which()) {
+            case CSeqdesc::e_Molinfo:
+                switch (desc_iter->GetMolinfo().GetTech()) {
+                case CMolInfo::eTech_wgs:
+                    return 'W';
+                case CMolInfo::eTech_htgs_0:
+                case CMolInfo::eTech_htgs_1:
+                case CMolInfo::eTech_htgs_2:
+                    type = max(type, eP);
+                    break;
+                case CMolInfo::eTech_htgs_3:
+                    type = max(type, eF);
+                    break;
+                default:
+                    break;
+                }
                 break;
-            case CMolInfo::eTech_htgs_3:
-                type = max(type, eF);
-                break;
-            default:
-                break;
-            }
-            break;
 
-        case CSeqdesc::e_Genbank:
-            if (desc_iter->GetGenbank().CanGetKeywords()) {
-                ITERATE (CGB_block::TKeywords, kw,
-                         desc_iter->GetGenbank().GetKeywords()) {
-                    if (*kw == "HTGS_DRAFT" || *kw == "HTGS_FULLTOP") {
-                        type = max(type, eD);
-                    }
-                    if (*kw == "HTGS_ACTIVEFIN") {
-                        type = max(type, eA);
+            case CSeqdesc::e_Genbank:
+                if (desc_iter->GetGenbank().CanGetKeywords()) {
+                    ITERATE (CGB_block::TKeywords, kw,
+                             desc_iter->GetGenbank().GetKeywords()) {
+                        if (*kw == "HTGS_DRAFT" || *kw == "HTGS_FULLTOP") {
+                            type = max(type, eD);
+                        }
+                        if (*kw == "HTGS_ACTIVEFIN") {
+                            type = max(type, eA);
+                        }
                     }
                 }
-            }
-            break;
+                break;
 
-        default:
-            _ASSERT(false);
-            break;
+            default:
+                _ASSERT(false);
+                break;
+            }
         }
     }
 

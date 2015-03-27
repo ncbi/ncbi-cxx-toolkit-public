@@ -152,11 +152,10 @@ int CConversionApp::Run(void)
 
     m_ObjMgr = CObjectManager::GetInstance();
     if ( args["wgsload"] ) {
-        CPluginManager_DllResolver::EnableGlobally();
-        if (m_ObjMgr->RegisterDataLoader(NULL /* params */, "wgs") != NULL) {
-            m_ObjMgr->SetLoaderOptions("wgs", CObjectManager::eDefault);
-        }
-        //CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr, CObjectManager::eDefault);
+        //CPluginManager_DllResolver::EnableGlobally();
+        //string loader_name = m_ObjMgr->RegisterDataLoader(0, "wgs")->GetName();
+        //m_ObjMgr->SetLoaderOptions(loader_name, CObjectManager::eDefault);
+        CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr, CObjectManager::eDefault);
     }
 	if ( args["gbload"] || !args["no-objmgr"] ) {
         CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
@@ -313,7 +312,25 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
     const string& outfmt = args["outfmt"].AsString();
     const string& type   = args["type"  ].AsString();
     int           ff_fmt = GetFlatFormat(outfmt);
-    if (ff_fmt >= 0) {
+    if (outfmt == "agp") {
+        CNcbiOstream& out = args["out"].AsOutputFile();
+
+		//m_topseh = m_Scope->AddTopLevelSeqEntry( *m_entry );
+		unsigned long long num = 0;
+		VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, entry) {
+			const CBioseq& bioseq = *bit;
+			if (bioseq.IsNa()) {
+				++num;
+				const CBioseq_Handle& bs = (*m_Scope).GetBioseqHandle (bioseq);
+				string id; // = bs.GetSeqId()->GetSeqIdString(&version);
+				bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
+				if (id.empty())	{
+					id = "chr" + NStr::NumericToString(num);
+				}
+				AgpWrite( out, bs, id, vector<char>(), nullptr );
+			}
+		}
+    } else if (ff_fmt >= 0) {
         CNcbiOstream& out = args["out"].AsOutputFile();
         CFlatFileGenerator ff(static_cast<CFlatFileConfig::TFormat>(ff_fmt),
                               CFlatFileConfig::eMode_Entrez,
@@ -340,24 +357,6 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
         } else {
             out.Write(m_Scope->GetSeq_entryHandle(entry));
         }
-    } else if (outfmt == "agp") {
-        CNcbiOstream& out = args["out"].AsOutputFile();
-
-		//m_topseh = m_Scope->AddTopLevelSeqEntry( *m_entry );
-		unsigned long long num = 0;
-		VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, entry) {
-			const CBioseq& bioseq = *bit;
-			if (bioseq.IsNa()) {
-				++num;
-				const CBioseq_Handle& bs = (*m_Scope).GetBioseqHandle (bioseq);
-				string id; // = bs.GetSeqId()->GetSeqIdString(&version);
-				bs.GetSeqId()->GetLabel(&id, CSeq_id::eContent, CSeq_id::fLabel_Version);
-				if (id.empty())	{
-					id = "chr" + NStr::NumericToString(num);
-				}
-				AgpWrite( out, bs, id, vector<char>(), nullptr );
-			}
-		}
 	} else {
         auto_ptr<CObjectOStream> out
             (CObjectOStream::Open(GetSerialFormat(outfmt),
