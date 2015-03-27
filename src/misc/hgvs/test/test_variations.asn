@@ -1667,3 +1667,112 @@ Variation ::= {
     }
   }
 }
+Variation ::= {
+  name "NM_004992.3:c.-98-?_377+?del",
+  description "",
+  placements {
+    {
+      loc int {
+        from 128,
+        to 602,
+        strand plus,
+        id other {
+          accession "NM_004992",
+          version 3
+        }
+      },
+      mol cdna,
+      start-offset 0,
+      start-offset-fuzz lim lt,
+      stop-offset 0,
+      stop-offset-fuzz lim gt,
+      seq {
+        length 475,
+        seq-data iupacna "GCTCCATAAAAATACAGACTCACCAGTTCCTGCTTTGATGTGACATGTGACT
+CCCCAGAATACACCTTGCTTCTGTAGACCAGCTCCAACAGGATTCCATGGTAGCTGGGATGTTAGGGCTCAGGGAAGA
+AAAGTCAGAAGACCAGGACCTCCAGGGCCTCAAGGACAAACCCCTCAAGTTTAAAAAGGTGAAGAAAGATAAGAAAGA
+AGAGAAAGAGGGCAAGCATGAGCCCGTGCAGCCATCAGCCCACCACTCTGCTGAGCCCGCAGAGGCAGGCAAAGCAGA
+GACATCAGAAGGGTCAGGCTCCGCCCCGGCTGTGCCGGAAGCTTCTGCCTCCCCCAAACAGCGGCGCTCCATCATCCG
+TGACCGGGGACCCATGTATGATGACCCCACCCTGCCTGAAGGCTGGACACGGAAGCTTAAGCAAAGGAAATCTGGCCG
+CTCTGCTGGGAAGTATGATGTGTATTTGATCAA"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 4204
+        }
+      },
+      gene-location 320
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 320
+  },
+  data instance {
+    type del,
+    delta {
+      {
+        seq this NULL,
+        action del-at
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_004992.3:c.27-?_378+?del",
+  description "",
+  placements {
+    {
+      loc int {
+        from 252,
+        to 603,
+        strand plus,
+        id other {
+          accession "NM_004992",
+          version 3
+        }
+      },
+      mol cdna,
+      start-offset 0,
+      start-offset-fuzz lim lt,
+      stop-offset 0,
+      stop-offset-fuzz lim gt,
+      seq {
+        length 352,
+        seq-data iupacna "GGAAGAAAAGTCAGAAGACCAGGACCTCCAGGGCCTCAAGGACAAACCCCTC
+AAGTTTAAAAAGGTGAAGAAAGATAAGAAAGAAGAGAAAGAGGGCAAGCATGAGCCCGTGCAGCCATCAGCCCACCAC
+TCTGCTGAGCCCGCAGAGGCAGGCAAAGCAGAGACATCAGAAGGGTCAGGCTCCGCCCCGGCTGTGCCGGAAGCTTCT
+GCCTCCCCCAAACAGCGGCGCTCCATCATCCGTGACCGGGGACCCATGTATGATGACCCCACCCTGCCTGAAGGCTGG
+ACACGGAAGCTTAAGCAAAGGAAATCTGGCCGCTCTGCTGGGAAGTATGATGTGTATTTGATCAAT"
+      },
+      exceptions {
+        {
+          code hgvs-exon-boundary,
+          message "HGVS exon-boundary position not represented in the
+ transcript annotation"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 4204
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data instance {
+    type del,
+    delta {
+      {
+        seq this NULL,
+        action del-at
+      }
+    }
+  }
+}
