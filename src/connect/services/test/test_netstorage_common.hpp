@@ -60,13 +60,13 @@ typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
 
 struct SDirectNC
 {
+    typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
+        TSource;
     static const TNetStorageFlags source = 0;
 
     static const TNetStorageFlags non_existent = 0;
 
-    typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
-        TCreate;
-
+    typedef TSource TCreate;
     static const TNetStorageFlags create = 0;
 
     static const TNetStorageFlags immovable = 0;
@@ -118,11 +118,6 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char* mode)
             "&client="   APP_NAME +
             mode);
     return CNetStorageByKey(init_string);
-}
-
-inline void g_Sleep()
-{
-    SleepSec(1UL);
 }
 
 END_NCBI_SCOPE

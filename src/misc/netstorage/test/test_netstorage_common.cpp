@@ -262,10 +262,25 @@ private:
 };
 
 
+// Convenience class for random generator
+struct CRandomSingleton
+{
+    CRandom r;
+    CRandomSingleton() { r.Randomize(); }
+
+    static CRandom& instance()
+    {
+        static CRandomSingleton rs;
+        return rs.r;
+    }
+};
+
+
 // Convenience function to fill container with random char data
 template <class TContainer>
-void RandomFill(CRandom& random, TContainer& container, size_t length, bool printable = true)
+void RandomFill(TContainer& container, size_t length, bool printable = true)
 {
+    CRandom& random(CRandomSingleton::instance());
     const char kMin = printable ? '!' : numeric_limits<char>::min();
     const char kMax = printable ? '~' : numeric_limits<char>::max();
     container.clear();
@@ -382,12 +397,12 @@ public:
     struct SSource
     {
         vector<char> data;
-        CRandom random;
 
         SSource()
         {
-            random.Randomize();
-            RandomFill(random, data, 20 * 1024 * 1024, false); // 20MB
+            const size_t kSize = 20 * 1024 * 1024; // 20MB
+            data.reserve(kSize);
+            RandomFill(data, kSize, false);
         }
     };
 
@@ -401,7 +416,6 @@ public:
         if (!m_Length) return eRW_Eof;
 
         size_t read = m_Length < count ? m_Length : count;
-        if (read > 2) read = m_Source.random.GetRand(2 * read / 3, read);
         if (buf) memcpy(buf, &m_Source.data[m_Begin], read);
         m_Begin += read;
         m_Length -= read;
@@ -434,9 +448,6 @@ public:
         CRndData::SSource source;
         m_Object.Write(&source.data[0], source.data.size());
         m_Object.Close();
-
-        // Wait some time for changes to take effect
-        g_Sleep();
     }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
@@ -652,8 +663,9 @@ struct SIosApiImpl
 // A helper to read from API/expected data
 struct SReadHelperBase
 {
+    static const size_t kSize = 128 * 1024;
     IExtReader& source;
-    char buf[65537]; // Prime
+    char buf[kSize];
     size_t length;
 
     SReadHelperBase(IExtReader& s)
@@ -670,7 +682,11 @@ struct SReadHelperBase
     bool operator()(const SCtx& ctx)
     {
         if (length) return true;
-        m_Result = source.Read(buf, sizeof(buf), &length);
+
+        // Read random length data
+        CRandom& random(CRandomSingleton::instance());
+        size_t buf_size = 1 + random.GetRandIndexSize_t(kSize);
+        m_Result = source.Read(buf, buf_size, &length);
 
         switch (m_Result) {
         case eRW_Success:
@@ -777,14 +793,20 @@ struct SWriteHelper
     template <class TReader>
     bool operator()(const TReader& reader, const SCtx& ctx)
     {
+        CRandom& random(CRandomSingleton::instance());
+        const char* data = reader.buf;
         size_t total = reader.length;
 
         while (total || m_Empty) {
             m_Empty = false;
             size_t length = 0;
-            m_Result = m_Dest.Write(reader.buf, total, &length);
+
+            // Write random length data
+            size_t to_write = total ? 1 + random.GetRandIndexSize_t(total) : 0;
+            m_Result = m_Dest.Write(data, to_write, &length);
 
             if (m_Result == eRW_Success) {
+                data += length;
                 total -= length;
             } else {
                 BOOST_ERROR_CTX("Failed to write to object: " <<
@@ -815,8 +837,7 @@ struct SAttrApiBase
 
     SAttrApiBase()
     {
-        CRandom r;
-        r.Randomize();
+        CRandom& r(CRandomSingleton::instance());
 
         // Attribute name/value length range
         const size_t kMinLength = 5;
@@ -839,10 +860,10 @@ struct SAttrApiBase
         value.reserve(kValueMaxLength);
 
         while (size-- > 0) {
-            RandomFill(r, name, r.GetRand(kMinLength, kNameMaxLength));
+            RandomFill(name, r.GetRand(kMinLength, kNameMaxLength));
 
             if (r.GetRandIndex(kSetProbability)) {
-                RandomFill(r, value, r.GetRand(kMinLength, kValueMaxLength));
+                RandomFill(value, r.GetRand(kMinLength, kValueMaxLength));
                 attrs.insert(make_pair(name, value));
             } else {
                 attrs.insert(make_pair(name, kEmptyStr));
@@ -984,6 +1005,7 @@ struct SLocBase
 
 struct SNC2FT : SLocBase
 {
+    typedef TLocationFileTrack TSource;
     static const TNetStorageFlags source = fNST_Persistent;
 
     static const TNetStorageFlags non_existent = fNST_Fast | fNST_Movable;
@@ -1001,6 +1023,7 @@ struct SNC2FT : SLocBase
 
 struct SFT2NC : SLocBase
 {
+    typedef TLocationNetCache TSource;
     static const TNetStorageFlags source = fNST_Fast;
 
     static const TNetStorageFlags non_existent = fNST_Persistent | fNST_Movable;
@@ -1206,6 +1229,17 @@ void SFixture<TPolicy>::ReadTwoAndCompare(const string& ctx,
     CGetInfo<TLocation>(Line(__LINE__), object2, data->Size()).Check(TLoc::loc_info);
 }
 
+template <class TLocation>
+inline void Sleep()
+{
+}
+
+template <>
+inline void Sleep<TLocationFileTrack>()
+{
+    SleepSec(2UL);
+}
+
 template <class TPolicy>
 template <class TLocation>
 string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
@@ -1235,8 +1269,8 @@ string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
     attr_tester.Write(TLocation(), Line(__LINE__), object1);
     attr_tester.Write(TLocation(), Line(__LINE__), object2);
 
-    // Wait some time for changes to take effect
-    g_Sleep();
+    // May wait some time for changes to take effect
+    Sleep<TLocation>();
 
     ReadTwoAndCompare<TLocation>("Reading after writing", object1, object2);
 
@@ -1310,8 +1344,8 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     LOG_POST(Trace << "Removing existent object");
     Remove(netstorage, id);
 
-    // Wait some time for changes to take effect
-    g_Sleep();
+    // May wait some time for changes to take effect
+    Sleep<TLocation>();
 
     Ctx("Checking non-existent object").Line(__LINE__);
     BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
@@ -1324,6 +1358,9 @@ template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorage&)
 {
     data.reset(new TExpected(netstorage.Create(TLoc::source)));
+
+    // May wait some time for changes to take effect
+    Sleep<typename TLoc::TSource>();
 
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(TLoc::not_found()));
@@ -1344,8 +1381,8 @@ void SFixture<TPolicy>::Test(CNetStorage&)
         Ctx("Relocating object");
         string relocated_loc = Relocate(netstorage, object_loc, TLoc::relocate);
 
-        // Wait some time for changes to take effect
-        g_Sleep();
+        // Will wait some time for changes to take effect
+        Sleep<TLocationFileTrack>();
 
         // Verify that the object has disappeared from the original storage.
         ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
@@ -1368,8 +1405,7 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
     string prefix = NStr::NumericToString(time(NULL)) + "t";
 
-    CRandom random_gen;
-    random_gen.Randomize();
+    CRandom& random_gen(CRandomSingleton::instance());
     string unique_key1 = prefix + NStr::NumericToString(
             random_gen.GetRandUint8());
     string unique_key2 = prefix + NStr::NumericToString(
@@ -1378,6 +1414,9 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
             random_gen.GetRandUint8());
 
     data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
+
+    // May wait some time for changes to take effect
+    Sleep<typename TLoc::TSource>();
 
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(unique_key2, TLoc::non_existent));
@@ -1396,8 +1435,8 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     Ctx("Relocating object");
     Relocate(netstorage, unique_key2, TLoc::relocate, TLoc::create);
 
-    // Wait some time for changes to take effect
-    g_Sleep();
+    // Will some time for changes to take effect
+    Sleep<TLocationFileTrack>();
 
     // Verify that the object has disappeared from the original storage.
     ReadAndCompare<TLocationRelocated>("Trying to read relocated object",

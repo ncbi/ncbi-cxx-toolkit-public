@@ -94,11 +94,6 @@ inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>(const char
             NULL, nst_app_domain);
 }
 
-inline void g_Sleep()
-{
-    SleepSec(2UL);
-}
-
 
 // Overloading is used to test specific API (CDirectNetStorage*)
 
