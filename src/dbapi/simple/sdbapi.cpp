@@ -815,12 +815,17 @@ public:
 
 static CSafeStatic<CDataSourceInitializer> ds_init;
 
-
-static impl::CDriverContext*
-s_GetDBContext(void)
+inline
+static IDataSource* s_GetDataSource(void)
 {
     ds_init.Get();
-    IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds", ".sdapi");
+    return CDriverManager::GetInstance().CreateDs("ftds", ".sdbapi");
+}
+
+inline
+static impl::CDriverContext* s_GetDBContext(void)
+{
+    IDataSource* ds = s_GetDataSource();
     return static_cast<impl::CDriverContext*>(ds->GetDriverContext());
 }
 
@@ -1380,9 +1385,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
             const string& server_name   = (*it)->server_name;
             EMirrorConnState& state     = (*it)->state;
             if (!conn.get()) {
-                IDataSource* ds
-                  = CDriverManager::GetInstance().CreateDs("ftds", ".sdbapi");
-                conn = ds->CreateConnection(eTakeOwnership);
+                conn = s_GetDataSource()->CreateConnection(eTakeOwnership);
             }
             if (!conn->IsAlive()) {
                 if (state == eConnEstablished) {
@@ -1542,9 +1545,7 @@ CDatabaseImpl::CDatabaseImpl(const CSDB_ConnectionParam& params)
 {
     CDBConnParamsBase lower_params;
     params.x_FillLowerParams(&lower_params);
-    IDataSource* ds
-        = CDriverManager::GetInstance().CreateDs("ftds", ".sdbapi");
-    AutoPtr<IConnection> conn = ds->CreateConnection();
+    AutoPtr<IConnection> conn = s_GetDataSource()->CreateConnection();
     conn->Connect(lower_params);
     m_Conn.Reset(new CConnHolder(conn.release()));
     m_IsOpen = true;
