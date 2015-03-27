@@ -201,7 +201,7 @@ void CAgpValidateReader::OnGapOrComponent()
         // check for W_BreakingGapSameCompId on the next row
         m_prev_component_id=m_prev_row->GetComponentId();
       }
-      if(m_explicit_scaf && !m_is_chr) {
+      if((m_explicit_scaf||m_unplaced) && !m_is_chr) {
         m_AgpErr->Msg(CAgpErrEx::E_ScafBreakingGap);
       }
 
@@ -375,6 +375,7 @@ void CAgpValidateReader::OnGapOrComponent()
     }
     else {
       if( string("ADF").find(m_this_row->component_type)!=NPOS ) m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
+      else if(m_this_row->component_type!='W') m_AgpErr->Msg( CAgpErr::W_CompIsLocalTypeNotW, m_this_row->GetComponentId() );
     }
 
     if( m_comp2len->size() ) {

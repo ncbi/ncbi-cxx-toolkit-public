@@ -583,7 +583,9 @@ public:
         W_DuplicateEvidence,    // CAgpRow (v. >= 2.0 )
         W_CompIsNotHtgTypeIs,
         W_SingletonsOnly,
+
         W_GnlId,
+        W_CompIsLocalTypeNotW,
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
@@ -773,7 +775,7 @@ public:
 protected:
     // Count errors of each type, including skipped ones.
     int m_MsgCount[CODE_Last];
-    bool m_MustSkip[CODE_Last];
+    char m_MustSkip[CODE_Last];
 
 
     // pp: line before previous (not supported by CAgpReader, but used in agp_validate for W_BreakingGapSameCompId)

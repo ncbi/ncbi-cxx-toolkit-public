@@ -145,7 +145,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "all objects are singletons with component_beg=1",
 
     "\"gnl|\" prefix in X is deprecated inside AGP files (no \"prefix|\" is best)",
-    kEmptyCStr,
+    "component_id X is a not an accession, but is used with component_type other than W",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -1160,7 +1160,7 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         out << "\n";
     }
 
-    out << "### Warnings (some are errors in -sub mode) ###\n";
+    out << "### Warnings (most are errors in -sub mode) ###\n";
     for(int i=W_First; i<W_Last; i++) {
         string lbl = GetPrintableCode(i);
         string lbl_strict = GetPrintableCode(i, true);
@@ -1314,14 +1314,17 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
     ResetTotals();
 
     // errors that are "silenced" by default (only the count is printed)
-    m_MustSkip[W_GapLineMissingCol9]=true;
+    m_MustSkip[W_GapLineMissingCol9]=1;
     if(!use_xml) // perhaps, we should have a separate parameter for hiding these...
     {
-        m_MustSkip[W_ExtraTab          ]=true;
-        m_MustSkip[W_CompIsWgsTypeIsNot]=true;
-        m_MustSkip[W_CompIsNotWgsTypeIs]=true;
-        m_MustSkip[W_CompIsNotHtgTypeIs]=true;
-        m_MustSkip[W_ShortGap          ]=true;
+        m_MustSkip[W_ExtraTab           ]=1;
+
+        // print the first 5 only
+        m_MustSkip[W_CompIsWgsTypeIsNot ]=5+1;
+        m_MustSkip[W_CompIsNotWgsTypeIs ]=5+1;
+        m_MustSkip[W_CompIsNotHtgTypeIs ]=5+1;
+        m_MustSkip[W_CompIsLocalTypeNotW]=5+1;
+        m_MustSkip[W_ShortGap           ]=5+1;
     }
 
     // A "random check" to make sure enum and msg[] are not out of skew.
@@ -1364,10 +1367,12 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 {
     // Suppress some messages while still counting them
     m_MsgCount[code]++;
-    if( m_MustSkip[code]) {
+    if( m_MustSkip[code]==1) {
         m_msg_skipped++;
         return;
     }
+    if( m_MustSkip[code]>1 ) m_MustSkip[code]--;
+
     if( m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat) {
         m_MaxRepeatTopped=true;
         m_msg_skipped++;
