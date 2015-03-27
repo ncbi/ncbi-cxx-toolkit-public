@@ -56,6 +56,33 @@ struct SICacheSettings;
 struct SUserKey;
 
 
+struct TimeWatch
+{
+    TimeWatch(const string& n) : name(n), stopped(true) {}
+
+    ~TimeWatch()
+    {
+        if (!stopped) stop();
+        ERR_POST(Warning << name << " time: " << NST_FormatPreciseTimeAsSec(t));
+    }
+
+    void start()
+    {
+        stopped = false;
+        d = CNSTPreciseTime::Current();
+    }
+
+    void stop()
+    {
+        stopped = true;
+        t += CNSTPreciseTime::Current() - d;
+    }
+
+    string name;
+    bool stopped;
+    CNSTPreciseTime t;
+    CNSTPreciseTime d;
+};
 
 class CNetStorageHandler : public IServer_ConnectionHandler
 {
@@ -256,6 +283,8 @@ private:
     TNSTDBValue<CTime> x_CheckObjectExpiration(const string &  object_key,
                                                bool            db_exception,
                                                CJsonNode &     reply);
+    auto_ptr<TimeWatch> rtw;
+    auto_ptr<TimeWatch> wtw;
 }; // CNetStorageHandler
 
 

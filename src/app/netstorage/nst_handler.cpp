@@ -282,6 +282,9 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
             break;
     }
 
+    rtw.reset();
+    wtw.reset();
+
     // If a command has not finished its logging by some reasons - do it
     // here as the last chance.
     if (m_CmdContext.NotNull()) {
@@ -1325,6 +1328,11 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             TNSTDBValue<Int8>   read_count;
             TNSTDBValue<Int8>   write_count;
             TNSTDBValue<string> client_name;
+
+            // The parameters are output only (from the SP POV) however the
+            // integer values should be initialized to avoid valgrind complains
+            read_count.m_Value = 0;
+            write_count.m_Value = 0;
             int                 status = m_Server->GetDb().
                                     ExecSP_GetObjectFixedAttributes(
                                         direct_object.Locator().GetUniqueKey(),
@@ -1928,6 +1936,7 @@ CNetStorageHandler::x_ProcessWrite(
 }
 
 
+
 void
 CNetStorageHandler::x_ProcessRead(
                         const CJsonNode &                message,
@@ -1977,14 +1986,21 @@ CNetStorageHandler::x_ProcessRead(
     size_t          bytes_read;
     Int8            total_bytes = 0;
 
+    rtw.reset(new TimeWatch("Read"));
+    wtw.reset(new TimeWatch("Write"));
+
     try {
         while (!direct_object.Eof()) {
+            rtw->start();
             bytes_read = direct_object.Read(buffer, sizeof(buffer));
+            rtw->stop();
 
             m_UTTPWriter.SendChunk(buffer, bytes_read, false);
 
+            wtw->start();
             if (x_SendOverUTTP() != eIO_Success)
                 return;
+            wtw->stop();
 
             m_Server->GetClientRegistry().AddBytesRead(m_Client, bytes_read);
             total_bytes += bytes_read;
@@ -2005,8 +2021,10 @@ CNetStorageHandler::x_ProcessRead(
 
     m_UTTPWriter.SendControlSymbol('\n');
 
+    wtw->start();
     if (x_SendOverUTTP() != eIO_Success)
         return;
+    wtw->stop();
 
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRead(
@@ -2020,6 +2038,8 @@ CNetStorageHandler::x_ProcessRead(
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
+    rtw.reset();
+    wtw.reset();
 }
 
 
