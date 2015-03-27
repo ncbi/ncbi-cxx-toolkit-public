@@ -803,6 +803,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_MaplocComments(ctx);
     x_RegionComments(ctx);
     x_NameComments(ctx);
+    x_BasemodComment(ctx);
     x_StructuredComments(ctx);
     x_HTGSComments(ctx);
     if( ctx.ShowAnnotCommentAsCOMMENT() ) {
@@ -814,7 +815,6 @@ void CFlatGatherer::x_GatherComments(void) const
 //    x_FeatComments(ctx);
 
     x_MapComment(ctx);
-    x_BasemodComment(ctx);
 
     x_RemoveDupComments();
     x_RemoveExcessNewlines();
