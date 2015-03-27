@@ -335,7 +335,7 @@ void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
     }
 
     cmd->append(" ncbi_phid=\"");
-    cmd->append(CDiagContext::GetRequestContext().GetHitID());
+    cmd->append(CDiagContext::GetRequestContext().GetNextSubHitID());
     cmd->append(1, '\"');
 }
 
