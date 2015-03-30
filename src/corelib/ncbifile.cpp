@@ -226,6 +226,10 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
         errno = saved_error; \
         return false; \
     }
+    
+// Macro to silence GCC's __wur (warn unused result)
+#define _no_warning(expr)  while ( expr ) break
+    
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4448,7 +4452,7 @@ static const SFileSystem s_FileSystem[] = {
 static void s_PipeExit(int status, int fd)
 {
     int errcode = errno;
-    (void) ::write(fd, &errcode, sizeof(errcode));
+    _no_warning(::write(fd, &errcode, sizeof(errcode)));
     ::close(fd);
     ::_exit(status);
 }
@@ -4473,13 +4477,14 @@ void s_GetDiskSpace_PANFS(const string&               path,
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
 
-    // TRUE if initialization has done for DLL/EXE methods
-    static bool s_InitDLL  = false;
+    // TRUE if initialization has done for EXE method
     static bool s_InitEXE  = false;
     static bool s_ExistEXE = false;
     
 #if defined(ALLOW_USE_NCBI_PANFS_DLL)
 
+    // TRUE if initialization has done for DLL method
+    static bool s_InitDLL = false;
     static FGetDiskSpace_PANFS f_GetDiskSpace = NULL;
    
     if ( !s_InitDLL ) {
@@ -4610,8 +4615,8 @@ void s_GetDiskSpace_PANFS(const string&               path,
                 // Close unused pipe handle
                 ::close(status_pipe[0]);
                 // stdin/stderr -- don't use
-                ::freopen("/dev/null", "r", stdin);
-                ::freopen("/dev/null", "a", stderr);
+                _no_warning(::freopen("/dev/null", "r", stdin));
+                _no_warning(::freopen("/dev/null", "a", stderr));
                 // stdout
                 if (pipe_fd[1] != STDOUT_FILENO) {
                     if (::dup2(pipe_fd[1], STDOUT_FILENO) < 0) {
