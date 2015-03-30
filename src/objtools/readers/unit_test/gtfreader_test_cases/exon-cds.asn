@@ -6,6 +6,9 @@ Seq-annot ::= {
     {
       id local str "gene|1",
       data gene {
+        syn {
+          "381.000"
+        }
       },
       location int {
         from 149,
@@ -14,6 +17,10 @@ Seq-annot ::= {
         id local id 381
       },
       qual {
+        {
+          qual "gene_id",
+          val "381.000"
+        },
         {
           qual "real",
           val "X"
@@ -66,8 +73,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "gene_id",
+          val "381.000"
+        },
+        {
           qual "real",
           val "X"
+        },
+        {
+          qual "transcript_id",
+          val "381.000.1"
         }
       },
       xref {
@@ -101,6 +116,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "381.000"
+        },
+        {
+          qual "transcript_id",
+          val "381.000.1"
+        }
       },
       xref {
         {

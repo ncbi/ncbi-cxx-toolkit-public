@@ -6,6 +6,9 @@ Seq-annot ::= {
     {
       id local str "gene|4",
       data gene {
+        syn {
+          "AT1G01010"
+        }
       },
       location int {
         from 3630,
@@ -14,6 +17,10 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        }
       }
     },
     {
@@ -61,6 +68,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01010.1"
+        }
       },
       xref {
         {
@@ -111,6 +126,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01010.1"
+        }
       },
       xref {
         {
@@ -124,6 +147,9 @@ Seq-annot ::= {
     {
       id local str "gene|7",
       data gene {
+        syn {
+          "AT1G01020"
+        }
       },
       location int {
         from 5927,
@@ -132,6 +158,10 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        }
       }
     },
     {
@@ -195,6 +225,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.1"
+        }
       },
       xref {
         {
@@ -271,6 +309,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.1"
+        }
       },
       xref {
         {
@@ -327,6 +373,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.2"
+        }
       },
       xref {
         {
@@ -391,6 +445,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.2"
+        }
       },
       xref {
         {
@@ -401,6 +463,9 @@ Seq-annot ::= {
     {
       id local str "gene|12",
       data gene {
+        syn {
+          "AT1G01030"
+        }
       },
       location int {
         from 11648,
@@ -409,6 +474,10 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01030"
+        }
       }
     },
     {
@@ -432,6 +501,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01030"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01030.1"
+        }
       },
       xref {
         {
@@ -451,11 +528,11 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gtf_gene_id",
+          qual "gene_id",
           val "AT1G01030"
         },
         {
-          qual "gtf_transcript_id",
+          qual "transcript_id",
           val "AT1G01030.1"
         }
       },
@@ -471,6 +548,9 @@ Seq-annot ::= {
     {
       id local str "gene|15",
       data gene {
+        syn {
+          "AT1G01040"
+        }
       },
       location int {
         from 23145,
@@ -479,6 +559,10 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        }
       }
     },
     {
@@ -610,6 +694,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.1"
+        }
       },
       xref {
         {
@@ -744,6 +836,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.1"
+        }
       },
       xref {
         {
@@ -841,6 +941,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.2"
+        }
       },
       xref {
         {
@@ -933,6 +1041,14 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.2"
+        }
       },
       xref {
         {
