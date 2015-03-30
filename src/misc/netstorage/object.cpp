@@ -152,15 +152,17 @@ void CObj::Remove()
 
 void CObj::Close()
 {
-    m_State->CloseImpl();
+    IState* rw_state = m_State;
     m_State = this;
+    rw_state->CloseImpl();
 }
 
 
 void CObj::Abort()
 {
-    m_State->AbortImpl();
+    IState* rw_state = m_State;
     m_State = this;
+    rw_state->AbortImpl();
 }
 
 
