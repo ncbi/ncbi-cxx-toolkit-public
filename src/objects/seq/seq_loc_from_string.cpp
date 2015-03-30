@@ -333,7 +333,7 @@ namespace {
         str = copy;
     }
 
-    unsigned int s_GetParenLen (string text)
+    size_t s_GetParenLen (string text)
     {
         string::size_type offset = 0;
         unsigned int paren_count;
