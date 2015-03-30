@@ -202,6 +202,12 @@ void CFeatTableEdit::EliminateBadQualifiers()
         for (QUALS::const_iterator qual = quals.begin(); qual != quals.end(); 
                 ++qual) {
             string qualVal = (*qual)->GetQual();
+            if (qualVal == "orig_transcript_id") {
+                continue;
+            }
+            if (qualVal == "orig_protein_id") {
+                continue;
+            }
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
             if (!CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
                 badQuals.push_back(qualVal);
