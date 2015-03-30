@@ -174,7 +174,8 @@ int CResInfoTest::Run(void)
     // Two domains
     decr = CNcbiEncrypt::DecryptForDomain(encr, "domain2");
     _ASSERT(decr == data);
-    v1_encr == "11BDF0BA7079A8C2BD6656D3CF2D79160:3F7930D402567001F058086D263539596792628CEEF15AFE9D7E84FCD9C7BC14/domain";
+    v1_encr = "11BDF0BA7079A8C2BD6656D3CF2D79160:3F7930D402567001F058086D263539596792628CEEF15AFE9D7E84FCD9C7BC14/domain";
+    decr = CNcbiEncrypt::Decrypt(v1_encr);
     _ASSERT(decr == data);
 
     // Test IsEncrypted()
@@ -240,7 +241,6 @@ int CResInfoTest::Run(void)
     _ASSERT(s == data);
 
     cout << "All tests passed" << endl;
-
     return 0;
 }
 
