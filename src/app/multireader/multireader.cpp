@@ -1134,6 +1134,9 @@ void CMultiReaderApp::xSetFlags(
         if ( args["child-links"] ) {
             m_iFlags |= CGtfReader::fGenerateChildXrefs;
         }
+        if (args["genbank"]) {
+            m_iFlags |= CGff3Reader::fGenbankMode;
+        }
         break;
            
     case CFormatGuess::eGff3:
@@ -1142,6 +1145,7 @@ void CMultiReaderApp::xSetFlags(
         }
         if ( args["genbank"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
+            m_iFlags |= CGff3Reader::fGenbankMode;
         }
         break;
 
@@ -1165,7 +1169,7 @@ void CMultiReaderApp::xPostProcessAnnot(
 	}
     edit::CFeatTableEdit fte(annot, args["locus-tag-prefix"].AsString(),
 		m_pErrors);
-//    fte.InferPartials();
+    fte.InferPartials();
     fte.InferParentMrnas();
     fte.InferParentGenes();
 	fte.GenerateLocusTags();

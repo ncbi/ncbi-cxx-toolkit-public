@@ -742,10 +742,27 @@ bool CGff2Record::x_MigrateAttributes(
 
     it = attrs_left.find("protein_id");
     if (it != attrs_left.end()) {
-        CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
+        string protId = it->second;
+        CRef<CSeq_id> pId = CReadUtil::AsSeqId(protId, flags);
         CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
         pLoc->SetId(*pId);
         pFeature->SetProduct(*pLoc);
+        if (flags & CGff2Reader::fGenbankMode) {
+            // mss-362: turn protein_id attributes into orig_protein_id quailifiers.
+            CRef<CGb_qual> pQual;
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual("orig_protein_id");
+            pQual->SetVal(protId);
+            pFeature->SetQual().push_back(pQual);
+        }
+        else {
+            // mss-362: turn protein_id attributes into protein_id quailifiers.
+            CRef<CGb_qual> pQual;
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual("protein_id");
+            pQual->SetVal(protId);
+            pFeature->SetQual().push_back(pQual);
+        }
         attrs_left.erase(it);
     }
 
@@ -757,13 +774,30 @@ bool CGff2Record::x_MigrateAttributes(
 
     it = attrs_left.find("transcript_id");
     if (it != attrs_left.end()) {
+        string transcriptId = it->second;
         if (!pFeature->IsSetProduct()) {
-            CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
+            CRef<CSeq_id> pId = CReadUtil::AsSeqId(transcriptId, flags);
             CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);
         }
-        //do not erase
+        if (flags & CGff2Reader::fGenbankMode) {
+            // mss-362: turn transcript_id attributes into orig_transcript_id quailifiers.
+            CRef<CGb_qual> pQual;
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual("orig_transcript_id");
+            pQual->SetVal(transcriptId);
+            pFeature->SetQual().push_back(pQual);
+        }
+        else {
+            // mss-362: turn protein_id attributes into protein_id quailifiers.
+            CRef<CGb_qual> pQual;
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual("transcript_id");
+            pQual->SetVal(transcriptId);
+            pFeature->SetQual().push_back(pQual);
+        }
+        attrs_left.erase(it);
     }
 
     it = attrs_left.find("transl_except");
