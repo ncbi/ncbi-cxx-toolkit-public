@@ -790,7 +790,7 @@ void s_ReadAndTestQueryFromString(const string& input, TSeqPos expected_length,
     BOOST_REQUIRE_EQUAL(expected_length, sv->size());
     BOOST_REQUIRE_EQUAL(is_protein, sv->IsProtein());
     sv->SetIupacCoding();
-    TSeqPos input_pos = input.find_first_of("ACTG");
+    SIZE_TYPE input_pos = NStr::Find(input, "ACTG");
     BOOST_REQUIRE(input_pos != NPOS);
     for (TSeqPos pos = 0; pos < sv->size(); pos++, input_pos++) {
         CNcbiOstrstream oss;
