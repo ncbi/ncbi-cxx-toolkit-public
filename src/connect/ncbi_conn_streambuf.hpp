@@ -96,7 +96,7 @@ protected:
 
 protected:
     int                 x_sync(void)
-    { return pbase()  &&  pptr() > pbase() ? sync() : 0; }
+    { return pbase() < pptr() ? sync() : 0; }
 
 private:
     CONN                m_Conn;      // underlying connection handle

@@ -120,7 +120,7 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
       x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
-    setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufSize << 1);
+    setbuf(n  &&  s ? s : 0, n ? n : kDefaultBufSize << 1);
 }
 
 
@@ -138,15 +138,43 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
 }
 
 
+ERW_Result CRWStreambuf::x_pushback(void)
+{
+    if ( !m_Reader ) {
+        _ASSERT(!gptr()  &&  !egptr());
+        return eRW_Success;
+    }
+
+    ERW_Result result;
+    const CT_CHAR_TYPE* ptr = gptr();
+    size_t count = (size_t)(egptr() - ptr);
+    setg(0, 0, 0);
+    if ( !count )
+        result = eRW_Success;
+    else if ((result = m_Reader->Pushback(ptr, count, m_pBuf)) == eRW_Success)
+        m_pBuf = 0;
+    return result;
+}
+
+
 CRWStreambuf::~CRWStreambuf()
 {
     try {
         // Flush only if data pending and no error
         if (!x_Err  ||  x_ErrPos != x_GetPPos())
             x_sync();
-        setg(0, 0, 0);
         setp(0, 0);
-
+    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
+    try {
+        // Push any data still unred in the buffer back to the device
+        ERW_Result result = x_pushback();
+        if (result != eRW_Success  &&  result != eRW_NotImplemented) {
+            ERR_POST_X(13,
+                       Critical << "CRWStreambuf::~CRWStreambuf():"
+                       " Read data pending");
+        }
+    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
+    try {
         IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
         if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
             if ((m_Flags & fOwnAll) == fOwnAll)
@@ -157,9 +185,9 @@ CRWStreambuf::~CRWStreambuf()
             if (m_Flags & fOwnReader)
                 delete m_Reader;
         }
-
-        delete[] m_pBuf;
     } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
+
+    delete[] m_pBuf;
 }
 
 
@@ -168,16 +196,18 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
     if (!s  &&  !m)
         return this;
 
-    if (gptr()   &&  gptr() < egptr())
+    if (x_pushback() != eRW_Success)
         ERR_POST_X(3,Critical << "CRWStreambuf::setbuf(): Read data pending");
-    if (pbase()  &&  pptr() > pbase())
+    if (x_sync() != 0)
         ERR_POST_X(4,Critical << "CRWStreambuf::setbuf(): Write data pending");
+    setp(0, 0);
 
     delete[] m_pBuf;
     m_pBuf = 0;
 
     size_t n = (size_t) m;
     if ( !n ) {
+        s = 0/*setbuf(s, 0)?!*/;
         _ASSERT(kDefaultBufSize > 1);
         n = (size_t) kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
     }
@@ -209,7 +239,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         return CT_EOF;
 
     size_t n_written;
-    size_t n_towrite = (size_t)(pbase() ? pptr() - pbase() : 0);
+    size_t n_towrite = (size_t)(pptr() - pbase());
 
     ERW_Result result;
     if ( n_towrite ) {
@@ -368,7 +398,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
 CT_INT_TYPE CRWStreambuf::underflow(void)
 {
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(gptr() >= egptr());
 
     if ( !m_Reader )
         return CT_EOF;
@@ -419,11 +449,11 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if ( n ) {
         // first, read from the memory buffer
-        n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
+        n_read = (size_t)(egptr() - gptr());
         if (n_read > n)
             n_read = n;
         memcpy(buf, gptr(), n_read);
-        gbump((int) n_read);
+        gbump(int(n_read));
         n   -= n_read;
         if ( !n )
             return (streamsize) n_read;
@@ -433,8 +463,8 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     do {
         // next, read directly from the device
-        size_t     x_toread = n < m_BufSize ? m_BufSize : n;
-        CT_CHAR_TYPE* x_buf = n < m_BufSize ? m_ReadBuf : buf;
+        size_t     x_toread = n  &&  n < m_BufSize ? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf =        n < m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
         size_t       x_read = 0;
 
@@ -472,7 +502,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CRWStreambuf::showmanyc(void)
 {
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(gptr() >= egptr());
 
     if ( !m_Reader )
         return -1L;

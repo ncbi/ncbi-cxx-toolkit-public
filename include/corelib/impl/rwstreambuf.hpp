@@ -118,7 +118,8 @@ protected:
     CT_POS_TYPE    x_GetPPos(void)
     { return x_PPos + (CT_OFF_TYPE)(pbase() ? pbase() - pptr() : 0); }
     int               x_sync(void)
-    { return pbase()  &&  pptr() > pbase() ? sync() : 0; }
+    { return pbase() < pptr() ? sync() : 0; }
+    ERW_Result        x_pushback(void);
 
 protected:
     TFlags         m_Flags;

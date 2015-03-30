@@ -57,51 +57,54 @@ BEGIN_NCBI_SCOPE
 
 struct NCBI_XNCBI_EXPORT CStreamUtils
 {
-// Push the block of data [buf, buf+buf_size) back to the input stream "is".
+// Push a block of data [buf, buf+buf_size) back to the input stream "is".
 // If "del_ptr" is not NULL, then `delete[] (CT_CHAR_TYPE*) del_ptr' is called
 // some time between the moment you call this function (perhaps, prior to when
 // it returns) and when the passed block is no longer needed (i.e. its content
 // is stored elsewhere, or its all read out from the stream, or if the stream
-// is destructed).  Since this function may, at its own discretion, use the
-// passed "buf" directly in the input stream as long as it needs to, for the
-// sake of data integrity and consistency the block should not be modified
-// from the outside until all of the passed data is read out from the stream.
-// NOTE 1:  It's okay to pushback arbitrary data (i.e. not necessarily
-//          just what has been last read from the stream).
+// is destructed).  Since the first form of this API may, at its own
+// discretion, use the passed "buf" directly in the input stream as long as
+// needed, for the sake of data integrity and consistency the block must not
+// be modified until all of the data is read out from the stream.
+// NOTE 0:  The very presence of the "del_ptr" parameter (NULL or non-NULL)
+//          denotes that the "buf"'s contents can be directly used as the
+//          pushback data (i.e. the stream assumes the ownership of "buf").
+// NOTE 1:  It's okay to push back arbitrary data (i.e. not necessarily just
+//          what has been last read from the "is" stream).
 // NOTE 2:  Data does not actually go to the original streambuf of "is".
 // NOTE 3:  It's okay if "is" is a full-duplex stream (iostream).
 // NOTE 4:  Data pushed back regardless of the current stream state, so it is
 //          the caller's responsibility to check and possibly clear stream
 //          state that can prevent further reading (e.g. an EOF condition
 //          reached previously).
-// NOTE 5:  After a pushback, the stream is allowed to do limited seeks
+// NOTE 5:  After the pushback, the stream is allowed to do limited seeks
 //          relative to current position (ios::cur);  only direct-access
 //          (ios::beg, ios::end) seeks are fully okay (if permitted by "is").
 // NOTE 6:  Stream re-positioning made after pushback clears all pushback data.
 // NOTE 7:  The standard specifically says that putbacks must be interleaved
 //          with reads in order to work properly.  That is especially
-//          important to keep in mind, when using both the standard
+//          important to keep in mind, while using both the standard
 //          putbacks and the pushbacks offered by this API.
 // NOTE 8:  Implementation is incomplete (but safe and stable) and may leak
-//          memory in Solaris WorkShop MT builds (due to a bug in C++ RTL).
+//          memory in Solaris WorkShop MT builds (due to a bug in its C++ RTL).
     static void       Pushback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
                                void*               del_ptr)
     { x_Pushback(is, buf, (size_t) buf_size, del_ptr, ePushback_NoCopy); }
 
-// Acts just like its counterpart with 4 args (above), but this variant
-// always copies (if necessary) the "pushback data" into an internal buffer,
-// so "buf" is not required to remain read-only in the outer code.
+// Acts just like its counterpart with 4 args (above), but this variant always
+// copies (if necessary) the "pushback data" into an internal buffer, so "buf"
+// is not required to remain read-only in the outer code.
     static void       Pushback(CNcbiIstream&       is,
                                const CT_CHAR_TYPE* buf,
                                streamsize          buf_size)
     { x_Pushback(is, const_cast<CT_CHAR_TYPE*> (buf), (size_t) buf_size); }
 
-// Unsafe but fast API that tries to backup "buf_size" bytes in the
-// internal stream buffer, but if that is not possible, will use
-// (perhaps, partially) "buf" and "del_ptr" to pushback as described above.
-// This call relies upon that the data in "buf" is exactly as it has been
+// Unsafe but fast API that tries to backup "buf_size" bytes in the internal
+// stream buffer, but if that is not possible, will use (perhaps, partially)
+// "buf" and "del_ptr" to pushback as described above.
+// This call relies upon that the data in "buf" is exactly same as it has been
 // read from the stream previously (otherwise, behavior is undefined).
     static void       Stepback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
@@ -140,15 +143,12 @@ private:
 ///     CRWStream rw(new CStreamReader(cin), new CStreamWriter(cout),
 ///                  0, 0, CRWStreambuf::fOwnAll);
 ///
-/// @note If a CRStream is built buffered on top of this CStreamReader, then
-///       the contents of "is" becomes undefined after the first read operation
-///       (because the underlying buffering may pull in more data than actually
-///       necessary for the top-level CRStream).  A workaround would be to add
-///       an IReader::Pushback() method (that calls CStreamUtils::Pushback() in
-///       this case), which is to be called by the stream buffer destructor.
+/// @note If the stream is not owned by CStreamReader, then any data buffered
+///       yet unread from a CRStream built on top of this reader, will be
+///       pushed back to the original stream when the CRStream gets destroyed.
 ///
 /// @sa
-///   CStreamWriter
+///   CStreamWriter, CStreamUtils::Pushback
 class NCBI_XNCBI_EXPORT CStreamReader : public IReader
 {
 public:
@@ -158,6 +158,7 @@ public:
 
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
     virtual ERW_Result PendingCount(size_t* count);
+    virtual ERW_Result Pushback(const void* buf, size_t count, void* del_ptr);
 
 protected:
     AutoPtr<CNcbiIstream> m_Stream;

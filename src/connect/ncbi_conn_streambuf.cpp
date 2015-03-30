@@ -190,7 +190,7 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
  
     EIO_Status status;
     // flush only if some data pending
-    if (pbase()  &&  pptr() > pbase()) {
+    if (pbase() < pptr()) {
         if ((status = CONN_Status(m_Conn, eIO_Write)) != eIO_Success) {
             m_Status = status;
             if (CONN_Status(m_Conn, eIO_Open) == eIO_Success) {
@@ -248,7 +248,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         return CT_EOF;
 
     size_t n_written;
-    size_t n_towrite = (size_t)(pbase() ? pptr() - pbase() : 0);
+    size_t n_towrite = (size_t)(pptr() - pbase());
 
     if (n_towrite) {
         // send buffer
@@ -379,7 +379,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
 CT_INT_TYPE CConn_Streambuf::underflow(void)
 {
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(gptr() >= egptr());
 
     if (!m_Conn)
         return CT_EOF;
@@ -432,7 +432,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (n) {
         // first, read from the memory buffer
-        n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
+        n_read = (size_t)(egptr() - gptr());
         if (n_read > n)
             n_read = n;
         memcpy(buf, gptr(), n_read);
@@ -487,7 +487,7 @@ streamsize CConn_Streambuf::showmanyc(void)
 {
     static const STimeout kZeroTmo = {0, 0};
 
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(gptr() >= egptr());
 
     if (!m_Conn)
         return -1;
@@ -552,7 +552,7 @@ int CConn_Streambuf::sync(void)
 {
     if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
         return -1;
-    _ASSERT(!pbase()  ||  pbase() == pptr());
+    _ASSERT(pbase() == pptr());
     return 0;
 }
 
@@ -574,9 +574,9 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
         // tellp()/tellg() support only
         switch (which) {
         case IOS_BASE::out:
-            return x_PPos + (CT_OFF_TYPE)(pbase() ? pptr() - pbase() : 0);
+            return x_PPos + (CT_OFF_TYPE)(pptr() - pbase());
         case IOS_BASE::in:
-            return x_GPos - (CT_OFF_TYPE)(gptr()  ? egptr() - gptr() : 0);
+            return x_GPos - (CT_OFF_TYPE)(egptr() - gptr());
         default:
             break;
         }

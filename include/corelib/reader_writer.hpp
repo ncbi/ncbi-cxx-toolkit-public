@@ -101,6 +101,20 @@ public:
     /// both eRW_Success and zero "*count", or return eRW_NotImplemented alone.
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
+
+    /// This method gets called by RStream buffer destructor to return buffered
+    /// yet still unread (from the stream) portion of data  back to the device.
+    /// It's semantically equivalent to CStreamUtils::Pushback() with the only
+    /// difference that IReader can only assume the ownership of "buf" when
+    /// "del_ptr" is passed non-NULL.
+    /// Return eRW_Success when data have been successfully pushed back and the
+    /// ownership of the pointers has been assumed as described above.
+    /// Any other error code results in pointers remained and handled within
+    /// the stream buffer being deleted, with a error messages suppressed for
+    /// eRW_NotImplemented (default implementation).
+    virtual ERW_Result Pushback(const void* buf, size_t count,
+                                void* del_ptr = 0);
+
     virtual ~IReader();
 };
 

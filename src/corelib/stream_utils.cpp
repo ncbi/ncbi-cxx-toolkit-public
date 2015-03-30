@@ -566,6 +566,12 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
 }
 
 
+ERW_Result IReader::Pushback(const void*, size_t, void*)
+{
+    return eRW_NotImplemented;
+}
+
+
 IReader::~IReader()
 {
 }
@@ -616,6 +622,21 @@ ERW_Result CStreamReader::PendingCount(size_t* count)
         return eRW_Success;
     }
     return eRW_Error;
+}
+
+
+ERW_Result CStreamReader::Pushback(const void* buf, size_t count,
+                                   void* del_ptr)
+{
+    if (!m_Stream.IsOwned()) {
+        if (del_ptr) {
+            CStreamUtils::Pushback(*m_Stream,
+                                   (CT_CHAR_TYPE*) buf, count, del_ptr);
+        } else
+            CStreamUtils::Pushback(*m_Stream, (CT_CHAR_TYPE*) buf, count);
+    } else
+        delete[] (CT_CHAR_TYPE*) del_ptr;
+    return eRW_Success;
 }
 
 
