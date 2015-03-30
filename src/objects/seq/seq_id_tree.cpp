@@ -194,16 +194,16 @@ CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 {
     TWriteLockGuard guard(m_TreeLock);
-    if ( info->GetLockCounter() != 0 ) {
+    if ( info->IsLocked() ) {
         _ASSERT(info->m_Seq_id_Type != CSeq_id::e_not_set);
         return;
     }
     if ( info->m_Seq_id_Type == CSeq_id::e_not_set ) {
-        _ASSERT(info->GetLockCounter() == 0);
+        _ASSERT(!info->IsLocked());
         return;
     }
     x_Unindex(info);
-    _ASSERT(info->GetLockCounter()==0);
+    _ASSERT(!info->IsLocked());
     _ASSERT(info->m_Seq_id_Type != CSeq_id::e_not_set);
     const_cast<CSeq_id_Info*>(info)->m_Seq_id_Type = CSeq_id::e_not_set;
 }

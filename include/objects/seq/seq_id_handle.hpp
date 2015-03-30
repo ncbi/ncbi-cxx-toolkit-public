@@ -91,9 +91,9 @@ public:
                 x_RemoveLastLock();
             }
         }
-    int GetLockCounter(void) const
+    bool IsLocked(void) const
         {
-            return m_LockCounter.Get();
+            return m_LockCounter.Get() != 0;
         }
 
     CSeq_id::E_Choice GetType(void) const
