@@ -672,20 +672,20 @@ public:
     // A bit mask for warnings that are still warnings in the strict mode.
     // The lowest bit stands for W_First (aka w31, W_GapObjBegin),
     // the highest, as of 2015/03/25  - W_Last, w66, W_GnlId.
-    static const Int8 s_StrictModeWarningMask =
-      (0x1l << (W_ExtraTab                    -W_First)) |
-      (0x1l << (W_GapLineMissingCol9          -W_First)) |
-      (0x1l << (W_NoEolAtEof                  -W_First)) |
-      (0x1l << (W_GapLineIgnoredCol9          -W_First)) |
-      (0x1l << (W_ObjOrderNotNumerical        -W_First)) |
-      (0x1l << (W_GapSizeNot100               -W_First)) |
-      (0x1l << (W_ShortGap                    -W_First)) |
-      (0x1l << (W_CommentsAfterStart          -W_First)) |
-      (0x1l << (W_AGPVersionCommentInvalid    -W_First)) |
-      (0x1l << (W_AGPVersionCommentUnnecessary-W_First)) ;
+    static const Uint8 s_StrictModeWarningMask =
+      (Uint8(1) << (W_ExtraTab                    -W_First)) |
+      (Uint8(1) << (W_GapLineMissingCol9          -W_First)) |
+      (Uint8(1) << (W_NoEolAtEof                  -W_First)) |
+      (Uint8(1) << (W_GapLineIgnoredCol9          -W_First)) |
+      (Uint8(1) << (W_ObjOrderNotNumerical        -W_First)) |
+      (Uint8(1) << (W_GapSizeNot100               -W_First)) |
+      (Uint8(1) << (W_ShortGap                    -W_First)) |
+      (Uint8(1) << (W_CommentsAfterStart          -W_First)) |
+      (Uint8(1) << (W_AGPVersionCommentInvalid    -W_First)) |
+      (Uint8(1) << (W_AGPVersionCommentUnnecessary-W_First)) ;
     static inline bool IsStrictModeWarning(int code)
     {
-        return s_StrictModeWarningMask & (0x1l << (code-W_First));
+        return s_StrictModeWarningMask & (Uint8(1) << (code-W_First));
     }
     const char* ErrorWarningOrNoteEx(int code);
 
