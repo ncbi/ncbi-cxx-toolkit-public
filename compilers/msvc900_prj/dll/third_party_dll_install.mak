@@ -30,7 +30,8 @@ THIRD_PARTY_LIBS = \
 	install_xalan      \
 	install_xerces     \
 	install_libxml     \
-	install_libxslt
+	install_libxslt    \
+	install_vdb
 
 CLEAN_THIRD_PARTY_LIBS = \
 	clean_berkeleydb \
@@ -48,7 +49,8 @@ CLEAN_THIRD_PARTY_LIBS = \
 	clean_xalan      \
 	clean_xerces     \
 	clean_libxml     \
-	clean_libxslt
+	clean_libxslt    \
+	clean_vdb
 
 all : dirs $(THIRD_PARTY_LIBS)
 

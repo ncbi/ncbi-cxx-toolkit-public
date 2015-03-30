@@ -483,6 +483,12 @@ sssutils         = @sssutils@
 NCBILS2_LIB      = ncbils2_cli ncbils2_asn ncbils2_cmn
 NCBILS_LIB       = $(NCBILS2_LIB)
 
+# NCBI SRA/VDB Toolkit
+VDB_INCLUDE     = @VDB_INCLUDE@
+VDB_LIB         = @VDB_LIB@
+VDB_LIBS        = @VDB_LIBS@
+VDB_STATIC_LIBS = @VDB_STATIC_LIBS@
+
 # SP:  headers, libraries
 SP_INCLUDE = @SP_INCLUDE@
 SP_LIBS    = @SP_LIBS@

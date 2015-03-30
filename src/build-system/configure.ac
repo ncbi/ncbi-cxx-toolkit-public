@@ -64,7 +64,7 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
-      m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre,
+      m4_foreach(X, [sss, sssutils, sssdb, vdb, z, bz2, lzo, pcre,
                      gcrypt, gnutls, openssl, krb5, boost,
                      sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
@@ -235,6 +235,12 @@ AC_ARG_WITH(sssdb,
    [ --without-sssdb         do not use NCBI SSS DB library])
 AC_ARG_WITH(included-sss,
    [ --with-included-sss     use the in-tree copy of SSS])
+AC_ARG_WITH(vdb,
+   [ --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR])
+AC_ARG_WITH(vdb2,
+   [ --without-vdb           do not use the NCBI SRA/VDB Toolkit])
+AC_ARG_WITH(included-vdb,
+   [ --with-included-vdb     always use the bundled NCBI SRA/VDB Toolkit copy])
 
 ## Third-party and system packages
 AC_ARG_WITH(z,
@@ -514,7 +520,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo \
+geo included-geo vdb included-vdb \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
 ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -560,7 +566,7 @@ for x_arg in "$@" ; do
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
-      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* \
+      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* | --with-vdb=* \
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-curl=* | --with-gsoap=* | --with-avro=* | --with-mongodb=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
@@ -635,6 +641,14 @@ if test "$with_openmp" = yes; then
       AC_MSG_ERROR([incompatible options: --without-mt but --with-openmp])
    fi
    : ${with_mt=yes} 
+fi
+
+if test "$with_included_vdb" = yes; then
+   if test "$with_vdb" = no; then
+      AC_MSG_ERROR([incompatible options: --without-vdb but
+                    --with-included-vdb])
+   fi
+   : ${with_vdb=yes}
 fi
 
 #### Check for special options
@@ -6460,6 +6474,101 @@ else
 fi
 
 
+# NCBI SRA/VDB
+if test "$with_vdb" != "no" ; then
+   # CURL?
+   vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
+   if test "$with_included_vdb" != "yes"; then
+      if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
+         : ${VDB_PATH=$with_vdb}
+      fi
+      if test -z "$VDB_PATH"; then
+         in_path=
+      else
+         NCBI_FIX_DIR(VDB_PATH)
+         in_path=" in $VDB_PATH"
+         for x in interfaces include; do
+            if test -d "$VDB_PATH/$x"; then
+               : ${VDB_INCLUDE="-I$VDB_PATH/$x"}
+               break
+            fi
+         done
+         case "$DEBUG_SFX" in
+            Debug )
+               VDB_INCLUDE="$VDB_INCLUDE $VDB_INCLUDE/cc/gcc -D_DEBUGGING"
+               vdb_mode=debug
+               ;;
+            Release )
+               vdb_mode=release
+               ;;
+         esac
+         case "$host_os:$host_cpu:$bit64_sfx" in
+            darwin*:*86*:64 )
+               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/x86_64/lib}   ;;
+            linux*:*86*:64 )
+               : ${VDB_LIBDIR=$VDB_PATH/linux/$vdb_mode/x86_64/lib} ;;
+            * )
+               if test -n "$with_vdb"; then
+                  AC_MSG_ERROR([--with-vdb explicitly specified,
+                                but not supported on this platform.])
+               fi
+               ;;
+         esac
+      fi
+      NCBI_RPATHIFY_COND(VDB_LIBS, $VDB_LIBDIR, [ -lncbi-vdb $vdb_deps])
+      CPPFLAGS="$orig_CPPFLAGS $VDB_INCLUDE"
+      LIBS="$orig_LIBS $VDB_LIBS"
+      AC_CACHE_CHECK([for ncbi-vdb$in_path], ncbi_cv_lib_ncbi_vdb,
+         AC_LINK_IFELSE([
+            AC_LANG_PROGRAM([#include <sra/sradb.h>],
+               [const SRAMgr* mgr; SRAMgrMakeRead(&mgr);])],
+            [ncbi_cv_lib_ncbi_vdb=yes], [ncbi_cv_lib_ncbi_vdb=no]))
+      if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
+         NCBI_PACKAGE(VDB)
+         VDB_LIB=
+         if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
+            VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
+         else
+            VDB_STATIC_LIBS=$VDB_LIBS
+         fi
+      else
+         VDB_INCLUDE=
+         VDB_LIBS=
+         VDB_STATIC_LIBS=
+      fi
+   fi
+   if test "$with_included_vdb" != "no" -a -z "$VDB_LIBS" \
+           -a -d "$real_srcdir/src/sra/sdk"; then
+      case "$host_os" in
+         darwin* | linux* | solaris* )
+            AC_MSG_NOTICE([Using local NCBI SRA/VDB copy in src/sra/sdk])
+            NCBI_PACKAGE(VDB)
+            NCBI_PACKAGE(LocalVDB)
+            VDB_INCLUDE='-I$(includedir)/../src/sra/sdk/interfaces'
+            VDB_INCLUDE="$VDB_INCLUDE -I\$(includedir)/../src/sra/sdk/interfaces/C++Toolkit"
+            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces"
+            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces/C++Toolkit"
+            if test "$DEBUG_SFX" = Debug; then
+               VDB_INCLUDE="$VDB_INCLUDE -D_DEBUGGING"
+            fi
+            VDB_LIB=ncbi-vdb-read
+            VDB_LIBS=$vdb_deps
+            VDB_STATIC_LIBS=$VDB_LIBS
+            ;;
+         * )
+            if test -n "${with_vdb}${with_included_vdb}"; then
+                AC_MSG_ERROR([--with-vdb or --with-included-vdb explicitly
+                              specified, but not supported on this platform.])
+            fi
+            ;;
+      esac
+   fi
+   if test -z "$VDB_LIBS"; then
+      NCBI_MISSING_PACKAGE(VDB)
+   fi
+fi
+
+
 ### OEChem
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
@@ -7500,6 +7609,10 @@ AC_SUBST(NCBI_SSS_LIBPATH)
 AC_SUBST(LIBSSSUTILS)
 AC_SUBST(LIBSSSDB)
 AC_SUBST(sssutils)
+AC_SUBST(VDB_INCLUDE)
+AC_SUBST(VDB_LIB)
+AC_SUBST(VDB_LIBS)
+AC_SUBST(VDB_STATIC_LIBS)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)

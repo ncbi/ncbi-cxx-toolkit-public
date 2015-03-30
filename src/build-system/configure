@@ -965,6 +965,10 @@ NCBI_SSS_LIBPATH
 LIBSSSUTILS
 LIBSSSDB
 sssutils
+VDB_INCLUDE
+VDB_LIB
+VDB_LIBS
+VDB_STATIC_LIBS
 SP_INCLUDE
 SP_LIBS
 ORBACUS_INCLUDE
@@ -1547,7 +1551,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo \
+geo included-geo vdb included-vdb \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
 ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -1592,7 +1596,7 @@ for x_arg in "$@" ; do
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [A-Z]*=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
-      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* \
+      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* | --with-vdb=* \
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-curl=* | --with-gsoap=* | --with-avro=* | --with-mongodb=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
@@ -1767,6 +1771,9 @@ Optional Packages:
  --without-utils         do not use NCBI SSS UTIL library
  --without-sssdb         do not use NCBI SSS DB library
  --with-included-sss     use the in-tree copy of SSS
+ --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR
+ --without-vdb           do not use the NCBI SRA/VDB Toolkit
+ --with-included-vdb     always use the bundled NCBI SRA/VDB Toolkit copy
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -2064,6 +2071,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_sssdb=no
+         fi
+        if test "${with_vdb-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-vdb but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_vdb=no
          fi
         if test "${with_z-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-z but --without-3psw" >&2
@@ -3116,6 +3129,24 @@ if test "${with_included_sss+set}" = set; then
 fi
 
 
+# Check whether --with-vdb was given.
+if test "${with_vdb+set}" = set; then
+  withval=$with_vdb;
+fi
+
+
+# Check whether --with-vdb2 was given.
+if test "${with_vdb2+set}" = set; then
+  withval=$with_vdb2;
+fi
+
+
+# Check whether --with-included-vdb was given.
+if test "${with_included_vdb+set}" = set; then
+  withval=$with_included_vdb;
+fi
+
+
 ## Third-party and system packages
 
 # Check whether --with-z was given.
@@ -4012,6 +4043,17 @@ echo "$as_me: error: incompatible options: --without-mt but --with-openmp" >&2;}
    { (exit 1); exit 1; }; }
    fi
    : ${with_mt=yes}
+fi
+
+if test "$with_included_vdb" = yes; then
+   if test "$with_vdb" = no; then
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-vdb but
+                    --with-included-vdb" >&5
+echo "$as_me: error: incompatible options: --without-vdb but
+                    --with-included-vdb" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   : ${with_vdb=yes}
 fi
 
 #### Check for special options
@@ -37133,6 +37175,209 @@ else
 fi
 
 
+# NCBI SRA/VDB
+if test "$with_vdb" != "no" ; then
+   # CURL?
+   vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
+   if test "$with_included_vdb" != "yes"; then
+      if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
+         : ${VDB_PATH=$with_vdb}
+      fi
+      if test -z "$VDB_PATH"; then
+         in_path=
+      else
+         ncbi_fix_dir_tmp=`if cd $VDB_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $VDB_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            VDB_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$VDB_PATH" in
+               /*) ;;
+               * ) VDB_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) VDB_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+         in_path=" in $VDB_PATH"
+         for x in interfaces include; do
+            if test -d "$VDB_PATH/$x"; then
+               : ${VDB_INCLUDE="-I$VDB_PATH/$x"}
+               break
+            fi
+         done
+         case "$DEBUG_SFX" in
+            Debug )
+               VDB_INCLUDE="$VDB_INCLUDE $VDB_INCLUDE/cc/gcc -D_DEBUGGING"
+               vdb_mode=debug
+               ;;
+            Release )
+               vdb_mode=release
+               ;;
+         esac
+         case "$host_os:$host_cpu:$bit64_sfx" in
+            darwin*:*86*:64 )
+               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/x86_64/lib}   ;;
+            linux*:*86*:64 )
+               : ${VDB_LIBDIR=$VDB_PATH/linux/$vdb_mode/x86_64/lib} ;;
+            * )
+               if test -n "$with_vdb"; then
+                  { { echo "$as_me:$LINENO: error: --with-vdb explicitly specified,
+                                but not supported on this platform." >&5
+echo "$as_me: error: --with-vdb explicitly specified,
+                                but not supported on this platform." >&2;}
+   { (exit 1); exit 1; }; }
+               fi
+               ;;
+         esac
+      fi
+      if test -z "${VDB_LIBS+set}"; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $VDB_LIBDIR; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    VDB_LIBS="${ncbi_rp_L_flags} -lncbi-vdb $vdb_deps"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $VDB_LIBDIR; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    VDB_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lncbi-vdb $vdb_deps"
+ fi
+ fi
+      CPPFLAGS="$orig_CPPFLAGS $VDB_INCLUDE"
+      LIBS="$orig_LIBS $VDB_LIBS"
+      { echo "$as_me:$LINENO: checking for ncbi-vdb$in_path" >&5
+echo $ECHO_N "checking for ncbi-vdb$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_ncbi_vdb+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+
+            /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sra/sradb.h>
+int
+main ()
+{
+const SRAMgr* mgr; SRAMgrMakeRead(&mgr);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_ncbi_vdb=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_ncbi_vdb=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_ncbi_vdb" >&5
+echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
+      if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
+                   WithPackages="$WithPackages${WithPackagesSep}VDB"; WithPackagesSep=" "
+         VDB_LIB=
+         if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
+            VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
+         else
+            VDB_STATIC_LIBS=$VDB_LIBS
+         fi
+      else
+         VDB_INCLUDE=
+         VDB_LIBS=
+         VDB_STATIC_LIBS=
+      fi
+   fi
+   if test "$with_included_vdb" != "no" -a -z "$VDB_LIBS" \
+           -a -d "$real_srcdir/src/sra/sdk"; then
+      case "$host_os" in
+         darwin* | linux* | solaris* )
+            { echo "$as_me:$LINENO: Using local NCBI SRA/VDB copy in src/sra/sdk" >&5
+echo "$as_me: Using local NCBI SRA/VDB copy in src/sra/sdk" >&6;}
+                      WithPackages="$WithPackages${WithPackagesSep}VDB"; WithPackagesSep=" "
+                      WithPackages="$WithPackages${WithPackagesSep}LocalVDB"; WithPackagesSep=" "
+            VDB_INCLUDE='-I$(includedir)/../src/sra/sdk/interfaces'
+            VDB_INCLUDE="$VDB_INCLUDE -I\$(includedir)/../src/sra/sdk/interfaces/C++Toolkit"
+            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces"
+            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces/C++Toolkit"
+            if test "$DEBUG_SFX" = Debug; then
+               VDB_INCLUDE="$VDB_INCLUDE -D_DEBUGGING"
+            fi
+            VDB_LIB=ncbi-vdb-read
+            VDB_LIBS=$vdb_deps
+            VDB_STATIC_LIBS=$VDB_LIBS
+            ;;
+         * )
+            if test -n "${with_vdb}${with_included_vdb}"; then
+                { { echo "$as_me:$LINENO: error: --with-vdb or --with-included-vdb explicitly
+                              specified, but not supported on this platform." >&5
+echo "$as_me: error: --with-vdb or --with-included-vdb explicitly
+                              specified, but not supported on this platform." >&2;}
+   { (exit 1); exit 1; }; }
+            fi
+            ;;
+      esac
+   fi
+   if test -z "$VDB_LIBS"; then
+      if test "${with_VDB:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-VDB explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-VDB explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+   fi
+fi
+
+
 ### OEChem
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
@@ -40948,7 +41193,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS 
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -41056,6 +41301,10 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
+
+
 
 
 
@@ -42473,6 +42722,10 @@ NCBI_SSS_LIBPATH!$NCBI_SSS_LIBPATH$ac_delim
 LIBSSSUTILS!$LIBSSSUTILS$ac_delim
 LIBSSSDB!$LIBSSSDB$ac_delim
 sssutils!$sssutils$ac_delim
+VDB_INCLUDE!$VDB_INCLUDE$ac_delim
+VDB_LIB!$VDB_LIB$ac_delim
+VDB_LIBS!$VDB_LIBS$ac_delim
+VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
 SP_INCLUDE!$SP_INCLUDE$ac_delim
 SP_LIBS!$SP_LIBS$ac_delim
 ORBACUS_INCLUDE!$ORBACUS_INCLUDE$ac_delim
@@ -42500,10 +42753,6 @@ ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
-GSOAP_PATH!$GSOAP_PATH$ac_delim
-AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
-CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
-MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42545,6 +42794,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GSOAP_PATH!$GSOAP_PATH$ac_delim
+AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
+CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
+MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
@@ -42585,7 +42838,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

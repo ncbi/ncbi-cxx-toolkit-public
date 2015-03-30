@@ -12,3 +12,6 @@ reconfigure after minor changes.
 2012-02-27: new @TOUCH@ variable to avoid hard-coded paths.
 
 2014-07-30: new @SED@ variable to avoid PATH lookup.
+
+2015-03-30: new @VDB_*@ variables to allow use of external SRA/VDB
+installations.

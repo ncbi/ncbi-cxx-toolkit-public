@@ -66,6 +66,7 @@ try_local() {
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
         test -f "$d/include/tiff.h"        &&  : ${TIFF_PATH=$d}
         test -f "$d/include/gif_lib.h"     &&  : ${UNGIF_PATH=$d}
+        test -f "$d/include/sra/sradb.h"   &&  : ${VDB_PATH=$d}
         test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
         test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
         test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
@@ -257,6 +258,12 @@ local_sybase_root="/export/home/sybase/clients"
 case "$ncbi_platform" in
     Linux32    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32:/usr/local/intel/itt-3.1/tcheck/bin/32} ;;
     Linux64    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux64 | *MAC )
+        : ${VDB_PATH=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.4.5-3}
+        ;;
 esac
 
 case "$ncbi_platform" in

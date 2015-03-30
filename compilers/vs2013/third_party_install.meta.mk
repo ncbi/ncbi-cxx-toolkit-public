@@ -123,6 +123,8 @@ LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(INTDIR)
 LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(ALTDIR)
 !ENDIF
 
+VDB_SRC = $(VDB_BINPATH)
+
 
 
 #################################################################
@@ -290,6 +292,15 @@ $(LIBXSLT_SRC).libxslt_clean :
 	@echo ---- & echo Deleting LIBXSLT DLLs & $(CLEAN_CMD)
 install_libxslt : $(LIBXSLT_SRC).libxslt_install
 clean_libxslt : $(LIBXSLT_SRC).libxslt_clean
+
+
+
+$(VDB_SRC).vdb_install :
+	@echo ---- & echo Copying VDB DLLs & $(INSTALL_CMD)
+$(VDB_SRC).vdb_clean :
+	@echo ---- & echo Deleting VDB DLLs & $(CLEAN_CMD)
+install_vdb : $(VDB_SRC).vdb_install
+clean_vdb : $(VDB_SRC).vdb_clean
 
 
 
