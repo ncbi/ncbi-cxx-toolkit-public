@@ -2486,7 +2486,6 @@ extern char* NcbiLog_GetNextSubHitID(void)
     /* Select PHID to use */
     if ( s_IsInsideRequest(ctx) ) {
         if (ctx->phid[0]) {
-            VERIFY(!sx_Info->phid_inherit);
             hit_id = ctx->phid;
             sub_id = &ctx->phid_sub_id;
         } else {
