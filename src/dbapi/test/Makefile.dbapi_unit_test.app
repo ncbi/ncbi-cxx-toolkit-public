@@ -8,13 +8,12 @@ SRC = dbapi_unit_test dbapi_unit_test_object dbapi_unit_test_lob dbapi_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = dbapi$(STATIC) dbapi_driver$(STATIC) dbapi_util_blobstore$(STATIC) \
-       $(COMPRESS_LIBS) $(XCONNEXT) test_boost$(STATIC) xconnect xutil xncbi
-STATIC_LIB = $(DBAPI_CTLIB) $(DBAPI_ODBC) ncbi_xdbapi_ftds $(FTDS_LIB) $(LIB)
+LIB  = $(DBAPI_CTLIB) $(DBAPI_ODBC) ncbi_xdbapi_ftds $(FTDS_LIB) \
+       dbapi$(STATIC) dbapi_util_blobstore$(STATIC) dbapi_driver$(STATIC) \
+       $(XCONNEXT) xconnect $(COMPRESS_LIBS) xutil test_boost xncbi
 
-LIBS =  $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-STATIC_LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) \
-              $(Z_LIBS) $(FTDS_LIBS) $(LIBS)
+LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) $(FTDS_LIBS) \
+       $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
