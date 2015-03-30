@@ -504,12 +504,12 @@ retry:
         if (!m_SmallMirror.empty()  ||  !m_BigMirror.empty()) {
             SNCMirrorEvent* event;
             if (!m_SmallMirror.empty()) {
-                event = m_SmallMirror.back();
-                m_SmallMirror.pop_back();
+                event = m_SmallMirror.front();
+                m_SmallMirror.pop_front();
             }
             else {
-                event = m_BigMirror.back();
-                m_BigMirror.pop_back();
+                event = m_BigMirror.front();
+                m_BigMirror.pop_front();
             }
             s_MirrorQueueSize.Add(-1);
             x_UpdateHasTasks();
