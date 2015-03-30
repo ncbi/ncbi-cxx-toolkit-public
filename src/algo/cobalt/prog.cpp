@@ -1130,12 +1130,26 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
 
         TRange range1(0, match_ranges.front().first.GetFrom() - 1);
         TRange range2(0, match_ranges.front().second.GetFrom() - 1);
-        vector<size_t> constr;
-        CNWAligner::TTranscript t;
-        x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
+
+        // if the fast alignment option is requested, then assume these
+        // ranges in both profiles are unaligned
+        if (m_Options->GetFastAlign()) {
+            for (int i=0;i < range2.GetLength();i++) {
+                transcr.push_back(CNWAligner::eTS_Insert);
+            }
+            for (int i=0;i < range1.GetLength();i++) {
+                transcr.push_back(CNWAligner::eTS_Delete);
+            }
+        }
+        else {
+            // otherwise align profiles
+            vector<size_t> constr;
+            CNWAligner::TTranscript t;
+            x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
                                        constr, range1, range2,
                                        prof1_length, prof2_length, fReduceLeft,
                                        transcr);
+        }
     }
     else {
         // otherwise put approriate gaps in the transcript
@@ -1186,17 +1200,30 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
         }
         // otherwise compute alignment for these spaces
         else if (space1.NotEmpty() && space2.NotEmpty()) {
-            vector<size_t> constr;
-            CNWAligner::TTranscript tr;
-            x_ComputeProfileRangeAlignment(node_list1, node_list2,
-                                   alignment, constr,
-                                   space1, space2,
-                                   prof1_length,
-                                   prof2_length,
-                                   fReduceBoth, tr);
 
-            ITERATE (CNWAligner::TTranscript, t, tr) {
-                transcr.push_back(*t);
+            // if the fast alignment option is requested, then assume these
+            // ranges in both profiles are unaligned
+            if (m_Options->GetFastAlign()) {
+                for (int i=0;i < space2.GetLength();i++) {
+                    transcr.push_back(CNWAligner::eTS_Insert);
+                }
+                for (int i=0;i < space1.GetLength();i++) {
+                    transcr.push_back(CNWAligner::eTS_Delete);
+                }
+            }
+            else {
+                vector<size_t> constr;
+                CNWAligner::TTranscript tr;
+                x_ComputeProfileRangeAlignment(node_list1, node_list2,
+                                               alignment, constr,
+                                               space1, space2,
+                                               prof1_length,
+                                               prof2_length,
+                                               fReduceBoth, tr);
+
+                ITERATE (CNWAligner::TTranscript, t, tr) {
+                    transcr.push_back(*t);
+                }
             }
         }
 
@@ -1216,15 +1243,27 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
         TRange seq2_range(match_ranges.back().second.GetTo() + 1,
                           prof2_length - 1);
 
-        vector<size_t> constr;
-        CNWAligner::TTranscript t;
-        x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
-                                       constr, seq1_range, seq2_range,
-                                       prof1_length, prof2_length,
-                                       fReduceRight, t);
+        // if the fast alignment option is requested, then assume these
+        // ranges in both profiles are unaligned
+        if (m_Options->GetFastAlign()) {
+            for (int i=0;i < seq2_range.GetLength();i++) {
+                transcr.push_back(CNWAligner::eTS_Insert);
+            }
+            for (int i=0;i < seq1_range.GetLength();i++) {
+                transcr.push_back(CNWAligner::eTS_Delete);
+            }
+        }
+        else {
+            vector<size_t> constr;
+            CNWAligner::TTranscript t;
+            x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
+                                           constr, seq1_range, seq2_range,
+                                           prof1_length, prof2_length,
+                                           fReduceRight, t);
 
-        ITERATE(CNWAligner::TTranscript, it, t) {
-            transcr.push_back(*it);
+            ITERATE(CNWAligner::TTranscript, it, t) {
+                transcr.push_back(*it);
+            }
         }
     }
     else {

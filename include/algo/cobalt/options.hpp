@@ -238,8 +238,10 @@ public:
 
         fNoRealign = 1<<5,    ///< Do not realign with different tree root
 
+        fFastAlign = 1<<6,    ///< Do Fast and rough profile-profile alignment
+
         /// Set options for very fast alignment (speed over accuracy)
-        fFast = fNoRpsBlast | fNoIterate | fNoRealign,
+        fFast = fNoRpsBlast | fNoIterate | fNoRealign | fFastAlign,
         
         // Other
         fNonStandard = 1<<7   ///< Not used as input, indicates that
@@ -713,6 +715,22 @@ public:
     bool CanGetDomainHits(void) const
     {return !m_DomainHits.Empty();}
 
+    /// Check if fast alignment is to be used
+    ///
+    /// Fast alignment means that constraints will be used instead of profile-
+    /// profile alignment
+    /// @return If true, fast alignment will be used, regural otherwise
+    ///
+    bool GetFastAlign(void) const {return m_FastAlign;}
+
+    /// Turn fast alignment method on/off
+    ///
+    /// Fast alignment means that constraints will be used instead of profile-
+    /// profile alignment
+    /// @param Fast alignment will be used if true [in]
+    ///
+    void SetFastAlign(bool f) {m_FastAlign = f; m_Mode = fNonStandard;}
+
 
     //--- Options validation ---
 
@@ -771,6 +789,10 @@ private:
 
     // Realign MSA for different progressive alignment tree rooting
     bool m_Realign;
+
+    // Skip profile-profile alignment whenever possible and use information
+    // from constraints to align sequences and profiles
+    bool m_FastAlign;
 
     // User constraints
     TConstraints m_UserHits;

@@ -251,6 +251,8 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_GapOpen = COBALT_GAP_OPEN;
     m_GapExtend = COBALT_GAP_EXTNT;
 
+    m_FastAlign = (mode & fFastAlign);
+
     m_Verbose = false;
 }
 
