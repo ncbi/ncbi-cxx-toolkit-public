@@ -1353,7 +1353,6 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
 const char* CAgpErrEx::ErrorWarningOrNoteEx(int code)
 {
     const char* t = ErrorWarningOrNote(code);
-    //                          (s_StrictModeWarningMask & (0x1l << (code-W_First)))==0
     if(m_strict && t[0]=='W' && !IsStrictModeWarning(code) ) t = "ERROR";
     return t;
 }
