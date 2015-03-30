@@ -78,7 +78,7 @@ def main():
     shutil.copy(license_file, cwd)
 
     f = open("README.txt", "w")
-    f.write("The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK1762\n")
+    f.write("The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK279690\n")
     f.write("Release notes are available in http://www.ncbi.nlm.nih.gov/books/NBK131777\n")
     f.close()
 

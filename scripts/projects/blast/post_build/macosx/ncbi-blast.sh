@@ -23,7 +23,7 @@ if [ $? -ne 0 ]; then
 fi
 
 cat > _stage/usr/local/ncbi/blast/doc/README.txt <<EOF
-The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK1762
+The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK279690
 Release notes are available in http://www.ncbi.nlm.nih.gov/books/NBK131777
 EOF
 if [ $? -ne 0 ]; then
