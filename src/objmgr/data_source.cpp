@@ -147,8 +147,8 @@ void CDataSource::DropAllTSEs(void)
         TCacheLock::TWriteLockGuard guard2(m_DSCacheLock);
         // check if any TSE is locked by user 
         ITERATE ( TBlob_Map, it, m_Blob_Map ) {
-            int lock_counter = it->second->m_LockCounter.Get();
-            int used_counter = m_StaticBlobs.FindLock(it->second)? 1: 0;
+            CAtomicCounter::TValue lock_counter = it->second->m_LockCounter.Get();
+            CAtomicCounter::TValue used_counter = m_StaticBlobs.FindLock(it->second)? 1: 0;
             if ( lock_counter != used_counter ) {
                 ERR_POST_X(1, "CDataSource::DropAllTSEs: tse is locked");
             }
