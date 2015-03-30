@@ -232,8 +232,13 @@ THROWS_NONE
     *value_p = result;
 #  elif defined(__i386) || defined(__x86_64)
     // Yay CISC. ;-)  (WorkShop already handled.)
+#   ifdef NCBI_COUNTER_64_BIT
+    asm volatile("lock; xaddq %1, %0" : "=m" (*nv_value_p), "=r" (result)
+                 : "1" (Int8(delta)), "m" (*nv_value_p));
+#   else
     asm volatile("lock; xaddl %1, %0" : "=m" (*nv_value_p), "=r" (result)
                  : "1" (delta), "m" (*nv_value_p));
+#endif
     result += delta;
 #  else
 #    error "Unsupported processor type for assembly implementation!"

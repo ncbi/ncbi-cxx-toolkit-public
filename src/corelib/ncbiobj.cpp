@@ -97,6 +97,56 @@
 
 BEGIN_NCBI_SCOPE
 
+class CObject;
+
+/// Initial counter value for non-heap objects
+static const CObject::TCount eInitCounterNotInHeap =
+    CObject::eCounterValid;
+/// Initial counter value for objects allocated in memory pool
+static const CObject::TCount eInitCounterInPool =
+    CObject::eCounterValid | CObject::eCounterBitsCanBeDeleted;
+/// Initial counter value for in-heap objects
+static const CObject::TCount eInitCounterInHeap =
+    CObject::eCounterValid | CObject::eCounterBitsCanBeDeleted |
+    CObject::eCounterBitsInPlainHeap;
+#if !USE_TLS_PTR
+/// Without unambiguous TLS ptr that tracks allocations
+/// the library has to guess CObject location.
+/// Here's is a value used to mark 'in stack' allocations.
+/// Initial counter value for probably non-heap objects (w/ signature)
+static const CObject::TCount eInitCounterInStack =
+    CObject::eCounterValid | CObject::eCounterBitsInPlainHeap;
+#endif
+
+#ifdef NCBI_COUNTER_64_BIT
+/// All magic counter values should have all their state bits off.
+/// Magic counter value for deleted objects
+static const CObject::TCount eMagicCounterDeleted =
+    NCBI_CONST_UINT8(0x5b0dead10f34) & ~CObject::eCounterStateMask;
+/// Magic counter value for object allocated in heap
+static const CObject::TCount eMagicCounterNew =
+    NCBI_CONST_UINT8(0x3470add10b13) & ~CObject::eCounterStateMask;
+/// Magic counter value for deleted object allocated in memory pool
+static const CObject::TCount eMagicCounterPoolDeleted =
+    NCBI_CONST_UINT8(0x420dead2075b) & ~CObject::eCounterStateMask;
+/// Magic counter value for objects allocated in memory pool
+static const CObject::TCount eMagicCounterPoolNew =
+    NCBI_CONST_UINT8(0x5490add20ec2) & ~CObject::eCounterStateMask;
+#else
+/// All magic counter values should have all their state bits off.
+/// Magic counter value for deleted objects
+static const CObject::TCount eMagicCounterDeleted =
+    0x5b4d9f34 & ~CObject::eCounterStateMask;
+/// Magic counter value for object allocated in heap
+static const CObject::TCount eMagicCounterNew =
+    0x3423cb13 & ~CObject::eCounterStateMask;
+/// Magic counter value for deleted object allocated in memory pool
+static const CObject::TCount eMagicCounterPoolDeleted =
+    0x4229775b & ~CObject::eCounterStateMask;
+/// Magic counter value for objects allocated in memory pool
+static const CObject::TCount eMagicCounterPoolNew =
+    0x54917ec2 & ~CObject::eCounterStateMask;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //  CObject::
@@ -723,11 +773,11 @@ void CObject::DeleteThis(void)
     TCount count = m_Counter.Get();
     // Counter could be changed by some other thread,
     // we should take care of that.
-    if ( (count & eInitCounterInHeap) == TCount(eInitCounterInHeap) ) {
+    if ( (count & eInitCounterInHeap) == eInitCounterInHeap ) {
         delete this;
     }
     else {
-        _ASSERT((count & eInitCounterInPool) == TCount(eInitCounterInPool));
+        _ASSERT((count & eInitCounterInPool) == eInitCounterInPool);
         CObjectMemoryPool::Delete(this);
     }
 }
@@ -855,11 +905,8 @@ void CObject::DoDeleteThisObject(void)
         CFastMutexGuard LOCK(sm_ObjectMutex);
         count = m_Counter.Get();
         // DoDeleteThisObject is not allowed for stack objects
-        enum {
-            eCheckBits = eStateBitsValid | eStateBitsHeapSignature
-        };
-
-        if ( (count & eCheckBits) == TCount(eCheckBits) ) {
+        static const TCount eCheckBits = eStateBitsValid | eStateBitsHeapSignature;
+        if ( (count & eCheckBits) == eCheckBits ) {
             if ( !(count & eStateBitsInHeap) ) {
                 // set 'in heap' flag
                 m_Counter.Add(eStateBitsInHeap);

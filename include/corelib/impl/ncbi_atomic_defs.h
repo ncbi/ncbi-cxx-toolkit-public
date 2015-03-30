@@ -114,7 +114,14 @@ extern "C" {
    ((defined(__i386) || defined(__sparc) || defined(__x86_64))  &&  \
     !defined(__GLIBCPP__) /* < 3.0 or >= 3.4 */)  &&  \
    (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))
+#  if defined(__x86_64)
+#    define NCBI_COUNTER_64_BIT
+#  endif
+#  ifdef NCBI_COUNTER_64_BIT
+   typedef size_t TNCBIAtomicValue;
+#  else
    typedef unsigned int TNCBIAtomicValue;
+#  endif
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_USE_ASM 1
 #  if defined(__sparc)  &&  !defined(__sparcv9)
@@ -245,8 +252,16 @@ extern "C" {
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/impl/ncbi_os_mswin.h>
 #  if !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)
+#   if NCBI_PLATFORM_BITS >= 64
+#     define NCBI_COUNTER_64_BIT
+#   endif
+#   ifdef NCBI_COUNTER_64_BIT
+     typedef LONGLONG TNCBIAtomicValue;
+#    define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd64(p, d) + d)
+#   else
      typedef LONG TNCBIAtomicValue;
 #    define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
+#   endif
 #  endif
 #  define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv))
 #elif !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)

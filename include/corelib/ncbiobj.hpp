@@ -306,7 +306,7 @@ protected:
     NCBI_XNCBI_EXPORT
     virtual void DeleteThis(void);
 
-private:
+public:
     typedef CAtomicCounter   TCounter;  ///< Counter type is CAtomiCounter
     typedef TCounter::TValue TCount;    ///< Alias for value type of counter
 
@@ -331,61 +331,32 @@ private:
     /// - [0]1c...ccx0 : object not in heap -> cannot be deleted.
     /// - [0]1c...cc01 : object in heap pool -> can be deleted via CMemoryPool
     /// - [0]1c...cc11 : object in heap -> can be deleted.
-    enum EObjectState {
-        eStateBitsInHeap        = 1 << 0, ///< Detected as in heap
-        eStateBitsHeapSignature = 1 << 1, ///< Heap signature was found
 
-        /// Mask for 'in heap' state flags
-        eStateBitsInHeapMask    = eStateBitsInHeap | eStateBitsHeapSignature,
+    /// Detected as in heap
+    static const TCount eCounterBitsCanBeDeleted = 1 << 0;
+    /// Heap signature was found
+    static const TCount eCounterBitsInPlainHeap = 1 << 1;
+    /// Mask for 'in heap' state flags
+    static const TCount eCounterBitsPlaceMask =
+        eCounterBitsCanBeDeleted | eCounterBitsInPlainHeap;
+    /// Skip over the "in heap" bits
+    static const int eCounterStep      = 1 << 2;
 
+    /// Minimal value for valid objects (reference counter is zero)
+    /// Must be a single bit value.
+    /// All counter values less than this value are invalid.
 #ifdef NCBI_COUNTER_UNSIGNED
-        /// 1 in the left most of the valid bits -- unsigned case
-        eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 1)),
+    /// 1 in the left most of the valid bits -- unsigned case
+    static const TCount eCounterValid   = TCount(1) << (sizeof(TCount) * 8 - 1);
 #else
-        /// 1 in the left most of the valid bits -- signed case
-        eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 2)),
+    /// 1 in the left most of the valid bits -- signed case
+    static const TCount eCounterValid   = TCount(1) << (sizeof(TCount) * 8 - 2);
 #endif
-        /// Valid object, and object in heap. 
-        eStateMask        = eStateBitsValid | eStateBitsInHeapMask,
+    /// Valid object, and object in heap. 
+    static const TCount eCounterStateMask =
+        eCounterValid | eCounterBitsPlaceMask;
 
-        /// Skip over the "in heap" bits
-        eCounterStep      = 1 << 2, 
-
-        /// Minimal value for valid objects (reference counter is zero)
-        eCounterValid     = eStateBitsValid,
-
-        /// Minimal value for referenced valid objects (reference counter = 1)
-        eCounterValidRef1 = eCounterValid + eCounterStep,
-
-        /// Minimal value for double referenced objects (reference counter = 2)
-        eCounterValidRef2 = eCounterValid + eCounterStep*2,
-
-        /// Initial counter value for non-heap objects
-        eInitCounterNotInHeap   = eStateBitsValid,
-
-        /// Initial counter value for in-heap objects
-        eInitCounterInHeap      = eStateBitsValid | eStateBitsHeapSignature |
-                                  eStateBitsInHeap,
-
-        /// Initial counter value for objects allocated in memory pool
-        eInitCounterInPool      = eStateBitsValid | eStateBitsInHeap,
-
-        /// Initial counter value for probably non-heap objects (w/ signature)
-        eInitCounterInStack     = eStateBitsValid | eStateBitsHeapSignature,
-
-        /// All magic counter values should have all their state bits off.
-        /// Magic counter value for deleted objects
-        eMagicCounterDeleted    = 0x5b4d9f34 & ~eStateMask,
-
-        /// Magic counter value for object allocated in heap
-        eMagicCounterNew        = 0x3423cb13 & ~eStateMask,
-
-        /// Magic counter value for deleted object allocated in memory pool
-        eMagicCounterPoolDeleted= 0x4229775b & ~eStateMask,
-
-        /// Magic counter value for objects allocated in memory pool
-        eMagicCounterPoolNew    = 0x54917ec2 & ~eStateMask
-    };
+private:
     friend class CObjectMemoryPool;
     friend class CWeakObject;
 
@@ -439,43 +410,44 @@ private:
 inline
 bool CObject::ObjectStateCanBeDeleted(TCount count)
 {
-    return (count & eStateBitsInHeap) != 0;
+    // check only 'CanBeDeleted' bit, include both plain heap and memory pool
+    return (count & eCounterBitsCanBeDeleted) != 0;
 }
 
 
 inline
 bool CObject::ObjectStateIsAllocatedInPool(TCount count)
 {
-    return (count & eStateBitsInHeapMask) ==
-        (eInitCounterInPool & eStateBitsInHeapMask);
+    // check if 'CanBeDeleted' is set and InPlainHeap is not set
+    return (count & eCounterBitsPlaceMask) == eCounterBitsCanBeDeleted;
 }
 
 
 inline
 bool CObject::ObjectStateValid(TCount count)
 {
-    return count >= TCount(eCounterValid);
+    return count >= eCounterValid;
 }
 
 
 inline
 bool CObject::ObjectStateReferenced(TCount count)
 {
-    return count >= TCount(eCounterValidRef1);
+    return count >= eCounterValid + eCounterStep;
 }
 
 
 inline
 bool CObject::ObjectStateUnreferenced(TCount count)
 {
-    return (count & ~eStateBitsInHeapMask) == TCount(eCounterValid);
+    return (count & ~eCounterBitsPlaceMask) == eCounterValid;
 }
 
 
 inline
 bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
 {
-    return (count & ~eStateBitsInHeapMask) == TCount(eCounterValidRef1);
+    return (count & ~eCounterBitsPlaceMask) == eCounterValid + eCounterStep;
 }
 
 
