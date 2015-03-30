@@ -679,7 +679,7 @@ void g_ExtractReaderContents(IReader& reader, string& s)
         if (s.size() <= pos + 1024) {
             s.resize(s.size() * 2);
         }
-        size_t n;
+        size_t n = 0;
         status = reader.Read(&s[pos], s.size() - pos, &n);
         pos += n;
     } while (status == eRW_Success);
