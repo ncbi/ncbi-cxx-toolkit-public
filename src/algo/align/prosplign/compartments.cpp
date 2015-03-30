@@ -235,7 +235,8 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 }
 
 auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
-                                                                CCompartOptions compart_options)
+                                                                CCompartOptions compart_options,
+                                                                const vector<pair<THit::TCoord, THit::TCoord> > *gaps)
 {
     auto_ptr<CCompartmentAccessor<THit> > comps_ptr;
     if (orig_hitrefs.empty())
@@ -286,7 +287,7 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
 
     comps.SetMaxIntron(compart_options.m_MaxIntron);
     comps.SetMaxOverlap(compart_options.m_MaxOverlap);
-    comps.Run(hitrefs.begin(), hitrefs.end());
+    comps.Run(hitrefs.begin(), hitrefs.end(), NULL, gaps);
 
     THitRefs comphits;
     if(comps.GetFirst(comphits)) {
@@ -299,16 +300,18 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
     return comps_ptr;
 }
 
-TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
+TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options,
+                                                                const vector<pair<THit::TCoord, THit::TCoord> > *gaps)
 {
     auto_ptr<CCompartmentAccessor<THit> >  comps_ptr =
-        CreateCompartmentAccessor( orig_hitrefs, compart_options);
+        CreateCompartmentAccessor( orig_hitrefs, compart_options, gaps);
 
-    TCompartments results = FormatAsAsn(comps_ptr.get(), compart_options);
+    TCompartments results = FormatAsAsn(comps_ptr.get(), compart_options, gaps);
     return results;
 }
 
-TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions compart_options)
+TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions compart_options,
+                                                                const vector<pair<THit::TCoord, THit::TCoord> > *gaps)
 {
     TCompartments results;
     if (comps_ptr == NULL)
@@ -330,6 +333,29 @@ TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions
             TSeqPos cur_end = boxPtr[3];
             TSeqPos cur_begin_extended = cur_begin < max_extent ? 0 : cur_begin - max_extent;
             TSeqPos cur_end_extended = cur_end + max_extent;
+
+            //prohibit extension to go over over non-bridgeable gaps
+            if(gaps) {
+                vector<pair<THit::TCoord, THit::TCoord> >::const_iterator it;
+                for(it = gaps->begin(); it != gaps->end(); ++it) {
+                    TSeqPos gfrom = it->first;
+                    TSeqPos gto = it->second;
+                    if( gfrom < cur_begin && cur_begin_extended < gto ) {
+                        if( gto < cur_begin ) {
+                            cur_begin_extended = gto + 1;//start from gap +1
+                        } else {
+                            cur_begin_extended = cur_begin;//gap covers cur_begin, no extension
+                        }
+                    }
+                    if( cur_end < gto && gfrom < cur_end_extended ) {
+                        if( cur_end < gfrom ) {
+                            cur_end_extended = gfrom - 1;//end at gap - 1
+                        } else {
+                            cur_end_extended = cur_end;
+                        }
+                    }
+                }
+            }
 
             CRef<CSeq_loc> cur_compartment_loc(&compartment->SetDesc().Set().back()->SetRegion());
             cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);

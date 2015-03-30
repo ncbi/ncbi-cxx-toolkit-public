@@ -109,13 +109,16 @@ typedef list<CRef<CSeq_annot> > TCompartments;
 typedef vector<SCompartment> TCompartmentStructs;
 
 /// Selects compartments. Hits should be for a single query-subject pair.
+/// Pass precalculated non-bridgeable gaps to prohibit compartment to go over it
 
 NCBI_XALGOALIGN_EXPORT
 auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
-                                                                CCompartOptions compart_options);
+                                                                CCompartOptions compart_options,
+                                                                const vector<pair<THit::TCoord, THit::TCoord> > *gaps = NULL);
 
 NCBI_XALGOALIGN_EXPORT
-TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comparts_ptr, CCompartOptions compart_options);
+TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comparts_ptr, CCompartOptions compart_options,
+                                                                const vector<pair<THit::TCoord, THit::TCoord> > *gaps = NULL);
 
 
 NCBI_XALGOALIGN_EXPORT
@@ -126,7 +129,8 @@ TCompartmentStructs MakeCompartments(const TCompartments& asn_representation,
 /// Composition of first two functions
 NCBI_XALGOALIGN_EXPORT
 TCompartments SelectCompartmentsHits(const THitRefs& hitrefs,
-                                     CCompartOptions compart_options);
+                                     CCompartOptions compart_options,
+                                     const vector<pair<THit::TCoord, THit::TCoord> > *gaps = NULL);
 
 /// Composition of all three functions
 NCBI_XALGOALIGN_EXPORT

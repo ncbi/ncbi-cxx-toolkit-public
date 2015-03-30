@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin, Alexander Souvorov
+* Author:  Yuri Kapustin, Alexander Souvorov, Boris Kiryutin
 *
 * File Description:  
 *
@@ -117,6 +117,51 @@ private:
 
 
 template<class THit>
+class CPrecalcGapInfo {
+public:
+    typedef typename THit::TCoord TCoord;
+
+    CPrecalcGapInfo(const vector<pair<TCoord, TCoord> >* gaps) : m_gaps(gaps) {
+        m_flipped = false;
+    }
+
+    void Flip(TCoord subj_min, TCoord subj_max) {
+        m_flipped = true;
+        m_subj_min = subj_min;
+        m_subj_max = subj_max;
+    }
+
+    bool IntersectsNonBridgeableGap(TCoord from, TCoord to) {
+        if(m_gaps == NULL) {
+            return false;
+        }
+        if(m_flipped) {
+            TCoord new_from = m_subj_min + m_subj_max - to;
+            TCoord new_to = m_subj_min + m_subj_max - from;
+            from = new_from;
+            to = new_to;
+        }
+        bool res = false;
+        for(size_t i = 0; i < m_gaps->size(); ++i) {
+            TCoord gfrom = (*m_gaps)[i].first;
+            TCoord gto = (*m_gaps)[i].second;
+            if( gfrom < to && from < gto ) {
+                res = true;
+                break;
+            }
+        }
+        return res;
+    }
+
+private:
+    bool m_flipped;
+    TCoord m_subj_min;
+    TCoord m_subj_max;
+    const vector<pair<TCoord, TCoord> > *m_gaps;    
+};
+
+
+template<class THit>
 class CCompartmentFinder {
 
 public:
@@ -137,7 +182,7 @@ public:
 
     CCompartmentFinder(typename THitRefs::const_iterator start,
                        typename THitRefs::const_iterator finish,
-                       CGapInfo<THit> *gap_info = NULL);
+                       CGapInfo<THit> *gap_info = NULL, CPrecalcGapInfo<THit> *prec_gap_info = NULL);
 
     /// Set compartment overlap behaviour. Allow compartments to overlap 
     /// on subject. 
@@ -330,6 +375,7 @@ private:
     vector<CCompartment>  m_compartments;    // final compartments
     int                   m_iter;            // GetFirst/Next index
     CGapInfo<THit> *      m_gap_info;        // holds information about sequence gaps
+    CPrecalcGapInfo<THit> *      m_prec_gap_info;        // holds precalculated information about sequence gaps
     
     struct SHitStatus {
         
@@ -414,7 +460,8 @@ public:
                          TCoord  comp_penalty_bps,
                          TCoord  min_matches,
                          TCoord  min_singleton_matches = numeric_limits<TCoord>::max(),
-                         bool    cross_filter = false, CScope *scope = NULL);
+                         bool    cross_filter = false, CScope *scope = NULL,
+                         const vector<pair<TCoord, TCoord> > *gaps = NULL);
 
     /// Execute: identify compartments. The alignments can be on one 
     /// or both genomic strands.
@@ -425,7 +472,8 @@ public:
     ///    Stop of the input range of input alignments.
 
     void Run(typename THitRefs::iterator start, 
-             typename THitRefs::iterator finish, CScope *scope = NULL);
+             typename THitRefs::iterator finish, CScope *scope = NULL,
+             const vector<pair<TCoord, TCoord> > *gaps = NULL);
     
     /// Assign the maximum intron length, in base pairs
 
@@ -572,7 +620,8 @@ template<class THit>
 CCompartmentFinder<THit>::CCompartmentFinder(
     typename THitRefs::const_iterator start,
     typename THitRefs::const_iterator finish,
-                       CGapInfo<THit> *gap_info ):
+                       CGapInfo<THit> *gap_info,
+                       CPrecalcGapInfo<THit> *prec_gap_info ):
 
     m_max_overlap(s_GetDefaultMaxOverlap()),
     m_intron_max(s_GetDefaultMaxIntron()),
@@ -580,7 +629,8 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     m_MinMatches(1),
     m_MinSingletonMatches(1),
     m_iter(-1),
-    m_gap_info(gap_info)
+    m_gap_info(gap_info),
+    m_prec_gap_info(prec_gap_info)
 {
     m_hitrefs.resize(finish - start);
     copy(start, finish, m_hitrefs.begin());
@@ -777,8 +827,11 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
                         //prohibit to go over non-bridgable gaps in subject
                         if(good) {
-                            if( (phcbox[3] <= hbox[2]) && m_gap_info && m_gap_info->IntersectsNonBridgeableGap(phcbox[3], hbox[2])) {
-                                good = false;
+                            if( phcbox[3] <= hbox[2] ) {
+                                if( ( m_prec_gap_info && m_prec_gap_info->IntersectsNonBridgeableGap(phcbox[3], hbox[2]) ) ||
+                                    ( m_gap_info && m_gap_info->IntersectsNonBridgeableGap(phcbox[3], hbox[2]) ) ) {
+                                    good = false;
+                                }
                             }
                         }
 
@@ -1323,10 +1376,11 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
      TCoord min_matches,
      TCoord min_singleton_matches,
      bool   cross_filter, 
-     CScope *scope)
+     CScope *scope,
+     const vector<pair<TCoord, TCoord> > *gaps)
 {
     x_Init(comp_penalty, min_matches, min_singleton_matches, cross_filter);
-    Run(istart, ifinish, scope);
+    Run(istart, ifinish, scope, gaps);
 }
 
 
@@ -1348,7 +1402,8 @@ void CCompartmentAccessor<THit>::x_Init(TCoord  comp_penalty,
 template<class THit>
 void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
                                      typename THitRefs::iterator ifinish,
-                                     CScope *scope)
+                                     CScope *scope,
+                                     const vector<pair<TCoord, TCoord> > *gaps)
 {
 
     if(istart == ifinish) return;
@@ -1382,8 +1437,10 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
     // minus
     {{
         CGapInfo<THit> gapi( *(*istart)->GetSubjId(), scope);
+        CPrecalcGapInfo<THit> prec_gapi( gaps );
         // flip
         gapi.Flip(minus_subj_min, minus_subj_max);
+        prec_gapi.Flip(minus_subj_min, minus_subj_max);
         for(ii = ib; ii != iplus_beg; ++ii) {
 
             const typename THit::TCoord s0 = minus_subj_min + minus_subj_max 
@@ -1394,7 +1451,7 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
             (*ii)->SetSubjStop(s1);
         }
         
-        CCompartmentFinder<THit> finder (ib, iplus_beg, &gapi);
+        CCompartmentFinder<THit> finder (ib, iplus_beg, &gapi, &prec_gapi);
         finder.SetPenalty(m_Penalty);
         finder.SetMinMatches(m_MinMatches);
         finder.SetMinSingletonMatches(m_MinSingletonMatches);
@@ -1419,7 +1476,8 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
     // plus
     {{
         CGapInfo<THit> gapi( *(*istart)->GetSubjId(), scope);
-        CCompartmentFinder<THit> finder (iplus_beg, ie, &gapi);
+        CPrecalcGapInfo<THit> prec_gapi( gaps );
+        CCompartmentFinder<THit> finder (iplus_beg, ie, &gapi, &prec_gapi);
         finder.SetPenalty(m_Penalty);
         finder.SetMinMatches(m_MinMatches);
         finder.SetMinSingletonMatches(m_MinSingletonMatches);
