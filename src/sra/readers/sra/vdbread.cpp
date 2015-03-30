@@ -419,7 +419,8 @@ void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0, "%.*s",
                                         int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
-        if ( GetRCObject(rc) == RCObject(rcDirectory) &&
+        if ( (GetRCObject(rc) == RCObject(rcDirectory) ||
+              GetRCObject(rc) == RCObject(rcPath)) &&
              GetRCState(rc) == rcNotFound ) {
             // no SRA accession
             NCBI_THROW3(CSraException, eNotFoundDb,
@@ -477,7 +478,8 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
                                            int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
         VSchemaRelease(schema);
-        if ( GetRCObject(rc) == RCObject(rcDirectory) &&
+        if ( (GetRCObject(rc) == RCObject(rcDirectory) ||
+              GetRCObject(rc) == RCObject(rcPath)) &&
              GetRCState(rc) == rcNotFound ) {
             // no SRA accession
             NCBI_THROW3(CSraException, eNotFoundTable,
