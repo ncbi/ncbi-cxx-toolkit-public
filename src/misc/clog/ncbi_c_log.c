@@ -2423,6 +2423,7 @@ extern void NcbiLog_AppSetHitID(const char* hit_id)
         TROUBLE_MSG("NcbiLog_AppSetHitID() can be used before NcbiLog_App[Start/Run]() only");
     }
     s_SetHitID((char*)sx_Info->phid, hit_id);
+    sx_Info->phid_inherit = 1;
     MT_UNLOCK;
 }
 
@@ -2480,28 +2481,21 @@ extern char* NcbiLog_GetNextSubHitID(void)
         TROUBLE_MSG("NcbiLog_GetNextSubHitID() can be used after NcbiLog_AppStart() only");
     }
 
+    VERIFY(sx_Info->phid[0]);
+
     /* Select PHID to use */
     if ( s_IsInsideRequest(ctx) ) {
         if (ctx->phid[0]) {
+            VERIFY(!sx_Info->phid_inherit);
             hit_id = ctx->phid;
             sub_id = &ctx->phid_sub_id;
         } else {
-            /* No request-specific PHID, use app-wide if specified */
-            if (sx_Info->phid[0]) {
-                hit_id = (char*)sx_Info->phid;
-                sub_id = (unsigned int*)&sx_Info->phid_sub_id;
-            } else {
-                /* No app-wide PHID also - cannot use */
-                MT_UNLOCK;
-                return NULL;
-            }
+            /* No request-specific PHID, inherit app-wide value */
+            VERIFY(sx_Info->phid_inherit);
+            hit_id = (char*)sx_Info->phid;
+            sub_id = (unsigned int*)&sx_Info->phid_sub_id;
         }
     } else {
-        if (!sx_Info->phid[0]) {
-            /* App-wide PHID should be set to use this function between requests */
-            MT_UNLOCK;
-            return NULL;
-        }
         hit_id = (char*)sx_Info->phid;
         sub_id = (unsigned int*)&sx_Info->phid_sub_id;
     }
@@ -2563,7 +2557,15 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     }
     /* Try to get app-wide hit ID from environment */
     if (!sx_Info->phid[0]) {
-        s_SetHitID((char*)sx_Info->phid, NcbiLogP_GetHitID_Env());
+        const char* ev = NcbiLogP_GetHitID_Env();
+        if (ev) {
+            s_SetHitID((char*)sx_Info->phid, ev);
+            sx_Info->phid_inherit = 1;
+        } else {
+            /* Auto-generate new PHID (not-inherited by requests) */
+            char phid_str[NCBILOG_HITID_MAX + 1];
+            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
+        }
     }
 
     s_SetState(ctx, eNcbiLog_AppBegin);
@@ -2613,10 +2615,10 @@ extern void NcbiLog_AppRun(void)
     CHECK_APP_START(ctx);
     s_SetState(ctx, eNcbiLog_AppRun);
 
-    /* Log app-wide hit ID, if any */
-    if ( sx_Info->phid[0] ) {
-        s_LogHitID(ctx, (char*)sx_Info->phid);
-    }
+    /* Log app-wide hit ID */
+    VERIFY(sx_Info->phid[0]);
+    s_LogHitID(ctx, (char*)sx_Info->phid);
+
     MT_UNLOCK;
 }
 
@@ -2835,10 +2837,11 @@ extern void NcbiLog_ReqRun(void)
     */
     if (!ctx->phid[0]) {
         char phid_str[NCBILOG_HITID_MAX + 1];
-        if (sx_Info->phid[0]) {
-            /* Just log copy of app-wide PHID, do not set it as request-specific
-               value to allow NcbiLog_GetNextSubHitID() works correctly
-               and use app-wide sub hits.
+        VERIFY(sx_Info->phid[0]);
+        if (sx_Info->phid_inherit) {
+            /* Just log app-wide PHID, do not set it as request specific
+               to allow NcbiLog_GetNextSubHitID() work correctly and
+               use app-wide sub hits.
             */
             s_LogHitID(ctx, (char*)sx_Info->phid);
             MT_UNLOCK;

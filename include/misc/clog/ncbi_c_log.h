@@ -644,7 +644,9 @@ extern void NcbiLog_NewSession(void);
  *  if that is not set also -- not used at all until any of *SetHitID() calls.
  *
  *  @attention
- *    This function should be called before NcbiLog_AppRun().
+ *    This function should be called before NcbiLog_AppRun(), because if
+ *    PHID is not set on application level or in the environment, then new PHID
+ *    will be generated on NcbiLog_AppRun().
  *  @param hit_id
  *    New (P)HID. (It will be URL-encoded.)
  *    (P)HID will be unset if the parameter is NULL or point to empty string,
@@ -665,8 +667,8 @@ extern void NcbiLog_AppSetHitID(const char* hit_id);
  *
  *  If (P)HID has not been explicitly set for a request, that the application-
  *  wide value (per NcbiLog_AppSetHitID() or env.variable, if any)
- *  will be used for the request as well. If no application-wide (P)HID, 
- *  that new (P)HID will be generated for the request on NcbiLog_ReqStart().
+ *  will be used for the request as well. If no explicitly set application-wide
+ * (P)HID, that new (P)HID will be generated for the request on NcbiLog_ReqStart().
  *
  *  @attention
  *    NcbiLog_ReqStop() resets the request-specific (P)HID back
@@ -688,9 +690,10 @@ extern void NcbiLog_SetHitID(const char* hit_id);
 /** Generate a sub-hit ID based on the currently effective
  *  (whether it's request-specific or application-wide) hit ID.
  *
+ *  @attention
+ *    This function should be called after NcbiLog_AppRun().
  *  @return
  *    Generated sub-hit ID.
- *    NULL if corresponding hit ID is not set, application-wide or request-specific.
  *  @attention
  *    The caller is responsible for freeing the returned sub-hit ID string!
  *    Use free() or NcbiLog_FreeMemory().

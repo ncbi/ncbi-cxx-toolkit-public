@@ -123,6 +123,7 @@ struct SInfo_tag {
     char              phid[3*NCBILOG_HITID_MAX+1];    
                                                 /**< App-wide hit ID (empty string if unknown)           */
     unsigned int      phid_sub_id;              /**< App-wide sub-hit ID counter                         */
+    int/*bool*/       phid_inherit;             /**< 1 if PHID set explicitly and should be inherited (by requests) */
     const char*       host_role;                /**< Host role (NULL if unknown or not set)              */
     const char*       host_location;            /**< Host location (NULL if unknown or not set)          */
 
