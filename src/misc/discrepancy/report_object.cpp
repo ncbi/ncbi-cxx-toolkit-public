@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include "discrepancy_core.hpp"
 #include <misc/discrepancy/report_object.hpp>
 
 #include <objects/general/Date.hpp>
@@ -56,10 +57,10 @@
 
 
 BEGIN_NCBI_SCOPE;
+BEGIN_SCOPE(NDiscrepancy)
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-USING_SCOPE(DiscRepNmSpc);
 
 
 void CReportObject::SetText(CScope& scope)
@@ -537,8 +538,9 @@ void CReportObject::DropReference(CScope& scope)
 }
 
 
-bool CReportObject::Equal(const CReportObject& other) const
+bool CReportObject::Equal(const CReportObj& obj) const
 {
+    const CReportObject& other = static_cast<const CReportObject&>(obj);
     string filename1 = GetFilename();
     string filename2 = other.GetFilename();
 
@@ -581,11 +583,12 @@ bool CReportObject::Equal(const CReportObject& other) const
 bool CReportObject::AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj)
 {
     ITERATE(TReportObjectList, it, list) {
-        if ((*it)->Equal(new_obj)) {
+        if (new_obj.Equal(**it)) {
             return true;
         }
     }
     return false;
 }
 
+END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

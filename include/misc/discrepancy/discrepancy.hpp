@@ -38,13 +38,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
 
-class NCBI_DISCREPANCY_EXPORT CReportObject : public CObject
+class NCBI_DISCREPANCY_EXPORT CReportObj : public CObject
 {
 public:
-    virtual ~CReportObject(){}
-    virtual string GetText() const = 0;
+    virtual ~CReportObj(){}
+    virtual const string& GetText() const = 0;
 };
-typedef vector<CRef<CReportObject> > TReportObjectList;
+typedef vector<CRef<CReportObj> > TReportObjectList;
 
 
 class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject

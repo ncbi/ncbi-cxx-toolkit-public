@@ -38,15 +38,10 @@
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
-BEGIN_SCOPE(DiscRepNmSpc)
+BEGIN_SCOPE(NDiscrepancy)
 
 
-class CReportObject;
-
-typedef vector<CRef< CReportObject> > TReportObjectList;
-
-
-class NCBI_DISCREPANCY_EXPORT CReportObject : public CObject
+class NCBI_DISCREPANCY_EXPORT CReportObject : public CReportObj
 {
 public:
     CReportObject() : m_Object(NULL) {}
@@ -92,7 +87,7 @@ public:
     static bool AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj);
 
     /// Do CReportObjects represent the same object?
-    bool Equal(const CReportObject& other) const;
+    bool Equal(const CReportObj& other) const;
 
 protected:
     string                m_Text;
@@ -104,7 +99,7 @@ protected:
 };
 
 
-END_SCOPE(DiscRepNmSpc)
+END_SCOPE(NDiscrepancy)
 
 END_NCBI_SCOPE
 

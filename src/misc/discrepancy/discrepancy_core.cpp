@@ -140,7 +140,7 @@ void CDiscrepancyCaseCore::Add(TReportObjectList& list, CRef<CDiscrepancyObject>
     ITERATE(TReportObjectList, it, list) {
         if(obj->Equal(**it)) return;
     }
-    list.push_back(CRef<CReportObject>(obj.Release()));
+    list.push_back(CRef<CReportObj>(obj.Release()));
 }
 
 // for testing purpose only:

@@ -36,16 +36,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
+/// Housekeeping classes
 class CDiscrepancyCaseConstructor;
 
-/// Housekeeping classes
 class CDiscrepancyTable  // singleton!
 {
 friend class CDiscrepancyCaseConstructor;
 private:
-    static map<string, CDiscrepancyCaseConstructor*> *sm_Table;
-    static map<string, string> *sm_AliasTable;
-    static map<string, vector<string> > *sm_AliasListTable;
+    static map<string, CDiscrepancyCaseConstructor*> *sm_Table; // = 0
+    static map<string, string> *sm_AliasTable;  // = 0
+    static map<string, vector<string> > *sm_AliasListTable; // = 0
 
     CDiscrepancyTable(){}
     ~CDiscrepancyTable()
@@ -100,27 +100,19 @@ protected:
 };
 
 
-/// CDiscrepancyObject
-//  TODO: change the namespace and merge with the DiscRepNmSpc::CReportObject
+/// CDiscrepancyItem and CReportObject
 
 class CDiscrepancyObject : public CReportObject
 {
 public:
-    CDiscrepancyObject(CConstRef<CObject> obj, CScope& scope, const string& filename, bool keep_ref) : m_Obj(new DiscRepNmSpc::CReportObject(obj))
+    CDiscrepancyObject(CConstRef<CObject> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
     {
-        m_Obj->SetFilename(filename);
-        m_Obj->SetText(scope);
-        if(!keep_ref) m_Obj->DropReference();
+        SetFilename(filename);
+        SetText(scope);
+        if(!keep_ref) DropReference();
     }
-    string GetText() const { return m_Obj->GetText(); }
-    CConstRef<CObject> GetObject() const { return m_Obj->GetObject(); }
-    bool Equal(const CReportObject& other) const { return m_Obj->Equal(*dynamic_cast<const CDiscrepancyObject&>(other).m_Obj); }
-private:
-    CRef<DiscRepNmSpc::CReportObject> m_Obj;
 };
 
-
-/// CDiscrepancyItem
 
 class CDiscrepancyItem : public CReportItem
 {

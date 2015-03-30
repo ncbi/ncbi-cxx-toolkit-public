@@ -261,11 +261,11 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     context.m_KeepRef = false;
 
     vector<CSeq_entry_Handle> seh = x_ReadFile(fname);
-    NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, tst, Tests) {
-        ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
+    ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
+        NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, tst, Tests) {
             (*tst)->Parse(*sh, context);
-            m_Scope.RemoveTopLevelSeqEntry(*sh);
         }
+        m_Scope.RemoveTopLevelSeqEntry(*sh);
     }
     x_Output(x_ConstructOutputName(fname), Tests);
 }
@@ -284,13 +284,11 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
 
     ITERATE(vector<string>, fname, m_Files) {
         vector<CSeq_entry_Handle> seh = x_ReadFile(*fname);
-        NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, tst, Tests) {
-            ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
+        ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
+            NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, tst, Tests) {
                 context.m_File = *fname;
                 (*tst)->Parse(*sh, context);
             }
-        }
-        ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
             m_Scope.RemoveTopLevelSeqEntry(*sh);
         }
     }
