@@ -1364,6 +1364,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
     data += '\n';
     data += m_Raw;
     ent.SetData(data);
+    m_Comments = 0;
 }
 
 void XSDParser::ProcessNamedTypes(void)
