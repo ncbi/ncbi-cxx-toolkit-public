@@ -135,7 +135,7 @@ unsigned int CStackTrace::s_GetStackTraceMaxDepth(void)
     if ( !s_InGetMaxDepth ) {
         s_InGetMaxDepth = true;
         try {
-            val = s_MaxDepth.Get();
+            val = (unsigned int)s_MaxDepth.Get();
             if (val > 0) {
                 return val;
             }

@@ -86,7 +86,7 @@ DEFINE_CLASS_STATIC_MUTEX(CSafeStaticPtr_Base::sm_Mutex);
 int CSafeStaticPtr_Base::x_GetCreationOrder(void)
 {
     static CAtomicCounter s_CreationOrder;
-    return s_CreationOrder.Add(1);
+    return int(s_CreationOrder.Add(1));
 }
 
 
