@@ -106,7 +106,10 @@ extern "C" {
  * as function-call overhead can be appreciable, particularly on x86.
  */
 #ifdef NCBI_NO_THREADS
-   typedef unsigned int TNCBIAtomicValue;
+   typedef size_t TNCBIAtomicValue;
+#  if SIZEOF_SIZE_T == 8
+#    define NCBI_COUNTER_64_BIT 1
+#  endif
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
 #elif (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC))  &&  \
@@ -128,7 +131,10 @@ extern "C" {
 #    define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
 #  endif
 #elif defined(NCBI_HAVE_CXX11)
-    typedef unsigned int TNCBIAtomicValue;
+    typedef size_t TNCBIAtomicValue;
+#  if SIZEOF_SIZE_T == 8
+#    define NCBI_COUNTER_64_BIT 1
+#  endif
 #  define NCBI_ATOMIC_TYPE(t) std::atomic<t>
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
