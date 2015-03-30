@@ -1338,18 +1338,18 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
 
     // prepare serial nums and result state
     int request_count = static_cast<int>(packet.Get().size());
-    int end_serial_num = m_RequestSerialNumber.Add(request_count);
-    if ( end_serial_num <= request_count ) {
+    int end_serial_num = static_cast<int>(m_RequestSerialNumber.Add(request_count));
+    while ( end_serial_num <= request_count ) {
         // int overflow, adjust to 1
         {{
             DEFINE_STATIC_FAST_MUTEX(sx_Mutex);
             CFastMutexGuard guard(sx_Mutex);
-            int num = m_RequestSerialNumber.Get();
+            int num = static_cast<int>(m_RequestSerialNumber.Get());
             if ( num <= request_count ) {
                 m_RequestSerialNumber.Set(1);
             }
         }}
-        end_serial_num = m_RequestSerialNumber.Add(request_count);
+        end_serial_num = static_cast<int>(m_RequestSerialNumber.Add(request_count));
     }
     int start_serial_num = end_serial_num - request_count;
     {{
