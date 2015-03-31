@@ -6959,12 +6959,15 @@ void CNcbiDiag::DiagFatal(const CDiagCompileInfo& info,
                           const char* message)
 {
     CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
+    // DiagFatal is non-returnable, so force aborting even if the above
+    // call has returned.
+    Abort();
 }
 
 void CNcbiDiag::DiagTrouble(const CDiagCompileInfo& info,
                             const char* message)
 {
-    DiagFatal(info, message);
+    CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
 }
 
 void CNcbiDiag::DiagAssert(const CDiagCompileInfo& info,

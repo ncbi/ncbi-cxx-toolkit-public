@@ -187,15 +187,12 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message                                          \
       << NCBI_NS_NCBI::Endm )
 
-// Most LOG_POST_xxxx flavors are aliases for the corresponding ERR_POST_xxxx
-// macros. LOG_POST is the only one which has special meaning for backward
-// compatibility: when printing a message in 'old' (human readable) format
-// it skips severity name.
-// This macro should be avoided in the new code, use ERR_POST instead.
+// When printing a message in 'old' (human readable) format LOG_POST skips
+// all fields except the message.
 #define LOG_POST(message)                                               \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
       NCBI_NS_NCBI::eDiag_Error,                                        \
-      NCBI_NS_NCBI::eDPF_Log).GetRef()                                  \
+      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsNote).GetRef()      \
       << message                                                        \
       << NCBI_NS_NCBI::Endm )
 
@@ -224,8 +221,13 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message                                             \
       << NCBI_NS_NCBI::Endm )
 
-#define LOG_POST_EX(err_code, err_subcode, message)                     \
-    ERR_POST_EX(err_code, err_subcode, message)
+#define LOG_POST_EX(err_code, err_subcode, message)          \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
+      NCBI_NS_NCBI::eDiag_Error,                                        \
+      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsNote).GetRef()      \
+      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )  \
+      << message                                             \
+      << NCBI_NS_NCBI::Endm )
 
 #define ERR_FATAL_EX(err_code, err_subcode, message)                    \
     NCBI_NS_NCBI::EndmFatal(NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,  \
@@ -537,7 +539,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     ERR_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 #define LOG_POST_X(err_subcode, message)                  \
-    ERR_POST_X(err_subcode, message)
+    LOG_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 #define ERR_FATAL_X(err_subcode, message)                 \
     ERR_FATAL_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
@@ -553,7 +555,9 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
                 message)
 
 #define LOG_POST_XX(error_name, err_subcode, message)   \
-    ERR_POST_XX(error_name, err_subcode, message)
+    LOG_POST_EX(NCBI_ERRCODE_X_NAME(error_name),                        \
+                NCBI_ERR_SUBCODE_X_NAME(error_name, err_subcode),       \
+                message)
 
 #define ERR_FATAL_XX(error_name, err_subcode, message)                  \
     ERR_FATAL_EX(NCBI_ERRCODE_X_NAME(error_name),                       \
@@ -579,13 +583,13 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     NCBI_REPEAT_POST_N_TIMES( ERR_POST, count, (message) )
 
 #define LOG_POST_N_TIMES(count, message)   \
-    ERR_POST_N_TIMES(count, message)
+    NCBI_REPEAT_POST_N_TIMES( LOG_POST, count, (message) )
 
 
 /// Error posting only once during program execution.
 #define ERR_POST_ONCE(message) ERR_POST_N_TIMES(1, message)
 
-#define LOG_POST_ONCE(message) ERR_POST_ONCE(1, message)
+#define LOG_POST_ONCE(message) LOG_POST_N_TIMES(1, message)
 
 
 /// Error posting only given number of times during program execution
@@ -596,7 +600,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     NCBI_REPEAT_POST_N_TIMES( ERR_POST_X, count, (err_subcode, message) )
 
 #define LOG_POST_X_N_TIMES(count, err_subcode, message)   \
-    ERR_POST_X_N_TIMES(count, err_subcode, message)
+    NCBI_REPEAT_POST_N_TIMES( LOG_POST_X, count, (err_subcode, message) )
 
 /// Error posting only once during program execution with default
 /// error code and given error subcode.
@@ -606,7 +610,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     ERR_POST_X_N_TIMES(1, err_subcode, message)
 
 #define LOG_POST_X_ONCE(err_subcode, message)   \
-    ERR_POST_X_ONCE(err_subcode, message)
+    LOG_POST_X_N_TIMES(1, err_subcode, message)
 
 /// Error posting only given number of times during program execution
 /// with given error code name and given error subcode.
@@ -617,7 +621,8 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
                               (error_name, err_subcode, message) )
 
 #define LOG_POST_XX_N_TIMES(count, error_name, err_subcode, message)   \
-    ERR_POST_XX_N_TIMES(count, error_name, err_subcode, message)
+    NCBI_REPEAT_POST_N_TIMES( LOG_POST_XX, count,                      \
+                              (error_name, err_subcode, message) )
 
 /// Error posting only once during program execution with given
 /// error code name and given error subcode.
@@ -627,7 +632,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
     ERR_POST_XX_N_TIMES(1, error_name, err_subcode, message)
 
 #define LOG_POST_XX_ONCE(error_name, err_subcode, message)   \
-    ERR_POST_XX_ONCE(error_name, err_subcode, message)
+    LOG_POST_XX_N_TIMES(1, error_name, err_subcode, message)
 
 /// Severity level for the posted diagnostics.
 enum EDiagSev {
@@ -1139,7 +1144,7 @@ public:
     TDiagPostFlags ResetPostFlags(TDiagPostFlags flags) const;
 
     /// Display fatal error message.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void DiagFatal(const CDiagCompileInfo& info,
                           const char* message);
     /// Display trouble error message.
