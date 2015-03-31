@@ -3907,7 +3907,8 @@ case "$host_os:$compiler" in
 esac
 NCBI_CHECK_LIBS(DL, dl, dlopen)
 orig_LIBS="$DL_LIBS $orig_LIBS"
-DL_LIBS=
+# Left alone for the sake of anything using $(C_LIBS) in lieu of $(ORIG_LIBS).
+# DL_LIBS=
 dnl NCBI_CHECK_LIBS(UUID, uuid, uuid_generate)
 AC_SEARCH_LIBS(uuid_generate, uuid,
    [NCBI_PACKAGE(UUID)

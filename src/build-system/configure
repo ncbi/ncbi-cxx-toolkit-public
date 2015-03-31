@@ -24635,7 +24635,8 @@ fi
  LIBS=$saved_LIBS
 
 orig_LIBS="$DL_LIBS $orig_LIBS"
-DL_LIBS=
+# Left alone for the sake of anything using $(C_LIBS) in lieu of $(ORIG_LIBS).
+# DL_LIBS=
 { echo "$as_me:$LINENO: checking for library containing uuid_generate" >&5
 echo $ECHO_N "checking for library containing uuid_generate... $ECHO_C" >&6; }
 if test "${ac_cv_search_uuid_generate+set}" = set; then
