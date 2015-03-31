@@ -376,6 +376,7 @@ void CLocusItem::x_SetStrand(CBioseqContext& ctx)
 void CLocusItem::x_SetBiomol(CBioseqContext& ctx)
 {
     if ( ctx.IsProt() ) {
+        m_Biomol = CMolInfo::eBiomol_peptide;
         return;
     }
 
