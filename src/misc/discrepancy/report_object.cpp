@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "discrepancy_core.hpp"
-#include <misc/discrepancy/report_object.hpp>
+#include "report_object.hpp"
 
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>

@@ -31,7 +31,7 @@
 #define _MISC_DISCREPANCY_DISCREPANCY_CORE_H_
 
 #include <misc/discrepancy/discrepancy.hpp>
-#include <misc/discrepancy/report_object.hpp>
+#include "report_object.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
