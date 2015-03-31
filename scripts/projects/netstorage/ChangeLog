@@ -1,3 +1,26 @@
+Release 2.0.0 based on TRUNK (2015-03-31)
+
+Improvements and bug fixes:
+    * Develop mechanism to expire NetStorage data in FileTrack (JIRA: CXX-5331)
+    * NetStorage: monitoring support (JIRA: CXX-5408)
+    * NetStorage: new GETATTRLIST command (JIRA: CXX-5481)
+    * NetStorage: DB access from many threads (JIRA: CXX-5550)
+    * Recent changes in connect/services apparently cause netstorage to fail
+      (JIRA: CXX-5573)
+    * NetStorage API: Add precise location flags, change object locator
+      (JIRA: CXX-5610)
+    * NetStorage: LBSMD hardcoded service (JIRA: CXX-5640)
+    * NetStorage: use CNcbiEncrypt for DB password in .ini file
+      (JIRA: CXX-5671)
+    * Exception while removing backend object (JIRA: CXX-5687)
+    * NetStorage server is to work with objects instead of locators
+      (JIRA: CXX-5690)
+    * NetStorage: error messages in applog (JIRA: CXX-5818)
+    * NetStorage: incorrect request context switching (JIRA: CXX-5839)
+    * NetStorage API: Exception case on close during relocate needs fixing
+      (JIRA: CXX-5841)
+
+
 Release 1.1.0 based on SC-15 (2014-12-16)
 
 Improvements and bug fixes:
