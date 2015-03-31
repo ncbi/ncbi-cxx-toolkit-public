@@ -169,13 +169,16 @@ bool CSrcWriter::WriteBioseqHandles(
 bool CSrcWriter::WriteSeqEntry(
     const CSeq_entry& seqEntry,
     CScope& scope,
-    CNcbiOstream& out) 
+    CNcbiOstream& out,
+    const bool nucsOnly) 
 //  ----------------------------------------------------------------------------
 {
     CSeq_entry_Handle handle = scope.AddTopLevelSeqEntry(seqEntry);
     vector<CBioseq_Handle> vecBsh;
     for (CBioseq_CI bci(handle); bci; ++bci) {
-      vecBsh.push_back(*bci);
+        if(!nucsOnly || bci->IsNa()) {
+            vecBsh.push_back(*bci);
+        }
     }
     WriteBioseqHandles(vecBsh, sAllSeqEntryFields, out, 0);
   

@@ -125,7 +125,8 @@ public:
     virtual bool WriteSeqEntry(
         const CSeq_entry&,
         CScope&,
-        CNcbiOstream&);
+        CNcbiOstream&,
+        bool = false);
     
   
 protected:
