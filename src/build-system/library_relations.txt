@@ -120,6 +120,7 @@ bacterial_pipeline_proc needs xalgoalignutil
 bag_access needs $(SEQ_LIBS)
 bag_access needs gpipe_common
 bag_access needs pub
+bamread needs $(VDB_LIB)
 bamread needs seqset
 bamread needs3party $(VDB_LIBS)
 basic_sample_lib needs xncbi
@@ -217,6 +218,8 @@ ct64 needs3party $(ORIG_LIBS)
 ct64 needs3party comn64
 ct64 needs3party intl64
 ct_ftds64 needs tds_ftds64
+ctutils needs $(VDB_LIB)
+ctutils needs3party $(SYBASE_DLLS)
 ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
@@ -226,10 +229,12 @@ dbapi needs dbapi_driver
 dbapi_driver needs xncbi
 dbapi_driver_wrap_s needs dbapi_driver
 dbapi_sample_base needs $(DBAPI_CTLIB)
+dbapi_sample_base needs $(DBAPI_ODBC)
 dbapi_sample_base needs $(XCONNEXT)
 dbapi_sample_base needs ncbi_xdbapi_ftds
 dbapi_sample_base needs xconnect
 dbapi_sample_base needs xutil
+dbapi_sample_base needs3party $(SYBASE_DLLS)
 dbapi_sample_base needs3party $(SYBASE_LIBS)
 dbapi_util_blobstore needs $(COMPRESS_LIBS)
 dbapi_util_blobstore needs dbapi_driver
@@ -719,10 +724,12 @@ ncbi_xcache_sqlite3 needs xutil
 ncbi_xcache_sqlite3 needs3party $(SQLITE3_LIBS)
 ncbi_xdbapi_ctlib needs dbapi_driver
 ncbi_xdbapi_ctlib needs3party $(NETWORK_LIBS)
+ncbi_xdbapi_ctlib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_LIBS)
 ncbi_xdbapi_dblib needs dbapi_driver
 ncbi_xdbapi_dblib needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_DBLIBS)
+ncbi_xdbapi_dblib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_ftds needs $(FTDS_LIB)
 ncbi_xdbapi_ftds needs dbapi_driver
 ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
@@ -741,7 +748,6 @@ ncbi_xloader_cdd needs $(SOBJMGR_LIBS)
 ncbi_xloader_cdd needs xconnect
 ncbi_xloader_csra needs $(SOBJMGR_LIBS)
 ncbi_xloader_csra needs $(SRAREAD_LIBS)
-ncbi_xloader_csra needs3party $(VDB_LIBS)
 ncbi_xloader_genbank needs ncbi_xreader_cache
 ncbi_xloader_genbank needs ncbi_xreader_id1
 ncbi_xloader_genbank needs ncbi_xreader_id2
@@ -750,15 +756,12 @@ ncbi_xloader_lds2 needs lds2
 ncbi_xloader_patcher needs $(SOBJMGR_LIBS)
 ncbi_xloader_sra needs $(SOBJMGR_LIBS)
 ncbi_xloader_sra needs $(SRAREAD_LIBS)
-ncbi_xloader_sra needs3party $(VDB_LIBS)
 ncbi_xloader_trace needs $(SOBJMGR_LIBS)
 ncbi_xloader_trace needs id1cli
 ncbi_xloader_vdbgraph needs $(SOBJMGR_LIBS)
 ncbi_xloader_vdbgraph needs $(SRAREAD_LIBS)
-ncbi_xloader_vdbgraph needs3party $(VDB_LIBS)
 ncbi_xloader_wgs needs $(SOBJMGR_LIBS)
 ncbi_xloader_wgs needs $(SRAREAD_LIBS)
-ncbi_xloader_wgs needs3party $(VDB_LIBS)
 ncbi_xreader needs $(COMPRESS_LIBS)
 ncbi_xreader needs $(SOBJMGR_LIBS)
 ncbi_xreader needs id1
@@ -854,7 +857,6 @@ pathogen_ctl needs gencoll_client
 pathogen_ctl needs gpipe_xml
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
-pathogen_ctl needs3party $(VDB_LIBS)
 pathogen_fill_taxa needs gpipe_common
 pathogen_target_loader needs gpinit_register
 pathogen_target_loader needs pathogen_ctl
@@ -951,6 +953,7 @@ splitdbasncpp_g needs xnetblast
 sqlite3 needs3party $(ORIG_LIBS)
 sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
+sraread needs $(VDB_LIB)
 sraread needs seqset
 sraread needs3party $(VDB_LIBS)
 srprism needs srprism_seq
@@ -971,6 +974,7 @@ ssrvcmn needs xconnect
 ssscli needs ssrvcmn
 ssscli needs ssssys
 sssdb needs ssssys
+sssdb needs3party $(SYBASE_DLLS)
 sssdb needs3party $(SYBASE_LIBS)
 ssssys needs $(LIBSSSUTILS)
 ssssys needs xconnect
@@ -981,6 +985,7 @@ submit needs seqset
 sv_objects needs general
 sybase_os needs3party $(NETWORK_LIBS)
 sybase_os needs3party $(ORIG_LIBS)
+sybase_os needs3party $(SYBASE_DLLS)
 sybase_os needs3party $(SYBASE_LIBS)
 sybdb64 includes3party comn64
 sybdb64 includes3party intl64
@@ -1054,6 +1059,7 @@ u2tl needs $(Z_LIB)
 u2tl needs3party $(NETWORK_LIBS)
 u2tl needs3party $(ORIG_LIBS)
 u2tl needs3party $(SYBASE_DBLIBS)
+u2tl needs3party $(SYBASE_DLLS)
 u2tl needs3party $(SYBASE_LIBS)
 u2tl needs3party $(Z_LIBS)
 uilist needs xser
@@ -1070,6 +1076,7 @@ variation needs pub
 variation_utils needs variation
 variation_utils needs xobjutil
 vdb2blast needs $(BLAST_LIBS)
+vdb2blast needs $(VDB_LIB)
 vdb2blast needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
@@ -1444,6 +1451,7 @@ xsvcgi needs ncbi_xcache_netcache
 xsvcgi needs ncbi_xloader_vdbgraph
 xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs uudutil
+xsvcgi needs3party $(SYBASE_DLLS)
 xsvcgi needs3party $(SYBASE_LIBS)
 xsvdata includes trackmgr
 xsvdata needs $(BLAST_INPUT_LIBS)
@@ -1456,6 +1464,7 @@ xsvdata needs sv_objects
 xsvdata needs uudutil
 xsvdata needs xalgophytree
 xsvdata needs xobjreadex
+xsvdata needs3party $(SYBASE_DLLS)
 xsvdata needs3party $(SYBASE_LIBS)
 xsvlink needs gui_objutils
 xsvlink needs sv_objects
