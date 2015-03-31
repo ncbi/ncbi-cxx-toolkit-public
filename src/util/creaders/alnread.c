@@ -1460,7 +1460,9 @@ static int s_CountSequencesInBracketedComment (TBracketedCommentListPtr comment)
 	}
 	/* Last line must be right bracket on a line by itself */
 	/* First line must be left bracket on a line by itself */
-	if (lip->data[0] != ']' || strspn (lip->data + 1, " \t\r\n") != strlen (lip->data + 1))
+	if (lip != NULL &&
+        lip->data != NULL &&
+        (lip->data[0] != ']' || strspn (lip->data + 1, " \t\r\n") != strlen (lip->data + 1)))
 	{
 		return 0;
 	}
@@ -2850,7 +2852,7 @@ static void s_AddDeflineFromOrganismLine
         defline_num ++;
     }
     
-    if (defline_num == org_num) {
+    if (defline_num == org_num && lip != NULL) {
         /* if previous defline is empty, replace with new defline */
         if (strlen (lip->data) == 0)
         {
@@ -3425,6 +3427,9 @@ s_FindInterleavedBlocks
             size_list = s_AddSizeInfo (size_list, llp->num_appearances);
         }
     }
+    if (size_list == NULL) {
+        return;
+    }
     best_ptr = s_GetMostPopularSizeInfo (size_list);
     if (best_ptr != NULL  
         &&  (best_ptr->num_appearances > 1  ||  
@@ -3607,7 +3612,6 @@ s_AfrpProcessFastaGap(
         s_LengthListFree (this_pattern);
     } else {
         last_pattern->next = this_pattern;
-        last_pattern = this_pattern;
     }
 }
 
@@ -4036,7 +4040,7 @@ s_ProcessBlockLines
                 pos += len;
                 len = strspn (cp, " \t\r");
                 cp += len;
-                pos += len;
+                
                 /* Check for duplicate IDs in the first block */
                 if (first_block)
                 {
@@ -5260,7 +5264,7 @@ static void s_InsertNewOffsets
 
     /* if we have room for one more sequence, or even most of one more sequence, add it */
     if (lip != NULL  &&  ! s_SkippableString (lip->data)) {
-        splice_offset = s_IntLinkNew (line_diff + prev_offset->ival, prev_offset);
+        s_IntLinkNew (line_diff + prev_offset->ival, prev_offset);
     }
 }
 
@@ -5679,6 +5683,7 @@ s_FindBadDataCharsInSequence
     }
 
     if (! found_middle_start) {
+        s_LineInfoReaderFree (lirp);
         if (num_segments > 1)
         {
             return eFalse;
@@ -5687,7 +5692,6 @@ s_FindBadDataCharsInSequence
         {
             s_ReportMissingSequenceData (arsp->id,
                                    report_error, report_error_userdata);
-            s_LineInfoReaderFree (lirp);
             return eTrue;
           
         }
@@ -5819,11 +5823,13 @@ static EBool s_AreOrganismsUnique (SAlignRawFilePtr afrp)
         }
         if (lip != NULL  &&  lip != this_org) {
             are_unique = eFalse;
-            s_ReportRepeatedOrganismName (arsp->id, this_org->line_num,
-                                        lip->line_num,
-                                        this_org->data,
-                                        afrp->report_error,
-                                        afrp->report_error_userdata);
+            if (arsp != NULL && arsp->id != NULL) {
+                s_ReportRepeatedOrganismName (arsp->id, this_org->line_num,
+                                            lip->line_num,
+                                            this_org->data,
+                                            afrp->report_error,
+                                            afrp->report_error_userdata);
+            }
         }
     }
     return are_unique;
