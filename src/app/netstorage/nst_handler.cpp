@@ -90,6 +90,15 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
 
 
 
+CRequestContextResetter::CRequestContextResetter()
+{}
+
+CRequestContextResetter::~CRequestContextResetter()
+{
+    CDiagContext::SetRequestContext(NULL);
+}
+
+
 CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
     : m_Server(server),
       m_ReadBuffer(NULL),
@@ -152,10 +161,19 @@ void CNetStorageHandler::OnOpen(void)
 
 void CNetStorageHandler::OnRead(void)
 {
-    size_t      n_read;
-    EIO_Status  status = GetSocket().Read(m_ReadBuffer,
-                                          kReadBufferSize, &n_read);
+    CRequestContextResetter     context_resetter;
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.NotNull())
+           CDiagContext::SetRequestContext(m_CmdContext);
+        else
+            CDiagContext::SetRequestContext(m_ConnContext);
+    }
 
+
+    size_t                      n_read;
+    EIO_Status                  status = GetSocket().Read(m_ReadBuffer,
+                                                          kReadBufferSize,
+                                                          &n_read);
     switch (status) {
     case eIO_Success:
         break;
@@ -282,23 +300,21 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
             break;
     }
 
-    rtw.reset();
-    wtw.reset();
-
     // If a command has not finished its logging by some reasons - do it
     // here as the last chance.
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStop();
         m_CmdContext.Reset();
+        CDiagContext::SetRequestContext(NULL);
     }
 
     CSocket&        socket = GetSocket();
-    CDiagContext::SetRequestContext(m_ConnContext);
     m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
     m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
-    GetDiagContext().PrintRequestStop();
 
+    CDiagContext::SetRequestContext(m_ConnContext);
+    GetDiagContext().PrintRequestStop();
     m_ConnContext.Reset();
     CDiagContext::SetRequestContext(NULL);
 }
@@ -313,6 +329,14 @@ void CNetStorageHandler::OnTimeout(void)
 
 void CNetStorageHandler::OnOverflow(EOverflowReason reason)
 {
+    CRequestContextResetter     context_resetter;
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.NotNull())
+           CDiagContext::SetRequestContext(m_CmdContext);
+        else
+            CDiagContext::SetRequestContext(m_ConnContext);
+    }
+
     switch (reason) {
         case eOR_ConnectionPoolFull:
             ERR_POST("eCommunicationError:Connection pool full");
@@ -358,20 +382,10 @@ bool CNetStorageHandler::x_ReadRawData()
 }
 
 
+
 // x_OnMessage gets control when a command message is received.
 void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 {
-    if (m_ConnContext.NotNull()) {
-        m_CmdContext.Reset(new CRequestContext());
-        m_CmdContext->SetRequestStatus(eStatus_OK);
-        m_CmdContext->SetRequestID();
-        CDiagContext::SetRequestContext(m_CmdContext);
-
-        // The setting of the client session and IP
-        // must be done before logging.
-        SetSessionAndIP(message, GetSocket());
-    }
-
     // Log all the message parameters
     x_PrintMessageRequestStart(message);
 
@@ -802,6 +816,7 @@ void CNetStorageHandler::x_CreateConnContext(void)
     GetDiagContext().PrintRequestStart()
                     .Print("_type", "conn");
     m_ConnContext->SetRequestStatus(eStatus_OK);
+    CDiagContext::SetRequestContext(NULL);
 }
 
 
@@ -838,8 +853,18 @@ CNetStorageHandler::x_FindProcessor(
 void
 CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
 {
-    if (m_CmdContext.NotNull()) {
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.IsNull()) {
+            m_CmdContext.Reset(new CRequestContext());
+            m_CmdContext->SetRequestStatus(eStatus_OK);
+            m_CmdContext->SetRequestID();
+        }
         CDiagContext::SetRequestContext(m_CmdContext);
+
+        // The setting of the client session and IP
+        // must be done before logging.
+        SetSessionAndIP(message, GetSocket());
+
         CDiagContext_Extra    ctxt_extra =
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "message");
@@ -869,8 +894,8 @@ CNetStorageHandler::x_PrintMessageRequestStop(void)
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStop();
-        CDiagContext::SetRequestContext(m_ConnContext);
         m_CmdContext.Reset();
+        CDiagContext::SetRequestContext(NULL);
     }
 }
 
@@ -1986,21 +2011,14 @@ CNetStorageHandler::x_ProcessRead(
     size_t          bytes_read;
     Int8            total_bytes = 0;
 
-    rtw.reset(new TimeWatch("Read"));
-    wtw.reset(new TimeWatch("Write"));
-
     try {
         while (!direct_object.Eof()) {
-            rtw->start();
             bytes_read = direct_object.Read(buffer, sizeof(buffer));
-            rtw->stop();
 
             m_UTTPWriter.SendChunk(buffer, bytes_read, false);
 
-            wtw->start();
             if (x_SendOverUTTP() != eIO_Success)
                 return;
-            wtw->stop();
 
             m_Server->GetClientRegistry().AddBytesRead(m_Client, bytes_read);
             total_bytes += bytes_read;
@@ -2021,10 +2039,8 @@ CNetStorageHandler::x_ProcessRead(
 
     m_UTTPWriter.SendControlSymbol('\n');
 
-    wtw->start();
     if (x_SendOverUTTP() != eIO_Success)
         return;
-    wtw->stop();
 
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRead(
@@ -2038,8 +2054,6 @@ CNetStorageHandler::x_ProcessRead(
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
-    rtw.reset();
-    wtw.reset();
 }
 
 
