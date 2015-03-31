@@ -25,6 +25,20 @@ endif
 
 RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
 
+ifeq "$(srcdir)" "."
+  PTB_ROOT      = /net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb
+  BOOTSTRAP_PTB = $(build_root)/bin/project_tree_builder
+  ifeq "$(PREBUILT_PTB_EXE)" "bootstrap"
+    RELEASE_PTB =
+  else
+    COMMON_SH   =  $(abs_top_srcdir)/scripts/common/common.sh
+    PLATFORM    := $(shell . $(COMMON_SH) && COMMON_DetectPlatform)
+    RELEASE_PTB =  $(PTB_ROOT)/$(PLATFORM)/project_tree_builder.RELEASE
+  endif
+  PTB_CANDIDATES =  $(PREBUILT_PTB_EXE) $(RELEASE_PTB) $(BOOTSTRAP_PTB)
+  PTB            := $(word 1, $(wildcard $(PTB_CANDIDATES)))
+endif
+
 ### Tests config variables
 
 check_run = $(abs_top_srcdir)/scripts/common/check/check_run.sh
@@ -270,9 +284,22 @@ depend_l.real: $(sources)
 	$(call make_each_app_proj,depend)
 
 Makefile.%.libdep: $(srcdir)/Makefile.% $(builddir)/Makefile.mk
+ifneq "$(srcdir)" "."
 	cd $(builddir)  &&  $(RWL) -base project_tree_builder \
 	    $(abs_top_srcdir)/scripts/common/impl/create_flat_makefile.sh \
 	        $(build_root) -s $(abs_top_srcdir) $(PROJECTS_:%=-p %)
+else
+  ifneq "$(PTB)" ""
+	cd $(import_root)  &&  $(RWL) -base project_tree_builder \
+	    $(PTB) -ext -extroot $(builddir) -nws \
+	        -logfile Flat.full.configuration_log -conffile \
+	        $(abs_top_srcdir)/src/build-system/project_tree_builder.ini \
+	        -noadddep `cd .. && pwd` src Makefile.flat.full
+  else
+	@echo Not sure how to update $@ from $<.
+	@exit 10
+  endif
+endif
 
 base_req_needers = $(filter-out mark-as-disabled_l,$(local_targets))
 .PHONY: $(base_targets) $(has_usr_nonusr) $(has_usr_usr)
