@@ -51,7 +51,6 @@ ads needs $(SEQ_LIBS)
 ads needs pub
 affy needs3party $(CURL_LIBS)
 affy needs3party $(ORIG_LIBS)
-affy needs3party $(VDB_LIBS)
 affy needs3party $(XERCES_LIBS)
 agp_lookup needs gc_utils
 agp_lookup needs xhtml
@@ -222,7 +221,6 @@ ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
-curl needs3party $(VDB_LIBS)
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
 dbapi_driver needs xncbi
@@ -1199,7 +1197,6 @@ wx_tools needs3party $(WXWIDGETS_LIBS)
 xalan-c needs3party $(CURL_LIBS)
 xalan-c needs3party $(ICU_LIBS)
 xalan-c needs3party $(ORIG_LIBS)
-xalan-c needs3party $(VDB_LIBS)
 xalan-c needs3party $(XERCES_LIBS)
 xalanMsg needs3party $(ORIG_LIBS)
 xalgoalignnw needs $(SEQ_LIBS)
@@ -1298,7 +1295,6 @@ xdiscrepancy_report needs xmlwrapp
 xdiscrepancy_report needs xvalidate
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(ORIG_LIBS)
-xerces-c needs3party $(VDB_LIBS)
 xfcgi includes xcgi
 xfcgi needs3party $(FASTCGI_LIBS)
 xformat needs gbseq
@@ -1428,7 +1424,6 @@ xslt_libxml needs xid_utils
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
-xslt_xalan needs3party $(VDB_LIBS)
 xslt_xalan needs3party $(XALAN_LIBS)
 xslt_xalan needs3party $(XERCES_LIBS)
 xsmall_assembly needs gcaccess_utils
