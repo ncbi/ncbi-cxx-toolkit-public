@@ -71,6 +71,7 @@ static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
     return (flags & IFlatQVal::fIsNote)  &&  !ctx.Config().IsModeDump();
 }
 
+// two-bytes combinations we're looking to clean
 #define twochars(a,b) Uint2((a) << 8 | (b))
 #define twocommas twochars(',',',')
 #define twospaces twochars(' ',' ')
@@ -81,7 +82,9 @@ static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 static void s_CleanAndCompress(string& dest, const CTempString& instr)
 {
     size_t left = instr.size();
+    // this is the input stream
     const char* in = instr.data();
+
     // skip front white spaces
     while (left && *in == ' ')
     {
@@ -96,19 +99,26 @@ static void s_CleanAndCompress(string& dest, const CTempString& instr)
 
     dest.resize(left);
 
+    // this is where we write result
     char* out = (char*)dest.c_str();
-    Uint2 prev = 0;
+    // this is two bytes storage where we see current and previous symbols
+    Uint2 two_chars = 0;
     char i = 0;
 
     while (left--)
     {
         i = *in++;
-        prev = (prev << 8) | i;
-        switch (prev)
+        two_chars = (two_chars << 8) | i;
+        switch (two_chars)
         {
-        case twocommas: // skip multicommas
+        case twocommas: // replace double commas with comma+space
+            *out++ = ' ';
+            two_chars = ' ';
+            break;
         case twospaces: // skip multispaces
+            break;
         case bracket_space: // skip space after bracket
+            two_chars = (two_chars >> 8);
             break;
         case space_comma:
         case space_bracket:
@@ -116,9 +126,10 @@ static void s_CleanAndCompress(string& dest, const CTempString& instr)
             break;
         default:
             *out++ = i;
+            break;
         }
     }
-    if (i == ' ') out--;
+    if (i == ' ') out--; // the final space don't get saved
     dest.resize(out - dest.c_str());
 }
 
@@ -127,6 +138,10 @@ struct s_CleanAndCompress_unit_test
 {
     s_CleanAndCompress_unit_test()
     {
+        test("C( )C");
+        test("xx,,xx");
+        test("xx,, xx");
+        test("xx,,  xx");
         test("  xx  xx  ");
         test("xx , xx");
         test("xx  , xx");
@@ -137,7 +152,7 @@ struct s_CleanAndCompress_unit_test
     {
         string str;
         s_CleanAndCompress(str, s);
-        cout << str << '.' << endl;
+        cout << s << "--->" << str << '.' << endl;
     }
 };
 
@@ -1364,8 +1379,8 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
 
 struct SSortReferenceByName
 {
-    bool operator()(const CRef< CDbtag >& sfp1,
-                    const CRef< CDbtag >& sfp2) 
+    bool operator()(const CDbtag* sfp1,
+                    const CDbtag* sfp2) 
     {
         if (NStr::CompareNocase(sfp1->GetDb().c_str(), sfp2->GetDb().c_str()) < 0)
             return true;
@@ -1381,10 +1396,14 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
     // to avoid duplicates, keep track of ones we've already done
     set<string> quals_already_done;
 
-    vector< CRef< CDbtag > > temp(m_Value);
+    TXref temp(m_Value);
+
     sort(temp.begin(), temp.end(), SSortReferenceByName());
 
-    ITERATE (TXref, it, temp) {
+    string id;
+    string db_xref; db_xref.reserve(100);
+
+    ITERATE(TXref, it, temp) {
         const CDbtag& dbt = **it;
         if (!m_Quals.Empty()  &&  x_XrefInGeneXref(dbt)) {
             continue;
@@ -1422,7 +1441,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
         }
 
         const CDbtag::TTag& tag = (*it)->GetTag();
-        string id;
+        id.clear();
         if (tag.IsId()) {
             id = NStr::IntToString(tag.GetId());
         } else if (tag.IsStr()) {        
@@ -1459,24 +1478,24 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
             }
         }
 
-        CNcbiOstrstream db_xref;
-        db_xref << db << ':';
+        db_xref.clear();
+        db_xref.append(db.data(), db.length()).push_back(':');
+
         if (ctx.Config().DoHTML()) {
             string url = dbt.GetUrl( ctx.GetTaxname() );
             if (!NStr::IsBlank(url)) {
-                db_xref <<  "<a href=\"" << url << "\">" << id << "</a>";
+                db_xref.append("<a href=\"").append(url).append("\">").append(id).append("</a>");
             } else {
-                db_xref << id;
+                db_xref.append(id);
             }
         } else {
-            db_xref << id;
+            db_xref.append(id);
         }
 
         // add quals not already done
-        string db_xref_str = CNcbiOstrstreamToString(db_xref);
-        if( quals_already_done.find(db_xref_str) == quals_already_done.end() ) {
-            quals_already_done.insert( db_xref_str );
-            x_AddFQ(q, name, db_xref_str);
+        if (quals_already_done.find(db_xref) == quals_already_done.end()) {
+            quals_already_done.insert(db_xref);
+            x_AddFQ(q, name, db_xref);
         }
     }
 }
