@@ -236,7 +236,7 @@ sources.nonusr:
 	$(call make_each_lib_proj,export-headers)
 	$(MAKE_LOCK_MAP)
 
-all.nonusr: $(sources:%=%.nonusr)
+all.nonusr: $(sources:%=%.nonusr) $(wildcard Makefile.*.libdep)
 	@-$(RM) -f .built .built_r
 	@-echo "`$(DATE)`: starting to build in $(CURDIR)" > .building
 	$(call make_each_lib_proj,all)
@@ -251,7 +251,7 @@ clean.nonusr purge.nonusr: %.nonusr: # %_sources
 clean_sources purge_sources:
 	$(call make_each_spec,$@)
 
-libs_l.real: $(sources)
+libs_l.real: $(sources) $(wildcard Makefile.*.libdep)
 	$(call make_each_lib_proj,all)
 
 mark-as-disabled%: ign = -
@@ -268,6 +268,11 @@ check_add_l.real:
 depend_l.real: $(sources)
 	$(call make_each_lib_proj,depend)
 	$(call make_each_app_proj,depend)
+
+Makefile.%.libdep: $(srcdir)/Makefile.% $(builddir)/Makefile.mk
+	cd $(builddir)  &&  $(RWL) -base project_tree_builder \
+	    $(abs_top_srcdir)/scripts/common/impl/create_flat_makefile.sh \
+	        $(build_root) -s $(abs_top_srcdir) $(PROJECTS_:%=-p %)
 
 base_req_needers = $(filter-out mark-as-disabled_l,$(local_targets))
 .PHONY: $(base_targets) $(has_usr_nonusr) $(has_usr_usr)
