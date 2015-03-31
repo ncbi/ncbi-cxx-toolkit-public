@@ -308,6 +308,11 @@ private:
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
     string         m_SubHitIDCache;
+
+    // For saving/checking owner TID.
+    friend class CDiagContextThreadData;
+    // TID of the thread currently using this context or -1.
+    Uint8          m_OwnerTID;
 };
 
 

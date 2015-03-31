@@ -56,7 +56,8 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_PropSet(0),
       m_IsRunning(false),
       m_AutoIncOnPost(false),
-      m_Flags(flags)
+      m_Flags(flags),
+      m_OwnerTID(-1)
 {
 }
 
