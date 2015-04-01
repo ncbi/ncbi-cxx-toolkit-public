@@ -294,7 +294,7 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc)
     }
     ret.row_id = NStr::StringToNumeric<Uint8>(acc.substr(row_pos),
                                               NStr::fConvErr_NoThrow);
-    if ( !ret.row_id && errno ) {
+    if ( !ret.row_id ) {
         return ret;
     }
     if ( CConstRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
