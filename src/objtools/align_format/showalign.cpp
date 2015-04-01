@@ -3819,14 +3819,17 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                         deflines += alnDefLine;	//this contains all deflines except the first one
                     }      
                     if(isFirst) {
-                        isFirst = false;	
-                        if(m_AlignTemplates->alnTitlesTmpl.empty()) break;
+                        isFirst = false;	                        
+                    }
+                    if(m_AlignTemplates->alnTitlesTmpl.empty() && !firstDefline.empty()) {
+                            m_NumBlastDefLines = 1;
+                            break;
                     }
                     
-					delete alnDispParams;
+		    delete alnDispParams;
                 }
             }            
-			m_NumBlastDefLines = numBdl;            
+	    m_NumBlastDefLines = numBdl;            
         }        
         if(m_NumBlastDefLines == 1) {
             deflines = firstDefline;	
