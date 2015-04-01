@@ -260,7 +260,7 @@ public:
     static bool IsCtxRunning(CRequestContext* ctx);
 
 public:
-    enum EDefaultHitIDFlag {
+    enum EDefaultHitIDFlags {
         eHitID_NoCreate, // Do not create new hit id.
         eHitID_Create    // Create new hit id if it's not yet set.
     };
@@ -289,7 +289,8 @@ public:
     void PrintStop(void) {
     }
     const string& GetDefaultHitID(void) { return m_hid; }
-    const string& x_GetDefaultHitID(CDiagContext::EDefaultHitIDFlag) { return m_hid; }
+    const string& x_GetDefaultHitID(CDiagContext::EDefaultHitIDFlags) { return m_hid; }
+    bool x_IsSetDefaultHitID(void) const {return false;}
 private:
     string m_hid;
 };
