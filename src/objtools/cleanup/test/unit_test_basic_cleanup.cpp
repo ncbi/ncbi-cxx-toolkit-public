@@ -336,7 +336,7 @@ void s_ProcessInputFile( const string &input_file_name )
     s_LoadExpectedOutput( expected_seq_entries, input_file_name );
     BOOST_CHECK( ! expected_seq_entries.empty() );
 
-    BOOST_CHECK( seq_entries.size() == expected_seq_entries.size() );
+    BOOST_CHECK_EQUAL( seq_entries.size(), expected_seq_entries.size() );
 
     // see whether or not to run extended cleanup, which depends
     // on the file path
