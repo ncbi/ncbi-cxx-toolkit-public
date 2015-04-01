@@ -112,11 +112,40 @@ const char* g_RW_ResultToString(ERW_Result result)
 static const streamsize kDefaultBufSize = 4096;
 
 
+static inline EOwnership x_IfToOwnReader(const IReader* r, const IWriter* w,
+                                         CRWStreambuf::TFlags f)
+{
+    const IReaderWriter* rw = dynamic_cast<const IReaderWriter*> (r);
+    if (!rw  ||  rw != dynamic_cast<const IReaderWriter*> (w)) {
+        if (f & CRWStreambuf::fOwnReader)
+            return eTakeOwnership;
+    } else {
+        if ((f & CRWStreambuf::fOwnAll) == CRWStreambuf::fOwnAll)
+            return eTakeOwnership;
+    }
+    return eNoOwnership;
+}
+
+
+static inline EOwnership x_IfToOwnWriter(const IReader* r, const IWriter* w,
+                                         CRWStreambuf::TFlags f)
+{
+    const IReaderWriter* rw = dynamic_cast<const IReaderWriter*> (w);
+    if (!rw  ||  rw != dynamic_cast<const IReaderWriter*> (r)) {
+        if (f & CRWStreambuf::fOwnWriter)
+            return eTakeOwnership;
+    } /* else IReader sets the ownership */
+    return eNoOwnership;
+}
+
+
 CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
-    : m_Flags(f), m_Reader(rw), m_Writer(rw), m_pBuf(0),
+    : m_Flags(f),
+      m_Reader(rw, x_IfToOwnReader(rw, rw, f)),
+      m_Writer(rw, x_IfToOwnWriter(rw, rw, f)), m_pBuf(0),
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
       x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
@@ -129,7 +158,9 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
-    : m_Flags(f), m_Reader(r), m_Writer(w), m_pBuf(0),
+    : m_Flags(f),
+      m_Reader(r, x_IfToOwnReader(r, w, f)),
+      m_Writer(w, x_IfToOwnWriter(r, w, f)), m_pBuf(0),
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
       x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
@@ -164,7 +195,7 @@ CRWStreambuf::~CRWStreambuf()
         if (!x_Err  ||  x_ErrPos != x_GetPPos())
             x_sync();
         setp(0, 0);
-    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
+    } NCBI_CATCH_ALL_X(2,  "Exception in ~CRWStreambuf() [IGNORED]");
     try {
         // Push any data still unred in the buffer back to the device
         ERW_Result result = x_pushback();
@@ -173,19 +204,7 @@ CRWStreambuf::~CRWStreambuf()
                        Critical << "CRWStreambuf::~CRWStreambuf():"
                        " Read data pending");
         }
-    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
-    try {
-        IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
-        if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
-            if ((m_Flags & fOwnAll) == fOwnAll)
-                delete rw;
-        } else {
-            if (m_Flags & fOwnWriter)
-                delete m_Writer;
-            if (m_Flags & fOwnReader)
-                delete m_Reader;
-        }
-    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
+    } NCBI_CATCH_ALL_X(14, "Exception in ~CRWStreambuf() [IGNORED]");
 
     delete[] m_pBuf;
 }

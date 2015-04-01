@@ -78,8 +78,8 @@ public:
                  CT_CHAR_TYPE*  buf      = 0,
                  TFlags         flags    = 0);
 
-    /// NOTE:  if both reader and writer have actually happened to be
-    ///        the same object, it will _not_ be deleted twice.
+    /// NOTE:  if both reader and writer have actually happened to be the same
+    ///        object, then when owned, it will _not_ be deleted twice.
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
                  streamsize     buf_size = 0,
@@ -113,32 +113,39 @@ protected:
 #endif /*NCBI_OS_MSWIN*/
 
 protected:
-    CT_POS_TYPE    x_GetGPos(void)
+    CT_POS_TYPE x_GetGPos(void)
     { return x_GPos - (CT_OFF_TYPE)(gptr()  ? egptr() - gptr() : 0); }
-    CT_POS_TYPE    x_GetPPos(void)
+
+    CT_POS_TYPE x_GetPPos(void)
     { return x_PPos + (CT_OFF_TYPE)(pbase() ? pbase() - pptr() : 0); }
-    int               x_sync(void)
+
+    int         x_sync(void)
     { return pbase() < pptr() ? sync() : 0; }
-    ERW_Result        x_pushback(void);
+
+    ERW_Result  x_pushback(void);
 
 protected:
-    TFlags         m_Flags;
+    TFlags            m_Flags;
 
-    IReader*       m_Reader;
-    IWriter*       m_Writer;
+    AutoPtr<IReader>  m_Reader;
+    AutoPtr<IWriter>  m_Writer;
 
-    size_t         m_BufSize;
-    CT_CHAR_TYPE*  m_ReadBuf;
-    CT_CHAR_TYPE*  m_WriteBuf;
+    size_t            m_BufSize;
+    CT_CHAR_TYPE*     m_ReadBuf;
+    CT_CHAR_TYPE*     m_WriteBuf;
 
-    CT_CHAR_TYPE*  m_pBuf;
-    CT_CHAR_TYPE   x_Buf;
+    CT_CHAR_TYPE*     m_pBuf;
+    CT_CHAR_TYPE      x_Buf;
 
-    CT_POS_TYPE    x_GPos;      ///< get position [for istream.tellg()]
-    CT_POS_TYPE    x_PPos;      ///< put position [for ostream.tellp()]
+    CT_POS_TYPE       x_GPos;    ///< get position [for istream.tellg()]
+    CT_POS_TYPE       x_PPos;    ///< put position [for ostream.tellp()]
 
-    bool           x_Err;       ///< whether there was a write error
-    CT_POS_TYPE    x_ErrPos;    ///< position of write error (if x_Error)
+    bool              x_Err;     ///< whether there was a _write_ error
+    CT_POS_TYPE       x_ErrPos;  ///< position of the _write_ error (if x_Err)
+
+private:
+    CRWStreambuf(const CRWStreambuf&);
+    CRWStreambuf operator=(const CRWStreambuf&);
 };
 
 
