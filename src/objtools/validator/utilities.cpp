@@ -1506,7 +1506,7 @@ bool s_IsSameSeqAnnot(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bo
 }
 
 
-bool s_AreGBQualsIdentical(const CSeq_feat& feat1, const CSeq_feat& feat2)
+bool s_AreGBQualsIdentical(const CSeq_feat_Handle& feat1, const CSeq_feat_Handle& feat2, bool case_sensitive)
 {
     bool rval = true;
 
@@ -1534,14 +1534,12 @@ bool s_AreGBQualsIdentical(const CSeq_feat& feat1, const CSeq_feat& feat2)
             } else if (!NStr::Equal ((*gb1)->GetQual(), (*gb2)->GetQual())) {
                 rval = false;
             }
-            if (!(*gb1)->IsSetVal()) {
-                if ((*gb2)->IsSetVal()) {
-                    rval = false;
-                }
-            } else if (!(*gb2)->IsSetVal()) {
-                rval = false;
-            } else if (!NStr::Equal ((*gb1)->GetVal(), (*gb2)->GetVal())) {
-                rval = false;
+            if (rval) {
+                string v1 = (*gb1)->IsSetVal() ? (*gb1)->GetVal() : "";
+                string v2 = (*gb2)->IsSetVal() ? (*gb2)->GetVal() : "";
+                NStr::TruncateSpacesInPlace(v1);
+                NStr::TruncateSpacesInPlace(v2);
+                rval = NStr::Equal(v1, v2, case_sensitive ? NStr::eCase : NStr::eNocase);
             }
             ++gb1;
             ++gb2;
@@ -1554,7 +1552,7 @@ bool s_AreGBQualsIdentical(const CSeq_feat& feat1, const CSeq_feat& feat2)
 }
 
 
-bool s_AreFeatureLabelsSame(const CSeq_feat& feat, const CSeq_feat& prev, CScope *scope)
+bool s_AreFeatureLabelsSame(const CSeq_feat_Handle& feat, const CSeq_feat_Handle& prev, bool case_sensitive)
 {
     // compare labels and comments
     bool same_label = true;
@@ -1565,14 +1563,17 @@ bool s_AreFeatureLabelsSame(const CSeq_feat& feat, const CSeq_feat& prev, CScope
     string curr_label = "";
     string prev_label = "";
 
-    feature::GetLabel(feat,
-        &curr_label, feature::fFGL_Content, scope);
-    feature::GetLabel(prev,
-        &prev_label, feature::fFGL_Content, scope);
-    if (!NStr::EqualNocase(curr_comment, prev_comment) ||
-        !NStr::EqualNocase(curr_label, prev_label) ) {
+    feature::GetLabel(*(feat.GetSeq_feat()),
+        &curr_label, feature::fFGL_Content, &(feat.GetScope()));
+    feature::GetLabel(*(prev.GetSeq_feat()),
+        &prev_label, feature::fFGL_Content, &(prev.GetScope()));
+
+    bool comments_same = NStr::Equal(curr_comment, prev_comment, case_sensitive ? NStr::eCase : NStr::eNocase);
+    bool labels_same = NStr::Equal(curr_label, prev_label, case_sensitive ? NStr::eCase : NStr::eNocase);
+
+    if (!comments_same || !labels_same) {
         same_label = false;
-    } else if (!s_AreGBQualsIdentical(feat, prev)) {
+    } else if (!s_AreGBQualsIdentical(feat, prev, case_sensitive)) {
         same_label = false;
     }
     return same_label;
@@ -1615,7 +1616,7 @@ bool s_IsDifferentDbxrefs(const TDbtags& list1, const TDbtags& list2)
 }
 
 
-bool s_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2, CScope* scope)
+bool s_AreFullLengthCodingRegionsWithDifferentFrames (const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
     if (!f1.GetData().IsCdregion() || !f2.GetData().IsCdregion()) {
         return false;
@@ -1638,11 +1639,11 @@ bool s_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_
         return false;
     }
 
-    CBioseq_Handle bsh1 = BioseqHandleFromLocation(scope, f1.GetLocation());
+    CBioseq_Handle bsh1 = f1.GetScope().GetBioseqHandle(f1.GetLocation());
     if (!IsLocFullLength (f1.GetLocation(), bsh1)) {
         return false;
     }
-    CBioseq_Handle bsh2 = BioseqHandleFromLocation(scope, f2.GetLocation());
+    CBioseq_Handle bsh2 = f2.GetScope().GetBioseqHandle(f2.GetLocation());
     if (!IsLocFullLength (f2.GetLocation(), bsh2)) {
         return false;
     }
@@ -1768,70 +1769,101 @@ bool s_AremRNAsLinkedToDifferentCodingRegions (CSeq_feat_Handle f1, CSeq_feat_Ha
 EDuplicateFeatureType 
 IsDuplicate 
 (CSeq_feat_Handle f1, 
- const CSeq_feat& feat1, 
- CSeq_feat_Handle f2, 
- const CSeq_feat& feat2, 
- CScope& scope)
+ CSeq_feat_Handle f2,
+ bool check_partials,
+ bool case_sensitive)
 {
     EDuplicateFeatureType dup_type = eDuplicate_Not;
 
     // subtypes
-    CSeqFeatData::ESubtype feat1_subtype = feat1.GetData().GetSubtype();
-    CSeqFeatData::ESubtype feat2_subtype = feat2.GetData().GetSubtype();
+    CSeqFeatData::ESubtype feat1_subtype = f1.GetData().GetSubtype();
+    CSeqFeatData::ESubtype feat2_subtype = f2.GetData().GetSubtype();
+
+    // not duplicates if not the same subtype
+    if (feat1_subtype != feat2_subtype) {
+        return eDuplicate_Not;
+    }
+
     // locations
-    const CSeq_loc& feat1_loc = feat1.GetLocation();
-    const CSeq_loc& feat2_loc = feat2.GetLocation();
+    const CSeq_loc& feat1_loc = f1.GetLocation();
+    const CSeq_loc& feat2_loc = f2.GetLocation();
 
-    // if same subtype
-    if (feat1_subtype == feat2_subtype) {
-        // if same location and strand
-        if (s_IsSameStrand(feat1_loc, feat2_loc, scope)  &&
-            sequence::Compare(feat1_loc, feat2_loc, &scope,
-            sequence::fCompareOverlapping) == sequence::eSame) {
+    // not duplicates if not the same location and strand
+    if (!s_IsSameStrand(feat1_loc, feat2_loc, f1.GetScope())  ||
+        sequence::Compare(feat1_loc, feat2_loc, &(f1.GetScope()),
+                            sequence::fCompareOverlapping) != sequence::eSame) {
+        return eDuplicate_Not;
+    }
 
-            // same annot?
-            bool diff_annot_desc = false;
-            bool same_annot = s_IsSameSeqAnnot(f1, f2, diff_annot_desc);
+    // same annot?
+    bool diff_annot_desc = false;
+    bool same_annot = s_IsSameSeqAnnot(f1, f2, diff_annot_desc);
 
-            if (diff_annot_desc) {
-                // don't report if features on different annots with different titles or names
-            } else {
-                // compare labels and comments
-                bool same_label = s_AreFeatureLabelsSame (feat1, feat2, &scope);
+    if (diff_annot_desc) {
+        // don't report if features on different annots with different titles or names
+        return eDuplicate_Not;
+    }
 
-                // Report duplicates
-                if ( feat1_subtype == CSeqFeatData::eSubtype_region  &&
-                    s_IsDifferentDbxrefs(feat1.GetDbxref(), feat2.GetDbxref()) ) {
-                    // do not report if both have dbxrefs and they are 
-                    // different.
-                } else if (!same_label && s_AreFullLengthCodingRegionsWithDifferentFrames(f1, f2, &scope)) {
-                    // do not report if both coding regions are full length, have different products,
-                    // and have different frames
-                } else if (s_AreDifferentVariations(f1, f2)) {
-                    // don't report variations if replace quals are different
-                } else if (s_AreCodingRegionsLinkedToDifferentmRNAs(f1, f2)) {
-                    // do not report if features are coding regions linked to different mRNAs
-                } else if (s_AremRNAsLinkedToDifferentCodingRegions(f1, f2)) {
-                    // do not report if features are mRNAs linked to different coding regions
-                } else if ( same_annot ) {
-                    if (same_label) {
-                        dup_type = eDuplicate_Duplicate;
-                    } else if ( feat1_subtype != CSeqFeatData::eSubtype_pub ) {
-                        if (PartialsSame(feat1_loc, feat2_loc)) {
-                            // do not report if partial flags are different
-                            dup_type = eDuplicate_SameIntervalDifferentLabel;
-                        }
-                    }
-                } else {
-                    if (same_label) {
-                        dup_type = eDuplicate_DuplicateDifferentTable;
-                    } else if ( feat2_subtype != CSeqFeatData::eSubtype_pub ) {
-                        dup_type = eDuplicate_SameIntervalDifferentLabelDifferentTable;
-                    }
-                }
-            }
+    // compare labels and comments
+    bool same_label = s_AreFeatureLabelsSame (f1, f2, case_sensitive);
+
+    // compare dbxrefs
+    bool different_dbxrefs = (f1.IsSetDbxref() && f2.IsSetDbxref() && 
+                        s_IsDifferentDbxrefs(f1.GetDbxref(), f2.GetDbxref()));
+
+    if ( feat1_subtype == CSeqFeatData::eSubtype_region && different_dbxrefs) {
+        return eDuplicate_Not;
+    }
+
+    // check for frame difference
+    bool full_length_coding_regions_with_different_frames = 
+                      s_AreFullLengthCodingRegionsWithDifferentFrames(f1, f2);
+    if (!same_label && full_length_coding_regions_with_different_frames) {
+        // do not report if both coding regions are full length, have different products,
+        // and have different frames
+        return eDuplicate_Not;
+    }
+
+    if (s_AreDifferentVariations(f1, f2)) {
+        // don't report variations if replace quals are different
+        return eDuplicate_Not;
+    }
+
+    if (s_AreCodingRegionsLinkedToDifferentmRNAs(f1, f2)) {
+        // do not report if features are coding regions linked to different mRNAs
+        return eDuplicate_Not;
+    }
+
+    if (s_AremRNAsLinkedToDifferentCodingRegions(f1, f2)) {
+        // do not report if features are mRNAs linked to different coding regions
+        return eDuplicate_Not;
+    }
+
+    // only report pubs if they have the same label
+    if (feat1_subtype == CSeqFeatData::eSubtype_pub && !same_label) {
+        return eDuplicate_Not;
+    }
+
+    bool partials_ok = (!check_partials || PartialsSame(feat1_loc, feat2_loc));
+
+    if (!partials_ok) {
+        return eDuplicate_Not;
+    }
+
+    if ( same_annot ) {
+        if (same_label) {
+            dup_type = eDuplicate_Duplicate;
+        } else {
+            dup_type = eDuplicate_SameIntervalDifferentLabel;
+        }
+    } else {
+        if (same_label) {
+            dup_type = eDuplicate_DuplicateDifferentTable;
+        } else if ( feat2_subtype != CSeqFeatData::eSubtype_pub ) {
+            dup_type = eDuplicate_SameIntervalDifferentLabelDifferentTable;
         }
     }
+
     return dup_type;        
 }
 

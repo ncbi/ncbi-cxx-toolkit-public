@@ -6878,7 +6878,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs)
 {
     // Get type of duplication, if any
-    EDuplicateFeatureType dup_type = IsDuplicate (f1, feat1, f2, feat2, *m_Scope);
+    EDuplicateFeatureType dup_type = IsDuplicate (f1, f2);
 
     switch (dup_type) {
         case eDuplicate_Duplicate:
@@ -6896,7 +6896,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             }}
             break;
         case eDuplicate_SameIntervalDifferentLabel:
-            {{
+            if (PartialsSame(feat1.GetLocation(), feat2.GetLocation()) {
                 EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, false);
                 if (feat1.GetData().IsImp()) {
                     severity = eDiag_Warning;
@@ -6904,7 +6904,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                     "Features have identical intervals, but labels differ",
                     feat2);
-            }}
+            }
             break;
         case eDuplicate_DuplicateDifferentTable:
             {{
@@ -7044,9 +7044,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                     break;
                 }
                 EDuplicateFeatureType dup_type = IsDuplicate (prev_it->GetSeq_feat_Handle(),
-                                                              *prev_feat,
-                                                              curr_it->GetSeq_feat_Handle(), 
-                                                              *curr_feat, *m_Scope);
+                                                              curr_it->GetSeq_feat_Handle());
                 if (dup_type != eDuplicate_Not) {
                     x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), 
                                                    *prev_feat, 

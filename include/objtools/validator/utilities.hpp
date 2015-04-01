@@ -178,8 +178,10 @@ typedef enum {
 typedef const CSeq_feat::TDbxref TDbtags;
 
 EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate 
-    (CSeq_feat_Handle f1, const CSeq_feat& feat1, 
-     CSeq_feat_Handle f2, const CSeq_feat& feat2,CScope& scope);
+    (CSeq_feat_Handle f1,
+     CSeq_feat_Handle f2,
+     bool check_partials = false,
+     bool case_sensitive = false);
 
 bool IsLocFullLength (const CSeq_loc& loc, const CBioseq_Handle& bsh);
 bool PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2);
