@@ -295,8 +295,8 @@ public:
     /// @param size
     ///
     /// @sa
-    ///  SOCK_PushBack
-    EIO_Status PushBack(const void* buf,
+    ///  SOCK_Pushback
+    EIO_Status Pushback(const void* buf,
                         size_t      size);
 
     /// Write to socket.
@@ -869,9 +869,9 @@ inline EIO_Status CSocket::ReadLine(char* buf, size_t size, size_t* n_read)
 }
 
 
-inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
+inline EIO_Status CSocket::Pushback(const void* buf, size_t size)
 {
-    return m_Socket ? SOCK_PushBack(m_Socket, buf, size) : eIO_Closed;
+    return m_Socket ? SOCK_Pushback(m_Socket, buf, size) : eIO_Closed;
 }
 
 

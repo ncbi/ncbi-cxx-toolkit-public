@@ -221,7 +221,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  );
 
 
-/** Push back "size" bytes from the buffer "buf" into connection.
+/** Push "size" bytes from the buffer "buf" back into connection.
  * Return eIO_Success on success, other code on error.
  * @note  The data pushed back may not necessarily be the same as previously
  *        obtained from the connection.
@@ -231,7 +231,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  * @sa
  *  CONN_Read, CONN_Write
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Pushback
 (CONN        conn,  /**< [in] connection handle                     */
  const void* buf,   /**< [in] pointer to the data being pushed back */
  size_t      size   /**< [in] # of bytes to push back               */

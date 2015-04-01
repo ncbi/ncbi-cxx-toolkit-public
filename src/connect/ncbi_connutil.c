@@ -1894,7 +1894,7 @@ static EIO_Status s_CONN_IO
         return CONN_Read((CONN) stream, buf, size, n_read, eIO_ReadPlain);
     case eIO_Write:
         assert(stream);
-        return CONN_PushBack((CONN) stream, buf, size);
+        return CONN_Pushback((CONN) stream, buf, size);
     default:
         break;
     }
@@ -1923,7 +1923,7 @@ static EIO_Status s_SOCK_IO
     case eIO_Read:
         return SOCK_Read((SOCK) stream, buf, size, n_read, eIO_ReadPlain);
     case eIO_Write:
-        return SOCK_PushBack((SOCK) stream, buf, size);
+        return SOCK_Pushback((SOCK) stream, buf, size);
     default:
         break;
     }
@@ -1957,7 +1957,7 @@ static EIO_Status s_BUF_IO
     case eIO_Write:
         assert(stream);
         b = (BUF) stream;
-        return BUF_PushBack(&b, buf, size) ? eIO_Success : eIO_Unknown;
+        return BUF_Pushback(&b, buf, size) ? eIO_Success : eIO_Unknown;
     default:
         break;
     }

@@ -446,14 +446,15 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     do {
         // next, read from the connection
-        size_t     x_toread = n < m_BufSize ? m_BufSize : n;
-        CT_CHAR_TYPE* x_buf = n < m_BufSize ? m_ReadBuf : buf;
+        size_t     x_toread = n  &&  n < m_BufSize ? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf =        n < m_BufSize ? m_ReadBuf : buf;
         size_t       x_read;
 
         m_Status = CONN_Read(m_Conn, x_buf, x_toread,
                              &x_read, eIO_ReadPlain);
         _ASSERT(x_read <= x_toread);
         if (!x_read) {
+            _ASSERT(!x_toread  ||  m_Status != eIO_Success);
             if (m_Status != eIO_Success  &&  m_Status != eIO_Closed)
                 ERR_POST_X(10, x_Message("xsgetn():  CONN_Read() failed"));
             break;
@@ -490,7 +491,7 @@ streamsize CConn_Streambuf::showmanyc(void)
     _ASSERT(gptr() >= egptr());
 
     if (!m_Conn)
-        return -1;
+        return -1L;
 
     // flush output buffer, if tied up to it
     if (m_Tie)
@@ -507,7 +508,7 @@ streamsize CConn_Streambuf::showmanyc(void)
     size_t x_read;
     bool backup = false;
     if (m_BufSize > 1) {
-        if (eback()  &&  gptr() > eback()) {
+        if (eback() < gptr()) {
             x_Buf = gptr()[-1];
             backup = true;
         }
@@ -527,17 +528,17 @@ streamsize CConn_Streambuf::showmanyc(void)
         switch (m_Status) {
         case eIO_Success:
             _ASSERT(m_BufSize <= 1);
-            return  1;  // can read at least 1 byte
+            return  1L;  // can read at least 1 byte
         case eIO_Timeout:
             if (!tmo  ||  !(tmo->sec | tmo->usec))
                 break;
             /*FALLTHRU*/
         case eIO_Closed:
-            return -1;  // EOF
+            return -1L;  // EOF
         default:
             break;
         }
-        return      0;  // no data available immediately
+        return       0;  // no data available immediately
     }
 
     m_ReadBuf[0] = x_Buf;

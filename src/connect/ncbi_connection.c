@@ -768,12 +768,12 @@ extern EIO_Status CONN_Write
 }
 
 
-extern EIO_Status CONN_PushBack
+extern EIO_Status CONN_Pushback
 (CONN        conn,
  const void* buf,
  size_t      size)
 {
-    CONN_NOT_NULL(19, PushBack);
+    CONN_NOT_NULL(19, Pushback);
 
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
@@ -784,7 +784,7 @@ extern EIO_Status CONN_PushBack
     if (!conn->meta.read)
         return eIO_NotSupported;
 
-    return BUF_PushBack(&conn->buf, buf, size) ? eIO_Success : eIO_Unknown;
+    return BUF_Pushback(&conn->buf, buf, size) ? eIO_Success : eIO_Unknown;
 }
 
 
@@ -1043,7 +1043,7 @@ extern EIO_Status CONN_ReadLine
         }
         if (i < x_read) {
             assert(done  ||  len >= size);
-            if (!BUF_PushBack(&conn->buf, x_buf + i, x_read - i)) {
+            if (!BUF_Pushback(&conn->buf, x_buf + i, x_read - i)) {
                 static const STimeout* timeout = 0/*dummy*/;
                 CONN_LOG_EX(35, ReadLine, eLOG_Critical,
                             "Cannot pushback extra data", 0);

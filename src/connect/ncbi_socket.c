@@ -6630,7 +6630,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 }
 
 
-#define s_PushBack(s, b, l)  BUF_PushBack(&(s)->r_buf, b, l)
+#define s_Pushback(s, b, l)  BUF_Pushback(&(s)->r_buf, b, l)
 
 
 extern EIO_Status SOCK_ReadLine(SOCK    sock,
@@ -6701,10 +6701,10 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
             done = 1/*true*/;
         if (done  &&  cr_seen) {
             c = '\r';
-            if (!s_PushBack(sock, &c, 1))
+            if (!s_Pushback(sock, &c, 1))
                 status = eIO_Unknown;
         }
-        if (i < x_size  &&  !s_PushBack(sock, &x_buf[i], x_size - i))
+        if (i < x_size  &&  !s_Pushback(sock, &x_buf[i], x_size - i))
             status = eIO_Unknown;
     } while (!done  &&  status == eIO_Success);
 
@@ -6717,20 +6717,20 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
 }
 
 
-extern EIO_Status SOCK_PushBack(SOCK        sock,
+extern EIO_Status SOCK_Pushback(SOCK        sock,
                                 const void* buf,
                                 size_t      size)
 {
     if (sock->sock == SOCK_INVALID) {
         char _id[MAXIDLEN];
         CORE_LOGF_X(67, eLOG_Error,
-                    ("%s[SOCK::PushBack] "
+                    ("%s[SOCK::Pushback] "
                      " Invalid socket",
                      s_ID(sock, _id)));
         return eIO_Closed;
     }
 
-    return s_PushBack(sock, buf, size) ? eIO_Success : eIO_Unknown;
+    return s_Pushback(sock, buf, size) ? eIO_Success : eIO_Unknown;
 }
 
 

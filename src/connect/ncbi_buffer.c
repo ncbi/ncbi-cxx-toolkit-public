@@ -263,7 +263,7 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
 }
 
 
-extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
+extern int/*bool*/ BUF_Pushback(BUF* buf, const void* src, size_t size)
 {
     SBufChunk* head;
     void* dst;

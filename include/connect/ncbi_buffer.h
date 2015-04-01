@@ -29,7 +29,7 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Memory-resident FIFO storage area (to be used e.g. in I/O buffering)
+ *   Memory-resident storage area (to be used e.g. in I/O buffering)
  *
  * Handle:  BUF
  *
@@ -39,7 +39,7 @@
  *   BUF_Prepend[Ex]
  *   BUF_Append[Ex]
  *   BUF_Write
- *   BUF_PushBack
+ *   BUF_Pushback
  *   BUF_Peek
  *   BUF_PeekAt
  *   BUF_PeekAtCB
@@ -159,12 +159,14 @@ extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
  );
 
 
+#define BUF_PushBack  BUF_Pushback
+
 /*!
  * Write the data to the very beginning of "*pBuf" (to be read first).
  * On error (failed memory allocation), return zero value.
  * NOTE:  if "*pBuf" == NULL then create it.
  */
-extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_PushBack
+extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Pushback
 (BUF*        pBuf,
  const void* data,
  size_t      size

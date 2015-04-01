@@ -37,6 +37,20 @@
 BEGIN_NCBI_SCOPE
 
 
+ERW_Result CSocketReaderWriter::Pushback(const void* buf,
+                                         size_t      count,
+                                         void*       del_ptr)
+{
+    if (!m_Sock.IsOwned()) {
+        ERW_Result result = x_Result(m_Sock->Pushback(buf, count));
+        if (result != eRW_Success)
+            return result;
+    }
+    delete[] (CT_CHAR_TYPE*) del_ptr;
+    return eRW_Success;
+}
+
+
 ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
 {
     static const STimeout kZero = {0, 0};

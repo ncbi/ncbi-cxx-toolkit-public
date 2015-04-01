@@ -52,13 +52,14 @@ class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public    IReaderWriter,
 {
 public:
     CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership);
-    virtual ~CSocketReaderWriter();
 
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0);
 
     virtual ERW_Result PendingCount(size_t* count);
+
+    virtual ERW_Result Pushback(const void* buf, size_t count, void* del_ptr);
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -71,10 +72,9 @@ public:
     ERW_Result         SetTimeout(EIO_Event event, const STimeout* timeout);
 
 protected:
-    ERW_Result x_Result(EIO_Status status);
+    ERW_Result         x_Result(EIO_Status status);
 
-    CSocket*   m_Sock;
-    EOwnership m_IsOwned;
+    AutoPtr<CSocket>   m_Sock;
 
 private:
     CSocketReaderWriter(const CSocketReaderWriter&);
@@ -85,16 +85,8 @@ private:
 
 inline CSocketReaderWriter::CSocketReaderWriter(CSocket*   sock,
                                                 EOwnership if_to_own)
-    : m_Sock(sock), m_IsOwned(if_to_own)
+    : m_Sock(sock, if_to_own)
 {
-}
-
-
-inline CSocketReaderWriter::~CSocketReaderWriter()
-{
-    if (m_IsOwned) {
-        delete m_Sock;
-    }
 }
 
 

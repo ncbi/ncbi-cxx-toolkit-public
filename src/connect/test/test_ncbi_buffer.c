@@ -61,17 +61,17 @@ extern int main(void)
     /* a simple test */
     {{
         char charbuf[128];
-        assert(BUF_PushBack(&buf, (const char*) "0", 1));
+        assert(BUF_Pushback(&buf, (const char*) "0", 1));
         assert(BUF_Write(&buf, (const char*) "1", 1));
         assert(BUF_Peek(buf, charbuf, sizeof(charbuf)) == 2);
-        assert(BUF_PushBack(&buf, (const char*) "BB", 2));
-        assert(BUF_PushBack(&buf, (const char*) "aa", 2));
+        assert(BUF_Pushback(&buf, (const char*) "BB", 2));
+        assert(BUF_Pushback(&buf, (const char*) "aa", 2));
         assert(BUF_Write(&buf, (const char*) "23\0", 3));
         assert(BUF_Read(buf, charbuf, sizeof(charbuf)) == 9);
         assert(strcmp(charbuf, (const char*) "aaBB0123") == 0);
         assert(BUF_Prepend(&buf, "Hello World\0", 12));
         assert(BUF_Read(buf, 0, 6) == 6);
-        assert(BUF_PushBack(&buf, "Goodbye ", 8));
+        assert(BUF_Pushback(&buf, "Goodbye ", 8));
         assert(BUF_Read(buf, charbuf, sizeof(charbuf)) == 14);
         assert(strcmp(charbuf, (const char*) "Goodbye World") == 0);
         BUF_Destroy(buf);
@@ -135,7 +135,7 @@ extern int main(void)
                 size_t n_pushback = s_Rand() % n_bytes;
                 if (n_pushback == 0)
                     n_pushback = 1;
-                assert(BUF_PushBack
+                assert(BUF_Pushback
                        (&buf, charbuf + n_bytes - n_pushback, n_pushback));
                 assert(BUF_Read
                        ( buf, charbuf + n_bytes - n_pushback, n_pushback));
@@ -157,7 +157,7 @@ extern int main(void)
             if (n_pushback > n_bytes)
                 n_pushback = n_bytes;
 
-            assert(BUF_PushBack
+            assert(BUF_Pushback
                    (&buf, charbuf + n_bytes - n_pushback, n_pushback));
             assert(BUF_Read
                    ( buf, tmp, n_pushback) == n_pushback);

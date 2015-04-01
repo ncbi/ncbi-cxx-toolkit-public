@@ -103,7 +103,7 @@ static void TEST__client_1(SOCK sock)
 
     assert(status == eIO_Success  &&  n_io == n_io_done);
     assert(strcmp(buf, s_S1) == 0);
-    assert(SOCK_PushBack(sock, buf, n_io_done) == eIO_Success);
+    assert(SOCK_Pushback(sock, buf, n_io_done) == eIO_Success);
     memset(buf, '\xFF', n_io_done);
     assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eIO_ReadPlain)
            == eIO_Success);
