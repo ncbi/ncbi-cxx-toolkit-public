@@ -47,8 +47,7 @@ class CDataLoader;
 class CSRADataLoader_Impl : public CObject
 {
 public:
-    CSRADataLoader_Impl(const string& rep_path, const string& vol_path,
-                        CSraMgr::ETrim trim);
+    CSRADataLoader_Impl(CSraMgr::ETrim trim);
     ~CSRADataLoader_Impl(void);
 
     CSeq_inst::TMol GetSequenceType(const string& accession,

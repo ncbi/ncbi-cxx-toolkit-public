@@ -72,6 +72,7 @@ public:
         CObjectManager& om,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    NCBI_DEPRECATED
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string& rep_path,
@@ -83,6 +84,7 @@ public:
         ETrim trim,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    NCBI_DEPRECATED
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string& rep_path,
@@ -91,9 +93,11 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(void);
+    NCBI_DEPRECATED
     static string GetLoaderNameFromArgs(const string& rep_path,
                                         const string& vol_path);
     static string GetLoaderNameFromArgs(ETrim trim);
+    NCBI_DEPRECATED
     static string GetLoaderNameFromArgs(const string& rep_path,
                                         const string& vol_path,
                                         ETrim trim);

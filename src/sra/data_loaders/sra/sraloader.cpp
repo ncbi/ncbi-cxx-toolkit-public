@@ -125,10 +125,8 @@ static bool GetTrimParam(void)
 }
 
 
-CSRADataLoader_Impl::CSRADataLoader_Impl(const string& rep_path,
-                                         const string& vol_path,
-                                         CSraMgr::ETrim trim)
-    : m_Mgr(rep_path, vol_path, trim)
+CSRADataLoader_Impl::CSRADataLoader_Impl(CSraMgr::ETrim trim)
+    : m_Mgr(trim)
 {
 }
 
@@ -308,7 +306,7 @@ CSRADataLoader::CSRADataLoader(const string& loader_name,
     : CDataLoader(loader_name)
 {
     CSraMgr::ETrim trim = params.m_Trim? CSraMgr::eTrim: CSraMgr::eNoTrim;
-    m_Impl = new CSRADataLoader_Impl(params.m_RepPath, params.m_VolPath, trim);
+    m_Impl = new CSRADataLoader_Impl(trim);
 }
 
 
