@@ -2337,6 +2337,11 @@ string CDeflineGenerator::GenerateDefline (
     if (pos != NPOS) {
         final [pos+1] = ' ';
     }
+    pos = final.find (" ;");
+    if (pos != NPOS) {
+        final [pos] = ';';
+        final [pos+1] = ' ';
+    }
 
     x_CompressRunsOfSpaces (final);
 
