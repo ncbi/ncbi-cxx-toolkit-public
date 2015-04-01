@@ -787,6 +787,11 @@ void CleanAndCompress (string& str)
     if (pos != NPOS) {
         str [pos+1] = ' ';
     }
+    pos = str.find (" ;");
+    if (pos != NPOS) {
+        str [pos] = ';';
+        str [pos+1] = ' ';
+    }
     pos = str.find ("( ");
     if (pos != NPOS) {
         str [pos] = ' ';

@@ -78,6 +78,7 @@ static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 #define space_comma twochars(' ',',')
 #define space_bracket twochars(' ',')')
 #define bracket_space twochars('(',' ')
+#define space_semicolon twochars(' ',';')
 
 static void s_CleanAndCompress(string& dest, const CTempString& instr)
 {
@@ -122,6 +123,7 @@ static void s_CleanAndCompress(string& dest, const CTempString& instr)
             break;
         case space_comma:
         case space_bracket:
+        case space_semicolon:
             out[-1] = i;
             break;
         default:
