@@ -798,11 +798,16 @@ CBamAlignIterator& CBamAlignIterator::operator++(void)
     x_CheckValid();
     x_InvalidateBuffers();
     m_LocateRC = AlignAccessAlignmentEnumeratorNext(m_Iter);
-    if ( m_LocateRC != 0 &&
-         !(GetRCObject(m_LocateRC) == rcRow &&
-           GetRCState(m_LocateRC) == rcNotFound) ) {
-        NCBI_THROW2(CBamException, eOtherError,
-                    "Cannot find next alignment", m_LocateRC);
+    if ( m_LocateRC ) {
+        if ( GetRCObject(m_LocateRC) == rcRow &&
+             GetRCState(m_LocateRC) == rcNotFound ) {
+            // end of iteration
+            m_LocateRC = m_LocateRC;
+        }
+        else {
+            NCBI_THROW2(CBamException, eOtherError,
+                        "Cannot find next alignment", m_LocateRC);
+        }
     }
     return *this;
 }
