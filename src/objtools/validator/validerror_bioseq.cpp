@@ -6896,7 +6896,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             }}
             break;
         case eDuplicate_SameIntervalDifferentLabel:
-            if (PartialsSame(feat1.GetLocation(), feat2.GetLocation()) {
+            if (PartialsSame(feat1.GetLocation(), feat2.GetLocation())) {
                 EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, false);
                 if (feat1.GetData().IsImp()) {
                     severity = eDiag_Warning;
