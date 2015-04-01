@@ -46,7 +46,7 @@ USING_NCBI_SCOPE;
 
 CNetStorageGCApp::CNetStorageGCApp(void) :
     CNcbiApplication(),
-    m_DeleteCount(0), m_TotalCount(0)
+    m_DeleteCount(0), m_TotalCount(0), m_RemoteErrors(0)
 {
     CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
                                 NCBI_PACKAGE_VERSION_MINOR,
@@ -127,15 +127,12 @@ int CNetStorageGCApp::Run(void)
         try {
             x_RemoveObjects(candidates, verbose, db, dryrun);
         } catch (...) {
-            x_PrintFinishCounters();
+            x_PrintFinishCounters(verbose);
             throw;
         }
     }
 
-    if (verbose)
-        cout << "Removed " << candidates.size() << " object(s)" << endl;
-
-    x_PrintFinishCounters();
+    x_PrintFinishCounters(verbose);
     return 0;
 }
 
@@ -190,12 +187,14 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
                         CNetICacheClient(CNetICacheClient::eAppRegistry),
                         NULL, kEmptyStr);
     CRef<CRequestContext>   ctx;
+    bool                    error;
 
     for (vector<string>::const_iterator  k = locators.begin();
             k != locators.end(); ++k) {
 
         const string &      hit_id = CDiagContext::GetRequestContext()
                                                                 .SetHitID();
+        error = true;
         try {
             if (verbose)
                 cout << "Removing backend storage object " << *k << endl;
@@ -215,6 +214,8 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
             GetDiagContext().PrintRequestStop();
             ctx.Reset();
             GetDiagContext().SetRequestContext(NULL);
+
+            error = false;
         } catch (const CException &  ex) {
             ERR_POST(ex);
 
@@ -223,8 +224,8 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
             ctx.Reset();
             GetDiagContext().SetRequestContext(NULL);
 
-            cerr << "Exception while removing backend object " << *k << endl;
-            NCBI_THROW(CNetStorageGCException, eStopGC, k_StopGC);
+            cerr << "Exception while removing backend object "
+                 << *k << endl;
         } catch (const std::exception &  ex ) {
             ERR_POST(ex.what());
 
@@ -235,7 +236,6 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
 
             cerr << "std::exception while removing backend object "
                  << *k << endl;
-            NCBI_THROW(CNetStorageGCException, eStopGC, k_StopGC);
         } catch (...) {
             ERR_POST(k_UnknownException);
 
@@ -246,23 +246,30 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
 
             cerr << "Unknown exception while removing backend object "
                  << *k << endl;
-            NCBI_THROW(CNetStorageGCException, eStopGC, k_StopGC);
         }
 
-        // Cleaning MS SQL db
-        db.RemoveObject(*k, dryrun, hit_id);
-
-        ++m_DeleteCount;
+        // Cleaning MS SQL db only if the remote storage deletion passed OK
+        if (error == false) {
+            db.RemoveObject(*k, dryrun, hit_id);
+            ++m_DeleteCount;
+        } else
+            ++m_RemoteErrors;
     }
 }
 
 
-void  CNetStorageGCApp::x_PrintFinishCounters(void)
+void  CNetStorageGCApp::x_PrintFinishCounters(bool  verbose)
 {
     GetDiagContext().Extra()
         .Print("_type", "finish")
         .Print("total_count", NStr::NumericToString(m_TotalCount))
-        .Print("deleted_count", NStr::NumericToString(m_DeleteCount));
+        .Print("deleted_count", NStr::NumericToString(m_DeleteCount))
+        .Print("remote_errors", NStr::NumericToString(m_RemoteErrors));
+
+    if (verbose)
+        cout << "Total candidates: " << m_TotalCount << endl
+             << "Deleted: " << m_DeleteCount << endl
+             << "Remote errors: " << m_RemoteErrors << endl;
 }
 
 
