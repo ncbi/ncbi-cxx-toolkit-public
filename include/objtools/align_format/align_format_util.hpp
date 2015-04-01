@@ -166,8 +166,8 @@ static const char kReprMicrobialGenomesImg[] = "<img border=0 height=16 width=16
 //For text link <@lnk@> is substituted by formatted url
 static const string kReprMicrobialGenomesDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>";
 
-static const char kIdenticalProteinsUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/protein?LinkName=protein_protein_identical&from_uid=<@gi@>&RID=<@rid@>&log$=identprot<@log@>&blast_rank=<@blast_rank@>\" title=\"View proteins identical to <@label@>\" <@lnkTarget@>><@lnk_displ@></a>";
-static const string kIdenticalProteinsDispl =  "<div><@lnk@>-<span class=\"rlLink\">Proteins identical to the subject</span></div>";
+static const char kIdenticalProteinsUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/protein/<@gi@>?report=ipg\" title=\"View proteins identical to <@label@>\" <@lnkTarget@>><@lnk_displ@></a>";
+static const string kIdenticalProteinsDispl =  "<div><@lnk@>-<span class=\"rlLink\">Identical proteins to <@label@></span></div>";
 
 
 ///dumpgnl
