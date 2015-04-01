@@ -2340,11 +2340,12 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     // All commands that have fUsesPeerSearch will operate on m_LatestExist and
     // m_LatestBlobSum, so we need to fill it here even if in next "if" we'll go
     // almost directly to m_CmdProcessor.
-    bool is_valid = m_BlobAccess->IsBlobExists() && m_BlobAccess->IsValid();
-    m_LatestExist = is_valid
+    bool is_exist = m_BlobAccess->IsBlobExists();
+    bool is_valid = is_exist && m_BlobAccess->IsValid();
+    m_LatestExist = is_exist
                     &&  (x_IsFlagSet(fNoBlobVersionCheck)
                          ||  m_BlobAccess->GetCurBlobVersion() == m_BlobVersion);
-    m_LatestSrvId = CNCDistributionConf::GetSelfID();
+    m_LatestSrvId = is_valid ? CNCDistributionConf::GetSelfID() : m_BlobAccess->GetValidServer();
     if (m_LatestExist) {
         m_LatestBlobSum->create_time = m_BlobAccess->GetCurBlobCreateTime();
         m_LatestBlobSum->create_server = m_BlobAccess->GetCurCreateServer();
@@ -2362,10 +2363,14 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     }
 
     x_GetCurSlotServers();
-    if (is_valid && m_ThisServerIsMain
+    if (m_ThisServerIsMain
         &&  m_AppSetup->fast_on_main
         &&  CNCServer::IsInitiallySynced())
     {
+        if (!is_valid) {
+            m_CheckSrvs.clear();
+            m_SrvsIndex = 0;
+        }
         return &CNCMessageHandler::x_ExecuteOnLatestSrvId;
     }
     if (!is_valid) {
