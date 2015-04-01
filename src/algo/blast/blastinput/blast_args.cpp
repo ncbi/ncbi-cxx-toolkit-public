@@ -415,7 +415,8 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
         const string& stat_file = args[kArgWindowMaskerDatabase].AsString();
         const CSeqMaskerIstatFactory::EStatType type =
             CSeqMaskerIstatFactory::DiscoverStatType(stat_file);
-        if (type != CSeqMaskerIstatFactory::eOBinary) {
+        if (type != CSeqMaskerIstatFactory::eOBinary &&
+            type != CSeqMaskerIstatFactory::eBinary) {
             string msg("Only optimized binary windowmasker stat files are supported");
             NCBI_THROW(CInputException, eInvalidInput, msg);
         }
