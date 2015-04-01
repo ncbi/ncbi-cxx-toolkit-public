@@ -1096,7 +1096,7 @@ void CValidError_imp::ValidateSubSource
                 if ( countryname.empty() ) {
                     countryname = "?";
                 }
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadCountryCode,
                             "Bad country name [" + countryname + "]", obj, ctx);
             }
         }
