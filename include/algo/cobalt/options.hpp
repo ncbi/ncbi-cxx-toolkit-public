@@ -731,6 +731,24 @@ public:
     ///
     void SetFastAlign(bool f) {m_FastAlign = f; m_Mode = fNonStandard;}
 
+    /// Get central sequence
+    ///
+    /// This is used for fast alignment of BLAST results. One sequence
+    /// (typically BLAST query) is made artificially similar to all other
+    /// sequences to make fast alignment more agreeable with BLAST alignments.
+    /// @param Zero-based index of the central sequence [in]
+    ///
+    int GetCentralSeq(void) const {return m_CentralSeq;}
+
+    /// Set central sequence
+    ///
+    /// This is used for fast alignment of BLAST results. One sequence
+    /// (typically BLAST query) is made artificially similar to all other
+    /// sequences to make fast alignment more agreeable with BLAST alignments.
+    /// @return Zero-based index of the central sequence
+    ///
+    void SetCentralSeq(int c) {m_CentralSeq = c;}
+
 
     //--- Options validation ---
 
@@ -768,6 +786,7 @@ private:
     double m_MaxInClusterDist;
     TKMethods::EDistMeasures m_ClustDistMeasure;
     EInClustAlnMethod m_InClustAlnMethod;
+    int m_CentralSeq;
 
     // RPS Blast
     string m_RpsDb;

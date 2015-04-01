@@ -218,6 +218,7 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_KmerAlphabet = COBALT_KMER_ALPH;
     m_ClustDistMeasure = TKMethods::eFractionCommonKmersGlobal;
     m_InClustAlnMethod = m_UseQueryClusters ? eMulti : eNone;
+    m_CentralSeq = -1;
 
     // RPS Blast
     m_UsePreRpsHits = true;

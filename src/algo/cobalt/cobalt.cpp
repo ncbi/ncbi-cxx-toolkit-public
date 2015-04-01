@@ -760,6 +760,22 @@ CMultiAligner::x_FindQueryClusters()
         = TKMethods::ComputeDistMatrix(kmer_counts,
                                        m_Options->GetKmerDistMeasure());
 
+    // If the central sequence is set, make the distance between this sequence
+    // and all others zero. This will result in a progressive alignment tree
+    // that will align the central sequence early so that its constraints
+    // will have more influence on the multiple alignment. This is used for
+    // fast alignment built based mostly on constraints from local hits.
+    if (m_Options->GetCentralSeq() >= 0) {
+        int center = m_Options->GetCentralSeq();
+        for (size_t i=0;i < dmat->GetRows();i++) {
+            if (i == center) {
+                continue;
+            }
+            (*dmat)(center, i) = 0.0;
+            (*dmat)(i, center) = 0.0;
+        }
+    }
+
     // find sequences with user constraints
     set<int> constr_q;
     for (int i=0;i < m_UserHits.Size();i++) {
