@@ -862,7 +862,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     if (*fff != '\0'  &&  *sss != '\0'  && 
         ((format.GetFlags() & CTimeFormat::fMatch_Weak) == CTimeFormat::fMatch_Weak)) {
         X_INIT_ERROR(eFormat, "Time string '" + str +
-                              "' do not match time format '" + fmt + "'");
+                              "' does not match time format '" + fmt + "'");
     }
 
     // For partially defined times use default values
