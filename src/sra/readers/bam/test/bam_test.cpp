@@ -257,18 +257,6 @@ string Reverse(const string& s)
     return r;
 }
 
-
-void CheckRc(rc_t rc)
-{
-    if ( rc ) {
-        char buffer[1024];
-        size_t error_len;
-        RCExplain(rc, buffer, sizeof(buffer), &error_len);
-        cerr << "SDK Error: 0x" << hex << rc << dec << ": " << buffer << endl;
-        exit(1);
-    }
-}
-
 class CSimpleSpotIdDetector : public CObject,
                               public CBamAlignIterator::ISpotIdDetector
 {
@@ -312,34 +300,79 @@ private:
     map<string, SShortSeqInfo> m_ShortSeqs;
 };
 
-int CBAMTestApp::Run(void)
-{
-    if ( 0 ) {
-        const AlignAccessMgr* mgr = 0;
-        CheckRc(AlignAccessMgrMake(&mgr));
-        VFSManager* vfs_mgr;
-        CheckRc(VFSManagerMake(&vfs_mgr));
-        VPath* bam_path = 0;
-        CheckRc(VFSManagerMakeSysPath(vfs_mgr, &bam_path, "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"));
-        VPath* bai_path = 0;
-        CheckRc(VFSManagerMakeSysPath(vfs_mgr, &bai_path, "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam.bai"));
-        
-        for ( int count = 0; count < 2; ++count ) {
-            cout << "Step: " << count+1 << endl;
-            const AlignAccessDB* bam = 0;
-            CheckRc(AlignAccessMgrMakeIndexBAMDB(mgr, &bam, bam_path, bai_path));
+#if 0 // LowLevelTest
 
-            CheckRc(AlignAccessDBRelease(bam));
+#ifdef _MSC_VER
+# include <io.h>
+#else
+# include <unistd.h>
+#endif
+
+void CheckRc(rc_t rc, const char* code, const char* file, int line)
+{
+    if ( rc ) {
+        char buffer1[4096];
+        size_t error_len;
+        RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
+        char buffer2[8192];
+        unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
+                             file, line, code, rc, buffer1);
+        write(2, buffer2, len);
+        exit(1);
+    }
+}
+
+#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
+
+int LowLevelTest()
+{
+    cout << "Running LowLevelTest()." << endl;
+    const AlignAccessMgr* mgr = 0;
+    CALL(AlignAccessMgrMake(&mgr));
+    VFSManager* vfs_mgr;
+    CALL(VFSManagerMake(&vfs_mgr));
+    VPath* bam_path = 0;
+#define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+    CALL(VFSManagerMakeSysPath(vfs_mgr, &bam_path, BAM_FILE));
+    VPath* bai_path = 0;
+    CALL(VFSManagerMakeSysPath(vfs_mgr, &bai_path, BAM_FILE ".bai"));
+    
+    const AlignAccessDB* bam = 0;
+    CALL(AlignAccessMgrMakeIndexBAMDB(mgr, &bam, bam_path, bai_path));
+
+    for ( int t = 0; t < 2; ++t ) {
+        cout << "Scan " << t << endl;
+        size_t count = 0;
+        const char* ref = "NT_113960";
+        AlignAccessAlignmentEnumerator* iter = 0;
+        rc_t rc = AlignAccessDBWindowedAlignments(bam, &iter, ref, 0, 0);
+        while ( rc == 0 ) {
+            ++count;
+            rc = AlignAccessAlignmentEnumeratorNext(iter);
         }
-        
-        CheckRc(VPathRelease(bam_path));
-        CheckRc(VPathRelease(bai_path));
-        CheckRc(AlignAccessMgrRelease(mgr));
-        CheckRc(VFSManagerRelease(vfs_mgr));
-        cout << "Success." << endl;
-        return 0;
+        if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
+            CALL(rc);
+        }
+        AlignAccessAlignmentEnumeratorRelease(iter);
+        cout << "Align count: " << count << endl;
     }
 
+    CALL(AlignAccessDBRelease(bam));
+        
+    CALL(VPathRelease(bam_path));
+    CALL(VPathRelease(bai_path));
+    CALL(AlignAccessMgrRelease(mgr));
+    CALL(VFSManagerRelease(vfs_mgr));
+    cout << "Success." << endl;
+    return 0;
+}
+#endif
+
+int CBAMTestApp::Run(void)
+{
+#ifdef CALL
+    return LowLevelTest();
+#endif
 
     // Get arguments
     const CArgs& args = GetArgs();
