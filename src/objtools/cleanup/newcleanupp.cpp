@@ -7815,6 +7815,7 @@ bool CNewCleanup_imp::IsInternalTranscribedSpacer(const string& name)
         NStr::Equal(name, "internal transcribed spacer 3")) {
         return true;
     }
+    return false;
 }
 
 
