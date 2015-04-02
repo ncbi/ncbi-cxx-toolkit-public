@@ -4034,14 +4034,16 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
     return vr;
 }
 
-CRef<CDelta_item> CreateDeltaForOffset(int offset, const CVariantPlacement& p)
+CRef<CDelta_item> CreateDeltaForOffset(int offset, const CInt_fuzz* fuzz)
 {
     CRef<CDelta_item> delta(new CDelta_item);
     delta->SetAction(CDelta_item::eAction_offset);
     delta->SetSeq().SetLiteral().SetLength(abs(offset));
-    int sign = (p.GetLoc().GetStrand() == eNa_strand_minus ? -1 : 1) * (offset < 0 ? -1 : 1);
-    if(sign < 0) {
+    if(offset < 0) {
         delta->SetMultiplier(-1);
+    }
+    if(fuzz) {
+        delta->SetSeq().SetLiteral().SetFuzz().Assign(*fuzz);
     }
     return delta;
 }
@@ -4049,10 +4051,14 @@ CRef<CDelta_item> CreateDeltaForOffset(int offset, const CVariantPlacement& p)
 void CVariationUtil::s_AddInstOffsetsFromPlacementOffsets(CVariation_inst& vi, const CVariantPlacement& p)
 {
     if(p.IsSetStart_offset()) {
-        vi.SetDelta().push_front(CreateDeltaForOffset(p.GetStart_offset(), p));
+        vi.SetDelta().push_front( CreateDeltaForOffset(
+                    p.GetStart_offset(), 
+                    p.IsSetStart_offset_fuzz() ? &p.GetStart_offset_fuzz() : NULL));
     }
     if(p.IsSetStop_offset()) {
-        vi.SetDelta().push_back(CreateDeltaForOffset(p.GetStop_offset(), p));
+        vi.SetDelta().push_back( CreateDeltaForOffset(
+                    p.GetStop_offset(), 
+                    p.IsSetStop_offset_fuzz() ? &p.GetStop_offset_fuzz() : NULL));
     }
 }
 
@@ -4253,50 +4259,54 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
 }
 
 
+int GetSignedOffset(const CDelta_item& delta)
+{
+    return delta.GetSeq().GetLiteral().GetLength()
+         * (delta.IsSetMultiplier() ? delta.GetMultiplier() : 1);
+}
+
+const CInt_fuzz* GetFuzz(const CDelta_item& delta)
+{
+    return delta.GetSeq().GetLiteral().IsSetFuzz() ? 
+          &delta.GetSeq().GetLiteral().GetFuzz() : NULL;
+}
+
 void CVariationUtil::s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVariantPlacement& p)
 {
     if(v.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, 
+                          it, 
+                          v.SetData().SetSet().SetVariations()) 
+        {
             s_ConvertInstOffsetsToPlacementOffsets(**it, p);
         }
     } else if(v.GetData().IsInstance() && v.GetData().GetInstance().GetDelta().size() > 0) {
-        const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
+        CConstRef<CDelta_item> delta_first = v.GetData().GetInstance().GetDelta().front();
+        CConstRef<CDelta_item> delta_last  = v.GetData().GetInstance().GetDelta().back();
 
-        if(p.GetLoc().IsPnt() 
-           && delta_first.IsSetAction() 
-           && delta_first.GetAction() == CDelta_item::eAction_offset) 
+        if(   delta_first->IsSetAction()
+           && delta_first->GetAction() == CDelta_item::eAction_offset)
         {
-            int offset = delta_first.GetSeq().GetLiteral().GetLength()
-                       * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
-                       * (p.GetLoc().GetStrand() == eNa_strand_minus ? -1 : 1);
-            if(!p.IsSetStart_offset() || offset == p.GetStart_offset()) {
-                p.SetStart_offset(offset);
-                v.SetData().SetInstance().SetDelta().pop_front();
+            p.SetStart_offset(GetSignedOffset(*delta_first));
+            const CInt_fuzz* fuzz = GetFuzz(*delta_first);
+            if(fuzz) {
+                p.SetStart_offset_fuzz().Assign(*fuzz);
             }
-        } else {
-            //If the location is not a point, then the offset(s) apply to start and/or stop individually
-            if(delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
-                CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
-                int offset = delta_first.GetSeq().GetLiteral().GetLength()
-                           * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
-                           * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
-                if(!p.IsSetStart_offset() || offset == p.GetStart_offset()) {
-                    p.SetStart_offset(offset);
-                    v.SetData().SetInstance().SetDelta().pop_front();
-                }
-            }
+           
+            v.SetData().SetInstance().SetDelta().pop_front();
+        }
 
-            const CDelta_item& delta_last = *v.GetData().GetInstance().GetDelta().back();
-            if(delta_last.IsSetAction() && delta_last.GetAction() == CDelta_item::eAction_offset) {
-                CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
-                int offset = delta_last.GetSeq().GetLiteral().GetLength()
-                           * (delta_last.IsSetMultiplier() ? delta_last.GetMultiplier() : 1)
-                           * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
-                if(!p.IsSetStop_offset() || offset == p.GetStop_offset()) {
-                    p.SetStop_offset(offset);
-                    v.SetData().SetInstance().SetDelta().pop_back();
-                }
+        if(delta_last != delta_first
+           && delta_last->IsSetAction()
+           && delta_last->GetAction() == CDelta_item::eAction_offset)
+        {
+            p.SetStop_offset(GetSignedOffset(*delta_last));
+            const CInt_fuzz* fuzz = GetFuzz(*delta_last);
+            if(fuzz) {
+                p.SetStop_offset_fuzz().Assign(*fuzz);
             }
+           
+            v.SetData().SetInstance().SetDelta().pop_back();
         }
     }
 }
