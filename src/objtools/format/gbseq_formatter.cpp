@@ -274,6 +274,8 @@ void CGBSeqFormatter::FormatLocus
     CGBSeq::TMoltype sMolType = s_GBSeqMoltype(locus.GetBiomol());
     if( ! sMolType.empty() ) {
         m_GBSeq->SetMoltype(sMolType);
+    } else if (ctx.IsProt()) {
+        m_GBSeq->SetMoltype("AA");
     }
     CGBSeq::TStrandedness sStrandedness = 
         s_GBSeqStrandedness(locus.GetStrand(), locus.GetBiomol());

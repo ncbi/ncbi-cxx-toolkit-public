@@ -107,7 +107,7 @@ void CLocusItem::x_GatherInfo(CBioseqContext& ctx)
     // NB: order of execution is important, as some values depend on others
     x_SetName(ctx);
     x_SetLength(ctx);
-    x_SetBiomol(ctx);   // must come befoer x_SetStrand
+    x_SetBiomol(ctx);   // must come before x_SetStrand
     x_SetStrand(ctx);
     x_SetTopology(ctx);
     x_SetDivision(ctx);
@@ -376,7 +376,6 @@ void CLocusItem::x_SetStrand(CBioseqContext& ctx)
 void CLocusItem::x_SetBiomol(CBioseqContext& ctx)
 {
     if ( ctx.IsProt() ) {
-        m_Biomol = CMolInfo::eBiomol_peptide;
         return;
     }
 
