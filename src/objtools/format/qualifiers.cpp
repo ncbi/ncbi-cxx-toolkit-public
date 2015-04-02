@@ -121,10 +121,14 @@ static void s_CleanAndCompress(string& dest, const CTempString& instr)
         case bracket_space: // skip space after bracket
             two_chars = (two_chars >> 8);
             break;
-        case space_comma:
         case space_bracket:
-        case space_semicolon:
             out[-1] = i;
+            break;
+        case space_comma:
+        case space_semicolon: // swap characters
+            out[-1] = i;
+            *out++ = ' ';
+            two_chars = ' ';
             break;
         default:
             *out++ = i;
