@@ -1923,7 +1923,7 @@ static EIO_Status s_SOCK_IO
     case eIO_Read:
         return SOCK_Read((SOCK) stream, buf, size, n_read, eIO_ReadPlain);
     case eIO_Write:
-        return SOCK_PushBack((SOCK) stream, buf, size);
+        return SOCK_Pushback((SOCK) stream, buf, size);
     default:
         break;
     }

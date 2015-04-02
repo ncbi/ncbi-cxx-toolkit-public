@@ -871,7 +871,7 @@ inline EIO_Status CSocket::ReadLine(char* buf, size_t size, size_t* n_read)
 
 inline EIO_Status CSocket::Pushback(const void* buf, size_t size)
 {
-    return m_Socket ? SOCK_PushBack(m_Socket, buf, size) : eIO_Closed;
+    return m_Socket ? SOCK_Pushback(m_Socket, buf, size) : eIO_Closed;
 }
 
 

@@ -74,7 +74,7 @@
  *  SOCK_GetTimeout
  *  SOCK_Read (including "peek" and "persistent read")
  *  SOCK_ReadLine
- *  SOCK_PushBack
+ *  SOCK_Pushback
  *  SOCK_Status
  *  SOCK_Write
  *  SOCK_Abort
@@ -1037,6 +1037,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
  size_t* n_read
  );
 
+
+#define SOCK_Pushback  SOCK_PushBack
 
 /** Push the specified data back to the socket input queue (in the socket's
  * internal read buffer). These can be any data, not necessarily the data
