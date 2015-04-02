@@ -1908,10 +1908,12 @@ public:
     CDiagContext_Extra& SetType(const string& type);
 
     /// Allow bad symbols in argument names. URL-encode names the same way
-    /// as values. The method must be called before printing any arguments
-    /// or it will have no effect.
+    /// as values.
     /// NOTE: Avoid using this method if possible. Argument names with
     /// encoded symbols may be incompatible with some logging tools.
+    /// If the flag is not set, any bad symbol is replaced with
+    /// [ILLEGAL_APPLOG_SYMBOL:%##] string, where %## is the URL-encoded
+    /// symbol.
     CDiagContext_Extra& AllowBadSymbolsInArgNames(void);
 
 private:

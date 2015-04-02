@@ -1355,6 +1355,7 @@ void CCgiApplication::SetHTTPStatus(unsigned int status, const string& reason)
 
 bool CCgiApplication::x_DoneHeadRequest(void) const
 {
+    if (!m_Context.get()) return false; // There was an error initializing context
     const CCgiContext& ctx = GetContext();
     const CCgiRequest& req = ctx.GetRequest();
     const CCgiResponse& res = ctx.GetResponse();

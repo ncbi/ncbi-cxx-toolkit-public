@@ -1919,16 +1919,7 @@ void CDiagContext::PrintExtra(const string& message)
 
 CDiagContext_Extra CDiagContext::PrintRequestStart(void)
 {
-    CDiagContext_Extra extra(SDiagMessage::eEvent_RequestStart);
-    const string& role = GetHostRole();
-    const string& loc = GetHostLocation();
-    if ( !role.empty() ) {
-        extra.Print("ncbi_role", role);
-    }
-    if ( !loc.empty() ) {
-        extra.Print("ncbi_location", loc);
-    }
-    return extra;
+    return CDiagContext_Extra(SDiagMessage::eEvent_RequestStart);
 }
 
 
@@ -1979,9 +1970,7 @@ CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
 
 CDiagContext_Extra& CDiagContext_Extra::AllowBadSymbolsInArgNames(void)
 {
-    if (!m_Args  ||  m_Args->empty()) {
-        m_AllowBadNames = true;
-    }
+    m_AllowBadNames = true;
     return *this;
 }
 
@@ -1995,6 +1984,17 @@ void CDiagContext_Extra::Flush(void)
         return;
     }
 
+    // Add ncbi-role and ncbi-location just before setting m_Flushed flag.
+    if (m_EventType == SDiagMessage::eEvent_RequestStart) {
+        const string& role = CDiagContext::GetHostRole();
+        const string& loc = CDiagContext::GetHostLocation();
+        if ( !role.empty() ) {
+            Print("ncbi_role", role);
+        }
+        if ( !loc.empty() ) {
+            Print("ncbi_location", loc);
+        }
+    }
     // Prevent double-flush
     m_Flushed = true;
 
@@ -4684,23 +4684,20 @@ private:
 
 string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
 {
-    if (stype == eName  &&  !m_AllowBadNames) {
-        // Just check the source string, it may contain only valid chars
-        ITERATE(CTempString, c, src) {
-            const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
-            if (enc[1] != 0  ||  enc[0] != *c) {
-                NCBI_THROW(CCoreException, eInvalidArg,
-                    "Invalid char in extra args name, pos=" +
-                    NStr::NumericToString(c - src.begin()) +
-                    ": " + string(src));
-            }
-        }
-        return src;
-    }
-    // Encode value (or name if m_AllowBadNames is set).
     string dst;
     ITERATE(CTempString, c, src) {
-        dst += s_ExtraEncodeChars[(unsigned char)(*c)];
+        const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
+        if (stype == eName  &&  !m_AllowBadNames &&
+            (enc[1] != 0  ||  enc[0] != *c)) {
+            // Replace bad chars in names with [INVALID_APPLOG_SYMBOL:%xx].
+            dst += "[INVALID_APPLOG_SYMBOL:";
+            // Special case - encode 'bad' space as '%20', not '+'
+            dst += (*c == ' ') ? "%20" : enc;
+            dst += "]";
+        }
+        else {
+            dst += s_ExtraEncodeChars[(unsigned char)(*c)];
+        }
     }
     return dst;
 }
