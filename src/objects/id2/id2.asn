@@ -349,7 +349,10 @@ ID2-Reply-Get-Blob ::= SEQUENCE {
 
         -- whole blob or blob skeleton
         -- not set if error occurred
-        data            ID2-Reply-Data OPTIONAL
+        data            ID2-Reply-Data OPTIONAL,
+
+        -- state of the blob, 0 or missing means regular live data
+        blob-state      INTEGER OPTIONAL
 }
 
 
@@ -362,7 +365,10 @@ ID2S-Reply-Get-Split-Info ::= SEQUENCE {
 
         -- blob split info
         -- not set if error occurred
-        data            ID2-Reply-Data OPTIONAL
+        data            ID2-Reply-Data OPTIONAL,
+
+        -- state of the blob, 0 or missing means regular live data
+        blob-state      INTEGER OPTIONAL
 }
 
 
