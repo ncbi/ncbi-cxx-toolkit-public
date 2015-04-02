@@ -19,7 +19,7 @@ echo ""
 
 umask 002
 
-read line
+read -r line
 if [[ $line =~ ^RAW ]] ; then
    params="`echo $line | sed 's/^RAW//'`"
    eval $NCBI_APPLOG raw -file - $params -mode=cgi
