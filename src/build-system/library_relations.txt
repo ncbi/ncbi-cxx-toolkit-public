@@ -102,6 +102,9 @@ an_worker_nodes needs gpipe_an_base
 asn_build_config needs build_config_base
 asn_build_config needs gpinit
 asn_cache includes id_dump
+asn_config needs build_config_base
+asn_config needs config_access
+asn_config needs reftrack_access
 asn_sample_lib needs xser
 asngendefs needs xser
 asnmuxdblb needs dbloadb_asn
@@ -200,6 +203,8 @@ com_err needs3party $(ORIG_LIBS)
 comn64 needs3party $(ORIG_LIBS)
 comn64 needs3party intl64
 composition_adjustment needs3party $(ORIG_LIBS)
+config_access needs gpinit_obj
+config_access needs gpipe_common
 configure_ctl needs gpipe_common
 connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
@@ -390,12 +395,14 @@ gpcgi needs xregexp
 gpexec_query needs gpipe_common
 gpexec_query needs monitor_buildrun
 gpg-error needs3party $(ORIG_LIBS)
+gpinit includes gpinit_obj
 gpinit needs entrez2cli
 gpinit needs gc_utils
 gpinit needs gpinit_access
 gpinit_access needs gpipe_common
 gpinit_bag_util needs bag_access
 gpinit_bag_util needs gpinit_access
+gpinit_obj needs general
 gpinit_register needs gc_utils
 gpinit_register needs gpinit_access
 gpinit_reports needs xmlwrapp
