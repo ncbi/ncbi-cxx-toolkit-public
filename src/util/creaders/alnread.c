@@ -2727,7 +2727,9 @@ static void s_RemoveOrganismCommentFromLine (char * string)
     TCommentLocPtr clp;
 
     while ((clp = s_FindOrganismComment (string)) != NULL) {
-        strcpy (clp->start, clp->end + 1);
+        if (clp->end != NULL) {
+            strcpy (clp->start, clp->end + 1);
+        }
         s_CommentLocFree (clp);
     }
 }
@@ -5880,17 +5882,32 @@ s_ConvertDataToOutput
         s_AreOrganismsUnique (afrp);
     }
 
+    // allocate memory to store sequence strings
     afp->sequences = (char **)malloc (afp->num_sequences 
                                            * sizeof (char *));
     if (afp->sequences == NULL) {
         AlignmentFileFree (afp);
         return NULL;
     }
+    // initialize afp->sequences, in case AlignmentFileFree must be called
+    // before real data can be added
+    for (index = 0; index < afp->num_sequences; index++) {
+        afp->sequences[index] = NULL;
+    }
+
+    // allocate memory to store sequence IDs
     afp->ids = (char **)malloc (afp->num_sequences * sizeof (char *));
     if (afp->ids == NULL) {
         AlignmentFileFree (afp);
         return NULL;
     }
+    // initialize afp->ids, in case AlignmentFileFree must be called
+    // before real data can be added
+    for (index = 0; index < afp->num_sequences; index++) {
+        afp->ids[index] = NULL;
+    }
+    
+    // allocate memory to store organism names
     if (afp->num_organisms > 0) {
         afp->organisms = (char **) malloc (afp->num_organisms
                                                 * sizeof (char *));
@@ -5899,6 +5916,13 @@ s_ConvertDataToOutput
             return NULL;
         }
     }
+    // initialize afp->organisms, in case AlignmentFileFree must be called
+    // before real data can be added
+    for (index = 0; index < afp->num_organisms; index++) {
+        afp->organisms[index] = NULL;
+    }
+
+    // allocate memory to store definition lines
     if (afp->num_deflines > 0) {
         afp->deflines = (char **)malloc (afp->num_deflines
                                               * sizeof (char *));
