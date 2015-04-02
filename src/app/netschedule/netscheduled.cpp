@@ -41,9 +41,6 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbidiag.hpp>
 
-#include <corelib/ncbidiag.hpp>
-#include <corelib/request_ctx.hpp> // FIXME: remove
-
 #include <util/bitset/ncbi_bitset.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
@@ -283,14 +280,8 @@ int CNetScheduleDApp::Run(void)
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;
 
-    CAsyncDiagHandler diag_handler;
-    diag_handler.SetCustomThreadSuffix("_l");
-
-
     try {
-        diag_handler.InstallToDiag();
         server->Run();
-        diag_handler.RemoveFromDiag();
     }
     catch (CThreadException& ex) {
         ERR_POST(Critical << ex);
