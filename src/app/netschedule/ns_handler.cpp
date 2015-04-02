@@ -538,6 +538,16 @@ static SNSProtoArgument s_AuthArgs[] = {
 
 
 
+CRequestContextResetter::CRequestContextResetter()
+{}
+
+CRequestContextResetter::~CRequestContextResetter()
+{
+    CDiagContext::SetRequestContext(NULL);
+}
+
+
+
 static size_t s_BufReadHelper(void* data, const void* ptr, size_t size)
 {
     ((string*) data)->append((const char *) ptr, size);
@@ -643,14 +653,15 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStop();
         m_CmdContext.Reset();
+        CDiagContext::SetRequestContext(NULL);
     }
 
     CSocket&        socket = GetSocket();
-    CDiagContext::SetRequestContext(m_ConnContext);
     m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
     m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
-    GetDiagContext().PrintRequestStop();
 
+    CDiagContext::SetRequestContext(m_ConnContext);
+    GetDiagContext().PrintRequestStop();
     m_ConnContext.Reset();
     CDiagContext::SetRequestContext(NULL);
 }
@@ -665,30 +676,30 @@ void CNetScheduleHandler::OnTimeout()
 
 void CNetScheduleHandler::OnOverflow(EOverflowReason reason)
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     switch (reason) {
-    case eOR_ConnectionPoolFull:
-        ERR_POST("eCommunicationError:Connection pool full");
-        break;
-    case eOR_UnpollableSocket:
-        ERR_POST("eCommunicationError:Unpollable connection");
-        break;
-    case eOR_RequestQueueFull:
-        ERR_POST("eCommunicationError:Request queue full");
-        break;
-    default:
-        ERR_POST("eCommunicationError:Unknown overflow error");
-        break;
+        case eOR_ConnectionPoolFull:
+            ERR_POST("eCommunicationError:Connection pool full");
+            break;
+        case eOR_UnpollableSocket:
+            ERR_POST("eCommunicationError:Unpollable connection");
+            break;
+        case eOR_RequestQueueFull:
+            ERR_POST("eCommunicationError:Request queue full");
+            break;
+        default:
+            ERR_POST("eCommunicationError:Unknown overflow error");
+            break;
     }
 }
 
 
 void CNetScheduleHandler::OnMessage(BUF buffer)
 {
-    // Initialize the proper diagnostics context
-    if (m_CmdContext.NotNull())
-        CDiagContext::SetRequestContext(m_CmdContext);
-    else if (m_ConnContext.NotNull())
-        CDiagContext::SetRequestContext(m_ConnContext);
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
 
     if (m_Server->ShutdownRequested()) {
         ERR_POST("NetSchedule is shutting down. Client input rejected.");
@@ -991,7 +1002,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         m_ClientId.SetPassedChecks(eNS_Admin);
 
     // Produce the log output if required
-    if (m_ConnContext.NotNull()) {
+    if (x_NeedCmdLogging()) {
         CDiagContext_Extra diag_extra = GetDiagContext().Extra();
         diag_extra.Print("queue", m_QueueName);
         ITERATE(TNSProtoParams, it, params) {
@@ -1039,7 +1050,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 // Workhorse method
 void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 {
-    if (m_ConnContext.NotNull()) {
+    if (x_NeedCmdLogging()) {
         m_CmdContext.Reset(new CRequestContext());
         m_CmdContext->SetRequestStatus(eStatus_OK);
         m_CmdContext->SetRequestID();
@@ -1147,7 +1158,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
                                         session_was_reset, old_session,
                                         had_wn_pref_affs, had_reader_pref_affs);
         if (client_was_found && session_was_reset) {
-            if (m_ConnContext.NotNull()) {
+            if (x_NeedCmdLogging()) {
                 string  wn_val = "true";
                 if (!had_wn_pref_affs)
                     wn_val = "had none";
@@ -1391,7 +1402,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
     // BTCH logging is in a separate context
     CRef<CRequestContext>  current_context(& CDiagContext::GetRequestContext());
     try {
-        if (m_ConnContext.NotNull()) {
+        if (x_NeedCmdLogging()) {
             CRequestContext *   ctx(new CRequestContext());
             ctx->SetRequestID();
             GetDiagContext().SetRequestContext(ctx);
@@ -1410,11 +1421,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         unsigned    job_id = GetQueue()->SubmitBatch(m_ClientId,
                                                      m_BatchJobs,
                                                      m_BatchGroup,
-                                                     m_ConnContext.NotNull(),
+                                                     x_NeedCmdLogging(),
                                                      m_RollbackAction);
         double      db_elapsed = sw.Elapsed();
 
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             GetDiagContext().Extra()
                 .Print("start_job", job_id)
                 .Print("commit_time",
@@ -1432,7 +1443,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
     catch (const CNetScheduleException &  ex) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        if (m_ConnContext.NotNull()) {
+        if (x_NeedCmdLogging()) {
             CDiagContext::GetRequestContext().
                             SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
             GetDiagContext().PrintRequestStop();
@@ -1445,7 +1456,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
     catch (...) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        if (m_ConnContext.NotNull()) {
+        if (x_NeedCmdLogging()) {
             CDiagContext::GetRequestContext().
                             SetRequestStatus(eStatus_ServerError);
             GetDiagContext().PrintRequestStop();
@@ -1456,7 +1467,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         throw;
     }
 
-    if (m_ConnContext.NotNull()) {
+    if (x_NeedCmdLogging()) {
         GetDiagContext().PrintRequestStop();
         GetDiagContext().SetRequestContext(current_context);
     }
@@ -1593,7 +1604,7 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
 
 
     // Here: prerequisites have been checked
-    if (m_ConnContext.NotNull() && m_ClientIdentificationPrinted == false)
+    if (x_NeedCmdLogging() && m_ClientIdentificationPrinted == false)
         GetDiagContext().Extra()
                 .Print("client_node", m_ClientId.GetNode())
                 .Print("client_session", m_ClientId.GetSession());
@@ -1623,7 +1634,7 @@ void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
     // This functionality requires client name and the session
     x_CheckNonAnonymousClient("use " + m_CommandArguments.cmd + " command");
 
-    if (m_ConnContext.NotNull() && m_ClientIdentificationPrinted == false)
+    if (x_NeedCmdLogging() && m_ClientIdentificationPrinted == false)
         GetDiagContext().Extra()
                 .Print("client_node", m_ClientId.GetNode())
                 .Print("client_session", m_ClientId.GetSession());
@@ -1668,7 +1679,7 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
         unsigned int  job_id = q->Submit(m_ClientId, job,
                                          m_CommandArguments.affinity_token,
                                          m_CommandArguments.group,
-                                         m_ConnContext.NotNull(),
+                                         x_NeedCmdLogging(),
                                          m_RollbackAction);
 
         x_WriteMessage("OK:" + q->MakeJobKey(job_id));
@@ -1761,7 +1772,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
         m_CommandArguments.group.empty() &&
         m_CommandArguments.affinity_token.empty() &&
         m_CommandArguments.job_statuses_string.empty()) {
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             ERR_POST(Warning <<
                      "Neither job key nor a group nor an "
                      "affinity nor a status list is provided "
@@ -1778,7 +1789,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
         (!m_CommandArguments.group.empty() ||
          !m_CommandArguments.affinity_token.empty() ||
          !m_CommandArguments.job_statuses_string.empty())) {
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             ERR_POST(Warning <<
                      "CANCEL can accept either a job "
                      "key or any combination of a group "
@@ -1811,7 +1822,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                     if (!reported) {
                         warnings.push_back("eInvalidJobStatus:unknown job "
                                            "status in the status list");
-                        if (m_ConnContext.NotNull())
+                        if (x_NeedCmdLogging())
                             ERR_POST(Warning <<
                                      "Unknown job status in the status list. "
                                      "Ignore and continue.");
@@ -1832,7 +1843,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                 if (*k == CNetScheduleAPI::eCanceled) {
                     warnings.push_back("eIgnoringCanceledStatus:attempt to "
                                        "cancel jobs in the 'Canceled' status");
-                    if (m_ConnContext.NotNull())
+                    if (x_NeedCmdLogging())
                         ERR_POST(Warning <<
                                  "Attempt to cancel jobs in the 'Canceled' "
                                  "status. Ignore and continue.");
@@ -1848,7 +1859,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                                             m_CommandArguments.group,
                                             m_CommandArguments.affinity_token,
                                             statuses,
-                                            m_ConnContext.NotNull(), warnings);
+                                            x_NeedCmdLogging(), warnings);
         if (warnings.empty())
             x_WriteMessage("OK:" + NStr::NumericToString(count));
         else {
@@ -1870,7 +1881,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                       m_CommandArguments.job_id,
                       m_CommandArguments.job_key, job)) {
         case CNetScheduleAPI::eJobNotFound:
-            if (m_ConnContext.NotNull())
+            if (x_NeedCmdLogging())
                 ERR_POST(Warning <<
                          "CANCEL for unknown job: " <<
                          m_CommandArguments.job_key);
@@ -1992,7 +2003,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
         else
             x_WriteMessage("OK:");
 
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             GetDiagContext().Extra().Print("job_key", "None")
                                     .Print("reason",
                                            "pause: " + pause_status_str);
@@ -2030,7 +2041,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
             x_LogCommandWithJob(job);
 
         if (!added_pref_aff.empty()) {
-            if (m_ConnContext.NotNull()) {
+            if (x_NeedCmdLogging()) {
                 if (m_ClientIdentificationPrinted)
                     GetDiagContext().Extra()
                         .Print("added_preferred_affinity", added_pref_aff);
@@ -2185,7 +2196,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                                                false);
 
         x_WriteMessage("OK:");
-        if (m_ConnContext.NotNull()) {
+        if (x_NeedCmdLogging()) {
             string      pause_status_str;
 
             if (pause_status == CQueue::ePauseWithPullback)
@@ -2225,7 +2236,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
         x_WriteMessage("ERR:ePrefAffExpired:");
     } else {
         if (added_pref_aff.empty() == false) {
-            if (m_ConnContext.NotNull()) {
+            if (x_NeedCmdLogging()) {
                 if (m_ClientIdentificationPrinted)
                     GetDiagContext().Extra()
                         .Print("added_preferred_affinity", added_pref_aff);
@@ -2349,7 +2360,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 {
-    q->Truncate(m_ConnContext.NotNull());
+    q->Truncate(x_NeedCmdLogging());
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
@@ -2840,7 +2851,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         if (what_changed.empty() && diff.empty() && services_changed.empty()) {
             m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
-            if (m_ConnContext.NotNull())
+            if (x_NeedCmdLogging())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
             x_WriteMessage("OK:WARNING:eNoParametersChanged:No changes in "
                            "changeable parameters were identified in the new "
@@ -2861,7 +2872,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             total_changes += services_changed;
         }
 
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             GetDiagContext().Extra().Print("config_changes", total_changes);
 
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
@@ -2891,7 +2902,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
         (!m_CommandArguments.group.empty() ||
          !m_CommandArguments.affinity_token.empty() ||
          !m_CommandArguments.job_statuses_string.empty())) {
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             ERR_POST(Warning << "DUMP can accept either a job key or no "
                                 "parameters or any combination of a group and "
                                 "an affinity and job statuses");
@@ -2912,7 +2923,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
             while (k != m_CommandArguments.job_statuses.end() ) {
                 if (*k == CNetScheduleAPI::eJobNotFound) {
                     if (!reported) {
-                        if (m_ConnContext.NotNull())
+                        if (x_NeedCmdLogging())
                             ERR_POST(Warning <<
                                      "Unknown job status in the status list. "
                                      "Ignore and continue.");
@@ -2943,7 +2954,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
                                      statuses,
                                      m_CommandArguments.start_after_job_id,
                                      m_CommandArguments.count,
-                                     m_ConnContext.NotNull()) + "OK:END");
+                                     x_NeedCmdLogging()) + "OK:END");
         x_PrintCmdRequestStop();
         return;
     }
@@ -3314,7 +3325,7 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
                                         had_wn_pref_affs,
                                         had_reader_pref_affs);
         if (client_was_found && session_was_reset) {
-            if (m_ConnContext.NotNull()) {
+            if (x_NeedCmdLogging()) {
                 string  wn_val = "true";
                 if (!had_wn_pref_affs)
                     wn_val = "had none";
@@ -3456,7 +3467,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
             x_LogCommandWithJob(job);
 
             if (!added_pref_aff.empty()) {
-                if (m_ConnContext.NotNull()) {
+                if (x_NeedCmdLogging()) {
                     if (m_ClientIdentificationPrinted)
                         GetDiagContext().Extra()
                             .Print("added_preferred_affinity", added_pref_aff);
@@ -3471,7 +3482,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
         else
             x_WriteMessage("OK:no_more_jobs=" + NStr::BoolToString(no_more_jobs));
 
-        if (m_ConnContext.NotNull()) {
+        if (x_NeedCmdLogging()) {
             if (job_id)
                 GetDiagContext().Extra().Print("job_key", job_key);
             else
@@ -3617,7 +3628,7 @@ void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
                        old_session, had_wn_pref_affs, had_reader_pref_affs);
 
     if (client_found) {
-        if (m_ConnContext.NotNull()) {
+        if (x_NeedCmdLogging()) {
             string      wn_val = "true";
             if (!had_wn_pref_affs)
                 wn_val = "had none";
@@ -3641,7 +3652,7 @@ void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 {
-    unsigned int  count = q->CancelAllJobs(m_ClientId, m_ConnContext.NotNull());
+    unsigned int  count = q->CancelAllJobs(m_ClientId, x_NeedCmdLogging());
     x_WriteMessage("OK:" + NStr::NumericToString(count));
     x_PrintCmdRequestStop();
 }
@@ -3827,7 +3838,7 @@ void CNetScheduleHandler::x_CheckQInf2Parameters(void)
 void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd &  cmd)
 {
     if (m_CmdContext.NotNull()) {
-        // Need to log SID/IP/PHID only if the command may not have
+        // Need to log SID/IP/PHID only if the command does not have
         // a job key in the parameters
         bool    is_worker_node_command = x_WorkerNodeCommand();
 
@@ -3896,7 +3907,6 @@ void CNetScheduleHandler::x_PrintCmdRequestStop(void)
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStop();
-        CDiagContext::SetRequestContext(m_ConnContext);
         m_CmdContext.Reset();
     }
 }
@@ -3910,14 +3920,14 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
 {
     if (!job.GetId()) {
         // No suitable job found
-        if (m_ConnContext.NotNull())
+        if (x_NeedCmdLogging())
             GetDiagContext().Extra().Print("job_key", "None");
         x_WriteMessage("OK:");
         return;
     }
 
     string      job_key = q->MakeJobKey(job.GetId());
-    if (m_ConnContext.NotNull()) {
+    if (x_NeedCmdLogging()) {
         // The only piece required for logging is the job key
         GetDiagContext().Extra().Print("job_key", job_key);
     }
@@ -4015,7 +4025,7 @@ CNetScheduleHandler::x_LogCommandWithJob(const CJob &  job) const
 {
     // If a command refers to a job some way then it should be logged
     // in a different way depending on the command source.
-    if (m_ConnContext.NotNull()) {
+    if (x_NeedCmdLogging()) {
         if (x_WorkerNodeCommand()) {
             CDiagContext::GetRequestContext().SetClientIP(job.GetClientIP());
             CDiagContext::GetRequestContext().SetSessionID(job.GetClientSID());
@@ -4234,6 +4244,7 @@ CNetScheduleHandler::x_GetStoredSectionValues(
     return ret;
 }
 
+
 string CNetScheduleHandler::x_GetLogSection(void) const
 {
     CNetScheduleDApp *      app = dynamic_cast<CNetScheduleDApp*>
@@ -4271,7 +4282,7 @@ CNetScheduleHandler::x_RemoveDuplicateStatuses(const vector<TJobStatus> &  src,
             warnings.push_back("eStatusDuplicates:job status " +
                                CNetScheduleAPI::StatusToString(*k) +
                                " provided more than once");
-            if (m_ConnContext.NotNull())
+            if (x_NeedCmdLogging())
                 ERR_POST(Warning <<
                          "Job status " + CNetScheduleAPI::StatusToString(*k) +
                          " provided more than once");
@@ -4280,5 +4291,26 @@ CNetScheduleHandler::x_RemoveDuplicateStatuses(const vector<TJobStatus> &  src,
         }
     }
     return no_duplicates;
+}
+
+
+bool CNetScheduleHandler::x_NeedCmdLogging(void) const
+{
+    // All the commands in a connection should be logged. The connection
+    // context is created based on an ini file logging setting. So in order to
+    // know if a command logging is required the existance of the connection
+    // context should be checked.
+    return m_ConnContext.NotNull();
+}
+
+void CNetScheduleHandler::x_SetRequestContext(void)
+{
+    // Sets the appropriate request context if one was created
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.NotNull())
+            CDiagContext::SetRequestContext(m_CmdContext);
+        else
+            CDiagContext::SetRequestContext(m_ConnContext);
+    }
 }
 

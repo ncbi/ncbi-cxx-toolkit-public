@@ -61,6 +61,16 @@ const size_t    kInitialMessageBufferSize = 16 * 1024;
 const size_t    kMessageBufferIncrement = 2 * 1024;
 
 
+// Helper class to make sure the current request context is reset at the end of
+// the scope
+class CRequestContextResetter
+{
+    public:
+        CRequestContextResetter();
+        ~CRequestContextResetter();
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////
 /// ConnectionHandler for NetScheduler
@@ -296,6 +306,9 @@ private:
 
     // Rollback support
     CNSRollbackInterface *          m_RollbackAction;
+
+    bool x_NeedCmdLogging(void) const;
+    void x_SetRequestContext(void);
 
 }; // CNetScheduleHandler
 
