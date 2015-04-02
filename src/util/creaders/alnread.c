@@ -3608,7 +3608,6 @@ s_AfrpProcessFastaGap(
             
     if (last_pattern == NULL) {
         *patterns = this_pattern;
-        last_pattern = this_pattern;
     } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
         last_pattern->num_appearances ++;
         s_LengthListFree (this_pattern);
@@ -4039,7 +4038,6 @@ s_ProcessBlockLines
                 strncpy (this_id, linestring, len);
                 this_id [len] = 0;
                 cp = linestring + len;
-                pos += len;
                 len = strspn (cp, " \t\r");
                 cp += len;
                 
@@ -4268,7 +4266,7 @@ s_CreateAnchorPatternForMarkedIDs
     TLineInfoPtr   lip;
     int            curr_seg;
 
-    if (afrp == NULL) {
+    if (afrp == NULL || afrp->num_segments < 1) {
         return NULL;
     }
 
@@ -4320,6 +4318,7 @@ s_CreateAnchorPatternForMarkedIDs
                   s_LengthListFree (list [curr_seg]);
                 }
                 free (list);
+                free (best);
                 return NULL;
             }
             this_pattern->num_appearances = 1;
@@ -4378,6 +4377,7 @@ s_CreateAnchorPatternForMarkedIDs
     		{
     			s_LengthListFree (best [curr_seg]);
     		}
+            free (best);
     		return NULL;
     	}
     }
@@ -5323,6 +5323,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
     anchorpattern [0] = s_FindMostPopularPattern (list->lengthrepeats);
     anchorpattern [1] = NULL;
     if (anchorpattern [0] == NULL  ||  anchorpattern[0]->lengthrepeats == NULL) {
+        s_LengthListFree (list);
         return;
     }
 
@@ -5855,7 +5856,7 @@ s_ConvertDataToOutput
     int               curr_seg;
 
     if (afrp == NULL  ||  sip == NULL  ||  afrp->sequences == NULL ||
-        afrp->num_segments == 0) {
+        afrp->num_segments < 1) {
         return NULL;
     }
     afp = AlignmentFileNew ();
