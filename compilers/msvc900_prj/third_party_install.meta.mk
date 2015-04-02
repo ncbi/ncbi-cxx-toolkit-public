@@ -294,11 +294,15 @@ install_libxslt : $(LIBXSLT_SRC).libxslt_install
 clean_libxslt : $(LIBXSLT_SRC).libxslt_clean
 
 
-
+VDB_COPY = $(INSTALL_BINPATH)\ncbi-vdb-dll.dll
 $(VDB_SRC).vdb_install :
 	@echo ---- & echo Copying VDB DLLs & $(INSTALL_CMD)
+# The trailing * suppresses a spurious prompt, per
+# http://stackoverflow.com/a/26034267/1231
+	@xcopy /Y /D /F "$(INSTALL_BINPATH)\ncbi-vdb.dll" "$(VDB_COPY)"*
 $(VDB_SRC).vdb_clean :
 	@echo ---- & echo Deleting VDB DLLs & $(CLEAN_CMD)
+	@if exist "$(VDB_COPY)" ( echo $(VDB_COPY) & del /f "$(VDB_COPY)" )
 install_vdb : $(VDB_SRC).vdb_install
 clean_vdb : $(VDB_SRC).vdb_clean
 
