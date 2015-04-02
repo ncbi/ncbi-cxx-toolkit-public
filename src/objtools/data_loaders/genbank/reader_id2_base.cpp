@@ -1609,6 +1609,34 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
 }
 
 
+inline void CId2ReaderBase::sx_CheckErrorFlag(const CID2_Error& error,
+                                              TErrorFlags& error_flags,
+                                              EErrorFlags test_flag,
+                                              const char* marker1,
+                                              const char* marker2)
+{
+    if ( !error.IsSetMessage() ) {
+        // no message to parse
+        return;
+    }
+    if ( error_flags & test_flag ) {
+        // already set
+        return;
+    }
+    SIZE_TYPE pos = NStr::FindNoCase(error.GetMessage(), marker1);
+    if ( pos == NPOS) {
+        // no marker
+        return;
+    }
+    if ( marker2 &&
+         NStr::FindNoCase(error.GetMessage(), marker2, pos) == NPOS ) {
+        // no second marker
+        return;
+    }
+    error_flags |= test_flag;
+}
+
+
 CId2ReaderBase::TErrorFlags
 CId2ReaderBase::x_GetError(CReaderRequestResult& result,
                            const CID2_Error& error)
@@ -1623,10 +1651,9 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
         break;
     case CID2_Error::eSeverity_failed_connection:
         error_flags |= fError_bad_connection;
-        if ( error.IsSetMessage() &&
-             NStr::FindNoCase(error.GetMessage(), "timed") &&
-             NStr::FindNoCase(error.GetMessage(), "out") ) {
-            error_flags |= fError_inactivity_timeout;
+        if ( error.IsSetMessage() ) {
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_inactivity_timeout, "timed", "out");
         }
         break;
     case CID2_Error::eSeverity_failed_server:
@@ -1661,22 +1688,16 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
     case CID2_Error::eSeverity_warning:
         error_flags |= fError_warning;
         if ( error.IsSetMessage() ) {
-            if ( !(error_flags & fError_warning_dead) &&
-                 NStr::FindNoCase(error.GetMessage(), "obsolete") != NPOS ) {
-                error_flags |= fError_warning_dead;
-            }
-            if ( !(error_flags & fError_suppressed_perm) &&
-                 NStr::FindNoCase(error.GetMessage(), "removed") != NPOS ) {
-                error_flags |= fError_suppressed_perm;
-            }
-            if ( !(error_flags & fError_suppressed_perm) &&
-                 NStr::FindNoCase(error.GetMessage(), "suppressed") != NPOS ) {
-                error_flags |= fError_suppressed_perm;
-            }
-            if ( !(error_flags & fError_suppressed_temp) &&
-                 NStr::FindNoCase(error.GetMessage(), "superseded") != NPOS ) {
-                error_flags |= fError_suppressed_temp;
-            }
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_warning_dead, "obsolete");
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_suppressed_perm, "removed");
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_suppressed_perm, "suppressed");
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_suppressed_temp, "superseded"); // perm?
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_suppressed_perm, "superceded"); // temp?
         }
         break;
     case CID2_Error::eSeverity_failed_command:
@@ -1693,12 +1714,13 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
         break;
     case CID2_Error::eSeverity_restricted_data:
         error_flags |= fError_no_data;
-        if ( error.IsSetMessage() &&
-             (NStr::FindNoCase(error.GetMessage(), "withdrawn") != NPOS ||
-              NStr::FindNoCase(error.GetMessage(), "removed") != NPOS) ) {
-            error_flags |= fError_withdrawn;
+        if ( error.IsSetMessage() ) {
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_withdrawn, "withdrawn");
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_withdrawn, "removed");
         }
-        else {
+        if ( !(error_flags & fError_withdrawn) ) {
             error_flags |= fError_restricted;
         }
         break;
@@ -1739,6 +1761,29 @@ CId2ReaderBase::x_GetMessageError(const CID2_Reply& reply)
     }
     return errors;
 }
+
+
+static CReader::TBlobState x_GetBlobStateFromID2(int id2_state)
+{
+    CReader::TBlobState blob_state = 0;
+    if ( id2_state & (1<<eID2_Blob_State_suppressed_temp) ) {
+        blob_state |= CBioseq_Handle::fState_suppress_temp;
+    }
+    if ( id2_state & (1<<eID2_Blob_State_suppressed) ) {
+        blob_state |= CBioseq_Handle::fState_suppress_perm;
+    }
+    if ( id2_state & (1<<eID2_Blob_State_dead) ) {
+        blob_state |= CBioseq_Handle::fState_dead;
+    }
+    if ( id2_state & (1<<eID2_Blob_State_protected) ) {
+        blob_state |= CBioseq_Handle::fState_confidential;
+    }
+    if ( id2_state & (1<<eID2_Blob_State_withdrawn) ) {
+        blob_state |= CBioseq_Handle::fState_withdrawn;
+    }
+    return blob_state;
+}
+
 
 
 CReader::TBlobState
@@ -2052,8 +2097,10 @@ void CId2ReaderBase::x_ProcessGetBlobId(
 {
     const CSeq_id& seq_id = reply.GetSeq_id();
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
-    TErrorFlags errors;
-    TBlobState blob_state = x_GetBlobState(main_reply, &errors);
+    TErrorFlags errors = 0;
+    TBlobState blob_state = reply.IsSetBlob_state()?
+        x_GetBlobStateFromID2(reply.GetBlob_state()):
+        x_GetBlobState(main_reply, &errors);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         SetAndSaveNoSeq_idBlob_ids(result, idh, 0, blob_state);
         return;
@@ -2153,7 +2200,9 @@ void CId2ReaderBase::x_ProcessGetBlob(
         SetAndSaveBlobVersion(result, blob_id, blob_version);
     }
 
-    TBlobState blob_state = x_GetBlobState(main_reply);
+    TBlobState blob_state = reply.IsSetBlob_state()?
+        x_GetBlobStateFromID2(reply.GetBlob_state()):
+        x_GetBlobState(main_reply);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;
@@ -2274,7 +2323,9 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
         }
     }
 
-    TBlobState blob_state = x_GetBlobState(main_reply);
+    TBlobState blob_state = reply.IsSetBlob_state()?
+        x_GetBlobStateFromID2(reply.GetBlob_state()):
+        x_GetBlobState(main_reply);
     {{
         SId2LoadedSet::TBlobStates::iterator iter =
             loaded_set.m_BlobStates.find(blob_id);

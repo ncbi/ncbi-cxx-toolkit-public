@@ -307,7 +307,7 @@ bool CId1Reader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
         CConstRef<CSeq_id> id_ref = seq_id.GetSeqId();
         const CDbtag& dbtag = id_ref->GetGeneral();
         Int8 id;
-        if ( dbtag.GetTag().GetIdType(id) == CObject_id::e_Id && id > 0 &&
+        if ( dbtag.GetTag().GetId8(id) && id > 0 &&
              sc_SatMap.find(dbtag.GetDb().c_str()) != sc_SatMap.end() ) {
             // only one source Seq-id and no synonyms
             TSeqIds seq_ids;
@@ -384,8 +384,8 @@ bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
 
 
 bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                   const CSeq_id_Handle& seq_id,
-                                   const SAnnotSelector* sel)
+                                    const CSeq_id_Handle& seq_id,
+                                    const SAnnotSelector* sel)
 {
     CLoadLockBlobIds ids(result, seq_id, sel);
     if ( ids.IsLoaded() ) {
@@ -402,22 +402,20 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     if ( seq_id.Which() == CSeq_id::e_General ) {
         CConstRef<CSeq_id> id_ref = seq_id.GetSeqId();
         const CSeq_id& id = *id_ref;
-        if ( id.GetGeneral().GetTag().IsId() ) {
+        Int8 num;
+        if ( id.GetGeneral().GetTag().GetId8(num) && num != 0 ) {
             const CDbtag& dbtag = id.GetGeneral();
             const string& db = dbtag.GetDb();
-            int num = dbtag.GetTag().GetId();
-            if ( num != 0 ) {
-                TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
-                if ( iter != sc_SatMap.end() ) {
-                    TBlobIds blob_ids;
-                    CRef<CBlob_id> blob_id(new CBlob_id);
-                    blob_id->SetSat(iter->second.first);
-                    blob_id->SetSatKey(num);
-                    blob_id->SetSubSat(iter->second.second);
-                    blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
-                    ids.SetLoadedBlob_ids(CFixedBlob_ids(eTakeOwnership, blob_ids));
-                    return true;
-                }
+            TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
+            if ( iter != sc_SatMap.end() ) {
+                TBlobIds blob_ids;
+                CRef<CBlob_id> blob_id(new CBlob_id);
+                blob_id->SetSat(iter->second.first);
+                blob_id->SetSatKey(num);
+                blob_id->SetSubSat(iter->second.second);
+                blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
+                ids.SetLoadedBlob_ids(CFixedBlob_ids(eTakeOwnership, blob_ids));
+                return true;
             }
         }
     }

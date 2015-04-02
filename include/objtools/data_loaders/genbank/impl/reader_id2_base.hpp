@@ -191,6 +191,11 @@ protected:
     TErrorFlags x_GetError(CReaderRequestResult& result,
                            const CID2_Error& error);
     TErrorFlags x_GetMessageError(const CID2_Error& error);
+    static void sx_CheckErrorFlag(const CID2_Error& error,
+                                  TErrorFlags& error_flags,
+                                  EErrorFlags test_flag,
+                                  const char* marker1,
+                                  const char* marker2 = 0);
     TErrorFlags x_GetError(CReaderRequestResult& result,
                            const CID2_Reply& reply);
     TErrorFlags x_GetMessageError(const CID2_Reply& reply);
