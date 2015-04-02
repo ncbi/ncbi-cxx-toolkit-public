@@ -365,10 +365,10 @@ void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
     }
 
     // Apply linked sections if so
-    map<string, string> linked_sections =
+    map<string, string> queue_linked_sections =
                             ReadLinkedSections(reg, sname, warnings);
-    for (map<string, string>::const_iterator  k = linked_sections.begin();
-         k != linked_sections.end(); ++k)
+    for (map<string, string>::const_iterator  k = queue_linked_sections.begin();
+         k != queue_linked_sections.end(); ++k)
         linked_sections[k->first] = k->second;
 
     // After deriving from a queue class there might be some restrictions
@@ -1778,7 +1778,7 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
                                      const string &     sname,
                                      vector<string> &   warnings)
 {
-    map<string, string>     linked_sections;
+    map<string, string>     conf_linked_sections;
     list<string>            entries;
     list<string>            available_sections;
 
@@ -1817,9 +1817,9 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
         }
 
         // Here: linked section exists and the prefix is fine
-        linked_sections[entry] = ref_section;
+        conf_linked_sections[entry] = ref_section;
     }
-    return linked_sections;
+    return conf_linked_sections;
 }
 
 END_NCBI_SCOPE

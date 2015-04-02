@@ -1392,3 +1392,92 @@ class Scenario1201( TestBase ):
             pass
         return False
 
+
+
+class Scenario1202( TestBase ):
+    " Scenario1202 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks that the linked sections are provides in the QINF2 command (queue with a class)"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( "8.1" )
+
+        ns_client = self.getNetScheduleService( '', 'scenario1202' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'QINF2 TEST1' )
+        values = parse_qs( output, True, True )
+        if values[ 'nc.one' ][ 0 ] != 'value 1':
+            raise Exception( "Unexpected nc.one" )
+        if values[ 'nc.two' ][ 0 ] != 'value 2':
+            raise Exception( "Unexpected nc.two" )
+
+        return True
+
+class Scenario1203( TestBase ):
+    " Scenario1203 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks that the linked sections are provides in the QINF2 command (linked sections are in a queue class)"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( "8.2" )
+
+        ns_client = self.getNetScheduleService( '', 'scenario1203' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'QINF2 TEST1' )
+        values = parse_qs( output, True, True )
+        if values[ 'nc.one' ][ 0 ] != 'value 1':
+            raise Exception( "Unexpected nc.one" )
+        if values[ 'nc.two' ][ 0 ] != 'value 2':
+            raise Exception( "Unexpected nc.two" )
+
+        return True
+
+
+class Scenario1204( TestBase ):
+    " Scenario1204 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks that the linked sections are provides in the QINF2 command (after RECO)"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( "8.3" )
+
+        ns_client = self.getNetScheduleService( '', 'netschedule_admin' )
+        ns_client.set_client_identification( 'netschedule_admin', 'session1' )
+
+        self.ns.setConfig( "8.2" )
+        output = execAny( ns_client, 'RECO' )   # analysis:ignore
+
+        output = execAny( ns_client, 'QINF2 TEST1' )
+        values = parse_qs( output, True, True )
+        if values[ 'nc.one' ][ 0 ] != 'value 1':
+            raise Exception( "Unexpected nc.one" )
+        if values[ 'nc.two' ][ 0 ] != 'value 2':
+            raise Exception( "Unexpected nc.two" )
+
+        return True
