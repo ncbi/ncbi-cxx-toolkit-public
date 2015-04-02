@@ -75,6 +75,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+static string s_WINDOW_MASKER_STAT_FILE_NAME("wmasker.obinary");
 static string s_WINDOW_MASKER_PATH(kEmptyStr);
 DEFINE_STATIC_MUTEX(InitMutex);
 
@@ -407,19 +408,8 @@ string WindowMaskerTaxidToDb(const string& window_masker_path, int taxid)
     string path = window_masker_path;
     path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
         + CFile::GetPathSeparator();
-    
-    const string binpath = path + "wmasker.obinary";
-    const string ascpath = path + "wmasker.oascii";
-    
-    string retval;
-    // Try the binary file first, as this is faster to process than the ASCII
-    // file
-    if (CFile(binpath).Exists()) {
-        retval = binpath;
-    } else if (CFile(ascpath).Exists()) {
-        retval = ascpath;
-    }
-    return retval;
+    const string binpath = path + s_WINDOW_MASKER_STAT_FILE_NAME;
+    return (CFile(binpath).Exists() ? binpath : kEmptyStr);
 }
 
 /* Unit test is in bl2seq_unit_test.cpp */
@@ -450,7 +440,7 @@ static void s_OldGetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
     const string wmpath = s_FindPathToWM();
     oss << wmpath << CFile::GetPathSeparator() << "*"
         << CFile::GetPathSeparator() << "*.*"
-        << CFile::GetPathSeparator() << "wmasker.o*";
+        << CFile::GetPathSeparator() << s_WINDOW_MASKER_STAT_FILE_NAME;
     const string path = CNcbiOstrstreamToString(oss);
     
     list<string> builds;
@@ -472,7 +462,7 @@ void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
     CNcbiOstrstream oss;
     const string wmpath = s_FindPathToWM();
     oss << wmpath << CFile::GetPathSeparator() << "*"
-        << CFile::GetPathSeparator() << "wmasker.o*";
+        << CFile::GetPathSeparator() << s_WINDOW_MASKER_STAT_FILE_NAME;
     const string path = CNcbiOstrstreamToString(oss);
     
     list<string> builds;
