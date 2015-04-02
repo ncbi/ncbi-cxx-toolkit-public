@@ -69,7 +69,8 @@ public:
         eAuthError,     ///< Authentication error (e.g. no FileTrack API key)
         eIOError,       ///< I/O error encountered while performing an op
         eServerError,   ///< NetStorage server error
-        eTimeout        ///< Timeout encountered while performing an op
+        eTimeout,       ///< Timeout encountered while performing an op
+        eExpired        ///< Object has expired on server
     };
     virtual const char* GetErrCodeString() const;
     NCBI_EXCEPTION_DEFAULT(CNetStorageException, CException);

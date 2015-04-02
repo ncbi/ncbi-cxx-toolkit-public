@@ -268,11 +268,10 @@ static void s_TrapErrors(const CJsonNode& request,
     }
 
     if (reply.GetString("Status") != "OK") {
+        Int8 code = CNetStorageServerError::eUnknownError;
         string errors;
 
         issues = reply.GetByKeyOrNull("Errors");
-
-        bool file_not_found = false;
 
         if (!issues)
             errors = reply.GetString("Status");
@@ -281,11 +280,7 @@ static void s_TrapErrors(const CJsonNode& request,
 
             for (CJsonIterator it = issues.Iterate(); it; ++it) {
                 errors += prefix;
-                Int8 code = (*it).GetInteger("Code");
-                file_not_found = file_not_found ||
-                    code == CNetStorageServerError::eNetStorageObjectNotFound ||
-                    code == CNetStorageServerError::eRemoteObjectNotFound;
-
+                code = (*it).GetInteger("Code");
                 errors += NStr::NumericToString(code);
                 errors += ": ";
                 errors += (*it).GetString("Message");
@@ -299,10 +294,16 @@ static void s_TrapErrors(const CJsonNode& request,
                         sock->GetPeerAddress() << ". "
                 "Server returned " << errors);
 
-        if (file_not_found) {
-            NCBI_THROW_FMT(CNetStorageException, eNotExists, err_msg);
-        } else {
-            NCBI_THROW_FMT(CNetStorageException, eServerError, err_msg);
+        switch (code) {
+            case CNetStorageServerError::eNetStorageObjectNotFound:
+            case CNetStorageServerError::eRemoteObjectNotFound:
+                NCBI_THROW_FMT(CNetStorageException, eNotExists, err_msg);
+                break;
+            case CNetStorageServerError::eNetStorageObjectExpired:
+                NCBI_THROW_FMT(CNetStorageException, eExpired, err_msg);
+                break;
+            default:
+                NCBI_THROW_FMT(CNetStorageException, eServerError, err_msg);
         }
     }
 
