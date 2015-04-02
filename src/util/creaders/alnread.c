@@ -4009,7 +4009,6 @@ s_ProcessBlockLines
     int             len;
     int             line_number;
     EBool           this_block_has_ids;
-    int             pos;
     TAlignRawSeqPtr arsp;
 
     this_block_has_ids = s_DoesBlockHaveIds (afrp, lines, num_lines_in_block);
@@ -4021,7 +4020,6 @@ s_ProcessBlockLines
     {
         linestring = lip->data;
         if (linestring != NULL) {
-            pos = 0;
             if (this_block_has_ids) {
                 len = strcspn (linestring, " \t\r");
                 if (first_block && len == strlen (linestring)) {
@@ -4368,6 +4366,11 @@ s_CreateAnchorPatternForMarkedIDs
             }
         }
     }
+
+    /* free list. note that all of the elements of list that are not pointed to by best
+       have already been freed*/
+    free (list);
+
 
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
     {
