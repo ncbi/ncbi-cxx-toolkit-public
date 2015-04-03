@@ -99,8 +99,6 @@ an_rnaseq needs gpipe_an_base
 an_rnaseq needs matchhits
 an_worker_nodes includes gencoll_client
 an_worker_nodes needs gpipe_an_base
-asn_build_config needs build_config_base
-asn_build_config needs gpinit
 asn_cache includes id_dump
 asn_config needs build_config_base
 asn_config needs config_access
