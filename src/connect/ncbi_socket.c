@@ -6717,7 +6717,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
 }
 
 
-extern EIO_Status SOCK_PushBack(SOCK        sock,
+extern EIO_Status SOCK_Pushback(SOCK        sock,
                                 const void* buf,
                                 size_t      size)
 {
