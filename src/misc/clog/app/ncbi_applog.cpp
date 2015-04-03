@@ -111,9 +111,9 @@ USING_NCBI_SCOPE;
 
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
-//const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
+const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 //#if DEBUG
-const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
+//const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
 //#endif
 
 
@@ -136,6 +136,7 @@ NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestination, kEmptyStr, eParam_NoThrea
 
 
 /// Structure to store logging information
+/// All string values stored URL-encoded.
 struct SInfo {
     ENcbiLog_AppState state;            ///< Assumed 'state' for Logging API
     TNcbiLog_PID      pid;              ///< Process ID
@@ -147,7 +148,7 @@ struct SInfo {
     string            sid_app;          ///< Application-wide session ID (set in "start_app")
     string            sid_req;          ///< Request session ID (UNK_SESSION if unknown)
     string            phid_app;         ///< Application-wide hit ID (set in "start_app")
-    string            phid_req;         ///< Request hit ID
+    string            phid_req;         ///< Request hit ID  (set in "req_app")
     string            logsite;          ///< Application-wide LogSite value (set in "start_app")
     string            host_role;        ///< Host role (CGI mode only, ignored for local host)
     string            host_location;    ///< Host location (CGI mode only, ignored for local host)
@@ -516,7 +517,7 @@ int CNcbiApplogApp::Redirect()
                 // env.variable, insert real value into command line.
                 s_args += " \"" + m_Token + "\"";
             } else {
-                // Check -host, -sid and -logsite parameters
+                // Check -host, -sid, -phid and -logsite parameters
                 if (is_start_app) {
                     if (need_hostname  &&  NStr::StartsWith(raw_args[i], "-host")) {
                         need_hostname = false;
@@ -524,7 +525,7 @@ int CNcbiApplogApp::Redirect()
                     if (need_sid  &&  NStr::StartsWith(raw_args[i], "-sid")) {
                         need_sid = false;
                     }
-                    if (need_sid  &&  NStr::StartsWith(raw_args[i], "-phid")) {
+                    if (need_phid  &&  NStr::StartsWith(raw_args[i], "-phid")) {
                         need_phid = false;
                     }
                     if (need_logsite  &&  NStr::StartsWith(raw_args[i], "-logsite")) {
@@ -556,13 +557,13 @@ int CNcbiApplogApp::Redirect()
             // Global SID
             if (need_sid) {
                 if ((ev = NcbiLogP_GetSessionID_Env()) != NULL) {
-                    s_args += string(" \"-sid=") + ev + "\"";
+                    s_args += string(" \"-sid=") + NStr::URLEncode(ev) + "\"";
                 }
             }
             // Global PHID
             if (need_phid) {
                 if ((ev = NcbiLogP_GetHitID_Env()) != NULL) {
-                    s_args += string(" \"-phid=") + ev + "\"";
+                    s_args += string(" \"-phid=") + NStr::URLEncode(ev) + "\"";
                 }
             }
             // Global log_site information
@@ -576,10 +577,9 @@ int CNcbiApplogApp::Redirect()
             if (need_hostname) {
                 const char* hostname = NcbiLog_GetHostName();
                 if (hostname) {
-                    s_args += string(" \"-host=") + hostname + "\"";
+                    s_args += string(" \"-host=") + NStr::URLEncode(hostname) + "\"";
                 }
             }
-
             // Host role and location
             // (add unconditionally, users should not overwrite it via command line)
             {{
@@ -663,6 +663,9 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
     if (!m_Info.sid_app.empty()) {
         token += "&asid="  + m_Info.sid_app;
     }
+    if (!m_Info.phid_app.empty()) {
+        token += "&phid=" + m_Info.phid_app;
+    }
     if (!m_Info.logsite.empty()) {
         token += "&logsite="  + m_Info.logsite;
     }
@@ -699,7 +702,7 @@ ETokenType CNcbiApplogApp::ParseToken()
     // Minimal token looks as:
     //     "name=STR&pid=NUM&guid=HEX&atime=N.N"
     // Also, can have: 
-    //     asid, rsid, rtime, client, host, srvport, logsite.
+    //     asid, rsid, rtime, phid, client, host, srvport, logsite.
     // for redirect mode:
     //     hostrole, hostloc
 
@@ -744,6 +747,8 @@ ETokenType CNcbiApplogApp::ParseToken()
         } else if ( key == "rsid") {
             m_Info.sid_req = value;
             type = eRequest;
+        } else if ( key == "phid") {
+            m_Info.phid_app = value;
         } else if ( key == "logsite") {
             m_Info.logsite = value;
         } else if ( key == "rid") {
@@ -805,6 +810,8 @@ int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
             if (m_Info.rid) cout << m_Info.rid;
         } else if (arg == "-sid") {
             cout << (type == eRequest ? m_Info.sid_req : m_Info.sid_app);
+        } else if (arg == "-phid") {
+            cout << m_Info.phid_app;
         } else if (arg == "-srvport") {
             if (m_Info.server_port) cout << m_Info.server_port;
         } else if (arg == "-app_start_time") {
@@ -878,8 +885,13 @@ void CNcbiApplogApp::SetInfo()
         NcbiLog_SetSession(m_Info.sid_req.c_str());
     }
     // Hit ID
+    // Set it if it should be inherited only.
     if (!m_Info.phid_app.empty()) {
-        NcbiLog_AppSetHitID(m_Info.phid_app.c_str());
+        if (m_Info.phid_app.length() > 3 * NCBILOG_HITID_MAX) {
+            throw "PHID is too long '" + m_Info.phid_app + "'";
+        }
+        strcpy(g_info->phid, m_Info.phid_app.c_str());
+        g_info->phid_inherit = 1;
     }
     if (!m_Info.phid_req.empty()) {
         NcbiLog_SetHitID(m_Info.phid_req.c_str());
@@ -907,6 +919,10 @@ void CNcbiApplogApp::UpdateInfo()
     m_Info.app_start_time = g_info->app_start_time;
     m_Info.req_start_time = g_ctx->req_start_time;
 
+    if (g_info->phid[0]  &&  g_info->phid_inherit) {
+        // Save it if it should be inherited only.
+        m_Info.phid_app = g_info->phid;
+    }
     if (!m_Info.host.empty()  &&  g_info->host[0]) {
         m_Info.host = g_info->host;
     }
@@ -932,17 +948,16 @@ int CNcbiApplogApp::Run(void)
 
     // Get logsite information, it will replace original appname if present
     if (args.Exist("logsite")) {
-        m_Info.logsite = args["logsite"].AsString();
-        if (m_Info.logsite.empty()) {
-            m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
-        }
-        m_Info.logsite = NStr::URLEncode(m_Info.logsite);
+        m_Info.logsite = NStr::URLEncode(args["logsite"].AsString());
+    }
+    if (m_Info.logsite.empty()) {
+        m_Info.logsite = NStr::URLEncode(GetEnvironment().Get("NCBI_APPLOG_SITE"));
     }
 
     // Command specific pre-initialization 
     if (cmd == "start_app") {
         // We need application name first to try initialize the local logging
-        m_Info.appname = args["appname"].AsString();
+        m_Info.appname = NStr::URLEncode(args["appname"].AsString());
         // Get value of $SERVER_PORT on original host (if specified; redirect mode only)
         string srvport = args["srvport"].AsString();
         if ( srvport.empty() ) {
@@ -1120,29 +1135,25 @@ int CNcbiApplogApp::Run(void)
 
     // -----  start_app  -----------------------------------------------------
     // ncbi_applog start_app -pid PID -appname NAME [-host HOST] [-sid SID] [-phid PHID] [-logsite SITE] -> token
-
     if (cmd == "start_app") {
         const char* ev;
         m_Info.pid  = args["pid"].AsInteger();
-        m_Info.host = args["host"].AsString();
+        m_Info.host = NStr::URLEncode(args["host"].AsString());
         if (m_Info.host.empty()) {
-            m_Info.host = NcbiLog_GetHostName();
+            m_Info.host = NStr::URLEncode(NcbiLog_GetHostName());
         }
-        m_Info.sid_app = args["sid"].AsString();
+        m_Info.sid_app = NStr::URLEncode(args["sid"].AsString());
         if (m_Info.sid_app.empty()  &&  (ev = NcbiLogP_GetSessionID_Env())) {
-            m_Info.sid_app = ev;
+            m_Info.sid_app = NStr::URLEncode(ev);
         }
-        m_Info.phid_app = args["phid"].AsString();
+        m_Info.phid_app = NStr::URLEncode(args["phid"].AsString());
         if (m_Info.phid_app.empty()  &&  (ev = NcbiLogP_GetHitID_Env())) {
-            m_Info.phid_app = ev;
+            m_Info.phid_app = NStr::URLEncode(ev);
         }
-        m_Info.logsite = args["logsite"].AsString();
-        if (m_Info.logsite.empty()) {
-            m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
-        }
+        /* We already have processed logsite parameter, so skip it here */
         if (m_IsRemoteLogging) {
-            m_Info.host_role     = args["hostrole"].AsString();
-            m_Info.host_location = args["hostloc"].AsString();
+            m_Info.host_role     = NStr::URLEncode(args["hostrole"].AsString());
+            m_Info.host_location = NStr::URLEncode(args["hostloc"].AsString());
         }
         SetInfo();
         NcbiLog_AppStart(NULL);
@@ -1168,15 +1179,16 @@ int CNcbiApplogApp::Run(void)
     // ncbi_applog start_request <token> [-sid SID] [-phid PHID] [-rid RID] [-client IP] [-param PAIRS] -> request_token
 
     if (cmd == "start_request") {
-        m_Info.sid_req  = args["sid"].AsString();
-        m_Info.phid_req = args["phid"].AsString();
+        m_Info.sid_req  = NStr::URLEncode(args["sid"].AsString());
+        m_Info.phid_req = NStr::URLEncode(args["phid"].AsString());
         m_Info.rid = args["rid"].AsInteger();
         // Adjust request identifier.
         // It will be increased back inside the C Logging API
         if (m_Info.rid) {
             m_Info.rid--;
         }
-        m_Info.client = args["client"].AsString();
+        m_Info.client = NStr::URLEncode(args["client"].AsString());
+        // should be URL-encoded already
         string params = args["param"].AsString();
         SetInfo();
         // If logsite present, replace original name with it
@@ -1230,12 +1242,14 @@ int CNcbiApplogApp::Run(void)
             NcbiLog_Error(msg.c_str());
         else if (sev == "critical")
             NcbiLog_Critical(msg.c_str());
+        // otherwise ignore
     } else 
 
     // -----  extra  ---------------------------------------------------------
     // ncbi_applog extra <token> [-param PAIRS]
 
     if (cmd == "extra") {
+        // should be URL-encoded already
         string params = args["param"].AsString();
         SetInfo();
         NcbiLogP_ExtraStr(params.c_str());
@@ -1254,7 +1268,7 @@ int CNcbiApplogApp::Run(void)
             NcbiLogP_PerfStr(status, ts, params.c_str());
         } else {
             // and add original appname as part of perf parameters
-            string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
+            string extra = "orig_appname=" + m_Info.appname;
             if (params.empty()) {
                 NcbiLogP_PerfStr(status, ts, extra.c_str());
             } else {

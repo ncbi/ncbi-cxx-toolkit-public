@@ -2836,8 +2836,10 @@ extern void NcbiLog_ReqRun(void)
     */
     if (!ctx->phid[0]) {
         char phid_str[NCBILOG_HITID_MAX + 1];
-        VERIFY(sx_Info->phid[0]);
-        if (sx_Info->phid_inherit) {
+        /* Usually we should always have app-wide PHID, but not 
+           in the case for ncbi_applog utility */
+        /* VERIFY(sx_Info->phid[0]); */
+        if (sx_Info->phid[0]  &&  sx_Info->phid_inherit) {
             /* Just log app-wide PHID, do not set it as request specific
                to allow NcbiLog_GetNextSubHitID() work correctly and
                use app-wide sub hits.
