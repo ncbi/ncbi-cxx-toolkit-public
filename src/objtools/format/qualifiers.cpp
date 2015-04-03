@@ -100,42 +100,55 @@ static void s_CleanAndCompress(string& dest, const CTempString& instr)
 
     dest.resize(left);
 
+    if (left < 1) return;
+
     // this is where we write result
     char* out = (char*)dest.c_str();
-    // this is two bytes storage where we see current and previous symbols
-    Uint2 two_chars = 0;
-    char i = 0;
 
-    while (left--)
-    {
-        i = *in++;
-        two_chars = (two_chars << 8) | i;
+    char curr = *in++; // initialize with first character
+    left--;
+
+    char next = 0;
+    Uint2 two_chars = curr; // this is two bytes storage where we see current and previous symbols
+
+    while (left > 0) {
+        next = *in++;
+
+        two_chars = (two_chars << 8) | next;
+
         switch (two_chars)
         {
         case twocommas: // replace double commas with comma+space
-            *out++ = ' ';
-            two_chars = ' ';
+            *out++ = curr;
+            next = ' ';
             break;
-        case twospaces: // skip multispaces
+        case twospaces: // skip multispaces (only print last one)
             break;
         case bracket_space: // skip space after bracket
-            two_chars = (two_chars >> 8);
+            next = curr;
+            two_chars = curr;
             break;
-        case space_bracket:
-            out[-1] = i;
+        case space_bracket: // skip space before bracket
             break;
         case space_comma:
         case space_semicolon: // swap characters
-            out[-1] = i;
-            *out++ = ' ';
-            two_chars = ' ';
+            *out++ = next;
+            next = curr;
+            two_chars = curr;
             break;
         default:
-            *out++ = i;
+            *out++ = curr;
             break;
         }
+
+        curr = next;
+        left--;
     }
-    if (i == ' ') out--; // the final space don't get saved
+
+    if (curr > 0 && curr != ' ') {
+        *out++ = curr;
+    }
+
     dest.resize(out - dest.c_str());
 }
 
