@@ -432,6 +432,7 @@ gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
 gpipe_common needs xmlwrapp
+gpipe_dateutil needs xregexp
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
 gpipe_ftp needs gpipe_alnutil
