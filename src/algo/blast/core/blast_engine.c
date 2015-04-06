@@ -678,6 +678,9 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
     const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
+    Boolean isRPS = FALSE;
+    if (Blast_ProgramIsRpsBlast(program_number))
+	isRPS = TRUE;
     const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_options);
 
     SubjectSplitStruct backup;
@@ -734,7 +737,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
 
 
     /* Substitute query info by concatenated database info for RPS BLAST search */
-    if (Blast_ProgramIsRpsBlast(program_number)) {
+    if (isRPS) {
         BlastRPSLookupTable* lut = (BlastRPSLookupTable*) lookup->lut;
         query_info = BlastQueryInfoNew(eBlastTypeRpsBlast, lut->num_profiles);
         /* Since this will really be "subject info", not "query info",
@@ -813,14 +816,12 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
                   subject->length, gap_align->sbp, hit_params->link_hsp_params, 
                   score_options->gapped_calculation);
     } else if (!Blast_ProgramIsPhiBlast(program_number)
-           && !(Blast_ProgramIsRpsBlast(program_number) && !sbp->gbp) ){
+           && !(isRPS && !sbp->gbp) ){
         /* Calculate e-values for all HSPs. Skip this step
            for PHI or RPS with old FSC, since calculating the E values 
            requires precomputation that has not been done yet */
-        Boolean isRPS = FALSE;
         double scale_factor = 1.0;
-        if (Blast_ProgramIsRpsBlast(program_number)) {
-            isRPS = TRUE;
+        if (isRPS) {
             scale_factor = score_params->scale_factor;
         }
         status = Blast_HSPListGetEvalues(program_number, query_info,
