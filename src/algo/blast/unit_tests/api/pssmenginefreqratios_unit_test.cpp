@@ -35,10 +35,13 @@
 
 // ASN.1 object includes
 #include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/scoremat/PssmIntermediateData.hpp>
+#include <objects/scoremat/Pssm.hpp>
 
 // C++ BLAST APIs
 #include <algo/blast/api/pssm_engine.hpp>
 #include <algo/blast/api/psi_pssm_input.hpp>
+#include <algo/blast/api/msa_pssm_input.hpp>
 #include "psiblast_aux_priv.hpp"        // for CScorematPssmConverter
 
 // Standard scoring matrices
@@ -49,6 +52,8 @@
 
 using namespace std;
 using namespace ncbi;
+using namespace ncbi::blast;
+using namespace ncbi::objects;
 
 struct CPssmEngineFreqRatiosTestFixture
 {
@@ -56,8 +61,8 @@ struct CPssmEngineFreqRatiosTestFixture
     ~CPssmEngineFreqRatiosTestFixture() {}
 
     void createNullPssmInputFreqRatios(void) {
-        blast::IPssmInputFreqRatios* null_ptr = NULL;
-        blast::CPssmEngine pssm_engine(null_ptr);
+        IPssmInputFreqRatios* null_ptr = NULL;
+        CPssmEngine pssm_engine(null_ptr);
     }
 };
 
@@ -66,7 +71,7 @@ BOOST_FIXTURE_TEST_SUITE(PssmEngineFreqRatios, CPssmEngineFreqRatiosTestFixture)
 BOOST_AUTO_TEST_CASE(testRejectNullPssmInputFreqRatios)
 {
     BOOST_REQUIRE_THROW(createNullPssmInputFreqRatios(),
-                        blast::CBlastException);
+                        CBlastException);
 }
 
 /// All entries in the frequecy ratios matrix are 0, and therefore the
@@ -78,12 +83,12 @@ BOOST_AUTO_TEST_CASE(AllZerosFreqRatios)
     { 15,  9, 10,  4, 11, 11, 19, 17, 17, 17 };
     CNcbiMatrix<double> freq_ratios(BLASTAA_SIZE, kQueryLength);
 
-    auto_ptr<blast::IPssmInputFreqRatios> pssm_input;
-    pssm_input.reset(new blast::CPsiBlastInputFreqRatios
+    auto_ptr<IPssmInputFreqRatios> pssm_input;
+    pssm_input.reset(new CPsiBlastInputFreqRatios
                         (kQuery, kQueryLength, freq_ratios));
-    blast::CPssmEngine pssm_engine(pssm_input.get());
+    CPssmEngine pssm_engine(pssm_input.get());
     auto_ptr< CNcbiMatrix<int> > pssm
-        (blast::CScorematPssmConverter::GetScores(*pssm_engine.Run()));
+        (CScorematPssmConverter::GetScores(*pssm_engine.Run()));
 
     const SNCBIPackedScoreMatrix* score_matrix = &NCBISM_Blosum62;
     const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA[(int)'-'];
@@ -114,6 +119,48 @@ BOOST_AUTO_TEST_CASE(AllZerosFreqRatios)
             }
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
+{
+    ifstream in("data/sample_msa.txt");
+
+    CPSIBlastOptions opts;
+    PSIBlastOptionsNew(&opts);
+
+    CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(true));
+    CPsiBlastInputClustalW pssm_input(in, *opts, "BLOSUM62", diags);
+    pssm_input.Process();
+    CPssmEngine pssm_engine(&pssm_input);
+    CRef<objects::CPssmWithParameters>  pssm_w_param = pssm_engine.Run();
+    BOOST_REQUIRE(pssm_w_param->CanGetPssm());
+
+    const CPssm & pssm = pssm_w_param->GetPssm();
+    BOOST_REQUIRE(pssm.IsSetIntermediateData());
+    BOOST_REQUIRE(pssm.GetIntermediateData().IsSetWeightedResFreqsPerPos());
+    list<double>  freq_ratios = pssm.GetIntermediateData().GetWeightedResFreqsPerPos();
+
+    ifstream raw_data("data/freqsprepos.dat");
+    string tmp_line;
+    getline(raw_data, tmp_line);
+    list<string>  ref_data;
+    NStr::Split(tmp_line,  " ", ref_data);
+    list<string>::iterator ref_pt=ref_data.begin();
+    ITERATE(list<double>, pt, freq_ratios) {
+    	if (*pt == 0) {
+    		continue;
+    	}
+    	else {
+    		double ref_value = NStr::StringToDouble(*ref_pt);
+    		BOOST_REQUIRE(ref_pt != ref_data.end());
+    		BOOST_REQUIRE(abs(ref_value - *pt) < 0.001);
+    		ref_pt ++;
+    	}
+
+    }
+
+
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
