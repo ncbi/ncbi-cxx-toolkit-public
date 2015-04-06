@@ -1568,6 +1568,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
     Uint4 pos = 0;                  /* position index */
     int retval = PSI_SUCCESS;       /* return value */
     const Uint4 kExpectedNumMatchingSeqs = nsg_compatibility_mode ? 0 : 1;
+    Uint4 last_calc_pos = 0;
 
     if ( !msa || !aligned_blocks || !seq_weights ) {
         return PSIERR_BADPARAM;
@@ -1594,8 +1595,11 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
         if (aligned_seqs->num_used <= kExpectedNumMatchingSeqs) {
             continue;
         }
+        last_calc_pos = pos;
 
-        if ( !DynamicUint4Array_AreEqual(aligned_seqs, prev_pos_aligned_seqs)) {
+        if (last_calc_pos != pos - 1 ||
+            !DynamicUint4Array_AreEqual(aligned_seqs, prev_pos_aligned_seqs)) {
+
             memset((void*)seq_weights->norm_seq_weights, 0, 
                    sizeof(double)*(msa->dimensions->num_seqs+1));
             memset((void*)seq_weights->row_sigma, 0,
@@ -3149,6 +3153,7 @@ int columnsAccountedFor; /*how many of the columns had their
  columnsAccountedFor = 0;
  totalDistinctCounts = 0;
  while (columnsAccountedFor < halfNumColumns) {
+   ASSERT(k >= 0);
    totalDistinctCounts += (seq_weights->posDistinctDistrib[columnNumber][k] *k);
    columnsAccountedFor += seq_weights->posDistinctDistrib[columnNumber][k];
    if (columnsAccountedFor > halfNumColumns) {
