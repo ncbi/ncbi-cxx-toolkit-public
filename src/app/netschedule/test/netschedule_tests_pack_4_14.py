@@ -378,12 +378,20 @@ class Scenario505( TestBase ):
             self.ns.directSendCmd( 'RECO' )
             reply = self.ns.directReadSingleReply()
             if reply[ 0 ] != True:
-                raise Exception( 'RECO failed: ' + reply[ 1 ] )
-            if reply[ 1 ] != '"server_changes" ' \
-                '{"log_notification_thread" [false, true], ' \
-                '"log_statistics_thread" [true, false]}, ' \
-                '"added_queue_classes" ["class1", "class2"], ' \
-                '"added_queues" {"q1" "", "q2" "class2"}':
+                raise Exception( 'RECO failed (step 4): ' + reply[ 1 ] )
+
+            # Older versions
+            pattern1 = '"server_changes" ' \
+                       '{"log_notification_thread" [false, true], ' \
+                       '"log_statistics_thread" [true, false]}, ' \
+                       '"added_queue_classes" ["class1", "class2"], ' \
+                       '"added_queues" {"q1" "", "q2" "class2"}'
+            # For NS 4.21.1 and up
+            pattern2 = '{"added_queue_classes": ["class1", "class2"], ' \
+                       '"added_queues": {"q1": "", "q2": "class2"}, ' \
+                       '"server_changes": {"log_notification_thread": [false, true], ' \
+                       '"log_statistics_thread": [true, false]}}'
+            if reply[ 1 ] != pattern1 and reply[ 1 ] != pattern2:
                 raise Exception( 'Unexpected output for RECO (step 4): ' + reply[ 1 ] )
 
             # Step 5: Create dynamic queue of a configured class
@@ -405,12 +413,22 @@ class Scenario505( TestBase ):
             reply = self.ns.directReadSingleReply()
             if reply[ 0 ] != True:
                 raise Exception( 'RECO failed: ' + reply[ 1 ] )
-            if reply[ 1 ] != '"deleted_queue_classes" ["class1"], ' \
-                '"queue_class_changes" {"class2" {"timeout" [1, 2], ' \
-                '"description" ["class two", "class two updated"]}}, ' \
-                '"deleted_queues" ["q1"], "queue_changes" ' \
-                '{"q2" {"max_input_size" [33, 77], "description" ' \
-                '["class two", "class two updated"]}}':
+
+            pattern1 = '"deleted_queue_classes" ["class1"], ' \
+                       '"queue_class_changes" {"class2" {"timeout" [1, 2], ' \
+                       '"description" ["class two", "class two updated"]}}, ' \
+                       '"deleted_queues" ["q1"], "queue_changes" ' \
+                       '{"q2" {"max_input_size" [33, 77], "description" ' \
+                       '["class two", "class two updated"]}}'
+            # For NS 4.21.1 and up
+            pattern2 = '{"deleted_queue_classes": ["class1"], ' \
+                       '"queue_class_changes": {"class2": {"timeout": [1, 2], ' \
+                       '"description": ["class two", "class two updated"]}}, ' \
+                       '"deleted_queues": ["q1"], "queue_changes": ' \
+                       '{"q2": {"max_input_size": ["33", "77"], ' \
+                       '"description": ["class two", "class two updated"]}}}'
+
+            if reply[ 1 ] != pattern1 and reply[ 1 ] != pattern2:
                 raise Exception( 'Unexpected output for RECO (step 6): ' + reply[ 1 ] )
 
             time.sleep( 3 )     # give a chance for deleting q1
@@ -482,16 +500,26 @@ class Scenario505( TestBase ):
             reply = self.ns.directReadSingleReply()
             if reply[ 0 ] != True:
                 raise Exception( 'RECO failed: ' + reply[ 1 ] )
-            if reply[ 1 ] != '"queue_class_changes" {"class2" ' \
-                '{"failed_retries" [3333, 87]}}, "queue_changes" ' \
-                '{"q2" {"failed_retries" [3333, 87], ' \
-                '"max_output_size" [333, 444]}}' and \
-               reply[ 1 ] != '"queue_class_changes" {"class2" ' \
-                '{"failed_retries" [3333, 87], ' \
-                '"read_failed_retries" [3333, 87]}}, "queue_changes" ' \
-                '{"q2" {"failed_retries" [3333, 87], ' \
-                '"read_failed_retries" [3333, 87], ' \
-                '"max_output_size" [333, 444]}}':
+
+            pattern1 = '"queue_class_changes" {"class2" ' \
+                       '{"failed_retries" [3333, 87]}}, "queue_changes" ' \
+                       '{"q2" {"failed_retries" [3333, 87], ' \
+                       '"max_output_size" [333, 444]}}'
+            pattern2 = '"queue_class_changes" {"class2" ' \
+                       '{"failed_retries" [3333, 87], ' \
+                       '"read_failed_retries" [3333, 87]}}, "queue_changes" ' \
+                       '{"q2" {"failed_retries" [3333, 87], ' \
+                       '"read_failed_retries" [3333, 87], ' \
+                       '"max_output_size" [333, 444]}}'
+            # For NS 4.21.1 and up
+            pattern3 = '{"queue_class_changes": {"class2": {"failed_retries": ' \
+                       '["3333", "87"], "read_failed_retries": ["3333", "87"]}}, ' \
+                       '"queue_changes": {"q2": {"failed_retries": ["3333", "87"], ' \
+                       '"read_failed_retries": ["3333", "87"], ' \
+                       '"max_output_size": ["333", "444"]}}}'
+
+            if reply[ 1 ] !=  pattern1 and reply[ 1 ] != pattern2 and \
+               reply[ 1 ] != pattern3:
                 raise Exception( 'Unexpected output for RECO (step 7): ' + reply[ 1 ] )
 
             # Step 8: restart NS and make sure the queues are still there

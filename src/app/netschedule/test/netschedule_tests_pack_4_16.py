@@ -820,17 +820,27 @@ class Scenario1107( TestBase ):
             reply = self.ns.directReadSingleReply()
             if reply[ 0 ] != True:
                 raise Exception( 'RECO failed: ' + reply[ 1 ] )
-            if reply[ 1 ] != '"queue_changes"' \
-                             ' {"TEST" {"failed_retries" [0, 3], ' \
-                             '"scramble_job_keys" [true, false]}}' and \
-               reply[ 1 ] != '"queue_changes"' \
-                             ' {"TEST" {"failed_retries" [0, 3], ' \
-                             '"read_failed_retries" [0, 3], ' \
-                             '"scramble_job_keys" [true, false]}}' and \
-                reply[ 1 ] != '"queue_changes" {"TEST" {"failed_retries" [0, 3], ' \
-                              '"read_failed_retries" [0, 3], ' \
-                              '"reader_timeout" ["40.0", "5.0"], ' \
-                              '"scramble_job_keys" [true, false]}}':
+
+            pattern1 = '"queue_changes"' \
+                       ' {"TEST" {"failed_retries" [0, 3], ' \
+                       '"scramble_job_keys" [true, false]}}'
+            pattern2 = '"queue_changes"' \
+                       ' {"TEST" {"failed_retries" [0, 3], ' \
+                       '"read_failed_retries" [0, 3], ' \
+                       '"scramble_job_keys" [true, false]}}'
+            pattern3 = '"queue_changes" {"TEST" {"failed_retries" [0, 3], ' \
+                       '"read_failed_retries" [0, 3], ' \
+                       '"reader_timeout" ["40.0", "5.0"], ' \
+                       '"scramble_job_keys" [true, false]}}'
+            # For NS 4.21.1 and up
+            pattern4 = '{"queue_changes": {"TEST": ' \
+                       '{"failed_retries": ["0", "3"], ' \
+                       '"read_failed_retries": ["0", "3"], ' \
+                       '"reader_timeout": ["40.0", "5.0"], ' \
+                       '"scramble_job_keys": [true, false]}}}'
+
+            if reply[ 1 ] !=  pattern1 and reply[ 1 ] !=  pattern2 and \
+                reply[ 1 ] != pattern3 and reply[ 1 ] != pattern4:
                 raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
 
             jobID = self.ns.submitJob( 'TEST', 'blah' )
