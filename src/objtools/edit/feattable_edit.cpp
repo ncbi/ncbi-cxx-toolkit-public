@@ -224,7 +224,13 @@ void CFeatTableEdit::EliminateBadQualifiers()
 void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 //  ----------------------------------------------------------------------------
 {
-	// that's for cds's.
+    // that's for cds's.
+    // scheme hinges on us generating locus tags, so if don't do that we should
+    //  not generate protein_ids and transcript_ids either.
+    if (mLocusTagPrefix.empty()) {
+        return;
+    }
+    
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI it(mHandle, sel);
@@ -282,6 +288,99 @@ void CFeatTableEdit::GenerateOrigProteinAndOrigTranscriptIds()
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateLocusIds()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_imp);
+
+    if (mLocusTagPrefix.empty()) {
+        return xGenerateLocusIdsUseExisting();
+    }
+    else {
+        return xGenerateLocusIdsRegenerate();
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xGenerateLocusIdsRegenerate()
+//  ----------------------------------------------------------------------------
+{
+    //mss-362:
+    // blow away any locus_tag, protein_id, transcript_id attributes and
+    // regenerate from scratch using mLocusTagPrefix
+
+    //make sure genes got proper locus tags
+    SAnnotSelector selGenes;
+    selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    for (CFeat_CI it(mHandle, selGenes); it; ++it) {
+        CMappedFeat mf = *it;
+        CSeq_feat_EditHandle feh(mf);
+        CRef<CSeq_feat> pReplacement(new CSeq_feat);
+        pReplacement->Assign(*mf.GetSeq_feat());
+        pReplacement->SetData().SetGene().SetLocus_tag(xNextLocusTag());
+        feh.Replace(*pReplacement);
+    }
+
+    //make sure all locus related junk is removed and that rnas are
+    // labeled properly
+    SAnnotSelector selOthers;
+    selOthers.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    for (CFeat_CI it(mHandle, selOthers); it; ++it) {
+        CMappedFeat mf = *it;
+        const CSeq_feat& f = mf.GetOriginalFeature();
+        CSeq_feat_EditHandle feh(mf);
+
+        feh.RemoveQualifier("locus_tag");
+        feh.RemoveQualifier("protein_id");
+        feh.RemoveQualifier("orig_protein_id");
+        feh.RemoveQualifier("transcript_id");
+        feh.RemoveQualifier("orig_transcript_id");
+
+        CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+        switch (subtype) {
+            case CSeqFeatData::eSubtype_mRNA: {
+                string proteinId = xNextProteinId(f);
+                feh.AddQualifier("protein_id", proteinId);
+                feh.AddQualifier("orig_protein_id", proteinId);
+                string transcriptId = xNextTranscriptId(f);
+                feh.AddQualifier("transcript_id", transcriptId);
+                feh.AddQualifier("orig_transcript_id", transcriptId);
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+
+    //finally, down inherit transcript ids from the mrna's to the cdregions
+    SAnnotSelector selCds;
+    selCds.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+
+    for (CFeat_CI it(mHandle, selCds); it; ++it) {
+
+        CMappedFeat mf = *it;
+        const CSeq_feat& f = mf.GetOriginalFeature();
+        CSeq_feat_EditHandle feh(mf);
+        string transcriptId = xCurrentTranscriptId(f);
+        feh.AddQualifier("transcript_id", transcriptId);
+        feh.AddQualifier("orig_transcript_id", transcriptId);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xGenerateLocusIdsUseExisting()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_imp);
+
+    for (CFeat_CI it(mHandle, sel); it; ++it) {
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateLocusTags()
 //  ----------------------------------------------------------------------------
 {
@@ -294,12 +393,9 @@ void CFeatTableEdit::GenerateLocusTags()
     selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itGenes(mHandle, selGenes);
     for ( ; itGenes; ++itGenes) {
-		string locusTagVal = itGenes->GetNamedQual("locus_tag");
-		if (!locusTagVal.empty()) {
-			continue;
-		}
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (itGenes)->GetOriginalFeature()));
+        feh.RemoveQualifier("locus_tag");
 		feh.AddQualifier("locus_tag", xNextLocusTag());
 	}
 	SAnnotSelector selOther;
@@ -309,7 +405,7 @@ void CFeatTableEdit::GenerateLocusTags()
     // mss-315:
     //  only the genes get the locus_tags. they are inherited down
     //  to the features that live on them when we generate a flat file,
-    //  but we don't want them here in the asn.1
+    //  but we don't want them here in the ASN.1
 	for ( ; itOther; ++itOther) {
         const CSeq_feat& feat = itOther->GetOriginalFeature();		
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
@@ -354,15 +450,15 @@ string CFeatTableEdit::xNextLocusTag()
 
 //	----------------------------------------------------------------------------
 string CFeatTableEdit::xNextProteinId(
-	const CSeq_feat& cds)
+	const CSeq_feat& f)
 //	----------------------------------------------------------------------------
 {
 	// format: mLocusTagPrefix|<locus tag of gene>[_numeric disambiguation]
-	CConstRef<CSeq_feat> pGene = xGetGeneParent(cds);
+	CConstRef<CSeq_feat> pGene = xGetGeneParent(f);
     if (!pGene) {
 		return "";
 	}
-	string locusTag = pGene->GetNamedQual("locus_tag");
+    string locusTag = pGene->GetData().GetGene().GetLocus_tag();
 	string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it == mMapProtIdCounts.end()) {
@@ -376,7 +472,7 @@ string CFeatTableEdit::xNextProteinId(
 }
 
 //	----------------------------------------------------------------------------
-string CFeatTableEdit::xCurrentTranscriptId(
+string CFeatTableEdit::xNextTranscriptId(
 	const CSeq_feat& cds)
 //	----------------------------------------------------------------------------
 {
@@ -385,13 +481,26 @@ string CFeatTableEdit::xCurrentTranscriptId(
     if (!pGene) {
 		return "";
 	}
-	string locusTag = pGene->GetNamedQual("locus_tag");
-	string disAmbig = "";
+    string locusTag = pGene->GetData().GetGene().GetLocus_tag();
+    string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it != mMapProtIdCounts.end()  &&  mMapProtIdCounts[locusTag] != 0) {
 		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
 	}
 	return (mLocusTagPrefix + "|mrna." + locusTag + disAmbig);
+}
+
+//  ----------------------------------------------------------------------------
+string CFeatTableEdit::xCurrentTranscriptId(
+    const CSeq_feat& f)
+    //  ----------------------------------------------------------------------------
+{
+    CConstRef<CSeq_feat> pRna = xGetMrnaParent(f);
+    if (!pRna) {
+        return "";
+    }
+    string transcriptId = pRna->GetNamedQual("transcript_id");
+    return transcriptId;
 }
 
 //	----------------------------------------------------------------------------

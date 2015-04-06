@@ -61,6 +61,7 @@ public:
         fNormal =       0,
         fNewCode =      0x1000, // for now don't clobber CGFFReader flags
         fGenbankMode =  0x2000,
+        fRetainLocusIds = 0x4000,
     } TFlags;
 
     typedef map< string, CRef< CSeq_feat > > IdToFeatureMap;

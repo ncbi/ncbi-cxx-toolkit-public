@@ -62,14 +62,20 @@ public:
     void EliminateBadQualifiers();
     void GenerateProteinAndTranscriptIds();
     void GenerateOrigProteinAndOrigTranscriptIds();
+    void GenerateLocusIds();
 
 protected:
+    void xGenerateLocusIdsUseExisting();
+    void xGenerateLocusIdsRegenerate();
+
     string xNextFeatId();
 	string xNextLocusTag();
 	string xNextProteinId(
 		const CSeq_feat&);
-	string xCurrentTranscriptId(
+	string xNextTranscriptId(
 		const CSeq_feat&);
+    string xCurrentTranscriptId(
+        const CSeq_feat&);
 
 	CConstRef<CSeq_feat> xGetGeneParent(
 		const CSeq_feat&);
