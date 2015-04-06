@@ -1,3 +1,14 @@
+Release 4.21.1 cloned from 4.21.0 (2015-04-06)
+
+Improvements:
+    * NetSchedule: get rid of CAsyncDiagHandler (JIRA: CXX-5850)
+    * grid_cli sometimes can not parse RECO response from NS (JIRA: CXX-5847)
+    * NetSchedule: improper usage of the connection request context
+      (JIRA: CXX-5846)
+    * QINF2 does not return queue's linked_section (JIRA: CXX-5845)
+    * NetSchedule: max_connection parameter limits (JIRA: CXX-5816)
+
+
 Release 4.21.0 cloned from 4.20.3 (2015-03-23)
 
 Improvements:
