@@ -2839,17 +2839,19 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
                 ERR_POST(*k);
         }
 
-        string                  diff;
+        CJsonNode       diff = CJsonNode::NewObjectNode();
         m_Server->Configure(reg, diff);
 
         // Logging from the [server] section
         SNS_Parameters          params;
         params.Read(reg);
 
-        string      what_changed = m_Server->SetNSParameters(params, true);
-        string      services_changed = m_Server->ReadServicesConfig(reg);
+        CJsonNode   what_changed = m_Server->SetNSParameters(params, true);
+        CJsonNode   services_changed = m_Server->ReadServicesConfig(reg);
 
-        if (what_changed.empty() && diff.empty() && services_changed.empty()) {
+        if (what_changed.GetSize() == 0 &&
+            diff.GetSize() == 0 &&
+            services_changed.GetSize() == 0) {
             m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
             if (x_NeedCmdLogging())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
@@ -2860,23 +2862,18 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             return;
         }
 
-        string      total_changes = what_changed;
-        if (!diff.empty()) {
-            if (!total_changes.empty())
-                total_changes += ", ";
-            total_changes += diff;
-        }
-        if (!services_changed.empty()) {
-            if (!total_changes.empty())
-                total_changes += ", ";
-            total_changes += services_changed;
-        }
+        // Merge the changes
+        for (CJsonIterator k = what_changed.Iterate(); k; ++k)
+            diff.SetByKey(k.GetKey(), k.GetNode());
+        for (CJsonIterator k = services_changed.Iterate(); k; ++k)
+            diff.SetByKey(k.GetKey(), k.GetNode());
 
+        string      diff_as_string = diff.Repr();
         if (x_NeedCmdLogging())
-            GetDiagContext().Extra().Print("config_changes", total_changes);
+            GetDiagContext().Extra().Print("config_changes", diff_as_string);
 
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
-        x_WriteMessage("OK:" + total_changes);
+        x_WriteMessage("OK:" + diff_as_string);
     }
     else
         x_WriteMessage("OK:WARNING:eConfigFileNotChanged:Configuration "

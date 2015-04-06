@@ -405,173 +405,157 @@ void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
 
 
 // Returns descriptive diff
-// Empty string if there is no difference
-string
+// Empty dictionary if there is no difference
+CJsonNode
 SQueueParameters::Diff(const SQueueParameters &  other,
                        bool                      include_class_cmp,
                        bool                      include_description) const
 {
-    string      diff;
+    CJsonNode       diff = CJsonNode::NewObjectNode();
 
     // It does not make sense to compare the qclass field for a queue class
     if (include_class_cmp && qclass != other.qclass)
-        AddParameterToDiffString(diff, "class",
-                                 qclass,
-                                 other.qclass);
+        AddParameterToDiff(diff, "class",
+                           qclass, other.qclass);
 
     if (timeout.Sec() != other.timeout.Sec())
-        AddParameterToDiffString(diff, "timeout",
-                                 timeout.Sec(),
-                                 other.timeout.Sec());
+        AddParameterToDiff(diff, "timeout",
+                           timeout.Sec(), other.timeout.Sec());
 
     if (notif_hifreq_interval != other.notif_hifreq_interval)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "notif_hifreq_interval",
                 NS_FormatPreciseTimeAsSec(notif_hifreq_interval),
                 NS_FormatPreciseTimeAsSec(other.notif_hifreq_interval));
 
     if (notif_hifreq_period != other.notif_hifreq_period)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "notif_hifreq_period",
                 NS_FormatPreciseTimeAsSec(notif_hifreq_period),
                 NS_FormatPreciseTimeAsSec(other.notif_hifreq_period));
 
     if (notif_lofreq_mult != other.notif_lofreq_mult)
-        AddParameterToDiffString(diff, "notif_lofreq_mult",
-                                 notif_lofreq_mult,
-                                 other.notif_lofreq_mult);
+        AddParameterToDiff(diff, "notif_lofreq_mult",
+                           notif_lofreq_mult, other.notif_lofreq_mult);
 
     if (notif_handicap != other.notif_handicap)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "notif_handicap",
                 NS_FormatPreciseTimeAsSec(notif_handicap),
                 NS_FormatPreciseTimeAsSec(other.notif_handicap));
 
     if (dump_buffer_size != other.dump_buffer_size)
-        AddParameterToDiffString(diff, "dump_buffer_size",
-                                 dump_buffer_size,
-                                 other.dump_buffer_size);
+        AddParameterToDiff(diff, "dump_buffer_size",
+                           dump_buffer_size, other.dump_buffer_size);
 
     if (dump_client_buffer_size != other.dump_client_buffer_size)
-        AddParameterToDiffString(diff, "dump_client_buffer_size",
-                                 dump_client_buffer_size,
-                                 other.dump_client_buffer_size);
+        AddParameterToDiff(diff, "dump_client_buffer_size",
+                           dump_client_buffer_size,
+                           other.dump_client_buffer_size);
 
     if (dump_aff_buffer_size != other.dump_aff_buffer_size)
-        AddParameterToDiffString(diff, "dump_aff_buffer_size",
-                                 dump_aff_buffer_size,
-                                 other.dump_aff_buffer_size);
+        AddParameterToDiff(diff, "dump_aff_buffer_size",
+                           dump_aff_buffer_size, other.dump_aff_buffer_size);
 
     if (dump_group_buffer_size != other.dump_group_buffer_size)
-        AddParameterToDiffString(diff, "dump_group_buffer_size",
-                                 dump_group_buffer_size,
-                                 other.dump_group_buffer_size);
+        AddParameterToDiff(diff, "dump_group_buffer_size",
+                           dump_group_buffer_size,
+                           other.dump_group_buffer_size);
 
     if (run_timeout != other.run_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "run_timeout",
                 NS_FormatPreciseTimeAsSec(run_timeout),
                 NS_FormatPreciseTimeAsSec(other.run_timeout));
 
     if (read_timeout != other.read_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "read_timeout",
                 NS_FormatPreciseTimeAsSec(read_timeout),
                 NS_FormatPreciseTimeAsSec(other.read_timeout));
 
     if (program_name != other.program_name)
-        AddParameterToDiffString(diff, "program",
-                                 program_name,
-                                 other.program_name);
+        AddParameterToDiff(diff, "program",
+                           program_name, other.program_name);
 
     if (failed_retries != other.failed_retries)
-        AddParameterToDiffString(diff, "failed_retries",
-                                 failed_retries,
-                                 other.failed_retries);
+        AddParameterToDiff(diff, "failed_retries",
+                           failed_retries, other.failed_retries);
 
     if (read_failed_retries != other.read_failed_retries)
-        AddParameterToDiffString(diff, "read_failed_retries",
-                                 read_failed_retries,
-                                 other.read_failed_retries);
+        AddParameterToDiff(diff, "read_failed_retries",
+                           read_failed_retries, other.read_failed_retries);
 
     if (blacklist_time != other.blacklist_time)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "blacklist_time",
                 NS_FormatPreciseTimeAsSec(blacklist_time),
                 NS_FormatPreciseTimeAsSec(other.blacklist_time));
 
     if (read_blacklist_time != other.read_blacklist_time)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "read_blacklist_time",
                 NS_FormatPreciseTimeAsSec(read_blacklist_time),
                 NS_FormatPreciseTimeAsSec(other.read_blacklist_time));
 
     if (max_input_size != other.max_input_size)
-        AddParameterToDiffString(diff, "max_input_size",
-                                 max_input_size,
-                                 other.max_input_size);
+        AddParameterToDiff(diff, "max_input_size",
+                           max_input_size, other.max_input_size);
 
     if (max_output_size != other.max_output_size)
-        AddParameterToDiffString(diff, "max_output_size",
-                                 max_output_size,
-                                 other.max_output_size);
+        AddParameterToDiff(diff, "max_output_size",
+                           max_output_size, other.max_output_size);
 
     if (subm_hosts != other.subm_hosts)
-        AddParameterToDiffString(diff, "subm_host",
-                                 subm_hosts,
-                                 other.subm_hosts);
+        AddParameterToDiff(diff, "subm_host",
+                           subm_hosts, other.subm_hosts);
 
     if (wnode_hosts != other.wnode_hosts)
-        AddParameterToDiffString(diff, "wnode_host",
-                                 wnode_hosts,
-                                 other.wnode_hosts);
+        AddParameterToDiff(diff, "wnode_host",
+                           wnode_hosts, other.wnode_hosts);
 
     if (reader_hosts != other.reader_hosts)
-        AddParameterToDiffString(diff, "reader_host",
-                                 reader_hosts,
-                                 other.reader_hosts);
+        AddParameterToDiff(diff, "reader_host",
+                           reader_hosts, other.reader_hosts);
 
     if (wnode_timeout != other.wnode_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "wnode_timeout",
                 NS_FormatPreciseTimeAsSec(wnode_timeout),
                 NS_FormatPreciseTimeAsSec(other.wnode_timeout));
 
     if (reader_timeout != other.reader_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "reader_timeout",
                 NS_FormatPreciseTimeAsSec(reader_timeout),
                 NS_FormatPreciseTimeAsSec(other.reader_timeout));
 
     if (pending_timeout != other.pending_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "pending_timeout",
                 NS_FormatPreciseTimeAsSec(pending_timeout),
                 NS_FormatPreciseTimeAsSec(other.pending_timeout));
 
     if (max_pending_wait_timeout != other.max_pending_wait_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "max_pending_wait_timeout",
                 NS_FormatPreciseTimeAsSec(max_pending_wait_timeout),
                 NS_FormatPreciseTimeAsSec(other.max_pending_wait_timeout));
 
     if (max_pending_read_wait_timeout != other.max_pending_read_wait_timeout)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "max_pending_read_wait_timeout",
                 NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout),
                 NS_FormatPreciseTimeAsSec(other.max_pending_read_wait_timeout));
 
     if (scramble_job_keys != other.scramble_job_keys)
-        AddParameterToDiffString(
-                diff, "scramble_job_keys",
-                scramble_job_keys,
-                other.scramble_job_keys);
+        AddParameterToDiff(diff, "scramble_job_keys",
+                           scramble_job_keys, other.scramble_job_keys);
 
 
     if (client_registry_timeout_worker_node !=
                                     other.client_registry_timeout_worker_node)
-        AddParameterToDiffString(
-                diff, "client_registry_timeout_worker_node",
+        AddParameterToDiff(diff, "client_registry_timeout_worker_node",
                 NS_FormatPreciseTimeAsSec(
                                 client_registry_timeout_worker_node),
                 NS_FormatPreciseTimeAsSec(
@@ -579,14 +563,13 @@ SQueueParameters::Diff(const SQueueParameters &  other,
 
     if (client_registry_min_worker_nodes !=
                                     other.client_registry_min_worker_nodes)
-        AddParameterToDiffString(diff, "client_registry_min_worker_nodes",
-                                 client_registry_min_worker_nodes,
-                                 other.client_registry_min_worker_nodes);
+        AddParameterToDiff(diff, "client_registry_min_worker_nodes",
+                           client_registry_min_worker_nodes,
+                           other.client_registry_min_worker_nodes);
 
     if (client_registry_timeout_admin !=
                                     other.client_registry_timeout_admin)
-        AddParameterToDiffString(
-                diff, "client_registry_timeout_admin",
+        AddParameterToDiff(diff, "client_registry_timeout_admin",
                 NS_FormatPreciseTimeAsSec(
                                 client_registry_timeout_admin),
                 NS_FormatPreciseTimeAsSec(
@@ -594,13 +577,13 @@ SQueueParameters::Diff(const SQueueParameters &  other,
 
     if (client_registry_min_admins !=
                                     other.client_registry_min_admins)
-        AddParameterToDiffString(diff, "client_registry_min_admins",
-                                 client_registry_min_admins,
-                                 other.client_registry_min_admins);
+        AddParameterToDiff(diff, "client_registry_min_admins",
+                           client_registry_min_admins,
+                           other.client_registry_min_admins);
 
     if (client_registry_timeout_submitter !=
                                     other.client_registry_timeout_submitter)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "client_registry_timeout_submitter",
                 NS_FormatPreciseTimeAsSec(
                                 client_registry_timeout_submitter),
@@ -609,13 +592,13 @@ SQueueParameters::Diff(const SQueueParameters &  other,
 
     if (client_registry_min_submitters !=
                                     other.client_registry_min_submitters)
-        AddParameterToDiffString(diff, "client_registry_min_submitters",
-                                 client_registry_min_submitters,
-                                 other.client_registry_min_submitters);
+        AddParameterToDiff(diff, "client_registry_min_submitters",
+                           client_registry_min_submitters,
+                           other.client_registry_min_submitters);
 
     if (client_registry_timeout_reader !=
                                     other.client_registry_timeout_reader)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "client_registry_timeout_reader",
                 NS_FormatPreciseTimeAsSec(
                                 client_registry_timeout_reader),
@@ -624,13 +607,13 @@ SQueueParameters::Diff(const SQueueParameters &  other,
 
     if (client_registry_min_readers !=
                                     other.client_registry_min_readers)
-        AddParameterToDiffString(diff, "client_registry_min_readers",
-                                 client_registry_min_readers,
-                                 other.client_registry_min_readers);
+        AddParameterToDiff(diff, "client_registry_min_readers",
+                           client_registry_min_readers,
+                           other.client_registry_min_readers);
 
     if (client_registry_timeout_unknown !=
                                     other.client_registry_timeout_unknown)
-        AddParameterToDiffString(
+        AddParameterToDiff(
                 diff, "client_registry_timeout_unknown",
                 NS_FormatPreciseTimeAsSec(
                                 client_registry_timeout_unknown),
@@ -639,14 +622,13 @@ SQueueParameters::Diff(const SQueueParameters &  other,
 
     if (client_registry_min_unknowns !=
                                     other.client_registry_min_unknowns)
-        AddParameterToDiffString(diff, "client_registry_min_unknowns",
-                                 client_registry_min_unknowns,
-                                 other.client_registry_min_unknowns);
+        AddParameterToDiff(diff, "client_registry_min_unknowns",
+                           client_registry_min_unknowns,
+                           other.client_registry_min_unknowns);
 
     if (include_description && description != other.description)
-        AddParameterToDiffString(diff, "description",
-                                 description,
-                                 other.description);
+        AddParameterToDiff(diff, "description",
+                           description, other.description);
 
     if (linked_sections != other.linked_sections) {
         list<string>    added;
@@ -675,53 +657,44 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         }
 
         if (!added.empty()) {
-            if (!diff.empty())
-                diff += ", ";
-            diff += "linked_section_added [";
+            CJsonNode       added_sections = CJsonNode::NewArrayNode();
             for (list<string>::const_iterator k = added.begin();
-                 k != added.end(); ++k) {
-                if (k != added.begin())
-                    diff += ", ";
-                diff += "\"" + NStr::PrintableString(*k) + "\"";
-            }
-            diff += "]";
+                    k != added.end(); ++k)
+                added_sections.AppendString(NStr::PrintableString(*k));
+            diff.SetByKey("linked_section_added", added_sections);
         }
 
         if (!deleted.empty()) {
-            if (!diff.empty())
-                diff += ", ";
-            diff += "linked_section_deleted [";
+            CJsonNode       deleted_sections = CJsonNode::NewArrayNode();
             for (list<string>::const_iterator k = deleted.begin();
-                 k != deleted.end(); ++k) {
-                if (k != deleted.begin())
-                    diff += ", ";
-                diff += "\"" + NStr::PrintableString(*k) + "\"";
-            }
-            diff += "]";
+                    k != deleted.end(); ++k)
+                deleted_sections.AppendString(NStr::PrintableString(*k));
+            diff.SetByKey("linked_section_deleted", deleted_sections);
         }
 
         if (!changed.empty()) {
-            if (!diff.empty())
-                diff += ", ";
-            diff += "linked_section_changed [";
+            CJsonNode       changed_sections = CJsonNode::NewArrayNode();
             for (list<string>::const_iterator k = changed.begin();
-                 k != changed.end(); ++k) {
-                if (k != changed.end())
-                    diff += ", ";
-                map<string, string>::const_iterator     val_iter;
-                string                                  changed_section_name = *k;
+                    k != changed.end(); ++k) {
+                CJsonNode       section_changes = CJsonNode::NewObjectNode();
+                CJsonNode       values = CJsonNode::NewArrayNode();
+
+                map<string,
+                    string>::const_iterator     val_iter;
+                string                          changed_section_name = *k;
 
                 val_iter = linked_sections.find(changed_section_name);
                 string      old_value = val_iter->second;
                 val_iter = other.linked_sections.find(changed_section_name);
                 string      new_value = val_iter->second;
 
-                diff += "\"" + NStr::PrintableString(changed_section_name) + "\" ["
-                        "\"" + NStr::PrintableString(old_value) +
-                        "\", \"" + NStr::PrintableString(new_value) +
-                        "\"]";
+                values.AppendString(old_value);
+                values.AppendString(new_value);
+                section_changes.SetByKey(changed_section_name, values);
+                changed_sections.Append(section_changes);
             }
-            diff += "]";
+
+            diff.SetByKey("linked_section_changed", changed_sections);
         }
     }
 

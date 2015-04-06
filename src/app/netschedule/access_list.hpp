@@ -33,22 +33,21 @@
  *
  */
 
-/// @file access_list.hpp
-/// NetSchedule access lists, configures server-client access rights
-///
-/// @internal
+// NetSchedule access lists, configures server-client access rights
+
+
+#include <vector>
 
 #include <corelib/ncbidbg.hpp>
 #include "ns_types.hpp"
 #include <corelib/ncbimtx.hpp>
+#include <connect/services/json_over_uttp.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-/// List of hosts allowed
-///
-/// @internal
+// List of hosts allowed
 class CNetScheduleAccessList
 {
 public:
@@ -59,7 +58,7 @@ public:
     bool IsAllowed(unsigned int  ha) const;
 
     // Delimited lists of hosts allowed into the system
-    string SetHosts(const string &  host_names);
+    CJsonNode SetHosts(const string &  host_names);
 
     string Print(const string &  prefix,
                  const string &  separator) const;
@@ -69,7 +68,7 @@ public:
 private:
     mutable CRWLock             m_Lock;
     TNSBitVector                m_Hosts;
-    string                      m_AsFromConfig;
+    vector<string>              m_AsFromConfig;
 };
 
 

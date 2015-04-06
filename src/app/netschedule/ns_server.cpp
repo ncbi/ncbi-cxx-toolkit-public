@@ -92,107 +92,93 @@ void CNetScheduleServer::AddDefaultListener(IServer_ConnectionFactory* factory)
 }
 
 
-static void s_AddSeparator(string &  what)
+// Returns what was changed
+CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
+                                              bool                    limited)
 {
-    if (what.empty())
-        what += "\"server_changes\" {";
-    else
-        what += ", ";
-}
-
-// Returs a string which describes what was changed
-string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
-                                           bool                    limited)
-{
-    string      what_changed = "";
+    CJsonNode   what_changed = CJsonNode::NewObjectNode();
+    CJsonNode   changes = CJsonNode::NewObjectNode();
     bool        new_val;
 
     if (m_LogFlag != params.is_log) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"log\" [" + NStr::BoolToString(m_LogFlag) +
-                        ", " + NStr::BoolToString(params.is_log) + "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendBoolean(m_LogFlag);
+        values.AppendBoolean(params.is_log);
+        changes.SetByKey("log", values);
     }
     m_LogFlag = params.is_log;
 
     new_val = (params.log_batch_each_job && m_LogFlag);
     if (m_LogBatchEachJobFlag != new_val) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"log_batch_each_job\" [" +
-                        NStr::BoolToString(m_LogBatchEachJobFlag) +
-                        ", " + NStr::BoolToString(new_val) + "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendBoolean(m_LogBatchEachJobFlag);
+        values.AppendBoolean(new_val);
+        changes.SetByKey("log_batch_each_job", values);
     }
     m_LogBatchEachJobFlag = new_val;
 
     new_val = (params.log_notification_thread && m_LogFlag);
     if (m_LogNotificationThreadFlag != new_val) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"log_notification_thread\" [" +
-                        NStr::BoolToString(m_LogNotificationThreadFlag) +
-                        ", " + NStr::BoolToString(new_val) + "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendBoolean(m_LogNotificationThreadFlag);
+        values.AppendBoolean(new_val);
+        changes.SetByKey("log_notification_thread", values);
     }
     m_LogNotificationThreadFlag = new_val;
 
     new_val = (params.log_cleaning_thread && m_LogFlag);
     if (m_LogCleaningThreadFlag != new_val) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"log_cleaning_thread\" [" +
-                        NStr::BoolToString(m_LogCleaningThreadFlag) +
-                        ", " + NStr::BoolToString(new_val) + "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendBoolean(m_LogCleaningThreadFlag);
+        values.AppendBoolean(new_val);
+        changes.SetByKey("log_cleaning_thread", values);
     }
     m_LogCleaningThreadFlag = new_val;
 
     new_val = (params.log_execution_watcher_thread&& m_LogFlag);
     if (m_LogExecutionWatcherThreadFlag != new_val) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"log_execution_watcher_thread\" [" +
-                        NStr::BoolToString(m_LogExecutionWatcherThreadFlag) +
-                        ", " + NStr::BoolToString(new_val) + "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendBoolean(m_LogExecutionWatcherThreadFlag);
+        values.AppendBoolean(new_val);
+        changes.SetByKey("log_execution_watcher_thread", values);
     }
     m_LogExecutionWatcherThreadFlag = new_val;
 
     new_val = (params.log_statistics_thread && m_LogFlag);
     if (m_LogStatisticsThreadFlag != new_val) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"log_statistics_thread\" [" +
-                        NStr::BoolToString(m_LogStatisticsThreadFlag) +
-                        ", " + NStr::BoolToString(new_val) + "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendBoolean(m_LogStatisticsThreadFlag);
+        values.AppendBoolean(new_val);
+        changes.SetByKey("log_statistics_thread", values);
     }
     m_LogStatisticsThreadFlag = new_val;
 
     if (m_StatInterval != params.stat_interval) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"stat_interval\" [" +
-                        NStr::NumericToString(m_StatInterval) +
-                        ", " + NStr::NumericToString(params.stat_interval) +
-                        "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendInteger(m_StatInterval);
+        values.AppendInteger(params.stat_interval);
+        changes.SetByKey("stat_interval", values);
     }
     m_StatInterval = params.stat_interval;
 
     if (m_MaxClientData != params.max_client_data) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"max_client_data\" [" +
-                        NStr::NumericToString(m_MaxClientData) +
-                        ", " + NStr::NumericToString(params.max_client_data) +
-                        "]";
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendInteger(m_MaxClientData);
+        values.AppendInteger(params.max_client_data);
+        changes.SetByKey("max_client_data", values);
     }
     m_MaxClientData = params.max_client_data;
 
-    string  accepted_hosts = m_AdminHosts.SetHosts(params.admin_hosts);
-    if (!accepted_hosts.empty()) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"admin_host\" [" +
-                        accepted_hosts + "]";
-    }
+    CJsonNode   accepted_hosts = m_AdminHosts.SetHosts(params.admin_hosts);
+    if (accepted_hosts.GetSize() > 0)
+        changes.SetByKey("admin_host", accepted_hosts);
 
-    string  accepted_admins = x_SetAdminClientNames(params.admin_client_names);
-    if (!accepted_admins.empty()) {
-        s_AddSeparator(what_changed);
-        what_changed += "\"admin_client_name\" [" +
-                        accepted_admins + "]";
-    }
+    CJsonNode   admin_diff = x_SetAdminClientNames(params.admin_client_names);
+    if (admin_diff.GetSize() > 0)
+        changes.SetByKey("admin_client_name", admin_diff);
 
-    if (!what_changed.empty())
-        what_changed += "}";
+    if (changes.GetSize() > 0)
+        what_changed.SetByKey("server_changes", changes);
 
     #if defined(_DEBUG) && !defined(NDEBUG)
     debug_fd_count = params.debug_fd_count;
@@ -231,16 +217,20 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     m_AffinityHighRemoval = params.affinity_high_removal;
     m_AffinityLowRemoval = params.affinity_low_removal;
     m_AffinityDirtPercentage = params.affinity_dirt_percentage;
-    return "";
+
+    // The difference is required only at the stage of RECO.
+    // RECO always calls the function with the limited flag so there is no need
+    // to provide the difference here
+    return CJsonNode::NewObjectNode();
 }
 
 
 // Return: difference
 // Note: it is always called after the configuration is validated so
 //       no messages should be logged
-string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
+CJsonNode CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
 {
-    string                  diff;
+    CJsonNode               diff = CJsonNode::NewObjectNode();
     const string            section = "service_to_queue";
     map< string, string >   new_services;
 
@@ -265,9 +255,9 @@ string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
     }
 
     // Compare with the old list -- combine report string
-    string      new_items;
-    string      deleted_items;
-    string      changed_items;
+    CJsonNode   new_items = CJsonNode::NewArrayNode();
+    CJsonNode   deleted_items = CJsonNode::NewArrayNode();
+    CJsonNode   changed_items = CJsonNode::NewObjectNode();
 
     for (map< string, string>::const_iterator  k = new_services.begin();
          k != new_services.end(); ++k) {
@@ -277,16 +267,14 @@ string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
                 break;
 
         if (found == m_Services.end()) {
-            if (!new_items.empty())
-                new_items += ", ";
-            new_items += "\"" + k->first + "\"";
+            new_items.AppendString(k->first);
             continue;
         }
         if (found->second != k->second) {
-            if (!changed_items.empty())
-                changed_items += ", ";
-            changed_items += "\"" + k->first + "\" [\"" +
-                             found->second + "\", \"" + k->second + "\"]";
+            CJsonNode       vals = CJsonNode::NewArrayNode();
+            vals.AppendString(found->second);
+            vals.AppendString(k->second);
+            changed_items.SetByKey(k->first, vals);
         }
     }
 
@@ -297,28 +285,19 @@ string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
             if (NStr::CompareNocase(found->first, k->first) == 0)
                 break;
 
-        if (found == new_services.end()) {
-            if (!deleted_items.empty())
-                deleted_items += ", ";
-            deleted_items += "\"" + k->first + "\"";
-        }
+        if (found == new_services.end())
+            deleted_items.AppendString(k->first);
     }
 
 
-    if (!new_items.empty())
-        diff = "\"services_added\" [" + new_items + "]";
+    if (new_items.GetSize() > 0)
+        diff.SetByKey("services_added", new_items);
 
-    if (!deleted_items.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"services_deleted\" [" + deleted_items + "]";
-    }
+    if (deleted_items.GetSize() > 0)
+        diff.SetByKey("services_deleted", deleted_items);
 
-    if (!changed_items.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"services_changed\" {" + changed_items + "}";
-    }
+    if (changed_items.GetSize() > 0)
+        diff.SetByKey("services_changed", changed_items);
 
     // Set the current as the new one
     CFastMutexGuard     guard(m_ServicesLock);
@@ -352,7 +331,7 @@ void CNetScheduleServer::SetShutdownFlag(int  signum, bool  db_was_drained)
 
 // Queue handling
 unsigned int  CNetScheduleServer::Configure(const IRegistry &  reg,
-                                            string &           diff)
+                                            CJsonNode &        diff)
 {
     return m_QueueDB->Configure(reg, diff);
 }
@@ -622,8 +601,10 @@ string  CNetScheduleServer::x_GenerateGUID(void) const
 }
 
 
-string CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
+CJsonNode
+CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
 {
+    CJsonNode           diff = CJsonNode::NewArrayNode();
     CWriteLockGuard     guard(m_AdminClientsLock);
     vector<string>      old_admins = m_AdminClientNames;
 
@@ -633,20 +614,20 @@ string CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
     sort(m_AdminClientNames.begin(), m_AdminClientNames.end());
 
     if (old_admins != m_AdminClientNames) {
-        string      accepted_names;
+        CJsonNode       old_vals = CJsonNode::NewArrayNode();
+        CJsonNode       new_vals = CJsonNode::NewArrayNode();
+
+        for (vector<string>::const_iterator  k = old_admins.begin();
+                k != old_admins.end(); ++k)
+            old_vals.AppendString(*k);
         for (vector<string>::const_iterator  k = m_AdminClientNames.begin();
-             k != m_AdminClientNames.end(); ++k) {
-            if (!accepted_names.empty())
-                accepted_names += ", ";
-            accepted_names += *k;
-        }
+                k != m_AdminClientNames.end(); ++k)
+            new_vals.AppendString(*k);
 
-        if (accepted_names.empty())
-            accepted_names = "none";
-        return accepted_names;
+        diff.Append(old_vals);
+        diff.Append(new_vals);
     }
-
-    return "";
+    return diff;
 }
 
 

@@ -33,6 +33,7 @@
  */
 
 #include <string>
+#include <connect/services/json_over_uttp.hpp>
 
 #include "ns_precise_time.hpp"
 
@@ -134,9 +135,9 @@ struct SQueueParameters
     size_t          notif_count;
 
   public:
-    string Diff(const SQueueParameters &  other,
-                bool                      include_class_cmp,
-                bool                      include_description) const;
+    CJsonNode Diff(const SQueueParameters &  other,
+                   bool                      include_class_cmp,
+                   bool                      include_description) const;
     string GetPrintableParameters(bool  include_class,
                                   bool  url_encoded) const;
     string ConfigSection(bool is_class) const;
@@ -243,43 +244,65 @@ struct SQueueParameters
 
 
 template<typename TValueType>
-void  AddParameterToDiffString(string &            output,
-                               const string &      param_name,
-                               const TValueType &  value_from,
-                               const TValueType &  value_to)
+void  AddParameterToDiff(CJsonNode &         output,
+                         const string &      param_name,
+                         const TValueType &  value_from,
+                         const TValueType &  value_to)
 {
-    if (!output.empty())
-        output += ", ";
-    output += "\"" + param_name + "\" [" + NStr::NumericToString(value_from) +
-              ", " + NStr::NumericToString(value_to) + "]";
-    return;
+    CJsonNode       values = CJsonNode::NewArrayNode();
+    values.AppendString(NStr::NumericToString(value_from));
+    values.AppendString(NStr::NumericToString(value_to));
+    output.SetByKey(param_name, values);
 }
 
 template<> inline
-void AddParameterToDiffString(string &            output,
-                              const string &      param_name,
-                              const string &      value_from,
-                              const string &      value_to)
+void AddParameterToDiff(CJsonNode &         output,
+                        const string &      param_name,
+                        const string &      value_from,
+                        const string &      value_to)
 {
-    if (!output.empty())
-        output += ", ";
-    output += "\"" + param_name + "\" [\"" + NStr::PrintableString(value_from) +
-              "\", \"" + NStr::PrintableString(value_to) + "\"]";
-    return;
+    CJsonNode       values = CJsonNode::NewArrayNode();
+    values.AppendString(NStr::PrintableString(value_from));
+    values.AppendString(NStr::PrintableString(value_to));
+    output.SetByKey(param_name, values);
 }
 
 template<> inline
-void AddParameterToDiffString(string &          output,
-                              const string &    param_name,
-                              const bool &      value_from,
-                              const bool &      value_to)
+void AddParameterToDiff(CJsonNode &       output,
+                        const string &    param_name,
+                        const bool &      value_from,
+                        const bool &      value_to)
 {
-    if (!output.empty())
-        output += ", ";
-    output += "\"" + param_name + "\" [" + NStr::BoolToString(value_from) +
-              ", " + NStr::BoolToString(value_to) + "]";
-    return;
+    CJsonNode       values = CJsonNode::NewArrayNode();
+    values.AppendBoolean(value_from);
+    values.AppendBoolean(value_to);
+    output.SetByKey(param_name, values);
 }
+
+template<> inline
+void AddParameterToDiff(CJsonNode &       output,
+                        const string &    param_name,
+                        const double &    value_from,
+                        const double &    value_to)
+{
+    CJsonNode       values = CJsonNode::NewArrayNode();
+    values.AppendDouble(value_from);
+    values.AppendDouble(value_to);
+    output.SetByKey(param_name, values);
+}
+
+template<> inline
+void AddParameterToDiff(CJsonNode &       output,
+                        const string &    param_name,
+                        const long &      value_from,
+                        const long &      value_to)
+{
+    CJsonNode       values = CJsonNode::NewArrayNode();
+    values.AppendInteger(value_from);
+    values.AppendInteger(value_to);
+    output.SetByKey(param_name, values);
+}
+
 
 
 END_NCBI_SCOPE

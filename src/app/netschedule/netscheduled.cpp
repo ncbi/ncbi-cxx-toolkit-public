@@ -229,7 +229,7 @@ int CNetScheduleDApp::Run(void)
 
     // [queue_*], [qclass_*] and [queues] sections
     // Scan and mount queues
-    string          unused_diff;
+    CJsonNode       unused_diff = CJsonNode::NewObjectNode();
     CNSPreciseTime  min_run_timeout = qdb->Configure(reg, unused_diff);
 
     if (min_run_timeout < CNSPreciseTime(0.2))

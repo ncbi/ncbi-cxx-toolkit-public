@@ -47,6 +47,7 @@
 #include <utility>
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/json_over_uttp.hpp>
 #include "ns_util.hpp"
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
@@ -111,7 +112,7 @@ public:
     // accordingly.
     // returns minimum run timeout, necessary for watcher thread
     time_t  Configure(const IRegistry &  reg,
-                      string &           diff);
+                      CJsonNode &        diff);
 
     // Count Pending and Running jobs in all queues
     unsigned int  CountActiveJobs(void) const;
@@ -282,9 +283,9 @@ private:
     void  x_RemoveNeedReinitFile(void);
 
     bool  x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
-                                  string &              diff);
+                                  CJsonNode &           diff);
     bool  x_ConfigureQueues(const TQueueParams &  queues_from_ini,
-                            string &              diff);
+                            CJsonNode &           diff);
 
     // Used to read/write both queues and queue classes
     TQueueParams  x_ReadDBQueueDescriptions(const string &  expected_prefix);
@@ -297,8 +298,8 @@ private:
     TQueueParams  x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
                                                  const TQueueParams &  classes);
     void  x_ReadLinkedSections(const IRegistry &  reg,
-                               string &           diff);
-    string  x_DetectChangesInLinkedSection(
+                               CJsonNode &        diff);
+    CJsonNode  x_DetectChangesInLinkedSection(
                                 const map<string, string> &  old_values,
                                 const map<string, string> &  new_values);
 

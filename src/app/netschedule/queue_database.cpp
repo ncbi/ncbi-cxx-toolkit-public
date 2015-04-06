@@ -728,7 +728,7 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
 
 
 void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
-                                           string &           diff)
+                                           CJsonNode &        diff)
 {
     // Read the new content
     typedef map< string, map< string, string > >    section_container;
@@ -794,16 +794,11 @@ void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
             deleted.push_back(k->first);
 
     if (!deleted.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"linked_section_deleted\" [";
+        CJsonNode   deletedSections = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k(deleted.begin());
-             k != deleted.end(); ++k) {
-            if (k != deleted.begin())
-                diff += ", ";
-            diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != deleted.end(); ++k)
+            deletedSections.AppendString( *k );
+        diff.SetByKey( "linked_section_deleted", deletedSections );
     }
 
     // Identify those sections which were added
@@ -814,16 +809,11 @@ void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
             added.push_back(k->first);
 
     if (!added.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"linked_section_added\" [";
+        CJsonNode   addedSections = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k(added.begin());
-            k != added.end(); ++k) {
-            if (k != added.begin())
-                diff += ", ";
-            diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != added.end(); ++k)
+            addedSections.AppendString( *k );
+        diff.SetByKey( "linked_section_added", addedSections );
     }
 
     // Deal with changed sections: what was added/deleted/modified
@@ -838,19 +828,13 @@ void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
     }
 
     if (!changed.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-
-        diff += "\"linked_section_changed\" [";
+        CJsonNode       changedSections = CJsonNode::NewObjectNode();
         for (vector<string>::const_iterator  k(changed.begin());
-             k != changed.end(); ++k) {
-            if (k != changed.begin())
-                diff += ", ";
-            diff += "\"" + *k + "\" {" + x_DetectChangesInLinkedSection(
-                                            m_LinkedSections[*k],
-                                            new_values[*k]) + "}";
-        }
-        diff += "]";
+                k != changed.end(); ++k)
+            changedSections.SetByKey( *k,
+                        x_DetectChangesInLinkedSection( m_LinkedSections[*k],
+                                                        new_values[*k]) );
+        diff.SetByKey( "linked_section_changed", changedSections );
     }
 
     // Finally, save the new configuration
@@ -858,12 +842,12 @@ void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
 }
 
 
-string
+CJsonNode
 CQueueDataBase::x_DetectChangesInLinkedSection(
                         const map<string, string> &  old_values,
                         const map<string, string> &  new_values)
 {
-    string      diff;
+    CJsonNode       diff = CJsonNode::NewObjectNode();
 
     // Deal with deleted items
     vector<string>  deleted;
@@ -872,14 +856,11 @@ CQueueDataBase::x_DetectChangesInLinkedSection(
         if (new_values.find(k->first) == new_values.end())
             deleted.push_back(k->first);
     if (!deleted.empty()) {
-        diff += "\"deleted\" [";
+        CJsonNode   deletedValues = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k(deleted.begin());
-             k != deleted.end(); ++k) {
-            if (k != deleted.begin())
-                diff += ", ";
-            diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != deleted.end(); ++k)
+            deletedValues.AppendString( *k );
+        diff.SetByKey( "deleted", deletedValues );
     }
 
     // Deal with added items
@@ -889,16 +870,11 @@ CQueueDataBase::x_DetectChangesInLinkedSection(
         if (old_values.find(k->first) == old_values.end())
             added.push_back(k->first);
     if (!added.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"added\" [";
+        CJsonNode   addedValues = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k(added.begin());
-             k != added.end(); ++k) {
-            if (k != added.begin())
-                diff += ", ";
-            diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != added.end(); ++k)
+            addedValues.AppendString( *k );
+        diff.SetByKey( "added", addedValues );
     }
 
     // Deal with changed values
@@ -913,17 +889,15 @@ CQueueDataBase::x_DetectChangesInLinkedSection(
         changed.push_back(k->first);
     }
     if (!changed.empty()) {
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"changed\" {";
+        CJsonNode   changedValues = CJsonNode::NewObjectNode();
         for (vector<string>::const_iterator  k(changed.begin());
-             k != changed.end(); ++k) {
-            if (k != changed.begin())
-                diff += ", ";
-            diff += "\"" + *k + "\" [\"" + old_values.find(*k)->second +
-                    "\", \"" + new_values.find(*k)->second + "\"]";
+                k != changed.end(); ++k) {
+            CJsonNode       values = CJsonNode::NewArrayNode();
+            values.AppendString( old_values.find(*k)->second );
+            values.AppendString( new_values.find(*k)->second );
+            changedValues.SetByKey( *k, values );
         }
-        diff += "}";
+        diff.SetByKey( "changed", changedValues );
     }
 
     return diff;
@@ -974,7 +948,7 @@ CQueueDataBase::x_CountQueuesToAdd(const TQueueParams &  queues_from_ini) const
 // Forms the diff string. Tells if there were changes.
 bool
 CQueueDataBase::x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
-                                        string &              diff)
+                                        CJsonNode &           diff)
 {
     bool            has_changes = false;
     vector<string>  classes;    // Used to store added and deleted classes
@@ -1002,23 +976,18 @@ CQueueDataBase::x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
 
     if (!classes.empty()) {
         has_changes = true;
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"deleted_queue_classes\" [";
+        CJsonNode       deleted_classes = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k = classes.begin();
-             k != classes.end(); ++k) {
-                if (k != classes.begin())
-                    diff += ", ";
-                diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != classes.end(); ++k)
+            deleted_classes.AppendString( *k );
+        diff.SetByKey( "deleted_queue_classes", deleted_classes );
     }
 
 
     // Check the updates in the classes
     classes.clear();
 
-    bool        section_started = false;
+    CJsonNode           class_changes = CJsonNode::NewObjectNode();
     for (TQueueParams::iterator    k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k) {
 
@@ -1041,29 +1010,19 @@ CQueueDataBase::x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
         // That's the same class which possibly was updated
         // Do not compare class name here, this is a class itself
         // Description should be compared
-        string      class_diff = k->second.Diff(new_class->second,
+        CJsonNode   class_diff = k->second.Diff(new_class->second,
                                                 false, true);
 
-        if (!class_diff.empty()) {
+        if (class_diff.GetSize() > 0) {
             // There is a difference, update the class info
             k->second = new_class->second;
 
-            if (section_started == false) {
-                section_started = true;
-                if (!diff.empty())
-                    diff += ", ";
-                diff += "\"queue_class_changes\" {";
-            } else {
-                diff += ", ";
-            }
-
-            diff += "\"" + queue_class + "\" {" + class_diff + "}";
+            class_changes.SetByKey(queue_class, class_diff);
             has_changes = true;
         }
     }
-
-    if (section_started)
-        diff += "}";
+    if (class_changes.GetSize() > 0)
+        diff.SetByKey("queue_class_changes", class_changes);
 
     // Check what was added
     for (TQueueParams::const_iterator  k = classes_from_ini.begin();
@@ -1078,16 +1037,11 @@ CQueueDataBase::x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
 
     if (!classes.empty()) {
         has_changes = true;
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"added_queue_classes\" [";
+        CJsonNode       added_classes = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k = classes.begin();
-             k != classes.end(); ++k) {
-                if (k != classes.begin())
-                    diff += ", ";
-                diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != classes.end(); ++k)
+            added_classes.AppendString(*k);
+        diff.SetByKey("added_queue_classes", added_classes);
     }
 
     return has_changes;
@@ -1098,7 +1052,7 @@ CQueueDataBase::x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
 // queues if necessary.
 bool
 CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
-                                  string &              diff)
+                                  CJsonNode &           diff)
 {
     bool            has_changes = false;
     vector<string>  deleted_queues;
@@ -1131,21 +1085,18 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
 
     if (!deleted_queues.empty()) {
         has_changes = true;
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"deleted_queues\" [";
+        CJsonNode       deleted = CJsonNode::NewArrayNode();
         for (vector<string>::const_iterator  k = deleted_queues.begin();
-             k != deleted_queues.end(); ++k) {
-                if (k != deleted_queues.begin())
-                    diff += ", ";
-                diff += "\"" + *k + "\"";
-        }
-        diff += "]";
+                k != deleted_queues.end(); ++k)
+            deleted.AppendString(*k);
+        diff.SetByKey("deleted_queues", deleted);
     }
 
+
     // Check the updates in the queue parameters
-    vector< pair<string, string> >      added_queues;
-    bool                                section_started = false;
+    vector< pair<string,
+                 string> >  added_queues;
+    CJsonNode               section_changes = CJsonNode::NewObjectNode();
 
     for (TQueueInfo::iterator    k = m_Queues.begin();
          k != m_Queues.end(); ++k) {
@@ -1186,10 +1137,10 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
         // That's the same queue which possibly was updated
         // Class name should also be compared here
         // Description should be compared here
-        string      queue_diff = k->second.first.Diff(new_queue->second,
+        CJsonNode   queue_diff = k->second.first.Diff(new_queue->second,
                                                       true, true);
 
-        if (!queue_diff.empty()) {
+        if (queue_diff.GetSize() > 0) {
             // There is a difference, update the queue info and the queue
             CRef<CQueue>    queue = k->second.second;
             queue->SetParameters(new_queue->second);
@@ -1202,16 +1153,7 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
             k->second.first = new_queue->second;
             k->second.first.position = pos;
 
-            if (section_started == false) {
-                section_started = true;
-                if (!diff.empty())
-                    diff += ", ";
-                diff += "\"queue_changes\" {";
-            } else {
-                diff += ", ";
-            }
-
-            diff += "\"" + queue_name + "\" {" + queue_diff + "}";
+            section_changes.SetByKey(queue_name, queue_diff);
             has_changes = true;
         }
     }
@@ -1241,9 +1183,9 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
         // They do not make sense for dynamic queues because they are created
         // with their own descriptions and the class does not have the 'class'
         // field
-        string  class_diff = k->second.first.Diff(queue_class->second,
-                                                  false, false);
-        if (!class_diff.empty()) {
+        CJsonNode   class_diff = k->second.first.Diff(queue_class->second,
+                                                      false, false);
+        if (class_diff.GetSize() > 0) {
             // There is a difference in the queue class - update the
             // parameters.
             string      old_class = k->second.first.qclass;
@@ -1259,22 +1201,14 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
             k->second.first.description = old_description;
             k->second.first.kind = CQueue::eKindDynamic;
 
-            if (section_started == false) {
-                section_started = true;
-                if (!diff.empty())
-                    diff += ", ";
-                diff += "\"queue_changes\" {";
-            } else {
-                diff += ", ";
-            }
-
-            diff += "\"" + k->first + "\" {" + class_diff + "}";
+            section_changes.SetByKey(k->first, class_diff);
             has_changes = true;
         }
     }
 
-    if (section_started)
-        diff += "}";
+    if (section_changes.GetSize() > 0)
+        diff.SetByKey("queue_changes", section_changes);
+
 
     // Check what was added
     for (TQueueParams::const_iterator  k = queues_from_ini.begin();
@@ -1298,17 +1232,12 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
 
     if (!added_queues.empty()) {
         has_changes = true;
-        if (!diff.empty())
-            diff += ", ";
-        diff += "\"added_queues\" {";
+        CJsonNode       added = CJsonNode::NewObjectNode();
         for (vector< pair<string, string> >::const_iterator
-             k = added_queues.begin();
-             k != added_queues.end(); ++k) {
-                if (k != added_queues.begin())
-                    diff += ", ";
-                diff += "\"" + k->first + "\" \"" + k->second + "\"";
-        }
-        diff += "}";
+                k = added_queues.begin();
+                k != added_queues.end(); ++k)
+            added.SetByKey(k->first, CJsonNode::NewStringNode(k->second));
+        diff.SetByKey("added_queues", added);
     }
 
     return has_changes;
@@ -1316,7 +1245,7 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
 
 
 time_t  CQueueDataBase::Configure(const IRegistry &  reg,
-                                  string &           diff)
+                                  CJsonNode &        diff)
 {
     CFastMutexGuard     guard(m_ConfigureLock);
 

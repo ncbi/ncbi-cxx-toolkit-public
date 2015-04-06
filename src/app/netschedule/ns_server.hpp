@@ -34,6 +34,7 @@
 
 #include <string>
 #include <connect/server.hpp>
+#include <connect/services/json_over_uttp.hpp>
 
 #include "ns_server_misc.hpp"
 #include "ns_server_params.hpp"
@@ -146,9 +147,9 @@ public:
 
 
     void AddDefaultListener(IServer_ConnectionFactory* factory);
-    string SetNSParameters(const SNS_Parameters &  new_params,
-                           bool                    limited);
-    string ReadServicesConfig(const CNcbiRegistry &  reg);
+    CJsonNode SetNSParameters(const SNS_Parameters &  new_params,
+                              bool                    limited);
+    CJsonNode ReadServicesConfig(const CNcbiRegistry &  reg);
 
     virtual bool ShutdownRequested(void);
     void SetShutdownFlag(int signum = 0, bool  db_was_drained = false);
@@ -156,7 +157,7 @@ public:
 
     // Queue handling
     unsigned int  Configure(const IRegistry &  reg,
-                            string &           diff);
+                            CJsonNode &        diff);
     unsigned CountActiveJobs() const;
     CRef<CQueue> OpenQueue(const string &  name);
     void CreateDynamicQueue(const CNSClientId &  client,
@@ -279,7 +280,7 @@ private:
 
 private:
     string x_GenerateGUID(void) const;
-    string x_SetAdminClientNames(const string &  client_names);
+    CJsonNode x_SetAdminClientNames(const string &  client_names);
 
 #if defined(_DEBUG) && !defined(NDEBUG)
 private:

@@ -51,14 +51,16 @@ bool CNetScheduleAccessList::IsAllowed(unsigned ha) const
 
 
 // Delimited lists of hosts allowed into the system
-string CNetScheduleAccessList::SetHosts(const string& host_names)
+CJsonNode CNetScheduleAccessList::SetHosts(const string &  host_names)
 {
-    string              accepted_hosts;
+    CJsonNode           diff = CJsonNode::NewArrayNode();
     vector<string>      hosts;
     NStr::Tokenize(host_names, ";, \n\r", hosts, NStr::eMergeDelims);
 
     CWriteLockGuard guard(m_Lock);
     TNSBitVector        old_hosts = m_Hosts;
+    vector<string>      old_as_from_config = m_AsFromConfig;
+
     m_Hosts.clear();
     m_AsFromConfig.clear();
 
@@ -71,12 +73,7 @@ string CNetScheduleAccessList::SetHosts(const string& host_names)
 
             if (ha != 0) {
                 m_Hosts.set_bit(ha, true);
-                if (!accepted_hosts.empty())
-                    accepted_hosts += ", ";
-                accepted_hosts += my_name;
-                if (!m_AsFromConfig.empty())
-                    m_AsFromConfig += ", ";
-                m_AsFromConfig += hn;
+                m_AsFromConfig.push_back(hn);
                 continue;
             }
         }
@@ -84,20 +81,27 @@ string CNetScheduleAccessList::SetHosts(const string& host_names)
         unsigned int        ha = CSocketAPI::gethostbyname(hn);
         if (ha != 0) {
             m_Hosts.set_bit(ha, true);
-            if (!accepted_hosts.empty())
-                accepted_hosts += ", ";
-            accepted_hosts += hn;
-            if (!m_AsFromConfig.empty())
-                m_AsFromConfig += ", ";
-            m_AsFromConfig += hn;
+            m_AsFromConfig.push_back(hn);
         }
         else
             ERR_POST("'" << hn << "' is not a valid host name. Ignored.");
     }
 
-    if (old_hosts == m_Hosts)
-        return "";
-    return accepted_hosts;
+    if (old_hosts != m_Hosts) {
+        CJsonNode       old_vals = CJsonNode::NewArrayNode();
+        CJsonNode       new_vals = CJsonNode::NewArrayNode();
+
+        for (vector<string>::const_iterator  k = old_as_from_config.begin();
+                k != old_as_from_config.end(); ++k)
+            old_vals.AppendString(*k);
+        for (vector<string>::const_iterator  k = m_AsFromConfig.begin();
+                k != m_AsFromConfig.end(); ++k)
+            new_vals.AppendString(*k);
+
+        diff.Append(old_vals);
+        diff.Append(new_vals);
+    }
+    return diff;
 }
 
 
@@ -121,8 +125,16 @@ string CNetScheduleAccessList::Print(const string &  prefix,
 
 string CNetScheduleAccessList::GetAsFromConfig(void) const
 {
+    string                      ret;
     CReadLockGuard              guard(m_Lock);
-    return m_AsFromConfig;
+
+    for (vector<string>::const_iterator  k = m_AsFromConfig.begin();
+            k != m_AsFromConfig.end(); ++k) {
+        if (!ret.empty())
+            ret += ", ";
+        ret += *k;
+    }
+    return ret;
 }
 
 
