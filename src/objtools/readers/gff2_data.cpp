@@ -790,7 +790,7 @@ bool CGff2Record::x_MigrateAttributes(
             pFeature->SetQual().push_back(pQual);
         }
         else {
-            // mss-362: turn protein_id attributes into protein_id quailifiers.
+            // mss-362: turn transcript_id attributes into transcript_id quailifiers.
             CRef<CGb_qual> pQual;
             pQual.Reset(new CGb_qual);
             pQual->SetQual("transcript_id");
