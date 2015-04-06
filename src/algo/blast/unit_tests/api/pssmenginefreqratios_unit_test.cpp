@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(AllZerosFreqRatios)
         }
     }
 }
-
+/*
 BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
 {
     ifstream in("data/sample_msa.txt");
@@ -162,5 +162,5 @@ BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
 
 
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
