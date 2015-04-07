@@ -1440,6 +1440,8 @@ void XSDParser::ProcessNamedTypes(void)
                     }
                 }
                 processed.insert(i->second.GetName() + i->second.GetNamespaceName());
+            } else {
+                node.SetTypeIfUnknown(node.GetContent().empty() ? DTDElement::eEmpty : DTDElement::eString);
             }
         }
     } while (found);
@@ -1460,9 +1462,7 @@ void XSDParser::ProcessNamedTypes(void)
                             found = true;
                             PushEntityLexer(a->GetTypeName());
                             ParseContent(*a);
-                            if (a->GetType() == DTDAttribute::eUnknown) {
-                                a->SetType(DTDAttribute::eString);
-                            }
+                            a->SetTypeIfUnknown(DTDAttribute::eString);
                         } else if ( a->GetType() == DTDAttribute::eUnknownGroup) {
                             found = true;
                             PushEntityLexer(a->GetTypeName());
@@ -1470,6 +1470,8 @@ void XSDParser::ProcessNamedTypes(void)
                             ParseAttributeGroupRef(node);
                             break;
                         }
+                    } else {
+                        a->SetTypeIfUnknown(DTDAttribute::eString);
                     }
                 }
             }
