@@ -164,7 +164,7 @@ void CNetStorageHandler::OnRead(void)
     CRequestContextResetter     context_resetter;
     if (m_ConnContext.NotNull()) {
         if (m_CmdContext.NotNull())
-           CDiagContext::SetRequestContext(m_CmdContext);
+            CDiagContext::SetRequestContext(m_CmdContext);
         else
             CDiagContext::SetRequestContext(m_ConnContext);
     }
@@ -871,6 +871,13 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
 
         for (CJsonIterator it = message.Iterate(); it; ++it) {
             string      key = it.GetKey();
+            if (key == "ncbi_phid") {
+                string  ncbi_phid = it.GetNode().Repr(
+                                                CJsonNode::fVerbatimIfString);
+                if (!ncbi_phid.empty())
+                    m_CmdContext->SetHitID(ncbi_phid);
+                continue;
+            }
             if (key != "SessionID" || key != "ClientIP")
                 ctxt_extra.Print(key,
                         it.GetNode().Repr(CJsonNode::fVerbatimIfString));
