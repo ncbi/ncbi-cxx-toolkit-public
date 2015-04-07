@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(AllZerosFreqRatios)
         }
     }
 }
-/*
+
 BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
 {
     ifstream in("data/sample_msa.txt");
@@ -130,7 +130,6 @@ BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
 
     CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(true));
     CPsiBlastInputClustalW pssm_input(in, *opts, "BLOSUM62", diags);
-    pssm_input.Process();
     CPssmEngine pssm_engine(&pssm_input);
     CRef<objects::CPssmWithParameters>  pssm_w_param = pssm_engine.Run();
     BOOST_REQUIRE(pssm_w_param->CanGetPssm());
@@ -162,5 +161,4 @@ BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
 
 
 }
-*/
 BOOST_AUTO_TEST_SUITE_END()
