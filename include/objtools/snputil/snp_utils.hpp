@@ -100,7 +100,7 @@ public:
 
     /// Return rsid of SNP
     ///
-    /// @param mapped_feat
+    /// @param feat
     ///   CSeq_feat object representing SNP feature
     /// @return
     ///   - rsid of SNP as set in its Tag data
@@ -169,6 +169,26 @@ public:
     ///   - false otherwise
     static bool             IsSnpKnown( CScope &scope, const CSeq_loc& loc, const string &allele=kEmptyStr);
 
+    /// list of alleles belonging to particular SNP
+    /// a deletion is represented by a "-"
+    typedef vector<string> TAlleles;
+
+    /// Return list of alleles encoded in qual."replace"
+    ///
+    /// @param mapped_feat
+    ///   CMappedFeat object representing snp feature
+    /// @return
+    ///   - list of alleles found in the feature (if any)
+    static void     GetAlleles(const CMappedFeat &mapped_feat, TAlleles& Alleles);
+
+    /// Return list of alleles encoded in qual."replace"
+    ///
+    /// @param feat
+    ///   CSeq_feat object representing snp feature
+    /// @return
+    ///   - list of alleles found in the feature (if any)
+    static void     GetAlleles(const CSeq_feat &feat, TAlleles& Alleles);
+
 	/// controls the case of strings returned from ClinSigAsString()
 	enum ELetterCase {
 		eLetterCase_ForceLower,		///< always use lower case only
@@ -184,9 +204,9 @@ public:
 	///   controls the letter case of the result
 	/// @return
 	///   string describing the first clinical significance in the first phenotype
-	///   - will be empty if clinical-significance is not present 
+	///   - will be empty if clinical-significance is not present
 	static string ClinSigAsString(const CVariation_ref& var, ELetterCase LetterCase = eLetterCase_Mixed);
-	
+
 	/// get a human-readable text for various clinical significance types
 	///
 	/// @param ClinSigID
@@ -220,7 +240,7 @@ public:
 	///   conversion result will be put here, old contents are destroyed upon conversion success
 	/// @param SrcFeat
 	///   old format feature
-    /// @return 
+    /// @return
 	///   false if a given feature is not a correctly formed SNP feature
     static bool ConvertFeat(CVariation& Variation, const CSeq_feat& SrcFeat);
 
@@ -354,17 +374,8 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
     // the alleles are encoded in qual with qual=="replace"
     // empty allele strings stand for "-"
     vector<string> alleles;
-    if (SrcFeat.CanGetQual()) {
-        alleles.reserve(SrcFeat.GetQual().size());
-        ITERATE (CSeq_feat::TQual, it, SrcFeat.GetQual()) {
-            const CGb_qual& qual = **it;
-            if (qual.GetQual() == "replace") {
-                //                alleles.push_back(qual.GetVal());
-				string sQualVal(qual.GetVal());
-				alleles.push_back(sQualVal.empty() ? "-" : sQualVal);
-            }
-        }
-    }
+    NSnp::GetAlleles(SrcFeat, alleles);
+
     // store the alleles depending on the SNP type sourced from the bitfield
     // have to create a temp CVariation_ref for this, since CVariation lacks useful
     // helper methods like SetSNV(), SetMNP(), etc.

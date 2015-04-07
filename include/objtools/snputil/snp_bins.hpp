@@ -95,7 +95,6 @@ public:
 	};
 
 	typedef list<CRef<SBinEntry> >  TBinEntryList;
-	typedef set<string>        TListNaas;
 
 	/// representation of a bin
 	struct SBin : public CObject
