@@ -77,6 +77,13 @@ protected:
     string xCurrentTranscriptId(
         const CSeq_feat&);
 
+    void xPutErrorMissingLocustag(
+        CMappedFeat);
+    void xPutErrorMissingTranscriptId(
+        CMappedFeat);
+    void xPutErrorMissingProteinId(
+        CMappedFeat);
+
 	CConstRef<CSeq_feat> xGetGeneParent(
 		const CSeq_feat&);
 	CConstRef<CSeq_feat> xGetMrnaParent(

@@ -377,6 +377,42 @@ void CFeatTableEdit::xGenerateLocusIdsUseExisting()
     sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_imp);
 
     for (CFeat_CI it(mHandle, sel); it; ++it) {
+        //mss-362: every feature that needs them must come with a complete set
+        // of locus_tag, protein_id, and transcript_id.
+        // we will generate orig_protein_id and orig_transcript_id as needed.
+
+        CMappedFeat mf = *it;
+        CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+        
+        switch (subtype) {
+            case CSeqFeatData::eSubtype_gene: {
+                if (!mf.GetData().GetGene().IsSetLocus_tag()) {
+                    xPutErrorMissingLocustag(mf);
+                }
+                break;
+            }
+            case CSeqFeatData::eSubtype_mRNA: {
+                string transcriptId = mf.GetNamedQual("transcript_id");
+                if (transcriptId.empty()) {
+                    xPutErrorMissingTranscriptId(mf);
+                }
+                string proteinId = mf.GetNamedQual("protein_id");
+                if (proteinId.empty()) {
+                    xPutErrorMissingProteinId(mf);
+                }
+                break;
+            }
+            case CSeqFeatData::eSubtype_cdregion: {
+                string transcriptId = mf.GetNamedQual("transcript_id");
+                if (transcriptId.empty()) {
+                    xPutErrorMissingTranscriptId(mf);
+                }
+                break;
+            }
+            default: {
+                break;
+            }
+        }
     }
 }
 
@@ -587,6 +623,87 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
         eExtreme_Positional));
     pGene->SetData().SetGene();
     return pGene;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CFeatTableEdit::xPutErrorMissingLocustag(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    if (!mpMessageListener) {
+        return;
+    }
+
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+    string subName = CSeqFeatData::SubtypeValueToName(subtype);
+    unsigned int lower = mf.GetLocation().GetStart(eExtreme_Positional);
+    unsigned int upper = mf.GetLocation().GetStop(eExtreme_Positional);
+    subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
+        subName;
+
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        subName + " feature is missing locus tag.",
+        ILineError::eProblem_Missing));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CFeatTableEdit::xPutErrorMissingTranscriptId(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    if (!mpMessageListener) {
+        return;
+    }
+
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+    string subName = CSeqFeatData::SubtypeValueToName(subtype);
+    unsigned int lower = mf.GetLocation().GetStart(eExtreme_Positional);
+    unsigned int upper = mf.GetLocation().GetStop(eExtreme_Positional);
+    subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
+        subName;
+
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        subName + " feature is missing transcript ID.",
+        ILineError::eProblem_Missing));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CFeatTableEdit::xPutErrorMissingProteinId(
+CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    if (!mpMessageListener) {
+        return;
+    }
+
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+    string subName = CSeqFeatData::SubtypeValueToName(subtype);
+    unsigned int lower = mf.GetLocation().GetStart(eExtreme_Positional);
+    unsigned int upper = mf.GetLocation().GetStop(eExtreme_Positional);
+    subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
+        subName;
+
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        subName + " feature is missing protein ID.",
+        ILineError::eProblem_Missing));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
 
 END_SCOPE(edit)

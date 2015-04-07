@@ -747,22 +747,13 @@ bool CGff2Record::x_MigrateAttributes(
         CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
         pLoc->SetId(*pId);
         pFeature->SetProduct(*pLoc);
-        if (flags & CGff2Reader::fGenbankMode) {
-            // mss-362: turn protein_id attributes into orig_protein_id quailifiers.
-            CRef<CGb_qual> pQual;
-            pQual.Reset(new CGb_qual);
-            pQual->SetQual("orig_protein_id");
-            pQual->SetVal(protId);
-            pFeature->SetQual().push_back(pQual);
-        }
-        else {
-            // mss-362: turn protein_id attributes into protein_id quailifiers.
-            CRef<CGb_qual> pQual;
-            pQual.Reset(new CGb_qual);
-            pQual->SetQual("protein_id");
-            pQual->SetVal(protId);
-            pFeature->SetQual().push_back(pQual);
-        }
+
+        CRef<CGb_qual> pQual;
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual("protein_id");
+        pQual->SetVal(protId);
+        pFeature->SetQual().push_back(pQual);
+
         attrs_left.erase(it);
     }
 
@@ -781,22 +772,12 @@ bool CGff2Record::x_MigrateAttributes(
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);
         }
-        if (flags & CGff2Reader::fGenbankMode) {
-            // mss-362: turn transcript_id attributes into orig_transcript_id quailifiers.
-            CRef<CGb_qual> pQual;
-            pQual.Reset(new CGb_qual);
-            pQual->SetQual("orig_transcript_id");
-            pQual->SetVal(transcriptId);
-            pFeature->SetQual().push_back(pQual);
-        }
-        else {
-            // mss-362: turn transcript_id attributes into transcript_id quailifiers.
-            CRef<CGb_qual> pQual;
-            pQual.Reset(new CGb_qual);
-            pQual->SetQual("transcript_id");
-            pQual->SetVal(transcriptId);
-            pFeature->SetQual().push_back(pQual);
-        }
+        // mss-362: turn transcript_id attributes into transcript_id quailifiers.
+        CRef<CGb_qual> pQual;
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual("transcript_id");
+        pQual->SetVal(transcriptId);
+        pFeature->SetQual().push_back(pQual);
         attrs_left.erase(it);
     }
 
