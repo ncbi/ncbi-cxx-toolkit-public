@@ -678,12 +678,13 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
     const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
-    Boolean isRPS = FALSE;
-    if (Blast_ProgramIsRpsBlast(program_number))
-	isRPS = TRUE;
     const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_options);
+    Boolean isRPS = FALSE;
+    SubjectSplitStruct backup = {0,};
 
-    SubjectSplitStruct backup;
+    if (Blast_ProgramIsRpsBlast(program_number))
+        isRPS = TRUE;
+
     backup.sequence = NULL;
 
     *hsp_list_out_ptr = NULL;
