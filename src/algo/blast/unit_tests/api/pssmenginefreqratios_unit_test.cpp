@@ -32,6 +32,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
+#include <math.h>
 
 // ASN.1 object includes
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -152,7 +153,7 @@ BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
     	else {
     		double ref_value = NStr::StringToDouble(*ref_pt);
     		BOOST_REQUIRE(ref_pt != ref_data.end());
-    		BOOST_REQUIRE(abs(ref_value - *pt) < 0.001);
+    		BOOST_REQUIRE(fabs(ref_value - *pt) < 0.001);
     		ref_pt ++;
     	}
 

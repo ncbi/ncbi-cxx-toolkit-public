@@ -11,4 +11,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = pssmenginefreqratios_unit_test
 CHECK_COPY = pssmenginefreqratios_unit_test.ini
 
-WATCHERS = boratyng madden camacho
+WATCHERS = boratyng madden camacho fongah2
