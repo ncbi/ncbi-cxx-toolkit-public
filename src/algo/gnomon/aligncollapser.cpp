@@ -956,7 +956,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
 
         TIVec score(tseq.size());
         for(int i = 0; i < (int)score.size(); ++i) {
-            if(tseq[i] == gseq[i])
+            if(tseq[i] == gseq[i] && tseq[i] != 'N')
                 score[i] = 1;
             else if(tseq[i] == '-' || gseq[i] == '-')
                 score[i] = -INDEL_PENALTY;
