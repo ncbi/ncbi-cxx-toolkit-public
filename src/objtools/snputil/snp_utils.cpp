@@ -211,6 +211,28 @@ CSnpBitfield NSnp::GetBitfield(const CSeq_feat &feat)
     return b;
 }
 
+
+void NSnp::GetAlleles(const CMappedFeat &mapped_feat, TAlleles& Alleles)
+{
+    GetAlleles(mapped_feat.GetOriginalFeature(), Alleles);
+}
+
+void NSnp::GetAlleles(const CSeq_feat &feat, TAlleles& Alleles)
+{
+    Alleles.clear();
+
+    if (feat.CanGetQual()) {
+        Alleles.reserve(feat.GetQual().size());
+        ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
+            const CGb_qual& qual = **it;
+            if (qual.GetQual() == "replace") {
+				string sQualVal(qual.GetVal());
+				Alleles.push_back(sQualVal.empty() ? "-" : sQualVal);
+            }
+        }
+    }
+}
+
 bool NSnp::IsSnpKnown( CScope &scope, const CMappedFeat &private_snp, const string &allele)
 {
     const CSeq_loc &loc = private_snp.GetLocation();
