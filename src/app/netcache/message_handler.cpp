@@ -2632,7 +2632,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     if (x_IsFlagSet(fReadExactBlobSize)  &&  m_BlobSize != m_Size) {
         fail = true;
         GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
-        SRV_LOG(Error, "Too few data for blob size " << m_Size
+        SRV_LOG(Error, "Wrong data for blob size " << m_Size
                         << " (received " << m_BlobSize << " bytes)");
         errmsg = s_MsgForStatus[eStatus_CondFailed];
     }
@@ -2848,6 +2848,10 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         return &CNCMessageHandler::x_CloseCmdAndConn;
     }
 
+// if we close connection here, in the middle of transmission,
+// client will have no chance (most likely) to receive our error message
+// and might want to retry thinking it was bad luck
+#if 0
     if (x_IsFlagSet(fReadExactBlobSize)  &&  (m_BlobSize + m_ChunkLen) > m_Size) {
         GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
         SRV_LOG(Error, "Too much data for blob size " << m_Size
@@ -2860,8 +2864,15 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
                         << CNCBlobStorage::GetMaxBlobSizeStore()
                         << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
+
+/*
+if (m_HttpMode == eNoHttp) {
+    WriteText("ERR:Too much data for blob").WriteText("\n");
+}
+*/
         return &CNCMessageHandler::x_CloseCmdAndConn;
     }
+#endif
 
     if (m_ActiveHub) {
         CSrvSocketTask* active_sock = m_ActiveHub->GetHandler()->GetSocket();

@@ -1164,7 +1164,8 @@ CNCActiveHandler::x_ProcessPeerError(void)
     SRV_LOG(Warning, "Error from peer "
         << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
         << m_ErrMsg);
-    m_CmdSuccess = false;
+    m_CmdSuccess = (m_SyncCtrl == NULL);
+    GetDiagCtx()->SetRequestStatus(eStatus_PeerError);
     return &Me::x_FinishCommand;
 }
 
