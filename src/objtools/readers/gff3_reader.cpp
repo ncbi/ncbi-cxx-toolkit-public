@@ -369,7 +369,6 @@ bool CGff3Reader::xFeatureSetXrefGrandParent(
     NStr::Split(grandParentsStr, ",", grandParents);
     for (list<string>::const_iterator gpcit = grandParents.begin();
             gpcit != grandParents.end(); ++gpcit) {
-        const string& s = *gpcit; 
         IdToFeatureMap::iterator gpit = m_MapIdToFeature.find(*gpcit);
         if (gpit == m_MapIdToFeature.end()) {
             return false;
