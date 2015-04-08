@@ -759,6 +759,8 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         if ( !max_age.empty() ) {
             response.SetHeaderValue(kAC_MaxAge, max_age);
         }
+        response.DisableTrackingCookie();
+        response.RemoveHeaderValue("NCBI-PHID");
         response.WriteHeader();
         // This was CORS preflight request (valid or not) - skip normap processing.
         return true;
