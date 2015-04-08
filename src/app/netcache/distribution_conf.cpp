@@ -68,6 +68,11 @@ struct SSrvMirrorInfo
     TSlot2SrvMap  s_RawSlot2Servers;
     TSrvGroupsMap s_Slot2Servers;
     TSrv2SlotMap  s_CommonSlots;
+// ID is defined by IP and port, so this map might be incorrect
+// but we also check the current slot number
+// while it is possible to handle same slot on different instances of NC
+// on the same machine (same IP), it does not make sense and should be avoided
+    map<Uint4, Uint8> s_IpToId;
 };
 static SSrvMirrorInfo* s_MirrorConf = NULL;
 #if 0
@@ -238,6 +243,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
     SSrvMirrorInfo* prevMirrorCfg = ACCESS_ONCE(s_MirrorConf);
     bool isReconf = prevMirrorCfg != NULL;
     vector<Uint2> self_slots;
+    mirrorCfg->s_IpToId[s_SelfIP] = s_SelfID;
 
     string reg_value;
     bool found_self = false;
@@ -360,8 +366,10 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
             if (find(s_SelfSlots.begin(), s_SelfSlots.end(), slot) == s_SelfSlots.end())
                 continue;
             const TServersList& srvs = it_slot->second;
-            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end())
+            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
                 common_slots.push_back(it_slot->first);
+                mirrorCfg->s_IpToId[ Uint4(srv_id >> 32)] = srv_id;
+            }
         }
     }
 
@@ -617,9 +625,12 @@ CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
         const TNCPeerList& peers = CNCDistributionConf::GetPeers();
         if (peers.find(srv_id) != peers.end()) {
             name = peers.find(srv_id)->second;
-        } else {
+        }
+#if 0
+        else {
             name = CNCPeerControl::GetPeerNameOrEmpty(srv_id);
         }
+#endif
     }
     return name;
 }
@@ -756,6 +767,34 @@ CNCDistributionConf::GetSlotByRnd(Uint4 key_rnd,
     slot = Uint2(key_rnd / s_SlotRndShare) + 1;
     time_bucket = Uint2((slot - 1) * s_CntSlotBuckets
                         + key_rnd % s_SlotRndShare / s_TimeRndShare) + 1;
+}
+
+Uint8 CNCDistributionConf::GetSrvIdByIP(Uint4 ip)
+{
+    SSrvMirrorInfo* mirrorConf = ACCESS_ONCE(s_MirrorConf);
+    map<Uint4, Uint8>::const_iterator i = mirrorConf->s_IpToId.find(ip);
+    if (i != mirrorConf->s_IpToId.end()) {
+        return i->second; 
+    }
+    return 0;
+}
+
+Uint8
+CNCDistributionConf::GetMainSrvId(const CNCBlobKey& key)
+{
+    return GetSrvIdByIP( GetMainSrvIP(key));
+}
+
+
+bool
+CNCDistributionConf::IsThisServerKey(const CNCBlobKey& key)
+{
+    if (key.IsICacheKey()) {
+        return true;
+    }
+    return (key.KeyVersion() == 3) ?
+        (s_SelfAlias  == key.GetHostPortCRC32()) :
+        (s_SelfHostIP == key.GetHost());
 }
 
 Uint4

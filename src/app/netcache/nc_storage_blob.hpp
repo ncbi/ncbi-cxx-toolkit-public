@@ -156,7 +156,7 @@ public:
     Uint8 GetNewCreateServer(void) const;
     Uint4 GetCurCreateId(void) const;
     void SetCreateServer(Uint8 create_server, Uint4 create_id);
-    void UpdateMeteInfo(Uint8 upd_server, Uint8 upd_time);
+    void UpdateMetaInfo(Uint8 upd_server, Uint8 upd_time);
     bool IsValid(void) const;
     Uint8 GetValidServer(void) const;
     string GetCurPassword(void) const;
@@ -544,7 +544,7 @@ CNCBlobAccessor::SetCreateServer(Uint8 create_server,
     m_NewData->create_id = create_id;
 }
 inline void
-CNCBlobAccessor::UpdateMeteInfo(Uint8 upd_server, Uint8 upd_time)
+CNCBlobAccessor::UpdateMetaInfo(Uint8 upd_server, Uint8 upd_time)
 {
     if (m_CurData->create_time < upd_time) {
         m_CurData->updated_on_server = upd_server;
