@@ -225,7 +225,7 @@ CLocalBlast::Run()
 	try {
 	    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
 	    m_InternalData = m_PrelimSearch->Run();
-	} catch( CIndexedDbException & e ) {
+	} catch( CIndexedDbException & ) {
 	    throw;
 	} catch (CBlastException & e) {
 		if(e.GetErrCode() == CBlastException::eCoreBlastError) {
