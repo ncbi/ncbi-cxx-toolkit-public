@@ -2642,7 +2642,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
                         << CNCBlobStorage::GetMaxBlobSizeStore()
                         << " (received " << m_BlobSize << " bytes)");
-        errmsg = "ERR:Too much data for blob";
+        errmsg = "ERR:Blob size exceeds the allowed maximum";
     }
     if (fail) {
         if (x_IsFlagSet(fConfirmOnFinish)) {
@@ -2867,7 +2867,7 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
 
 /*
 if (m_HttpMode == eNoHttp) {
-    WriteText("ERR:Too much data for blob").WriteText("\n");
+    WriteText("ERR:Blob size exceeds the allowed maximum").WriteText("\n");
 }
 */
         return &CNCMessageHandler::x_CloseCmdAndConn;
