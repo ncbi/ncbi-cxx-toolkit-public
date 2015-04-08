@@ -34,6 +34,13 @@
 // Additional sources to avoid linking with related libraries and to force
 // everybody to use CTaskServer's infrastructure of threads, diagnostics and
 // application-related stuff
+
+// proxy
+class CDiagContextThreadData {
+public:
+    static bool IsInitialized(void) {return false;}
+};
+
 #include "../../corelib/ncbistr.cpp"
 #undef NCBI_USE_ERRCODE_X
 #undef CHECK_RANGE
@@ -62,11 +69,6 @@
 #undef NCBI_USE_ERRCODE_X
 #include "../../corelib/ncbi_safe_static.cpp"
 #undef NCBI_USE_ERRCODE_X
-// proxy
-class CDiagContextThreadData {
-public:
-    static bool IsInitialized(void) {return false;}
-};
 #include "../../corelib/ncbi_param.cpp"
 #undef NCBI_USE_ERRCODE_X
 #ifdef NCBI_OS_LINUX
