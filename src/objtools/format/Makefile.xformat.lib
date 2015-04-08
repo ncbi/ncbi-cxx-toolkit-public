@@ -13,8 +13,8 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
       context utils gather_items embl_gather genbank_gather \
       flat_file_generator item_formatter embl_formatter genbank_formatter \
       format_item_ostream item_ostream ostream_text_ostream \
-      gff_gather gff_formatter origin_item ftable_gather ftable_formatter \
-      gbseq_formatter flat_file_config alignment_item gff3_formatter \
+      origin_item ftable_gather ftable_formatter \
+      gbseq_formatter flat_file_config alignment_item \
       gap_item genome_project_item sam_formatter cigar_formatter \
       gather_iter html_anchor_item inst_info_map gene_finder flat_qual_slots
 

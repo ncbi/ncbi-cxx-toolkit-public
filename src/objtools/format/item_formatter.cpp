@@ -55,7 +55,6 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/embl_formatter.hpp>
-#include <objtools/format/gff3_formatter.hpp>
 #include <objtools/format/ftable_formatter.hpp>
 #include <objtools/format/gbseq_formatter.hpp>
 #include <objtools/format/context.hpp>
@@ -88,12 +87,6 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
         
     case CFlatFileConfig::eFormat_EMBL:
         return new CEmblFormatter;
-
-    case CFlatFileConfig::eFormat_GFF:
-        return new CGFFFormatter;
-
-    case CFlatFileConfig::eFormat_GFF3:
-        return new CGFF3_Formatter;
 
     case CFlatFileConfig::eFormat_FTable:
         return new CFtableFormatter;

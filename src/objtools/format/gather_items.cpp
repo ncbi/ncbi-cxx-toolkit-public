@@ -101,7 +101,6 @@
 #include <objtools/format/gather_iter.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/embl_gather.hpp>
-#include <objtools/format/gff_gather.hpp>
 #include <objtools/format/ftable_gather.hpp>
 #include <objtools/format/feature_gather.hpp>
 #include <objtools/format/context.hpp>
@@ -185,10 +184,6 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
     case CFlatFileConfig::eFormat_EMBL:
         return new CEmblGatherer;
 
-    case CFlatFileConfig::eFormat_GFF:
-    case CFlatFileConfig::eFormat_GFF3:
-        return new CGFFGatherer;
-    
     case CFlatFileConfig::eFormat_FTable:
         return new CFtableGatherer;
 
