@@ -63,6 +63,7 @@ struct NCBI_DISCREPANCY_EXPORT CContext
     string m_File;
     string m_Lineage;
     bool m_KeepRef;     // set true to allow autofix
+    CContext() : m_KeepRef(false) {}
 };
 
 
