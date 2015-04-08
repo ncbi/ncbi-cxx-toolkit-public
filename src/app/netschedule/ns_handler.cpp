@@ -2853,6 +2853,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             diff.GetSize() == 0 &&
             services_changed.GetSize() == 0) {
             m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
+            m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSAcknowledge");
             if (x_NeedCmdLogging())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
             x_WriteMessage("OK:WARNING:eNoParametersChanged:No changes in "
@@ -2873,6 +2874,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             GetDiagContext().Extra().Print("config_changes", diff_as_string);
 
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
+        m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSAcknowledge");
         x_WriteMessage("OK:" + diff_as_string);
     }
     else
