@@ -602,7 +602,9 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     if (any_changes && args["debug"]) {
         string diff_cmd = "diff before.sqn " + file_name;
-        system (diff_cmd.c_str());
+        if (!system (diff_cmd.c_str())) {
+            printf("No differences were found.\n");
+        }
     }
     printf ("generated asn.1\n");
     return true;
