@@ -433,7 +433,7 @@ CBlastServices::GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb)
 
 
 vector< CRef<objects::CBlast4_database_info> >
-CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all)
+CBlastServices::GetDatabaseInfoLegacy(const string& dbname, bool is_protein, bool *found_all)
 {
     vector<CRef<objects::CBlast4_database_info> > retval;
     vector<string> dbs;
@@ -459,6 +459,81 @@ CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *fou
           retval.push_back(result);
        else
           *found_all = false;
+    }
+    return retval;
+}
+
+vector< CRef<objects::CBlast4_database_info> >
+CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all)
+{
+    vector<CRef<objects::CBlast4_database_info> > retval;
+    CRef<CBlast4_request> request;
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+    vector<string> all_db_names;
+    vector<string>::iterator  it_db;
+    bool l_multiple_db = false;
+
+    if( found_all ){
+	*found_all = false;
+	string local_db_name = NStr::TruncateSpaces( dbname );
+	NStr::Tokenize(local_db_name, " \n\t", all_db_names);
+	l_multiple_db = ( all_db_names.size() > 1 );
+    }
+
+    request.Reset(new CBlast4_request);
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    CRef<CBlast4_get_databases_ex_request> db_ex_req(new CBlast4_get_databases_ex_request);
+
+    body->SetGet_databases_ex( *db_ex_req );
+    request->SetBody(*body);
+
+    db_ex_req->SetParams().Add("FILTER_TYPE",string("EXACT"));
+    db_ex_req->SetParams().Add("DBNAME",dbname);
+    if( is_protein ) 
+	db_ex_req->SetParams().Add("DBTYPE",string("prot"));
+    else
+	db_ex_req->SetParams().Add("DBTYPE",string("nucl"));
+
+
+    try {
+        CBlast4Client().Ask(*request, *reply);
+    }
+    catch(const CEofException &) {
+        NCBI_THROW(CBlastServicesException, eRequestErr,
+                   "No response from server, cannot complete request.");
+    }
+    // if no answer, call legacy method
+    if( reply->GetBody().GetGet_databases_ex().Get().empty() ){
+	return GetDatabaseInfoLegacy(dbname,is_protein,found_all);
+    }
+
+    if( !reply->CanGetBody() ||  !reply->GetBody().IsGet_databases_ex() ) {
+	if(found_all ) *found_all = false;
+        NCBI_THROW(CBlastServicesException, eRequestErr,
+                   "Unexpected response from server, cannot complete request. (GetDatabaseInfoEx)");
+    }
+
+    list< CRef< CBlast4_database_info > >::const_iterator it;
+    it = reply->GetBody().GetGet_databases_ex().Get().begin();
+    for( ; it != reply->GetBody().GetGet_databases_ex().Get().end(); it++){
+	retval.push_back( *it );
+	if( found_all ) {
+	    if( l_multiple_db ) {
+		string current_dbname = (*(*it)).GetDatabase().GetName();
+		it_db = find(all_db_names.begin(),all_db_names.end(),current_dbname);
+		if( it_db != all_db_names.end() ){
+		    all_db_names.erase( it_db);
+		}
+	    }
+	    else{
+		//single db lookup
+		*found_all = true;
+	    }
+	}
+    }
+
+    if( found_all ){
+	if( all_db_names.empty() ) *found_all = true;  // all resolved
     }
     return retval;
 }
