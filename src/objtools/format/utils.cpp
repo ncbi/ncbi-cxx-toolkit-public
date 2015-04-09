@@ -772,6 +772,115 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
     result.append(suffix.data(), suffix.length());
 }
 
+// two-bytes combinations we're looking to clean
+#define twochars(a,b) Uint2((a) << 8 | (b))
+#define twocommas twochars(',',',')
+#define twospaces twochars(' ',' ')
+#define space_comma twochars(' ',',')
+#define space_bracket twochars(' ',')')
+#define bracket_space twochars('(',' ')
+#define space_semicolon twochars(' ',';')
+
+void CleanAndCompress(string& dest, const CTempString& instr)
+{
+    size_t left = instr.size();
+    // this is the input stream
+    const char* in = instr.data();
+
+    // skip front white spaces
+    while (left && *in == ' ')
+    {
+        in++;
+        left--;
+    }
+    // forget end white spaces
+    while (left && in[left - 1] == ' ')
+    {
+        left--;
+    }
+
+    dest.resize(left);
+
+    if (left < 1) return;
+
+    // this is where we write result
+    char* out = (char*)dest.c_str();
+
+    char curr = *in++; // initialize with first character
+    left--;
+
+    char next = 0;
+    Uint2 two_chars = curr; // this is two bytes storage where we see current and previous symbols
+
+    while (left > 0) {
+        next = *in++;
+
+        two_chars = (two_chars << 8) | next;
+
+        switch (two_chars)
+        {
+        case twocommas: // replace double commas with comma+space
+            *out++ = curr;
+            next = ' ';
+            break;
+        case twospaces: // skip multispaces (only print last one)
+            break;
+        case bracket_space: // skip space after bracket
+            next = curr;
+            two_chars = curr;
+            break;
+        case space_bracket: // skip space before bracket
+            break;
+        case space_comma:
+        case space_semicolon: // swap characters
+            *out++ = next;
+            next = curr;
+            two_chars = curr;
+            break;
+        default:
+            *out++ = curr;
+            break;
+        }
+
+        curr = next;
+        left--;
+    }
+
+    if (curr > 0 && curr != ' ') {
+        *out++ = curr;
+    }
+
+    dest.resize(out - dest.c_str());
+}
+
+#if 0
+struct CleanAndCompress_unit_test
+{
+    CleanAndCompress_unit_test()
+    {
+        test("C( )C");
+        test("xx,,xx");
+        test("xx,, xx");
+        test("xx,,  xx");
+        test("  xx  xx  ");
+        test("xx , xx");
+        test("xx  , xx");
+        test("xx(xx)");
+        test("xx( xx )");
+    }
+    void test(char* s)
+    {
+        string str;
+        CleanAndCompress(str, s);
+        cout << s << "--->" << str << '.' << endl;
+    }
+};
+
+CleanAndCompress_unit_test t;
+#endif
+
+
+/*
 void CleanAndCompress (string& str)
 {
     if (str.empty()) {
@@ -823,6 +932,7 @@ void CleanAndCompress (string& str)
     }
     str.erase(new_str, str.end());
 }
+*/
 
 
 #if 0

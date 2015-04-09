@@ -72,7 +72,7 @@ void StripSpaces(string& str);
 bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allow_ellipsis = false);
 void TrimSpaces(string& str, size_t indent = 0);
-void CleanAndCompress (string& str);
+void CleanAndCompress (string& dest, const CTempString& instr);
 string &CompressSpaces( string& str, const bool trim_beginning = true, const bool trim_end = true );
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);

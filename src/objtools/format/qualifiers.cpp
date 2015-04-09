@@ -71,112 +71,6 @@ static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
     return (flags & IFlatQVal::fIsNote)  &&  !ctx.Config().IsModeDump();
 }
 
-// two-bytes combinations we're looking to clean
-#define twochars(a,b) Uint2((a) << 8 | (b))
-#define twocommas twochars(',',',')
-#define twospaces twochars(' ',' ')
-#define space_comma twochars(' ',',')
-#define space_bracket twochars(' ',')')
-#define bracket_space twochars('(',' ')
-#define space_semicolon twochars(' ',';')
-
-static void s_CleanAndCompress(string& dest, const CTempString& instr)
-{
-    size_t left = instr.size();
-    // this is the input stream
-    const char* in = instr.data();
-
-    // skip front white spaces
-    while (left && *in == ' ')
-    {
-        in++;
-        left--;
-    }
-    // forget end white spaces
-    while (left && in[left - 1] == ' ')
-    {
-        left--;
-    }
-
-    dest.resize(left);
-
-    if (left < 1) return;
-
-    // this is where we write result
-    char* out = (char*)dest.c_str();
-
-    char curr = *in++; // initialize with first character
-    left--;
-
-    char next = 0;
-    Uint2 two_chars = curr; // this is two bytes storage where we see current and previous symbols
-
-    while (left > 0) {
-        next = *in++;
-
-        two_chars = (two_chars << 8) | next;
-
-        switch (two_chars)
-        {
-        case twocommas: // replace double commas with comma+space
-            *out++ = curr;
-            next = ' ';
-            break;
-        case twospaces: // skip multispaces (only print last one)
-            break;
-        case bracket_space: // skip space after bracket
-            next = curr;
-            two_chars = curr;
-            break;
-        case space_bracket: // skip space before bracket
-            break;
-        case space_comma:
-        case space_semicolon: // swap characters
-            *out++ = next;
-            next = curr;
-            two_chars = curr;
-            break;
-        default:
-            *out++ = curr;
-            break;
-        }
-
-        curr = next;
-        left--;
-    }
-
-    if (curr > 0 && curr != ' ') {
-        *out++ = curr;
-    }
-
-    dest.resize(out - dest.c_str());
-}
-
-#if 0
-struct s_CleanAndCompress_unit_test
-{
-    s_CleanAndCompress_unit_test()
-    {
-        test("C( )C");
-        test("xx,,xx");
-        test("xx,, xx");
-        test("xx,,  xx");
-        test("  xx  xx  ");
-        test("xx , xx");
-        test("xx  , xx");
-        test("xx(xx)");
-        test("xx( xx )");
-    }
-    void test(char* s)
-    {
-        string str;
-        s_CleanAndCompress(str, s);
-        cout << s << "--->" << str << '.' << endl;
-    }
-};
-
-s_CleanAndCompress_unit_test t;
-#endif
 
 static bool s_StringIsJustQuotes(const string& str)
 {
@@ -300,7 +194,7 @@ static string s_GetGOText(
             go_text += "]";
         }
     }
-    CleanAndCompress(go_text);
+    CleanAndCompress(go_text, go_text.c_str());
     NStr::TruncateSpacesInPlace(go_text);
     return go_text;
 }
@@ -426,7 +320,7 @@ CFormatQual::CFormatQual
   m_Suffix(suffix),
   m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
-    s_CleanAndCompress(m_Value, value);
+    CleanAndCompress(m_Value, value);
 }
 
 
@@ -435,7 +329,7 @@ CFormatQual::CFormatQual(const CTempString& name, const CTempString& value, TSty
     m_Prefix(" "), m_Suffix(kEmptyStr),
     m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
-    s_CleanAndCompress(m_Value, value);
+    CleanAndCompress(m_Value, value);
 }
 
 
@@ -445,7 +339,7 @@ CFlatStringQVal::CFlatStringQVal(const CTempString& value, TStyle style, ETrim t
     :  IFlatQVal(&kSpace, &kSemicolon),
        m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
-    s_CleanAndCompress(m_Value, value);
+    CleanAndCompress(m_Value, value);
 }
 
 
@@ -458,7 +352,7 @@ CFlatStringQVal::CFlatStringQVal
     :   IFlatQVal(&pfx, &sfx),
         m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
-    s_CleanAndCompress(m_Value, value);
+    CleanAndCompress(m_Value, value);
 }
 
 CFlatStringQVal::CFlatStringQVal(const CTempString& value,
@@ -466,7 +360,7 @@ CFlatStringQVal::CFlatStringQVal(const CTempString& value,
 :   IFlatQVal(&kSpace, &kSemicolon),
     m_Style(CFormatQual::eQuoted), m_Trim(trim), m_AddPeriod(0)
 {
-    s_CleanAndCompress(m_Value, value);
+    CleanAndCompress(m_Value, value);
 }
 
 
