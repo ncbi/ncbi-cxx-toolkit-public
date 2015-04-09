@@ -539,14 +539,14 @@ bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, st
             product_name = comment;
         } else {
             /* if not tRNA, gene name is required */
-            return NULL;
+            return false;
         }
     } else {
         product_name = comment.substr(0, pos);
         comment = comment.substr (pos + 1);
         pos = NStr::Find(comment, ")");
         if (pos == NCBI_NS_STD::string::npos) {
-            return NULL;
+            return false;
         }
         gene_name = comment.substr (0, pos);
         NStr::TruncateSpacesInPlace(gene_name);
