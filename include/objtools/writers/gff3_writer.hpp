@@ -120,7 +120,7 @@ protected:
         CGffFeatureContext& );
     virtual bool xWriteFeature(
         CGffFeatureContext&,
-        const CMappedFeat&);
+        CMappedFeat);
     virtual bool xWriteFeatureGene(
         CGffFeatureContext&,
         CMappedFeat );

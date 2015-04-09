@@ -1085,7 +1085,7 @@ bool CGff3Writer::xWriteSource(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeature(
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
@@ -1967,7 +1967,9 @@ bool CGff3Writer::xAssignFeatureAttributeProduct(
             if (pId) {
                 CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId); 
                 if (bsh) {
-                    CFeat_CI it(bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+                    SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
+                    sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+                    CFeat_CI it(bsh, sel);
                     if (it  &&  it->IsSetData() 
                             &&  it->GetData().GetProt().IsSetName()
                             &&  !it->GetData().GetProt().GetName().empty()) {

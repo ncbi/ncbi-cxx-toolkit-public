@@ -214,7 +214,7 @@ protected:
     virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
 
-    virtual bool x_WriteFeature(
+    virtual bool xWriteFeature(
         CGffFeatureContext&,
         CMappedFeat );
 

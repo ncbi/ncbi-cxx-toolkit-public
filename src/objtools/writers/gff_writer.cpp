@@ -181,7 +181,8 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
                 x_WriteSequenceHeader(currentId);
                 lastId = currentId;
             }
-            if ( ! x_WriteFeature( fc, *fit ) ) {
+            //HERE!
+            if ( ! xWriteFeature( fc, *fit ) ) {
                 return false;
             }
         }
@@ -220,7 +221,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CFeat_CI feat_iter(bsh, sel);
     CGffFeatureContext fc(feat_iter, bsh);
     for (;  feat_iter; ++feat_iter) {
-        if (!x_WriteFeature(fc, *feat_iter)) {
+        if (!xWriteFeature(fc, *feat_iter)) {
             return false;
         }
     } 
@@ -263,7 +264,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
-        if ( ! x_WriteFeature( fc, *feat_iter ) ) {
+        if ( ! xWriteFeature( fc, *feat_iter ) ) {
             return false;
         }
     }
@@ -271,7 +272,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteFeature(
+bool CGff2Writer::xWriteFeature(
     CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
