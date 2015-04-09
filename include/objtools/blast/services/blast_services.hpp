@@ -136,7 +136,9 @@ public:
     /// empty vector if no databases were found.
     vector< CRef<objects::CBlast4_database_info> >
     GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all);
-
+    /// Same as GetDatabaseInfo but  retrieving whole list of database
+    vector< CRef<objects::CBlast4_database_info> >
+    GetDatabaseInfoLegacy(const string& dbname, bool is_protein, bool *found_all);
     /// Retrieve organism specific repeats databases
     vector< CRef<objects::CBlast4_database_info> >
     GetOrganismSpecificRepeatsDatabases();
