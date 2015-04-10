@@ -495,6 +495,14 @@ public:
     void SetNullParameter(CTempString   name,
                           ESDB_Type     type,
                           ESP_ParamType param_type = eSP_In);
+    /// Declare an output-only parameter.
+    /// Equivalent for now to calling SetNullParameter with a
+    /// param_type value of eSP_InOut because MSSQL and Sybase (and
+    /// hence FreeTDS) don't support true output-only parameters.
+    /// However, if SDBAPI ever gains support for database engines
+    /// with this feature, this method will arrange to make use of it
+    /// as appropriate.
+    void SetOutputParameter(CTempString name, ESDB_Type type);
 
     /// Get value of the parameter.
     /// For eSP_In parameter value set to it will always be returned. For
@@ -1206,6 +1214,12 @@ void CSDB_DeadlockException::x_InitErrCode(CException::EErrCode err_code)
     _ASSERT((TErrCode)err_code == (TErrCode)CSDB_Exception::eLowLevel);
 }
 
+
+inline
+void CQuery::SetOutputParameter(CTempString name, ESDB_Type type)
+{
+    SetNullParameter(name, type, eSP_InOut);
+}
 
 
 inline
