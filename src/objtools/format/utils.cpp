@@ -780,6 +780,8 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
 #define space_bracket twochars(' ',')')
 #define bracket_space twochars('(',' ')
 #define space_semicolon twochars(' ',';')
+#define comma_space twochars(',',' ')
+#define semicolon_space twochars(';',' ')
 
 void CleanAndCompress(string& dest, const CTempString& instr)
 {
@@ -836,6 +838,26 @@ void CleanAndCompress(string& dest, const CTempString& instr)
             *out++ = next;
             next = curr;
             two_chars = curr;
+            break;
+        case comma_space:
+            *out++ = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ',') {
+                next = *in;
+                in++;
+                left--;
+            }
+            two_chars = next;
+            break;
+        case semicolon_space:
+            *out++ = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ';') {
+                next = *in;
+                in++;
+                left--;
+            }
+            two_chars = next;
             break;
         default:
             *out++ = curr;

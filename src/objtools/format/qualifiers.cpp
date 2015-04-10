@@ -864,6 +864,8 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
         subname = kEmptyStr;
     }
     ConvertQuotesNotInHTMLTags(subname);
+    CleanAndCompress(subname, subname.c_str());
+    NStr::TruncateSpacesInPlace(subname);
     ExpandTildes(subname, ( (flags & IFlatQVal::fIsNote) != 0  ? eTilde_note : eTilde_space ) );
     
     if (s_IsNote(flags, ctx)) {
@@ -1224,6 +1226,8 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
         subname = kEmptyStr;
     }
     ConvertQuotes(subname);
+    CleanAndCompress(subname, subname.c_str());
+    NStr::TruncateSpacesInPlace(subname);
     if (ctx.Config().DoHTML()) {
         s_ConvertGtLt(subname);
     }
