@@ -2341,7 +2341,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
 // sending the notification here we assume the risk that the blob will not be received correctly
 // and the notification will create confusion only (it will be corrected by periodic sync).
     if (
-        (m_Flags & eClientBlobWrite) == eClientBlobWrite // request from clients only
+        (m_Flags & eProxyBlobWrite) == eProxyBlobWrite // request from clients only
         && CNCDistributionConf::GetBlobUpdateHotline()
 #if !USE_ALWAYS_COPY_UPD
         // if the blob exists here, it can exist on mirrors as well
@@ -2848,31 +2848,32 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         return &CNCMessageHandler::x_CloseCmdAndConn;
     }
 
+    if (x_IsFlagSet(fComesFromClient)) {
+// this is potentially dangerous, because
 // if we close connection here, in the middle of transmission,
-// client will have no chance (most likely) to receive our error message
+// client might have no chance (most likely) to receive our error message
 // and might want to retry thinking it was bad luck
-#if 0
-    if (x_IsFlagSet(fReadExactBlobSize)  &&  (m_BlobSize + m_ChunkLen) > m_Size) {
-        GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
-        SRV_LOG(Error, "Too much data for blob size " << m_Size
-                        << " (received at least "
-                        << (m_BlobSize + m_ChunkLen) << " bytes)");
-        return &CNCMessageHandler::x_CloseCmdAndConn;
+        if (x_IsFlagSet(fReadExactBlobSize)  &&  (m_BlobSize + m_ChunkLen) > m_Size) {
+            GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
+            SRV_LOG(Error, "Too much data for blob size " << m_Size
+                            << " (received at least "
+                            << (m_BlobSize + m_ChunkLen) << " bytes)");
+            if (m_HttpMode == eNoHttp) {
+                WriteText(s_MsgForStatus[eStatus_CondFailed]).WriteText("\n");
+            }
+            return &CNCMessageHandler::x_CloseCmdAndConn;
+        }
+        if ((m_BlobSize + m_ChunkLen) > CNCBlobStorage::GetMaxBlobSizeStore()) {
+            GetDiagCtx()->SetRequestStatus(eStatus_BlobTooBig);
+            SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
+                            << CNCBlobStorage::GetMaxBlobSizeStore()
+                            << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
+            if (m_HttpMode == eNoHttp) {
+                WriteText("ERR:Blob size exceeds the allowed maximum").WriteText("\n");
+            }
+            return &CNCMessageHandler::x_CloseCmdAndConn;
+        }
     }
-    if ((m_BlobSize + m_ChunkLen) > CNCBlobStorage::GetMaxBlobSizeStore()) {
-        GetDiagCtx()->SetRequestStatus(eStatus_BlobTooBig);
-        SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
-                        << CNCBlobStorage::GetMaxBlobSizeStore()
-                        << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
-
-/*
-if (m_HttpMode == eNoHttp) {
-    WriteText("ERR:Blob size exceeds the allowed maximum").WriteText("\n");
-}
-*/
-        return &CNCMessageHandler::x_CloseCmdAndConn;
-    }
-#endif
 
     if (m_ActiveHub) {
         CSrvSocketTask* active_sock = m_ActiveHub->GetHandler()->GetSocket();

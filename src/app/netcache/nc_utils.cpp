@@ -54,7 +54,7 @@ static SStatusMsg s_StatusMessages[] =
         {eStatus_NoDiskSpace, "ERR:Not enough disk space"},
         {eStatus_BadPassword, "ERR:Access denied."},
         {eStatus_NotFound, "ERR:BLOB not found."},
-        {eStatus_CondFailed, "ERR:Too few data for blob"},
+        {eStatus_CondFailed, "ERR:Precondition failed"},
         {eStatus_NoImpl, "ERR:Not implemented"},
         {eStatus_ShuttingDown, "ERR:Shutting down"}
     };
