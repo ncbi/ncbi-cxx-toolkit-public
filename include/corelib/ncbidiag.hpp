@@ -2726,6 +2726,8 @@ public:
     /// initialized, i.e. no earlier than CNcbiApplication::Run() is called.
     /// Method can throw CThreadException if dedicated thread failed
     /// to start.
+    /// @deprecated Use regular diganostics instead.
+    NCBI_DEPRECATED
     void InstallToDiag(void);
     /// Remove this DiagHandler from diagnostics.
     /// This method must be called if InstallToDiag was called. Object cannot
