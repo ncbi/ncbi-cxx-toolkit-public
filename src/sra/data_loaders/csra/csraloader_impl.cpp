@@ -1597,17 +1597,18 @@ void CCSRARefSeqInfo::LoadRefSeqChunk(CTSE_Chunk_Info& chunk_info)
 
 BEGIN_LOCAL_NAMESPACE;
 
+enum EBaseStat {
+    kStat_A = 0,
+    kStat_C = 1,
+    kStat_G = 2,
+    kStat_T = 3,
+    kStat_Insert = 4,
+    kStat_Match = 5,
+    kNumStat = 6
+};
+
 struct SBaseStat
 {
-    enum {
-        kStat_A = 0,
-        kStat_C = 1,
-        kStat_G = 2,
-        kStat_T = 3,
-        kStat_Insert = 4,
-        kStat_Match = 5,
-        kNumStat = 6
-    };
     SBaseStat(void) {
         for ( int i = 0; i < kNumStat; ++i ) {
             cnts[i] = 0;
@@ -1634,11 +1635,103 @@ struct SBaseStat
     void add_match() {
         cnts[kStat_Match] += 1;
     }
-    void add_gap() {
+    void add_insert() {
         cnts[kStat_Insert] += 1;
     }
 
     unsigned cnts[kNumStat];
+};
+
+struct SBaseStats
+{
+    size_t x_size;
+    vector<SBaseStat> ss;
+
+    size_t size(void) const
+        {
+            return x_size;
+        }
+    void resize(size_t len)
+        {
+            x_size = len;
+        }
+    bool x_empty(EBaseStat stat) const
+        {
+            return false;
+        }
+    unsigned x_get(EBaseStat stat, size_t pos) const
+        {
+            return ss[pos].cnts[stat];
+        }
+    void x_add(EBaseStat stat, size_t pos)
+        {
+            ss.resize(size());
+            ss[pos].cnts[stat] += 1;
+        }
+
+    void add_stat(EBaseStat stat, size_t pos)
+        {
+            x_add(stat, pos);
+        }
+    void add_stat(EBaseStat stat, size_t pos, size_t count)
+        {
+            size_t end = min(size(), pos+count);
+            for ( size_t i = pos; i < end; ++i ) {
+                x_add(stat, i);
+            }
+        }
+    void add_base(char b, size_t pos)
+        {
+            if ( pos < size() ) {
+                EBaseStat stat;
+                switch ( b ) {
+                case 'A': stat = kStat_A; break;
+                case 'C': stat = kStat_C; break;
+                case 'G': stat = kStat_G; break;
+                case 'T': stat = kStat_T; break;
+                case '=': stat = kStat_Match; break;
+                default: return;
+                }
+                add_stat(stat, pos);
+            }
+        }
+    void add_match(size_t pos, size_t count)
+        {
+            add_stat(kStat_Match, pos, count);
+        }
+    void add_insert(size_t pos, size_t count)
+        {
+            add_stat(kStat_Insert, pos, count);
+        }
+
+    pair<unsigned, unsigned> get_min_max(EBaseStat stat) const
+        {
+            pair<unsigned, unsigned> c_min_max;
+            if ( !x_empty(stat) ) {
+                c_min_max.first = c_min_max.second = x_get(stat, 0);
+                for ( size_t i = 1; i < size(); ++i ) {
+                    unsigned c = x_get(stat, i);
+                    c_min_max.first = min(c_min_max.first, c);
+                    c_min_max.second = max(c_min_max.second, c);
+                }
+            }
+            return c_min_max;
+        }
+    
+    void get_bytes(EBaseStat stat, CByte_graph::TValues& vv)
+        {
+            vv.reserve(size());
+            for ( size_t i = 0; i < size(); ++i ) {
+                vv.push_back(CByte_graph::TValues::value_type(x_get(stat, i)));
+            }
+        }
+    void get_ints(EBaseStat stat, CInt_graph::TValues& vv)
+        {
+            vv.reserve(size());
+            for ( size_t i = 0; i < size(); ++i ) {
+                vv.push_back(CInt_graph::TValues::value_type(x_get(stat, i)));
+            }
+        }
 };
 
 
@@ -1649,7 +1742,7 @@ struct SChunkAnnots {
     CRef<CCSRAFileInfo> m_File;
     bool m_SeparateSpotGroups;
     ECSRAAnnotChunkIdType m_Type;
-    typedef pair<CRef<CSeq_annot>, vector<SBaseStat> > TSlot;
+    typedef pair<CRef<CSeq_annot>, SBaseStats> TSlot;
     typedef map<string, TSlot> TAnnots;
     TAnnots m_Annots;
     TAnnots::iterator m_LastAnnot;
@@ -1692,7 +1785,7 @@ SChunkAnnots::TSlot& SChunkAnnots::Select(const CCSraAlignIterator& ait)
 
 void SChunkAnnots::Create(const string& name)
 {
-    m_LastAnnot = m_Annots.insert(TAnnots::value_type(name, TSlot(null, vector<SBaseStat>()))).first;
+    m_LastAnnot = m_Annots.insert(TAnnots::value_type(name, TSlot(null, SBaseStats()))).first;
     if ( !m_LastAnnot->second.first ) {
         const string& annot_name = m_File->GetAnnotName(name, m_Type);
         if ( m_Type == eCSRAAnnotChunk_align ) {
@@ -1791,10 +1884,8 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
             continue;
         }
         ++count;
-        vector<SBaseStat>& ss = annots.Select(ait).second;
-        if ( ss.empty() ) {
-            ss.resize(len);
-        }
+        SBaseStats& ss = annots.Select(ait).second;
+        ss.resize(len);
 
         TSeqPos ref_pos = ait.GetRefSeqPos()-pos;
         TSeqPos read_pos = ait.GetShortPos();
@@ -1822,19 +1913,15 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
             }
             if ( type == '=' ) {
                 // match
-                for ( int i = 0; i < seglen; ++i ) {
-                    if ( ref_pos < len ) {
-                        ss[ref_pos].add_match();
-                    }
-                    ++ref_pos;
-                    ++read_pos;
-                }
+                ss.add_match(ref_pos, seglen);
+                ref_pos += seglen;
+                read_pos += seglen;
             }
             else if ( type == 'M' || type == 'X' ) {
                 // mismatch
                 for ( int i = 0; i < seglen; ++i ) {
                     if ( ref_pos < len ) {
-                        ss[ref_pos].add_base(read[read_pos]);
+                        ss.add_base(read[read_pos], ref_pos);
                     }
                     ++ref_pos;
                     ++read_pos;
@@ -1853,12 +1940,8 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
             }
             else if ( type == 'D' ) {
                 // delete
-                for ( int i = 0; i < seglen; ++i ) {
-                    if ( ref_pos < len ) {
-                        ss[ref_pos].add_gap();
-                    }
-                    ++ref_pos;
-                }
+                ss.add_insert(ref_pos, seglen);
+                ref_pos += seglen;
             }
             else if ( type != 'P' ) {
                 NCBI_THROW_FMT(CSraException, eOtherError,
@@ -1874,26 +1957,9 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                    count<<" skipped: "<<skipped);
     }
 
-    int c_min[SBaseStat::kNumStat], c_max[SBaseStat::kNumStat];
-    for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
-        c_min[i] = kMax_Int;
-        c_max[i] = 0;
-    }
     NON_CONST_ITERATE ( SChunkAnnots::TAnnots, it, annots.m_Annots ) {
-        vector<SBaseStat>& ss = it->second.second;
-        if ( ss.empty() ) {
-            ss.resize(len);
-        }
-        for ( size_t j = 0; j < len; ++j ) {
-            const SBaseStat& s = ss[j];
-            for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
-                int c = s.cnts[i];
-                c_min[i] = min(c_min[i], c);
-                c_max[i] = max(c_max[i], c);
-            }
-        }
-
-        for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
+        SBaseStats& ss = it->second.second;
+        for ( int k = 0; k < kNumStat; ++k ) {
             CRef<CSeq_graph> graph(new CSeq_graph);
             static const char* const titles[6] = {
                 "Number of A bases",
@@ -1903,33 +1969,35 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                 "Number of inserts",
                 "Number of matches"
             };
-            graph->SetTitle(titles[i]);
+            graph->SetTitle(titles[k]);
             CSeq_interval& loc = graph->SetLoc().SetInt();
             loc.SetId(*ait.GetRefSeq_id());
             loc.SetFrom(pos);
             loc.SetTo(pos+len-1);
             graph->SetNumval(len);
 
-            if ( c_max[i] < 256 ) {
+            pair<unsigned, unsigned> c_min_max = ss.get_min_max(EBaseStat(k));
+            if ( c_min_max.second == 0 ) {
+                CByte_graph& data = graph->SetGraph().SetByte();
+                data.SetValues().resize(len);
+                data.SetMin(0);
+                data.SetMax(0);
+                data.SetAxis(0);
+            }
+            else if ( c_min_max.second < 256 ) {
                 CByte_graph& data = graph->SetGraph().SetByte();
                 CByte_graph::TValues& vv = data.SetValues();
-                vv.reserve(len);
-                for ( size_t j = 0; j < len; ++j ) {
-                    vv.push_back(ss[j].cnts[i]);
-                }
-                data.SetMin(c_min[i]);
-                data.SetMax(c_max[i]);
+                ss.get_bytes(EBaseStat(k), vv);
+                data.SetMin(c_min_max.first);
+                data.SetMax(c_min_max.second);
                 data.SetAxis(0);
             }
             else {
                 CInt_graph& data = graph->SetGraph().SetInt();
                 CInt_graph::TValues& vv = data.SetValues();
-                vv.reserve(len);
-                for ( size_t j = 0; j < len; ++j ) {
-                    vv.push_back(ss[j].cnts[i]);
-                }
-                data.SetMin(c_min[i]);
-                data.SetMax(c_max[i]);
+                ss.get_ints(EBaseStat(k), vv);
+                data.SetMin(c_min_max.first);
+                data.SetMax(c_min_max.second);
                 data.SetAxis(0);
             }
             it->second.first->SetData().SetGraph().push_back(graph);
