@@ -874,6 +874,10 @@ pcsubstance needs pub
 pepXML needs xser
 phytree_format needs taxon1
 phytree_format needs xalgophytree
+pn_ctl needs $(GPIPE_GENCOLL_LIBS)
+pn_ctl needs hmm_hit_handle
+pn_ctl needs idload_utils
+pn_ctl needs xid_utils
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
