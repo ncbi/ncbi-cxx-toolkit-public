@@ -517,7 +517,7 @@ static bool s_IsProteinToGenomic(CScope& scope,
         return false;
     }
     const CSeq_id& id1 = align.GetSeq_id(1);
-    return s_SequenceIsProtein(scope, id0);
+    return s_SequenceIsProtein(scope, id1);
 }
 
 
