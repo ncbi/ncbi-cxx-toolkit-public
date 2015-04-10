@@ -502,7 +502,6 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
             site.GetLibInfo(m_3PartyLib, config, &lib_info);
 
             if ( !site.IsLibOk(lib_info) ) {
-
                 m_Choice = eLib;
                 break;
             }
@@ -510,6 +509,7 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
     } else {
         m_Choice = site.IsProvided(lib_3party) ? e3PartyLib : eLib;
     }
+    LOG_POST(Info << "LibChoice " << lib << "/" << lib_3party << " = " << (m_Choice == e3PartyLib ? lib_3party : lib));
 }
 
 
