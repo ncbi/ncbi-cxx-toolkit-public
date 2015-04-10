@@ -801,8 +801,7 @@ CBamAlignIterator& CBamAlignIterator::operator++(void)
     if ( m_LocateRC ) {
         if ( GetRCObject(m_LocateRC) == rcRow &&
              GetRCState(m_LocateRC) == rcNotFound ) {
-            // end of iteration
-            m_LocateRC = m_LocateRC;
+            // end of iteration, keep the error code
         }
         else {
             NCBI_THROW2(CBamException, eOtherError,
