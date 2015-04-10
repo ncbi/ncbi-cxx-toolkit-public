@@ -423,7 +423,7 @@ CSraValue::CSraValue(const CSraColumn& col, spotid_t id, ECheckRc check_rc)
     }
     if ( m_Error && check_rc == eCheckRc ) {
         NCBI_THROW3(CSraException, eNotFoundValue, "Cannot read value",
-                    m_Error, NStr::UIntToString(id));
+                    m_Error, NStr::NumericToString(id));
     }
 }
 
@@ -491,7 +491,7 @@ CRef<CSeq_entry> CSraRun::GetSpotEntry(spotid_t spot_id) const
     CSraStringValue read(m_Read, spot_id);
     CSraBytesValue qual(m_Qual, spot_id);
     int seq_count = 0;
-    string id_start = GetAccession()+'.'+NStr::UIntToString(spot_id)+'.';
+    string id_start = GetAccession()+'.'+NStr::NumericToString(spot_id)+'.';
     for ( int r = 0; r < sdesc->num_reads; ++r ) {
         if ( rdesc[r].type != SRA_READ_TYPE_BIOLOGICAL ) {
             continue;
