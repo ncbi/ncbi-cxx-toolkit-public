@@ -152,9 +152,9 @@ public:
         return m_Query->GetQuerySeqLoc();
     }
 
-    const TMaskedQueryRegions
+    const TMaskedQueryRegions &
         GetMaskLocations(void) const {
-        return m_Query->GetMaskedRegions();
+        return m_QueryMasks;
     }
 
     Int8 GetDbNumSeqs(void) const {
@@ -234,6 +234,8 @@ private:
     int *m_Matrix[kMatrixCols];
 
     list<string> m_SubjectIds;
+
+    TMaskedQueryRegions m_QueryMasks;
 
     /// Initialize the score matrix to be used for formatting
     /// (if applicable)

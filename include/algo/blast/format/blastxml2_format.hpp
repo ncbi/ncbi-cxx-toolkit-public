@@ -82,7 +82,7 @@ public:
     virtual CBlastFormattingMatrix* GetMatrix(void) const = 0;
     virtual CConstRef<objects::CSeq_loc> GetQuerySeqLoc(void) const  = 0;
     /// Returns list of mask locations for a given query.
-    virtual const TMaskedQueryRegions  GetMaskLocations() const = 0;
+    virtual const TMaskedQueryRegions & GetMaskLocations() const = 0;
     /// Returns number of database sequences.
     virtual Int8 GetDbNumSeqs(void) const = 0;
     /// Returns database length

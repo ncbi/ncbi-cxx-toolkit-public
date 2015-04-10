@@ -54,6 +54,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData (
 {
 	x_InitCommon(results, opts);
 	x_InitDB(dbsInfo);
+	results.GetMaskedQueryRegions(m_QueryMasks);
 	x_InitResults(results);
 }
 
@@ -69,6 +70,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData(
 {
 	x_InitCommon(results, opts);
 	x_InitSubjects(subjectsInfo);
+	results.GetMaskedQueryRegions(m_QueryMasks);
 	x_InitResults(results);
 }
 
@@ -84,7 +86,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData(
 {
 	x_InitCommon(resultSet[0], opts);
 	x_InitDB(dbsInfo);
-
+	resultSet[0].GetMaskedQueryRegions(m_QueryMasks);
 	for(unsigned int i = 0; i < resultSet.size(); i++) {
 		x_InitResults(resultSet[i]);
 	}
@@ -102,6 +104,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData(
 {
 	x_InitCommon(resultSet[0], opts);
 	x_InitSubjects(subjectsInfo);
+	resultSet[0].GetMaskedQueryRegions(m_QueryMasks);
 	for(unsigned int i = 0; i < resultSet.size(); i++) {
 		x_InitResults(resultSet[i]);
 	}
