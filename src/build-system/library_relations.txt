@@ -858,6 +858,7 @@ osutils needs3party $(RT_LIBS)
 osutils needs3party ctutils
 pathogen_connection needs connssl
 pathogen_connection needs gpipe_common
+pathogen_connection needs gpipe_dateutil
 pathogen_ctl needs $(SRAREAD_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gencoll_client
