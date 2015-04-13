@@ -1696,14 +1696,15 @@ extern SOCK URL_Connect
         }
         if (x_add) {
             size_t x_len = host  &&  *host ? strlen(host) : 0; 
-            char* x_host = x_len ? (char*) malloc(x_len + 16) : 0;
+            char* x_host = x_len ? (char*) malloc(x_len + sizeof(kHost)+6) : 0;
             if (x_host) {
                 memcpy(x_host, kHost, sizeof(kHost) - 1);
                 memcpy(x_host + sizeof(kHost) - 1, host, x_len);
-                if (port) {
-                    x_len += sizeof(kHost);
+                x_len += sizeof(kHost) - 1;
+                if (port)
                     sprintf(x_host + x_len, ":%hu", port);
-                }
+                else
+                    x_host[x_len] = '\0';
                 if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr))) {
                     x_hdr = user_hdr;
                     free(x_host);
