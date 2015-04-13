@@ -16,6 +16,8 @@
 NCBI-ID2Access DEFINITIONS ::=
 BEGIN
 
+EXPORTS ID2-Blob-State;
+
 IMPORTS Seq-id, Seq-loc                                 FROM NCBI-Seqloc
         ID2S-Chunk-Id, ID2S-Seq-annot-Info              FROM NCBI-Seq-split;
 
@@ -294,7 +296,9 @@ ID2-Reply-Get-Seq-id ::= SEQUENCE {
         end-of-reply    NULL OPTIONAL
 }
 
-
+-- Bit numbers for different blob states,
+-- used in blob-state fields of several replies.
+-- For example, dead & protected blob has blob-state 24 - 3rd and 4th bits set.
 ID2-Blob-State ::= ENUMERATED {
         live            (0),
         suppressed-temp (1),
@@ -324,7 +328,7 @@ ID2-Reply-Get-Blob-Id ::= SEQUENCE {
         -- this Blob-id is the last one in the request
         end-of-reply    NULL OPTIONAL,
 
-        -- state of the blob, 0 or missing means regular live data
+        -- state bits of the blob, 0 or missing means regular live data
         blob-state      INTEGER OPTIONAL
 }
 
@@ -351,7 +355,7 @@ ID2-Reply-Get-Blob ::= SEQUENCE {
         -- not set if error occurred
         data            ID2-Reply-Data OPTIONAL,
 
-        -- state of the blob, 0 or missing means regular live data
+        -- state bits of the blob, 0 or missing means regular live data
         blob-state      INTEGER OPTIONAL
 }
 
@@ -367,7 +371,7 @@ ID2S-Reply-Get-Split-Info ::= SEQUENCE {
         -- not set if error occurred
         data            ID2-Reply-Data OPTIONAL,
 
-        -- state of the blob, 0 or missing means regular live data
+        -- state bits of the blob, 0 or missing means regular live data
         blob-state      INTEGER OPTIONAL
 }
 
