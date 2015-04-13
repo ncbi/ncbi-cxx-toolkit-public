@@ -76,7 +76,7 @@ protected:
     bool x_WriteRecord( 
         const CGffWriteRecord* );
 
-    virtual bool x_WriteFeature(
+    virtual bool xWriteFeature(
         CGffFeatureContext&,
         CMappedFeat );
     virtual bool x_WriteFeatureGene(

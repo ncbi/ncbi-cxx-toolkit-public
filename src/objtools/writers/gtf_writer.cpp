@@ -118,7 +118,7 @@ bool CGtfWriter::x_WriteRecord(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::x_WriteFeature(
+bool CGtfWriter::xWriteFeature(
     CGffFeatureContext& context,
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
