@@ -483,6 +483,7 @@ gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_xml needs $(GPIPE_COMMON_LIBS)
 gpipe_xml needs connssl
+gpipe_xml needs gpipe_dateutil
 gpipe_xml needs taxon1
 gpipe_xml needs taxon3
 gpxapi needs general
