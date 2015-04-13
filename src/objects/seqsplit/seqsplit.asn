@@ -21,8 +21,7 @@ EXPORTS ID2S-Chunk-Id, ID2S-Seq-annot-Info;
 IMPORTS Seq-id                                      FROM NCBI-Seqloc
         Seq-entry                                   FROM NCBI-Seqset
         Bioseq, Seq-annot, Seq-descr, Seq-literal   FROM NCBI-Sequence
-        Seq-align                                   FROM NCBI-Seqalign
-        Feat-id                                     FROM NCBI-Seqfeat;
+        Seq-align                                   FROM NCBI-Seqalign;
 
 ----------------------------------------------------------------------------
 -- Blob split info types
