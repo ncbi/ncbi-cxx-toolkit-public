@@ -346,7 +346,7 @@ def main():
             printVerbose( "Switching to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
             nsConnect.execute( "SETQUEUE " + DYNAMIC_QUEUE_TO_TEST )
         if not testQueueAcceptSubmit( nsConnect ):
-            penaltyValue = log( BASE_NO_ACTION_ALERT_CODE + 3,
+            penaltyValue = log( BASE_NO_ACTION_ALERT_CODE + 4,
                                 "test queue refuses submits" )
             if canSetClientData:
                 setClientData( nsConnect, "DONE", penaltyValue )
@@ -359,33 +359,33 @@ def main():
 
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 1,
+                log( BASE_RESERVE_CODE + 4,
                      "(service " + serviceName + ") communication timeout" ) )
     except UnexpectedNSResponse, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 4,
+                log( BASE_RESERVE_CODE + 5,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except NSError, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 4,
+                log( BASE_RESERVE_CODE + 6,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except NSShuttingDown, exc:
         return log( BASE_DOWN_CODE,
                     "(service " + serviceName + ") " + str( exc ) )
     except NSAccessDenied, exc:
-        return log( BASE_NO_ACTION_ALERT_CODE + 4,
+        return log( BASE_NO_ACTION_ALERT_CODE + 5,
                     "(service " + serviceName + ") " + str( exc ) )
     except NSStaticCheckError, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 5,
+                log( BASE_RESERVE_CODE + 7,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except Exception, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 2,
+                log( BASE_NO_ACTION_ALERT_CODE + 6,
                      "(service " + serviceName + ") " + str( exc ) ) )
     except:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 3,
+                log( BASE_NO_ACTION_ALERT_CODE + 6,
                      "(service " + serviceName + ") Unknown check script error" ) )
 
     # Everything is fine
@@ -689,13 +689,13 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         # Ctrl+C
         printStderr( "Ctrl + C received" )
-        returnValue = BASE_NO_ACTION_ALERT_CODE
+        returnValue = BASE_NO_ACTION_ALERT_CODE + 7
     except Exception, excpt:
         printStderr( str( excpt ) )
-        returnValue = BASE_NO_ACTION_ALERT_CODE
+        returnValue = BASE_NO_ACTION_ALERT_CODE + 8
     except:
         printStderr( "Generic unknown script error" )
-        returnValue = BASE_NO_ACTION_ALERT_CODE
+        returnValue = BASE_NO_ACTION_ALERT_CODE + 9
 
 
     printVerbose( "Return code: " + str( returnValue ) )
