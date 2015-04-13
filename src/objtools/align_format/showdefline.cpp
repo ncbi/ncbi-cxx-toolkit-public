@@ -1527,7 +1527,8 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
         deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
-        deflFastaSeq = sdl->id->AsFastaString();        
+        //deflFastaSeq = sdl->id->AsFastaString();
+        deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
     }
     else {        
         deflFrmID = deflId = NStr::NumericToString(sdl->gi);        
