@@ -287,7 +287,7 @@ bool CWriteUtil::GetCodeBreak(
             }
         }
     }
-    cb_str += ",aa=";
+    cb_str += ",aa:";
 
     string aaName;
     if (!CWriteUtil::GetAaName(cb, aaName)) {
