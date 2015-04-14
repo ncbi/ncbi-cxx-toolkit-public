@@ -54,7 +54,7 @@ public:
 
     string PrintClause(bool print_typeword, bool typeword_is_plural);
     
-    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype();
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const;
     size_t GetNumSubclauses() { return m_ClauseList.size(); }
     virtual void Label();
     virtual bool AddmRNA (CAutoDefFeatureClause_Base *mRNAClause);
@@ -85,6 +85,7 @@ public:
     string ListClauses(bool allow_semicolons, bool suppress_final_and);
 
     bool IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause);
+    bool IsUnattachedGene() const;
     bool IsTypewordFirst() { return m_ShowTypewordFirst; }
     bool DisplayAlleleName ();
 
@@ -146,6 +147,9 @@ public:
     
     virtual bool IsBioseqPrecursorRNA();
     void RemoveBioseqPrecursorRNAs();
+
+    void Consolidate(CAutoDefFeatureClause_Base& other);
+    void TakeSubclauses(CAutoDefFeatureClause_Base& other);
    
 protected:
     CAutoDefFeatureClause_Base();
@@ -179,6 +183,7 @@ protected:
     bool x_OkToConsolidate (unsigned int clause1, unsigned int clause2);
     bool x_MeetAltSpliceRules (unsigned int clause1, unsigned int clause2, string &splice_name);
 
+    void x_RemoveNullClauses();
 };
 
 
@@ -204,7 +209,7 @@ public:
     virtual bool IsExonList() { return true; }
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);    
     virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause);
-    virtual CSeqFeatData::ESubtype GetMainFeatureSubtype();
+    virtual CSeqFeatData::ESubtype GetMainFeatureSubtype() const;
     void SetSuppressFinalAnd(bool suppress) { m_SuppressFinalAnd = suppress; }
 private:
     CRef<CSeq_loc> SeqLocIntersect (CRef<CSeq_loc> loc1, CRef<CSeq_loc> loc2);

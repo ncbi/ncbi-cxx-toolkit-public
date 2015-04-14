@@ -47,7 +47,7 @@ public:
     ~CAutoDefFeatureClause();
     
     virtual void Label();
-    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype();
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const;
     
     virtual bool IsRecognizedFeature();
     
@@ -192,7 +192,7 @@ public:
     CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string gene_name, string product_name, bool is_first, bool is_last);
     ~CAutoDefParsedtRNAClause();
 
-    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_tRNA; }
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const { return CSeqFeatData::eSubtype_tRNA; }
     virtual bool IsIntergenicSpacer() { return false; }
     static bool ParseString(string comment, string& gene_name, string& product_name);
 };
@@ -246,7 +246,7 @@ public:
 
     virtual void Label();
     virtual bool IsPromoter() { return true; }
-    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_promoter; };
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const { return CSeqFeatData::eSubtype_promoter; };
     
     virtual bool IsRecognizedFeature() { return false; };
     

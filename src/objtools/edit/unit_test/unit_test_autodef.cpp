@@ -1172,6 +1172,48 @@ BOOST_AUTO_TEST_CASE(Test_GB_3949)
     CheckDeflineMatches(entry, subsrcs, orgmods);
 }
 
+BOOST_AUTO_TEST_CASE(Test_GB_4043)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    cds->SetLocation().SetInt().SetFrom(20);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    CRef<objects::CSeq_feat> intron = unit_test_util::AddMiscFeature(nuc);
+    intron->SetData().SetImp().SetKey("intron");
+    intron->SetLocation().SetInt().SetFrom(0);
+    intron->SetLocation().SetInt().SetTo(19);
+    intron->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    intron->ResetComment();
+    intron->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("number", "2")));
+    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature(nuc);
+    gene->SetData().SetGene().SetLocus("GAPDH");
+    gene->SetLocation().SetInt().SetFrom(0);
+    gene->SetLocation().SetInt().SetTo(cds->GetLocation().GetInt().GetTo());
+    gene->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    gene->ResetComment();
+
+    AddTitle(nuc, "Sebaea microphylla fake protein name (GAPDH) gene, intron 2 and partial cds.");
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources (seh);
+    autodef.SetKeepIntrons(true);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = autodef.FindBestModifierCombo();
+    
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

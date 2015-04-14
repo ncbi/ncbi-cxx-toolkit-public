@@ -85,7 +85,7 @@ CAutoDefFeatureClause_Base::~CAutoDefFeatureClause_Base()
 }
 
 
-CSeqFeatData::ESubtype CAutoDefFeatureClause_Base::GetMainFeatureSubtype()
+CSeqFeatData::ESubtype CAutoDefFeatureClause_Base::GetMainFeatureSubtype() const
 {
     if (m_ClauseList.size() == 1) {
         return m_ClauseList[0]->GetMainFeatureSubtype();
@@ -220,6 +220,21 @@ bool CAutoDefFeatureClause_Base::IsGeneMentioned(CAutoDefFeatureClause_Base *gen
 }
 
 
+bool CAutoDefFeatureClause_Base::IsUnattachedGene() const
+{
+    if (GetMainFeatureSubtype() != CSeqFeatData::eSubtype_gene) {
+        return false;
+    }
+
+    for (unsigned int j = 0; j < m_ClauseList.size(); j++) {
+        if (!m_ClauseList[j]->IsMarkedForDeletion()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool CAutoDefFeatureClause_Base::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
 {
     bool retval = false;
@@ -305,10 +320,13 @@ void CAutoDefFeatureClause_Base::RemoveGenesMentionedElsewhere()
     
     for (k = 0; k < m_ClauseList.size(); k++) {
         if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_gene) {
-            for (j = 0; j < m_ClauseList.size() && !m_ClauseList[k]->IsMarkedForDeletion(); j++) {
-                if (j != k && !m_ClauseList[j]->IsMarkedForDeletion() 
-                    && m_ClauseList[j]->IsGeneMentioned(m_ClauseList[k])) {
-                    m_ClauseList[k]->MarkForDeletion();
+            // only remove the gene if it has no subclauses not already marked for deletion
+            if (m_ClauseList[k]->IsUnattachedGene()) {
+                for (j = 0; j < m_ClauseList.size() && !m_ClauseList[k]->IsMarkedForDeletion(); j++) {
+                    if (j != k && !m_ClauseList[j]->IsMarkedForDeletion() 
+                        && m_ClauseList[j]->IsGeneMentioned(m_ClauseList[k])) {
+                        m_ClauseList[k]->MarkForDeletion();
+                    }
                 }
             }
         } else {
@@ -721,6 +739,47 @@ bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsign
 }
 
 
+void CAutoDefFeatureClause_Base::Consolidate(CAutoDefFeatureClause_Base& other)
+{
+    // Add subfeatures from new clause to last clause
+    TClauseList new_subfeatures;
+    new_subfeatures.clear();
+    other.TransferSubclauses(new_subfeatures);
+    for (unsigned int j = 0; j < new_subfeatures.size(); j++) {
+        AddSubclause(new_subfeatures[j]);
+        new_subfeatures[j] = NULL;
+    }
+    new_subfeatures.clear();
+            
+    // Add new clause location to last clause
+    AddToLocation(other.GetLocation());
+    // if we have two clauses that are really identical instead of
+    // just sharing a "prefix", make the description plural
+    if (NStr::Equal(GetInterval(), other.GetInterval())) {
+        SetMakePlural();
+    }
+            
+    // this will regenerate the interval
+    Label();
+            
+    // mark other clause for deletion
+    other.MarkForDeletion();
+}
+
+
+void CAutoDefFeatureClause_Base::x_RemoveNullClauses()
+{
+    TClauseList::iterator it = m_ClauseList.begin();
+    while (it != m_ClauseList.end()) {
+        if (*it == NULL) {
+            it = m_ClauseList.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
 void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
 {
     if (m_ClauseList.size() < 2) {
@@ -728,42 +787,32 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
     }
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        m_ClauseList[k]->ConsolidateRepeatedClauses();
-        if (m_ClauseList[k]->IsMarkedForDeletion()) {
+        if (!m_ClauseList[k] || m_ClauseList[k]->IsMarkedForDeletion()) {
             continue;
         }
+        m_ClauseList[k]->ConsolidateRepeatedClauses();
         for (unsigned int n = k + 1; n < m_ClauseList.size(); n++) {
-            if (m_ClauseList[n]->IsMarkedForDeletion()) {
+            if (!m_ClauseList[n] || m_ClauseList[n]->IsMarkedForDeletion()) {
                 continue;
             }
             if (x_OkToConsolidate(k, n)) {
-                // Add subfeatures from new clause to last clause
-                TClauseList new_subfeatures;
-                new_subfeatures.clear();
-                m_ClauseList[n]->TransferSubclauses(new_subfeatures);
-                for (unsigned int j = 0; j < new_subfeatures.size(); j++) {
-                    m_ClauseList[k]->AddSubclause(new_subfeatures[j]);
-                    new_subfeatures[j] = NULL;
-                }
-                new_subfeatures.clear();
-            
-                // Add new clause location to last clause
-                m_ClauseList[k]->AddToLocation(m_ClauseList[n]->GetLocation());
-                // if we have two clauses that are really identical instead of
-                // just sharing a "prefix", make the description plural
-                if (NStr::Equal(m_ClauseList[k]->GetInterval(), m_ClauseList[n]->GetInterval())) {
-                    m_ClauseList[k]->SetMakePlural();
-                }
-            
-                // this will regenerate the interval
-                m_ClauseList[k]->Label();
-            
-                // mark new clause for deletion
-                m_ClauseList[n]->MarkForDeletion();
+                CSeqFeatData::ESubtype subtypek = m_ClauseList[k]->GetMainFeatureSubtype();
+                CSeqFeatData::ESubtype subtypen = m_ClauseList[n]->GetMainFeatureSubtype();
+
+                if (subtypek == CSeqFeatData::eSubtype_gene) {
+                    m_ClauseList[n]->Consolidate(*m_ClauseList[k]);
+                } else if (subtypen == CSeqFeatData::eSubtype_gene) {
+                    m_ClauseList[k]->Consolidate(*m_ClauseList[n]);
+                } else {
+                    m_ClauseList[k]->AddSubclause(m_ClauseList[n]);
+                    m_ClauseList[n] = NULL;
+                } 
             }
         }
    
     }
+    x_RemoveNullClauses();
+    Label();
 } 
 
 // These are words that are used to introduced the part of the protein
@@ -1504,7 +1553,7 @@ CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_
 }
 
 
-CSeqFeatData::ESubtype CAutoDefExonListClause::GetMainFeatureSubtype() 
+CSeqFeatData::ESubtype CAutoDefExonListClause::GetMainFeatureSubtype() const
 { 
     return CSeqFeatData::eSubtype_exon; 
 }

@@ -111,7 +111,7 @@ CAutoDefFeatureClause::~CAutoDefFeatureClause()
 }
 
 
-CSeqFeatData::ESubtype CAutoDefFeatureClause::GetMainFeatureSubtype()
+CSeqFeatData::ESubtype CAutoDefFeatureClause::GetMainFeatureSubtype() const
 {
     return m_MainFeat.GetData().GetSubtype();
 }
