@@ -1878,11 +1878,9 @@ CNetStorageHandler::x_ProcessCreate(
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
         m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
     } else {
-        // No need metadata decision could be made basing not on the command
-        // flags but basing on the HELLO parameters so make sure the flag is
-        // set properly to reflect the decision
-        flags |= fNST_NoMetaData;
+        m_DBObjectID = 0;
     }
 
     // Create the object stream depending on settings
@@ -2453,12 +2451,6 @@ CNetStorageHandler::x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags)
 {
-    if ((flags & fNST_NoMetaData) == 0) {
-        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
-    } else {
-        m_DBObjectID = 0;
-    }
-
     CNetICacheClient icache_client;
 
     if (icache_settings.m_ServiceName.empty())
