@@ -272,16 +272,20 @@ bool CGff2Record::AssignFromGff(
         m_pdScore = new double( NStr::StringToDouble( columns[5] ) );
     }
 
-    if ( columns[6] == "+" ) {
-        m_peStrand = new ENa_strand( eNa_strand_plus );
-    }
-    else
-    if ( columns[6] == "-" ) {
-        m_peStrand = new ENa_strand( eNa_strand_minus );
-    }
-    else
-    if ( columns[6] == "?" ) {
-        m_peStrand = new ENa_strand( eNa_strand_unknown );
+    char strand = columns[6][0];
+    switch (strand) {
+    default: 
+        m_peStrand = new ENa_strand(objects::eNa_strand_unknown);
+        break;
+    case '+':
+        m_peStrand = new ENa_strand(objects::eNa_strand_plus);
+        break;
+    case '-':
+        m_peStrand = new ENa_strand(objects::eNa_strand_minus);
+        break;
+    case '.':
+        m_peStrand = new ENa_strand(objects::eNa_strand_both);
+        break;
     }
 
     if ( columns[7] == "0" ) {
