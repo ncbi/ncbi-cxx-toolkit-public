@@ -31,9 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <algorithm>
-#include <memory>
-#include <sstream>
 
 #include <corelib/ncbi_limits.h>
 
@@ -48,6 +45,11 @@
 #include <algo/winmask/seq_masker_util.hpp>
 #include <algo/winmask/seq_masker_istat_factory.hpp>
 #include <algo/winmask/seq_masker_cache_boost.hpp>
+
+#include <algorithm>
+#include <memory>
+#include <sstream>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
