@@ -5106,6 +5106,7 @@ BLAST_ComputeLengthAdjustment(double K,
     return converged ? 0 : 1;
 }
 
+/* UNUSED
 static double s_CalculateNormalProbability(double x_, double eps_) 
 {
     double pi = 3.1415926535897932384626433832795;
@@ -5143,6 +5144,8 @@ static double s_CalculateNormalProbability(double x_, double eps_)
     res *= h;
     return 0.5+const_val*(res);
 }
+UNUSED */
+
 
 /*
    BlastSpougeStoE() -- given a score, return the associated Expect value
