@@ -6108,6 +6108,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UBCZ	s	University of British Columbia, Spencer Entomological Museum",
 "UBJTL	s	Universidad Bogota Jorge Tadeo Lozano",
 "UBL	s	Universite du Benin",
+"UBOCC	c	Universite de Bretagne Occidentale",
 "UBT	s	Oekologisch-Botanischer Garten",
 "UBU	s	Mongolian State University, Botany Department",
 "UC<AUS>	scb	University of Canberra Wildlife Tissue Collection",
