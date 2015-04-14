@@ -1030,7 +1030,7 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
          break;
     }
   }
-  for (i; i< (int)(arr.size()-1); i++) {
+  for ( ; i< (int)(arr.size()-1); i++) {
           ret_str += arr[i] + ' ';
   }
   ret_str += arr[arr.size()-1];
