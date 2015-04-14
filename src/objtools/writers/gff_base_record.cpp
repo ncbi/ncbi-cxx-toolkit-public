@@ -311,6 +311,13 @@ void CGffBaseRecord::SetStrand(
     case objects::eNa_strand_minus:
         mStrand = "-";
         break;
+    case objects::eNa_strand_unknown:
+        mStrand = "?";
+        break;
+    case objects::eNa_strand_both:
+    case objects::eNa_strand_both_rev:
+        mStrand = ".";
+        break;
     }
 }
 
