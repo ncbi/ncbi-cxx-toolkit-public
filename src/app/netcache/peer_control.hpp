@@ -138,7 +138,7 @@ public:
                           Uint8 next_sync_delay);
     Uint8 GetNextSyncTime(void);
 
-    Uint8 GetSrvId(void);
+    Uint8 GetSrvId(void) const;
     CNCActiveHandler* GetBGConn(void);
     bool StartActiveSync(void);
     bool AddSyncControl(CNCActiveSyncControl* sync_ctrl);
@@ -258,7 +258,7 @@ CNCPeerControl::ReconfSlotsForInitSync(Uint2 cnt_slots)
 }
 
 inline Uint8
-CNCPeerControl::GetSrvId(void)
+CNCPeerControl::GetSrvId(void) const
 {
     return m_SrvId;
 }

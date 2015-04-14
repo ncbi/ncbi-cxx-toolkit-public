@@ -143,7 +143,7 @@ s_StopSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
     if (slot_data->cnt_sync_started != 0) {
         --slot_data->cnt_sync_started;
     } else {
-        SRV_LOG(Critical, "SyncSlotData broken");
+        SRV_LOG(Error, "SyncSlotData broken");
     }
     if (slot_data->cnt_sync_started == 0  &&  slot_data->clean_required)
         s_LogCleaner->SetRunnable();
