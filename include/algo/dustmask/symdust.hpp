@@ -33,6 +33,14 @@
 #ifndef C_SYM_DUST_MASKER_HPP
 #define C_SYM_DUST_MASKER_HPP
 
+#include <corelib/ncbitype.h>
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbiobj.hpp>
+
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+#include <objmgr/seq_vector.hpp>
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -41,13 +49,6 @@
 #include <deque>
 #include <list>
 
-#include <corelib/ncbitype.h>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbiobj.hpp>
-
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Packed_seqint.hpp>
-#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 
