@@ -2891,7 +2891,7 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
         auto_ptr<IBulkInsert> bi;
         CVariant n(eDB_Int);
 
-        for (Int4 i = 0;  i < kNumTypes;  ++i) {
+        for (Uint4 i = 0;  i < kNumTypes;  ++i) {
             auto_ptr<CVariant> s;
             switch (kTypes[i]) {
             case eDB_Char:
@@ -2908,11 +2908,11 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
             bi->Bind(1, &n);
             bi->Bind(2, s.get());
 
-            n = i * 2 + 2;
+            n = Int4(i) * 2 + 2;
             s->SetBulkInsertionEnc(eBulkEnc_UCS2FromChar);
             *s = kText;
             bi->AddRow();
-            n = i * 2 + 3;
+            n = n.GetInt4() + 1;
             *s = kTextUCS2;
             bi->AddRow();
             bi->Complete();
