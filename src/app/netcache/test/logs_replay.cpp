@@ -79,6 +79,7 @@ public:
 
     IEmbeddedStreamWriter* PutData(string* key);
     IReader*               GetData(const string& key, size_t* blob_size);
+    bool                   HasBlob(const string& key);
     void                   Remove(const string& blob_id);
 
     bool UseNC(void) {
@@ -148,6 +149,14 @@ IReader* CNCproxy::GetData(const string& key, size_t* blob_size)
     CNetCacheAPI::eCaching_AppDefault*/);
 }
 
+bool CNCproxy::HasBlob(const string& key)
+{
+    if (m_NC) {
+        return m_NC->HasBlob(key);
+    }
+    return m_IC->HasBlob(key, m_subkey);
+}
+
 void CNCproxy::Remove(const string& key)
 {
     if (m_NC) {
@@ -202,6 +211,7 @@ public:
     vector<Uint8> m_SizeWrites;
     vector<Uint8> m_SizeErased;
     vector<Uint8> m_SizeReads;
+    vector<Uint8> m_CntBadHasb;
 };
 
 static bool s_SelfGen = false;
@@ -302,9 +312,10 @@ s_PrintStats(int elapsed)
     vector<Uint8> m_SizeWrites(100);
     vector<Uint8> m_SizeErased(100);
     vector<Uint8> m_SizeReads(100);
+    vector<Uint8> m_CntBadHasb(100);
 
     Uint8 tot_w = 0, tot_er = 0, tot_r = 0, tot_err = 0, tot_bad = 0, tot_nf = 0;
-    Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0;
+    Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0, tot_bhb = 0;
     for (size_t i = 0; i < s_Threads->size(); ++i) {
         for (size_t j = 0; j < m_CntWrites.size(); ++j) {
             Uint8 req_time = s_Threads->at(i)->m_ReqTime;
@@ -342,6 +353,9 @@ s_PrintStats(int elapsed)
             size = s_Threads->at(i)->m_SizeReads[j];
             m_SizeReads[j] += size;
             tot_rs += size;
+            cnt = s_Threads->at(i)->m_CntBadHasb[j];
+            m_CntBadHasb[j] += cnt;
+            tot_bhb += cnt;
         }
     }
 
@@ -356,7 +370,7 @@ s_PrintStats(int elapsed)
                        << tot_er << " (er) " << s_ToSizeStr(tot_ers) << " (ers) "
                        << tot_r << " (r) " << s_ToSizeStr(tot_rs) << " (rs) "
                        << tot_err << " (err), " << tot_bad << " (bad), "
-                       << tot_nf << " (nf)");
+                       << tot_nf << " (nf), " << tot_bhb << " (bhb)");
     LOG_POST("   ");
     Uint8 prev_size = 0, size = 2;
     for (size_t i = 0; i < m_CntWrites.size(); ++i, prev_size = size + 1, size <<= 1)
@@ -377,6 +391,7 @@ s_PrintStats(int elapsed)
                  << m_CntErrReads[i] << " (re) "
                  << m_CntBadReads[i] << " (bad) "
                  << m_CntNotFound[i] << " (nf) "
+                 << m_CntBadHasb[i] << " (bhb) "
                 );
     }
     LOG_POST("   ");
@@ -426,6 +441,7 @@ void CReplayThread::x_Init(void)
     m_SizeWrites.resize(100);
     m_SizeErased.resize(100);
     m_SizeReads.resize(100);
+    m_CntBadHasb.resize(100);
 }
 
 
@@ -526,19 +542,32 @@ cout << "key_id = " << key_id << endl;
         Uint8 start_time = Uint8(ts.tv_sec) * 1000000 + ts.tv_nsec / 1000;
 #endif
 
-        auto_ptr<IEmbeddedStreamWriter> writer(m_NC.PutData(&key));
         Uint8 orig_size = size;
-        while (size > sizeof(m_InBuf)) {
-            writer->Write(m_InBuf, sizeof(m_InBuf));
-            size -= sizeof(m_InBuf);
-        }
         size_t last_pos = 0;
-        if (size != 0) {
-            Uint4 cnt_chunks = Uint4(sizeof(m_InBuf) / size);
-            last_pos = size_t((key_id % cnt_chunks) * size);
-            writer->Write(m_InBuf + last_pos, size);
+        {
+            auto_ptr<IEmbeddedStreamWriter> writer(m_NC.PutData(&key));
+            while (size > sizeof(m_InBuf)) {
+                writer->Write(m_InBuf, sizeof(m_InBuf));
+                size -= sizeof(m_InBuf);
+            }
+            if (size != 0) {
+                Uint4 cnt_chunks = Uint4(sizeof(m_InBuf) / size);
+                last_pos = size_t((key_id % cnt_chunks) * size);
+                writer->Write(m_InBuf + last_pos, size);
+            }
+            writer->Close();
         }
-        writer->Close();
+
+        if (!m_NC.HasBlob(key)) {
+            ++m_CntBadHasb[size_index];
+            ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
+                 << " Error while writing blob with key '" << key << "': HasBlob returns false");
+            
+            for (int f=0; f<100 && !m_NC.HasBlob(key); ++f) {
+                ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
+                     << " Error while writing blob with key '" << key << "': HasBlob returns false");
+            }
+        }
 
 #ifdef NCBI_OS_LINUX
         clock_gettime(CLOCK_REALTIME, &ts);
