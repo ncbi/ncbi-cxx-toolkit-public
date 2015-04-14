@@ -278,7 +278,7 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 
         AddInternalFeature(md);
     }
-    catch (CException& e) {
+    catch (CException&) {
         cerr << MSerial_AsnText << *align;
         throw;
     }
