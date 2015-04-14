@@ -782,7 +782,7 @@ Uint8 CNCDistributionConf::GetSrvIdByIP(Uint4 ip)
 Uint8
 CNCDistributionConf::GetMainSrvId(const CNCBlobKey& key)
 {
-    return GetSrvIdByIP( GetMainSrvIP(key));
+    return key.IsICacheKey() ? 0 : GetSrvIdByIP( GetMainSrvIP(key));
 }
 
 

@@ -1555,7 +1555,7 @@ CNCMessageHandler::x_WriteInitWriteResponse(void)
     LOG_CURRENT_FUNCTION
 check_again:
     ENCClientHubStatus status = m_ActiveHub->GetStatus();
-    if (status == eNCHubError) {
+    if (status == eNCHubError || status == eNCHubSuccess) {
         m_LastPeerError = m_ActiveHub->GetErrMsg();
         SRV_LOG(Warning, "Error executing command on peer "
             << m_ActiveHub->GetFullPeerName() << ", peer says: "
@@ -2270,6 +2270,7 @@ CNCMessageHandler::x_GetCurSlotServers(void)
 {
     LOG_CURRENT_FUNCTION
     CNCDistributionConf::GetServersForSlot(m_BlobSlot, m_CheckSrvs);
+    m_SrvsIndex = 0;
     Uint4 main_srv_ip = 0;
     if (!m_NCBlobKey.IsICacheKey()) {
         main_srv_ip = CNCDistributionConf::GetMainSrvIP(m_NCBlobKey);
@@ -2369,21 +2370,22 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
         m_BlobAccess->GetValidServer();
     if (m_LatestSrvId == 0) {
         m_LatestSrvId = CNCDistributionConf::GetSelfID();
-    }
-    if (m_LatestExist) {
-        m_LatestBlobSum->create_time   = m_BlobAccess->GetCurBlobCreateTime();
-        m_LatestBlobSum->create_server = m_BlobAccess->GetCurCreateServer();
-        m_LatestBlobSum->create_id     = m_BlobAccess->GetCurCreateId();
-        m_LatestBlobSum->dead_time     = m_BlobAccess->GetCurBlobDeadTime();
-        m_LatestBlobSum->expire        = m_BlobAccess->GetCurBlobExpire();
-        m_LatestBlobSum->ver_expire    = m_BlobAccess->GetCurVerExpire();
-    }
-    if (x_IsFlagSet(fDoNotProxyToPeers)
-        ||  m_ForceLocal
-        ||  (m_Quorum == 1  &&  (m_LatestExist  ||  !m_SearchOnRead))
-        ||  (m_LatestExist  &&  x_IsFlagSet(fPeerFindExistsOnly)))
-    {
-        return &CNCMessageHandler::x_ExecuteOnLatestSrvId;
+    } else {
+        if (m_LatestExist) {
+            m_LatestBlobSum->create_time   = m_BlobAccess->GetCurBlobCreateTime();
+            m_LatestBlobSum->create_server = m_BlobAccess->GetCurCreateServer();
+            m_LatestBlobSum->create_id     = m_BlobAccess->GetCurCreateId();
+            m_LatestBlobSum->dead_time     = m_BlobAccess->GetCurBlobDeadTime();
+            m_LatestBlobSum->expire        = m_BlobAccess->GetCurBlobExpire();
+            m_LatestBlobSum->ver_expire    = m_BlobAccess->GetCurVerExpire();
+        }
+        if (x_IsFlagSet(fDoNotProxyToPeers)
+            ||  m_ForceLocal
+            ||  (m_Quorum == 1  &&  (m_LatestExist  ||  !m_SearchOnRead))
+            ||  (m_LatestExist  &&  x_IsFlagSet(fPeerFindExistsOnly)))
+        {
+            return &CNCMessageHandler::x_ExecuteOnLatestSrvId;
+        }
     }
 
     x_GetCurSlotServers();
@@ -3194,6 +3196,7 @@ CNCMessageHandler::x_ReadMetaResults(void)
 
     if (cur_exist  &&  x_IsFlagSet(fPeerFindExistsOnly)) {
         m_LatestExist = true;
+        m_LatestSrvId = m_CheckSrvs[m_SrvsIndex - 1];
         goto meta_search_finished;
     }
     if (cur_exist  &&  (!m_LatestExist  ||  m_LatestBlobSum->isOlder(*cur_blob_sum)))
@@ -3246,15 +3249,15 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
         }
         return &CNCMessageHandler::x_ReportBlobNotFound;
     }
-#if 0
-    if (x_IsFlagSet(fPeerFindExistsOnly))
+    if (x_IsFlagSet(fPeerFindExistsOnly) && m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
         return m_CmdProcessor;
-#endif
+    }
     if (m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
-        if (m_LatestExist  &&  !m_BlobAccess->IsCurBlobExpired())
+        if (m_LatestExist  && m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobExpired()) {
             return m_CmdProcessor;
-        else
+        } else {
             return &CNCMessageHandler::x_ReportBlobNotFound;
+        }
     }
 
     CSrvDiagMsg().PrintExtra().PrintParam("proxy", "1");
@@ -3960,6 +3963,10 @@ CNCMessageHandler::x_DoCmd_CopyPut(void)
     m_CopyBlobInfo->blob_ver = m_BlobVersion;
     bool need_read_blob = m_BlobAccess->ReplaceBlobInfo(*m_CopyBlobInfo);
     if (need_read_blob) {
+        // while receiving new data, redirect clients to "correct" server
+        if (m_BlobAccess->IsBlobExists()) {
+            m_BlobAccess->UpdateMetaInfo(m_CopyBlobInfo->create_server, m_CopyBlobInfo->create_time);
+        }
         WriteText("OK:\n");
     }
     else {
