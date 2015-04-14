@@ -300,9 +300,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
         }
     }
 
-    /// Types we use here:
-    typedef CSeq_align::TDim TDim;
-
     /// Create a vector of seq-ids per seq-align
     TIdExtract id_extract;
     TAlnIdMap aln_id_map(id_extract, aln_container.size());
