@@ -1,96 +1,91 @@
-#!/bin/sh
+#!/bin/sh -xe
 
 INSTALLDIR=$1
 SCRIPTDIR=$2
 BLAST_VERSION=$3
 PRODUCT="ncbi-blast-$BLAST_VERSION+"
 
+INSTALL_LOCATION1=/usr/local/ncbi/blast
+INSTALL_LOCATION2=/etc/paths.d
+STAGE_DIR1=_stage1
+STAGE_DIR2=_stage2
+RESOURCES_DIR=Resources
+ID=gov.nlm.nih.ncbi.blast
+
 if [ $# -ne 3 ] ; then
     echo "Usage: ncbi-blast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
     exit 1;
 fi
 
-BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast legacy_blast.pl update_blastdb.pl "
-MASKING_BINS="windowmasker dustmasker segmasker"
-DB_BINS="blastdbcmd makeblastdb makeprofiledb makembindex blastdb_aliastool convert2blastmask blastdbcheck"
-ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
+setup()
+{
+    rm -rf $PRODUCT.dmg $PRODUCT $STAGE_DIR1 $STAGE_DIR2 $INSTALLDIR/installer $RESOURCES_DIR
+    mkdir -p $STAGE_DIR1/bin $STAGE_DIR1/doc $STAGE_DIR2 $PRODUCT
+}
 
-rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
-mkdir -p _stage/usr/local/ncbi/blast/bin _stage/usr/local/ncbi/blast/doc _stage/private/etc/paths.d
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+prep_binary_component_package() 
+{
+    BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast legacy_blast.pl update_blastdb.pl "
+    MASKING_BINS="windowmasker dustmasker segmasker"
+    DB_BINS="blastdbcmd makeblastdb makeprofiledb makembindex blastdb_aliastool convert2blastmask blastdbcheck"
+    ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
-cat > _stage/usr/local/ncbi/blast/doc/README.txt <<EOF
+    cat > $STAGE_DIR1/doc/README.txt <<EOF
 The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK279690
 Release notes are available in http://www.ncbi.nlm.nih.gov/books/NBK131777
 EOF
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
 
-cp -p $SCRIPTDIR/ncbi_blast _stage/private/etc/paths.d
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+    for bin in $ALL_BINS; do
+        cp -p $INSTALLDIR/bin/$bin $STAGE_DIR1/bin
+    done
 
-# This is needed because the binary ncbi-blast.pmproj has this string hard
-# coded
-cp -p $INSTALLDIR/LICENSE ./license.txt
-for f in uninstall_ncbi_blast.zip large-Blue_ncbi_logo.tiff ncbi-blast.pmdoc welcome.txt; do
-    echo copying $f to local directory
-    cp -rp $SCRIPTDIR/$f .
-    if [ $? -ne 0 ]; then
-        echo FAILURE
-        exit 1;
-    fi
-done
+    /usr/bin/pkgbuild --root $STAGE_DIR1 --identifier $ID.binaries --version \
+        $BLAST_VERSION --install-location $INSTALL_LOCATION1 binaries.pkg
+}
 
-for bin in $ALL_BINS; do
-    echo copying $bin
-    cp -p $INSTALLDIR/bin/$bin _stage/usr/local/ncbi/blast/bin
-    if [ $? -ne 0 ]; then
-        echo FAILURE
-        exit 1;
-    fi
-done
+prep_paths_component_package()
+{
+    echo /usr/local/ncbi/blast/bin > $STAGE_DIR2/ncbi_blast
+    /usr/bin/pkgbuild --root $STAGE_DIR2 --identifier $ID.paths --version \
+        $BLAST_VERSION --install-location $INSTALL_LOCATION2 paths.pkg
+}
 
-echo building package
-mkdir $PRODUCT
-/Developer/usr/bin/packagemaker --id gov.nih.nlm.ncbi.blast --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+customize_distribution_xml()
+{
+    sed -i.bak '/options/i\
+    <title>NCBI BLAST+ Command Line Applications</title> \
+    <welcome file="welcome.txt" mime-type="text/plain"/> \
+    <license file="LICENSE" mime-type="text/plain"/> \
+    <background scaling="proportional" alignment="left" file="large-Blue_ncbi_logo.tiff" mime-type="image/tiff"/> \
+' Distribution.xml 
+}
 
-echo copying uninstaller
-cp -p uninstall_ncbi_blast.zip $PRODUCT
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+create_product_archive()
+{
+	/usr/bin/productbuild --synthesize --identifier $ID --version \
+    $BLAST_VERSION --package binaries.pkg --package paths.pkg Distribution.xml
 
-echo creating disk image
-/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+    customize_distribution_xml
 
-echo moving disk image
-mkdir $INSTALLDIR/installer
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
-mv $PRODUCT.dmg $INSTALLDIR/installer
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+    mkdir $RESOURCES_DIR
+    cp -p $INSTALLDIR/LICENSE $RESOURCES_DIR
+    for f in welcome.txt large-Blue_ncbi_logo.tiff ; do
+        cp -p $SCRIPTDIR/$f $RESOURCES_DIR
+    done
 
-echo done
-rm -rf _stage $PRODUCT
+	/usr/bin/productbuild --resources Resources --distribution Distribution.xml $PRODUCT/$PRODUCT.pkg
+    cp -p $SCRIPTDIR/uninstall_ncbi_blast.zip $PRODUCT
+}
+
+create_disk_image()
+{
+	/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
+    mkdir $INSTALLDIR/installer
+    mv $PRODUCT.dmg $INSTALLDIR/installer
+}
+
+setup
+prep_binary_component_package
+prep_paths_component_package
+create_product_archive
+create_disk_image
