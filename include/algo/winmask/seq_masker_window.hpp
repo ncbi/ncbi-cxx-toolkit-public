@@ -33,10 +33,11 @@
 #ifndef C_SEQ_MASKER_WINDOW_H
 #define C_SEQ_MASKER_WINDOW_H
 
-#include <vector>
-
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/seq_vector.hpp>
+
+#include <vector>
+
 
 BEGIN_NCBI_SCOPE
 
