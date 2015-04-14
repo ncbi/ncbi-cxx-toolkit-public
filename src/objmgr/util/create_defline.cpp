@@ -1552,6 +1552,30 @@ void CDeflineGenerator::x_SetTitleFromProtein (
                 m_MainTitle.erase (pos + 1);
             }
 
+            int offset = 0;
+            int delta = 0;
+            string comma = "";
+            string isoform = "";
+            if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
+                offset = 20;
+            } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
+                offset = 23;
+            }
+            if (offset > 0) {
+                if (m_MainTitle [offset] == ',' && m_MainTitle [offset + 1] == ' ') {
+                    comma = ", isoform ";
+                    delta = 2;
+                }
+                if (m_MainTitle [offset] == ' ') {
+                    comma = " isoform ";
+                    delta = 1;
+                }
+                if (NStr::StartsWith (m_MainTitle.substr (offset + delta), "isoform ")) {
+                    isoform = m_MainTitle.substr (offset + delta + 8);
+                    // !!! check for single alphanumeric string
+                    m_MainTitle.erase (offset);
+                }
+            }
             if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
                  NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
                 &&  !m_LocalAnnotsOnly ) {
@@ -1563,7 +1587,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
                     }
                 }
                 if (! locus_tag.empty()) {
-                    m_MainTitle += " " + string(locus_tag);
+                    m_MainTitle += " " + string(locus_tag) + string(comma) + string(isoform);
                 }
             }
         }
