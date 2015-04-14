@@ -50,11 +50,11 @@ class CClickableText : public CObject
 {
 public:
     CClickableText() : m_Text(""), 
-                          m_IsSelected(false), m_IsChecked(false), m_IsExpanded(false), 
-                          m_Objects(), m_Objdescs(), m_Subitems() {}
+                       m_IsSelected(false), m_IsExpanded(false), m_IsChecked(false), 
+                       m_Subitems(), m_Objects(), m_Objdescs() {}
     CClickableText(const string& text, bool selected = false, bool expanded = false, bool checked = false)
       : m_Text(text), m_IsSelected(selected), m_IsExpanded(expanded), 
-            m_IsChecked(checked), m_Objects(), m_Objdescs(), m_Subitems() {};
+        m_IsChecked(checked), m_Subitems(), m_Objects(), m_Objdescs() {};
     ~CClickableText() {}
 
     const string& GetText() const { return m_Text; }
