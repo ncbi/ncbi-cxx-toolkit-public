@@ -33,6 +33,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -232,7 +233,7 @@ bool CWriteUtil::GetAaName(
     static const char* AANames[] = {
         "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
         "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
-        "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl"
+        "Trp", "Other", "Tyr", "Glx", "Sec", "TERM", "Pyl"
     };
     static const char* other = "OTHER";
 
@@ -240,6 +241,8 @@ bool CWriteUtil::GetAaName(
     switch (cb.GetAa().Which()) {
         case CCode_break::C_Aa::e_Ncbieaa:
             aa = cb.GetAa().GetNcbieaa();
+            aa = CSeqportUtil::GetMapToIndex(
+                CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
             break;
         case CCode_break::C_Aa::e_Ncbi8aa:
             aa = cb.GetAa().GetNcbi8aa();
