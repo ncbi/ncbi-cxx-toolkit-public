@@ -295,7 +295,7 @@ void CSymDustMasker::GetMaskedLocs(
     const sequence_type & seq, 
     std::vector< CConstRef< objects::CSeq_loc > > & locs )
 {
-    typedef std::vector< CConstRef< objects::CSeq_loc > > locs_type;
+    // typedef std::vector< CConstRef< objects::CSeq_loc > > locs_type;
     std::auto_ptr< TMaskList > res = (*this)( seq );
     locs.clear();
     locs.reserve( res->size() );
