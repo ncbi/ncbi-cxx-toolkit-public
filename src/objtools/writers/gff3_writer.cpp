@@ -969,7 +969,7 @@ bool CGff3Writer::WriteHeader()
 {
     if (!m_bHeaderWritten) {
         m_Os << "##gff-version 3" << '\n';
-        m_Os << "#!gff-spec-version 1.20" << '\n';
+        m_Os << "#!gff-spec-version 1.21" << '\n';
         m_Os << "#!processor NCBI annotwriter" << '\n';
         m_bHeaderWritten = true;
     }

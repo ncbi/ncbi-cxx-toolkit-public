@@ -1,5 +1,5 @@
 ##gff-version 3
-#!gff-spec-version 1.20
+#!gff-spec-version 1.21
 #!processor NCBI annotwriter
 ##sequence-region NW_001838553.2 1 3536253
 ##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
