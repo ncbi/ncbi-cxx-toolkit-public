@@ -51,7 +51,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 class NCBI_FORMAT_EXPORT CSAM_Formatter
 {
 public:
@@ -99,9 +98,20 @@ private:
     CRef<CScope>  m_Scope;
     TFlags        m_Flags;
 
+    friend class CSAM_CIGAR_Formatter;
+
     typedef list<string> TLines;
 
-    TLines        m_Header;
+    class CSAM_Headers
+    {
+    public:
+        CSAM_Headers(void) {}
+        void AddSequence(CSeq_id_Handle id, const string& line);
+        typedef list<pair<CSeq_id_Handle, string> > TData;
+        TData m_Data;
+    };
+
+    CSAM_Headers  m_Header;
     TLines        m_Body;
 };
 

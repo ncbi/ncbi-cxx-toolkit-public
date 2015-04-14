@@ -51,9 +51,10 @@ class CSAM_CIGAR_Formatter : public CCIGAR_Formatter
 {
 public:
     typedef CSAM_Formatter::TFlags TFlags;
-    typedef list<string> TLines;
+    typedef CSAM_Formatter::CSAM_Headers THeaders;
+    typedef CSAM_Formatter::TLines TLines;
 
-    CSAM_CIGAR_Formatter(TLines&            header,
+    CSAM_CIGAR_Formatter(THeaders&          headers,
                          TLines&            body,
                          const CSeq_align&  aln,
                          CScope&            scope,
@@ -77,7 +78,7 @@ private:
     string x_GetTargetIdString(void) const;
 
     TFlags          m_Flags;
-    TLines&         m_Head;
+    THeaders&       m_Head;
     TLines&         m_Rows;
     int             m_NumDif;   // count differences
 
@@ -85,14 +86,14 @@ private:
 };
 
 
-CSAM_CIGAR_Formatter::CSAM_CIGAR_Formatter(TLines&            header,
+CSAM_CIGAR_Formatter::CSAM_CIGAR_Formatter(THeaders&          headers,
                                            TLines&            body,
                                            const CSeq_align&  aln,
                                            CScope&            scope,
                                            TFlags             flags)
     : CCIGAR_Formatter(aln, &scope),
       m_Flags(flags),
-      m_Head(header),
+      m_Head(headers),
       m_Rows(body),
       m_NumDif(0)
 {
@@ -117,10 +118,6 @@ string CSAM_CIGAR_Formatter::x_GetTargetIdString(void) const
 
 void CSAM_CIGAR_Formatter::StartAlignment(void)
 {
-    // One header per file.
-    if ( m_Head.empty() ) {
-        m_Head.push_back("@HD\tVN:1.2\tGO:query");
-    }
 }
 
 
@@ -157,7 +154,8 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
 {
     CBioseq_Handle  refseq = GetScope()->GetBioseqHandle(GetRefId());
     if (m_KnownRefSeqs.find(refseq) == m_KnownRefSeqs.end()) {
-        m_Head.push_back("@SQ\tSN:" + x_GetRefIdString() +
+        m_Head.AddSequence(CSeq_id_Handle::GetHandle(GetRefId()),
+            "@SQ\tSN:" + x_GetRefIdString() +
             "\tLN:" + NStr::UInt8ToString(refseq.GetBioseqLength()));
         m_KnownRefSeqs.insert(refseq);
     }
@@ -311,14 +309,27 @@ CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align_set& aln_set,
 void CSAM_Formatter::Flush(void)
 {
     if ( !m_Out ) return;
-    ITERATE(TLines, it, m_Header) {
-        *m_Out << *it << '\n';
+    if (!m_Header.m_Data.empty() || !m_Body.empty()) {
+        *m_Out << "@HD\tVN:1.2\tGO:query" << '\n';
+    }
+    ITERATE(CSAM_Headers::TData, it, m_Header.m_Data) {
+        *m_Out << it->second << '\n';
     }
     ITERATE(TLines, it, m_Body) {
         *m_Out << *it << '\n';
     }
-    m_Header.clear();
+    m_Header.m_Data.clear();
     m_Body.clear();
+}
+
+
+void CSAM_Formatter::CSAM_Headers::AddSequence(CSeq_id_Handle id,
+    const string& line)
+{
+    ITERATE(TData, it, m_Data) {
+        if (it->first == id) return; // duplicate
+    }
+    m_Data.push_back(TData::value_type(id, line));
 }
 
 
