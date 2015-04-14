@@ -2188,7 +2188,7 @@ bool CFormatGuess::IsLineGff3(
     if ( ! s_IsTokenDouble( tokens[5] ) ) {
         return false;
     }
-    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
+    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-?" ) ) {
         return false;
     }
     if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
