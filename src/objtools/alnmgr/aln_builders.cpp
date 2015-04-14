@@ -548,7 +548,6 @@ BuildAln(TAnchoredAlnVec& in_alns,
 {
     // Types
     typedef CAnchoredAln::TDim TDim;
-    typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
 
     AutoPtr<TAnchoredAlnVec> adj_alns;
 
