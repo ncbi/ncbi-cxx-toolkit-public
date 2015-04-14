@@ -380,6 +380,10 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         CMappedFeat);
+    bool xAssignFeatureAttributePseudoGene(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        CMappedFeat);
     bool xAssignFeatureAttributeMapLoc(
         CGffFeatureRecord&,
         CGffFeatureContext&,

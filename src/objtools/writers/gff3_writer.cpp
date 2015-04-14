@@ -1412,7 +1412,8 @@ bool CGff3Writer::xAssignFeatureAttributes(
     //attributes common to all feature types:
     if (!xAssignFeatureAttributeProduct(record, fc, mf) ||
             !xAssignFeatureAttributeParent(record, fc, mf)  ||
-            !xAssignFeatureAttributeException(record, fc, mf)  ||
+            !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
+            !xAssignFeatureAttributeException(record, fc, mf) ||
             !xAssignFeatureAttributeExonNumber(record, fc, mf)  ||
             !xAssignFeatureAttributePseudo(record, fc, mf)  ||
             !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
@@ -1432,7 +1433,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             if (!xAssignFeatureAttributeLocusTag(record, fc, mf)  ||
                     !xAssignFeatureAttributeGeneSynonym(record, fc, mf)  ||
                     !xAssignFeatureAttributeOldLocusTag(record, fc, mf)  ||
-                    !xAssignFeatureAttributePartial(record, fc, mf)  ||
+                    !xAssignFeatureAttributePartial(record, fc, mf) ||
                     !xAssignFeatureAttributeGeneDesc(record, fc, mf)  ||
                     !xAssignFeatureAttributeMapLoc(record, fc, mf)) {
                 return false;
@@ -1760,7 +1761,7 @@ bool CGff3Writer::xAssignFeatureAttributeGeneSynonym(
 bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetQual()) {
@@ -1768,9 +1769,9 @@ bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
     }
     string old_locus_tags;
     vector<CRef<CGb_qual> > quals = mf.GetQual();
-    for (vector<CRef<CGb_qual> >::const_iterator it = quals.begin(); 
+    for (vector<CRef<CGb_qual> >::const_iterator it = quals.begin();
             it != quals.end(); ++it) {
-        if ((**it).IsSetQual()  &&  (**it).IsSetVal()) {
+        if ((**it).IsSetQual() && (**it).IsSetVal()) {
             string qual = (**it).GetQual();
             if (qual != "old_locus_tag") {
                 continue;
@@ -1783,6 +1784,34 @@ bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
     }
     if (!old_locus_tags.empty()) {
         record.SetAttribute("old_locus_tag", old_locus_tags);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributePseudoGene(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    string pseudoGene = mf.GetNamedQual("pseudogene");
+    if (!pseudoGene.empty()) {
+        record.SetAttribute("pseudogene", pseudoGene);
+        return true;
+    }
+    if (!CSeqFeatData::IsLegalQualifier(
+            mf.GetFeatSubtype(), CSeqFeatData::eQual_pseudogene)) {
+        return true;
+    }
+    CMappedFeat gene = fc.FindBestGeneParent(mf);
+    if (!gene) {
+        return true;
+    }
+    pseudoGene = gene.GetNamedQual("pseudogene");
+    if (!pseudoGene.empty()) {
+        record.SetAttribute("pseudogene", pseudoGene);
+        return true;
     }
     return true; 
 }
