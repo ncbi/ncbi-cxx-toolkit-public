@@ -859,7 +859,7 @@ void BlockTEA_Encode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
 {
     if (n <= 1) return;
     Uint4 z = data[n - 1];
-    Uint4 y = data[0];
+    Uint4 y;
     Uint4 sum = 0;
     Uint4 e;
     Int4 p;
@@ -881,7 +881,7 @@ void BlockTEA_Encode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
 void BlockTEA_Decode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
 {
     if (n <= 1) return;
-    Uint4 z = data[n - 1];
+    Uint4 z;
     Uint4 y = data[0];
     Uint4 e;
     Int4 p;
