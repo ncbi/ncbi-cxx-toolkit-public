@@ -706,48 +706,53 @@ void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
         size_t size = table->GetNum_rows();
         CSeqTable_multi_data* data =
             CType<CSeqTable_multi_data>::Get(variant.GetChoiceObject());
-        switch ( variant.GetVariantIndex() ) {
-        case e_Int:
-            data->SetInt().reserve(size);
-            break;
-        case e_Int1:
-            data->SetInt1().reserve(size);
-            break;
-        case e_Int2:
-            data->SetInt2().reserve(size);
-            break;
-        case e_Int8:
-            data->SetInt8().reserve(size);
-            break;
-        case e_Real:
-            data->SetReal().reserve(size);
-            break;
-        case e_String:
-            data->SetString().reserve(size);
-            break;
-        case e_Bytes:
-            data->SetBytes().reserve(size);
-            break;
-        case e_Common_string:
-            data->SetCommon_string().SetIndexes().reserve(size);
-            break;
-        case e_Common_bytes:
-            data->SetCommon_bytes().SetIndexes().reserve(size);
-            break;
-        case e_Bit:
-            data->SetBit().reserve((size+7)/8);
-            break;
-        case e_Loc:
-            data->SetLoc().reserve(size);
-            break;
-        case e_Id:
-            data->SetId().reserve(size);
-            break;
-        case e_Interval:
-            data->SetInterval().reserve(size);
-            break;
-        default:
-            break;
+        try {
+            switch ( variant.GetVariantIndex() ) {
+            case e_Int:
+                data->SetInt().reserve(size);
+                break;
+            case e_Int1:
+                data->SetInt1().reserve(size);
+                break;
+            case e_Int2:
+                data->SetInt2().reserve(size);
+                break;
+            case e_Int8:
+                data->SetInt8().reserve(size);
+                break;
+            case e_Real:
+                data->SetReal().reserve(size);
+                break;
+            case e_String:
+                data->SetString().reserve(size);
+                break;
+            case e_Bytes:
+                data->SetBytes().reserve(size);
+                break;
+            case e_Common_string:
+                data->SetCommon_string().SetIndexes().reserve(size);
+                break;
+            case e_Common_bytes:
+                data->SetCommon_bytes().SetIndexes().reserve(size);
+                break;
+            case e_Bit:
+                data->SetBit().reserve((size+7)/8);
+                break;
+            case e_Loc:
+                data->SetLoc().reserve(size);
+                break;
+            case e_Id:
+                data->SetId().reserve(size);
+                break;
+            case e_Interval:
+                data->SetInterval().reserve(size);
+                break;
+            default:
+                break;
+            }
+        }
+        catch ( bad_alloc& /*ignored*/ ) {
+            // ignore insufficient memory exception from advisory reserve()
         }
     }
 }

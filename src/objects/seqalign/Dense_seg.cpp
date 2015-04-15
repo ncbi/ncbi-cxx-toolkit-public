@@ -1490,18 +1490,23 @@ void CDense_seg::CReserveHook::PreReadClassMember(CObjectIStream& in,
     }
     CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
     size_t numseg = ds.GetNumseg();
-    switch ( member.GetMemberIndex() ) {
-    case 4: // "starts"
-        ds.SetStarts().reserve(ds.GetDim()*numseg);
-        break;
-    case 5: // "lens"
-        ds.SetLens().reserve(numseg);
-        break;
-    case 6: // "strands"
-        ds.SetStrands().reserve(ds.GetDim()*numseg);
-        break;
-    default:
-        break;
+    try {
+        switch ( member.GetMemberIndex() ) {
+        case 4: // "starts"
+            ds.SetStarts().reserve(ds.GetDim()*numseg);
+            break;
+        case 5: // "lens"
+            ds.SetLens().reserve(numseg);
+            break;
+        case 6: // "strands"
+            ds.SetStrands().reserve(ds.GetDim()*numseg);
+            break;
+        default:
+            break;
+        }
+    }
+    catch ( bad_alloc& /*ignored*/ ) {
+        // ignore insufficient memory exception from advisory reserve()
     }
 }
 
@@ -1531,7 +1536,14 @@ void CDenseSegReserveStartsHook::ReadClassMember(CObjectIStream& in,
                                                  const CObjectInfoMI& member)
 {
     CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
-    ds.SetStarts().reserve(ds.GetDim()*ds.GetNumseg());
+    size_t size = ds.GetDim()*ds.GetNumseg();
+    CDense_seg::TStarts& array = ds.SetStarts();
+    try {
+        array.reserve(size);
+    }
+    catch ( bad_alloc& /*ignored*/ ) {
+        // ignore insufficient memory exception from advisory reserve()
+    }
     DefaultRead(in, member);
 }
 
@@ -1561,7 +1573,14 @@ void CDenseSegReserveLensHook::ReadClassMember(CObjectIStream& in,
                                                const CObjectInfoMI& member)
 {
     CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
-    ds.SetLens().reserve(ds.GetNumseg());
+    size_t size = ds.GetNumseg();
+    CDense_seg::TLens& array = ds.SetLens();
+    try {
+        array.reserve(size);
+    }
+    catch ( bad_alloc& /*ignored*/ ) {
+        // ignore insufficient memory exception from advisory reserve()
+    }
     DefaultRead(in, member);
 }
 
@@ -1591,7 +1610,14 @@ void CDenseSegReserveStrandsHook::ReadClassMember(CObjectIStream& in,
                                                   const CObjectInfoMI& member)
 {
     CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
-    ds.SetStrands().reserve(ds.GetDim()*ds.GetNumseg());
+    size_t size = ds.GetDim()*ds.GetNumseg();
+    CDense_seg::TStrands& array = ds.SetStrands();
+    try {
+        array.reserve(size);
+    }
+    catch ( bad_alloc& /*ignored*/ ) {
+        // ignore insufficient memory exception from advisory reserve()
+    }
     DefaultRead(in, member);
 }
 

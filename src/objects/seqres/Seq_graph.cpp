@@ -70,18 +70,23 @@ void CSeq_graph::CReserveHook::PreReadChoiceVariant(
     }
     if ( CSeq_graph* graph = CType<CSeq_graph>::GetParent(in) ) {
         size_t size = graph->GetNumval();
-        switch ( variant.GetVariantIndex() ) {
-        case C_Graph::e_Real:
-            graph->SetGraph().SetReal().SetValues().reserve(size);
-            break;
-        case C_Graph::e_Int:
-            graph->SetGraph().SetInt().SetValues().reserve(size);
-            break;
-        case C_Graph::e_Byte:
-            graph->SetGraph().SetByte().SetValues().reserve(size);
-            break;
-        default:
-            break;
+        try {
+            switch ( variant.GetVariantIndex() ) {
+            case C_Graph::e_Real:
+                graph->SetGraph().SetReal().SetValues().reserve(size);
+                break;
+            case C_Graph::e_Int:
+                graph->SetGraph().SetInt().SetValues().reserve(size);
+                break;
+            case C_Graph::e_Byte:
+                graph->SetGraph().SetByte().SetValues().reserve(size);
+                break;
+            default:
+                break;
+            }
+        }
+        catch ( bad_alloc& /*ignored*/ ) {
+            // ignore insufficient memory exception from advisory reserve()
         }
     }
 }
