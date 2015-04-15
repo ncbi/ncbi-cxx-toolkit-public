@@ -417,6 +417,22 @@ static inline bool s_CheckRequestEntryForTID(const CCgiRequest* request,
     return is_found && s_CheckValueForTID(entry->GetValue(), tid);
 }
 
+
+// Check if TID is non-empty and (if Discard_UNK_SESSION is set) not UNK_SESSION.
+NCBI_PARAM_DECL(bool, CGI, Discard_UNK_SESSION);
+NCBI_PARAM_DEF_EX(bool, CGI, Discard_UNK_SESSION, false, eParam_NoThread,
+                  NCBI_CGI_DISCARD_UNK_SESSION);
+typedef NCBI_PARAM_TYPE(CGI, Discard_UNK_SESSION) TParamDiscardUnkSession;
+
+static inline bool s_IsTID(const string& tid)
+{
+    if (tid.empty()) return false;
+    if (TParamDiscardUnkSession::GetDefault())
+        return tid != "UNK_SESSION";
+    return true;
+}
+
+
 string CCgiContext::RetrieveTrackingId() const
 {
     if ( !m_TrackingId.empty() ) {
@@ -436,7 +452,7 @@ string CCgiContext::RetrieveTrackingId() const
     bool is_found = false;
     const CCgiEntry* entry =
         &m_Request->GetEntry(TCGI_TrackingCookieName::GetDefault(), &is_found);
-    if (is_found  &&  !entry->GetValue().empty()) {
+    if (is_found  &&  s_IsTID(entry->GetValue())) {
         return entry->GetValue();
     }
 
@@ -447,11 +463,11 @@ string CCgiContext::RetrieveTrackingId() const
         return tid;
     const CCgiCookie* cookie = cookies.Find(
         TCGI_TrackingCookieName::GetDefault(), kEmptyStr, kEmptyStr);
-    if (cookie  &&  !cookie->GetValue().empty())
+    if (cookie  &&  s_IsTID(cookie->GetValue())) {
         return cookie->GetValue();
+    }
     if (s_CheckCookieForTID(cookies, cookie_or_entry_name_2, tid))
         return tid;
-
     if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_1, tid))
         return tid;
     if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_2, tid))
@@ -461,12 +477,13 @@ string CCgiContext::RetrieveTrackingId() const
     NStr::ReplaceInPlace(tag_name, "-", "_");
     tid = CRequestContext::SelectLastSessionID(
         m_Request->GetRandomProperty(tag_name, true));
-    if (!tid.empty()) {
+    if (s_IsTID(tid)) {
         return tid;
     }
 
     return CDiagContext::GetRequestContext().IsSetSessionID() &&
-        !CDiagContext::GetRequestContext().GetSessionID().empty() ?
+        // If UNK_SESSION is set through HTTP_NCBI_SID, replace it with a valid SID
+        s_IsTID(CDiagContext::GetRequestContext().GetSessionID()) ?
         CDiagContext::GetRequestContext().GetSessionID() :
         CDiagContext::GetRequestContext().SetSessionID();
 }
