@@ -202,7 +202,7 @@ void  CAlignFormatUtil::PrintTildeSepLines(string str, size_t line_len,
         x_WrapOutputLine(*iter,  line_len, out);
     }
 }
-
+#ifdef DO_UNUSED
 /// Initialize database statistics with data from BLAST servers
 /// @param dbname name of a single BLAST database [in]
 /// @param info structure to fill [in|out]
@@ -232,7 +232,7 @@ static bool s_FillDbInfoRemotely(const string& dbname,
     info.number_seqs = static_cast<int>(dbinfo->GetNum_sequences());
     return true;
 }
-
+#endif
 /// Initialize database statistics with data obtained from local BLAST
 /// databases
 /// @param dbname name of a single BLAST database [in]
@@ -284,7 +284,45 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
                            bool is_remote /* = false */)
 {
     retval.clear();
-
+    if( is_remote ){
+	bool found_all = false;
+        static CBlastServices rmt_blast_services;
+	vector<string> missing_names;
+	vector< CRef<objects::CBlast4_database_info> > all_db_info =
+	    rmt_blast_services.GetDatabaseInfo(blastdb_names,is_protein,&found_all,&missing_names);
+	if( !missing_names.empty() ){
+	    string msg("'");
+	    for(size_t ndx=0 ; ndx < missing_names.size(); ndx++){
+		msg += missing_names[ndx];
+	    }
+	    msg += string("' not found on NCBI servers.\n");
+	    NCBI_THROW(CSeqDBException, eFileErr, msg);
+	}
+	for(size_t ndx=0 ; ndx < all_db_info.size(); ndx++){
+	    CAlignFormatUtil::SDbInfo info;
+	    objects::CBlast4_database_info &dbinfo = *all_db_info[ndx];
+	    info.name = dbinfo.GetDatabase().GetName(); 
+	    info.definition = dbinfo.GetDescription();
+	    if (info.definition.empty())
+		info.definition = info.name;
+	    CTimeFormat tf("b d, Y H:m P", CTimeFormat::fFormat_Simple);
+	    info.date = CTime(dbinfo.GetLast_updated()).AsString(tf);
+	    info.total_length = dbinfo.GetTotal_length();
+	    info.number_seqs = static_cast<int>(dbinfo.GetNum_sequences());
+            if (info.total_length < 0) {
+		const string kDbName = NStr::TruncateSpaces(info.name);
+                if( ! s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm) ){
+		    string msg("'");
+		    msg += kDbName;
+		    msg += string("' has bad total length on NCBI servers.\n");
+		    NCBI_THROW(CSeqDBException, eFileErr, msg);
+		}
+            }
+            retval.push_back(info);
+	}
+	return;	
+    }
+    else{
     vector<string> dbs;
     NStr::Tokenize(blastdb_names, " \n\t", dbs);
     retval.reserve(dbs.size());
@@ -297,14 +335,7 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
         if (kDbName.empty())
             continue;
 
-        if (is_remote) {
-            success = s_FillDbInfoRemotely(kDbName, info);
-            if (info.total_length < 0) {
-                success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm);
-            }
-        } else {
-            success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm);
-        }
+        success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm);
 
         if (success) {
             retval.push_back(info);
@@ -317,6 +348,7 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
                 msg += string("' not found.\n");
             NCBI_THROW(CSeqDBException, eFileErr, msg);
         }
+    }
     }
 }
 
@@ -1486,7 +1518,7 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
         CRef<CSeq_align_set> new_aln(new CSeq_align_set);        
         hitsMap.insert(map<string, CRef<CSeq_align_set> >::value_type(seqIdList[i],new_aln));
     }
-    int count = 0;
+    size_t count = 0;
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         const CSeq_id& cur_id = (*iter)->GetSeq_id(1);
         if(previous_id.Empty() || !cur_id.Match(*previous_id)) {

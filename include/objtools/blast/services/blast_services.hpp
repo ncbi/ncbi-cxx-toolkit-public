@@ -132,13 +132,16 @@ public:
     /// @param dbname string listing the database(s)
     /// @param is_protein is a protein for true, otherwise dna
     /// @param found_all true if all databases were found.
+    /// @param missing_names pointer to an array with missing database(s)
     /// @return Detailed information for the requested BLAST databases or an
     /// empty vector if no databases were found.
     vector< CRef<objects::CBlast4_database_info> >
-    GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all);
+    GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all,
+	    vector<string> *missing_names = NULL);
     /// Same as GetDatabaseInfo but  retrieving whole list of database
     vector< CRef<objects::CBlast4_database_info> >
-    GetDatabaseInfoLegacy(const string& dbname, bool is_protein, bool *found_all);
+    GetDatabaseInfoLegacy(const string& dbname, bool is_protein, bool *found_all,
+	    vector<string> *missing_names = NULL);
     /// Retrieve organism specific repeats databases
     vector< CRef<objects::CBlast4_database_info> >
     GetOrganismSpecificRepeatsDatabases();

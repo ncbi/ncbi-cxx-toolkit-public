@@ -433,7 +433,9 @@ CBlastServices::GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb)
 
 
 vector< CRef<objects::CBlast4_database_info> >
-CBlastServices::GetDatabaseInfoLegacy(const string& dbname, bool is_protein, bool *found_all)
+CBlastServices::GetDatabaseInfoLegacy(const string& dbname, bool is_protein,
+	bool *found_all,
+	vector<string> *missing_names)
 {
     vector<CRef<objects::CBlast4_database_info> > retval;
     vector<string> dbs;
@@ -455,16 +457,21 @@ CBlastServices::GetDatabaseInfoLegacy(const string& dbname, bool is_protein, boo
                      ? eBlast4_residue_type_protein 
                      : eBlast4_residue_type_nucleotide);
        CRef<CBlast4_database_info> result = GetDatabaseInfo(blastdb);
-       if (result)
+       if (result){
           retval.push_back(result);
-       else
+       }
+       else{
           *found_all = false;
+	  if( missing_names ) missing_names->push_back(  blastdb->GetName() );
+       }
     }
     return retval;
 }
 
 vector< CRef<objects::CBlast4_database_info> >
-CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all)
+CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein,
+	bool *found_all,
+	vector<string> *missing_names)
 {
     vector<CRef<objects::CBlast4_database_info> > retval;
     CRef<CBlast4_request> request;
@@ -472,13 +479,13 @@ CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *fou
     vector<string> all_db_names;
     vector<string>::iterator  it_db;
     bool l_multiple_db = false;
+    string local_db_name = NStr::TruncateSpaces( dbname );
 
     if( found_all ){
 	*found_all = false;
-	string local_db_name = NStr::TruncateSpaces( dbname );
-	NStr::Tokenize(local_db_name, " \n\t", all_db_names);
-	l_multiple_db = ( all_db_names.size() > 1 );
     }
+    NStr::Tokenize(local_db_name, " \n\t", all_db_names);
+    l_multiple_db = ( all_db_names.size() > 1 );
 
     request.Reset(new CBlast4_request);
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
@@ -504,7 +511,7 @@ CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *fou
     }
     // if no answer, call legacy method
     if( reply->GetBody().GetGet_databases_ex().Get().empty() ){
-	return GetDatabaseInfoLegacy(dbname,is_protein,found_all);
+	return GetDatabaseInfoLegacy(dbname,is_protein,found_all,missing_names);
     }
 
     if( !reply->CanGetBody() ||  !reply->GetBody().IsGet_databases_ex() ) {
@@ -528,12 +535,18 @@ CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *fou
 	    else{
 		//single db lookup
 		*found_all = true;
+		all_db_names.clear(); 
 	    }
 	}
     }
 
     if( found_all ){
-	if( all_db_names.empty() ) *found_all = true;  // all resolved
+	if( all_db_names.empty() ) {
+	    *found_all = true;  // all resolved
+	}
+	else{
+	    if( missing_names ) missing_names->assign(all_db_names.begin(),all_db_names.end()); 
+	}
     }
     return retval;
 }
