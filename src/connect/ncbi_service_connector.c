@@ -460,8 +460,8 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
             tempf &= ~fSOCK_Secure;
         }
+        net_info->scheme = eURL_Unspec;
         if (!proxy  &&  net_info->debug_printout) {
-            net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
             net_info->firewall = 0;
             net_info->stateless = 0;
@@ -854,8 +854,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                         ? fSOCK_Secure : 0);
     }
     ConnNetInfo_DeleteUserHeader(net_info, "Host:");
-    if (info  &&  (info->mode & fSERV_Secure))
-        net_info->scheme = eURL_Https;
+    net_info->scheme = !info  ||  !(info->mode & fSERV_Secure)
+        ? eURL_Http
+        : eURL_Https;
     return !uuu->extra.adjust
         ||  uuu->extra.adjust(net_info, uuu->extra.data, 0)
         ? HTTP_CreateConnectorEx(net_info,
@@ -964,7 +965,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             break;
         }
 
-        net_info->scheme = eURL_Unspec;
         c = s_Open(uuu, timeout, info, net_info, &status);
         uuu->descr = ConnNetInfo_URL(net_info);
         stateless = net_info->stateless;

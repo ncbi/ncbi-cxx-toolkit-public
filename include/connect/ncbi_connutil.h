@@ -39,6 +39,7 @@
  *       ConnNetInfo_Print()
  *       ConnNetInfo_Destroy()
  *       ConnNetInfo_Log()
+ *       ConnNetInfo_URL()
  *       ConnNetInfo_ParseURL()
  *       ConnNetInfo_SetTimeout()
  *       ConnNetInfo_SetUserHeader()

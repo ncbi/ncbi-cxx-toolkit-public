@@ -1383,12 +1383,10 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 
     req_method = info->req_method & ~eReqMethod_v1;
     scheme = x_Scheme((EURLScheme) info->scheme, buf);
-    if ((!scheme  &&  req_method != eReqMethod_Connect)  ||
-        ( scheme  &&  !isalpha((unsigned char)(*scheme)))) {
+    if (scheme  &&  !isalpha((unsigned char)(*scheme)))
         return 0/*failed*/;
-    }
 
-    if (req_method == eReqMethod_Connect) {
+    if (!scheme  ||  req_method == eReqMethod_Connect) {
         scheme = "";
         schlen = 0;
         path = 0;
