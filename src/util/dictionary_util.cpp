@@ -278,8 +278,8 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
 
         case 'w':
             if ( !prev_len ) {
-                if (*(iter + 1) == 'h'  ||
-                    *(iter + 1) == 'r') {
+                if (remaining && ( *(iter + 1) == 'h'  ||
+                                   *(iter + 1) == 'r') ) {
                     *out += *(iter + 1);
                     ++iter;
                     break;
