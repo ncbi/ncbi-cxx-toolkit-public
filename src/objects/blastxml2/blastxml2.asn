@@ -1,7 +1,7 @@
-NCBI-BlastOutput DEFINITIONS ::=
+NCBI-BlastOutput2 DEFINITIONS ::=
 BEGIN
 
-BlastOutput ::= SEQUENCE {
+BlastOutput2 ::= SEQUENCE {
 	report Report OPTIONAL,
 	error  Err OPTIONAL
 }

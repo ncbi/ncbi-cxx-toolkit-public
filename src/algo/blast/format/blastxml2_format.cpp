@@ -652,7 +652,7 @@ s_GetBlastPublication(EProgram program)
     return publication;
 }
 
-static void s_FillBlastOutput(blastxml2::CBlastOutput& bxmlout, const IBlastXML2ReportData* data)
+static void s_FillBlastOutput(blastxml2::CBlastOutput2 & bxmlout, const IBlastXML2ReportData* data)
 {
 	if(data == NULL)
 		 NCBI_THROW(CException, eUnknown, "blastxml2: NULL XML2ReportData pointer");
@@ -702,7 +702,7 @@ static void s_FillBlastOutput(blastxml2::CBlastOutput& bxmlout, const IBlastXML2
 }
 
 static void
-s_WriteXML2Object(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
+s_WriteXML2Object(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
     auto_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (*out_stream, eNoOwnership));
@@ -712,7 +712,7 @@ s_WriteXML2Object(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
     xml_out->SetReferenceSchema();
     xml_out->SetUseSchemaLocation(true);
     xml_out->SetEnforcedStdXml();
-    xml_out->SetDefaultSchemaNamespace("http://blast.ncbi.nlm.nih.gov/");
+    xml_out->SetDefaultSchemaNamespace("http://www.ncbi.nlm.nih.gov/data_specs/schema/");
     xml_out->Write(&bxmlout, typeInfo );
 }
 
@@ -724,7 +724,7 @@ s_WriteXML2Object(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
 void
 BlastXML2_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_stream )
 {
-	blastxml2::CBlastOutput bxmlout;
+	blastxml2::CBlastOutput2 bxmlout;
 	try {
 		s_FillBlastOutput(bxmlout, data);
 		s_WriteXML2Object(bxmlout, out_stream);
@@ -742,7 +742,7 @@ BlastXML2_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_strea
 void
 BlastXML2_FormatReport(const IBlastXML2ReportData* data, string file_name)
 {
-	blastxml2::CBlastOutput bxmlout;
+	blastxml2::CBlastOutput2 bxmlout;
 	try {
 		CNcbiOfstream out_stream;
 		out_stream.open(file_name.c_str(), IOS_BASE::out);
@@ -767,7 +767,7 @@ void
 BlastXML2_FormatError(int exit_code, string err_msg,
                       CNcbiOstream *out_stream)
 {
-	blastxml2::CBlastOutput bxmlout;
+	blastxml2::CBlastOutput2 bxmlout;
 	bxmlout.SetError().SetCode(exit_code);
 	if(err_msg != kEmptyStr) {
 		bxmlout.SetError().SetMessage(err_msg);
@@ -776,7 +776,7 @@ BlastXML2_FormatError(int exit_code, string err_msg,
 }
 
 static void
-s_WriteJSONObject(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
+s_WriteJSONObject(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
     auto_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson (*out_stream, eNoOwnership));
@@ -790,7 +790,7 @@ s_WriteJSONObject(blastxml2::CBlastOutput& bxmlout, CNcbiOstream *out_stream)
 void
 BlastJSON_FormatReport(const IBlastXML2ReportData* data, string file_name)
 {
-	blastxml2::CBlastOutput bxmlout;
+	blastxml2::CBlastOutput2 bxmlout;
 	try {
 		CNcbiOfstream out_stream;
 		out_stream.open(file_name.c_str(), IOS_BASE::out);
@@ -813,7 +813,7 @@ BlastJSON_FormatReport(const IBlastXML2ReportData* data, string file_name)
 void
 BlastJSON_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_stream )
 {
-	blastxml2::CBlastOutput bxmlout;
+	blastxml2::CBlastOutput2 bxmlout;
 	try {
 		s_FillBlastOutput(bxmlout, data);
 		s_WriteJSONObject(bxmlout, out_stream);
