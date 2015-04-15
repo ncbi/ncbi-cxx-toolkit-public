@@ -180,6 +180,9 @@ typedef const CSeq_feat::TDbxref TDbtags;
 EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate 
     (CSeq_feat_Handle f1,
      CSeq_feat_Handle f2,
+     bool fruit_fly,
+     bool viral,
+     bool htgs,
      bool check_partials = false,
      bool case_sensitive = false);
 

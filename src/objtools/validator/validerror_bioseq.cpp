@@ -6878,7 +6878,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs)
 {
     // Get type of duplication, if any
-    EDuplicateFeatureType dup_type = IsDuplicate (f1, f2);
+    EDuplicateFeatureType dup_type = IsDuplicate (f1, f2, fruit_fly, viral, htgs);
 
     switch (dup_type) {
         case eDuplicate_Duplicate:
@@ -7012,8 +7012,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
         CSeqdesc_CI di(m_CurrentHandle, CSeqdesc::e_Source);
         if ( di && di->GetSource().IsSetOrg()) {
             if (di->GetSource().GetOrg().IsSetTaxname()
-                && NStr::EqualNocase(di->GetSource().GetOrg().GetTaxname(),
-                                     "Drosophila melanogaster")) {
+                && NStr::StartsWith(di->GetSource().GetOrg().GetTaxname(), "Drosophila ", NStr::eNocase)) {
                 fruit_fly = true;
             }
             if ( di->GetSource().GetOrg().IsSetOrgname()
@@ -7044,7 +7043,8 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                     break;
                 }
                 EDuplicateFeatureType dup_type = IsDuplicate (prev_it->GetSeq_feat_Handle(),
-                                                              curr_it->GetSeq_feat_Handle());
+                                                              curr_it->GetSeq_feat_Handle(),
+                                                              fruit_fly, viral, htgs);
                 if (dup_type != eDuplicate_Not) {
                     x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), 
                                                    *prev_feat, 

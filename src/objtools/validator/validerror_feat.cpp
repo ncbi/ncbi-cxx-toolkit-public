@@ -7932,7 +7932,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 // curated fly source still has duplicate features
                 CSeqdesc_CI dbsrc_i(bsh, CSeqdesc::e_Source);
                 if (dbsrc_i && dbsrc_i->GetSource().IsSetTaxname()
-                    && NStr::EqualNocase (dbsrc_i->GetSource().GetTaxname(), "Drosophila melanogaster")) {
+                    && NStr::StartsWith (dbsrc_i->GetSource().GetTaxname(), "Drosophila ", NStr::eNocase)) {
                     do_report = true;
                 }
             }
