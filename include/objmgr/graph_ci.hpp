@@ -158,6 +158,9 @@ public:
             if ( m_MappedGraph ) {
                 return m_MappedGraph->GetNumval();
             }
+            if ( !m_GraphRef->GetMappingInfo().IsMapped() ) {
+                return GetOriginalGraph().GetNumval();
+            }
             TSeqPos numval = 0;
             ITERATE(TGraphRanges, it, GetMappedGraphRanges()) {
                 numval += it->GetLength();
