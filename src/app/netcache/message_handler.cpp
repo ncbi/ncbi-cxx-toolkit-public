@@ -3028,16 +3028,17 @@ CNCMessageHandler::State
 CNCMessageHandler::x_SendCmdAsProxy(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError ||
+    if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
@@ -3098,10 +3099,11 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
     LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
-    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubCmdInProgress)
         return NULL;
 
-    if (m_ActiveHub->GetStatus() == eNCHubError) {
+    if (status == eNCHubError) {
         if (m_ActiveHub->GetHandler()->GotClientResponse())
             return &CNCMessageHandler::x_CloseOnPeerError;
 
@@ -3112,8 +3114,8 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
 
     const string& err_msg = m_ActiveHub->GetErrMsg();
@@ -3152,16 +3154,17 @@ CNCMessageHandler::State
 CNCMessageHandler::x_SendGetMetaCmd(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError ||
+    if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ReadMetaNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
@@ -3290,16 +3293,17 @@ CNCMessageHandler::State
 CNCMessageHandler::x_SendPutToPeerCmd(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError ||
+    if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PutToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
@@ -3314,12 +3318,13 @@ CNCMessageHandler::x_ReadPutResults(void)
     LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
-    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubCmdInProgress)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError)
+    if (status == eNCHubError)
         goto results_processed;
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
 
     if (m_Quorum == 1)
@@ -3352,15 +3357,16 @@ CNCMessageHandler::State
 CNCMessageHandler::x_SendPurgeToPeerCmd(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubWaitForConn)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError) {
+    if (status == eNCHubError || status == eNCHubSuccess) {
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PurgeToNextPeer;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubConnReady) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubConnReady) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
@@ -3375,12 +3381,13 @@ CNCMessageHandler::x_ReadPurgeResults(void)
     LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
-    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubCmdInProgress)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError)
+    if (status == eNCHubError)
         goto results_processed;
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess) {
-        SRV_FATAL("Unexpected client status: " << m_ActiveHub->GetStatus());
+    if (status != eNCHubSuccess) {
+        SRV_FATAL("Unexpected client status: " << status);
     }
 
 results_processed:
