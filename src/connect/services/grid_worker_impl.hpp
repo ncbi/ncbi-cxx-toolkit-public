@@ -32,6 +32,8 @@
  *    Common NetSchedule Worker Node declarations
  */
 
+#include <corelib/hash_set.hpp>
+
 #include "wn_commit_thread.hpp"
 #include "wn_cleanup.hpp"
 #include "netschedule_api_impl.hpp"
@@ -243,6 +245,29 @@ struct SGridWorkerNodeImpl : public CObject
     bool m_ProgressLogRequested;
     size_t m_QueueEmbeddedOutputSize;
     unsigned m_ThreadPoolTimeout;
+
+    /// Bookkeeping of jobs being executed (to prevent simultaneous runs of the same job)
+    struct SJobsInProgress
+    {
+        bool Add(const string& id)
+        {
+            TFastMutexGuard lock(m_Mutex);
+            return m_Ids.insert(id).second;
+        }
+
+        void Remove(const string& id)
+        {
+            TFastMutexGuard lock(m_Mutex);
+            const size_t erased = m_Ids.erase(id);
+            _ASSERT(erased);
+        }
+
+    private:
+        CFastMutex m_Mutex;
+        hash_set<string> m_Ids;
+    };
+
+    SJobsInProgress m_JobsInProgress;
 };
 
 

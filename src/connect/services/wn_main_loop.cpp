@@ -787,19 +787,29 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
     if (!m_WorkerNode->WaitForExclusiveJobToFinish())
         return false;
 
-    bool job_exists = x_WaitForNewJob(job);
+    if (!x_WaitForNewJob(job)) {
+        return false;
+    }
 
-    if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
+    // Already executing this job, so do nothing
+    // (and rely on that execution to report its result later)
+    if (!m_WorkerNode->m_JobsInProgress.Add(job.job_id)) {
+        return false;
+    }
+
+    if (job.mask & CNetScheduleAPI::eExclusiveJob) {
         if (!m_WorkerNode->EnterExclusiveMode()) {
             m_WorkerNode->m_NSExecutor.ReturnJob(job);
-            job_exists = false;
+            return false;
         }
     }
-    if (job_exists && x_EnterSuspendedState()) {
+
+    if (x_EnterSuspendedState()) {
         m_WorkerNode->m_NSExecutor.ReturnJob(job);
         return false;
     }
-    return job_exists;
+
+    return true;
 }
 
 size_t CGridWorkerNode::GetServerOutputSize()
