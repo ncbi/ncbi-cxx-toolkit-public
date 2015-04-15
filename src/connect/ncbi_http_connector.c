@@ -114,10 +114,10 @@ typedef struct {
  */
 typedef struct {
     SConnNetInfo*     net_info;       /* network configuration parameters    */
-    FHTTP_ParseHeader parse_header;   /* callback to parse HTTP reply header */
     void*             user_data;      /* user data handle for callbacks (CB) */
     FHTTP_Adjust      adjust;         /* on-the-fly net_info adjustment CB   */
     FHTTP_Cleanup     cleanup;        /* cleanup callback                    */
+    FHTTP_ParseHeader parse_header;   /* callback to parse HTTP reply header */
 
     TBHTTP_Flags      flags;          /* as passed to constructor            */
     unsigned          error_header:1; /* only err.HTTP header on SOME debug  */
@@ -1977,10 +1977,10 @@ static EIO_Status s_CreateHttpConnector
     /* initialize internal data structure */
     uuu->net_info     = xxx;
 
-    uuu->parse_header = 0;
     uuu->user_data    = 0;
     uuu->adjust       = 0;
     uuu->cleanup      = 0;
+    uuu->parse_header = 0;
 
     sid = flags & fHTTP_NoAutomagicSID ? 1 : tunnel;
     uuu->skip_host    = x_FixupUserHeader(xxx, &sid);
@@ -2036,10 +2036,10 @@ static CONNECTOR s_CreateConnector
     }
 
     /* initialize additional internal data structure */
-    uuu->parse_header = parse_header;
     uuu->user_data    = user_data;
     uuu->adjust       = adjust;
     uuu->cleanup      = cleanup;
+    uuu->parse_header = parse_header;
 
     ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", val, sizeof(val), 0);
     if (ConnNetInfo_Boolean(val))

@@ -577,23 +577,23 @@ public:
 
 protected:
     // Chained callbacks
-    FHTTP_ParseHeader m_UserParseHeader;
     void*             m_UserData;
     FHTTP_Adjust      m_UserAdjust;
     FHTTP_Cleanup     m_UserCleanup;
+    FHTTP_ParseHeader m_UserParseHeader;
 
     // HTTP status & text seen last
     SHTTP_StatusData  m_StatusData;
 
 private:
     // Interceptors
-    static EHTTP_HeaderParse x_ParseHeader(const char*   header,
-                                           void*         data,
-                                           int           code);
     static int/*bool*/       x_Adjust     (SConnNetInfo* net_info,
                                            void*         data,
                                            unsigned int  count);
     static void              x_Cleanup    (void*         data);
+    static EHTTP_HeaderParse x_ParseHeader(const char*   header,
+                                           void*         data,
+                                           int           code);
 };
 
 
@@ -660,13 +660,16 @@ protected:
 
 private:
     // Interceptors
-    static EHTTP_HeaderParse x_ParseHeader(const char* header,
-                                           void*       data,
-                                           int         code);
-    static void              x_Reset      (void*       data);
-    static void              x_Cleanup    (void*       data);
-    static const SSERV_Info* x_GetNextInfo(void*       data,
-                                           SERV_ITER   iter);
+    static void              x_Reset      (void*         data);
+    static int/*bool*/       x_Adjust     (SConnNetInfo* net_info,
+                                           void*         data,
+                                           unsigned int  count);
+    static void              x_Cleanup    (void*         data);
+    static EHTTP_HeaderParse x_ParseHeader(const char*   header,
+                                           void*         data,
+                                           int           code);
+    static const SSERV_Info* x_GetNextInfo(void*         data,
+                                           SERV_ITER     iter);
 };
 
 

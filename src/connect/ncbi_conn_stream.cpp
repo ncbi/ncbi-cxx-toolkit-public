@@ -416,10 +416,10 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        const char*         path,
                        const char*         args,
                        const char*         user_header,
-                       FHTTP_ParseHeader   parse_header,
                        void*               user_data,
                        FHTTP_Adjust        adjust,
                        FHTTP_Cleanup       cleanup,
+                       FHTTP_ParseHeader   parse_header,
                        THTTP_Flags         flags,
                        const STimeout*     timeout)
 {
@@ -496,15 +496,14 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             path.c_str(),
                                             args.c_str(),
                                             user_header.c_str(),
-                                            x_ParseHeader,
                                             this,
                                             0,
                                             0,
+                                            x_ParseHeader,
                                             flags,
                                             timeout),
                      timeout, buf_size),
-      m_UserParseHeader(0), m_UserData(0),
-      m_UserAdjust(0), m_UserCleanup(0)
+      m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
 {
     return;
 }
@@ -522,15 +521,14 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             0,
-                                            x_ParseHeader,
                                             this,
                                             0,
                                             0,
+                                            x_ParseHeader,
                                             flags,
                                             timeout),
                      timeout, buf_size),
-      m_UserParseHeader(0), m_UserData(0),
-      m_UserAdjust(0), m_UserCleanup(0)
+      m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
 {
     return;
 }
@@ -550,15 +548,14 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             user_header.c_str(),
-                                            x_ParseHeader,
                                             this,
                                             0,
                                             0,
+                                            x_ParseHeader,
                                             flags,
                                             timeout),
                      timeout, buf_size),
-      m_UserParseHeader(0), m_UserData(0),
-      m_UserAdjust(0), m_UserCleanup(0)
+      m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
 {
     return;
 }
@@ -582,15 +579,15 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             0,
                                             0,
                                             user_header.c_str(),
-                                            x_ParseHeader,
                                             this,
-                                            adjust  ? x_Adjust  : 0,
+                                            adjust ? x_Adjust  : 0,
                                             cleanup ? x_Cleanup : 0,
+                                            x_ParseHeader,
                                             flags,
                                             timeout),
                      timeout, buf_size),
-      m_UserParseHeader(parse_header), m_UserData(user_data),
-      m_UserAdjust(adjust), m_UserCleanup(cleanup)
+      m_UserData(user_data),  m_UserAdjust(adjust),
+      m_UserCleanup(cleanup), m_UserParseHeader(parse_header)
 {
     return;
 }
@@ -613,15 +610,15 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                             0,
                                             0,
                                             user_header.c_str(),
-                                            x_ParseHeader,
                                             this,
-                                            adjust  ? x_Adjust  : 0,
+                                            adjust ? x_Adjust  : 0,
                                             cleanup ? x_Cleanup : 0,
+                                            x_ParseHeader,
                                             flags,
                                             timeout),
                      timeout, buf_size),
-      m_UserParseHeader(parse_header), m_UserData(user_data),
-      m_UserAdjust(adjust), m_UserCleanup(cleanup)
+      m_UserData(user_data),  m_UserAdjust(adjust),
+      m_UserCleanup(cleanup), m_UserParseHeader(parse_header)
 {
     return;
 }
@@ -659,21 +656,6 @@ static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
 }
 
 
-EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
-                                                  void*       data,
-                                                  int         code)
-{
-    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
-    EHTTP_HeaderParse rv = s_ParseHttpHeader(header, http->m_StatusData);
-    if (rv != eHTTP_HeaderSuccess)
-        return rv;
-    _ASSERT(!code  ||  code == http->m_StatusData.code);
-    return http->m_UserParseHeader
-        ? http->m_UserParseHeader(header, http->m_UserData, code)
-        : eHTTP_HeaderSuccess;
-}
-
-
 int/*bool*/ CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
                                        void*         data,
                                        unsigned int  count)
@@ -690,6 +672,21 @@ void CConn_HttpStream::x_Cleanup(void* data)
 }
 
 
+EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
+                                                  void*       data,
+                                                  int         code)
+{
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
+    EHTTP_HeaderParse rv = s_ParseHttpHeader(header, http->m_StatusData);
+    if (rv != eHTTP_HeaderSuccess)
+        return rv;
+    _ASSERT(!code  ||  code == http->m_StatusData.code);
+    return http->m_UserParseHeader
+        ? http->m_UserParseHeader(header, http->m_UserData, code)
+        : eHTTP_HeaderSuccess;
+}
+
+
 static CConn_IOStream::TConn_Pair
 s_ServiceConnectorBuilder(const char*                           service,
                           TSERV_Type                            types,
@@ -698,9 +695,10 @@ s_ServiceConnectorBuilder(const char*                           service,
                           const SSERVICE_Extra*                 extra,
                           CConn_ServiceStream::SSERVICE_CBData* cbdata,
                           FSERVICE_Reset                        reset,
+                          FHTTP_Adjust                          adjust,
                           FSERVICE_Cleanup                      cleanup,
-                          FSERVICE_GetNextInfo                  get_next_info,
                           FHTTP_ParseHeader                     parse_header,
+                          FSERVICE_GetNextInfo                  get_next_info,
                           const STimeout*                       timeout)
 {
     AutoPtr<SConnNetInfo>
@@ -719,13 +717,18 @@ s_ServiceConnectorBuilder(const char*                           service,
         memcpy(&cbdata->extra, extra, sizeof(cbdata->extra));
     else
         memset(&cbdata->extra, 0,     sizeof(cbdata->extra));
+    _ASSERT(!reset          ||  (extra  &&  extra->reset));
+    _ASSERT(!adjust         ||  (extra  &&  extra->adjust));
+    _ASSERT(!cleanup        ||  (extra  &&  extra->cleanup));
+    _ASSERT(!get_next_info  ||  (extra  &&  extra->get_next_info));
     SSERVICE_Extra x_extra;
     memset(&x_extra, 0, sizeof(x_extra));
     x_extra.data          = cbdata;
     x_extra.reset         = reset;
+    x_extra.adjust        = adjust;
     x_extra.cleanup       = cleanup;
-    x_extra.get_next_info = get_next_info;
     x_extra.parse_header  = parse_header;
+    x_extra.get_next_info = get_next_info;
     x_extra.flags         = extra ? extra->flags : 0;
     CONNECTOR c = SERVICE_CreateConnectorEx(service,
                                             types,
@@ -749,11 +752,13 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                &m_CBData,
                                                extra  &&  extra->reset
                                                ? x_Reset : 0,
+                                               extra  &&  extra->adjust
+                                               ? x_Adjust : 0,
                                                extra  &&  extra->cleanup
                                                ? x_Cleanup : 0,
+                                               x_ParseHeader,
                                                extra  &&  extra->get_next_info
                                                ? x_GetNextInfo : 0,
-                                               x_ParseHeader,
                                                timeout),
                      timeout, buf_size)
 {
@@ -775,11 +780,13 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                &m_CBData,
                                                extra  &&  extra->reset
                                                ? x_Reset : 0,
+                                               extra  &&  extra->adjust
+                                               ? x_Adjust : 0,
                                                extra  &&  extra->cleanup
                                                ? x_Cleanup : 0,
+                                               x_ParseHeader,
                                                extra  &&  extra->get_next_info
                                                ? x_GetNextInfo : 0,
-                                               x_ParseHeader,
                                                timeout),
                      timeout, buf_size)
 {
@@ -806,6 +813,29 @@ SOCK CConn_ServiceStream::GetSOCK(void)
 }
 
 
+void CConn_ServiceStream::x_Reset(void* data)
+{
+    SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
+    cbd->extra.reset(cbd->extra.data);
+}
+
+
+int/*bool*/ CConn_ServiceStream::x_Adjust(SConnNetInfo* net_info,
+                                          void*         data,
+                                          unsigned int  count)
+{
+    SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
+    return cbd->extra.adjust(net_info, cbd->extra.data, count);
+}
+
+
+void CConn_ServiceStream::x_Cleanup(void* data)
+{
+    SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
+    cbd->extra.cleanup(cbd->extra.data);
+}
+
+
 EHTTP_HeaderParse CConn_ServiceStream::x_ParseHeader(const char* header,
                                                      void* data, int code)
 {
@@ -817,20 +847,6 @@ EHTTP_HeaderParse CConn_ServiceStream::x_ParseHeader(const char* header,
     return cbd->extra.parse_header
         ? cbd->extra.parse_header(header, cbd->extra.data, code)
         : eHTTP_HeaderSuccess;
-}
-
-
-void CConn_ServiceStream::x_Reset(void* data)
-{
-    SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
-    cbd->extra.reset(cbd->extra.data);
-}
-
-
-void CConn_ServiceStream::x_Cleanup(void* data)
-{
-    SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
-    cbd->extra.cleanup(cbd->extra.data);
 }
 
 

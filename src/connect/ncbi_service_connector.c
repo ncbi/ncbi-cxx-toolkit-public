@@ -540,11 +540,11 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     assert(n > 0  &&  (!net_info->firewall  ||  net_info->stateless));
 
     if (uuu->retry >= uuu->net_info->max_try)
-        return 0/*false - too many errors*/;
+        return 0/*failure - too many errors*/;
     uuu->retry++;
 
     if (!(info = s_GetNextInfo(uuu, 1/*http*/)))
-        return 0/*false - not adjusted*/;
+        return 0/*failure - not adjusted*/;
 
     iter_header = SERV_Print(uuu->iter, 0, 0);
     switch (info->type) {
@@ -605,7 +605,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     if (*user_header) {
         uuu->user_header = user_header;
         if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
-            return 0/*false - not adjusted*/;
+            return 0/*failure - not adjusted*/;
     } else /*NB: special case ""*/
         uuu->user_header = 0;
 
@@ -616,7 +616,10 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
         strcpy(net_info->host, uuu->net_info->host);
         net_info->port = uuu->net_info->port;
     }
-    return 1/*true - adjusted*/;
+    return uuu->extra.adjust
+        &&  !uuu->extra.adjust(net_info, uuu->extra.data, uuu->retry)
+        ? 0/*failure - not adjusted*/
+        : 1/*success - adjusted*/;
 }
 
 
@@ -853,12 +856,15 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     ConnNetInfo_DeleteUserHeader(net_info, "Host:");
     if (info  &&  (info->mode & fSERV_Secure))
         net_info->scheme = eURL_Https;
-    return HTTP_CreateConnectorEx(net_info,
-                                  (uuu->extra.flags
-                                   & (fHTTP_Flushable | fHTTP_NoAutoRetry))
-                                  | fHTTP_AutoReconnect,
-                                  s_ParseHeaderUCB, uuu/*user_data*/,
-                                  s_Adjust, 0/*cleanup*/);
+    return !uuu->extra.adjust
+        ||  uuu->extra.adjust(net_info, uuu->extra.data, 0)
+        ? HTTP_CreateConnectorEx(net_info,
+                                 (uuu->extra.flags
+                                  & (fHTTP_Flushable | fHTTP_NoAutoRetry))
+                                 | fHTTP_AutoReconnect,
+                                 s_ParseHeaderUCB, uuu/*user_data*/,
+                                 s_Adjust, 0/*cleanup*/)
+        : 0/*failure*/;
 }
 
 
