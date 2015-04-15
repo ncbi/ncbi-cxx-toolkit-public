@@ -214,15 +214,7 @@ bool CObjectsSniffer::x_TryReadObject(CObjectIStream& input,
         x_ReadObject(input, object_info);
         return true;
     }
-    catch ( CEofException& /*rethrown*/ ) {
-        // no more objects
-        throw;
-    }
-    catch ( bad_alloc& /*rethrown*/ ) {
-        // no more memory
-        throw;
-    }
-    catch ( exception& /*ignored*/ ) {
+    catch ( CSerialException& /*ignored*/ ) {
         input.SetStreamPos(m_StreamPos);
         Reset();
         return false;
