@@ -341,10 +341,10 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
         switch (subtype) {
             case CSeqFeatData::eSubtype_mRNA: {
                 string proteinId = xNextProteinId(f);
-                feh.AddQualifier("protein_id", proteinId);
+                //feh.AddQualifier("protein_id", proteinId);
                 feh.AddQualifier("orig_protein_id", proteinId);
                 string transcriptId = xNextTranscriptId(f);
-                feh.AddQualifier("transcript_id", transcriptId);
+                //feh.AddQualifier("transcript_id", transcriptId);
                 feh.AddQualifier("orig_transcript_id", transcriptId);
                 break;
             }
@@ -364,8 +364,10 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
         const CSeq_feat& f = mf.GetOriginalFeature();
         CSeq_feat_EditHandle feh(mf);
         string transcriptId = xCurrentTranscriptId(f);
-        feh.AddQualifier("transcript_id", transcriptId);
+        //feh.AddQualifier("transcript_id", transcriptId);
         feh.AddQualifier("orig_transcript_id", transcriptId);
+        string proteinId = xCurrentProteinId(f);
+        feh.AddQualifier("orig_protein_id", proteinId);
     }
 }
 
@@ -535,8 +537,21 @@ string CFeatTableEdit::xCurrentTranscriptId(
     if (!pRna) {
         return "";
     }
-    string transcriptId = pRna->GetNamedQual("transcript_id");
+    string transcriptId = pRna->GetNamedQual("orig_transcript_id");
     return transcriptId;
+}
+
+//  ----------------------------------------------------------------------------
+string CFeatTableEdit::xCurrentProteinId(
+    const CSeq_feat& f)
+    //  ----------------------------------------------------------------------------
+{
+    CConstRef<CSeq_feat> pRna = xGetMrnaParent(f);
+    if (!pRna) {
+        return "";
+    }
+    string proteinId = pRna->GetNamedQual("orig_protein_id");
+    return proteinId;
 }
 
 //	----------------------------------------------------------------------------

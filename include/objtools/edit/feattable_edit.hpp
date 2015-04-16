@@ -76,6 +76,8 @@ protected:
 		const CSeq_feat&);
     string xCurrentTranscriptId(
         const CSeq_feat&);
+    string xCurrentProteinId(
+        const CSeq_feat&);
 
     void xPutErrorMissingLocustag(
         CMappedFeat);
