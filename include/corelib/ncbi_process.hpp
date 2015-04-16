@@ -42,6 +42,7 @@
 
 
 #include <corelib/ncbistr.hpp>
+#include <corelib/interprocess_lock.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <sys/types.h>
@@ -450,9 +451,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CPIDGuard -- 
-///
-/// Define process guard.
+/// CPIDGuard -- Process guard.
 ///
 /// If file already exists, CPIDGuard try to check that the process with PID
 /// specified in the file is running or not. If guarded process is still
@@ -461,9 +460,13 @@ private:
 /// This means that some CPIDGuard objects can be created for the same PID
 /// and file name.
 ///
-/// NOTE: This method to protect PID file works only within one process.
-///       CPIDGuard know nothing about PID file modification or deletion 
-///       by other processes. Be aware.
+/// @note
+///   If you need something just to prevent run some application twice,
+///   please look to CInterProcessLock class.
+/// @note
+///   CPIDGuard know nothing about PID file modification or deletion
+///   by other processes directly, without using this API. Be aware.
+/// 
 
 class NCBI_XNCBI_EXPORT CPIDGuard
 {
@@ -478,9 +481,6 @@ public:
     ///
     /// Just calls Release();
     ~CPIDGuard(void);
-
-    /// Returns non-zero if there was a stale file.
-    TPid GetOldPID(void) { return m_OldPID; }
 
     /// Release PID.
     ///
@@ -501,10 +501,19 @@ public:
     ///   the parent.
     void UpdatePID(TPid pid = 0);
 
+    /// Returns non-zero if there was a stale file.
+    /// Always return 0, because new implementation don't allow
+    /// any stale file left on the file system.
+    ///
+    /// @deprecated
+    NCBI_DEPRECATED
+    TPid GetOldPID(void) { return 0; }
+
 private:
-    string  m_Path;     //< File path to store PID.
-    TPid    m_OldPID;   //< Old PID read from file.
-    TPid    m_NewPID;   //< New PID wroted to file.
+    string  m_Path;  //< File path to store PID.
+    TPid    m_PID;   //< Sored PID.
+    auto_ptr<CInterProcessLock> m_MTGuard;  //< MT-Safe protection guard.
+    auto_ptr<CInterProcessLock> m_PIDGuard; //< Guard to help with "PID reuse" problem.
 };
 
 

@@ -49,8 +49,6 @@ USING_NCBI_SCOPE;
 
 static void Test_Process(void)
 {
-    LOG_POST("\nProcess tests:\n");
-
     string app = CNcbiApplication::Instance()->GetArguments().GetProgramName();
     TProcessHandle handle;
     {{
@@ -83,8 +81,8 @@ static void Test_Process(void)
 /////////////////////////////////
 // PIDGuard test
 //
-// NOTE:  ppid is int rather than TPid in these two functions because we need
-//        it to be signed.
+// NOTE:  ppid is int rather than TPid in these two functions
+//        because we need it to be signed.
 
 static void Test_PIDGuardChild(int ppid, string lockfile)
 {
@@ -98,6 +96,7 @@ static void Test_PIDGuardChild(int ppid, string lockfile)
     assert( !ret_code );
 }
 
+
 static void Test_PIDGuard(int ppid, string lockfile)
 {
     if (lockfile.empty()) {
@@ -108,25 +107,42 @@ static void Test_PIDGuard(int ppid, string lockfile)
     CFile lf(lockfile);
     TPid my_pid = CProcess::GetCurrentPid();
     assert(my_pid > 0);
-    LOG_POST("\nTest_PIDGuard starting:\nmy_pid = " << my_pid
+    LOG_POST("Test_PIDGuard starting:\nmy_pid = " << my_pid
              << ", ppid = " << ppid << ", lockfile = " << lockfile << '\n');
 
     // Parent
     if (ppid == 0) {
+
+        // Create lock
         CPIDGuard guard(lockfile);
-        {
+        {{
+            // increase reference counter
             CPIDGuard guard2(lockfile);
-        }
+            // decrease reference counter (on destruction)
+        }}
         assert(lf.Exists());
+        // try to use lock in other process -- exception there
         Test_PIDGuardChild(my_pid, lockfile);
         assert(lf.Exists());
+        {{
+            // increase reference counter
+            CPIDGuard guard2(lockfile);
+            // decrease reference counter (on destruction)
+        }}
+        // final release
         guard.Release();
         assert(!lf.Exists());
+
+        // Left stale lock test
+
+        // Some process create lockfile
         Test_PIDGuardChild(-1, lockfile);
         assert(lf.Exists());
+
+#if 0
+// possible do not needed now, commented out for test purposes
 #if defined(NCBI_OS_MSWIN)
         // Additional check on stuck child process.
-        //
         // On some Windows machines OS report that child process is still
         // running even if we already have its exit code.
         CNcbiIfstream in(lockfile.c_str());
@@ -140,15 +156,17 @@ static void Test_PIDGuard(int ppid, string lockfile)
         }
         in.close();
 #endif
+#endif
+        // And other reuse existent lockfile
         Test_PIDGuardChild(-2, lockfile);
         assert(!lf.Exists());
     }
+
     // Child run with parent lock open
     else if (ppid > 0) {
         try {
-            LOG_POST("Expect an exception now.");
+            LOG_POST("Should have been locked (by parent), expect an exception now:");
             CPIDGuard guard(lockfile);
-            ERR_POST("Should have been locked (by parent)");
             _TROUBLE;
         } catch (CPIDGuardException& e) {
             LOG_POST(e.what());
@@ -156,13 +174,14 @@ static void Test_PIDGuard(int ppid, string lockfile)
             assert(e.GetPID() == ppid);
         }
     } else if (ppid == -1) {
-        new CPIDGuard(lockfile); // deliberate leak
+        // Deliberate leak -- just create lockfile
+        new CPIDGuard(lockfile);
         LOG_POST("Left stale lock.");
     } else if (ppid == -2) {
+        // Reuse lockfile in the child process
         CPIDGuard guard(lockfile);
-        TPid old_pid = guard.GetOldPID();
-        assert(old_pid > 0);
-        LOG_POST("Old PID was " << old_pid);
+        TPid old_pid = guard.GetOldPID(); // -- always 0
+        assert(old_pid == 0);
     } else {
         _TROUBLE;
     }
@@ -222,11 +241,11 @@ int CTestApplication::Run(void)
         return 88;
     }
 
-    // Main tests
-
     // General tests
     if ( !args["parent"].AsInteger() ) {
+        LOG_POST("\n--- CProcess tests ---\n");
         Test_Process();
+        LOG_POST("\n--- CPIDGuard tests ---\n");
     }
     // PIDGuard tests
     Test_PIDGuard(args["parent"].AsInteger(), args["lockfile"].AsString());
