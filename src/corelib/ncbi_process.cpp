@@ -374,6 +374,13 @@ namespace {
 
 TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
 {
+    if (!(flags & fDF_AllowThreads)) {
+        if (unsigned n = CThread::GetThreadsCount()) {
+            NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                    "Prohibited, there are already child threads running: " << n);
+        }
+    }
+
     bool success_flag = false;
 
     CSafeRedirect stdin_redirector(STDIN_FILENO, &success_flag);

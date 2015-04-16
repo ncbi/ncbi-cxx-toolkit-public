@@ -342,6 +342,7 @@ public:
                                     ///< but return
         fDF_AllowExceptions = 32,   ///< Throw an exception in case
                                     ///< of an error.
+        fDF_AllowThreads    = 64,   ///< Do not fail if pre-existing threads are detected
 
         fDontChroot = fDF_KeepCWD,    ///< @deprecated Use fDF_KeepCWD instead
         fKeepStdin  = fDF_KeepStdin,  ///< @deprecated Use fDF_KeepStdin instead

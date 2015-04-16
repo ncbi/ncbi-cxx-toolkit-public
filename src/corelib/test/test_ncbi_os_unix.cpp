@@ -29,23 +29,36 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <common/test_assert.h>  /* This header must go last */
 
+USING_NCBI_SCOPE;
+
+struct SChildThread : CThread
+{
+protected:
+    void* Main(void) { SleepSec(10); return NULL; }
+};
 
 int main()
 {
-    USING_NCBI_SCOPE;
-
     // Set err.-posting and tracing to maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
 
     // Run tests
+    LOG_POST("Trying to daemonize while running a child thread, expecting failure");
+    SChildThread* child = new SChildThread;
+    child->Run();
+    _ASSERT(CProcess::Daemonize() == 0);
+    child->Join();
+
     LOG_POST("Trying to daemonize at \"/\","
              " expecting failure for the check to continue successfully");
     _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
