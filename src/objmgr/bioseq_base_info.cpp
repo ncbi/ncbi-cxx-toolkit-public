@@ -421,9 +421,10 @@ void CBioseq_Base_Info::ResetAnnot(void)
 }
 
 
-CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(CSeq_annot& annot)
+CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(CSeq_annot& annot,
+                                                  int chunk_id)
 {
-    CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot));
+    CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot, chunk_id));
     AddAnnot(info);
     return info;
 }

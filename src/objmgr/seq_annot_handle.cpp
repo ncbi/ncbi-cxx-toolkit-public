@@ -115,6 +115,9 @@ bool CSeq_annot_Handle::OrderedBefore(const CSeq_annot_Handle& h) const
                 h.GetTSE_Handle().OrderedBefore(GetTSE_Handle()));
         return GetTSE_Handle().OrderedBefore(h.GetTSE_Handle());
     }
+    if ( x_GetInfo().GetChunkId() != h.x_GetInfo().GetChunkId() ) {
+        return x_GetInfo().GetChunkId() < h.x_GetInfo().GetChunkId();
+    }
     if ( x_GetInfo().GetBioObjectId() != h.x_GetInfo().GetBioObjectId() ) {
         _ASSERT(x_GetInfo().GetBioObjectId()<h.x_GetInfo().GetBioObjectId()||
                 h.x_GetInfo().GetBioObjectId()<x_GetInfo().GetBioObjectId());

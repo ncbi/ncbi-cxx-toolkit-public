@@ -75,7 +75,7 @@ public:
     typedef C_Data::TSeq_table  TSeq_table;
     typedef Uint4               TAnnotIndex;
 
-    explicit CSeq_annot_Info(CSeq_annot& annot);
+    explicit CSeq_annot_Info(CSeq_annot& annot, int chunk_id = 0);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
     explicit CSeq_annot_Info(const CSeq_annot_Info& src,
                              TObjectCopyMap* copy_map);
@@ -93,6 +93,10 @@ public:
     CConstRef<TObject> GetSeq_annotSkeleton(void) const;
 
     const CAnnotName& GetName(void) const;
+
+    int GetChunkId(void) const {
+        return m_ChunkId;
+    }
 
     // tree initialization
     virtual void x_DSAttachContents(CDataSource& ds);
@@ -241,6 +245,9 @@ protected:
 
     // Feature table info
     CRef<CSeqTableInfo> m_Table_Info;
+
+    // chunk ID for deterministic ordering
+    int m_ChunkId;
 
 private:
     CSeq_annot_Info(const CSeq_annot_Info&);

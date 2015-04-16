@@ -182,14 +182,15 @@ void CTSE_Default_Assigner::LoadDescr(CTSE_Info& tse,
 
 void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
                                       const TPlace& place, 
-                                      CRef<CSeq_annot> annot)
+                                      CRef<CSeq_annot> annot,
+                                      TIntId chunk_id)
 {
     CRef<CSeq_annot_Info> annot_info;
     {{
         CDataSource::TMainLock::TWriteLockGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource().GetMainLock());
-        annot_info.Reset(x_GetBase(tse, place).AddAnnot(*annot));
+        annot_info.Reset(x_GetBase(tse, place).AddAnnot(*annot, chunk_id));
     }}
     {{
         CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);

@@ -120,7 +120,7 @@ public:
     const TAnnot& GetLoadedAnnot(void) const;
 
     void ResetAnnot(void);
-    CRef<CSeq_annot_Info> AddAnnot(CSeq_annot& annot);
+    CRef<CSeq_annot_Info> AddAnnot(CSeq_annot& annot, int chunk_id = 0);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
     void RemoveAnnot(CRef<CSeq_annot_Info> annot);
 

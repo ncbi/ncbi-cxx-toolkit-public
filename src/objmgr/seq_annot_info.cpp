@@ -70,13 +70,15 @@ NCBI_DEFINE_ERR_SUBCODE_X(9);
 BEGIN_SCOPE(objects)
 
 
-CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot)
+CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot, int chunk_id)
+    : m_ChunkId(chunk_id)
 {
     x_SetObject(annot);
 }
 
 
 CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
+    : m_ChunkId(0)
 {
     x_SetSNP_annot_Info(snp_annot);
 }
@@ -84,7 +86,8 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
 
 CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info,
                                  TObjectCopyMap* copy_map)
-    : TParent(info, copy_map)
+    : TParent(info, copy_map),
+      m_ChunkId(info.GetChunkId())
 {
     x_SetObject(info, copy_map);
 }
@@ -165,7 +168,6 @@ void CSeq_annot_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 
 void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
 {
-    SetBioObjectId(tse.x_RegisterBioObject(*this));
     CRef<CSeq_annot_SNP_Info> snp_info = tse.x_GetSNP_Info(m_Object);
     if ( snp_info ) {
         _ASSERT(!m_SNP_Info);
@@ -175,6 +177,7 @@ void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
         x_AttachObject(*snp_info);
     }
     TParent::x_TSEAttachContents(tse);
+    SetBioObjectId(tse.x_RegisterBioObject(*this));
     x_UpdateName();
     x_SetDirtyAnnotIndex();
     if ( m_SNP_Info ) {

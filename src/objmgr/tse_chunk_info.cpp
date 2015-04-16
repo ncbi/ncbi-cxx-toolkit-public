@@ -728,7 +728,7 @@ void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   const CSeq_annot& annot)
 {
     _ASSERT(x_Attached());
-    m_SplitInfo->x_LoadAnnot(place, annot);
+    m_SplitInfo->x_LoadAnnot(place, annot, GetChunkId());
 }
 
 
