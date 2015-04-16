@@ -1021,7 +1021,6 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
      CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
 
-/// @internal
 class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 {
 public:
