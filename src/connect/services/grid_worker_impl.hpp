@@ -255,11 +255,12 @@ struct SGridWorkerNodeImpl : public CObject
             return m_Ids.insert(id).second;
         }
 
-        void Remove(const string& id)
+        size_t Remove(const string& id)
         {
             TFastMutexGuard lock(m_Mutex);
             const size_t erased = m_Ids.erase(id);
             _ASSERT(erased);
+            return erased;
         }
 
     private:
