@@ -311,7 +311,7 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
 void CMsvcSite::GetLibInfo(const string& lib, 
                            const SConfigInfo& config, SLibInfo* libinfo) const
 {
-    string libinfokey(lib + config.GetConfigFullName());
+    string libinfokey(lib + "|" + config.GetConfigFullName());
     map<string,SLibInfo>::const_iterator li;
     li = m_AllLibInfo.find(libinfokey);
     if (li != m_AllLibInfo.end()) {
@@ -363,9 +363,8 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
     libinfo->m_libinfokey = libinfokey;
     libinfo->m_good = IsLibOk(*libinfo);
-//    m_AllLibInfo.insert( make_pair<string,SLibInfo>(libinfokey,*libinfo));
+    LOG_POST(Info << "Component " << libinfokey << ": " << (libinfo->m_good ? "good" : "bad"));
     m_AllLibInfo.insert( map<string,SLibInfo>::value_type(libinfokey,*libinfo));
-//    m_AllLibInfo[ libinfokey ] = *libinfo;
 }
 
 
