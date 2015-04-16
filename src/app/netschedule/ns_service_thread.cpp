@@ -75,7 +75,7 @@ void  CServiceThread::DoJob(void)
         // Print statistics for all the queues
         size_t      aff_count = 0;
         m_QueueDB.PrintStatistics(aff_count);
-        CStatisticsCounters::PrintTotal(aff_count);
+        CStatisticsCounters::PrintServerWide(aff_count);
     }
 }
 

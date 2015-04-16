@@ -60,10 +60,16 @@ public:
         eNewSession = 4
     };
 
+    enum ECountersScope {
+        eQueueCounters      = 0,
+        eServerWideCounters = 1
+    };
 
-    CStatisticsCounters();
+    CStatisticsCounters(ECountersScope  scope);
 
     void PrintTransitions(CDiagContext_Extra &  extra) const;
+    void PrintDelta(CDiagContext_Extra &  extra,
+                    const CStatisticsCounters &  prev) const;
     string PrintTransitions(void) const;
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to,
@@ -77,13 +83,15 @@ public:
     void CountToPendingWithoutBlacklist(size_t  count);
     void CountToPendingRescheduled(size_t  count);
 
-    static void  PrintTotal(size_t  affinities);
+    static void  PrintServerWide(size_t  affinities);
 
 private:
     static string x_GetTransitionCounterName(size_t  index_from,
                                              size_t  index_to);
 
 private:
+    ECountersScope                  m_Scope;
+
     CAtomicCounter_WithAutoInit     m_Transitions[g_ValidJobStatusesSize]
                                                  [g_ValidJobStatusesSize];
     CAtomicCounter_WithAutoInit     m_SubmitCounter;

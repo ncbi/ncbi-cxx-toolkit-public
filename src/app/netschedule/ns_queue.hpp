@@ -663,6 +663,8 @@ private:
     bool                        m_RefuseSubmits;
 
     CStatisticsCounters         m_StatisticsCounters;
+    mutable CStatisticsCounters m_StatisticsCountersLastPrinted;
+    mutable CNSPreciseTime      m_StatisticsCountersLastPrintedTimestamp;
 
     unsigned int                m_MaxAffinities;
     unsigned int                m_AffinityHighMarkPercentage;

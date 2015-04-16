@@ -114,6 +114,9 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_Log(server->IsLog()),
     m_LogBatchEachJob(server->IsLogBatchEachJob()),
     m_RefuseSubmits(false),
+    m_StatisticsCounters(CStatisticsCounters::eQueueCounters),
+    m_StatisticsCountersLastPrinted(CStatisticsCounters::eQueueCounters),
+    m_StatisticsCountersLastPrintedTimestamp(0.0),
     m_MaxAffinities(server->GetMaxAffinities()),
     m_AffinityHighMarkPercentage(server->GetAffinityHighMarkPercentage()),
     m_AffinityLowMarkPercentage(server->GetAffinityLowMarkPercentage()),
@@ -4092,9 +4095,24 @@ bool CQueue::x_UnregisterGetListener(const CNSClientId &  client,
 
 void CQueue::PrintStatistics(size_t &  aff_count) const
 {
+    CStatisticsCounters counters_copy = m_StatisticsCounters;
+
+    // Do not print the server wide statistics the very first time
+    CNSPreciseTime      current = CNSPreciseTime::Current();
+
+    if (double(m_StatisticsCountersLastPrintedTimestamp) == 0.0) {
+        m_StatisticsCountersLastPrinted = counters_copy;
+        m_StatisticsCountersLastPrintedTimestamp = current;
+        return;
+    }
+
+    // Calculate the delta since the last time
+    CNSPreciseTime  delta = current - m_StatisticsCountersLastPrintedTimestamp;
+
     CRef<CRequestContext>   ctx;
     ctx.Reset(new CRequestContext());
     ctx->SetRequestID();
+
 
     CDiagContext &      diag_context = GetDiagContext();
 
@@ -4107,6 +4125,7 @@ void CQueue::PrintStatistics(size_t &  aff_count) const
     // The member is called only if there is a request context
     extra.Print("_type", "statistics_thread")
          .Print("queue", GetQueueName())
+         .Print("time_interval", NS_FormatPreciseTimeAsSec(delta))
          .Print("affinities", affinities)
          .Print("pending", CountStatus(CNetScheduleAPI::ePending))
          .Print("running", CountStatus(CNetScheduleAPI::eRunning))
@@ -4116,13 +4135,17 @@ void CQueue::PrintStatistics(size_t &  aff_count) const
          .Print("reading", CountStatus(CNetScheduleAPI::eReading))
          .Print("confirmed", CountStatus(CNetScheduleAPI::eConfirmed))
          .Print("readfailed", CountStatus(CNetScheduleAPI::eReadFailed));
-    m_StatisticsCounters.PrintTransitions(extra);
+    counters_copy.PrintTransitions(extra);
+    counters_copy.PrintDelta(extra, m_StatisticsCountersLastPrinted);
     extra.Flush();
 
     ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
     diag_context.PrintRequestStop();
     ctx.Reset();
     diag_context.SetRequestContext(NULL);
+
+    m_StatisticsCountersLastPrinted = counters_copy;
+    m_StatisticsCountersLastPrintedTimestamp = current;
 }
 
 
