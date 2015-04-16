@@ -1021,7 +1021,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             header_header = "HTTP header (redirect)";
         else if (retry->mode == eRetry_Redirect303)
             header_header = "HTTP header (see other)";
-        else if (retry->mode & eRetry_ProxyAuthenticate)
+        else if (retry->mode & eRetry_Authenticate)
             header_header = "HTTP header (authentication)";
         else if (retry->mode)
             header_header = 0, assert(0);

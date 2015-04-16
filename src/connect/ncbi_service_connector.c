@@ -379,16 +379,11 @@ static SSERV_InfoCPtr s_GetNextInfo(SServiceConnector* uuu, int/*bool*/ http)
 }
 
 
-static char* s_HostPort(const char* host, unsigned short nport)
+static char* x_HostPort(const char* host, unsigned short nport)
 {
-    size_t hostlen = strlen(host), portlen;
     char*  hostport, port[16];
- 
-    if (!nport) {
-        portlen = 1;
-        port[0] = '\0';
-    } else
-        portlen = (size_t) sprintf(port, ":%hu", nport) + 1;
+    size_t hostlen = strlen(host);
+    size_t portlen = (size_t) sprintf(port, ":%hu", nport) + 1;
     hostport = (char*) malloc(hostlen + portlen);
     if (hostport) {
         memcpy(hostport,           host, hostlen);
@@ -399,12 +394,13 @@ static char* s_HostPort(const char* host, unsigned short nport)
 
 
 /* Until r294766, this code used to send a ticket along with building the
- * tunnel, but for buggy proxies that ignore HTTP body as connection data
- * (and thus violate the standard), this shortcut could not be utilized;
+ * tunnel, but for buggy proxies, which ignore HTTP body as connection data
+ * (and thus violate the standard), that shortcut could not be utilized;
  * so the longer multi-step sequence was introduced below, instead.
  * Cf. ncbi_conn_stream.cpp: s_SocketConnectorBuilder().
  */
 static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
+                                          const char*   hostport,
                                           EIO_Status*   status,
                                           const void*   data,
                                           size_t        size,
@@ -412,14 +408,11 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
 {
     int/*bool*/ proxy = 0/*false*/;
     SOCK        sock = 0, s;
-    char*       hostport;
     SSOCK_Init  init;
     CONNECTOR   c;
 
     flags |= (net_info->debug_printout == eDebugPrintout_Data
               ? fSOCK_LogOn : fSOCK_LogDefault);
-    net_info->path[0] = '\0';
-    net_info->args[0] = '\0';
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
         /* NB: ideally, should have pushed data:size here if proxy not buggy */
         *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
@@ -460,14 +453,16 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
             tempf &= ~fSOCK_Secure;
         }
-        net_info->scheme = eURL_Unspec;
         if (!proxy  &&  net_info->debug_printout) {
+            net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
             net_info->firewall = 0;
             net_info->stateless = 0;
             net_info->lb_disable = 0;
             net_info->user[0] = '\0';
             net_info->pass[0] = '\0';
+            net_info->path[0] = '\0';
+            net_info->args[0] = '\0';
             net_info->http_proxy_host[0] = '\0';
             net_info->http_proxy_port    =   0;
             net_info->http_proxy_user[0] = '\0';
@@ -498,15 +493,12 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             sock = s;
         }
     }
-    hostport = s_HostPort(net_info->host, net_info->port);
     if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport))) {
         if (*status == eIO_Success)
             *status  = eIO_Unknown;
         SOCK_Abort(sock);
         SOCK_Close(sock);
     }
-    if (hostport)
-        free(hostport);
     return c;
 }
 
@@ -687,8 +679,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             break;
         case fSERV_Standalone:
             if (!net_info->stateless) {
-                return s_SocketConnectorBuilder(net_info, status, 0, 0,
-                                                info->mode & fSERV_Secure
+                assert(!uuu->descr);
+                uuu->descr = x_HostPort(net_info->host, net_info->port);
+                return s_SocketConnectorBuilder(net_info, uuu->descr, status,
+                                                0, 0, info->mode & fSERV_Secure
                                                 ? fSOCK_Secure : 0);
             }
             /* Otherwise, it will be a pass-thru connection via dispatcher */
@@ -837,6 +831,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             /* no connection info found */
             if (*status == eIO_Success)
                 *status  = eIO_Unknown;
+            if (!net_info->scheme)
+                net_info->scheme = eURL_Http;
+            net_info->args[0] = '\0';
+            assert(!uuu->descr);
+            uuu->descr = ConnNetInfo_URL(net_info);
             return 0;
         }
         if (net_info->firewall == eFWMode_Fallback
@@ -845,18 +844,24 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         ("[%s]  Firewall port :%hu is not in the fallback set",
                          uuu->service, uuu->port));
         }
+        ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         net_info->port = uuu->port;
-        ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
-        return s_SocketConnectorBuilder(net_info, status, &uuu->ticket,
+        assert(!uuu->descr);
+        uuu->descr = x_HostPort(net_info->host, net_info->port);
+        return s_SocketConnectorBuilder(net_info, uuu->descr, status,
+                                        &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0,
                                         info  &&  (info->mode & fSERV_Secure)
                                         ? fSOCK_Secure : 0);
     }
     ConnNetInfo_DeleteUserHeader(net_info, "Host:");
-    net_info->scheme = !info  ||  !(info->mode & fSERV_Secure)
-        ? eURL_Http
-        : eURL_Https;
+    if (info  &&  (info->mode & fSERV_Secure))
+        net_info->scheme = eURL_Https;
+    else if (!net_info->scheme)
+        net_info->scheme = eURL_Http;
+    assert(!uuu->descr);
+    uuu->descr = ConnNetInfo_URL(net_info);
     return !uuu->extra.adjust
         ||  uuu->extra.adjust(net_info, uuu->extra.data, 0)
         ? HTTP_CreateConnectorEx(net_info,
@@ -966,7 +971,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         }
 
         c = s_Open(uuu, timeout, info, net_info, &status);
-        uuu->descr = ConnNetInfo_URL(net_info);
         stateless = net_info->stateless;
 
         ConnNetInfo_Destroy(net_info);

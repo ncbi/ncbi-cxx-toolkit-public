@@ -215,6 +215,17 @@ static EHTTP_HeaderParse s_AnyHeader(const char* /*header*/,
 }
 
 
+static EHTTP_HeaderParse s_GoodHeader(const char* /*header*/,
+                                      void* data, int server_error)
+{
+    SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
+    _ASSERT(auxdata);
+    if (server_error)
+        auxdata->m_Failed = true;
+    return eHTTP_HeaderSuccess;
+}
+
+
 static EHTTP_HeaderParse s_SvcHeader(const char* header,
                                      void* data, int server_error)
 {
@@ -247,7 +258,7 @@ static void s_Cleanup(void* data)
     delete auxdata;
 }
 
-}
+} // extern "C"
 
 
 EIO_Status CConnTest::ExtraCheckOnFailure(void)
@@ -365,7 +376,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 : kEmptyStr);
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
     CConn_HttpStream http("/Service/index.html",
-                          net_info, kEmptyStr/*user_header*/, s_AnyHeader,
+                          net_info, kEmptyStr/*user_header*/, s_GoodHeader,
                           auxdata, s_Adjust, s_Cleanup, 0/*flags*/, m_Timeout);
     http.SetCanceledCallback(m_Canceled);
     string temp;
@@ -408,8 +419,8 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT} is correct";
         } else {
             if (net_info->http_proxy_host[0]  ||  net_info->http_proxy_port) {
-                temp += "Note that your HTTP proxy seems to have been only"
-                    " partially specified, and thus cannot be used: the ";
+                temp += "Note that your HTTP proxy seems to have been"
+                    " specified only partially, and thus cannot be used: the ";
                 if (net_info->http_proxy_port) {
                     temp += "host part is missing (for port :"
                         + NStr::UIntToString(net_info->http_proxy_port);
@@ -426,7 +437,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         }
         temp += "; and if your proxy server requires authorization, please"
             " check that appropriate [CONN]HTTP_PROXY_{USER|PASS} have been"
-            " specified\n";
+            " set\n";
         if (net_info  &&  (*net_info->user  ||  *net_info->pass)) {
             temp += "Make sure there are no stray [CONN]{USER|PASS} that"
                 " appear in your configuration -- NCBI services neither"
@@ -473,7 +484,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
         if (status != eIO_Timeout) {
             if (okay) {
                 temp = "Make sure there are no stray [CONN]{HOST|PORT|PATH}"
-                    " settings on the way in your configuration\n";
+                    " settings in the way in your configuration\n";
             }
             if (okay == 1) {
                 temp += "Service response was not recognized; please contact "
@@ -590,7 +601,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     if (!ConnNetInfo_GetValue(0, "FWD_URL", fwdurl, sizeof(fwdurl), kFWDUrl))
         return eIO_InvalidArg;
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
-    CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*usrhdr*/, s_AnyHeader,
+    CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*ushdr*/, s_GoodHeader,
                             auxdata, s_Adjust, s_Cleanup, 0/*flg*/, m_Timeout);
     fwdcgi.SetCanceledCallback(m_Canceled);
     fwdcgi << "selftest" << NcbiEndl;

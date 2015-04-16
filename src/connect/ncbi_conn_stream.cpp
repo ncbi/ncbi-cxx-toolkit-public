@@ -315,6 +315,8 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 x_net_info->lb_disable = 0;
                 x_net_info->user[0] = '\0';
                 x_net_info->pass[0] = '\0';
+                x_net_info->path[0] = '\0';
+                x_net_info->args[0] = '\0';
                 x_net_info->http_proxy_host[0] = '\0';
                 x_net_info->http_proxy_port    =   0;
                 x_net_info->http_proxy_user[0] = '\0';
@@ -1260,8 +1262,8 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
 
     unsigned int   host;
     unsigned short port;
-    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port)  &&  port
-        &&  net_info.get()) {
+    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port)
+        &&  port  &&  net_info.get()) {
         net_info->req_method = eReqMethod_Connect;
     }
 
