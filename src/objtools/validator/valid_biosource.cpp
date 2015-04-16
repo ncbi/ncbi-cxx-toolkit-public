@@ -572,6 +572,24 @@ void CValidError_imp::ValidateBioSource
 
     const COrg_ref& orgref = bsrc.GetOrg();
 
+    // look at uncultured required modifiers
+    if (orgref.IsSetTaxname()) {
+          if (NStr::StartsWith(orgref.GetTaxname(), "uncultured ", NStr::eNocase)) {
+              bool is_env_sample = false;
+              FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, bsrc) {
+                  if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                      is_env_sample = true;
+                      break;
+                  }
+              }
+              if (!is_env_sample) {
+                  PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                             "Uncultured should also have /environmental_sample",
+                             obj, ctx);
+              }
+          }
+    }
+
     // validate legal locations.
     if ( bsrc.GetGenome() == CBioSource::eGenome_transposon  ||
          bsrc.GetGenome() == CBioSource::eGenome_insertion_seq ) {
@@ -1840,7 +1858,7 @@ void CValidError_imp::ValidateBioSourceForSeq
       if (source.IsSetOrg()) {
             const COrg_ref& orgref = source.GetOrg();
 
-            // look at uncultured sequence length and required modifiers
+            // look at uncultured sequence length
             if (orgref.IsSetTaxname()) {
                   if (NStr::EqualNocase(orgref.GetTaxname(), "uncultured bacterium")
                       && bsh.GetBioseqLength() >= 10000
@@ -1849,6 +1867,7 @@ void CValidError_imp::ValidateBioSourceForSeq
                                  "Uncultured bacterium sequence length is suspiciously high",
                                  obj, ctx);
                   }
+                  /*
                   if (NStr::StartsWith(orgref.GetTaxname(), "uncultured ", NStr::eNocase)) {
                       bool is_env_sample = false;
                       FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
@@ -1863,6 +1882,7 @@ void CValidError_imp::ValidateBioSourceForSeq
                                      obj, ctx);
                       }
                   }
+                  */
             }
 
             if (mi) {                        
