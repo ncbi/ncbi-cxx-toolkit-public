@@ -160,23 +160,42 @@ private:
 /// Convenience macro that also saves cycles when the performance logging is
 /// globally turned off.
 ///
+/// @par Usage example:
+/// This example demonstrates logging a variety of performance statistics.
+/// @code
 /// CPerfLogger perf_logger;
-/// --- Here, running stored proc "123" on server "MSSQL444" which e.g.
-/// --- has finished successfully (code 200) in 2.345 seconds:
-/// PERF_POST(perf_logger, e200_Ok, "StoredProc123",
-///           .Print("dbserver", "MSSQL444")
-///           .Print("foo", "bar"));
-///
+/// PERF_POST(perf_logger, CRequestStatus::e200_Ok, "ApacheSlotStats",
+///           .Print("total_slots",
+///                  NStr::NumericToString(total))
+///           .Print("free_slots",
+///                  NStr::NumericToString(total ? total - used       : 0))
+///           .Print("used_slots",
+///                  NStr::NumericToString(total ? used               : 0))
+///           .Print("used_slots_pct",
+///                  NStr::NumericToString(total ? 100 * used / total : 0))
+///           .Print("ratio",
+///                  NStr::DoubleToString(ratio, 2))
+///           .Print("penalty", m_Mode == eShmem ? "N/A" :
+///                  NStr::DoubleToString(m_Penalty, 0))
+///           .Print("error",
+///                  NStr::BoolToString(!okay)));
+/// @endcode
 #define PERF_POST(perf_logger, status, resource, args)              \
     do { if ( CPerfLogger::IsON() )                                 \
         perf_logger.Post(CRequestStatus::status, resource) args;    \
     } while (false)
 
 
-/// Adaptation for logging database performance
-/// PERF_POST_DB(perf_logger, e200_Ok,
+/// Adaptation for logging database performance.
+///
+/// @par Usage example:
+/// This example demonstrates logging the results of a stored procedure call.
+/// @code
+/// CPerfLogger perf_logger;
+/// PERF_POST_DB(perf_logger, CRequestStatus::e200_Ok,
 ///              "StoredProc123", "MSSQL444")
 ///              .Print("foo", "bar"));
+/// @endcode
 ///
 #define PERF_POST_DB(perf_logger, status, resource, server, args)   \
     do { if ( CPerfLogger::IsON() )                                 \
