@@ -1512,6 +1512,7 @@ void CFlatItemFormatter::x_GetKeywords
     }
 
     ExpandTildes( keywords, eTilde_space );
+    CleanAndCompress (keywords, keywords.c_str());
     Wrap(l, prefix, keywords);
 }
 
