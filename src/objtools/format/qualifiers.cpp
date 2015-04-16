@@ -1296,14 +1296,10 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
 
 struct SSortReferenceByName
 {
-    bool operator()(const CDbtag* sfp1,
-                    const CDbtag* sfp2) 
-    {
-        if (NStr::CompareNocase(sfp1->GetDb().c_str(), sfp2->GetDb().c_str()) < 0)
-            return true;
-        else
-            return false;
-    }
+   bool operator()(const CDbtag* dbt1,  const CDbtag* dbt2) 
+   {
+      return (dbt1->Compare(*dbt2)<0);
+   }
 };
 
 
