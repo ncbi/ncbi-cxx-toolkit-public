@@ -579,7 +579,8 @@ void x_Append2To2(string& dst, char& dst_c, TSeqPos dst_pos,
         dst += c;
         dst_c = 0;
         src_pos += add;
-        dst_pos += add;
+        // Dead increment: dst_pos is not used anymore
+        //dst_pos += add;
         count -= add;
     }
     _ASSERT(!(src_pos&3));
