@@ -1386,6 +1386,7 @@ static void s_FormatJournal
     }
 
     string volume = imp.IsSetVolume() ? imp.GetVolume() : kEmptyStr;
+    TrimSpacesAndJunkFromEnds (volume, false);
     if (!NStr::IsBlank(volume)) {
         jour << ' ' << volume;
     }
