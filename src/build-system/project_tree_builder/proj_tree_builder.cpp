@@ -2137,8 +2137,22 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
             else if ( CDirEntry(asn_path_abs + ".xsd").Exists() )
                 asn_path_abs += ".xsd";
             else {
-                PTB_ERROR_EX(asn_path_abs, ePTB_FileNotFound,
-                            "ASN spec file not found");
+                // one level down
+                string asn_dir_abs = CDirEntry::ConcatPath(source_base_dir, asn);
+                asn_dir_abs = CDirEntry::NormalizePath(asn_dir_abs);
+                asn_dir_abs = CDirEntry::AddTrailingPathSeparator(asn_dir_abs);
+        
+                asn_path_abs = CDirEntry::ConcatPath(asn_dir_abs, asn);
+                if ( CDirEntry(asn_path_abs + ".asn").Exists() )
+                    asn_path_abs += ".asn";
+                else if ( CDirEntry(asn_path_abs + ".dtd").Exists() )
+                    asn_path_abs += ".dtd";
+                else if ( CDirEntry(asn_path_abs + ".xsd").Exists() )
+                    asn_path_abs += ".xsd";
+                else {
+                    PTB_ERROR_EX(asn_path_abs, ePTB_FileNotFound,
+                                "ASN spec file not found");
+                }
             }
         }
 
@@ -2196,25 +2210,12 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         if ( !CSymResolver::IsDefine(src) )
             project.m_Sources.push_front(src);    
     }
-//    project.m_Sources.remove(proj_name);
-//    project.m_Sources.push_back(proj_name + "__");
-//    project.m_Sources.push_back(proj_name + "___");
-    ITERATE(list<string>, p, asn_names) {
-        const string& asn = *p;
-        string src(1, CDirEntry::GetPathSeparator());
-        if (asn == proj_name) {
-            src = asn;
-        } else {
-            src += "..";
-            src += CDirEntry::GetPathSeparator();
-            src += asn;
-            src += CDirEntry::GetPathSeparator();
-            src += asn;
-        }
-
+    ITERATE( list<CDataToolGeneratedSrc>, dts, datatool_sources) {
+        const string& asn = dts->m_SourceCPP;
         project.m_Sources.remove(asn);
         project.m_Sources.remove(asn + "__");
         project.m_Sources.remove(asn + "___");
+        string src = CDirEntry::ConcatPath(CDirEntry::CreateRelativePath( source_base_dir, dts->m_SourceBaseDir), asn);
         project.m_Sources.push_back(src + "__");
         project.m_Sources.push_back(src + "___");
     }

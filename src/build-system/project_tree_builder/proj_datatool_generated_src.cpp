@@ -108,6 +108,7 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
     CDirEntry::SplitPath(source_file_path, &dir, &base, &ext);
 
     src->m_SourceBaseDir = dir;
+    src->m_SourceCPP     = base;
     src->m_SourceFile    = base + ext;
 
     {{
@@ -202,6 +203,7 @@ bool CDataToolGeneratedSrc::IsEmpty(void) const
 void CDataToolGeneratedSrc::Clear(void)
 {
     m_SourceFile.erase();
+    m_SourceCPP.erase();
     m_SourceBaseDir.erase();
     m_ImportModules.clear();
 
@@ -219,6 +221,7 @@ void CDataToolGeneratedSrc::Clear(void)
 void CDataToolGeneratedSrc::SetFrom(const CDataToolGeneratedSrc& src)
 {
     m_SourceFile        = src.m_SourceFile;
+    m_SourceCPP         = src.m_SourceCPP;
     m_SourceBaseDir     = src.m_SourceBaseDir;
     m_ImportModules     = src.m_ImportModules;
 

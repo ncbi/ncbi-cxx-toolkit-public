@@ -46,6 +46,7 @@ public:
     bool operator<  (const CDataToolGeneratedSrc& src) const;
 
     string       m_SourceFile;
+    string       m_SourceCPP;
     string       m_SourceBaseDir;
 
     list<string> m_ImportModules;
