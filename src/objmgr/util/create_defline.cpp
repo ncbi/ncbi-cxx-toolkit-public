@@ -651,21 +651,26 @@ void CDeflineGenerator::x_SetFlags (
 
     if (keywords != NULL  &&  (m_HTGTech || m_ThirdParty)) {
         FOR_EACH_STRING_IN_LIST (kw_itr, *keywords) {
-            const string& str = *kw_itr;
-            if (NStr::EqualNocase (str, "HTGS_DRAFT")) {
-                m_HTGSDraft = true;
-            } else if (NStr::EqualNocase (str, "HTGS_CANCELLED")) {
-                m_HTGSCancelled = true;
-            } else if (NStr::EqualNocase (str, "HTGS_POOLED_MULTICLONE")) {
-                m_HTGSPooled = true;
-            } else if (NStr::EqualNocase (str, "TPA:experimental")) {
-                m_TPAExp = true;
-            } else if (NStr::EqualNocase (str, "TPA:inferential")) {
-                m_TPAInf = true;
-            } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
-                m_TPAReasm = true;
-            } else if (NStr::EqualNocase (str, "TPA:assembly")) {
-                m_TPAReasm = true;
+            const string& clause = *kw_itr;
+            list<string> kywds;
+            NStr::Split( clause, ";", kywds );
+            FOR_EACH_STRING_IN_LIST ( k_itr, kywds ) {
+                const string& str = *k_itr;
+                if (NStr::EqualNocase (str, "HTGS_DRAFT")) {
+                    m_HTGSDraft = true;
+                } else if (NStr::EqualNocase (str, "HTGS_CANCELLED")) {
+                    m_HTGSCancelled = true;
+                } else if (NStr::EqualNocase (str, "HTGS_POOLED_MULTICLONE")) {
+                    m_HTGSPooled = true;
+                } else if (NStr::EqualNocase (str, "TPA:experimental")) {
+                    m_TPAExp = true;
+                } else if (NStr::EqualNocase (str, "TPA:inferential")) {
+                    m_TPAInf = true;
+                } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
+                    m_TPAReasm = true;
+                } else if (NStr::EqualNocase (str, "TPA:assembly")) {
+                    m_TPAReasm = true;
+                }
             }
         }
     }
@@ -1951,11 +1956,14 @@ void CDeflineGenerator::x_SetSuffix (
         case NCBI_TECH(htgs_1):
         case NCBI_TECH(htgs_2):
         {
-            if (m_HTGSDraft && m_MainTitle.find ("WORKING DRAFT") == NPOS) {
-                type = ", WORKING DRAFT SEQUENCE";
-            } else if ( !m_HTGSDraft && !m_HTGSCancelled &&
-                       m_MainTitle.find ("SEQUENCING IN") == NPOS) {
-                type = ", *** SEQUENCING IN PROGRESS ***";
+            if (m_HTGSDraft) {
+                if (m_MainTitle.find ("WORKING DRAFT") == NPOS) {
+                    type = ", WORKING DRAFT SEQUENCE";
+                }
+            } else if (!m_HTGSCancelled) {
+                if (m_MainTitle.find ("SEQUENCING IN") == NPOS) {
+                    type = ", *** SEQUENCING IN PROGRESS ***";
+                }
             }
 
             string un;
