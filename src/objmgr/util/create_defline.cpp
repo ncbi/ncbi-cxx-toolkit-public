@@ -2486,7 +2486,8 @@ string CDeflineGenerator::GenerateDefline (
     x_CompressRunsOfSpaces (final);
     */
 
-    x_CleanAndCompress (final, final.c_str());
+    CStringUTF8 x = NStr::HtmlDecode (final);
+    x_CleanAndCompress (final, x);
 
     if (! m_IsPDB && ! m_IsPatent && ! m_IsAA && ! m_IsSeg) {
         if (!final.empty() && islower ((unsigned char) final[0]) && capitalize) {
