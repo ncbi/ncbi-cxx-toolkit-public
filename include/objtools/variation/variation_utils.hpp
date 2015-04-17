@@ -35,6 +35,8 @@
 #include <objects/variation/VariantPlacement.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 
+#include <objmgr/scope.hpp>
+
 #include <util/ncbi_cache.hpp>
 
 USING_NCBI_SCOPE;
@@ -46,15 +48,15 @@ bool x_CheckForFirstNTSeq(const CVariation_inst& inst);
 class CVariationUtilities
 {
 public:
-    static void   CorrectRefAllele(CVariation& var, CScope& scope);      
+    static void   CorrectRefAllele(CVariation& var, CScope& scope);
     static void   CorrectRefAllele(CSeq_annot& annot, CScope& scope);
     static void   CorrectRefAllele(CSeq_feat& feat, CScope& scope);
-    
+
     static bool   IsReferenceCorrect(const CSeq_feat& feat, string& asserted_ref, string& ref_at_location, CScope& scope);
 
     static CVariation_inst::TType  GetVariationType(const CVariation_ref& vr);
     static CVariation_inst::TType  GetVariationType(const CVariation& var);
-    
+
     //For deletions, this returns asserted deleted sequence
     // not the one extracted from scope (thus, no scope).
     static void   GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt);
@@ -63,7 +65,7 @@ public:
 
     //Do all alleles in variation ref have a common repeat unit
     // and thus possible to shift them.
-    
+
     //Returns kEmptyStr if no common repeat unit
     static string GetCommonRepeatUnit(const CVariation_ref& vr);
     static string GetCommonRepeatUnit(const CVariation& vr);
@@ -75,7 +77,7 @@ private:
     static string x_GetRefAlleleFromVP(CVariantPlacement& vp, CScope& scope, TSeqPos length);
 
     //These return true if the reference allele was changed
-    static bool x_SetReference(CVariation_ref& var, const string& ref_at_location); 
+    static bool x_SetReference(CVariation_ref& var, const string& ref_at_location);
     static bool x_FixAlleles(CVariation& variation, string asserted_ref, string ref_at_location);
     static bool x_FixAlleles(CVariation_ref& vr, string asserted_ref, string ref_at_location) ;
 
@@ -88,12 +90,12 @@ private:
 };
 
 
-/// 
+///
 /// A set of classes to normalize variation.
-/// 
+///
 /// The \a CSeqVectorCache class handles storing
-/// a cache of \a CSeqVectors, hard coded to 16.  
-/// 
+/// a cache of \a CSeqVectors, hard coded to 16.
+///
 /// Not intended to be used directly
 class CSeqVectorCache
 {
@@ -119,10 +121,10 @@ struct SEndPosition {
 /// Shifting can be one of four types (left, right, full, left-with-interval)
 /// and can be on two related types of objects: Seq-annot (and Seq-feat)
 /// and Variation.
-/// 
+///
 /// The main method here is x_Shift.  It will process through each variation
-/// and shift the SeqLoc and allele string.  The type (or direction) of 
-/// shifting depends on the derived class used for invocation.  There 
+/// and shift the SeqLoc and allele string.  The type (or direction) of
+/// shifting depends on the derived class used for invocation.  There
 /// are three methods that each derived class must implement
 template<class T>
 class CVariationNormalization_base : public CSeqVectorCache
@@ -136,34 +138,34 @@ public:
     // Four calls to derived classes
     // to customize behavior based on left, right, full or left/int shifting.
     static bool ProcessShift(string &common_repeat_unit, SEndPosition& sep,
-        CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type) 
+        CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type)
     {
         return T::ProcessShift(common_repeat_unit,sep,
             seqvec,rotation_counter,type);
     }
 
-    static void ModifyLocation(CSeq_loc &loc, SEndPosition& sep, 
-        const CVariation_inst::TType type, const TSeqPos& deletion_size ) 
+    static void ModifyLocation(CSeq_loc &loc, SEndPosition& sep,
+        const CVariation_inst::TType type, const TSeqPos& deletion_size )
     {
         T::ModifyLocation(loc,sep,type, deletion_size);
     }
 
-    static void Rotate(string& v) 
-    { 
-        T::Rotate(v); 
+    static void Rotate(string& v)
+    {
+        T::Rotate(v);
     }
 
     template<class U>
-    static void SetShiftFlag(U& var) 
-    { 
-        T::SetShiftFlag(var); 
+    static void SetShiftFlag(U& var)
+    {
+        T::SetShiftFlag(var);
     }
 
 
     /// This method determine if a SeqLoc, and associated allele, are shiftable.
-    static bool x_IsShiftable(const CSeq_loc &loc, const string &allele, 
+    static bool x_IsShiftable(const CSeq_loc &loc, const string &allele,
         CScope &scope, CVariation_inst::TType type);
-    
+
     /// Convert Interval SeqLoc into a Point
     static void x_ConvertIntervalToPoint(CSeq_loc &loc, int pos);
 
@@ -172,14 +174,14 @@ public:
 
     static void x_SetShiftFlag(CVariation& var,const string& field_text);
     static void x_SetShiftFlag(CSeq_feat& var,const string& field_text);
-    
+
 protected:
    static void RotateLeft(string &v);
    static void RotateRight(string &v);
 
-   static void ResetFullyShifted(CVariation& var, CSeq_loc &loc, SEndPosition& sep, 
+   static void ResetFullyShifted(CVariation& var, CSeq_loc &loc, SEndPosition& sep,
        const CVariation_inst::TType type, const TSeqPos& deletion_size);
-   static void ResetFullyShifted(CSeq_feat& feat, CSeq_loc &loc, SEndPosition& sep, 
+   static void ResetFullyShifted(CSeq_feat& feat, CSeq_loc &loc, SEndPosition& sep,
        const CVariation_inst::TType type, const TSeqPos& deletion_size);
 
 
@@ -189,9 +191,9 @@ protected:
 class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
 {
 public:
-    static bool ProcessShift(string &allele, SEndPosition& sep, 
+    static bool ProcessShift(string &allele, SEndPosition& sep,
         CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type);
-    static void ModifyLocation(CSeq_loc &loc, 
+    static void ModifyLocation(CSeq_loc &loc,
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size );
     static void Rotate(string& v);
 
@@ -205,10 +207,10 @@ class CVariationNormalizationInt : public CVariationNormalization_base<CVariatio
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
         CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type);
-    static void ModifyLocation(CSeq_loc &loc, 
+    static void ModifyLocation(CSeq_loc &loc,
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size );
     static void Rotate(string& v);
-    
+
     template<class V>
     static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Fully Shifted"); }
 
@@ -219,7 +221,7 @@ class CVariationNormalizationRight : public CVariationNormalization_base<CVariat
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
         CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type);
-    static void ModifyLocation(CSeq_loc &loc, 
+    static void ModifyLocation(CSeq_loc &loc,
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size );
     static void Rotate(string& v);
 
@@ -234,7 +236,7 @@ class CVariationNormalizationLeftInt :  public CVariationNormalization_base<CVar
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
         CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type);
-    static void ModifyLocation(CSeq_loc &loc, 
+    static void ModifyLocation(CSeq_loc &loc,
         SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size);
     static void Rotate(string& v);
 
@@ -252,26 +254,26 @@ public:
        eVCF,
        eVarLoc
     };
-    
-    static void NormalizeVariation(CVariation& var, 
-        ETargetContext target_ctxt, CScope& scope);     
-    static void NormalizeVariation(CSeq_annot& var, 
+
+    static void NormalizeVariation(CVariation& var,
         ETargetContext target_ctxt, CScope& scope);
-    static void NormalizeVariation(CSeq_feat& feat, 
+    static void NormalizeVariation(CSeq_annot& var,
+        ETargetContext target_ctxt, CScope& scope);
+    static void NormalizeVariation(CSeq_feat& feat,
         ETargetContext target_ctxt, CScope& scope);
 
- 
+
     //These methods search out ambiguous ins/del, and alter SeqLoc
     //to a Seq-equiv: the first is the original SeqLoc
     //the second is an interval representing the IOA
     static void NormalizeAmbiguousVars(CVariation& var, CScope &scope);
     static void NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope);
     static void NormalizeAmbiguousVars(CSeq_feat& feat, CScope &scope);
- 
+
     //HGVS
     //*Assume* Seq-equiv's are present and second one is 'IOA'
     //  (i.e. that SetContextToDbSnp has already been executed on the object)
-    //Produce one var/var-ref *per* allele, each with single SeqLoc, 
+    //Produce one var/var-ref *per* allele, each with single SeqLoc,
     //representing right-most position
     //For an insert, this is a SeqLoc-Point
     //For a deletion, this is either a point or interval, depending on the size of the deletion.
@@ -279,7 +281,7 @@ public:
     static void AlterToHGVSVar(CVariation& var, CScope& scope);
     static void AlterToHGVSVar(CSeq_annot& annot, CScope& scope);
 	static void AlterToHGVSVar(CSeq_feat& feat, CScope& scope);
- 
+
     //VCF business logic
     static void AlterToVCFVar(CVariation& var, CScope& scope);
     static void AlterToVCFVar(CSeq_annot& var, CScope& scope);
@@ -290,8 +292,8 @@ public:
     static void AlterToVarLoc(CSeq_annot& var, CScope& scope);
     static void AlterToVarLoc(CSeq_feat& feat, CScope& scope);
 
-    static bool IsShiftable(const CSeq_loc &loc, const string &allele, 
-        CScope &scope, CVariation_inst::TType type); 
+    static bool IsShiftable(const CSeq_loc &loc, const string &allele,
+        CScope &scope, CVariation_inst::TType type);
 
     //Is the variant full-shifted, based on inclusion of 'UserObject'
     static bool isFullyShifted(const CVariation& var);
