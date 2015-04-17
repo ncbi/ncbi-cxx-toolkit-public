@@ -269,6 +269,22 @@ int CHttpSessionApp::Run(void)
         cout << "-------------------------------------" << endl << endl;
     }}
 
+    {{
+        // Service request
+        cout << "GET service: test" << endl;
+        CHttpRequest req = session.NewRequest(CUrl("test"));
+        PrintResponse(&session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
+        // Service request
+        cout << "GET service (shortcut): test" << endl;
+        CHttpResponse response = g_HttpGet(CUrl("test"));
+        PrintResponse(0, response);
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
     return 0;
 }
 

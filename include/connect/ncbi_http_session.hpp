@@ -252,6 +252,8 @@ public:
     /// @param value
     ///   Value for the input. If the form content type is eFormUrlEncoded,
     ///   the value will be URL encoded properly. Otherwise the value is sent as-is.
+    ///   URL-encoded form data allows only one value per entry, otherwise
+    ///   exception will be thrown when sending the data.
     /// @param content_type
     ///   Content type for the entry used if the form content type is
     ///   eMultipartFormData. If not set, the protocol assumes 'text/plain'
@@ -395,13 +397,12 @@ private:
         CHttpStreamRef(void) {}
         virtual ~CHttpStreamRef(void) {}
         bool IsInitialized(void) const { return m_ConnStream.get() ? true : false; }
-        CConn_HttpStream& GetConnStream(void) const { return *m_ConnStream; }
-        void SetConnStream(CConn_HttpStream* stream) { m_ConnStream.reset(stream); }
+        CConn_IOStream& GetConnStream(void) const { return *m_ConnStream; }
+        void SetConnStream(CConn_IOStream* stream) { m_ConnStream.reset(stream); }
     private:
         CHttpStreamRef(const CHttpStreamRef&);
         CHttpStreamRef& operator=(const CHttpStreamRef&);
-        // SConnNetInfo must be stored here to be destroyed using proper function.
-        auto_ptr<CConn_HttpStream> m_ConnStream;
+        auto_ptr<CConn_IOStream> m_ConnStream;
     };
 
     CHttpResponse(CHttpSession& session, const CUrl& url, CHttpStreamRef& stream);

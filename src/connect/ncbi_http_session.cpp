@@ -398,9 +398,13 @@ void CHttpFormData::WriteFormData(CNcbiOstream& out) const
         // Format data as query string.
         CUrlArgs args;
         ITERATE(TEntries, values, m_Entries) {
-            ITERATE(TValues, it, values->second) {
-                args.SetValue(values->first, it->m_Value);
+            if (values->second.size() > 1) {
+                NCBI_THROW(CHttpSessionException, eBadFormData,
+                    string("No multiple values per entry are allowed "
+                    "in URL-encoded form data, entry name '") +
+                    values->first + "' ");
             }
+            args.SetValue(values->first, values->second.back().m_Value);
         }
         CFormDataEncoder encoder;
         out << args.GetQueryString(CUrlArgs::eAmp_Char, &encoder);
@@ -513,13 +517,6 @@ void CHttpResponse::x_ParseHeader(const char* header)
             m_StatusText = status.substr(text_pos);
         }
     }
-
-    // Location must be updated after processing cookies to make sure
-    // all current cookies are saved.
-    const string& loc = m_Headers->GetValue(CHttpHeaders::eLocation);
-    if ( !loc.empty() ) {
-        m_Location.SetUrl(loc);
-    }
 }
 
 
@@ -570,7 +567,7 @@ CHttpResponse CHttpRequest::Execute(void)
     }
     _ASSERT(m_Response);
     _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
-    CConn_HttpStream& out = m_Stream->GetConnStream();
+    CConn_IOStream& out = m_Stream->GetConnStream();
     if ( have_data ) {
         m_FormData->WriteFormData(out);
     }
@@ -624,6 +621,13 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     SConnNetInfo* connnetinfo = ConnNetInfo_Create(0);
     connnetinfo->req_method = m_Method;
 
+    // Save headers set automatically (e.g. from CONN_HTTP_USER_HEADER).
+    if (connnetinfo->http_user_header) {
+        CHttpHeaders usr_hdr;
+        usr_hdr.ParseHttpHeader(connnetinfo->http_user_header);
+        m_Headers->Merge(usr_hdr);
+    }
+
     x_AddCookieHeader(m_Url);
     if (use_form_data) {
         m_Headers->SetValue(CHttpHeaders::eContentType,
@@ -640,18 +644,36 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
 
     m_Stream.Reset(new TStreamRef);
-    m_Stream->SetConnStream(new CConn_HttpStream(
-        m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
-        connnetinfo,
-        headers.c_str(),
-        sx_ParseHeader,
-        this,
-        sx_Adjust,
-        0, // cleanup
-        // Always set AdjustOnRedirect flag - we need this to send correct cookies.
-        m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect));
-    ConnNetInfo_Destroy(connnetinfo);
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, *m_Stream));
+    if ( m_Url.GetIsGeneric() ) {
+        // Connect using HTTP.
+        m_Stream->SetConnStream(new CConn_HttpStream(
+            m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
+            connnetinfo,
+            headers.c_str(),
+            sx_ParseHeader,
+            this,
+            sx_Adjust,
+            0, // cleanup
+            // Always set AdjustOnRedirect flag - we need this to send correct cookies.
+            m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect));
+    }
+    else {
+        // Try to resolve service name.
+        ConnNetInfo_SetUserHeader(connnetinfo, headers.c_str());
+        SSERVICE_Extra x_extra;
+        memset(&x_extra, 0, sizeof(x_extra));
+        x_extra.data = this;
+        x_extra.adjust = sx_Adjust;
+        x_extra.parse_header = sx_ParseHeader;
+        x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
+        m_Stream->SetConnStream(new CConn_ServiceStream(
+            m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
+            fSERV_Http,
+            connnetinfo,
+            &x_extra));
+    }
+    ConnNetInfo_Destroy(connnetinfo);
 }
 
 
@@ -695,7 +717,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 // user_data must contain CHttpRequest*.
 int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                             void*         user_data,
-                            unsigned int  failure_count)
+                            unsigned int  /*failure_count*/)
 {
     if ( !user_data ) return 1;
     // Reset and re-fill headers on redirects (failure_count == 0).
@@ -717,7 +739,13 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
         break;
     }
 
-    // Use new location from the last response rather than the original url.
+    // Update location if it's different from the original url.
+    char* loc = ConnNetInfo_URL(net_info);
+    if (loc) {
+        resp->m_Location.SetUrl(loc);
+        free(loc);
+    }
+    // Discard old cookies, add those for the new location.
     req->x_AddCookieHeader(resp->m_Location);
     string headers = req->m_Headers->GetHttpHeader();
     ConnNetInfo_SetUserHeader(net_info, headers.c_str());
