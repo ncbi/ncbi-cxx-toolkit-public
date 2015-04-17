@@ -105,6 +105,7 @@ def printStderr( msg ):
     " Prints onto stderr with a prefix "
     timestamp = datetime.datetime.now().strftime( '%m-%d-%y %H:%M:%S' )
     print >> sys.stderr, timestamp + " NetStorage check script. " + msg
+    printVerbose( msg )
     return
 
 
@@ -448,24 +449,24 @@ def main():
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 1,
-                     "Error communicating to server: socket timeout" ) )
+                     "Error communicating to server (with metadata): socket timeout" ) )
 
     except NSTProtocolError, exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 2,
-             "NetStorage protocol error: " + str( exc ) )
+             "NetStorage protocol error (with metadata): " + str( exc ) )
     except NSTResponseError, exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 3,
-             "NetStorage response error: " + str( exc ) )
+             "NetStorage response error (with metadata): " + str( exc ) )
     except NSTObjectContentError, exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 4,
-             "NetStorage object read/write error: " + str( exc ) )
+             "NetStorage object read/write error (with metadata): " + str( exc ) )
     except NSTAttrValueError, exc:
         safeDelete( nst, objectLoc )
         log( BASE_RESERVE_CODE + 5,
-             "NetStorage attribute read/write error: " + str( exc ) )
+             "NetStorage attribute read/write error (with metadata): " + str( exc ) )
     except Exception, exc:
         safeDelete( nst, objectLoc )
         log( BASE_NO_ACTION_ALERT_CODE + 3,
@@ -486,27 +487,27 @@ def main():
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 1,
-                     "Error communicating to server: socket timeout" ) )
+                     "Error communicating to server (without metadata): socket timeout" ) )
     except NSTProtocolError, exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 2,
-                     "NetStorage protocol error:  " + str( exc ) ) )
+                     "NetStorage protocol error (without metadata): " + str( exc ) ) )
     except NSTResponseError, exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 3,
-                     "NetStorage response error:  " + str( exc ) ) )
+                     "NetStorage response error (without metadata): " + str( exc ) ) )
     except NSTObjectContentError, exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_RESERVE_CODE + 4,
-                     "NetStorage object read/write error:  " + str( exc ) ) )
+                     "NetStorage object read/write error (without metadata): " + str( exc ) ) )
     except Exception, exc:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
                 log( BASE_NO_ACTION_ALERT_CODE + 3,
-                     "NetStorage object life cycle error (without metadata):  " + str( exc ) ) )
+                     "NetStorage object life cycle error (without metadata): " + str( exc ) ) )
     except:
         safeDelete( nst, objectLoc )
         return pickPenaltyValue( lastCheckExitCode,
