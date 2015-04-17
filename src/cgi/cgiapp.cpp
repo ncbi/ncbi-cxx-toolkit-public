@@ -892,11 +892,13 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                     }
                 }
             }
-            if ( m_RequestStartPrinted  &&
-                !CDiagContext::IsSetOldPostFormat() ) {
-                // This will also reset request context
-                ctx.PrintRequestStop();
-                m_RequestStartPrinted = false;
+            if (!CDiagContext::IsSetOldPostFormat()) {
+                if (m_RequestStartPrinted) {
+                    // This will also reset request context
+                    ctx.PrintRequestStop();
+                    m_RequestStartPrinted = false;
+                }
+                rctx.Reset();
             }
             break;
         }
