@@ -2071,7 +2071,7 @@ static EIO_Status s_Poll_(size_t                n,
                     assert(events  ||  ((nfds_t) m < count  &&  count <= j));
                 }
                 if ((events & POLLIN)
-                     &&  (revents & (POLLIN | POLLHUP | POLLPRI))) {
+                    &&  (revents & (POLLIN | POLLHUP | POLLPRI))) {
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
                 }
                 if ((events & POLLOUT)
