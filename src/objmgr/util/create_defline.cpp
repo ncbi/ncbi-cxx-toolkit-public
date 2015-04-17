@@ -1566,7 +1566,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
             } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
                 offset = 23;
             }
-            if (offset > 0) {
+            if (offset > 0 && offset < m_MainTitle.length()) {
                 if (m_MainTitle [offset] == ',' && m_MainTitle [offset + 1] == ' ') {
                     comma = ", isoform ";
                     delta = 2;
