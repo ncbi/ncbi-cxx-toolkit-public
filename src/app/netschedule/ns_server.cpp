@@ -51,7 +51,7 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_Shutdown(false),
       m_SigNum(0),
       m_InactivityTimeout(default_network_timeout),
-      m_QueueDB(0),
+      m_QueueDB(NULL),
       m_StartTime(GetFastLocalTime()),
       m_LogFlag(default_is_log),
       m_LogBatchEachJobFlag(default_log_batch_each_job),

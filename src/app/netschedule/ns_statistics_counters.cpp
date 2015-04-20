@@ -44,7 +44,8 @@ BEGIN_NCBI_SCOPE
 
 // Only valid statuses as strings
 static bool     s_Initialized = false;
-static string   s_ValidStatusesNames[g_ValidJobStatusesSize];
+// +1 is for eDeleted
+static string   s_ValidStatusesNames[g_ValidJobStatusesSize + 1];
 static size_t   s_StatusToIndex[CNetScheduleAPI::eLastStatus];
 
 
@@ -65,12 +66,15 @@ CStatisticsCounters::CStatisticsCounters(ECountersScope  scope) :
         for (size_t  index = 0; index < g_ValidJobStatusesSize; ++index)
             s_ValidStatusesNames[index] =
                 CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]);
+        s_ValidStatusesNames[g_ValidJobStatusesSize] =
+                CNetScheduleAPI::StatusToString(CNetScheduleAPI::eDeleted);
 
         for (int  status = CNetScheduleAPI::ePending;
              status < CNetScheduleAPI::eLastStatus; ++status )
             for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k)
                 if (g_ValidJobStatuses[k] == status)
                     s_StatusToIndex[status] = k;
+        s_StatusToIndex[CNetScheduleAPI::eDeleted] = g_ValidJobStatusesSize;
     }
 
     // Mark invalid transitions with the counter value -1.
@@ -79,7 +83,7 @@ CStatisticsCounters::CStatisticsCounters(ECountersScope  scope) :
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
         for (size_t  index_to = 0;
-             index_to < g_ValidJobStatusesSize; ++index_to) {
+             index_to < g_ValidJobStatusesSize + 1; ++index_to) {
             m_Transitions[index_from][index_to].Set(
                                 static_cast<TNCBIAtomicValue>(-1));
         }
@@ -146,6 +150,23 @@ CStatisticsCounters::CStatisticsCounters(ECountersScope  scope) :
 
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::eCanceled]]
                  [s_StatusToIndex[CNetScheduleAPI::eReading]].Set(0);
+
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::ePending]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eRunning]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eCanceled]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eFailed]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eDone]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eReading]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eConfirmed]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eReadFailed]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
     return;
 }
 
@@ -163,7 +184,7 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
         for (size_t  index_to = 0;
-             index_to < g_ValidJobStatusesSize; ++index_to) {
+             index_to < g_ValidJobStatusesSize + 1; ++index_to) {
 
             // All invalid transitions are marked as -1
             if (m_Transitions[index_from][index_to].Get() !=
@@ -248,7 +269,7 @@ void CStatisticsCounters::PrintDelta(CDiagContext_Extra &  extra,
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
         for (size_t  index_to = 0;
-             index_to < g_ValidJobStatusesSize; ++index_to) {
+             index_to < g_ValidJobStatusesSize + 1; ++index_to) {
 
             // All invalid transitions are marked as -1
             if (m_Transitions[index_from][index_to].Get() !=
@@ -349,7 +370,7 @@ string CStatisticsCounters::PrintTransitions(void) const
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
         for (size_t  index_to = 0;
-             index_to < g_ValidJobStatusesSize; ++index_to) {
+             index_to < g_ValidJobStatusesSize + 1; ++index_to) {
 
             // All invalid transitions are marked as -1
             if (m_Transitions[index_from][index_to].Get() !=
@@ -524,6 +545,17 @@ CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
 
     if (m_Scope == eQueueCounters)
         s_ServerWide.CountTransition(from, to, path_option);
+}
+
+
+void CStatisticsCounters::CountTransitionToDeleted(
+                                CNetScheduleAPI::EJobStatus  from,
+                                size_t                       count)
+{
+    size_t      index_from = s_StatusToIndex[from];
+    size_t      index_to = s_StatusToIndex[CNetScheduleAPI::eDeleted];
+
+    m_Transitions[index_from][index_to].Add(count);
 }
 
 

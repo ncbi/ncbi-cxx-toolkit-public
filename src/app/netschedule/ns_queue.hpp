@@ -333,7 +333,7 @@ public:
                                  TJobStatus            target_status);
 
     // Erase job from all structures, request delayed db deletion
-    void EraseJob(unsigned job_id);
+    void EraseJob(unsigned job_id, TJobStatus  status);
 
     // Optimize bitvectors
     void OptimizeMem();
@@ -557,7 +557,8 @@ private:
                                  unsigned short       port);
 
     /// Erase jobs from all structures, request delayed db deletion
-    void x_Erase(const TNSBitVector& job_ids);
+    void x_Erase(const TNSBitVector &  job_ids,
+                 TJobStatus  status);
 
     string x_DumpJobs(const TNSBitVector &   jobs_to_dump,
                       unsigned int           start_after_job_id,

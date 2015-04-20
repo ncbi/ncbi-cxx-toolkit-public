@@ -43,10 +43,8 @@ class CQueueDataBase;
 class CNetScheduleServer;
 
 
-/// Thread class, prints the statistics counters
-/// and makes decision about shutdown in case if draining was requested
-///
-/// @internal
+// Thread class, prints the statistics counters
+// and makes decision about shutdown in case if draining was requested
 class CServiceThread : public CThreadNonStop
 {
 public:

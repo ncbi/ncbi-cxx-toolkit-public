@@ -74,6 +74,8 @@ public:
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to,
                          ETransitionPathOption        path_option = eNone);
+    void CountTransitionToDeleted(CNetScheduleAPI::EJobStatus  from,
+                                  size_t                       count);
     void CountDBDeletion(size_t  count);
     void CountSubmit(size_t  count);
     void CountNSSubmitRollback(size_t  count);
@@ -92,8 +94,9 @@ private:
 private:
     ECountersScope                  m_Scope;
 
+    // +1 is for eDeleted
     CAtomicCounter_WithAutoInit     m_Transitions[g_ValidJobStatusesSize]
-                                                 [g_ValidJobStatusesSize];
+                                                 [g_ValidJobStatusesSize + 1];
     CAtomicCounter_WithAutoInit     m_SubmitCounter;
     CAtomicCounter_WithAutoInit     m_NSSubmitRollbackCounter;
     CAtomicCounter_WithAutoInit     m_NSGetRollbackCounter;

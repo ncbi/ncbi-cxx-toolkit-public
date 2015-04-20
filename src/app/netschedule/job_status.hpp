@@ -66,10 +66,8 @@ const size_t
 
 
 
-/// In-Memory storage to track status of all jobs
-/// Syncronized thread safe class
-///
-/// @internal
+// In-Memory storage to track status of all jobs
+// Syncronized thread safe class
 class CJobStatusTracker
 {
 public:
@@ -81,11 +79,11 @@ public:
 
     TJobStatus GetStatus(unsigned job_id) const;
 
-    /// Add closed interval of ids to pending status
+    // Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
 
-    /// Provides a job id (or 0 if none) which is in the given state and is not
-    /// in the unwanted jobs list
+    // Provides a job id (or 0 if none) which is in the given state and is not
+    // in the unwanted jobs list
     unsigned int  GetJobByStatus(TJobStatus            status,
                                  const TNSBitVector &  unwanted_jobs,
                                  const TNSBitVector &  group_jobs,
@@ -97,11 +95,13 @@ public:
 
     TNSBitVector  GetJobs(const vector<TJobStatus> &  statuses) const;
     TNSBitVector  GetJobs(TJobStatus  status) const;
-    TNSBitVector  GetOutdatedPendingJobs(CNSPreciseTime          timeout,
-                                         const CJobGCRegistry &  gc_registry) const;
-    TNSBitVector  GetOutdatedReadVacantJobs(CNSPreciseTime          timeout,
-                                            const TNSBitVector &    read_jobs,
-                                            const CJobGCRegistry &  gc_registry) const;
+    TNSBitVector  GetOutdatedPendingJobs(
+                            CNSPreciseTime          timeout,
+                            const CJobGCRegistry &  gc_registry) const;
+    TNSBitVector  GetOutdatedReadVacantJobs(
+                            CNSPreciseTime          timeout,
+                            const TNSBitVector &    read_jobs,
+                            const CJobGCRegistry &  gc_registry) const;
 
     // true if we have pending jobs
     bool AnyPending() const;
@@ -141,10 +141,10 @@ public:
 
     // Clear status storage
     //
-    // @param bv
-    //    If not NULL all ids from the matrix are OR-ed with this vector
-    //    (bv is not cleared)
+    // If not NULL all ids from the matrix are OR-ed with this vector
+    // (bv is not cleared)
     void ClearAll(TNSBitVector* bv = 0);
+    void ClearStatus(TJobStatus  status, TNSBitVector* bv = 0);
 
     // Optimize bitvectors memory
     void OptimizeMem();

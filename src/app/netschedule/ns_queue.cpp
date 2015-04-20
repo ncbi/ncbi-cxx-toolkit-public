@@ -1719,11 +1719,21 @@ TJobStatus  CQueue::ReadAndTouchJob(unsigned int      job_id,
 void CQueue::Truncate(bool  logging)
 {
     CJob                                job;
-    TNSBitVector                        bv;
     vector<CNetScheduleAPI::EJobStatus> statuses;
     TNSBitVector                        jobs_to_notify;
     CNSPreciseTime                      current_time =
                                                 CNSPreciseTime::Current();
+
+    // Jobs in certain states
+    TNSBitVector                        bvPending;
+    TNSBitVector                        bvRunning;
+    TNSBitVector                        bvCanceled;
+    TNSBitVector                        bvFailed;
+    TNSBitVector                        bvDone;
+    TNSBitVector                        bvReading;
+    TNSBitVector                        bvConfirmed;
+    TNSBitVector                        bvReadFailed;
+
 
     // Pending and running jobs should be notified if requested
     statuses.push_back(CNetScheduleAPI::ePending);
@@ -1765,7 +1775,15 @@ void CQueue::Truncate(bool  logging)
             // There is no need to commit transaction - there were no changes
         }}
 
-        m_StatusTracker.ClearAll(&bv);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::ePending, &bvPending);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eRunning, &bvRunning);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eCanceled, &bvCanceled);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eFailed, &bvFailed);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eDone, &bvDone);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eReading, &bvReading);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eConfirmed, &bvConfirmed);
+        m_StatusTracker.ClearStatus(CNetScheduleAPI::eReadFailed, &bvReadFailed);
+
         m_AffinityRegistry.ClearMemoryAndDatabase();
         m_GroupRegistry.ClearMemoryAndDatabase();
 
@@ -1773,7 +1791,22 @@ void CQueue::Truncate(bool  logging)
         m_RunTimeLine->ReInit(0);
     }}
 
-    x_Erase(bv);
+    if (bvPending.count() > 0)
+        x_Erase(bvPending, CNetScheduleAPI::ePending);
+    if (bvRunning.count() > 0)
+        x_Erase(bvRunning, CNetScheduleAPI::eRunning);
+    if (bvCanceled.count() > 0)
+        x_Erase(bvCanceled, CNetScheduleAPI::eCanceled);
+    if (bvDone.count() > 0)
+        x_Erase(bvFailed, CNetScheduleAPI::eFailed);
+    if (bvDone.count() > 0)
+        x_Erase(bvDone, CNetScheduleAPI::eDone);
+    if (bvReading.count() > 0)
+        x_Erase(bvReading, CNetScheduleAPI::eReading);
+    if (bvConfirmed.count() > 0)
+        x_Erase(bvConfirmed, CNetScheduleAPI::eConfirmed);
+    if (bvReadFailed.count() > 0)
+        x_Erase(bvReadFailed, CNetScheduleAPI::eReadFailed);
 }
 
 
@@ -2499,7 +2532,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 
 // This function is called from places where the operations lock has been
 // already taken. So there is no lock around memory status tracker
-void CQueue::EraseJob(unsigned int  job_id)
+void CQueue::EraseJob(unsigned int  job_id, TJobStatus  status)
 {
     m_StatusTracker.Erase(job_id);
 
@@ -2511,15 +2544,19 @@ void CQueue::EraseJob(unsigned int  job_id)
         ++m_JobsToDeleteOps;
     }}
     TimeLineRemove(job_id);
+    m_StatisticsCounters.CountTransitionToDeleted(status, 1);
 }
 
 
-void CQueue::x_Erase(const TNSBitVector &  job_ids)
+// status - the job status from which the job was deleted
+void CQueue::x_Erase(const TNSBitVector &  job_ids, TJobStatus  status)
 {
     CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
+    size_t              job_count = job_ids.count();
 
     m_JobsToDelete |= job_ids;
-    m_JobsToDeleteOps += job_ids.count();
+    m_JobsToDeleteOps += job_count;
+    m_StatisticsCounters.CountTransitionToDeleted(status, job_count);
 }
 
 
@@ -3361,7 +3398,7 @@ CQueue::CheckJobsExpiry(const CNSPreciseTime &  current_time,
     }}
 
     if (result.deleted > 0) {
-        x_Erase(job_ids);
+        x_Erase(job_ids, status);
 
         CFastMutexGuard     guard(m_OperationLock);
         TNSBitVector        jobs_to_notify = m_JobsToNotify & job_ids;
