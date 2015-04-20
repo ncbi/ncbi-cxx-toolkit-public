@@ -259,6 +259,7 @@ void CDeflineGenerator::x_SetFlags (
     m_AllProtNames = (flags & fAllProteinNames) != 0;
     m_LocalAnnotsOnly = (flags & fLocalAnnotsOnly) != 0;
     m_GpipeMode = (flags & fGpipeMode) != 0;
+    m_OmitTaxonomicName = (flags & fOmitTaxonomicName) != 0;
 
     // reset member variables to cleared state
     m_IsNA = false;
@@ -1672,6 +1673,8 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         m_MainTitle += ", partial";
     }
 
+    if (m_OmitTaxonomicName) return;
+
     CTempString taxname = m_Taxname;
 
     if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
@@ -2319,6 +2322,8 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
         m_MainTitle += ", partial";
     }
 
+    if (m_OmitTaxonomicName) return;
+
     CTempString taxname = m_Taxname;
 
     if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
@@ -2343,7 +2348,6 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
             taxname = src->GetTaxname();
         }
     }
-
 
     if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
         m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";

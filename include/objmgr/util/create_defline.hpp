@@ -80,12 +80,13 @@ public:
 
     /// User-settable flags for tuning behavior
     enum EUserFlags {
-        fIgnoreExisting  = 0x1, ///< Generate fresh titles unconditionally.
-        fAllProteinNames = 0x2, ///< List all relevant proteins, not just one.
-        fLocalAnnotsOnly = 0x4, ///< Never use related sequences' annotations.
+        fIgnoreExisting    = 0x1, ///< Generate fresh titles unconditionally.
+        fAllProteinNames   = 0x2, ///< List all relevant proteins, not just one.
+        fLocalAnnotsOnly   = 0x4, ///< Never use related sequences' annotations.
         /// Refrain from anything that could add substantial overhead.
-        fNoExpensiveOps  = fLocalAnnotsOnly,
-        fGpipeMode       = 0x8  ///< Use GPipe defaults.
+        fNoExpensiveOps    = fLocalAnnotsOnly,
+        fGpipeMode         = 0x8, ///< Use GPipe defaults.
+        fOmitTaxonomicName = 0x10 ///< Do not add organism suffix to proteins.
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
@@ -179,6 +180,7 @@ private:
     bool m_AllProtNames;
     bool m_LocalAnnotsOnly;
     bool m_GpipeMode;
+    bool m_OmitTaxonomicName;
 
     /// seq-inst fields
     bool m_IsNA;
