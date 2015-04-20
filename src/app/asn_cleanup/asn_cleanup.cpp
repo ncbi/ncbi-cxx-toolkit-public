@@ -163,6 +163,8 @@ void CCleanupApp::Init(void)
             "Do not perform extended data cleanup prior to formatting");
         arg_desc->AddFlag("basic",
             "Perform basic data cleanup prior to formatting");
+        arg_desc->AddFlag("noobj",
+            "Do not create Ncbi_cleanup object");
 
         // remote
         arg_desc->AddFlag("gbload", "Use CGBDataLoader");
@@ -456,10 +458,14 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
         CCleanup cleanup;
         cleanup.SetScope(scope);
         
+        Uint4 options = 0;
+        if (args["noobj"]) {
+            options = CCleanup::eClean_NoNcbiUserObjects;
+        }
 		if (args["basic"]) {
 			// perform BasicCleanup
 			try {
-				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
+				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())), options);
 				vector<string> changes_str = changes->GetAllDescriptions();
 				if (changes_str.size() == 0) {
 					printf ("No changes from BasicCleanup\n");
@@ -478,7 +484,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
 		if (!args["nocleanup"]) {
 			// perform ExtendedCleanup
 			try {
-				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
+				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())), options);
 				vector<string> changes_str = changes->GetAllDescriptions();
 				if (changes_str.size() == 0) {
 				    printf ("No changes from ExtendedCleanup\n");
@@ -549,10 +555,15 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         CCleanup cleanup;
         cleanup.SetScope(scope);
 
+        Uint4 options = 0;
+        if (args["noobj"]) {
+            options = CCleanup::eClean_NoNcbiUserObjects;
+        }
+
 		if (args["basic"]) {
 			// perform BasicCleanup
 			try {
-				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (entry);
+				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (entry, options);
 				vector<string> changes_str = changes->GetAllDescriptions();
 				if (changes_str.size() == 0) {
 					printf ("No changes from BasicCleanup\n");
@@ -573,7 +584,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 		if (!args["nocleanup"]) {
 			// perform ExtendedCleanup
 			try {
-				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())));
+				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())), options);
 				vector<string> changes_str = changes->GetAllDescriptions();
 				if (changes_str.size() == 0) {
 				    printf ("No changes from ExtendedCleanup\n");
