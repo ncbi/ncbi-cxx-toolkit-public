@@ -601,8 +601,10 @@ void CNetScheduleHandler::OnOpen(void)
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgAuth;
 
     // Log the fact of opened connection if needed
-    if (m_Server->IsLog())
+    if (m_Server->IsLog()) {
+        CRequestContextResetter     context_resetter;
         x_CreateConnContext();
+    }
 }
 
 
@@ -980,6 +982,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         msg += "': ";
 
         // This will form request context with the client IP etc.
+        CRequestContextResetter     context_resetter;
         if (m_ConnContext.IsNull())
             x_CreateConnContext();
 
@@ -1024,6 +1027,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         catch (const CNetScheduleException &  ex) {
             if (ex.GetErrCode() == CNetScheduleException::eUnknownQueue) {
                 // This will form request context with the client IP etc.
+                CRequestContextResetter     context_resetter;
                 if (m_ConnContext.IsNull())
                     x_CreateConnContext();
 
