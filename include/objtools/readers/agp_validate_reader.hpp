@@ -152,6 +152,7 @@ public:
 };
 
 class XPrintTotalsItem;
+class CAgpValidateReader;
 class NCBI_XOBJREAD_EXPORT CAgpValidateReader : public CAgpReader
 {
 public:
@@ -180,7 +181,7 @@ public:
   typedef map<int,int> TMapIntInt;
 protected:
   void x_PrintTotals(CNcbiOstream& out=cout, bool use_xml=false); // without comment counts or ids not in AGP
-  void x_PrintIdsNotInAgp(CNcbiOstream& out=cout, bool use_xml=false);
+  //void x_PrintIdsNotInAgp(CNcbiOstream& out=cout, bool use_xml=false);
 
   // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
   static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label=NULL, CNcbiOstream& out=cout, bool use_xml=false);
@@ -277,6 +278,29 @@ protected:
   int m_max_comp_beg;
   int m_max_obj_beg;
   bool m_has_partial_comp, m_has_comp_of_unknown_len;
+
+  // Former CAgpValidateReader::x_PrintIdsNotInAgp(), split into member functions for the purpose of
+  // running CheckIds() earlier, to be able to add this error to the total error/warning counts.
+  class CIdsNotInAgp
+  {
+    CAgpValidateReader& m_reader;
+    CAccPatternCounter m_patterns;
+    set<string> m_ids;
+    int m_cnt;
+  public:
+    CIdsNotInAgp(CAgpValidateReader& reader) : m_reader(reader)
+    {
+      m_cnt=0;
+    }
+
+    // returns: an error/warning message, to be later passed to Print() or PrintXml();
+    // "" if no error.
+    string CheckIds();
+
+    void Print(CNcbiOstream& out, const string& msg);
+    void PrintXml(CNcbiOstream& out, const string& msg);
+  };
+  friend class CIdsNotInAgp;
 };
 
 END_NCBI_SCOPE

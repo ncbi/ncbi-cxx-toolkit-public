@@ -839,11 +839,19 @@ void CAgpValidateReader::x_PrintGapCountsLine(XPrintTotalsItem& xprint, int gap_
 
 void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // without comment counts
 {
+  CIdsNotInAgp not_in_agp(*this);
+  string not_in_agp_msg = not_in_agp.CheckIds();
+
   //// Counts of errors and warnings
   int e_count=m_AgpErr->CountTotals(CAgpErrEx::E_Last);
   // In case -fa or -len was used, add counts for G_InvalidCompId and G_CompEndGtLength.
   e_count+=m_AgpErr->CountTotals(CAgpErrEx::G_Last);
   int w_count=m_AgpErr->CountTotals(CAgpErrEx::W_Last);
+
+  if(not_in_agp_msg.size()) {
+    if(m_AgpErr->m_strict) e_count++; else w_count++;
+  }
+
   if(e_count || w_count || m_ObjCount) {
     if( m_ObjCount==0 && !m_AgpErr->m_MaxRepeatTopped &&
         e_count==m_AgpErr->CountTotals(CAgpErrEx::E_NoValidLines)
@@ -894,6 +902,9 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   // w: width for right alignment
   int w = NStr::IntToString((unsigned)(m_CompId2Spans.size())).size(); // +1;
   XPrintTotalsItem xprint(out, use_xml, w);
+  if(not_in_agp_msg.size() && !use_xml) {
+    out << "      -   -   " << not_in_agp_msg << "\n";
+  }
   xprint.line();
 
   //// Prepare component/gap types and counts for later printing
@@ -1132,15 +1143,22 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     }
   }
   if(use_xml) out << "</stats>\n";
+
+  /* This would print the message where it was previously.
+     (Could be moved up, if wanted...)
+  */
+
+  if(not_in_agp_msg.size()) {
+    if(use_xml) not_in_agp.PrintXml(out, not_in_agp_msg);
+    else        not_in_agp.Print   (out, not_in_agp_msg);
+  }
 }
 
 void CAgpValidateReader::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
   x_PrintTotals(out, use_xml);
 
-  if(m_comp2len->size()) {
-    x_PrintIdsNotInAgp(out, use_xml);
-  }
+  // if(m_comp2len->size()) x_PrintIdsNotInAgp(out, use_xml);
 
   if(use_xml) {
     if(m_CommentLineCount) out << " <CommentLineCount>" << m_CommentLineCount << "</CommentLineCount>\n";
@@ -1458,81 +1476,93 @@ bool CAgpValidateReader::x_PrintPatterns(
   return mixedCategories||mixedPattern;
 }
 
+void CAgpValidateReader::SetRowOutput(IAgpRowOutput* row_output)
+{
+  m_row_output = row_output;
+}
+
+/* An equivalent for the old functionality before splitting CheckIds() from Print()/PrintXml().
+void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
+{
+  CIdsNotInAgp not_in_agp(*this);
+  string msg = not_in_agp.CheckIds();
+  if(msg.size()) {
+    if(use_xml) not_in_agp.PrintXml(out, msg);
+    else        not_in_agp.Print   (out, msg);
+  }
+}
+*/
+
+//// class CAgpValidateReader::CIdsNotInAgp
 // label = "component(s) from FASTA not found in AGP"
 // label = "scaffold(s) not found in Chromosome from scaffold AGP"
 // 2012/02/21: xml mode not tested since the current CGI has no info to provide this kind of validation
-void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
+string CAgpValidateReader::CIdsNotInAgp::CheckIds()
 {
-  CAccPatternCounter patterns;
-  set<string> ids;
-  int cnt=0;
-
-    // ids in m_comp2len but not in m_CompId2Spans
-  for(CMapCompLen::iterator it = m_comp2len->begin();  it != m_comp2len->end(); ++it) {
+  // ids in m_comp2len but not in m_CompId2Spans
+  for(CMapCompLen::iterator it = m_reader.m_comp2len->begin();  it != m_reader.m_comp2len->end(); ++it) {
     string id;
-    if(m_CheckObjLen) {
+    if(m_reader.m_CheckObjLen) {
       // ids in m_comp2len but not in m_ObjIdSet
-      TObjSet::iterator obj = m_ObjIdSet.find(it->first);
-      if(obj==m_ObjIdSet.end()) {
+      TObjSet::iterator obj = m_reader.m_ObjIdSet.find(it->first);
+      if(obj==m_reader.m_ObjIdSet.end()) {
         id=it->first;
       }
     }
     else {
-      TCompId2Spans::iterator spans = m_CompId2Spans.find(it->first);
-      if(spans==m_CompId2Spans.end()) {
+      TCompId2Spans::iterator spans = m_reader.m_CompId2Spans.find(it->first);
+      if(spans==m_reader.m_CompId2Spans.end()) {
         id=it->first;
       }
     }
     if( id.size() &&
       id.find("|") == NPOS // works only if AGP contains plain accessions...
     ) {
-      patterns.AddName(it->first);
-      ids.insert(it->first);
-      cnt++;
+      m_patterns.AddName(it->first);
+      m_ids.insert(it->first);
+      m_cnt++;
     }
   }
 
-  if(cnt>0) {
-    string label =
-      m_CheckObjLen ? "object name(s) in FASTA not found in AGP" :
-      m_comp2len == &m_scaf2len ? "scaffold(s) not found in Chromosome from scaffold AGP":
-      "component name(s) in FASTA not found in AGP";
+  if(m_cnt>0) return
+    m_reader.m_CheckObjLen ? "object name(s) in FASTA not found in AGP" :
+    m_reader.m_comp2len == &(m_reader.m_scaf2len) ? "scaffold(s) not found in Chromosome from scaffold AGP":
+    "component name(s) in FASTA not found in AGP";
+  return NcbiEmptyString; // OK
+}
 
-    if(use_xml) {
-      // print both patterns and ALL missing names
-      label = label.substr(0, label.find(' '));
-      out << "<MissingSeqNames level=\""+label+"\">\n";
-      for(set<string>::iterator it = ids.begin();  it != ids.end(); ++it) {
-        out << " <name>" << NStr::XmlEncode(*it) << "</name>\n";
-      }
-    }
-    else {
-      string tmp;
-      NStr::Replace(label, "(s)", cnt==1 ? "" : "s", tmp);
-      out << "\nWARNING -- " << cnt << " " << tmp << ": ";
-    }
+void CAgpValidateReader::CIdsNotInAgp::Print(CNcbiOstream& out, const string& msg)
+{
+  string tmp, label=msg;
 
-    if(!use_xml && cnt==1) {
-      out << *(ids.begin()) << "\n";
+  NStr::Replace(label, "(s)", m_cnt==1 ? "" : "s", tmp);
+  out << "\n" << (m_reader.m_AgpErr->m_strict?"ERROR":"WARNING")
+      << " -- " << m_cnt << " " << tmp << ": ";
+
+  if(m_cnt==1) {
+    out << *(m_ids.begin()) << "\n";
+  }
+  else if(m_cnt<m_reader.m_AgpErr->m_MaxRepeat||m_reader.m_AgpErr->m_MaxRepeat==0) {
+    out << "\n";
+    for(set<string>::iterator it = m_ids.begin();  it != m_ids.end(); ++it) {
+      out << "  " << *it << "\n";
     }
-    else if(!use_xml && (cnt<m_AgpErr->m_MaxRepeat||m_AgpErr->m_MaxRepeat==0)) {
-      out << "\n";
-      for(set<string>::iterator it = ids.begin();  it != ids.end(); ++it) {
-        out << "  " << *it << "\n";
-      }
-    }
-    else {
-      x_PrintPatterns(patterns, NcbiEmptyString, 0, NULL, out, use_xml);
-    }
-    if(use_xml) {
-      out << "</MissingSeqNames>\n";
-    }
+  }
+  else {
+    m_reader.x_PrintPatterns(m_patterns, NcbiEmptyString, 0, NULL, out, false);
   }
 }
 
-void CAgpValidateReader::SetRowOutput(IAgpRowOutput* row_output)
+void CAgpValidateReader::CIdsNotInAgp::PrintXml(CNcbiOstream& out, const string& msg)
 {
-  m_row_output = row_output;
+  // print both patterns and ALL missing names
+  string label = msg.substr(0, msg.find(' '));
+  out << "<MissingSeqNames level=\""+label+"\">\n";
+  for(set<string>::iterator it = m_ids.begin();  it != m_ids.end(); ++it) {
+    out << " <name>" << NStr::XmlEncode(*it) << "</name>\n";
+  }
+  m_reader.x_PrintPatterns(m_patterns, NcbiEmptyString, 0, NULL, out, true);
+  out << "</MissingSeqNames>\n";
 }
 
 //// class CValuesCount

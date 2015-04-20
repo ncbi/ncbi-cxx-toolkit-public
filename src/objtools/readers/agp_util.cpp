@@ -1189,7 +1189,11 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
     out <<
         "#\tErrors reported once at the end of validation:\n"
         "#\tunable to determine a Taxid for the AGP (less than 80% of components have one common taxid)\n"
-        "#\tcomponents with incorrect taxids\n";
+        "#\tcomponents with incorrect taxids\n"
+        "#Error with -sub, warning if no -sub option:\n"
+        "#\tcomponent name(s)/object name(s) in FASTA not found in AGP\n"
+        "#\tscaffold(s) not found in Chromosome from scaffold AGP\n"
+        ;
 }
 
 string CAgpErrEx::GetPrintableCode(int code, bool strict)

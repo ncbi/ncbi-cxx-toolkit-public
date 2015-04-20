@@ -681,6 +681,7 @@ public:
       (Uint8(1) << (W_GapSizeNot100               -W_First)) |
       (Uint8(1) << (W_ShortGap                    -W_First)) |
       (Uint8(1) << (W_CommentsAfterStart          -W_First)) |
+      (Uint8(1) << (W_AssumingVersion             -W_First)) |
       (Uint8(1) << (W_AGPVersionCommentInvalid    -W_First)) |
       (Uint8(1) << (W_AGPVersionCommentUnnecessary-W_First)) ;
     static inline bool IsStrictModeWarning(int code)
