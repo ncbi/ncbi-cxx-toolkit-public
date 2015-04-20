@@ -78,10 +78,7 @@ CIStreamBuffer::~CIStreamBuffer(void)
     try {
         Close();
     }
-    catch ( exception& exc ) {
-        ERR_POST_X(1, Warning <<
-                      "~CIStreamBuffer: exception while closing: " << exc.what());
-    }
+    NCBI_CATCH_X(1, "~CIStreamBuffer: exception while closing");
     if ( m_BufferSize ) {
         delete[] m_Buffer;
     }
@@ -737,21 +734,50 @@ COStreamBuffer::~COStreamBuffer(void)
     try {
         Close();
     }
-    catch ( exception& exc ) {
-        ERR_POST_X(2, Warning <<
-                      "~COStreamBuffer: exception while closing: " << exc.what());
+    NCBI_CATCH_X(2, "~COStreamBuffer: exception while closing");
+    if ( m_DeleteOutput ) {
+        try {
+            delete &m_Output;
+        }
+        NCBI_CATCH_X(2, "~COStreamBuffer: exception deleting output stream");
+        m_DeleteOutput = false;
     }
     delete[] m_Buffer;
 }
 
+BEGIN_LOCAL_NAMESPACE;
+
+struct STemporarilyClearStreamState
+{
+    STemporarilyClearStreamState(ios& stream)
+        : m_Stream(stream),
+          m_State(stream.rdstate())
+        {
+            m_Stream.clear();
+        }
+    ~STemporarilyClearStreamState()
+        {
+            m_Stream.setstate(m_State);
+        }
+
+    ios& m_Stream;
+    IOS_BASE::iostate m_State;
+};
+
+END_LOCAL_NAMESPACE;
+
+
 void COStreamBuffer::Close(void)
 {
     if ( m_Output ) {
-        FlushBuffer();
         if ( m_DeleteOutput ) {
             Flush();
             delete &m_Output;
             m_DeleteOutput = false;
+        }
+        else {
+            STemporarilyClearStreamState state(m_Output);
+            FlushBuffer();
         }
     }
     m_Error = 0;
@@ -808,19 +834,11 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
 void COStreamBuffer::Flush(void)
     THROWS1((CIOException))
 {
+    STemporarilyClearStreamState state(m_Output);
     FlushBuffer();
-    IOS_BASE::iostate state = m_Output.rdstate();
-    m_Output.clear();
-    try {
-        if ( !m_Output.flush() ) {
-            NCBI_THROW(CIOException,eFlush,"COStreamBuffer::Flush: failed");
-        }
+    if ( !m_Output.flush() ) {
+        NCBI_THROW(CIOException,eFlush,"COStreamBuffer::Flush: failed");
     }
-    catch (...) {
-        m_Output.clear(state);
-        throw;
-    }
-    m_Output.clear(state);
 }
 
 
