@@ -1560,6 +1560,14 @@ void CQueueDataBase::Close(void)
     StopServiceThread();
     StopExecutionWatcherThread();
 
+    // Print the statistics counters last time
+    if (m_Server->IsLogStatisticsThread()) {
+        size_t      aff_count = 0;
+
+        PrintStatistics(aff_count);
+        CStatisticsCounters::PrintServerWide(aff_count);
+    }
+
 
 
     if (m_Server->IsDrainShutdown() && m_Server->WasDBDrained()) {
