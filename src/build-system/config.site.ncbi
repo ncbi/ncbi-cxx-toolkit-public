@@ -82,6 +82,9 @@ case "$ncbi_platform" in
     Linux32   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/32/\\1:&," ;;
     Linux64   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&," ;;
 esac
+if [ -d /panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software ]; then
+    ncbi_rpath_sed="$ncbi_rpath_sed; s,/net/.*/\\(trace_software.*\\),&:/panfs/traces01.be-md.ncbi.nlm.nih.gov/\\1,"
+fi
 
 case "$ncbi_platform" in
     Linux64    ) : ${AVRO_PATH=$NCBI/avro-cpp-1.7.7-ncbi1} ;;
