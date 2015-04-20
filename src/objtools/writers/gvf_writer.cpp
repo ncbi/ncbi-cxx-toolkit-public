@@ -184,7 +184,7 @@ bool CGvfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::xWriteFeature(
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     switch( mf.GetFeatSubtype() ) {
