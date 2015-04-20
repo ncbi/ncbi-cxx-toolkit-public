@@ -197,22 +197,30 @@ int CDBLBClientApp::x_RunLookup(void)
     }
 
     CDatabase db(param);
-    db.Connect();
+    CQuery query;
+    {{
+        CDiagCollectGuard diag_guard(eDiag_Fatal, eDiag_Info,
+                                     CDiagCollectGuard::ePrint);
+        db.Connect();
+        query = db.NewQuery();
+        diag_guard.SetAction(CDiagCollectGuard::eDiscard);
+    }}
     // Hack to obtain the actual server name
     try {
-        db.NewQuery().Execute();
+        query.Execute();
     } catch (CSDB_Exception& e) {
-        TSvrRef server;
+        const string& name = e.GetServerName();
+        TSvrRef server,
+                pref(new CDBServer(name, CSocketAPI::gethostbyname(name)));
         IDBServiceMapper* mapper = x_GetServiceMapper();
         if (mapper != NULL) {
             // server.Reset(mapper->GetServer(e.GetServerName()));
             const string& service = param.Get(CSDB_ConnectionParam::eService);
-            mapper->SetPreference(service,
-                                  TSvrRef(new CDBServer(e.GetServerName())));
+            mapper->SetPreference(service, pref);
             server.Reset(mapper->GetServer(service));
         }
         if (server.Empty()  ||  server->GetName().empty()) {
-            server.Reset(new CDBServer(e.GetServerName()));
+            server.Reset(pref);
         }
         cout << *server << '\n';
     }
@@ -286,6 +294,7 @@ int CDBLBClientApp::x_RunWhatIs(void)
         NcbiCout << name << " is a host (" << CSocketAPI::ntoa(ip) << ").\n";
     } else if (types_seen == 0) {
         NcbiCout << name << " is unknown to LBSM or DNS.\n";
+        return 1;
     }
 
     return 0;
@@ -321,6 +330,7 @@ int CDBLBClientApp::x_RunWhereIs(void)
     const string& service  = args["service"].AsString();
     const string& type_str = args["type"   ].AsString();
     TSERV_Type    type     = fSERV_Any;
+    int           status   = 1;
 
     if (NStr::EqualNocase(type_str, "dblb")) {
 #ifndef HAVE_LIBCONNEXT
@@ -334,10 +344,11 @@ int CDBLBClientApp::x_RunWhereIs(void)
                 ||  ref->GetName().empty()) {
                 break;
             }
+            status = 0;
             NcbiCout << *ref << "\t# type=DBLB\n";
             mapper->Exclude(service, ref);
         }
-        return 0;
+        return status;
 #endif
     } else if (SERV_ReadType(type_str.c_str(),
                              reinterpret_cast<ESERV_Type*>(&type)) == NULL) {
@@ -356,6 +367,7 @@ int CDBLBClientApp::x_RunWhereIs(void)
         if (serv_info == NULL) {
             break;
         }
+        status = 0;
         CDBServer server(CSocketAPI::gethostbyaddr(serv_info->host),
                          serv_info->host, serv_info->port);
         if (serv_info->rate <= 0.0) {
@@ -364,7 +376,7 @@ int CDBLBClientApp::x_RunWhereIs(void)
         NcbiCout << server << "\t# type=" << SERV_TypeStr(serv_info->type)
                  << '\n';
     }
-    return 0;
+    return status;
 }
 
 IDBServiceMapper* CDBLBClientApp::x_GetServiceMapper(void)

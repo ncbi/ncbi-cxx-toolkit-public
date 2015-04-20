@@ -149,8 +149,8 @@ class NCBIDBLBTest( unittest.TestCase ):
             retCode, stdout, stderr = safeRun( args )
 
             errorMsg = "RetCode in case of nonexistent " \
-                       "service must still be 0"
-            self.failIf( retCode != 0, errorMsg )
+                       "service must be 1"
+            self.failIf( retCode != 1, errorMsg )
 
             errorMsg = "The output must match the service name"
             self.failIf( not stdout.startswith(NONEXISTENT_SERVICE
@@ -170,8 +170,8 @@ class NCBIDBLBTest( unittest.TestCase ):
             retCode, stdout, stderr = safeRun( args )
 
             errorMsg = "RetCode in case of nonexistent " \
-                       "service must still be 0"
-            self.failIf( retCode != 0, errorMsg )
+                       "service must be 1"
+            self.failIf( retCode != 1, errorMsg )
 
             errorMsg = "The output must be empty"
             self.failIf( len(stdout) > 0, errorMsg )
