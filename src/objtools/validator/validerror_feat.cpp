@@ -5304,18 +5304,6 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
 }
 
 
-static CRef<CSeq_loc> s_MakePointForLocationStop (const CSeq_loc& loc)
-{
-    CRef<CSeq_loc> stop(new CSeq_loc());
-
-    for ( CSeq_loc_CI citer (loc); citer; ++citer ) {
-        stop->SetPnt().SetId().Assign(citer.GetSeq_id());
-    }
-    stop->SetPnt().SetPoint(loc.GetStop(eExtreme_Biological));
-    return stop;
-}
-
-
 void CValidError_feat::ValidatePeptideOnCodonBoundry
 (const CSeq_feat& feat, 
  const string& key)
@@ -5326,81 +5314,37 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
     if ( !cds ) {
         return;
     }
-    const CCdregion& cdr = cds->GetData().GetCdregion();
 
-    TSeqPos pos1 = LocationOffset(cds->GetLocation(), loc, eOffset_FromStart);
-    bool pos1_not_in = false;
-    if (pos1 == ((TSeqPos)-1)) {
-        pos1_not_in = true;
-    }
-    CRef<CSeq_loc> tmp = s_MakePointForLocationStop(loc);
-    TSeqPos pos2 = LocationOffset(cds->GetLocation(), *tmp, eOffset_FromStart);
-    bool pos2_not_in = false;
-    if (pos2 == ((TSeqPos)-1)) {
-        pos2_not_in = true;
-    }
-    if (pos1_not_in && pos2_not_in && NStr::Equal(key, "sig_peptide")) {
-    // ignore sig_peptide that is completely before coding region
+    feature::ELocationInFrame in_frame = feature::IsLocationInFrame(m_Scope->GetSeq_featHandle(*cds), loc);
+    if (NStr::Equal(key, "sig_peptide") && in_frame == feature::eLocationInFrame_NotIn) {
         return;
     }
-
-    unsigned int frame = 0;
-    switch (cdr.GetFrame()) {
-        case CCdregion::eFrame_not_set:
-        case CCdregion::eFrame_one:
-            frame = 0;
+    switch (in_frame) {
+        case feature::eLocationInFrame_NotIn:
+            if (NStr::Equal(key, "sig_peptide")) {
+                // ignore
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+                    "Start and stop of " + key + " are out of frame with CDS codons",
+                    feat);
+            }
             break;
-        case CCdregion::eFrame_two:
-            frame = 1;
+        case feature::eLocationInFrame_BadStartAndStop:
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+                "Start and stop of " + key + " are out of frame with CDS codons",
+                feat);
             break;
-        case CCdregion::eFrame_three:
-            frame = 2;
+        case feature::eLocationInFrame_BadStart:
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame, 
+                "Start of " + key + " is out of frame with CDS codons", feat);
             break;
-    }
-    // note - have to add 3 to prevent negative result from subtraction
-    TSeqPos mod1 = (pos1 + 3 - frame) %3;
-    TSeqPos mod2 = (pos2 + 3 - frame) %3;
-
-    if ( mod1 != 0 && loc.IsPartialStart(eExtreme_Biological) 
-         && cds->GetLocation().IsPartialStart(eExtreme_Biological) 
-         && pos1 == 0) {
-        mod1 = 0;
-    } else if (pos1 < frame) {
-        // start is out of frame - it's before the coding region begins
-        mod1 = 1;
-    }
-
-    if ( mod2 != 0 && loc.IsPartialStop(eExtreme_Biological) 
-         && cds->GetLocation().IsPartialStop(eExtreme_Biological) 
-         && pos2 == GetLength (cds->GetLocation(), m_Scope)) {
-        mod2 = 0;
-    } else if (pos2 <= frame) {
-        // stop is out of frame - it's before the coding region begins
-        mod2 = 1;
-    }
-    if (pos2 > GetLength (cds->GetLocation(), m_Scope)) {
-        // stop is out of frame - it's after the coding region ends
-        mod2 = 1;
-    }
-
-    if (loc.IsPartialStart(eExtreme_Biological)) {
-        mod1 = 0;
-    }
-    if (loc.IsPartialStop(eExtreme_Biological)) {
-        mod2 = 2;
-    }
-
-    if ( (mod1 != 0)  &&  (mod2 != 2) ) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
-            "Start and stop of " + key + " are out of frame with CDS codons",
-            feat);
-    } else if (mod1 != 0) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame, 
-            "Start of " + key + " is out of frame with CDS codons", feat);
-    } else if (mod2 != 2) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
-            "Stop of " + key + " is out of frame with CDS codons", feat);
-    }
+        case feature::eLocationInFrame_BadStop:
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+                "Stop of " + key + " is out of frame with CDS codons", feat);
+            break;
+        case feature::eLocationInFrame_InFrame:
+            break;
+    }    
 }
 
 

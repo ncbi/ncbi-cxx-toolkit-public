@@ -493,6 +493,20 @@ void ReassignFeatureIds(const CSeq_entry_EditHandle& entry);
 NCBI_XOBJUTIL_EXPORT
 void ReassignFeatureIds(const CSeq_annot_EditHandle& annot);
 
+typedef enum {
+    eLocationInFrame_InFrame = 0,
+    eLocationInFrame_BadStart,
+    eLocationInFrame_BadStop,
+    eLocationInFrame_BadStartAndStop,
+    eLocationInFrame_NotIn
+} ELocationInFrame;
+
+/// Determines whether location loc is in frame with coding region cds
+/// @param cds coding region feature [in]
+/// @param loc location to compare to coding region
+/// @return enumerated return value indicates frame is good or either endpoint is bad
+ELocationInFrame NCBI_XOBJUTIL_EXPORT IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc& loc);
+
 
 END_SCOPE(feature)
 END_SCOPE(objects)

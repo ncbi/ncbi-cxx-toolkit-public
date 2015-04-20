@@ -106,6 +106,15 @@ public:
     // Handle versions
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
 
+    // Useful cleanup functions
+
+/// Moves protein-specific features from nucleotide sequences in the Seq-entry to
+/// the appropriate protein sequence.
+/// @param seh Seq-entry Handle to edit [in]
+/// @return Boolean return value indicates whether any changes were made
+    static bool MoveProteinSpecificFeats(CSeq_entry_Handle seh);
+
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

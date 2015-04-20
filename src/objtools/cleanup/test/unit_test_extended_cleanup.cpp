@@ -484,3 +484,68 @@ BOOST_AUTO_TEST_CASE(Test_RemoveEmptyFeatures)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_MoveProteinSpecificFeatures)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    // if no features at all, return value should be false
+    BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
+
+    // if no protein features, return value should be false
+    scope->RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene = BuildGoodFeat();
+    gene->SetData().SetGene();
+    AddFeat(gene, entry);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
+
+    // if protein feature but no overlapping coding region, return value should
+    // be false
+    scope->RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> prot = BuildGoodFeat();
+    prot->SetData().SetProt();
+    AddFeat(prot, entry);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
+
+    // if protein feature and overlapping coding region but no protein sequence,
+    // return value should be false
+    scope->RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> cdregion = BuildGoodFeat();
+    cdregion->SetData().SetCdregion();
+    AddFeat(cdregion, entry);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
+
+    // if protein features are already on protein sequence, return
+    // value should be false
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
+
+    // protein features that are not on a codon boundary cannot be moved
+    scope->RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> mat_peptide = BuildGoodFeat();
+    mat_peptide->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+    mat_peptide->SetLocation().Assign(cds->GetLocation());
+    mat_peptide->SetLocation().SetInt().SetFrom(cds->GetLocation().GetStart(eExtreme_Biological) + 4);
+    AddFeat(mat_peptide, entry);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
+
+    // but can be moved if they are on a codon boundary
+    scope->RemoveTopLevelSeqEntry(seh);
+    mat_peptide->SetLocation().SetInt().SetFrom(cds->GetLocation().GetStart(eExtreme_Biological) + 3);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(true, CCleanup::MoveProteinSpecificFeats(seh));
+
+}
+
+
+
+

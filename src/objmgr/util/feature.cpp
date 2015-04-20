@@ -3227,6 +3227,96 @@ void ReassignFeatureIds(const CSeq_annot_EditHandle& annot)
 }
 
 
+static CRef<CSeq_loc> s_MakePointForLocationStop (const CSeq_loc& loc)
+{
+    CRef<CSeq_loc> stop(new CSeq_loc());
+
+    for ( CSeq_loc_CI citer (loc); citer; ++citer ) {
+        stop->SetPnt().SetId().Assign(citer.GetSeq_id());
+    }
+    stop->SetPnt().SetPoint(loc.GetStop(eExtreme_Biological));
+    return stop;
+}
+
+ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc& loc)
+{
+    TSeqPos pos1 = sequence::LocationOffset(cds.GetLocation(), loc, sequence::eOffset_FromStart);
+    bool pos1_not_in = false;
+    if (pos1 == ((TSeqPos)-1)) {
+        pos1_not_in = true;
+    }
+    CRef<CSeq_loc> tmp = s_MakePointForLocationStop(loc);
+    TSeqPos pos2 = sequence::LocationOffset(cds.GetLocation(), *tmp, sequence::eOffset_FromStart);
+    bool pos2_not_in = false;
+    if (pos2 == ((TSeqPos)-1)) {
+        pos2_not_in = true;
+    }
+    if (pos1_not_in && pos2_not_in) {
+        return eLocationInFrame_NotIn;
+    }
+
+    unsigned int frame = 0;
+    if (cds.IsSetData() && cds.GetData().IsCdregion()) {
+        const CCdregion& cdr = cds.GetData().GetCdregion();
+        switch (cdr.GetFrame()) {
+            case CCdregion::eFrame_not_set:
+            case CCdregion::eFrame_one:
+                frame = 0;
+                break;
+            case CCdregion::eFrame_two:
+                frame = 1;
+                break;
+            case CCdregion::eFrame_three:
+                frame = 2;
+                break;
+        }
+    }
+    // note - have to add 3 to prevent negative result from subtraction
+    TSeqPos mod1 = (pos1 + 3 - frame) %3;
+    TSeqPos mod2 = (pos2 + 3 - frame) %3;
+
+    if ( mod1 != 0 && loc.IsPartialStart(eExtreme_Biological) 
+         && cds.GetLocation().IsPartialStart(eExtreme_Biological) 
+         && pos1 == 0) {
+        mod1 = 0;
+    } else if (pos1 < frame) {
+        // start is out of frame - it's before the coding region begins
+        mod1 = 1;
+    }
+
+    TSeqPos cds_len = sequence::GetLength (cds.GetLocation(), &(cds.GetScope()));
+
+    if ( mod2 != 0 && loc.IsPartialStop(eExtreme_Biological) 
+         && cds.GetLocation().IsPartialStop(eExtreme_Biological) 
+         && pos2 == cds_len) {
+        mod2 = 0;
+    } else if (pos2 <= frame) {
+        // stop is out of frame - it's before the coding region begins
+        mod2 = 1;
+    }
+    if (pos2 > cds_len) {
+        // stop is out of frame - it's after the coding region ends
+        mod2 = 1;
+    }
+
+    if (loc.IsPartialStart(eExtreme_Biological)) {
+        mod1 = 0;
+    }
+    if (loc.IsPartialStop(eExtreme_Biological)) {
+        mod2 = 2;
+    }
+
+    if ( (mod1 != 0)  &&  (mod2 != 2) ) {
+        return eLocationInFrame_BadStartAndStop;
+    } else if (mod1 != 0) {
+        return eLocationInFrame_BadStart;
+    } else if (mod2 != 2) {
+        return eLocationInFrame_BadStop;
+    } else {
+        return eLocationInFrame_InFrame;
+    }
+}
+
 
 END_SCOPE(feature)
 END_SCOPE(objects)

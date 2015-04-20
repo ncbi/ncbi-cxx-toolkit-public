@@ -41,6 +41,8 @@
 
 
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 #include "newcleanupp.hpp"
@@ -403,6 +405,92 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Change Other", 
     "Invalid Change Code"
 };
+
+
+bool CCleanup::MoveProteinSpecificFeats(CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+    SAnnotSelector sel(CSeqFeatData::e_Prot);
+    sel.IncludeFeatType(CSeqFeatData::e_Psec_str);
+    for (CFeat_CI prot_it(seh, sel); prot_it; ++prot_it) {
+        CBioseq_Handle parent_bsh = seh.GetScope().GetBioseqHandle(prot_it->GetLocation());
+
+        if (!parent_bsh) {
+            // protein feature is mispackaged
+            continue;
+        }
+        if (parent_bsh.IsAa()) {
+            // protein feature is already on protein sequence
+            continue;
+        }
+
+        CConstRef<CSeq_feat> cds = sequence::GetOverlappingCDS(prot_it->GetLocation(), seh.GetScope());
+        if (!cds || !cds->IsSetProduct()) {
+            // there is no overlapping coding region feature, so there is no appropriate
+            // protein sequence to move to
+            continue;
+        }
+
+        CSeq_feat_Handle cds_h = seh.GetScope().GetSeq_featHandle(*cds);
+        if (!cds_h) {
+            // can't get handle
+            continue;
+        }
+
+        if (feature::IsLocationInFrame(cds_h, prot_it->GetLocation()) != feature::eLocationInFrame_InFrame) {
+            // not in frame, can't convert
+            continue;
+        }
+
+        CConstRef<CSeq_feat> orig_feat = prot_it->GetSeq_feat();
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*orig_feat);
+        CRef<CSeq_loc> new_loc;
+        CRef<CSeq_loc_Mapper> nuc2prot_mapper(
+            new CSeq_loc_Mapper(*cds, CSeq_loc_Mapper::eLocationToProduct, &seh.GetScope()) );
+        new_loc = nuc2prot_mapper->Map(orig_feat->GetLocation());
+        if (!new_loc || new_loc->GetId()->Equals(*(orig_feat->GetLocation().GetId()))) {
+            // unable to map to protein location
+            continue;
+        }
+        new_loc->GetStart(eExtreme_Biological);
+        new_loc->GetStop(eExtreme_Biological);
+
+        // change location to protein
+        new_feat->ResetLocation();
+        new_feat->SetLocation(*new_loc);
+
+        // remove the feature from the nuc bioseq
+        CSeq_feat_Handle fh = seh.GetScope().GetSeq_featHandle(*orig_feat);
+        CSeq_feat_EditHandle edh(fh);
+        edh.Remove();
+
+        CBioseq_Handle target_bsh = seh.GetScope().GetBioseqHandle(new_feat->GetLocation());
+        CBioseq_EditHandle eh = target_bsh.GetEditHandle();
+
+        // Find a feature table on the protein sequence to add the feature to.       
+        CSeq_annot_Handle ftable;
+        CSeq_annot_CI annot_ci(target_bsh);
+        for (; annot_ci; ++annot_ci) {
+            if ((*annot_ci).IsFtable()) {
+                ftable = *annot_ci;
+                break;
+            }
+        }
+        // If there is no feature table present, make one
+        if (!ftable) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            ftable = eh.AttachAnnot(*new_annot);
+        }
+
+        // add feature to the protein bioseq
+        CSeq_annot_EditHandle aeh(ftable);
+        aeh.AddFeat(*new_feat);
+        any_change = true;
+    }
+    return any_change;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

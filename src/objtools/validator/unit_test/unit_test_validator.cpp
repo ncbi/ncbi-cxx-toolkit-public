@@ -19249,3 +19249,44 @@ BOOST_AUTO_TEST_CASE(Test_VR_146)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_IsLocationInFrame)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CSeq_feat_Handle fh = scope->GetSeq_featHandle(*cds);
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->Assign(cds->GetLocation());
+    
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_InFrame, feature::IsLocationInFrame(fh, *loc));
+    loc->SetInt().SetFrom(loc->GetInt().GetFrom() + 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_BadStart, feature::IsLocationInFrame(fh, *loc));
+    loc->SetInt().SetFrom(loc->GetInt().GetFrom() + 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_BadStart, feature::IsLocationInFrame(fh, *loc));
+    loc->SetInt().SetFrom(loc->GetInt().GetFrom() + 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_InFrame, feature::IsLocationInFrame(fh, *loc));
+    loc->Assign(cds->GetLocation());
+    loc->SetInt().SetTo(loc->GetInt().GetTo() - 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_BadStop, feature::IsLocationInFrame(fh, *loc));
+    loc->SetInt().SetTo(loc->GetInt().GetTo() - 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_BadStop, feature::IsLocationInFrame(fh, *loc));
+    loc->SetInt().SetTo(loc->GetInt().GetTo() - 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_InFrame, feature::IsLocationInFrame(fh, *loc));
+
+    loc->Assign(cds->GetLocation());
+    loc->SetInt().SetFrom(loc->GetInt().GetFrom() + 1);
+    loc->SetInt().SetTo(loc->GetInt().GetTo() - 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_BadStartAndStop, feature::IsLocationInFrame(fh, *loc));
+    loc->SetInt().SetFrom(loc->GetInt().GetFrom() + 1);
+    loc->SetInt().SetTo(loc->GetInt().GetTo() - 1);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_BadStartAndStop, feature::IsLocationInFrame(fh, *loc));
+
+    loc->SetInt().SetFrom(cds->GetLocation().GetStop(eExtreme_Biological) + 1);
+    loc->SetInt().SetTo(loc->GetInt().GetFrom() + 2);
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_NotIn, feature::IsLocationInFrame(fh, *loc));    
+}
+
