@@ -419,11 +419,6 @@ void CNetCacheWriter::Transmit(const void* buf,
     ERW_Result res = m_TransmissionWriter->Write(buf, count, bytes_written);
 
     try {
-        if (res != eRW_Success /*&& res != eRW_NotImplemented*/) {
-            NCBI_THROW(CNetServiceException, eCommunicationError,
-                g_RW_ResultToString(res));
-        }
-
         STimeout to = {0, 0};
         switch (m_Connection->m_Socket.Wait(eIO_Read, &to)) {
             case eIO_Success:
@@ -437,6 +432,11 @@ void CNetCacheWriter::Transmit(const void* buf,
                             msg = NStr::ParseEscapes(msg);
                         }
                         NCBI_THROW(CNetCacheException, eServerError, msg);
+                    }
+
+                    if (res != eRW_Success) {
+                        NCBI_THROW(CNetServiceException, eCommunicationError,
+                            g_RW_ResultToString(res));
                     } // else FALL THROUGH
                 }
 
