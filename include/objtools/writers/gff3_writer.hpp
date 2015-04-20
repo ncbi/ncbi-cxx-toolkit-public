@@ -428,6 +428,10 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         CMappedFeat);
+    bool xAssignFeatureAttributeGeneBiotype(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        CMappedFeat);
     //end mss-234//
     string xNextGenericId();
     string xNextGeneId();
