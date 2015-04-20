@@ -37220,6 +37220,8 @@ if test "$with_vdb" != "no" ; then
          case "$host_os:$host_cpu:$bit64_sfx" in
             darwin*:*86*:64 )
                : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/x86_64/lib}   ;;
+            darwin*:*86*:* )
+               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/fat86/lib}    ;;
             linux*:*86*:64 )
                : ${VDB_LIBDIR=$VDB_PATH/linux/$vdb_mode/x86_64/lib} ;;
             * )
