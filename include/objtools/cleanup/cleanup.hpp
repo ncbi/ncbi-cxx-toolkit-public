@@ -114,7 +114,23 @@ public:
 /// @return Boolean return value indicates whether any changes were made
     static bool MoveProteinSpecificFeats(CSeq_entry_Handle seh);
 
-    static bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat_Handle& sfh, const CGene_ref& gene_xref);
+/// Calculates whether a Gene-xref is unnecessary (because it refers to the
+/// same gene as would be calculated using overlap)
+/// @param sf Seq-feat with the xref [in]
+/// @param scope Scope in which to search for location [in]
+/// @param gene_xref Gene-ref of gene-xref [in]
+/// @return Boolean return value indicates whether gene-xref is unnecessary
+    static bool IsGeneXrefUnnecessary(const CSeq_feat& sf, CScope& scope, const CGene_ref& gene_xref);
+
+/// Removes unnecessary Gene-xrefs
+/// @param f Seq-feat to edit [in]
+/// @param scope Scope in which to search for locations [in]
+/// @return Boolean return value indicates whether gene-xrefs were removed
+    static bool RemoveUnnecessaryGeneXrefs(CSeq_feat& f, CScope& scope);
+
+/// Removes unnecessary Gene-xrefs on features in Seq-entry
+/// @param seh Seq-entry-Handle to edit [in]
+/// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh);
 
 private:

@@ -493,12 +493,12 @@ bool CCleanup::MoveProteinSpecificFeats(CSeq_entry_Handle seh)
 }
 
 
-bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat_Handle& sfh, const CGene_ref& gene_xref)
+bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat& sf, CScope& scope, const CGene_ref& gene_xref)
 {
     if (gene_xref.IsSuppressed()) {
         return false;
     }
-    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sfh.GetLocation(), sfh.GetScope());
+    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sf.GetLocation(), scope);
     if (!gene || !gene->IsSetData() || !gene->GetData().IsGene()) {
         return false;
     }
@@ -507,29 +507,42 @@ bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat_Handle& sfh, const CGene_re
 }
 
 
+bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_feat& f, CScope& scope)
+{
+    if (!f.IsSetXref()) {
+        return false;
+    }
+    bool any_removed = false;
+    CSeq_feat::TXref::iterator xit = f.SetXref().begin();
+    while (xit != f.SetXref().end()) {
+        if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() &&
+            IsGeneXrefUnnecessary(f, scope, (*xit)->GetData().GetGene())) {
+            xit = f.SetXref().erase(xit);
+            any_removed = true;
+        } else {
+            ++xit;
+        }
+    }
+    if (any_removed) {
+        if (f.IsSetXref() && f.GetXref().empty()) {
+            f.ResetXref();
+        }
+    }
+    return any_removed;
+}
+
+
 bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh)
 {
     bool any_change = false;
+    CScope& scope = seh.GetScope();
 
     for (CFeat_CI fi(seh); fi; ++fi) {
         if (fi->IsSetXref()) {
             CRef<CSeq_feat> new_feat(new CSeq_feat());
             new_feat->Assign(*(fi->GetOriginalSeq_feat()));
-            bool any_removed = false;
-            CSeq_feat::TXref::iterator xit = new_feat->SetXref().begin();
-            while (xit != new_feat->SetXref().end()) {
-                if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() &&
-                    IsGeneXrefUnnecessary(*fi, (*xit)->GetData().GetGene())) {
-                    xit = new_feat->SetXref().erase(xit);
-                    any_removed = true;
-                } else {
-                    ++xit;
-                }
-            }
+            bool any_removed = RemoveUnnecessaryGeneXrefs(*new_feat, scope);
             if (any_removed) {
-                if (new_feat->IsSetXref() && new_feat->GetXref().empty()) {
-                    new_feat->ResetXref();
-                }
                 CSeq_feat_EditHandle edh(*fi);
                 edh.Replace(*new_feat);
                 any_change = true;
