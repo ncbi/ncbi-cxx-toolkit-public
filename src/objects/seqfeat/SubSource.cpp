@@ -172,7 +172,7 @@ bool CSubSource::IsMultipleValuesAllowed(TSubtype subtype)
     return subtype != eSubtype_chromosome
         && subtype != eSubtype_germline
         && subtype != eSubtype_rearranged
-        && subtype != eSubtype_plastid_name
+        && subtype != eSubtype_plasmid_name
         && subtype != eSubtype_segment
         && subtype != eSubtype_country
         && subtype != eSubtype_transgenic

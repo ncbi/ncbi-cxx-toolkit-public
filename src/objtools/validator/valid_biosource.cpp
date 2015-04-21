@@ -828,8 +828,8 @@ void CValidError_imp::ValidateBioSource
                 qual = "germline"; break;
             case CSubSource::eSubtype_rearranged:
                 qual = "rearranged"; break;
-            case CSubSource::eSubtype_plastid_name:
-                qual = "plastid_name"; break;
+            case CSubSource::eSubtype_plasmid_name:
+                qual = "plasmid_name"; break;
             case CSubSource::eSubtype_segment:
                 qual = "segment"; break;
             case CSubSource::eSubtype_country:
