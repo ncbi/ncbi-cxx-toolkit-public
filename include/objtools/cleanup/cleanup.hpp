@@ -114,6 +114,8 @@ public:
 /// @return Boolean return value indicates whether any changes were made
     static bool MoveProteinSpecificFeats(CSeq_entry_Handle seh);
 
+    static bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat_Handle& sfh, const CGene_ref& gene_xref);
+    static bool RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh);
 
 private:
     // Prohibit copy constructor & assignment operator

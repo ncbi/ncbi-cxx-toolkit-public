@@ -87,6 +87,26 @@ bool CGene_ref::IsSuppressed(void) const
 }
 
 
+// Examines criteria to determine if this gene is referred to by another gene xref
+bool CGene_ref::RefersToSameGene(const CGene_ref& xref) const
+{
+    if (IsSetLocus_tag() && !NStr::IsBlank(GetLocus_tag())
+        && xref.IsSetLocus_tag() && !NStr::IsBlank(xref.GetLocus_tag())) {
+        return NStr::Equal(GetLocus_tag(), xref.GetLocus_tag());
+    }
+    if (IsSetLocus() && !NStr::IsBlank(GetLocus())
+        && xref.IsSetLocus() && !NStr::IsBlank(xref.GetLocus())) {
+        return NStr::Equal(GetLocus(), xref.GetLocus());
+    }
+    if (IsSetSyn() && GetSyn().size() > 0 && !NStr::IsBlank(GetSyn().front())
+        && xref.IsSetSyn() && xref.GetSyn().size() > 0 && !NStr::IsBlank(xref.GetSyn().front())) {
+        return NStr::Equal(GetSyn().front(), xref.GetSyn().front());
+    }
+
+    return false;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

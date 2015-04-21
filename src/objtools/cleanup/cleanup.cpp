@@ -37,6 +37,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
 
@@ -488,6 +489,54 @@ bool CCleanup::MoveProteinSpecificFeats(CSeq_entry_Handle seh)
         aeh.AddFeat(*new_feat);
         any_change = true;
     }
+    return any_change;
+}
+
+
+bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat_Handle& sfh, const CGene_ref& gene_xref)
+{
+    if (gene_xref.IsSuppressed()) {
+        return false;
+    }
+    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sfh.GetLocation(), sfh.GetScope());
+    if (!gene || !gene->IsSetData() || !gene->GetData().IsGene()) {
+        return false;
+    }
+
+    return gene->GetData().GetGene().RefersToSameGene(gene_xref);    
+}
+
+
+bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+
+    for (CFeat_CI fi(seh); fi; ++fi) {
+        if (fi->IsSetXref()) {
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*(fi->GetOriginalSeq_feat()));
+            bool any_removed = false;
+            CSeq_feat::TXref::iterator xit = new_feat->SetXref().begin();
+            while (xit != new_feat->SetXref().end()) {
+                if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() &&
+                    IsGeneXrefUnnecessary(*fi, (*xit)->GetData().GetGene())) {
+                    xit = new_feat->SetXref().erase(xit);
+                    any_removed = true;
+                } else {
+                    ++xit;
+                }
+            }
+            if (any_removed) {
+                if (new_feat->IsSetXref() && new_feat->GetXref().empty()) {
+                    new_feat->ResetXref();
+                }
+                CSeq_feat_EditHandle edh(*fi);
+                edh.Replace(*new_feat);
+                any_change = true;
+            }
+        }
+    }
+
     return any_change;
 }
 

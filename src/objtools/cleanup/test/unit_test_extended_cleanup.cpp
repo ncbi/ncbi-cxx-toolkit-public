@@ -547,5 +547,96 @@ BOOST_AUTO_TEST_CASE(Test_MoveProteinSpecificFeatures)
 }
 
 
+void s_CheckXrefs(CSeq_entry_Handle seh, size_t num)
+{
+    for (CFeat_CI fi(seh); fi; ++fi) {
+        if (!fi->GetData().IsGene()) {
+            if (num == 0) {
+                BOOST_CHECK_EQUAL(false, fi->IsSetXref());
+            } else {
+                BOOST_CHECK_EQUAL(true, fi->IsSetXref());
+                BOOST_CHECK_EQUAL(1, fi->GetXref().size());
+            }
+        }
+    }
+}
 
 
+CRef<CSeq_feat> s_AddRna(CRef<CSeq_entry> entry, const string& locus_tag) 
+{
+    CRef<CSeq_feat> rna = BuildGoodFeat();
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+    AddFeat(rna, entry);
+    CRef<CSeqFeatXref> xref(new CSeqFeatXref());
+    if (NStr::IsBlank(locus_tag)) {
+        xref->SetData().SetGene();
+    } else {
+        xref->SetData().SetGene().SetLocus_tag(locus_tag);
+    }
+    rna->SetXref().push_back(xref);
+    return rna;
+}
+
+
+CRef<CSeq_feat> s_AddGene(CRef<CSeq_entry> entry, const string& locus_tag)
+{
+    CRef<CSeq_feat> gene = BuildGoodFeat();
+    gene->SetData().SetGene().SetLocus_tag(locus_tag);
+    AddFeat(gene, entry);
+    return gene;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoveUnnecessaryGeneXrefs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+
+    // build an RNA with a suppressing gene xref, should not be removed
+    CRef<CSeq_feat> rna = s_AddRna(entry, "");
+
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::RemoveUnnecessaryGeneXrefs(seh));
+    s_CheckXrefs(seh, 1);
+
+    // add a gene - xref is suppressing, so still shouldn't be removed
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    rna = s_AddRna(entry, "");
+    CRef<CSeq_feat> gene = s_AddGene(entry, "test");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::RemoveUnnecessaryGeneXrefs(seh));
+    s_CheckXrefs(seh, 1);
+
+    // do remove if gene xref matches
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    rna = s_AddRna(entry, "test");
+    gene = s_AddGene(entry, "test");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(true, CCleanup::RemoveUnnecessaryGeneXrefs(seh));
+    s_CheckXrefs(seh, 0);
+
+    // don't remove if gene xref matches but gene does not contain feature
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    rna = s_AddRna(entry, "test");
+    gene = s_AddGene(entry, "test");
+    rna->SetLocation().SetInt().SetTo(rna->GetLocation().GetInt().GetTo() + 1);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::RemoveUnnecessaryGeneXrefs(seh));
+    s_CheckXrefs(seh, 1);
+
+    // don't remove if gene xref matches, location is overlap, but there is
+    // a different gene that also matches and is smaller
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    rna = s_AddRna(entry, "test");
+    gene = s_AddGene(entry, "test");
+    CRef<CSeq_feat> gene2 = s_AddGene(entry, "test2");
+    gene->SetLocation().SetInt().SetTo(gene->GetLocation().GetInt().GetTo() + 1);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(false, CCleanup::RemoveUnnecessaryGeneXrefs(seh));
+    s_CheckXrefs(seh, 1);
+
+}

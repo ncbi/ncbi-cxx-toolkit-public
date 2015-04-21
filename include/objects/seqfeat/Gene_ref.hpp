@@ -63,6 +63,8 @@ public:
     // Checks for an emtpy Gene-ref used for suppressing /gene by overlap
     bool IsSuppressed(void) const;
 
+    bool CGene_ref::RefersToSameGene(const CGene_ref& xref) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CGene_ref(const CGene_ref& value);
