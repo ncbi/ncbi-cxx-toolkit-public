@@ -110,19 +110,20 @@ void CFeatTableEdit::InferParentGenes()
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
     CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
-        const CSeq_feat& rna = it->GetOriginalFeature();
+        CMappedFeat rna = *it;
         CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna);
         if (!pGene) {
             if (!rna.IsSetPartial() ||  !rna.GetPartial()) {
                 continue;
             }
-            CConstRef<CSeq_feat> pParentGene = xGetGeneParent(rna); 
-            if (pParentGene  &&  
-                    !(pParentGene->IsSetPartial()  &&  pParentGene->GetPartial())) {
+            CMappedFeat parentGene = feature::GetBestGeneForMrna(rna); 
+            if (parentGene  &&  
+                    !(parentGene.IsSetPartial()  &&  parentGene.GetPartial())) {
                 CRef<CSeq_feat> pEditedGene(new CSeq_feat);
-                pEditedGene->Assign(*pParentGene);
+                pEditedGene->Assign(parentGene.GetOriginalFeature());
                 pEditedGene->SetPartial(true);
-                CSeq_feat_EditHandle geneEh(mpScope->GetObjectHandle(*pParentGene));
+                CSeq_feat_EditHandle geneEh(
+                    mpScope->GetObjectHandle(parentGene.GetOriginalFeature()));
                 geneEh.Replace(*pEditedGene);
             }
             continue;
@@ -131,7 +132,8 @@ void CFeatTableEdit::InferParentGenes()
         string geneId(xNextFeatId());
         pGene->SetId().SetLocal().SetStr(geneId);
         //add gene xref to rna
-        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(rna));
+        CSeq_feat_EditHandle feh(
+            mpScope->GetObjectHandle(rna.GetOriginalFeature()));
         feh.AddFeatXref(geneId);
         //add new gene to feature table
         mEditHandle.AddFeat(*pGene);
@@ -165,24 +167,26 @@ void CFeatTableEdit::InferPartials()
         cdsEh.Replace(*pEditedCds);
 
         // make sure the parent rna is partial as well
-        CConstRef<CSeq_feat> pParentRna = xGetMrnaParent(cds);
-        if (pParentRna  &&  
-                !(pParentRna->IsSetPartial()  &&  pParentRna->GetPartial())) {
+        CMappedFeat parentRna = feature::GetBestMrnaForCds(*it, &mTree);
+        if (parentRna  &&
+            !(parentRna.IsSetPartial() && parentRna.GetPartial())) {
             CRef<CSeq_feat> pEditedRna(new CSeq_feat);
-            pEditedRna->Assign(*pParentRna);
+            pEditedRna->Assign(parentRna.GetOriginalFeature());
             pEditedRna->SetPartial(true);
-            CSeq_feat_EditHandle rnaEh(mpScope->GetObjectHandle(*pParentRna));
+            CSeq_feat_EditHandle rnaEh(
+                mpScope->GetObjectHandle(parentRna.GetOriginalFeature()));
             rnaEh.Replace(*pEditedRna);
         }
 
         // make sure the gene parent is partial as well
-        CConstRef<CSeq_feat> pParentGene = xGetGeneParent(cds); 
-        if (pParentGene  &&  
-                !(pParentGene->IsSetPartial()  &&  pParentGene->GetPartial())) {
+        CMappedFeat parentGene = feature::GetBestGeneForCds(*it);
+        if (parentGene  &&  
+                !(parentGene.IsSetPartial()  &&  parentGene.GetPartial())) {
             CRef<CSeq_feat> pEditedGene(new CSeq_feat);
-            pEditedGene->Assign(*pParentGene);
+            pEditedGene->Assign(parentGene.GetOriginalFeature());
             pEditedGene->SetPartial(true);
-            CSeq_feat_EditHandle geneEh(mpScope->GetObjectHandle(*pParentGene));
+            CSeq_feat_EditHandle geneEh(
+                mpScope->GetObjectHandle(parentGene.GetOriginalFeature()));
             geneEh.Replace(*pEditedGene);
         }
     }
@@ -269,7 +273,7 @@ void CFeatTableEdit::xFeatureAddProteinId(
         protein_id = associateFeat.GetNamedQual("protein_id");
     }
     if (protein_id.empty()) {
-        protein_id = xNextProteinId(mf.GetOriginalFeature());
+        protein_id = xNextProteinId(mf);
     }
     xFeatureAddQualifier(mf, "protein_id", protein_id);
 }
@@ -307,7 +311,7 @@ void CFeatTableEdit::xFeatureAddTranscriptId(
         transcript_id = associateFeat.GetNamedQual("transcript_id");
     }
     if (transcript_id.empty()) {
-        transcript_id = xNextTranscriptId(mf.GetOriginalFeature());
+        transcript_id = xNextTranscriptId(mf);
     }
     xFeatureAddQualifier(mf, "transcript_id", transcript_id);
 }
@@ -365,10 +369,10 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
         CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
         switch (subtype) {
             case CSeqFeatData::eSubtype_mRNA: {
-                string proteinId = xNextProteinId(f);
+                string proteinId = xNextProteinId(mf);
                 //feh.AddQualifier("protein_id", proteinId);
                 feh.AddQualifier("orig_protein_id", proteinId);
-                string transcriptId = xNextTranscriptId(f);
+                string transcriptId = xNextTranscriptId(mf);
                 //feh.AddQualifier("transcript_id", transcriptId);
                 feh.AddQualifier("orig_transcript_id", transcriptId);
                 break;
@@ -386,12 +390,11 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
     for (CFeat_CI it(mHandle, selCds); it; ++it) {
 
         CMappedFeat mf = *it;
-        const CSeq_feat& f = mf.GetOriginalFeature();
         CSeq_feat_EditHandle feh(mf);
-        string transcriptId = xCurrentTranscriptId(f);
-        //feh.AddQualifier("transcript_id", transcriptId);
+        CMappedFeat rna = feature::GetBestMrnaForCds(mf);
+        string transcriptId = rna.GetNamedQual("transcript_id");
         feh.AddQualifier("orig_transcript_id", transcriptId);
-        string proteinId = xCurrentProteinId(f);
+        string proteinId = rna.GetNamedQual("protein_id");
         feh.AddQualifier("orig_protein_id", proteinId);
     }
 }
@@ -484,12 +487,6 @@ void CFeatTableEdit::GenerateLocusTags()
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (itOther)->GetOriginalFeature()));
 		feh.RemoveQualifier("locus_tag");
-		CConstRef<CSeq_feat> pGeneParent = xGetGeneParent(feat);
-		if (!pGeneParent) {
-			continue;
-		}
-		//string locusTag = pGeneParent->GetNamedQual("locus_tag");
-		//feh.AddQualifier("locus_tag", locusTag);
 	}
 }
 
@@ -541,15 +538,15 @@ string CFeatTableEdit::xNextLocusTag()
 
 //	----------------------------------------------------------------------------
 string CFeatTableEdit::xNextProteinId(
-	const CSeq_feat& f)
+	const CMappedFeat& mf)
 //	----------------------------------------------------------------------------
 {
 	// format: mLocusTagPrefix|<locus tag of gene>[_numeric disambiguation]
-	CConstRef<CSeq_feat> pGene = xGetGeneParent(f);
-    if (!pGene) {
+    CMappedFeat parentGene = feature::GetBestGeneForFeat(mf, &mTree);
+    if (!parentGene) {
 		return "";
 	}
-    string locusTag = pGene->GetData().GetGene().GetLocus_tag();
+    string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
 	string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it == mMapProtIdCounts.end()) {
@@ -564,15 +561,15 @@ string CFeatTableEdit::xNextProteinId(
 
 //	----------------------------------------------------------------------------
 string CFeatTableEdit::xNextTranscriptId(
-	const CSeq_feat& cds)
+	const CMappedFeat& cds)
 //	----------------------------------------------------------------------------
 {
 	// format: mLocusTagPrefix|mrna.<locus tag of gene>[_numeric disambiguation]
-	CConstRef<CSeq_feat> pGene = xGetGeneParent(cds);
-    if (!pGene) {
+	CMappedFeat parentGene = feature::GetBestGeneForFeat(cds, &mTree);
+    if (!parentGene) {
 		return "";
 	}
-    string locusTag = pGene->GetData().GetGene().GetLocus_tag();
+    string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
     string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it != mMapProtIdCounts.end()  &&  mMapProtIdCounts[locusTag] != 0) {
@@ -582,104 +579,18 @@ string CFeatTableEdit::xNextTranscriptId(
 }
 
 //  ----------------------------------------------------------------------------
-string CFeatTableEdit::xCurrentTranscriptId(
-    const CSeq_feat& f)
-    //  ----------------------------------------------------------------------------
-{
-    CConstRef<CSeq_feat> pRna = xGetMrnaParent(f);
-    if (!pRna) {
-        return "";
-    }
-    string transcriptId = pRna->GetNamedQual("orig_transcript_id");
-    return transcriptId;
-}
-
-//  ----------------------------------------------------------------------------
-string CFeatTableEdit::xCurrentProteinId(
-    const CSeq_feat& f)
-    //  ----------------------------------------------------------------------------
-{
-    CConstRef<CSeq_feat> pRna = xGetMrnaParent(f);
-    if (!pRna) {
-        return "";
-    }
-    string proteinId = pRna->GetNamedQual("orig_protein_id");
-    return proteinId;
-}
-
-//	----------------------------------------------------------------------------
-CConstRef<CSeq_feat> CFeatTableEdit::xGetGeneParent(
-	const CSeq_feat& feat)
-//	----------------------------------------------------------------------------
-{
-	CConstRef<CSeq_feat> pGene;
-	CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(feat);
-	CSeq_annot_Handle sah = sfh.GetAnnot();
-	if (!sah) {
-		return pGene;
-	}
-
-    size_t bestLength(0);
-    CFeat_CI findGene(sah, CSeqFeatData::eSubtype_gene);
-    for ( ; findGene; ++findGene) {
-        Int8 compare = sequence::TestForOverlap64(
-            findGene->GetLocation(), feat.GetLocation(),
-            sequence::eOverlap_Contained);
-        if (compare == -1) {
-            continue;
-        }
-        size_t currentLength = sequence::GetLength(findGene->GetLocation(), mpScope);
-        if (!bestLength  ||  currentLength > bestLength) {
-            pGene.Reset(&(findGene->GetOriginalFeature()));
-            bestLength = currentLength;
-        }
-    }
-	return pGene;
-}
-
-//	----------------------------------------------------------------------------
-CConstRef<CSeq_feat> CFeatTableEdit::xGetMrnaParent(
-	const CSeq_feat& feat)
-//	----------------------------------------------------------------------------
-{
-	CConstRef<CSeq_feat> pMrna;
-	CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(feat);
-	CSeq_annot_Handle sah = sfh.GetAnnot();
-	if (!sah) {
-		return pMrna;
-	}
-
-    size_t bestLength(0);
-    CFeat_CI findGene(sah, CSeqFeatData::eSubtype_mRNA);
-    for ( ; findGene; ++findGene) {
-        Int8 compare = sequence::TestForOverlap64(
-            findGene->GetLocation(), feat.GetLocation(),
-            sequence::eOverlap_Contained);
-        if (compare == -1) {
-            continue;
-        }
-        size_t currentLength = sequence::GetLength(findGene->GetLocation(), mpScope);
-        if (!bestLength  ||  currentLength > bestLength) {
-            pMrna.Reset(&(findGene->GetOriginalFeature()));
-            bestLength = currentLength;
-        }
-    }
-	return pMrna;
-}
-
-//  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
-    const CSeq_feat& rna)
+    const CMappedFeat& rna)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
-    CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(rna);
+    CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(rna.GetOriginalFeature());
     CSeq_annot_Handle sah = sfh.GetAnnot();
     if (!sah) {
         return pGene;
     }
-    CConstRef<CSeq_feat> pExistingGene = xGetGeneParent(rna);
-    if (pExistingGene) {
+    CMappedFeat existingGene = feature::GetBestGeneForMrna(rna, &mTree);
+    if (existingGene) {
         return pGene;
     }
     pGene.Reset(new CSeq_feat);

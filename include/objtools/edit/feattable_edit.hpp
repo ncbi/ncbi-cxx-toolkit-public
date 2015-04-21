@@ -71,13 +71,9 @@ protected:
     string xNextFeatId();
 	string xNextLocusTag();
 	string xNextProteinId(
-		const CSeq_feat&);
+		const CMappedFeat&);
 	string xNextTranscriptId(
-		const CSeq_feat&);
-    string xCurrentTranscriptId(
-        const CSeq_feat&);
-    string xCurrentProteinId(
-        const CSeq_feat&);
+		const CMappedFeat&);
 
     void xPutErrorMissingLocustag(
         CMappedFeat);
@@ -95,12 +91,8 @@ protected:
     void xFeatureAddTranscriptId(
         CMappedFeat);
 
-	CConstRef<CSeq_feat> xGetGeneParent(
-		const CSeq_feat&);
-	CConstRef<CSeq_feat> xGetMrnaParent(
-		const CSeq_feat&);
     CRef<CSeq_feat> xMakeGeneForMrna(
-        const CSeq_feat&);
+        const CMappedFeat&);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
