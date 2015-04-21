@@ -193,6 +193,26 @@ void CFeatTableEdit::InferPartials()
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatTableEdit::SubmitEraseProducts()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    for (CFeat_CI it(mHandle, sel); it; ++it){
+        CMappedFeat mf = *it;
+        if (!mf.IsSetProduct()) {
+            continue;
+        }
+        CRef<CSeq_feat> pEditedFeature(new CSeq_feat);
+        pEditedFeature->Assign(mf.GetOriginalFeature());
+        pEditedFeature->ResetProduct();
+        CSeq_feat_EditHandle feh(mf);
+        feh.Replace(*pEditedFeature);
+    }   
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatTableEdit::EliminateBadQualifiers()
 //  ----------------------------------------------------------------------------
 {

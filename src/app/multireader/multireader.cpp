@@ -1181,6 +1181,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.EliminateBadQualifiers();
 	fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();
+    fte.SubmitEraseProducts();
 }
 
 //  ----------------------------------------------------------------------------
