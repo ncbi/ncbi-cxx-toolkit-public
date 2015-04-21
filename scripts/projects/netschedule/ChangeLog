@@ -1,3 +1,13 @@
+Release 4.21.2 cloned from 4.21.1 (2015-04-21)
+
+Improvements:
+    * NetSchedule: incorrect connection request context resetting
+      (JIRA: CXX-5896)
+    * Log NetSchedule queue statistics to AppLog (JIRA: CXX-5872)
+    * NetSchedule: automatic acknowledge of the ConfigOutOfSync alert after
+      RECO (JIRA: CXX-5868)
+
+
 Release 4.21.1 cloned from 4.21.0 (2015-04-06)
 
 Improvements:
