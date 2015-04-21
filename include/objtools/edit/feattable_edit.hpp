@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -61,9 +62,8 @@ public:
     void InferPartials();
     void EliminateBadQualifiers();
     void GenerateProteinAndTranscriptIds();
-    void GenerateOrigProteinAndOrigTranscriptIds();
     void GenerateLocusIds();
-
+ 
 protected:
     void xGenerateLocusIdsUseExisting();
     void xGenerateLocusIdsRegenerate();
@@ -86,6 +86,15 @@ protected:
     void xPutErrorMissingProteinId(
         CMappedFeat);
 
+    void xFeatureAddQualifier(
+        CMappedFeat,
+        const std::string&,                 // qual key
+        const std::string&);                // qual value
+    void xFeatureAddProteinId(
+        CMappedFeat);
+    void xFeatureAddTranscriptId(
+        CMappedFeat);
+
 	CConstRef<CSeq_feat> xGetGeneParent(
 		const CSeq_feat&);
 	CConstRef<CSeq_feat> xGetMrnaParent(
@@ -96,6 +105,7 @@ protected:
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
     CSeq_annot_Handle mHandle;
+    feature::CFeatTree mTree;
     CSeq_annot_EditHandle mEditHandle;
     IMessageListener* mpMessageListener;
     unsigned int mNextFeatId;
