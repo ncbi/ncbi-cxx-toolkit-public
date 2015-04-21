@@ -22,12 +22,13 @@ No runs of Ns longer than 10 bp found in FASTA sequences.
 10:LACBIscaffold_1	511863	512826	10	N	964	fragment	yes	
 	WARNING: gap at the end of object (OK if LACBIscaffold_1 is the circular chromosome/plasmid)
 
-5 errors, 1 warning, 1 note.
+5 errors, 2 warnings, 1 note.
   Count Code  Description
       1  w31  gap at the end of object (OK if X is the circular chromosome/plasmid)
       1  w58  assuming AGP version X
       4  g71  invalid component_id
       1  g74  component_end greater than sequence length
+      -   -   component name(s) in FASTA not found in AGP
 
 
 Objects                : 1

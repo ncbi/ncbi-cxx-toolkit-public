@@ -121,7 +121,7 @@
 199:chrX	2002	3001	2	W	AADB02037646.1	1	1000	+
 	ERROR: duplicate object chrX
 	WARNING: the span overlaps a previous span for this component: 1..1000 at line 196
-	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 196, in another object
+	WARNING: same component_id found on different scaffolds; previous occurance at line 196, in another object
 
 200:	1	1000	1	W	AADB02037648.1	1	1000	+
 	ERROR, line skipped: column 1 is empty
@@ -186,15 +186,15 @@
 
 233:chrC	1	100	1	W	AADB02037644.1	4051	4150	+
 	WARNING: the span overlaps a previous span for this component: 1..4051 at line 193
-	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 193, in another object
+	WARNING: same component_id found on different scaffolds; previous occurance at line 193, in another object
 
 234:chrC	101	200	2	W	AADB02037645.1	1000	1099	-
 	WARNING: the span overlaps a previous span for this component: 1..1000 at line 195
-	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 195, in another object
+	WARNING: same component_id found on different scaffolds; previous occurance at line 195, in another object
 
 235:chrC	201	300	3	W	AADB02037646.1	1	100	-
 	WARNING: the span overlaps a previous span for this component: 1..1000 at line 196
-	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 199, in another object
+	WARNING: same component_id found on different scaffolds; previous occurance at line 199, in another object
 
 236:
 	ERROR, line skipped: empty line
@@ -226,7 +226,7 @@
       1  w40  extra tab or space at the end of line
       2  w45  component_id looks like a WGS accession, component_type is not W
          (Use -g to print lines with WGS component_id/component_type mismatch.)
-      4  w49  component lines with the same component_id found on different scaffolds
+      4  w49  same component_id found on different scaffolds
       1  w58  assuming AGP version X
       1  w64  component_id X is not an HTG accession, but is used with component_type A, D, or F
 

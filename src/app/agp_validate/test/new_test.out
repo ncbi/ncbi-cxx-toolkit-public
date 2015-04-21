@@ -29,7 +29,7 @@
 24:LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
 26:LACBIscaffold_1	5257	6500	5	W	LACBIscaffold_1_Cont2	1202	2445	+
 	WARNING: duplicate component with non-draft type; preceding span: 1..1201 at line 24
-	WARNING: component lines with the same component_id found on different scaffolds (a scaffold-breaking gap in between)
+	WARNING: same component_id found on different scaffolds (a scaffold-breaking gap in between)
 	WARNING: in unplaced singleton scaffold, component is not used in full
 
 28:LACBIscaffold_2	1	1103	1	W	LACBIscaffold_2_Cont1	1	1103	-
@@ -44,7 +44,7 @@
       1  w37  duplicate component with non-draft type
       6  w47  object name (column 1) is the same as component_id (column 6)
       1  w48  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
-      1  w49  component lines with the same component_id found on different scaffolds
+      1  w49  same component_id found on different scaffolds
       1  w50  in unplaced singleton scaffold, component is not used in full
       2  w51  in unplaced singleton scaffold, component orientation is not "+"
       1  w58  assuming AGP version X

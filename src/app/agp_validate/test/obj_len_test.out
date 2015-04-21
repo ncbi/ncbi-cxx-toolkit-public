@@ -12,11 +12,12 @@
 7:>MICPUCscaffold_21	1	5431	1	W	ACCP01000497.1	1	5431	+
 	ERROR: object >MICPUCscaffold_21 not found in FASTA file(s)
 
-3 errors, no warnings, 1 note.
+3 errors, 1 warning, 1 note.
   Count Code  Description
       1  w58  assuming AGP version X
       1  g77  object X not found in FASTA file(s)
       2  g78  final object_end (column 3) not equal to object length in FASTA file(s)
+      -   -   object name(s) in FASTA not found in AGP
 
 
 Objects                : 3

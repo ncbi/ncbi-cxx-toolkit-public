@@ -125,12 +125,13 @@ Component names             :  95
 ./test/chr_from_scaffold_WGS_bad.agp:47:chrY	11005301	11009700	45	W	EG1_scaffold23	31	4430	+
 	WARNING: in "Chromosome from scaffold" file, scaffold is not used in full (4400 out of 4430 bp)
 
-2 errors, 2 warnings, 1 note.
+2 errors, 3 warnings, 1 note.
   Count Code  Description
       1  e21  scaffold X was not defined in any of "Scaffold from component" files
       1  w58  assuming AGP version X
       2  w59  in "Chromosome from scaffold" file, scaffold is not used in full
       1  g74  component_end greater than sequence length
+      -   -   scaffold(s) not found in Chromosome from scaffold AGP
 
 
 Objects                :  1
