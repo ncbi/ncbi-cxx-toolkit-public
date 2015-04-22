@@ -218,7 +218,7 @@ public:
     }
 
     template <class TRequest, class TReply>
-    void Ask(const TRequest& request, TReply& reply) const
+    tuple<CNetScheduleJob, bool> Ask(const TRequest& request, TReply& reply) const
     {
         CNcbiOstream& job_in = m_Grid_cli->GetOStream(); // job input stream
         auto_ptr<CObjectOStream> outstr(TConnectTraits::GetOStream(job_in));
@@ -230,6 +230,7 @@ public:
         m_Grid_cli->CloseStream();
 
         CNetScheduleJob& job = m_Grid_cli->GetJob();
+        bool timed_out = false;
         x_PrepareJob(job);
 
         CNetScheduleNotificationHandler submit_job_handler;
@@ -238,7 +239,18 @@ public:
                                      m_Timeout
                                     );
         LOG_POST(Trace << "submitted job: " << job.job_id);
-        x_GetJobReply(submit_job_handler, job, reply);
+        try {
+            x_GetJobReply(submit_job_handler, job, reply);
+        }
+        catch (const CGridRPCBaseClientException& e) {
+            if (e.GetErrCode() != CGridRPCBaseClientException::eWaitTimeout) {
+                throw e;
+            }
+            else {
+                timed_out = true;
+            }
+        }
+        return make_tuple(job, timed_out);
     }
 
 protected:
@@ -250,14 +262,10 @@ protected:
     void x_GetJobReply(CNetScheduleNotificationHandler& job_handler, CNetScheduleJob& job, TReply& reply) const
     {
         CDeadline deadline(m_Timeout, 0);
-        CNetScheduleAPI::EJobStatus status(
-            job_handler.WaitForJobCompletion(job, deadline, m_NS_api)
-        );
-
         // TODO The wait is over; the current job status is in the status
         // variable. CNetScheduleAPI::StatusToString(status) can convert it
         // to a human-readable string.
-        if (status == CNetScheduleAPI::eDone) {
+        if (job_handler.WaitForJobCompletion(job, deadline, m_NS_api) == CNetScheduleAPI::eDone) {
             // TODO The job has completed successfully.
             CStringOrBlobStorageReader reader(job.output, m_NC_api);
             CRStream rstr(&reader);
@@ -280,7 +288,6 @@ protected:
 
         CNetScheduleNotificationHandler job_handler;
         list<string> _job_ids(job_ids.begin(), job_ids.end());
-CStopWatch sw(CStopWatch::eStart);
         CPerfLogGuard pl("x_GetJobRepliesById");
         do {
             ERASE_ITERATE(list<string>, it, _job_ids) {
@@ -289,8 +296,7 @@ CStopWatch sw(CStopWatch::eStart);
                 int last_event_index;
                 CNetScheduleJob job;
                 job.job_id = job_id;
-                const CNetScheduleAPI::EJobStatus job_status = job_handler.WaitForJobCompletion(job, timeslice, m_NS_api);
-                if (job_status == CNetScheduleAPI::eDone) {
+                if (job_handler.WaitForJobCompletion(job, timeslice, m_NS_api) == CNetScheduleAPI::eDone) {
                     VECTOR_ERASE(it, _job_ids);
                     CStringOrBlobStorageReader reader(job.output, m_NC_api);
                     CRStream rstr(&reader);
@@ -302,21 +308,20 @@ CStopWatch sw(CStopWatch::eStart);
             }
         } while (!deadline.IsExpired() && !_job_ids.empty());
         pl.Post(CRequestStatus::e200_Ok, kEmptyStr);
-cerr << "x_GetJobRepliesById finished waiting: " << sw.Elapsed() << "s\n";
     }
 
     template <class TReply>
-    void x_GetJobById(const string job_id, TReply& reply) const
+    CNetScheduleJob x_GetJobById(const string job_id, TReply& reply) const
     {
-        CDeadline deadline(m_Timeout, 0);
+        //CDeadline deadline(m_Timeout, 0);
         CNetScheduleNotificationHandler job_handler;
-        CNetScheduleAPI::EJobStatus job_status;
-        int last_event_index;
-        if (job_handler.RequestJobWatching(m_NS_api, job_id, deadline, &job_status, &last_event_index)) {
-            CNetScheduleJob job;
-            job.job_id = job_id;
-            x_GetJobReply(job_handler, job, reply);
-        }
+        //CNetScheduleAPI::EJobStatus job_status;
+        //CDeadline job_complete_deadline(0, 10000); // 10ms
+        //int last_event_index;
+        CNetScheduleJob job;
+        job.job_id = job_id;
+        x_GetJobReply(job_handler, job, reply);
+        return job;
     }
 
 private:
