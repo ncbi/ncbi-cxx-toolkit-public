@@ -9379,6 +9379,22 @@ void CNewCleanup_imp::x_PostProcessing(void)
 }
 
 
+void CNewCleanup_imp::x_ClearEmptyDescr( CBioseq_set& bioseq_set )
+{
+    if (bioseq_set.IsSetDescr() && bioseq_set.GetDescr().Get().empty()) {
+        bioseq_set.ResetDescr();
+    }
+}
+
+
+void CNewCleanup_imp::x_ClearEmptyDescr( CBioseq& bioseq )
+{
+    if (bioseq.IsSetDescr() && bioseq.GetDescr().Get().empty()) {
+        bioseq.ResetDescr();
+    }
+}
+
+
 void CNewCleanup_imp::x_NotePubdescOrAnnotPubs( 
     const CPub_equiv &pub_equiv )
 {

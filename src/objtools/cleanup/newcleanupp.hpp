@@ -454,6 +454,10 @@ private:
     // This function does that processing.
     void x_PostProcessing(void);
 
+    // after cleaning bioseq and bioseq-set, need to clear empty descriptors
+    void x_ClearEmptyDescr( CBioseq_set& bioseq_set );
+    void x_ClearEmptyDescr( CBioseq& bioseq );
+
     // functions that prepare for post-processing while traversing
     void x_NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
     void x_NotePubdescOrAnnotPubs_RecursionHelper( 
