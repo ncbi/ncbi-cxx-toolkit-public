@@ -374,6 +374,12 @@ bool sFeatureGetGeneBiotype(
         return false;
     }
 
+    //for debugging specific genes:
+    // size_t start = mf.GetLocation().GetInt().GetStart(objects::eExtreme_Positional);
+    // if (XXXX == start) {
+    //     cerr << "";
+    // }
+
     vector<CMappedFeat> vecCds;
     sFeatureGetChildrenOfSubtype(mf, SUBTYPE(cdregion), vecCds);
 
@@ -387,9 +393,10 @@ bool sFeatureGetGeneBiotype(
             continue;
         }
         if (it->IsSetExcept_text() && (it->GetExcept_text() == strRearrange)) {
-            biotype = "protein_coding";
-            return true;
+            continue;
         }
+        biotype = "protein_coding";
+        return true;
     }
 
     vector<CMappedFeat> vecOthers;
@@ -1657,7 +1664,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
                     !xAssignFeatureAttributeOldLocusTag(record, fc, mf)  ||
                     !xAssignFeatureAttributePartial(record, fc, mf) ||
                     !xAssignFeatureAttributeGeneDesc(record, fc, mf)  ||
-                    //!xAssignFeatureAttributeGeneBiotype(record, fc, mf) ||
+                    !xAssignFeatureAttributeGeneBiotype(record, fc, mf) ||
                     !xAssignFeatureAttributeMapLoc(record, fc, mf)) {
                 return false;
             }
