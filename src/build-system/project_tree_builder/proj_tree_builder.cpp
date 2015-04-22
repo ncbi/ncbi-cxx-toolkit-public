@@ -524,14 +524,15 @@ void SMakeProjectT::Create3PartyLibs(
             libs_list->push_back(StripConfigurableDefine(flag));    
             done.insert(flag);
         } else if (NStr::StartsWith(flag, "-l")) {
-            CSymResolver::StripSuffix(flag);
+            string suffix;
+	    CSymResolver::StripSuffix(flag, &suffix);
             if (liborder_found && find(
                     GetApp().m_LibraryOrder[*mkname].begin(),
                     GetApp().m_LibraryOrder[*mkname].end(), flag.substr(2)) !=
                         GetApp().m_LibraryOrder[*mkname].end()) {
                 continue;
             }
-            libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
+            libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2), suffix));
 // user cannot be trusted
 //            GetApp().m_3PartyLibs.insert(flag.substr(2));
             done.insert(flag.substr(2));
