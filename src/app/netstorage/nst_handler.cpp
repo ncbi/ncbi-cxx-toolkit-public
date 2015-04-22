@@ -2027,6 +2027,9 @@ CNetStorageHandler::x_ProcessRead(
 
             m_Server->GetClientRegistry().AddBytesRead(m_Client, bytes_read);
             total_bytes += bytes_read;
+
+            if (m_CmdContext.NotNull())
+                m_CmdContext->SetBytesRd(total_bytes);
         }
 
         direct_object.Close();
