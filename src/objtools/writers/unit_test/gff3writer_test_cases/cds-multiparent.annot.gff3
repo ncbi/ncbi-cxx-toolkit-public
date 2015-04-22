@@ -1,7 +1,7 @@
 ##gff-version 3
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
-ctg123	.	gene	1000	9000	.	+	.	ID=gene0;gbkey=Gene
+ctg123	.	gene	1000	9000	.	+	.	ID=gene0;gbkey=Gene;gene_biotype=other
 ctg123	.	region	1000	1012	.	+	.	ID=id0;gbkey=TF_binding_site
 ctg123	.	mRNA	1201	7600	.	+	.	ID=rna0;Parent=gene0;gbkey=mRNA
 ctg123	.	exon	1201	1500	.	+	.	ID=id1;Parent=rna0;gbkey=mRNA
