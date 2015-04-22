@@ -471,7 +471,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  LB  ddbj_gss",
     "2+6  LC  ddbj_dirsub",
     "2+6  LD  ddbj_con",
-    "2+6  LE  ddbj_other_nuc",
+    "2+6  LE  ddbj_tsa_nuc",
     "2+6  LF  ddbj_other_nuc",
     "2+6  LG  ddbj_other_nuc",
     "2+6  LH  ddbj_other_nuc",
