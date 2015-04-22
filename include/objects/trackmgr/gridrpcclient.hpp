@@ -218,7 +218,7 @@ public:
     }
 
     template <class TRequest, class TReply>
-    tuple<CNetScheduleJob, bool> Ask(const TRequest& request, TReply& reply) const
+    pair<CNetScheduleJob, bool> Ask(const TRequest& request, TReply& reply) const
     {
         CNcbiOstream& job_in = m_Grid_cli->GetOStream(); // job input stream
         auto_ptr<CObjectOStream> outstr(TConnectTraits::GetOStream(job_in));
@@ -250,7 +250,7 @@ public:
                 timed_out = true;
             }
         }
-        return make_tuple(job, timed_out);
+        return make_pair(job, timed_out);
     }
 
 protected:
