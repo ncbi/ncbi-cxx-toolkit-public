@@ -82,6 +82,7 @@ case "$ncbi_platform" in
     Linux32   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/32/\\1:&," ;;
     Linux64   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&," ;;
 esac
+ncbi_rpath_sed="$ncbi_rpath_sed; s,/vdb-versions/[^/]*/,/,"
 if [ -d /panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software ]; then
     ncbi_rpath_sed="$ncbi_rpath_sed; s,/net/.*/\\(trace_software.*\\),&:/panfs/traces01.be-md.ncbi.nlm.nih.gov/\\1,"
 fi
