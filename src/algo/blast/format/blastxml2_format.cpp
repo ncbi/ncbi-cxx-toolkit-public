@@ -712,7 +712,8 @@ s_WriteXML2Object(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
     xml_out->SetReferenceSchema();
     xml_out->SetUseSchemaLocation(true);
     xml_out->SetEnforcedStdXml();
-    xml_out->SetDefaultSchemaNamespace("http://www.ncbi.nlm.nih.gov/data_specs/schema/");
+    xml_out->SetDTDFilePrefix("http://www.ncbi.nlm.nih.gov/data_specs/schema_alt/");
+    xml_out->SetDefaultSchemaNamespace("http://www.ncbi.nlm.nih.gov");
     xml_out->Write(&bxmlout, typeInfo );
 }
 
