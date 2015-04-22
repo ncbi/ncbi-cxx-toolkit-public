@@ -22,7 +22,7 @@ class ScriptMode:
     LBSMD222 = 2
 
 
-SCRIPT_MODE = ScriptMode.LBSMD222_OLD_CLIENT
+SCRIPT_MODE = ScriptMode.LBSMD222
 
 MAX_OLD_MODE_VALUE = 99
 
