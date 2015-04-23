@@ -39,11 +39,13 @@
 
 USING_NCBI_SCOPE;
 
+#ifdef NCBI_THREADS
 struct SChildThread : CThread
 {
 protected:
     void* Main(void) { SleepSec(10); return NULL; }
 };
+#endif
 
 int main()
 {
@@ -53,11 +55,13 @@ int main()
     SetDiagPostLevel(eDiag_Info);
 
     // Run tests
+#ifdef NCBI_THREADS
     LOG_POST("Trying to daemonize while running a child thread, expecting failure");
     SChildThread* child = new SChildThread;
     child->Run();
     _ASSERT(CProcess::Daemonize() == 0);
     child->Join();
+#endif
 
     LOG_POST("Trying to daemonize at \"/\","
              " expecting failure for the check to continue successfully");
