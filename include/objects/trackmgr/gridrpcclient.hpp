@@ -267,10 +267,12 @@ protected:
         // to a human-readable string.
         if (job_handler.WaitForJobCompletion(job, deadline, m_NS_api) == CNetScheduleAPI::eDone) {
             // TODO The job has completed successfully.
+            CPerfLogGuard pl("x_GetJobReply read reply");
             CStringOrBlobStorageReader reader(job.output, m_NC_api);
             CRStream rstr(&reader);
             auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
             *instr >> reply;
+            pl.Post(CRequestStatus::e200_Ok);
         }
         else {
             // TODO Check 'status' to see if the job's still running or
@@ -307,7 +309,7 @@ protected:
                 }
             }
         } while (!deadline.IsExpired() && !_job_ids.empty());
-        pl.Post(CRequestStatus::e200_Ok, kEmptyStr);
+        pl.Post(CRequestStatus::e200_Ok);
     }
 
     template <class TReply>
