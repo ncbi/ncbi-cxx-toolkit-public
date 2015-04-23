@@ -110,6 +110,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
@@ -811,7 +812,7 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*nuc);
     CSeq_feat_Handle fh = scope.GetSeq_featHandle(*cds);
 
-    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);
     BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
     scope.RemoveTopLevelSeqEntry(seh);
 
@@ -822,7 +823,7 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     
     seh = scope.AddTopLevelSeqEntry(*nuc);
     fh = scope.GetSeq_featHandle(*cds);
-    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);
     BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
     scope.RemoveTopLevelSeqEntry(seh);
 
@@ -835,7 +836,7 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     seh = scope.AddTopLevelSeqEntry(*entry);
     CBioseq_Handle n_bsh = scope.GetBioseqHandle(*nuc_id);
     fh = scope.GetSeq_featHandle(*cds);
-    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);
     BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == n_bsh.GetSeq_entry_Handle());
     scope.RemoveTopLevelSeqEntry(seh);
 
@@ -847,11 +848,11 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
 
     seh = scope.AddTopLevelSeqEntry(*entry);
     fh = scope.GetSeq_featHandle(*cds);
-    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), true);
+    BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), true);
     BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
 
     // can't promote again
-    BOOST_CHECK_EQUAL(edit::PromoteCDSToNucProtSet(fh), false);
+    BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);
 
     // after demotion, should go back to nucleotide sequence
     n_bsh = scope.GetBioseqHandle(*nuc_id);

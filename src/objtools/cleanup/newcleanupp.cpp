@@ -44,6 +44,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
@@ -8271,6 +8272,24 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
         ChangeMade (CCleanupChange::eConvertFeature);
     }
 }
+
+
+void CNewCleanup_imp::x_MoveCDSFromNucAnnotToSetAnnot( CBioseq_set &set )
+{
+    if (set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(*(set.GetParentEntry()));
+        SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+        CFeat_CI fi(seh, sel);
+        while (fi) {
+            CSeq_feat_Handle fh = fi->GetSeq_feat_Handle();
+            if (feature::PromoteCDSToNucProtSet(fh)) {
+                ChangeMade (CCleanupChange::eMoveFeat);
+            }
+            ++fi;
+        }
+    }
+}
+
 
 void CNewCleanup_imp::x_CleanupStringMarkChanged( std::string &str )
 {

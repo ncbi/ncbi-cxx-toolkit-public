@@ -422,6 +422,8 @@ private:
     void x_MoveSeqdescOrgToSourceOrg( CSeqdesc &seqdesc );
     void x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat );
 
+    void x_MoveCDSFromNucAnnotToSetAnnot( CBioseq_set &set );
+
     // string cleanup funcs
     void x_CleanupStringMarkChanged( std::string &str );
     void x_CleanupStringJunkMarkChanged( std::string &str );

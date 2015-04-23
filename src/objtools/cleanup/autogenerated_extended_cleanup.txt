@@ -92,6 +92,8 @@ use m_NewCleanup.x_RemoveEmptyFeatures
     Seq-annot
 }
 
+use m_NewCleanup.x_MoveCDSFromNucAnnotToSetAnnot { Bioseq-set }
+
 use m_NewCleanup.x_RemoveEmptyFeatureTables
 {
     Bioseq,

@@ -507,6 +507,11 @@ typedef enum {
 /// @return enumerated return value indicates frame is good or either endpoint is bad
 ELocationInFrame NCBI_XOBJUTIL_EXPORT IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc& loc);
 
+/// Promotes coding region from Seq-annot on nucleotide sequence to Seq-annot
+/// on nuc-prot-set if necessary and appropriate
+/// @param orig_feat coding region feature [in]
+/// @return enumerated return value indicates whether a change was made
+NCBI_XOBJUTIL_EXPORT bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat);
 
 END_SCOPE(feature)
 END_SCOPE(objects)
