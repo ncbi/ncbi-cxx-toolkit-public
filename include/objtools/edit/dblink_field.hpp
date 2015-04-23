@@ -105,12 +105,12 @@ public:
     static void SetSRA(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
     static void SetAssembly(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
 
-    static vector<string> GetBioSample(CUser_object& obj);
-    static vector<string> GetBioProject(CUser_object& obj);
-    static vector<string> GetTrace(CUser_object& obj);
-    static vector<string> GetProbeDB(CUser_object& obj);
-    static vector<string> GetSRA(CUser_object& obj);
-    static vector<string> GetAssembly(CUser_object& obj);
+    static vector<string> GetBioSample(const CUser_object& obj);
+    static vector<string> GetBioProject(const CUser_object& obj);
+    static vector<string> GetTrace(const CUser_object& obj);
+    static vector<string> GetProbeDB(const CUser_object& obj);
+    static vector<string> GetSRA(const CUser_object& obj);
+    static vector<string> GetAssembly(const CUser_object& obj);
 
     CDBLink& SetBioSample(const string& val, EExistingText existing_text = eExistingText_replace_old);
     CDBLink& SetBioProject(const string& val, EExistingText existing_text = eExistingText_replace_old);

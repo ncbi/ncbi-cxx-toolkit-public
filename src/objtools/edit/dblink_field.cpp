@@ -565,42 +565,42 @@ CDBLink& CDBLink::SetAssembly(const string& val, EExistingText existing_text)
 }
 
 
-vector<string> CDBLink::GetBioSample(CUser_object& obj)
+vector<string> CDBLink::GetBioSample(const CUser_object& obj)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_BioSample);
     return field.GetVals(obj);
 }
 
 
-vector<string> CDBLink::GetBioProject(CUser_object& obj)
+vector<string> CDBLink::GetBioProject(const CUser_object& obj)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_BioProject);
     return field.GetVals(obj);
 }
 
 
-vector<string> CDBLink::GetTrace(CUser_object& obj)
+vector<string> CDBLink::GetTrace(const CUser_object& obj)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_Trace);
     return field.GetVals(obj);
 }
 
 
-vector<string> CDBLink::GetProbeDB(CUser_object& obj)
+vector<string> CDBLink::GetProbeDB(const CUser_object& obj)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_ProbeDB);
     return field.GetVals(obj);
 }
 
 
-vector<string> CDBLink::GetSRA(CUser_object& obj)
+vector<string> CDBLink::GetSRA(const CUser_object& obj)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_SRA);
     return field.GetVals(obj);
 }
 
 
-vector<string> CDBLink::GetAssembly(CUser_object& obj)
+vector<string> CDBLink::GetAssembly(const CUser_object& obj)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_Assembly);
     return field.GetVals(obj);
