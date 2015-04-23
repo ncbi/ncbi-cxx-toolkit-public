@@ -1,0 +1,97 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region 1000000 1 10000
+1000000	GenInfo	gene	1	10001	.	+	.	ID=gene0;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=protein_coding
+1000000	GenInfo	mRNA	1	4001	.	+	.	ID=rna0;Parent=gene0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	1	4001	.	+	.	ID=id0;Parent=rna0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	1	4001	.	+	0	ID=cds0;Parent=rna0;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	mRNA	5001	9001	.	+	.	ID=rna1;Parent=gene0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	5001	9001	.	+	.	ID=id1;Parent=rna1;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	5001	9001	.	+	0	ID=cds1;Parent=rna1;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	gene	10001	20001	.	+	.	ID=gene1;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=classRNA
+1000000	GenInfo	mRNA	10001	14001	.	+	.	ID=rna2;Parent=gene1;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	10001	14001	.	+	.	ID=id2;Parent=rna2;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	10001	14001	.	+	0	ID=cds2;Parent=rna2;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	mRNA	15001	19001	.	+	.	ID=rna3;Parent=gene1;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	15001	19001	.	+	.	ID=id3;Parent=rna3;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	15001	19001	.	+	0	ID=cds3;Parent=rna3;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	ncRNA	19001	19501	.	+	.	ID=rna4;Parent=gene1;gbkey=ncRNA;gene=MSS-346;ncrna_class=classRNA
+1000000	GenInfo	exon	19001	19501	.	+	.	ID=id4;Parent=rna4;gbkey=ncRNA;gene=MSS-346;ncrna_class=classRNA
+1000000	GenInfo	gene	20001	30001	.	+	.	ID=gene2;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=ncRNA
+1000000	GenInfo	mRNA	20001	24001	.	+	.	ID=rna5;Parent=gene2;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	20001	24001	.	+	.	ID=id5;Parent=rna5;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	20001	24001	.	+	0	ID=cds4;Parent=rna5;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	mRNA	25001	29001	.	+	.	ID=rna6;Parent=gene2;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	25001	29001	.	+	.	ID=id6;Parent=rna6;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	25001	29001	.	+	0	ID=cds5;Parent=rna6;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	ncRNA	29001	29501	.	+	.	ID=rna7;Parent=gene2;gbkey=ncRNA;gene=MSS-346;ncrna_class=other
+1000000	GenInfo	exon	29001	29501	.	+	.	ID=id7;Parent=rna7;gbkey=ncRNA;gene=MSS-346;ncrna_class=other
+1000000	GenInfo	gene	30001	40001	.	+	.	ID=gene3;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=J_segment
+1000000	GenInfo	mRNA	30001	34001	.	+	.	ID=rna8;Parent=gene3;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	30001	34001	.	+	.	ID=id8;Parent=rna8;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	30001	34001	.	+	0	ID=cds6;Parent=rna8;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	mRNA	35001	39001	.	+	.	ID=rna9;Parent=gene3;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	35001	39001	.	+	.	ID=id9;Parent=rna9;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	35001	39001	.	+	0	ID=cds7;Parent=rna9;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	J_gene_segment	39001	39501	.	+	.	ID=id10;Parent=gene3;gbkey=J_segment;gene=MSS-346
+1000000	GenInfo	exon	39001	39501	.	+	.	ID=id11;Parent=id10;gbkey=J_segment;gene=MSS-346
+1000000	GenInfo	gene	40001	50001	.	+	.	ID=gene4;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=transcribed_pseudogene
+1000000	GenInfo	mRNA	40001	44001	.	+	.	ID=rna10;Parent=gene4;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	40001	44001	.	+	.	ID=id12;Parent=rna10;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	40001	44001	.	+	0	ID=cds8;Parent=rna10;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	mRNA	45001	49001	.	+	.	ID=rna11;Parent=gene4;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	45001	49001	.	+	.	ID=id13;Parent=rna11;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	45001	49001	.	+	0	ID=cds9;Parent=rna11;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	transcript	49001	49501	.	+	.	ID=rna12;Parent=gene4;gbkey=misc_RNA;gene=MSS-346;pseudo=true
+1000000	GenInfo	exon	49001	49501	.	+	.	ID=id14;Parent=rna12;gbkey=misc_RNA;gene=MSS-346;pseudo=true
+1000000	GenInfo	gene	50001	60001	.	+	.	ID=gene5;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=J_segment_pseudogene
+1000000	GenInfo	mRNA	50001	54001	.	+	.	ID=rna13;Parent=gene5;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	50001	54001	.	+	.	ID=id15;Parent=rna13;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	50001	54001	.	+	0	ID=cds10;Parent=rna13;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	mRNA	55001	59001	.	+	.	ID=rna14;Parent=gene5;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	55001	59001	.	+	.	ID=id16;Parent=rna14;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	55001	59001	.	+	0	ID=cds11;Parent=rna14;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	J_gene_segment	59001	59501	.	+	.	ID=id17;Parent=gene5;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	exon	59001	59501	.	+	.	ID=id18;Parent=id17;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	gene	60001	70001	.	+	.	ID=gene6;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=other
+1000000	GenInfo	J_gene_segment	60001	64001	.	+	.	ID=id19;Parent=gene6;gbkey=J_segment;gene=MSS-346
+1000000	GenInfo	exon	60001	64001	.	+	.	ID=id20;Parent=id19;gbkey=J_segment;gene=MSS-346
+1000000	GenInfo	transcript	65001	69001	.	+	.	ID=rna15;Parent=gene6;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	exon	65001	69001	.	+	.	ID=id21;Parent=rna15;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	J_gene_segment	69001	69501	.	+	.	ID=id22;Parent=gene6;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	exon	69001	69501	.	+	.	ID=id23;Parent=id22;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	gene	70001	80001	.	+	.	ID=gene7;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=segment
+1000000	GenInfo	mRNA	70001	72001	.	+	.	ID=rna16;Parent=gene7;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	70001	72001	.	+	.	ID=id24;Parent=rna16;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	70001	72001	.	+	0	ID=cds12;Parent=rna16;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
+1000000	GenInfo	mRNA	72001	74001	.	+	.	ID=rna17;Parent=gene7;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	72001	74001	.	+	.	ID=id25;Parent=rna17;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	72001	74001	.	+	0	ID=cds13;Parent=rna17;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	J_gene_segment	79001	79501	.	+	.	ID=id26;Parent=gene7;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	exon	79001	79501	.	+	.	ID=id27;Parent=id26;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	transcript	79001	79201	.	+	.	ID=rna18;Parent=gene7;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	exon	79001	79201	.	+	.	ID=id28;Parent=rna18;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	gene	80001	90001	.	+	.	ID=gene8;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=segment_pseudogene
+1000000	GenInfo	mRNA	80001	82001	.	+	.	ID=rna19;Parent=gene8;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	80001	82001	.	+	.	ID=id29;Parent=rna19;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	80001	82001	.	+	0	ID=cds14;Parent=rna19;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	mRNA	82001	84001	.	+	.	ID=rna20;Parent=gene8;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	82001	84001	.	+	.	ID=id30;Parent=rna20;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	82001	84001	.	+	0	ID=cds15;Parent=rna20;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	J_gene_segment	89001	89501	.	+	.	ID=id31;Parent=gene8;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	exon	89001	89501	.	+	.	ID=id32;Parent=id31;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	transcript	89001	89201	.	+	.	ID=rna21;Parent=gene8;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	exon	89001	89201	.	+	.	ID=id33;Parent=rna21;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	gene	90001	100001	.	+	.	ID=gene9;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=pseudogene
+1000000	GenInfo	mRNA	90001	92001	.	+	.	ID=rna22;Parent=gene9;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	90001	92001	.	+	.	ID=id34;Parent=rna22;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	90001	92001	.	+	0	ID=cds16;Parent=rna22;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	mRNA	92001	94001	.	+	.	ID=rna23;Parent=gene9;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	92001	94001	.	+	.	ID=id35;Parent=rna23;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	92001	94001	.	+	0	ID=cds17;Parent=rna23;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
+1000000	GenInfo	J_gene_segment	99001	99501	.	+	.	ID=id36;Parent=gene9;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	exon	99001	99501	.	+	.	ID=id37;Parent=id36;gbkey=J_segment;gene=MSS-346;pseudo=true
+1000000	GenInfo	transcript	99001	99201	.	+	.	ID=rna24;Parent=gene9;gbkey=misc_RNA;gene=MSS-346
+1000000	GenInfo	exon	99001	99201	.	+	.	ID=id38;Parent=rna24;gbkey=misc_RNA;gene=MSS-346
+###

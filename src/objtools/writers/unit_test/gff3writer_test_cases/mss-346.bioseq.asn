@@ -1,0 +1,723 @@
+Bioseq ::= {
+  id {
+    gi 1000000 
+  },
+  inst {
+    repr raw ,
+    mol dna ,
+    length 10000 
+  },
+  annot {
+    {
+      data ftable {
+
+        -- ------------------------------------------------------------------
+        -- 1a 
+        -- If there is at least one non-pseudo CDS child without a 
+        -- except-text="rearrangement required for product" qualifier then 
+        -- gene_biotype qualifier is "protein_coding".
+        -- ------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 0 ,
+            to 10000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 0 ,
+            to 4000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 5000 ,
+            to 9000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 0 ,
+            to 4000 ,
+            id gi 1000000  
+          } ,
+          except-text "rearrangement required for product"
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 5000 ,
+            to 9000 ,
+            id gi 1000000  
+          } 
+        } ,
+
+        -- ---------------------------------------------------------------------
+        -- 2a 
+        -- If the only feature type present in vecOthers is ncRNA and at least one  
+        -- of the members is non-pseudo then look at CLASS=RNA-ref.ext.gen.class. 
+        -- If CLASS=="other", then gene_biotype="ncRNA". 
+        -- If not, then gene_biotype=<CLASS>.
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 10000 ,
+            to 20000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 10000 ,
+            to 14000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 15000 ,
+            to 19000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data rna {
+            type ncRNA ,
+            ext gen {
+              class "classRNA"
+            }
+          } ,
+          location int {
+            from 19000 ,
+            to 19500 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 10000 ,
+            to 14000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 15000 ,
+            to 19000 ,
+            id gi 1000000  
+          } ,
+          except-text "rearrangement required for product"
+        } ,
+
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 20000 ,
+            to 30000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 20000 ,
+            to 24000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 25000 ,
+            to 29000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data rna {
+            type ncRNA ,
+            ext gen {
+              class "other"
+            }
+          } ,
+          location int {
+            from 29000 ,
+            to 29500 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 20000 ,
+            to 24000 ,
+            id gi 1000000  
+          } ,
+          except-text "rearrangement required for product"
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 25000 ,
+            to 29000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        } ,
+
+        -- ---------------------------------------------------------------------
+        -- 2b
+        -- If still here and all members of vecOthers are of the same feature type 
+        -- FTYPE and at least one of the members is non-pseudo, then 
+        -- gene_biotype=<FTYPE>
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 30000 ,
+            to 40000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 30000 ,
+            to 34000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 35000 ,
+            to 39000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 39000 ,
+            to 39500 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 30000 ,
+            to 34000 ,
+            id gi 1000000  
+          } ,
+          except-text "rearrangement required for product"
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 35000 ,
+            to 39000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        } ,
+
+        -- ---------------------------------------------------------------------
+        -- 2c
+        -- If all members of vecOthers are of type miscRNA (and also all pseudo 
+        -- or we would no longer be here) then 
+        -- gene_biotype="transcribed_pseudogene".
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 40000 ,
+            to 50000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 40000 ,
+            to 44000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 45000 ,
+            to 49000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data rna {
+            type miscRNA
+          } ,
+          location int {
+            from 49000 ,
+            to 49500 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 40000 ,
+            to 44000 ,
+            id gi 1000000  
+          } ,
+          except-text "rearrangement required for product"
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 45000 ,
+            to 49000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+
+        -- ---------------------------------------------------------------------
+        -- 2d
+        -- If all members of vecOthers are of the same feature type FTYPE (and 
+        -- also all pseudo or we would no longer be here) then 
+        -- gene_biotype=<FTYPE>"-pseudogene".
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 50000 ,
+            to 60000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 50000 ,
+            to 54000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 55000 ,
+            to 59000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 59000 ,
+            to 59500 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 50000 ,
+            to 54000 ,
+            id gi 1000000  
+          } ,
+          pseudo FALSE ,
+          except-text "rearrangement required for product"
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 55000 ,
+            to 59000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+
+        -- ---------------------------------------------------------------------
+        -- 3a
+        -- If there are no CDS children then gene_biotype="other".
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 60000 ,
+            to 70000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 60000 ,
+            to 64000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data rna {
+            type miscRNA
+          } ,
+          location int {
+            from 65000 ,
+            to 69000 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 69000 ,
+            to 69500 ,
+            id gi 1000000  
+          }, 
+          pseudo TRUE
+        },
+
+        -- ---------------------------------------------------------------------
+        -- 3b
+        -- If at least one member of vecCds with "except-text=rearrangement 
+        -- required for product" then gene_biotype="segment" for pseudo=FALSE 
+        -- and gene_biotype="segment_pseudogene" for pseudo=TRUE.
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 70000 ,
+            to 80000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 70000 ,
+            to 72000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 70000 ,
+            to 72000 ,
+            id gi 1000000  
+          } ,
+          pseudo FALSE,
+          except-text "rearrangement required for product"
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 72000 ,
+            to 74000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 72000 ,
+            to 74000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data rna {
+            type miscRNA
+          } ,
+          location int {
+            from 79000 ,
+            to 79200 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 79000 ,
+            to 79500 ,
+            id gi 1000000  
+          }, 
+          pseudo TRUE
+        },
+
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 80000 ,
+            to 90000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 80000 ,
+            to 82000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 80000 ,
+            to 82000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE,
+          except-text "rearrangement required for product"
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 82000 ,
+            to 84000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 82000 ,
+            to 84000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data rna {
+            type miscRNA
+          } ,
+          location int {
+            from 89000 ,
+            to 89200 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 89000 ,
+            to 89500 ,
+            id gi 1000000  
+          }, 
+          pseudo TRUE
+        },
+
+
+        -- ---------------------------------------------------------------------
+        -- 3c
+        -- If every single one of the tests above fails then
+        -- gene_biotype="pseudogene".
+        -- ---------------------------------------------------------------------
+        {
+          data gene {
+            locus "MSS-346"
+          },
+          location int {
+            from 90000 ,
+            to 100000 ,
+            id gi 1000000 
+          } 
+        }, 
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 90000 ,
+            to 92000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 90000 ,
+            to 92000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data rna {
+            type mRNA
+          } ,
+          location int {
+            from 92000 ,
+            to 94000 ,
+            id gi 1000000 
+          } 
+        },
+        {
+          data cdregion {
+            frame one
+          },
+          product whole gi 1000000 ,
+          location int {
+            from 92000 ,
+            to 94000 ,
+            id gi 1000000  
+          } ,
+          pseudo TRUE
+        },
+        {
+          data rna {
+            type miscRNA
+          } ,
+          location int {
+            from 99000 ,
+            to 99200 ,
+            id gi 1000000  
+          } 
+        },
+        {
+          data imp {
+            key "J_segment"
+          } ,
+          location int {
+            from 99000 ,
+            to 99500 ,
+            id gi 1000000  
+          }, 
+          pseudo TRUE
+        }
+      } 
+    } 
+  }
+} 
