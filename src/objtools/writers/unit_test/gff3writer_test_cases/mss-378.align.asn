@@ -1,0 +1,122 @@
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 1000000,
+    genomic-id gi 100000000,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 641,
+        product-end nucpos 801,
+        genomic-start 4084438,
+        genomic-end 4084598,
+        parts {
+          match 161
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 802
+  },
+
+  -- simple case: one id, of type string
+  id {
+    str "efd22dc2-36ab-4d46-a42c-c0000000000"
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 1000001,
+    genomic-id gi 100000001,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 641,
+        product-end nucpos 801,
+        genomic-start 4084438,
+        genomic-end 4084598,
+        parts {
+          match 161
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 802
+  },
+
+  -- two ids, use first string type id
+  id {
+    id 10000,
+    str "efd22dc2-36ab-4d46-a42c-c0000000001"
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 1000001,
+    genomic-id gi 100000001,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 641,
+        product-end nucpos 801,
+        genomic-start 4084438,
+        genomic-end 4084598,
+        parts {
+          match 161
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 802
+  }
+  -- no ids supplied at all: make something up
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 1000001,
+    genomic-id gi 100000001,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 641,
+        product-end nucpos 801,
+        genomic-start 4084438,
+        genomic-end 4084598,
+        parts {
+          match 161
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 802
+  },
+
+  -- no string id: make something up
+  id {
+    id 10000,
+    id 10001
+  }
+}

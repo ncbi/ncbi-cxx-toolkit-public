@@ -624,8 +624,21 @@ bool CGff3Writer::xWriteAlign(
     
     string id = alignId;
     if (id.empty()) {
+        if (align.IsSetId()) {
+            const CSeq_align::TId& ids = align.GetId();
+            for (CSeq_align::TId::const_iterator it = ids.begin();
+                    it != ids.end(); ++it) {
+                if ((*it)->IsStr()) {
+                    id = (*it)->GetStr();
+                    break;
+                }
+            }
+        }
+    }
+    if (id.empty()) {
         id = xNextAlignId();
     }
+
     switch(align.GetSegs().Which()) {
         default:
             break;

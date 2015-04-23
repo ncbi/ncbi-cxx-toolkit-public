@@ -1,0 +1,11 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+AAADJ0036087.1	PDB	match	4084439	4084599	.	-	.	ID=efd22dc2-36ab-4d46-a42c-c0000000000;Target=1ANH_B 642 802 +
+###
+AAADJ0036088.1	PDB	match	4084439	4084599	.	-	.	ID=efd22dc2-36ab-4d46-a42c-c0000000001;Target=1CGF_A 642 802 +
+###
+AAADJ0036088.1	PDB	match	4084439	4084599	.	-	.	ID=aln0;Target=1CGF_A 642 802 +
+###
+AAADJ0036088.1	PDB	match	4084439	4084599	.	-	.	ID=aln1;Target=1CGF_A 642 802 +
+###
