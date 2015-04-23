@@ -302,6 +302,12 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         pWriter->WriteHeader();
         pWriter->WriteAlign(*pAlign);
         pWriter->WriteFooter();
+        while (!pI->EndOfData()) {
+            *pI >> *pAlign;
+            pWriter->WriteHeader();
+            pWriter->WriteAlign(*pAlign);
+            pWriter->WriteFooter();
+        }
     }
     else if (testInfo.mObjType == "bioseq") {
         CRef<CBioseq> pBioseq(new CBioseq);
