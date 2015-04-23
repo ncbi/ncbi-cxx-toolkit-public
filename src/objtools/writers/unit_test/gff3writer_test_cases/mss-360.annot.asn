@@ -1,0 +1,159 @@
+Seq-annot ::= {
+  id {
+    local str "NM_020451.2"
+  },
+  data ftable {
+    {
+      data gene {
+        locus "MSS-346"
+      },
+      location int {
+        from 0 ,
+        to 10000 ,
+        id gi 1000000 
+      } 
+    }, 
+
+    -- expected: GFF3 strand "+"
+    {
+      data rna {
+        type mRNA
+      } ,
+      location int {
+        from 0 ,
+        to 1000 ,
+        id gi 1000000 
+      } 
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 0 ,
+        to 1000 ,
+        id gi 1000000  
+      }
+    },
+
+    -- expected: GFF3 strand "+"
+    {
+      data rna {
+        type mRNA
+      } ,
+      location int {
+        from 1000 ,
+        to 2000 ,
+        strand plus,
+        id gi 1000000 
+      } 
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1000 ,
+        to 2000 ,
+        strand plus,
+        id gi 1000000  
+      }
+    },
+
+    -- expected: GFF3 strand "-"
+    {
+      data rna {
+        type mRNA
+      } ,
+      location int {
+        from 2000 ,
+        to 3000 ,
+        strand minus,
+        id gi 1000000 
+      } 
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 2000 ,
+        to 3000 ,
+        strand minus,
+        id gi 1000000  
+      }
+    },
+
+    -- expected: GFF3 strand "."
+    {
+      data rna {
+        type mRNA
+      } ,
+      location int {
+        from 3000 ,
+        to 4000 ,
+        strand both,
+        id gi 1000000 
+      } 
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 3000 ,
+        to 4000 ,
+        strand both,
+        id gi 1000000  
+      }
+    },
+
+    -- expected: GFF3 strand "."
+    {
+      data rna {
+        type mRNA
+      } ,
+      location int {
+        from 4000 ,
+        to 5000 ,
+        strand both-rev,
+        id gi 1000000 
+      } 
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 4000 ,
+        to 5000 ,
+        strand both-rev,
+        id gi 1000000  
+      }
+    },
+
+    -- expected: GFF3 strand "+"
+    {
+      data rna {
+        type mRNA
+      } ,
+      location int {
+        from 5000 ,
+        to 6000 ,
+        strand unknown,
+        id gi 1000000 
+      } 
+    },
+    {
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 5000 ,
+        to 6000 ,
+        strand unknown,
+        id gi 1000000  
+      }
+    }
+  }
+}

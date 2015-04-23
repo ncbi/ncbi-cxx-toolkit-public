@@ -1,0 +1,23 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+1ANH_B	GenInfo	gene	1	10001	.	+	.	ID=gene0;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=other
+1000000	GenInfo	mRNA	1	1001	.	+	.	ID=rna0;Parent=gene0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	1	1001	.	+	.	ID=id0;Parent=rna0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	1	1001	.	+	0	ID=cds0;Parent=rna0;gbkey=CDS;gene=MSS-346
+1000000	GenInfo	mRNA	1001	2001	.	+	.	ID=rna1;Parent=gene0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	1001	2001	.	+	.	ID=id1;Parent=rna1;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	1001	2001	.	+	0	ID=cds1;Parent=rna1;gbkey=CDS;gene=MSS-346
+1000000	GenInfo	mRNA	2001	3001	.	-	.	ID=rna2;gbkey=mRNA
+1000000	GenInfo	exon	2001	3001	.	-	.	ID=id2;Parent=rna2;gbkey=mRNA
+1000000	GenInfo	CDS	2001	3001	.	-	0	ID=cds2;Parent=rna2;gbkey=CDS
+1000000	GenInfo	mRNA	3001	4001	.	.	.	ID=rna3;Parent=gene0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	3001	4001	.	.	.	ID=id3;Parent=rna3;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	3001	4001	.	.	0	ID=cds3;Parent=rna3;gbkey=CDS;gene=MSS-346
+1000000	GenInfo	mRNA	4001	5001	.	.	.	ID=rna4;gbkey=mRNA
+1000000	GenInfo	exon	4001	5001	.	.	.	ID=id4;Parent=rna4;gbkey=mRNA
+1000000	GenInfo	CDS	4001	5001	.	.	0	ID=cds4;Parent=rna4;gbkey=CDS
+1000000	GenInfo	mRNA	5001	6001	.	+	.	ID=rna5;Parent=gene0;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	exon	5001	6001	.	+	.	ID=id5;Parent=rna5;gbkey=mRNA;gene=MSS-346
+1000000	GenInfo	CDS	5001	6001	.	+	0	ID=cds5;Parent=rna5;gbkey=CDS;gene=MSS-346
+###
