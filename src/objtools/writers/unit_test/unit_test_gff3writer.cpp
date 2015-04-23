@@ -127,7 +127,8 @@ public:
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
         // assign object type contained in test input
-        if (sObjType == "align"  ||  sObjType == "annot"  ||  sObjType == "entry") {
+        if (sObjType == "align"  ||  sObjType == "annot"  ||  
+                sObjType == "entry"  ||  sObjType == "bioseq") {
             test_info_to_load.mObjType = sObjType;
         }
         else {
@@ -215,6 +216,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         pWriter->WriteAlign(*pAlign);
         pWriter->WriteFooter();
     }
+    else if (test_type == "bioseq") {
+        CRef<CBioseq> pBioseq(new CBioseq);
+        *pI >> *pBioseq;
+        CBioseq_Handle bsh = pScope->AddBioseq(*pBioseq);
+        pWriter->WriteHeader();
+        pWriter->WriteBioseqHandle(bsh);
+        pWriter->WriteFooter();
+    }
     delete pWriter;
     ofstr.flush();
 
@@ -292,6 +301,14 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         *pI >> *pAlign;
         pWriter->WriteHeader();
         pWriter->WriteAlign(*pAlign);
+        pWriter->WriteFooter();
+    }
+    else if (testInfo.mObjType == "bioseq") {
+        CRef<CBioseq> pBioseq(new CBioseq);
+        *pI >> *pBioseq;
+        CBioseq_Handle bsh = pScope->AddBioseq(*pBioseq);
+        pWriter->WriteHeader();
+        pWriter->WriteBioseqHandle(bsh);
         pWriter->WriteFooter();
     }
     delete pWriter;
