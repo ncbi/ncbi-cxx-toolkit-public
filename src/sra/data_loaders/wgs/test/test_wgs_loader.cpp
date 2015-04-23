@@ -58,14 +58,34 @@ USING_SCOPE(objects);
 
 #define PILEUP_NAME_SUFFIX " pileup graphs"
 
-#define REPORT_GENERAL_ID_ERROR 2 // 0 - never, 1 - every 5th day, 2 - always
-NCBI_PARAM_DECL(int, WGS, REPORT_GENERAL_ID_ERROR);
-NCBI_PARAM_DEF(int, WGS, REPORT_GENERAL_ID_ERROR, 0);
+// 0 - never, 1 - every 5th day, 2 - always
+#define DEFAULT_REPORT_GENERAL_ID_ERROR 1
+#define DEFAULT_REPORT_SEQ_STATE_ERROR 1
 
-static int GetReportGeneralIdError(void)
+NCBI_PARAM_DECL(int, WGS, REPORT_GENERAL_ID_ERROR);
+NCBI_PARAM_DEF(int, WGS, REPORT_GENERAL_ID_ERROR,
+               DEFAULT_REPORT_GENERAL_ID_ERROR);
+NCBI_PARAM_DECL(int, WGS, REPORT_SEQ_STATE_ERROR);
+NCBI_PARAM_DEF(int, WGS, REPORT_SEQ_STATE_ERROR,
+               DEFAULT_REPORT_SEQ_STATE_ERROR);
+
+static bool GetReportError(int report_level)
+{
+    // optionally report error only when day of month is divisible by 5
+    return ( (report_level >= 2) ||
+             (report_level == 1 && CTime(CTime::eCurrent).Day() % 5 == 0) );
+}
+
+static bool GetReportGeneralIdError(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(WGS, REPORT_GENERAL_ID_ERROR)> s_Value;
-    return s_Value->Get();
+    return GetReportError(s_Value->Get());
+}
+
+static bool GetReportSeqStateError(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(WGS, REPORT_SEQ_STATE_ERROR)> s_Value;
+    return GetReportError(s_Value->Get());
 }
 
 enum EMasterDescrType
@@ -208,7 +228,8 @@ bool sx_EqualGeneralId(const CSeq_id& gen1, const CSeq_id& gen2)
     return false;
 }
 
-bool sx_EqualDelta(const CDelta_ext& delta1, const CDelta_ext& delta2)
+bool sx_EqualDelta(const CDelta_ext& delta1, const CDelta_ext& delta2,
+                   bool report_error = false)
 {
     if ( delta1.Equals(delta2) ) {
         return true;
@@ -230,23 +251,32 @@ bool sx_EqualDelta(const CDelta_ext& delta1, const CDelta_ext& delta2)
     CSeqVector sv1 = bh1.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
     CSeqVector sv2 = bh2.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
     if ( sv1.size() != sv2.size() ) {
-        NcbiCout << "Lengths are different: "
-                 << sv1.size() << " != " << sv2.size()
-                 << NcbiEndl;
+        if ( report_error ) {
+            NcbiCout << "ERROR: Lengths are different: "
+                     << "WGS: " << sv1.size() << " != "
+                     << "GB: " << sv2.size()
+                     << NcbiEndl;
+        }
         return false;
     }
     for ( CSeqVector_CI it1 = sv1.begin(), it2 = sv2.begin();
           it1 && it2; ++it1, ++it2 ) {
         if ( it1.IsInGap() != it2.IsInGap() ) {
-            NcbiCout << "Gaps are different @ "<<it1.GetPos()<<": "
-                     << it1.IsInGap() << " != " << it2.IsInGap()
-                     << NcbiEndl;
+            if ( report_error ) {
+                NcbiCout << "ERROR: Gaps are different @ "<<it1.GetPos()<<": "
+                         << "WGS: " << it1.IsInGap() << " != "
+                         << "GB: " << it2.IsInGap()
+                         << NcbiEndl;
+            }
             return false;
         }
         if ( *it1 != *it2 ) {
-            NcbiCout << "Bases are different @ "<<it1.GetPos()<<": "
-                     << int(*it1) << " != " << int(*it2)
-                     << NcbiEndl;
+            if ( report_error ) {
+                NcbiCout << "ERROR: Bases are different @ "<<it1.GetPos()<<": "
+                         << "WGS: " << int(*it1) << " != "
+                         << "GB: " << int(*it2)
+                         << NcbiEndl;
+            }
             return false;
         }
     }
@@ -341,9 +371,6 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     CRef<CSeq_entry> annot2 = sx_ExtractAnnot(bh2);
     CConstRef<CBioseq> seq1 = bh1.GetCompleteBioseq();
     CConstRef<CBioseq> seq2 = bh2.GetCompleteBioseq();
-    if ( seq1->Equals(*seq2) ) {
-        return true;
-    }
     CRef<CBioseq> nseq1(SerialClone(*seq1));
     CRef<CBioseq> nseq2(SerialClone(*seq2));
     CRef<CSeq_id> gen1 = sx_ExtractGeneralId(*nseq1);
@@ -355,12 +382,15 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     nseq1->ResetAnnot();
     nseq2->ResetAnnot();
     if ( !nseq1->Equals(*nseq2) ) {
-        NcbiCout << "Sequences do not match:\n"
-                 << "Seq1: " << MSerial_AsnText << *seq1
-                 << "Seq2: " << MSerial_AsnText << *seq2;
+        NcbiCout << "Seq-id: " << bh1.GetAccessSeq_id_Handle() << NcbiEndl;
+        NcbiCout << "ERROR: Sequences do not match:\n"
+                 << "WGS: " << MSerial_AsnText << *seq1
+                 << "GB: " << MSerial_AsnText << *seq2;
         return false;
     }
     bool has_delta_error = false;
+    bool has_state_error = false;
+    bool report_state_error = false;
     bool has_id_error = false;
     bool report_id_error = false;
     bool has_descr_error = false;
@@ -382,12 +412,7 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     }
     else if ( gen1 && !sx_EqualGeneralId(*gen1, *gen2) ) {
         has_id_error = true;
-        // report general id error only when day of month divides by 5
-        int report = GetReportGeneralIdError();
-        if ( (report > 1) ||
-             (report == 1 && CTime(CTime::eCurrent).Day() % 5 == 0) ) {
-            report_id_error = true;
-        }
+        report_id_error = GetReportGeneralIdError();
     }
     if ( !descr1->Equals(*descr2) ) {
         has_descr_error = true;
@@ -395,30 +420,24 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     if ( !annot1->Equals(*annot2) ) {
         has_annot_error = true;
     }
-    bool has_error =
-        has_delta_error || has_id_error || has_descr_error || has_annot_error;
-    if ( !has_error ) {
-        return true;
+    if ( bh1.GetState() != bh2.GetState() ) {
+        has_state_error = true;
+        report_state_error = GetReportSeqStateError();
     }
-    if ( has_delta_error ) {
-        NcbiCout << "Delta sequences do not match:\n";
-        NcbiCout << "Seq1: ";
-        if ( !delta1 ) {
-            NcbiCout << "null\n";
-        }
-        else {
-            NcbiCout << MSerial_AsnText << *delta1;
-        }
-        NcbiCout << "Seq2: ";
-        if ( !delta2 ) {
-            NcbiCout << "null\n";
-        }
-        else {
-            NcbiCout << MSerial_AsnText << *delta2;
-        }
+    if ( has_state_error || has_id_error ||
+         has_descr_error || has_descr_error || has_annot_error ) {
+        NcbiCout << "Seq-id: " << bh1.GetAccessSeq_id_Handle() << NcbiEndl;
+    }
+    if ( has_state_error ) {
+        NcbiCout << (report_state_error? "ERROR": "WARNING")
+                 << ": States do not match:"
+                 << " WGS: " << bh1.GetState()
+                 << " GB: " << bh2.GetState()
+                 << NcbiEndl;
     }
     if ( has_id_error ) {
-        NcbiCout << "General ids do no match:\n";
+        NcbiCout << (report_id_error? "ERROR": "WARNING")
+                 << ": General ids do no match:\n";
         NcbiCout << "Id1: ";
         if ( !gen1 ) {
             NcbiCout << "null\n";
@@ -435,16 +454,38 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
         }
     }
     if ( has_descr_error ) {
-        NcbiCout << "Descriptors do no match:\n";
-        NcbiCout << "Descr1: " << MSerial_AsnText << *descr1;
-        NcbiCout << "Descr2: " << MSerial_AsnText << *descr2;
+        NcbiCout << "ERROR: Descriptors do no match:\n";
+        NcbiCout << "WGS: " << MSerial_AsnText << *descr1;
+        NcbiCout << "GB: " << MSerial_AsnText << *descr2;
+    }
+    if ( has_delta_error ) {
+        NcbiCout << "ERROR: Delta sequences do not match:\n";
+        NcbiCout << "WGS: ";
+        if ( delta1 && delta2 ) {
+            // report errors
+            sx_EqualDelta(*delta1, *delta2, true);
+        }
+        if ( !delta1 ) {
+            NcbiCout << "null\n";
+        }
+        else {
+            NcbiCout << MSerial_AsnText << *delta1;
+        }
+        NcbiCout << "GB: ";
+        if ( !delta2 ) {
+            NcbiCout << "null\n";
+        }
+        else {
+            NcbiCout << MSerial_AsnText << *delta2;
+        }
     }
     if ( has_annot_error ) {
-        NcbiCout << "Annotations do no match:\n";
-        NcbiCout << "Annot1: " << MSerial_AsnText << *annot1;
-        NcbiCout << "Annot2: " << MSerial_AsnText << *annot2;
+        NcbiCout << "ERROR: Annotations do no match:\n";
+        NcbiCout << "WGS: " << MSerial_AsnText << *annot1;
+        NcbiCout << "GB: " << MSerial_AsnText << *annot2;
     }
-    return !has_error;
+    return !report_id_error && !report_state_error &&
+        !has_delta_error && !has_descr_error && !has_annot_error;
 }
 
 bool sx_EqualToGB(const CBioseq_Handle& bh)
@@ -1052,6 +1093,43 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
         }
     }
     NcbiCout << "Scanned in "<<sw.Elapsed() << NcbiEndl;
+}
+
+
+BOOST_AUTO_TEST_CASE(StateTest)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CDBB01000001"));
+    BOOST_REQUIRE(bh);
+    /*
+    NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
+             << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
+             << NcbiEndl;
+    */
+    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011"));
+    BOOST_REQUIRE(bh);
+    /*
+    NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
+             << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
+             << NcbiEndl;
+    */
+    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("JPNT01000001"));
+    BOOST_REQUIRE(bh);
+    /*
+    NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
+             << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
+             << NcbiEndl;
+    */
+    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 }
 
 
