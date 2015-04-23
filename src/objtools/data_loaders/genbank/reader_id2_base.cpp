@@ -1695,9 +1695,9 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
             sx_CheckErrorFlag(error, error_flags,
                               fError_suppressed_perm, "suppressed");
             sx_CheckErrorFlag(error, error_flags,
-                              fError_suppressed_temp, "superseded"); // perm?
-            sx_CheckErrorFlag(error, error_flags,
                               fError_suppressed_perm, "superceded"); // temp?
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_suppressed_temp, "superseded"); // perm?
         }
         break;
     case CID2_Error::eSeverity_failed_command:
@@ -1763,9 +1763,12 @@ CId2ReaderBase::x_GetMessageError(const CID2_Reply& reply)
 }
 
 
-static CReader::TBlobState x_GetBlobStateFromID2(int id2_state)
+CReader::TBlobState
+CId2ReaderBase::x_GetBlobStateFromID2(const CBlob_id& blob_id,
+                                      SId2LoadedSet& loaded_set,
+                                      int id2_state)
 {
-    CReader::TBlobState blob_state = 0;
+    TBlobState blob_state = 0;
     if ( id2_state & (1<<eID2_Blob_State_suppressed_temp) ) {
         blob_state |= CBioseq_Handle::fState_suppress_temp;
     }
@@ -1781,15 +1784,26 @@ static CReader::TBlobState x_GetBlobStateFromID2(int id2_state)
     if ( id2_state & (1<<eID2_Blob_State_withdrawn) ) {
         blob_state |= CBioseq_Handle::fState_withdrawn;
     }
+    if ( blob_state ) {
+        loaded_set.m_BlobStates[blob_id] |= blob_state;
+    }
     return blob_state;
 }
 
 
 
 CReader::TBlobState
-CId2ReaderBase::x_GetBlobState(const CID2_Reply& reply,
+CId2ReaderBase::x_GetBlobState(const CBlob_id& blob_id,
+                               SId2LoadedSet& loaded_set,
+                               const CID2_Reply& reply,
                                TErrorFlags* errors_ptr)
 {
+    SId2LoadedSet::TBlobStates::const_iterator it =
+        loaded_set.m_BlobStates.find(blob_id);
+    if ( it != loaded_set.m_BlobStates.end() ) {
+        return it->second;
+    }
+
     TBlobState blob_state = 0;
     TErrorFlags errors = x_GetMessageError(reply);
     if ( errors_ptr ) {
@@ -1807,11 +1821,11 @@ CId2ReaderBase::x_GetBlobState(const CID2_Reply& reply,
     if ( errors & fError_warning_dead ) {
         blob_state |= CBioseq_Handle::fState_dead;
     }
-    if ( errors & fError_suppressed_temp ) {
-        blob_state |= CBioseq_Handle::fState_suppress_temp;
-    }
     if ( errors & fError_suppressed_perm ) {
         blob_state |= CBioseq_Handle::fState_suppress_perm;
+    }
+    else if ( errors & fError_suppressed_temp ) {
+        blob_state |= CBioseq_Handle::fState_suppress_temp;
     }
     return blob_state;
 }
@@ -2097,10 +2111,17 @@ void CId2ReaderBase::x_ProcessGetBlobId(
 {
     const CSeq_id& seq_id = reply.GetSeq_id();
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
+    const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
+    CBlob_id blob_id = GetBlobId(src_blob_id);
     TErrorFlags errors = 0;
-    TBlobState blob_state = reply.IsSetBlob_state()?
-        x_GetBlobStateFromID2(reply.GetBlob_state()):
-        x_GetBlobState(main_reply, &errors);
+    TBlobState blob_state;
+    if ( reply.IsSetBlob_state() ) {
+        blob_state = x_GetBlobStateFromID2(blob_id, loaded_set,
+                                           reply.GetBlob_state());
+    }
+    else {
+        blob_state = x_GetBlobState(blob_id, loaded_set, main_reply, &errors);
+    }
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         SetAndSaveNoSeq_idBlob_ids(result, idh, 0, blob_state);
         return;
@@ -2111,8 +2132,6 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     
     SId2LoadedSet::TBlob_idsInfo& ids = loaded_set.m_Blob_ids[idh];
     ids.first |= blob_state;
-    const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
-    CBlob_id blob_id = GetBlobId(src_blob_id);
     if ( blob_state ) {
         loaded_set.m_BlobStates[blob_id] |= blob_state;
     }
@@ -2200,9 +2219,14 @@ void CId2ReaderBase::x_ProcessGetBlob(
         SetAndSaveBlobVersion(result, blob_id, blob_version);
     }
 
-    TBlobState blob_state = reply.IsSetBlob_state()?
-        x_GetBlobStateFromID2(reply.GetBlob_state()):
-        x_GetBlobState(main_reply);
+    TBlobState blob_state;
+    if ( reply.IsSetBlob_state() ) {
+        blob_state = x_GetBlobStateFromID2(blob_id, loaded_set,
+                                           reply.GetBlob_state());
+    }
+    else {
+        blob_state = x_GetBlobState(blob_id, loaded_set, main_reply);
+    }
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;
@@ -2323,16 +2347,14 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
         }
     }
 
-    TBlobState blob_state = reply.IsSetBlob_state()?
-        x_GetBlobStateFromID2(reply.GetBlob_state()):
-        x_GetBlobState(main_reply);
-    {{
-        SId2LoadedSet::TBlobStates::iterator iter =
-            loaded_set.m_BlobStates.find(blob_id);
-        if ( iter != loaded_set.m_BlobStates.end() ) {
-            blob_state |= iter->second;
-        }
-    }}
+    TBlobState blob_state;
+    if ( reply.IsSetBlob_state() ) {
+        blob_state = x_GetBlobStateFromID2(blob_id, loaded_set,
+                                           reply.GetBlob_state());
+    }
+    else {
+        blob_state = x_GetBlobState(blob_id, loaded_set, main_reply);
+    }
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;

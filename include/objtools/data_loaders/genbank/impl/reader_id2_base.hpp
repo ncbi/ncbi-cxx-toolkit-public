@@ -199,7 +199,12 @@ protected:
     TErrorFlags x_GetError(CReaderRequestResult& result,
                            const CID2_Reply& reply);
     TErrorFlags x_GetMessageError(const CID2_Reply& reply);
-    TBlobState x_GetBlobState(const CID2_Reply& reply,
+    TBlobState x_GetBlobStateFromID2(const CBlob_id& blob_id,
+                                     SId2LoadedSet& loaded_set,
+                                     int id2_state);
+    TBlobState x_GetBlobState(const CBlob_id& blob_id,
+                              SId2LoadedSet& loaded_set,
+                              const CID2_Reply& reply,
                               TErrorFlags* errors_ptr = 0);
 
     void x_ProcessReply(CReaderRequestResult& result,
