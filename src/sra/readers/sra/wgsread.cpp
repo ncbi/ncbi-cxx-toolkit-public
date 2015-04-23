@@ -1264,7 +1264,7 @@ void sx_MakeGap(CDelta_seq& seg,
         }
         CLinkage_evidence::TType type = CLinkage_evidence::eType_paired_ends;
         NCBI_WGS_gap_linkage bit = NCBI_WGS_gap_linkage_evidence_paired_ends;
-        for ( ; bit <= gap_linkage; bit<<=1, ++type ) {
+        for ( ; bit && bit <= gap_linkage; bit<<=1, ++type ) {
             if ( gap_linkage & bit ) {
                 sx_AddEvidence(gap, type);
             }
