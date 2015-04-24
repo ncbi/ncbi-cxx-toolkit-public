@@ -215,6 +215,12 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         pWriter->WriteHeader();
         pWriter->WriteAlign(*pAlign);
         pWriter->WriteFooter();
+        while (!pI->EndOfData()) {
+            *pI >> *pAlign;
+            pWriter->WriteHeader();
+            pWriter->WriteAlign(*pAlign);
+            pWriter->WriteFooter();
+        }
     }
     else if (test_type == "bioseq") {
         CRef<CBioseq> pBioseq(new CBioseq);
