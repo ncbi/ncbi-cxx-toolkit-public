@@ -490,9 +490,12 @@ void CFeatTableEdit::GenerateLocusTags()
     CFeat_CI itGenes(mHandle, selGenes);
     for ( ; itGenes; ++itGenes) {
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
-            (itGenes)->GetOriginalFeature()));
-        feh.RemoveQualifier("locus_tag");
-		feh.AddQualifier("locus_tag", xNextLocusTag());
+            itGenes->GetOriginalFeature()));
+        CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
+        pEditedFeat->Assign(itGenes->GetOriginalFeature());
+        pEditedFeat->RemoveQualifier("locus_tag");
+        pEditedFeat->SetData().SetGene().SetLocus_tag(xNextLocusTag());
+		feh.Replace(*pEditedFeat);
 	}
 	SAnnotSelector selOther;
 	selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
