@@ -8154,8 +8154,7 @@ Suspect-rule-set ::= {
         is-all-lower FALSE ,
         is-all-punct FALSE ,
         ignore-weasel TRUE } } ,
-    rule-type might-be-nonfunctional,
-    fatal TRUE } ,
+    rule-type might-be-nonfunctional } ,
   {
     find
       string-constraint {
@@ -8198,8 +8197,7 @@ Suspect-rule-set ::= {
         is-all-lower FALSE ,
         is-all-punct FALSE ,
         ignore-weasel FALSE } ,
-    rule-type might-be-nonfunctional,
-    fatal TRUE } ,
+    rule-type might-be-nonfunctional } ,
   {
     find
       string-constraint {
@@ -8259,8 +8257,7 @@ Suspect-rule-set ::= {
         is-all-lower FALSE ,
         is-all-punct FALSE ,
         ignore-weasel FALSE } ,
-    rule-type might-be-nonfunctional,
-    fatal TRUE } ,
+    rule-type might-be-nonfunctional } ,
   {
     find
       string-constraint {
