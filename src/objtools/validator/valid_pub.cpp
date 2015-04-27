@@ -611,7 +611,7 @@ bool CValidError_imp::HasTitle(const CTitle& title)
         default:
             break;
         };
-        if ( !NStr::IsBlank(*str) ) {
+        if ( str != NULL && !NStr::IsBlank(*str) ) {
             return true;
         }
     }
