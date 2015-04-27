@@ -80,24 +80,19 @@ private:
     CChainerImpl(CRef<CHMMParameters>& hmm_params, auto_ptr<CGnomonEngine>& gnomon);
     void SetGenomicRange(const TAlignModelList& alignments);
     void SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignments);
-    void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
 
     void FilterOutChimeras(TGeneModelList& clust);
-    void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);
-    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust);
-    void ReplicateFrameShifts(TGeneModelList& models);
-
 
     TGeneModelList MakeChains(TGeneModelList& models);
     void FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains);
     void CombineCompatibleChains(TChainList& chains);
     void SetFlagsForChains(TChainList& chains);
-    SChainMember* FindOptimalChainForProtein(vector<SChainMember*>& pointers_all, vector<CGeneModel*>& parts, CGeneModel& palign);
-    void CreateChainsForPartialProteins(TChainList& chains, vector<SChainMember*>& pointers);
-
+    SChainMember* FindOptimalChainForProtein(TContained& pointers_all, vector<CGeneModel*>& parts, CGeneModel& palign);
+    void CreateChainsForPartialProteins(TChainList& chains, TContained& pointers, TGeneModelList& unma_aligns, CChainMembers& unma_members);
     void CutParts(TGeneModelList& clust);
+    bool CanIncludeJinI(const SChainMember& mi, const SChainMember& mj);
     void IncludeInContained(SChainMember& big, SChainMember& small);
-    void FindContainedAlignments(vector<SChainMember*>& pointers);
+    void FindContainedAlignments(TContained& pointers);
     void DuplicateNotOriented(CChainMembers& pointers, TGeneModelList& clust);
     void Duplicate5pendsAndShortCDSes(CChainMembers& pointers, TGeneModelList& clust);
     void ReplicatePStops(CChainMembers& pointers);
@@ -106,15 +101,13 @@ private:
     void CalculateSpliceWeights(CChainMembers& pointers);
     bool LRCanChainItoJ(int& delta_cds, double& delta_num, double& delta_splice_num, const SChainMember& mi, const SChainMember& mj, TContained& contained);
     void LRIinit(SChainMember& mi);
-    void LeftRight(vector<SChainMember*>& pointers);
-    void RightLeft(vector<SChainMember*>& pointers);
+    void LeftRight(TContained& pointers);
+    void RightLeft(TContained& pointers);
     double GoodCDNAScore(const CGeneModel& algn);
     void RemovePoorCds(CGeneModel& algn, double minscor);
     void SkipReason(CGeneModel* orig_align, const string& comment);
     bool AddIfCompatible(set<SFShiftsCluster>& fshift_clusters, const CGeneModel& algn);
     bool FsTouch(const TSignedSeqRange& lim, const CInDelInfo& fs);
-    void AddFShifts(TGeneModelList& clust, const TInDels& fshifts);
-    void CollectFShifts(const TGeneModelList& clust, TInDels& fshifts);
     void SplitAlignmentsByStrand(const TGeneModelList& clust, TGeneModelList& clust_plus, TGeneModelList& clust_minus);
 
     void FindGeneSeeds(list<CGene>& alts, TChainPointerList& not_placed_yet); 
@@ -167,15 +160,9 @@ private:
     friend class CChainerArgUtil;
 };
 
-CGnomonAnnotator_Base::CGnomonAnnotator_Base()
-    : m_masking(false), m_edited_contig_map(0)
-{
-}
+CGnomonAnnotator_Base::CGnomonAnnotator_Base() : m_masking(false) { }
 
-CGnomonAnnotator_Base::~CGnomonAnnotator_Base()
-{
-    delete m_edited_contig_map;
-}
+CGnomonAnnotator_Base::~CGnomonAnnotator_Base(){ }
 
 void CGnomonAnnotator_Base::EnableSeqMasking()
 {
@@ -568,21 +555,6 @@ bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
     return has_common_splice;
 }
 
-int NumOfRetainedIntrons(const CGeneModel& under_test, const CGeneModel& control_model)
-{
-    int num = 0;
-    for(int i = 1; i < (int)control_model.Exons().size(); ++i) {
-        if(control_model.Exons()[i-1].m_ssplice && control_model.Exons()[i].m_fsplice) {
-            TSignedSeqRange intron(control_model.Exons()[i-1].GetTo()+1,control_model.Exons()[i].GetFrom()-1);
-            ITERATE(CGeneModel::TExons, test_exon, under_test.Exons()) {
-                if(Include(test_exon->Limits(), intron))
-                    ++num;
-            }
-        }
-    } 
-    return num;
-}
-
 static bool DescendingModelOrder(const CChain& a, const CChain& b)
 {
     if (!a.Support().empty() && b.Support().empty())
@@ -810,14 +782,19 @@ void CChainer::CChainerImpl::ReplacePseudoGeneSeeds(list<CGene>& alts, TChainPoi
 
         list<list<CGene>::iterator> included_in;
         list<CGene*> possibly_nested;   // genes which 'could' become nested
+        list<CGene*> nested_in;
 
         bool good_model = true;
         for(list<CGene>::iterator itl = alts.begin(); good_model && itl != alts.end(); ++itl) {
             ECompat cmp = CheckCompatibility(*itl, algn);
 
             switch(cmp) {
+            case eNested:
+                nested_in.push_back(&(*itl));
+                break;
             case eExternal:
                 possibly_nested.push_back(&(*itl));  // already created gene is nested in this model
+                break;
             case eOtherGene:
                 break;
             case eAlternative:
@@ -834,7 +811,7 @@ void CChainer::CChainerImpl::ReplacePseudoGeneSeeds(list<CGene>& alts, TChainPoi
             }
         }
 
-        if(!good_model || included_in.size() != 1 || !possibly_nested.empty() || !(algn.Status()&CGeneModel::ecDNAIntrons))
+        if(!good_model || included_in.size() != 1 || (!(algn.Status()&CGeneModel::ecDNAIntrons) && algn.TrustedmRNA().empty() && algn.TrustedProt().empty()))
             continue;
         
         CGene& gene = *included_in.front();
@@ -851,8 +828,18 @@ void CChainer::CChainerImpl::ReplacePseudoGeneSeeds(list<CGene>& alts, TChainPoi
         algn.AddComment("Replacing pseudo "+NStr::NumericToString(model.ID()));
 #endif 
         not_placed_yet.push_back(gene.front()); // position doesn't matter - will go to 'bad' models 
+        gene.RemoveGeneFromOtherGenesSets();
         gene = CGene();
         gene.Insert(algn);
+        ITERATE(list<CGene*>, itl, nested_in) {
+            gene.AddToNestedIn(*itl); 
+            (*itl)->AddToHarbored(&gene);
+        }
+        ITERATE(list<CGene*>, itl, possibly_nested) {
+            (*itl)->AddToNestedIn(&gene);
+            gene.AddToHarbored(*itl);
+        }
+
         not_placed_yet.erase(it);
     }
 }
@@ -1683,14 +1670,6 @@ struct ScoreOrder
     }
 };
 
-static bool s_ScoreOrder(const CGeneModel& a, const CGeneModel& b)
-    {
-        if (a.Score() == b.Score())
-            return a.ID() < b.ID(); // to make sort deterministic
-        else
-            return a.Score() > b.Score();
-    }
-
 template <class C>
 void uniq(C& container)
 {
@@ -1708,6 +1687,7 @@ public:
     void InsertMemberCopyWithoutCds(SChainMember* copy_ofp);
     void InsertMember(SChainMember& m, SChainMember* copy_ofp = 0); 
     void DuplicateUTR(SChainMember* copy_ofp); 
+    void SpliceFromOther(CChainMembers& other);
 private:
     CChainMembers(const CChainMembers& object) { }
     CChainMembers& operator=(const CChainMembers& object) { return *this; }    
@@ -1717,6 +1697,15 @@ private:
     list<TContained> m_containedlist;
     list<CCDSInfo> m_extra_cds;
 };
+
+void CChainMembers::SpliceFromOther(CChainMembers& other) {
+    m_members.splice(m_members.end(),other.m_members);
+    m_copylist.splice(m_copylist.end(),other.m_copylist);
+    m_align_maps.splice(m_align_maps.end(),other.m_align_maps);
+    m_containedlist.splice(m_containedlist.end(),other.m_containedlist);
+    m_extra_cds.splice(m_extra_cds.end(),other.m_extra_cds);
+    insert(end(),other.begin(),other.end());
+}
 
 void CChainMembers::InsertMemberCopyWithCds(const CCDSInfo& cds, SChainMember* copy_ofp) {
 
@@ -1833,14 +1822,12 @@ void CChainer::CutParts(TGeneModelList& models)
     m_data->CutParts(models);
 }
 
-void CChainer::CChainerImpl::CutParts(TGeneModelList& clust) {
-    for(TGeneModelList::iterator iloop = clust.begin(); iloop != clust.end(); ) {
-        TGeneModelList::iterator im = iloop++;
-
+void CChainer::CChainerImpl::CutParts(TGeneModelList& models) {
+    ERASE_ITERATE(TGeneModelList, im, models) {
         TGeneModelList parts = GetAlignParts(*im, true);
         if(!parts.empty()) {
-            clust.splice(clust.begin(),parts);
-            clust.erase(im);            
+            models.splice(models.begin(),parts);
+            models.erase(im);            
         }
     }
 }
@@ -1906,7 +1893,7 @@ void CChainer::CChainerImpl::ReplicatePStops(CChainMembers& pointers)
         CGeneModel& algn = *mbr.m_align;
         TPstopIntron& pstops_with_intron = (algn.Strand() == ePlus) ? pstops_with_intron_plus : pstops_with_intron_minus;
         ITERATE(CCDSInfo::TPStops, s, algn.GetCdsInfo().PStops()) {
-            if(s->m_type == CCDSInfo::eSelenocysteine || s->m_type == CCDSInfo::eGenomeNotCorrect) {
+            if(s->m_status == CCDSInfo::eSelenocysteine || s->m_status == CCDSInfo::eGenomeNotCorrect) {
                 left = min(left,s->GetFrom());
                 right = max(right,s->GetTo());
                 if(s->GetLength() == 3) {
@@ -1956,7 +1943,7 @@ void CChainer::CChainerImpl::ReplicatePStops(CChainMembers& pointers)
             ITERATE(CCDSInfo::TPStops, s, pstops)
                 cds.AddPStop(*s);
             algn.SetCdsInfo(cds);
-        } else {
+        } else if(algn.ReadingFrame().Empty()) {
             CCDSInfo cds;
             const CGeneModel::TExons& exons = algn.Exons(); 
             ITERATE(TPstopIntron, si, pstops_with_intron) {
@@ -2077,10 +2064,88 @@ void CChainer::CChainerImpl::Duplicate5pendsAndShortCDSes(CChainMembers& pointer
     }
 }
 
-void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& pointers) {
+TInDels StrictlyContainedInDels(const TInDels& indels, const TSignedSeqRange& lim) {
+    TInDels fs;
+    ITERATE(TInDels, indl, indels) {
+        if(indl->InDelEnd() > lim.GetFrom() && indl->Loc() <= lim.GetTo())
+            fs.push_back(*indl);
+    }
+    return fs;
+}
+
+bool CChainer::CChainerImpl::CanIncludeJinI(const SChainMember& mi, const SChainMember& mj) {
+    const CGeneModel& ai = *mi.m_align;
+    const CGeneModel& aj = *mj.m_align;
+
+    if(aj.Strand() != ai.Strand() || !Include(ai.Limits(),aj.Limits()))
+        return false;
+
+    if(mi.m_type != eCDS && mj.m_type  != mi.m_type)
+        return false;    // avoid including UTR copy and avoid including CDS into UTR because that will change m_type
+
+    const CCDSInfo& ai_cds_info = *mi.m_cds_info;
+    TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
+    TSignedSeqRange ai_max_cds = ai_cds_info.MaxCdsLimits()&ai.Limits();
+
+    const CCDSInfo& aj_cds_info = *mj.m_cds_info;
+    TSignedSeqRange aj_rf = aj_cds_info.Start()+aj_cds_info.ReadingFrame()+aj_cds_info.Stop();
+
+    if(mi.m_type == eCDS && mj.m_type == eLeftUTR && aj.Limits().GetTo()-ai_max_cds.GetFrom()+1 >= min(6,aj.Limits().GetLength()))  // UTR in CDS
+        return false;
+    if(mi.m_type == eCDS && mj.m_type == eRightUTR && ai_max_cds.GetTo()-aj.Limits().GetFrom()+1 >= min(6,aj.Limits().GetLength()))  // UTR in CDS
+        return false;
+
+    if(aj.FrameShifts() != StrictlyContainedInDels(ai.FrameShifts(), aj.Limits()))    // not compatible frameshifts
+        return false;
+
+    if(mi.m_type == eCDS && mj.m_type == eCDS) { // CDS in CDS
+        TSignedSeqRange max_cds_limits = ai_cds_info.MaxCdsLimits() & aj_cds_info.MaxCdsLimits();
+        if (!Include(max_cds_limits, ExtendedMaxCdsLimits(ai, ai_cds_info) + ExtendedMaxCdsLimits(aj, aj_cds_info)))
+            return false;;
+        if(!Include(ai_rf,aj_rf))
+            return false;
+        
+        if(ai_rf.GetFrom() != aj_rf.GetFrom()) {
+            TSignedSeqPos j_from = mi.m_align_map->MapOrigToEdited(aj_rf.GetFrom());
+            if(j_from < 0)
+                return false;
+            TSignedSeqPos i_from = mi.m_align_map->MapOrigToEdited(ai_rf.GetFrom()); 
+            if(abs(j_from-i_from)%3 != 0)
+                return false;
+        }
+    }
+
+    int iex = ai.Exons().size();
+    int jex = aj.Exons().size();
+    if(jex > iex)
+        return false;
+    if(iex > 1) {                                               // big alignment is spliced     
+        int fex = 0;
+        while(fex < iex && ai.Exons()[fex].GetTo() < aj.Limits().GetFrom()) {
+            ++fex;
+        }
+        if(ai.Exons()[fex].GetFrom() > aj.Limits().GetFrom())   // first aj exon is in ai intron
+            return false;
+
+        if(iex-fex < jex)                                       // not enough exons left in ai
+            return false;
+
+        if(ai.Exons()[fex+jex-1].GetTo() < aj.Limits().GetTo()) // last aj exon is in ai intron
+            return false;
+
+        for(int j = 0; j < jex-1; ++j) {
+            if(aj.Exons()[j].GetTo() != ai.Exons()[fex+j].GetTo() || aj.Exons()[j+1].GetFrom() != ai.Exons()[fex+j+1].GetFrom())  // different intron
+                return false;
+        }
+    }
+
+    return true;
+}
+
+void CChainer::CChainerImpl::FindContainedAlignments(TContained& pointers) {
 
     set<int> left_exon_ends, right_exon_ends;
-    ITERATE(vector<SChainMember*>, ip, pointers) {
+    ITERATE(TContained, ip, pointers) {
         const CGeneModel& algn = *(*ip)->m_align;
         for(int i = 1; i < (int)algn.Exons().size(); ++i) {
             if(algn.Exons()[i-1].m_ssplice && algn.Exons()[i].m_fsplice) {
@@ -2089,7 +2154,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
             }
         }
     }
-    NON_CONST_ITERATE(vector<SChainMember*>, ip, pointers) {
+    NON_CONST_ITERATE(TContained, ip, pointers) {
         SChainMember& mi = **ip;
         CGeneModel& ai = *mi.m_align;
 
@@ -2106,19 +2171,39 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 //  finding contained subalignments (alignment is contained in itself) and selecting longer alignments for chaining
 
     sort(pointers.begin(),pointers.end(),GenomeOrderD());
+    int jfirst = 0;
     for(int i = 0; i < (int)pointers.size(); ++i) {
         SChainMember& mi = *pointers[i];
         CGeneModel& ai = *mi.m_align;
         const CCDSInfo& ai_cds_info = *mi.m_cds_info;
-        TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
 
         // knockdown spliced notconsensus UTRs in reads
         if(mi.m_type != eCDS && (ai.Status()&CGeneModel::eUnknownOrientation) && ai.Exons().size() > 1)
-            mi.m_not_for_chaining = true; 
+            mi.m_not_for_chaining = true;
 
+        //don't use alignments intersection with frameshifts for hiding smaller alignments
+        TSignedSeqRange intersect_with_fs;
+        ITERATE(TInDels, indl, all_frameshifts) {
+            if(indl->InDelEnd() < ai.Limits().GetFrom())
+                continue;
+            else if(indl->Loc() >  ai.Limits().GetTo()+1)
+                break;
+            else {
+                ITERATE(CGeneModel::TExons, e, ai.Exons()) {
+                    if(indl->IntersectingWith(e->GetFrom(), e->GetTo()))
+                        intersect_with_fs += TSignedSeqRange(indl->Loc(), indl->InDelEnd());                    
+                }
+            }
+        }
+
+        if(pointers[jfirst]->m_align->Limits() != ai.Limits())
+            jfirst = i;
+
+        /*
         int jfirst = i;
         while(jfirst > 0 && pointers[jfirst-1]->m_align->Limits() == ai.Limits())
             --jfirst;
+        */
         for(int j = jfirst; j < (int)pointers.size() && pointers[j]->m_align->Limits().GetFrom() < ai.Limits().GetTo(); ++j) {
 
             if(i == j) {
@@ -2128,73 +2213,18 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 
             SChainMember& mj = *pointers[j];
             CGeneModel& aj = *mj.m_align;
-
-            if(aj.Strand() != ai.Strand())
-                continue;
-
-            if(!Include(ai.Limits(),aj.Limits()))
-                continue;
-
-            if(mi.m_type != eCDS && mj.m_type  != mi.m_type)
-                continue;    // avoid including UTR copy and avoid including CDS into UTR because that will change m_type
-
-            TSignedSeqRange ai_max_cds = ai_cds_info.MaxCdsLimits()&ai.Limits();
-            if(mi.m_type == eCDS && mj.m_type == eLeftUTR && aj.Limits().GetTo()-ai_max_cds.GetFrom()+1 >= min(6,aj.Limits().GetLength()))  // UTR in CDS
-                continue;
-            if(mi.m_type == eCDS && mj.m_type == eRightUTR && ai_max_cds.GetTo()-aj.Limits().GetFrom()+1 >= min(6,aj.Limits().GetLength()))  // UTR in CDS
-                continue;
-
             const CCDSInfo& aj_cds_info = *mj.m_cds_info;
-            TSignedSeqRange aj_rf = aj_cds_info.Start()+aj_cds_info.ReadingFrame()+aj_cds_info.Stop();
 
-            if(mi.m_type == eCDS && mj.m_type == eCDS) { // CDS in CDS
-                TSignedSeqRange max_cds_limits = ai_cds_info.MaxCdsLimits() & aj_cds_info.MaxCdsLimits();
-                if (!Include(max_cds_limits, ExtendedMaxCdsLimits(ai, ai_cds_info) + ExtendedMaxCdsLimits(aj, aj_cds_info)))
-                    continue;;
-                if(!Include(ai_rf,aj_rf))
-                    continue;
-
-                if(ai_rf.GetFrom() != aj_rf.GetFrom()) {
-                    TSignedSeqPos j_from = mi.m_align_map->MapOrigToEdited(aj_rf.GetFrom());
-                    if(j_from < 0)
-                        continue;
-                    TSignedSeqPos i_from = mi.m_align_map->MapOrigToEdited(ai_rf.GetFrom()); 
-                    if(abs(j_from-i_from)%3 != 0)
-                        continue;
-                }
-            }
-
-            int iex = ai.Exons().size();
-            int jex = aj.Exons().size();
-            if(jex > iex)
+            if(CanIncludeJinI(mi, mj)) 
+                IncludeInContained(mi, mj);
+            else
                 continue;
-            if(iex > 1) {                                               // big alignment is spliced
-                int fex = 0;
-                while(fex < iex && ai.Exons()[fex].GetTo() < aj.Limits().GetFrom()) {
-                    ++fex;
-                }
-                if(ai.Exons()[fex].GetFrom() > aj.Limits().GetFrom())   // first aj exon is in ai intron
-                    continue;
-
-                if(iex-fex < jex)                                       // not enough exons left in ai
-                    continue;
-
-                if(ai.Exons()[fex+jex-1].GetTo() < aj.Limits().GetTo()) // last aj exon is in ai intron
-                    continue;
-
-                bool compatible = true;
-                for(int j = 0; compatible && j < jex-1; ++j) {
-                    if(aj.Exons()[j].GetTo() != ai.Exons()[fex+j].GetTo() || aj.Exons()[j+1].GetFrom() != ai.Exons()[fex+j+1].GetFrom())  // different intron
-                        compatible = false;
-                }
-                if(!compatible)
-                    continue;
-            }
-
-            IncludeInContained(mi, mj);
 
             if(mi.m_not_for_chaining)
                 continue;
+
+            if(intersect_with_fs.NotEmpty() && !Include(aj.Limits(), intersect_with_fs))
+               continue;
 
             if(mj.m_type  != mi.m_type)
                 continue;
@@ -2269,6 +2299,10 @@ bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, d
     default:             // one or more introns in intersection 
         break;
     }
+
+    TSignedSeqRange overlap = (ai.Limits() & aj.Limits());
+    if(StrictlyContainedInDels(ai.FrameShifts(), overlap) !=  StrictlyContainedInDels(aj.FrameShifts(), overlap))   // incompatible frameshifts
+        return false;
             
     int cds_overlap = 0;
 
@@ -2353,13 +2387,13 @@ void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
     mi.m_fully_connected_to_part = -1;
 }
 
-void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
+void CChainer::CChainerImpl::LeftRight(TContained& pointers)
 {
     sort(pointers.begin(),pointers.end(),LeftOrderD());
     TIVec right_ends(pointers.size());
     for(int k = 0; k < (int)pointers.size(); ++k)
         right_ends[k] = pointers[k]->m_align->Limits().GetTo();
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+    NON_CONST_ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
 
@@ -2368,10 +2402,10 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
         sort(micontained.begin(),micontained.end(),LeftOrderD());
         
         TIVec::iterator lb = lower_bound(right_ends.begin(),right_ends.end(),ai.Limits().GetFrom());
-        vector<SChainMember*>::iterator jfirst = pointers.begin();
+        TContained::iterator jfirst = pointers.begin();
         if(lb != right_ends.end())
             jfirst = pointers.begin()+(lb-right_ends.begin()); // skip all on the left side
-        for(vector<SChainMember*>::iterator j = jfirst; j < i; ++j) {
+        for(TContained::iterator j = jfirst; j < i; ++j) {
             SChainMember& mj = **j;
 
             int delta_cds;
@@ -2403,13 +2437,13 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
     }
 }
 
-void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
+void CChainer::CChainerImpl::RightLeft(TContained& pointers)
 {
     sort(pointers.begin(),pointers.end(),RightOrderD());
     TIVec left_ends(pointers.size());
     for(int k = 0; k < (int)pointers.size(); ++k)
         left_ends[k] = pointers[k]->m_align->Limits().GetFrom();
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+    NON_CONST_ITERATE(TContained, i, pointers) {
     
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
@@ -2426,10 +2460,10 @@ void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
         sort(micontained.begin(),micontained.end(),RightOrderD());
         
         TIVec::iterator lb = lower_bound(left_ends.begin(),left_ends.end(),ai.Limits().GetTo(),greater<int>()); // first potentially intersecting
-        vector<SChainMember*>::iterator jfirst = pointers.begin();
+        TContained::iterator jfirst = pointers.begin();
         if(lb != left_ends.end())
             jfirst = pointers.begin()+(lb-left_ends.begin()); // skip all on thge right side
-        for(vector<SChainMember*>::iterator j = jfirst; j < i; ++j) {
+        for(TContained::iterator j = jfirst; j < i; ++j) {
             SChainMember& mj = **j;
             CGeneModel& aj = *mj.m_align;
 
@@ -2481,6 +2515,10 @@ void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
                 default:             // one or more introns in intersection
                     break;
             }
+
+            TSignedSeqRange overlap = (ai.Limits() & aj.Limits());
+            if(StrictlyContainedInDels(ai.FrameShifts(), overlap) !=  StrictlyContainedInDels(aj.FrameShifts(), overlap))   // incompatible frameshifts
+                continue;
             
             int cds_overlap = 0;
 
@@ -2602,10 +2640,10 @@ bool GoodSupportForIntrons(const CGeneModel& chain, const SMinScor& minscor,
     return good;
 }
 
-void MarkUnwantedLowSupportIntrons(vector<SChainMember*>& pointers, const SMinScor& minscor, 
+void MarkUnwantedLowSupportIntrons(TContained& pointers, const SMinScor& minscor, 
                                    map<TSignedSeqRange,int>& mrna_count, map<TSignedSeqRange,int>& est_count, map<TSignedSeqRange,int>& rnaseq_count) {
 
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) 
+    NON_CONST_ITERATE(TContained, i, pointers) 
         (*i)->m_marked_for_deletion = !GoodSupportForIntrons(*(*i)->m_align, minscor, mrna_count, est_count, rnaseq_count); 
 }
 
@@ -2642,6 +2680,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     ITERATE (TGeneModelList, it, clust) {
         const CGeneModel& align = *it;
+        all_frameshifts.insert(all_frameshifts.end(), align.FrameShifts().begin(), align.FrameShifts().end());
         for(int i = 1; i < (int)align.Exons().size(); ++i) {
             if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
                 TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
@@ -2663,6 +2702,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         }
     }
     has_rnaseq = !rnaseq_count.empty();
+    sort(all_frameshifts.begin(),all_frameshifts.end());
+    if(!all_frameshifts.empty())
+        uniq(all_frameshifts);
 
     NON_CONST_ITERATE (TGeneModelList, it, clust) {
         CGeneModel& align = *it;
@@ -2700,14 +2742,14 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     CalculateSpliceWeights(allpointers);
     FindContainedAlignments(allpointers);
 
-    vector<SChainMember*> pointers;
-    ITERATE(vector<SChainMember*>, ip, allpointers) {
+    TContained pointers;
+    ITERATE(TContained, ip, allpointers) {
         _ASSERT((*ip)->m_orig_align);
         if(!(*ip)->m_not_for_chaining)
             pointers.push_back(*ip);
     }
 
-    vector<SChainMember*> coding_pointers;
+    TContained coding_pointers;
     ITERATE(CChainMembers, i, pointers) {
         if(MemberIsCoding(*i)) 
             coding_pointers.push_back(*i); 
@@ -2715,14 +2757,15 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     LeftRight(coding_pointers);
     RightLeft(coding_pointers);
-    NON_CONST_ITERATE(vector<SChainMember*>, i, coding_pointers) {
+
+    NON_CONST_ITERATE(TContained, i, coding_pointers) {
         SChainMember& mi = **i;
         mi.m_cds = mi.m_left_cds+mi.m_right_cds-mi.m_cds;
         mi.m_splice_num = mi.m_left_splice_num+mi.m_right_splice_num-mi.m_splice_num;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
     }
     sort(coding_pointers.begin(),coding_pointers.end(),CdsNumOrder());
-    NON_CONST_ITERATE(vector<SChainMember*>, i, coding_pointers) {
+    NON_CONST_ITERATE(TContained, i, coding_pointers) {
         SChainMember& mi = **i;
 
         if(mi.m_included) continue;
@@ -2762,7 +2805,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     LeftRight(pointers);
     RightLeft(pointers);
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+    NON_CONST_ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
         mi.m_included = false;
         mi.m_cds = mi.m_left_cds+mi.m_right_cds-mi.m_cds;
@@ -2774,7 +2817,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     TChainList tmp_chains;
 
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+    NON_CONST_ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
         if(mi.m_included || mi.m_postponed) continue;
 
@@ -2810,7 +2853,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         }
     }
 
-    CreateChainsForPartialProteins(tmp_chains, pointers);
+    TGeneModelList unma_aligns;
+    CChainMembers unma_members;
+    CreateChainsForPartialProteins(tmp_chains, pointers, unma_aligns, unma_members);
 
 
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
@@ -2821,7 +2866,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     LeftRight(pointers);
     RightLeft(pointers);
 
-    ITERATE(vector<SChainMember*>, i, pointers) {
+    ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
         mi.m_splice_num = mi.m_left_splice_num+mi.m_right_splice_num-mi.m_splice_num;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
@@ -2830,7 +2875,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     sort(pointers.begin(),pointers.end(),CdsNumOrder());
 
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+    NON_CONST_ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
         if(mi.m_included) continue;
 
@@ -2902,7 +2947,7 @@ struct AlignSeqOrder
     }
 };
 
-SChainMember* CChainer::CChainerImpl::FindOptimalChainForProtein(vector<SChainMember*>& pointers, vector<CGeneModel*>& parts, CGeneModel& palign) {
+SChainMember* CChainer::CChainerImpl::FindOptimalChainForProtein(TContained& pointers, vector<CGeneModel*>& parts, CGeneModel& palign) {
     //    Int8 id = parts.front()->ID();
             
     TIVec right_ends(pointers.size());
@@ -2966,37 +3011,15 @@ SChainMember* CChainer::CChainerImpl::FindOptimalChainForProtein(vector<SChainMe
         int last_included_part = -1;
         bool includes_first_part = false;
         for(int p = part_to_connect+1; p < (int)parts.size(); ++p) {
-            /*            
-            if(Include(ai.Limits(),parts[p]->Limits())) {
-                bool found = false;
-                ITERATE(TContained, ic, micontained) {
-                    if((*ic)->m_align->ID() == id && (*ic)->m_align->Limits() == parts[p]->Limits()) {
-                        found = true;
-                        last_included_part = p;
-                        if(p == 0)
-                            includes_first_part = true;
-                        break;
-                    }
-                }
-                
-                if(found) {
-                    TSignedSeqRange ai_rf = mi.m_cds_info->Cds();
-                    _ASSERT(parts[p]->isCompatible(ai));
-                    _ASSERT(Include(ai_rf,parts[p]->Limits()));
-                    _ASSERT(mi.m_align_map->FShiftedLen(ai_rf.GetFrom(),parts[p]->Limits().GetFrom(),false)%3==0);
-                }
-
-                if(!found) {
-                    compatible_with_included_parts = false;
-                    break;
-                }
-            */
-               
             if(Include(ai.Limits(),parts[p]->Limits())) {
                 TSignedSeqRange ai_rf = mi.m_cds_info->ReadingFrame();
-                TSignedSeqRange aj_rf = parts[p]->ReadingFrame();
-                if(parts[p]->isCompatible(ai) && Include(ai_rf,aj_rf) && mi.m_align_map->FShiftedLen(ai_rf.GetFrom(),aj_rf.GetFrom(),false)%3==1 &&
-                   parts[p]->GetCdsInfo().HasStop() ==  mi.m_cds_info->HasStop() && (!parts[p]->GetCdsInfo().HasStop() || parts[p]->GetCdsInfo().Stop() == mi.m_cds_info->Stop())) {
+                TSignedSeqRange aj_rf = parts[p]->GetCdsInfo().ReadingFrame();
+                TSignedSeqRange ai_cds = mi.m_cds_info->Cds();
+                TSignedSeqRange aj_cds = parts[p]->GetCdsInfo().Cds();
+                bool compatible = (parts[p]->isCompatible(ai) && Include(ai_rf,aj_rf) && mi.m_align_map->FShiftedLen(ai_cds.GetFrom(),aj_cds.GetFrom(),false)%3==1);
+                bool samestop = (parts[p]->GetCdsInfo().HasStop() ==  mi.m_cds_info->HasStop() && (!parts[p]->GetCdsInfo().HasStop() || parts[p]->GetCdsInfo().Stop() == mi.m_cds_info->Stop()));
+                bool samefshifts = (parts[p]->FrameShifts() == StrictlyContainedInDels(ai.FrameShifts(), parts[p]->Limits()));
+                if(compatible && samestop && samefshifts) {
                     last_included_part = p;
                     if(p == 0)
                         includes_first_part = true;
@@ -3005,7 +3028,8 @@ SChainMember* CChainer::CChainerImpl::FindOptimalChainForProtein(vector<SChainMe
                     break;
                 }
             } else if(ai.Limits().IntersectingWith(parts[p]->Limits())) {
-                if(!parts[p]->isCompatible(ai)) {
+                TSignedSeqRange overlap = (ai.Limits() & parts[p]->Limits());
+                if(!parts[p]->isCompatible(ai) || StrictlyContainedInDels(ai.FrameShifts(), overlap) !=  StrictlyContainedInDels(parts[p]->FrameShifts(), overlap)) {
                     compatible_with_included_parts = false;
                     break;
                 }
@@ -3164,7 +3188,7 @@ struct AlignLenOrder
     }    
 };
 
-void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, vector<SChainMember*>& pointers_all) {
+void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, TContained& pointers_all, TGeneModelList& unma_aligns, CChainMembers& unma_members) {
 
     sort(pointers_all.begin(),pointers_all.end(),LeftOrderD());
 
@@ -3217,7 +3241,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
             continue;
 
 
-        vector<SChainMember*> pointers;
+        TContained pointers;
         for(int k = 0; k < (int)pointers_all.size(); ++k) {
             SChainMember* mip = pointers_all[k];
 
@@ -3237,67 +3261,76 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
         best_right->m_right_member = 0;
         CChain chain(*best_right,&palign);
-       
-        if(!chain.Continuous() && unmodified_aligns.find(id) != unmodified_aligns.end()) {  // failed to connect all parts - try unsupported introns if existed
-            CGeneModel unma = unmodified_aligns[id];
-            if(unma.Limits() != palign.Limits())
-                unma.Clip(palign.Limits(),CGeneModel::eRemoveExons);
 
+        if(unmodified_aligns.count(id)) {  // some unmodifies are dleted if interfere with a gap
+            CGeneModel unma = unmodified_aligns[id]; 
+            vector<TSignedSeqRange> new_holes;
             vector<TSignedSeqRange> remaining_holes;
             for(int k = 1; k < (int)chain.Exons().size(); ++k) {
                 CModelExon exonl = chain.Exons()[k-1];
                 CModelExon exonr = chain.Exons()[k];
-                if(!(exonl.m_ssplice && exonr.m_fsplice))
-                    remaining_holes.push_back(TSignedSeqRange(exonl.GetTo()+1,exonr.GetFrom()-1));
-            }
-
-            vector<TSignedSeqRange> existed_holes;
-            for(int k = 1; k < (int)unma.Exons().size(); ++k) {
-                CModelExon exonl = unma.Exons()[k-1];
-                CModelExon exonr = unma.Exons()[k];
-                if(!(exonl.m_ssplice && exonr.m_fsplice))
-                    existed_holes.push_back(TSignedSeqRange(exonl.GetTo()+1,exonr.GetFrom()-1));
-            }
-
-            
-            for(int k = 1; k < (int)palign.Exons().size(); ++k) {   // cut holes which were connected or existed
-                CModelExon exonl = palign.Exons()[k-1];
-                CModelExon exonr = palign.Exons()[k];
                 if(!(exonl.m_ssplice && exonr.m_fsplice)) {
-                    TSignedSeqRange hole(exonl.GetTo()+1,exonr.GetFrom()-1);
-                    bool connected = true;
-                    ITERATE(vector<TSignedSeqRange>, h, remaining_holes) {
-                        _ASSERT(Include(unma.Limits(), *h));
-                        if(Include(hole, *h)) {
-                            connected = false;
+                    TSignedSeqRange h(exonl.GetTo()+1,exonr.GetFrom()-1);
+                    remaining_holes.push_back(h);
+                    for(int piece_begin = 0; piece_begin < (int)unma.Exons().size(); ++piece_begin) {
+                        int piece_end = piece_begin;
+                        for( ; piece_end < (int)unma.Exons().size() && unma.Exons()[piece_end].m_ssplice; ++piece_end);
+                        if(unma.Exons()[piece_begin].GetFrom() < h.GetFrom() && unma.Exons()[piece_end].GetTo() > h.GetTo()) {
+                            new_holes.push_back(h);
                             break;
                         }
+                        piece_begin = piece_end;
                     }
+                }
+            }
+       
+            if(!new_holes.empty()) {  // failed to connect all parts - try unsupported introns
+                CAlignMap umap = unma.GetAlignMap();
+                if(unma.Limits() != palign.Limits()) {
+                    TSignedSeqRange lim = umap.ShrinkToRealPoints(palign.Limits(), true);
+                    unma.Clip(lim,CGeneModel::eRemoveExons);                
+                }
 
-                    bool existed = false;
-                    ITERATE(vector<TSignedSeqRange>, h, existed_holes) {
-                        if(Include(hole, *h)) {
-                            existed = true;
-                            break;
+                vector<TSignedSeqRange> existed_holes;
+                for(int k = 1; k < (int)unma.Exons().size(); ++k) {
+                    CModelExon exonl = unma.Exons()[k-1];
+                    CModelExon exonr = unma.Exons()[k];
+                    if(!(exonl.m_ssplice && exonr.m_fsplice))
+                        existed_holes.push_back(TSignedSeqRange(exonl.GetTo()+1,exonr.GetFrom()-1));
+                }
+
+                for(int k = 1; k < (int)palign.Exons().size(); ++k) {   // cut holes which were connected or existed    
+                    CModelExon exonl = palign.Exons()[k-1];
+                    CModelExon exonr = palign.Exons()[k];
+                    if(!(exonl.m_ssplice && exonr.m_fsplice)) {
+                        TSignedSeqRange hole(exonl.GetTo()+1,exonr.GetFrom()-1);
+                        bool connected = true;
+                        ITERATE(vector<TSignedSeqRange>, h, remaining_holes) {
+                            _ASSERT(Include(unma.Limits(), *h));
+                            if(Include(hole, *h)) {
+                                connected = false;
+                                break;
+                            }
+                        }
+
+                        bool existed = false;
+                        ITERATE(vector<TSignedSeqRange>, h, existed_holes) {
+                            if(Include(hole, *h)) {
+                                existed = true;
+                                break;
+                            }
+                        }
+
+                        if(connected || existed) {
+                            TSignedSeqRange left = umap.ShrinkToRealPoints(TSignedSeqRange(unma.Limits().GetFrom(),hole.GetFrom()-1), true);
+                            TSignedSeqRange right = umap.ShrinkToRealPoints(TSignedSeqRange(hole.GetTo()+1,unma.Limits().GetTo()), true);
+                            if(left.GetTo()+1 == hole.GetFrom() && right.GetFrom()-1 == hole.GetTo())
+                                unma.CutExons(hole);
                         }
                     }
-
-                    if(connected || existed) 
-                        unma.CutExons(hole);
                 }
-            }
-            m_gnomon->GetScore(unma);
-
-
-            TInDels overlapping_fshifts;
-            ITERATE(TInDels, fs, all_frameshifts) {
-                ITERATE(CGeneModel::TExons, e, unma.Exons()) {
-                    if(fs->IntersectingWith(e->GetFrom(),e->GetTo()))
-                        overlapping_fshifts.push_back(*fs);
-                }
-            }
+                m_gnomon->GetScore(unma);
             
-            if(unma.Exons() != palign.Exons() && unma.FrameShifts() == palign.FrameShifts() && unma.FrameShifts() == overlapping_fshifts) {
                 TGeneModelList unmacl;
                 unmacl.push_back(unma);
                 CutParts(unmacl);
@@ -3310,55 +3343,44 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
                 CChainMembers unmapointers(unmacl, orig_aligns, unmodified_aligns);
                 Duplicate5pendsAndShortCDSes(unmapointers, unmacl);
-                FindContainedAlignments(unmapointers);
+                sort(pointers.begin(),pointers.end(),GenomeOrderD());
+                ITERATE(TContained, ip, unmapointers) {
+                    SChainMember& mi = **ip;
+                    IncludeInContained(mi, mi);          // include self                    
+                    ITERATE(TContained, jp, pointers) {
+                        SChainMember& mj = **jp;
+                        if(CanIncludeJinI(mi, mj)) 
+                            IncludeInContained(mi, mj);
+                    }
+                }
                 
-                ITERATE(vector<SChainMember*>, ip, unmapointers) {
+                ITERATE(TContained, ip, unmapointers) {
                     _ASSERT((*ip)->m_orig_align);
-                    (*ip)->m_mem_id = -(*ip)->m_mem_id;   // unique m_mem_id
+                    (*ip)->m_mem_id = -(*ip)->m_mem_id;   // unique m_mem_id    
                     pointers.push_back(*ip);
                 }
                 
                 sort(pointers.begin(),pointers.end(),LeftOrderD());
-
                 best_right = FindOptimalChainForProtein(pointers, unmaparts, unma);
-                CChain tmp_chain(*best_right, &unma);
-
-                // remove connected protein parts which are probably local and unstable  
-                while(best_right != 0 && best_right->m_align->ID() == id) {
-                    best_right = best_right->m_left_member;
-                }
-                for (SChainMember* mp = best_right; mp != 0; ) {
-                    SChainMember* leftm = mp->m_left_member;
-                    if(leftm != 0 && leftm->m_align->ID() == id)  { // remove from chain
-                        mp->m_left_member = leftm->m_left_member;
-                    } else {
-                        mp = leftm;
-                    }
-                }
-                
-                // add protein trimmed parts with stable pointers 
-                ITERATE(vector<SChainMember*>, ip, pointers) {
-                    if((*ip)->m_align->ID() == id && !((*ip)->m_align->Status()&CGeneModel::eUnmodifiedAlign) ) {
-                        const CCDSInfo& ai_cds_info = tmp_chain.GetCdsInfo();
-                        TSignedSeqRange ai_rf = ai_cds_info.Cds();
-                        const CCDSInfo& aj_cds_info = *(*ip)->m_cds_info;
-                        TSignedSeqRange aj_rf = aj_cds_info.Cds();
-                        TSignedSeqRange max_cds_limits = ai_cds_info.MaxCdsLimits() & aj_cds_info.MaxCdsLimits();
-                        if(Include(max_cds_limits, ExtendedMaxCdsLimits(tmp_chain, ai_cds_info) + ExtendedMaxCdsLimits(*(*ip)->m_align, aj_cds_info)) && Include(ai_rf,aj_rf)) {
-                            (*ip)->m_left_member = best_right;
-                            best_right = *ip;
+                ITERATE(TContained, jp, unmapointers) {  // add parts in case they were 'shadowed' by longer or identical alignment 
+                    SChainMember& mj = **jp;
+                    bool present = false;
+                    for(SChainMember* ip = best_right; ip != 0 && !present; ip = ip->m_left_member)
+                        present = ip == &mj;
+                    for(SChainMember* ip = best_right; ip != 0 && !present; ip = ip->m_left_member) {
+                        SChainMember& mi = *ip;
+                        if(CanIncludeJinI(mi, mj)) {
+                            mj.m_left_member = best_right;
+                            best_right = &mj;
+                            break;
                         }
                     }
                 }
-
-                _ASSERT(best_right != 0 && best_right->m_align->ID() == id && !(best_right->m_align->Status()&CGeneModel::eUnmodifiedAlign));
-
-                best_right->m_right_member = 0;
-                CChain new_chain(*best_right, &unma);
-                chain = new_chain;
+                chain = CChain(*best_right, &unma);
+                unma_aligns.splice(unma_aligns.end(), unmacl);
+                unma_members.SpliceFromOther(unmapointers);
             }
         }
-        
 
         m_gnomon->GetScore(chain);
         if(chain.Score() == BadScore())
@@ -3502,25 +3524,28 @@ void CChainer::CChainerImpl::CombineCompatibleChains(TChainList& chains) {
             if(jtt->Status()&CGeneModel::eSkipped)
                 continue;
 
-            if(itt != jtt && itt->Strand() == jtt->Strand() && jtt->IsSubAlignOf(*itt)) {
-                if(itt->ReadingFrame().Empty()) {
-                    if(jtt->ReadingFrame().NotEmpty())
+            if(itt != jtt && itt->Strand() == jtt->Strand() && jtt->IsSubAlignOf(*itt) && itt->ReadingFrame().Empty() == jtt->ReadingFrame().Empty()) {
+                if(itt->ReadingFrame().NotEmpty()) {
+                    if(!Include(jtt->GetCdsInfo().MaxCdsLimits(), itt->GetCdsInfo().MaxCdsLimits()))
+                        continue;               
+                
+                    if(jtt->FrameShifts() != StrictlyContainedInDels(itt->FrameShifts(), jtt->Limits()))
                         continue;
-                } else if(jtt->ReadingFrame().NotEmpty()) {
-                    if(!Include(itt->ReadingFrame(),jtt->ReadingFrame()) ||
-                       (itt->FShiftedLen(itt->GetCdsInfo().Cds().GetFrom(),jtt->GetCdsInfo().Cds().GetFrom(),false)-1)%3 != 0)
+
+                    if((itt->FShiftedLen(itt->GetCdsInfo().Cds().GetFrom(),jtt->GetCdsInfo().Cds().GetFrom(),false)-1)%3 != 0)
                         continue;
-                }
-                CCDSInfo::TPStops jstops = jtt->GetCdsInfo().PStops();
-                bool same_stops = true;
-                ITERATE(CCDSInfo::TPStops, istp, istops) {
-                    if(Include(jtt->Limits(),*istp) && find(jstops.begin(), jstops.end(), *istp) == jstops.end()) {
-                        same_stops = false;
-                        break;
+
+                    CCDSInfo::TPStops jstops = jtt->GetCdsInfo().PStops();
+                    bool same_stops = true;
+                    ITERATE(CCDSInfo::TPStops, istp, istops) {
+                        if(Include(jtt->Limits(),*istp) && find(jstops.begin(), jstops.end(), *istp) == jstops.end()) {
+                            same_stops = false;
+                            break;
+                        }
                     }
+                    if(!same_stops)
+                        continue;
                 }
-                if(!same_stops)
-                    continue;
 
                 TMemberPtrSet support;
                 ITERATE(TContained, i, itt->m_members) {
@@ -3601,9 +3626,11 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
         align.SetCdsInfo(*mi->m_cds_info);
         if(extened_parts.empty() || !align.Limits().IntersectingWith(extened_parts.back().Limits())) {
             extened_parts.push_back(align);
+            _ASSERT(extened_parts.back().Continuous());
             extened_parts_and_gapped.push_back(&extened_parts.back());
         } else {
             extened_parts.back().Extend(align, false);
+            _ASSERT(extened_parts.back().Continuous());
         }
     }
 
@@ -3680,7 +3707,7 @@ void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
     }
 
     for(map<Int8,int>::iterator it = exonnum.begin(); it != exonnum.end(); ++it) {
-        if(it->second == (int)orig_aligns[it->first]->Exons().size()) {   // all exons are included in the chain
+        if(it->second >= (int)orig_aligns[it->first]->Exons().size()) {   // all exons are included in the chain
             Status() |= eBestPlacement;
             break;
         }
@@ -4873,16 +4900,38 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
     ClearTrustedProt();
 
     if(HasStart() && HasStop()) {
-        typedef map<Int8, int> Tint8int;
-        Tint8int palignedlen;
+        typedef map<Int8, set<TSignedSeqRange> > Tint8range;
+        Tint8range aexons;
+        Tint8range uexons;
         ITERATE(TContained, i, m_members) {
             if(IntersectingWith(*(*i)->m_align)) {                                                                   // just in case we clipped this alignment
-                if(!(*i)->m_align->TrustedProt().empty())
-                    palignedlen[(*i)->m_align->ID()] += (*i)->m_align->AlignLen();
+                if(!(*i)->m_align->TrustedProt().empty()) {
+                    ITERATE(TExons, e, (*i)->m_align->Exons()) {
+                        if((*i)->m_mem_id > 0)
+                            aexons[(*i)->m_align->ID()].insert(e->Limits());
+                        else
+                            uexons[(*i)->m_align->ID()].insert(e->Limits());
+                    }
+                }
                 else if(!(*i)->m_align->TrustedmRNA().empty() && (*i)->m_align->ConfirmedStart() && (*i)->m_align->ConfirmedStop())  // trusted mRNA with aligned CDS (correctly checks not duplicated cds)
                     InsertTrustedmRNA(*(*i)->m_align->TrustedmRNA().begin());                                      // could be only one 'part'
             }
         }
+        typedef map<Int8, int> Tint8int;
+        Tint8int palignedlen;
+        ITERATE(Tint8range, i, aexons) {
+            int len = 0;
+            ITERATE(set<TSignedSeqRange>, e, i->second)
+                len += e->GetLength();
+            palignedlen[i->first] = len;
+        }
+        ITERATE(Tint8range, i, uexons) {
+            int len = 0;
+            ITERATE(set<TSignedSeqRange>, e, i->second)
+                len += e->GetLength();
+            palignedlen[i->first] = max(len,palignedlen[i->first]);
+        }
+
         if(ConfirmedStart() && ConfirmedStop()) {
             ITERATE(Tint8int, i, palignedlen) {
                 CAlignModel* orig_align = orig_aligns[i->first];
@@ -5027,6 +5076,9 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
     typedef map<int,TGeneModelClusterSet> TClustersByStrand;
     TClustersByStrand trusted_aligns;
     ITERATE(TGeneModelList, it, clust) {
+        if(it->Status()&CGeneModel::eUnmodifiedAlign)
+            continue;
+
         CAlignModel* orig_align = orig_aligns[it->ID()];
         if(orig_align->Continuous() && (!it->TrustedmRNA().empty() || !it->TrustedProt().empty())
                             && it->AlignLen() > minscor.m_minprotfrac*orig_aligns[it->ID()]->TargetLen()) {
@@ -5063,6 +5115,8 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
 
     for(TGeneModelList::iterator it_loop = clust.begin(); it_loop != clust.end(); ) {
         TGeneModelList::iterator it = it_loop++;
+        if(it->Status()&CGeneModel::eUnmodifiedAlign)
+            continue;
         
         const CGeneModel& align = *it;
         int strand = align.Strand();
@@ -5191,67 +5245,228 @@ Predicate* CChainer::ConnectsParalogs(TAlignModelList& alignments)
 
 void CChainer::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
 {
-    m_data->ScoreCDSes_FilterOutPoorAlignments(clust);
-}
-
-void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
-{
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    const CResidueVec& contig = m_gnomon->GetSeq();
-
-    for(TGeneModelList::iterator itcl = clust.begin(); itcl != clust.end(); ) {
+    ERASE_ITERATE(TGeneModelList, itcl, clust) {
+        if(m_data->orig_aligns.find(itcl->ID()) == m_data->orig_aligns.end()) {
+            clust.erase(itcl);
+            continue;
+        }
 
         CGeneModel& algn = *itcl;
-        CAlignModel* orig = orig_aligns[algn.ID()];
-
         if ((algn.Type() & CGeneModel::eProt)!=0 || algn.ConfirmedStart()) {   // this includes protein alignments and mRNA with confirmed CDSes
 
             m_gnomon->GetScore(algn);
+            double ms = m_data->GoodCDNAScore(algn);
+            CAlignModel* orig = m_data->orig_aligns[algn.ID()];
 
-            if(algn.PStop()) {
-                CAlignMap amap = algn.GetAlignMap();
-                CAlignMap origmap = orig->GetAlignMap();
-                CResidueVec mrna;
-                amap.EditedSequence(contig, mrna);
-                CSeqVector protein_seqvec(scope.GetBioseqHandle(*orig->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
-                CCDSInfo::TPStops pstops = algn.GetCdsInfo().PStops();
-                bool selenocysteine = false;
-                NON_CONST_ITERATE(CCDSInfo::TPStops, stp, pstops) {
-                    TSignedSeqRange tstop = amap.MapRangeOrigToEdited(*stp,false);
-                    if(tstop.GetLength() == 3 && mrna[tstop.GetFrom()] == 'T' && mrna[tstop.GetFrom()+1] == 'G' && mrna[tstop.GetFrom()+2] == 'A') {
-                        TSignedSeqRange ostop = origmap.MapRangeOrigToEdited(*stp,false);
-                        if(ostop.GetLength() == 3 && protein_seqvec[ostop.GetFrom()/3] == 'U') {
-                            selenocysteine = true;
-                            stp->m_type = CCDSInfo::eSelenocysteine;
-                        }
-                    }
-                }
-                if(selenocysteine) {
-                    CCDSInfo cds = algn.GetCdsInfo();
-                    cds.ClearPStops();
-                    ITERATE(CCDSInfo::TPStops, stp, pstops)
-                        cds.AddPStop(*stp);
-                    algn.SetCdsInfo(cds);
-                }
-            }
-
-            double ms = GoodCDNAScore(algn);
-
-            if (algn.Score() == BadScore() || (algn.Score() < ms && (algn.Type()&CGeneModel::eProt) && !(algn.Status()&CGeneModel::eBestPlacement) && orig->AlignLen() < minscor.m_minprotfrac*orig->TargetLen())) { // all mRNA with confirmed CDS and best placed or reasonably aligned proteins with known length will get through with any finite score 
+            if (algn.Score() == BadScore() || (algn.Score() < ms && (algn.Type()&CGeneModel::eProt) && !(algn.Status()&CGeneModel::eBestPlacement) && orig->AlignLen() < m_data->minscor.m_minprotfrac*orig->TargetLen())) { // all mRNA with confirmed CDS and best placed or reasonably aligned proteins with known length will get through with any finite score 
                 CNcbiOstrstream ost;
                 if(algn.AlignLen() <= 75)
                     ost << "Short alignment " << algn.AlignLen();
                 else
                     ost << "Low score " << algn.Score();
-                SkipReason(orig, CNcbiOstrstreamToString(ost));
-                itcl = clust.erase(itcl);
-                continue;
+                m_data->SkipReason(orig, CNcbiOstrstreamToString(ost));
+                clust.erase(itcl);
             }
         }
-        ++itcl;
     }
-}   
+} 
+
+#define PROT_CLIP 120
+#define PROT_CLIP_FRAC 0.20
+
+void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) {
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    const CResidueVec& contig = m_gnomon->GetSeq();
+    
+    ERASE_ITERATE(TGeneModelList, itcl, clust) {
+        if(!(itcl->Type()&CGeneModel::eProt) || m_data->orig_aligns.find(itcl->ID()) == m_data->orig_aligns.end())  // skip cDNA and 'unmodified' without origaligns
+            continue;
+
+        CGeneModel& align = *itcl;
+        m_gnomon->GetScore(align);
+        if(align.Score() == BadScore()) {
+            clust.erase(itcl);
+            continue;
+        }       
+
+        CAlignModel* orig = m_data->orig_aligns[align.ID()];
+        CSeqVector protein_seqvec(scope.GetBioseqHandle(*orig->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+
+        CAlignMap amap = align.GetAlignMap();
+        CAlignMap origmap = orig->GetAlignMap();
+
+        //find selenoproteins and stops 'confirmed' on genome
+        if(align.PStop()) {
+            CCDSInfo::TPStops pstops = align.GetCdsInfo().PStops();
+            NON_CONST_ITERATE(CCDSInfo::TPStops, stp, pstops) {
+                TInDels fs = StrictlyContainedInDels(align.FrameShifts(), *stp);
+                if(!fs.empty())
+                    continue;
+                TSignedSeqRange tstop = amap.MapRangeOrigToEdited(*stp,false);
+                CResidueVec mrna;
+                amap.EditedSequence(contig, mrna);
+                if(tstop.GetLength() == 3 && mrna[tstop.GetFrom()] == 'T' && mrna[tstop.GetFrom()+1] == 'G' && mrna[tstop.GetFrom()+2] == 'A') {
+                    TSignedSeqRange ostop = origmap.MapRangeOrigToEdited(*stp,false);
+                    if(ostop.GetLength() == 3 && protein_seqvec[ostop.GetFrom()/3] == 'U') {
+                        stp->m_status = CCDSInfo::eSelenocysteine;
+                    }
+                }
+                if(stp->m_status != CCDSInfo::eSelenocysteine) {
+                    TIntMap::iterator conf = m_confirmed_bases_len.upper_bound(stp->GetTo()); // confirmed on the right
+                    if(conf != m_confirmed_bases_len.begin() && (--conf)->first <= stp->GetFrom() && conf->first+conf->second > stp->GetTo())
+                        stp->m_status =  CCDSInfo::eGenomeCorrect;
+                }
+            }
+
+            CCDSInfo cds = align.GetCdsInfo();
+            cds.ClearPStops();
+            ITERATE(CCDSInfo::TPStops, stp, pstops)
+                cds.AddPStop(*stp);
+            align.SetCdsInfo(cds);
+        }
+
+        if(itcl->Status()&CGeneModel::eUnmodifiedAlign) {
+            m_data->unmodified_aligns[itcl->ID()] = *itcl;
+            clust.erase(itcl);
+            continue;
+        }       
+
+        if(align.Limits() == orig->Limits() && (!align.HasStart() || !align.FrameShifts().empty() || align.PStop(false))) {
+            int maxclip = min(PROT_CLIP, (int)(align.AlignLen()*PROT_CLIP_FRAC+0.5));
+            TSignedSeqRange tlim = orig->TranscriptLimits();
+            int fivepclip = 0;
+            if(protein_seqvec[0] == 'M')
+                fivepclip = maxclip-tlim.GetFrom();
+            int threepclip = maxclip-(orig->TargetLen()-tlim.GetTo()-1);
+
+            bool skip = false;
+
+            int fivepshift = 0;
+            int threepshift = 0;
+            int tlen = align.TranscriptLimits().GetTo()+1;
+            for(TInDels::iterator indl = align.FrameShifts().begin(); !skip && indl != align.FrameShifts().end(); ++indl) {
+                //project safely in case of tandem frameshifts or exon boundaries
+                TSignedSeqRange left(align.Limits().GetFrom(),indl->Loc()-1);
+                left = amap.ShrinkToRealPoints(left,false);
+                _ASSERT(left.NotEmpty());
+                TSignedSeqRange right(indl->InDelEnd(),align.Limits().GetTo());
+                right = amap.ShrinkToRealPoints(right,false);
+                _ASSERT(right.NotEmpty());
+
+                TSignedSeqRange lim = amap.MapRangeOrigToEdited(TSignedSeqRange(left.GetTo(),right.GetFrom()), false);
+                _ASSERT(lim.GetLength() >= 2);
+                int tpa = lim.GetFrom()+1;
+                int tpb = lim.GetTo()-1;
+                // for deletion tpa,tpb are first and last tposition of the extra sequence on transcript
+                // for insertion tpa is AFTER the missing sequence and tpb is BEFORE
+                if(tpb < fivepclip) {                           // clipable 5' frameshift
+                    if(indl->IsInsertion())
+                        fivepshift += indl->Len();
+                    else if(indl->IsDeletion())
+                        fivepshift -= indl->Len();
+                } else if(tpa >= tlen-threepclip) {             // clipable 3' frameshift
+                    if(indl->IsInsertion())
+                        threepshift += indl->Len();
+                    else if(indl->IsDeletion())
+                        threepshift -= indl->Len();
+                } else {                                        // frameshift in main body
+                    skip = true;   
+                }            
+            }
+            if(skip)
+                continue;
+
+            if(fivepshift >= 0)                
+                fivepshift %= 3;
+            else
+                fivepshift = 3-(-fivepshift)%3;
+            if(threepshift >= 0)                
+                threepshift %= 3;
+            else
+                threepshift = 3-(-threepshift)%3;
+
+            CGeneModel editedm = align;
+            editedm.FrameShifts().clear();
+            editedm.SetCdsInfo(CCDSInfo());
+            //CAlignMap edited_map = editedm.GetAlignMap();
+            TSignedSeqRange edited_tlim = editedm.TranscriptLimits();
+            edited_tlim.SetFrom(edited_tlim.GetFrom()+fivepshift);
+            edited_tlim.SetTo(edited_tlim.GetTo()-threepshift);
+            TSignedSeqRange edited_lim = editedm.GetAlignMap().MapRangeEditedToOrig(edited_tlim, false);
+            _ASSERT(edited_lim.NotEmpty());
+            editedm.Clip(edited_lim, CGeneModel::eRemoveExons);
+            CCDSInfo edited_cds;
+            edited_cds.SetReadingFrame(edited_lim, true);
+            editedm.SetCdsInfo(edited_cds);            
+
+            string protseq = editedm.GetProtein(contig);
+            tlen = 3*protseq.size();
+            int fivep_problem = -1;
+            int first_stop = tlen;
+ 
+            for(int p = 0; !skip && p < (int)protseq.size(); ++p) {
+                if(protseq[p] == '*') {                    
+                    int tpa = p*3;
+                    int tpb = tpa+2;
+                    if(tpb < fivepclip)                                           // clipable 5' stop
+                        fivep_problem = max(fivep_problem, tpb);
+                    else if(tpa >= tlen-threepclip || p == (int)protseq.size()-1) // leftmost 3' stop
+                        first_stop = min(first_stop, tpa);
+                    else                                                          // stop in main body
+                        skip = true;
+                } 
+            }
+            if(skip)
+                continue;
+
+            int fivep_limit = 0;
+            size_t m = protseq.find("M", (fivep_problem+1)/3);   // first start after possible stop/frameshift
+            skip = true;
+            if(m != string::npos && (int)m*3 <= fivepclip) {
+                fivep_limit = 3*m;
+                skip = false;                
+            }
+            if(skip)
+                continue;
+            
+            int threep_limit = tlen-1;
+            skip = true;
+            if(first_stop+2 < threep_limit) {
+                threep_limit =  first_stop+2;
+                skip = false;               
+            }
+            if(skip)
+                continue;
+
+            TSignedSeqRange clip(fivep_limit, threep_limit);
+            tlen = clip.GetLength();
+            clip = editedm.GetAlignMap().MapRangeEditedToOrig(clip, false);
+            _ASSERT(clip.NotEmpty());
+
+            editedm.Clip(clip, CGeneModel::eRemoveExons);
+            TSignedSeqRange start(0, 2);
+            TSignedSeqRange stop(tlen-3, tlen-1);
+            TSignedSeqRange rf(start.GetTo()+1,stop.GetFrom()-1);
+            edited_cds.SetReadingFrame(rf,true);
+            edited_cds.SetStart(start,true);
+            edited_cds.SetStop(stop,true);
+            edited_cds.SetScore(align.Score());
+            edited_cds = edited_cds.MapFromEditedToOrig(editedm.GetAlignMap());
+            editedm.SetCdsInfo(edited_cds);
+
+#ifdef _DEBUG 
+            protseq = editedm.GetProtein(contig);
+            _ASSERT(tlen == 3*(int)protseq.size());
+            _ASSERT(protseq[0] == 'M');
+            m = protseq.find("*");
+            _ASSERT(m == protseq.size()-1);
+#endif    
+
+            align = editedm;
+        }        
+    }
+}
 
 
 struct SFShiftsCluster {
@@ -5317,129 +5532,6 @@ bool CChainer::CChainerImpl::FsTouch(const TSignedSeqRange& lim, const CInDelInf
     return false;
 }
 
-void CChainer::FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust)
-{
-    m_data->FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(clust);
-}
-
-void CChainer::CChainerImpl::FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust)
-{
-    clust.sort(s_ScoreOrder);
-    set<SFShiftsCluster> fshift_clusters;
-
-    for (TGeneModelList::iterator itcl=clust.begin(); itcl != clust.end(); ) {
-        CGeneModel& algn = *itcl;
-        bool skip = false;
-        
-        if(((algn.Type() & CGeneModel::eProt)!=0 || algn.ConfirmedStart())) {
-            skip = !AddIfCompatible(fshift_clusters,algn);
-            
-            for (TGeneModelList::iterator it = clust.begin(); !skip && it != itcl; ++it) {
-                if((it->Type()&CGeneModel::eProt) == 0)
-                    continue;
-                ITERATE(TInDels, fi, it->FrameShifts()) {
-                    if(FsTouch(algn.ReadingFrame(), *fi))
-                       skip = true;
-                }
-                ITERATE(TInDels, fi, algn.FrameShifts()) {
-                    if(FsTouch(it->ReadingFrame(), *fi))
-                       skip = true;
-                }
-            }
-        }
-
-        if(skip) {
-            SkipReason(orig_aligns[itcl->ID()], "incompatible indels3");
-            itcl=clust.erase(itcl);
-        } else
-            ++itcl;
-    }
-}
-
-
-void CChainer::CChainerImpl::AddFShifts(TGeneModelList& clust, const TInDels& fshifts)    
-{      
-    for (TGeneModelList::iterator itcl=clust.begin(); itcl != clust.end(); ) {
-        CGeneModel& algn = *itcl;
-        if((algn.Type() & CGeneModel::eProt)!=0 || algn.ConfirmedStart()) {
-            ++itcl;
-            continue;
-        }
-
-        TInDels algn_fs;
-        bool incompatible_indels = false;
-        TSignedSeqPos la = algn.Limits().GetFrom();
-        TSignedSeqPos lb = algn.Limits().GetTo();
-
-        // trim ends with fshifts (we want at least 3 bases without fs and no touching)
-        ITERATE(TInDels, fs, fshifts) {
-            if(fs->IsInsertion() && fs->Loc()<=la+2 && fs->Loc()+fs->Len()>=la)  
-                la = fs->Loc()+fs->Len()+1;
-            if(fs->IsInsertion() && fs->Loc()<=lb+1 && fs->Loc()+fs->Len()>=lb-1)
-                lb = fs->Loc()-2;
-            if(fs->IsDeletion() && fs->Loc()<=la+2 && fs->Loc()>=la-1)
-                la = fs->Loc()+1;
-            if(fs->IsDeletion() && fs->Loc()>=lb-2 && fs->Loc()<=lb+1)
-                lb = fs->Loc()-2;
-        }
-        if(la != algn.Limits().GetFrom() || lb != algn.Limits().GetTo()) {
-            algn.Clip(TSignedSeqRange(la,lb), CGeneModel::eRemoveExons);
-            la = algn.Limits().GetFrom();
-            lb = algn.Limits().GetTo();
-            if(algn.Exons().empty())
-                incompatible_indels = true;
-        }
-        
-        ITERATE(TInDels, fs, fshifts) {
-            if(!fs->IntersectingWith(la,lb))
-                continue; 
-            bool found = false;
-            for(int k = 0; k < (int)algn.Exons().size() && !found; ++k) {
-                int a = algn.Exons()[k].GetFrom();
-                int b = algn.Exons()[k].GetTo();
-                if (fs->IntersectingWith(a,b)) {
-                    found = true;
-                    if ((algn.Exons()[k].m_fsplice && fs->Loc()<a) ||
-                        (algn.Exons()[k].m_ssplice && fs->IsInsertion() && b<fs->Loc()+fs->Len()-1)) {
-                        incompatible_indels = true;
-                    }
-                }
-                // AlignMap can't handle ggap and frameshift at rthe same point
-                if(k > 0 && algn.Exons()[k-1].m_ssplice_sig == "XX" && fs->IntersectingWith(a,a))
-                    incompatible_indels = true;
-                if(k < (int)algn.Exons().size()-1 && algn.Exons()[k+1].m_fsplice_sig == "XX" && fs->IntersectingWith(b,b))
-                    incompatible_indels = true;
-            } 
-            if (found)
-                algn_fs.push_back(*fs);
-        }
-
-        if (incompatible_indels) {
-            SkipReason(orig_aligns[algn.ID()], "incompatible indels1");
-            itcl=clust.erase(itcl);
-            continue;
-        }
-
-        algn.FrameShifts() = algn_fs;
-
-        ++itcl;
-    }
-}
-
-
-void CChainer::CChainerImpl::CollectFShifts(const TGeneModelList& clust, TInDels& fshifts)
-{
-    ITERATE (TGeneModelList, itcl, clust) {
-        const TInDels& fs = itcl->FrameShifts();
-        fshifts.insert(fshifts.end(),fs.begin(),fs.end());
-    }
-    sort(fshifts.begin(),fshifts.end());
-            
-    if (!fshifts.empty())
-        uniq(fshifts);
-}
-
-
 void CChainer::CChainerImpl::SplitAlignmentsByStrand(const TGeneModelList& clust, TGeneModelList& clust_plus, TGeneModelList& clust_minus)
 {            
     ITERATE (TGeneModelList, itcl, clust) {
@@ -5462,7 +5554,8 @@ double InframeFraction(const CGeneModel& a, TSignedSeqPos left, TSignedSeqPos ri
     int outframelength = 0;
     int frame = 0;
     TSignedSeqPos prev = left;
-    ITERATE(TInDels, fs, a.FrameShifts()) {
+    TInDels indels = a.GetInDels(left, right, true);
+    ITERATE(TInDels, fs, indels) {
         int len = cdsmap.FShiftedLen(cdsmap.ShrinkToRealPoints(TSignedSeqRange(prev,fs->Loc()-1)),false);
         if(frame == 0) {
             inframelength += len;
@@ -5865,35 +5958,104 @@ void CChainer::CChainerImpl::SetConfirmedStartStopForProteinAlignments(TAlignMod
 
 void CChainer::DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models)
 {
-    m_data->DropAlignmentInfo(alignments, models);
-}
-void CChainer::CChainerImpl::DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models)
-{
+    ///////////////////////
+    //    SMatrix blosum;
+
     NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
+        if(!(i->Status()&CGeneModel::eUnmodifiedAlign)) 
+            m_data->orig_aligns[i->ID()]=&(*i);
+
         CGeneModel aa = *i;
-        if(!(aa.Type() & CGeneModel::eProt)) {
+        if(aa.Type() & CGeneModel::eProt) {
+            /*
+            {{//////////////////////  print replacement info for diagnostics
+                    const CResidueVec& contig = m_gnomon->GetSeq();
+                    CScope scope(*CObjectManager::GetInstance());
+                    scope.AddDefaults();
+                    CSeqVector protein_seqvec(scope.GetBioseqHandle(*i->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+                    CAlignMap amap = i->GetAlignMap();
+
+                    ITERATE(CGeneModel::TExons, e, i->Exons()) {
+                        TSignedSeqRange exon = m_edited_contig_map.ShrinkToRealPointsOnEdited(e->Limits());
+                        if(exon.Empty())
+                            continue;
+                        exon = m_edited_contig_map.MapRangeEditedToOrig(exon,false);
+                        if(exon.Empty())
+                            continue;
+                        map<int,char>::const_iterator ir = m_replacements.lower_bound(exon.GetFrom()+2);  // first definetely internal exon replacement or end()
+                        for( ; ir != m_replacements.end() && ir->first <= exon.GetTo()-2; ++ir) {
+                            int orig_gpos = ir->first;
+                            int edited_gpos = m_edited_contig_map.MapOrigToEdited(orig_gpos);
+                            int tpos = amap.MapOrigToEdited(edited_gpos);
+                            if(tpos < 0)
+                                continue;
+                            int pos_in_codon = tpos%3;
+
+                            if(i->Strand() == eMinus)
+                                pos_in_codon = 2-pos_in_codon;
+
+                            cout << tpos << '\t' <<  pos_in_codon << endl;
+
+                            int codon_left = edited_gpos-pos_in_codon ;
+                            string edited_codon(contig.begin()+codon_left,contig.begin()+codon_left+3);
+                            string orig_codon = edited_codon;
+                            orig_codon[pos_in_codon] = m_replaced_bases[orig_gpos];
+                            if(i->Strand() == eMinus) {
+                                ReverseComplement(orig_codon.begin(),orig_codon.end());
+                                ReverseComplement(edited_codon.begin(),edited_codon.end());
+                            }
+                            string edited_aa, orig_aa;
+                            objects::CSeqTranslator::Translate(orig_codon, orig_aa, objects::CSeqTranslator::fIs5PrimePartial);
+                            objects::CSeqTranslator::Translate(edited_codon, edited_aa, objects::CSeqTranslator::fIs5PrimePartial);
+                            char prot_aa = (tpos/3 < protein_seqvec.size()) ? protein_seqvec[tpos/3] : '*';
+                            int delta = blosum.matrix[edited_aa[0]][prot_aa] - blosum.matrix[orig_aa[0]][prot_aa];
+                            cout << "Replacement\t" << m_contig_acc << '\t' << orig_gpos << '\t' << orig_codon << '\t' << edited_codon << '\t' << orig_aa << '\t' << edited_aa << '\t' << prot_aa << '\t' << delta << '\t' << i->ID() << endl;
+                        }
+                        
+
+                    }
+
+                }}//////////////////
+            */
+            TInDels alignfshifts = i->GetInDels(true);
+            TInDels fshifts;
+            ITERATE(CGeneModel::TExons, e, aa.Exons()) {
+                TInDels efshifts;
+                int len = 0;
+                ITERATE(TInDels, fs, alignfshifts) {
+                    if(fs->IntersectingWith(e->GetFrom(),e->GetTo())) {
+                        efshifts.push_back(*fs);
+                        len += (fs->IsInsertion() ? fs->Len() : -fs->Len());
+                    }
+                }
+                if(efshifts.empty())
+                    continue;
+
+                int a = efshifts.front().Loc()-1;
+                int b = efshifts.back().InDelEnd();
+                TIntMap::iterator conf = m_confirmed_bases_len.upper_bound(b); // confirmed on the right    
+                bool confirmed_region = (conf != m_confirmed_bases_len.begin() && (--conf)->first <= a && conf->first+conf->second > b);
+
+                if(len%3 != 0 || !confirmed_region) {
+                    ITERATE(TInDels, fs, efshifts) {
+                        int l = fs->Len()%3;
+                        if(fs->IsInsertion()) {
+                            fshifts.push_back(CInDelInfo(fs->Loc(), l, CInDelInfo::eIns));
+                        } else {
+                            fshifts.push_back(CInDelInfo(fs->Loc(), l, CInDelInfo::eDel, fs->GetInDelV().substr(0,l)));
+                        }                        
+                    }
+                    //                    fshifts.insert(fshifts.end(), efshifts.begin(), efshifts.end());
+                }
+            }
+            aa.FrameShifts() = fshifts;
+        } else {
             aa.FrameShifts().clear();
+            aa.Status() &= ~CGeneModel::eReversed;
         }
 
-        if(aa.Status()&CGeneModel::eUnmodifiedAlign) {
-            unmodified_aligns[aa.ID()] = aa;
-        } else { 
-            models.push_back(aa);
-            orig_aligns[aa.ID()]=&(*i);
-        }
+        models.push_back(aa);
     }
-}
-
-void CChainer::ReplicateFrameShifts(TGeneModelList& models)
-{
-    m_data->ReplicateFrameShifts(models);
-}
-
-void CChainer::CChainerImpl::ReplicateFrameShifts(TGeneModelList& models)
-{
-    all_frameshifts.clear();
-    CollectFShifts(models, all_frameshifts);
-    AddFShifts(models, all_frameshifts);
 }
 
 
@@ -6098,134 +6260,483 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     }
 }
 
-void CGnomonAnnotator_Base::MapModelsToOrigContig(TGeneModelList& models) const {
-    if(m_edited_contig_map) {
-        for(TGeneModelList::iterator im_loop = models.begin(); im_loop != models.end(); ) {
-            TGeneModelList::iterator im = im_loop++;
+bool OverlappingIndel(int pos, const CInDelInfo& indl) {
+    if(indl.IsDeletion())
+        return pos <= indl.InDelEnd();
+    else
+        return pos < indl.InDelEnd();
+}
 
-            CGeneModel model = *im;
-            model.SetCdsInfo(CCDSInfo());
-            model.CutExons(model.Limits());  // empty model with all atributes
+TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left, int extra_right, const TSignedSeqRange exonb, const TInDels& editing_indels_frombtoa, const TInDels& exona_indels) {
+    TInDels combined_indels;
 
-            bool bad_model = false;
+    TInDels::const_iterator ic = upper_bound(editing_indels_frombtoa.begin(), editing_indels_frombtoa.end(), exonb.GetFrom(), OverlappingIndel);  // skip all correction ending before exonb
+    for( ;ic != editing_indels_frombtoa.end() && ic->GetStatus() != CInDelInfo::eGenomeNotCorrect; ++ic);   //skip ggaps and Ns
+    if((ic == editing_indels_frombtoa.end() || ic->Loc() > exonb.GetTo()+1) && exona_indels.empty()) 
+        return combined_indels;
 
-            for(int ie = 0; ie < (int)im->Exons().size(); ++ie) {
-                const CModelExon& e = im->Exons()[ie];
-
-                string seq;
-                CInDelInfo::SSource src;
-                TGgapInfo::const_iterator i = m_inserted_seqs.find(e.GetFrom());
-                if(i != m_inserted_seqs.end()) {
-                    seq = i->second->GetInDelV().substr(0,e.Limits().GetLength());
-                    src = i->second->GetSource();
-                    if(src.m_strand == ePlus)
-                        src.m_range.SetTo(src.m_range.GetFrom()+e.Limits().GetLength()-1);
-                    else
-                        src.m_range.SetFrom(src.m_range.GetTo()-e.Limits().GetLength()+1);
-                } else {
-                    i = m_inserted_seqs.upper_bound(e.GetTo());
-                    if(i != m_inserted_seqs.begin() && (--i)->first + (int)i->second->GetInDelV().length() - 1 == e.GetTo()) {
-                        string s = i->second->GetInDelV();
-                        seq = s.substr(s.length()-e.Limits().GetLength());
-                        src = i->second->GetSource();
-                        if(src.m_strand == eMinus)
-                            src.m_range.SetTo(src.m_range.GetFrom()+e.Limits().GetLength()-1);
-                        else
-                            src.m_range.SetFrom(src.m_range.GetTo()-e.Limits().GetLength()+1);
-                    }
-                }
-
-                if(seq.empty()) {  // normal exon
-                    TSignedSeqRange exon = m_edited_contig_map->MapRangeEditedToOrig(e.Limits(),false);
-                    if(exon.Empty()) { // all real alignment and some filling was clipped
-                        _ASSERT(im->Exons().size() == 1);
-                        bad_model = true;
-                        break;
-                    }
-                    //                    model.AddExon(exon, e.m_fsplice_sig, e.m_ssplice_sig);
-                    model.AddNormalExon(exon, e.m_fsplice_sig, e.m_ssplice_sig, 0, false);
-                } else {
-                    if((int)im->Exons().size() == 1){ // all real alignment was clipped
-                        bad_model = true;
-                        break;
-                    }
-
-                    if(model.Strand() == eMinus) {
-                        ReverseComplement(seq.begin(), seq.end());
-                        src.m_strand = (src.m_strand == ePlus ? eMinus : ePlus);
-                    }
-                    _ASSERT((int)seq.length() == src.m_range.GetLength());
-                    //                    model.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", e.m_ident, seq, src);
-                    model.AddGgapExon(0, seq, src, false);
-                }
-
-                if(ie < (int)im->Exons().size()-1 && (!e.m_ssplice || !im->Exons()[ie+1].m_fsplice)) // hole
-                    model.AddHole();
+    typedef list<char> TCharList;
+    TCharList edit;
+    // M match/mismatch
+    // - skip one base
+    // everything else insert this letter 
+    
+    //edit from B genome to A genome 
+    int pb = exonb.GetFrom();
+    for( ;pb <= exonb.GetTo(); ++pb) {
+        if(ic != editing_indels_frombtoa.end() && ic->Loc() <= pb) {
+            if(ic->IsInsertion()) {
+                int len = min(exonb.GetTo()+1,ic->InDelEnd())-max(exonb.GetFrom(),ic->Loc());
+                edit.insert(edit.end(),len,'-');
+                pb = ic->InDelEnd()-1;                                    
+            } else {
+                string s = ic->GetInDelV();
+                if(pb == exonb.GetFrom())       // include extra_left part of deletion
+                    s = s.substr(ic->Len()-extra_left);                                    
+                edit.insert(edit.end(),s.begin(),s.end());
+                edit.push_back('M');
             }
+            ++ic;
+        } else {
+            edit.push_back('M');
+        }
+    }
+    if(ic != editing_indels_frombtoa.end() && ic->Loc() == pb && ic->GetStatus() == CInDelInfo::eGenomeNotCorrect && extra_right > 0) { // include extra_right part of deletion
+        _ASSERT(ic->IsDeletion());
+        string s = ic->GetInDelV().substr(0,extra_right);
+        edit.insert(edit.end(),s.begin(),s.end());
+    } 
+    _ASSERT(exonb.GetLength() == count(edit.begin(),edit.end(),'M')+count(edit.begin(),edit.end(),'-'));
+    _ASSERT(exona.GetLength() == (int)edit.size()-count(edit.begin(),edit.end(),'-'));
 
-            if(bad_model) {
-                models.erase(im);
+    // edit from B genome to transcript 
+    if(!exona_indels.empty()) {
+        TInDels::const_iterator jleft = exona_indels.begin();
+        int pa = exona.GetFrom()-1;
+        int skipsome = 0;
+        ERASE_ITERATE(TCharList, ip, edit) {
+            if(*ip == '-')
                 continue;
+            else
+                ++pa;
+        
+            if(jleft != exona_indels.end() && jleft->Loc() == pa) {
+                if(jleft->IsInsertion()) {  // skip extra bases on edited           
+                    _ASSERT(skipsome == 0);
+                    skipsome = jleft->Len();
+                    // don't use reverse iterator for erasing           
+                    for(TCharList::iterator ipp = ip; skipsome > 0 && ipp != edit.begin() && *(--ipp) != '-' && *ipp != 'M'; ) {  // skip previosly inserted            
+                        --skipsome;                        
+                        ipp = edit.erase(ipp);
+                    }
+                } else {                    // insert extra bases in transcript         
+                    _ASSERT(skipsome == 0);
+                    int insertsome = jleft->Len();                           
+                    for(reverse_iterator<TCharList::iterator> ir(ip); insertsome > 0 && ir != edit.rend() && *ir == '-'; ++ir) { // reuse skipped positions         
+                        *ir = 'M';
+                        --insertsome;
+                    }
+                    if(insertsome > 0)
+                        edit.insert(ip,insertsome,'N');
+                }
+                ++jleft;
             }
 
-            TInDels editedframeshifts = im->FrameShifts();
-            NON_CONST_ITERATE(TInDels, i, editedframeshifts) {
-                int newloc = m_edited_contig_map->MapEditedToOrig(i->Loc());
-                _ASSERT(newloc >= 0);
-                CInDelInfo indel(newloc, i->Len(), i->IsInsertion(), i->GetInDelV());
-                *i = indel;
+            if(skipsome > 0) {
+                --skipsome;                        
+                if(*ip == 'M')
+                    *ip = '-';
+                else if(*ip != '-')
+                    edit.erase(ip);
             }
-            model.FrameShifts() = editedframeshifts;
+        }
+        if(jleft != exona_indels.end()) {
+            _ASSERT(jleft->IsDeletion() && jleft->Loc() == pa+1);
+            int insertsome = jleft->Len();                           
+            for(TCharList::reverse_iterator ir = edit.rbegin(); insertsome > 0 && ir != edit.rend() && *ir == '-'; ++ir) { // reuse skipped positions       
+                *ir = 'M';
+                --insertsome;
+            }
+            if(insertsome > 0)
+                edit.insert(edit.end(),insertsome,'N');
+        }
+    }
+    _ASSERT(exonb.GetLength() == count(edit.begin(),edit.end(),'M')+count(edit.begin(),edit.end(),'-'));
+ 
+    pb = exonb.GetFrom();
+    for(TCharList::iterator ip = edit.begin(); ip != edit.end(); ) {
+        if(*ip == 'M') {
+            ++pb;
+            ++ip;
+        } else if(*ip == '-') {
+            int len = 0;
+            for( ;ip != edit.end() && *ip == '-'; ++ip, ++len);
+            int pos = pb;
+            pb += len;
+            for( ;len > 0 && ip != edit.end() && *ip != 'M'; ++ip, --len);   // we may have ----+++M but not +++---
+            if(len > 0)
+                combined_indels.push_back(CInDelInfo(pos,len,CInDelInfo::eIns));
+        } else {
+            string s;
+            for( ;ip != edit.end() && *ip != 'M' && *ip != '-'; ++ip)
+                s.push_back(*ip);
+            combined_indels.push_back(CInDelInfo(pb, s.size(), CInDelInfo::eDel, s));
+        }
+    }
+    _ASSERT(pb == exonb.GetTo()+1);
 
-            model.SetCdsInfo(im->GetCdsInfo().MapFromOrigToEdited(im->GetAlignMap()));
+    return combined_indels;
+}
 
+CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel, const TInDels& editing_indels, const map<int,char>& replacements, const CAlignMap& edited_contig_map, const CGnomonAnnotator_Base::TGgapInfo& inserted_seqs) {
+    CGeneModel model = srcmodel;
+    model.SetCdsInfo(CCDSInfo());
+    model.CutExons(model.Limits());  // empty model with all atributes
+    TInDels editedframeshifts;
+
+    for(int ie = 0; ie < (int)srcmodel.Exons().size(); ++ie) {
+        const CModelExon& e = srcmodel.Exons()[ie];
+
+        string seq;
+        CInDelInfo::SSource src;
+        CGnomonAnnotator_Base::TGgapInfo::const_iterator i = inserted_seqs.upper_bound(e.GetTo());          // first ggap on right or end()
+        if(i != inserted_seqs.begin()) {
+            --i;                                                                       // first ggap left or equal GetTo()
+            int ggapa = i->first;
+            int ggapb = i->first+(int)i->second->GetInDelV().length()-1;
+            if(ggapa == e.GetFrom()) {                                                 // exons starts with ggap
+                seq = i->second->GetInDelV().substr(0,e.Limits().GetLength());
+                src = i->second->GetSource();
+                if(src.m_strand == ePlus)
+                    src.m_range.SetTo(src.m_range.GetFrom()+e.Limits().GetLength()-1);
+                else
+                    src.m_range.SetFrom(src.m_range.GetTo()-e.Limits().GetLength()+1);
+            } else if(ggapb == e.GetTo()) {                                            // exon ends by ggap
+                string s = i->second->GetInDelV();
+                seq = s.substr(s.length()-e.Limits().GetLength());
+                src = i->second->GetSource();
+                if(src.m_strand == eMinus)
+                    src.m_range.SetTo(src.m_range.GetFrom()+e.Limits().GetLength()-1);
+                else
+                    src.m_range.SetFrom(src.m_range.GetTo()-e.Limits().GetLength()+1);
+            } else if(ggapb >= e.GetFrom()) {                                          // all real alignment and some filling was clipped
+                _ASSERT(srcmodel.Exons().size() == 1);
+                return CGeneModel();
+            }
+        }
+        
+        if(!seq.empty()) {  // ggap
+            if((int)srcmodel.Exons().size() == 1){ // all real alignment was clipped
+                return CGeneModel();
+            }
+            if(model.Strand() == eMinus) {
+                ReverseComplement(seq.begin(), seq.end());
+                src.m_strand = (src.m_strand == ePlus ? eMinus : ePlus);
+            }
+            _ASSERT((int)seq.length() == src.m_range.GetLength());
+            model.AddGgapExon(0, seq, src, false);
+        } else {  // normal exon
+            TSignedSeqRange exon = edited_contig_map.ShrinkToRealPointsOnEdited(e.Limits());
+            if(exon.Empty()) {   // not projectable exon
+                return CGeneModel();
+            }
+            int extra_left = exon.GetFrom()-e.GetFrom();
+            int extra_right = e.GetTo()-exon.GetTo();
+
+            exon = edited_contig_map.MapRangeEditedToOrig(exon,false);
+            _ASSERT(exon.NotEmpty());
+            model.AddNormalExon(exon, e.m_fsplice_sig, e.m_ssplice_sig, 0, false);
+
+            TInDels exon_indels;
+            ITERATE(TInDels, indl, srcmodel.FrameShifts()) {
+                if(indl->IntersectingWith(e.GetFrom(),e.GetTo()))
+                    exon_indels.push_back(*indl);
+            }
+            TInDels efs = CombineCorrectionsAndIndels(e.Limits(), extra_left, extra_right, exon, editing_indels, exon_indels);
+
+            TInDels erepl;
+            map<int,char>::const_iterator ir = replacements.lower_bound(exon.GetFrom());  // first exon replacement or end()
+            for( ;ir != replacements.end() && ir->first <= exon.GetTo(); ++ir) {
+                int loc = ir->first;
+                char c = ir->second;
+                TInDels::const_iterator ic = upper_bound(efs.begin(), efs.end(), loc, OverlappingIndel);  // skip all indels ending before mismatch
+                if(ic != efs.end() && ic->IsInsertion() && ic->Loc() <= loc && ic->InDelEnd() > loc)   // overlapping insertion
+                    continue;
+                else if(ic != efs.end() && ic->IsDeletion() && ic->Loc() == loc)                       // deletion right before mismatch
+                    erepl.push_back(CInDelInfo(loc, 1, CInDelInfo::eMism, string(1,c)));
+                else if(erepl.empty() || erepl.back().InDelEnd() != loc)                               // not extention of previous
+                    erepl.push_back(CInDelInfo(loc, 1, CInDelInfo::eMism, string(1,c)));
+                else {
+                    loc = erepl.back().Loc();
+                    string s = erepl.back().GetInDelV()+string(1,c);
+                    erepl.back() = CInDelInfo(loc, s.size(), CInDelInfo::eMism, s);
+                }
+            }
+
+            efs.insert(efs.end(), erepl.begin(), erepl.end());
+            sort(efs.begin(), efs.end());
+            editedframeshifts.insert(editedframeshifts.end(), efs.begin(), efs.end());
+        }
+
+        if(ie < (int)srcmodel.Exons().size()-1 && (!e.m_ssplice || !srcmodel.Exons()[ie+1].m_fsplice)) // hole
+            model.AddHole();
+    }
+
+    model.FrameShifts() = editedframeshifts;
+    model.SetCdsInfo(srcmodel.GetCdsInfo().MapFromOrigToEdited(srcmodel.GetAlignMap()));
+
+    return model;
+}
+
+
+//currently not used for anything; will need separation of indels and replacemnets inputs if used
+void MapAlignsToOrigContig(TAlignModelList& aligns, const TInDels& corrections, int contig_size) {
+    CGnomonAnnotator_Base::TGgapInfo inserted_seqs;  // not used
+    TInDels editing_indels;
+    map<int,char> replacements;
+
+    ITERATE(TInDels, i, corrections) {
+        if(i->IsMismatch()) {
+            string seq = i->GetInDelV();
+            for(int l = 0; l < i->Len(); ++l)
+                replacements[i->Loc()+l] = seq[l];
+        } else {
+            editing_indels.push_back(*i);
+            if(i->IsInsertion())
+                contig_size += i->Len();
+            else
+                contig_size -= i->Len();
+        }
+    }                
+    CAlignMap edited_contig_map(0, contig_size-1, editing_indels.begin(), editing_indels.end());
+    
+    ERASE_ITERATE(TAlignModelList, ia, aligns) {
+        CAlignModel& align = *ia;
+        CGeneModel model = MapOneModelToOrigContig(align, editing_indels, replacements, edited_contig_map, inserted_seqs);
+        if(model.Limits().Empty()) {
+            aligns.erase(ia);
+        } else {
+            _ASSERT(align.Exons().size() == model.Exons().size());
+            if(align.Type()&CAlignModel::eProt)
+                model.FrameShifts() = model.GetInDels(false);
+            vector<TSignedSeqRange> transcript_exons;
+            for(int i = 0; i < (int)align.Exons().size(); ++i)
+                transcript_exons.push_back(align.TranscriptExon(i));
+            CAlignMap amap(model.Exons(), transcript_exons, model.FrameShifts(), align.Orientation(), align.TargetLen());
+            CConstRef<objects::CSeq_id> id = align.GetTargetId();
+            *ia = CAlignModel(model,amap);
+            ia->SetTargetId(*id);
+        }
+    }    
+}
+
+void CGnomonAnnotator_Base::MapModelsToOrigContig(TGeneModelList& models) const {
+    ERASE_ITERATE(TGeneModelList, im, models) {
+        CGeneModel model = MapOneModelToOrigContig(*im, m_editing_indels, m_replacements, m_edited_contig_map, m_inserted_seqs);
+        if(model.Limits().Empty()) {
+            models.erase(im);
+        } else {
+            NON_CONST_ITERATE(TInDels, i, model.FrameShifts()) {
+                if(i->IsMismatch()) {
+                    i->SetStatus(CInDelInfo::eGenomeNotCorrect);
+                } else {
+                    TIntMap::const_iterator conf = m_confirmed_bases_orig_len.upper_bound(i->Loc()); // confirmed on the right  
+                    bool included = (conf != m_confirmed_bases_orig_len.begin() && (--conf)->first < i->Loc() &&  conf->first+conf->second >= i->InDelEnd());
+
+                    TInDels::const_iterator ic = upper_bound(m_editing_indels.begin(), m_editing_indels.end(), i->Loc(), OverlappingIndel);  // skip all correction ending before Loc() 
+                    if(ic != m_editing_indels.end() && i->GetType() == ic->GetType() && i->Loc() >= ic->Loc() && i->InDelEnd() <= ic->InDelEnd()) {
+                        i->SetStatus(CInDelInfo::eGenomeNotCorrect);
+                        _ASSERT(included);
+                    } else if(included && (ic == m_editing_indels.end() || ic->Loc() > i->InDelEnd())) {
+                        i->SetStatus(CInDelInfo::eGenomeCorrect);                                        
+                    }
+                }
+            }            
             *im = model;
         }
     }
 }
 
+
+bool InDelEndOrder(int pos, const CInDelInfo& indl) {
+    return pos < indl.InDelEnd(); 
+}
+
 CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& align) const 
 {
+    CAlignMap amap = align.GetAlignMap();
+    //mismatches are dropped at this point
+    TInDels aindels = align.GetInDels(false);
     CGeneModel editedmodel = align;
     editedmodel.ClearExons();  // empty alignment with all atributes
 
     vector<TSignedSeqRange> transcript_exons;
+    TInDels editedindels;
+    bool snap_to_codons = (align.Type() == CAlignModel::eProt);
  
     for(int i = 0; i < (int)align.Exons().size(); ++i) {
-        transcript_exons.push_back(align.TranscriptExon(i));
         const CModelExon& e = align.Exons()[i];
                 
         if(e.Limits().NotEmpty()) {   // real exon
-            editedmodel.AddExon(m_edited_contig_map->MapRangeOrigToEdited(e.Limits(),false),e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
+            list<CInDelInfo> exon_indels;
+            ITERATE(TInDels, indl, aindels) {
+                if(indl->IntersectingWith(e.GetFrom(), e.GetTo()))
+                    exon_indels.push_back(*indl);
+            }
+
+            int left = e.GetFrom();
+            int left_shrink = 0;
+            int right = e.GetTo();
+            int right_shrink = 0;
+            int left_extend = 0;
+            int right_extend = 0;
+            CAlignMap::ERangeEnd lend = CAlignMap::eLeftEnd;
+            CAlignMap::ERangeEnd rend = CAlignMap::eRightEnd;
+
+            TSignedSeqRange left_codon;
+            TSignedSeqRange right_codon;
+            if(align.Type() == CAlignModel::eProt) {
+                if(i == 0)
+                    left_codon = (align.Strand() == ePlus ? align.GetCdsInfo().Start() :  align.GetCdsInfo().Stop());
+                if(i == (int)align.Exons().size()-1)
+                    right_codon = (align.Strand() == ePlus ? align.GetCdsInfo().Stop() :  align.GetCdsInfo().Start());
+                if(!align.GetCdsInfo().IsMappedToGenome()) {
+                    left_codon = amap.MapRangeEditedToOrig(left_codon, false);
+                    right_codon = amap.MapRangeEditedToOrig(right_codon, false);
+                }
+            }
+
+            TInDels::const_iterator ileft = upper_bound(m_editing_indels.begin(), m_editing_indels.end(), left, OverlappingIndel);  // skip all correction left of exon (doesn't skip touching deletion)
+            for( ;ileft != m_editing_indels.end() && ileft->GetStatus() != CInDelInfo::eGenomeNotCorrect; ++ileft);   //skip ggaps and Ns
+
+            if(ileft != m_editing_indels.end() && ileft->IsDeletion() && ileft->Loc() == left) {
+                if(!exon_indels.empty() && exon_indels.front().IsDeletion() && exon_indels.front().Loc() == left) {// ileft is touching deletion and there is matching indel in alignmnet
+                    _ASSERT(left_codon.Empty());
+                    left_extend = min(ileft->Len(),exon_indels.front().Len());
+                }
+                ++ileft;
+            }
+
+            int ll = left;
+            if(left_codon.GetLength() == 3)
+                ll = left_codon.GetTo();
+            if(ileft != m_editing_indels.end() && ileft->Loc() <= ll) {  // left end is involved
+                if(e.m_fsplice) {  // move splice to projectable point, add indels to keep the texon length
+                    _ASSERT(left_codon.Empty());
+                    left = ileft->Loc()+ileft->Len();
+                    if(left > right)
+                        return CAlignModel();
+                    left_shrink = left-e.GetFrom();
+                } else {
+                    // clip to commom projectable point
+                    TSignedSeqRange lim = e.Limits();
+                    if(left_codon.GetLength() == 3)
+                        lim.SetFrom(left_codon.GetTo()+1);
+                    while(ileft != m_editing_indels.end() && ileft->Loc() <= lim.GetFrom()) {
+                        lim.SetFrom(ileft->InDelEnd());
+                        if(lim.NotEmpty())
+                            lim = amap.ShrinkToRealPoints(lim, snap_to_codons);  // skip alignment indels   
+                        if(lim.Empty())
+                            return CAlignModel();
+
+                        for( ;ileft != m_editing_indels.end() && ileft->InDelEnd() <= lim.GetFrom(); ++ileft); // skip outside corrections  
+                    }
+
+                    left = lim.GetFrom();
+                    while(!exon_indels.empty() && exon_indels.front().InDelEnd() <= left)
+                        exon_indels.pop_front();
+                    lend = CAlignMap::eSinglePoint;  // is used for transcript exon
+                }
+            }            
+            
+            TInDels::const_iterator first_outside = ileft;
+            for( ; first_outside != m_editing_indels.end() && first_outside->Loc() <= (first_outside->IsInsertion() ? right : right+1); ++first_outside); // end() or first completely on right
+            reverse_iterator<TInDels::const_iterator> iright(first_outside);  // previous correction (last which interferes with exon or rend())
+            for( ;iright != m_editing_indels.rend() && iright->GetStatus() != CInDelInfo::eGenomeNotCorrect; ++iright);   //skip ggaps and Ns
+
+            if(iright != m_editing_indels.rend() && iright->IsDeletion() && iright->Loc() == right+1) {
+                if(!exon_indels.empty() && exon_indels.back().IsDeletion() && exon_indels.back().Loc() == right+1) { // touching deletion and there is matching indel in alignmnet
+                    _ASSERT(right_codon.Empty());
+                    right_extend = min(iright->Len(),exon_indels.back().Len());
+                }
+                ++iright;
+            }
+
+            int rr = right;
+            if(right_codon.GetLength() == 3)
+                rr = right_codon.GetFrom();
+            if(iright != m_editing_indels.rend() && iright->InDelEnd() > rr) {  // right end is involved
+                if(e.m_ssplice) { // move splice to projectable point, add indels to keep the texon length
+                    _ASSERT(right_codon.Empty());
+                    right = iright->Loc()-1;
+                    if(right < left)
+                        return CAlignModel();                     
+                    right_shrink = e.GetTo()-right;
+                } else {
+                    // clip to commom projectable point
+                    TSignedSeqRange lim = e.Limits();
+                    if(right_codon.GetLength() == 3)
+                        lim.SetTo(right_codon.GetFrom()-1);
+                    while(iright != m_editing_indels.rend() && iright->InDelEnd() > lim.GetTo()) { // iright is insertion including right position
+                        lim.SetTo(iright->Loc()-1);
+                        if(lim.NotEmpty())
+                            lim = amap.ShrinkToRealPoints(lim, snap_to_codons);  // skip alignment indels
+                        if(lim.Empty())
+                            return CAlignModel();
+                            
+                        for( ; iright != m_editing_indels.rend() && iright->Loc() > lim.GetTo(); ++iright);  // skip outside corrections    
+                    }
+
+                    right = lim.GetTo();
+                    while(!exon_indels.empty() && exon_indels.back().Loc() > right)
+                        exon_indels.pop_back();
+                    rend = CAlignMap::eSinglePoint;  // is used for transcript exon
+                }
+            }
+            
+            TSignedSeqRange orig_exon(left-left_shrink, right+right_shrink);
+            TSignedSeqRange texon = amap.MapRangeOrigToEdited(orig_exon, lend, rend);
+            transcript_exons.push_back(texon);
+
+            TSignedSeqRange corrected_exon = m_edited_contig_map.MapRangeOrigToEdited(TSignedSeqRange(left, right), false);
+            _ASSERT(corrected_exon.NotEmpty());
+            corrected_exon.SetFrom(corrected_exon.GetFrom()-left_extend);
+            corrected_exon.SetTo(corrected_exon.GetTo()+right_extend);
+            editedmodel.AddExon(corrected_exon, e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
             if(i < (int)align.Exons().size()-1 && (!align.Exons()[i].m_ssplice || !align.Exons()[i+1].m_fsplice))  // hole
                 editedmodel.AddHole();
+
+
+            TInDels efs = CombineCorrectionsAndIndels(orig_exon, left_shrink, right_shrink, corrected_exon, m_reversed_corrections, TInDels(exon_indels.begin(), exon_indels.end()));
+            editedindels.insert(editedindels.end(), efs.begin(), efs.end());
         } else {                     // gap exon
+            transcript_exons.push_back(align.TranscriptExon(i));
             string gap_seq = e.m_seq;
             if(align.Orientation() == eMinus)
                 ReverseComplement(gap_seq.begin(), gap_seq.end());
 
             TInDels::const_iterator gap = m_editing_indels.end();
             ITERATE(TInDels, ig, m_editing_indels) {
-                if(ig->IsInsertion())
-                    continue;
-                if(i > 0 && ig->Loc() < align.Exons()[i-1].GetTo())
-                    continue;
-                if(i == 0 && ig->Loc() > align.Exons()[i+1].GetFrom())
-                    break;
-                if(ig->GetInDelV() == gap_seq) {
-                    gap = ig;
-                    if(i > 0) break;  //first available  for all exons except the first one
+                if(ig->GetSource().m_range.NotEmpty()) {  //ggap 
+                    if(i > 0 && ig->Loc() < align.Exons()[i-1].GetTo())
+                        continue;
+                    if(i == 0 && ig->Loc() > align.Exons()[i+1].GetFrom())
+                        break;
+                    if(ig->GetInDelV() == gap_seq) {
+                        gap = ig;
+                        if(i > 0) break;  //first available  for all exons except the first one 
+                    }
                 }
             }
             _ASSERT(gap != m_editing_indels.end());
 
-            int left_end = m_edited_contig_map->MapOrigToEdited(gap->Loc());
+            int left_end = m_edited_contig_map.MapOrigToEdited(gap->Loc());
             if(left_end >= 0) {
                 left_end -= gap->Len();
                 for(TInDels::const_iterator ig = gap+1; ig != m_editing_indels.end() && ig->Loc() == gap->Loc(); ++ig)
                     left_end -= ig->Len();
             } else {
-                left_end = m_edited_contig_map->MapOrigToEdited(gap->Loc()-1);
+                left_end = m_edited_contig_map.MapOrigToEdited(gap->Loc()-1);
                 _ASSERT(left_end >= 0);
                 left_end += 1;
                 for(TInDels::const_iterator ig = gap; ig != m_editing_indels.begin() && (ig-1)->Loc() == gap->Loc(); --ig) {
@@ -6236,17 +6747,10 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
             editedmodel.AddExon(TSignedSeqRange(left_end,left_end+gap->Len()-1), "XX", "XX", 1);
         }
     }
-                    
-    TInDels editedindels = align.GetAlignMap().GetInDels(false);
-    NON_CONST_ITERATE(TInDels, i, editedindels) {
-        int newloc = m_edited_contig_map->MapOrigToEdited(i->Loc());
-        _ASSERT(newloc >= 0);
-        CInDelInfo indel(newloc, i->Len(), i->IsInsertion(), i->GetInDelV());
-        *i = indel;
-    }
 
-    CAlignMap editedamap(editedmodel.Exons(), transcript_exons, editedindels, align.Orientation(), align.GetAlignMap().TargetLen());
+    CAlignMap editedamap(editedmodel.Exons(), transcript_exons, editedindels, align.Orientation(), amap.TargetLen());
 
+    editedmodel.FrameShifts() = editedindels;
     CAlignModel editedalign(editedmodel, editedamap);
 
     _ASSERT(align.GetEdgeReadingFrames()->empty());
@@ -6254,8 +6758,11 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
     if(align.ReadingFrame().NotEmpty()) {
         CCDSInfo cds = align.GetCdsInfo();
         if(cds.IsMappedToGenome())
-            cds = cds.MapFromOrigToEdited(align.GetAlignMap());
-        editedalign.SetCdsInfo(cds.MapFromEditedToOrig(editedalign.GetAlignMap()));
+            cds = cds.MapFromOrigToEdited(amap);
+        double score = cds.Score();
+        cds.Clip(editedalign.TranscriptLimits());
+        cds.SetScore(score, cds.OpenCds());
+        editedalign.SetCdsInfo(cds.MapFromEditedToOrig(editedamap));
     }
 
     return editedalign;
@@ -6263,117 +6770,148 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
 
 void CGnomonAnnotator_Base::MapAlignmentsToEditedContig(TAlignModelList& alignments) const
 {
-    if(m_edited_contig_map) {
-        NON_CONST_ITERATE(TAlignModelList, ia, alignments) {
-            CAlignModel a = MapOneModelToEditedContig(*ia);
+    ERASE_ITERATE(TAlignModelList, ia, alignments) {
+        CAlignModel a = MapOneModelToEditedContig(*ia);
+        if(a.Limits().NotEmpty()) {
             a.SetTargetId(*ia->GetTargetId());
             *ia = a;
+        } else {
+            alignments.erase(ia);
         }
     }
 }
 
 void CGnomonAnnotator_Base::MapModelsToEditedContig(TGeneModelList& models) const
 {
-    if(m_edited_contig_map) {
-        NON_CONST_ITERATE(TGeneModelList, ia, models) {
-            *ia = MapOneModelToEditedContig(*ia);
-        }
+    NON_CONST_ITERATE(TGeneModelList, ia, models) {
+        *ia = MapOneModelToEditedContig(*ia);
+        _ASSERT(!ia->Exons().empty());
     }
-}
-
-TInDels CGnomonAnnotator_Base::GetGenomicGaps(const TGeneModelList& models){
-    TInDels ggaps;
-
-    if(models.empty())
-        return ggaps;
-
-    int left = numeric_limits<int>::max();
-    int right = 0;
-    ITERATE(TGeneModelList, i, models) {
-        left = min(left,i->Limits().GetFrom());
-        right = max(right,i->Limits().GetTo());
-    }
-
-    int len = right-left+1;
-    TIVec exons(len,0);
-    ITERATE(TGeneModelList, i, models) {
-        int numex = i->Exons().size();
-        const CModelExon* preve = 0;
-        for(int ie = 0; ie < numex; ++ie) {
-            const CModelExon* e = &(i->Exons()[ie]);
-            const CModelExon* nexte = 0;
-            if(ie < numex-1) {
-                nexte = &(i->Exons()[ie+1]);
-                if(nexte->Limits().Empty()) {
-                    if(ie < numex-2)
-                        nexte = &(i->Exons()[ie+2]);
-                    else
-                        nexte = 0;
-                }
-            }
-            if(e->Limits().NotEmpty()) {
-                int a = e->GetFrom();
-                if(e->m_fsplice && (preve == 0 || preve->GetTo()+5 < a))
-                    a = max(left,a-2);
-                int b = e->GetTo();
-                if(e->m_ssplice && (nexte == 0 || nexte->GetFrom()-5 > b))
-                    b = min(right,b+2);
-                for(int p = a; p <= b; ++p) {  // block all exons and their splices 
-                    _ASSERT(p-left >= 0 && p-left < len);
-                    exons[p-left] = 1;
-                }
-                preve = e;
-            }
-        }
-    }
-    
-    ITERATE(TGeneModelList, i, models) {
-        for(int ie = 0; ie < (int)i->Exons().size(); ++ie) {
-            const CModelExon& e = i->Exons()[ie];
-            if(e.Limits().Empty()) {
-                int pos;
-                if(ie > 0) {
-                    _ASSERT(i->Exons()[ie-1].Limits().NotEmpty());
-                    for(pos = i->Exons()[ie-1].GetTo()+1; pos-left < len && exons[pos-left] > 0; ++pos);
-                } else {
-                    _ASSERT((int)i->Exons().size() > 1 && i->Exons()[1].Limits().NotEmpty());
-                    for(pos = i->Exons()[1].GetFrom()-1; pos-left > 0 && exons[pos-left-1] > 0; --pos);
-                }
-                string seq = e.m_seq;
-                CInDelInfo::SSource source = e.m_source;
-                if(i->Strand() == eMinus) {
-                    ReverseComplement(seq.begin(),seq.end());
-                    source.m_strand = OtherStrand(source.m_strand);
-                }
-
-                //could push out of contig - will need correction in SetGenomic
-                if(pos == left)
-                    pos = left-2;  
-                if(pos == right+1)
-                    pos = right+3;
-
-                ggaps.push_back(CInDelInfo(pos, seq.length(), false, seq, source));
-            }
-        }    
-    }
-
-    uniq(ggaps);  //remove duplicates from altvariants
-
-    return ggaps;
 }
 
 void CGnomonAnnotator_Base::SetGenomic(const CResidueVec& seq)
 {
-    delete m_edited_contig_map;
-    m_edited_contig_map = 0;
+    m_edited_contig_map = CAlignMap(0, seq.size()-1);
     m_editing_indels.clear();
+    m_reversed_corrections.clear();
+    m_confirmed_bases_len.clear();
+    m_confirmed_bases_orig_len.clear();
+    m_replacements.clear();
     m_inserted_seqs.clear();
     m_notbridgeable_gaps_len.clear();
+    m_contig_acc.clear();
     m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));
 }
 
-void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const string& mask_annots, const TInDels* contig_fix_indels, const TGeneModelList* models)
+// SetGenomic for annot - models could be 0
+void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const string& mask_annots, const TGeneModelList* models) {
+    SCorrectionData correction_data;
+    m_notbridgeable_gaps_len.clear();
+    
+    if(models) {
+        CBioseq_Handle bh(scope.GetBioseqHandle(contig));
+        CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+        int length (sv.size());
+        string seq_txt;
+        sv.GetSeqData(0, length, seq_txt);
+
+        TIVec exons(length,0);
+
+        ITERATE(TGeneModelList, i, *models) {
+            ITERATE(CGeneModel::TExons, e, i->Exons()) {
+                if(e->Limits().NotEmpty()) {
+                    int a = e->GetFrom();
+                    if(a > 0 && !sv.IsInGap(a-1)) --a;
+                    if(a > 0 && !sv.IsInGap(a-1)) --a;
+                    int b = e->GetTo();
+                    if(b < length-1 && !sv.IsInGap(b+1)) ++b;
+                    if(b < length-1 && !sv.IsInGap(b+1)) ++b;
+                    for(int p = a; p <= b; ++p) {  // block all exons and their splices if not in gap
+                        exons[p] = 1;
+                    }
+                }
+            }
+        }
+
+        TIVec model_ranges(length,0);
+
+        ITERATE(TGeneModelList, i, *models) {
+            for(int p = max(0,i->Limits().GetFrom()-2); p <= min(length-1,i->Limits().GetTo()+2); ++p)
+                model_ranges[p] = 1;
+
+            ITERATE(TInDels, indl, i->FrameShifts()) {
+                if(indl->GetStatus() == CInDelInfo::eGenomeNotCorrect) {
+                    if(indl->IsMismatch()) {
+                        string s = indl->GetInDelV();
+                        for(int l = 0; l < indl->Len(); ++l)
+                            correction_data.m_replacements[indl->Loc()+l] = s[l];
+                    } else {
+                        correction_data.m_correction_indels.push_back(*indl);
+                    }
+                }
+                if(indl->GetStatus() != CInDelInfo::eUnknown) {
+                    correction_data.m_confirmed_intervals.push_back(TSignedSeqRange(indl->Loc()-1,indl->InDelEnd()));
+                    _ASSERT(correction_data.m_confirmed_intervals.back().GetFrom() >= 0 && correction_data.m_confirmed_intervals.back().GetTo() < length);
+                }
+            }
+            for(int ie = 0; ie < (int)i->Exons().size(); ++ie) {
+                const CModelExon& e = i->Exons()[ie];
+                if(e.Limits().Empty()) {
+                    int pos;
+                    if(ie > 0) {
+                        _ASSERT(i->Exons()[ie-1].Limits().NotEmpty());
+                        for(pos = i->Exons()[ie-1].GetTo()+1; pos < length && exons[pos] > 0; ++pos);
+                    } else {
+                        _ASSERT((int)i->Exons().size() > 1 && i->Exons()[1].Limits().NotEmpty());
+                        for(pos = i->Exons()[1].GetFrom(); pos > 0 && exons[pos-1] > 0; --pos);
+                    }
+                    string seq = e.m_seq;
+                    CInDelInfo::SSource source = e.m_source;
+                    if(i->Strand() == eMinus) {
+                        ReverseComplement(seq.begin(),seq.end());
+                        source.m_strand = OtherStrand(source.m_strand);
+                    }
+                    correction_data.m_correction_indels.push_back(CInDelInfo(pos, seq.length(), CInDelInfo::eDel, seq, source));
+                }
+            }    
+        }
+
+        uniq(correction_data.m_correction_indels);  //remove duplicates from altvariants
+        ERASE_ITERATE(TInDels, indl, correction_data.m_correction_indels) {  // remove 'partial' indels
+            TInDels::iterator next = indl;
+            if(++next != correction_data.m_correction_indels.end() && indl->Loc() == next->Loc()) {
+                _ASSERT(indl->IsDeletion());
+                _ASSERT(next->IsDeletion());
+                _ASSERT(indl->GetSource().m_range.Empty());
+                _ASSERT(next->GetSource().m_range.Empty());
+                VECTOR_ERASE(indl, correction_data.m_correction_indels);
+            }
+        }
+
+        TIntMap::iterator current_gap = m_notbridgeable_gaps_len.end();
+        for(int i = 0; i < length; ++i) {
+            if(model_ranges[i])
+                continue;
+
+            CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
+            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
+                if(current_gap == m_notbridgeable_gaps_len.end())
+                    current_gap = m_notbridgeable_gaps_len.insert(TIntMap::value_type(i,1)).first;
+                else
+                    ++current_gap->second;
+            } else {
+                current_gap = m_notbridgeable_gaps_len.end();
+            }
+        }
+    }
+
+    SetGenomic(contig, scope, correction_data, mask_annots);
+}
+
+void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const SCorrectionData& correction_data, const string& mask_annots)
 {
+    m_contig_acc = CIdHandler::ToString(contig);
+
     CBioseq_Handle bh(scope.GetBioseqHandle(contig));
     CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
     int length (sv.size());
@@ -6402,117 +6940,107 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
     CResidueVec seq(length);
     copy(seq_txt.begin(), seq_txt.end(), seq.begin());
 
-    delete m_edited_contig_map;
-    m_edited_contig_map = 0;
     m_editing_indels.clear();
+    m_reversed_corrections.clear();
+    m_confirmed_bases_len.clear();
+    m_confirmed_bases_orig_len.clear();
+    m_replacements.clear();
     m_inserted_seqs.clear();
-    m_notbridgeable_gaps_len.clear();
 
-    if(models) {
-        /*
-        //Temporary diagnostics
-        TIntMap ngl;
-        TIntMap::iterator cg = ngl.end();
-        for(int i = 0; i < length; ++i) {
-            CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
-            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
-                if(cg == ngl.end())
-                    cg = ngl.insert(TIntMap::value_type(i,1)).first;
-                else
-                    ++cg->second;
-            } else {
-                cg = ngl.end();
-            }
-        }
-        ITERATE(TIntMap, ig, ngl) {
-            cerr << "Notbridgeable gap " << CIdHandler::ToString(contig) << " " << ig->first << " " << ig->second << endl;
-            TSignedSeqRange gap(ig->first,ig->first+ig->second-1);
-            ITERATE(TGeneModelList, im, *models) {
-                TSignedSeqRange lim = im->Limits();
-                if(lim.IntersectingWith(gap))
-                    cerr << "Chain " << im->ID() << " intersects with notbridgeable gap" << endl;
-            }
-        }
-        */
-
-
-        vector<int> model_ranges(length);
-        ITERATE(TGeneModelList, im, *models) {
-            for(int i = max(0,im->Limits().GetFrom()-2); i <= min(length-1,im->Limits().GetTo()+2); ++i)
-                model_ranges[i] = 1;
-        }
-
-        TIntMap::iterator current_gap = m_notbridgeable_gaps_len.end();
-        for(int i = 0; i < length; ++i) {
-            if(model_ranges[i])
-                continue;
-
-            CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
-            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
-                if(current_gap == m_notbridgeable_gaps_len.end())
-                    current_gap = m_notbridgeable_gaps_len.insert(TIntMap::value_type(i,1)).first;
-                else
-                    ++current_gap->second;
-            } else {
-                current_gap = m_notbridgeable_gaps_len.end();
-            }
-        }
+    m_replacements = correction_data.m_replacements;
+    for(map<int,char>::iterator ir = m_replacements.begin(); ir != m_replacements.end(); ++ir) {
+        m_replaced_bases[ir->first] = seq[ir->first];
+        seq[ir->first] = ir->second;
     }
 
-    if(contig_fix_indels && !contig_fix_indels->empty()) {
 
-        cerr << "Genomic gaps for contig " << CIdHandler::ToString(contig) << endl;
-        ITERATE(TInDels, ig, *contig_fix_indels)
-            cerr << "Gaploc " << ig->Loc() << ' ' << seq.size() << ' ' << ig->GetInDelV() << endl;
-
-#define BLOCK_OF_Ns 35
-        //surround ggapw with Ns to satisfy MinIntron
-        ITERATE(TInDels, ig, *contig_fix_indels) {
+#define     BLOCK_OF_Ns 35
+    ITERATE(TInDels, ig, correction_data.m_correction_indels) {
+        if(ig->GetSource().m_range.Empty()) { // correction indel
+            m_editing_indels.push_back(*ig);
+        } else {                              // ggap
             int l = ig->Loc();
             l = max(0,l);
             l = min((int)seq_txt.size(),l);
-            CInDelInfo g(l, ig->Len(), ig->IsInsertion(), ig->GetInDelV(), ig->GetSource());
-            CInDelInfo Ns(l, BLOCK_OF_Ns, false, string(BLOCK_OF_Ns,'N'));
+            CInDelInfo g(l, ig->Len(), ig->GetType(), ig->GetInDelV(), ig->GetSource());
+            //surround ggap with Ns to satisfy MinIntron
+            CInDelInfo Ns(l, BLOCK_OF_Ns, CInDelInfo::eDel, string(BLOCK_OF_Ns,'N'));
             m_editing_indels.push_back(Ns);
             m_editing_indels.push_back(g);
             m_editing_indels.push_back(Ns);
         }
+    }
                 
-        m_edited_contig_map = new CAlignMap(0, seq_txt.size()-1, m_editing_indels.begin(), m_editing_indels.end());
-        CResidueVec editedseq;
-        m_edited_contig_map->EditedSequence(seq,editedseq);
-        seq = editedseq;
+    m_edited_contig_map = CAlignMap(0, seq_txt.size()-1, m_editing_indels.begin(), m_editing_indels.end());
+    CResidueVec editedseq;
+    m_edited_contig_map.EditedSequence(seq,editedseq);
+    seq = editedseq;
+           
+    ITERATE(TInDels, ig, m_editing_indels) {
+        TInDels::const_iterator next = ig;
+        if(next != m_editing_indels.end() && (++next)->GetSource().m_range.NotEmpty() && next->Loc() == ig->Loc())  // block of Ns
+            continue;
 
-        ITERATE(TInDels, ig, m_editing_indels) {
-            if(ig->IsDeletion()) {
-                int left_end = m_edited_contig_map->MapOrigToEdited(ig->Loc());
-                if(left_end >= 0) {
-                    left_end -= ig->Len();
-                    for(TInDels::const_iterator igg = ig+1; igg != m_editing_indels.end() && igg->Loc() == ig->Loc(); ++igg)
-                        left_end -= igg->Len();
-                } else {
-                    left_end = m_edited_contig_map->MapOrigToEdited(ig->Loc()-1);
-                    _ASSERT(left_end >= 0);
-                    left_end += 1;
-                    for(TInDels::const_iterator i = ig; i != m_editing_indels.begin() && (i-1)->Loc() == ig->Loc(); --i) {
-                        left_end += (i-1)->Len();
-                    }                        
-                }
-
-                m_inserted_seqs[left_end] = ig;
+        if(ig->GetSource().m_range.NotEmpty()) {  //ggap    
+            int left_end = m_edited_contig_map.MapOrigToEdited(ig->Loc());
+            if(left_end >= 0) {
+                left_end -= ig->Len();
+                for(TInDels::const_iterator igg = ig+1; igg != m_editing_indels.end() && igg->Loc() == ig->Loc(); ++igg)
+                    left_end -= igg->Len();
+            } else {
+                left_end = m_edited_contig_map.MapOrigToEdited(ig->Loc()-1);
+                _ASSERT(left_end >= 0);
+                left_end += 1;
+                for(TInDels::const_iterator i = ig; i != m_editing_indels.begin() && (i-1)->Loc() == ig->Loc(); --i) {
+                    left_end += (i-1)->Len();
+                }                        
             }
+            m_inserted_seqs[left_end] = ig;
+            ++ig;   // skip  block of Ns
+        } else {
+            int loc = m_edited_contig_map.MapOrigToEdited(ig->InDelEnd());
+            _ASSERT(loc >= 0);
+            if(ig->IsInsertion()) {
+                string s = seq_txt.substr(ig->Loc(), ig->Len());
+                m_reversed_corrections.push_back(CInDelInfo(loc, ig->Len(), CInDelInfo::eDel, NStr::ToUpper(s)));
+            } else {
+                m_reversed_corrections.push_back(CInDelInfo(loc-ig->Len(), ig->Len(), CInDelInfo::eIns));
+            }
+            m_reversed_corrections.back().SetStatus(ig->GetStatus());
         }
-
-
-        TIntMap notbridgeable_gaps_len;
-        ITERATE(TIntMap, ig, m_notbridgeable_gaps_len) {
-            int pos = m_edited_contig_map->MapOrigToEdited(ig->first);
-            _ASSERT(pos >= 0);
-            notbridgeable_gaps_len[pos] = ig->second;
-        }
-        m_notbridgeable_gaps_len = notbridgeable_gaps_len;
     }
 
+    set<int> confirmed_bases;
+    for(list<TSignedSeqRange>::const_iterator it = correction_data.m_confirmed_intervals.begin(); it != correction_data.m_confirmed_intervals.end(); ++it) {
+        TSignedSeqRange lim = *it;
+        _ASSERT(lim.NotEmpty());
+        for(int p = lim.GetFrom(); p <= lim.GetTo(); ++p)
+            confirmed_bases.insert(p);
+    }
+    TIntMap::iterator cbase_len = m_confirmed_bases_orig_len.end();
+    ITERATE(set<int>, ip, confirmed_bases) {
+        if(cbase_len == m_confirmed_bases_orig_len.end() || *ip != cbase_len->first+cbase_len->second)
+            cbase_len = m_confirmed_bases_orig_len.insert(TIntMap::value_type(*ip,1)).first;
+        else
+            ++cbase_len->second;
+    }
+
+    ITERATE(TIntMap, ic,  m_confirmed_bases_orig_len) {
+        TSignedSeqRange lim(ic->first, ic->first+ic->second-1);
+        lim = m_edited_contig_map.MapRangeOrigToEdited(lim, false);
+        _ASSERT(lim.NotEmpty());
+        m_confirmed_bases_len[lim.GetFrom()] = lim.GetLength();
+    }
+
+    TIntMap notbridgeable_gaps_len;
+    ITERATE(TIntMap, ig, m_notbridgeable_gaps_len) {
+        int pos = m_edited_contig_map.MapOrigToEdited(ig->first);
+        _ASSERT(pos >= 0);
+        notbridgeable_gaps_len[pos] = ig->second;
+    }
+    m_notbridgeable_gaps_len = notbridgeable_gaps_len;
+
+    
     m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));
 }
 

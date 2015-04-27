@@ -97,10 +97,9 @@ typedef CVectorSet<CSupportInfo> CSupportInfoSet;
 
 class CAlignModel;
 
-class NCBI_XALGOGNOMON_EXPORT CInDelInfo
-{
+class NCBI_XALGOGNOMON_EXPORT CInDelInfo {
 public:
-
+    
     struct SSource {
         SSource() : m_strand(ePlus) {}
         string m_acc;
@@ -108,34 +107,29 @@ public:
         EStrand m_strand;
     };
 
-    CInDelInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& v = kEmptyStr, const SSource& s = SSource()) : m_loc(l), m_len(len), m_is_insert(is_i), m_indelv(v),  m_source(s)
-    {
-        _ASSERT(m_indelv.empty() || (int)m_indelv.length() == len);
-        if(IsDeletion() && GetInDelV().empty())
-            m_indelv.insert( m_indelv.end(), Len(),'N');
+    enum EType {eDel, eIns, eMism};
+    enum EStatus {eGenomeNotCorrect, eGenomeCorrect, eUnknown};
+
+    CInDelInfo(TSignedSeqPos l, int len, EType type, const string& v = kEmptyStr, const SSource& s = SSource()) { Init(l, len, type, v, s); }
+
+    TSignedSeqPos Loc() const { return m_loc; 
     }
-    TSignedSeqPos Loc() const { return m_loc; }
-    int Len() const { return m_len; }
-    bool IsInsertion() const { return m_is_insert; }
-    bool IsDeletion() const { return !m_is_insert; }
-    int IsMismatch(const CInDelInfo& next) const 
-    { 
-        if(IsInsertion() && next.IsDeletion() && Loc()+Len() == next.Loc())
-            return min(Len(),next.Len()); 
-        else
-            return 0;
-    }
-    bool IntersectingWith(TSignedSeqPos a, TSignedSeqPos b) const    // insertion at least partially inside, deletion inside or flanking
+int Len() const { return m_len; }
+    int InDelEnd() const { return ((IsInsertion() || IsMismatch()) ? Loc()+Len() : Loc()); }  // first base "after" correction
+    bool IsInsertion() const { return m_type == eIns; }
+    bool IsDeletion() const { return m_type == eDel; }
+    bool IsMismatch() const { return m_type == eMism; }
+    bool IntersectingWith(TSignedSeqPos a, TSignedSeqPos b) const    // insertion/mismatch at least partially inside, deletion inside or flanking
     {
         return (IsDeletion() && Loc() >= a && Loc() <= b+1) ||
-            (IsInsertion() && Loc() <= b && a <= Loc()+Len()-1);
+            ((IsInsertion() || IsMismatch()) && Loc() <= b && a <= Loc()+Len()-1);
     }
     bool operator<(const CInDelInfo& fsi) const    // source is ignored!!!!!!!!!!!
     {
         if(m_loc != fsi.m_loc)
             return m_loc < fsi.m_loc;
-        else if(IsDeletion() != fsi.IsDeletion())
-            return IsDeletion();  // if location is same deletion first
+        else if(m_type != fsi.m_type)
+            return m_type < fsi.m_type;  // if location is same deletion first
         else if(m_len != fsi.m_len)
             return m_len < fsi.m_len;
         else
@@ -145,12 +139,29 @@ public:
     bool operator==(const CInDelInfo& fsi) const { return !(*this != fsi); }
     string GetInDelV() const { return m_indelv; }
     const SSource& GetSource() const { return m_source; }
+    EType GetType() const { return m_type; };
+    void SetStatus(EStatus s) { m_status = s; }
+    EStatus GetStatus() const { return m_status; }
 
 private:
+    void Init(TSignedSeqPos l, int len, EType type, const string& v, const SSource& s) {
+        m_loc = l;
+        m_len = len;
+        m_type = type;
+        m_status = eUnknown;
+        m_indelv = v;
+        m_source = s;
+        _ASSERT(m_indelv.empty() || (int)m_indelv.length() == len);
+        _ASSERT(m_indelv.empty() || m_type != eIns);
+        if((IsDeletion() || IsMismatch()) && GetInDelV().empty())
+            m_indelv.insert( m_indelv.end(), Len(),'N');
+    }
+
     TSignedSeqPos m_loc;  // left location for insertion, deletion is before m_loc
                           // insertion - when there are extra bases in the genome
     int m_len;
-    bool m_is_insert;
+    EType m_type;
+    EStatus m_status;
     string m_indelv;
     SSource m_source;
 };
@@ -246,31 +257,32 @@ public:
     void CombineWith(const CCDSInfo& another_cds_info);
     void Remap(const CRangeMapper& mapper);
     void Clip(TSignedSeqRange limits);
+    void Cut(TSignedSeqRange hole);
     void Clear();
 
     int Strand() const; // -1 (minus), 0 (unknown), 1 (plus)
 
-    enum EType {eSelenocysteine, eGenomeNotCorrect, eGenomeCorrect, eUnknown};
+    enum EStatus {eSelenocysteine, eGenomeNotCorrect, eGenomeCorrect, eUnknown};
     struct SPStop : public TSignedSeqRange {
-        SPStop(TSignedSeqRange r, int t) : TSignedSeqRange(r), m_type(t) {};
+        SPStop(TSignedSeqRange r, EStatus s) : TSignedSeqRange(r), m_status(s) {};
 
         //not overloaded == is used for uniquing and finding intervals
         //overloaded < is used for sorting before uniquing
         bool operator<(const SPStop& stp) const {
             if(operator==(stp))                // == is not overloaded
-                return m_type < stp.m_type;
+                return m_status < stp.m_status;
             else
                 return TSignedSeqRange::operator<(stp);
         }
 
-        int m_type;
+        EStatus m_status;
     };
 
     typedef vector<SPStop> TPStops;
     const TPStops& PStops() const { return m_p_stops; }
     bool PStop(bool includeall = true) const;                  // has premature stop(s)
     void AddPStop(SPStop stp) { m_p_stops.push_back(stp); _ASSERT( Invariant() ); }
-    void AddPStop(TSignedSeqRange r, int type);
+    void AddPStop(TSignedSeqRange r, EStatus status);
     void ClearPStops() { m_p_stops.clear(); }
 
     bool Invariant() const
@@ -405,7 +417,6 @@ public:
     void ExtendLeft(int amount);
     void ExtendRight(int amount);
     void Extend(const CGeneModel& a, bool ensure_cds_invariant = true);
-    void TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant = true);
     void RemoveShortHolesAndRescore(const CGnomonEngine& gnomon);   // removes holes shorter than min intron (may add frameshifts/stops)
    
     TSignedSeqRange TranscriptExon(int i) const; 
@@ -519,7 +530,8 @@ public:
     TInDels& FrameShifts() { return m_fshifts; }
     const TInDels& FrameShifts() const { return m_fshifts; }
     TInDels FrameShifts(TSignedSeqPos a, TSignedSeqPos b) const;
-    void RemoveExtraFShifts();
+    TInDels GetInDels(bool fs_only) const;
+    TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
 
     int FShiftedLen(TSignedSeqRange ab, bool withextras = true) const;    // won't work if a/b is insertion
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const  { return FShiftedLen(TSignedSeqRange(a,b),withextras); }
@@ -564,6 +576,9 @@ public:
 #endif
 
 private:
+    void RemoveExtraFShifts(int left, int right);
+    void TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant = true);
+
     int m_type;
     Int8 m_id;
     unsigned int m_status;
@@ -604,7 +619,7 @@ public:
 
     CAlignMap() {};
     CAlignMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b) : m_orientation(ePlus) {
-        m_orig_ranges.push_back(SMapRange(SMapRangeEdge(orig_a), SMapRangeEdge(orig_b)));
+        m_orig_ranges.push_back(SMapRange(SMapRangeEdge(orig_a), SMapRangeEdge(orig_b), kEmptyStr));
         m_edited_ranges = m_orig_ranges;
         m_target_len = FShiftedLen(orig_a, orig_b); 
     }
@@ -612,8 +627,8 @@ public:
         EEdgeType atype = eBoundary;
         EEdgeType btype = eBoundary;
         if(fsi_begin != fsi_end) {
-            if(fsi_begin->Loc() == orig_a) {
-                _ASSERT(fsi_begin->IsDeletion());   // no reason to have insertion
+            if(fsi_begin->Loc() == orig_a && !fsi_begin->IsMismatch()) {
+                _ASSERT(!fsi_begin->IsInsertion());   // no reason to have insertion
                 atype = eInDel;
             }
             TInDels::const_iterator fs = fsi_end-1;
@@ -637,8 +652,10 @@ public:
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const { return FShiftedLen(TSignedSeqRange(a,b), withextras); }
     //snap to codons works by analising transcript coordinates (MUST be a protein or reading frame cutout)
     TSignedSeqRange ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons = false) const;
+    TSignedSeqRange ShrinkToRealPointsOnEdited(TSignedSeqRange edited_range) const;
     TSignedSeqPos FShiftedMove(TSignedSeqPos orig_pos, int len) const;   // may reurn < 0 if hits a gap
-    TInDels GetInDels(bool fs_only) const;
+    //    TInDels GetInDels(bool fs_only) const;
+    //    TInDels GetAllCorrections() const;
     int TargetLen() const { return m_target_len; }
     EStrand Orientation() const { return m_orientation; }
 
@@ -655,7 +672,7 @@ public:
     
     class SMapRange {
     public:
-        SMapRange(SMapRangeEdge from, SMapRangeEdge to) : m_from(from), m_to(to) {}
+        SMapRange(SMapRangeEdge from, SMapRangeEdge to, const string& mism) : m_from(from), m_to(to), m_mism_seq(mism) {}
         SMapRangeEdge GetEdgeFrom() const { return m_from; }
         SMapRangeEdge GetEdgeTo() const { return m_to; }
         void SetEdgeFrom(SMapRangeEdge from) { m_from = from; }
@@ -670,6 +687,7 @@ public:
         string GetExtraSeqTo() const { return m_to.m_extra_seq; }
         EEdgeType GetTypeFrom() const { return m_from.m_edge_type; }
         EEdgeType GetTypeTo() const { return m_to.m_edge_type; }
+        const string& GetMismatch() const { return m_mism_seq; }
         bool operator<(const SMapRange& mr) const {
             if(m_from.m_pos == mr.m_from.m_pos) return m_to.m_pos < mr.m_to.m_pos;
             else return m_from.m_pos < mr.m_from.m_pos;
@@ -677,8 +695,10 @@ public:
     
     private:
         SMapRangeEdge m_from, m_to;
+        string m_mism_seq;
     };
 
+    //    static TInDels RemoveExtraIndels(const TInDels& indels, const CGeneModel::TExons& exons);
 
 private:
     static TSignedSeqPos MapAtoB(const vector<CAlignMap::SMapRange>& a, const vector<CAlignMap::SMapRange>& b, TSignedSeqPos p, ERangeEnd move_mode);
@@ -688,7 +708,7 @@ private:
     };
     static int FindLowerRange(const vector<CAlignMap::SMapRange>& a,  TSignedSeqPos p);
 
-    void InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, int left_orige, int left_edite, int right_orige, int right_edite, EEdgeType left_type, EEdgeType right_type, const string& left_edit_extra_seq, const string& right_edit_extra_seq);
+    void InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const string& mism, int left_orige, int left_edite, int right_orige, int right_edite, EEdgeType left_type, EEdgeType right_type, const string& left_edit_extra_seq, const string& right_edit_extra_seq);
     TSignedSeqPos InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TInDels::const_iterator fsi_begin, TInDels::const_iterator fsi_end, EEdgeType type_a, EEdgeType type_b, const string& gseq_a, const string& gseq_b);
 
     vector<SMapRange> m_orig_ranges, m_edited_ranges;
@@ -709,25 +729,22 @@ public:
 
     virtual void Clip(TSignedSeqRange limits, EClipMode mode, bool ensure_cds_invariant = true) { // drops the score!!!!!!!!!
         CGeneModel::Clip(limits,mode,ensure_cds_invariant);
-        RecalculateAlignMap();
+        RecalculateAlignMap(limits.GetFrom(), limits.GetTo());
     }
     virtual void CutExons(TSignedSeqRange hole) { // clip or remove exons, dangerous, should be completely in or outside the cds, should not cut an exon in two 
         CGeneModel::CutExons(hole);
-        RecalculateAlignMap();
+        RecalculateAlignMap(hole.GetTo()+1, hole.GetFrom()-1);
     }
 
     string TargetAccession() const;
     void SetTargetId(const objects::CSeq_id& id) { m_target_id.Reset(&id); }
     CConstRef<objects::CSeq_id> GetTargetId() const { return m_target_id; }
     int TargetLen() const { return m_alignmap.TargetLen(); }
-    TInDels GetInDels(bool fs_only) const;
-    TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
-    TInDels GetInDelsWithoutMismatches(bool fs_only) const;
     int PolyALen() const;
     CRef<objects::CSeq_align> MakeSeqAlign(const string& contig) const;   // should be used for alignments only; for chains and models will produce a Splign alignment of mRNA
 
 private:
-    void RecalculateAlignMap();
+    void RecalculateAlignMap(int left, int right);
     CAlignMap m_alignmap;
     CConstRef<objects::CSeq_id> m_target_id;
 };
@@ -860,11 +877,9 @@ void ReverseComplement(const BidirectionalIterator& first, const BidirectionalIt
     reverse(first, last);
 }
 
-
 template<class Model>
 list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
     list<Model> parts;
-    
     int left = algn.Limits().GetFrom();
     for(unsigned int i = 1; i < algn.Exons().size(); ++i) {
         if (!algn.Exons()[i-1].m_ssplice || !algn.Exons()[i].m_fsplice) {
@@ -876,7 +891,7 @@ list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
                 parts.back().Status() &= ~CGeneModel::eRightTrimmed;
                 m.Status() &= ~CGeneModel::eLeftTrimmed;
             }
-            parts.push_back(m);
+            parts.push_back(m);            
             left = algn.Exons()[i].GetFrom();
         }
     }
@@ -889,7 +904,7 @@ list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
             parts.back().Status() &= ~CGeneModel::eRightTrimmed;
             m.Status() &= ~CGeneModel::eLeftTrimmed;
         }
-        parts.push_back(m);
+        parts.push_back(m);        
 
         if(algn.Status()&CGeneModel::ePolyA) {
             if(algn.Strand() == ePlus)
@@ -907,6 +922,8 @@ list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
 
     return parts;
 }
+
+void MapAlignsToOrigContig(TAlignModelList& aligns, const TInDels& corrections, int contig_size);
 
 
 

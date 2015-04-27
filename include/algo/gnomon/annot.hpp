@@ -82,34 +82,6 @@ public:
     /// @see SelectGenes(TGeneModelList& chains, TGeneModelList& bad_aligns)
     TGeneModelList FilterGenes(TGeneModelList& chains, TGeneModelList& bad_aligns);
 
-    /// Filters and renumbers genes, excluding genes flagged to be skipped.
-    ///
-    /// @param chains List of models, which are renumbered in place.
-    /// @param bad_aligns Output list of skipped models.
-    /// @warning The models' gene IDs are renumbered.
-    ///
-    /// @deprecated Use FilterGenes(...), which does not renumber the genes.
-    /// @see FilterGenes(TGeneModelList& chains, TGeneModelList& bad_aligns)
-    NCBI_DEPRECATED
-    TGeneModelList SelectGenes(TGeneModelList& chains, TGeneModelList& bad_aligns);
-
-    /// Renumbers genes using an appropriate size of integer for the IDs.
-    ///
-    /// @see RenumGenes(TGeneModelList& models, int& gennum, Int8 geninc)
-    ///     for the old, deprecated overload.
-    void RenumGenes(TGeneModelList& models, Int8& gennum, Int8 geninc);
-
-    /// Renumbers genes using the natural size of an integer for the IDs,
-    /// which is platform-dependent.
-    ///
-    /// @warning The size of integer may be inadequate for use in practice.
-    ///
-    /// @deprecated Use the Int8 overload instead, which guarantees the
-    ///     size of the integer.
-    /// @see RenumGenes(TGeneModelList& models, Int8& gennum, Int8 geninc)
-    NCBI_DEPRECATED
-    void RenumGenes(TGeneModelList& models, int& gennum, int geninc);
-
 private:
 };
 

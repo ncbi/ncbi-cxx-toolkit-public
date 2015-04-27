@@ -107,6 +107,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     const CSeq_id& genomic_id = sps.GetGenomic_id();
 
     string mismatches;
+    string mismstatus;
 
     if(seq_align.CanGetExt()) {
         int count = 0;
@@ -123,13 +124,17 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                     }
                 } else if(type == "MismatchedBases") {
                     mismatches = (*i)->GetData().front()->GetData().GetStr();
+                } else if(type == "MismatchedBasesStatus") {
+                    mismstatus = (*i)->GetData().front()->GetData().GetStr();
                 }
             }
         }
         if(count > 0)
             SetWeight(count);
-        if(Strand() == eMinus)
+        if(Strand() == eMinus) {
             reverse(mismatches.begin(),mismatches.end());
+            reverse(mismstatus.begin(),mismstatus.end());
+        }
     }
 
 #ifdef _DEBUG 
@@ -220,6 +225,14 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
+            CInDelInfo::EStatus indelstatus = CInDelInfo::eUnknown;
+            if(!mismstatus.empty() && (chunk.IsProduct_ins() || chunk.IsGenomic_ins() || chunk.IsMismatch())) {
+                if(mismstatus.front() == 'n')
+                    indelstatus = CInDelInfo::eGenomeNotCorrect;
+                else if(mismstatus.front() == 'c')
+                    indelstatus = CInDelInfo::eGenomeCorrect;
+                mismstatus = mismstatus.substr(1);
+            }
             if (chunk.IsProduct_ins()) {
                 string v = kEmptyStr;
                 int product_ins = chunk.GetProduct_ins();
@@ -229,7 +242,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                 }
                 if(Strand() == eMinus)
                     reverse(v.begin(),v.end());
-                CInDelInfo fs(Strand()==ePlus?nuc_cur_start+pos:nuc_cur_end-pos+1, product_ins, false, v);
+                CInDelInfo fs(Strand()==ePlus?nuc_cur_start+pos:nuc_cur_end-pos+1, product_ins, CInDelInfo::eDel, v);
                 if (Strand() == ePlus)
                     indels.push_back(fs);
                 else
@@ -238,18 +251,15 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             } else if (chunk.IsGenomic_ins()) {
                 const int genomic_ins = chunk.GetGenomic_ins();
                 if (Strand()==ePlus)
-                    indels.push_back(CInDelInfo(nuc_cur_start+pos,genomic_ins));
+                    indels.push_back(CInDelInfo(nuc_cur_start+pos, genomic_ins, CInDelInfo::eIns));
                 else
-                    indels.insert(indels.begin(), CInDelInfo(nuc_cur_end-pos-genomic_ins+1,genomic_ins));
+                    indels.insert(indels.begin(), CInDelInfo(nuc_cur_end-pos-genomic_ins+1, genomic_ins, CInDelInfo::eIns));
                 pos += genomic_ins;
             } else if (chunk.IsMatch()) {
                 pos += chunk.GetMatch();
                 prod_pos += chunk.GetMatch();
             } else if (chunk.IsMismatch()) {
                 int mismatch_len = chunk.GetMismatch();
-                pos += mismatch_len;
-                prod_pos += mismatch_len;
-
                 string v(mismatch_len,'N');
                 if(!mismatches.empty()) {
                     _ASSERT(mismatch_len <= (int)mismatches.length());
@@ -257,20 +267,22 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                     mismatches = mismatches.substr(mismatch_len);
                 }
                 if(Strand() == ePlus) {
-                    CInDelInfo gins(nuc_cur_start+pos-mismatch_len, mismatch_len, true);
-                    CInDelInfo gdel(nuc_cur_start+pos, mismatch_len, false, v);
-                    indels.push_back(gins);
-                    indels.push_back(gdel);
+                    indels.push_back(CInDelInfo(nuc_cur_start+pos, mismatch_len, CInDelInfo::eMism, v));
                 } else {
                     reverse(v.begin(),v.end());
-                    CInDelInfo gins(nuc_cur_end-pos+1, mismatch_len, true);
-                    CInDelInfo gdel(nuc_cur_end-pos+1+mismatch_len, mismatch_len, false, v);
-                    indels.insert(indels.begin(), gdel);
-                    indels.insert(indels.begin(), gins);
+                    indels.insert(indels.begin(), CInDelInfo(nuc_cur_end-pos-mismatch_len+1, mismatch_len, CInDelInfo::eMism, v));
                 }
+                pos += mismatch_len;
+                prod_pos += mismatch_len;
             } else { // if (chunk.IsDiag())
                 pos += chunk.GetDiag();
                 prod_pos += chunk.GetDiag();
+            }
+            if(indelstatus != CInDelInfo::eUnknown) {
+                if(Strand() == ePlus)
+                    indels.back().SetStatus(indelstatus);
+                else
+                    indels.front().SetStatus(indelstatus);
             }
         }
 
@@ -306,7 +318,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     }
 
     m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation, target_len );
-    FrameShifts() = m_alignmap.GetInDels(true);
+    FrameShifts() = indels;
 
     TSignedSeqRange newlimits = m_alignmap.ShrinkToRealPoints(Limits(),is_protein);
     if(newlimits != Limits()) {
@@ -337,11 +349,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             
         piece_range = m_alignmap.ShrinkToRealPoints(piece_range, is_protein); // finds first projectable interval (on codon boundaries  for proteins)   
 
+        /*
         TSignedSeqRange pr;
         while(pr != piece_range) {
             pr = piece_range;
             ITERATE(TInDels, i, indels) { // here we check that no indels touch our interval from outside   
-                if((i->IsDeletion() && i->Loc() == pr.GetFrom()) || (i->IsInsertion() && i->Loc()+i->Len() == pr.GetFrom()))
+                if((i->IsDeletion() && i->Loc() == pr.GetFrom()) || ((i->IsInsertion() || i->IsMismatch()) && i->Loc()+i->Len() == pr.GetFrom()))
                     pr.SetFrom(pr.GetFrom()+1);                
                 else if(i->Loc() == pr.GetTo()+1)
                     pr.SetTo(pr.GetTo()-1);
@@ -349,6 +362,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             if(pr != piece_range)
                 piece_range = m_alignmap.ShrinkToRealPoints(pr, is_protein);
         }
+        */
 
         _ASSERT(piece_range.NotEmpty());
         _ASSERT(piece_range.IntersectingWith(piece_begin->Limits()) && piece_range.IntersectingWith(piece_end_g->Limits()));
@@ -362,32 +376,33 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     }
 
     if (is_protein) {
-        TSignedSeqRange reading_frame = Limits();
+        TSignedSeqRange reading_frame =  m_alignmap.MapRangeOrigToEdited(Limits(), true);
         TSignedSeqRange start, stop;
         if (sps.CanGetModifiers()) {
             ITERATE(CSpliced_seg::TModifiers, m, sps.GetModifiers()) {
-                TSignedSeqRange rf = m_alignmap.MapRangeOrigToEdited(reading_frame, true);
                 if ((*m)->IsStart_codon_found()) {
-                    start = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom(),rf.GetFrom()+2),false);
-                    reading_frame = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom()+3,rf.GetTo()),true);
+                    start = TSignedSeqRange(reading_frame.GetFrom(),reading_frame.GetFrom()+2);
+                    reading_frame.SetFrom(start.GetTo()+1);
                 } else if ((*m)->IsStop_codon_found()) {
-                    stop = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetTo()-2,rf.GetTo()),false);
-                    reading_frame = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom(),rf.GetTo()-3),true);
+                    stop = TSignedSeqRange(reading_frame.GetTo()-2,reading_frame.GetTo());
+                    reading_frame.SetTo(stop.GetFrom()-1);
                 }
             }
         }
 
-        CCDSInfo cds_info;
-        cds_info.SetReadingFrame( reading_frame, true);
+        CCDSInfo cds_info_t;
+        cds_info_t.SetReadingFrame(reading_frame, true);
         if (start.NotEmpty()) {
-            //            cds_info.SetStart(start, sps.GetExons().front()->GetProduct_start().AsSeqPos() == 0 && sps.GetExons().front()->GetParts().front()->IsMatch());
-            cds_info.SetStart(start, false);
+            cds_info_t.SetStart(start, false);
         }
         if (stop.NotEmpty()) {
-            //            cds_info.SetStop(stop, sps.GetExons().back()->GetProduct_end().AsSeqPos() == product_len-1 );
-            cds_info.SetStop(stop, false);
+            cds_info_t.SetStop(stop, false);
         }
-        SetCdsInfo(cds_info);
+        CCDSInfo cds_info_g = cds_info_t.MapFromEditedToOrig(m_alignmap);
+        if(cds_info_g.ReadingFrame().NotEmpty())   // successful projection
+            SetCdsInfo(cds_info_g);
+        else
+            SetCdsInfo(cds_info_t);
     }
 
     if (sps.IsSetPoly_a()) {
@@ -456,7 +471,7 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
             cds_info = cds_info.MapFromOrigToEdited(amap);
         }
         ITERATE(CCDSInfo::TPStops, stp, cds_info.PStops()) {
-            if(stp->m_type == CCDSInfo::eSelenocysteine) 
+            if(stp->m_status == CCDSInfo::eSelenocysteine) 
                 prot_seq[(stp->GetFrom()- cds_info.Cds().GetFrom())/3] = 'U';
         }
     }
@@ -484,7 +499,7 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence, const CGeneti
             cds_info = cds_info.MapFromOrigToEdited(amap);
         }
         ITERATE(CCDSInfo::TPStops, stp, cds_info.PStops()) {
-            if(stp->m_type == CCDSInfo::eSelenocysteine) 
+            if(stp->m_status == CCDSInfo::eSelenocysteine) 
                 prot_seq[(stp->GetFrom()- cds_info.Cds().GetFrom())/3] = 'U';
         }
     }

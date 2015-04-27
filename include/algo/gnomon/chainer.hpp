@@ -33,6 +33,7 @@
  */
 
 #include <algo/gnomon/gnomon_model.hpp>
+#include <algo/gnomon/aligncollapser.hpp>
 
 BEGIN_SCOPE(ncbi);
 
@@ -117,12 +118,27 @@ public:
     void SetHMMParameters(CHMMParameters* params);
     void EnableSeqMasking();
     void SetGenomic(const CResidueVec& seq);
-    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TInDels* contig_fix_idels = 0, const TGeneModelList* models = 0);
+    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TGeneModelList* models = 0);
+    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const SCorrectionData& correction_data, const string& mask_annots = kEmptyStr);
+
+    //for compatibilty with 'pre-correction' worker node
+    NCBI_DEPRECATED
+    static TInDels GetGenomicGaps(const TGeneModelList& models) { return TInDels(); }
+    NCBI_DEPRECATED
+    void SetGenomic(const CSeq_id& seqid, CScope& scope, const string& mask_annots, const TInDels* contig_fix_indels, const TGeneModelList* models = 0) {
+        if(models != 0 || contig_fix_indels == 0) {
+            SetGenomic(seqid, scope, mask_annots, models);
+        } else {
+            SCorrectionData correction_data;
+            correction_data.m_correction_indels = *contig_fix_indels;
+            SetGenomic(seqid, scope, correction_data, mask_annots);
+        }
+    }
+
     CGnomonEngine& GetGnomon();
     void MapAlignmentsToEditedContig(TAlignModelList& alignments) const;
     void MapModelsToEditedContig(TGeneModelList& models) const;
     void MapModelsToOrigContig(TGeneModelList& models) const;
-    static TInDels GetGenomicGaps(const TGeneModelList& models);
 
     typedef map<int,TInDels::const_iterator> TGgapInfo;
     typedef map<int,int> TIntMap;
@@ -133,10 +149,16 @@ protected:
     bool m_masking;
     CRef<CHMMParameters> m_hmm_params;
     auto_ptr<CGnomonEngine> m_gnomon;
-    CAlignMap* m_edited_contig_map;
-    TInDels m_editing_indels;      //original coordinates
-    TGgapInfo m_inserted_seqs;     // edited coord to indelinfo
+    CAlignMap m_edited_contig_map;
+    TInDels m_editing_indels;           // in original coordinates (include corrections, ggaps and Ns)
+    TInDels m_reversed_corrections;     // corrections from edited genome back to original (without gggaps or ns)
+    TIntMap m_confirmed_bases_len;      // include all "confirmed" or "corrected" positions in corrected coordinates
+    TIntMap m_confirmed_bases_orig_len; // include all "confirmed" or "corrected" positions in original coordinates
+    map<int,char> m_replacements;       // in original coordinates
+    map<int,char> m_replaced_bases;     // in original coordinates; just in case
+    TGgapInfo m_inserted_seqs;          // edited left coord to indelinfo for ggaps
     TIntMap m_notbridgeable_gaps_len;   // don't allow introns to cross this
+    string m_contig_acc;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -168,11 +190,15 @@ public:
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
     void FilterOutChimeras(TGeneModelList& clust);
     void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);
-    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust);
-    void ReplicateFrameShifts(TGeneModelList& models);
+    void FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust);
     void CutParts(TGeneModelList& models);
-
     TGeneModelList MakeChains(TGeneModelList& models);
+
+    // dummy functions for compatibilty with 'pre-correction' worker node
+    NCBI_DEPRECATED
+    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust) { return; }
+    NCBI_DEPRECATED
+    void ReplicateFrameShifts(TGeneModelList& models) { return; }
 
 private:
     // Prohibit copy constructor and assignment operator

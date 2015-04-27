@@ -112,6 +112,12 @@ private:
     int m_flags;
 };
 
+struct SCorrectionData {
+    list<TSignedSeqRange> m_confirmed_intervals;    // include all "confirmed" or "corrected" positions
+    map<int,char> m_replacements; 
+    TInDels m_correction_indels;
+};
+
 
 class CAlignCollapser {
 public:
@@ -119,7 +125,12 @@ public:
     void AddAlignment(const CAlignModel& align);
     void FilterAlignments();
     void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
-    TInDels GetGenomicGaps() const { return m_align_gaps; };
+
+    //for compatibilty with 'pre-correction' worker node
+    NCBI_DEPRECATED
+    TInDels GetGenomicGaps() const { return m_correction_data.m_correction_indels; };
+
+    SCorrectionData GetgenomicCorrctions() const { return m_correction_data; }
 
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
@@ -168,13 +179,14 @@ private:
     CScope* m_scope;
     typedef map<int,int> TIntMap;
     TIntMap m_genomic_gaps_len;
-    TInDels m_align_gaps;
     string m_contig;
     string m_contig_name;
     CResidueVec m_contigrv;
 
     int m_left_end;
     vector<double> m_coverage;
+
+    SCorrectionData m_correction_data;
 };
 
 END_SCOPE(gnomon)

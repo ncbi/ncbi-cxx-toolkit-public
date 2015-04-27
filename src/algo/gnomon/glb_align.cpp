@@ -39,6 +39,201 @@ BEGIN_SCOPE(gnomon)
 
 using namespace std;
 
+void CCigar::PushFront(const SElement& el) {
+    if(el.m_type == 'M') {
+        m_qfrom -= el.m_len;
+        m_sfrom -= el.m_len;
+    } else if(el.m_type == 'D')
+        m_sfrom -= el.m_len;
+    else
+        m_qfrom -= el.m_len;
+            
+    if(m_elements.empty() || m_elements.front().m_type != el.m_type)
+        m_elements.push_front(el);
+    else
+        m_elements.front().m_len += el.m_len;
+}
+
+void CCigar::PushBack(const SElement& el) {
+    if(el.m_type == 'M') {
+        m_qto += el.m_len;
+        m_sto += el.m_len;
+    } else if(el.m_type == 'D')
+        m_sto += el.m_len;
+    else
+        m_qto += el.m_len;
+            
+    if(m_elements.empty() || m_elements.back().m_type != el.m_type)
+        m_elements.push_back(el);
+    else
+        m_elements.back().m_len += el.m_len;
+}
+
+string CCigar::CigarString(int qstart, int qlen) const {
+    string cigar;
+    ITERATE(list<SElement>, i, m_elements)
+        cigar += NStr::IntToString(i->m_len)+i->m_type;
+
+    int missingstart = qstart+m_qfrom;
+    if(missingstart > 0)
+        cigar = NStr::IntToString(missingstart)+"S"+cigar;
+    int missingend = qlen-1-m_qto-qstart;
+    if(missingend > 0)
+        cigar += NStr::IntToString(missingend)+"S";
+
+    return cigar;
+}
+
+TInDels CCigar::GetInDels(int sstart, const  char* const query, const  char* subject) const {
+    TInDels indels;
+
+    int qpos = m_qfrom;
+    int spos = m_sfrom;
+    ITERATE(list<SElement>, i, m_elements) {
+        if(i->m_type == 'M') {
+            bool is_match = *(query+qpos) == *(subject+spos);
+            int len = 0;
+            for(int l = 0; l < i->m_len; ++l) {
+                if((*(query+qpos) == *(subject+spos)) == is_match) {
+                    ++len;
+                } else {
+                    if(!is_match) {
+                        CInDelInfo indl(spos-len+sstart, len, CInDelInfo::eMism, string(query+qpos-len, len)); 
+                        indels.push_back(indl);
+                    }
+                    is_match = !is_match;
+                    len = 1;
+                }
+                ++qpos;
+                ++spos;
+            }
+            if(!is_match) {
+                CInDelInfo indl(spos-len+sstart, len, CInDelInfo::eMism, string(query+qpos-len, len)); 
+                indels.push_back(indl);
+            }
+        } else if(i->m_type == 'D') {
+            CInDelInfo indl(spos+sstart, i->m_len, CInDelInfo::eIns); 
+            indels.push_back(indl);
+            spos += i->m_len;
+        } else {
+            CInDelInfo indl(spos+sstart, i->m_len, CInDelInfo::eDel, string(query+qpos, i->m_len)); 
+            indels.push_back(indl);
+            qpos += i->m_len;
+        }
+    }
+        
+    return indels;
+}
+
+string CCigar::DetailedCigarString(int qstart, int qlen, const  char* query, const  char* subject) const {
+    string cigar;
+    query += m_qfrom;
+    subject += m_sfrom;
+    ITERATE(list<SElement>, i, m_elements) {
+        if(i->m_type == 'M') {
+            bool is_match = *query == *subject;
+            int len = 0;
+            for(int l = 0; l < i->m_len; ++l) {
+                if((*query == *subject) == is_match) {
+                    ++len;
+                } else {
+                    cigar += NStr::IntToString(len)+ (is_match ? "=" : "X"); 
+                    is_match = !is_match;
+                    len = 1;
+                }
+                ++query;
+                ++subject;
+            }
+            cigar += NStr::IntToString(len)+ (is_match ? "=" : "X"); 
+        } else if(i->m_type == 'D') {
+            cigar += NStr::IntToString(i->m_len)+i->m_type;
+            subject += i->m_len;
+        } else {
+            cigar += NStr::IntToString(i->m_len)+i->m_type;
+            query += i->m_len;
+        }
+    }
+
+    int missingstart = qstart+m_qfrom;
+    if(missingstart > 0)
+        cigar = NStr::IntToString(missingstart)+"S"+cigar;
+    int missingend = qlen-1-m_qto-qstart;
+    if(missingend > 0)
+        cigar += NStr::IntToString(missingend)+"S";
+    
+    return cigar;
+}
+
+TCharAlign CCigar::ToAlign(const  char* query, const  char* subject) const {
+    TCharAlign align;
+    query += m_qfrom;
+    subject += m_sfrom;
+    ITERATE(list<SElement>, i, m_elements) {
+        if(i->m_type == 'M') {
+            align.first.insert(align.first.end(), query, query+i->m_len);
+            query += i->m_len;
+            align.second.insert(align.second.end(), subject, subject+i->m_len);
+            subject += i->m_len;
+        } else if(i->m_type == 'D') {
+            align.first.insert(align.first.end(), i->m_len, '-');
+            align.second.insert(align.second.end(), subject, subject+i->m_len);
+            subject += i->m_len;
+        } else {
+            align.first.insert(align.first.end(), query, query+i->m_len);
+            query += i->m_len;
+            align.second.insert(align.second.end(), i->m_len, '-');
+        }
+    }
+
+    return align;
+}
+
+int CCigar::Matches(const  char* query, const  char* subject) const {
+    int matches = 0;
+    query += m_qfrom;
+    subject += m_sfrom;
+    ITERATE(list<SElement>, i, m_elements) {
+        if(i->m_type == 'M') {
+            for(int l = 0; l < i->m_len; ++l) {
+                if(*query == *subject)
+                    ++matches;
+                ++query;
+                ++subject;
+            }
+        } else if(i->m_type == 'D') {
+            subject += i->m_len;
+        } else {
+            query += i->m_len;
+        }
+    }
+
+    return matches;
+}
+
+int CCigar::Distance(const  char* query, const  char* subject) const {
+    int dist = 0;
+    query += m_qfrom;
+    subject += m_sfrom;
+    ITERATE(list<SElement>, i, m_elements) {
+        if(i->m_type == 'M') {
+            for(int l = 0; l < i->m_len; ++l) {
+                if(*query != *subject)
+                    ++dist;
+                ++query;
+                ++subject;
+            }
+        } else if(i->m_type == 'D') {
+            subject += i->m_len;
+            dist += i->m_len;
+        } else {
+            query += i->m_len;
+            dist += i->m_len;
+        }
+    }
+
+    return dist;
+}
+
 CCigar GlbAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, const char delta[256][256]) {
     //	rho - new gap penalty (one base gap rho+sigma)
     // sigma - extension penalty

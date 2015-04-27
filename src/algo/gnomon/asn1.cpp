@@ -312,7 +312,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
 
             code_break->SetLoc(*pstop);
             CRef<CCode_break::C_Aa> aa(new CCode_break::C_Aa);
-            if(s->m_type == CCDSInfo::eSelenocysteine)
+            if(s->m_status == CCDSInfo::eSelenocysteine)
                 aa->SetNcbieaa('U');
             else
                 aa->SetNcbieaa('X');
@@ -805,9 +805,11 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
 
     CRef< CSeq_align > seq_align( new CSeq_align );
 
-    CRef<CObject_id> id(new CObject_id());
-    CIdHandler::SetId(*id, model.ID());
-    seq_align->SetId().push_back(id);
+    if(model.ID() > 0) {
+        CRef<CObject_id> id(new CObject_id());
+        CIdHandler::SetId(*id, model.ID());
+        seq_align->SetId().push_back(id);
+    }
 
     seq_align->SetType(CSeq_align::eType_partial);
     CSpliced_seg& spliced_seg = seq_align->SetSegs().SetSpliced();
@@ -833,8 +835,7 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
 
     CSpliced_seg::TExons& exons = spliced_seg.SetExons();
 
-    TInDels indels = model.GetInDels(false);
-
+    TInDels indels = (is_protalign ? model.GetInDels(false) : model.FrameShifts());
     TInDels::const_iterator indel_i = indels.begin();
     for (size_t i=0; i < model.Exons().size(); ++i) {
         const CModelExon *e = &model.Exons()[i]; 
@@ -852,7 +853,7 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
 
         if(e->Limits().NotEmpty()) {    // normal exon
             int last_chunk = e->GetFrom();
-            while (indel_i != indels.end() && indel_i->Loc() <= e->GetTo()+1) {
+            for( ;indel_i != indels.end() && indel_i->Loc() <= e->GetTo()+1; ++indel_i) {
                 const CInDelInfo& indel = *indel_i;
                 _ASSERT( e->GetFrom() <= indel.Loc() );
             
@@ -869,28 +870,13 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
                     last_chunk = indel.Loc();
                 }
 
-                TInDels::const_iterator next = indel_i+1;
-                int mism = 0;
-                if(next != indels.end())
-                    mism = indel.IsMismatch(*next);
-                if(mism > 0) {
-                    _ASSERT(next->Loc() <= e->GetTo()+1);
-
+                if(indel.IsMismatch()) {
+                    _ASSERT(!is_protalign);
                     CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                    chunk->SetMismatch(mism);
+                    chunk->SetMismatch(indel.Len());
                     se->SetParts().push_back(chunk);
-                    if(indel.Len() > mism) {
-                        CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                        chunk->SetGenomic_ins(indel.Len()-mism);
-                        se->SetParts().push_back(chunk);
-                    } else if(next->Len() > mism) {
-                        CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                        chunk->SetProduct_ins(next->Len()-mism);
-                        se->SetParts().push_back(chunk);
-                    }
 
                     last_chunk += indel.Len();
-                    indel_i = next;
                 } else if (indel.IsInsertion()) {
                     CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
                     chunk->SetGenomic_ins(indel.Len());
@@ -902,7 +888,6 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
                     chunk->SetProduct_ins(indel.Len());
                     se->SetParts().push_back(chunk);
                 }
-                ++indel_i;
             }
             if (e->GetFrom() <= last_chunk && last_chunk <= e->GetTo()) {
                 CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
@@ -938,6 +923,61 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
             CSpliced_exon& se = **exon_i;
             if (se.IsSetParts())
                 se.SetParts().reverse();
+        }
+    }
+
+    if(!model.FrameShifts().empty() && !is_protalign) {
+        TSignedSeqRange tlim = model.TranscriptLimits();
+        int left_not_aligned = tlim.GetFrom();
+        int right_not_aligned = model.TargetLen()-tlim.GetTo()-1;
+        if(model.Strand() == eMinus)
+            swap(left_not_aligned, right_not_aligned);
+
+        string mismatches(left_not_aligned, 'N'); // will include mismatches and deletions
+        string mismstatus;                        // will include status for mismatches and indels
+        TInDels::const_iterator indl = model.FrameShifts().begin();
+        for(int e = 0; e < (int)model.Exons().size(); ++e) {
+            if(model.Exons()[e].Limits().Empty())
+                continue;
+            if(e > 0 && !model.Exons()[e].m_fsplice) {
+                int len;
+                if(model.Orientation() == ePlus)
+                    len = model.TranscriptExon(e).GetFrom()-model.TranscriptExon(e-1).GetTo()-1;
+                else
+                    len = model.TranscriptExon(e-1).GetFrom()-model.TranscriptExon(e).GetTo()-1;
+                mismatches += string(len, 'N');
+            }
+            for( ; indl != model.FrameShifts().end() && indl->IntersectingWith(model.Exons()[e].GetFrom(), model.Exons()[e].GetTo()); ++indl) {
+                switch(indl->GetStatus()) {
+                case CInDelInfo::eGenomeNotCorrect:
+                    mismstatus.push_back('n'); break;
+                case CInDelInfo::eGenomeCorrect:
+                    mismstatus.push_back('c'); break;
+                default:
+                    mismstatus.push_back('u'); break;
+                }
+                if(!indl->IsInsertion())
+                    mismatches += indl->GetInDelV();
+            }
+        }
+        mismatches += string(right_not_aligned, 'N');
+        
+        if(mismatches.find_first_not_of('N') != string::npos) {
+            CRef<CUser_object> userm( new CUser_object);
+            CRef<CObject_id> typem(new CObject_id);
+            typem->SetStr("MismatchedBases");
+            userm->SetType(*typem);
+            userm->AddField("Bases", mismatches);
+            seq_align->SetExt().push_back(userm);
+        }
+        
+        if(mismstatus.find_first_not_of('u') != string::npos) {
+            CRef<CUser_object> users( new CUser_object);
+            CRef<CObject_id> types(new CObject_id);
+            types->SetStr("MismatchedBasesStatus");
+            users->SetType(*types);
+            users->AddField("Status", mismstatus);
+            seq_align->SetExt().push_back(users);
         }
     }
 

@@ -467,198 +467,6 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
     }
 }
 
-#define PROT_CLIP 120
-#define PROT_CLIP_FRAC 0.20
-
-void CAlignCollapser::ClipProteinToStartStop(CAlignModel& align) {
-
-    int maxclip = min(PROT_CLIP, (int)(align.AlignLen()*PROT_CLIP_FRAC+0.5));
-    TSignedSeqRange tlim = align.TranscriptLimits();
-    int leftclip = maxclip-tlim.GetFrom();
-    int rightclip = maxclip-(align.TargetLen()-tlim.GetTo()-1);
-    if(align.Strand() == eMinus)
-        swap(leftclip, rightclip);
-
-    TSignedSeqRange r(align.Limits());
-    if(leftclip > 0)
-        r.SetFrom(min(align.Limits().GetFrom()+leftclip,align.Exons().front().GetTo()-2));
-    if(rightclip > 0)
-        r.SetTo(max(align.Exons().back().GetFrom()+2,align.Limits().GetTo()-rightclip));
-    r = align.GetAlignMap().ShrinkToRealPoints(r, true);
-
-    if(r.NotEmpty()) {
-        if(r.GetFrom() > align.Exons().front().GetTo())
-            r.SetFrom(align.Limits().GetFrom());
-        if(r.GetTo() < align.Exons().back().GetFrom())
-            r.SetTo(align.Limits().GetTo());
-        if(r != align.Limits()) {
-
-            CGeneModel editedmodel = align;
-            editedmodel.SetCdsInfo(CCDSInfo());
-            vector<TSignedSeqRange> transcript_exons;
-            for(int i = 0; i < (int)align.Exons().size(); ++i) {
-                transcript_exons.push_back(align.TranscriptExon(i));
-            }
-            TInDels indels = align.GetInDels(false);
-
-            CGeneModel am = align;
-            am.Clip(r,CGeneModel::eRemoveExons);
-            if(!am.FrameShifts().empty())  // frameshift in the main body
-                return;
-
-            int left_ext = (r.GetFrom()-align.Limits().GetFrom())/3;
-            int right_ext = (align.Limits().GetTo()-r.GetTo())/3;
-            am.ExtendLeft(left_ext*3);
-            am.ExtendRight(right_ext*3);
-            CCDSInfo cds;
-            cds.SetReadingFrame(am.Limits(),true);
-            am.SetCdsInfo(cds);
-            string protseq = am.GetProtein(m_contigrv);
-
-            if(align.Strand() == eMinus)
-                swap(left_ext, right_ext);
-
-            size_t star = protseq.find("*", left_ext);
-            if(star != string::npos && star < protseq.length()-right_ext)  // stop in the main body
-                return;
-            
-            TSignedSeqRange left_term;
-            size_t m = string::npos;
-            CSeqVector protein_seqvec(m_scope->GetBioseqHandle(*align.GetTargetId()), CBioseq_Handle::eCoding_Iupac);
-            if(protein_seqvec[0] == 'M') {
-                size_t last_star = protseq.find_last_of("*",left_ext-1);
-                m = protseq.find("M", (last_star ==string::npos) ? 0 : last_star+1);   // first start after possible stop
-                if(m != string::npos && (int)m < left_ext) {
-                    left_term = am.GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(3*m,3*m+2),false);
-                    _ASSERT(left_term.NotEmpty());
-                }
-            }
-
-            TSignedSeqRange right_term;
-            star = protseq.find("*", (m == string::npos) ? 0 : m+1);   // first stop after possible start
-            if(star != string::npos && star >= protseq.length()-right_ext) {
-                right_term = am.GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(3*star,3*star+2),false);
-                _ASSERT(right_term.NotEmpty());
-            }
-
-            if(align.Strand() == eMinus)
-                swap(left_term, right_term);
-
-            TSignedSeqRange clip(editedmodel.Limits());
-            bool new_left = false;
-            bool new_right = false;
-
-            if(left_term.NotEmpty() && (left_term.GetFrom() > align.Limits().GetFrom() || !align.LeftComplete())) {
-                _ASSERT(left_term.GetTo() < r.GetFrom());
-                new_left = true;
-                clip.SetFrom(left_term.GetFrom());
-                for(int l = 0; l < (int)indels.size(); ++l) {
-                    if(indels[l].Loc() <= r.GetFrom())
-                        indels.erase(indels.begin()+l--);
-                }
-            }
-
-            if(right_term.NotEmpty() && (right_term.GetTo() < align.Limits().GetTo() || !align.RightComplete())) {
-                _ASSERT(right_term.GetFrom() > r.GetTo());
-                new_right = true;
-                clip.SetTo(right_term.GetTo());
-                for(int l = 0; l < (int)indels.size(); ++l) {
-                    if(indels[l].Loc() > r.GetTo())
-                        indels.erase(indels.begin()+l--);
-                }
-            }
-
-            if(new_left || new_right) {
-                editedmodel.Clip(clip, CGeneModel::eRemoveExons);
-                
-                CCDSInfo cds = align.GetCdsInfo();
-                TSignedSeqRange rf = cds.ReadingFrame();
-                TSignedSeqRange start = cds.Start();
-                TSignedSeqRange stop = cds.Stop();
-
-                string comment;
-
-                TSignedSeqRange atlim = align.GetAlignMap().MapRangeOrigToEdited(r, false);
-                if(new_left) {
-                    if(align.Strand() == ePlus) {
-                        start = left_term;
-                        rf.SetFrom(start.GetTo()+1);
-
-                        int newf = atlim.GetFrom()-(r.GetFrom()-start.GetFrom());
-                        if(newf < 0) {
-                            int insertlen = abs(newf);
-                            indels.insert(indels.begin(), CInDelInfo(start.GetTo()+1, insertlen, true));
-                            newf = 0;
-                        }
-                        transcript_exons.front().SetFrom(newf);
-
-                        comment = "Clipped to start";
-                    } else {
-                        stop = left_term;
-                        rf.SetFrom(stop.GetTo()+1);
-
-                        int newt = atlim.GetTo()+(r.GetFrom()-left_term.GetFrom());
-                        if(newt > align.TargetLen()-1) {
-                            int insertlen = newt-align.TargetLen()+1;
-                            indels.insert(indels.begin(), CInDelInfo(stop.GetTo()+1, insertlen, true));
-                            newt = align.TargetLen()-1;
-                        }
-                        transcript_exons.front().SetTo(newt);
-
-                        comment = "Clipped to stop";
-                    }
-                }
-
-                if(new_right) {
-                    if(!comment.empty())
-                        comment += " ";
-                    if(align.Strand() == ePlus) {
-                        stop = right_term;
-                        rf.SetTo(stop.GetFrom()-1);
-
-                        int newt = atlim.GetTo()+(stop.GetTo()-r.GetTo());
-                        if(newt > align.TargetLen()-1) {
-                            int insertlen = newt-align.TargetLen()+1;
-                            indels.push_back(CInDelInfo(stop.GetFrom()-insertlen, insertlen, true));
-                            newt = align.TargetLen()-1;
-                        }
-                        transcript_exons.back().SetTo(newt);
-
-                        comment += "Clipped to stop";
-                    } else {
-                        start = right_term;
-                        rf.SetTo(start.GetFrom()-1);
-
-                        int newf = atlim.GetFrom()-(start.GetTo()-r.GetTo());
-                        if(newf < 0) {
-                            int insertlen = abs(newf);
-                            indels.push_back(CInDelInfo(start.GetFrom()-insertlen, insertlen, true));
-                            newf = 0;
-                        }
-                        transcript_exons.back().SetFrom(newf);
-
-                        comment += "Clipped to start";
-                    }
-                }
-                
-                cds.SetReadingFrame(rf,true);
-                cds.SetStart(start);
-                cds.SetStop(stop);
-
-                CAlignMap editedamap(editedmodel.Exons(), transcript_exons, indels, align.Orientation(), align.GetAlignMap().TargetLen());
-                CAlignModel editedalign(editedmodel, editedamap);
-                editedalign.SetTargetId(*align.GetTargetId());
-                editedalign.SetCdsInfo(cds);
-#ifdef _DEBUG 
-                editedalign.AddComment(comment);
-#endif    
-
-                align = editedalign;
-            }
-        }
-    }
-}
-
 
 #define CUT_MARGIN 15
 
@@ -714,7 +522,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
     CGeneModel editedmodel = align;
 
     if(!(editedmodel.Status()&CGeneModel::eGapFiller)) {  //remove flanking bad introns AND exons
-        editedmodel.ClearExons();  // empty alignment with all atributes
+        editedmodel.ClearExons();  // empty alignment with all atributes and remove indels
         for (CAlignModel::TExons::const_iterator piece_begin = align.Exons().begin(); piece_begin != align.Exons().end(); ++piece_begin) {
             _ASSERT( !piece_begin->m_fsplice );
             
@@ -725,7 +533,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
             CAlignModel a = align;
             a.Clip(TSignedSeqRange(piece_begin->Limits().GetFrom(),piece_end->Limits().GetTo()),CGeneModel::eRemoveExons);  // only one piece   
             
-            //remove flanking bad in    trons
+            //remove flanking bad introns
             int new_left = a.Limits().GetFrom();
             for(int k = 1; k < (int)a.Exons().size(); ++k) {
                 CModelExon exonl = a.Exons()[k-1];
@@ -758,6 +566,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
             ITERATE(CGeneModel::TExons, e, a.Exons()) {
                 editedmodel.AddExon(e->Limits(), e->m_fsplice_sig, e->m_ssplice_sig, e->m_ident);
             }
+            editedmodel.FrameShifts().insert(editedmodel.FrameShifts().end(),a.FrameShifts().begin(),a.FrameShifts().end());
 
             piece_begin = piece_end;
         }
@@ -800,7 +609,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
 
     TSignedSeqRange old_limits = align.Limits();
 
-    CAlignMap editedamap(editedmodel.Exons(), transcript_exons, amap.GetInDels(false), align.Orientation(), align.GetAlignMap().TargetLen());
+    CAlignMap editedamap(editedmodel.Exons(), transcript_exons, editedmodel.FrameShifts(), align.Orientation(), align.GetAlignMap().TargetLen());
     CAlignModel editedalign(editedmodel, editedamap);
     editedalign.SetTargetId(*align.GetTargetId());
     align = editedalign;
@@ -890,11 +699,12 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
         }
     }
 
-    CAlignMap amap(exons,transcript_exons, align.GetInDels(false), ePlus, tlen);
+    CAlignMap amap(exons,transcript_exons, align.FrameShifts(), ePlus, tlen);
 
     CGeneModel editedmodel = align;
     editedmodel.ClearExons();  // empty alignment with all atributes
     vector<TSignedSeqRange> edited_transcript_exons;
+    TInDels edited_indels;
 
     for (int piece_begin = 0; piece_begin < (int)exons.size(); ++piece_begin) {
         _ASSERT( !align.Exons()[piece_begin].m_fsplice );
@@ -902,23 +712,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
         for( ; align.Exons()[piece_end].m_ssplice; ++piece_end);
         _ASSERT(piece_end < (int)align.Exons().size());
 
-        TInDels all_indels = align.GetInDels(exons[piece_begin].GetFrom(), exons[piece_end].GetTo(), false);   // possibly include mismatches as insertion/deletion pairs
-        TInDels indels;   // indels without mismatches
-        for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
-            TInDels::iterator next = i+1;
-            int mism = 0;
-            if(next != all_indels.end())
-                mism = i->IsMismatch(*next);
-            if(mism > 0) {  // mismatch pair and possibly indel
-                if(i->Len() > mism)
-                    indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
-                else if(next->Len() > mism)
-                    indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
-                i = next;
-            } else {
-                indels.push_back(*i);
-            }
-        }
+        TInDels indels = align.GetInDels(exons[piece_begin].GetFrom(), exons[piece_end].GetTo(), false);
         TInDels::const_iterator indl = indels.begin();
 
         string tseq;
@@ -1076,6 +870,10 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
                 edited_transcript_exons.push_back(TSignedSeqRange(tleft,tright));
             }
             editedmodel.AddHole();
+            ITERATE(TInDels, i, indels) {
+                if(i->InDelEnd() > grange.GetFrom() && i->Loc() <= grange.GetTo())
+                    edited_indels.push_back(*i);
+            }
         }
         piece_begin = piece_end;
     }
@@ -1086,279 +884,18 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
             te = TSignedSeqRange(tlen-1-te.GetTo(),tlen-1-te.GetFrom());
         }
     }
-    CAlignMap editedamap(editedmodel.Exons(),edited_transcript_exons, align.GetInDels(false), align.Orientation(), tlen);
+    CAlignMap editedamap(editedmodel.Exons(),edited_transcript_exons, edited_indels, align.Orientation(), tlen);
+    editedmodel.FrameShifts() = edited_indels;
     CAlignModel editedalign(editedmodel, editedamap);
     editedalign.SetTargetId(*align.GetTargetId());
 
     align = editedalign;
 }
 
-
-#define CHECK_LENGTH 10
-#define CLOSE_GAP 5
-void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& transcript, bool right_edge) const {
-
-    if(align.Exons()[ie].Limits().GetLength() < CHECK_LENGTH)
-        return;
-    if(align.Status()&CGeneModel::ePolyA) {
-        if(ie == 0 && align.Strand() == eMinus && !right_edge)
-            return;
-        if(ie == (int)align.Exons().size()-1 && align.Strand() == ePlus && right_edge)
-            return;
-    }
-
-    TSignedSeqRange texon = align.TranscriptExon(ie);
-    TSignedSeqRange tgap;
-    if((ie == 0 && !right_edge && align.Orientation() == ePlus) || (ie == (int)align.Exons().size()-1 && right_edge && align.Orientation() == eMinus)) {  // 5p not aligned
-        tgap.SetFrom(0);
-        tgap.SetTo(texon.GetFrom()-1);
-    } else if((ie == 0 && !right_edge && align.Orientation() == eMinus) || (ie == (int)align.Exons().size()-1 && right_edge && align.Orientation() == ePlus)) { // 3p not aligned
-        tgap.SetFrom(texon.GetTo()+1);
-        tgap.SetTo(align.TargetLen()-1);
-    } else {  // hole
-        if(right_edge)
-            tgap = align.GetAlignMap().MapRangeOrigToEdited(TSignedSeqRange(align.Exons()[ie].GetTo(),align.Exons()[ie+1].GetFrom()), false);
-        else
-            tgap = align.GetAlignMap().MapRangeOrigToEdited(TSignedSeqRange(align.Exons()[ie-1].GetTo(),align.Exons()[ie].GetFrom()), false);
-
-        tgap.SetFrom(tgap.GetFrom()+1);
-        tgap.SetTo(tgap.GetTo()-1);
-    }
-
-
-    //transcript sequence for exon+not aligned
-    string tseq = transcript.substr((texon+tgap).GetFrom(),(texon+tgap).GetLength());
-    if(align.Orientation() == eMinus)
-        ReverseComplement(tseq.begin(),tseq.end());   // tseq in genome direction (gap is on 'right/left' side)
-
-    int direction = right_edge ? 1 : -1;
-    int gedge = right_edge ? align.Exons()[ie].GetTo() : align.Exons()[ie].GetFrom();  // last aligned base before gap in genome coordinates
-    int tedge = right_edge ? texon.GetLength()-1 : tgap.GetLength();                   // last aligned base before gap in tseq coordinates
-
-    //expand if identical
-    int gleftlim = 0;
-    if(!right_edge && ie > 0)
-        gleftlim = align.Exons()[ie-1].GetTo()+1;
-    int grightlim = m_contig.length()-1;
-    if(right_edge && ie < (int)align.Exons().size()-1)
-        grightlim = align.Exons()[ie+1].GetFrom()-1;
-    while(gedge+direction >= gleftlim && gedge+direction <= grightlim && 
-          tedge+direction >= 0 && tedge+direction < (int)tseq.length() && 
-          tseq[tedge+direction] == m_contig[gedge+direction]) {
-        gedge += direction;
-        tedge += direction;
-    }
-
-    // cut not aligned transceipt sequence
-    int not_aligned_length = tseq.length();
-    if(right_edge)
-        tseq = tseq.substr(0,tedge+1);
-    else
-        tseq = tseq.substr(tedge);
-    not_aligned_length -= tseq.length();
-
-    int gleft = min(gedge,align.Exons()[ie].GetFrom());
-    int gright = max(gedge,align.Exons()[ie].GetTo());
-    string gseq = m_contig.substr(gleft,gright-gleft+1);
-    
-    //insert indels into both sequences
-    TInDels all_indels = align.GetAlignMap().GetInDels(false);   // possibly include mismatches as insertion/deletion pairs
-
-    TInDels indels;   // indels without mismatches
-    for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
-        TInDels::iterator next = i+1;
-        int mism = 0;
-        if(next != all_indels.end())
-            mism = i->IsMismatch(*next);
-        if(mism > 0) {  // mismatch pair and possibly indel
-            if(i->Len() > mism)
-                indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
-            else if(next->Len() > mism)
-                indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
-            i = next;
-        } else {
-            indels.push_back(*i);
-        }
-    }
-
-    TInDels::const_iterator indl = indels.end();
-    ITERATE(TInDels, i, indels) {
-        if(i->Loc() < align.Exons()[ie].GetFrom())
-            continue;
-        if(i->IsDeletion() && i->Loc() == align.Exons()[ie].GetFrom() && !align.Exons()[ie].m_fsplice)
-            continue;
-
-        indl = i;
-        break;
-    }
-    int gp = 0;
-    int tp = 0;
-    for(int i = gleft; i <= gright && indl != indels.end(); ++i) {
-        if(indl->Loc() == i) {
-            if(indl->IsDeletion()) {
-                gseq.insert(gp, indl->Len(), '#');
-                gp += indl->Len();
-                tp += indl->Len();
-            } else {
-                tseq.insert(tp, indl->Len(), '#');
-            }
-            ++indl;
-        } 
-
-        ++gp;
-        ++tp;        
-    }
-    if(indl != indels.end() && indl->Loc() == gright+1 && indl->IsDeletion()) {   // deletion at the end of exon
-        gseq.insert(gp, indl->Len(), '#');
-    }
-    _ASSERT(gseq.length() == tseq.length() && gseq.length() >= CHECK_LENGTH);
-
-
-    //trim mismatches
-    int mismatches = 0;
-    if(right_edge) {  // reverse sequences for easy counting
-        reverse(gseq.begin(),gseq.end());
-        reverse(tseq.begin(),tseq.end());
-    }
-    for(int i = 0; i < CHECK_LENGTH; ++i) {
-        if(gseq[i] != tseq[i])
-            ++mismatches;
-    }
-    while(mismatches > 0 && gseq.length() > CHECK_LENGTH) {
-        if(gseq[0] != '#')
-            gedge -= direction;
-        if(tseq[0] != '#')
-            ++not_aligned_length;
-        if(gseq[0] != tseq[0])
-            --mismatches;
-        if(gseq[CHECK_LENGTH] != tseq[CHECK_LENGTH])
-            ++mismatches;
-        gseq.erase(gseq.begin());
-        tseq.erase(tseq.begin());
-    }
-
-    if(mismatches == 0) {  
-        int distance_to_gap = -1;
-        if(right_edge) {
-            TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(gedge);
-            if(igap != m_genomic_gaps_len.end())
-                distance_to_gap = igap->first-gedge-1;
-        } else {
-            TIntMap::const_iterator igap = m_genomic_gaps_len.lower_bound(gedge);
-            if(igap != m_genomic_gaps_len.begin()) {
-                --igap;
-                distance_to_gap = gedge-(igap->first+igap->second);
-            }
-        }
-
-
-        double ident = 0.;
-        for(int i = 0; i < (int)gseq.length(); ++i) {
-            if(gseq[i] == tseq[i])
-                ++ident;
-        }
-        ident /= gseq.length();
-
-        //find splice if possible
-        string splice_sig;
-        if(distance_to_gap == 0) { // ubutting gap      
-            splice_sig = "NN";
-        } else if(distance_to_gap > CLOSE_GAP && not_aligned_length > BIG_NOT_ALIGNED) {
-            int extracut = 0; 
-            string splice, splice2;
-            if(right_edge) {
-                splice = (align.Strand() == ePlus) ? "GT" : "CT";
-                if(align.Status()&CGeneModel::eUnknownOrientation)
-                    splice2 = (align.Strand() == ePlus) ? "CT" : "GT";
-            } else {
-                splice = (align.Strand() == ePlus) ? "AG" : "AC";
-                if(align.Status()&CGeneModel::eUnknownOrientation)
-                    splice2 = (align.Strand() == ePlus) ? "AC" : "AG";
-            }
-
-            string spl;
-            while(gseq.length() > CHECK_LENGTH && extracut < EXTRA_CUT && gseq[CHECK_LENGTH] == tseq[CHECK_LENGTH]) {
-                spl = m_contig.substr(min(gedge+1,gedge+2*direction),2);
-                if(spl == splice || spl == splice2)
-                    break;
-
-                gedge -= direction;
-                ++extracut;
-                gseq.erase(gseq.begin());
-                tseq.erase(tseq.begin());
-            }
-
-            if(spl == splice || spl == splice2) {
-                if(align.Strand() == eMinus)
-                    ReverseComplement(spl.begin(),spl.end());
-                splice_sig = spl;
-
-                ident = 0.;
-                for(int i = 0; i < (int)gseq.length(); ++i) {
-                    if(gseq[i] == tseq[i])
-                        ++ident;
-                }
-                ident /= gseq.length();
-            } else {                           // didn't find splice - reverse extracut
-                gedge += extracut*direction;   // gseq and tseq are invalid after this point !!!!
-            }
-        }
-        
-        CGeneModel editedmodel = align;
-        editedmodel.ClearExons();  // empty alignment with all atributes
-        vector<TSignedSeqRange> transcript_exons;
-        
-        for(int i = 0; i < (int)align.Exons().size(); ++i) {
-            TSignedSeqRange te = align.TranscriptExon(i);
-            const CModelExon& e = align.Exons()[i];
-            if(i == ie) {
-                if(right_edge) {
-                    editedmodel.AddExon(TSignedSeqRange(e.GetFrom(),gedge),e.m_fsplice_sig, splice_sig, ident);
-                    if(gedge < e.GetTo()) { // clip
-                        te = align.GetAlignMap().MapRangeOrigToEdited(editedmodel.Exons().back().Limits(), align.Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint, CAlignMap::eSinglePoint);
-                        _ASSERT(te.NotEmpty());
-                    } else if(gedge > e.GetTo()) { // expansion
-                        int delta = gedge-e.GetTo();
-                        if(align.Orientation() == ePlus)
-                            te.SetTo(te.GetTo()+delta);
-                        else
-                            te.SetFrom(te.GetFrom()-delta);
-                    }
-                } else {
-                    editedmodel.AddExon(TSignedSeqRange(gedge,e.GetTo()), splice_sig, e.m_ssplice_sig, ident);
-                    if(gedge > e.GetFrom()) { // clip
-                        te = align.GetAlignMap().MapRangeOrigToEdited(editedmodel.Exons().back().Limits(), CAlignMap::eSinglePoint, align.Exons()[i].m_ssplice ? CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
-                        _ASSERT(te.NotEmpty());
-                    } else if(gedge < e.GetFrom()) { // expansion
-                        int delta = e.GetFrom()-gedge;
-                        if(align.Orientation() == ePlus)
-                            te.SetFrom(te.GetFrom()-delta);
-                        else
-                            te.SetTo(te.GetTo()+delta);
-                    }
-                }
-            } else {
-                editedmodel.AddExon(e.Limits(), e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
-            }
-            transcript_exons.push_back(te);
-
-            if(i < (int)align.Exons().size()-1 && (!align.Exons()[i].m_ssplice || !align.Exons()[i+1].m_fsplice))
-                editedmodel.AddHole();
-        }
-
-        CAlignMap editedamap(editedmodel.Exons(), transcript_exons, all_indels, align.Orientation(), align.GetAlignMap().TargetLen());
-        CAlignModel editedalign(editedmodel, editedamap);
-        editedalign.SetTargetId(*align.GetTargetId());
-
-        align = editedalign;
-    }
-}
-
-
 int TotalFrameShift(const TInDels& indels, int a, int b) {
     int fs = 0;
     ITERATE(TInDels, indl, indels) {
-        if(!indl->IntersectingWith(a, b))
+        if(indl->IsMismatch() || !indl->IntersectingWith(a, b))
             continue;
         if(indl->IsInsertion())
             fs += indl->Len();
@@ -1379,13 +916,6 @@ int TotalFrameShift(const TInDels& indels, TSignedSeqRange range = TSignedSeqRan
 
 
 void CAlignCollapser::FilterAlignments() {
-
-    NON_CONST_ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
-        CAlignModel& align = *i;
-        if(align.Type()&CAlignModel::eProt) {
-            ClipProteinToStartStop(align);
-        }
-    }
 
     CArgs args = CNcbiApplication::Instance()->GetArgs();
 
@@ -1746,6 +1276,12 @@ void CAlignCollapser::FilterAlignments() {
         TAlignModelList::iterator i = it++;
         CAlignModel& align = *i;
 
+        if(align.Type()&CAlignModel::eProt) {
+            CAlignModel a = align;
+            a.Status() |= CGeneModel::eUnmodifiedAlign;
+            m_aligns_for_filtering_only.push_front(a);
+        }
+
         int intronnum = 0;
         ITERATE(CGeneModel::TExons, e, align.Exons()) {
             if(e->m_fsplice)
@@ -1772,10 +1308,6 @@ void CAlignCollapser::FilterAlignments() {
 
         //clip alignmnets with bad introns
         if(align.Type()&CAlignModel::eProt) {
-            CAlignModel a = align;
-            a.Status() |= CGeneModel::eUnmodifiedAlign;
-            m_aligns_for_filtering_only.push_front(a);
-
             good_alignment = RemoveNotSupportedIntronsFromProt(align);
         } else if(align.Type()&CGeneModel::eNotForChaining) {
             good_alignment = RemoveNotSupportedIntronsFromTranscript(align, true);
@@ -1811,6 +1343,18 @@ void CAlignCollapser::FilterAlignments() {
 
     TIVec self_coverage(len,0);
 
+    //modify contig near correction indels which will ensure their clipping near self species cDNA edges (as mismatches)
+    ITERATE(TInDels, indl, m_correction_data.m_correction_indels) {
+        if(indl->IsDeletion()) {
+            m_contig[indl->Loc()] = tolower(m_contig[indl->Loc()]);
+            m_contig[indl->Loc()-1] = tolower(m_contig[indl->Loc()]-1);
+        } else {
+            for(int p = indl->Loc(); p < indl->Loc()+indl->Len(); ++p)
+                m_contig[p] = tolower(m_contig[p]);
+        }
+    }
+    
+
     //clean self species cDNA edges and calculate self coverage
     for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
         TAlignModelList::iterator i = it++;
@@ -1829,7 +1373,11 @@ void CAlignCollapser::FilterAlignments() {
                 }
             }
         }
-    }    
+    } 
+
+    //restore contig
+    NON_CONST_ITERATE(string, ip, m_contig)
+        *ip = toupper(*ip);
 
     typedef pair<TSignedSeqRange,TInDels> TGapEnd;
     set<TGapEnd> right_gends;   //rightmost exon befor gap
@@ -1848,6 +1396,7 @@ void CAlignCollapser::FilterAlignments() {
             continue;
         } 
 
+        //collect fshifts
         ITERATE(CGeneModel::TExons, ie, align.Exons()) {
             TInDels fs = align.GetInDels(ie->GetFrom(), ie->GetTo(), true);
             left_gends.insert(TGapEnd(ie->Limits(),fs));
@@ -2135,12 +1684,12 @@ void CAlignCollapser::FilterAlignments() {
                     if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && left_plus[l-m_left_end] < r-trim) { // crosses left plus splice              
                         new_r = left_plus[l-m_left_end];
                         lefts = &left_plus;
-                        endp= eLeftPlus;
+                        endp = eLeftPlus;
                     }
                     if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && left_minus[l-m_left_end] < r-trim) { // crosses left minus splice               
                         new_r = left_minus[l-m_left_end];
                         lefts = &left_minus;
-                        endp= eLeftMinus;
+                        endp = eLeftMinus;
                     }
 
                     if(new_r != r && (end_status[new_r-m_left_end]&endp) && (align.Type()&CAlignModel::eProt)) {
@@ -2165,7 +1714,7 @@ void CAlignCollapser::FilterAlignments() {
                             for(int i = pindels.size()-1; i >= 0 && pindels[i].Loc() >= new_r-FS_FUZZ; --i) 
                                 new_r = min(new_r,pindels[i].Loc()-1);
                         }
-                   }
+                    }
 
                     if(new_r != r) {
                         _ASSERT(new_r >= l);
@@ -2203,8 +1752,8 @@ void CAlignCollapser::FilterAlignments() {
     }
 
     //clean genomic gaps
-    sort(m_align_gaps.begin(),m_align_gaps.end(),GenomicGapsOrder());                            // accsession is used if the sequence is same
-    m_align_gaps.erase( unique(m_align_gaps.begin(),m_align_gaps.end()), m_align_gaps.end() );   // uses == for CInDelInfo which ignores accession
+    sort(m_correction_data.m_correction_indels.begin(),m_correction_data.m_correction_indels.end(),GenomicGapsOrder());                            // accsession is used if the sequence is same
+    m_correction_data.m_correction_indels.erase( unique(m_correction_data.m_correction_indels.begin(),m_correction_data.m_correction_indels.end()), m_correction_data.m_correction_indels.end() );   // uses == for CInDelInfo which ignores accession
 
     total += m_aligns_for_filtering_only.size();
     
@@ -2216,10 +1765,12 @@ bool CAlignCollapser::CheckAndInsert(const CAlignModel& align, TAlignModelCluste
 
     ITERATE(CGeneModel::TExons, i, align.Exons()) {
         if(i->Limits().NotEmpty()) {
-            CInDelInfo p(i->GetFrom(), 1, false);
-            TInDels::const_iterator ig = lower_bound(m_align_gaps.begin(), m_align_gaps.end(), p); // first equal or greater
-            if(ig != m_align_gaps.end() && ig->Loc() <= i->GetTo())      // exon overlaps with inserted gap
-                return false;
+            CInDelInfo p(i->GetFrom(), 1, CInDelInfo::eDel);
+            TInDels::const_iterator ig = lower_bound(m_correction_data.m_correction_indels.begin(), m_correction_data.m_correction_indels.end(), p); // first equal or greater
+            for( ; ig != m_correction_data.m_correction_indels.end() && ig->Loc() <= i->GetTo(); ++ig) {
+                if(ig->GetSource().m_range.NotEmpty())      // exon overlaps with inserted gap
+                    return false;
+            }
         }
     }
    
@@ -2495,7 +2046,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                 ReverseComplement(left_seq.begin(),left_seq.end());
                 left_src.m_strand = eMinus;
             }
-            m_align_gaps.push_back(CInDelInfo(max(0,ig->first+2*ig->second/3), left_seq.length(), false, left_seq, left_src));   // 1/3 of gap length will separate genes abatting the same gap
+            m_correction_data.m_correction_indels.push_back(CInDelInfo(max(0,ig->first+2*ig->second/3), left_seq.length(), CInDelInfo::eDel, left_seq, left_src));   // 1/3 of gap length will separate genes abatting the same gap
         }
     }
 
@@ -2523,7 +2074,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                         ReverseComplement(seq.begin(),seq.end());
                         src.m_strand = eMinus;
                     }
-                    m_align_gaps.push_back(CInDelInfo(ig->first+ig->second/2, seq.length(), false, seq, src));
+                    m_correction_data.m_correction_indels.push_back(CInDelInfo(ig->first+ig->second/2, seq.length(), CInDelInfo::eDel, seq, src));
                 } else {
                     editedmodel.AddHole();
                 }
@@ -2543,11 +2094,12 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                 ReverseComplement(right_seq.begin(),right_seq.end());
                 right_src.m_strand = eMinus;
             }
-            m_align_gaps.push_back(CInDelInfo(ig->first+ig->second/3, right_seq.length(), false, right_seq, right_src));   // 1/3 of gap length will separate genes abatting the same gap
+            m_correction_data.m_correction_indels.push_back(CInDelInfo(ig->first+ig->second/3, right_seq.length(), CInDelInfo::eDel, right_seq, right_src));   // 1/3 of gap length will separate genes abatting the same gap
         }
     }
 
-    CAlignMap editedamap(editedmodel.Exons(), transcript_exons, align.GetAlignMap().GetInDels(false), align.Orientation(), align.GetAlignMap().TargetLen());
+    CAlignMap editedamap(editedmodel.Exons(), transcript_exons, align.FrameShifts(), align.Orientation(), align.GetAlignMap().TargetLen());
+    editedmodel.FrameShifts() = align.FrameShifts();
     CAlignModel editedalign(editedmodel, editedamap);
     editedalign.SetTargetId(*align.GetTargetId());
 
@@ -2556,6 +2108,33 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
 
 #define COLLAPS_CHUNK 500000
 void CAlignCollapser::AddAlignment(const CAlignModel& a) {
+
+    string acc = a.TargetAccession();
+    if(acc.find("CorrectionData") != string::npos) {
+        if(!m_genomic_gaps_len.empty()) {
+            TIntMap::iterator gap = m_genomic_gaps_len.upper_bound(a.Limits().GetTo());               // gap clearly on the right (could be end)
+            if(gap != m_genomic_gaps_len.begin())
+                --gap;                                                                                // existing gap (not end)
+            if(gap->first <= a.Limits().GetTo() && gap->first+gap->second-1 >= a.Limits().GetFrom())  // overlap
+                return;
+        }
+
+        m_correction_data.m_confirmed_intervals.push_back(a.Limits());
+
+        TInDels corrections = a.FrameShifts();
+        ITERATE(TInDels, i, corrections) {
+            if(i->IsMismatch()) {
+                string seq = i->GetInDelV();
+                for(int l = 0; l < i->Len(); ++l)
+                    m_correction_data.m_replacements[i->Loc()+l] = seq[l];
+            } else {
+               m_correction_data.m_correction_indels.push_back(*i);
+               m_correction_data.m_correction_indels.back().SetStatus(CInDelInfo::eGenomeNotCorrect);
+            }
+        }                
+
+        return;
+    }
 
     if((a.Type()&CGeneModel::eSR) && !a.Continuous())   // ignore SR with internal gaps
         return;

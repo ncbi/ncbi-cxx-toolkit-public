@@ -510,7 +510,6 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
                             hosting_interval = (hosting_interval&interval);
                     }
                 }
-                //                _ASSERT((ig->second.front()->Type()&CGeneModel::eNested) == 0 || !hosting_interval.Empty());       
 
                 if(hosting_interval.NotEmpty()) {
                     TIterList nested(1,nested_modeli);
@@ -542,8 +541,9 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
                             hosting_interval.SetFrom(finished_interval.GetTo());
                         } else if(Precede(lim_for_nested,finished_interval)) {    // after partial model
                             hosting_interval.SetTo(finished_interval.GetFrom());
-                        } else {                                                  // overlaps partial model
-                            _ASSERT(CModelCompare::RangeNestedInIntron(finished_interval, *nested_modeli, true));
+                        } else if(CModelCompare::RangeNestedInIntron(finished_interval, *nested_modeli, true)) {
+                            //} else {                                                  // overlaps partial model
+                            // _ASSERT(CModelCompare::RangeNestedInIntron(finished_interval, *nested_modeli, true));
                             ITERATE(TIterList, im, other_gene) {
                                 nested.push_back(*im);
                             }
@@ -586,7 +586,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
              
                     models.erase(*im);
                 } else {
-                    (*im)->SetType((*im)->Type()|CGeneModel::eNested);
+                    //                    (*im)->SetType((*im)->Type()|CGeneModel::eNested);
                     included_complete_models.insert((*im)->ID()); 
                 }
             }
@@ -660,7 +660,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         TInDels fs;
         TSignedSeqRange fullcds = cds_info.Cds();
         ITERATE(TInDels, i, it->FrameShifts()) {
-            if((i->IsInsertion() && Include(fullcds,i->Loc())) ||
+            if(((i->IsInsertion() || i->IsMismatch()) && Include(fullcds,i->Loc())) ||
                (i->IsDeletion() && i->Loc() > fullcds.GetFrom() && i->Loc() <= fullcds.GetTo())) {
                 fs.push_back(*i);
             }
@@ -686,7 +686,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
             }
             int nstop = it->HasStop() ? 1 : 0;
             ITERATE(CCDSInfo::TPStops, stp, it->GetCdsInfo().PStops()) {
-                if(stp->m_type != CCDSInfo::eSelenocysteine)
+                if(stp->m_status != CCDSInfo::eSelenocysteine)
                     ++nstop;
             }
         }
