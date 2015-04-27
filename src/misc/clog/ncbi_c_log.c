@@ -40,10 +40,11 @@
 #  include <string.h>
 #  include <limits.h>
 #  include <ctype.h>
+#  include <unistd.h>
 #  include <sys/utsname.h>
 #  include <sys/time.h>
 #  include <sys/types.h>
-#  include <unistd.h>
+#  include <sys/syscall.h>
 #elif defined(NCBI_OS_MSWIN)
 #  include <sys/types.h>
 #  include <sys/timeb.h>
@@ -611,9 +612,13 @@ static TNcbiLog_TID s_GetTID(void)
     TNcbiLog_TID tid = 0;
 #if defined(NCBI_NO_THREADS)
     tid = 0;
-#elif defined(NCBI_POSIX_THREADS)
+#elif defined(NCBI_OS_UNIX)
+#  if defined(SYS_gettid)
+    tid = (TNcbiLog_TID)syscall(SYS_gettid);
+#  else
     tid = (TNcbiLog_TID)pthread_self(); /* NCBI_FAKE_WARNING */
-#elif defined(NCBI_WIN32_THREADS)
+#  endif
+#elif defined(NCBI_OS_MSWIN)
     tid = GetCurrentThreadId();
 #endif
     return tid;
