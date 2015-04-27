@@ -4702,7 +4702,6 @@ CLatLonCountryMap::x_FindCountryExtreme(const string& country)
 
     L = 0;
     R = m_CountryExtremes.size() - 1;
-    mid = 0;
 
     while (L < R) {
         mid = (L + R) / 2;
