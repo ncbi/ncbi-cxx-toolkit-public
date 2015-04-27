@@ -1164,18 +1164,12 @@ bool HasECnumberPattern (const string& str)
             if (numdigits > 0 && numdashes > 0) {
                 is_ambig = false;
                 numperiods = 0;
-                numdigits = 0;
-                numdashes = 0;
             } else if (numdigits == 0 && numdashes == 0) {
                 is_ambig = false;
                 numperiods = 0;
-                numdigits = 0;
-                numdashes = 0;
             } else if (numdashes > 1) {
                 is_ambig = false;
                 numperiods = 0;
-                numdigits = 0;
-                numdashes = 0;
             }
             numdigits = 0;
             numdashes = 0;
@@ -1183,9 +1177,6 @@ bool HasECnumberPattern (const string& str)
             if (numperiods == 3) {
                 if (numdigits > 0 && numdashes > 0) {
                     is_ambig = false;
-                    numperiods = 0;
-                    numdigits = 0;
-                    numdashes = 0;
                 } else if (numdigits > 0 || numdashes == 1) {
                     rval = true;
                 }
