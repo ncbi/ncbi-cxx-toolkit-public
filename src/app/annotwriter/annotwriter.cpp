@@ -241,6 +241,10 @@ void CAnnotWriterApp::Init()
         "GFF3 only: Use Flybase inerpretation of the GFF3 spec",
         true );
     arg_desc->AddFlag(
+        "micro-introns",
+        "GFF3 only: Incorporate micro introns",
+        true);
+    arg_desc->AddFlag(
         "binary",
         "input file is binary ASN.1",
         true );
@@ -594,6 +598,9 @@ unsigned int CAnnotWriterApp::xGffFlags(
     }
     if ( args["use-extra-quals"] ) {
         eFlags |= CGff3Writer::fExtraQuals;
+    }
+    if (args["micro-introns"]) {
+        eFlags |= CGff3Writer::fMicroIntrons;
     }
     return eFlags;
 }
