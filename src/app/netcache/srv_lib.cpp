@@ -35,10 +35,13 @@
 // everybody to use CTaskServer's infrastructure of threads, diagnostics and
 // application-related stuff
 
-// proxy
 class CDiagContextThreadData {
 public:
     static bool IsInitialized(void) {return false;}
+};
+class CThread {
+public:
+    static unsigned int GetThreadsCount() {return 0;}
 };
 
 #include "../../corelib/ncbistr.cpp"
@@ -88,6 +91,8 @@ public:
 #include "../../corelib/ncbiexpt.cpp"
 #undef NCBI_USE_ERRCODE_X
 #include "../../corelib/ncbi_process.cpp"
+#undef NCBI_USE_ERRCODE_X
+#include "../../corelib/interprocess_lock.cpp"
 #undef NCBI_USE_ERRCODE_X
 
 #if 1
