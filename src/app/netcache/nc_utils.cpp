@@ -35,13 +35,14 @@
 BEGIN_NCBI_SCOPE;
 
 
-map<int, string> s_MsgForStatus;
-map<string, int> s_StatusForMsg;
+map<EHTTPStatus, string> s_MsgForStatus;
+static
+map<string, EHTTPStatus> s_StatusForMsg;
 
 
 struct SStatusMsg
 {
-    int status;
+    EHTTPStatus status;
     const char* msg;
 };
 
@@ -49,14 +50,14 @@ struct SStatusMsg
 static SStatusMsg s_StatusMessages[] =
     {
         {eStatus_JustStarted, "ERR:Caching is not completed"},
-        {eStatus_Disabled, "ERR:Cache is disabled"},
-        {eStatus_NotAllowed, "ERR:Password in the command doesn't match server settings"},
+        {eStatus_Disabled,    "ERR:Cache is disabled"},
+        {eStatus_NotAllowed,  "ERR:Password in the command doesn't match server settings"},
         {eStatus_NoDiskSpace, "ERR:Not enough disk space"},
         {eStatus_BadPassword, "ERR:Access denied."},
-        {eStatus_NotFound, "ERR:BLOB not found."},
-        {eStatus_CondFailed, "ERR:Precondition failed"},
-        {eStatus_NoImpl, "ERR:Not implemented"},
-        {eStatus_ShuttingDown, "ERR:Shutting down"}
+        {eStatus_NotFound,    "ERR:BLOB not found."},
+        {eStatus_CondFailed,  "ERR:Precondition failed"},
+        {eStatus_NoImpl,      "ERR:Not implemented"},
+        {eStatus_ShuttingDown,"ERR:Shutting down"}
     };
 
 
@@ -64,13 +65,27 @@ static SStatusMsg s_StatusMessages[] =
 void
 InitClientMessages(void)
 {
-    Uint1 num_elems = Uint1(sizeof(s_StatusMessages) / sizeof(s_StatusMessages[0]));
-    for (Uint1 i = 0; i < num_elems; ++i) {
+    size_t num_elems = sizeof(s_StatusMessages) / sizeof(s_StatusMessages[0]);
+    for (size_t i = 0; i < num_elems; ++i) {
         SStatusMsg& stat_msg = s_StatusMessages[i];
         s_MsgForStatus[stat_msg.status] = stat_msg.msg;
-        s_StatusForMsg[stat_msg.msg] = stat_msg.status;
+        s_StatusForMsg[stat_msg.msg]    = stat_msg.status;
     }
 }
+
+EHTTPStatus GetStatusByMessage(const string& msg, EHTTPStatus def)
+{
+	if (!msg.empty() && NStr::StartsWith(msg, "ERR:")) {
+		for (map<string, EHTTPStatus>::const_iterator i = s_StatusForMsg.begin();
+			i != s_StatusForMsg.end(); ++i) {
+			if (NStr::StartsWith(msg, i->first)) {
+				return i->second;
+			}
+		}
+	}
+	return def;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // alerts

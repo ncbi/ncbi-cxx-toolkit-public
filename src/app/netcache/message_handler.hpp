@@ -106,17 +106,17 @@ enum ENCCmdFlags {
     fIsHttp  = 1 << 23,
 
 
-    eProxyBlobRead      = fNeedsBlobAccess + fUsesPeerSearch,
-    eClientBlobRead     = eProxyBlobRead + fComesFromClient,
-    eProxyBlobWrite     = fNeedsBlobAccess + fNeedsSpaceAsClient,
-    eClientBlobWrite    = eProxyBlobWrite + fComesFromClient,
-    eCopyBlobFromPeer   = fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
-                          + fDoNotCheckPassword + fNeedsAdminClient + fConfirmOnFinish,
-    eRunsInStartedSync  = fRunsInStartedSync + fNeedsAdminClient + fNeedsLowerPriority
-                          + fNeedsStorageCache,
-    eSyncBlobCmd        = eRunsInStartedSync + fNeedsBlobAccess + fDoNotProxyToPeers
-                          + fDoNotCheckPassword,
-    eBlobPut            =   fNeedsSpaceAsClient + fNeedsSpaceAsPeer
+    eProxyBlobRead      = fNeedsBlobAccess | fUsesPeerSearch,
+    eClientBlobRead     = eProxyBlobRead | fComesFromClient,
+    eProxyBlobWrite     = fNeedsBlobAccess | fNeedsSpaceAsClient,
+    eClientBlobWrite    = eProxyBlobWrite | fComesFromClient,
+    eCopyBlobFromPeer   = fNeedsBlobAccess | fNeedsStorageCache | fDoNotProxyToPeers
+                          | fDoNotCheckPassword | fNeedsAdminClient | fConfirmOnFinish,
+    eRunsInStartedSync  = fRunsInStartedSync | fNeedsAdminClient | fNeedsLowerPriority
+                          | fNeedsStorageCache,
+    eSyncBlobCmd        = eRunsInStartedSync | fNeedsBlobAccess | fDoNotProxyToPeers
+                          | fDoNotCheckPassword,
+    eBlobPut            =   fNeedsSpaceAsClient | fNeedsSpaceAsPeer
 };
 typedef Uint4 TNCCmdFlags;
 

@@ -1916,8 +1916,11 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CN
             }
 
             if (info_ptr->size > CNCDistributionConf::GetMaxBlobSizeSync()) {
-                continue;
+                if (CNCDistributionConf::IsThisServerKey(info_ptr->key)) {
+                    continue;
+                }
             }
+
             if (peer && !peer->AcceptsBlobKey(info_ptr->key)) {
                 continue;
             }

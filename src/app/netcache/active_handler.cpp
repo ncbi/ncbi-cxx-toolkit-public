@@ -380,6 +380,25 @@ CNCActiveHandler::CopyUpdate(const CNCBlobKeyLight& nc_key, Uint8 create_time)
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
+void CNCActiveHandler::CopyRemove(const CNCBlobKeyLight& nc_key, Uint8 create_time)
+{
+    m_CurCmd = eNeedOnlyConfirm;
+
+    m_CmdToSend.resize(0);
+    m_CmdToSend += "COPY_RMV \"";
+    m_CmdToSend += nc_key.Cache();
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += nc_key.RawKey();
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += nc_key.SubKey();
+    m_CmdToSend += "\" ";
+    m_CmdToSend += NStr::UInt8ToString(create_time);
+    m_CmdToSend += " ";
+    m_CmdToSend += NStr::UInt8ToString( CNCDistributionConf::GetSelfID());
+
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
+}
+
 void
 CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
                           const CNCBlobKeyLight& key,

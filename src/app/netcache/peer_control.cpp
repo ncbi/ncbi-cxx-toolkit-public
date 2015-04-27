@@ -593,7 +593,7 @@ CNCPeerControl::ReleaseConn(CNCActiveHandler* conn)
 void
 CNCPeerControl::x_DeleteMirrorEvent(SNCMirrorEvent* event)
 {
-    if (event->evt_type == eSyncWrite || event->evt_type == eSyncUpdate)
+    if (event->evt_type == eSyncWrite || event->evt_type == eSyncUpdate || event->evt_type == eSyncRemove)
         delete event;
     else if (event->evt_type == eSyncProlong)
         delete (SNCMirrorProlong*)event;
@@ -634,6 +634,9 @@ CNCPeerControl::x_ProcessMirrorEvent(CNCActiveHandler* conn, SNCMirrorEvent* eve
     }
     else if (event->evt_type == eSyncUpdate) {
         conn->CopyUpdate(event->key, event->orig_rec_no);
+    }
+    else if (event->evt_type == eSyncRemove) {
+        conn->CopyRemove(event->key, event->orig_rec_no);
     }
     else {
         SRV_FATAL("Unexpected mirror event type: " << event->evt_type);
@@ -698,6 +701,24 @@ CNCPeerControl::MirrorUpdate(const CNCBlobKey& key,
             SNCMirrorEvent* event = new SNCMirrorEvent(eSyncUpdate, slot, key, update_time);
             if (event) {
                 peer->x_ProcessUpdateEvent(event);
+            }
+        }
+    }
+}
+
+void 
+CNCPeerControl::MirrorRemove(const CNCBlobKey& key,
+                                  Uint2 slot,
+                                  Uint8 update_time)
+{
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    ITERATE(TServersList, it_srv, servers) {
+        Uint8 srv_id = *it_srv;
+        CNCPeerControl* peer = Peer(srv_id);
+        if (peer->AcceptsSyncRemove()) {
+            SNCMirrorEvent* event = new SNCMirrorEvent(eSyncRemove, slot, key, update_time);
+            if (event) {
+                peer->x_AddMirrorEvent(event, 0);
             }
         }
     }

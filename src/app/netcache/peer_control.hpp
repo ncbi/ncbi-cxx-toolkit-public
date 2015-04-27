@@ -115,6 +115,9 @@ public:
     static void MirrorUpdate(const CNCBlobKey& key,
                               Uint2 slot,
                               Uint8 update_time);
+    static void MirrorRemove(const CNCBlobKey& key,
+                              Uint2 slot,
+                              Uint8 update_time);
     static void MirrorWrite(const CNCBlobKey& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
@@ -163,6 +166,7 @@ public:
     void SetHostProtocol(Uint8 ver);
 
     bool AcceptsSyncUpdate(void) const;
+    bool AcceptsSyncRemove(void) const;
     bool AcceptsBlobKey(const CNCBlobKeyLight& key) const;
 
 private:
@@ -273,6 +277,11 @@ inline bool
 CNCPeerControl::AcceptsSyncUpdate(void) const
 {
     return m_HostProtocol >= 60700;
+}
+inline bool
+CNCPeerControl::AcceptsSyncRemove(void) const
+{
+    return m_HostProtocol >= 60806;
 }
 inline bool
 CNCPeerControl::AcceptsBlobKey(const CNCBlobKeyLight& key) const

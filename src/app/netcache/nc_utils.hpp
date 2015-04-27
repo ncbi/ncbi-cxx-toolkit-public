@@ -147,12 +147,12 @@ enum EHTTPStatus {
 
 /// Maps between status codes and error texts sent to client
 /// to explain these codes.
-extern map<int, string> s_MsgForStatus;
-extern map<string, int> s_StatusForMsg;
+extern map<EHTTPStatus, string> s_MsgForStatus;
 
 /// Initializes maps between status codes and error texts sent to client
 /// to explain these codes.
 void InitClientMessages(void);
+EHTTPStatus GetStatusByMessage(const string& msg, EHTTPStatus def);
 
 
 /////////////////////////////////////////////////////////////////////////////

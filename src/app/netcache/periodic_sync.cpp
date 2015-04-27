@@ -116,7 +116,9 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
             CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_data->slot, slot_srv->cnt_sync_ops, false);
         }
         slot_srv->sync_started = false;
-        --slot_data->cnt_sync_started;
+        if (slot_data->cnt_sync_started != 0) {
+            --slot_data->cnt_sync_started;
+        }
     }
 
     if (!is_passive  &&  !slot_srv->peer->StartActiveSync()) {
@@ -625,7 +627,17 @@ CNCActiveSyncControl::x_CheckSlotOurSync(void)
         }
     }
     else {
+        TSlotSrvsList srvs = m_SlotData->srvs;
         m_SlotData->lock.Unlock();
+        ITERATE(TSlotSrvsList, it_srv, srvs) {
+            SSyncSlotSrv* slot_srv = *it_srv;
+            if (slot_srv->sync_started) {
+                if (CSrvTime::Current().AsUSec() - slot_srv->last_active_time
+                            >= CNCDistributionConf::GetNetworkErrorTimeout()) {
+                    s_CancelSync(m_SlotData, slot_srv, 0);
+                }
+            }
+        }
     }
     return &Me::x_CheckSlotTheirSync;
 }
@@ -1034,18 +1046,29 @@ sync_next_key:
                 else
                     m_NextTask = eSynBlobUpdatePeer;
             }
-            else if (m_CurLocalBlob->first < m_CurRemoteBlob->first)
+            else if (m_CurLocalBlob->first < m_CurRemoteBlob->first) {
+                if (m_CurLocalBlob->second->isExpired()) {
+                    ++m_CurLocalBlob;
+                    goto sync_next_key;
+                }
                 m_NextTask = eSynBlobSend;
-            else
+            }
+            else {
                 m_NextTask = eSynBlobGet;
+            }
         }
         // Process the tails of the lists
-        else if (m_CurLocalBlob != m_LocalBlobs.end())
+        else if (m_CurLocalBlob != m_LocalBlobs.end()) {
+            if (m_CurLocalBlob->second->isExpired()) {
+                ++m_CurLocalBlob;
+                goto sync_next_key;
+            }
             m_NextTask = eSynBlobSend;
-        else if (m_CurRemoteBlob != m_RemoteBlobs.end())
+        } else if (m_CurRemoteBlob != m_RemoteBlobs.end()) {
             m_NextTask = eSynBlobGet;
-        else
+        } else {
             m_NextTask = eSynNeedFinalize;
+        }
     }
 }
 

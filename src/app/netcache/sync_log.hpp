@@ -43,7 +43,8 @@ enum ENCSyncEvent
 {
     eSyncWrite,     //< Blob write event
     eSyncProlong,   //< Blob life time prolongation event
-    eSyncUpdate     //< blob changed notification
+    eSyncUpdate,    //< blob changed notification
+    eSyncRemove,    //< blob removal request
 };
 
 /// Single event record

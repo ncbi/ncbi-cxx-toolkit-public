@@ -237,6 +237,10 @@ struct SNCBlobSummary
                &&  expire == other.expire
                &&  ver_expire == other.ver_expire;
     }
+    bool isExpired(void) const
+    {
+        return expire < CSrvTime::CurSecs();
+    }
 };
 
 

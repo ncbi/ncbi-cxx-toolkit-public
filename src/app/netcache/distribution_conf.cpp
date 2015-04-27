@@ -738,8 +738,9 @@ CNCDistributionConf::GetSlotByNetCacheKey(const string& key,
     return true;
 
 on_error:
+    CNCBlobKeyLight kl(key);
     CNetCacheKey tmp;
-    if (!CNetCacheKey::ParseBlobKey(key.data(), key.size(), &tmp)) {
+    if (!CNetCacheKey::ParseBlobKey(kl.RawKey().data(), kl.RawKey().size(), &tmp)) {
         SRV_LOG(Critical, "CNetCacheKey failed to parse blob key: " << key);
         return false;
     }
@@ -785,6 +786,15 @@ CNCDistributionConf::GetMainSrvId(const CNCBlobKey& key)
     return key.IsICacheKey() ? 0 : GetSrvIdByIP( GetMainSrvIP(key));
 }
 
+
+bool
+CNCDistributionConf::IsThisServerKey(const string& packed_key)
+{
+    CNCBlobKeyLight kl(packed_key);
+    CNCBlobKey blob_key;
+    blob_key.Assign(kl.Cache(), kl.RawKey(), kl.SubKey());
+    return CNCDistributionConf::IsThisServerKey(blob_key);
+}
 
 bool
 CNCDistributionConf::IsThisServerKey(const CNCBlobKey& key)

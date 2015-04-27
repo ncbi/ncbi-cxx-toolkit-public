@@ -145,6 +145,7 @@ public:
                 request confirmation -> x_WaitOneLineAnswer
     */
     void CopyUpdate(const CNCBlobKeyLight& key, Uint8 create_time);
+    void CopyRemove(const CNCBlobKeyLight& key, Uint8 create_time);
     void CopyPut(CRequestContext* cmd_ctx,
                  const CNCBlobKeyLight& key,
                  Uint2 slot,

@@ -688,6 +688,7 @@ CNCSyncLog::GetEventsList(Uint8  server,
         SBlobEvent& blob_event = (*events)[evt->key.PackedKey()];
         switch (evt->event_type) {
         case eSyncUpdate:
+        case eSyncRemove:
             break;
         case eSyncWrite:
             if (!blob_event.wr_or_rm_event)
