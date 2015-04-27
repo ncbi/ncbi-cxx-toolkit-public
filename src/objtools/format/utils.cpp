@@ -1247,10 +1247,11 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                 const CDelta_seq::TLiteral& lit = (*curr)->GetLiteral();
                 size_t lit_len = lit.CanGetLength() ? lit.GetLength() : 0;
                 len += lit_len;
-                if ( lit.CanGetSeq_data() ) {
+                if ( lit.CanGetSeq_data() && lit.GetSeq_data().Which() != CSeq_data::e_Gap ) {
                     temp.residues += lit_len;
                     while ( next != end  &&  (*next)->IsLiteral()  &&
-                        (*next)->GetLiteral().CanGetSeq_data() ) {
+                        (*next)->GetLiteral().CanGetSeq_data()  &&
+                        (*next)->GetLiteral().GetSeq_data().Which() != CSeq_data::e_Gap ) {
                         const CDelta_seq::TLiteral& next_lit = (*next)->GetLiteral();
                         size_t next_len = next_lit.CanGetLength() ?
                             next_lit.GetLength() : 0;
