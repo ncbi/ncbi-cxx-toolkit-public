@@ -3321,18 +3321,12 @@ ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc&
 
 bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat)
 {
-    // only move coding regions to nuc-prot set, and only do this if they
-    // have a product that is "local"
-    if (!orig_feat.IsSetData() || !orig_feat.GetData().IsCdregion()
-        || !orig_feat.IsSetProduct()) {
+    // only move coding regions to nuc-prot set
+    if (!orig_feat.IsSetData() || !orig_feat.GetData().IsCdregion()) {
         return false;
     }
     CBioseq_Handle nuc_bsh = orig_feat.GetScope().GetBioseqHandle(orig_feat.GetLocation());
     if (!nuc_bsh) {
-        return false;
-    }
-    CBioseq_Handle p_bsh = orig_feat.GetScope().GetBioseqHandleFromTSE(*(orig_feat.GetProduct().GetId()), nuc_bsh);
-    if (!p_bsh) {
         return false;
     }
 
