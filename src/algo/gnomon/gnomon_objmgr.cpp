@@ -227,9 +227,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             const CSpliced_exon_chunk& chunk = **p_it;
             CInDelInfo::EStatus indelstatus = CInDelInfo::eUnknown;
             if(!mismstatus.empty() && (chunk.IsProduct_ins() || chunk.IsGenomic_ins() || chunk.IsMismatch())) {
-                if(mismstatus.front() == 'n')
+                if(mismstatus[0] == 'n')
                     indelstatus = CInDelInfo::eGenomeNotCorrect;
-                else if(mismstatus.front() == 'c')
+                else if(mismstatus[0] == 'c')
                     indelstatus = CInDelInfo::eGenomeCorrect;
                 mismstatus = mismstatus.substr(1);
             }
