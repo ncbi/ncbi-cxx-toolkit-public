@@ -976,7 +976,7 @@ void CGenbankFormatter::x_Pubmed
     string strPubmed = NStr::IntToString( ref.GetPMID() );
     if ( ctx.Config().DoHTML() ) {
         string strRaw = strPubmed;
-        strPubmed = "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/";
+        strPubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/";
         strPubmed += strRaw;
         strPubmed += "\">";
         strPubmed += strRaw;
@@ -2018,7 +2018,7 @@ void CGenbankFormatter::FormatWGS
     if( bHtml ) {
         string link;
         if( first_id_equals_second_id ) {
-            link = "http://www.ncbi.nlm.nih.gov/nuccore/" + first_id;
+            link = "https://www.ncbi.nlm.nih.gov/nuccore/" + first_id;
         } else {
             string url_arg;
             const bool bIsWGSProject = CWGSItem::eWGS_Projects == wgs.GetType();
@@ -2032,10 +2032,10 @@ void CGenbankFormatter::FormatWGS
                 } else {
                     url_arg = first_id.substr(0, 6);
                 }
-                link = "http://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + 
+                link = "https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + 
                     url_arg + ( bIsWGSProject ? "#contigs" : "#scaffolds" );
             } else {
-                link = "http://www.ncbi.nlm.nih.gov/nuccore?term=" + first_id + ":" + last_id + "[PACC]";
+                link = "https://www.ncbi.nlm.nih.gov/nuccore?term=" + first_id + ":" + last_id + "[PACC]";
             }
         }
         wgs_line = "<a href=\"" + link + "\">" + wgs_line + "</a>";
@@ -2094,7 +2094,7 @@ void CGenbankFormatter::FormatTSA
         }
         TryToSanitizeHtml(tsa_master);
         if( ! tsa_master.empty() ) {
-            id_range = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + tsa_master + "\">" + id_range + "</a>";
+            id_range = "<a href=\"https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + tsa_master + "\">" + id_range + "</a>";
         }
     }
 

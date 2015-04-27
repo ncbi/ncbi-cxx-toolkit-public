@@ -446,7 +446,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
                 if (ctx.Config().DoHTML()) {
                     xrefs.push_back
                         ("MIM <a href=\""
-                         "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id=" + id
+                         "https://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id=" + id
                          + "\">" + id + "</a>");
                 } else {
                     xrefs.push_back("MIM:" + id);
@@ -677,7 +677,7 @@ bool CDBSourceItem::x_ExtractLinkableSource(
         string m_url;
         bool   m_must_be_all_digits;
     } potentialPrefixes[] = {
-        { "Mmdb_id:", "http://www.ncbi.nlm.nih.gov/Structure/mmdb/mmdbsrv.cgi?uid=", true }
+        { "Mmdb_id:", "https://www.ncbi.nlm.nih.gov/Structure/mmdb/mmdbsrv.cgi?uid=", true }
     };
 
     const static size_t numPotentialPrefixes = sizeof(potentialPrefixes)/sizeof(potentialPrefixes[0]);

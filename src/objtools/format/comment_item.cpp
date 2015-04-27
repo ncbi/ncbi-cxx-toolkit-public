@@ -1436,7 +1436,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         return CNcbiOstrstreamToString(result);
     }
     if ( label_str == "Annotation Software Version") {
-        result << "<a href=\"http://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
@@ -1445,7 +1445,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         string snd;
         NStr::Replace( data_str, " Annotation Release ", "/", fst );
         NStr::Replace( fst, " ", "_", snd );
-        result << "<a href=\"http://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
                << snd
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);

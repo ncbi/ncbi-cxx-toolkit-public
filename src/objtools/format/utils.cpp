@@ -1573,36 +1573,36 @@ EResolveOrder GetResolveOrder(CScope& scope,
 //  Link locations:
 //  ============================================================================
 const string strLinkBaseNuc( 
-    "http://www.ncbi.nlm.nih.gov/nuccore/" );
+    "https://www.ncbi.nlm.nih.gov/nuccore/" );
 const string strLinkBaseProt( 
-    "http://www.ncbi.nlm.nih.gov/protein/" );
+    "https://www.ncbi.nlm.nih.gov/protein/" );
 
 const string strLinkBaseEntrezViewer(
-    "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" );
+    "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" ); // https forwarded to http
 
 const string strLinkBaseTaxonomy( 
-    "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
+    "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
 const string strLinkBaseTransTable(
-    "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
+    "https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
 const string strLinkBasePubmed(
-    "http://www.ncbi.nlm.nih.gov/pubmed/" );
+    "https://www.ncbi.nlm.nih.gov/pubmed/" );
 const string strLinkBaseExpasy(
-    "http://www.expasy.org/enzyme/" );
+    "http://www.expasy.org/enzyme/" ); // not government site
 const string strLinkBaseNucSearch(
-    "http://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=" );
+    "https://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=" );
 const string strLinkBaseGenomePrj(
-    "http://www.ncbi.nlm.nih.gov/bioproject/" );
+    "https://www.ncbi.nlm.nih.gov/bioproject/" );
 const string strLinkBaseLatLon(
-    "http://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html" );
+    "https://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html" );
 const string strLinkBaseGeneOntology (
-    "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" );
+    "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" ); // not government site
 const string strLinkBaseGeneOntologyRef (
-    "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:" );
+    "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:" ); // not government site
 const string strLinkBaseUSPTO(
     "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=" );
 
 const string strDocLink(
-    "http://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/" );
+    "https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/" );
 
 namespace {
     // make sure we're not "double-sanitizing"

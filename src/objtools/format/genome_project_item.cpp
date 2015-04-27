@@ -93,7 +93,7 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
             if (NStr::StartsWith (id, "SRZ") ||
                 NStr::StartsWith (id, "DRZ") ||
                 NStr::StartsWith (id, "ERZ")) {
-                url = "http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
+                url = "https://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
             }
             result << "<a href=\"" << url << id << "\">";
         }
@@ -222,11 +222,11 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 
     typedef SStaticPair<const char *, SDbLinkLabelInfo> TDbLinkLabelToInfo;
     static const TDbLinkLabelToInfo kDbLinkLabelToInfo[] = {
-        { "Assembly",               { true,  false, "http://www.ncbi.nlm.nih.gov/assembly/" } },
-        { "BioProject",             { true,  false, "http://www.ncbi.nlm.nih.gov/bioproject/" } },
-        { "BioSample",              { true,  false, "http://www.ncbi.nlm.nih.gov/biosample/" } },
+        { "Assembly",               { true,  false, "https://www.ncbi.nlm.nih.gov/assembly/" } },
+        { "BioProject",             { true,  false, "https://www.ncbi.nlm.nih.gov/bioproject/" } },
+        { "BioSample",              { true,  false, "https://www.ncbi.nlm.nih.gov/biosample/" } },
         { "ProbeDB",                { true,  false, "" } },
-        { "Sequence Read Archive",  { true,  false, "http://www.ncbi.nlm.nih.gov/sra/" } },
+        { "Sequence Read Archive",  { true,  false, "https://www.ncbi.nlm.nih.gov/sra/" } },
         { "Trace Assembly Archive", { false, true,  "" } }
     };
     typedef const CStaticPairArrayMap<const char *, SDbLinkLabelInfo, PNocase> TDbLinkLabelToInfoMap;
@@ -274,7 +274,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 
                     string alt_url;
                     if (NStr::Equal (label, "Sequence Read Archive")) {
-                        alt_url = "http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
+                        alt_url = "https://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
                     }
                     string dblinkValue = s_JoinLinkableStrs( 
                         *pStrs, dbLinkLabelInfo.url, alt_url, bHtml );
