@@ -2304,6 +2304,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
 }
 
 
+#if 0
+// Commenting out this unit test - we do not plan on supporting segmented sets in the future
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
@@ -2382,6 +2384,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
 
     CLEAR_ERRORS
 }
+#endif
 
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
