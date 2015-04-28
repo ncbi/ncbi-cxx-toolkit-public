@@ -2580,7 +2580,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
 #  endif /*SOL_IP && IP_MTU*/
                 *mtu = '\0';
 #else
-            static const char mtu = "";
+            static const char* mtu = "";
 #endif /*_DEBUG && !NDEBUG*/
             CORE_LOGF(eLOG_Trace,
                       ("%sConnection established%s", s_ID(sock, _id), mtu));
