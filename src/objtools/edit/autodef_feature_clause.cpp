@@ -326,7 +326,7 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
             break;
     }
     
-    if (m_Biomol == CMolInfo::eBiomol_genomic) {
+    if (m_Biomol == CMolInfo::eBiomol_genomic || m_Biomol == CMolInfo::eBiomol_cRNA) {
         if (x_IsPseudo()) {
             typeword = "pseudogene";
             return true;

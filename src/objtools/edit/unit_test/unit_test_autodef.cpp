@@ -1214,6 +1214,34 @@ BOOST_AUTO_TEST_CASE(Test_GB_4043)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_4078)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    CRef<objects::CSeq_feat> spacer = unit_test_util::AddMiscFeature(nuc);
+    spacer->SetComment("G-L intergenic spacer");
+    spacer->SetLocation().SetInt().SetFrom(cds->SetLocation().GetStart(eExtreme_Biological));
+    spacer->SetLocation().SetInt().SetTo(cds->SetLocation().GetStart(eExtreme_Biological) + 2);
+    spacer->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    CRef<objects::CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus("G");
+    unit_test_util::AddFeat(gene, nuc);
+
+
+    AddTitle(nuc, "Sebaea microphylla fake protein name (G) gene, partial cds; and G-L intergenic spacer, partial sequence.");
+
+    CheckDeflineMatches(entry);
+
+    unit_test_util::SetBiomol(nuc, CMolInfo::eBiomol_cRNA);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+
+
+    CheckDeflineMatches(entry);
+
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
