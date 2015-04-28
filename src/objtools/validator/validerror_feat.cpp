@@ -768,6 +768,8 @@ int CGoTermSortStruct::Compare(const CGoTermSortStruct& g2) const
     if (compare == 0) {
         compare = NStr::Compare (m_Evidence, g2.m_Evidence);
     }
+    if (compare > 0) return 1;
+    if (compare < 0) return -1;
 
     if (m_Pmid == 0) return 1;
     if (g2.m_Pmid == 0) return -1;
@@ -4669,9 +4671,6 @@ TGi CValidError_feat::x_SeqIdToGiNumber(
     TGi gi = ZERO_GI;
     try {
         CRef<CSeq_id> id(new CSeq_id(seq_id));
-        if (id->IsGenbank()) {
-            gi = GI_FROM(TIntId, 1);
-        }
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
         gi = m_Scope->GetGi (idh);
     } catch (CException ) {
@@ -5451,7 +5450,6 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
     
     CBioseq_Handle nuc = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     if (!nuc) {
-        has_errors = true;
         if (report_errors  ||  unclassified_except) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_MrnaTransFail,
                 "Unable to transcribe mRNA", feat);
