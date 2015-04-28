@@ -51,7 +51,7 @@
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
-#  include <gnutls/abstract.h>
+#  include <gnutls/gnutls.h>
 #  define GNUTLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
 #  define GNUTLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
 #  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
