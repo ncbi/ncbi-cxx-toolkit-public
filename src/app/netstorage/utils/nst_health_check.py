@@ -13,6 +13,7 @@ import sys, datetime, socket, os
 from optparse import OptionParser
 from ncbi_grid_1_1.ncbi import json_over_uttp, uttp
 import pprint
+import random
 
 
 # Defines three script modes
@@ -45,8 +46,15 @@ PENALTY_CURVE = [ 90, 99 ]
 VERBOSE_LOG_FILE = None
 #VERBOSE_LOG_FILE = "/home/satskyse/nst_health_check.log"
 
-SESSIONID = '1111111111111111_0000SID'
-NCBI_PHID = 'NST_HEALTH_CHECK.NCBI.PHID'
+
+def generateSessionID():
+    " Generates the session ID in an appropriate format "
+    # It sould be like 1111111111111111_0000SID
+    return str( random.randint( 1111111111111111,
+                                9999999999999999 ) ) + "_0000SID"
+
+SESSIONID = generateSessionID()
+NCBI_PHID = 'NST_HEALTH_CHECK_NCBI_PHID'
 
 try:
     hostIP = socket.gethostbyname( socket.gethostname() )
@@ -159,7 +167,6 @@ class NetStorage:
         " Establishes a connection to the server "
         socket.socket.write = socket.socket.send
         socket.socket.flush = lambda ignore: ignore
-        socket.socket.readline = socket.socket.recv
 
         self.__sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
         self.__sock.settimeout( timeout )
@@ -448,7 +455,7 @@ def main():
         return penaltyValue
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_RESERVE_CODE + 1,
+                log( BASE_STANDBY_CODE + 0,
                      "Error communicating to server (with metadata): socket timeout" ) )
 
     except NSTProtocolError, exc:
