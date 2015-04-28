@@ -2563,8 +2563,8 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
     }
 
     if (!sock->connected) {
-#if defined(_DEBUG)  &&  !defined(NDEBUG)
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
             char mtu[128];
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
             if (sock->port) {
@@ -2579,9 +2579,12 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
             } else
 #  endif /*SOL_IP && IP_MTU*/
                 *mtu = '\0';
-            CORE_TRACEF(("%sConnection established%s", s_ID(sock, _id), mtu));
-        }
+#else
+            static const char mtu = "";
 #endif /*_DEBUG && !NDEBUG*/
+            CORE_LOGF(eLOG_Trace,
+                      ("%sConnection established%s", s_ID(sock, _id), mtu));
+        }
         if (s_ReuseAddress == eOn
 #ifdef NCBI_OS_UNIX
             &&  !sock->path[0]
@@ -2608,21 +2611,31 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 const unsigned int wtv_set = sock->w_tv_set;
                 struct timeval rtv;
                 struct timeval wtv;
+                char* desc = 0;
                 if (rtv_set)
                     rtv = sock->r_tv;
                 if (wtv_set)
                     wtv = sock->w_tv;
                 SOCK_SET_TIMEOUT(sock, r, tv);
                 SOCK_SET_TIMEOUT(sock, w, tv);
-                status = sslopen(sock->session, error);
+                status = sslopen(sock->session, error, &desc);
                 if ((sock->w_tv_set = wtv_set) != 0)
                     x_tvcpy(&sock->w_tv, &wtv);
                 if ((sock->r_tv_set = rtv_set) != 0)
                     x_tvcpy(&sock->r_tv, &rtv);
-                if (status != eIO_Success)
-                    *what = "SSL hello";
-                else
+                if (status == eIO_Success) {
                     sock->pending = 0;
+                    if (desc) {
+                        if (sock->log == eOn
+                            ||  (sock->log == eDefault  &&  s_Log == eOn)) {
+                            CORE_LOGF(eLOG_Trace,
+                                      ("%sSSL session established %s",
+                                       s_ID(sock, _id), desc));
+                        }
+                        free(desc);
+                    }
+                } else
+                    *what = "SSL hello";
             } else
                 status = eIO_NotSupported;
         } else

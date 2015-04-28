@@ -117,7 +117,7 @@ extern "C" {
 static EIO_Status  s_GnuTlsInit  (FSSLPull pull, FSSLPush push);
 static void*       s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
                                   NCBI_CRED cred, int* error);
-static EIO_Status  s_GnuTlsOpen  (void* session, int* error);
+static EIO_Status  s_GnuTlsOpen  (void* session, int* error, char** desc);
 static EIO_Status  s_GnuTlsRead  (void* session,       void* buf,  size_t size,
                                   size_t* done, int* error);
 static EIO_Status  s_GnuTlsWrite (void* session, const void* data, size_t size,
@@ -191,26 +191,34 @@ static EIO_Status x_RetryStatus(gnutls_session_t session, EIO_Event direction)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static EIO_Status x_ErrorToStatus(int error,
+static EIO_Status x_ErrorToStatus(int* error,
                                   gnutls_session_t session,EIO_Event direction)
 {
     EIO_Status status;
 
-    assert(error <= 0);
+    assert(error  &&  *error <= 0);
 
-    if (!error)
+    if (!*error)
         return eIO_Success;
-    else if (error == GNUTLS_E_AGAIN)
+    else if (*error == GNUTLS_E_AGAIN)
         status = x_RetryStatus(session, direction);
-    else if (error == GNUTLS_E_INTERRUPTED)
+    else if (*error == GNUTLS_E_INTERRUPTED)
         status = eIO_Interrupt;
-    else if (gnutls_error_is_fatal(error))
+    else if (*error == GNUTLS_E_WARNING_ALERT_RECEIVED) {
+        status = eIO_Unknown;
+        *error = GNUTLS_E_APPLICATION_ERROR_MAX - gnutls_alert_get(session);
+    }
+    else if (*error == GNUTLS_E_FATAL_ALERT_RECEIVED) {
+        status = eIO_Closed;
+        *error = GNUTLS_E_APPLICATION_ERROR_MAX - gnutls_alert_get(session);
+    }
+    else if (gnutls_error_is_fatal(*error))
         status = eIO_Closed;
     else
         status = eIO_Unknown;
 #if 0
     CORE_TRACEF(("GNUTLS error %d -> CONNECT status %s",
-                 error, IO_StatusStr(status)));
+                 *error, IO_StatusStr(status)));
 #endif
     return status;
 }
@@ -342,7 +350,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
 }
 
 
-static EIO_Status s_GnuTlsOpen(void* session, int* error)
+static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
 {
     EIO_Status status;
     int x_error;
@@ -352,12 +360,14 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error)
     } while (x_error  &&  x_error == GNUTLS_E_REHANDSHAKE);
 
     if (x_error < 0) {
-        status = x_ErrorToStatus(x_error,
+        status = x_ErrorToStatus(&x_error,
                                  (gnutls_session_t) session, eIO_Open);
         *error = x_error;
-    } else
+        *desc = 0;
+    } else {
+        *desc = gnutls_session_get_desc(session);
         status = eIO_Success;
-
+    }
     return status;
 }
 
@@ -460,7 +470,7 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
     x_read = gnutls_record_recv((gnutls_session_t) session, buf, n_todo);
 
     if (x_read <= 0) {
-        status = x_ErrorToStatus(x_read,
+        status = x_ErrorToStatus(&x_read,
                                  (gnutls_session_t) session, eIO_Read);
         *error = x_read;
         x_read = 0;
@@ -483,7 +493,7 @@ static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
     x_written = gnutls_record_send((gnutls_session_t) session, data, n_todo);
 
     if (x_written <= 0) {
-        status = x_ErrorToStatus(x_written,
+        status = x_ErrorToStatus(&x_written,
                                  (gnutls_session_t) session, eIO_Write);
         *error = x_written;
         x_written = 0;
@@ -527,19 +537,31 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 {
     gnutls_anon_client_credentials_t acred;
     gnutls_certificate_credentials_t xcred;
-    char val[32];
+    const char* version;
+    const char* val;
+    char buf[32];
 
     assert(!s_GnuTlsCredAnon);
 
-    ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", val, sizeof(val), 0);
-    if (*val) {
-        int level = atoi(val);
-        s_GnuTlsLogLevel = level < 0 ? 0 : level;
-        if (s_GnuTlsLogLevel > 0) {
+    version = gnutls_check_version(0);
+    if (strcasecmp(GNUTLS_VERSION, version) != 0) {
+        CORE_LOGF(eLOG_Critical,
+                  ("GNUTLS version mismatch: %s headers vs. %s runtime",
+                   GNUTLS_VERSION, version));
+        assert(0);
+    }
+
+    val = ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", buf, sizeof(buf), 0);
+    if (!val  ||  !*val)
+        val = getenv("GNUTLS_DEBUG_LEVEL");
+    if (val  &&  *val) {
+        s_GnuTlsLogLevel = atoi(val);
+        if (s_GnuTlsLogLevel) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
-            gnutls_global_set_log_level(s_GnuTlsLogLevel);
+            if (val != buf)
+                gnutls_global_set_log_level(s_GnuTlsLogLevel);
             CORE_LOGF(eLOG_Note, ("GNUTLS V%s (Loglevel=%d)",
-                                  gnutls_check_version(0), s_GnuTlsLogLevel));
+                                  version, s_GnuTlsLogLevel));
         }
     }
 
@@ -608,7 +630,9 @@ static void s_GnuTlsExit(void)
 static const char* s_GnuTlsError(void* session/*unused*/, int error)
 {
     /* GNUTLS defines only negative error codes */
-    return error < 0 ? gnutls_strerror(error) : 0;
+    return error >= 0 ? 0 : error < GNUTLS_E_APPLICATION_ERROR_MAX
+        ? gnutls_alert_get_name(GNUTLS_E_APPLICATION_ERROR_MAX - error)
+        : gnutls_strerror(error);
 }
 
 
@@ -631,7 +655,7 @@ extern SOCKSSL NcbiSetupGnuTls(void)
     };
     return &kGnuTlsOps;
 #else
-    CORE_LOG(eLOG_Critical, "Unavailable GNUTLS feature requested");
+    CORE_LOG(eLOG_Critical, "Unavailable feature GNUTLS");
     return 0;
 #endif /*HAVE_LIBGNUTLS*/
 }

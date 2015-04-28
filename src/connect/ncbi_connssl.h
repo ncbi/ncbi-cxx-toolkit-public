@@ -83,7 +83,7 @@ typedef EIO_Status  (*FSSLPush)  (SOCK sock, const void* data, size_t size,
 typedef EIO_Status  (*FSSLInit)  (FSSLPull pull, FSSLPush push);
 typedef void*       (*FSSLCreate)(ESOCK_Side side, SOCK sock,
                                   NCBI_CRED cred, int* error);
-typedef EIO_Status  (*FSSLOpen)  (void* session, int* error);
+typedef EIO_Status  (*FSSLOpen)  (void* session, int* error, char** desc);
 
 /* See FSSLPull for behavior.  When non-eIO_Success code gets returned,
  * the call must set "*error" to indicate specific problem.  The "*error" may
