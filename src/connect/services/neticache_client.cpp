@@ -827,8 +827,8 @@ public:
     }
 
     virtual CRef<INetServerProperties> AllocServerProperties();
-    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
-        string* new_section_name);
+    virtual CConfig* OnPreInit(CObject* api_impl,
+        CConfig* config, string* config_section);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection& connection);
@@ -846,11 +846,10 @@ CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
     return m_DelegateListener->AllocServerProperties();
 }
 
-CConfig* CSetValidWarningSuppressor::LoadConfigFromAltSource(CObject* api_impl,
-        string* new_section_name)
+CConfig* CSetValidWarningSuppressor::OnPreInit(CObject* api_impl,
+        CConfig* config, string* config_section)
 {
-    return m_DelegateListener->LoadConfigFromAltSource(api_impl,
-            new_section_name);
+    return m_DelegateListener->OnPreInit(api_impl, config, config_section);
 }
 
 void CSetValidWarningSuppressor::OnInit(CObject* api_impl,

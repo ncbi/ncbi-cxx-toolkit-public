@@ -341,8 +341,6 @@ public:
     virtual CRef<INetServerProperties> AllocServerProperties();
 
 public:
-    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
-        string* new_section_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection& connection);
@@ -355,12 +353,6 @@ public:
 CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
 {
     return CRef<INetServerProperties>(new INetServerProperties);
-}
-
-CConfig* CNetStorageServerListener::LoadConfigFromAltSource(
-        CObject* /*api_impl*/, string* /*new_section_name*/)
-{
-    return NULL;
 }
 
 void CNetStorageServerListener::OnInit(CObject* /*api_impl*/,

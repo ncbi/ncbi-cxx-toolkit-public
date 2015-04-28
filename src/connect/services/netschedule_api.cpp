@@ -400,7 +400,60 @@ void SNetScheduleAPIImpl::x_ClearNode()
     }
 }
 
-/**********************************************************************/
+CConfig* CNetScheduleConfigLoader::Parse(const TParams& params,
+        const CTempString& prefix, EParseMode mode)
+{
+    auto_ptr<CConfig::TParamTree> result;
+    const string kQueueParameter = "queue_name";
+
+    ITERATE(CNetScheduleAPI::TQueueParams, it, params) {
+        string param;
+        if (mode == eGetQueueName && it->first == kQueueParameter) {
+            param = it->first;
+        } else if (NStr::StartsWith(it->first, prefix)) {
+            param = it->first.substr(prefix.size());
+        } else {
+            continue;
+        }
+
+        if (!result.get()) {
+            result.reset(new CConfig::TParamTree);
+        }
+
+        result->AddNode(CConfig::TParamValue(param, it->second));
+    }
+
+    return result.get() ? new CConfig(result.release()) : NULL;
+}
+
+CConfig* CNetScheduleConfigLoader::Get(const CTempString* literals,
+        SNetScheduleAPIImpl* impl, string* section, EParseMode mode)
+{
+    _ASSERT(literals);
+    _ASSERT(impl);
+    _ASSERT(impl->m_Service);
+
+    TParams queue_params;
+    impl->GetQueueParams(impl->m_Service->m_ServiceName, queue_params);
+
+    if (CConfig* result = Parse(queue_params, *literals++, mode)) {
+        *section = *literals;
+        return result;
+    }
+
+    try {
+        impl->GetQueueParams(queue_params);
+
+        if (CConfig* result = Parse(queue_params, *++literals, mode)) {
+            *section = *++literals;
+            return result;
+        }
+    }
+    catch (CNetScheduleException&) {
+    }
+
+    return NULL;
+}
 
 void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
 {
@@ -500,12 +553,6 @@ CRef<SNetScheduleServerProperties>
 CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
 {
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
-}
-
-CConfig* CNetScheduleServerListener::LoadConfigFromAltSource(
-    CObject* /*api_impl*/, string* /*new_section_name*/)
-{
-    return NULL;
 }
 
 void CNetScheduleServerListener::OnInit(
@@ -1065,13 +1112,13 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
     return m_Impl->GetServerParams();
 }
 
-void CNetScheduleAPI::GetQueueParams(
+void SNetScheduleAPIImpl::GetQueueParams(
         const string& queue_name, TQueueParams& queue_params)
 {
     string cmd;
 
     if (queue_name.empty())
-        cmd = "QINF2 " + m_Impl->m_Queue;
+        cmd = "QINF2 " + m_Queue;
     else {
         SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
 
@@ -1080,8 +1127,7 @@ void CNetScheduleAPI::GetQueueParams(
 
     g_AppendClientIPSessionIDHitID(cmd);
 
-    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd,
-            false).response);
+    CUrlArgs url_parser(m_Service.FindServerAndExec(cmd, false).response);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
         queue_params[field->name] = field->value;
@@ -1089,17 +1135,27 @@ void CNetScheduleAPI::GetQueueParams(
 }
 
 void CNetScheduleAPI::GetQueueParams(
-        CNetScheduleAPI::TQueueParams& queue_params)
+        const string& queue_name, TQueueParams& queue_params)
+{
+    return m_Impl->GetQueueParams(queue_name, queue_params);
+}
+
+void SNetScheduleAPIImpl::GetQueueParams(TQueueParams& queue_params)
 {
     string cmd("GETP2");
     g_AppendClientIPSessionIDHitID(cmd);
 
-    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd,
+    CUrlArgs url_parser(m_Service.FindServerAndExec(cmd,
             false).response);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
         queue_params[field->name] = field->value;
     }
+}
+
+void CNetScheduleAPI::GetQueueParams(TQueueParams& queue_params)
+{
+    return m_Impl->GetQueueParams(queue_params);
 }
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)

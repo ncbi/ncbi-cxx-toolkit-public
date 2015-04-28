@@ -73,6 +73,31 @@ struct SNetScheduleServerProperties : public INetServerProperties
     bool affs_synced;
 };
 
+// A namespace-like helper class to load configuration from NetSchedule server
+class CNetScheduleConfigLoader
+{
+public:
+    enum EParseMode {
+        eDefault,
+        eGetQueueName
+    };
+
+    static bool Use(CConfig* config, const string& section)
+    {
+        return config && config->GetBool(section, "load_config_from_ns",
+                CConfig::eErr_NoThrow, false);
+    }
+
+    static CConfig* Get(const CTempString* literals, SNetScheduleAPIImpl* impl,
+            string* section, EParseMode mode = eDefault);
+
+private:
+    typedef CNetScheduleAPI::TQueueParams TParams;
+
+    static CConfig* Parse(const TParams& params, const CTempString& prefix,
+            EParseMode mode);
+};
+
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
 public:
@@ -92,8 +117,6 @@ public:
 
     virtual CRef<INetServerProperties> AllocServerProperties();
 
-    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
-        string* new_section_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection& connection);
@@ -226,6 +249,10 @@ struct SNetScheduleAPIImpl : public CObject
             ENetScheduleQueuePauseMode* pause_mode);
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
+
+    typedef CNetScheduleAPI::TQueueParams TQueueParams;
+    void GetQueueParams(const string& queue_name, TQueueParams& queue_params);
+    void GetQueueParams(TQueueParams& queue_params);
 
     CNetServer GetServer(const string& job_key)
     {

@@ -352,6 +352,30 @@ void SNetServiceImpl::AllowXSiteConnections()
 }
 #endif
 
+CConfig* FindSection(const char* const* sections, const CConfig::TParamTree* tree,
+        string* section)
+{
+    _ASSERT(section);
+
+    if (section->empty()) {
+        *section = *sections++;
+    }
+
+    for (;;) {
+        if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(*section)) {
+            return new CConfig(sub_tree);
+        }
+
+        if (!*sections) {
+            break;
+        }
+
+        *section = *sections++;
+    }
+
+    return NULL;
+}
+
 void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     CConfig* config, const string& config_section,
     const char* const* default_config_sections)
@@ -367,10 +391,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         conn_initer.NoOp();
     }
 
-    const char* const* default_section = default_config_sections;
-    string section = !config_section.empty() ?
-        config_section : *default_section++;
-
+    string section = config_section;
+        
     auto_ptr<CConfig> app_reg_config;
     auto_ptr<CConfig::TParamTree> param_tree;
 
@@ -381,46 +403,23 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         if (app != NULL && (reg = &app->GetConfig()) != NULL) {
             param_tree.reset(CConfig::ConvertRegToTree(*reg));
 
-            for (;;) {
-                const CConfig::TParamTree* section_param_tree =
-                    param_tree->FindSubNode(section);
-
-                if (section_param_tree != NULL)
-                    app_reg_config.reset(new CConfig(section_param_tree));
-                else if (*default_section != NULL) {
-                    section = *default_section++;
-                    continue;
-                }
-                break;
-            }
-
+            app_reg_config.reset(FindSection(default_config_sections,
+                        param_tree.get(), &section));
             config = app_reg_config.get();
         }
     } else {
-        const CConfig::TParamTree* supplied_param_tree = config->GetTree();
-
-        for (;;) {
-            const CConfig::TParamTree* section_param_tree =
-                supplied_param_tree->FindSubNode(section);
-
-            if (section_param_tree != NULL) {
-                app_reg_config.reset(new CConfig(section_param_tree));
-                config = app_reg_config.get();
-            } else if (*default_section != NULL) {
-                section = *default_section++;
-                continue;
-            }
-            break;
-        }
+        app_reg_config.reset(FindSection(default_config_sections,
+                    config->GetTree(), &section));
+        config = app_reg_config.get();
     }
 
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
-    if (m_ServiceName.empty() && config == NULL &&
-            (config = m_Listener->LoadConfigFromAltSource(api_impl,
-                    &section)) != NULL)
-        app_reg_config.reset(config);
+    if (CConfig *alt = m_Listener->OnPreInit(api_impl, config, &section)) {
+        app_reg_config.reset(alt);
+        config = alt;
+    }
 
     if (config != NULL) {
         if (m_ServiceName.empty()) {
@@ -1320,11 +1319,6 @@ namespace {
         virtual CRef<INetServerProperties> AllocServerProperties()
         {
             return CRef<INetServerProperties>(new INetServerProperties);
-        }
-        virtual CConfig* LoadConfigFromAltSource(CObject* /*api_impl*/,
-                string* /*new_section_name*/)
-        {
-            return NULL;
         }
         virtual void OnInit(CObject* /*api_impl*/,
                 CConfig* /*config*/, const string& /*config_section*/)

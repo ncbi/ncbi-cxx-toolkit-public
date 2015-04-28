@@ -39,6 +39,7 @@
 #pragma warning (disable: 4191)
 #endif
 
+#include "netschedule_api_impl.hpp"
 #include "netcache_api_impl.hpp"
 
 #include <connect/services/srv_connections_expt.hpp>
@@ -86,61 +87,31 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetCacheServerProperties);
 }
 
-CConfig* CNetCacheServerListener::LoadConfigFromAltSource(CObject* api_impl,
-        string* new_section_name)
+CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
+        CConfig* config, string* config_section)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
-    auto_ptr<CConfig::TParamTree> result;
+    _ASSERT(nc_impl);
+    _ASSERT(nc_impl->m_Service);
+    _ASSERT(config_section);
 
-    if (nc_impl->m_NetScheduleAPI) {
-        CNetScheduleAPI::TQueueParams queue_params;
-
-        nc_impl->m_NetScheduleAPI.GetQueueParams(
-                nc_impl->m_NetScheduleAPI.GetQueueName(), queue_params);
-
-        ITERATE(CNetScheduleAPI::TQueueParams, param_it, queue_params) {
-            if (NStr::StartsWith(param_it->first, "nc.")) {
-                string param_name(param_it->first);
-                param_name.erase(0, sizeof("nc.") - 1);
-                if (result.get() == NULL) {
-                    result.reset(new CConfig::TParamTree);
-                    *new_section_name = "netcache_conf_from_netschedule";
-                }
-                result->AddNode(CConfig::TParamValue(param_name, param_it->second));
-            }
-        }
-
-        if (result.get() == NULL)
-            try {
-                nc_impl->m_NetScheduleAPI.GetQueueParams(queue_params);
-
-                ITERATE(CNetScheduleAPI::TQueueParams, param_it, queue_params) {
-                    if (NStr::StartsWith(param_it->first, "nc::")) {
-                        string param_name(param_it->first);
-                        param_name.erase(0, sizeof("nc::") - 1);
-                        if (result.get() == NULL) {
-                            result.reset(new CConfig::TParamTree);
-                            *new_section_name =
-                                    "netcache_conf_from_netschedule_GETP2";
-                        }
-                        result->AddNode(CConfig::TParamValue(param_name,
-                                param_it->second));
-                    }
-                }
-            }
-            catch (CNetScheduleException&) {
-            }
+    // If we are not forced to load config from NetSchedule
+    // and have either config or service name, then nothing to do here
+    if (!CNetScheduleConfigLoader::Use(config, *config_section) &&
+            (config || !nc_impl->m_Service->m_ServiceName.empty())) {
+        return NULL;
     }
 
-    if (result.get() == NULL)
-        return NULL;
+    if (CNetScheduleAPI api = nc_impl->m_NetScheduleAPI) {
+        const CTempString kLiterals[] = {
+            "nc.",      "netcache_conf_from_netschedule",
+            "nc::",     "netcache_conf_from_netschedule_GETP2"
+        };
+        return CNetScheduleConfigLoader::Get(kLiterals, api, config_section);
+    }
 
-    CConfig* config = new CConfig(result.get());
-
-    result.release();
-
-    return config;
+    return NULL;
 }
 
 void CNetCacheServerListener::OnInit(CObject* api_impl,
