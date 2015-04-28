@@ -100,16 +100,6 @@ static struct gcry_thread_cbs gcry_threads_user = {
 
 #  endif /*HAVE_LIBGCRYPT*/
 
-#  ifndef LIBGNUTLS_VERSION_NUMBER
-/* backport support for older gnutls */
-#    define gnutls_session_t                  gnutls_session
-#    define gnutls_transport_ptr_t            gnutls_transport_ptr
-#    define gnutls_connection_end_t           gnutls_connection_end
-#    define gnutls_anon_client_credentials_t  gnutls_anon_client_credentials
-#    define gnutls_certificate_credentials_t  gnutls_certificate_credentials
-#  endif /*LIBGNUTLS_VERSION_NUMBER*/
-
-
 #  ifdef __cplusplus
 extern "C" {
 #  endif /*__cplusplus*/
@@ -136,7 +126,7 @@ static ssize_t     x_GnuTlsPush  (gnutls_transport_ptr_t, const void*, size_t);
 #  endif /*__cplusplus*/
 
 
-#  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
+#  if LIBGNUTLS_VERSION_NUMBER < 0x030400
 static const int kGnuTlsCertPrio[] = {
     GNUTLS_CRT_X509,
     /*GNUTLS_CRT_OPENPGP,*/
@@ -147,7 +137,7 @@ static const int kGnuTlsCompPrio[] = {
     GNUTLS_COMP_NULL,
     0
 };
-#  endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER<3.4.0*/
 
 
 static int                              s_GnuTlsLogLevel;
@@ -322,18 +312,18 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
     ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
     if ((err = gnutls_set_default_priority(session))                   != 0  ||
-#  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
-#    if LIBGNUTLS_VERSION_NUMBER >= 0x020200
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x020200
         ( *val  &&
          (err = gnutls_priority_set_direct(session, val, 0))           != 0) ||
-#    endif /*LIBGNUTLS_VERSION_NUMBER>=2.2.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=2.2.0*/
+#  if LIBGNUTLS_VERSION_NUMBER < 0x030400
         (!*val  &&
          (err = gnutls_compression_set_priority(session,
                                                 kGnuTlsCompPrio))      != 0) ||
         (!*val  &&
          (err = gnutls_certificate_type_set_priority(session,
                                                      kGnuTlsCertPrio)) != 0) ||
-#  endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER<3.4.0*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
                                       cred ? cred->data : xcred))      != 0  ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON, acred))!= 0) {
@@ -384,12 +374,10 @@ static int x_IfToLog(void)
 /*ARGSUSED*/
 static void x_set_errno(gnutls_session_t session, int error)
 {
-#  ifdef LIBGNUTLS_VERSION_NUMBER
-#    if LIBGNUTLS_VERSION_NUMBER >= 0x010504
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x010504
     gnutls_transport_set_errno(session, error);
     return;
-#    endif /*LIBGNUTLS_VERSION>=1.5.4*/
-#  endif /*LIBGNUTLS_VERSION_NUMBER*/
+#  endif /*LIBGNUTLS_VERSION>=1.5.4*/
     /*NOTREACHED*/
     if (error)
         errno = error;
