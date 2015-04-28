@@ -2259,16 +2259,14 @@ bool CValidError_imp::IsSerialNumberInComment(const string& comment)
     size_t pos = comment.find('[', 0);
     while ( pos != string::npos ) {
         ++pos;
-        bool first = true;
         bool okay = true;
         if ( isdigit((unsigned char) comment[pos]) ) {
             // skip if first character after bracket is 0
-            if (first && comment[pos] == '0') {
+            if (comment[pos] == '0') {
                 okay = false;
             }
             while ( isdigit((unsigned char) comment[pos]) ) {
                 ++pos;
-                first = false;
             }
             if ( comment[pos] == ']' && okay ) {
                 return true;
