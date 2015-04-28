@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile
-#################################
-
-APP_PROJ = lds_indexer
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
