@@ -266,10 +266,10 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                 while (col < aln_len && !ids_missing) {
                     string column;
                     av->GetColumnVector(column, col);
-                    bool match = true;
                     if (internal_gaps && NStr::Find(column, "-") != string::npos) {
-                        match = false;
+                        // do nothing
                     } else {
+                        bool match = true;
                         // don't care about end gaps, ever
                         NStr::ReplaceInPlace(column, ".", "");            
                         // if we cared about internal gaps, it would have been handled above
