@@ -3409,14 +3409,6 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             "No CDelta_ext data for delta Bioseq", seq);
     }
 
-    EDiagSev sev = eDiag_Error;
-    if ( tech != CMolInfo::eTech_htgs_0  &&
-         tech != CMolInfo::eTech_htgs_1  &&
-         tech != CMolInfo::eTech_htgs_2  &&
-         tech != CMolInfo::eTech_htgs_3  ) {
-        sev = eDiag_Warning;
-    }
-
     bool any_tech_ok = false;
     bool has_gi = false;
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
@@ -3489,7 +3481,6 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             prev_gap_linkage = -1;
             prev_gap_type = -1;
             gap_linkage = -1;
-            gap_type = -1;
             first = false;
             break;
         }
@@ -3515,8 +3506,6 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 last_is_gap = false;
                 prev_gap_linkage = -1;
                 prev_gap_type = -1;
-                gap_linkage = -1;
-                gap_type = -1;
                 const CSeq_data& data = lit.GetSeq_data();
                 vector<TSeqPos> badIdx;
                 CSeqportUtil::Validate(data, &badIdx);
@@ -3669,7 +3658,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     }
                 }
                 if ( first ) {
-                    sev = eDiag_Error;
+                    EDiagSev sev = eDiag_Error;
                     if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1
                         || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
                         sev = eDiag_Warning;
@@ -3757,10 +3746,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             "There is 1 adjacent gap in delta seq" :
             "There are " + NStr::SizetToString(num_adjacent_gaps) +
             " adjacent gaps in delta seq";
-        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
+        PostErr(m_Imp.IsRefSeq() ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
     }
     if ( last_is_gap ) {
-        sev = eDiag_Error;
+        EDiagSev sev = eDiag_Error;
         if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1
             || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
             sev = eDiag_Warning;
@@ -9616,7 +9605,6 @@ void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
                             if (feat_it->IsSetData() 
                                 && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA
                                 && s_IdXrefsAreReciprocal(pair_it->first, *feat_it)) {
-                                featid_matched = true;
                                 pair_it->second = *feat_it;
                                 ok_to_keep = true;
                                 break;
