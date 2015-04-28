@@ -51,8 +51,8 @@
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
-#  include <gnutls/gnutls.h>
-#  define GNUTLS_PKCS12_TYPE  GNUTLS_X509_FMT_PEM/*or _DER*/
+#  include <gnutls/abstract.h>
+#  define GNUTLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
 #  define GNUTLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
 #  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 #endif /*HAVE_LIBGNUTLS*/
@@ -96,6 +96,133 @@ static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
     }
     return (const char*) memcpy(buf, val, ++len);
 }
+
+
+static int x_CertVfyCB(gnutls_session_t session)
+{
+	unsigned int n, cert_list_size = 0;
+	const gnutls_datum_t* cert_list;
+	
+	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
+	if (cert_list_size == 0) {
+		CORE_LOG(eLOG_Error, "No certificates obtained from server");
+		return 1;
+	}
+    assert(cert_list);
+
+    CORE_LOGF(eLOG_Note,
+              ("%u certificate%s received from server:",
+               cert_list_size, &"s"[cert_list_size == 1]));
+	for (n = 0;  n < cert_list_size;  ++n) {
+        gnutls_x509_crt_t crt;
+		gnutls_datum_t cinfo;
+        int err;
+
+		gnutls_x509_crt_init(&crt);
+        err = gnutls_x509_crt_import(crt, &cert_list[n],
+                                     GNUTLS_X509_FMT_DER);
+		if (!err) {
+            err = gnutls_x509_crt_print(crt, GNUTLS_CRT_PRINT_ONELINE, &cinfo);
+            if (!err) {
+                CORE_LOGF(eLOG_Note,
+                          ("Certificate[%u]: %s", n + 1, cinfo.data));
+                gnutls_free(cinfo.data);
+            }
+        }
+        if (err) {
+            CORE_LOGF(eLOG_Error,
+                      ("Certificate[%u] error: %s",
+                       n + 1, gnutls_strerror(err)));
+        }
+        gnutls_x509_crt_deinit(crt);
+	}
+    return 0;
+}
+
+
+#if 0
+static int x_CertRtrCB(gnutls_session_t session,
+                       const gnutls_datum_t* req_ca_dn,    int n_req_ca_dn,
+                       const gnutls_pk_algorithm_t* algos, int n_algos,
+                       gnutls_pcert_st** pcert,  unsigned int* n_pcert,
+                       gnutls_privkey_t* pkey)
+{
+    gnutls_certificate_type_t type = gnutls_certificate_type_get(session);
+    const char* str;
+    char buf[256];
+
+    /* The very fact of receiving this callback is that
+     * gnutls_certificate_client_get_request_status(session)
+     * would return non-zero (i.e. certificate is required).
+     */
+    switch (type) {
+    case GNUTLS_CRT_X509:
+        str = "X.509";
+        break;
+    case GNUTLS_CRT_OPENPGP:
+        str = "Open PGP";
+        break;
+    case GNUTLS_CRT_RAW:
+        str = "Raw public key";
+        break;
+    default:
+        sprintf(buf, "%u", (int) type);
+        str = buf;
+        break;
+    }
+    CORE_LOGF(eLOG_Note,
+              ("Server requires %s certificate for client authentication",
+               str));
+
+    if (n_req_ca_dn > 0) {
+        int n;
+        CORE_LOGF(eLOG_Note,
+                  ("Server's %d trusted certificate authorit%s:",
+                   n_req_ca_dn, n_req_ca_dn == 1 ? "y" : "ies"));
+        for (n = 0;  n < n_req_ca_dn;  ++n) {
+            size_t len = sizeof(buf);
+            int    err = gnutls_x509_rdn_get(&req_ca_dn[n], buf, &len);
+            if (err >= 0) {
+                CORE_LOGF(eLOG_Note,
+                          ("CA[%d]: %s", n + 1, buf));
+            } else {
+                CORE_LOGF(eLOG_Error,
+                          ("CA[%d]: requires %lu bytes: %s",
+                           n + 1, (unsigned long) len, gnutls_strerror(err)));
+            }
+        }
+    } else {
+        CORE_LOG(eLOG_Note,
+                 "Server does not specify any trusted CAs");
+    }
+
+    if (n_algos) {
+        int n;
+        CORE_LOGF(eLOG_Note,
+                  ("Server supports %d signature algorithm%s:",
+                   n_algos, &"s"[n_algos == 1]));
+        for (n = 0;  n < n_algos;  ++n) {
+            str = gnutls_pk_algorithm_get_name(algos[n]);
+            CORE_LOGF(eLOG_Note,
+                      ("PK algorithm[%d]: %s(%d)",
+                       n + 1, !str ? "<NULL>" : *str ? str : "\"\"",
+                       (int) algos[n]));
+        }
+    }
+
+    if (type == GNUTLS_CRT_X509) {
+        *pcert   = &pcrt;
+        *n_pcert = 1;
+        *pkey    = key;
+    } else*/ {
+        *pcert   = 0;
+        *n_pcert = 0;
+        *pkey    = 0;
+    }
+    return 0;
+}
+#endif/*0*/
+
 
 #endif /*HAVE_LIBGNUTLS*/
 
@@ -149,28 +276,61 @@ int main(int argc, char* argv[])
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, 0);
     if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
 #ifdef HAVE_LIBGNUTLS
-        const char* file;
-        const char* pass;
+        int err;
+        char type[40];
+        const char* file, *pass;
         status = SOCK_SetupSSLEx(NcbiSetupGnuTls);
         CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
                               IO_StatusStr(status)));
+        if (!ConnNetInfo_GetValue(0, GNUTLS_PKCS12_TYPE, type, sizeof(type), 0)
+            ||  !*type) {
+            strncpy0(type, "PEM", sizeof(type));
+        }
         pass = x_GetPkcs12Pass(GNUTLS_PKCS12_PASS, blk, sizeof(blk));
         file = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_FILE,
                                     blk, sizeof(blk)/2 - 1, 0);
         if (file  &&  *file  &&  access(file, R_OK) == 0) {
-            int err;
             if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
                 (err = gnutls_certificate_set_x509_simple_pkcs12_file
-                 (xcred, file, GNUTLS_PKCS12_TYPE, pass)) != 0) {
+                 (xcred, file, strcasecmp(type, "PEM") == 0
+                  ? GNUTLS_X509_FMT_PEM
+                  : GNUTLS_X509_FMT_DER, pass)) != 0) {
                 CORE_LOGF(eLOG_Fatal,
-                          ("Cannot load PKCS#12 credentials from \"%s\": %s",
-                           file, gnutls_strerror(err)));
-            } else if ((cred = NcbiCredGnuTls(xcred)) != 0) {
-                net_info->credentials = cred;
-                CORE_LOGF(eLOG_Note, ("PKCS#12 credentials loaded from \"%s\"",
-                                      file));
-            } else
+                          ("Cannot load PKCS#12 %s credentials from"
+                           " \"%s\": %s", type, file, gnutls_strerror(err)));
+            }
+        } else if (net_info->debug_printout == eDebugPrintout_Data) {
+            /* We don't have to create empty cert credentials, in general
+             * (as the ncbi_gnutls shim does that for us); but if we want
+             * callbacks, then they can only be associated with the
+             * credentials handle (gnutls design???) so here it goes: */
+            if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0) {
+                CORE_LOGF(eLOG_Critical,
+                          ("Cannot allocate certificate credentials: %s",
+                           gnutls_strerror(err)));
+                xcred = 0;
+            }
+            file = 0;
+        } else
+            file = 0;
+        if (xcred) {
+            if (!(cred = NcbiCredGnuTls(xcred)))
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
+            net_info->credentials = cred;
+            if (!file)
+                CORE_LOG(eLOG_Note, "Debug certificate credentials set");
+            else {
+                CORE_LOGF(eLOG_Note, ("PKCS#12 %s credentials loaded from"
+                                      " \"%s\"", type, file));
+            }
+            if (net_info->debug_printout == eDebugPrintout_Data) {
+                gnutls_certificate_set_verify_function(xcred,
+                                                       x_CertVfyCB);
+#if 0
+                gnutls_certificate_set_retrieve_function2(xcred,
+                                                          x_CertRtrCB);
+#endif
+            }
         }
 #else
         CORE_LOG(eLOG_Warning, "SSL requested but may not be supported");
