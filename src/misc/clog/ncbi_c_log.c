@@ -44,7 +44,9 @@
 #  include <sys/utsname.h>
 #  include <sys/time.h>
 #  include <sys/types.h>
-#  include <sys/syscall.h>
+#  if !defined(__CYGWIN__)
+#      include <sys/syscall.h>
+#  endif
 #elif defined(NCBI_OS_MSWIN)
 #  include <sys/types.h>
 #  include <sys/timeb.h>
