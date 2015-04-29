@@ -14,4 +14,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_netstorage_rpc
 CHECK_TIMEOUT = 1600
 
-WATCHERS = kazimird sadyrovr
+WATCHERS = sadyrovr

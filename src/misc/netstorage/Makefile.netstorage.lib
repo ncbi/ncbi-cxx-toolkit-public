@@ -7,7 +7,7 @@ LIBS     = $(NETWORK_LIBS)
 
 LIB_OR_DLL = lib
 
-WATCHERS = kazimird sadyrovr
+WATCHERS = sadyrovr
 
 
 USES_LIBRARIES =  \

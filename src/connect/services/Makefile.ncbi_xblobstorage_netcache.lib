@@ -11,7 +11,7 @@ DLL_LIB = xconnserv xconnect xutil xncbi
 CPPFLAGS = $(ORIG_CPPFLAGS)
 LIBS = $(ORIG_LIBS)
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr
 
 
 

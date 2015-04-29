@@ -5,4 +5,4 @@ SRC = cidtool
 
 LIB = xconnserv xthrserv xconnect xutil xncbi
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

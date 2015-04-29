@@ -10,4 +10,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

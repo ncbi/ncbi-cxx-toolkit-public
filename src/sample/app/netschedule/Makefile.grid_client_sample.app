@@ -11,4 +11,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 ### END COPIED SETTINGS
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

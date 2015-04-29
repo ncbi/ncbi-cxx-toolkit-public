@@ -6,4 +6,4 @@ LIB = xutil xncbi
 
 CHECK_CMD =
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

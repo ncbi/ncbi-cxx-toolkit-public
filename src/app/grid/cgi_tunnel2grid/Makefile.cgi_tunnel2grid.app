@@ -12,4 +12,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 #CHECK_CMD  =
 CHECK_COPY = cgi_tunnel2grid_sample.html cgi_tunnel2grid.ini
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

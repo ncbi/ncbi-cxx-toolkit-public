@@ -8,4 +8,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = test_gridclient_stress.ini
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

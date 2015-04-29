@@ -22,4 +22,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 #CHECK_CMD  =
 CHECK_COPY = grid_cgi_sample.html grid_cgi_sample.ini
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

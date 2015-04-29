@@ -24,7 +24,7 @@ LIBS    = $(NETWORK_LIBS)
 
 DLL_LIB = xthrserv xconnect xutil xncbi
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr
 
 
 USES_LIBRARIES =  \

@@ -10,4 +10,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr

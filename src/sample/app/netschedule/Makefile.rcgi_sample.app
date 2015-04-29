@@ -25,4 +25,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 #CHECK_CMD  =
 #CHECK_COPY = rcgi_sample.html rcgi_sample.ini
 
-WATCHERS = kazimird
+WATCHERS = sadyrovr
