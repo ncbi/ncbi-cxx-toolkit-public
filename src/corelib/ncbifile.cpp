@@ -3206,7 +3206,9 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         } while (n_read > 0);
         
         if (n_read != 0) {
-            x_errno = EIO;
+            if (x_errno == 0) {
+                x_errno = EIO;
+            }
         }
     } while (!x_errno);
 
