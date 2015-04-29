@@ -455,9 +455,9 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     m_ServerPool->Init(config, section, m_Listener.GetPointerOrNull());
 
-    m_Listener->OnInit(api_impl, config, section);
-
     Construct();
+
+    m_Listener->OnInit(api_impl, config, section);
 }
 
 void SNetServerPoolImpl::Init(CConfig* config, const string& section,

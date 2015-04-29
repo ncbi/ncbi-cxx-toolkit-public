@@ -431,10 +431,9 @@ CConfig* CNetScheduleConfigLoader::Get(const CTempString* literals,
 {
     _ASSERT(literals);
     _ASSERT(impl);
-    _ASSERT(impl->m_Service);
 
     TParams queue_params;
-    impl->GetQueueParams(impl->m_Service->m_ServiceName, queue_params);
+    impl->GetQueueParams(kEmptyStr, queue_params);
 
     if (CConfig* result = Parse(queue_params, *literals++, mode)) {
         *section = *literals;
@@ -556,83 +555,108 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
 }
 
 void CNetScheduleServerListener::OnInit(
-    CObject* api_impl, CConfig* config, const string& config_section)
+    CObject* api_impl, CConfig* config, const string& section)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
+    _ASSERT(ns_impl);
 
-    if (!ns_impl->m_Queue.empty())
-        SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-    else if (config != NULL) {
-        ns_impl->m_Queue = config->GetString(config_section,
-            "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
+    auto_ptr<CConfig> config_holder;
+
+    // There are two phases of OnInit in case we need to load config from server
+    // 1) Setup as much as possible and try to get config from server
+    // 2) Setup everything using received config from server
+    for (int phase = 0; phase < 2; ++phase) {
+        string config_section = section;
+
         if (!ns_impl->m_Queue.empty())
             SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-    }
-
-    if (config == NULL) {
-        ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
-        ns_impl->m_UseEmbeddedStorage = true;
-    } else {
-        try {
-            ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
-                "use_embedded_storage", CConfig::eErr_Throw, true);
-        }
-        catch (CConfigException&) {
-            ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
-                "use_embedded_input", CConfig::eErr_NoThrow, true);
+        else if (config != NULL) {
+            ns_impl->m_Queue = config->GetString(config_section,
+                "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
+            if (!ns_impl->m_Queue.empty())
+                SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
         }
 
-        if (!config->GetBool(config_section, "use_affinities",
-                CConfig::eErr_NoThrow, false))
+        if (config == NULL) {
             ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
-        else {
-            ns_impl->m_AffinityPreference = config->GetBool(config_section,
-                    "claim_new_affinities", CConfig::eErr_NoThrow, false) ?
-                CNetScheduleExecutor::eClaimNewPreferredAffs :
-                config->GetBool(config_section,
-                    "process_any_job", CConfig::eErr_NoThrow, false) ?
-                        CNetScheduleExecutor::ePreferredAffsOrAnyJob :
-                        CNetScheduleExecutor::ePreferredAffinities;
+            ns_impl->m_UseEmbeddedStorage = true;
+        } else {
+            try {
+                ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
+                    "use_embedded_storage", CConfig::eErr_Throw, true);
+            }
+            catch (CConfigException&) {
+                ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
+                    "use_embedded_input", CConfig::eErr_NoThrow, true);
+            }
 
-            string affinity_list = config->GetString(config_section,
-                    "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
+            if (!config->GetBool(config_section, "use_affinities",
+                    CConfig::eErr_NoThrow, false))
+                ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
+            else {
+                ns_impl->m_AffinityPreference = config->GetBool(config_section,
+                        "claim_new_affinities", CConfig::eErr_NoThrow, false) ?
+                    CNetScheduleExecutor::eClaimNewPreferredAffs :
+                    config->GetBool(config_section,
+                        "process_any_job", CConfig::eErr_NoThrow, false) ?
+                            CNetScheduleExecutor::ePreferredAffsOrAnyJob :
+                            CNetScheduleExecutor::ePreferredAffinities;
 
-            if (!affinity_list.empty()) {
-                NStr::Split(affinity_list, ", ", ns_impl->m_AffinityList);
-                ITERATE(list<string>, it, ns_impl->m_AffinityList) {
-                    SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
+                string affinity_list = config->GetString(config_section,
+                        "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
+
+                if (!affinity_list.empty()) {
+                    NStr::Split(affinity_list, ", ", ns_impl->m_AffinityList);
+                    ITERATE(list<string>, it, ns_impl->m_AffinityList) {
+                        SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
+                    }
+                }
+
+                string affinity_ladder = config->GetString(config_section,
+                        "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
+                list<CTempString> affinities;
+                NStr::Split(affinity_ladder, ", ", affinities);
+
+                if (!affinities.empty()) {
+                    list<CTempString>::const_iterator it = affinities.begin();
+                    affinity_list = *it;
+                    for (;;) {
+                        ns_impl->m_AffinityLadder.push_back(affinity_list);
+                        if (++it == affinities.end())
+                            break;
+                        affinity_list += ',';
+                        affinity_list += *it;
+                    }
                 }
             }
 
-            string affinity_ladder = config->GetString(config_section,
-                    "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
-            list<CTempString> affinities;
-            NStr::Split(affinity_ladder, ", ", affinities);
+            ns_impl->m_JobGroup = config->GetString(config_section,
+                    "job_group", CConfig::eErr_NoThrow, kEmptyStr);
 
-            if (!affinities.empty()) {
-                list<CTempString>::const_iterator it = affinities.begin();
-                affinity_list = *it;
-                for (;;) {
-                    ns_impl->m_AffinityLadder.push_back(affinity_list);
-                    if (++it == affinities.end())
-                        break;
-                    affinity_list += ',';
-                    affinity_list += *it;
-                }
-            }
+            ns_impl->m_ClientNode = config->GetString(config_section,
+                "client_node", CConfig::eErr_NoThrow, kEmptyStr);
+
+            if (!ns_impl->m_ClientNode.empty())
+                ns_impl->m_ClientSession = GetDiagContext().GetStringUID();
         }
 
-        ns_impl->m_JobGroup = config->GetString(config_section,
-                "job_group", CConfig::eErr_NoThrow, kEmptyStr);
+        SetAuthString(ns_impl);
 
-        ns_impl->m_ClientNode = config->GetString(config_section,
-            "client_node", CConfig::eErr_NoThrow, kEmptyStr);
+        // If we should not load config from NetSchedule server
+        // or have already done it
+        if (phase || !CNetScheduleConfigLoader::Use(config, config_section)) {
+            break;
+        }
 
-        if (!ns_impl->m_ClientNode.empty())
-            ns_impl->m_ClientSession = GetDiagContext().GetStringUID();
+        const CTempString kLiterals[] = {
+            "ns.",      "netschedule_conf_from_netschedule",
+            "ns::",     "netschedule_conf_from_netschedule_GETP2"
+        };
+        config_holder.reset(
+                CNetScheduleConfigLoader::Get(kLiterals, ns_impl,
+                    &config_section, CNetScheduleConfigLoader::eGetQueueName));
+        config = config_holder.get();
     }
-
-    SetAuthString(ns_impl);
 }
 
 void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
@@ -1115,14 +1139,16 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
 void SNetScheduleAPIImpl::GetQueueParams(
         const string& queue_name, TQueueParams& queue_params)
 {
-    string cmd;
+    string cmd("QINF2 ");
 
-    if (queue_name.empty())
-        cmd = "QINF2 " + m_Queue;
-    else {
+    if (!queue_name.empty()) {
         SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
 
-        cmd = "QINF2 " + queue_name;
+        cmd += queue_name;
+    } else if (!m_Queue.empty()) {
+        cmd += m_Queue;
+    } else {
+        cmd += "service=" + m_Service->m_ServiceName;
     }
 
     g_AppendClientIPSessionIDHitID(cmd);
