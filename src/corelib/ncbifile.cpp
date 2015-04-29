@@ -3203,7 +3203,10 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             }
             n_read -= n_written;
             ptr    += n_written;
-        } while (n_read);
+        } while (n_read > 0);
+        if ( x_errno != 0) {
+            break;
+        }
     } while (!x_errno);
 
     s_CloseFile(fs);
