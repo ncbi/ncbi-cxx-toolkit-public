@@ -126,7 +126,7 @@ static ssize_t     x_GnuTlsPush  (gnutls_transport_ptr_t, const void*, size_t);
 #  endif /*__cplusplus*/
 
 
-#  if LIBGNUTLS_VERSION_NUMBER < 0x030400
+#  if LIBGNUTLS_VERSION_NUMBER < 0x030306
 static const int kGnuTlsCertPrio[] = {
     GNUTLS_CRT_X509,
     /*GNUTLS_CRT_OPENPGP,*/
@@ -137,7 +137,7 @@ static const int kGnuTlsCompPrio[] = {
     GNUTLS_COMP_NULL,
     0
 };
-#  endif /*LIBGNUTLS_VERSION_NUMBER<3.4.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER<3.3.6*/
 
 
 static int                              s_GnuTlsLogLevel;
@@ -316,14 +316,14 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
         ( *val  &&
          (err = gnutls_priority_set_direct(session, val, 0))           != 0) ||
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.2.0*/
-#  if LIBGNUTLS_VERSION_NUMBER < 0x030400
+#  if LIBGNUTLS_VERSION_NUMBER < 0x030306
         (!*val  &&
          (err = gnutls_compression_set_priority(session,
                                                 kGnuTlsCompPrio))      != 0) ||
         (!*val  &&
          (err = gnutls_certificate_type_set_priority(session,
                                                      kGnuTlsCertPrio)) != 0) ||
-#  endif /*LIBGNUTLS_VERSION_NUMBER<3.4.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER<3.3.6*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
                                       cred ? cred->data : xcred))      != 0  ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON, acred))!= 0) {
@@ -355,7 +355,11 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
         *error = x_error;
         *desc = 0;
     } else {
+#  if LIBGNUTLS_VERSION_NUMBER < 0x030110
+        *desc = 0;
+#  else
         *desc = gnutls_session_get_desc(session);
+#  endif /*LIBGNUTLS_VERSION_NUMBER<3.1.10*/
         status = eIO_Success;
     }
     return status;
@@ -376,11 +380,10 @@ static void x_set_errno(gnutls_session_t session, int error)
 {
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x010504
     gnutls_transport_set_errno(session, error);
-    return;
-#  endif /*LIBGNUTLS_VERSION>=1.5.4*/
-    /*NOTREACHED*/
+#  else
     if (error)
         errno = error;
+#  endif /*LIBGNUTLS_VERSION>=1.5.4*/
 }
 
 

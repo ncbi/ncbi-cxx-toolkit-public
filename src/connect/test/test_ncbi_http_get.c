@@ -98,6 +98,7 @@ static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
 }
 
 
+#if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 static int x_CertVfyCB(gnutls_session_t session)
 {
 	unsigned int n, cert_list_size = 0;
@@ -138,6 +139,7 @@ static int x_CertVfyCB(gnutls_session_t session)
 	}
     return 0;
 }
+#endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 
 
 #if 0
@@ -324,8 +326,10 @@ int main(int argc, char* argv[])
                                       " \"%s\"", type, file));
             }
             if (net_info->debug_printout == eDebugPrintout_Data) {
+#if LIBGNUTLS_VERSION_NUMBER >= 0x021000
                 gnutls_certificate_set_verify_function(xcred,
                                                        x_CertVfyCB);
+#endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 #if 0
                 gnutls_certificate_set_retrieve_function2(xcred,
                                                           x_CertRtrCB);

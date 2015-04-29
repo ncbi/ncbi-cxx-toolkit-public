@@ -2625,14 +2625,14 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                     x_tvcpy(&sock->r_tv, &rtv);
                 if (status == eIO_Success) {
                     sock->pending = 0;
-                    if (desc) {
-                        if (sock->log == eOn
-                            ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-                            CORE_LOGF(eLOG_Trace,
-                                      ("%sSSL session established %s",
-                                       s_ID(sock, _id), desc));
-                        }
-                        free(desc);
+                    if (sock->log == eOn
+                        ||  (sock->log == eDefault  &&  s_Log == eOn)) {
+                        CORE_LOGF(eLOG_Trace,
+                                  ("%sSSL session established%s%s",
+                                   s_ID(sock, _id),
+                                   &" "[!desc], desc ? desc : ""));
+                        if (desc)
+                            free(desc);
                     }
                 } else
                     *what = "SSL hello";
