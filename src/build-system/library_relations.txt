@@ -564,6 +564,7 @@ hgvs needs xregexp
 hgvs_name needs $(OBJMGR_LIBS)
 hgvs_name needs gui_objutils
 hgvs_name needs sv_objects
+hmm_file needs xregexp
 hmm_hit_handle needs $(SOBJMGR_LIBS)
 hogweed needs3party $(ORIG_LIBS)
 hogweed needs3party gmp
@@ -882,6 +883,7 @@ pepXML needs xser
 phytree_format needs taxon1
 phytree_format needs xalgophytree
 pn_ctl needs $(GPIPE_GENCOLL_LIBS)
+pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
 pn_ctl needs idload_utils
 pn_ctl needs xid_utils
