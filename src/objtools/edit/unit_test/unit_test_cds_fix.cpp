@@ -827,24 +827,11 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == seh);
     scope.RemoveTopLevelSeqEntry(seh);
 
-    // should not change cdregion if in nuc-prot set and product set but
+    // move cdregion if in nuc-prot set and product set but
     // protein sequence not local
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
     entry->SetSet().SetSeq_set().push_back(nuc);
-
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    CBioseq_Handle n_bsh = scope.GetBioseqHandle(*nuc_id);
-    fh = scope.GetSeq_featHandle(*cds);
-    BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);
-    BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == n_bsh.GetSeq_entry_Handle());
-    scope.RemoveTopLevelSeqEntry(seh);
-
-    // should change cdregion if in nuc-prot set and product set
-    // and protein sequence is local
-    CRef<CSeq_entry> prot = unit_test_util::BuildGoodProtSeq();
-    unit_test_util::ChangeId(prot, product_id);
-    entry->SetSet().SetSeq_set().push_back(prot);
 
     seh = scope.AddTopLevelSeqEntry(*entry);
     fh = scope.GetSeq_featHandle(*cds);
@@ -855,7 +842,7 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);
 
     // after demotion, should go back to nucleotide sequence
-    n_bsh = scope.GetBioseqHandle(*nuc_id);
+    CBioseq_Handle n_bsh = scope.GetBioseqHandle(*nuc_id);
     BOOST_CHECK_EQUAL(edit::DemoteCDSToNucSeq(fh), true);
     BOOST_ASSERT(fh.GetAnnot().GetParentEntry() == n_bsh.GetSeq_entry_Handle());
 
