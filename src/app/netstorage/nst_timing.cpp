@@ -1,6 +1,3 @@
-#ifndef NETSTORAGE_SERVER_PARAMS__HPP
-#define NETSTORAGE_SERVER_PARAMS__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -26,37 +23,60 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: [server] section of the configuration
+ * File Description: NetStorage server timing
  *
  */
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
 
-#include <corelib/ncbireg.hpp>
-#include <connect/server.hpp>
-
-#include <string>
+#include "nst_timing.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-//
-// NetStorage server parameters
-//
-struct SNetStorageServerParameters : SServer_Parameters
+void CNSTTiming::Append(const string &  what,
+                        const CNSTPreciseTime &  start)
 {
-    void Read(const IRegistry& reg, const string& sname,
-              string &  decrypt_warning);
+    data.push_back(make_pair(what, CNSTPreciseTime::Current() - start));
+}
 
-    unsigned short  port;
-    unsigned int    network_timeout;
-    bool            log;
-    bool            log_timing;
-    string          admin_client_names;
-};
+
+// Automatically cleans the collected data to avoid double printing
+string CNSTTiming::Serialize(void)
+{
+    string      retval;
+    for ( vector< pair< string, CNSTPreciseTime > >::const_iterator
+            k = data.begin(); k != data.end(); ++k ) {
+        if (!retval.empty())
+            retval += " ";
+        retval += k->first + ": " + NST_FormatPreciseTimeAsSec(k->second);
+    }
+
+    data.clear();
+    return retval;
+}
+
+
+bool  CNSTTiming::Empty(void) const
+{
+    return data.empty();
+}
+
+
+size_t  CNSTTiming::Size(void) const
+{
+    return data.size();
+}
+
+
+void  CNSTTiming::Clear(void)
+{
+    data.clear();
+}
+
 
 END_NCBI_SCOPE
-
-#endif
 

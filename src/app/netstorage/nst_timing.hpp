@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_SERVER_PARAMS__HPP
-#define NETSTORAGE_SERVER_PARAMS__HPP
+#ifndef NETSTORAGE_TIMING__HPP
+#define NETSTORAGE_TIMING__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,37 +26,45 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: [server] section of the configuration
+ * File Description:
+ *   Net storage server timing
  *
  */
 
-#include <corelib/ncbireg.hpp>
-#include <connect/server.hpp>
 
-#include <string>
+#include <vector>
+#include <utility>
+
+#include "nst_precise_time.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-//
-// NetStorage server parameters
-//
-struct SNetStorageServerParameters : SServer_Parameters
+// The helper class to collect how much time it took to complete certain stages
+// whithin a single command
+class CNSTTiming
 {
-    void Read(const IRegistry& reg, const string& sname,
-              string &  decrypt_warning);
+    public:
+        void Append(const string &  what,
+                    const CNSTPreciseTime &  how_long);
 
-    unsigned short  port;
-    unsigned int    network_timeout;
-    bool            log;
-    bool            log_timing;
-    string          admin_client_names;
+        // Also cleans the collected data to avoid double printing
+        string Serialize(void);
+        bool  Empty(void) const;
+        size_t  Size(void) const;
+        void  Clear(void);
+
+    private:
+        vector<
+            pair< string, CNSTPreciseTime > >   data;
 };
+
+
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* NETSTORAGE_TIMING__HPP */
 

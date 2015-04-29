@@ -38,6 +38,7 @@
 #include "nst_exception.hpp"
 #include "nst_application.hpp"
 #include "nst_server.hpp"
+#include "nst_timing.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -109,34 +110,43 @@ CNSTDatabase::~CNSTDatabase(void)
 
 
 int
-CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
+CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
+                                     CNSTTiming &  timing)
 {
-    const string    proc_name = "GetNextObjectID";
-    x_PreCheckConnection();
-
-    int     status;
+    const string        proc_name = "GetNextObjectID";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase   db = m_Db->Clone();
-        CQuery      query = db.NewQuery();
+        x_PreCheckConnection();
 
-        object_id = 0;
-        query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        status = x_CheckStatus(query, proc_name);
+        int     status;
+        try {
+            CDatabase   db = m_Db->Clone();
+            CQuery      query = db.NewQuery();
 
-        if (status == 0)
-            object_id = query.GetParameter("@next_id").AsInt8();
-        else
-            object_id = -1;
-        return status;
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            object_id = 0;
+            query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == 0)
+                object_id = query.GetParameter("@next_id").AsInt8();
+            else
+                object_id = -1;
+
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -144,36 +154,44 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
 
 int
 CNSTDatabase::ExecSP_CreateClient(
-            const string &  client, Int8 &  client_id)
+            const string &  client, Int8 &  client_id, CNSTTiming &  timing)
 {
-    const string    proc_name = "CreateClient";
-    x_PreCheckConnection();
-
-    int     status;
+    const string        proc_name = "CreateClient";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase   db = m_Db->Clone();
-        CQuery      query = db.NewQuery();
+        x_PreCheckConnection();
 
-        client_id = -1;
-        query.SetParameter("@client_name", client);
-        query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
+        int     status;
+        try {
+            CDatabase   db = m_Db->Clone();
+            CQuery      query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        status = x_CheckStatus(query, proc_name);
-
-        if (status == 0)
-            client_id = query.GetParameter("@client_id").AsInt8();
-        else
             client_id = -1;
-        return status;
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            query.SetParameter("@client_name", client);
+            query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == 0)
+                client_id = query.GetParameter("@client_id").AsInt8();
+            else
+                client_id = -1;
+
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -183,40 +201,52 @@ int
 CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
-            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl)
+            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl,
+            CNSTTiming &  timing)
 {
-    const string    proc_name = "CreateObjectWithClientID";
-    x_PreCheckConnection();
+    const string        proc_name = "CreateObjectWithClientID";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
-                                                  object_loc);
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_id", object_id);
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_create_tm",
-                           object_loc_struct.GetCreationTime());
-        query.SetParameter("@object_loc", object_loc);
-        query.SetParameter("@object_size", size);
-        query.SetParameter("@client_id", client_id);
+        int     status;
+        try {
+            CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                      object_loc);
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        if (ttl.m_IsNull)
-            query.SetNullParameter("@object_expiration", eSDB_DateTime);
-        else
-            query.SetParameter("@object_expiration",
-                               CTime(CTime::eCurrent) + ttl.m_Value);
+            query.SetParameter("@object_id", object_id);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_create_tm",
+                               object_loc_struct.GetCreationTime());
+            query.SetParameter("@object_loc", object_loc);
+            query.SetParameter("@object_size", size);
+            query.SetParameter("@client_id", client_id);
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            if (ttl.m_IsNull)
+                query.SetNullParameter("@object_expiration", eSDB_DateTime);
+            else
+                query.SetParameter("@object_expiration",
+                                   CTime(CTime::eCurrent) + ttl.m_Value);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -228,7 +258,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration)
+            const TNSTDBValue<CTime> &  object_expiration,
+            CNSTTiming &  timing)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -241,41 +272,52 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
                           object_expiration,
                           exp_record_found, exp_record_not_found);
 
-    const string    proc_name = "UpdateObjectOnWrite";
-    x_PreCheckConnection();
+    const string        proc_name = "UpdateObjectOnWrite";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_loc", object_loc);
-        query.SetParameter("@object_size", size);
-        query.SetParameter("@client_id", client_id);
-        query.SetParameter("@current_time", current_time);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        if (exp_record_found.m_IsNull)
-            query.SetNullParameter("@object_exp_if_found",
-                                   eSDB_DateTime);
-        else
-            query.SetParameter("@object_exp_if_found",
-                               exp_record_found.m_Value);
-        if (exp_record_not_found.m_IsNull)
-            query.SetNullParameter("@object_exp_if_not_found",
-                                   eSDB_DateTime);
-        else
-            query.SetParameter("@object_exp_if_not_found",
-                               exp_record_not_found.m_Value);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_loc", object_loc);
+            query.SetParameter("@object_size", size);
+            query.SetParameter("@client_id", client_id);
+            query.SetParameter("@current_time", current_time);
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            if (exp_record_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_found",
+                                   exp_record_found.m_Value);
+            if (exp_record_not_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_not_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_not_found",
+                                   exp_record_not_found.m_Value);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -287,7 +329,8 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration)
+            const TNSTDBValue<CTime> &  object_expiration,
+            CNSTTiming &  timing)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -300,40 +343,51 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
                           exp_record_found, exp_record_not_found);
 
     const string    proc_name = "UpdateUserKeyObjectOnWrite";
-    x_PreCheckConnection();
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_loc", object_loc);
-        query.SetParameter("@object_size", size);
-        query.SetParameter("@client_id", client_id);
-        query.SetParameter("@current_time", current_time);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        if (exp_record_found.m_IsNull)
-            query.SetNullParameter("@object_exp_if_found",
-                                   eSDB_DateTime);
-        else
-            query.SetParameter("@object_exp_if_found",
-                               exp_record_found.m_Value);
-        if (exp_record_not_found.m_IsNull)
-            query.SetNullParameter("@object_exp_if_not_found",
-                                   eSDB_DateTime);
-        else
-            query.SetParameter("@object_exp_if_not_found",
-                               exp_record_not_found.m_Value);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_loc", object_loc);
+            query.SetParameter("@object_size", size);
+            query.SetParameter("@client_id", client_id);
+            query.SetParameter("@current_time", current_time);
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            if (exp_record_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_found",
+                                   exp_record_found.m_Value);
+            if (exp_record_not_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_not_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_not_found",
+                                   exp_record_not_found.m_Value);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -345,7 +399,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
-            const TNSTDBValue<CTime> &  object_expiration)
+            const TNSTDBValue<CTime> &  object_expiration,
+            CNSTTiming &  timing)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -357,41 +412,52 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
     x_CalculateExpiration(current_time, ttl, prolong_on_read, object_expiration,
                           exp_record_found, exp_record_not_found);
 
-    const string    proc_name = "UpdateObjectOnRead";
-    x_PreCheckConnection();
+    const string        proc_name = "UpdateObjectOnRead";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_loc", object_loc);
-        query.SetParameter("@object_size", size);
-        query.SetParameter("@client_id", client_id);
-        query.SetParameter("@current_time", current_time);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        if (exp_record_found.m_IsNull)
-            query.SetNullParameter("@object_exp_if_found",
-                                   eSDB_DateTime);
-        else
-            query.SetParameter("@object_exp_if_found",
-                               exp_record_found.m_Value);
-        if (exp_record_not_found.m_IsNull)
-            query.SetNullParameter("@object_exp_if_not_found",
-                                   eSDB_DateTime);
-        else
-            query.SetParameter("@object_exp_if_not_found",
-                               exp_record_not_found.m_Value);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_loc", object_loc);
+            query.SetParameter("@object_size", size);
+            query.SetParameter("@client_id", client_id);
+            query.SetParameter("@current_time", current_time);
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            if (exp_record_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_found",
+                                   exp_record_found.m_Value);
+            if (exp_record_not_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_not_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_not_found",
+                                   exp_record_not_found.m_Value);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -400,54 +466,78 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
 int
 CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
-            const string &  object_loc, Int8  client_id)
+            const string &  object_loc, Int8  client_id,
+            CNSTTiming &  timing)
 {
-    const string    proc_name = "UpdateObjectOnRelocate";
-    x_PreCheckConnection();
+    const string        proc_name = "UpdateObjectOnRelocate";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@object_loc", object_loc);
-        query.SetParameter("@client_id", client_id);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_loc", object_loc);
+            query.SetParameter("@client_id", client_id);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
 
 
 int
-CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
+CNSTDatabase::ExecSP_RemoveObject(const string &  object_key,
+                                  CNSTTiming &  timing)
 {
-    const string    proc_name = "RemoveObject";
-    x_PreCheckConnection();
+    const string        proc_name = "RemoveObject";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            query.SetParameter("@object_key", object_key);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -455,32 +545,44 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
 
 int
 CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
-                                   const TNSTDBValue<CTimeSpan> &  ttl)
+                                   const TNSTDBValue<CTimeSpan> &  ttl,
+                                   CNSTTiming &  timing)
 {
-    const string    proc_name = "SetObjectExpiration";
-    x_PreCheckConnection();
+    const string        proc_name = "SetObjectExpiration";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        if (ttl.m_IsNull)
-            query.SetNullParameter("@expiration", eSDB_DateTime);
-        else
-            query.SetParameter("@expiration", CTime(CTime::eCurrent) +
-                                              ttl.m_Value);
+            query.SetParameter("@object_key", object_key);
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            if (ttl.m_IsNull)
+                query.SetNullParameter("@expiration", eSDB_DateTime);
+            else
+                query.SetParameter("@expiration", CTime(CTime::eCurrent) +
+                                                  ttl.m_Value);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -490,29 +592,41 @@ int
 CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
                                   const string &  attr_name,
                                   const string &  attr_value,
-                                  Int8  client_id)
+                                  Int8  client_id,
+                                  CNSTTiming &  timing)
 {
-    const string    proc_name = "AddAttribute";
-    x_PreCheckConnection();
+    const string        proc_name = "AddAttribute";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@attr_name", attr_name);
-        query.SetParameter("@attr_value", attr_value);
-        query.SetParameter("@client_id", client_id);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@attr_name", attr_name);
+            query.SetParameter("@attr_value", attr_value);
+            query.SetParameter("@client_id", client_id);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -520,34 +634,45 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
-                                       vector<string> &  attr_names)
+                                       vector<string> &  attr_names,
+                                       CNSTTiming &  timing)
 {
-    const string    proc_name = "GetAttributeNames";
-    x_PreCheckConnection();
-
+    const string        proc_name = "GetAttributeNames";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
+            query.SetParameter("@object_key", object_key);
 
-        // NOTE: reading result recordset must be done before getting the
-        //       status code
-        ITERATE(CQuery, qit, query.SingleSet()) {
-            attr_names.push_back(qit["name"].AsString());
+            query.ExecuteSP(proc_name);
+
+            // NOTE: reading result recordset must be done before getting the
+            //       status code
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                attr_names.push_back(qit["name"].AsString());
+            }
+
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -557,37 +682,45 @@ int
 CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
                                   const string &  attr_name,
                                   bool            need_update,
-                                  string &        value)
+                                  string &        value,
+                                  CNSTTiming &    timing)
 {
-    const string    proc_name = "GetAttribute";
-    x_PreCheckConnection();
-
-    int     status;
+    const string        proc_name = "GetAttribute";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@attr_name", attr_name);
-        query.SetParameter("@need_update", need_update);
-        query.SetParameter("@attr_value", "", eSDB_String, eSP_InOut);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        status = x_CheckStatus(query, proc_name);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@attr_name", attr_name);
+            query.SetParameter("@need_update", need_update);
+            query.SetParameter("@attr_value", "", eSDB_String, eSP_InOut);
 
-        if (status == 0)
-            value = query.GetParameter("@attr_value").AsString();
-        else
-            value = "";
-        return status;
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == 0)
+                value = query.GetParameter("@attr_value").AsString();
+            else
+                value = "";
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -595,27 +728,39 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
-                                  const string &  attr_name)
+                                  const string &  attr_name,
+                                  CNSTTiming &    timing)
 {
-    const string    proc_name = "DelAttribute";
-    x_PreCheckConnection();
+    const string        proc_name = "DelAttribute";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@attr_name", attr_name);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@attr_name", attr_name);
+
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -631,87 +776,95 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                               TNSTDBValue<CTime> &  attr_write,
                                               TNSTDBValue<Int8> &   read_count,
                                               TNSTDBValue<Int8> &   write_count,
-                                              TNSTDBValue<string> & client_name
+                                              TNSTDBValue<string> & client_name,
+                                              CNSTTiming &          timing
                                               )
 {
-    const string    proc_name = "GetObjectFixedAttributes";
-    x_PreCheckConnection();
-
-    int     status;
+    const string        proc_name = "GetObjectFixedAttributes";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@expiration", expiration.m_Value,
-                                          eSDB_DateTime, eSP_InOut);
-        query.SetParameter("@creation", creation.m_Value,
-                                        eSDB_DateTime, eSP_InOut);
-        query.SetParameter("@obj_read", obj_read.m_Value,
-                                        eSDB_DateTime, eSP_InOut);
-        query.SetParameter("@obj_write", obj_write.m_Value,
-                                         eSDB_DateTime, eSP_InOut);
-        query.SetParameter("@attr_read", attr_read.m_Value,
-                                         eSDB_DateTime, eSP_InOut);
-        query.SetParameter("@attr_write", attr_write.m_Value,
-                                          eSDB_DateTime, eSP_InOut);
-        query.SetParameter("@read_cnt", read_count.m_Value,
-                                        eSDB_Int8, eSP_InOut);
-        query.SetParameter("@write_cnt", write_count.m_Value,
-                                         eSDB_Int8, eSP_InOut);
-        query.SetParameter("@client_name", client_name.m_Value,
-                                           eSDB_String, eSP_InOut);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        status = x_CheckStatus(query, proc_name);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@expiration", expiration.m_Value,
+                                              eSDB_DateTime, eSP_InOut);
+            query.SetParameter("@creation", creation.m_Value,
+                                            eSDB_DateTime, eSP_InOut);
+            query.SetParameter("@obj_read", obj_read.m_Value,
+                                            eSDB_DateTime, eSP_InOut);
+            query.SetParameter("@obj_write", obj_write.m_Value,
+                                             eSDB_DateTime, eSP_InOut);
+            query.SetParameter("@attr_read", attr_read.m_Value,
+                                             eSDB_DateTime, eSP_InOut);
+            query.SetParameter("@attr_write", attr_write.m_Value,
+                                              eSDB_DateTime, eSP_InOut);
+            query.SetParameter("@read_cnt", read_count.m_Value,
+                                            eSDB_Int8, eSP_InOut);
+            query.SetParameter("@write_cnt", write_count.m_Value,
+                                             eSDB_Int8, eSP_InOut);
+            query.SetParameter("@client_name", client_name.m_Value,
+                                               eSDB_String, eSP_InOut);
 
-        if (status == 0) {
-            expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
-            if (!expiration.m_IsNull)
-                expiration.m_Value = query.GetParameter("@expiration").
-                                                                AsDateTime();
-            creation.m_IsNull = query.GetParameter("@creation").IsNull();
-            if (!creation.m_IsNull)
-                creation.m_Value = query.GetParameter("@creation").
-                                                                AsDateTime();
-            obj_read.m_IsNull = query.GetParameter("@obj_read").IsNull();
-            if (!obj_read.m_IsNull)
-                obj_read.m_Value = query.GetParameter("@obj_read").
-                                                                AsDateTime();
-            obj_write.m_IsNull = query.GetParameter("@obj_write").IsNull();
-            if (!obj_write.m_IsNull)
-                obj_write.m_Value = query.GetParameter("@obj_write").
-                                                                AsDateTime();
-            attr_read.m_IsNull = query.GetParameter("@attr_read").IsNull();
-            if (!attr_read.m_IsNull)
-                attr_read.m_Value = query.GetParameter("@attr_read").
-                                                                AsDateTime();
-            attr_write.m_IsNull = query.GetParameter("@attr_write").IsNull();
-            if (!attr_write.m_IsNull)
-                attr_write.m_Value = query.GetParameter("@attr_write").
-                                                                AsDateTime();
-            read_count.m_IsNull = query.GetParameter("@read_cnt").IsNull();
-            if (!read_count.m_IsNull)
-                read_count.m_Value = query.GetParameter("@read_cnt").
-                                                                AsInt8();
-            write_count.m_IsNull = query.GetParameter("@write_cnt").IsNull();
-            if (!write_count.m_IsNull)
-                write_count.m_Value = query.GetParameter("@write_cnt").
-                                                                AsInt8();
-            client_name.m_IsNull = query.GetParameter("@client_name").IsNull();
-            if (!client_name.m_IsNull)
-                client_name.m_Value = query.GetParameter("@client_name").
-                                                                AsString();
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == 0) {
+                expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
+                if (!expiration.m_IsNull)
+                    expiration.m_Value = query.GetParameter("@expiration").
+                                                                    AsDateTime();
+                creation.m_IsNull = query.GetParameter("@creation").IsNull();
+                if (!creation.m_IsNull)
+                    creation.m_Value = query.GetParameter("@creation").
+                                                                    AsDateTime();
+                obj_read.m_IsNull = query.GetParameter("@obj_read").IsNull();
+                if (!obj_read.m_IsNull)
+                    obj_read.m_Value = query.GetParameter("@obj_read").
+                                                                    AsDateTime();
+                obj_write.m_IsNull = query.GetParameter("@obj_write").IsNull();
+                if (!obj_write.m_IsNull)
+                    obj_write.m_Value = query.GetParameter("@obj_write").
+                                                                    AsDateTime();
+                attr_read.m_IsNull = query.GetParameter("@attr_read").IsNull();
+                if (!attr_read.m_IsNull)
+                    attr_read.m_Value = query.GetParameter("@attr_read").
+                                                                    AsDateTime();
+                attr_write.m_IsNull = query.GetParameter("@attr_write").IsNull();
+                if (!attr_write.m_IsNull)
+                    attr_write.m_Value = query.GetParameter("@attr_write").
+                                                                    AsDateTime();
+                read_count.m_IsNull = query.GetParameter("@read_cnt").IsNull();
+                if (!read_count.m_IsNull)
+                    read_count.m_Value = query.GetParameter("@read_cnt").
+                                                                    AsInt8();
+                write_count.m_IsNull = query.GetParameter("@write_cnt").IsNull();
+                if (!write_count.m_IsNull)
+                    write_count.m_Value = query.GetParameter("@write_cnt").
+                                                                    AsInt8();
+                client_name.m_IsNull = query.GetParameter("@client_name").IsNull();
+                if (!client_name.m_IsNull)
+                    client_name.m_Value = query.GetParameter("@client_name").
+                                                                    AsString();
+            }
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-        return status;
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
@@ -719,109 +872,133 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
 
 int
 CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
-                                         TNSTDBValue<CTime> &  expiration)
+                                         TNSTDBValue<CTime> &  expiration,
+                                         CNSTTiming &          timing)
 {
-    const string    proc_name = "GetObjectExpiration";
-    x_PreCheckConnection();
-
-    int     status;
+    const string        proc_name = "GetObjectExpiration";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@object_key", object_key);
-        query.SetParameter("@expiration", expiration.m_Value,
-                                          eSDB_DateTime, eSP_InOut);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
-        query.VerifyDone();
-        status = x_CheckStatus(query, proc_name);
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@expiration", expiration.m_Value,
+                                              eSDB_DateTime, eSP_InOut);
 
-        if (status == 0) {
-            expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
-            if (!expiration.m_IsNull)
-                expiration.m_Value = query.GetParameter("@expiration").
-                                                                AsDateTime();
+            query.ExecuteSP(proc_name);
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == 0) {
+                expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
+                if (!expiration.m_IsNull)
+                    expiration.m_Value = query.GetParameter("@expiration").
+                                                                    AsDateTime();
+            }
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-        return status;
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
 
 
 map<string, string>
-CNSTDatabase::ExecSP_GetGeneralDBInfo(void)
+CNSTDatabase::ExecSP_GetGeneralDBInfo(CNSTTiming &  timing)
 {
     map<string, string>     result;
     const string            proc_name = "sp_spaceused";
-    x_PreCheckConnection();
-
+    CNSTPreciseTime         start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.ExecuteSP(proc_name);
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        // sp_spaceused provides two recordsets 1 record each, e.g.
-        // NETSTORAGE   224.88 MB   98.34 MB
-        // 1696 KB   752 KB  736 KB  208 KB
-        ITERATE(CQuery, qit, query.SingleSet()) {
-            for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
-                string  columnName = qit.GetColumnName(k);
-                result[columnName] = qit[k].AsString();
+            query.ExecuteSP(proc_name);
+
+            // sp_spaceused provides two recordsets 1 record each, e.g.
+            // NETSTORAGE   224.88 MB   98.34 MB
+            // 1696 KB   752 KB  736 KB  208 KB
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
+                    string  columnName = qit.GetColumnName(k);
+                    result[columnName] = qit[k].AsString();
+                }
             }
+            query.VerifyDone();
+
+            timing.Append("MS SQL " + proc_name, start);
+            return result;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-        query.VerifyDone();
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
-    return result;
 }
 
 
 map<string, string>
-CNSTDatabase::ExecSP_GetStatDBInfo(void)
+CNSTDatabase::ExecSP_GetStatDBInfo(CNSTTiming &  timing)
 {
-    const string            proc_name = "GetStatInfo";
     map<string, string>     result;
-    x_PreCheckConnection();
-
+    const string            proc_name = "GetStatInfo";
+    CNSTPreciseTime         start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.ExecuteSP(proc_name);
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        ITERATE(CQuery, qit, query.SingleSet()) {
-            for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
-                string  columnName = qit.GetColumnName(k);
-                result[columnName] = qit[k].AsString();
+            query.ExecuteSP(proc_name);
+
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
+                    string  columnName = qit.GetColumnName(k);
+                    result[columnName] = qit[k].AsString();
+                }
             }
+            query.VerifyDone();
+
+            timing.Append("MS SQL " + proc_name, start);
+            return result;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-        query.VerifyDone();
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
-    return result;
 }
 
 
@@ -829,72 +1006,94 @@ int
 CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                                       TNSTDBValue<Int8>  limit,
                                       Int8 &  total,
-                                      vector<string> &  locators)
+                                      vector<string> &  locators,
+                                      CNSTTiming &  timing)
 {
-    const string    proc_name = "GetClientObjects";
-    x_PreCheckConnection();
-
+    const string            proc_name = "GetClientObjects";
+    CNSTPreciseTime         start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.SetParameter("@client_name", client_name);
-        if (limit.m_IsNull)
-            query.SetNullParameter("@limit", eSDB_Int8);
-        else
-            query.SetParameter("@limit", limit.m_Value);
-        query.SetParameter("@total_object_cnt", total, eSDB_Int8, eSP_InOut);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        query.ExecuteSP(proc_name);
+            query.SetParameter("@client_name", client_name);
+            if (limit.m_IsNull)
+                query.SetNullParameter("@limit", eSDB_Int8);
+            else
+                query.SetParameter("@limit", limit.m_Value);
+            query.SetParameter("@total_object_cnt", total, eSDB_Int8, eSP_InOut);
 
-        // NOTE: reading result recordset must be done before getting the
-        //       status code
-        ITERATE(CQuery, qit, query.SingleSet()) {
-            locators.push_back(qit["object_loc"].AsString());
+            query.ExecuteSP(proc_name);
+
+            // NOTE: reading result recordset must be done before getting the
+            //       status code
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                locators.push_back(qit["object_loc"].AsString());
+            }
+
+            total = query.GetParameter("@total_object_cnt").AsInt8();
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-
-        total = query.GetParameter("@total_object_cnt").AsInt8();
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }
 
 
 int
-CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
+CNSTDatabase::ExecSP_GetClients(vector<string> &  names,
+                                CNSTTiming &  timing)
 {
-    const string    proc_name = "GetClients";
-    x_PreCheckConnection();
-
+    const string            proc_name = "GetClients";
+    CNSTPreciseTime         start = CNSTPreciseTime::Current();
     try {
-        CDatabase               db = m_Db->Clone();
-        CQuery                  query = db.NewQuery();
+        x_PreCheckConnection();
 
-        query.ExecuteSP(proc_name);
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
 
-        // NOTE: reading result recordset must be done before getting the
-        //       status code
-        ITERATE(CQuery, qit, query.SingleSet()) {
-            names.push_back(qit["name"].AsString());
+            query.ExecuteSP(proc_name);
+
+            // NOTE: reading result recordset must be done before getting the
+            //       status code
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                names.push_back(qit["name"].AsString());
+            }
+
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
         }
-
-        query.VerifyDone();
-        return x_CheckStatus(query, proc_name);
-    } catch (const std::exception &  ex) {
-        m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-        x_PostCheckConnection();
-        throw;
     } catch (...) {
-        m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-        x_PostCheckConnection();
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
         throw;
     }
 }

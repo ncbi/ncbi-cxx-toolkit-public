@@ -98,7 +98,7 @@ void NSTValidateServerSection(const IRegistry &  reg,
 {
     const string    section = "server";
 
-    // port is a unique value in this section. NS must not start
+    // port is a unique value in this section. NST must not start
     // if there is a problem with port.
     bool    ok = NSTValidateInt(reg, section, "port", warnings);
     if (ok) {
@@ -178,6 +178,7 @@ void NSTValidateServerSection(const IRegistry &  reg,
     }
 
     NSTValidateBool(reg, section, "log", warnings);
+    NSTValidateBool(reg, section, "log_timing", warnings);
     NSTValidateString(reg, section, "admin_client_name", warnings);
 }
 

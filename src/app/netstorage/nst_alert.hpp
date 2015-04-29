@@ -29,14 +29,9 @@
  * Authors:  Sergey Satskiy
  *
  * File Description:
- *   Net storagee server alerts
+ *   Net storage server alerts
  *
  */
-
-/// @file ns_alert.hpp
-/// NetSchedule server alerts
-///
-/// @internal
 
 
 #include "nst_precise_time.hpp"

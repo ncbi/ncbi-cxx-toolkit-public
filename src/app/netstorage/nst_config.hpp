@@ -46,7 +46,7 @@ const unsigned short    port_high_limit = 65535;
 
 const unsigned int      default_network_timeout = 10;
 
-const unsigned int      default_max_connections = 100;
+const unsigned int      default_max_connections = 500;
 const unsigned int      max_connections_low_limit = 1;
 const unsigned int      max_connections_high_limit = 1000;
 
@@ -54,9 +54,13 @@ const unsigned int      default_init_threads = 10;
 const unsigned int      init_threads_low_limit = 1;
 const unsigned int      init_threads_high_limit = 1000;
 
-const unsigned int      default_max_threads = 25;
+const unsigned int      default_max_threads = 50;
 const unsigned int      max_threads_low_limit = 1;
 const unsigned int      max_threads_high_limit = 1000;
+
+const bool              default_log = true;
+const bool              default_log_timing = false;
+
 
 
 

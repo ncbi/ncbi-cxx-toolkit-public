@@ -34,6 +34,7 @@
 
 #include "nst_server_parameters.hpp"
 #include "nst_exception.hpp"
+#include "nst_config.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -43,12 +44,6 @@ USING_NCBI_SCOPE;
 #define GetBoolNoErr(name, dflt) \
     reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
 
-
-static unsigned int     default_max_connections = 500;
-static unsigned int     default_max_threads = 50;
-static unsigned int     default_init_threads = 10;
-static unsigned int     default_network_timeout = 10;
-static bool             default_log = true;
 
 
 void SNetStorageServerParameters::Read(const IRegistry &    reg,
@@ -82,6 +77,7 @@ void SNetStorageServerParameters::Read(const IRegistry &    reg,
     }
 
     log = GetBoolNoErr("log", default_log);
+    log_timing = GetBoolNoErr("log_timing", default_log_timing);
 
     // Deal with potentially encrypted admin client names
     try {

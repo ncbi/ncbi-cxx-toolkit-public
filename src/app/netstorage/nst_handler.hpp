@@ -44,6 +44,7 @@
 #include "nst_metadata_options.hpp"
 #include "nst_database.hpp"
 #include "nst_service_parameters.hpp"
+#include "nst_timing.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -179,6 +180,9 @@ private:
     bool                    m_ByeReceived;
     bool                    m_FirstMessage;
     bool                    m_WriteCreateNeedMetaDBUpdate;
+
+    CNSTTiming              m_Timing;
+    bool x_PrintTimingIsOn(void) const;
 
     typedef void (CNetStorageHandler::*FProcessor)(
                                 const CJsonNode &,

@@ -44,6 +44,7 @@ struct SCommonRequestArguments;
 class CJsonNode;
 class CNetStorageServer;
 class CNSTDBConnectionThread;
+class CNSTTiming;
 
 
 struct SDbAccessInfo
@@ -77,49 +78,61 @@ public:
     bool IsConnected(void) const
     { return m_Connected; }
 
-    int  ExecSP_GetNextObjectID(Int8 &  object_id);
+    int  ExecSP_GetNextObjectID(Int8 &  object_id,
+                                CNSTTiming &  timing);
     int  ExecSP_CreateClient(const string &  client,
-                             Int8 &  client_id);
+                             Int8 &  client_id,
+                             CNSTTiming &  timing);
     int  ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
-            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl);
+            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl,
+            CNSTTiming &  timing);
     int  ExecSP_UpdateObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration);
+            const TNSTDBValue<CTime> &  object_expiration,
+            CNSTTiming &  timing);
     int  ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration);
+            const TNSTDBValue<CTime> &  object_expiration,
+            CNSTTiming &  timing);
     int  ExecSP_UpdateObjectOnRead(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
-            const TNSTDBValue<CTime> &  object_expiration);
+            const TNSTDBValue<CTime> &  object_expiration,
+            CNSTTiming &  timing);
     int  ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
-            const string &  object_loc, Int8  client_id);
-    int  ExecSP_RemoveObject(const string &  object_key);
+            const string &  object_loc, Int8  client_id,
+            CNSTTiming &  timing);
+    int  ExecSP_RemoveObject(const string &  object_key, CNSTTiming &  timing);
     int  ExecSP_SetExpiration(const string &  object_key,
-                              const TNSTDBValue<CTimeSpan> &  ttl);
+                              const TNSTDBValue<CTimeSpan> &  ttl,
+                              CNSTTiming &  timing);
     int  ExecSP_AddAttribute(const string &  object_key,
                              const string &  attr_name,
                              const string &  attr_value,
-                             Int8  client_id);
+                             Int8  client_id,
+                             CNSTTiming &  timing);
     int  ExecSP_GetAttribute(const string &  object_key,
                              const string &  attr_name,
                              bool            need_update,
-                             string &        value);
+                             string &        value,
+                             CNSTTiming &  timing);
     int  ExecSP_DelAttribute(const string &  object_key,
-                             const string &  attr_name);
+                             const string &  attr_name,
+                             CNSTTiming &  timing);
     int  ExecSP_GetAttributeNames(const string &  object_key,
-                                  vector<string> &  attr_names);
+                                  vector<string> &  attr_names,
+                                  CNSTTiming &  timing);
     int  ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                          TNSTDBValue<CTime> &  expiration,
                                          TNSTDBValue<CTime> &  creation,
@@ -129,16 +142,20 @@ public:
                                          TNSTDBValue<CTime> &  attr_write,
                                          TNSTDBValue<Int8> &   read_count,
                                          TNSTDBValue<Int8> &   write_count,
-                                         TNSTDBValue<string> & client_name);
+                                         TNSTDBValue<string> & client_name,
+                                         CNSTTiming &  timing);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
-                                    TNSTDBValue<CTime> &  expiration);
-    map<string, string>  ExecSP_GetGeneralDBInfo(void);
-    map<string, string>  ExecSP_GetStatDBInfo(void);
+                                    TNSTDBValue<CTime> &  expiration,
+                                    CNSTTiming &  timing);
+    map<string, string>  ExecSP_GetGeneralDBInfo(CNSTTiming &  timing);
+    map<string, string>  ExecSP_GetStatDBInfo(CNSTTiming &  timing);
     int  ExecSP_GetClientObjects(const string &  client_name,
                                  TNSTDBValue<Int8>  limit,
                                  Int8 &  total,
-                                 vector<string> &  locators);
-    int  ExecSP_GetClients(vector<string> &  names);
+                                 vector<string> &  locators,
+                                 CNSTTiming &  timing);
+    int  ExecSP_GetClients(vector<string> &  names,
+                           CNSTTiming &  timing);
 
 private:
     bool x_ReadDbAccessInfo(bool  is_initialization);

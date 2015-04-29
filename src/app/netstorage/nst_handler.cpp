@@ -154,8 +154,10 @@ void CNetStorageHandler::OnOpen(void)
     socket.SetTimeout(eIO_ReadWrite, &to);
     x_SetQuickAcknowledge();
 
-    if (m_Server->IsLog())
+    if (m_Server->IsLog()) {
+        CRequestContextResetter     context_resetter;
         x_CreateConnContext();
+    }
 }
 
 
@@ -170,10 +172,12 @@ void CNetStorageHandler::OnRead(void)
     }
 
 
-    size_t                      n_read;
-    EIO_Status                  status = GetSocket().Read(m_ReadBuffer,
-                                                          kReadBufferSize,
-                                                          &n_read);
+    size_t              n_read;
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    EIO_Status          status = GetSocket().Read(m_ReadBuffer, kReadBufferSize,
+                                                  &n_read);
+    m_Timing.Append("Client socket read", start);
+
     switch (status) {
     case eIO_Success:
         break;
@@ -304,6 +308,9 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     // here as the last chance.
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
+        if (!m_Timing.Empty() && m_Server->IsLogTiming()) {
+            GetDiagContext().Extra().Print("timing", m_Timing.Serialize());
+        }
         GetDiagContext().PrintRequestStop();
         m_CmdContext.Reset();
         CDiagContext::SetRequestContext(NULL);
@@ -454,6 +461,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     unsigned int  http_error_code;
 
     try {
+        m_Timing.Clear();
         m_Server->GetClientRegistry().Touch(m_Client);
 
         // Find the processor
@@ -471,6 +479,8 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
                 CNetStorageServerException::eNetStorageAttributeValueNotFound) {
             // Choke the error printout for this specific case, see CXX-5818
             ERR_POST(ex);
+            if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+                ERR_POST("Timing information: " + m_Timing.Serialize());
         }
         http_error_code = ex.ErrCodeToHTTPStatusCode();
         error_code = ex.GetErrCode();
@@ -481,6 +491,8 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     }
     catch (const CNetStorageException &  ex) {
         ERR_POST(ex);
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
         http_error_code = eStatus_ServerError;
         if (ex.GetErrCode() == CNetStorageException::eNotExists)
             error_code = CNetStorageServerException::eRemoteObjectNotFound;
@@ -490,18 +502,24 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     }
     catch (const CException &  ex) {
         ERR_POST(ex);
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
     }
     catch (const std::exception &  ex) {
         ERR_POST("STL exception: " << ex.what());
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
     }
     catch (...) {
         ERR_POST("Unknown exception");
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = "Unknown exception";
@@ -532,15 +550,24 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         return;
     }
 
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         m_ObjectBeingWritten.Write(data, data_size);
+        m_Timing.Append("NetStorageAPI write (" +
+                        NStr::NumericToString(data_size) + ")", start);
+        start = 0.0;
         m_Server->GetClientRegistry().AddBytesWritten(m_Client, data_size);
         m_ObjectSize += data_size;
     }
     catch (const std::exception &  ex) {
         string  message = "Error writing into " +
                           m_ObjectBeingWritten.GetLoc() + ": " + ex.what();
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI writing error (" +
+                            NStr::NumericToString(data_size) + ")", start);
         ERR_POST(message);
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
@@ -554,7 +581,12 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
     catch (...) {
         string  message = "Unknown exception while writing into " +
                           m_ObjectBeingWritten.GetLoc();
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI writing error (" +
+                            NStr::NumericToString(data_size) + ")", start);
         ERR_POST(message);
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
@@ -576,20 +608,27 @@ void CNetStorageHandler::x_SendWriteConfirmation()
         return;
     }
 
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         if (m_ObjectSize == 0) {
             // This is the object of zero size i.e. there were no write()
             // calls. Thus the remote object was not really created.
             m_ObjectBeingWritten.Write("", 0);
+            m_Timing.Append("NetStorageAPI writing (0)", start);
         }
+        start = CNSTPreciseTime::Current();
         m_ObjectBeingWritten.Close();
+        m_Timing.Append("NetStorageAPI closing", start);
     }
     catch (const CException &  ex) {
         x_SetCmdRequestStatus(eStatus_ServerError);
+        m_Timing.Append("NetStorageAPI finilizing error", start);
 
         string  message = "Error while finalizing " +
                           m_ObjectBeingWritten.GetLoc() + ": " + ex.GetMsg();
         ERR_POST(message);
+        if (!x_PrintTimingIsOn())
+            ERR_POST("Timing information: " + m_Timing.Serialize());
         x_PrintMessageRequestStop();
 
         CJsonNode   response = CreateErrorResponseMessage(
@@ -616,7 +655,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             try {
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
                         m_DBObjectID, object_loc_struct.GetUniqueKey(),
-                        locator, m_ObjectSize, m_DBClientID, m_CreateTTL);
+                        locator, m_ObjectSize, m_DBClientID, m_CreateTTL,
+                        m_Timing);
             } catch (const CException &  ex) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 CJsonNode   response = CreateErrorResponseMessage(
@@ -626,6 +666,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
 
                 x_SendSyncMessage(response);
                 ERR_POST(ex);
+                if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+                    ERR_POST("Timing information: " + m_Timing.Serialize());
                 x_PrintMessageRequestStop();
 
                 m_ObjectBeingWritten = eVoid;
@@ -639,6 +681,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                                     "Unknown metadata information DB error");
                 x_SendSyncMessage(response);
                 ERR_POST("Unknown metadata information DB error");
+                if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+                    ERR_POST("Timing information: " + m_Timing.Serialize());
                 x_PrintMessageRequestStop();
 
                 m_ObjectBeingWritten = eVoid;
@@ -654,20 +698,24 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                                         locator, m_ObjectSize, m_DBClientID,
                                         m_WriteServiceProps.GetTTL(),
                                         m_WriteServiceProps.GetProlongOnWrite(),
-                                        m_WriteObjectExpiration);
+                                        m_WriteObjectExpiration,
+                                        m_Timing);
                 } else {
                     m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
                                         object_loc_struct.GetUniqueKey(),
                                         locator, m_ObjectSize, m_DBClientID,
                                         m_WriteServiceProps.GetTTL(),
                                         m_WriteServiceProps.GetProlongOnWrite(),
-                                        m_WriteObjectExpiration);
+                                        m_WriteObjectExpiration,
+                                        m_Timing);
                 }
             } catch (const CException &  ex) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
                 AppendWarning(response, eDatabaseWarning, ex.what());
                 x_SendSyncMessage(response);
                 ERR_POST(ex);
+                if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+                    ERR_POST("Timing information: " + m_Timing.Serialize());
                 x_PrintMessageRequestStop();
 
                 m_ObjectBeingWritten = eVoid;
@@ -679,6 +727,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                               "Unknown updating object meta info error");
                 x_SendSyncMessage(response);
                 ERR_POST("Unknown updating object meta info error");
+                if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+                    ERR_POST("Timing information: " + m_Timing.Serialize());
                 x_PrintMessageRequestStop();
 
                 m_ObjectBeingWritten = eVoid;
@@ -746,6 +796,9 @@ void  CNetStorageHandler::x_OnSocketWriteError(
         report += NStr::PrintableString(buffer_head);
     }
 
+    if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+        report += " Timing info: " + m_Timing.Serialize();
+
     ERR_POST(report);
 
     if (m_ConnContext.NotNull()) {
@@ -772,9 +825,13 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
     do {
         m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
         while (output_buffer_size > 0) {
+            CNSTPreciseTime     start = CNSTPreciseTime::Current();
             EIO_Status  status = GetSocket().Write(output_buffer,
                                                    output_buffer_size,
                                                    &bytes_written);
+            m_Timing.Append("Client socket write (" +
+                            NStr::NumericToString(output_buffer_size) + ")",
+                            start);
             if (status != eIO_Success) {
                 // Error writing to the socket. Log what we can and close the
                 // connection.
@@ -805,11 +862,9 @@ void CNetStorageHandler::x_SetQuickAcknowledge(void)
 
 void CNetStorageHandler::x_CreateConnContext(void)
 {
-    CSocket &       socket = GetSocket();
-
     m_ConnContext.Reset(new CRequestContext());
     m_ConnContext->SetRequestID();
-    m_ConnContext->SetClientIP(socket.GetPeerAddress(eSAF_IP));
+    m_ConnContext->SetClientIP(GetSocket().GetPeerAddress(eSAF_IP));
 
     // Set the connection request as the current one and print request start
     CDiagContext::SetRequestContext(m_ConnContext);
@@ -900,6 +955,9 @@ CNetStorageHandler::x_PrintMessageRequestStop(void)
 {
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
+        if (!m_Timing.Empty() && m_Server->IsLogTiming()) {
+            GetDiagContext().Extra().Print("timing", m_Timing.Serialize());
+        }
         GetDiagContext().PrintRequestStop();
         m_CmdContext.Reset();
         CDiagContext::SetRequestContext(NULL);
@@ -1040,12 +1098,12 @@ CNetStorageHandler::x_ProcessHealth(
     if (connected) {
         try {
             map<string, string>   db_stat = m_Server->GetDb().
-                                                        ExecSP_GetGeneralDBInfo();
+                                            ExecSP_GetGeneralDBInfo(m_Timing);
             for (map<string, string>::const_iterator  k = db_stat.begin();
                  k != db_stat.end(); ++k)
                 db_stat_node.SetString(k->first, k->second);
 
-            db_stat = m_Server->GetDb().ExecSP_GetStatDBInfo();
+            db_stat = m_Server->GetDb().ExecSP_GetStatDBInfo(m_Timing);
             for (map<string, string>::const_iterator  k = db_stat.begin();
                  k != db_stat.end(); ++k)
                 db_stat_node.SetString(k->first, k->second);
@@ -1288,7 +1346,8 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
     if (db_access) {
         try {
             vector<string>      names;
-            int     status = m_Server->GetDb().ExecSP_GetClients(names);
+            int     status = m_Server->GetDb().ExecSP_GetClients(names,
+                                                                 m_Timing);
             if (status != 0) {
                 reply.SetString("DBClients", "MetadataAccessWarning");
                 AppendWarning(reply, eDatabaseWarning,
@@ -1372,7 +1431,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                                         obj_read, obj_write,
                                         attr_read, attr_write,
                                         read_count, write_count,
-                                        client_name);
+                                        client_name, m_Timing);
 
             if (status != 0) {
                 // The record in the meta DB for the object is not found
@@ -1499,8 +1558,11 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 
 
     // Second source of data - remote object info
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         CJsonNode         object_info = direct_object.GetInfo().ToJSON();
+        m_Timing.Append("NetStorageAPI GetInfo", start);
+        start = 0.0;
 
         for (CJsonIterator it = object_info.Iterate(); it; ++it) {
             string      key = it.GetKey();
@@ -1512,12 +1574,18 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             AppendWarning(reply, eRemoteObjectInfoWarning,
                           "Error while getting remote object info: " +
                           string(ex.what()));
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (const exception &  ex) {
         AppendWarning(reply, eRemoteObjectInfoWarning,
                       "Error while getting remote object info");
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (...) {
         AppendWarning(reply, eRemoteObjectInfoWarning,
                       "Unknown error while getting remote object info");
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI GetInfo exception", start);
     }
 
     x_SendSyncMessage(reply);
@@ -1547,7 +1615,7 @@ CNetStorageHandler::x_ProcessGetAttrList(
         x_ValidateWriteMetaDBAccess(message);
 
     if (m_MetadataOption != eMetadataMonitoring)
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1557,7 +1625,7 @@ CNetStorageHandler::x_ProcessGetAttrList(
 
     vector<string>  attr_names;
     int             status = m_Server->GetDb().ExecSP_GetAttributeNames(
-                                        object_key, attr_names);
+                                        object_key, attr_names, m_Timing);
 
     if (status == 0) {
         // Everything is fine, the attribute is found
@@ -1620,7 +1688,7 @@ CNetStorageHandler::x_ProcessGetClientObjects(
         x_ValidateWriteMetaDBAccess(message);
 
     if (m_MetadataOption != eMetadataMonitoring)
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -1628,7 +1696,8 @@ CNetStorageHandler::x_ProcessGetClientObjects(
     Int8            total_client_objects;
     int             status = m_Server->GetDb().ExecSP_GetClientObjects(
                                         message.GetString("ClientName"), limit,
-                                        total_client_objects, locators);
+                                        total_client_objects, locators,
+                                        m_Timing);
 
     if (status == 0) {
         // Everything is fine, the attribute is found
@@ -1685,7 +1754,7 @@ CNetStorageHandler::x_ProcessGetAttr(
 
 
     if (m_MetadataOption != eMetadataMonitoring)
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1697,7 +1766,7 @@ CNetStorageHandler::x_ProcessGetAttr(
     int         status = m_Server->GetDb().ExecSP_GetAttribute(
                                         object_key, attr_name,
                                         m_MetadataOption != eMetadataMonitoring,
-                                        value);
+                                        value, m_Timing);
 
     if (status == 0) {
         // Everything is fine, the attribute is found
@@ -1760,7 +1829,7 @@ CNetStorageHandler::x_ProcessSetAttr(
     // The only options left are NotSpecified and Required
     x_ValidateWriteMetaDBAccess(message);
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1774,7 +1843,7 @@ CNetStorageHandler::x_ProcessSetAttr(
     int         status = m_Server->GetDb().ExecSP_AddAttribute(
                                           object_key,
                                           attr_name, value,
-                                          m_DBClientID);
+                                          m_DBClientID, m_Timing);
     if (status == -1) {
         // Object is not found
         NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
@@ -1820,7 +1889,7 @@ CNetStorageHandler::x_ProcessDelAttr(
     // The only options left are NotSpecified and Required
     x_ValidateWriteMetaDBAccess(message);
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1829,7 +1898,7 @@ CNetStorageHandler::x_ProcessDelAttr(
     x_CheckObjectExpiration(object_key, true, reply);
 
     int         status = m_Server->GetDb().ExecSP_DelAttribute(
-                                            object_key, attr_name);
+                                            object_key, attr_name, m_Timing);
 
     if (status == -1) {
         // Object is not found
@@ -1877,8 +1946,8 @@ CNetStorageHandler::x_ProcessCreate(
 
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
-        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID, m_Timing);
     } else {
         m_DBObjectID = 0;
     }
@@ -1933,7 +2002,7 @@ CNetStorageHandler::x_ProcessWrite(
 
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
     }
 
     CJsonNode           reply = CreateResponseMessage(
@@ -1992,7 +2061,8 @@ CNetStorageHandler::x_ProcessRead(
 
     if (need_meta_db_update) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID,
+                                              m_Timing);
     }
 
     CJsonNode           reply = CreateResponseMessage(
@@ -2012,13 +2082,17 @@ CNetStorageHandler::x_ProcessRead(
 
     m_Server->GetClientRegistry().AddObjectsRead(m_Client, 1);
 
-    char            buffer[kReadBufferSize];
-    size_t          bytes_read;
-    Int8            total_bytes = 0;
+    char                buffer[kReadBufferSize];
+    size_t              bytes_read;
+    Int8                total_bytes = 0;
+    CNSTPreciseTime     start = 0.0;
 
     try {
         while (!direct_object.Eof()) {
+            start = CNSTPreciseTime::Current();
             bytes_read = direct_object.Read(buffer, sizeof(buffer));
+            m_Timing.Append("NetStorageAPI read", start);
+            start = 0.0;
 
             m_UTTPWriter.SendChunk(buffer, bytes_read, false);
 
@@ -2032,7 +2106,10 @@ CNetStorageHandler::x_ProcessRead(
                 m_CmdContext->SetBytesRd(total_bytes);
         }
 
+        start = CNSTPreciseTime::Current();
         direct_object.Close();
+        m_Timing.Append("NetStorageAPI Close", start);
+        start = 0.0;
 
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     }
@@ -2043,6 +2120,16 @@ CNetStorageHandler::x_ProcessRead(
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
                        CNetStorageServerException::eReadError,
                        string("Object read error: ") + ex.what());
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI read (exception)", start);
+        if (!x_PrintTimingIsOn() && !m_Timing.Empty())
+            ERR_POST("Object read error timing information: " +
+                     m_Timing.Serialize());
+    }
+    catch (...) {
+        if (double(start) != 0.0)
+            m_Timing.Append("NetStorageAPI read (unknown exception)", start);
+        throw;
     }
 
     m_UTTPWriter.SendControlSymbol('\n');
@@ -2056,7 +2143,7 @@ CNetStorageHandler::x_ProcessRead(
                 locator, total_bytes, m_DBClientID,
                 service_properties.GetTTL(),
                 service_properties.GetProlongOnRead(),
-                object_expiration
+                object_expiration, m_Timing
                 );
     }
 
@@ -2097,10 +2184,18 @@ CNetStorageHandler::x_ProcessDelete(
     if (need_meta_db_update) {
         // Meta information is required so delete from the DB first
         status = m_Server->GetDb().ExecSP_RemoveObject(
-                    direct_object.Locator().GetUniqueKey());
+                    direct_object.Locator().GetUniqueKey(), m_Timing);
     }
 
-    direct_object.Remove();
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        direct_object.Remove();
+        m_Timing.Append("NetStorageAPI Remove", start);
+    } catch (...) {
+        m_Timing.Append("NetStorageAPI Remove exception", start);
+        throw;
+    }
+
     m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -2153,7 +2248,7 @@ CNetStorageHandler::x_ProcessRelocate(
 
     if (need_meta_db_update) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
     }
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -2163,13 +2258,21 @@ CNetStorageHandler::x_ProcessRelocate(
     if (need_meta_db_update)
         x_CheckObjectExpiration(object_key, true, reply);
 
-    string          new_object_loc = direct_object.Relocate(new_location_flags);
+    string              new_object_loc;
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        new_object_loc = direct_object.Relocate(new_location_flags);
+        m_Timing.Append("NetStorageAPI Relocate", start);
+    } catch (...) {
+        m_Timing.Append("NetStorageAPI Relocate exception", start);
+        throw;
+    }
 
     if (need_meta_db_update) {
         m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
                                     object_key,
                                     new_object_loc,
-                                    m_DBClientID);
+                                    m_DBClientID, m_Timing);
     }
 
     m_Server->GetClientRegistry().AddObjectsRelocated(m_Client, 1);
@@ -2205,7 +2308,15 @@ CNetStorageHandler::x_ProcessExists(
         x_CheckObjectExpiration(direct_object.Locator().GetUniqueKey(),
                                 true, reply);
 
-    bool            exists = direct_object.Exists();
+    bool                exists = false;
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        exists = direct_object.Exists();
+        m_Timing.Append("NetStorageAPI Exists", start);
+    } catch (...) {
+        m_Timing.Append("NetStorageAPI Exists exception", start);
+        throw;
+    }
 
     reply.SetBoolean("Exists", exists);
     x_SendSyncMessage(reply);
@@ -2231,7 +2342,15 @@ CNetStorageHandler::x_ProcessGetSize(
     else if (x_DetectMetaDBNeedOnGetObjectInfo(message))
         x_CheckObjectExpiration(object_key, true, reply);
 
-    Uint8             object_size = direct_object.GetSize();
+    Uint8               object_size = 0;
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        object_size = direct_object.GetSize();
+        m_Timing.Append("NetStorageAPI GetSize", start);
+    } catch (...) {
+        m_Timing.Append("NetStorageAPI GetSize exception", start);
+        throw;
+    }
 
     reply.SetInteger("Size", object_size);
     x_SendSyncMessage(reply);
@@ -2292,11 +2411,11 @@ CNetStorageHandler::x_ProcessSetExpTime(
                                         direct_object.Locator().GetUniqueKey();
     x_CheckObjectExpiration(object_key, true, reply);
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
 
     // The SP will throw an exception if an error occured
     int         status = m_Server->GetDb().ExecSP_SetExpiration(
-                                                            object_key, ttl);
+                                                object_key, ttl, m_Timing);
     if (status == -1) {
         // Object is not found
         NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
@@ -2493,8 +2612,12 @@ CNetStorageHandler::x_SendOverUTTP()
         m_UTTPWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
         if (output_buffer_size > 0) {
             // Write to the socket as a single transaction
+            CNSTPreciseTime     start = CNSTPreciseTime::Current();
             EIO_Status result =
                 GetSocket().Write(output_buffer, output_buffer_size, &written);
+            m_Timing.Append("Client socket write (" +
+                            NStr::NumericToString(output_buffer_size) + ")",
+                            start);
             if (result != eIO_Success) {
                 // Error writing to the socket. Log what we can and close the
                 // connection.
@@ -2732,7 +2855,8 @@ CNetStorageHandler::x_CheckObjectExpiration(const string &  object_key,
 
     try {
         status = m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                              expiration);
+                                                              expiration,
+                                                              m_Timing);
     } catch (const CNetStorageServerException &  ex) {
         if (db_exception)
             throw;
@@ -2764,5 +2888,12 @@ CNetStorageHandler::x_CheckObjectExpiration(const string &  object_key,
         NCBI_THROW(CNetStorageServerException,
                    eNetStorageObjectExpired, "Object expired");
     return expiration;
+}
+
+
+bool
+CNetStorageHandler::x_PrintTimingIsOn(void) const
+{
+    return m_Server->IsLogTiming() && m_CmdContext.NotNull();
 }
 

@@ -66,6 +66,8 @@ public:
 
     const bool &  IsLog() const
     { return m_Log; }
+    const bool &  IsLogTiming() const
+    { return m_LogTiming; }
 
     unsigned int  GetNetworkTimeout(void) const
     { return m_NetworkTimeout; }
@@ -132,6 +134,7 @@ private:
     mutable bool                m_Shutdown;
     int                         m_SigNum;
     bool                        m_Log;
+    bool                        m_LogTiming;
     string                      m_SessionID;
     unsigned int                m_NetworkTimeout;
     CNSTPreciseTime             m_StartTime;

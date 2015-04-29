@@ -34,6 +34,7 @@
 
 #include "nst_server.hpp"
 #include "nst_service_thread.hpp"
+#include "nst_config.hpp"
 
 
 
@@ -49,7 +50,8 @@ CNetStorageServer::CNetStorageServer()
      m_HostNetAddr(CSocketAPI::gethostbyname(kEmptyStr)),
      m_Shutdown(false),
      m_SigNum(0),
-     m_Log(true),
+     m_Log(default_log),
+     m_LogTiming(default_log_timing),
      m_SessionID("s" + x_GenerateGUID()),
      m_NetworkTimeout(0),
      m_StartTime(CNSTPreciseTime::Current()),
@@ -81,6 +83,7 @@ CNetStorageServer::SetParameters(
 
         m_Port = params.port;
         m_Log = params.log;
+        m_LogTiming = params.log_timing;
         m_NetworkTimeout = params.network_timeout;
         m_AdminClientNames = x_GetAdminClientNames(params.admin_client_names);
         return CJsonNode::NewNullNode();
@@ -107,7 +110,8 @@ CNetStorageServer::SetParameters(
         m_AdminClientNames = new_admins;
     }
 
-    if (m_Log == params.log && added.empty() && deleted.empty())
+    if (m_Log == params.log && m_LogTiming == params.log_timing &&
+        added.empty() && deleted.empty())
         return CJsonNode::NewNullNode();
 
     // Here: there is a difference
@@ -117,10 +121,19 @@ CNetStorageServer::SetParameters(
         CJsonNode   values = CJsonNode::NewObjectNode();
 
         values.SetByKey("Old", CJsonNode::NewBooleanNode(m_Log));
-        values.SetByKey("Nld", CJsonNode::NewBooleanNode(params.log));
+        values.SetByKey("New", CJsonNode::NewBooleanNode(params.log));
         diff.SetByKey("log", values);
 
         m_Log = params.log;
+    }
+    if (m_LogTiming != params.log_timing) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("Old", CJsonNode::NewBooleanNode(m_LogTiming));
+        values.SetByKey("New", CJsonNode::NewBooleanNode(params.log_timing));
+        diff.SetByKey("log_timing", values);
+
+        m_LogTiming = params.log_timing;
     }
 
     if (!added.empty() || !deleted.empty())
