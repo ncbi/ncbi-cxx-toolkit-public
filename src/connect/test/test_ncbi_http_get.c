@@ -52,6 +52,9 @@
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
 #  include <gnutls/gnutls.h>
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
+#    include <gnutls/x509.h>
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 #  define GNUTLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
 #  define GNUTLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
 #  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
@@ -127,7 +130,7 @@ static int x_CertVfyCB(gnutls_session_t session)
             if (!err) {
                 CORE_LOGF(eLOG_Note,
                           ("Certificate[%u]: %s", n + 1, cinfo.data));
-                gnutls_free(cinfo.data);
+                /*gnutls_*/free(cinfo.data);
             }
         }
         if (err) {
