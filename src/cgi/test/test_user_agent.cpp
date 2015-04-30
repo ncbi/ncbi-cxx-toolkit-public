@@ -156,6 +156,18 @@ const SUserAgent s_UserAgentTests[] = {
         { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
+    { "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0",
+        CCgiUserAgent::eEdge,           { 12,  0, -1},
+        CCgiUserAgent::eEngine_Edge,    { 12,  0, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
+    },
+    { "Mozilla/5.0 (Windows Phone 10.0; Android 4.2.1; DEVICE INFO) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Mobile Safari/537.36 Edge/12.0",
+        CCgiUserAgent::eEdge,           { 12,  0, -1},
+        CCgiUserAgent::eEngine_Edge,    { 12,  0, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Android
+    },
 
     // AppComment tests
 

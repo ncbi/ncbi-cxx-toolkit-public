@@ -92,6 +92,7 @@ public:
         eUnknown = 0,           ///< Unknown user agent
 
         eIE,                    ///< Microsoft Internet Explorer (www.microsoft.com/windows/ie)
+        eEdge,                  ///< Microsoft Edge (www.microsoft.com)
         eiCab,                  ///< iCab       (www.icab.de)
         eKonqueror,             ///< Konqueror  (www.konqueror.org) (KHTML based since v3.2 ?)
         eLynx,                  ///< Lynx       (lynx.browser.org)
@@ -188,6 +189,7 @@ public:
     enum EBrowserEngine {
         eEngine_Unknown = eUnknown,     ///< Unknown engine
         eEngine_IE      = eIE,          ///< Microsoft Internet Explorer (Trident and etc)
+        eEngine_Edge    = eEdge,        ///< Microsoft Edge
         eEngine_Gecko   = eMozilla,     ///< Gecko-based
         eEngine_KHTML   = eSafari,      ///< Apple KHTML (WebKit) -based
         eEngine_Bot     = eCrawler      ///< Search robot/bot/checker/...

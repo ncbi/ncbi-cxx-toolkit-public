@@ -725,6 +725,9 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eVodafone,     "Vodafone Live!",           "Vodafone",                 CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_MobileDevice, fApp },
     { CCgiUserAgent::eXiino,        "Xiino",                    "Xiino",                    CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Palm,         fApp },
 
+    // ???
+
+    { CCgiUserAgent::eEdge,         "Microsoft Edge",           "Edge",                     CCgiUserAgent::eEngine_Edge,    CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
 
     // Gecko-based                                              
 
@@ -976,6 +979,12 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
     }
 
+    // Microsoft Edge
+    // Temporary set browser/engine version to the same value
+    if (m_Engine == eEngine_Edge) {
+        m_EngineVersion = m_BrowserVersion;
+    }
+
     // Try to get browser version for IE-based browsers or old IE
     if ( m_Engine == eEngine_IE  &&
          m_BrowserVersion.GetMajor() == -1 )
@@ -1030,14 +1039,15 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     }
 
     // Try to get engine version for KHTML-based browsers
-    search = USTR(" AppleWebKit/");
-    pos = m_UserAgent.find(search);
-    if (pos != NPOS) {
-        m_Engine = eEngine_KHTML;
-        pos += search.length();
-        s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+    if (m_Engine != eEngine_Edge) {
+        search = USTR(" AppleWebKit/");
+        pos = m_UserAgent.find(search);
+        if (pos != NPOS) {
+            m_Engine = eEngine_KHTML;
+            pos += search.length();
+            s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+        }
     }
-
 
     // Hack for some browsers (like Safari) that use Version/x.x.x rather than
     // Safari/x.x.x for real browser version (for Safari, numbers after browser
@@ -1204,7 +1214,8 @@ string CCgiUserAgent::GetEngineName(void) const
 {
     switch ( GetEngine() ) {
         case eEngine_Unknown : return "Unknown";
-        case eEngine_IE      : return "IE";
+        case eEngine_IE      : return "Trident";
+        case eEngine_Edge    : return "Edge";
         case eEngine_Gecko   : return "Gecko";
         case eEngine_KHTML   : return "KHTML";
         case eEngine_Bot     : return "Bot";
