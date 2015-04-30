@@ -1,3 +1,12 @@
+Release 2.0.1 based on SC-16 (2015-04-30)
+
+Improvements and bug fixes:
+    * NetStorage: timing information (JIRA: CXX-5917)
+    * NST upload error "No storages available for locator" (JIRA: CXX-5880)
+    * NetStorage server: two different ncbi_phids in one request
+      (JIRA: CXX-5860)
+
+
 Release 2.0.0 based on TRUNK (2015-03-31)
 
 Improvements and bug fixes:
