@@ -196,6 +196,7 @@ protected:
     char m_InBuf[1024 * 1024];
     char m_GetBuf[1024 * 1024];
     char m_LastChunkBuf[1024 * 1024];
+    bool m_Performance;
 
 public:
     Uint8 m_ReqTime;
@@ -402,6 +403,7 @@ s_PrintStats(int elapsed)
 CReplayThread::CReplayThread(const string& file_name, const string& client_name)
     : m_NC(s_NCService, client_name)
 {
+    m_Performance = false;
     x_Init();
 #if DO_TEST
     m_NC.SetCommunicationTimeout(2000);
@@ -415,6 +417,7 @@ CReplayThread::CReplayThread(const string& file_name, const string& cache_name,
                const string& client_name, ICache::TFlags flags)
     : m_NC(s_NCService, cache_name, client_name, flags)
 {
+    m_Performance = flags == ICache::fBestPerformance;
     x_Init();
 #if DO_TEST
     m_NC.SetCommunicationTimeout(2000);
@@ -558,7 +561,9 @@ cout << "key_id = " << key_id << endl;
             writer->Close();
         }
 
-        if (!m_NC.HasBlob(key)) {
+        // in "favor performance" mode there is a lot of failed HasBlob calls,
+        // which is expected, because HasBlob() can and do come before blob is fully received
+        if (!m_Performance && !m_NC.HasBlob(key)) {
             ++m_CntBadHasb[size_index];
             ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
                  << " Error while writing blob with key '" << key << "': HasBlob returns false");
