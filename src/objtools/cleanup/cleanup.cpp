@@ -44,6 +44,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 #include "newcleanupp.hpp"
@@ -551,6 +552,31 @@ bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh)
     }
 
     return any_change;
+}
+
+
+bool CCleanup::AddMissingMolInfo(CBioseq& seq)
+{
+    if (!seq.IsAa()) {
+        return false;
+    }
+    bool needs_molinfo = true;
+
+    if (seq.IsSetDescr()) {
+        ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+            if ((*it)->IsMolinfo()) {
+                needs_molinfo = false;
+            }
+        }
+    }
+    if (needs_molinfo) {
+        CRef<CSeqdesc> m(new CSeqdesc());
+        m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+        m->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+        seq.SetDescr().Set().push_back(m);
+    }
+
+    return needs_molinfo;
 }
 
 

@@ -10338,6 +10338,13 @@ void CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
     }
 }
 
+void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
+{
+    if (CCleanup::AddMissingMolInfo(seq)) {
+        ChangeMade(CCleanupChange::eChangeMolInfo);
+    }
+}
+
 void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     CSeq_entry& seq_entry
 )

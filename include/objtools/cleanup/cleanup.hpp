@@ -133,6 +133,11 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh);
 
+/// Adds missing MolInfo descriptor to sequence
+/// @param seq Bioseq to edit
+/// @return Boolean return value indicates whether descriptor was added
+    static bool AddMissingMolInfo(CBioseq& seq);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

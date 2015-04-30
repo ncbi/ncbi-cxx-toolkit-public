@@ -287,6 +287,7 @@ private:
     void PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set );
 
     void MolInfoBC( CMolInfo &molinfo );
+    void CreateMissingMolInfo( CBioseq& seq );
 
     static bool IsInternalTranscribedSpacer(const string& name);
     static bool TranslateITSName( string &in_out_name );
