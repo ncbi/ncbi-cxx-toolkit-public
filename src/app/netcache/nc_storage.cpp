@@ -1925,12 +1925,13 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CN
                 continue;
             }
             SNCBlobSummary* blob_sum = new SNCBlobSummary();
-            blob_sum->create_id = info_ptr->create_id;
-            blob_sum->create_server = info_ptr->create_server;
-            blob_sum->create_time = info_ptr->create_time;
-            blob_sum->dead_time = info_ptr->dead_time;
-            blob_sum->expire = info_ptr->expire;
-            blob_sum->ver_expire = info_ptr->ver_expire;
+            blob_sum->size           = info_ptr->size;
+            blob_sum->create_id      = info_ptr->create_id;
+            blob_sum->create_server  = info_ptr->create_server;
+            blob_sum->create_time    = info_ptr->create_time;
+            blob_sum->dead_time      = info_ptr->dead_time;
+            blob_sum->expire         = info_ptr->expire;
+            blob_sum->ver_expire     = info_ptr->ver_expire;
             blobs_lst[info_ptr->key] = blob_sum;
 
             info_ptr->~SNCTempBlobInfo();

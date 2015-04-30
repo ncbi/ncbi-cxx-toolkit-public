@@ -700,7 +700,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_GET",
         {&CNCMessageHandler::x_DoCmd_Get,
             "PROXY_GET",
-            eProxyBlobRead | fDoNotProxyToPeers,
+            eProxyBlobRead,
             eNCReadData,
             eProxyRead},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -743,7 +743,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "PROXY_HASB",
-            eProxyBlobRead | fPeerFindExistsOnly | fConfirmOnFinish | fDoNotProxyToPeers,
+            eProxyBlobRead | fPeerFindExistsOnly | fConfirmOnFinish,
             eNCRead,
             eProxyHasBlob},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -770,7 +770,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "PROXY_GetSIZe",
-            eProxyBlobRead | fDoNotProxyToPeers,
+            eProxyBlobRead,
             eNCRead,
             eProxyGetSize},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -808,7 +808,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_READLAST",
         {&CNCMessageHandler::x_DoCmd_GetLast,
             "PROXY_READLAST",
-            eProxyBlobRead | fNoBlobVersionCheck | fDoNotProxyToPeers,
+            eProxyBlobRead | fNoBlobVersionCheck,
             eNCReadData,
             eProxyReadLast},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -849,7 +849,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "PROXY_SETVALID",
-            fNeedsBlobAccess | fNeedsStorageCache | fDoNotProxyToPeers,
+            fNeedsBlobAccess | fNeedsStorageCache,
             eNCRead,
             eProxySetValid},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -874,7 +874,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_RMV",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "PROXY_ReMoVe",
-            fNeedsBlobAccess | fConfirmOnFinish | fNoBlobAccessStats | fDoNotProxyToPeers,
+            fNeedsBlobAccess | fConfirmOnFinish | fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -924,7 +924,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_GETMETA",
         {&CNCMessageHandler::x_DoCmd_GetMeta,
             "PROXY_GETMETA",
-            eProxyBlobRead | fDoNotCheckPassword | fDoNotProxyToPeers | fConfirmOnFinish,
+            eProxyBlobRead | fDoNotCheckPassword | fConfirmOnFinish,
             eNCRead,
             eProxyGetMeta},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -1222,7 +1222,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROXY_PROLONG",
-            eProxyBlobRead | fConfirmOnFinish | fDoNotProxyToPeers,
+            eProxyBlobRead | fConfirmOnFinish,
             eNCRead,
             eProxyProlong},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -2398,9 +2398,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
             (is_exist ? CNCDistributionConf::GetSelfID() : CNCDistributionConf::GetMainSrvId(m_NCBlobKey)) :
             m_BlobAccess->GetValidServer();
     }
-    if (m_LatestSrvId == 0) {
-        m_LatestSrvId = CNCDistributionConf::GetSelfID();
-    } else {
+    if (m_LatestSrvId != 0) {
         if (m_LatestExist) {
             m_LatestBlobSum->create_time   = m_BlobAccess->GetCurBlobCreateTime();
             m_LatestBlobSum->create_server = m_BlobAccess->GetCurCreateServer();
@@ -2442,8 +2440,9 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
         }
     }
 
-    if (m_LatestExist  &&  m_Quorum != 0)
+    if (m_LatestExist  &&  m_Quorum != 0) {
         --m_Quorum;
+    }
     return &CNCMessageHandler::x_ReadMetaNextPeer;
 }
 
@@ -2494,8 +2493,9 @@ CNCMessageHandler::x_ProlongBlobDeadTime(unsigned int add_time)
     }
 
     m_BlobAccess->SetCurBlobExpire(new_expire);
-    if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
+    if (m_BlobAccess->GetCurBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
         SNCSyncEvent* event = new SNCSyncEvent();
+        event->blob_size = m_BlobAccess->GetCurBlobSize();
         event->event_type = eSyncProlong;
         event->key = m_NCBlobKey;
         event->orig_server = CNCDistributionConf::GetSelfID();
@@ -2518,8 +2518,9 @@ CNCMessageHandler::x_ProlongVersionLife(void)
         return;
 
     m_BlobAccess->SetCurVerExpire(new_expire);
-    if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
+    if (m_BlobAccess->GetCurBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
         SNCSyncEvent* event = new SNCSyncEvent();
+        event->blob_size = m_BlobAccess->GetCurBlobSize();
         event->event_type = eSyncProlong;
         event->key = m_NCBlobKey;
         event->orig_server = CNCDistributionConf::GetSelfID();
@@ -2577,14 +2578,17 @@ CNCMessageHandler::x_CleanCmdResources(void)
     }
 
     if (x_IsFlagSet(fRunsInStartedSync)) {
-        if (cmd_status == eStatus_OK  ||  x_IsFlagSet(fSyncCmdSuccessful))
+        if (cmd_status == eStatus_OK  ||  x_IsFlagSet(fSyncCmdSuccessful)) {
             CNCPeriodicSync::SyncCommandFinished(m_SrvId, m_Slot, m_SyncId);
-        else
+        } else {
             CNCPeriodicSync::Cancel(m_SrvId, m_Slot, m_SyncId);
+        }
     }
-    if (x_IsFlagSet(fConfirmOnFinish) && cmd_status == eStatus_OK) {
+    if (x_IsFlagSet(fConfirmOnFinish)) {
         if (m_HttpMode == eNoHttp) {
-            WriteText("OK:\n");
+            if (cmd_status == eStatus_OK) {
+                WriteText("OK:\n");
+            }
         } else {
             x_WriteHttpResponse();
         }
@@ -2702,6 +2706,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     // Fill all new event data but not add it to CNCSyncLog until we execute
     // m_BlobAccess->Finalize().
     SNCSyncEvent* write_event = new SNCSyncEvent();
+    write_event->blob_size = m_BlobSize;
     write_event->event_type = eSyncWrite;
     write_event->key = m_NCBlobKey;
     if (x_IsFlagSet(fCopyLogEvent)) {
@@ -3062,8 +3067,10 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
     GetDiagCtx()->SetRequestStatus( GetStatusByMessage(m_LastPeerError, eStatus_PeerError));
-    WriteText(m_LastPeerError).WriteText("\n");
-    x_UnsetFlag(fConfirmOnFinish);
+    if (x_IsFlagSet(fConfirmOnFinish) && m_HttpMode == eNoHttp) {
+        WriteText(m_LastPeerError).WriteText("\n");
+        x_UnsetFlag(fConfirmOnFinish);
+    }
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -3076,6 +3083,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         return NULL;
     if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
+        m_LastPeerError = m_ActiveHub->GetErrMsg();
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ProxyToNextPeer;
@@ -3166,10 +3174,10 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
     if (rst != eStatus_OK) {
         GetDiagCtx()->SetRequestStatus(rst);
     }
-    if (/*!x_IsFlagSet(fConfirmOnFinish) ||*/ err_msg.empty()) {
+    if (err_msg.empty()) {
         return &CNCMessageHandler::x_FinishCommand;
     }
-	if (m_HttpMode == eNoHttp) {
+	if (x_IsFlagSet(fConfirmOnFinish) && m_HttpMode == eNoHttp) {
         WriteText(err_msg).WriteText("\n");
         x_UnsetFlag(fConfirmOnFinish);
     }
@@ -3202,6 +3210,7 @@ CNCMessageHandler::x_SendGetMetaCmd(void)
         return NULL;
     if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
+        m_LastPeerError = m_ActiveHub->GetErrMsg();
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_ReadMetaNextPeer;
@@ -3260,11 +3269,15 @@ CNCMessageHandler::x_ReadMetaResults(void)
         --m_Quorum;
 
 results_processed:
+
+    m_LastPeerError = m_ActiveHub->GetErrMsg();
     m_ActiveHub->Release();
     m_ActiveHub = NULL;
     return &CNCMessageHandler::x_ReadMetaNextPeer;
 
 meta_search_finished:
+
+    m_LastPeerError = m_ActiveHub->GetErrMsg();
     m_ActiveHub->Release();
     m_ActiveHub = NULL;
     m_CheckSrvs.clear();
@@ -3276,6 +3289,9 @@ CNCMessageHandler::State
 CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
 {
     LOG_CURRENT_FUNCTION
+    if (m_LatestSrvId == 0) {
+        m_LatestSrvId = CNCDistributionConf::GetSelfID();
+    }
     if (m_LatestExist) {
         // if max age specified, check age
         if (m_AgeMax != 0 && m_BlobAccess->IsBlobExists()) {
@@ -3344,6 +3360,7 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
         return NULL;
     if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
+        m_LastPeerError = m_ActiveHub->GetErrMsg();
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PutToNextPeer;
@@ -3407,6 +3424,7 @@ CNCMessageHandler::x_SendPurgeToPeerCmd(void)
     if (status == eNCHubWaitForConn)
         return NULL;
     if (status == eNCHubError || status == eNCHubSuccess) {
+        m_LastPeerError = m_ActiveHub->GetErrMsg();
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &CNCMessageHandler::x_PurgeToNextPeer;
@@ -3657,6 +3675,7 @@ CNCMessageHandler::x_DoCmd_Put(void)
         if (!m_BlobAccess->IsBlobExists() && !x_IsFlagSet(fCanGenerateKey)) {
             GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
             x_WriteHttpResponse();
+            x_UnsetFlag(fConfirmOnFinish);
             return &CNCMessageHandler::x_CloseCmdAndConn;
         }
     }
@@ -3895,12 +3914,12 @@ CNCMessageHandler::x_WriteFullBlobsList(void)
         Uint2 key_size = Uint2(key.size());
         m_SendBuff->append(&key_size, sizeof(key_size));
         m_SendBuff->append(key.data(), key_size);
-        m_SendBuff->append(&blob_sum->create_time, sizeof(blob_sum->create_time));
+        m_SendBuff->append(&blob_sum->create_time,   sizeof(blob_sum->create_time));
         m_SendBuff->append(&blob_sum->create_server, sizeof(blob_sum->create_server));
-        m_SendBuff->append(&blob_sum->create_id, sizeof(blob_sum->create_id));
-        m_SendBuff->append(&blob_sum->dead_time, sizeof(blob_sum->dead_time));
-        m_SendBuff->append(&blob_sum->expire, sizeof(blob_sum->expire));
-        m_SendBuff->append(&blob_sum->ver_expire, sizeof(blob_sum->ver_expire));
+        m_SendBuff->append(&blob_sum->create_id,     sizeof(blob_sum->create_id));
+        m_SendBuff->append(&blob_sum->dead_time,     sizeof(blob_sum->dead_time));
+        m_SendBuff->append(&blob_sum->expire,        sizeof(blob_sum->expire));
+        m_SendBuff->append(&blob_sum->ver_expire,    sizeof(blob_sum->ver_expire));
         delete blob_sum;
         it_blob->second = NULL;
         blob_sum = NULL;
@@ -3958,6 +3977,11 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
                 if (!evt) {
                     continue;
                 }
+                if (evt->blob_size > CNCDistributionConf::GetMaxBlobSizeSync()) {
+                    if (CNCDistributionConf::IsThisServerKey(evt->key.PackedKey())) {
+                        continue;
+                    }
+                }
                 if (!CNCPeerControl::Peer(m_SrvId)->AcceptsBlobKey(evt->key)) {
                     continue;
                 }
@@ -3966,11 +3990,11 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
                 m_SendBuff->append(evt->key.PackedKey().data(), key_size);
                 char c = char(evt->event_type);
                 m_SendBuff->append(&c, 1);
-                m_SendBuff->append(&evt->rec_no, sizeof(evt->rec_no));
-                m_SendBuff->append(&evt->local_time, sizeof(evt->local_time));
+                m_SendBuff->append(&evt->rec_no,      sizeof(evt->rec_no));
+                m_SendBuff->append(&evt->local_time,  sizeof(evt->local_time));
                 m_SendBuff->append(&evt->orig_rec_no, sizeof(evt->orig_rec_no));
                 m_SendBuff->append(&evt->orig_server, sizeof(evt->orig_server));
-                m_SendBuff->append(&evt->orig_time, sizeof(evt->orig_time));
+                m_SendBuff->append(&evt->orig_time,   sizeof(evt->orig_time));
             }
         }
     }
@@ -4079,6 +4103,7 @@ CNCMessageHandler::x_DoCmd_CopyProlong(void)
         // no need to create event here.
         if (need_event  &&  m_OrigRecNo != 0) {
             SNCSyncEvent* event = new SNCSyncEvent();
+            event->blob_size = m_BlobAccess->GetCurBlobSize();
             event->event_type = eSyncProlong;
             event->key = m_NCBlobKey;
             event->orig_server = m_OrigSrvId;

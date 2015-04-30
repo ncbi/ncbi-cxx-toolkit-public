@@ -906,8 +906,9 @@ bool
 CNCPeerControl::StartActiveSync(void)
 {
     CMiniMutexGuard guard(m_ObjLock);
-    if (m_CntActiveSyncs >= CNCDistributionConf::GetMaxSyncsOneServer())
+    if (m_CntActiveSyncs >= CNCDistributionConf::GetMaxSyncsOneServer()) {
         return false;
+    }
     ++m_CntActiveSyncs;
     return true;
 }

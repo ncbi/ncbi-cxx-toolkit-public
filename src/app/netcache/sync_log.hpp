@@ -51,6 +51,7 @@ enum ENCSyncEvent
 struct SNCSyncEvent
 {
     Uint8  rec_no;          //< Local event sequential number.
+    Uint8  blob_size;       //< blob size
     CNCBlobKeyLight key;    //< Blob key.
     ENCSyncEvent event_type;//< Event type (write, remove, prolong).
     Uint8  orig_time;       //< Timestamp of the event when
@@ -63,7 +64,7 @@ struct SNCSyncEvent
                             //< recorded locally.
 
     SNCSyncEvent(void)
-      : rec_no(0), event_type(eSyncWrite), orig_time(0), orig_server(0), orig_rec_no(0), local_time(0)
+      : rec_no(0), blob_size(0), event_type(eSyncWrite), orig_time(0), orig_server(0), orig_rec_no(0), local_time(0)
     {
     }
     bool isOlder(const SNCSyncEvent& other) const

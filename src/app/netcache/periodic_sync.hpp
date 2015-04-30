@@ -145,6 +145,7 @@ struct SSyncSlotSrv
     Uint4   started_cmds;
     Uint8   next_sync_time;
     Uint8   last_active_time;
+    Uint8   last_success_time;
     Uint8   cur_sync_id;
     Uint8   cnt_sync_ops;
 

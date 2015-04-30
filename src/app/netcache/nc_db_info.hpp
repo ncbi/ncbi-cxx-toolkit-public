@@ -205,6 +205,15 @@ struct SNCBlobSummary
           dead_time(0), expire(0), ver_expire(0)
     {
     }
+    void reset(void) {
+        memset(this, 0, sizeof(SNCBlobSummary));
+    }
+    SNCBlobSummary& operator=( const SNCBlobSummary& other) {
+        if (this != &other) {
+            memcpy(this, &other, sizeof(SNCBlobSummary));
+        }
+        return *this;
+    }
     bool isOlder(const SNCBlobSummary& other) const
     {
         if (create_time != other.create_time)

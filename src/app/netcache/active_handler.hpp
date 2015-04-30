@@ -346,7 +346,7 @@ private:
     Uint8  m_CntCmds;
     CNCBlobKeyLight m_BlobKey;
     CNCBlobAccessor* m_BlobAccess;
-    SNCBlobSummary* m_BlobSum;
+    SNCBlobSummary m_BlobSum;
     Uint8 m_OrigTime;
     Uint8 m_OrigRecNo;
     Uint8 m_OrigServer;
@@ -495,7 +495,7 @@ CNCActiveHandler::IsBlobExists(void)
 inline const SNCBlobSummary&
 CNCActiveHandler::GetBlobSummary(void)
 {
-    return *m_BlobSum;
+    return m_BlobSum;
 }
 
 

@@ -127,7 +127,7 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
     slot_srv->sync_started = true;
     slot_srv->is_passive = is_passive;
     slot_srv->cnt_sync_ops = 0;
-    slot_srv->last_active_time = CSrvTime::Current().AsUSec();
+    slot_srv->last_active_time = CSrvTime::CurSecs();
     ++slot_srv->cur_sync_id;
     ++slot_data->cnt_sync_started;
     return eProceedWithEvents;
@@ -161,6 +161,7 @@ s_CancelSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
 static void
 s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv)
 {
+    slot_srv->last_success_time = CSrvTime::CurSecs();
     CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_data->slot, slot_srv->cnt_sync_ops, true);
     slot_srv->peer->ConnOk();
     if (slot_srv->is_by_blobs)
@@ -252,14 +253,17 @@ SSyncSlotData::SSyncSlotData(Uint2 slot_)
 SSyncSlotSrv::SSyncSlotSrv(CNCPeerControl* peer_)
     : peer(peer_),
       sync_started(false),
+      is_passive(false),
+      is_by_blobs(false),
       was_blobs_sync(false),
       made_initial_sync(false),
       started_cmds(0),
       next_sync_time(0),
-      cur_sync_id(0)
+      last_active_time(CSrvTime::Current().Sec()),
+      last_success_time(CSrvTime::Current().Sec()),
+      cur_sync_id(0),
+      cnt_sync_ops(0)
 {}
-
-
 
 bool
 CNCPeriodicSync::Initialize(void)
@@ -434,6 +438,11 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
                                                        local_start_rec_no,
                                                        remote_start_rec_no,
                                                        events);
+    if (CSrvTime::CurSecs() - slot_srv->last_success_time
+                > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
+        slot_srv->is_by_blobs = true;
+        return eProceedWithBlobs;
+    }
     if (records_available
         ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->was_blobs_sync))
     {
@@ -469,7 +478,7 @@ CNCPeriodicSync::CanStartSyncCommand(Uint8  server_id,
 
     ++slot_srv->started_cmds;
     ++slot_srv->cnt_sync_ops;
-    slot_srv->last_active_time = CSrvTime::Current().AsUSec();
+    slot_srv->last_active_time = CSrvTime::CurSecs();
     sync_id = slot_srv->cur_sync_id;
     return eProceedWithEvents;
 }
@@ -506,7 +515,7 @@ CNCPeriodicSync::SyncCommandFinished(Uint8 server_id, Uint2 slot, Uint8 sync_id)
             SRV_FATAL("SyncSlotData broken");
         }
         --slot_srv->started_cmds;
-        slot_srv->last_active_time = CSrvTime::Current().AsUSec();
+        slot_srv->last_active_time = CSrvTime::CurSecs();
     }
 }
 
@@ -632,8 +641,8 @@ CNCActiveSyncControl::x_CheckSlotOurSync(void)
         ITERATE(TSlotSrvsList, it_srv, srvs) {
             SSyncSlotSrv* slot_srv = *it_srv;
             if (slot_srv->sync_started) {
-                if (CSrvTime::Current().AsUSec() - slot_srv->last_active_time
-                            >= CNCDistributionConf::GetNetworkErrorTimeout()) {
+                if (CSrvTime::CurSecs() - slot_srv->last_active_time
+                            > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
                     s_CancelSync(m_SlotData, slot_srv, 0);
                 }
             }
@@ -654,8 +663,8 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
         slot_srv->lock.Lock();
         if (slot_srv->sync_started) {
             if (/*slot_srv->is_passive && slot_srv->started_cmds == 0 && */
-                CSrvTime::Current().AsUSec() - slot_srv->last_active_time
-                        >= CNCDistributionConf::GetPeriodicSyncTimeout()) {
+                CSrvTime::CurSecs() - slot_srv->last_active_time
+                        > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond)) {
                 s_CancelSync(m_SlotData, slot_srv, 0);
             }
         }
@@ -764,7 +773,7 @@ CNCActiveSyncControl::x_WaitSyncStarted(void)
 
     m_LocalSyncedRecNo = 0;
     m_RemoteSyncedRecNo = 0;
-    m_SlotSrv->last_active_time = CSrvTime::Current().AsUSec();
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     // depending on the reply
     if (m_SlotSrv->is_by_blobs)
         return &Me::x_PrepareSyncByBlobs;
@@ -783,7 +792,7 @@ CNCActiveSyncControl::x_ExecuteSyncCommands(void)
     // add to list of active
     // as there are free connections between these two servers
     // these commands will be executed
-    m_SlotSrv->last_active_time = CSrvTime::Current().AsUSec();
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     if (m_SlotSrv->peer->AddSyncControl(this))
         return &Me::x_WaitForExecutingTasks;
 
@@ -803,7 +812,7 @@ CNCActiveSyncControl::x_ExecuteFinalize(void)
             m_FinishSyncCalled = true;
             return &Me::x_WaitForExecutingTasks;
         }
-        m_Result = eSynNetworkError;
+      m_Result = eSynNetworkError;
     }
     m_StartedCmds = 0;
     m_NextTask = eSynNoTask;
@@ -913,6 +922,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
 {
     m_Events2Get.clear();
     m_Events2Send.clear();
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     if (CNCSyncLog::GetSyncOperations(m_SrvId, m_Slot,
                                       m_LocalStartRecNo,
                                       m_RemoteStartRecNo,
@@ -939,6 +949,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
     // request blob list
     m_StartedCmds = 1;
     conn->SyncBlobsList(this);
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     return &Me::x_WaitForBlobList;
 }
 
@@ -960,6 +971,7 @@ CNCActiveSyncControl::x_PrepareSyncByBlobs(void)
 {
     m_LocalSyncedRecNo = CNCSyncLog::GetCurrentRecNo(m_Slot);
     m_RemoteSyncedRecNo = m_RemoteStartRecNo;
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
 
     ITERATE(TNCBlobSumList, it, m_LocalBlobs) {
         delete it->second;
@@ -969,6 +981,7 @@ CNCActiveSyncControl::x_PrepareSyncByBlobs(void)
 
     m_CurLocalBlob = m_LocalBlobs.begin();
     m_CurRemoteBlob = m_RemoteBlobs.begin();
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     return &Me::x_ExecuteSyncCommands;
 }
 
@@ -1077,7 +1090,8 @@ CNCActiveSyncControl::x_DoEventSend(const SSyncTaskInfo& task_info,
                                     CNCActiveHandler* conn)
 {
     SNCSyncEvent* event = *task_info.send_evt;
-    if (!conn->GetPeer()->AcceptsBlobKey(event->key)) {
+    if (event->blob_size > CNCDistributionConf::GetMaxBlobSizeSync() ||
+        !conn->GetPeer()->AcceptsBlobKey(event->key)) {
         CmdFinished( eSynOK, eSynActionWrite, conn);
         conn->Release();
         return;
@@ -1198,7 +1212,7 @@ CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info)
     }
     if (m_NextTask != eSynNeedFinalize)
         ++m_SlotSrv->cnt_sync_ops;
-    m_SlotSrv->last_active_time = CSrvTime::Current().AsUSec();
+    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     x_CalcNextTask();
     bool has_more = m_NextTask != eSynNeedFinalize  &&  m_NextTask != eSynNoTask;
     m_Lock.Unlock();

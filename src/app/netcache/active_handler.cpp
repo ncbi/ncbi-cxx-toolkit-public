@@ -159,7 +159,6 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
       m_CmdFromClient(false),
       m_Purge(false)
 {
-    m_BlobSum = new SNCBlobSummary();
     // Right after creation CNCActiveHandler shouldn't become runnable until
     // it's assigned to CNCActiveHandlerHub or some command-executing method
     // (like CopyPut(), SyncStart() etc.) is called.
@@ -175,8 +174,6 @@ CNCActiveHandler::~CNCActiveHandler(void)
     while (GetDiagCtx()) {
         ReleaseDiagCtx();
     }
-    delete m_BlobSum;
-
     //Uint8 cnt = AtomicSub(s_CntHndls, 1);
     //INFO("~CNCActiveHandler, cnt=" << cnt);
 }
@@ -771,6 +768,7 @@ CNCActiveHandler::CopyProlong(const CNCBlobKeyLight& key,
                               Uint8 orig_time,
                               const SNCBlobSummary& blob_sum)
 {
+    m_BlobSum = blob_sum;
     m_BlobKey = key;
     x_SetSlotAndBucketAndVerifySlot(slot);
     m_OrigTime = orig_time;
@@ -822,6 +820,7 @@ CNCActiveHandler::SyncBlobsList(CNCActiveSyncControl* ctrl)
 void
 CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, SNCSyncEvent* event)
 {
+    m_BlobSum.size = event->blob_size;
     m_SyncAction = eSynActionWrite;
     m_SyncCtrl = ctrl;
     SetDiagCtx(ctrl->GetDiagCtx());
@@ -846,6 +845,7 @@ CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, const CNCBlobKeyLight& ke
 void
 CNCActiveHandler::SyncRead(CNCActiveSyncControl* ctrl, SNCSyncEvent* event)
 {
+    m_BlobSum.size = event->blob_size;
     m_SyncCtrl = ctrl;
     m_BlobKey = event->key;
     m_OrigTime = event->orig_time;
@@ -870,6 +870,7 @@ void
 CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
                                   SNCSyncEvent* event)
 {
+    m_BlobSum.size = event->blob_size;
     m_SyncCtrl = ctrl;
     SetDiagCtx(ctrl->GetDiagCtx());
     m_SyncAction = eSynActionProlong;
@@ -890,6 +891,7 @@ CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
                                   const CNCBlobKeyLight& key,
                                   const SNCBlobSummary& blob_sum)
 {
+    m_BlobSum = blob_sum;
     m_SyncCtrl = ctrl;
     SetDiagCtx(ctrl->GetDiagCtx());
     m_SyncAction = eSynActionProlong;
@@ -905,6 +907,7 @@ void
 CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
                                  SNCSyncEvent* event)
 {
+    m_BlobSum.size = event->blob_size;
     m_SyncCtrl = ctrl;
     SetDiagCtx(ctrl->GetDiagCtx());
     m_SyncAction = eSynActionProlong;
@@ -936,6 +939,7 @@ CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
                                  const string& key,
                                  const SNCBlobSummary& blob_sum)
 {
+    m_BlobSum = blob_sum;
     m_SyncCtrl = ctrl;
     SetDiagCtx(ctrl->GetDiagCtx());
     m_SyncAction = eSynActionProlong;
@@ -944,7 +948,6 @@ CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
     m_OrigTime = 0;
     m_OrigRecNo = 0;
     m_OrigServer = 0;
-    *m_BlobSum = blob_sum;
     m_CurCmd = eSyncProInfo;
 
     x_DoProlongOur();
@@ -1158,7 +1161,9 @@ CNCActiveHandler::x_CleanCmdResources(void)
         }
     }
     m_ErrMsg.clear();
+    m_Response.clear();
     m_CmdStarted = false;
+    m_BlobSum.reset();
 
     // Releasing diag context only if we have command-related one. If we only
     // have socket-related context we leave it intact.
@@ -1180,11 +1185,11 @@ CNCActiveHandler::State
 CNCActiveHandler::x_ProcessPeerError(void)
 {
     m_ErrMsg = m_Response;
-    SRV_LOG(Warning, "Error from peer "
-        << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
-        << m_ErrMsg);
-    m_CmdSuccess = (m_SyncCtrl == NULL);
-    GetDiagCtx()->SetRequestStatus(eStatus_PeerError);
+    m_CmdSuccess = true;
+    if (m_SyncCtrl != NULL) {
+        x_FinishSyncCmd(eSynOK);
+    }
+    GetDiagCtx()->SetRequestStatus(eStatus_OK);
     return &Me::x_FinishCommand;
 }
 
@@ -1241,17 +1246,17 @@ CNCActiveHandler::x_ReadFoundMeta(void)
     list<CTempString>::const_iterator param_it = params.begin();
     ++param_it;
     try {
-        m_BlobSum->create_time = NStr::StringToUInt8(*param_it);
+        m_BlobSum.create_time = NStr::StringToUInt8(*param_it);
         ++param_it;
-        m_BlobSum->create_server = NStr::StringToUInt8(*param_it);
+        m_BlobSum.create_server = NStr::StringToUInt8(*param_it);
         ++param_it;
-        m_BlobSum->create_id = NStr::StringToUInt(*param_it);
+        m_BlobSum.create_id = NStr::StringToUInt(*param_it);
         ++param_it;
-        m_BlobSum->dead_time = NStr::StringToInt(*param_it);
+        m_BlobSum.dead_time = NStr::StringToInt(*param_it);
         ++param_it;
-        m_BlobSum->expire = NStr::StringToInt(*param_it);
+        m_BlobSum.expire = NStr::StringToInt(*param_it);
         ++param_it;
-        m_BlobSum->ver_expire = NStr::StringToInt(*param_it);
+        m_BlobSum.ver_expire = NStr::StringToInt(*param_it);
         m_BlobExists = true;
         return &Me::x_FinishCommand;
     }
@@ -1372,12 +1377,13 @@ CNCActiveHandler::x_PrepareSyncProlongCmd(void)
         return &Me::x_CloseCmdAndConn;
 
     SNCBlobSummary blob_sum;
-    blob_sum.create_time = m_BlobAccess->GetCurBlobCreateTime();
+    blob_sum.size          = m_BlobAccess->GetCurBlobSize();
+    blob_sum.create_time   = m_BlobAccess->GetCurBlobCreateTime();
     blob_sum.create_server = m_BlobAccess->GetCurCreateServer();
-    blob_sum.create_id = m_BlobAccess->GetCurCreateId();
-    blob_sum.dead_time = m_BlobAccess->GetCurBlobDeadTime();
-    blob_sum.expire = m_BlobAccess->GetCurBlobExpire();
-    blob_sum.ver_expire = m_BlobAccess->GetCurVerExpire();
+    blob_sum.create_id     = m_BlobAccess->GetCurCreateId();
+    blob_sum.dead_time     = m_BlobAccess->GetCurBlobDeadTime();
+    blob_sum.expire        = m_BlobAccess->GetCurBlobExpire();
+    blob_sum.ver_expire    = m_BlobAccess->GetCurVerExpire();
 
     // m_BlobAccess is not needed anymore. It will be re-created later if
     // blob won't be found on peer and it will be necessary to execute
@@ -1393,6 +1399,7 @@ void
 CNCActiveHandler::x_SendCopyProlongCmd(const SNCBlobSummary& blob_sum)
 {
     m_CurCmd = eCopyProlong;
+    m_BlobSum = blob_sum;
 
     m_CmdToSend.resize(0);
     if (m_SyncCtrl) {
@@ -1897,6 +1904,7 @@ CNCActiveHandler::x_ReadBlobData(void)
 
     if (m_OrigRecNo != 0) {
         SNCSyncEvent* event = new SNCSyncEvent();
+        event->blob_size = m_BlobAccess->GetCurBlobSize();
         event->event_type = eSyncWrite;
         event->key = m_BlobKey;
         event->orig_server = m_OrigServer;
@@ -1934,17 +1942,17 @@ CNCActiveHandler::x_ReadSyncProInfoAnswer(void)
     list<CTempString>::const_iterator it_tok = tokens.begin();
     try {
         ++it_tok;
-        m_BlobSum->create_time = NStr::StringToUInt8(*it_tok);
+        m_BlobSum.create_time = NStr::StringToUInt8(*it_tok);
         ++it_tok;
-        m_BlobSum->create_server = NStr::StringToUInt8(*it_tok);
+        m_BlobSum.create_server = NStr::StringToUInt8(*it_tok);
         ++it_tok;
-        m_BlobSum->create_id = NStr::StringToUInt(*it_tok);
+        m_BlobSum.create_id = NStr::StringToUInt(*it_tok);
         ++it_tok;
-        m_BlobSum->dead_time = NStr::StringToInt(*it_tok);
+        m_BlobSum.dead_time = NStr::StringToInt(*it_tok);
         ++it_tok;
-        m_BlobSum->expire = NStr::StringToInt(*it_tok);
+        m_BlobSum.expire = NStr::StringToInt(*it_tok);
         ++it_tok;
-        m_BlobSum->ver_expire = NStr::StringToInt(*it_tok);
+        m_BlobSum.ver_expire = NStr::StringToInt(*it_tok);
     }
     catch (CStringException&) {
         return &Me::x_ProcessProtocolError;
@@ -2008,27 +2016,28 @@ CNCActiveHandler::x_ExecuteProInfoCmd(void)
     if (!m_BlobAccess->IsBlobExists()) {
         m_BlobAccess->Release();
         m_BlobAccess = NULL;
-        SyncRead(m_SyncCtrl, m_BlobKey, m_BlobSum->create_time);
+        SyncRead(m_SyncCtrl, m_BlobKey, m_BlobSum.create_time);
         return NULL;
     }
 
     bool need_event = false;
-    if (m_BlobAccess->GetCurBlobCreateTime() == m_BlobSum->create_time
-        &&  m_BlobAccess->GetCurCreateServer() == m_BlobSum->create_server
-        &&  m_BlobAccess->GetCurCreateId() == m_BlobSum->create_id)
+    if (m_BlobAccess->GetCurBlobCreateTime() == m_BlobSum.create_time
+        &&  m_BlobAccess->GetCurCreateServer() == m_BlobSum.create_server
+        &&  m_BlobAccess->GetCurCreateId() == m_BlobSum.create_id)
     {
-        if (m_BlobAccess->GetCurBlobExpire() < m_BlobSum->expire) {
-            m_BlobAccess->SetCurBlobExpire(m_BlobSum->expire, m_BlobSum->dead_time);
+        if (m_BlobAccess->GetCurBlobExpire() < m_BlobSum.expire) {
+            m_BlobAccess->SetCurBlobExpire(m_BlobSum.expire, m_BlobSum.dead_time);
             need_event = true;
         }
-        if (m_BlobAccess->GetCurVerExpire() < m_BlobSum->ver_expire) {
-            m_BlobAccess->SetCurVerExpire(m_BlobSum->ver_expire);
+        if (m_BlobAccess->GetCurVerExpire() < m_BlobSum.ver_expire) {
+            m_BlobAccess->SetCurVerExpire(m_BlobSum.ver_expire);
             need_event = true;
         }
     }
 
     if (need_event  &&  m_OrigRecNo != 0) {
         SNCSyncEvent* event = new SNCSyncEvent();
+        event->blob_size = m_BlobAccess->GetCurBlobSize();
         event->event_type = eSyncProlong;
         event->key = m_BlobKey;
         event->orig_server = m_OrigServer;
@@ -2066,9 +2075,15 @@ CNCActiveHandler::x_WaitOneLineAnswer(void)
     m_GotCmdAnswer = true;
     m_BlobExists = true;
     if (NStr::StartsWith(m_Response, "ERR:")) {
-        if (m_Response != s_MsgForStatus[eStatus_NotFound])
-            return &Me::x_ProcessPeerError;
         m_BlobExists = false;
+#if 0
+        if (GetStatusByMessage(m_Response, eStatus_OK) != eStatus_NotFound ||
+            m_BlobSum.size > CNCDistributionConf::GetMaxBlobSizeSync()) {
+            return &Me::x_ProcessPeerError;
+        }
+#else
+            return &Me::x_ProcessPeerError;
+#endif
         // fall through
     }
     else if (!NStr::StartsWith(m_Response, "OK:"))

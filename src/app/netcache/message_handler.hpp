@@ -101,15 +101,14 @@ enum ENCCmdFlags {
     fCursedPUT2Cmd      = 1 << 21,
     /// Command comes from client, not from other NC server.
     fComesFromClient    = 1 << 22,
-
     /// HTTP-related.
-    fIsHttp  = 1 << 23,
+    fIsHttp             = 1 << 23,
 
 
     eProxyBlobRead      = fNeedsBlobAccess | fUsesPeerSearch,
-    eClientBlobRead     = eProxyBlobRead | fComesFromClient,
+    eClientBlobRead     = eProxyBlobRead   | fComesFromClient,
     eProxyBlobWrite     = fNeedsBlobAccess | fNeedsSpaceAsClient,
-    eClientBlobWrite    = eProxyBlobWrite | fComesFromClient,
+    eClientBlobWrite    = eProxyBlobWrite  | fComesFromClient,
     eCopyBlobFromPeer   = fNeedsBlobAccess | fNeedsStorageCache | fDoNotProxyToPeers
                           | fDoNotCheckPassword | fNeedsAdminClient | fConfirmOnFinish,
     eRunsInStartedSync  = fRunsInStartedSync | fNeedsAdminClient | fNeedsLowerPriority
