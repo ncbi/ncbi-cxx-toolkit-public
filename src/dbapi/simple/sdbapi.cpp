@@ -473,6 +473,12 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
     case eDB_Int:
         to_var = NStr::StringToInt(from_val);
         break;
+    case eDB_SmallInt:
+        to_var = NStr::StringToNumeric<Int2>(from_val);
+        break;
+    case eDB_TinyInt:
+        to_var = NStr::StringToNumeric<Uint1>(from_val);
+        break;
     case eDB_BigInt:
         to_var = NStr::StringToInt8(from_val);
         break;
