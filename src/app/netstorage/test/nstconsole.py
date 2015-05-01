@@ -43,7 +43,7 @@ except:
     hostIP = "127.0.0.1"
 
 SESSIONID = '1111111111111111_0000SID'
-NCBI_PHID = 'Fake.NCBI.PHID'
+NCBI_PHID = 'Fake_NCBI_PHID'
 
 
 
