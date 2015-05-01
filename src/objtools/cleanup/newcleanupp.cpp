@@ -2196,6 +2196,12 @@ static bool s_ShouldWeFixInitials(const CPub_equiv& equiv)
     return !(has_art  &&  has_id);
 }
 
+inline
+static
+bool s_PubWhichCompare( CRef<CPub> pub1, CRef<CPub> pub2 ) {
+    return (pub1->Which() < pub2->Which());
+}
+
 void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
 {
     x_FlattenPubEquiv(pub_equiv);
@@ -2207,6 +2213,9 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
     CRef<CCit_art> last_article;
     
     bool fix_initials = s_ShouldWeFixInitials(pub_equiv);
+
+    pub_equiv.Set().sort(s_PubWhichCompare);
+
     EDIT_EACH_PUB_ON_PUBEQUIV(it, pub_equiv) {
         CPub &pub = **it;
 
