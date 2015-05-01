@@ -557,7 +557,7 @@ bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh)
 
 bool CCleanup::AddMissingMolInfo(CBioseq& seq)
 {
-    if (!seq.IsAa()) {
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
         return false;
     }
     bool needs_molinfo = true;
