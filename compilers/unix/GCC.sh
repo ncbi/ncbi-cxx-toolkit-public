@@ -45,7 +45,7 @@ case "$1" in
      elif llvm-$CXX-$1 -dumpversion >/dev/null 2>&1; then
        CXX="llvm-$CXX-$1"
        CC="llvm-$CC-$1"
-     elif "`$CXX -V$1 -dumpversion 2>/dev/null`" = "$1"; then
+     elif test "`$CXX -V$1 -dumpversion 2>/dev/null`" = "$1"; then
        CXX="$CXX -V$1"
        CC="$CC -V$1"
      elif test "`$CXX -dumpversion 2>/dev/null`" \!= "$1"; then
