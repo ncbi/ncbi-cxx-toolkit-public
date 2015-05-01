@@ -554,6 +554,124 @@ bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh)
     return any_change;
 }
 
+bool CCleanup::RemoveNonsuppressingGeneXrefs(CSeq_feat& f)
+{
+    if (!f.IsSetXref()) {
+        return false;
+    }
+    bool any_removed = false;
+    CSeq_feat::TXref::iterator xit = f.SetXref().begin();
+    while (xit != f.SetXref().end()) {
+        if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() &&
+            !(*xit)->GetData().GetGene().IsSuppressed()) {
+            xit = f.SetXref().erase(xit);
+            any_removed = true;
+        } else {
+            ++xit;
+        }
+    }
+    if (any_removed) {
+        if (f.IsSetXref() && f.GetXref().empty()) {
+            f.ResetXref();
+        }
+    }
+    return any_removed;
+}
+
+bool CCleanup::FindMatchingLocusGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh)
+{
+    bool match = false;
+    string locus1;
+    if (gene_xref.IsSetLocus())
+        locus1 = gene_xref.GetLocus();
+    for (CFeat_CI feat_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_gene)); feat_ci; ++feat_ci)
+    {
+        string locus2;
+        if ( !f.Equals(*feat_ci->GetSeq_feat()) && feat_ci->GetSeq_feat()->IsSetData() && feat_ci->GetSeq_feat()->GetData().IsGene() 
+             && feat_ci->GetSeq_feat()->GetData().GetGene().IsSetLocus())
+        {
+            locus2 = feat_ci->GetSeq_feat()->GetData().GetGene().GetLocus();
+        }
+        if (!locus1.empty() && !locus2.empty() && locus1 == locus2)
+        {
+            match = true;
+            break;
+        }
+    }
+    return match;
+}
+
+bool CCleanup::RemoveOrphanLocusGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
+{
+    if (!f.IsSetXref()) {
+        return false;
+    }
+    bool any_removed = false;
+    CSeq_feat::TXref::iterator xit = f.SetXref().begin();
+    while (xit != f.SetXref().end()) {
+        if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() &&
+            !(*xit)->GetData().GetGene().IsSuppressed() && !FindMatchingLocusGene(f, (*xit)->GetData().GetGene(), bsh)) {
+            xit = f.SetXref().erase(xit);
+            any_removed = true;
+        } else {
+            ++xit;
+        }
+    }
+    if (any_removed) {
+        if (f.IsSetXref() && f.GetXref().empty()) {
+            f.ResetXref();
+        }
+    }
+    return any_removed;
+}
+
+bool CCleanup::FindMatchingLocus_tagGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh)
+{
+    bool match = false;
+    string locus_tag1;
+    if (gene_xref.IsSetLocus_tag())
+        locus_tag1 = gene_xref.GetLocus_tag();
+    for (CFeat_CI feat_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_gene)); feat_ci; ++feat_ci)
+    {
+        string locus_tag2;
+        if ( !f.Equals(*feat_ci->GetSeq_feat()) && feat_ci->GetSeq_feat()->IsSetData() && feat_ci->GetSeq_feat()->GetData().IsGene() 
+             && feat_ci->GetSeq_feat()->GetData().GetGene().IsSetLocus_tag())
+        {
+            locus_tag2 = feat_ci->GetSeq_feat()->GetData().GetGene().GetLocus_tag();
+        }
+        if (!locus_tag1.empty() && !locus_tag2.empty() && locus_tag1 == locus_tag2)
+        {
+            match = true;
+            break;
+        }
+    }
+    return match;
+}
+
+bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
+{
+    if (!f.IsSetXref()) {
+        return false;
+    }
+    bool any_removed = false;
+    CSeq_feat::TXref::iterator xit = f.SetXref().begin();
+    while (xit != f.SetXref().end()) {
+        if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() &&
+            !(*xit)->GetData().GetGene().IsSuppressed() && !FindMatchingLocus_tagGene(f, (*xit)->GetData().GetGene(), bsh)) {
+            xit = f.SetXref().erase(xit);
+            any_removed = true;
+        } else {
+            ++xit;
+        }
+    }
+    if (any_removed) {
+        if (f.IsSetXref() && f.GetXref().empty()) {
+            f.ResetXref();
+        }
+    }
+    return any_removed;
+}
+
 
 bool CCleanup::AddMissingMolInfo(CBioseq& seq)
 {

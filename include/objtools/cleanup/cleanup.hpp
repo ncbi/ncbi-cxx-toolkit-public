@@ -133,6 +133,38 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh);
 
+/// Removes non-suppressing Gene-xrefs
+/// @param f Seq-feat to edit [in]
+/// @return Boolean return value indicates whether gene-xrefs were removed
+    static bool RemoveNonsuppressingGeneXrefs(CSeq_feat& f);
+
+/// Detects gene features with matching locus
+/// @param f Seq-feat parent feature of gene_xref [in]
+/// @param gene_xref Gene-ref of gene-xref [in]
+/// @param bsh CBioseq_Handle parent bioseq in which to search for genes [in]
+/// @return Boolean return value indicates whether a gene feature with matching locus has been found
+    static bool FindMatchingLocusGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh);
+
+/// Removes orphaned locus Gene-xrefs
+/// @param f Seq-feat to edit [in]
+/// @param bsh CBioseq_Handle in which to search for gene features [in]
+/// @return Boolean return value indicates whether gene-xrefs were removed
+    static bool RemoveOrphanLocusGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh);
+
+/// Detects gene features with matching locus_tag
+/// @param f Seq-feat parent feature of gene_xref [in]
+/// @param gene_xref Gene-ref of gene-xref [in]
+/// @param bsh CBioseq_Handle parent bioseq in which to search for genes [in]
+/// @return Boolean return value indicates whether a gene feature with matching locus_tag has been found
+    static bool FindMatchingLocus_tagGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh);
+
+/// Removes orphaned locus_tag Gene-xrefs
+/// @param f Seq-feat to edit [in]
+/// @param bsh CBioseq_Handle in which to search for gene features [in]
+/// @return Boolean return value indicates whether gene-xrefs were removed
+    static bool RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh);
+
+
 /// Adds missing MolInfo descriptor to sequence
 /// @param seq Bioseq to edit
 /// @return Boolean return value indicates whether descriptor was added
