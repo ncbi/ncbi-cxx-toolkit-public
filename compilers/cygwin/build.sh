@@ -9,6 +9,8 @@
 
 script="$0"
 cfgs="${1:-Debug DebugMT Release ReleaseMT}"
+arch=${2}
+
  
 ########### Global variables
 
@@ -63,7 +65,7 @@ for cfg in $cfgs ; do
 
     # Build
 
-    dir=`find . -maxdepth 1 -name "*-$cfg" | head -1 | sed 's|^.*/||g'`
+    dir=`find . -maxdepth 1 -name "*-$cfg*" | head -1 | sed 's|^.*/||g'`
     if [ -z "$dir"  -o  ! -d "$dir" ] ; then
        error "Build directory for \"$cfg\" configuration not found"
     fi
