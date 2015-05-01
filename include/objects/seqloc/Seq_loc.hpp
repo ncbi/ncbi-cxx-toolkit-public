@@ -554,7 +554,7 @@ protected:
     bool x_IsValid(void) const;
     // Check the position, throw exception if not valid
     virtual const char* x_GetIteratorType(void) const;
-    void x_CheckNotValid(const char* where) const;
+    void x_CheckValid(const char* where) const;
     void x_ThrowNotValid(const char* where) const;
 
     size_t m_Index;
@@ -588,60 +588,102 @@ public:
     /// return constructed CSeq_loc with all changes
     CRef<CSeq_loc> MakeSeq_loc(EMakeType make_type = eMake_CompactType) const;
 
-    /// Delete current piece, position to the next piece
+    /// Delete current element, and make iterator to point to the next element.
+    /// All other iterators of the same CSeq_loc object will become invalid.
+    /// If the deleted element is contained in any equiv set then the equiv set
+    /// and its corresponding part will be reduced in size appropriately,
+    /// and if the part and/or the set become empty after the deletion
+    /// they will be removed completely.
     void Delete(void);
 
-    /// Insert new piece before current, position to the inserted piece
-    void InsertNull(void);
-    void InsertEmpty(const CSeq_id_Handle& id);
-    void InsertEmpty(const CSeq_id& id)
+    /// Set of Insert*() methods.
+    /// All of them insert new element before the one the iterator points to.
+    /// If the iterator is at the end of CSeq_loc then the new element is
+    /// inserted after the last element of the CSeq_loc.
+    /// After the insertion this iterator will point to the element
+    /// it was pointing before (or end), and the result iterator will point
+    /// to the inserted element.
+    /// All other iterators of the same CSeq_loc object will become invalid.
+    /// If the insertion point is completely within an equiv set (excluding
+    /// the equiv set boundary) the equiv set will be expanded appropriately.
+    /// If the insertion point is completely within an equiv part (excluding
+    /// the equiv part boundary) the new element is added to that equiv part.
+    /// If the insertion point is between two equiv parts of the same set
+    /// then the new element is appended to the part just before
+    /// the insertion point.
+    /// The effect of the insertion on equiv sets can be modified
+    /// by calling SetEquivMode(EEquivMode).
+    /// @sa SetEquivMode()
+    CSeq_loc_I InsertNull(void);
+
+    /// Insert new element before the current one (@sa InsertNull()).
+    CSeq_loc_I InsertEmpty(const CSeq_id_Handle& id);
+    /// Insert new element before the current one (@sa InsertNull()).
+    CSeq_loc_I InsertEmpty(const CSeq_id& id)
         {
-            InsertEmpty(CSeq_id_Handle::GetHandle(id));
+            return InsertEmpty(CSeq_id_Handle::GetHandle(id));
         }
-    void InsertWhole(const CSeq_id_Handle& id);
-    void InsertWhole(const CSeq_id& id)
+    /// Insert new element before the current one (@sa InsertNull()).
+    CSeq_loc_I InsertWhole(const CSeq_id_Handle& id);
+    /// Insert new element before the current one (@sa InsertNull()).
+    CSeq_loc_I InsertWhole(const CSeq_id& id)
         {
-            InsertWhole(CSeq_id_Handle::GetHandle(id));
+            return InsertWhole(CSeq_id_Handle::GetHandle(id));
         }
 
-    /// Insert new piece before current, position to the inserted piece
+    /// Insert new element before the current one (@sa InsertNull()).
     /// The strand value eNa_strand_unknown produces strand field not set,
     /// If eNa_strand_unknown is expicitly required, call SetStrand().
-    void InsertInterval(const CSeq_id_Handle& id,
-                        const TRange& range,
-                        ENa_strand strand = eNa_strand_unknown);
-    void InsertInterval(const CSeq_id& id,
-                        const TRange& range,
-                        ENa_strand strand = eNa_strand_unknown)
+    CSeq_loc_I InsertInterval(const CSeq_id_Handle& id,
+                              const TRange& range,
+                              ENa_strand strand = eNa_strand_unknown);
+    /// Insert new element before the current one (@sa InsertNull()).
+    /// The strand value eNa_strand_unknown produces strand field not set,
+    /// If eNa_strand_unknown is expicitly required, call SetStrand().
+    CSeq_loc_I InsertInterval(const CSeq_id& id,
+                              const TRange& range,
+                              ENa_strand strand = eNa_strand_unknown)
         {
-            InsertInterval(CSeq_id_Handle::GetHandle(id), range, strand);
+            return InsertInterval(CSeq_id_Handle::GetHandle(id), range, strand);
         }
-    void InsertInterval(const CSeq_id& id,
-                        TSeqPos from, TSeqPos to,
-                        ENa_strand strand = eNa_strand_unknown)
+    /// Insert new element before the current one (@sa InsertNull()).
+    /// The strand value eNa_strand_unknown produces strand field not set,
+    /// If eNa_strand_unknown is expicitly required, call SetStrand().
+    CSeq_loc_I InsertInterval(const CSeq_id& id,
+                              TSeqPos from, TSeqPos to,
+                              ENa_strand strand = eNa_strand_unknown)
         {
-            InsertInterval(id, TRange(from, to), strand);
+            return InsertInterval(id, TRange(from, to), strand);
         }
-    void InsertInterval(const CSeq_id_Handle& id,
-                        TSeqPos from, TSeqPos to,
-                        ENa_strand strand = eNa_strand_unknown)
+    /// Insert new element before the current one (@sa InsertNull()).
+    /// The strand value eNa_strand_unknown produces strand field not set,
+    /// If eNa_strand_unknown is expicitly required, call SetStrand().
+    CSeq_loc_I InsertInterval(const CSeq_id_Handle& id,
+                              TSeqPos from, TSeqPos to,
+                              ENa_strand strand = eNa_strand_unknown)
         {
-            InsertInterval(id, TRange(from, to), strand);
+            return InsertInterval(id, TRange(from, to), strand);
         }
 
-    /// Insert new piece before current, position to the inserted piece
-    void InsertPoint(const CSeq_id_Handle& id,
-                     TSeqPos pos,
-                     ENa_strand strand = eNa_strand_unknown);
-    void InsertPoint(const CSeq_id& id,
-                     TSeqPos pos,
-                     ENa_strand strand = eNa_strand_unknown)
+    /// Insert new element before the current one (@sa InsertNull()).
+    /// The strand value eNa_strand_unknown produces strand field not set,
+    /// If eNa_strand_unknown is expicitly required, call SetStrand().
+    CSeq_loc_I InsertPoint(const CSeq_id_Handle& id,
+                           TSeqPos pos,
+                           ENa_strand strand = eNa_strand_unknown);
+    /// Insert new element before the current one (@sa InsertNull()).
+    /// The strand value eNa_strand_unknown produces strand field not set,
+    /// If eNa_strand_unknown is expicitly required, call SetStrand().
+    CSeq_loc_I InsertPoint(const CSeq_id& id,
+                           TSeqPos pos,
+                           ENa_strand strand = eNa_strand_unknown)
         {
-            InsertPoint(CSeq_id_Handle::GetHandle(id), pos, strand);
+            return InsertPoint(CSeq_id_Handle::GetHandle(id), pos, strand);
         }
 
     /// Set seq_id of the current location
     void SetSeq_id_Handle(const CSeq_id_Handle& id);
+    /// Set seq_id of the current location
     void SetSeq_id(const CSeq_id& id)
         {
             SetSeq_id_Handle(CSeq_id_Handle::GetHandle(id));
@@ -649,21 +691,29 @@ public:
 
     /// Set the range
     void SetRange(const TRange& range);
+    /// Set the range from position
     void SetFrom(TSeqPos from);
+    /// Set the range to position
     void SetTo(TSeqPos to);
+    /// Set the range from and to positions
     void SetPoint(TSeqPos pos);
 
-    /// Set strand
+    /// Reset the range strand
     void ResetStrand(void);
+    /// Set the range strand
     void SetStrand(ENa_strand strand);
 
-    // Change fuzz values
+    /// Reset fuzz from
     void ResetFuzzFrom(void);
+    /// Change fuzz from
     void SetFuzzFrom(CInt_fuzz& fuzz);
+    /// Reset fuzz to
     void ResetFuzzTo(void);
+    /// Change fuzz to values
     void SetFuzzTo(CInt_fuzz& fuzz);
-    // Point version
+    /// Reset fuzz of a point
     void ResetFuzz(void);
+    /// Change fuzz of a point
     void SetFuzz(CInt_fuzz& fuzz);
 
     /// Return iterators that cover equiv set of current position
@@ -678,6 +728,100 @@ public:
     /// level specify equiv set if there are more than one of them
     /// level = 0 is the smallest equiv set (innermost)
     pair<CSeq_loc_I, CSeq_loc_I> GetEquivPartRange(size_t level = 0) const;
+
+    /// This enum defines a way equiv sets are expanded or created
+    /// when one of Insert*() methods is called.
+    enum EEquivMode {
+        /// By default no equiv sets are created or expanded except
+        /// if insertion point is completely inside of an equiv or its part.
+        eEquiv_none,
+
+        /// A new equiv set will be created, even if the insertion point
+        /// is already inside of an existing equiv, so that new equiv set may
+        /// become a sub-unit of an exisiting equiv set.
+        /// The new equiv set will contain one part with the inserted element
+        /// as its content.
+        /// The mode will switch to eEquiv_append after the insertion.
+        eEquiv_new_equiv,
+
+        /// New equiv part will be started with the inserted element.
+        /// If the insertion point is not in or near any existing equiv part
+        /// then exception is thrown.
+        /// If...
+        /// A. the insertion point is exactly between two equiv sets
+        /// then a new equiv part will be created at the end of the first set
+        /// with the inserted element as its content.
+        /// B. the insertion point is at a boundary of any equiv part
+        /// then a new equiv part will be created at this point
+        /// with the inserted element as its content.
+        /// C. the insertion point is in the middle of existing part
+        /// then the existing part will be split at the insertion point
+        /// and new element will be added to the second part after splitting.
+        /// 
+        /// The mode will switch to eEquiv_append after the insertion.
+        eEquiv_new_part,
+
+        /// If the insertion point is just after any equiv part, including
+        /// the last one in an equiv, then the inserted element is appended
+        /// to the part, and the equiv mode will remain eEquiv_append.
+        /// Otherwise the equiv mode will switch to eEquiv_none.
+        /// Change the mode to eEquiv_none explicitly if you want to stop
+        /// expanding existing equiv.
+        eEquiv_append,
+
+        /// If the insertion point is just before any equiv part, including
+        /// the first one in an equiv, then the inserted element is prepended
+        /// to the part, and the equiv mode will remain eEquiv_prepend.
+        /// Otherwise the equiv mode will switch to eEquiv_none.
+        /// Change the mode to eEquiv_none explicitly if you want to stop
+        /// expanding existing equiv.
+        eEquiv_prepend
+    };
+    /// Change equiv modification mode
+    /// @sa InsertNull()
+    void SetEquivMode(EEquivMode mode);
+    /// Change equiv modification mode to add new equiv set for the next
+    /// insert operation.
+    /// @sa SetEquivMode()
+    void StartNewEquiv(void)
+        {
+            SetEquivMode(eEquiv_new_equiv);
+        }
+    /// Change equiv modification mode to add new equiv part for the next
+    /// insert operation.
+    /// @sa SetEquivMode()
+    void StartNewEquivPart(void)
+        {
+            SetEquivMode(eEquiv_new_part);
+        }
+    /// Change equiv modification mode to normal behavior that will only
+    /// update existing equiv sets.
+    /// @sa SetEquivMode()
+    void StopEquiv(void)
+        {
+            SetEquivMode(eEquiv_none);
+        }
+    /// Get equiv modification mode.
+    /// @sa SetEquivMode()
+    EEquivMode GetEquivMode(void) const;
+
+    /// Remove equiv set, all pieces that are part of the set will be
+    /// preserved as independent pieces.
+    void RemoveEquiv(size_t level = 0);
+    /// Create equiv set with one part from current position to
+    /// the position pointed by end_it argument exclusive.
+    /// The end_it position must be after current position.
+    /// If there are any conflicts with existing equiv sets or bond pairs
+    /// no new equiv set will be made and an exception will be thrown.
+    /// New set's level will be assigned depending on its size in relation
+    /// to existing overlapping equiv sets.
+    void MakeEquiv(const CSeq_loc_I& end_it);
+    /// Create equiv set with one part from current position to
+    /// the position pointed by end_it argument exclusive.
+    /// The end_it position must be after current position.
+    /// If there are any conflicts with existing equiv sets or bond pairs
+    /// no new equiv set will be made and an exception will be thrown.
+    void MakeEquivPartBreak(size_t level = 0);
 
     /// Remove bond at current position - it may be either A or B part
     void RemoveBond(void);
@@ -701,6 +845,8 @@ protected:
     void x_SetSeq_id_Handle(SSeq_loc_CI_RangeInfo& info,
                             const CSeq_id_Handle& id);
 
+    bool x_IsValidForInsert(void) const;
+    void x_CheckValidForInsert(const char* where) const;
     virtual const char* x_GetIteratorType(void) const;
 };
 
@@ -835,7 +981,7 @@ void SSeq_loc_CI_RangeInfo::SetStrand(ENa_strand strand)
 }
 
 inline
-void CSeq_loc_CI::x_CheckNotValid(const char* where) const
+void CSeq_loc_CI::x_CheckValid(const char* where) const
 {
     if ( !x_IsValid() )
         x_ThrowNotValid(where);
@@ -844,7 +990,7 @@ void CSeq_loc_CI::x_CheckNotValid(const char* where) const
 inline
 CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
 {
-    x_CheckNotValid("operator++");
+    x_CheckValid("operator++");
     ++m_Index;
     return *this;
 }
@@ -852,70 +998,70 @@ CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
 inline
 const CSeq_id& CSeq_loc_CI::GetSeq_id(void) const
 {
-    x_CheckNotValid("GetSeq_id()");
+    x_CheckValid("GetSeq_id()");
     return *x_GetRangeInfo().m_Id;
 }
 
 inline
 CSeq_id_Handle CSeq_loc_CI::GetSeq_id_Handle(void) const
 {
-    x_CheckNotValid("GetSeq_id_Handle()");
+    x_CheckValid("GetSeq_id_Handle()");
     return x_GetRangeInfo().m_IdHandle;
 }
 
 inline
 CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
 {
-    x_CheckNotValid("GetRange()");
+    x_CheckValid("GetRange()");
     return x_GetRangeInfo().m_Range;
 }
 
 inline
 bool CSeq_loc_CI::IsSetStrand(void) const
 {
-    x_CheckNotValid("IsSetStrand()");
+    x_CheckValid("IsSetStrand()");
     return x_GetRangeInfo().m_IsSetStrand;
 }
 
 inline
 ENa_strand CSeq_loc_CI::GetStrand(void) const
 {
-    x_CheckNotValid("GetStrand()");
+    x_CheckValid("GetStrand()");
     return x_GetRangeInfo().m_Strand;
 }
 
 inline
 const CInt_fuzz* CSeq_loc_CI::GetFuzzFrom(void) const
 {
-    x_CheckNotValid("GetFuzzFrom()");
+    x_CheckValid("GetFuzzFrom()");
     return x_GetRangeInfo().m_Fuzz.first;
 }
 
 inline
 const CInt_fuzz* CSeq_loc_CI::GetFuzzTo(void) const
 {
-    x_CheckNotValid("GetFuzzTo()");
+    x_CheckValid("GetFuzzTo()");
     return x_GetRangeInfo().m_Fuzz.second;
 }
 
 inline
 bool CSeq_loc_CI::IsWhole(void) const
 {
-    x_CheckNotValid("IsWhole()");
+    x_CheckValid("IsWhole()");
     return x_GetRangeInfo().m_Range.IsWhole();
 }
 
 inline
 bool CSeq_loc_CI::IsEmpty(void) const
 {
-    x_CheckNotValid("IsEmpty()");
+    x_CheckValid("IsEmpty()");
     return x_GetRangeInfo().m_Range.Empty();
 }
 
 inline
 bool CSeq_loc_CI::IsPoint(void) const
 {
-    x_CheckNotValid("IsPoint()");
+    x_CheckValid("IsPoint()");
     return x_GetRangeInfo().m_Range.GetLength() == 1;
 }
 
@@ -932,6 +1078,13 @@ void CSeq_loc_CI::Rewind(void)
 }
 
 /////////////////// CSeq_loc_I inline methods
+
+inline
+void CSeq_loc_I::x_CheckValidForInsert(const char* where) const
+{
+    if ( !x_IsValidForInsert() )
+        x_ThrowNotValid(where);
+}
 
 NCBISER_HAVE_POST_READ(CSeq_loc)
 

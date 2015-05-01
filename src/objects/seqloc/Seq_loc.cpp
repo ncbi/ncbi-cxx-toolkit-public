@@ -1044,49 +1044,108 @@ public:
     struct SEquivSet {
         size_t m_StartIndex;
 
-        // parts' end offsets within the equiv set
+        // parts' end offsets within the equiv set, ordered by position
         // must contain at least one element - the only part
-        vector<size_t> m_PartsEnds;
+        // all parts must be not empty - contain at least one element
+        typedef vector<size_t> TParts;
+        typedef TParts::const_iterator TPart_CI;
+        typedef TParts::iterator TPart_I;
 
-        size_t RangesCount(void) const
+        TParts m_Parts;
+
+        // return number of Seq-loc element in all equiv parts (always > 0)
+        size_t GetElementsCount(void) const
             {
-                _ASSERT(!m_PartsEnds.empty());
-                return m_PartsEnds.back();
+                _ASSERT(!m_Parts.empty());
+                _ASSERT(m_Parts.back() > 0);
+                return m_Parts.back();
             }
-        size_t StartIndex(void) const
+        // return index of the first element in the equiv set
+        size_t GetStartIndex(void) const
             {
                 return m_StartIndex;
             }
-        size_t EndIndex(void) const // exclusive
+        // return index of element after the equiv set
+        size_t GetEndIndex(void) const // exclusive
             {
-                return StartIndex()+RangesCount();
-            }
-        size_t PartsCount(void) const
-            {
-                return m_PartsEnds.size();
+                return GetStartIndex()+GetElementsCount();
             }
 
-        bool contains(size_t idx) const
+        // return true if the equiv set contains element with specified index
+        bool Contains(size_t idx) const
             {
-                return idx >= StartIndex() && idx < EndIndex();
+                return idx >= GetStartIndex() && idx < GetEndIndex();
+            }
+
+        // return number of equiv parts (always > 0)
+        size_t GetPartsCount(void) const
+            {
+                _ASSERT(!m_Parts.empty());
+                return m_Parts.size();
+            }
+
+        // return offset of the first element in equiv part within equiv set
+        size_t GetPartStartOffset(TPart_CI part) const
+            {
+                _ASSERT(part < m_Parts.end());
+                return part == m_Parts.begin()? 0: *--part;
+            }
+        // return offset of the end element in equiv part within equiv set
+        size_t GetPartEndOffset(TPart_CI part) const
+            {
+                _ASSERT(part < m_Parts.end());
+                return *part;
+            }
+
+        // return index of the first element in equiv part within equiv set
+        size_t GetPartStartIndex(TPart_CI part) const
+            {
+                return GetStartIndex()+GetPartStartOffset(part);
+            }
+        // return index of the end element in equiv part within equiv set
+        size_t GetPartEndIndex(TPart_CI part) const
+            {
+                return GetStartIndex()+GetPartEndOffset(part);
+            }
+
+        // return part containing element with specified index
+        TPart_I FindPartByElementIndex(size_t idx)
+            {
+                _ASSERT(Contains(idx));
+                return upper_bound(m_Parts.begin(), m_Parts.end(),
+                                   idx - GetStartIndex());
+            }
+        // return part containing element with specified index
+        TPart_CI FindPartByElementIndex(size_t idx) const
+            {
+                _ASSERT(Contains(idx));
+                return upper_bound(m_Parts.begin(), m_Parts.end(),
+                                   idx - GetStartIndex());
             }
     };
     struct PByLevel {
         bool operator()(const SEquivSet* e1, const SEquivSet* e2) const
             {
-                size_t s1 = e1->RangesCount();
-                size_t s2 = e2->RangesCount();
+                size_t s1 = e1->GetElementsCount();
+                size_t s2 = e2->GetElementsCount();
                 if ( s1 != s2 ) {
                     // smallest first
                     return s1 < s2;
                 }
-                s1 = e1->PartsCount();
-                s2 = e2->PartsCount();
+                s1 = e1->GetPartsCount();
+                s2 = e2->GetPartsCount();
                 if ( s1 != s2 ) {
-                    // more parts first
+                    // enclosing set must have single part with the inner set
+                    _ASSERT(s1 == 1 || s2 == 1);
+                    // more parts (inner) first
                     return s1 > s2;
                 }
-                return false;
+                // it's still possible that both equiv sets contain
+                // one part with the same set of elements
+                // in this case the sets are equivalent and one set contains
+                // another, no matter which one, but we still order the sets
+                // by their creation order
+                return e1 < e2;
             }
     };
     typedef vector<SEquivSet> TEquivSets;
@@ -1209,7 +1268,7 @@ public:
     bool IsInEquivSet(size_t idx) const
         {
             ITERATE ( TEquivSets, it, m_EquivSets ) {
-                if ( it->contains(idx) ) {
+                if ( it->Contains(idx) ) {
                     return true;
                 }
             }
@@ -1219,7 +1278,7 @@ public:
         {
             size_t count = 0;
             ITERATE ( TEquivSets, it, m_EquivSets ) {
-                if ( it->contains(idx) ) {
+                if ( it->Contains(idx) ) {
                     ++count;
                 }
             }
@@ -1229,7 +1288,7 @@ public:
         {
             vector<const SEquivSet*> sets;
             ITERATE ( TEquivSets, it, m_EquivSets ) {
-                if ( it->contains(idx) ) {
+                if ( it->Contains(idx) ) {
                     sets.push_back(&*it);
                 }
             }
@@ -1243,31 +1302,30 @@ public:
     pair<size_t, size_t> GetEquivSetRange(size_t idx, size_t level) const
         {
             const SEquivSet& s = GetEquivSet(idx, level);
-            return make_pair(s.StartIndex(), s.EndIndex());
+            return make_pair(s.GetStartIndex(), s.GetEndIndex());
         }
     pair<size_t, size_t> GetEquivPartRange(size_t idx, size_t level) const
         {
             const SEquivSet& s = GetEquivSet(idx, level);
-            _ASSERT(s.contains(idx));
-            size_t start_idx = s.StartIndex();
-            ITERATE ( vector<size_t>, it, s.m_PartsEnds ) {
-                size_t end_idx = s.StartIndex()+*it;
-                if ( idx < end_idx ) {
-                    return make_pair(start_idx, end_idx);
-                }
-                start_idx = end_idx;
-            }
-            return make_pair(start_idx, s.EndIndex());
+            SEquivSet::TPart_CI p = s.FindPartByElementIndex(idx);
+            return make_pair(s.GetPartStartIndex(p), s.GetPartEndIndex(p));
         }
+    // Return first equiv part bound point that fall into the range.
+    // Beginning and ending points are not counted, so 0 is not possible.
+    // Return 0 if there are no such breaks.
     size_t HasEquivBreak(size_t begin, size_t end) const;
-    const SEquivSet* FindInnerEquivSet(size_t begin, size_t end) const;
+
+    typedef set<const SEquivSet*> TUsedEquivs;
+    const SEquivSet* FindInnerEquivSet(size_t begin, size_t end,
+                                       const TUsedEquivs& used_equivs) const;
 
     CRef<CSeq_loc> MakeLocOther(const SSeq_loc_CI_RangeInfo& info) const;
     CRef<CSeq_loc> MakeRangeLoc(const SSeq_loc_CI_RangeInfo& info) const;
     CRef<CSeq_loc> MakeLoc(CSeq_loc_I::EMakeType make_type) const;
     CRef<CSeq_loc> MakeLoc(size_t idx_begin,
                            size_t idx_end,
-                           CSeq_loc_I::EMakeType make_type) const;
+                           CSeq_loc_I::EMakeType make_type,
+                           TUsedEquivs& used_equivs) const;
 
     bool HasChanges(void) const
         {
@@ -1277,6 +1335,15 @@ public:
     void SetHasChanges(void)
         {
             m_HasChanges = true;
+        }
+
+    CSeq_loc_I::EEquivMode GetEquivMode(void) const
+        {
+            return m_EquivMode;
+        }
+    void SetEquivMode(CSeq_loc_I::EEquivMode mode)
+        {
+            m_EquivMode = mode;
         }
 
 private:
@@ -1301,12 +1368,16 @@ private:
     TEquivSets               m_EquivSets;
     // Empty locations processing option
     CSeq_loc_CI::EEmptyFlag  m_EmptyFlag;
+    // true if anything was changed in the Seq-loc
     bool                     m_HasChanges;
+    // equiv editing mode
+    CSeq_loc_I::EEquivMode   m_EquivMode;
 };
 
 
 CSeq_loc_CI_Impl::CSeq_loc_CI_Impl(void)
-    : m_HasChanges(false)
+    : m_HasChanges(false),
+      m_EquivMode(CSeq_loc_I::eEquiv_none)
 {
 }
 
@@ -1316,7 +1387,8 @@ CSeq_loc_CI_Impl::CSeq_loc_CI_Impl(const CSeq_loc&           loc,
                                    CSeq_loc_CI::ESeqLocOrder order)
     : m_Location(&loc),
       m_EmptyFlag(empty_flag),
-      m_HasChanges(false)
+      m_HasChanges(false),
+      m_EquivMode(CSeq_loc_I::eEquiv_none)
 {
     x_ProcessLocation(loc);
     if ( order == CSeq_loc_CI::eOrder_Positional  &&  loc.IsReverseStrand() ) {
@@ -1330,6 +1402,15 @@ void CSeq_loc_CI_Impl::x_SetId(SSeq_loc_CI_RangeInfo& info,
 {
     info.m_Id = &id;
     info.m_IdHandle = CSeq_id_Handle::GetHandle(id);
+}
+
+
+template<class Container>
+static void s_ReserveMore(Container& cont, size_t add_size)
+{
+    if ( cont.size()+add_size > cont.capacity() ) {
+        cont.reserve(max(cont.size()+add_size, cont.capacity()*2));
+    }
 }
 
 
@@ -1380,7 +1461,7 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Packed_int:
         {
             const CPacked_seqint::Tdata& data = loc.GetPacked_int().Get();
-            m_Ranges.reserve(m_Ranges.size() + data.size());
+            s_ReserveMore(m_Ranges, data.size());
             ITERATE ( CPacked_seqint::Tdata, ii, data ) {
                 x_ProcessInterval(**ii, loc);
             }
@@ -1389,7 +1470,7 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Packed_pnt:
         {
             const CPacked_seqpnt& pack_pnt = loc.GetPacked_pnt();
-            m_Ranges.reserve(m_Ranges.size() + pack_pnt.GetPoints().size());
+            s_ReserveMore(m_Ranges, pack_pnt.GetPoints().size());
             SSeq_loc_CI_RangeInfo info;
             x_SetId(info, pack_pnt.GetId());
             if ( pack_pnt.IsSetStrand() ) {
@@ -1408,7 +1489,7 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Mix:
         {
             const CSeq_loc_mix::Tdata& data = loc.GetMix().Get();
-            m_Ranges.reserve(m_Ranges.size() + data.size());
+            s_ReserveMore(m_Ranges, data.size());
             ITERATE(CSeq_loc_mix::Tdata, li, data) {
                 x_ProcessLocation(**li);
             }
@@ -1417,20 +1498,23 @@ void CSeq_loc_CI_Impl::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Equiv:
         {
             const CSeq_loc_equiv::Tdata& data = loc.GetEquiv().Get();
-            m_Ranges.reserve(m_Ranges.size() + data.size());
+            s_ReserveMore(m_Ranges, data.size());
             SEquivSet eq_set;
             size_t start = m_Ranges.size();
             eq_set.m_StartIndex = start;
             ITERATE(CSeq_loc_equiv::Tdata, li, data) {
+                size_t part_start = m_Ranges.size();
                 x_ProcessLocation(**li);
-                size_t end = m_Ranges.size()-start;
-                eq_set.m_PartsEnds.push_back(end);
+                size_t part_end = m_Ranges.size();
+                if ( part_start != part_end ) {
+                    // add only non-empty parts
+                    eq_set.m_Parts.push_back(part_end-start);
+                }
             }
-            if ( eq_set.m_PartsEnds.empty() ) {
-                // no parts, add one default part
-                eq_set.m_PartsEnds.push_back(0);
+            if ( !eq_set.m_Parts.empty() ) {
+                // add only non-empty equiv sets
+                m_EquivSets.push_back(eq_set);
             }
-            m_EquivSets.push_back(eq_set);
             return;
         }
     case CSeq_loc::e_Bond:
@@ -1494,44 +1578,47 @@ void CSeq_loc_CI_Impl::x_ProcessPoint(const CSeq_point& seq_pnt,
 size_t CSeq_loc_CI_Impl::HasEquivBreak(size_t begin,
                                        size_t end) const
 {
-    size_t ret = 0;
+    size_t ret = end;
     ITERATE ( TEquivSets, it, m_EquivSets ) {
         const SEquivSet& eq_set = *it;
-        size_t eq_begin = eq_set.StartIndex();
-        size_t eq_end = eq_set.EndIndex();
+        size_t eq_begin = eq_set.GetStartIndex();
+        size_t eq_end = eq_set.GetEndIndex();
         if ( eq_end <= begin || eq_begin >= end ) {
+            // no overlaps
             continue;
         }
         if ( eq_begin > begin && eq_begin < end ) {
-            if ( !ret || eq_begin < ret ) {
-                ret = eq_begin;
-            }
+            // range overlaps with the beginning of the equiv set
+            ret = min(ret, eq_begin);
             continue;
         }
-        ITERATE ( vector<size_t>, it2, eq_set.m_PartsEnds ) {
-            size_t pos = eq_begin+*it2;
-            if ( pos > begin && pos < end ) {
-                if ( !ret || pos < ret ) {
-                    ret = pos;
-                }
-                break;
-            }
-        }
+        // otherwise the equiv starts before the range and ends somewhere
+        // after beginning of the range.
+        // so the first part that contains range's begin point is the one,
+        // end its end point is one of the breaking points we are looking for.
+        SEquivSet::TPart_CI part = eq_set.FindPartByElementIndex(begin);
+        ret = min(ret, eq_set.GetPartEndIndex(part));
     }
-    return ret;
+    // the first break point may be after the requested range
+    return ret == end? 0: ret;
 }
 
 
 const CSeq_loc_CI_Impl::SEquivSet*
 CSeq_loc_CI_Impl::FindInnerEquivSet(size_t begin,
-                                    size_t end) const
+                                    size_t end,
+                                    const TUsedEquivs& used_equivs) const
 {
     const SEquivSet* ret = 0;
     ITERATE ( TEquivSets, it, m_EquivSets ) {
         const SEquivSet& eq_set = *it;
-        size_t eq_begin = eq_set.StartIndex();
-        size_t eq_end = eq_set.EndIndex();
+        size_t eq_begin = eq_set.GetStartIndex();
+        size_t eq_end = eq_set.GetEndIndex();
         if ( eq_begin < begin || eq_end > end ) {
+            continue;
+        }
+        if ( used_equivs.find(&eq_set) != used_equivs.end() ) {
+            // already processed
             continue;
         }
         if ( !ret || PByLevel()(ret, &eq_set) ) {
@@ -1547,18 +1634,29 @@ void CSeq_loc_CI_Impl::DeleteRange(size_t idx)
     SetHasChanges();
     m_Ranges.erase(m_Ranges.begin()+idx);
     // update equiv sets
-    NON_CONST_ITERATE ( TEquivSets, it, m_EquivSets ) {
+    ERASE_ITERATE ( TEquivSets, it, m_EquivSets ) {
         SEquivSet& eq_set = *it;
-        if ( eq_set.contains(idx) ) {
-            size_t offset = idx - eq_set.m_StartIndex;
-            NON_CONST_ITERATE ( vector<size_t>, it2, eq_set.m_PartsEnds ) {
-                if ( *it2 > offset ) {
-                    --*it2;
+        size_t start_index = eq_set.GetStartIndex();
+        if ( idx < start_index ) {
+            // shift whole equiv set because an element before is deleted
+            --eq_set.m_StartIndex;
+            continue;
+        }
+        size_t offset = idx - start_index;
+        size_t prev_offset = 0;
+        ERASE_ITERATE ( SEquivSet::TParts, it2, eq_set.m_Parts ) {
+            if ( offset < *it2 ) {
+                --*it2;
+                if ( *it2 == prev_offset ) {
+                    VECTOR_ERASE(it2, eq_set.m_Parts);
+                }
+                else {
+                    prev_offset = *it2;
                 }
             }
         }
-        else if ( idx < eq_set.m_StartIndex ) {
-            --eq_set.m_StartIndex;
+        if ( eq_set.GetElementsCount() == 0 ) {
+            VECTOR_ERASE(it, m_EquivSets);
         }
     }
 }
@@ -1614,25 +1712,92 @@ SSeq_loc_CI_RangeInfo& CSeq_loc_CI_Impl::InsertRange(size_t idx,
         }
     }
     info.m_Loc = loc;
-    // update equiv sets
+
+    SEquivSet* add_to_set_beg = 0;
+    vector<SEquivSet*> add_to_set_mid;
+    SEquivSet* add_to_set_end = 0;
+    // update existing equiv sets
     NON_CONST_ITERATE ( TEquivSets, it, m_EquivSets ) {
         SEquivSet& eq_set = *it;
-        if ( s_InsertExpands(idx, eq_set.StartIndex(), eq_set.EndIndex()) ) {
-            size_t part_start = eq_set.StartIndex();
-            bool inserted = false;
-            NON_CONST_ITERATE ( vector<size_t>, it2, eq_set.m_PartsEnds ) {
-                size_t part_end = eq_set.StartIndex()+*it2;
-                if ( inserted || s_InsertExpands(idx, part_start, part_end) ) {
-                    ++*it2;
-                    ++part_end;
-                    inserted = true;
-                }
-                part_start = part_end;
+        size_t eq_start = eq_set.GetStartIndex();
+        size_t eq_end = eq_set.GetEndIndex();
+        if ( idx == eq_start &&
+             (GetEquivMode() == CSeq_loc_I::eEquiv_prepend ||
+              GetEquivMode() == CSeq_loc_I::eEquiv_new_part) ) {
+            // new element is inserted just before the equiv and will be added
+            // shift it for now
+            ++eq_set.m_StartIndex;
+            if ( !add_to_set_beg || PByLevel()(&eq_set, add_to_set_beg) ) {
+                add_to_set_beg = &eq_set;
             }
         }
-        else if ( idx <= eq_set.StartIndex() ) {
+        else if ( idx == eq_end &&
+                  (GetEquivMode() == CSeq_loc_I::eEquiv_append ||
+                   GetEquivMode() == CSeq_loc_I::eEquiv_new_part) ) {
+            // new element is inserted just after the equiv and will be added
+            if ( !add_to_set_end || PByLevel()(&eq_set, add_to_set_end) ) {
+                add_to_set_end = &eq_set;
+            }
+        }
+        else if ( idx > eq_start && idx < eq_end ) {
+            // new element is completely within eq_set, so it will be added
+            add_to_set_mid.push_back(&eq_set);
+        }
+        else if ( idx <= eq_start ) {
+            // new element is completely before the equiv - shift right
             ++eq_set.m_StartIndex;
         }
+    }
+    sort(add_to_set_mid.begin(), add_to_set_mid.end(), PByLevel());
+    if ( add_to_set_beg ) {
+        // add at the beginning of the set
+        NON_CONST_ITERATE ( SEquivSet::TParts, it, add_to_set_beg->m_Parts ) {
+            ++*it;
+        }
+        if ( GetEquivMode() == CSeq_loc_I::eEquiv_new_part ) {
+            // add as a new part
+            add_to_set_beg->m_Parts.insert(add_to_set_beg->m_Parts.begin(), 1);
+            SetEquivMode(CSeq_loc_I::eEquiv_append);
+        }
+    }
+    else if ( add_to_set_end ) {
+        // add at the end of the set
+        if ( GetEquivMode() == CSeq_loc_I::eEquiv_new_part ) {
+            // add as a new part
+            add_to_set_end->m_Parts.push_back(add_to_set_end->m_Parts.back()+1);
+            SetEquivMode(CSeq_loc_I::eEquiv_append);
+        }
+        else {
+            ++add_to_set_end->m_Parts.back();
+        }
+    }
+    if ( GetEquivMode() == CSeq_loc_I::eEquiv_new_part &&
+         !add_to_set_mid.empty() ) {
+        SEquivSet& eq_set = **add_to_set_mid.begin();
+        add_to_set_mid.erase(add_to_set_mid.begin());
+        SEquivSet::TPart_I it = eq_set.FindPartByElementIndex(idx);
+        it = eq_set.m_Parts.insert(it, idx-eq_set.GetStartIndex()+1)+1;
+        for ( ; it != eq_set.m_Parts.end(); ++it ) {
+            ++*it;
+        }
+        SetEquivMode(CSeq_loc_I::eEquiv_append);
+    }
+    ITERATE ( vector<SEquivSet*>, set_it, add_to_set_mid ) {
+        SEquivSet& eq_set = **set_it;
+        SEquivSet::TPart_I it = eq_set.FindPartByElementIndex(idx);
+        for ( ; it != eq_set.m_Parts.end(); ++it ) {
+            ++*it;
+        }
+    }
+    // now all existing equivs were updated
+
+    if ( GetEquivMode() == CSeq_loc_I::eEquiv_new_equiv ) {
+        // create new equiv
+        SEquivSet eq_set;
+        eq_set.m_StartIndex = idx;
+        eq_set.m_Parts.push_back(1);
+        m_EquivSets.push_back(eq_set);
+        SetEquivMode(CSeq_loc_I::eEquiv_append);
     }
     return info;
 }
@@ -2122,40 +2287,30 @@ void AddLoc(CRef<CSeq_loc>& loc, CRef<CSeq_loc> loc2)
 }
 
 
-CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(CSeq_loc_I::EMakeType make_type) const
-{
-    return MakeLoc(0, m_Ranges.size(), make_type);
-}
-
-
 CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(size_t idx_begin,
                                          size_t idx_end,
-                                         CSeq_loc_I::EMakeType make_type) const
+                                         CSeq_loc_I::EMakeType make_type,
+                                         TUsedEquivs& used_equivs) const
 {
-    if ( idx_begin == idx_end ) {
-        NCBI_THROW(CSeqLocException, eNotSet,
-                   "CSeq_loc_I::MakeSeq_loc: no any parts");
-    }
-
-    if ( const SEquivSet* eq_set = FindInnerEquivSet(idx_begin, idx_end) ) {
-        size_t idx = eq_set->StartIndex();
+    if ( const SEquivSet* eq_set = FindInnerEquivSet(idx_begin, idx_end, used_equivs) ) {
+        used_equivs.insert(eq_set);
+        size_t idx = eq_set->GetStartIndex();
         CRef<CSeq_loc> loc;
         if ( idx > idx_begin ) {
-            loc = MakeLoc(idx_begin, idx, make_type);
+            loc = MakeLoc(idx_begin, idx, make_type, used_equivs);
         }
         CRef<CSeq_loc> loc2(new CSeq_loc);
         CSeq_loc_equiv& equiv = loc2->SetEquiv();
-        ITERATE ( vector<size_t>, it2, eq_set->m_PartsEnds ) {
-            size_t part_end = eq_set->StartIndex()+*it2;
-            if ( part_end > idx ) {
-                CRef<CSeq_loc> part = MakeLoc(idx, part_end, make_type);
-                equiv.Set().push_back(part);
-                idx = part_end;
-            }
+        ITERATE ( SEquivSet::TParts, it, eq_set->m_Parts ) {
+            size_t part_end = eq_set->GetPartEndIndex(it);
+            CRef<CSeq_loc> part_loc =
+                MakeLoc(idx, part_end, make_type, used_equivs);
+            equiv.Set().push_back(part_loc);
+            idx = part_end;
         }
         AddLoc(loc, loc2);
         if ( idx < idx_end ) {
-            loc2 = MakeLoc(idx, idx_end, make_type);
+            loc2 = MakeLoc(idx, idx_end, make_type, used_equivs);
             if ( loc2->IsMix() ) {
                 ITERATE ( CSeq_loc_mix::Tdata, it, loc2->GetMix().Get() ) {
                     AddLoc(loc, *it);
@@ -2171,6 +2326,12 @@ CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(size_t idx_begin,
     if ( HasEquivBreak(idx_begin, idx_end) ) {
         NCBI_THROW(CSeqLocException, eBadLocation,
                    "CSeq_loc_I::MakeSeq_loc: equiv set overlaps with range");
+    }
+
+    if ( idx_begin == idx_end ) {
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetMix();
+        return loc;
     }
 
     // check bonds
@@ -2240,6 +2401,13 @@ CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(size_t idx_begin,
 }
 
 
+CRef<CSeq_loc> CSeq_loc_CI_Impl::MakeLoc(CSeq_loc_I::EMakeType make_type) const
+{
+    TUsedEquivs used_equivs;
+    return MakeLoc(0, m_Ranges.size(), make_type, used_equivs);
+}
+
+
 CSeq_loc_CI::CSeq_loc_CI(void)
     : m_Impl(new CSeq_loc_CI_Impl),
       m_Index(0)
@@ -2305,21 +2473,21 @@ bool CSeq_loc_CI::operator!= (const CSeq_loc_CI& iter) const
 
 bool CSeq_loc_CI::IsInBond(void) const
 {
-    x_CheckNotValid("IsInBond()");
+    x_CheckValid("IsInBond()");
     return m_Impl->IsInBond(m_Index);
 }
 
 
 bool CSeq_loc_CI::IsBondA(void) const
 {
-    x_CheckNotValid("IsBondA()");
+    x_CheckValid("IsBondA()");
     return m_Impl->IsBondPartA(m_Index);
 }
 
 
 bool CSeq_loc_CI::IsBondB(void) const
 {
-    x_CheckNotValid("IsBondB()");
+    x_CheckValid("IsBondB()");
     return m_Impl->IsBondPartB(m_Index);
 }
 
@@ -2327,7 +2495,7 @@ bool CSeq_loc_CI::IsBondB(void) const
 pair<CSeq_loc_CI, CSeq_loc_CI>
 CSeq_loc_CI::GetBondRange(void) const
 {
-    x_CheckNotValid("GetBondRange()");
+    x_CheckValid("GetBondRange()");
     pair<size_t, size_t> indexes = m_Impl->GetBondRange(m_Index);
     return make_pair(CSeq_loc_CI(*this, indexes.first),
                      CSeq_loc_CI(*this, indexes.second));
@@ -2342,14 +2510,14 @@ bool CSeq_loc_CI::HasEquivSets(void) const
 
 bool CSeq_loc_CI::IsInEquivSet(void) const
 {
-    x_CheckNotValid("IsInEquivSet()");
+    x_CheckValid("IsInEquivSet()");
     return m_Impl->IsInEquivSet(m_Index);
 }
 
 
 size_t CSeq_loc_CI::GetEquivSetsCount(void) const
 {
-    x_CheckNotValid("GetEquivSetsCount()");
+    x_CheckValid("GetEquivSetsCount()");
     return m_Impl->GetEquivSetsCount(m_Index);
 }
 
@@ -2357,7 +2525,7 @@ size_t CSeq_loc_CI::GetEquivSetsCount(void) const
 pair<CSeq_loc_CI, CSeq_loc_CI>
 CSeq_loc_CI::GetEquivSetRange(size_t level) const
 {
-    x_CheckNotValid("GetEquivSetRange()");
+    x_CheckValid("GetEquivSetRange()");
     pair<size_t, size_t> indexes = m_Impl->GetEquivSetRange(m_Index, level);
     return make_pair(CSeq_loc_CI(*this, indexes.first),
                      CSeq_loc_CI(*this, indexes.second));
@@ -2367,7 +2535,7 @@ CSeq_loc_CI::GetEquivSetRange(size_t level) const
 pair<CSeq_loc_CI, CSeq_loc_CI>
 CSeq_loc_CI::GetEquivPartRange(size_t level) const
 {
-    x_CheckNotValid("GetEquivPartRange()");
+    x_CheckValid("GetEquivPartRange()");
     pair<size_t, size_t> indexes = m_Impl->GetEquivPartRange(m_Index, level);
     return make_pair(CSeq_loc_CI(*this, indexes.first),
                      CSeq_loc_CI(*this, indexes.second));
@@ -2382,7 +2550,7 @@ const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
 
 const CSeq_loc& CSeq_loc_CI::GetEmbeddingSeq_loc(void) const
 {
-    x_CheckNotValid("GetEmbeddingSeq_loc()");
+    x_CheckValid("GetEmbeddingSeq_loc()");
     CConstRef<CSeq_loc> loc = x_GetRangeInfo().m_Loc;
     if ( !loc ) {
         NCBI_THROW(CSeqLocException, eNotSet,
@@ -2394,7 +2562,7 @@ const CSeq_loc& CSeq_loc_CI::GetEmbeddingSeq_loc(void) const
 
 CConstRef<CSeq_loc> CSeq_loc_CI::GetRangeAsSeq_loc(void) const
 {
-    x_CheckNotValid("GetRangeAsSeq_loc()");
+    x_CheckValid("GetRangeAsSeq_loc()");
     const SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Loc ) {
         switch ( info.m_Loc->Which() ) {
@@ -2418,7 +2586,7 @@ CConstRef<CSeq_loc> CSeq_loc_CI::GetRangeAsSeq_loc(void) const
 
 bool CSeq_loc_CI::x_IsValid(void) const
 {
-    return m_Index < m_Impl->GetRanges().size();
+    return m_Impl && m_Index < m_Impl->GetRanges().size();
 }
 
 
@@ -2486,6 +2654,12 @@ CSeq_loc_I::~CSeq_loc_I()
 }
 
 
+bool CSeq_loc_I::x_IsValidForInsert(void) const
+{
+    return m_Impl && m_Index <= m_Impl->GetRanges().size();
+}
+
+
 const char* CSeq_loc_I::x_GetIteratorType(void) const
 {
     return "CSeq_loc_I";
@@ -2513,44 +2687,59 @@ bool CSeq_loc_I::HasChanges(void) const
 }
 
 
+CSeq_loc_I::EEquivMode CSeq_loc_I::GetEquivMode(void) const
+{
+    return m_Impl->GetEquivMode();
+}
+
+
+void CSeq_loc_I::SetEquivMode(EEquivMode mode)
+{
+    m_Impl->SetEquivMode(mode);
+}
+
+
 void CSeq_loc_I::Delete(void)
 {
-    x_CheckNotValid("Delete()");
+    x_CheckValid("Delete()");
     m_Impl->DeleteRange(m_Index);
 }
 
 
-void CSeq_loc_I::InsertNull(void)
+CSeq_loc_I CSeq_loc_I::InsertNull(void)
 {
-    x_CheckNotValid("InsertNull()");
+    x_CheckValidForInsert("InsertNull()");
     m_Impl->InsertRange(m_Index, CSeq_loc::e_Null);
+    return CSeq_loc_I(*this, m_Index++);
 }
 
 
-void CSeq_loc_I::InsertEmpty(const CSeq_id_Handle& id)
+CSeq_loc_I CSeq_loc_I::InsertEmpty(const CSeq_id_Handle& id)
 {
-    x_CheckNotValid("InsertEmpty()");
+    x_CheckValidForInsert("InsertEmpty()");
     SSeq_loc_CI_RangeInfo& info =
         m_Impl->InsertRange(m_Index, CSeq_loc::e_Empty);
     x_SetSeq_id_Handle(info, id);
+    return CSeq_loc_I(*this, m_Index++);
 }
 
 
-void CSeq_loc_I::InsertWhole(const CSeq_id_Handle& id)
+CSeq_loc_I CSeq_loc_I::InsertWhole(const CSeq_id_Handle& id)
 {
-    x_CheckNotValid("InsertWhole()");
+    x_CheckValidForInsert("InsertWhole()");
     SSeq_loc_CI_RangeInfo& info =
         m_Impl->InsertRange(m_Index, CSeq_loc::e_Whole);
     x_SetSeq_id_Handle(info, id);
     info.m_Range = TRange::GetWhole();
+    return CSeq_loc_I(*this, m_Index++);
 }
 
 
-void CSeq_loc_I::InsertPoint(const CSeq_id_Handle& id,
-                             TSeqPos pos,
-                             ENa_strand strand)
+CSeq_loc_I CSeq_loc_I::InsertPoint(const CSeq_id_Handle& id,
+                                   TSeqPos pos,
+                                   ENa_strand strand)
 {
-    x_CheckNotValid("InsertPoint()");
+    x_CheckValidForInsert("InsertPoint()");
     SSeq_loc_CI_RangeInfo& info =
         m_Impl->InsertRange(m_Index, CSeq_loc::e_Pnt);
     x_SetSeq_id_Handle(info, id);
@@ -2559,14 +2748,15 @@ void CSeq_loc_I::InsertPoint(const CSeq_id_Handle& id,
         info.SetStrand(strand);
     }
     m_Impl->SetPoint(info);
+    return CSeq_loc_I(*this, m_Index++);
 }
 
 
-void CSeq_loc_I::InsertInterval(const CSeq_id_Handle& id,
-                                const TRange& range,
-                                ENa_strand strand)
+CSeq_loc_I CSeq_loc_I::InsertInterval(const CSeq_id_Handle& id,
+                                      const TRange& range,
+                                      ENa_strand strand)
 {
-    x_CheckNotValid("InsertPoint()");
+    x_CheckValidForInsert("InsertInterval()");
     SSeq_loc_CI_RangeInfo& info =
         m_Impl->InsertRange(m_Index, CSeq_loc::e_Int);
     x_SetSeq_id_Handle(info, id);
@@ -2577,12 +2767,13 @@ void CSeq_loc_I::InsertInterval(const CSeq_id_Handle& id,
     if ( !range.IsWhole() && !range.Empty() ) {
         info.m_Loc = m_Impl->MakeLocInterval(info);
     }
+    return CSeq_loc_I(*this, m_Index++);
 }
 
 
 void CSeq_loc_I::SetSeq_id_Handle(const CSeq_id_Handle& id)
 {
-    x_CheckNotValid("SetSeq_id_Handle()");
+    x_CheckValid("SetSeq_id_Handle()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_IdHandle != id ) {
         x_SetSeq_id_Handle(info, id);
@@ -2593,7 +2784,7 @@ void CSeq_loc_I::SetSeq_id_Handle(const CSeq_id_Handle& id)
 
 void CSeq_loc_I::SetRange(const TRange& range)
 {
-    x_CheckNotValid("SetRange()");
+    x_CheckValid("SetRange()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Range != range ) {
         info.m_Range = range;
@@ -2604,7 +2795,7 @@ void CSeq_loc_I::SetRange(const TRange& range)
 
 void CSeq_loc_I::SetFrom(TSeqPos from)
 {
-    x_CheckNotValid("SetFrom()");
+    x_CheckValid("SetFrom()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Range.GetFrom() != from ) {
         info.m_Range.SetFrom(from);
@@ -2615,7 +2806,7 @@ void CSeq_loc_I::SetFrom(TSeqPos from)
 
 void CSeq_loc_I::SetTo(TSeqPos to)
 {
-    x_CheckNotValid("SetTo()");
+    x_CheckValid("SetTo()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Range.GetTo() != to ) {
         info.m_Range.SetTo(to);
@@ -2626,7 +2817,7 @@ void CSeq_loc_I::SetTo(TSeqPos to)
 
 void CSeq_loc_I::SetPoint(TSeqPos pos)
 {
-    x_CheckNotValid("SetPoint()");
+    x_CheckValid("SetPoint()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( !m_Impl->WasPoint(info) || info.m_Range != TRange(pos, pos) ) {
         info.m_Range = TRange(pos, pos);
@@ -2642,7 +2833,7 @@ void CSeq_loc_I::SetPoint(TSeqPos pos)
 
 void CSeq_loc_I::ResetStrand(void)
 {
-    x_CheckNotValid("ResetStrand()");
+    x_CheckValid("ResetStrand()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_IsSetStrand ) {
         info.m_IsSetStrand = false;
@@ -2654,7 +2845,7 @@ void CSeq_loc_I::ResetStrand(void)
 
 void CSeq_loc_I::SetStrand(ENa_strand strand)
 {
-    x_CheckNotValid("SetStrand()");
+    x_CheckValid("SetStrand()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( !info.m_IsSetStrand || info.m_Strand != strand ) {
         info.SetStrand(strand);
@@ -2665,7 +2856,7 @@ void CSeq_loc_I::SetStrand(ENa_strand strand)
 
 void CSeq_loc_I::ResetFuzzFrom(void)
 {
-    x_CheckNotValid("ResetFuzzFrom()");
+    x_CheckValid("ResetFuzzFrom()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Fuzz.first ) {
         info.m_Fuzz.first = null;
@@ -2676,7 +2867,7 @@ void CSeq_loc_I::ResetFuzzFrom(void)
 
 void CSeq_loc_I::SetFuzzFrom(CInt_fuzz& fuzz)
 {
-    x_CheckNotValid("SetFuzzFrom()");
+    x_CheckValid("SetFuzzFrom()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( !info.m_Fuzz.first || !info.m_Fuzz.first->Equals(fuzz) ) {
         info.m_Fuzz.first = SerialClone(fuzz);
@@ -2687,7 +2878,7 @@ void CSeq_loc_I::SetFuzzFrom(CInt_fuzz& fuzz)
 
 void CSeq_loc_I::ResetFuzzTo(void)
 {
-    x_CheckNotValid("ResetFuzzTo()");
+    x_CheckValid("ResetFuzzTo()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Fuzz.second ) {
         info.m_Fuzz.second = null;
@@ -2698,7 +2889,7 @@ void CSeq_loc_I::ResetFuzzTo(void)
 
 void CSeq_loc_I::SetFuzzTo(CInt_fuzz& fuzz)
 {
-    x_CheckNotValid("SetFuzzTo()");
+    x_CheckValid("SetFuzzTo()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( !info.m_Fuzz.second || !info.m_Fuzz.second->Equals(fuzz) ) {
         info.m_Fuzz.second = SerialClone(fuzz);
@@ -2709,7 +2900,7 @@ void CSeq_loc_I::SetFuzzTo(CInt_fuzz& fuzz)
 
 void CSeq_loc_I::ResetFuzz(void)
 {
-    x_CheckNotValid("ResetFuzz()");
+    x_CheckValid("ResetFuzz()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( info.m_Fuzz.first || info.m_Fuzz.second ) {
         info.m_Fuzz.first = info.m_Fuzz.second = null;
@@ -2720,7 +2911,7 @@ void CSeq_loc_I::ResetFuzz(void)
 
 void CSeq_loc_I::SetFuzz(CInt_fuzz& fuzz)
 {
-    x_CheckNotValid("SetFuzz()");
+    x_CheckValid("SetFuzz()");
     SSeq_loc_CI_RangeInfo& info = x_GetRangeInfo();
     if ( !info.m_Fuzz.first || !info.m_Fuzz.first->Equals(fuzz) ||
          info.m_Fuzz.first != info.m_Fuzz.second ) {
@@ -2739,7 +2930,7 @@ CRef<CSeq_loc> CSeq_loc_I::MakeSeq_loc(EMakeType make_type) const
 pair<CSeq_loc_I, CSeq_loc_I>
 CSeq_loc_I::GetEquivSetRange(size_t level) const
 {
-    x_CheckNotValid("GetEquivSetRange()");
+    x_CheckValid("GetEquivSetRange()");
     pair<size_t, size_t> indexes = m_Impl->GetEquivSetRange(m_Index, level);
     return make_pair(CSeq_loc_I(*this, indexes.first),
                      CSeq_loc_I(*this, indexes.second));
@@ -2749,7 +2940,7 @@ CSeq_loc_I::GetEquivSetRange(size_t level) const
 pair<CSeq_loc_I, CSeq_loc_I>
 CSeq_loc_I::GetEquivPartRange(size_t level) const
 {
-    x_CheckNotValid("GetEquivPartRange()");
+    x_CheckValid("GetEquivPartRange()");
     pair<size_t, size_t> indexes = m_Impl->GetEquivPartRange(m_Index, level);
     return make_pair(CSeq_loc_I(*this, indexes.first),
                      CSeq_loc_I(*this, indexes.second));
@@ -2758,28 +2949,28 @@ CSeq_loc_I::GetEquivPartRange(size_t level) const
 
 void CSeq_loc_I::RemoveBond(void)
 {
-    x_CheckNotValid("RemoveBond()");
+    x_CheckValid("RemoveBond()");
     m_Impl->RemoveBond(m_Index);
 }
 
 
 void CSeq_loc_I::MakeBondA(void)
 {
-    x_CheckNotValid("MakeBondA()");
+    x_CheckValid("MakeBondA()");
     m_Impl->MakeBondA(m_Index);
 }
 
 
 void CSeq_loc_I::MakeBondAB(void)
 {
-    x_CheckNotValid("MakeBondAB()");
+    x_CheckValid("MakeBondAB()");
     m_Impl->MakeBondAB(m_Index);
 }
 
 
 void CSeq_loc_I::MakeBondB(void)
 {
-    x_CheckNotValid("MakeBondB()");
+    x_CheckValid("MakeBondB()");
     m_Impl->MakeBondB(m_Index);
 }
 
