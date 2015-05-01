@@ -52,7 +52,7 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
         PrintNetScheduleStats_Generic(eNetScheduleStatAffinities);
     else if (IsOptionSet(eActiveJobCount) || IsOptionSet(eJobsByStatus)) {
         if (!IsOptionSet(eQueue) &&
-                (IsOptionSet(eAffinity) || IsOptionSet(eGroup))) {
+                (IsOptionSet(eAffinity) || IsOptionSet(eJobGroup))) {
             fprintf(stderr, GRID_APP_NAME ": invalid option combination.\n");
             return 2;
         }

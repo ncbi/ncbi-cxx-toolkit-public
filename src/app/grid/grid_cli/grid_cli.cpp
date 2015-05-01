@@ -212,9 +212,6 @@ struct SOptionDefinition {
     {OPT_DEF(eOptionWithParameter, eBatch),
         BATCH_OPTION, "Enable batch mode and specify batch size.", {-1}},
 
-    {OPT_DEF(eOptionWithParameter, eGroup),
-        "group", "Define group membership for the created job(s).", {-1}},
-
     {OPT_DEF(eOptionWithParameter, eAffinity),
         AFFINITY_OPTION, "Affinity token.", {-1}},
 
@@ -251,9 +248,6 @@ struct SOptionDefinition {
 
     {OPT_DEF(eOptionWithParameter, eLimit),
         LIMIT_OPTION, "Maximum number of records to return.", {-1}},
-
-    {OPT_DEF(eOptionWithParameter, eTimeout),
-        TIMEOUT_OPTION, "Timeout in seconds.", {-1}},
 
     {OPT_DEF(ePositionalArgument, eAuthToken),
         "AUTH_TOKEN", "Security token that grants the "
@@ -350,14 +344,13 @@ struct SOptionDefinition {
         "progress-message", "Set job progress message.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eJobGroup),
-        JOB_GROUP_OPTION, "Select jobs by job group.", {-1}},
+         "group|" JOB_GROUP_OPTION, "Job group.", {-1}},
 
     {OPT_DEF(eSwitch, eAllJobs),
         "all-jobs", "Apply to all jobs in the queue.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eWaitTimeout),
-        WAIT_TIMEOUT_OPTION, "Wait up to the specified "
-            "number of seconds for a response.", {-1}},
+        TIMEOUT_OPTION "|" WAIT_TIMEOUT_OPTION, "Timeout in seconds.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eFailJob),
         FAIL_JOB_OPTION, "Report the job as failed "
@@ -770,7 +763,7 @@ struct SCommandDefinition {
         "'--" JOB_INPUT_DIR_OPTION "' option, which defines the target "
         "directory where input data will be saved.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
-            eRemoteAppArgs, eGroup, eAffinity, eExclusiveJob, eOutputFile,
+            eRemoteAppArgs, eJobGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications,
             eJobInputDir, -1}},
@@ -1135,7 +1128,7 @@ struct SCommandDefinition {
         "worker node must wait for the running jobs to complete.\n\n"
         "The '--" WAIT_FOR_JOB_COMPLETION_OPTION "' option makes sure "
         "that when '" GRID_APP_NAME "' returns, no jobs are running.",
-        {eWorkerNode, eTimeout, eWaitForJobCompletion,
+        {eWorkerNode, eWaitTimeout, eWaitForJobCompletion,
             eNetSchedule, eQueue, ePullback,
             eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -1459,7 +1452,6 @@ int CGridCommandLineInterfaceApp::Run()
             case eLimit:
                 m_Opts.limit = NStr::StringToUInt(opt_value);
                 break;
-            case eTimeout:
             case eWaitTimeout:
                 m_Opts.timeout = NStr::StringToUInt(opt_value);
                 break;
@@ -1507,7 +1499,6 @@ int CGridCommandLineInterfaceApp::Run()
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;
                 break;
-            case eGroup:
             case eJobGroup:
                 m_Opts.job_group = opt_value;
                 break;

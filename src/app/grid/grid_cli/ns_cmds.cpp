@@ -510,7 +510,7 @@ void CGridCommandLineInterfaceApp::SubmitJob_Batch()
             if (job_input_record.exclusive_job)
                 m_GridClient->SetJobMask(CNetScheduleAPI::eExclusiveJob);
 
-            if (IsOptionSet(eGroup))
+            if (IsOptionSet(eJobGroup))
                 m_GridClient->SetJobGroup(m_Opts.job_group);
 
             fprintf(m_Opts.output_stream,
