@@ -1804,6 +1804,7 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
     len = strlen(value);
     s_URL_Encode(value, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
+    dst[pos] = '\0';
 
     return pos;
 }
@@ -2099,6 +2100,12 @@ extern void NcbiLog_Destroy(void)
         NcbiLog_MTLock_Delete(sx_MTLock);
     }
     sx_MTLock = NULL;
+}
+
+
+extern void NcbiLogP_ReInit(void)
+{
+    sx_IsInit = 0;
 }
 
 
@@ -2971,8 +2978,9 @@ extern void NcbiLog_Perf(int status, double timespan,
 {
     TNcbiLog_Context ctx = NULL;
     int    n;
-    size_t pos;
+    size_t pos, pos_prev;
     char*  buf;
+    char*  hit_id = NULL;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2982,13 +2990,32 @@ extern void NcbiLog_Perf(int status, double timespan,
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos);
+
     /* Print event name, status and timespan */
     n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
     VERIFY(n > 0);
     pos += n;
+
     /* Parameters */
+    pos_prev = pos;
     pos = s_PrintParams(buf, pos, params);
     VERIFY(pos);
+
+    /* Add PHID if known */
+    if (s_IsInsideRequest(ctx)) {
+        hit_id = ctx->phid[0] ? ctx->phid : (char*)sx_Info->phid;
+    } else {
+        hit_id = (char*)sx_Info->phid;
+    }
+    if (hit_id) {
+        /* need to add '&' ? */
+        if ((pos > pos_prev)  &&  (pos < NCBILOG_ENTRY_MAX - 1)) {
+            buf[pos++] = '&';
+        }
+        pos = s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
+        VERIFY(pos);
+    }
+
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
@@ -3000,8 +3027,9 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 {
     TNcbiLog_Context ctx = NULL;
     int    n;
-    size_t pos;
+    size_t pos, pos_prev;
     char*  buf;
+    char*  hit_id = NULL;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -3011,13 +3039,32 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos);
+
     /* Print event name, status and timespan */
     n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
     VERIFY(n > 0);
     pos += n;
+
     /* Parameters */
+    pos_prev = pos;
     pos = s_PrintParamsStr(buf, pos, params);
     VERIFY(pos);
+
+    /* Add PHID if known */
+    if (s_IsInsideRequest(ctx)) {
+        hit_id = ctx->phid[0] ? ctx->phid : (char*)sx_Info->phid;
+    } else {
+        hit_id = (char*)sx_Info->phid;
+    }
+    if (hit_id && hit_id[0]) {
+        /* need to add '&' ? */
+        if ((pos > pos_prev)  &&  (pos < NCBILOG_ENTRY_MAX - 1)) {
+            buf[pos++] = '&';
+        }
+        pos = s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
+        VERIFY(pos);
+    }
+
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 

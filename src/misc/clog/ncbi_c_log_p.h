@@ -179,6 +179,12 @@ typedef struct SContext_tag TNcbiLog_Context_Data;
  *  Logging setup functions --- for internal use only
  */
 
+/* Reinitialize API.
+ * Used for test purposes only, never use it in your applications! 
+ */
+extern void NcbiLogP_ReInit(void);
+
+
 /* Can be used in ST mode only */
 extern TNcbiLog_Info*   NcbiLogP_GetInfoPtr(void);
 extern TNcbiLog_Context NcbiLogP_GetContextPtr(void);
