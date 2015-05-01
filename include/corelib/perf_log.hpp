@@ -164,7 +164,7 @@ private:
 /// This example demonstrates logging a variety of performance statistics.
 /// @code
 /// CPerfLogger perf_logger;
-/// PERF_POST(perf_logger, CRequestStatus::e200_Ok, "ApacheSlotStats",
+/// PERF_POST(perf_logger, e200_Ok, "ApacheSlotStats",
 ///           .Print("total_slots",
 ///                  NStr::NumericToString(total))
 ///           .Print("free_slots",
@@ -180,6 +180,8 @@ private:
 ///           .Print("error",
 ///                  NStr::BoolToString(!okay)));
 /// @endcode
+/// @note The status must come from enum CRequestStatus::ECode (but without
+/// the class scope, which is added by the macro).
 #define PERF_POST(perf_logger, status, resource, args)              \
     do { if ( CPerfLogger::IsON() )                                 \
         perf_logger.Post(CRequestStatus::status, resource) args;    \
@@ -192,10 +194,12 @@ private:
 /// This example demonstrates logging the results of a stored procedure call.
 /// @code
 /// CPerfLogger perf_logger;
-/// PERF_POST_DB(perf_logger, CRequestStatus::e200_Ok,
+/// PERF_POST_DB(perf_logger, e200_Ok,
 ///              "StoredProc123", "MSSQL444")
 ///              .Print("foo", "bar"));
 /// @endcode
+/// @note The status must come from enum CRequestStatus::ECode (but without
+/// the class scope, which is added by the macro).
 ///
 #define PERF_POST_DB(perf_logger, status, resource, server, args)   \
     do { if ( CPerfLogger::IsON() )                                 \
