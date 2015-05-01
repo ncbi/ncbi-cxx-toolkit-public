@@ -366,6 +366,9 @@ public:
     }
 };
 
+#if 0
+// commenting out; these files are now part of the regression test
+
 // This will load up various files, clean them, and
 // make sure they match expected output.
 BOOST_AUTO_TEST_CASE(Test_CornerCaseFiles)
@@ -403,7 +406,7 @@ BOOST_AUTO_TEST_CASE(Test_CornerCaseFiles)
         BOOST_CHECK_NO_THROW( s_ProcessInputFile(input_file_name) );
     }
 }
-
+#endif
 
 const char *sc_TestEntryCleanAssemblyDate = "\
 Seq-entry ::= seq {\
