@@ -784,6 +784,7 @@ CCB<BRZ>	c	Colecao de Culturas de Basidiomicetos
 CCB<IND>	s	Central College, Bangalore
 CCBAS	c	Culture Collection of Basidiomycetes
 CCBAU	c	Culture Collection, Beijing Agricultural University
+CCC	c	Culture Collection of Clavicipitaceae
 CCC<IND>	c	Cyanobacterial Culture Collection, National Centre for Conservation and Utilisation of Blue Green Algae
 CCCC	s	Carthage College
 CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology
@@ -1011,7 +1012,7 @@ CITA	s	The Citadel, Biology Department
 CIUC	s	Centro Interdipartimentale dell'Universita Museo di Storia Naturale e del Territorio
 CIZ	s	Centro de Investigaciones Zoologicas
 CKE	s	Calke Abbey
-CL	s	Universitatis Napocensis
+CL	s	Babes-Bolyai University
 CLA	s	Universitatea de Stiinte Agricole si Medicina Veterinara
 CLCB	s	Laboratorul de Ecologie
 CLCC	s	Augustana University College
@@ -3651,7 +3652,7 @@ MGUV	s	Museo del Departamento de Geologia, Universidad de Valencia
 MGUWR	s	Institute of Geological Sciences, University of Wroclaw
 MH<CHE>	s	Naturhistorisches Museum, Basel
 MH<IND>	s	Tamil Nadu Agricultural University
-MHA	s	Main Botanical Garden
+MHA	s	Main Botanical Garden of the Russian Academy of Sciences
 MHH	c	Institute of Virology
 MHL	s	Mildenhall and District Museum
 MHM	s	Malham Tarn Field Centre
