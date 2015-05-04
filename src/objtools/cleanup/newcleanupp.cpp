@@ -2196,10 +2196,62 @@ static bool s_ShouldWeFixInitials(const CPub_equiv& equiv)
     return !(has_art  &&  has_id);
 }
 
+static size_t s_PubPriority( CPub::E_Choice val)
+{
+    size_t priority = 0;
+    switch (val) {
+        case CPub::e_not_set:
+            priority = 0;
+            break;
+        case CPub::e_Gen:
+            priority = 3;
+            break;
+        case CPub::e_Sub:
+            priority = 4;
+            break;
+        case CPub::e_Medline:
+            priority = 13;
+            break;
+        case CPub::e_Muid:
+            priority = 2;
+            break;
+        case CPub::e_Article:
+            priority = 5;
+            break;
+        case CPub::e_Journal:
+            priority = 6;
+            break;
+        case CPub::e_Book:
+            priority = 7;
+            break;
+        case CPub::e_Proc:
+            priority = 8;
+            break;
+        case CPub::e_Patent:
+            priority = 9;
+            break;
+        case CPub::e_Pat_id:
+            priority = 10;
+            break;
+        case CPub::e_Man:
+            priority = 11;
+            break;
+        case CPub::e_Equiv:
+            priority = 12;
+            break;
+        case CPub::e_Pmid:
+            priority = 1;
+            break;
+    }
+    return priority;
+}
+
 inline
 static
 bool s_PubWhichCompare( CRef<CPub> pub1, CRef<CPub> pub2 ) {
-    return (pub1->Which() < pub2->Which());
+    size_t pr1 = s_PubPriority(pub1->Which());
+    size_t pr2 = s_PubPriority(pub2->Which());
+    return (pr1 < pr2);
 }
 
 void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
