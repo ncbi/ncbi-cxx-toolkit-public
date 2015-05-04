@@ -2914,6 +2914,10 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
     }
 
     if (x_IsFlagSet(fComesFromClient)) {
+        if (m_BlobSize > CNCBlobStorage::GetMaxBlobSizeStore()) {
+            RunAfter(1);
+            return NULL;
+        }
 // this is potentially dangerous, because
 // if we close connection here, in the middle of transmission,
 // client might have no chance (most likely) to receive our error message
