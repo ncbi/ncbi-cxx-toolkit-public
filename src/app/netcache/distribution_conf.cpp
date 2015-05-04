@@ -368,7 +368,10 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
             const TServersList& srvs = it_slot->second;
             if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
                 common_slots.push_back(it_slot->first);
-                mirrorCfg->s_IpToId[ Uint4(srv_id >> 32)] = srv_id;
+                Uint4 ip = (srv_id >> 32);
+                if (ip != s_SelfIP) {
+                    mirrorCfg->s_IpToId[ Uint4(srv_id >> 32)] = srv_id;
+                }
             }
         }
     }

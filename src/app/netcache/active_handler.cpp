@@ -657,7 +657,8 @@ void
 CNCActiveHandler::ProxyGetMeta(CRequestContext* cmd_ctx,
                                const CNCBlobKey& nc_key,
                                Uint1 quorum,
-                               bool force_local)
+                               bool force_local,
+                               int http)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
@@ -678,6 +679,10 @@ CNCActiveHandler::ProxyGetMeta(CRequestContext* cmd_ctx,
     m_CmdToSend += "\" \"";
     m_CmdToSend += cmd_ctx->GetSessionID();
     m_CmdToSend.append(1, '"');
+    if (http != 0) {
+        m_CmdToSend += " http=";
+        m_CmdToSend += NStr::IntToString(http);
+    }
 
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
@@ -1521,13 +1526,53 @@ CNCActiveHandler::x_ReadDataPrefix(void)
         return &Me::x_CloseCmdAndConn;
 
     CNCMessageHandler* client = hub->GetClient();
-    client->WriteText(m_Response).WriteText("\n");
+    client->BeginProxyResponse(m_Response, m_SizeToReadReq);
     // After setting m_GotClientResponse to TRUE CNCMessageHandler can immediately
     // continue its job. Thus we MUST set it after we (asynchronously) messed up
     // with the CNCMessageHandler's socket.
     m_GotClientResponse = true;
     // Make sure that m_Proxy does proxying with the correct diag context set
     // (in case if it needs to log something).
+    m_Proxy->SetDiagCtx(GetDiagCtx());
+    m_Proxy->NeedToProxySocket();
+    return &Me::x_ReadDataForClient;
+}
+
+CNCActiveHandler::State
+CNCActiveHandler::x_ReadHttpDataPrefix(void)
+// similar to x_ReadDataPrefix
+// we just have to figure out content length
+{
+    if (m_Proxy->NeedEarlyClose())
+        return &Me::x_CloseCmdAndConn;
+
+    CNCActiveClientHub* hub = ACCESS_ONCE(m_Client);
+    if (!hub)
+        return &Me::x_CloseCmdAndConn;
+
+    CNCMessageHandler* client = hub->GetClient();
+    client->BeginProxyResponse(m_Response, m_SizeToReadReq);
+
+    const char* keywd = "Content-Length:";
+    while (m_Proxy->ReadLine(&m_Response)) {
+        client->WriteText(m_Response).WriteText("\r\n");
+        if (m_Response.empty()) {
+            break;
+        }
+        CTempString::size_type pos = m_Response.find(keywd);
+        if (pos != CTempString::npos) {
+            try {
+                pos += strlen(keywd);
+                m_SizeToReadReq =
+                m_SizeToRead = NStr::StringToUInt8(m_Response.substr(pos),
+                    NStr::fAllowTrailingSymbols | NStr::fAllowLeadingSpaces);
+            }
+            catch (CStringException& ) {
+                return &Me::x_ProcessProtocolError;
+            }
+        }
+    }
+    m_GotClientResponse = true;
     m_Proxy->SetDiagCtx(GetDiagCtx());
     m_Proxy->NeedToProxySocket();
     return &Me::x_ReadDataForClient;
@@ -2076,18 +2121,14 @@ CNCActiveHandler::x_WaitOneLineAnswer(void)
     m_BlobExists = true;
     if (NStr::StartsWith(m_Response, "ERR:")) {
         m_BlobExists = false;
-#if 0
-        if (GetStatusByMessage(m_Response, eStatus_OK) != eStatus_NotFound ||
-            m_BlobSum.size > CNCDistributionConf::GetMaxBlobSizeSync()) {
-            return &Me::x_ProcessPeerError;
-        }
-#else
-            return &Me::x_ProcessPeerError;
-#endif
-        // fall through
+        return &Me::x_ProcessPeerError;
     }
-    else if (!NStr::StartsWith(m_Response, "OK:"))
+    else if (NStr::StartsWith(m_Response, "HTTP") && m_CurCmd == eReadData) {
+        return &Me::x_ReadHttpDataPrefix;
+    }
+    else if (!NStr::StartsWith(m_Response, "OK:")) {
         return &Me::x_ProcessProtocolError;
+    }
 
     switch (m_CurCmd) {
     case eSearchMeta:

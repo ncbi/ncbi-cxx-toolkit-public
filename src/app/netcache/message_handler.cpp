@@ -690,7 +690,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read all or a part of the blob contents. This command is sent only
     // by other NC servers in response to client's GET2 (or similar) command
     // when the server where client have sent initial command cannot execute it
@@ -734,7 +735,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // Max age of blob (returned blob should be younger)
-          { "age",     eNSPT_Int,  eNSPA_Optional } } },
+          { "age",     eNSPT_Int,  eNSPA_Optional }
+        } },
     // Check if the blob exists. This command is sent only by other NC servers
     // in response to client's HASB command when the server where
     // client have sent initial command cannot execute it locally for any
@@ -893,7 +895,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional }
+        } },
     // Remove the blob. This command is sent by other NC servers in certain scenarios only
     { "COPY_RMV",
         {&CNCMessageHandler::x_DoCmd_Remove,
@@ -944,7 +947,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
           // Session ID for application requesting the info.
-          { "sid",     eNSPT_Str,  eNSPA_Required } } },
+          { "sid",     eNSPT_Str,  eNSPA_Required },
+          // HTTP flag: read input in NC format, write output in HTTP one
+          { "http", eNSPT_Int,  eNSPA_Optional }
+        } },
     // Start periodic synchronization session. Command is sent only by other
     // NC servers when CNCActiveSyncControl in them decides to start
     // synchronization. Response to this command contains list of events from
@@ -1645,7 +1651,7 @@ CNCMessageHandler::x_ReadAuthMessage(void)
         }
     }
 
-    if (m_HttpMode == eNoHttp) {
+    if (!x_IsHttpMode()) {
         TNSProtoParams params;
         try {
             m_Parser.ParseArguments(auth_line, s_AuthArgs, &params);
@@ -1712,7 +1718,8 @@ CNCMessageHandler::x_AssignCmdParams(void)
 
     CTempString cache_name;
 
-    if (m_HttpMode == eNoHttp) {
+    if (!x_IsHttpMode()) {
+        m_HttpMode = eNoHttp;
         ERASE_ITERATE(TNSProtoParams, it, m_ParsedCmd.params) {
             const CTempString& key = it->first;
             CTempString& val = it->second;
@@ -1764,6 +1771,11 @@ CNCMessageHandler::x_AssignCmdParams(void)
             case 'e':
                 if (key == "exp") {
                     m_CopyBlobInfo->expire = NStr::StringToInt(val);
+                }
+                break;
+            case 'h':
+                if (key == "http") {
+                    m_HttpMode = (EHttpMode)NStr::StringToInt(val);
                 }
                 break;
             case 'i':
@@ -2037,7 +2049,7 @@ CNCMessageHandler::x_StartCommand(void)
     {
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_JustStarted);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[eStatus_JustStarted]).WriteText("\n");
             m_Flags = 0;
         }
@@ -2049,7 +2061,7 @@ CNCMessageHandler::x_StartCommand(void)
         // We'll be here only if generally work for the client is enabled but
         // for current particular cache it is disabled.
         GetDiagCtx()->SetRequestStatus(eStatus_Disabled);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[eStatus_Disabled]).WriteText("\n");
             m_Flags = 0;
         }
@@ -2089,7 +2101,7 @@ CNCMessageHandler::x_StartCommand(void)
         && !CNCBlobStorage::AcceptWritesFromPeers()) {
         EHTTPStatus sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
         GetDiagCtx()->SetRequestStatus(sts);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[sts]).WriteText("\n");
         }
         return &CNCMessageHandler::x_FinishCommand;
@@ -2107,7 +2119,7 @@ CNCMessageHandler::x_StartCommand(void)
     {
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_NotAllowed);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[eStatus_NotAllowed].substr(4)).WriteText("\n");
         }
         SRV_LOG(Warning, s_MsgForStatus[eStatus_NotAllowed]);
@@ -2118,10 +2130,10 @@ CNCMessageHandler::x_StartCommand(void)
         string raw_key;
 //to test
 //        bool old_ver = (CSrvTime::Current().CurSecs() % 2) != 0;
-        bool old_ver = m_HttpMode == eNoHttp;
+        bool old_ver = !x_IsHttpMode();
 
         CNCDistributionConf::GenerateBlobKey(
-            m_HttpMode == eNoHttp ? m_LocalPort : Uint4( CNCDistributionConf::GetSelfID()),
+            !x_IsHttpMode() ? m_LocalPort : Uint4( CNCDistributionConf::GetSelfID()),
             raw_key, m_BlobSlot, m_TimeBucket, old_ver ? 1 : 3);
         m_NCBlobKey.Assign(raw_key);
         diag_msg.PrintParam("key", m_NCBlobKey.RawKey());
@@ -2130,7 +2142,7 @@ CNCMessageHandler::x_StartCommand(void)
     else if (!m_NCBlobKey.IsValid()) {
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
             SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
         }
@@ -2176,7 +2188,7 @@ CNCMessageHandler::x_StartCommand(void)
         }
         EHTTPStatus sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
         GetDiagCtx()->SetRequestStatus(sts);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[sts]).WriteText("\n");
         }
         return &CNCMessageHandler::x_FinishCommand;
@@ -2202,7 +2214,7 @@ CNCMessageHandler::x_ReadCommand(void)
     }
 
     CTempString cmd_line;
-    if (m_HttpMode != eNoHttp && !m_PosponedCmd.empty()) {
+    if (x_IsHttpMode() && !m_PosponedCmd.empty()) {
         cmd_line = m_PosponedCmd;
     } else if (!ReadLine(&cmd_line)) {
         if (!HasError()  &&  CanHaveMoreRead())
@@ -2212,7 +2224,7 @@ CNCMessageHandler::x_ReadCommand(void)
         return &CNCMessageHandler::x_SaveStatsAndClose;
     }
 
-    if (m_HttpMode == eNoHttp) {
+    if (!x_IsHttpMode()) {
         try {
             m_ParsedCmd = m_Parser.ParseCommand(cmd_line);
         }
@@ -2356,7 +2368,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
 
     if (!m_BlobAccess->IsAuthorized()  &&  !x_IsFlagSet(fDoNotCheckPassword)) {
         GetDiagCtx()->SetRequestStatus(eStatus_BadPassword);
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             WriteText(s_MsgForStatus[eStatus_BadPassword]).WriteText("\n");
         }
         return &CNCMessageHandler::x_FinishCommand;
@@ -2452,7 +2464,7 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
     LOG_CURRENT_FUNCTION
     x_SetFlag(fNoBlobAccessStats);
     GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-    if (m_HttpMode == eNoHttp) {
+    if (!x_IsHttpMode()) {
         x_UnsetFlag(fConfirmOnFinish);
         WriteText(s_MsgForStatus[eStatus_NotFound]);
         if (m_AgeMax != 0 && m_BlobAccess->IsBlobExists()) {
@@ -2585,7 +2597,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
         }
     }
     if (x_IsFlagSet(fConfirmOnFinish)) {
-        if (m_HttpMode == eNoHttp) {
+        if (!x_IsHttpMode()) {
             if (cmd_status == eStatus_OK) {
                 WriteText("OK:\n");
             }
@@ -2688,7 +2700,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
     if (fail) {
         if (x_IsFlagSet(fConfirmOnFinish)) {
-            if (m_HttpMode == eNoHttp) {
+            if (!x_IsHttpMode()) {
                 WriteText(errmsg).WriteText("\n");
                 x_UnsetFlag(fConfirmOnFinish);
             }
@@ -2804,7 +2816,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_ReadBlobSignature(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_HttpMode != eNoHttp) {
+    if (x_IsHttpMode()) {
         return &CNCMessageHandler::x_ReadBlobChunkLength;
     }
 
@@ -2863,7 +2875,7 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         // Workaround for old STRS
         m_ChunkLen = 0xFFFFFFFF;
     }
-    else if (m_HttpMode != eNoHttp) {
+    else if (x_IsHttpMode()) {
         m_ChunkLen = m_Size;
         has_chunklen = m_ChunkLen != 0;
     }
@@ -2911,7 +2923,7 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
             SRV_LOG(Error, "Too much data for blob size " << m_Size
                             << " (received at least "
                             << (m_BlobSize + m_ChunkLen) << " bytes)");
-            if (m_HttpMode == eNoHttp) {
+            if (!x_IsHttpMode()) {
                 WriteText(s_MsgForStatus[eStatus_CondFailed]).WriteText("\n");
             }
             return &CNCMessageHandler::x_CloseCmdAndConn;
@@ -2921,10 +2933,17 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
             SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
                             << CNCBlobStorage::GetMaxBlobSizeStore()
                             << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
-            if (m_HttpMode == eNoHttp) {
+            if (!x_IsHttpMode()) {
                 WriteText("ERR:Blob size exceeds the allowed maximum").WriteText("\n");
+            } else {
+                x_WriteHttpHeader(eStatus_BlobTooBig, 0, false);
             }
-            return &CNCMessageHandler::x_CloseCmdAndConn;
+            // I am not going to read it anyway
+            m_BlobSize += m_ChunkLen;
+            Flush();
+            RunAfter(1);
+            return NULL;
+//            return &CNCMessageHandler::x_CloseCmdAndConn;
         }
     }
 
@@ -3067,7 +3086,7 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
     GetDiagCtx()->SetRequestStatus( GetStatusByMessage(m_LastPeerError, eStatus_PeerError));
-    if (x_IsFlagSet(fConfirmOnFinish) && m_HttpMode == eNoHttp) {
+    if (x_IsFlagSet(fConfirmOnFinish) && !x_IsHttpMode()) {
         WriteText(m_LastPeerError).WriteText("\n");
         x_UnsetFlag(fConfirmOnFinish);
     }
@@ -3099,7 +3118,8 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     case eProxyRead:
         m_ActiveHub->GetHandler()->ProxyRead(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                              m_BlobVersion, m_StartPos, m_Size,
-                                             m_Quorum, m_SearchOnRead, m_ForceLocal, m_AgeMax);
+                                             m_Quorum, m_SearchOnRead, m_ForceLocal,
+                                             m_AgeMax);
         break;
     case eProxyWrite:
         m_ActiveHub->GetHandler()->ProxyWrite(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
@@ -3130,7 +3150,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         break;
     case eProxyGetMeta:
         m_ActiveHub->GetHandler()->ProxyGetMeta(GetDiagCtx(), m_NCBlobKey,
-                                                m_Quorum, m_ForceLocal);
+                                                m_Quorum, m_ForceLocal, m_HttpMode);
         break;
     case eProxyProlong:
         m_ActiveHub->GetHandler()->ProxyProlong(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
@@ -3177,7 +3197,7 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
     if (err_msg.empty()) {
         return &CNCMessageHandler::x_FinishCommand;
     }
-	if (x_IsFlagSet(fConfirmOnFinish) && m_HttpMode == eNoHttp) {
+	if (x_IsFlagSet(fConfirmOnFinish) && !x_IsHttpMode()) {
         WriteText(err_msg).WriteText("\n");
         x_UnsetFlag(fConfirmOnFinish);
     }
@@ -3670,8 +3690,8 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Put(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_HttpMode != eNoHttp) {
-// if blob not exists, verify that it is POST, not PUT
+    if (x_IsHttpMode()) {
+// if blob does not exist, verify that it is POST, not PUT
         if (!m_BlobAccess->IsBlobExists() && !x_IsFlagSet(fCanGenerateKey)) {
             GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
             x_WriteHttpResponse();
@@ -3682,7 +3702,7 @@ CNCMessageHandler::x_DoCmd_Put(void)
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(0);
     m_BlobAccess->SetBlobVersion(0);
-    if (m_HttpMode == eNoHttp) {
+    if (!x_IsHttpMode()) {
         WriteText("OK:ID:").WriteText(m_NCBlobKey.RawKey()).WriteText("\n");
     } else {
         string key(m_NCBlobKey.RawKey());
@@ -3717,7 +3737,7 @@ CNCMessageHandler::x_DoCmd_Get(void)
             m_Size = blob_size;
     }
 
-    if (m_HttpMode == eNoHttp) {
+    if (!x_IsHttpMode()) {
         WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
         if (m_AgeMax != 0) {
             WriteText(", AGE=").WriteNumber(m_AgeCur);
@@ -4220,7 +4240,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     char time_buf[50];
     string tmp;
 
-    if (m_HttpMode != eNoHttp) {
+    if (x_IsHttpMode()) {
 
         CNcbiOstrstream str;
 
@@ -4484,6 +4504,21 @@ CNCMessageHandler::x_DoCmd_CopyPurge(void)
         CNCBlobStorage::SavePurgeData();
     }
     return &CNCMessageHandler::x_FinishCommand;
+}
+
+void
+CNCMessageHandler::BeginProxyResponse(const CTempString& response, size_t content_length)
+{
+    if (x_IsHttpMode()) {
+        if (NStr::StartsWith(response, "HTTP")) {
+            WriteText(response).WriteText("\r\n");
+        } else {
+            x_WriteHttpHeader(eStatus_OK, content_length, true);
+        }
+        x_UnsetFlag(fConfirmOnFinish);
+        return;
+    }
+    WriteText(response).WriteText("\n");
 }
 
 void

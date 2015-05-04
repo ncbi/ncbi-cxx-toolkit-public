@@ -348,12 +348,18 @@ private:
 
     string m_PosponedCmd;
     enum EHttpMode {
-        eNoHttp,
-        eHttp10,
-        eHttp11
+        eNoHttp = 0,
+        eHttp10 = 1,
+        eHttp11 = 2
     } m_HttpMode;
+
+    bool x_IsHttpMode(void) const {
+        return m_HttpMode != eNoHttp;
+    }
     void x_WriteHttpResponse(void);
     void x_WriteHttpHeader(int cmd_status, size_t content_length, bool binary);
+public:
+    void BeginProxyResponse(const CTempString& response, size_t content_length);
 };
 
 

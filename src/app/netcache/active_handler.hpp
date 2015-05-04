@@ -198,7 +198,8 @@ public:
     void ProxyGetMeta(CRequestContext* cmd_ctx,
                       const CNCBlobKey& key,
                       Uint1 quorum,
-                      bool force_local);
+                      bool force_local,
+                      int http);
     void ProxyWrite(CRequestContext* cmd_ctx,
                     const CNCBlobKey& key,
                     const string& password,
@@ -311,6 +312,7 @@ private:
     State x_ReadCopyProlong(void);
     State x_ReadConfirm(void);
     State x_ReadDataPrefix(void);
+    State x_ReadHttpDataPrefix(void);
     State x_ReadDataForClient(void);
     State x_ReadWritePrefix(void);
     State x_FinishBlobFromClient(void);
