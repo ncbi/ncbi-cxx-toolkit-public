@@ -6864,10 +6864,18 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 
 
 
-void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs)
+bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs)
 {
+    if (fruit_fly && IsDicistronicGene(f1) && IsDicistronicGene(f2)) {
+        return false;
+    }
+
+    bool rval = false;
+
     // Get type of duplication, if any
-    EDuplicateFeatureType dup_type = IsDuplicate (f1, f2, fruit_fly, viral, htgs);
+    EDuplicateFeatureType dup_type = IsDuplicate (f1, f2);
+    const CSeq_feat& feat1 = *(f1.GetSeq_feat());
+    const CSeq_feat& feat2 = *(f2.GetSeq_feat());
 
     switch (dup_type) {
         case eDuplicate_Duplicate:
@@ -6882,6 +6890,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
                 }
                 PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                     "Duplicate feature", feat2);
+                rval = true;
             }}
             break;
         case eDuplicate_SameIntervalDifferentLabel:
@@ -6893,6 +6902,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                     "Features have identical intervals, but labels differ",
                     feat2);
+                rval = true;
             }
             break;
         case eDuplicate_DuplicateDifferentTable:
@@ -6901,6 +6911,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
                 PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                     "Duplicate feature (packaged in different feature table)",
                     feat2);
+                rval = true;
             }}
             break;
         case eDuplicate_SameIntervalDifferentLabelDifferentTable:
@@ -6910,12 +6921,14 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
                     "Features have identical intervals, but labels "
                     "differ (packaged in different feature table)",
                     feat2);
+                rval = true;
             }}
             break;
         case eDuplicate_Not:
             // no error
             break;
     }
+    return rval;
 }
 
 
@@ -7024,6 +7037,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
             CCacheImpl::TFeatValue::const_iterator curr_it = prev_it;
             ++curr_it;
             CConstRef<CSeq_feat> prev_feat = prev_it->GetSeq_feat();
+            CSeq_feat_Handle f1 = prev_it->GetSeq_feat_Handle();
             TSeqPos prev_end = prev_feat->GetLocation().GetStop (eExtreme_Positional);
             for( ; curr_it != m_AllFeatIt->end(); ++curr_it) {
                 CConstRef<CSeq_feat>curr_feat = curr_it->GetSeq_feat();
@@ -7031,15 +7045,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                 if (curr_start > prev_end) {
                     break;
                 }
-                EDuplicateFeatureType dup_type = IsDuplicate (prev_it->GetSeq_feat_Handle(),
-                                                              curr_it->GetSeq_feat_Handle(),
-                                                              fruit_fly, viral, htgs);
-                if (dup_type != eDuplicate_Not) {
-                    x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), 
-                                                   *prev_feat, 
-                                                   curr_it->GetSeq_feat_Handle(), 
-                                                   *curr_feat,
-                                                   fruit_fly, viral, htgs);
+                if (x_ReportDupOverlapFeaturePair (f1, curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs)) {
                     break;
                 }
             }

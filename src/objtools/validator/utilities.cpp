@@ -1757,16 +1757,14 @@ bool s_AremRNAsLinkedToDifferentCodingRegions (CSeq_feat_Handle f1, CSeq_feat_Ha
 }
 
 
-static bool s_AreDrosophilaDicistronicGenes (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+bool IsDicistronicGene(CSeq_feat_Handle f)
 {
-    if ( f1.GetData().GetSubtype() != CSeqFeatData::eSubtype_gene || f2.GetData().GetSubtype() != CSeqFeatData::eSubtype_gene ) return false;
-    if ( ! f1.IsSetExcept() || ! f2.IsSetExcept() ) return false;
-    if ( ! f1.IsSetExcept_text() || ! f2.IsSetExcept_text() ) return false;
+    if ( f.GetData().GetSubtype() != CSeqFeatData::eSubtype_gene ) return false;
+    if ( ! f.IsSetExcept() ) return false;
+    if ( ! f.IsSetExcept_text() ) return false;
 
-    const string& except_text1 = f1.GetExcept_text();
-    const string& except_text2 = f2.GetExcept_text();
-    if (NStr::FindNoCase(except_text1, "dicistronic gene") == NPOS) return false;
-    if (NStr::FindNoCase(except_text2, "dicistronic gene") == NPOS) return false;
+    const string& except_text = f.GetExcept_text();
+    if (NStr::FindNoCase(except_text, "dicistronic gene") == NPOS) return false;
 
     return true;
 }
@@ -1776,9 +1774,6 @@ EDuplicateFeatureType
 IsDuplicate 
 (CSeq_feat_Handle f1, 
  CSeq_feat_Handle f2,
- bool fruit_fly,
- bool viral,
- bool htgs,
  bool check_partials,
  bool case_sensitive)
 {
@@ -1845,11 +1840,6 @@ IsDuplicate
 
     if (s_AremRNAsLinkedToDifferentCodingRegions(f1, f2)) {
         // do not report if features are mRNAs linked to different coding regions
-        return eDuplicate_Not;
-    }
-
-    if (fruit_fly && s_AreDrosophilaDicistronicGenes(f1, f2)) {
-        // do not report if features are genes from FlyBase with dicistronic exceptions
         return eDuplicate_Not;
     }
 

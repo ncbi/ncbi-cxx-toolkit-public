@@ -167,6 +167,12 @@ void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
  EBioseqEndIsType& end_n,
  EBioseqEndIsType& end_gap);
 
+
+/// Indicates whether feature is a dicistronic gene 
+/// @param f Seq-feat-Handle [in]
+/// @return Boolean
+bool NCBI_VALIDATOR_EXPORT IsDicistronicGene (CSeq_feat_Handle f);
+
 typedef enum {
     eDuplicate_Not = 0,
     eDuplicate_Duplicate,
@@ -177,12 +183,13 @@ typedef enum {
 
 typedef const CSeq_feat::TDbxref TDbtags;
 
+/// Reports how two features duplicate each other
+/// @param f1 Seq-feat-Handle [in]
+/// @param f2 Seq-feat-Handle [in]
+/// @return EDuplicateFeatureType return value indicates how features are duplicates
 EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate 
     (CSeq_feat_Handle f1,
      CSeq_feat_Handle f2,
-     bool fruit_fly,
-     bool viral,
-     bool htgs,
      bool check_partials = false,
      bool case_sensitive = false);
 
