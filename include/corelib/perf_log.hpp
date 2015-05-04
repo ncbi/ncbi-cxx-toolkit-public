@@ -380,7 +380,7 @@ void CPerfLogger::Discard()
 inline
 CPerfLogger::~CPerfLogger()
 {
-    if ( !m_IsDiscarded  &&  m_TimerState != CStopWatch::eStop ) {
+    if (IsON()  &&  !m_IsDiscarded  &&  m_TimerState != CStopWatch::eStop ) {
         ERR_POST_ONCE(Error << "CPerfLogger timer is still running");
     }
 }

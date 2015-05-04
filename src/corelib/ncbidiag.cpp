@@ -7385,7 +7385,12 @@ CDiagContext_Extra g_PostPerf(int                       status,
                               double                    timespan,
                               SDiagMessage::TExtraArgs& args)
 {
-    return CDiagContext_Extra(status, timespan, args);
+    const CRequestContext& rctx = GetDiagContext().GetRequestContext();
+    CDiagContext_Extra perf(status, timespan, args);
+    if (rctx.IsSetHitID(CRequestContext::eHidID_Existing)) {
+        perf.Print("ncbi_phid", rctx.GetHitID());
+    }
+    return perf;
 }
 
 
