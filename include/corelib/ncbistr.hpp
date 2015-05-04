@@ -4607,7 +4607,8 @@ float NStr::StringToNumeric(const CTempString& str,
                             TStringToNumFlags flags, int /*base*/)
 {
     double n = StringToDouble(str, flags);
-    if (n < numeric_limits<float>::min()  ||  n > numeric_limits<float>::max()) {
+    // dont use ::min() for float types, it returns positive value
+    if (n < -numeric_limits<float>::max()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             CNcbiError::SetErrno(errno = ERANGE, str);
             return 0;
@@ -4628,7 +4629,8 @@ bool NStr::StringToNumeric(const CTempString& str,
     if ( !n && errno ) {
         return false;
     }
-    if (n < numeric_limits<float>::min()  ||  n > numeric_limits<float>::max()) {
+    // dont use ::min() for float types, it returns positive value
+    if (n < -numeric_limits<float>::max() || n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             CNcbiError::SetErrno(errno = ERANGE, str);
             return false;
