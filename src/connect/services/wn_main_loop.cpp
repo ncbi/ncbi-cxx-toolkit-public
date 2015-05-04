@@ -619,34 +619,6 @@ void* CMainLoopThread::Main()
     return NULL;
 }
 
-CMainLoopThread::~CMainLoopThread()
-{
-    ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
-        (*it)->RemoveReference();
-    }
-}
-
-SNotificationTimelineEntry*
-    CMainLoopThread::x_GetTimelineEntry(SNetServerImpl* server_impl)
-{
-    SNotificationTimelineEntry search_pattern(
-            server_impl->m_ServerInPool->m_Address, 0);
-
-    TTimelineEntries::iterator it(
-            m_TimelineEntryByAddress.find(&search_pattern));
-
-    if (it != m_TimelineEntryByAddress.end())
-        return *it;
-
-    SNotificationTimelineEntry* new_entry = new SNotificationTimelineEntry(
-            search_pattern.m_ServerAddress, m_DiscoveryIteration);
-
-    m_TimelineEntryByAddress.insert(new_entry);
-    new_entry->AddReference();
-
-    return new_entry;
-}
-
 bool CMainLoopThread::x_PerformTimelineAction(
         CMainLoopThread::TNotificationTimeline& timeline, CNetScheduleJob& job)
 {

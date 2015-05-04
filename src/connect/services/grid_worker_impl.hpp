@@ -304,41 +304,21 @@ bool g_IsRequestStopEventEnabled();
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class CMainLoopThread : public CThread
+class CMainLoopThread : public CThread, public CNotificationTimeline
 {
 public:
     CMainLoopThread(SGridWorkerNodeImpl* worker_node) :
         m_WorkerNode(worker_node),
-        m_Semaphore(0, 1),
-        m_DiscoveryIteration(1),
-        m_DiscoveryAction(
-                new SNotificationTimelineEntry(SServerAddress(0, 0), 0))
+        m_Semaphore(0, 1)
     {
-        m_ImmediateActions.Push(m_DiscoveryAction);
     }
 
     virtual void* Main();
 
-    virtual ~CMainLoopThread();
-
 private:
     SGridWorkerNodeImpl* m_WorkerNode;
     CSemaphore m_Semaphore;
-    unsigned m_DiscoveryIteration;
 
-    typedef CWorkerNodeTimeline<SNotificationTimelineEntry,
-            SNotificationTimelineEntry::TRef> TNotificationTimeline;
-
-    TNotificationTimeline m_ImmediateActions, m_Timeline;
-
-    typedef set<SNotificationTimelineEntry*,
-            SNotificationTimelineEntry::SLess> TTimelineEntries;
-
-    TTimelineEntries m_TimelineEntryByAddress;
-
-    SNotificationTimelineEntry::TRef m_DiscoveryAction;
-
-    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
     bool x_PerformTimelineAction(TNotificationTimeline& timeline,
             CNetScheduleJob& job);
     bool x_EnterSuspendedState();

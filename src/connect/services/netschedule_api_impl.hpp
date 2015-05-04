@@ -438,26 +438,34 @@ struct SNotificationTimelineEntry : public CWorkerNodeTimelineEntry
     bool IsDiscoveryAction() const {return m_DiscoveryIteration == 0;}
 };
 
-struct SNetScheduleJobReaderImpl : public CObject
+class CNotificationTimeline
 {
-    SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl) :
-        m_API(ns_api_impl),
-        m_DiscoveryIteration(1),
-        m_DiscoveryAction(
-                new SNotificationTimelineEntry(SServerAddress(0, 0), 0))
-    {
-        m_ImmediateActions.Push(m_DiscoveryAction);
-    }
-
+public:
     typedef CWorkerNodeTimeline<SNotificationTimelineEntry,
             SNotificationTimelineEntry::TRef> TNotificationTimeline;
-
     TNotificationTimeline m_ImmediateActions, m_Timeline;
 
+protected:
+    CNotificationTimeline();
+    ~CNotificationTimeline();
+
+    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
+
+    unsigned m_DiscoveryIteration;
+    SNotificationTimelineEntry::TRef m_DiscoveryAction;
+
+private:
     typedef set<SNotificationTimelineEntry*,
             SNotificationTimelineEntry::SLess> TTimelineEntries;
-
     TTimelineEntries m_TimelineEntryByAddress;
+};
+
+struct SNetScheduleJobReaderImpl : public CObject, public CNotificationTimeline
+{
+    SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl) :
+        m_API(ns_api_impl)
+    {
+    }
 
     CNetScheduleAPI m_API;
 
@@ -484,13 +492,7 @@ struct SNetScheduleJobReaderImpl : public CObject
             bool* no_more_jobs);
     void x_ProcessReadJobNotifications();
 
-    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
-
     virtual ~SNetScheduleJobReaderImpl();
-
-    unsigned m_DiscoveryIteration;
-
-    SNotificationTimelineEntry::TRef m_DiscoveryAction;
 };
 
 struct SNetScheduleAdminImpl : public CObject

@@ -52,8 +52,14 @@ void CNetScheduleJobReader::SetAffinity(const string& affinity)
     m_Impl->m_Affinity = affinity;
 }
 
-SNotificationTimelineEntry*
-    SNetScheduleJobReaderImpl::x_GetTimelineEntry(SNetServerImpl* server_impl)
+CNotificationTimeline::CNotificationTimeline() :
+    m_DiscoveryIteration(1),
+    m_DiscoveryAction(new SNotificationTimelineEntry(SServerAddress(0, 0), 0))
+{
+    m_ImmediateActions.Push(m_DiscoveryAction);
+}
+
+SNotificationTimelineEntry* CNotificationTimeline::x_GetTimelineEntry(SNetServerImpl* server_impl)
 {
     SNotificationTimelineEntry search_pattern(
             server_impl->m_ServerInPool->m_Address, 0);
@@ -73,12 +79,15 @@ SNotificationTimelineEntry*
     return new_entry;
 }
 
-SNetScheduleJobReaderImpl::~SNetScheduleJobReaderImpl()
+CNotificationTimeline::~CNotificationTimeline()
 {
     ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
         (*it)->RemoveReference();
     }
+}
 
+SNetScheduleJobReaderImpl::~SNetScheduleJobReaderImpl()
+{
     if (m_NotificationThreadIsRunning.Get() != 0)
         m_API->StopNotificationThread();
 }
