@@ -107,8 +107,11 @@ bool CCgiUserAgent::IsBrowser(void) const
 {
     switch ( GetEngine() ) {
         case eEngine_IE:
+        case eEngine_Edge:
         case eEngine_Gecko:
         case eEngine_KHTML:
+        case eEngine_WebKit:
+        case eEngine_Blink:
             return true;
         case eEngine_Bot:
             return false;
@@ -770,24 +773,24 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eIE,           "Internet Explorer",        "Internet Explorer",        CCgiUserAgent::eEngine_IE,      CCgiUserAgent::ePlatform_Unknown,      fProduct },
     { CCgiUserAgent::eIE,           "Internet Explorer",        "MSIE",                     CCgiUserAgent::eEngine_IE,      CCgiUserAgent::ePlatform_Unknown,      fApp },
 
-    // AppleQWebKit/KHTML-based                                 
+    // AppleWebKit/KHTML-based (engine detected automatically)
 
-    { CCgiUserAgent::eChrome,       "Google Chrome",            "Chrome",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eFluid,        "Fluid",                    "Fluid",                    CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
-    { CCgiUserAgent::eMidori,       "Midori",                   "Midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
-    { CCgiUserAgent::eMidori,       "Midori",                   "midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAppComment },
-    { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
-    { CCgiUserAgent::eOmniWeb,      "OmniWeb",                  "OmniWeb",                  CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eQtWeb,        "QtWeb",                    "QtWeb Internet Browser",   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eSafari,       "Safari",                   "Safari",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eShiira,       "Shiira",                   "Shiira",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eStainless,    "Stainless",                "Stainless",                CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eChrome,       "Google Chrome",            "Chrome",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eFluid,        "Fluid",                    "Fluid",                    CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
+    { CCgiUserAgent::eMidori,       "Midori",                   "Midori",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAny },
+    { CCgiUserAgent::eMidori,       "Midori",                   "midori",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppComment },
+    { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAny },
+    { CCgiUserAgent::eOmniWeb,      "OmniWeb",                  "OmniWeb",                  CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eQtWeb,        "QtWeb",                    "QtWeb Internet Browser",   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eSafari,       "Safari",                   "Safari",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eShiira,       "Shiira",                   "Shiira",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eStainless,    "Stainless",                "Stainless",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
 
     // Other                                                    
 
     { CCgiUserAgent::eiCab,         "iCab",                     "iCab",                     CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fApp },
-    { CCgiUserAgent::eKonqueror,    "Konqueror",                "Konqueror",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fApp },
+    { CCgiUserAgent::eKonqueror,    "Konqueror",                "Konqueror",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eLynx,         "Lynx",                     "Lynx",                     CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eLynx,         "ELynx", /* Linx based */   "ELynx",                    CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eOregano,      "Oregano",                  "Oregano2",                 CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppComment },
@@ -972,7 +975,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     pos = m_UserAgent.find(search);
     if (pos != NPOS) {
         m_Browser = eIE;
-        m_Engine  = eEngine_IE;
+        m_Engine = eEngine_IE;
         m_BrowserName = "Internet Explorer";
         m_BrowserVersion = m_EngineVersion;
         pos += search.length();
@@ -980,15 +983,14 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     }
 
     // Microsoft Edge
-    // Temporary set browser/engine version to the same value
+    // Temporary: set browser/engine version to the same value
     if (m_Engine == eEngine_Edge) {
         m_EngineVersion = m_BrowserVersion;
     }
 
     // Try to get browser version for IE-based browsers or old IE
-    if ( m_Engine == eEngine_IE  &&
-         m_BrowserVersion.GetMajor() == -1 )
-    {
+    if (m_Engine == eEngine_IE  &&
+        m_BrowserVersion.GetMajor() == -1) {
         TUserAgentVersion v;
         search = USTR(" MSIE ");
         pos = m_UserAgent.find(search);
@@ -996,11 +998,9 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             pos += search.length();
             s_ParseVersion(m_UserAgent, pos, &v);
         }
-        // Set engine version for IE-based browsers to IE version
-        if ( m_Browser == eIE ) {
+        // Set browser version for IE only, don't change for IE-based browsers
+        if (m_Browser == eIE) {
             m_BrowserVersion = v;
-        } else {
-            m_EngineVersion = v;
         }
     }
 
@@ -1038,14 +1038,38 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         }
     }
 
-    // Try to get engine version for KHTML-based browsers
-    if (m_Engine != eEngine_Edge) {
+    // Try to get engine version for KHTML/WebKit-based browsers
+
+    if (m_Engine != eEngine_IE  &&  m_Engine != eEngine_Edge) {
         search = USTR(" AppleWebKit/");
         pos = m_UserAgent.find(search);
+        if (pos == NPOS) {
+            search = USTR(" WebKit/");
+            pos = m_UserAgent.find(search);
+        }
         if (pos != NPOS) {
-            m_Engine = eEngine_KHTML;
+            m_Engine = eEngine_WebKit;
             pos += search.length();
             s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+            // AppleWebKit/537.36
+            if (m_EngineVersion == CVersionInfo(537,36,-1) ) {
+                m_Engine = eEngine_Blink;
+            }
+        } else {
+            search = USTR(" KHTML/");
+            pos = m_UserAgent.find(search);
+            if (pos != NPOS) {
+                m_Engine = eEngine_KHTML;
+                pos += search.length();
+                s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+            } else {
+                search = USTR("KHTML,");
+                pos = m_UserAgent.find(search);
+                if (pos != NPOS) {
+                    m_Engine = eEngine_KHTML;
+                    m_EngineVersion.SetVersion(-1, -1, -1);
+                }
+            }
         }
     }
 
@@ -1065,7 +1089,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         } else {
             // Safari (old version) -- try to get browser version
             // depending on engine (WebKit) version (very approximately).
-            if ( m_Browser == eSafari  &&  m_Engine == eEngine_KHTML) { 
+            if ( m_Browser == eSafari  &&
+                (m_Engine == eEngine_KHTML  ||  m_Engine == eEngine_WebKit)) { 
                 // See http://www.useragentstring.com/pages/Safari/
                 int rev = m_EngineVersion.GetMajor();
                 if (rev < 85 ) {
@@ -1218,6 +1243,8 @@ string CCgiUserAgent::GetEngineName(void) const
         case eEngine_Edge    : return "Edge";
         case eEngine_Gecko   : return "Gecko";
         case eEngine_KHTML   : return "KHTML";
+        case eEngine_WebKit  : return "WebKit";
+        case eEngine_Blink   : return "Blink";
         case eEngine_Bot     : return "Bot";
     }
     _TROUBLE;

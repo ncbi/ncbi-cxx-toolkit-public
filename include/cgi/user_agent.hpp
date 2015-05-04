@@ -94,7 +94,6 @@ public:
         eIE,                    ///< Microsoft Internet Explorer (www.microsoft.com/windows/ie)
         eEdge,                  ///< Microsoft Edge (www.microsoft.com)
         eiCab,                  ///< iCab       (www.icab.de)
-        eKonqueror,             ///< Konqueror  (www.konqueror.org) (KHTML based since v3.2 ?)
         eLynx,                  ///< Lynx       (lynx.browser.org)
         eNetscape,              ///< Netscape (Navigator), versions >=6 are Gecko-based (www.netscape.com)
         eOpera,                 ///< Opera      (www.opera.com)
@@ -129,9 +128,10 @@ public:
         eMaxthon,               ///< Maxthon/MyIE2  (www.maxthon.com)
         eNetCaptor,             ///< NetCaptor      (www.netcaptor.com)
 
-        // AppleWebKit/KHTML based
+        // Blink/WebKit/KHTML based
         eChrome,                ///< Google Chrome  (www.google.com/chrome)
         eFluid,                 ///< Fluid       (fluidapp.com)
+        eKonqueror,             ///< Konqueror  (www.konqueror.org) (KHTML based since v3.2 ?)
         eMidori,                ///< Midori
         eNetNewsWire,           ///< NetNewsWire (www.apple.com)
         eOmniWeb,               ///< OmniWeb     (www.omnigroup.com/applications/omniweb)
@@ -191,7 +191,9 @@ public:
         eEngine_IE      = eIE,          ///< Microsoft Internet Explorer (Trident and etc)
         eEngine_Edge    = eEdge,        ///< Microsoft Edge
         eEngine_Gecko   = eMozilla,     ///< Gecko-based
-        eEngine_KHTML   = eSafari,      ///< Apple KHTML (WebKit) -based
+        eEngine_KHTML   = eKonqueror,   ///< KHTML-based
+        eEngine_WebKit  = eSafari,      ///< Apple WebKit (KHTML fork)
+        eEngine_Blink   = eChrome,      ///< Google Blink (WebKit/537.36 fork)
         eEngine_Bot     = eCrawler      ///< Search robot/bot/checker/...
     };
 

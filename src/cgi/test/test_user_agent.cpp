@@ -120,33 +120,39 @@ const SUserAgent s_UserAgentTests[] = {
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
+    { "Midori/0.2.2 (X11; Linux i686; U; ja-jp) WebKit/531.2+",
+        CCgiUserAgent::eMidori,         {   0,  2,  2},
+        CCgiUserAgent::eEngine_WebKit,  { 531,  2, -1},
+        { -1, -1, -1},
+        CCgiUserAgent::ePlatform_Unix
+    },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; it-it) AppleWebKit/412 (KHTML, like Gecko) Safari/412",
         CCgiUserAgent::eSafari,         {  2,  0, -1},
-        CCgiUserAgent::eEngine_KHTML,   {412, -1, -1},
+        CCgiUserAgent::eEngine_WebKit,  {412, -1, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr-fr) AppleWebKit/125.5.6 (KHTML, like Gecko) Safari/125.12",
         CCgiUserAgent::eSafari,         {  1,  2, -1},
-        CCgiUserAgent::eEngine_KHTML,   {125,  5,  6},
+        CCgiUserAgent::eEngine_WebKit,  {125,  5,  6},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; sv-se) AppleWebKit/85.7 (KHTML, like Gecko) Safari/85.5",
         CCgiUserAgent::eSafari,         {  1,  0, -1},
-        CCgiUserAgent::eEngine_KHTML,   { 85,  7, -1},
+        CCgiUserAgent::eEngine_WebKit,  { 85,  7, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en-US) AppleWebKit/125.4 (KHTML, like Gecko, Safari) OmniWeb/v563.51",
         CCgiUserAgent::eOmniWeb,        {563, 51, -1},
-        CCgiUserAgent::eEngine_KHTML,   {125,  4, -1},
+        CCgiUserAgent::eEngine_WebKit,  {125,  4, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.2.149.27 Safari/525.13",
         CCgiUserAgent::eChrome,         {  0,  2,149},
-        CCgiUserAgent::eEngine_KHTML,   {525, 13, -1},
+        CCgiUserAgent::eEngine_WebKit,  {525, 13, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
@@ -167,6 +173,12 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eEngine_Edge,    { 12,  0, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Android
+    },
+    { "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36",
+        CCgiUserAgent::eChrome,         { 28,   0, 1500},
+        CCgiUserAgent::eEngine_Blink,   { 537, 36, -1},  // AppleWebKit/537.36
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Unix
     },
 
     // AppComment tests
@@ -203,7 +215,7 @@ const SUserAgent s_UserAgentTests[] = {
     },
     { "Mozilla/4.0 (compatible; MSIE 6.0(en); Windows NT 5.1; Avant Browser [avantbrowser.com]; iOpus-I-M; QXW03416; .NET CLR 1.1.4322)",
         CCgiUserAgent::eAvantBrowser,   {-1, -1, -1},
-        CCgiUserAgent::eEngine_IE,      { 6,  0, -1},
+        CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
         { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
@@ -324,13 +336,13 @@ const SUserAgent s_UserAgentTests[] = {
     },
     { "Mozilla/5.0 (Linux; U; Android 1.6; en-fr; T-Mobile G1 Build/DRC83) AppleWebKit/528.5+ (KHTML, like Gecko) Version/3.1.2 Mobile Safari/525.20.1",
         CCgiUserAgent::eSafariMobile,   {  3, 1,  2},
-        CCgiUserAgent::eEngine_KHTML,   {528, 5, -1},
+        CCgiUserAgent::eEngine_WebKit,  {528, 5, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Android
     },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS2_2 like Mac OS X;fr-fr) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5G77 Safari/525.20",
         CCgiUserAgent::eSafariMobile,   {  3,  1, 1},
-        CCgiUserAgent::eEngine_KHTML,   {525, 18, 1},
+        CCgiUserAgent::eEngine_WebKit,  {525, 18, 1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
@@ -390,19 +402,19 @@ const SUserAgent s_UserAgentTests[] = {
     },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/420.1 (KHTML, like Gecko) Version/3.0 Mobile/1A542a Safari/419.3",
         CCgiUserAgent::eSafariMobile,   {  3,  0, -1},
-        CCgiUserAgent::eEngine_KHTML,   {420,  1, -1},
+        CCgiUserAgent::eEngine_WebKit,  {420,  1, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
     { "Mozilla/5.0 (iPod; U; CPU iPhone OS 2_2_1 like Mac OS X; en-us) AppleWebKit/525.18.1 (KHTML, like Gecko) Mobile/5H11a",
         CCgiUserAgent::eMozilla,        { 5,  0,  -1},
-        CCgiUserAgent::eEngine_KHTML,   {525, 18,  1},
+        CCgiUserAgent::eEngine_WebKit,  {525, 18,  1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
     { "Mozilla/5.0 (Linux; Android 4.2.1; Nexus 4 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19",
         CCgiUserAgent::eChrome,         { 18, 0,1025},
-        CCgiUserAgent::eEngine_KHTML,   {535, 19, -1},
+        CCgiUserAgent::eEngine_WebKit,  {535, 19, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Android
     },
@@ -454,7 +466,7 @@ const SUserAgent s_UserAgentTests[] = {
     },
     { "Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10",
         CCgiUserAgent::eSafariMobile,   {   4, 0,  4},
-        CCgiUserAgent::eEngine_KHTML,   {531, 21, 10},
+        CCgiUserAgent::eEngine_WebKit,  {531, 21, 10},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     }
