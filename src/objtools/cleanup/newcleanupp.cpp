@@ -5153,23 +5153,11 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                 }
 
                 if( NStr::EqualNocase(suffix, "1d") ) {
-                     suffix = "I";
-                } else if( NStr::EqualNocase(suffix, "1st") ) {
-                     suffix = "I";
+                     suffix = "1st";
                 } else if( NStr::EqualNocase(suffix, "2d") ) {
-                     suffix = "II";
-                } else if( NStr::EqualNocase(suffix, "2nd") ) {
-                     suffix = "II";
+                     suffix = "2nd";
                 } else if( NStr::EqualNocase(suffix, "3d") ) {
-                     suffix = "III";
-                } else if( NStr::EqualNocase(suffix, "3rd") ) {
-                     suffix = "III";
-                } else if( NStr::EqualNocase(suffix, "4th") ) {
-                     suffix = "IV";
-                } else if( NStr::EqualNocase(suffix, "5th") ) {
-                     suffix = "V";
-                } else if( NStr::EqualNocase(suffix, "6th") ) {
-                     suffix = "VI";
+                     suffix = "3rd";
                 } else if( NStr::EqualNocase(suffix, "Sr") ) {
                      suffix = "Sr.";
                 } else if( NStr::EqualNocase(suffix, "Jr") ) {

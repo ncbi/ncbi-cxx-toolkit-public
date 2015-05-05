@@ -98,23 +98,14 @@ string s_NormalizeSuffix( const string& raw_suffix )
     //
     //  Note: (2008-02-13) Suffixes I..VI no longer have trailing periods.
     //
-    if ( raw_suffix == "1d" || raw_suffix == "1st" ) {
-        return "I";
+    if ( raw_suffix == "1d" ) {
+        return "1st";
     }
-    if ( raw_suffix == "2d" || raw_suffix == "2nd" ) {
-        return "II";
+    if ( raw_suffix == "2d" ) {
+        return "2nd";
     }
-    if ( raw_suffix == "3d" || raw_suffix == "3rd" ) {
-        return "III";
-    }
-    if ( raw_suffix == "4th" ) {
-        return "IV";
-    }
-    if ( raw_suffix == "5th" ) {
-        return "V";
-    }
-    if ( raw_suffix == "6th" ) {
-        return "VI";
+    if ( raw_suffix == "3d" ) {
+        return "3rd";
     }
     if ( raw_suffix == "Sr" ) {
         return "Sr.";
