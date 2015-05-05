@@ -360,6 +360,17 @@ public:
     /// Destructor.
     ~CArgs(void);
 
+    /// Creating copy of this object usually makes no sense
+    /// if it is really required, please use Assign method
+    NCBI_DEPRECATED_CTOR(CArgs(const CArgs& other));
+
+    /// Creating copy of this object usually makes no sense
+    /// if it is really required, please use Assign method
+    NCBI_DEPRECATED CArgs& operator=(const CArgs& other);
+
+    /// Copy contents of another object into this one
+    CArgs& Assign(const CArgs& other);
+
     /// Check existence of argument description.
     ///
     /// Return TRUE if arg "name" was described in the parent CArgDescriptions.

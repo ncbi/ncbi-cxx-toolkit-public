@@ -1680,6 +1680,25 @@ CArgs::~CArgs(void)
     return;
 }
 
+CArgs::CArgs(const CArgs& other)
+{
+    Assign(other);
+}
+
+CArgs& CArgs::operator=(const CArgs& other)
+{
+    return Assign(other);
+}
+
+CArgs& CArgs::Assign(const CArgs& other)
+{
+    if (this != &other) {
+        m_Args = other.m_Args;
+        m_nExtra = other.m_nExtra;
+        m_Command = other.m_Command;
+    }
+    return *this;
+}
 
 static string s_ComposeNameExtra(size_t idx)
 {
