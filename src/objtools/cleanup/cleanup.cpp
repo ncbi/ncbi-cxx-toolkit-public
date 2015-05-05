@@ -729,7 +729,7 @@ bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
         }
     }
 
-    string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh);
+    string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
     CSeqdesc_CI di(bsh, CSeqdesc::e_Title);
     if (di) {
         if (sequence::GetCDSForProduct(*(bsh.GetCompleteBioseq()), &(bsh.GetScope())) != NULL
