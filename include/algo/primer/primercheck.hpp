@@ -101,10 +101,11 @@ public:
         m_TemplateRange = range;
     }
 
-    ///Set the allowed pcr product length margin for the non-specific template
-    ///@param length: the length margin
-    void SetPcrLengthMargin(TSeqPos length) {
-        m_ProductLenMargin = length;
+
+    ///Set the allowed pcr product size range 
+    ///@param length: the length range
+    void SetTargetSize(TSeqPos max) {
+        m_TargetSizeMax = max;
     }
 
     ///Set mismatch threshhold below which a 
@@ -184,8 +185,8 @@ private:
     ///sort the hit
     void x_SortHit(const CSeq_align_set& input);
 
-    ///the requested length margin  for non-specific template
-    TSeqPos m_ProductLenMargin;
+    ///the requested target max length 
+    TSeqPos m_TargetSizeMax;
 
     ///minimal continuous match required
     int m_WordSize;

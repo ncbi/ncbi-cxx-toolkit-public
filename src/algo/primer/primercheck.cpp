@@ -1432,9 +1432,7 @@ x_AnalyzeLeftAndRightPrimer(const vector<SHspInfo*>& hsp_list,
            
             if (product_len > 0 && 
                 product_len <= 
-                (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
-                (int)product_len >= 
-                (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin)){
+                (int)(m_Hits->m_TargetSizeMax)){
              
                 if (!left_global_align_filled) {
                     
@@ -1518,8 +1516,7 @@ x_IsPcrLengthInRange(const CSeq_align& left_primer_hit_align,
                 
     if (product_len >= min((int)left_primer_hit_align.GetSeqRange(0).GetLength(),
                            (int)right_primer_hit_align.GetSeqRange(0).GetLength()) && 
-        product_len <= (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
-        (int)product_len >= (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin)) { 
+        product_len <= (int)m_Hits->m_TargetSizeMax) { 
         result = true;
     }
 
@@ -1603,9 +1600,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
             
             if (!(product_len > 0 && 
                   product_len <= 
-                  (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
-                  (int)product_len >= 
-                  (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin))) {
+                  (int)m_Hits->m_TargetSizeMax)) {
                 continue;
             }
            
@@ -1750,9 +1745,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
             
             if (!(product_len > 0 && 
                   product_len <= 
-                  (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
-                  (int)product_len >= 
-                  (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin))) {
+                  (int)(m_Hits->m_TargetSizeMax))) {
                 continue;
             }
           
