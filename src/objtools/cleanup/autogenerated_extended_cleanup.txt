@@ -87,6 +87,8 @@ use m_NewCleanup.x_RemoveEmptyUserObject
 
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
+use m_NewCleanup.AddProteinTitles { Bioseq }
+
 use m_NewCleanup.BioSourceEC { BioSource }
 
 use m_NewCleanup.x_RemoveEmptyFeatures
