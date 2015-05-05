@@ -168,7 +168,7 @@ public:
 /// Adds missing MolInfo descriptor to sequence
 /// @param seq Bioseq to edit
 /// @return Boolean return value indicates whether descriptor was added
-    static bool AddMissingMolInfo(CBioseq& seq);
+    static bool AddMissingMolInfo(CBioseq& seq, bool is_product);
 
 /// Creates missing protein title descriptor
 /// @param seq Bioseq to edit

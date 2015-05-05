@@ -45,6 +45,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
@@ -10401,8 +10402,17 @@ void CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
 
 void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 {
-    if (CCleanup::AddMissingMolInfo(seq)) {
-        ChangeMade(CCleanupChange::eChangeMolInfo);
+    if (seq.IsSetInst() && seq.GetInst().IsSetMol()) {
+        bool is_product = false;
+        if (seq.IsAa() && sequence::GetCDSForProduct(seq, m_Scope) != NULL) {
+            is_product = true;
+        } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna &&
+                   sequence::GetmRNAForProduct(seq, m_Scope) != NULL) {
+            is_product = true;
+        }
+        if (CCleanup::AddMissingMolInfo(seq, is_product)) {
+            ChangeMade(CCleanupChange::eChangeMolInfo);
+        }
     }
 }
 

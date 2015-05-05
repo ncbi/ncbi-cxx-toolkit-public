@@ -673,7 +673,7 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
 }
 
 
-bool CCleanup::AddMissingMolInfo(CBioseq& seq)
+bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetMol()) {
         return false;
@@ -691,9 +691,11 @@ bool CCleanup::AddMissingMolInfo(CBioseq& seq)
         if (seq.IsAa()) {
             CRef<CSeqdesc> m(new CSeqdesc());
             m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-            m->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+            if (is_product) {
+                m->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+            }
             seq.SetDescr().Set().push_back(m);
-        } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+        } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna && is_product) {
             CRef<CSeqdesc> m(new CSeqdesc());
             m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
             m->SetMolinfo().SetTech(CMolInfo::eTech_standard);
