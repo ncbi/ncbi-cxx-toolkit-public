@@ -243,7 +243,7 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
     }
     size_t uFrom = location.GetInt().GetFrom();
 
-    strStart += NStr::NumericToString( uFrom + uSeqStart * graph.GetComp() );
+    strStart += NStr::NumericToString( (uFrom + 1) + uSeqStart * graph.GetComp() );
     strFixedStep += strStart;
 
     //  ------------------------------------------------------------------------
