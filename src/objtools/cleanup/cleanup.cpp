@@ -675,7 +675,7 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
 
 bool CCleanup::AddMissingMolInfo(CBioseq& seq)
 {
-    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol()) {
         return false;
     }
     bool needs_molinfo = true;
@@ -688,14 +688,57 @@ bool CCleanup::AddMissingMolInfo(CBioseq& seq)
         }
     }
     if (needs_molinfo) {
-        CRef<CSeqdesc> m(new CSeqdesc());
-        m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-        m->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
-        seq.SetDescr().Set().push_back(m);
+        if (seq.IsAa()) {
+            CRef<CSeqdesc> m(new CSeqdesc());
+            m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+            m->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+            seq.SetDescr().Set().push_back(m);
+        } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+            CRef<CSeqdesc> m(new CSeqdesc());
+            m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+            m->SetMolinfo().SetTech(CMolInfo::eTech_standard);
+            seq.SetDescr().Set().push_back(m);
+        }
     }
 
     return needs_molinfo;
 }
+
+
+bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
+{
+    if (!bsh.IsSetInst() || !bsh.GetInst().IsSetMol() || !bsh.IsAa()) {
+        return false;
+    }
+    if (bsh.IsSetId()) {
+        ITERATE(CBioseq_Handle::TId, it, bsh.GetId()) {
+            // do not add titles for sequences with certain IDs
+            switch (it->Which()) {
+                case CSeq_id::e_Pir:
+                case CSeq_id::e_Swissprot:
+                case CSeq_id::e_Patent:
+                case CSeq_id::e_Prf:
+                case CSeq_id::e_Pdb:
+                    return false;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Title);
+    if (di) {
+        return false;
+    }
+
+    CRef<CSeqdesc> t(new CSeqdesc());
+    t->SetTitle(sequence::CDeflineGenerator().GenerateDefline(bsh));
+    CBioseq_EditHandle eh = bsh.GetEditHandle();
+    eh.AddSeqdesc(*t);
+    return true;
+}
+
 
 
 END_SCOPE(objects)

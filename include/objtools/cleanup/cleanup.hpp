@@ -170,6 +170,11 @@ public:
 /// @return Boolean return value indicates whether descriptor was added
     static bool AddMissingMolInfo(CBioseq& seq);
 
+/// Creates missing protein title descriptor
+/// @param seq Bioseq to edit
+/// @return Boolean return value indicates whether title was added
+    static bool AddProteinTitle(CBioseq_Handle bsh);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);
