@@ -56,7 +56,7 @@
 USING_NCBI_SCOPE;
 
 const size_t    kReadBufferSize = 1024 * 1024;
-const size_t    kWriteBufferSize = 1024;
+const size_t    kWriteBufferSize = 16 * 1024;
 
 
 CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
@@ -1615,7 +1615,7 @@ CNetStorageHandler::x_ProcessGetAttrList(
         x_ValidateWriteMetaDBAccess(message);
 
     if (m_MetadataOption != eMetadataMonitoring)
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        x_CreateClient();
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1688,7 +1688,7 @@ CNetStorageHandler::x_ProcessGetClientObjects(
         x_ValidateWriteMetaDBAccess(message);
 
     if (m_MetadataOption != eMetadataMonitoring)
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        x_CreateClient();
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -1754,7 +1754,7 @@ CNetStorageHandler::x_ProcessGetAttr(
 
 
     if (m_MetadataOption != eMetadataMonitoring)
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        x_CreateClient();
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1829,7 +1829,7 @@ CNetStorageHandler::x_ProcessSetAttr(
     // The only options left are NotSpecified and Required
     x_ValidateWriteMetaDBAccess(message);
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+    x_CreateClient();
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1889,7 +1889,7 @@ CNetStorageHandler::x_ProcessDelAttr(
     // The only options left are NotSpecified and Required
     x_ValidateWriteMetaDBAccess(message);
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+    x_CreateClient();
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
@@ -1946,7 +1946,7 @@ CNetStorageHandler::x_ProcessCreate(
 
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        x_CreateClient();
         m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID, m_Timing);
     } else {
         m_DBObjectID = 0;
@@ -2002,7 +2002,7 @@ CNetStorageHandler::x_ProcessWrite(
 
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        x_CreateClient();
     }
 
     CJsonNode           reply = CreateResponseMessage(
@@ -2061,8 +2061,7 @@ CNetStorageHandler::x_ProcessRead(
 
     if (need_meta_db_update) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID,
-                                              m_Timing);
+        x_CreateClient();
     }
 
     CJsonNode           reply = CreateResponseMessage(
@@ -2120,6 +2119,7 @@ CNetStorageHandler::x_ProcessRead(
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
                        CNetStorageServerException::eReadError,
                        string("Object read error: ") + ex.what());
+        ERR_POST(ex);
         if (double(start) != 0.0)
             m_Timing.Append("NetStorageAPI read (exception)", start);
         if (!x_PrintTimingIsOn() && !m_Timing.Empty())
@@ -2248,7 +2248,7 @@ CNetStorageHandler::x_ProcessRelocate(
 
     if (need_meta_db_update) {
         // Meta information is required so check the DB
-        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+        x_CreateClient();
     }
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -2411,7 +2411,7 @@ CNetStorageHandler::x_ProcessSetExpTime(
                                         direct_object.Locator().GetUniqueKey();
     x_CheckObjectExpiration(object_key, true, reply);
 
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+    x_CreateClient();
 
     // The SP will throw an exception if an error occured
     int         status = m_Server->GetDb().ExecSP_SetExpiration(
@@ -2895,5 +2895,24 @@ bool
 CNetStorageHandler::x_PrintTimingIsOn(void) const
 {
     return m_Server->IsLogTiming() && m_CmdContext.NotNull();
+}
+
+
+// Checks if the client DB ID is set in the client registry.
+// If it is then sets the m_DBClientID. This case means the DB ID was cached
+// before.
+// If the DB ID is not set then executes the stored procedure which retrieves
+// the ID and saves it in the in-memory registry.
+void
+CNetStorageHandler::x_CreateClient(void)
+{
+    m_DBClientID = m_Server->GetClientRegistry().GetDBClientID(m_Client);
+    if (m_DBClientID != k_UndefinedClientID)
+        return;
+
+    // Here: the ID is not set thus a DB request is required
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+    if (m_DBClientID != k_UndefinedClientID)
+        m_Server->GetClientRegistry().SetDBClientID(m_Client, m_DBClientID);
 }
 

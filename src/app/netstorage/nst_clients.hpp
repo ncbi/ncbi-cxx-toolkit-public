@@ -45,6 +45,9 @@
 
 BEGIN_NCBI_SCOPE
 
+// Shared with the database wrapper code
+const Int8      k_UndefinedClientID = -1;
+
 
 
 // Note: access to the instances of this class is possible only via the client
@@ -101,8 +104,13 @@ class CNSTClient
         void  AddObjectsDeleted(size_t  count)
         { m_NumberOfObjectsDeleted += count; }
 
-        void Touch(void);
+        void  Touch(void);
         CJsonNode  Serialize(void) const;
+
+        Int8  GetDBClientID(void) const
+        { return m_DBClientID; }
+        void  SetDBClientID(Int8  id)
+        { m_DBClientID = id; }
 
     private:
         string          m_Application;    // Absolute exec path
@@ -126,6 +134,8 @@ class CNSTClient
         size_t          m_NumberOfObjectsDeleted;
 
         size_t          m_NumberOfSockErrors;
+
+        Int8            m_DBClientID;     // Cached database value
 
         string  x_TypeAsString(void) const;
 };
@@ -157,6 +167,9 @@ class CNSTClientRegistry
         void  AddObjectsDeleted(const string &  client, size_t  count);
 
         CJsonNode Serialize(void) const;
+
+        Int8  GetDBClientID(const string &  client) const;
+        void  SetDBClientID(const string &  client, Int8  id);
 
     private:
         map< string, CNSTClient >   m_Clients;  // All the server clients

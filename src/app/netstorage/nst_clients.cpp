@@ -53,7 +53,8 @@ CNSTClient::CNSTClient() :
     m_NumberOfObjectsRead(0),
     m_NumberOfObjectsRelocated(0),
     m_NumberOfObjectsDeleted(0),
-    m_NumberOfSockErrors(0)
+    m_NumberOfSockErrors(0),
+    m_DBClientID(k_UndefinedClientID)
 {}
 
 
@@ -86,6 +87,7 @@ CJsonNode  CNSTClient::Serialize(void) const
     client.SetInteger("ObjectsDeleted", m_NumberOfObjectsDeleted);
     client.SetInteger("SocketErrors", m_NumberOfSockErrors);
     client.SetString("MetadataOption", g_MetadataOptionToId(m_MetadataOption));
+    client.SetInteger("DBClientID", m_DBClientID);
 
     return client;
 }
@@ -288,6 +290,31 @@ void  CNSTClientRegistry::AddObjectsDeleted(const string &  client,
     map<string, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddObjectsDeleted(count);
+}
+
+
+Int8  CNSTClientRegistry::GetDBClientID(const string &  client) const
+{
+    if (client.empty())
+        return k_UndefinedClientID;
+
+    CMutexGuard                              guard(m_Lock);
+    map<string, CNSTClient>::const_iterator  found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        return found->second.GetDBClientID();
+    return k_UndefinedClientID;
+}
+
+
+void  CNSTClientRegistry::SetDBClientID(const string &  client, Int8  id)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.SetDBClientID(id);
 }
 
 

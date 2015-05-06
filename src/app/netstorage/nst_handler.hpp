@@ -269,6 +269,7 @@ private:
     TNSTDBValue<CTime> x_CheckObjectExpiration(const string &  object_key,
                                                bool            db_exception,
                                                CJsonNode &     reply);
+    void x_CreateClient(void);
 }; // CNetStorageHandler
 
 

@@ -39,6 +39,7 @@
 #include "nst_application.hpp"
 #include "nst_server.hpp"
 #include "nst_timing.hpp"
+#include "nst_clients.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -166,7 +167,7 @@ CNSTDatabase::ExecSP_CreateClient(
             CDatabase   db = m_Db->Clone();
             CQuery      query = db.NewQuery();
 
-            client_id = -1;
+            client_id = k_UndefinedClientID;
             query.SetParameter("@client_name", client);
             query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
 
@@ -177,7 +178,7 @@ CNSTDatabase::ExecSP_CreateClient(
             if (status == 0)
                 client_id = query.GetParameter("@client_id").AsInt8();
             else
-                client_id = -1;
+                client_id = k_UndefinedClientID;
 
             timing.Append("MS SQL " + proc_name, start);
             return status;
