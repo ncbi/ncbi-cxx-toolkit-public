@@ -422,8 +422,9 @@ BioSource feature." } },
 "The RefGeneTracking user object does not have the required Status field set." } },
    { eErr_SEQ_DESCR_UnwantedCompleteFlag,
    { "UnwantedCompleteFlag",
-"The Mol-info.completeness flag should not be set on a genomic sequence unless \
-the title also says it is a complete sequence or complete genome." } },
+"The Mol-info.completeness flag should not be set on a genomic sequence, unless \
+the title also says it is a complete sequence or complete genome, nor should it \
+be set on a plasmid, chromosome, or organelle." } },
    { eErr_SEQ_DESCR_CollidingPublications,
    { "CollidingPublications",
 "Multiple publication descriptors with the same PMID or MUID apply to a Bioseq. \
