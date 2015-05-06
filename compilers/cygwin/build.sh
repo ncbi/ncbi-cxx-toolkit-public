@@ -14,8 +14,8 @@ arch=${2}
  
 ########### Global variables
 
-cmd_Debug='--with-debug --without-mt --without-dll'
-cmd_DebugMT='--with-debug --with-mt --without-dll'
+cmd_Debug='--with-debug --without-mt --without-dll CFLAGS=-g0 CXXFLAGS=-g0'
+cmd_DebugMT='--with-debug --with-mt  --without-dll CFLAGS=-g0 CXXFLAGS=-g0'
 ##cmd_DebugDLL='--with-debug --with-mt --with-dll'
 cmd_Release='--without-debug --without-mt --without-dll'
 cmd_ReleaseMT='--without-debug --with-mt --without-dll'
