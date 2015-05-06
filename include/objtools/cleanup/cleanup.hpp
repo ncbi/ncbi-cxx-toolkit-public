@@ -35,6 +35,7 @@
  */
 #include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
+#include <objects/seq/MolInfo.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
