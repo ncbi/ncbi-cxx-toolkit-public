@@ -10415,6 +10415,19 @@ void CNewCleanup_imp::AddProteinTitles(CBioseq& seq)
 }
 
 
+void CNewCleanup_imp::ProtRefEC(CProt_ref& pr)
+{
+    if (pr.IsSetDesc()) {
+        string desc = pr.GetDesc();
+        TrimInternalSemicolons(desc);
+        if (!NStr::Equal(desc, pr.GetDesc())) {
+            pr.SetDesc(desc);
+            ChangeMade(CCleanupChange::eChangeOther);
+        }
+    }
+}
+
+
 void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     CSeq_entry& seq_entry
 )

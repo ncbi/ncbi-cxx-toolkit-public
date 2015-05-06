@@ -296,6 +296,7 @@ private:
     // Extended Cleanup functions
     void BioSourceEC ( CBioSource& biosrc );
     void AddProteinTitles (CBioseq& seq);
+    void ProtRefEC( CProt_ref& pr);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 

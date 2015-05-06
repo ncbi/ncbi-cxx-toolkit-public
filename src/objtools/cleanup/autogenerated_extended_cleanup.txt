@@ -74,6 +74,11 @@ use m_NewCleanup.x_RemoveProtDescThatDupsProtName
     Prot-ref
 }
 
+use m_NewCleanup.ProtRefEC 
+{
+    Prot-ref
+}
+
 use m_NewCleanup.x_RemoveRedundantComment
 {
     Seq-feat.data.gene AND Seq-feat
