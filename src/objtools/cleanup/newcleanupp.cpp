@@ -43,6 +43,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -10423,6 +10424,39 @@ void CNewCleanup_imp::ProtRefEC(CProt_ref& pr)
         if (!NStr::Equal(desc, pr.GetDesc())) {
             pr.SetDesc(desc);
             ChangeMade(CCleanupChange::eChangeOther);
+        }
+    }
+}
+
+
+void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
+{
+    if (!sf.IsSetData() || !sf.GetData().IsCdregion()) {
+        return;
+    }
+
+    CCdregion& cdr = sf.SetData().SetCdregion();
+
+    if (cdr.IsSetConflict() && 
+        cdr.GetConflict() &&
+        sf.IsSetProduct()) {
+        CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
+        string expected;
+        CSeqTranslator::Translate(sf, *m_Scope, expected, false);
+        CSeqVector vec(prot, CBioseq_Handle::eCoding_Iupac);
+        CSeqVector_CI vi = vec.begin();
+        string::iterator si = expected.begin();
+        while (vi != vec.end() && si != expected.end() && *vi == *si) {
+            ++vi; 
+            ++si;
+        }
+        if (vi != vec.end() || si != expected.end()) {
+            cdr.ResetConflict();
+            ChangeMade(CCleanupChange::eChangeOther);
+        } else {
+            if (CCleanup::SetMolinfoTech(prot, CMolInfo::eTech_concept_trans_a)) {
+                ChangeMade(CCleanupChange::eChangeMolInfo);
+            }
         }
     }
 }

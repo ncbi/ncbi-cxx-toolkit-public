@@ -297,6 +297,7 @@ private:
     void BioSourceEC ( CBioSource& biosrc );
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
+    void CdRegionEC( CSeq_feat& sf);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 

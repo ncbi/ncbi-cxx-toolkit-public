@@ -164,6 +164,18 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh);
 
+/// Sets MolInfo::tech for a sequence
+/// @param seq Bioseq to edit
+/// @param tech tech value to set
+/// @return Boolean tech was changed
+    static bool SetMolinfoTech(CBioseq_Handle seq, CMolInfo::ETech tech);
+
+/// Sets MolInfo::biomol for a sequence
+/// @param seq Bioseq to edit
+/// @param biomol biomol value to set
+/// @return Boolean biomol was changed
+    static bool SetMolinfoBiomol(CBioseq_Handle seq, CMolInfo::EBiomol biomol);
+
 
 /// Adds missing MolInfo descriptor to sequence
 /// @param seq Bioseq to edit

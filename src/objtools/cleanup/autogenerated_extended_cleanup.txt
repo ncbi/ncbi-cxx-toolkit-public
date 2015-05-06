@@ -90,6 +90,8 @@ use m_NewCleanup.x_RemoveEmptyUserObject
     Bioseq-set.descr
 }
 
+use m_NewCleanup.CdRegionEC { Seq-feat }
+
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
 use m_NewCleanup.AddProteinTitles { Bioseq }

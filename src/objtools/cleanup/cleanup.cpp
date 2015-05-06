@@ -673,6 +673,51 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
 }
 
 
+bool CCleanup::SetMolinfoTech(CBioseq_Handle bsh, CMolInfo::ETech tech)
+{
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
+    if (di) {
+        if (di->GetMolinfo().IsSetTech() && di->GetMolinfo().GetTech() == tech) {
+            // no change necessary
+            return false;
+        } else {
+            CSeqdesc* d = const_cast<CSeqdesc*>(&(*di));
+            d->SetMolinfo().SetTech(tech);
+            return true;
+        }
+    }
+    CRef<CSeqdesc> m(new CSeqdesc());
+    m->SetMolinfo().SetTech(tech);
+    if (bsh.IsSetInst() && bsh.GetInst().IsSetMol() && bsh.IsAa()) {
+        m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    }
+    CBioseq_EditHandle eh = bsh.GetEditHandle();
+    eh.AddSeqdesc(*m);
+    return true;
+}
+
+
+bool CCleanup::SetMolinfoBiomol(CBioseq_Handle bsh, CMolInfo::EBiomol biomol)
+{
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
+    if (di) {
+        if (di->GetMolinfo().IsSetTech() && di->GetMolinfo().GetBiomol() == biomol) {
+            // no change necessary
+            return false;
+        } else {
+            CSeqdesc* d = const_cast<CSeqdesc*>(&(*di));
+            d->SetMolinfo().SetBiomol(biomol);
+            return true;
+        }
+    }
+    CRef<CSeqdesc> m(new CSeqdesc());
+    m->SetMolinfo().SetBiomol(biomol);
+    CBioseq_EditHandle eh = bsh.GetEditHandle();
+    eh.AddSeqdesc(*m);
+    return true;
+}
+
+
 bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetMol()) {
