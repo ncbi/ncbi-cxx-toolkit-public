@@ -282,7 +282,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         if( m_Dst_len != kInvalidSeqPos ) {
             const TSeqPos src_to_dst_end = m_Dst_from + (m_Src_to - m_Src_from);
             const TSeqPos new_dst_end    = m_Dst_from + m_Dst_len - 1;    
-            if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
+            if ( m_ExtTo && partial_to && to+1 == m_Src_bioseq_len ) {
                 if( ((int)new_dst_end - (int)src_to_dst_end) >= 0 && (new_dst_end - src_to_dst_end) <= 2 ) {
                     ret.SetTo( new_dst_end );
                 }
@@ -302,7 +302,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         }
         // extend to the end, if necessary (Note: reverse strand implies "end" is a lower number )
         // ( e.g. NZ_AAOJ01000043 )
-        if( m_ExtTo && partial_to && (to == m_Src_bioseq_len) ) {
+        if( m_ExtTo && partial_to && (to+1 == m_Src_bioseq_len) ) {
             ret.SetFrom( m_Dst_from );
         }
 
@@ -891,7 +891,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 dst_total_len++;
             }
             else if (src_total_len/3 == dst_total_len  &&  src_total_len % 3 != 0) {
-                ERR_POST_X(28, Warning <<
+                ERR_POST_X(28, Info <<
                     "Source and destination lengths do not match, "
                     "dropping " << src_total_len % 3 <<
                     " overhanging bases on source location");
@@ -909,7 +909,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 src_total_len++;
             }
             else if (dst_total_len/3 == src_total_len  &&  dst_total_len % 3 != 0) {
-                ERR_POST_X(28, Warning <<
+                ERR_POST_X(28, Info <<
                     "Source and destination lengths do not match, "
                     "dropping " << dst_total_len % 3 <<
                     " overhanging bases on destination location");
