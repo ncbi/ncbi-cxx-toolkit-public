@@ -1,3 +1,10 @@
+Release 2.0.2 cloned from 2.0.1 (2015-05-06)
+
+Improvements and bug fixes:
+    * NetStorage: caching client ID (JIRA: CXX-5930)
+    * Increased client socket write buffer (1k -> 16k)
+    * Better exception logging in the READ command
+
 Release 2.0.1 based on SC-16 (2015-04-30)
 
 Improvements and bug fixes:
