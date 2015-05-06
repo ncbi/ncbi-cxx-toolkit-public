@@ -44,8 +44,10 @@ BEGIN_SCOPE(NDiscrepancy)
 class NCBI_DISCREPANCY_EXPORT CReportObject : public CReportObj
 {
 public:
-    CReportObject() : m_Object(NULL) {}
-    CReportObject(CConstRef<CObject> obj) : m_Object(obj) {}
+    CReportObject(){}
+    CReportObject(CConstRef<CBioseq> obj) : m_Bioseq(obj) {}
+    CReportObject(CConstRef<CSeq_feat> obj) : m_Seq_feat(obj) {}
+    CReportObject(CConstRef<CSeqdesc> obj) : m_Seqdesc(obj) {}
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
@@ -57,8 +59,8 @@ public:
     void SetXML(CScope& scope);
     void Format(CScope& scope);
 
-    CConstRef<CObject> GetObject() const { return m_Object; }
-    void SetObject(CConstRef<CObject> obj) { m_Object = obj; }
+    CConstRef<CBioseq> GetBioseq() const { return m_Bioseq; }
+    void SetBioseq(CConstRef<CBioseq> obj) { m_Bioseq = obj; }
 
     // if we have read in Seq-entries from multiple files, the 
     // report should include the filename that the object was
@@ -74,9 +76,9 @@ public:
     void DropReference();
     void DropReference(CScope& scope);
 
-    static string GetTextObjectDescription(CConstRef<CObject> obj, CScope& scope);
-    static string GetFeatureTableObjectDescription(CConstRef<CObject> obj, CScope& scope);
-    static string GetXMLObjectDescription(CConstRef<CObject> obj, CScope& scope);
+    //static string GetTextObjectDescription(CConstRef<CObject> obj, CScope& scope);
+    //static string GetFeatureTableObjectDescription(CConstRef<CObject> obj, CScope& scope);
+    //static string GetXMLObjectDescription(CConstRef<CObject> obj, CScope& scope);
 
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
@@ -93,14 +95,14 @@ protected:
     string                m_Text;
     string                m_FeatureTable;
     string                m_XML;
-    CConstRef<CObject>    m_Object;
+    CConstRef<CBioseq>    m_Bioseq;
+    CConstRef<CSeq_feat>  m_Seq_feat;
+    CConstRef<CSeqdesc>   m_Seqdesc;
     string                m_Filename;
-
 };
 
 
 END_SCOPE(NDiscrepancy)
-
 END_NCBI_SCOPE
 
 #endif 

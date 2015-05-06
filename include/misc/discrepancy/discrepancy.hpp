@@ -30,6 +30,7 @@
 #ifndef _MISC_DISCREPANCY_DISCREPANCY_H_
 #define _MISC_DISCREPANCY_DISCREPANCY_H_
 
+#include <serial/iterator.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
@@ -51,20 +52,14 @@ class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
 {
 public:
     virtual ~CReportItem(){}
+    virtual string GetTitle(void) const = 0;
     virtual string GetMsg(void) const = 0;
     virtual TReportObjectList GetDetails(void) const = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 
 
-/// Pass default values to the test
-struct NCBI_DISCREPANCY_EXPORT CContext
-{
-    string m_File;
-    string m_Lineage;
-    bool m_KeepRef;     // set true to allow autofix
-    CContext() : m_KeepRef(false) {}
-};
+class CDiscrepancySet;
 
 
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
@@ -72,15 +67,39 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 public:
     virtual ~CDiscrepancyCase(){}
     virtual string GetName(void) const = 0;
-    virtual bool Parse(objects::CSeq_entry_Handle, const CContext& context) = 0;
+    virtual string GetType(void) const = 0;
+    virtual void Summarize() = 0;
     virtual bool Autofix(objects::CScope&){ return false;}
     virtual TReportItemList GetReport() const = 0;
 };
 
 
+class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
+{
+public:
+    CDiscrepancySet() : m_KeepRef(false) {}
+    virtual ~CDiscrepancySet(){}
+    virtual bool AddTest(const string&) = 0;
+    virtual void Parse(objects::CSeq_entry_Handle) = 0;
+    virtual void Summarize() = 0;
+    virtual const vector<CRef<CDiscrepancyCase> >& GetTests() = 0;
+
+    const string& GetFile() const { return m_File;}
+    const string& GetLineage() const { return m_Lineage;}
+    bool GetKeepRef() const { return m_KeepRef;}
+    void SetFile(const string& s){ m_File = s;}
+    void SetLineage(const string& s){ m_Lineage = s;}
+    void SetKeepRef(bool b){ m_KeepRef = b;}
+    static CRef<CDiscrepancySet> New(objects::CScope&);
+
+protected:
+    string m_File;
+    string m_Lineage;
+    bool m_KeepRef;     // set true to allow autofix
+};
+
+
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
-NCBI_DISCREPANCY_EXPORT CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
-NCBI_DISCREPANCY_EXPORT bool DiscrepancyCaseNotImplemented(const string&);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames();
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 

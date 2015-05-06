@@ -1,39 +1,39 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Sema
-*
-* File Description:
-*   Sample unit tests file for the mainstream test developing.
-*
-* This file represents basic most common usage of Ncbi.Test framework (which
-* is based on Boost.Test framework. For more advanced techniques look into
-* another sample - unit_test_alt_sample.cpp.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Sema
+ *
+ * File Description:
+ *   Sample unit tests file for the mainstream test developing.
+ *
+ * This file represents basic most common usage of Ncbi.Test framework (which
+ * is based on Boost.Test framework. For more advanced techniques look into
+ * another sample - unit_test_alt_sample.cpp.
+ *
+ * ===========================================================================
+ */
 
 #include <ncbi_pch.hpp>
 //#include <corelib/ncbi_system.hpp>
@@ -87,50 +87,35 @@ NCBITEST_AUTO_FINI()
 
 BOOST_AUTO_TEST_CASE(NON_EXISTENT)
 {
-    BOOST_CHECK(GetDiscrepancyCase("NON-EXISTENT").IsNull());
-};
-
-
-BOOST_AUTO_TEST_CASE(ALIAS)
-{
-    BOOST_CHECK(GetDiscrepancyCase("NOT_IMPL").NotNull());
-    BOOST_CHECK(GetDiscrepancyCase("NOT_IMPL_ALIAS").NotNull());
-    BOOST_CHECK(GetDiscrepancyCase("DISC_NOT_IMPL").NotNull());
-    BOOST_CHECK(GetDiscrepancyCase("DISC_NOT_IMPL_ALIAS").NotNull());
-};
-
-
-BOOST_AUTO_TEST_CASE(NOT_IMPL)
-{
-    CRef<CDiscrepancyCase> dscr = GetDiscrepancyCase("NOT_IMPL");
-    BOOST_REQUIRE(dscr.NotNull());
-    TReportItemList rep = dscr->GetReport();
-    BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "NOT_IMPL: Not implemented");
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(CScope(*CObjectManager::GetInstance()));
+    Set->AddTest("NON-EXISTENT");
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 0);
 };
 
 
 BOOST_AUTO_TEST_CASE(COUNT_NUCLEOTIDES)
 {
     CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
+    CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
 
-    CRef<CDiscrepancyCase> dscr = GetDiscrepancyCase("COUNT_NUCLEOTIDES");
-    BOOST_REQUIRE(dscr.NotNull());
-    BOOST_REQUIRE_EQUAL(dscr->GetName(), "COUNT_NUCLEOTIDES");
-    CContext context;
-    dscr->Parse(seh, context);
-    TReportItemList rep = dscr->GetReport();
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+    Set->AddTest("COUNT_NUCLEOTIDES");
+    Set->Parse(seh);
+    Set->Summarize();
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "COUNT_NUCLEOTIDES: 1 nucleotide Bioseq is present");
+    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "1 nucleotide Bioseq is present");
 }
 
 
 BOOST_AUTO_TEST_CASE(OVERLAPPING_CDS)
 {
+/*
     CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
@@ -140,11 +125,13 @@ BOOST_AUTO_TEST_CASE(OVERLAPPING_CDS)
     CRef<CDiscrepancyCase> dscr = GetDiscrepancyCase("OVERLAPPING_CDS");
     CContext context;
     dscr->Parse(seh, context);
+*/
 }
 
 
 BOOST_AUTO_TEST_CASE(CONTAINED_CDS)
 {
+/*
     CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
@@ -154,4 +141,5 @@ BOOST_AUTO_TEST_CASE(CONTAINED_CDS)
     CRef<CDiscrepancyCase> dscr = GetDiscrepancyCase("CONTAINED_CDS");
     CContext context;
     dscr->Parse(seh, context);
+*/
 }

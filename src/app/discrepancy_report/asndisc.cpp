@@ -57,7 +57,7 @@ protected:
     void x_ParseDirectory(const string& name, bool recursive);
     void x_ProcessFile(const string& filename);
     void x_ProcessAll(const string& outname);
-    void x_Output(const string& filename, vector<CRef<CDiscrepancyCase> >& tests);
+    void x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
 
     CScope m_Scope;
     string m_Lineage;   // override lineage
@@ -86,18 +86,13 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
     {
         str+="TESTS\n";
         const vector<string> Name = GetDiscrepancyNames();
-        for (size_t i=0; i<Name.size(); i++)
-        {
+        ITERATE(vector<string>, nm, Name) {
             str += "   ";
-            str += Name[i];
-            const vector<string> Alias = GetDiscrepancyAliases(Name[i]);
-            for (size_t j=0; j<Alias.size(); j++) // ITERATE
-            {
+            str += *nm;
+            const vector<string> Alias = GetDiscrepancyAliases(*nm);
+            ITERATE(vector<string>, al, Alias) {
                 str += " / ";
-                str += Alias[j];
-            }
-            if (DiscrepancyCaseNotImplemented(Name[i])) {
-                str += " (not implemented)";
+                str += *al;
             }
             str += "\n";
         }
@@ -251,52 +246,46 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 
 void CDiscRepApp::x_ProcessFile(const string& fname)
 {
-    vector<CRef<CDiscrepancyCase> > Tests;
+    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
     ITERATE(vector<string>, tname, m_Tests) {
-        Tests.push_back(GetDiscrepancyCase(*tname));
+        Tests->AddTest(*tname);
     }
 
-    CContext context;
-    context.m_Lineage = m_Lineage;
-    context.m_KeepRef = false;
+    Tests->SetLineage(m_Lineage);
 
     vector<CSeq_entry_Handle> seh = x_ReadFile(fname);
     ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
-        NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, tst, Tests) {
-            (*tst)->Parse(*sh, context);
-        }
+        Tests->Parse(*sh);
         m_Scope.RemoveTopLevelSeqEntry(*sh);
     }
-    x_Output(x_ConstructOutputName(fname), Tests);
+    Tests->Summarize();
+    x_Output(x_ConstructOutputName(fname), Tests->GetTests());
 }
 
 
 void CDiscRepApp::x_ProcessAll(const string& outname)
 {
-    vector<CRef<CDiscrepancyCase> > Tests;
+    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
     ITERATE(vector<string>, tname, m_Tests) {
-        Tests.push_back(GetDiscrepancyCase(*tname));
+        Tests->AddTest(*tname);
     }
 
-    CContext context;
-    context.m_Lineage = m_Lineage;
-    context.m_KeepRef = false;
+    Tests->SetLineage(m_Lineage);
 
     ITERATE(vector<string>, fname, m_Files) {
         vector<CSeq_entry_Handle> seh = x_ReadFile(*fname);
         ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
-            NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, tst, Tests) {
-                context.m_File = *fname;
-                (*tst)->Parse(*sh, context);
-            }
+            Tests->SetFile(*fname);
+            Tests->Parse(*sh);
             m_Scope.RemoveTopLevelSeqEntry(*sh);
         }
     }
-    x_Output(outname, Tests);
+    Tests->Summarize();
+    x_Output(outname, Tests->GetTests());
 }
 
 
-void CDiscRepApp::x_Output(const string& filename, vector<CRef<CDiscrepancyCase> >& tests)
+void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests)
 {
     bool summary = GetArgs()["S"].AsBoolean();
 
@@ -307,7 +296,7 @@ void CDiscRepApp::x_Output(const string& filename, vector<CRef<CDiscrepancyCase>
     ITERATE(vector<CRef<CDiscrepancyCase> >, tst, tests) {
         TReportItemList rep = (*tst)->GetReport();
         ITERATE(TReportItemList, it, rep) {
-            out << (*it)->GetMsg() << "\n";
+            out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         }
     }
     if (summary) return;
@@ -316,8 +305,8 @@ void CDiscRepApp::x_Output(const string& filename, vector<CRef<CDiscrepancyCase>
     ITERATE(vector<CRef<CDiscrepancyCase> >, tst, tests) {
         TReportItemList rep = (*tst)->GetReport();
         ITERATE(TReportItemList, it, rep) {
-            out << (*it)->GetMsg() << "\n";
-            cout << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
+            out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
+            cout << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
             TReportObjectList det = (*it)->GetDetails();
             ITERATE(TReportObjectList, obj, det) {
                 out << (*obj)->GetText() << "\n";

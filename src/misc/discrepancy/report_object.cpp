@@ -65,7 +65,17 @@ USING_SCOPE(objects);
 
 void CReportObject::SetText(CScope& scope)
 {
-    m_Text = GetTextObjectDescription(m_Object, scope);
+    if (m_Bioseq) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*m_Bioseq);
+        m_Text = GetTextObjectDescription(bsh);
+    }
+    else if (m_Seq_feat) {
+        m_Text = GetTextObjectDescription(*m_Seq_feat, scope);
+    }
+    else if (m_Seqdesc) {
+        m_Text = GetTextObjectDescription(*m_Seqdesc, scope);
+    }
+
     if (!NStr::IsBlank(m_Filename)) {
         m_Text = m_Filename + ":" + m_Text;
     }
@@ -74,13 +84,13 @@ void CReportObject::SetText(CScope& scope)
 
 void CReportObject::SetFeatureTable(CScope& scope)
 {
-    m_FeatureTable = GetFeatureTableObjectDescription(m_Object, scope);
+    m_FeatureTable = "feature table format display of object";
 }
 
 
 void CReportObject::SetXML(CScope& scope)
 {
-    m_XML = GetXMLObjectDescription(m_Object, scope);
+    m_XML = "xml description of object";
 }
 
 
@@ -476,54 +486,17 @@ string CReportObject::GetTextObjectDescription(CBioseq_Handle bsh)
 }
 
 
-string CReportObject::GetTextObjectDescription(CConstRef<CObject> obj, CScope& scope)
-{
-    string rval = "";
-    if (obj) {
-        const CBioseq* seq = dynamic_cast<const CBioseq*>(obj.GetPointer());
-        const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj.GetPointer());
-        const CSeqdesc* sd = dynamic_cast<const CSeqdesc*>(obj.GetPointer());
-        if (seq) {
-            CBioseq_Handle bsh = scope.GetBioseqHandle(*seq);
-            rval = GetTextObjectDescription(bsh);
-        } else if (feat) {
-            rval = GetTextObjectDescription(*feat, scope);
-        } else if (sd) {
-            rval = GetTextObjectDescription(*sd, scope);
-        } else {
-            rval = "stub";
-        }
-    } else {
-        rval = "Unable to generate description";
-    }
-
-    return rval;
-}
-
-
-string CReportObject::GetFeatureTableObjectDescription(CConstRef<CObject> obj, CScope& scope)
-{
-    string rval = "feature table format display of object";
-    return rval;
-}
-
-
-string CReportObject::GetXMLObjectDescription(CConstRef<CObject> obj, CScope& scope)
-{
-    string rval = "xml description of object";
-    return rval;
-}
-
-
 void CReportObject::DropReference()
 {
-    m_Object.Reset(NULL);
+    m_Bioseq.Reset();
+    m_Seq_feat.Reset();
+    m_Seqdesc.Reset();
 }
 
 
 void CReportObject::DropReference(CScope& scope) 
 {
-    if (!m_Object) {
+    if (!m_Bioseq && !m_Seq_feat && !m_Seqdesc) {
         return;
     }
     if (NStr::IsBlank(m_Text)) {
@@ -548,14 +521,8 @@ bool CReportObject::Equal(const CReportObj& obj) const
         return false;
     }
     
-    CConstRef<CObject> o1 = GetObject();
-    CConstRef<CObject> o2 = other.GetObject();
-    if (o1 || o2) {
-        if (o1 && o2 && o1.GetPointer() == o2.GetPointer()) {
-            return true;
-        } else {
-            return false;
-        }
+    if (m_Bioseq || m_Seq_feat || m_Seqdesc || other.m_Bioseq || other.m_Seq_feat || other.m_Seqdesc) {
+        return (m_Bioseq.GetPointer() == other.m_Bioseq.GetPointer() && m_Seq_feat.GetPointer() == other.m_Seq_feat.GetPointer() && m_Seqdesc.GetPointer() == other.m_Seqdesc.GetPointer());
     }            
 
     string cmp1 = GetText();

@@ -3,7 +3,7 @@
 # Build library "xdiscrepancy"
 ###############################
 
-SRC = discrepancy_core discrepancy_case report_object
+SRC = discrepancy_core report_object utils discrepancy_case suspect_product_names
 
 LIB = xdiscrepancy
 

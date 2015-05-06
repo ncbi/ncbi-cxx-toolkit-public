@@ -43,48 +43,47 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(discrepancy_case);
 
 
-DISCREPANCY_CASE(COUNT_NUCLEOTIDES)
+DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst)
 {
-    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
-    while (bi) {
-        CConstRef<CObject> obj(bi->GetCompleteBioseq().GetPointer());
-        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(obj, bi->GetScope(), context.m_File, context.m_KeepRef));
-        Add(m_Objs, r);
-        ++bi;
-    }
+    CSeq_inst::TMol mol = obj->GetMol();
+    if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) return;
+    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+    Add(m_Objs, r);
+}
 
-    m_ReportItems.clear();
+
+DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
+{
     CNcbiOstrstream ss;
-    ss << GetName() << ": " << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
+    ss << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
     item->SetDetails(m_Objs);
-    m_ReportItems.push_back(CRef<CReportItem>(item.Release()));
-    return true;
+    AddItem(CRef<CReportItem>(item.Release()));
 }
 
 
 DISCREPANCY_ALIAS(COUNT_NUCLEOTIDES, COUNT_NUCLEOTIDES_ALIAS);
 
 
-DISCREPANCY_CASE(COUNT_PROTEINS)
+DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst)
 {
-    CBioseq_CI bi(seh, CSeq_inst::eMol_aa);
-    while (bi) {
-        CConstRef<CObject> obj(bi->GetCompleteBioseq().GetPointer());
-        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(obj, bi->GetScope(), context.m_File, context.m_KeepRef));
-        Add(m_Objs, r);
-        ++bi;
-    }
-
-    m_ReportItems.clear();
-    CNcbiOstrstream ss;
-    ss << GetName() << ": " << m_Objs.size() << " protein sequence" << (m_Objs.size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs);
-    m_ReportItems.push_back(CRef<CReportItem>(item.Release()));
-    return true;
+    if (obj->GetMol() != CSeq_inst::eMol_aa) return;
+    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+    Add(m_Objs, r);
 }
 
+
+DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
+{
+    CNcbiOstrstream ss;
+    ss << m_Objs.size() << " protein sequence" << (m_Objs.size()==1 ? " is" : "s are") << " present";
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
+    item->SetDetails(m_Objs);
+    AddItem(CRef<CReportItem>(item.Release()));
+}
+
+
+/*
 
 // OVERLAPPING_CDS
 
@@ -142,8 +141,7 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
     bool str1_has_similarity_word = false, str2_has_similarity_word = false;
 
     size_t i;
-    /* if both product names contain one of the special case similarity words,
-    * the product names are similar. */
+    // if both product names contain one of the special case similarity words, the product names are similar.
   
     for (i = 0; i < kNumSimilarProductWords; i++) {
         if (string::npos != NStr::FindNoCase(product1, kSimilarProductWords[i])) {
@@ -158,9 +156,9 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
         return true;
     }
   
-    /* otherwise, if one of the product names contains one of special ignore similarity
-    * words, the product names are not similar.
-    */
+    // otherwise, if one of the product names contains one of special ignore similarity
+    // words, the product names are not similar.
+
     for (i = 0; i < kNumIgnoreSimilarProductWords; i++) {
         if (string::npos != NStr::FindNoCase(product1, kSimilarProductWords[i])
             || string::npos 
@@ -259,8 +257,8 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)
 
     m_ReportItems.clear();
     CNcbiOstrstream ss;
-    ss << GetName() << ": " << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
+    ss << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
     TReportObjectList Objs(m_Objs);
     copy(m_ObjsNoNote.begin(), m_ObjsNoNote.end(), back_inserter(Objs));
     item->SetDetails(Objs);
@@ -447,8 +445,8 @@ DISCREPANCY_CASE(CONTAINED_CDS, TReportObjectList m_ObjsSameStrand; TReportObjec
 
     m_ReportItems.clear();
     CNcbiOstrstream ss;
-    ss << GetName() << ": " << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
+    ss << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
     TReportObjectList Objs(m_Objs);
     copy(m_ObjsSameStrand.begin(), m_ObjsSameStrand.end(), back_inserter(Objs));
     copy(m_ObjsDiffStrand.begin(), m_ObjsDiffStrand.end(), back_inserter(Objs));
@@ -514,7 +512,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 
     return rval;
 }
-
+*/
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

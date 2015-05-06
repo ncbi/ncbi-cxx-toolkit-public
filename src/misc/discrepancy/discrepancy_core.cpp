@@ -31,40 +31,41 @@
 #include "discrepancy_core.hpp"
 #include <sstream>
 
+
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-CDiscrepancyTable CDiscrepancyCaseConstructor::m_Table;
-map<string, CDiscrepancyCaseConstructor*>* CDiscrepancyTable::sm_Table = 0;
+CDiscrepancyTable CDiscrepancyConstructor::m_Table;
+map<string, CDiscrepancyConstructor*>* CDiscrepancyTable::sm_Table = 0;
 map<string, string>* CDiscrepancyTable::sm_AliasTable = 0;
 map<string, vector<string> >* CDiscrepancyTable::sm_AliasListTable = 0;
 
 
-map<string, CDiscrepancyCaseConstructor*>& CDiscrepancyCaseConstructor::GetTable()
+map<string, CDiscrepancyConstructor*>& CDiscrepancyConstructor::GetTable()
 {
-    if(!m_Table.sm_Table) m_Table.sm_Table = new map<string, CDiscrepancyCaseConstructor*>;
+    if(!m_Table.sm_Table) m_Table.sm_Table = new map<string, CDiscrepancyConstructor*>;
     return *m_Table.sm_Table;
 }
 
 
-map<string, string>& CDiscrepancyCaseConstructor::GetAliasTable()
+map<string, string>& CDiscrepancyConstructor::GetAliasTable()
 {
     if(!m_Table.sm_AliasTable) m_Table.sm_AliasTable = new map<string, string>;
     return *m_Table.sm_AliasTable;
 }
 
 
-map<string, vector<string> >& CDiscrepancyCaseConstructor::GetAliasListTable()
+map<string, vector<string> >& CDiscrepancyConstructor::GetAliasListTable()
 {
     if(!m_Table.sm_AliasListTable) m_Table.sm_AliasListTable = new map<string, vector<string> >;
     return *m_Table.sm_AliasListTable;
 }
 
 
-string CDiscrepancyCaseConstructor::GetDiscrepancyCaseName(const string& name)
+string CDiscrepancyConstructor::GetDiscrepancyCaseName(const string& name)
 {
-    map<string, CDiscrepancyCaseConstructor*>& Table = GetTable();
+    map<string, CDiscrepancyConstructor*>& Table = GetTable();
     map<string, string>& AliasTable = GetAliasTable();
     if (Table.find(name) != Table.end()) return name;
     if (AliasTable.find(name) != AliasTable.end()) return AliasTable[name];
@@ -73,7 +74,7 @@ string CDiscrepancyCaseConstructor::GetDiscrepancyCaseName(const string& name)
 }
 
 
-const CDiscrepancyCaseConstructor* CDiscrepancyCaseConstructor::GetDiscrepancyCaseConstructor(const string& name)
+const CDiscrepancyConstructor* CDiscrepancyConstructor::GetDiscrepancyConstructor(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
     return str.empty() ? 0 : GetTable()[str];
@@ -82,28 +83,21 @@ const CDiscrepancyCaseConstructor* CDiscrepancyCaseConstructor::GetDiscrepancyCa
 
 string GetDiscrepancyCaseName(const string& name)
 {
-    return CDiscrepancyCaseConstructor::GetDiscrepancyCaseName(name);
+    return CDiscrepancyConstructor::GetDiscrepancyCaseName(name);
 }
 
-
+/*
 CRef<CDiscrepancyCase> GetDiscrepancyCase(const string& name)
 {
-    const CDiscrepancyCaseConstructor* constr = CDiscrepancyCaseConstructor::GetDiscrepancyCaseConstructor(name);
+    const CDiscrepancyConstructor* constr = CDiscrepancyConstructor::GetDiscrepancyConstructor(name);
     return constr ? constr->Create() : CRef<CDiscrepancyCase>(0);
 }
-
-
-bool DiscrepancyCaseNotImplemented(const string& name)
-{
-    const CDiscrepancyCaseConstructor* constr = CDiscrepancyCaseConstructor::GetDiscrepancyCaseConstructor(name);
-    return constr ? constr->NotImplemented() : true;
-}
-
+*/
 
 vector<string> GetDiscrepancyNames()
 {
-    typedef map<string, CDiscrepancyCaseConstructor*> MyMap;
-    map<string, CDiscrepancyCaseConstructor*>& Table = CDiscrepancyCaseConstructor::GetTable();
+    typedef map<string, CDiscrepancyConstructor*> MyMap;
+    map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
     vector<string> V;
     ITERATE (MyMap, J, Table) {
         if (J->first == "NOT_IMPL") continue;
@@ -115,27 +109,25 @@ vector<string> GetDiscrepancyNames()
 
 vector<string> GetDiscrepancyAliases(const string& name)
 {
-    map<string, vector<string> >& AliasListTable = CDiscrepancyCaseConstructor::GetAliasListTable();
+    map<string, vector<string> >& AliasListTable = CDiscrepancyConstructor::GetAliasListTable();
     return AliasListTable.find(name)!=AliasListTable.end() ? AliasListTable[name] : vector<string>();
 }
 
 
-bool CDiscrepancyCaseCore::Parse(objects::CSeq_entry_Handle seq, const CContext& context)
+template<typename T> void CDiscrepancyVisitor<T>::Call(const T* obj, CDiscrepancyContext& context)
 {
     try {
-        return Process(seq, context);
+        Visit(obj, context);
     }
     catch (CException& e) {
         stringstream ss;
-        string fname = context.m_File.empty() ? "the data" : context.m_File;
-        ss << "EXCEPTION caught while processing " << fname << ": " << e.what();
-        m_ReportItems.push_back(CRef<CReportItem>(new CDiscrepancyItem(ss.str())));
+        ss << "EXCEPTION caught while processing " << e.what();
+        dynamic_cast<CDiscrepancyCore*>(this)->AddItem(CRef<CReportItem>(new CDiscrepancyItem(GetName(), ss.str())));
     }
-    return true;
 }
 
 
-void CDiscrepancyCaseCore::Add(TReportObjectList& list, CRef<CDiscrepancyObject> obj)
+void CDiscrepancyCore::Add(TReportObjectList& list, CRef<CDiscrepancyObject> obj)
 {
     ITERATE(TReportObjectList, it, list) {
         if(obj->Equal(**it)) return;
@@ -143,11 +135,70 @@ void CDiscrepancyCaseCore::Add(TReportObjectList& list, CRef<CDiscrepancyObject>
     list.push_back(CRef<CReportObj>(obj.Release()));
 }
 
-// for testing purpose only:
-DISCREPANCY_NOT_IMPL(NOT_IMPL);
-DISCREPANCY_ALIAS(NOT_IMPL, NOT_IMPL_ALIAS);
+
+CRef<CDiscrepancySet> CDiscrepancySet::New(objects::CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
+
+
+bool CDiscrepancyContext::AddTest(const string& name)
+{
+    string str = GetDiscrepancyCaseName(name);
+    if (str.empty()) return false; // no such test
+    if (m_Names.find(str)!=m_Names.end()) return false;  // already there
+    CRef<CDiscrepancyCase> test = CDiscrepancyConstructor::GetDiscrepancyConstructor(str)->Create();
+    m_Names.insert(str);
+    m_Tests.push_back(test);
+
+#define REGISTER_DISCREPANCY_TYPE(type) \
+    if (dynamic_cast<CDiscrepancyVisitor<type>* >(test.GetPointer())) {                         \
+        m_All_##type.push_back(dynamic_cast<CDiscrepancyVisitor<type>* >(test.GetPointer()));   \
+        m_Enable_##type = true;                                                                 \
+        return true;                                                                            \
+    }
+    REGISTER_DISCREPANCY_TYPE(CSeq_inst)
+    REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
+    return false;
+}
+
+
+void CDiscrepancyContext::Parse(objects::CSeq_entry_Handle handle)
+{
+    CTypesConstIterator i;
+    CType<CBioseq>::AddTo(i);
+    CType<CSeq_feat>::AddTo(i);
+#define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
+    ENABLE_DISCREPANCY_TYPE(CSeq_inst)
+    ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
+
+    for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
+        if (CType<CBioseq>::Match(i)) {
+            m_Current_Bioseq.Reset(m_Scope.GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
+        }
+        else if (CType<CSeq_feat>::Match(i)) {
+            m_Current_Seq_feat.Reset(m_Scope.GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
+        }
+#define HANDLE_DISCREPANCY_TYPE(type) \
+        else if (m_Enable_##type && CType<type>::Match(i)) {                                    \
+            const type* obj = CType<type>::Get(i);                                              \
+            NON_CONST_ITERATE(vector<CDiscrepancyVisitor<type>* >, it, m_All_##type) {          \
+                Call(*it, obj);                                                                 \
+            }                                                                                   \
+        }
+        HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
+        HANDLE_DISCREPANCY_TYPE(CSeqFeatData)
+    }
+}
+
+
+void CDiscrepancyContext::Summarize()
+{
+    NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, it, m_Tests) {
+        (*it)->Summarize();
+    }
+}
+
 
 DISCREPANCY_LINK_MODULE(discrepancy_case);
+DISCREPANCY_LINK_MODULE(suspect_product_names);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

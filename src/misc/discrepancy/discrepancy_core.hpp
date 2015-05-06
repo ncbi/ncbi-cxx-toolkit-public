@@ -37,13 +37,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
 /// Housekeeping classes
-class CDiscrepancyCaseConstructor;
+class CDiscrepancyConstructor;
 
 class CDiscrepancyTable  // singleton!
 {
-friend class CDiscrepancyCaseConstructor;
+friend class CDiscrepancyConstructor;
 private:
-    static map<string, CDiscrepancyCaseConstructor*> *sm_Table; // = 0
+    static map<string, CDiscrepancyConstructor*> *sm_Table; // = 0
     static map<string, string> *sm_AliasTable;  // = 0
     static map<string, vector<string> > *sm_AliasListTable; // = 0
 
@@ -57,35 +57,34 @@ private:
 };
 
 
-class NCBI_DISCREPANCY_EXPORT CDiscrepancyCaseConstructor
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create() const = 0;
     virtual bool NotImplemented() const { return false;}
-    static void Register(const string& name, CDiscrepancyCaseConstructor* ptr);
+    static void Register(const string& name, CDiscrepancyConstructor* ptr);
     static string GetDiscrepancyCaseName(const string&);
-    static const CDiscrepancyCaseConstructor* GetDiscrepancyCaseConstructor(const string&);
-    static map<string, CDiscrepancyCaseConstructor*>& GetTable();
+    static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string&);
+    static map<string, CDiscrepancyConstructor*>& GetTable();
     static map<string, string>& GetAliasTable();
     static map<string, vector<string> >& GetAliasListTable();
     static CDiscrepancyTable m_Table;
 friend string GetDiscrepancyCaseName(const string&);
-friend CRef<CDiscrepancyCase> GetDiscrepancyCase(const string&);
-friend bool DiscrepancyCaseNotImplemented(const string&);
 friend vector<string> GetDiscrepancyNames();
 friend vector<string> GetDiscrepancyAliases(const string&);
 friend class CDiscrepancyAlias;
+friend class CDiscrepancyContext;
 };
 
 
-inline void CDiscrepancyCaseConstructor::Register(const string& name, CDiscrepancyCaseConstructor* ptr)
+inline void CDiscrepancyConstructor::Register(const string& name, CDiscrepancyConstructor* ptr)
 {
     GetTable()[name] = ptr;
     GetAliasListTable()[name] = vector<string>();
 }
 
 
-class CDiscrepancyAlias : public CDiscrepancyCaseConstructor
+class CDiscrepancyAlias : public CDiscrepancyConstructor
 {
 protected:
     CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(0);}
@@ -105,7 +104,13 @@ protected:
 class CDiscrepancyObject : public CReportObject
 {
 public:
-    CDiscrepancyObject(CConstRef<CObject> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
+    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
+    {
+        SetFilename(filename);
+        SetText(scope);
+        if(!keep_ref) DropReference();
+    }
+    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
     {
         SetFilename(filename);
         SetText(scope);
@@ -117,24 +122,28 @@ public:
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(const string& s) : m_Msg(s) {}
+    CDiscrepancyItem(const string& t, const string& s) : m_Title(t), m_Msg(s) {}
+    string GetTitle(void) const { return m_Title;}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     void SetDetails(const TReportObjectList& list){ m_Objs = list;}
 protected:
+    string m_Title;
     string m_Msg;
     TReportObjectList m_Objs;
 };
 
 
-/// CDiscrepancyCase core and special cases
+/// CDiscrepancyCore and CDiscrepancyVisitor - parents for CDiscrepancyCase_* classes
 
-class CDiscrepancyCaseCore : public CDiscrepancyCase
+class CDiscrepancyContext;
+
+class CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
-    bool Parse(objects::CSeq_entry_Handle, const CContext&);
-    virtual bool Process(objects::CSeq_entry_Handle, const CContext&){ return true;}
+    void Summarize(){}
     virtual TReportItemList GetReport() const { return m_ReportItems;}
+    void AddItem(CRef<CReportItem> item){ m_ReportItems.push_back(item);}
     static void Add(TReportObjectList&, CRef<CDiscrepancyObject>);
 protected:
     TReportObjectList m_Objs;
@@ -142,25 +151,41 @@ protected:
 };
 
 
-class CDiscrepancyCaseNotImpl : public CDiscrepancyCaseCore
+template<typename T> class CDiscrepancyVisitor : public CDiscrepancyCore
 {
 public:
-    virtual string GetName() const { return m_Name;}
-protected:
-    CDiscrepancyCaseNotImpl(const string& name) : m_Name(name) { m_ReportItems.push_back(CRef<CReportItem>(new CDiscrepancyItem((m_Name + ": Not implemented"))));}
-    string m_Name;
-friend class CDiscrepancyCaseNotImplConstructor;
+    void Call(const T*, CDiscrepancyContext&);
+    virtual void Visit(const T*, CDiscrepancyContext&) = 0;
 };
 
 
-class CDiscrepancyCaseNotImplConstructor : public CDiscrepancyCaseConstructor // not for direct use
+/// CDiscrepancyContext - manage and run the list of tests
+
+class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
-    CDiscrepancyCaseNotImplConstructor(const string& name) : m_Name(name) { Register(name, this);}
+    CDiscrepancyContext(objects::CScope& scope) : m_Scope(scope), m_Enable_CSeq_inst(false) {}
+    bool AddTest(const string&);
+    void Parse(objects::CSeq_entry_Handle);
+    void Summarize();
+    const vector<CRef<CDiscrepancyCase> >& GetTests(){ return m_Tests;}
+
+    template<typename T> void Call(CDiscrepancyVisitor<T>* disc, const T* obj){ disc->Call(obj, *this);}
+
+    CConstRef<CBioseq> GetCurrentBioseq(){ return m_Current_Bioseq;}
+    CConstRef<CSeq_feat> GetCurrentSeq_feat(){ return m_Current_Seq_feat;}
+    objects::CScope& GetScope(){ return m_Scope;}
+
 protected:
-    CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseNotImpl(m_Name));}
-    virtual bool NotImplemented() const { return true;}
-    string m_Name;
+    objects::CScope& m_Scope;
+    set<string> m_Names;
+    vector<CRef<CDiscrepancyCase> > m_Tests;
+    CConstRef<CBioseq> m_Current_Bioseq;
+    CConstRef<CSeq_feat> m_Current_Seq_feat;
+
+#define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
+    ADD_DISCREPANCY_TYPE(CSeq_inst)
+    ADD_DISCREPANCY_TYPE(CSeqFeatData)
 };
 
 
@@ -175,30 +200,30 @@ protected:
     void* CDiscrepancyModule_##name::dummy=0;
 
 
-#define DISCREPANCY_NOT_IMPL(name) \
-    class CDiscrepancyCase_##name {};  /* prevent name conflicts */                                             \
-    class CDiscrepancyCase_A_##name {};                                                                         \
-    static CDiscrepancyCaseNotImplConstructor DiscrepancyCaseNotImplConstructor_##name(#name);
-
-
-#define DISCREPANCY_CASE(name,...) \
-    class CDiscrepancyCase_##name : public CDiscrepancyCaseCore                                                 \
+#define DISCREPANCY_CASE(name, type, ...) \
+    class CDiscrepancyCase_##name : public CDiscrepancyVisitor<type>                                            \
     {                                                                                                           \
     public:                                                                                                     \
-        bool Process(objects::CSeq_entry_Handle, const CContext&);                                              \
+        void Visit(const type*, CDiscrepancyContext&);                                                          \
+        void Summarize();                                                                                       \
         string GetName() const { return #name;}                                                                 \
+        string GetType() const { return #type;}                                                                 \
     protected:                                                                                                  \
         __VA_ARGS__;                                                                                            \
     };                                                                                                          \
-    class CDiscrepancyCaseConstructor_##name : public CDiscrepancyCaseConstructor                               \
+    class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                       \
     {                                                                                                           \
     public:                                                                                                     \
-        CDiscrepancyCaseConstructor_##name(){ Register(#name, this);}                                           \
+        CDiscrepancyConstructor_##name(){ Register(#name, this);}                                               \
     protected:                                                                                                  \
         CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
     };                                                                                                          \
-    static CDiscrepancyCaseConstructor_##name DiscrepancyCaseConstructor_##name;                                \
-    bool CDiscrepancyCase_##name::Process(objects::CSeq_entry_Handle seh, const CContext& context)
+    static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                        \
+    void CDiscrepancyCase_##name::Visit(const type* obj, CDiscrepancyContext& context)
+
+
+#define DISCREPANCY_SUMMARIZE(name) \
+    void CDiscrepancyCase_##name::Summarize()
 
 
 #define DISCREPANCY_AUTOFIX(name) \
@@ -207,7 +232,7 @@ protected:
     public:                                                                                                     \
         bool Autofix(CScope& scope);                                                                            \
     };                                                                                                          \
-    class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyCaseConstructor                              \
+    class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                  \
     {                                                                                                           \
     public:                                                                                                     \
         CDiscrepancyCaseAConstructor_##name(){ Register(#name, this);}                                          \
