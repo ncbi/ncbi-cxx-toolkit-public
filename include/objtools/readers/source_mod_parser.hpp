@@ -73,7 +73,7 @@ class CBioseq;
 /// Some flat interchange formats (notably FASTA) limit annotations to a
 /// single definition/title line per sequence, so NCBI developed a convention
 /// for allowing them to contain bracketed modifiers of the form [key=value],
-/// as documented at http://www.ncbi.nlm.nih.gov/Sequin/modifiers.html .
+/// as documented at https://www.ncbi.nlm.nih.gov/Sequin/modifiers.html .
 
 template<class _T>
 class CAutoInitDesc;
