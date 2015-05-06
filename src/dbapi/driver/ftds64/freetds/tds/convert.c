@@ -194,6 +194,8 @@ tds_get_conversion_type(int srctype, int colsize)
 	case SYBBITN:
 		return SYBBIT;
 		break;
+    case SYB5INT8:
+        return SYBINT8;
 	}
 	return srctype;
 }

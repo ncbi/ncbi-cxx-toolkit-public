@@ -98,6 +98,10 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
             if (!curcol->column_output  &&  (tds->capabilities[5] & 0x10))
 			    type = XSYBCHAR;
 			break;
+        case SYBINT8:
+            if (IS_TDS50(tds)) {
+                type = SYB5INT8;
+            }
 		default:
 			break;
 		}
@@ -169,6 +173,8 @@ tds_get_cardinal_type(int datatype)
 	case XSYBNCHAR:
 	case XSYBCHAR:
 		return SYBCHAR;
+    case SYB5INT8:
+        return SYBINT8;
 	}
 	return datatype;
 }
@@ -197,6 +203,7 @@ tds_get_varint_size(TDSSOCKET * tds, int datatype)
 	case SYBINT2:
 	case SYBINT4:
 	case SYBINT8:
+    case SYB5INT8:
 	case SYBDATETIME4:
 	case SYBREAL:
 	case SYBMONEY:

@@ -470,6 +470,8 @@ typedef enum
 #define SYBUINT4    SYBUINT4
     SYBUINT8 = 67,      /* 0x43 */
 #define SYBUINT8    SYBUINT8
+    SYB5INT8 = 191,     /* 0xBF */
+#define SYB5INT8        SYB5INT8
 
     SYBUNIQUE = 36,     /* 0x24 */
 #define SYBUNIQUE   SYBUNIQUE
@@ -627,8 +629,11 @@ typedef enum tds_packet_type
 /* FIX ME -- not a complete list */
 #define is_fixed_type(x) (x==SYBINT1    || \
             x==SYBINT2      || \
+            x==SYBUINT2     || \
             x==SYBINT4      || \
+            x==SYBUINT4     || \
             x==SYBINT8      || \
+            x==SYBUINT8     || \
             x==SYBREAL      || \
             x==SYBFLT8      || \
             x==SYBDATETIME  || \

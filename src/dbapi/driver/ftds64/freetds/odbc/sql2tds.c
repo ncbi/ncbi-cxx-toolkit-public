@@ -394,6 +394,7 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 	case SYBINT2:
 	case SYBINT4:
 	case SYBINT8:
+    case SYB5INT8:
 	case SYBFLT8:
 	case SYBDATETIME:
 	case SYBBIT:

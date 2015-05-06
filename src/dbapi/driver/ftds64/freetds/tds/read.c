@@ -318,12 +318,16 @@ tds_get_size_by_type(int servertype)
 		return 1;
 		break;
 	case SYBINT2:
+    case SYBUINT2:
 		return 2;
 		break;
 	case SYBINT4:
+    case SYBUINT4:
 		return 4;
 		break;
 	case SYBINT8:
+    case SYBUINT8:
+    case SYB5INT8:
 		return 8;
 		break;
 	case SYBREAL:

@@ -234,6 +234,7 @@ odbc_server_to_sql_type(int col_type, int col_size)
 	case SYBBITN:
 		return SQL_BIT;
 #if (ODBCVER >= 0x0300)
+    case SYB5INT8:
 	case SYBINT8:
 		/* TODO return numeric for odbc2 and convert bigint to numeric */
 		return SQL_BIGINT;

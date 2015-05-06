@@ -1931,12 +1931,15 @@ _ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size)
         return CS_VARCHAR_TYPE;
         break;
     case SYBINT8:
+    case SYBUINT8:
         return CS_LONG_TYPE;
         break;
     case SYBINT4:
+    case SYBUINT4:
         return CS_INT_TYPE;
         break;
     case SYBINT2:
+    case SYBUINT2:
         return CS_SMALLINT_TYPE;
         break;
     case SYBINT1:
