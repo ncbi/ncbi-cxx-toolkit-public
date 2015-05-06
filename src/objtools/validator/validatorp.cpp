@@ -389,6 +389,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_Inconsistent,
     eErr_SEQ_DESCR_ObsoleteSourceLocation,
     eErr_SEQ_DESCR_ObsoleteSourceQual,
+    eErr_SEQ_DESCR_UnwantedCompleteFlag,
     eErr_SEQ_DESCR_CollidingPublications,
     eErr_SEQ_DESCR_TransgenicProblem,
     eErr_SEQ_DESCR_BioSourceInconsistency,
