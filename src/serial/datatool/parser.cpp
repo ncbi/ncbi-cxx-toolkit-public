@@ -186,7 +186,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             }
         }
         catch (CException& e) {
-            NCBI_RETHROW_SAME(e,"ASNParser::ModuleBody: failed");
+            NCBI_RETHROW_SAME(e,GetLocation() + " ASNParser::ModuleBody: failed");
         }
         catch (exception& e) {
             ERR_POST_X(3, e.what());

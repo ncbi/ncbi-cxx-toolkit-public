@@ -48,7 +48,7 @@ AbstractParser::~AbstractParser(void)
 
 string AbstractParser::GetLocation(void)
 {
-    return kEmptyStr;
+    return Lexer().GetName() + "(" + NStr::NumericToString(Lexer().CurrentLine()) + ")";
 }
 
 void AbstractParser::ParseError(const char* error, const char* expected,
@@ -56,7 +56,7 @@ void AbstractParser::ParseError(const char* error, const char* expected,
 {
     NCBI_THROW(CDatatoolException,eWrongInput,
                GetLocation() +
-               "LINE " + NStr::IntToString(token.GetLine()) +
+//               " LINE " + NStr::IntToString(token.GetLine()) +
                ", TOKEN \"" + token.GetText() + "\": " + error +
                (string(error).empty() ? "" : ": ") + expected + " expected");
 }

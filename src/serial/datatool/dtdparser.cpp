@@ -119,7 +119,7 @@ void DTDParser::Module(
         EndCommentBlock();
     }
     catch (CException& e) {
-        NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
+        NCBI_RETHROW_SAME(e, GetLocation() + " DTDParser::BuildDocumentTree: failed");
     }
     catch (exception& e) {
         ERR_POST_X(5, e.what());
