@@ -6977,7 +6977,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZIKU	s	Zoological Institute, Kochi University",
 "ZIL	s	Academy of Sciences, Zoological Institute",
 "ZIM	c	ZIM Culture Collection of Industrial Microorganisms",
-"ZIN	s	Russian Academy of Sciences, Zoological Institute",
+"ZIN	s	Zoological Institute of the Russian Academy of Sciences",
 "ZIS	s	Universitaet Saarbruecken",
 "ZISB	s	Institute of Zoology",
 "ZISP	s	Zoological Institute, Russian Academy of Sciences",
