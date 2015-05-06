@@ -6277,6 +6277,15 @@ case "$host_os:$compiler" in
    esac
    ;;
 
+ linux*:GCC )
+    if test -r $srcdir/src/build-system/config.site.ncbi && test -d "$NCBI"
+    then
+       case "$compiler_version" in
+          5* ) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 $CPPFLAGS" ;;
+       esac
+    fi
+    ;;
+
  irix*:GCC )
    if test "$with_debug" != "no" ; then
       LDFLAGS="-LD_LAYOUT:lgot_buffer=32 $LDFLAGS"
