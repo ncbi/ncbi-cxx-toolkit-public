@@ -30,6 +30,8 @@
 #ifndef _MISC_DISCREPANCY_UTILS_H_
 #define _MISC_DISCREPANCY_UTILS_H_
 
+#include <serial/iterator.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
