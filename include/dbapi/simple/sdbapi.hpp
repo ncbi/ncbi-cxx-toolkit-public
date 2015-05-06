@@ -520,7 +520,7 @@ public:
     /// Method does not clear parameter list and doesn't purge result sets
     /// left from previous query execution.
     void SetSql(CTempString sql);
-    /// Execute sql statement.
+    /// Explicitly execute sql statement.
     /// All result sets left from previous statement or stored procedure
     /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
@@ -615,8 +615,10 @@ public:
     CQuery& MultiSet(void);
 
     /// Start iterating through next result set.
-    /// If some result set was already started to iterate through and end of it
-    /// wasn't reached all remaining rows will be purged.
+    /// If a query was supplied but not explicitly executed, automatically
+    /// execute it before proceeding.  If iteration was already in
+    /// progress, purge the remainder of the current result set and advance
+    /// to the next, if there is one.
     CRowIterator begin(void) const;
     /// Get iterator pointing to the end of the current result set or to the
     /// end of all result sets (depending on the setting changed with
