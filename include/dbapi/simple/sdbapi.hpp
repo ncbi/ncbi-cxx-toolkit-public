@@ -143,19 +143,19 @@ public:
 /// a common Transact-SQL type, but implicit conversion is also possible in
 /// many cases, including to and from types with no exact SDBAPI equivalent.
 enum ESDB_Type {
-    eSDB_Byte,       //< Like Transact-SQL BYTE (unsigned 8-bit integer)
-    eSDB_Short,      //< Like Transact-SQL SMALLINT (signed 16-bit integer)
-    eSDB_Int4,       //< Like Transact-SQL INT (signed 32-bit integer)
-    eSDB_Int8,       //< Like Transact-SQL BIGINT (signed 64-bit integer)
-    eSDB_Float,      //< Like Transact-SQL REAL (32-bit floating point value)
-    eSDB_Double,     //< Like Transact-SQL DOUBLE (64-bit floating point value)
-    eSDB_String,     //< Like Transact-SQL VARCHAR(N)
-    eSDB_StringUCS2, //< Like Transact-SQL NVARCHAR(N)
-    eSDB_Binary,     //< Like Transact-SQL VARBINARY(N)
-    eSDB_DateTime,   //< Like Transact-SQL DATETIME
-    eSDB_Text,       //< Like Transact-SQL TEXT or VARCHAR(MAX)
-    eSDB_TextUCS2,   //< Like Transact-SQL NTEXT or NVARCHAR(MAX)
-    eSDB_Image       //< Like Transact-SQL IMAGE or VARBINARY(MAX)
+    eSDB_Byte,       ///< Like Transact-SQL BYTE (unsigned 8-bit integer)
+    eSDB_Short,      ///< Like Transact-SQL SMALLINT (signed 16-bit integer)
+    eSDB_Int4,       ///< Like Transact-SQL INT (signed 32-bit integer)
+    eSDB_Int8,       ///< Like Transact-SQL BIGINT (signed 64-bit integer)
+    eSDB_Float,      ///< Like Transact-SQL REAL (32-bit floating point value)
+    eSDB_Double,     ///< Like Transact-SQL DOUBLE (64-bit floating point value)
+    eSDB_String,     ///< Like Transact-SQL VARCHAR(N)
+    eSDB_StringUCS2, ///< Like Transact-SQL NVARCHAR(N)
+    eSDB_Binary,     ///< Like Transact-SQL VARBINARY(N)
+    eSDB_DateTime,   ///< Like Transact-SQL DATETIME
+    eSDB_Text,       ///< Like Transact-SQL TEXT or VARCHAR(MAX)
+    eSDB_TextUCS2,   ///< Like Transact-SQL NTEXT or NVARCHAR(MAX)
+    eSDB_Image       ///< Like Transact-SQL IMAGE or VARBINARY(MAX)
 };
 
 /// Stored procedure and statement parameter types
