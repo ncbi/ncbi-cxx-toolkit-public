@@ -726,9 +726,14 @@ bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
     bool needs_molinfo = true;
 
     if (seq.IsSetDescr()) {
-        ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq.SetDescr().Set()) {
             if ((*it)->IsMolinfo()) {
                 needs_molinfo = false;
+                if (seq.IsAa() && 
+                    (!(*it)->GetMolinfo().IsSetBiomol() || 
+                     (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown)) {
+                    (*it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+                }
             }
         }
     }
