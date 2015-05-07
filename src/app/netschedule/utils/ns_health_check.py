@@ -438,6 +438,9 @@ def pickPenaltyValue( lastCheckExitCode, calculatedCode ):
     if lastCheckExitCode == calculatedCode:
         return calculatedCode
 
+    if calculatedCode >= 100:
+        return calculatedCode
+
     minRange = min( [lastCheckExitCode, calculatedCode] )
     maxRange = max( [lastCheckExitCode, calculatedCode] )
     crossedPoints = []
