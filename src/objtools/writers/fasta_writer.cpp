@@ -51,6 +51,11 @@ CFastaOstreamEx::CFastaOstreamEx(const string& dir, const string& filename_witho
 
 CFastaOstreamEx::~CFastaOstreamEx()
 {
+    NON_CONST_ITERATE(vector<TStreams>, it, m_streams)
+    {
+        delete it->m_fasta_stream; it->m_fasta_stream = 0;
+        delete it->m_ostream; it->m_ostream = 0;
+    }
 }
 
 void CFastaOstreamEx::x_GetNewFilename(string& filename, E_FileSection sel)
@@ -89,17 +94,16 @@ void CFastaOstreamEx::x_GetNewFilename(string& filename, E_FileSection sel)
     filename.append(ext);
 }
 
-auto_ptr<CNcbiOstream> CFastaOstreamEx::x_GetOutputStream(const string& filename, E_FileSection sel)
+CNcbiOstream* CFastaOstreamEx::x_GetOutputStream(const string& filename, E_FileSection sel)
 {
-    auto_ptr<CNcbiOstream> ostr(new CNcbiOfstream(filename.c_str()));
-    return ostr;
+    return new CNcbiOfstream(filename.c_str());
 }
 
-auto_ptr<CFastaOstream> CFastaOstreamEx::x_GetFastaOstream(CNcbiOstream& ostr, E_FileSection sel)
+CFastaOstream* CFastaOstreamEx::x_GetFastaOstream(CNcbiOstream& ostr, E_FileSection sel)
 {
-    auto_ptr<CFastaOstream> fstr(new CFastaOstream(ostr));
+    CFastaOstream* fstr = new CFastaOstream(ostr);
     if (m_Flags != -1)
-      fstr->SetAllFlags(m_Flags);
+       fstr->SetAllFlags(m_Flags);
     return fstr;
 }
 
@@ -114,11 +118,11 @@ CFastaOstreamEx::TStreams& CFastaOstreamEx::x_GetStream(E_FileSection sel)
     { 
         x_GetNewFilename(res.m_filename, sel);
     }
-    if (res.m_ostream.get() == 0)
+    if (res.m_ostream == 0)
     {
         res.m_ostream = x_GetOutputStream(res.m_filename, sel);
     }
-    if (res.m_fasta_stream.get() == 0)
+    if (res.m_fasta_stream == 0)
     {
         res.m_fasta_stream = x_GetFastaOstream(*res.m_ostream, sel);
     }

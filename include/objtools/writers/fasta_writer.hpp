@@ -80,16 +80,19 @@ public:
 protected:
     struct TStreams
     {
-        string                  m_filename;
-        auto_ptr<CNcbiOstream>  m_ostream;
-        auto_ptr<CFastaOstream> m_fasta_stream;
+        TStreams() : m_ostream(0), m_fasta_stream(0)
+        {
+        }
+        string         m_filename;
+        CNcbiOstream*  m_ostream;
+        CFastaOstream* m_fasta_stream;
     };
 
     void x_Write(const CBioseq_Handle& handle, const CSeq_loc* location);
     // override these method to change filename policy and output stream
     virtual void x_GetNewFilename(string& filename, E_FileSection sel);
-    virtual auto_ptr<CNcbiOstream> x_GetOutputStream(const string& filename, E_FileSection sel);
-    virtual auto_ptr<CFastaOstream> x_GetFastaOstream(CNcbiOstream& ostr, E_FileSection sel);
+    virtual CNcbiOstream* x_GetOutputStream(const string& filename, E_FileSection sel);
+    virtual CFastaOstream* x_GetFastaOstream(CNcbiOstream& ostr, E_FileSection sel);
 
     TStreams& x_GetStream(E_FileSection sel);
 protected:
