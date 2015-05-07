@@ -63,7 +63,6 @@ public:
             ParseError("", expected);
         }
 
-    string Location(void) const;
 
     AbstractLexer& Lexer(void)
         {

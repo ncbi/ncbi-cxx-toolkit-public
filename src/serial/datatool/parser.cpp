@@ -172,7 +172,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
                 ModuleType(module, name);
                 break;
             case T_DEFINE:
-                ERR_POST_X(1, "LINE " << Location() <<
+                ERR_POST_X(1, GetLocation() <<
                     " type name omitted");
                 Consume();
                 ModuleType(module, "unnamed type");
@@ -180,7 +180,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             case K_END:
                 return;
             default:
-                ERR_POST_X(2, "LINE " << Location() <<
+                ERR_POST_X(2, GetLocation() <<
                     " type definition expected");
                 return;
             }
@@ -189,7 +189,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             NCBI_RETHROW_SAME(e,GetLocation() + " ASNParser::ModuleBody: failed");
         }
         catch (exception& e) {
-            ERR_POST_X(3, e.what());
+            ERR_POST_X(3, GetLocation() << e.what());
         }
     }
 }
@@ -567,9 +567,15 @@ void ASNParser::TypeList(list<string>& ids)
 AutoPtr<CDataValue> ASNParser::Value(void)
 {
     int line = NextTokenLine();
-    AutoPtr<CDataValue> value(x_Value());
-    value->SetSourceLine(line);
-    return value;
+    try {
+        AutoPtr<CDataValue> value(x_Value());
+        value->SetSourceLine(line);
+        return value;
+    }
+    catch (CException& e) {
+        NCBI_RETHROW_SAME(e, GetLocation() + " failed to parse value");
+    }
+    return AutoPtr<CDataValue>();
 }
 
 AutoPtr<CDataValue> ASNParser::x_Value(void)

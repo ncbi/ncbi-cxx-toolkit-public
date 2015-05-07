@@ -48,7 +48,7 @@ AbstractParser::~AbstractParser(void)
 
 string AbstractParser::GetLocation(void)
 {
-    return Lexer().GetName() + "(" + NStr::NumericToString(Lexer().CurrentLine()) + ")";
+    return Lexer().GetName() + "(" + NStr::NumericToString(LastTokenLine()) + "):";
 }
 
 void AbstractParser::ParseError(const char* error, const char* expected,
@@ -59,11 +59,6 @@ void AbstractParser::ParseError(const char* error, const char* expected,
 //               " LINE " + NStr::IntToString(token.GetLine()) +
                ", TOKEN \"" + token.GetText() + "\": " + error +
                (string(error).empty() ? "" : ": ") + expected + " expected");
-}
-
-string AbstractParser::Location(void) const
-{
-    return NStr::IntToString(LastTokenLine()) + ':';
 }
 
 void AbstractParser::CopyLineComment(int line, CComments& comments,

@@ -286,7 +286,7 @@ void WSDLParser::ParseHeader(void)
             ;
         tok = GetNextToken();
     } else {
-        ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
+        ERR_POST_X(4, GetLocation() << " XML declaration is missing");
     }
 // schema    
     if (tok != K_DEFINITIONS) {

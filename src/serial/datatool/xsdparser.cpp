@@ -339,7 +339,7 @@ void XSDParser::ParseHeader()
         tok = GetNextToken();
     } else {
         if (m_SrcType == eSchema) {
-            ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
+            ERR_POST_X(4, GetLocation() << " XML declaration is missing");
         }
     }
 // schema    
@@ -533,7 +533,7 @@ DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement::EOccurrence occNo
                 occNew = DTDElement::eZeroOrMore;
             }
         } else if (m > 1) {
-            ERR_POST_X(8, Warning << "Unsupported element minOccurs= " << m);
+            ERR_POST_X(8, Warning << GetLocation() << "Unsupported element minOccurs= " << m);
             occNew = DTDElement::eOneOrMore;
         }
     }
@@ -547,7 +547,7 @@ DTDElement::EOccurrence XSDParser::ParseMaxOccurs( DTDElement::EOccurrence occNo
         int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
         if (m == -1 || m > 1) {
             if (m > 1) {
-                ERR_POST_X(8, Warning << "Unsupported element maxOccurs= " << m);
+                ERR_POST_X(8, Warning << GetLocation() << "Unsupported element maxOccurs= " << m);
             }
             if (occNow == DTDElement::eOne) {
                 occNew = DTDElement::eOneOrMore;
@@ -1037,6 +1037,7 @@ void XSDParser::ParseAny(DTDElement& node)
 void XSDParser::ParseUnion(DTDElement& node)
 {
     ERR_POST_X(9, Warning
+        << GetLocation()
         << "Unsupported element type: union; in node "
         << node.GetName());
     node.SetType(DTDElement::eString);
@@ -1051,6 +1052,7 @@ void XSDParser::ParseUnion(DTDElement& node)
 void XSDParser::ParseList(DTDElement& node)
 {
     ERR_POST_X(10, Warning
+        << GetLocation()
         << "Unsupported element type: list; in node "
         << node.GetName());
     node.SetType(DTDElement::eString);
@@ -1192,6 +1194,7 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
 void XSDParser::ParseUnion(DTDAttribute& att)
 {
     ERR_POST_X(9, Warning
+        << GetLocation()
         << "Unsupported attribute type: union; in attribute "
         << att.GetName());
     att.SetType(DTDAttribute::eString);
@@ -1205,6 +1208,7 @@ void XSDParser::ParseUnion(DTDAttribute& att)
 void XSDParser::ParseList(DTDAttribute& att)
 {
     ERR_POST_X(10, Warning
+        << GetLocation()
         << "Unsupported attribute type: list; in attribute "
         << att.GetName());
     att.SetType(DTDAttribute::eString);

@@ -122,7 +122,7 @@ void DTDParser::Module(
         NCBI_RETHROW_SAME(e, GetLocation() + " DTDParser::BuildDocumentTree: failed");
     }
     catch (exception& e) {
-        ERR_POST_X(5, e.what());
+        ERR_POST_X(5, GetLocation() << e.what());
         throw;
     }
 
@@ -219,10 +219,10 @@ void DTDParser::SkipConditionalSection(void)
             }
         }
         catch (CException& e) {
-            NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
+            NCBI_RETHROW_SAME(e, GetLocation() + "DTDParser::BuildDocumentTree: failed");
         }
         catch (exception& e) {
-            ERR_POST_X(6, e.what());
+            ERR_POST_X(6, GetLocation() << e.what());
             throw;
         }
     }
@@ -232,13 +232,15 @@ string DTDParser::GetLocation(void)
 {
     string loc;
     list<string>::const_iterator i;
-    for (i = m_StackLexerName.begin(); i != m_StackLexerName.end(); ++i) {
-        if (i != m_StackLexerName.begin()) {
-            loc += "/";
+    size_t len = m_StackLexerName.size();
+    if (len > 0) {
+        for (--len, i = m_StackLexerName.begin(); len > 0 && i != m_StackLexerName.end(); ++i) {
+            if (i != m_StackLexerName.begin()) {
+                loc += "/";
+            }
+            loc += *i;
         }
-        loc += *i;
     }
-    loc += ": ";
     return loc + AbstractParser::GetLocation();
 }
 
@@ -1129,9 +1131,20 @@ CDataType* DTDParser::x_Type(
 
 AutoPtr<CDataValue> DTDParser::Value(const DTDElement& node)
 {
-    AutoPtr<CDataValue> value(x_Value(node));
-    value->SetSourceLine(node.GetSourceLine());
-    return value;
+    try {
+        AutoPtr<CDataValue> value(x_Value(node));
+        value->SetSourceLine(node.GetSourceLine());
+        return value;
+    }
+    catch (CException& e) {
+        NCBI_RETHROW_SAME(e,
+            string("Element: ") + node.GetName() + 
+            ", type: " + node.GetTypeName() +
+            ", namespace: " + node.GetNamespaceName() +
+            ", on line: " + NStr::NumericToString(node.GetSourceLine()) +
+            ": failed to define default value");
+    }
+    return AutoPtr<CDataValue>();
 }
 
 AutoPtr<CDataValue> DTDParser::x_Value(const DTDElement& node)
@@ -1211,7 +1224,7 @@ CDataType* DTDParser::TypesBlock(
             if (refNode.GetType() == DTDElement::eAny) {
                 refNode.SetName("-Any");
             } else {
-                ERR_POST_X(7, Warning << "Element with no name: " << *i);
+                ERR_POST_X(7, Warning << GetLocation() << "Element with no name: " << *i);
                 refNode.SetName(*i);
             }
         }
