@@ -1,4 +1,4 @@
-^/internal/scripts/common/lib/python/ncbi
+^/internal/scripts/common/lib/python/grid-python
 
 -./compilers
 -./src/build-system

@@ -10,7 +10,7 @@ if len( sys.argv ) != 2:
 version = sys.argv[ 1 ]
 
 fName = os.path.sep.join( [ "scripts", "common", "lib",
-                            "python", "ncbi", "__init__.py" ] )
+                            "python", "grid-python", "__init__.py" ] )
 f = open( fName, "r" )
 content = f.read()
 f.close()
