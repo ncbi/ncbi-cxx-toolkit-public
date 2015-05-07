@@ -134,7 +134,7 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     m_Port = args["port"].AsString();
 

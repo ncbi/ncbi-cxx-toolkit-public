@@ -127,7 +127,7 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     m_PipeName = kPipeName;
     if ( !args["suffix"].AsString().empty() ) {
