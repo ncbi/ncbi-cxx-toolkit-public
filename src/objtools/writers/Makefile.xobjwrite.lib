@@ -16,7 +16,8 @@ SRC = agp_write \
       bed_writer bed_track_record bed_feature_record \
       vcf_writer \
       ucsc_writer \
-      src_writer
+      src_writer \
+      fasta_writer
 
 DLL_LIB = variation_utils
 
