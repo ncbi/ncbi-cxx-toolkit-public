@@ -115,18 +115,16 @@ SNetScheduleNotificationThread::SNetScheduleNotificationThread(
 }
 
 void SNetScheduleNotificationThread::CmdAppendPortAndTimeout(
-        string* cmd, const CDeadline* deadline)
+        string* cmd, const CDeadline& deadline)
 {
-    if (deadline != NULL) {
-        unsigned remaining_seconds = s_GetRemainingSeconds(*deadline);
+    unsigned remaining_seconds = s_GetRemainingSeconds(deadline);
 
-        if (remaining_seconds > 0) {
-            *cmd += " port=";
-            *cmd += NStr::UIntToString(GetPort());
+    if (remaining_seconds > 0) {
+        *cmd += " port=";
+        *cmd += NStr::UIntToString(GetPort());
 
-            *cmd += " timeout=";
-            *cmd += NStr::UIntToString(remaining_seconds);
-        }
+        *cmd += " timeout=";
+        *cmd += NStr::UIntToString(remaining_seconds);
     }
 }
 

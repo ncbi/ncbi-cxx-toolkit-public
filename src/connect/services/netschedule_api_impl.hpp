@@ -201,7 +201,7 @@ struct SNetScheduleNotificationThread : public CThread
 
     void PrintPortNumber();
 
-    void CmdAppendPortAndTimeout(string* cmd, const CDeadline* deadline);
+    void CmdAppendPortAndTimeout(string* cmd, const CDeadline& deadline);
 
     SNetScheduleAPIImpl* m_API;
 
@@ -369,7 +369,7 @@ struct SNetScheduleExecutorImpl : public CObject
             CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
             const string& affinity_list);
     bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
-            const CDeadline* timeout,
+            const CDeadline& timeout,
             CNetScheduleJob& job);
 
     void ExecWithOrWithoutRetry(const CNetScheduleJob& job, const string& cmd);
@@ -411,52 +411,135 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-struct SNotificationTimelineEntry : public CWorkerNodeTimelineEntry
+class CNotificationTimeline
 {
-    typedef CRef<SNotificationTimelineEntry> TRef;
+private:
+    struct TEntry;
 
-    SServerAddress m_ServerAddress;
+protected:
+    typedef CRef<TEntry> TTimelineEntry;
+
+    CNotificationTimeline();
+    ~CNotificationTimeline();
+
+    bool HasImmediateActions() const { return !m_ImmediateActions.IsEmpty(); }
+    bool HasScheduledActions() const { return !m_Timeline.IsEmpty(); }
+
+    void CheckScheduledActions()
+    {
+        while (!m_Timeline.IsEmpty() && m_Timeline.GetHead()->TimeHasCome()) {
+            m_Timeline.MoveHeadTo(&m_ImmediateActions);
+        }
+    }
+
+    const CDeadline GetNextTimeout() const
+    {
+        return m_Timeline.GetHead()->GetTimeout();
+    }
+
+    TTimelineEntry PullImmediateAction()
+    {
+        TTimelineEntry entry;
+        m_ImmediateActions.Shift(entry);
+        return entry;
+    }
+
+    TTimelineEntry PullScheduledAction()
+    {
+        TTimelineEntry entry;
+        m_Timeline.Shift(entry);
+        return entry;
+    }
+
+    bool IsDiscoveryAction(TTimelineEntry entry) const
+    {
+        return !entry->m_DiscoveryIteration;
+    }
+
+    bool IsOutdatedAction(TTimelineEntry entry) const
+    {
+        return entry->m_DiscoveryIteration != m_DiscoveryIteration;
+    }
+
+    void MoveToImmediateActions(SNetServerImpl* server_impl)
+    {
+        x_GetTimelineEntry(server_impl)->MoveTo(&m_ImmediateActions);
+    }
+
+    void PushImmediateAction(TTimelineEntry entry)
+    {
+        m_ImmediateActions.Push(entry);
+    }
+
+    void PushScheduledAction(TTimelineEntry entry)
+    {
+        m_Timeline.Push(entry);
+    }
+
+    CNetServer GetServer(CNetScheduleAPI api, TTimelineEntry entry)
+    {
+        return api.GetService().GetServer(entry->m_ServerAddress);
+    }
+
+    void NextDiscoveryIteration(CNetScheduleAPI api)
+    {
+        ++m_DiscoveryIteration;
+
+        for (CNetServiceIterator it =
+                api.GetService().Iterate(
+                    CNetService::eIncludePenalized); it; ++it) {
+            TEntry* srv_entry = x_GetTimelineEntry(*it);
+            srv_entry->m_DiscoveryIteration = m_DiscoveryIteration;
+            if (!srv_entry->IsInTimeline())
+                m_ImmediateActions.Push(srv_entry);
+        }
+    }
+
+    void Suspend(unsigned timeout)
+    {
+        m_ImmediateActions.Clear();
+        m_Timeline.Clear();
+        m_DiscoveryAction->ResetTimeout(timeout);
+        m_Timeline.Push(m_DiscoveryAction);
+    }
+
+    void Resume()
+    {
+        m_DiscoveryAction->MoveTo(&m_ImmediateActions);
+    }
+
+private:
+    struct TEntry : public CWorkerNodeTimelineEntry
+    {
+        SServerAddress m_ServerAddress;
+
+        unsigned m_DiscoveryIteration;
+
+        TEntry(const SServerAddress& server_address,
+                unsigned discovery_iteration) :
+            m_ServerAddress(server_address),
+            m_DiscoveryIteration(discovery_iteration)
+        {
+        }
+    };
+
+    TEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
+
+    typedef CWorkerNodeTimeline<TEntry, TTimelineEntry> TNotificationTimeline;
+    TNotificationTimeline m_ImmediateActions, m_Timeline;
 
     unsigned m_DiscoveryIteration;
-
-    SNotificationTimelineEntry(const SServerAddress& server_address,
-            unsigned discovery_iteration) :
-        m_ServerAddress(server_address),
-        m_DiscoveryIteration(discovery_iteration)
-    {
-    }
+    TTimelineEntry m_DiscoveryAction;
 
     struct SLess
     {
-        bool operator ()(const SNotificationTimelineEntry* left,
-                const SNotificationTimelineEntry* right) const
+        bool operator ()(const TEntry* left, const TEntry* right) const
         {
             return left->m_ServerAddress < right->m_ServerAddress;
         }
     };
 
-    bool IsDiscoveryAction() const {return m_DiscoveryIteration == 0;}
-};
-
-class CNotificationTimeline
-{
-public:
-    typedef CWorkerNodeTimeline<SNotificationTimelineEntry,
-            SNotificationTimelineEntry::TRef> TNotificationTimeline;
-    TNotificationTimeline m_ImmediateActions, m_Timeline;
-
-protected:
-    CNotificationTimeline();
-    ~CNotificationTimeline();
-
-    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
-
-    unsigned m_DiscoveryIteration;
-    SNotificationTimelineEntry::TRef m_DiscoveryAction;
-
-private:
-    typedef set<SNotificationTimelineEntry*,
-            SNotificationTimelineEntry::SLess> TTimelineEntries;
+    typedef set<TEntry*, SLess> TTimelineEntries;
     TTimelineEntries m_TimelineEntryByAddress;
 };
 
@@ -482,15 +565,20 @@ struct SNetScheduleJobReaderImpl : public CObject, public CNotificationTimeline
     string m_Affinity;
 
     bool x_ReadJob(SNetServerImpl* server,
-            const CDeadline* timeout,
+            const CDeadline& timeout,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
-    bool x_PerformTimelineAction(TNotificationTimeline& timeline,
+    bool x_PerformTimelineAction(TTimelineEntry timeline_entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
     void x_ProcessReadJobNotifications();
+
+    CNetScheduleJobReader::EReadNextJobResult ReadNextJob(
+        CNetScheduleJob* job,
+        CNetScheduleAPI::EJobStatus* job_status,
+        CTimeout* timeout);
 
     virtual ~SNetScheduleJobReaderImpl();
 };

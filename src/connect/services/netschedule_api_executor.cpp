@@ -367,10 +367,10 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityList(SNetServerImpl* server,
 }
 
 bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
-        SNetServerImpl* server, const CDeadline* timeout, CNetScheduleJob& job)
+        SNetServerImpl* server, const CDeadline& timeout, CNetScheduleJob& job)
 {
     if (m_API->m_AffinityLadder.empty())
-        return x_GetJobWithAffinityList(server, timeout, job,
+        return x_GetJobWithAffinityList(server, &timeout, job,
                 m_AffinityPreference, kEmptyStr);
 
     list<string>::const_iterator it = m_API->m_AffinityLadder.begin();
@@ -378,7 +378,7 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
     for (;;) {
         string affinity_list = *it;
         if (++it == m_API->m_AffinityLadder.end())
-            return x_GetJobWithAffinityList(server, timeout, job,
+            return x_GetJobWithAffinityList(server, &timeout, job,
                     m_AffinityPreference, affinity_list);
         else if (x_GetJobWithAffinityList(server, NULL, job,
                 CNetScheduleExecutor::ePreferredAffinities, affinity_list))

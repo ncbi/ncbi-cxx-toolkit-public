@@ -55,7 +55,7 @@ public:
 
     void MoveTo(CWorkerNodeTimeline_Base* timeline);
 
-    const CDeadline& GetTimeout() const {return m_Deadline;}
+    const CDeadline GetTimeout() const {return m_Deadline;}
 
     void ResetTimeout(unsigned seconds)
     {
