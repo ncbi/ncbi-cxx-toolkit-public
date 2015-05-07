@@ -399,7 +399,7 @@ void CChecksumTestApp::RunChecksum(CChecksum::EMethod type,
 
 int CChecksumTestApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     m_ChunkSize = args["size"].AsInteger();
     m_ChunkCount = args["count"].AsInteger();

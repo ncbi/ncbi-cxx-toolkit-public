@@ -70,7 +70,7 @@ void CTestDateApp::Init(void)
 
 int CTestDateApp::Run(void)
 {
-    CArgs      args = GetArgs();
+    const CArgs& args = GetArgs();
     CDate      date;
     CDate_std& std  = date.SetStd();
     std.SetYear(args["Y"].AsInteger());

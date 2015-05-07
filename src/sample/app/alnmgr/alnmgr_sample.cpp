@@ -105,7 +105,7 @@ int CSampleAlnmgrApplication::Run(void)
     CONNECT_Init(&GetConfig());
 
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     CSeq_align in_sa;
     CSeq_entry in_se;
 

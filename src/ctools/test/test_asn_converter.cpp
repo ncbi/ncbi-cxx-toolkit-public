@@ -102,7 +102,7 @@ static ESerialDataFormat s_GetFormat(const string& name)
 
 int CTestAsnConverterApp::Run()
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     auto_ptr<CObjectIStream> in;
     if (args["type"].AsString() != "Score") {
         in.reset(CObjectIStream::Open

@@ -108,7 +108,7 @@ static unsigned int s_Rand(unsigned int limit)
 
 int CTestLogrotateApplication::Run(void)
 {
-    CArgs              args    = GetArgs();
+    const CArgs&       args    = GetArgs();
     string             me      = GetArguments().GetProgramBasename();
     string             logname = me + ".log";
     CNcbiStreamoff     limit   = args["limit"].AsInteger();

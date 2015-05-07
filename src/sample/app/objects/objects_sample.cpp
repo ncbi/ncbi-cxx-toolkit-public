@@ -111,7 +111,7 @@ static ESerialDataFormat s_GetFormat(const string& name)
 int CSampleObjectsApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Read the entry
     {{

@@ -199,7 +199,7 @@ void CTestApplication::Init(void)
 
 int CTestApplication::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Specific tests
     if (args["feature"].AsString() == "general") {

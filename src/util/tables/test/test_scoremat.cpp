@@ -142,7 +142,7 @@ static void s_Dump(const SNCBIPackedScoreMatrix& psm,
 
 int CSMTestApplication::Run(void)
 {
-    CArgs                          args = GetArgs();
+    const CArgs&                   args = GetArgs();
     string                         sm   = args["sm"].AsString();
     const SNCBIPackedScoreMatrix*  psm;
     auto_ptr<SNCBIFullScoreMatrix> fsm(new SNCBIFullScoreMatrix);
