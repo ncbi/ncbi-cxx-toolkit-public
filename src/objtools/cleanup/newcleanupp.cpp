@@ -10451,12 +10451,12 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
             ++si;
         }
         if (vi != vec.end() || si != expected.end()) {
-            cdr.ResetConflict();
-            ChangeMade(CCleanupChange::eChangeOther);
-        } else {
             if (CCleanup::SetMolinfoTech(prot, CMolInfo::eTech_concept_trans_a)) {
                 ChangeMade(CCleanupChange::eChangeMolInfo);
             }
+        } else {
+            cdr.ResetConflict();
+            ChangeMade(CCleanupChange::eChangeOther);
         }
     }
 }
