@@ -37,9 +37,9 @@
 /// heavy use-specific tuning, both via flags and via virtual methods.
 ///
 /// URLs to relevant specifications:
-/// http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml (GFF 2)
-/// http://genes.cs.wustl.edu/GTF2.html
-/// http://song.sourceforge.net/gff3-jan04.shtml (support incomplete)
+/// www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml (GFF 2)
+/// genes.cs.wustl.edu/GTF2.html
+/// song.sourceforge.net/gff3-jan04.shtml (support incomplete)
 
 
 #include <corelib/ncbiutil.hpp>

@@ -33,8 +33,8 @@
 /// @file cigar.hpp
 /// Code to handle Concise Idiosyncratic Gapped Alignment Report notation.
 ///
-/// See http://may2005.archive.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html
-/// for the base format and http://song.sorceforge.net/gff3-jan04.shtml for
+/// See may2005.archive.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html
+/// for the base format and song.sorceforge.net/gff3-jan04.shtml for
 /// the frame-shift extensions.
 
 #include <objects/seqalign/Seq_align.hpp>

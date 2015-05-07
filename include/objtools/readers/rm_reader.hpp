@@ -821,19 +821,19 @@ END_NCBI_SCOPE
 
     @see https://sp.ncbi.nlm.nih.gov/IEB/mss/Gpipe/RepeatDb/RepeatMasker%20and%20GPipe.docx
             for official requirements specifications
-    @see http://jira.be-md.ncbi.nlm.nih.gov/browse/GP-1000
+    @see jira.be-md.ncbi.nlm.nih.gov/browse/GP-1000
             for developer discussion.
-    @see http://www.repeatmasker.org/ for RepeatMasker.
-    @see http://www.repeatmasker.org/webrepeatmaskerhelp.html#reading
+    @see www.repeatmasker.org/ for RepeatMasker.
+    @see www.repeatmasker.org/webrepeatmaskerhelp.html#reading
             for RepeatMasker file format specifications.
-    @see http://www.girinst.org/repbase/update/index.html
+    @see www.girinst.org/repbase/update/index.html
             for examples of EMBL format for RepBase repeat libraries.
-    @see http://www.ebi.ac.uk/embl/Documentation/User_manual/usrman.html#3_4
+    @see www.ebi.ac.uk/embl/Documentation/User_manual/usrman.html#3_4
             for EMBL file format specifications, as used by
             the RepeatMaskerLib.embl repeat library.
-    @see http://www.ebi.ac.uk/ena/WebFeat/repeat_region_s.html
+    @see www.ebi.ac.uk/ena/WebFeat/repeat_region_s.html
             for INSDC standards related to annotating repeat features.
-    @see http://www.ebi.ac.uk/embl/Standards/web/repetitive.html
+    @see www.ebi.ac.uk/embl/Standards/web/repetitive.html
             for examples of EMBL standards for annotating repeat features.
 */
 
