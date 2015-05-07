@@ -1184,7 +1184,9 @@ static void s_FormatPatent
     if (pat.IsSetAuthors()  &&  pat.GetAuthors().IsSetAffil()) {
         const CAffil& affil = pat.GetAuthors().GetAffil();
         if (affil.IsStr()  &&  !NStr::IsBlank(affil.GetStr())) {
-            jour << '\n' << affil.GetStr();
+        	string str = affil.GetStr();
+        	CleanAndCompress (str, str.c_str());
+            jour << '\n' << str;
         } else if (affil.IsStd()) {
             const CAffil::TStd& std = affil.GetStd();
 
