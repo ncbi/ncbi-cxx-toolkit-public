@@ -1666,7 +1666,7 @@ void CFeatureItem::x_AddQuals(
          (  ! gene_forbidden_if_genbank || is_not_genbank ) )
     {
         CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
-        if (mapped_gene) {
+        if (mapped_gene && subtype != CSeqFeatData::eSubtype_primer_bind) {
             gene_feat = &mapped_gene.GetOriginalFeature();
             gene_ref = &gene_feat->GetData().GetGene();
         } else {
