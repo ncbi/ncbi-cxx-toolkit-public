@@ -10393,11 +10393,18 @@ void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 {
     if (seq.IsSetInst() && seq.GetInst().IsSetMol()) {
         bool is_product = false;
-        if (seq.IsAa() && sequence::GetCDSForProduct(seq, m_Scope) != NULL) {
-            is_product = true;
-        } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna &&
-                   sequence::GetmRNAForProduct(seq, m_Scope) != NULL) {
-            is_product = true;
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        CBioseq_set_Handle p = bsh.GetParentBioseq_set();
+        if (p && p.IsSetClass() && p.GetClass() == CBioseq_set::eClass_nuc_prot) {
+            p = p.GetParentBioseq_set();
+        }
+        if (p && p.IsSetClass() && p.GetClass() == CBioseq_set::eClass_gen_prod_set) {
+            if (seq.IsAa() && sequence::GetCDSForProduct(seq, m_Scope) != NULL) {
+                is_product = true;
+            } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna &&
+                       sequence::GetmRNAForProduct(seq, m_Scope) != NULL) {
+                is_product = true;
+            }
         }
         if (CCleanup::AddMissingMolInfo(seq, is_product)) {
             ChangeMade(CCleanupChange::eChangeMolInfo);
