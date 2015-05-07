@@ -165,7 +165,7 @@ void CTest::Init(void)
 int CTest::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string test = args["lib"].AsString();
 
     // Set a random starting point

@@ -140,7 +140,7 @@ static void Test_PIDGuard(int ppid, string lockfile)
         assert(lf.Exists());
 
 #if 0
-// possible do not needed now, commented out for test purposes
+// possible not needed now, commented out for test purposes
 #if defined(NCBI_OS_MSWIN)
         // Additional check on stuck child process.
         // On some Windows machines OS report that child process is still
@@ -231,7 +231,7 @@ void CTestApplication::Init(void)
 
 int CTestApplication::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Is this an instance executed from process test?
     int sec = args["sleep"].AsInteger();

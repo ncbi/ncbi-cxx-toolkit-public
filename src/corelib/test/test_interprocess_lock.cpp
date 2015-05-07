@@ -348,7 +348,7 @@ void CTestApplication::Init(void)
 int CTestApplication::Run(void)
 {
     CTime::SetFormat("[h:m:s.l]  ");
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Special arguments to test locks in multi-process configuration
     if ( args["test"].AsInteger() ) {

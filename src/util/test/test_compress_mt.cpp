@@ -161,7 +161,7 @@ bool CTest::Thread_Init(int)
 bool CTest::Thread_Run(int idx)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string test = args["lib"].AsString();
 
     // Set a random starting point

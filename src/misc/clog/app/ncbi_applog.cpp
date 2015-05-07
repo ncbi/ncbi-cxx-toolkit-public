@@ -941,7 +941,7 @@ int CNcbiApplogApp::Run(void)
 
     try {
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Get command
     string cmd(args.GetCommand());

@@ -113,7 +113,7 @@ int CTest::Run(void)
 
 void CTest::RunInternalTest(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string test = args["fmt"].AsString();
 
     // Set a random starting point
