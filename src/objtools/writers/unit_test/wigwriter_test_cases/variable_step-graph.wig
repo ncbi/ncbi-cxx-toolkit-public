@@ -1,5 +1,5 @@
 track type=wiggle_0
-fixedStep chrom=gi|1010 start=4799 step=1 span=1
+fixedStep chrom=gi|1010 start=4800 step=1 span=1
 1
 0
 0
@@ -55,7 +55,7 @@ fixedStep chrom=gi|1010 start=4799 step=1 span=1
 1
 
 track type=wiggle_0
-fixedStep chrom=gi|1011 start=6799 step=1 span=1
+fixedStep chrom=gi|1011 start=6800 step=1 span=1
 1
 0
 0
