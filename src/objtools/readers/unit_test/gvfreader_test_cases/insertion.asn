@@ -12,7 +12,7 @@ Seq-annot ::= {
         },
         {
           label str "feature-ontology",
-          data str "http://www.sequenceontology.org/resources/obo_files/curren
+          data str "www.sequenceontology.org/resources/obo_files/curren
 t_release.obo"
         },
         {

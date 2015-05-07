@@ -1,5 +1,5 @@
 ##gvf-version 1.06
-##feature-ontology http://www.sequenceontology.org/resources/obo_files/current_release.obo
+##feature-ontology www.sequenceontology.org/resources/obo_files/current_release.obo
 ##genome-build NCBI B36.3
 ##sequence-region chr16 1 88827254
 
