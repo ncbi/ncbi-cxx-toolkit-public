@@ -2,7 +2,7 @@
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
 ##sequence-region NW_001955489.1 1 972361
-##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=7719
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=7719
 NW_001955489.1	RefSeq	region	1	972361	.	+	.	ID=id0;Dbxref=taxon:7719;gbkey=Src;genome=genomic;mol_type=genomic DNA
 NW_001955489.1	GNOMON	gene	273	8004	.	+	.	ID=gene0;Dbxref=GeneID:100183115;Name=LOC100183115;end_range=8004,.;gbkey=Gene;gene=LOC100183115;gene_biotype=protein_coding;partial=true;start_range=.,273
 NW_001955489.1	GNOMON	mRNA	273	8004	.	+	.	ID=rna0;Parent=gene0;Dbxref=GeneID:100183115,Genbank:XM_002124125.1;Name=XM_002124125.1;end_range=8004,.;gbkey=mRNA;gene=LOC100183115;partial=true;product=similar to Diacylglycerol kinase delta (DAG kinase delta) (Diglyceride kinase delta) (DGK-delta) (130 kDa diacylglycerol kinase);start_range=.,273;transcript_id=XM_002124125.1

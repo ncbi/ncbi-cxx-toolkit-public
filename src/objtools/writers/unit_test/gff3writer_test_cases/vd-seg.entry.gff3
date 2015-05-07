@@ -2,7 +2,7 @@
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
 ##sequence-region AB019592.1 1 853
-##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
 AB019592.1	DDBJ	region	1	853	.	+	.	ID=id0;Dbxref=taxon:9606;Name=14;cell-type=B lymphocyte;chromosome=14;clone=KKa-3;gbkey=Src;isolate=HCL patient KKa;mol_type=genomic DNA;rearranged=true;sex=male
 AB019592.1	DDBJ	gene	1	227	.	+	.	ID=gene0;Name=IgH;end_range=227,.;gbkey=Gene;gene=IgH;gene_biotype=protein_coding;partial=true;start_range=.,1
 AB019592.1	DDBJ	CDS	1	227	.	+	0	ID=cds0;Parent=gene0;Dbxref=IMGT/LIGM:AB019592,NCBI_GP:BAA35003.1;Name=BAA35003.1;end_range=227,.;gbkey=CDS;gene=IgH;partial=true;product=immunoglobulin heavy chain;protein_id=BAA35003.1;start_range=.,1

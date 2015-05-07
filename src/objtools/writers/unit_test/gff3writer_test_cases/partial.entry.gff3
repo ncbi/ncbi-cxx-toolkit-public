@@ -2,7 +2,7 @@
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
 ##sequence-region NW_001838553.2 1 3536253
-##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
 NW_001838553.2	RefSeq	region	1	3536253	.	+	.	ID=id0;Dbxref=taxon:9606;Name=1;chromosome=1;dev-stage=adult;gbkey=Src;genome=genomic;mol_type=genomic DNA;sex=male
 NW_001838553.2	BestRefSeq	gene	622	77814	.	-	.	ID=gene0;Dbxref=GeneID:163882,HGNC:26486,MIM:613439;Name=CNST;description=consortin%2C connexin sorting protein;gbkey=Gene;gene=CNST;gene_biotype=protein_coding;gene_synonym=C1orf71,PPP1R64,RP11-452J6.1;partial=true;start_range=.,622
 NW_001838553.2	BestRefSeq	mRNA	622	77814	.	-	.	ID=rna0;Parent=gene0;Dbxref=GeneID:163882,Genbank:NM_152609.2,HGNC:26486,MIM:613439;Name=NM_152609.2;Note=The RefSeq transcript has 1 substitution and aligns at 25%25 coverage compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=CNST;partial=true;product=consortin%2C connexin sorting protein%2C transcript variant 1;start_range=.,622;transcript_id=NM_152609.2

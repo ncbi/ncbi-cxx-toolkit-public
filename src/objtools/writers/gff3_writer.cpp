@@ -79,6 +79,8 @@
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 
+#include <algo/sequence/gene_model.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -90,6 +92,106 @@ USING_SCOPE(objects);
     ( !((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 #define IS_MATCH(sf, tf) \
     ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
+
+//  ----------------------------------------------------------------------------
+CConstRef<CSeq_align> sGetAlignmentForRna(
+    const CMappedFeat& mf,
+    CScope& scope)
+//  ----------------------------------------------------------------------------
+{
+    CSeq_id_Handle feat_idh = mf.GetProductId();
+    CSeq_id_Handle canonical_idh = sequence::GetId(feat_idh, scope,
+        sequence::eGetId_Canonical);
+    if (canonical_idh) {
+        feat_idh = canonical_idh;
+    }
+    list<CConstRef<CSeq_align> > aligns;
+    for (CAlign_CI it(scope, mf.GetLocation()); it; ++it) {
+        const CSeq_align& curAlign = *it;
+        CSeq_id_Handle align_idh = CSeq_id_Handle::GetHandle(curAlign.GetSeq_id(0));
+        CSeq_id_Handle canonical_idh = sequence::GetId(align_idh, scope,
+            sequence::eGetId_Canonical);
+        if (canonical_idh) {
+            align_idh = canonical_idh;
+        }
+        if (feat_idh.MatchesTo(align_idh)) {
+            aligns.push_back(CConstRef<CSeq_align>(&*it));
+        }
+    }
+    if (aligns.size() != 1) {
+        return CConstRef<CSeq_align>();
+    }
+    return aligns.front();
+}
+    
+//  ----------------------------------------------------------------------------
+bool sCreateMicroIntrons(
+    CScope& scope,
+    CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    feature::CFeatTree tree;
+    {{
+        SAnnotSelector sel;
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+        sel.SetResolveAll().SetAdaptiveDepth(true);
+        CFeat_CI it(bsh, sel);
+        tree.AddFeatures(it);
+    }}
+    scope.GetEditHandle(bsh);
+
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    sel.SetResolveAll().SetAdaptiveDepth(true);
+    for (CFeat_CI it(bsh, sel); it; ++it) {
+        CSeq_feat_Handle cds_h = it->GetSeq_feat_Handle();
+        CSeq_feat_Handle rna_h = 
+            tree.GetParent(cds_h, CSeqFeatData::eSubtype_mRNA).GetSeq_feat_Handle();
+        if (!rna_h) {
+            continue;
+        }
+        CConstRef<CSeq_align> pAlign = sGetAlignmentForRna(rna_h, scope);
+        if (!pAlign) {
+            continue;
+        }
+        CBioseq_Handle rna_bsh = scope.GetBioseqHandle(rna_h.GetProductId());
+        if (!rna_bsh) {
+            return false;
+        }
+        CFeat_CI product_it(rna_bsh, sel);
+        if (!product_it) {
+            return false;
+        }
+        CMappedFeat mf_product = *product_it;
+        ++product_it;
+        if (product_it) {
+            return false;
+        }
+        /*
+        CRef<CSeq_loc> pProjectedRnaLoc = CFeatureGenerator::s_ProjectRNA(
+            *pAlign, CConstRef<CSeq_loc>(&mf_product.GetLocation()));
+        CRef<CSeq_loc> pProjectedCdsLoc = CFeatureGenerator::s_ProjectCDS(
+            *pAlign, mf_product.GetLocation());
+
+        scope.GetEditHandle(rna_h.GetAnnot());
+        CRef<CSeq_feat> pEditedRna(new CSeq_feat);
+        pEditedRna->Assign(*rna_h.GetOriginalSeq_feat());
+        pEditedRna->SetLocation(*pProjectedRnaLoc);
+        CSeq_feat_EditHandle rna_eh(rna_h);
+        rna_eh.Replace(*pEditedRna);
+
+        scope.GetEditHandle(cds_h.GetAnnot());
+        CRef<CSeq_feat> pEditedCds(new CSeq_feat);
+        pEditedCds->Assign(*cds_h.GetOriginalSeq_feat());
+        pEditedCds->SetLocation(*pProjectedCdsLoc);
+        CSeq_feat_EditHandle cds_eh(cds_h);
+        cds_eh.Replace(*pEditedCds);
+        */
+        continue;
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 CConstRef<CUser_object> sGetUserObjectByType(
@@ -1251,7 +1353,7 @@ bool CGff3Writer::xWriteSequenceHeader(
 
     //species
     const string base_url = 
-        "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?";
+        "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?";
     CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
     if (sdi) {
         const CBioSource& bs = sdi->GetSource();
@@ -1283,6 +1385,9 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
+    if (this->m_uFlags & CGff3Writer::fMicroIntrons) {
+        xCreateMicroIntrons(bsh);
+    }
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
     }
@@ -1330,6 +1435,12 @@ bool CGff3Writer::xWriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    static unsigned int feats(0);
+    ++feats;
+    if ((feats %1000) == 0) {
+        cerr << feats << endl;
+    }
+ 
     //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     try {
         switch( mf.GetFeatSubtype() ) {
@@ -3036,6 +3147,14 @@ string CGff3Writer::xNextTrnaId()
 //  ----------------------------------------------------------------------------
 {
     return (string("rna") + NStr::UIntToString(m_uPendingTrnaId++));
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xCreateMicroIntrons(
+    CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    return sCreateMicroIntrons(*m_pScope, bsh);
 }
 
 END_NCBI_SCOPE
