@@ -66,7 +66,7 @@
 *     containing the applicable Tax-id, and will also determine the Defline and
 *     report the desired information.
 *  5. Skip through the file, triggering the hooks.
-* 
+*
 * ===========================================================================
 */
 
@@ -369,9 +369,9 @@ static void s_Report(void)
     string defline = s_BioseqInfoStack.top().defline;
 
     // Report the required information.
-    NcbiCout << ">" 
-        << seqid_str << " " 
-        << defline << " [" 
+    NcbiCout << ">"
+        << seqid_str << " "
+        << defline << " ["
         << taxid << "]" << NcbiEndl;
 }
 
@@ -414,7 +414,7 @@ void CBssInfoApp::Init(void)
 int CBssInfoApp::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Set up the input stream.
     auto_ptr<CObjectIStream> in(CObjectIStream::Open

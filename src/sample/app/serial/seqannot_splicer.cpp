@@ -150,7 +150,7 @@
 *   seqannot_splicer_util.[ch]pp
 *       Supporting code not specifically related to serial
 *       hooks - notably, a simplistic method of splicing.
-* 
+*
 * ===========================================================================
 */
 
@@ -503,7 +503,7 @@ void CSeqAnnotSplicerApp::Init(void)
 int CSeqAnnotSplicerApp::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Set up Seq-annot selection mask.
     if (args["sasm"].HasValue()) {

@@ -96,7 +96,7 @@ int CDbapiTest::Run()
 
     DBLB_INSTALL_DEFAULT();
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     IDataSource *ds = 0;
     //CNcbiOfstream log("debug.log");

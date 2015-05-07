@@ -169,7 +169,7 @@ int CSdbapiSimpleApp::Run(void)
 
 void CSdbapiSimpleApp::ParseArgs(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     m_UserString1 = args["user_string1"].AsString();
     m_UserString2 = args["user_string2"].AsString();
@@ -317,7 +317,7 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
 void CSdbapiSimpleApp::DemoParamerizedSql(void)
 {
     // Get user-supplied strings.
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string user_last   = args["user_string1"].AsString();
     string user_salary = args["user_string2"].AsString();
     string user_hire   = args["user_string3"].AsString();
@@ -378,7 +378,7 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
 void CSdbapiSimpleApp::DemoDynamicSql(void)
 {
     // Get user-supplied strings.
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string user_last   = args["user_string1"].AsString();
     string user_salary = args["user_string2"].AsString();
     string user_hire   = args["user_string3"].AsString();
@@ -431,7 +431,7 @@ void CSdbapiSimpleApp::DemoSqlInjection(void)
 {
 #if 0
     // Get user-supplied string.
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string user_input = args["user_string1"].AsString();
 
     // DO NOT DO THIS -- IT ALLOWS SQL INJECTION.

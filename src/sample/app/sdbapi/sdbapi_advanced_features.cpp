@@ -74,7 +74,7 @@ void CSdbapiTest::Init()
 
 int CSdbapiTest::Run()
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     try {
         string server = args["s"].AsString();

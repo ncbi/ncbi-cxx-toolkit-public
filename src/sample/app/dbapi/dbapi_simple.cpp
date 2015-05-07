@@ -482,7 +482,7 @@ void CDbapiSimpleApp::DemoParamerizedSql(void)
 {
     try {
         // Get user-supplied strings.
-        CArgs args = GetArgs();
+        const CArgs& args = GetArgs();
         string user_last   = args["user_string1"].AsString();
         string user_salary = args["user_string2"].AsString();
         string user_hire   = args["user_string3"].AsString();
@@ -535,7 +535,7 @@ void CDbapiSimpleApp::DemoDynamicSql(void)
 {
     try {
         // Get user-supplied strings.
-        CArgs args = GetArgs();
+        const CArgs& args = GetArgs();
         string user_last   = args["user_string1"].AsString();
         string user_salary = args["user_string2"].AsString();
         string user_hire   = args["user_string3"].AsString();
@@ -579,7 +579,7 @@ void CDbapiSimpleApp::DemoSqlInjection(void)
 #if 0
     try {
         // Get user-supplied string.
-        CArgs args = GetArgs();
+        const CArgs& args = GetArgs();
         string user_input = args["user_string1"].AsString();
 
         // DO NOT DO THIS -- IT ALLOWS SQL INJECTION.
