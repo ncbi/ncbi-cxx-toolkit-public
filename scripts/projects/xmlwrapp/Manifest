@@ -35,7 +35,7 @@ Linux64-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt 
 Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux32-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-Cygwin32          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Cygwin64          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system:netopt --without-ncbi-public
 IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
