@@ -23,8 +23,8 @@ COPY: $srcdir/include/connect/ext/*.h        $installdir/include/connect/ext/
 COPY: $srcdir/include/connect/daemons/*.h    $installdir/include/connect/daemons/
 COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv2/
 
-POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -vp /bin/{cyggcc_s-1.dll,cygrunsrv.exe,cygwin1.dll,cygz.dll} $installdir/bin/; }
-POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -vp /usr/{bin/cygcheck.exe,bin/ipcs.exe,sbin/cygserver.exe} $installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin64" ] || { cp -vp /bin/{cyggcc_s-1.dll,cygrunsrv.exe,cygwin1.dll,cygz.dll} $installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin64" ] || { cp -vp /usr/{bin/cygcheck.exe,bin/ipcs.exe,sbin/cygserver.exe} $installdir/bin/; }
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -37,4 +37,4 @@ Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --wit
 Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 FreeBSD32       : Clang : Clang.sh       --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
-Cygwin32        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
+Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
