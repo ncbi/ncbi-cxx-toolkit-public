@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <sstream>
 #include "exec_helpers.hpp"
 
 #include <connect/services/grid_worker.hpp>
@@ -245,6 +246,33 @@ CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts)
 {
 }
 
+// This class is responsible for reporting app/cgi version run by this app
+class CRemoteAppVersion
+{
+public:
+    CRemoteAppVersion(const string& app, const vector<string>& args)
+        : m_App(app), m_Args(args)
+    {}
+
+    string Get(const string& v) const
+    {
+        istringstream in;
+        ostringstream out;
+        ostringstream err;
+        int exit_code;
+
+        if (CPipe::ExecWait(m_App, m_Args, in, out, err, exit_code) == CPipe::eDone) {
+            return NStr::Sanitize(out.str()) + " / " + v;
+        }
+
+        return v;
+    }
+
+private:
+    const string m_App;
+    const vector<string> m_Args;
+};
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
@@ -366,6 +394,11 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     int max_attempts = reg.GetInt(sec_name,
             "max_reap_attempts_after_kill", 60, 0, IRegistry::eReturn);
     m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts));
+
+    const string cmd = reg.GetString(sec_name, "version_cmd", m_AppPath);
+    const string args = reg.GetString(sec_name, "version_args", "-version");
+    vector<string> v;
+    m_Version.reset(new CRemoteAppVersion(cmd, NStr::Tokenize(args, " ", v)));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -828,6 +861,11 @@ bool CRemoteAppLauncher::MustFailNoRetries(int exit_code) const
     }
 
     return false;
+}
+
+string CRemoteAppLauncher::GetAppVersion(const string& v) const
+{
+    return m_Version->Get(v);
 }
 
 END_NCBI_SCOPE

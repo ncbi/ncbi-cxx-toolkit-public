@@ -360,7 +360,8 @@ public:
     }
     virtual string GetAppVersion() const
     {
-        return GRID_APP_VERSION;
+        _ASSERT(m_RemoteAppLauncher.get());
+        return m_RemoteAppLauncher->GetAppVersion(GRID_APP_VERSION);
     }
 
 private:

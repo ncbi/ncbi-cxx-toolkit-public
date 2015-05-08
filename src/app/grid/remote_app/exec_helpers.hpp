@@ -46,6 +46,7 @@ bool CanExecRemoteApp(const CFile& file);
 class IRegistry;
 class CWorkerNodeJobContext;
 class CRemoteAppReaper;
+class CRemoteAppVersion;
 
 class CRemoteAppLauncher
 {
@@ -86,6 +87,8 @@ public:
     const list<string>& GetExcludedEnv() const { return m_ExcludeEnv; }
     const list<string>& GetIncludedEnv() const { return m_IncludeEnv; }
 
+    string GetAppVersion(const string&) const;
+
 private:
     string m_AppPath;
     int m_MaxAppRunningTime;
@@ -107,6 +110,7 @@ private:
     list<string> m_IncludeEnv;
 
     auto_ptr<CRemoteAppReaper> m_Reaper;
+    auto_ptr<CRemoteAppVersion> m_Version;
 };
 
 END_NCBI_SCOPE
