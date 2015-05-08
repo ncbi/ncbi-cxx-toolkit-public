@@ -430,6 +430,9 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
                 m_NetScheduleAPI.GetService().GetServiceType()));
         return 0;
 
+    case eNetStorageAdmin:
+        return ReconfigureNetStorageServer();
+
     default:
         return 2;
     }

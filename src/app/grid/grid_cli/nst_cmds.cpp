@@ -126,36 +126,36 @@ void CGridCommandLineInterfaceApp::NetStorage_PrintServerReply(
     }
 }
 
-class CNetStorageInfoToJson : public IExecToJson
+class CNetStorageExecToJson : public IExecToJson
 {
 public:
-    CNetStorageInfoToJson(CNetStorageAdmin::TInstance netstorage_admin) :
-        m_NetStorageAdmin(netstorage_admin)
+    CNetStorageExecToJson(CNetStorageAdmin::TInstance netstorage_admin,
+            const string& command) :
+        m_NetStorageAdmin(netstorage_admin),
+        m_Command(command)
     {
     }
 
 private:
-    virtual CJsonNode ExecOn(CNetServer server);
+    virtual CJsonNode ExecOn(CNetServer server)
+    {
+        CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
+                m_NetStorageAdmin.MkNetStorageRequest(m_Command), server));
+
+        s_NetStorage_RemoveStdReplyFields(server_reply);
+        return server_reply;
+    }
 
     CNetStorageAdmin m_NetStorageAdmin;
+    const string m_Command;
 };
-
-CJsonNode CNetStorageInfoToJson::ExecOn(CNetServer server)
-{
-    CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
-            m_NetStorageAdmin.MkNetStorageRequest("INFO"), server));
-
-    s_NetStorage_RemoveStdReplyFields(server_reply);
-
-    return server_reply;
-}
 
 int CGridCommandLineInterfaceApp::PrintNetStorageServerInfo()
 {
     CNetService service(m_NetStorageAdmin.GetService());
 
     if (m_Opts.output_format != eHumanReadable) {
-        CNetStorageInfoToJson info_to_json(m_NetStorageAdmin);
+        CNetStorageExecToJson info_to_json(m_NetStorageAdmin, "INFO");
 
         g_PrintJSON(stdout, g_ExecToJson(info_to_json, service,
                 service.GetServiceType(), CNetService::eIncludePenalized));
@@ -222,6 +222,16 @@ int CGridCommandLineInterfaceApp::ShutdownNetStorageServer()
         m_NetStorageAdmin.ExchangeJson(shutdown_request, server);
     }
 
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::ReconfigureNetStorageServer()
+{
+    CNetService service(m_NetStorageAdmin.GetService());
+    CNetStorageExecToJson reconf_to_json(m_NetStorageAdmin, "RECONFIGURE");
+
+    g_PrintJSON(stdout, g_ExecToJson(reconf_to_json, service,
+            service.GetServiceType(), CNetService::eIncludePenalized));
     return 0;
 }
 

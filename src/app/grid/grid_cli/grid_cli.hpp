@@ -580,6 +580,7 @@ private:
     int PrintNetStorageServerInfo();
     int PrintNetStorageServerConfig();
     int ShutdownNetStorageServer();
+    int ReconfigureNetStorageServer();
 
     int Automation_PipeServer();
     int Automation_DebugConsole();

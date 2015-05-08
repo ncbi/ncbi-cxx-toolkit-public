@@ -1099,7 +1099,7 @@ struct SCommandDefinition {
         "Update configuration parameters of a running server. "
         "The server will look for a configuration file in the "
         "same location that was used during start-up.",
-        {eNetCache, eNetSchedule, eLoginToken, eAuth, eMirror,
+        {eNetCache, eNetSchedule, eNetStorage, eLoginToken, eAuth, eMirror,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Drain,
