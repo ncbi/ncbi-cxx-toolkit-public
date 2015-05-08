@@ -202,7 +202,7 @@ static inline int SumAllRowScores(AlignmentUtility& au)
 int SUApp::Run(void)
 {
     // process arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // arg interactions
     if (args["LOO"].HasValue() && !args["IBM"].HasValue()) {

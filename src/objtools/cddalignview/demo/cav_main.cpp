@@ -87,7 +87,7 @@ void CAVApp::Init(void)
 int CAVApp::Run(void)
 {
     // process arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // open input file
     CNcbiIfstream *asnIfstream = new CNcbiIfstream(args["in"].AsString().c_str(), IOS_BASE::in | IOS_BASE::binary);
