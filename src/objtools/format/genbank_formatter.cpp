@@ -861,6 +861,9 @@ void CGenbankFormatter::x_Authors
     string authors;
     if (ref.IsSetAuthors()) {
         CReferenceItem::FormatAuthors(ref.GetAuthors(), authors);
+        if (NStr::EqualNocase(authors, "?")) {
+            authors = ".";
+        }
     }
     if( authors.empty() ) {
         if( NStr::IsBlank(ref.GetConsortium()) ) {
