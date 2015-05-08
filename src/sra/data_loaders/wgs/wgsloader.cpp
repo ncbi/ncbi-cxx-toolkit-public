@@ -54,6 +54,28 @@ BEGIN_SCOPE(objects)
 class CDataLoader;
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+class CLoaderFilter : public CObjectManager::IDataLoaderFilter {
+public:
+    bool IsDataLoaderMatches(CDataLoader& loader) const {
+        return dynamic_cast<CWGSDataLoader*>(&loader) != 0;
+    }
+};
+
+
+class CRevoker {
+public:
+    ~CRevoker() {
+        CLoaderFilter filter;
+        CObjectManager::GetInstance()->RevokeDataLoaders(filter);
+    }
+};
+static CRevoker s_Revoker;
+
+END_LOCAL_NAMESPACE;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSDataLoader
 /////////////////////////////////////////////////////////////////////////////
