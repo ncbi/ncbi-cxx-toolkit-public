@@ -191,6 +191,19 @@ public:
     /// data loader plugins for unloading of their shared library.
     void RevokeAllDataLoaders(void);
 
+    
+    class NCBI_XOBJMGR_EXPORT IDataLoaderFilter
+    {
+    public:
+        virtual ~IDataLoaderFilter();
+
+        virtual bool IsDataLoaderMatches(CDataLoader& loader) const = 0;
+    };
+    
+    /// Revoke data loaders by filter, even if they were still used.
+    /// This method should be called from data loader's plugin unloadin code.
+    void RevokeDataLoaders(IDataLoaderFilter& filter);
+
     typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
 
     void ReleaseDataSource(TDataSourceLock& data_source);

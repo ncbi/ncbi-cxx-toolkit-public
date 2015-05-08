@@ -237,7 +237,29 @@ void CObjectManager::RevokeAllDataLoaders(void)
         iter->second->RevokeDataLoader();
     }
     m_mapToSource.clear();
+    m_mapNameToLoader.clear();
     m_setDefaultSource.clear();
+}
+
+
+CObjectManager::IDataLoaderFilter::~IDataLoaderFilter()
+{
+}
+
+
+void CObjectManager::RevokeDataLoaders(IDataLoaderFilter& filter)
+{
+    TWriteLockGuard guard(m_OM_Lock);
+    ERASE_ITERATE ( TMapToSource, iter, m_mapToSource ) {
+        TDataSourceLock source = iter->second;
+        CDataLoader* loader = source->GetDataLoader();
+        if ( loader && filter.IsDataLoaderMatches(*loader) ) {
+            m_mapNameToLoader.erase(loader->GetName());
+            m_mapToSource.erase(loader);
+            m_setDefaultSource.erase(source);
+            source->RevokeDataLoader();
+        }
+    }
 }
 
 
