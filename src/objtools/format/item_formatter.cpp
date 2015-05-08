@@ -1287,6 +1287,7 @@ static void s_FormatPatent
     }
 
     journal = CNcbiOstrstreamToString(jour);
+    CleanAndCompress (journal, journal.c_str());
 }
 
 
