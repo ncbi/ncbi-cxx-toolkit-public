@@ -821,11 +821,11 @@ bool CDataSource_ScopeInfo::TSEIsReplaced(const TBlobId& blob_id) const
 
 
 CTSE_ScopeInfo::SUnloadedInfo::SUnloadedInfo(const CTSE_Lock& tse_lock)
-    : m_Loader(tse_lock->GetDataSource().GetDataLoader()),
+    : m_Source(&tse_lock->GetDataSource()),
       m_BlobId(tse_lock->GetBlobId()),
       m_BlobOrder(tse_lock->GetBlobOrder())
 {
-    _ASSERT(m_Loader);
+    _ASSERT(m_Source);
     _ASSERT(m_BlobId);
     // copy all bioseq ids
     tse_lock->GetBioseqsIds(m_BioseqsIds);
@@ -834,9 +834,9 @@ CTSE_ScopeInfo::SUnloadedInfo::SUnloadedInfo(const CTSE_Lock& tse_lock)
 
 CTSE_Lock CTSE_ScopeInfo::SUnloadedInfo::LockTSE(void)
 {
-    _ASSERT(m_Loader);
+    _ASSERT(m_Source);
     _ASSERT(m_BlobId);
-    return m_Loader->GetBlobById(m_BlobId);
+    return m_Source->GetDataLoader()->GetBlobById(m_BlobId);
 }
 
 

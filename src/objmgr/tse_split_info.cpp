@@ -112,15 +112,6 @@ CRef<ITSE_Assigner> CTSE_Split_Info::GetAssigner(const CTSE_Info& tse)
     return CRef<ITSE_Assigner>();
 }
 
-void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
-{
-    if ( !m_DataLoader ) {
-        m_DataLoader = ds.GetDataLoader();
-        _ASSERT(m_DataLoader);
-    }
-}
-
-
 // identification
 CTSE_Split_Info::TBlobId CTSE_Split_Info::GetBlobId(void) const
 {
@@ -158,7 +149,10 @@ CInitMutexPool& CTSE_Split_Info::GetMutexPool(void)
 
 CDataLoader& CTSE_Split_Info::GetDataLoader(void) const
 {
-    return m_DataLoader.GetNCObject();
+    _ASSERT(!m_TSE_Set.empty());
+    CDataLoader* loader = m_TSE_Set.begin()->first->GetDataSource().GetDataLoader();
+    _ASSERT(loader);
+    return *loader;
 }
 
 

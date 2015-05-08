@@ -540,9 +540,6 @@ void CTSE_Info::x_DSAttachContents(CDataSource& ds)
 
     m_DataSource = &ds;
     TParent::x_DSAttachContents(ds);
-    if ( m_Split ) {
-        m_Split->x_DSAttach(ds);
-    }
     ITERATE ( TBioseqs, it, m_Bioseqs ) {
         ds.x_IndexSeqTSE(it->first, this);
     }

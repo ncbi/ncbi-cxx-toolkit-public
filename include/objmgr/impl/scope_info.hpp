@@ -472,7 +472,7 @@ private: // members
         SUnloadedInfo(const CTSE_Lock& lock);
         CTSE_Lock LockTSE(void);
 
-        CRef<CDataLoader>       m_Loader;
+        CRef<CDataSource>       m_Source;
         TBlobId                 m_BlobId;
         TBlobOrder              m_BlobOrder;
         TSeqIds                 m_BioseqsIds;

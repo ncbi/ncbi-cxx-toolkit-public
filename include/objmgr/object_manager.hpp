@@ -185,6 +185,12 @@ public:
     bool RevokeDataLoader(CDataLoader& loader);
     bool RevokeDataLoader(const string& loader_name);
 
+
+    /// Revoke all registered data loaders, even if they were still used.
+    /// This method should be called at application's end to release
+    /// data loader plugins for unloading of their shared library.
+    void RevokeAllDataLoaders(void);
+
     typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
 
     void ReleaseDataSource(TDataSourceLock& data_source);

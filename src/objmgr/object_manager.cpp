@@ -230,6 +230,17 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
 }
 
 
+void CObjectManager::RevokeAllDataLoaders(void)
+{
+    TWriteLockGuard guard(m_OM_Lock);
+    NON_CONST_ITERATE ( TMapToSource, iter, m_mapToSource ) {
+        iter->second->RevokeDataLoader();
+    }
+    m_mapToSource.clear();
+    m_setDefaultSource.clear();
+}
+
+
 CObjectManager::TDataSourceLock
 CObjectManager::x_RevokeDataLoader(CDataLoader* loader)
 {

@@ -125,6 +125,15 @@ CDataSource::~CDataSource(void)
 }
 
 
+void CDataSource::RevokeDataLoader(void)
+{
+    if ( m_Loader ) {
+        TMainLock::TWriteLockGuard guard(m_DSMainLock);
+        m_Loader = null;
+    }
+}
+
+
 void CDataSource::DropAllTSEs(void)
 {
     // Lock indexes

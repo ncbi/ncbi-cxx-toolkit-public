@@ -94,7 +94,6 @@ public:
     CDataLoader& GetDataLoader(void) const;
 
     // TSE connection
-    void x_DSAttach(CDataSource& ds);
     void x_TSEAttach(CTSE_Info& tse_info, CRef<ITSE_Assigner>& assigner);
     void x_TSEDetach(CTSE_Info& tse_info);
 
@@ -160,7 +159,6 @@ protected:
 
 private:
     // identification of the blob
-    CRef<CDataLoader>      m_DataLoader;
     TBlobId                m_BlobId;
     TBlobVersion           m_BlobVersion;
     TSplitVersion          m_SplitVersion;

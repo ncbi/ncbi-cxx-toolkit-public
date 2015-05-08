@@ -182,6 +182,7 @@ public:
     const CTSE_LockSet& GetStaticBlobs(void) const;
 
     CDataLoader* GetDataLoader(void) const;
+    void RevokeDataLoader(void);
     const CConstRef<CObject>& GetSharedObject(void) const;
     TTSE_Lock GetSharedTSE(void) const;
     bool CanBeEdited(void) const;
