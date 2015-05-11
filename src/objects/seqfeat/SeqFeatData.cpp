@@ -1748,6 +1748,7 @@ START_SUBTYPE(misc_signal)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
+    ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
