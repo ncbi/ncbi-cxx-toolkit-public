@@ -266,7 +266,7 @@ esac
 
 case "$ncbi_platform" in
     Linux64 | *MAC )
-        : ${VDB_PATH=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.4.5-3}
+        : ${VDB_PATH=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.5.0}
         ;;
 esac
 
