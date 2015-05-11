@@ -69,6 +69,9 @@ USING_SCOPE(objects);
 class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
 public:
+    CAsn2FlatApp (void);
+    ~CAsn2FlatApp (void);
+
     void Init(void);
     int  Run (void);
 
@@ -120,6 +123,18 @@ private:
     bool                        m_do_cleanup;
 };
 
+
+// constructor
+CAsn2FlatApp::CAsn2FlatApp (void)
+{
+    SetVersion(CVersionInfo(0, 9, 1));
+}
+
+// destructor
+CAsn2FlatApp::~CAsn2FlatApp (void)
+
+{
+}
 
 void CAsn2FlatApp::Init(void)
 {
