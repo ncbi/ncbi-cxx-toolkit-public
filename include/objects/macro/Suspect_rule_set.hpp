@@ -59,8 +59,8 @@ public:
     // destructor
     ~CSuspect_rule_set(void);
 
-    static CConstRef<CSuspect_rule_set> GetOrganelleProductRules();
-    static CConstRef<CSuspect_rule_set> GetProductRules();
+    static CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name = "");
+    static CConstRef<CSuspect_rule_set> GetProductRules(const string& name = "");
 
 private:
     // Prohibit copy constructor and assignment operator

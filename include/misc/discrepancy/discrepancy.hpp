@@ -89,6 +89,7 @@ public:
     bool GetKeepRef() const { return m_KeepRef;}
     void SetFile(const string& s){ m_File = s;}
     void SetLineage(const string& s){ m_Lineage = s;}
+    virtual void SetSuspectRules(const string&) = 0;
     void SetKeepRef(bool b){ m_KeepRef = b;}
     static CRef<CDiscrepancySet> New(objects::CScope&);
 

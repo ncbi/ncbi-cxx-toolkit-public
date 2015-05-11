@@ -1525,9 +1525,7 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
               else {
                 if (pattern.empty()) pFound = false;
                 else {
-  	          pFound = (str_cons->GetCase_sensitive()) ?
-                             pFound = search.find(pattern, pFound+1):
-                               NStr::FindNoCase(search, pattern, pFound+1);
+  	                pFound = (str_cons->GetCase_sensitive()) ? search.find(pattern, pFound+1) : NStr::FindNoCase(search, pattern, pFound+1);
                 }
               }
             }

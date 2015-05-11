@@ -1060,10 +1060,12 @@ static string GetRuleText(const CSuspect_rule& rule)
 }
 
 
+///////////////////////////////////// SUSPECT_PRODUCT_NAMES
+
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
 {
     if (obj->GetSubtype() != CSeqFeatData::eSubtype_prot) return;
-    CConstRef<CSuspect_rule_set> rules = CSuspect_rule_set::GetProductRules();
+    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
     const CProt_ref& prot = obj->GetProt();
     string prot_name = *(prot.GetName().begin()); 
 
@@ -1079,7 +1081,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
             //if (!DoesObjectMatchConstraintChoiceSet(*context.GetCurrentSeq_feat(), constr)) continue;
         }
         CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-        Add(m_Objs, r);
+        Add("", r);
 
 cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
     }
@@ -1089,7 +1091,7 @@ cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "it works!"));
-    item->SetDetails(m_Objs);
+    item->SetDetails(m_Objs[""]);
     AddItem(CRef<CReportItem>(item.Release()));
 
 /*
@@ -1103,6 +1105,57 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 
 
 DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
+{
+    return false;
+}
+
+
+///////////////////////////////////// TEST_ORGANELLE_PRODUCTS
+
+
+DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData)
+{
+    if (obj->GetSubtype() != CSeqFeatData::eSubtype_prot) return;
+    CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
+    const CProt_ref& prot = obj->GetProt();
+    string prot_name = *(prot.GetName().begin()); 
+
+    ITERATE (list <CRef <CSuspect_rule> >, rule, rules->Get()) {
+        const CSearch_func& find = (*rule)->GetFind();
+        if (!MatchesSearchFunc(prot_name, find)) continue;
+        if ((*rule)->CanGetExcept()) {
+            const CSearch_func& except = (*rule)->GetExcept();
+            if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) continue;
+        }
+        if ((*rule)->CanGetFeat_constraint()) {
+            const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
+            //if (!DoesObjectMatchConstraintChoiceSet(*context.GetCurrentSeq_feat(), constr)) continue;
+        }
+        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+        Add("", r);
+
+cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
+{
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "it works!"));
+    item->SetDetails(m_Objs[""]);
+    AddItem(CRef<CReportItem>(item.Release()));
+
+/*
+    CNcbiOstrstream ss;
+    ss << GetName() << ": " << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
+    item->SetDetails(m_Objs);
+    AddItem(CRef<CReportItem>(item.Release()));
+*/
+}
+
+
+DISCREPANCY_AUTOFIX(TEST_ORGANELLE_PRODUCTS)
 {
     return false;
 }

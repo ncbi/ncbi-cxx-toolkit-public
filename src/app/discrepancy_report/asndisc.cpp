@@ -60,6 +60,7 @@ protected:
     void x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
 
     CScope m_Scope;
+    string m_SuspectRules;
     string m_Lineage;   // override lineage
     vector<string> m_Files;
     vector<string> m_Tests;
@@ -123,6 +124,7 @@ void CDiscRepApp::Init(void)
     // use CArgAllow_Strings
     arg_desc->AddFlag("S", "SummaryReport");
 
+    arg_desc->AddOptionalKey("w", "SuspectProductFile", "Suspect product rule file name", CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("L", "LineageToUse", "Default lineage", CArgDescriptions::eString);
 
 /*
@@ -251,6 +253,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
         Tests->AddTest(*tname);
     }
 
+    Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
 
     vector<CSeq_entry_Handle> seh = x_ReadFile(fname);
@@ -270,6 +273,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->AddTest(*tname);
     }
 
+    Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
 
     ITERATE(vector<string>, fname, m_Files) {
@@ -369,6 +373,7 @@ int CDiscRepApp::Run(void)
     }
 
     // set defaults
+    if(args["w"]) m_SuspectRules = args["w"].AsString();
     if(args["L"]) m_Lineage = args["L"].AsString();
 
     // run tests

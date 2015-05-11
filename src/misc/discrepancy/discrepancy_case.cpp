@@ -48,16 +48,16 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst)
     CSeq_inst::TMol mol = obj->GetMol();
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) return;
     CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
-    Add(m_Objs, r);
+    Add("", r);
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 {
     CNcbiOstrstream ss;
-    ss << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
+    ss << m_Objs[""].size() << " nucleotide Bioseq" << (m_Objs[""].size()==1 ? " is" : "s are") << " present";
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs);
+    item->SetDetails(m_Objs[""]);
     AddItem(CRef<CReportItem>(item.Release()));
 }
 
@@ -69,16 +69,16 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst)
 {
     if (obj->GetMol() != CSeq_inst::eMol_aa) return;
     CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
-    Add(m_Objs, r);
+    Add("", r);
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 {
     CNcbiOstrstream ss;
-    ss << m_Objs.size() << " protein sequence" << (m_Objs.size()==1 ? " is" : "s are") << " present";
+    ss << m_Objs[""].size() << " protein sequence" << (m_Objs[""].size()==1 ? " is" : "s are") << " present";
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs);
+    item->SetDetails(m_Objs[""]);
     AddItem(CRef<CReportItem>(item.Release()));
 }
 

@@ -32,6 +32,7 @@
 
 #include <misc/discrepancy/discrepancy.hpp>
 #include "report_object.hpp"
+#include <objects/macro/Suspect_rule_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -137,6 +138,7 @@ protected:
 /// CDiscrepancyCore and CDiscrepancyVisitor - parents for CDiscrepancyCase_* classes
 
 class CDiscrepancyContext;
+typedef map<string, vector<CRef<CReportObj> > > TReportObjectMap;
 
 class CDiscrepancyCore : public CDiscrepancyCase
 {
@@ -144,9 +146,9 @@ public:
     void Summarize(){}
     virtual TReportItemList GetReport() const { return m_ReportItems;}
     void AddItem(CRef<CReportItem> item){ m_ReportItems.push_back(item);}
-    static void Add(TReportObjectList&, CRef<CDiscrepancyObject>);
+    void Add(const string&, CRef<CDiscrepancyObject>);
 protected:
-    TReportObjectList m_Objs;
+    TReportObjectMap m_Objs;
     TReportItemList m_ReportItems;
 };
 
@@ -176,12 +178,19 @@ public:
     CConstRef<CSeq_feat> GetCurrentSeq_feat(){ return m_Current_Seq_feat;}
     objects::CScope& GetScope(){ return m_Scope;}
 
+    void SetSuspectRules(const string& name);
+    CConstRef<CSuspect_rule_set> GetProductRules();
+    CConstRef<CSuspect_rule_set> GetOrganelleProductRules();
+
 protected:
     objects::CScope& m_Scope;
     set<string> m_Names;
     vector<CRef<CDiscrepancyCase> > m_Tests;
     CConstRef<CBioseq> m_Current_Bioseq;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
+    CConstRef<CSuspect_rule_set> m_ProductRules;
+    CConstRef<CSuspect_rule_set> m_OrganelleProductRules;
+    string m_SuspectRules;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)

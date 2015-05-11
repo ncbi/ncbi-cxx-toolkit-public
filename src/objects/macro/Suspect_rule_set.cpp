@@ -69,15 +69,15 @@ CSuspect_rule_set::~CSuspect_rule_set(void)
 }
 
 
-static void s_InitializeOrganelleProductRules(void)
+static void s_InitializeOrganelleProductRules(const string& name)
 {
     CFastMutexGuard GUARD(s_OrganelleProductRulesMutex);
     if (s_OrganelleProductRulesInitialized) {
         return;
     }
     s_OrganelleProductRules.Reset(new CSuspect_rule_set());
-    string file = g_FindDataFile("organelle_products.prt");
-  
+    string file = name.empty() ? g_FindDataFile("organelle_products.prt") : name;
+
     if ( !file.empty() ) {
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
@@ -93,20 +93,20 @@ static void s_InitializeOrganelleProductRules(void)
         CNcbiIstrstream istr(all_rules.c_str());
         istr >> MSerial_AsnText >> *s_OrganelleProductRules;
     }
-     
+
     s_OrganelleProductRulesInitialized = true;
 }
 
 
-static void s_InitializeProductRules(void)
+static void s_InitializeProductRules(const string& name)
 {
     CFastMutexGuard GUARD(s_ProductRulesMutex);
     if (s_ProductRulesInitialized) {
         return;
     }
     s_ProductRules.Reset(new CSuspect_rule_set());
-    string file = g_FindDataFile("product_rules.prt");
-  
+    string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
+
     if ( !file.empty() ) {
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
@@ -122,21 +122,21 @@ static void s_InitializeProductRules(void)
         CNcbiIstrstream istr(all_rules.c_str());
         istr >> MSerial_AsnText >> *s_ProductRules;
     }
-     
+
     s_ProductRulesInitialized = true;
 }
 
 
-CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetOrganelleProductRules()
+CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetOrganelleProductRules(const string& name)
 {
-    s_InitializeOrganelleProductRules();
+    s_InitializeOrganelleProductRules(name);
     return CConstRef<CSuspect_rule_set>(s_OrganelleProductRules.GetPointer());
 }
 
 
-CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetProductRules()
+CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetProductRules(const string& name)
 {
-    s_InitializeProductRules();
+    s_InitializeProductRules(name);
     return CConstRef<CSuspect_rule_set>(s_ProductRules.GetPointer());
 }
 

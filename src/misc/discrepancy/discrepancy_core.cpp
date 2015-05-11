@@ -127,8 +127,9 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T* obj, CDiscrepanc
 }
 
 
-void CDiscrepancyCore::Add(TReportObjectList& list, CRef<CDiscrepancyObject> obj)
+void CDiscrepancyCore::Add(const string& s, CRef<CDiscrepancyObject> obj)
 {
+    TReportObjectList& list = this->m_Objs[s];
     ITERATE(TReportObjectList, it, list) {
         if(obj->Equal(**it)) return;
     }
@@ -194,6 +195,27 @@ void CDiscrepancyContext::Summarize()
     NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, it, m_Tests) {
         (*it)->Summarize();
     }
+}
+
+
+void CDiscrepancyContext::SetSuspectRules(const string& name)
+{
+    m_SuspectRules = name;
+    if (!m_ProductRules) m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+}
+
+
+CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetProductRules()
+{
+    if (!m_ProductRules) m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+    return m_ProductRules;
+}
+
+
+CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetOrganelleProductRules()
+{
+    if (!m_OrganelleProductRules) m_OrganelleProductRules = CSuspect_rule_set::GetOrganelleProductRules();
+    return m_OrganelleProductRules;
 }
 
 
