@@ -3382,6 +3382,201 @@ bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat)
 }
 
 
+bool sFeatureGetChildrenOfSubtype(
+    CMappedFeat mf,
+    CSeqFeatData::ESubtype subtype,
+    vector<CMappedFeat>& children,
+    feature::CFeatTree* pTree = 0)
+{
+    const CSeq_feat& ff = mf.GetOriginalFeature();
+    bool bTreeIsMine = false;
+    if (!pTree) {
+        pTree = new feature::CFeatTree;
+        pTree->AddFeaturesFor(mf, subtype, mf.GetFeatSubtype());
+        bTreeIsMine = true;
+    }
+
+    vector<CMappedFeat> c = pTree->GetChildren(mf);
+    for (vector<CMappedFeat>::iterator it = c.begin(); it != c.end(); it++) {
+        CMappedFeat f = *it;
+        if (f.GetFeatSubtype() == subtype) {
+            children.push_back(f);
+        }
+        else {
+            sFeatureGetChildrenOfSubtype(f, subtype, children, pTree);
+        }
+    }
+    if (bTreeIsMine) {
+        delete pTree;
+    }
+    return true;
+}
+
+bool GetFeatureGeneBiotype(
+    feature::CFeatTree ft,
+    CMappedFeat mf,
+    string& biotype)
+{
+#define SUBTYPE(x) CSeqFeatData::eSubtype_ ## x
+
+    typedef vector<CMappedFeat> MFS;
+    typedef MFS::const_iterator MFSit;
+
+    const string strRearrange("rearrangement required for product");
+
+    //0a 
+    // Only genes ever get that new gene_biotype attribute, other feature types 
+    // control whether the parent gene gets it but they don't get the attribute 
+    // themselves.
+    //
+    if (mf.GetFeatSubtype() != SUBTYPE(gene)) {
+        return false;
+    }
+
+    //for debugging specific genes:
+    // size_t start = mf.GetLocation().GetInt().GetStart(objects::eExtreme_Positional);
+    // if (XXXX == start) {
+    //     cerr << "";
+    // }
+
+    vector<CMappedFeat> vecCds;
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(cdregion), vecCds);
+
+    //1a 
+    // If there is at least one non-pseudo CDS child without a 
+    // except-text="rearrangement required for product" qualifier then 
+    // gene_biotype qualifier is "protein_coding".
+    //
+    for (MFSit it = vecCds.begin(); it != vecCds.end(); it++) {
+        if (it->IsSetPseudo() && it->GetPseudo()) {
+            continue;
+        }
+        if (it->IsSetExcept_text() && (it->GetExcept_text() == strRearrange)) {
+            continue;
+        }
+        biotype = "protein_coding";
+        return true;
+    }
+
+    vector<CMappedFeat> vecOthers;
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(V_region), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(C_region), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(V_segment), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(D_segment), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(J_segment), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(tRNA), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(rRNA), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(snRNA), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(snoRNA), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(tmRNA), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(otherRNA), vecOthers);
+    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(ncRNA), vecOthers);
+
+    CSeqFeatData::ESubtype singleSubtype = SUBTYPE(bad);
+    CMappedFeat nonPseudo;
+
+    for (MFSit it = vecOthers.begin(); it != vecOthers.end(); it++) {
+        CSeqFeatData::ESubtype currentSubtype = it->GetFeatSubtype();
+        if (!it->IsSetPseudo() || !it->GetPseudo()) {
+            nonPseudo = *it;
+        }
+        if (singleSubtype == SUBTYPE(bad)) {
+            singleSubtype = currentSubtype;
+        }
+        else if (currentSubtype != singleSubtype) {
+            singleSubtype = SUBTYPE(bad);
+            break;
+        }
+    }
+
+    //2a 
+    // If the only feature type present in vecOthers is ncRNA and at least one  
+    // of the members is non-pseudo then look at CLASS=RNA-ref.ext.gen.class. 
+    // If CLASS=="other", then gene_biotype="ncRNA". 
+    // If not, then gene_biotype=<CLASS>.
+    //
+    if (singleSubtype == SUBTYPE(ncRNA) && nonPseudo) {
+        const CRNA_ref& rna = nonPseudo.GetData().GetRna();
+        if (!rna.IsSetExt()) {
+            biotype = "ncRNA";
+            return true;
+        }
+        const CRNA_ref::TExt& ext = rna.GetExt();
+        if (!ext.IsGen()) {
+            biotype = "ncRNA";
+            return true;
+        }
+        string rnaClass = ext.GetGen().GetClass();
+        if (rnaClass == "other") {
+            biotype = "ncRNA";
+            return true;
+        }
+        biotype = rnaClass;
+        return true;
+    }
+
+    //2b
+    // If still here and all members of vecOthers are of the same feature type FTYPE and 
+    // at least one of the members is non-pseudo, then gene_biotype=<FTYPE>
+    //
+    if (singleSubtype != SUBTYPE(bad) && nonPseudo) {
+        biotype = CSeqFeatData::SubtypeValueToName(singleSubtype);
+        return true;
+    }
+
+    //2c
+    // If all members of vecOthers are of type miscRNA (and also all pseudo or we would no 
+    // longer be here) then gene_biotype="transcribed_pseudogene".
+    if (singleSubtype == SUBTYPE(otherRNA)) {
+        biotype = "transcribed_pseudogene";
+        return true;
+    }
+
+    //2d
+    // If all members of vecOthers are of the same feature type FTYPE (and also all pseudo 
+    // or we would no longer be here) then gene_biotype=<FTYPE>"-pseudogene"
+    if (singleSubtype != SUBTYPE(bad)) {
+        biotype = CSeqFeatData::SubtypeValueToName(singleSubtype) + "_pseudogene";
+        return true;
+    }
+
+    //3a
+    // If vecCds is empty then gene_biotype="other".
+    if (vecCds.empty()) {
+        biotype = "other";
+        return true;
+    }
+
+    //3b
+    // If at least one member of vecCds with "except-text=rearrangement required for product" 
+    // then gene_biotype="segment" for pseudo=FALSE and gene_biotype="segment_pseudogene" for 
+    // pseudo=TRUE.
+    for (MFSit it = vecCds.begin(); it != vecCds.end(); it++) {
+        if (!it->IsSetExcept_text()) {
+            continue;
+        }
+        if (it->GetExcept_text() != strRearrange) {
+            continue;
+        }
+        if (it->IsSetPseudo() && it->GetPseudo()) {
+            biotype = "segment_pseudogene";
+        }
+        else {
+            biotype = "segment";
+        }
+        return true;
+    }
+
+    //3c
+    // If we made it to that point then all members of the non-empty vecCds are pseudo and 
+    // gene_biotype="pseudogene".
+    biotype = "pseudogene";
+
+    return true;
+#undef SUBTYPE
+}
+
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

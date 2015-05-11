@@ -492,6 +492,10 @@ NCBI_XOBJUTIL_EXPORT
 void ReassignFeatureIds(const CSeq_entry_EditHandle& entry);
 NCBI_XOBJUTIL_EXPORT
 void ReassignFeatureIds(const CSeq_annot_EditHandle& annot);
+NCBI_XOBJUTIL_EXPORT
+bool GetFeatureGeneBiotype(feature::CFeatTree ft,
+                           CMappedFeat mf,
+                           string& biotype);
 
 typedef enum {
     eLocationInFrame_InFrame = 0,
