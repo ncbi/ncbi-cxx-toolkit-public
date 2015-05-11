@@ -522,7 +522,7 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
             break;
         case K_DEFAULT:
             Consume();
-            member->SetDefault(Value());
+            member->SetDefault(Value(type.get()));
             break;
         }
     }
@@ -564,11 +564,11 @@ void ASNParser::TypeList(list<string>& ids)
     } while ( ConsumeIfSymbol(',') );
 }
 
-AutoPtr<CDataValue> ASNParser::Value(void)
+AutoPtr<CDataValue> ASNParser::Value(const CDataType* type)
 {
     int line = NextTokenLine();
     try {
-        AutoPtr<CDataValue> value(x_Value());
+        AutoPtr<CDataValue> value(x_Value(type));
         value->SetSourceLine(line);
         return value;
     }
@@ -578,15 +578,18 @@ AutoPtr<CDataValue> ASNParser::Value(void)
     return AutoPtr<CDataValue>();
 }
 
-AutoPtr<CDataValue> ASNParser::x_Value(void)
+AutoPtr<CDataValue> ASNParser::x_Value(const CDataType* type)
 {
     switch ( Next() ) {
     default:
         break;
     case T_NUMBER:
+        if (type && NStr::Compare( type->GetASNKeyword(), "REAL") == 0) {
+            return AutoPtr<CDataValue>(new CDoubleDataValue(Double(T_NUMBER)));
+        }
         return AutoPtr<CDataValue>(new CIntDataValue(Number()));
     case T_DOUBLE:
-        return AutoPtr<CDataValue>(new CDoubleDataValue(Double()));
+        return AutoPtr<CDataValue>(new CDoubleDataValue(Double(T_DOUBLE)));
     case T_STRING:
         return AutoPtr<CDataValue>(new CStringDataValue(String()));
     case K_NULL:
@@ -604,7 +607,7 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
             if ( CheckSymbols(',', '}') )
                 return AutoPtr<CDataValue>(new CIdDataValue(id));
             else
-                return AutoPtr<CDataValue>(new CNamedDataValue(id, Value()));
+                return AutoPtr<CDataValue>(new CNamedDataValue(id, Value(nullptr)));
         }
     case T_BINARY_STRING:
     case T_HEXADECIMAL_STRING:
@@ -621,7 +624,7 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
                 AutoPtr<CBlockDataValue> b(new CBlockDataValue());
                 if ( !CheckSymbol('}') ) {
                     do {
-                        b->GetValues().push_back(Value());
+                        b->GetValues().push_back(Value(nullptr));
                     } while ( ConsumeIfSymbol(',') );
                 }
                 ConsumeSymbol('}');
@@ -639,9 +642,9 @@ Int4 ASNParser::Number(void)
     return NStr::StringToInt(ValueOf(T_NUMBER, "number"));
 }
 
-double ASNParser::Double(void)
+double ASNParser::Double(TToken token)
 {
-    return NStr::StringToDouble(ValueOf(T_DOUBLE, "double"), NStr::fDecimalPosix);
+    return NStr::StringToDouble(ValueOf(token, "double"), NStr::fDecimalPosix);
 }
 
 const string& ASNParser::String(void)

@@ -84,10 +84,10 @@ public:
     CEnumDataType* EnumeratedBlock(CEnumDataType* enumType);
     CEnumDataTypeValue& EnumeratedValue(CEnumDataType& enumType);
     void TypeList(list<string>& ids);
-    AutoPtr<CDataValue> Value(void);
-    AutoPtr<CDataValue> x_Value(void);
+    AutoPtr<CDataValue> Value(const CDataType* type);
+    AutoPtr<CDataValue> x_Value(const CDataType* type);
     Int4 Number(void);
-    double Double(void);
+    double Double(TToken token);
     const string& String(void);
     const string& Identifier(void);
     const string& TypeReference(void);
