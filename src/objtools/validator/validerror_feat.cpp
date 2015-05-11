@@ -7312,11 +7312,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
 
     // check for unparsed transl_except
     bool transl_except = false;
-    if (!cdregion.IsSetCode_break()) {
-        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-            if ((*it)->IsSetQual()  &&  NStr::Equal((*it)->GetQual(), "transl_except")) {
-                transl_except = true;
-            }
+    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+        if ((*it)->IsSetQual()  &&  NStr::Equal((*it)->GetQual(), "transl_except")) {
+            transl_except = true;
         }
     }
     
