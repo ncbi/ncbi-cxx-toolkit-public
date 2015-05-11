@@ -291,7 +291,7 @@ int CAlignmentRefiner::Run(void)
     string message;
 
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     string fname, err;
     string basename = args["o"].AsString() + "_", suffix = ".cn3"; 
 
@@ -448,7 +448,7 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
     unsigned int nBlocksMade, nExtra, extra;
 
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     RefinerResultCode result = eRefinerResultOK;
 
     msg.erase();
@@ -513,7 +513,7 @@ unsigned int  CAlignmentRefiner::GetBlocksToAlign(unsigned int nBlocks, vector<u
     blocks.clear();
     if (nBlocks == 0) return 0;
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     unsigned int nExtra = (useExtras) ? (unsigned int) args.GetNExtra() : 0;
 
     //  If specify realignment of all blocks, the default settings are OK.
@@ -560,7 +560,7 @@ unsigned int  CAlignmentRefiner::GetBlocksToAlign(unsigned int nBlocks, vector<u
 RefinerResultCode CAlignmentRefiner::ExtractBEArgs(unsigned int nAlignedBlocks, string& msg) {
 
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     RefinerResultCode result = eRefinerResultOK;
 
     m_blockEdit.editBlocks = (!args["be_fix"]);
@@ -683,7 +683,7 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
 
     static string yes = "Yes", no = "No";
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     unsigned int nExtra = (unsigned int) args.GetNExtra();
 
     if ((!echoLOO && !echoBE) || (echoLOO && echoBE)) {
