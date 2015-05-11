@@ -124,7 +124,7 @@ public:
       version_str.resize( version_str.length() - 1 ); // remove final '$'
 
     str="Validate data in the AGP format:\n"
-    "http://www.ncbi.nlm.nih.gov/projects/genome/assembly/agp/AGP_Specification.shtml\n"
+    "https://www.ncbi.nlm.nih.gov/projects/genome/assembly/agp/AGP_Specification.shtml\n"
     "\n"
     "Version: " + version_str + "\n"
     "\n"
