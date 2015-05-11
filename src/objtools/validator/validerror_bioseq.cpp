@@ -4142,6 +4142,17 @@ void CValidError_bioseq::x_ValidateCompletness
     EDiagSev sev = mi.GetTech() == CMolInfo::eTech_htgs_3 ? 
         eDiag_Warning : /* eDiag_Error */ eDiag_Warning;
 
+    CSeqdesc_CI desc(m_CurrentHandle, CSeqdesc::e_Title);
+    if ( desc ) {
+        const string& title = desc->GetTitle();
+        if (!NStr::IsBlank(title)) {
+            if (NStr::FindNoCase(title, "complete sequence") != string::npos
+                || NStr::FindNoCase(title, "complete genome") != string::npos) {
+                return;
+            }
+        }
+    }
+
     bool reported = false;
 
     if ( comp == CMolInfo::eCompleteness_complete ) {
@@ -4155,24 +4166,16 @@ void CValidError_bioseq::x_ValidateCompletness
             }
 
             if ( is_gb ) {
-                CSeqdesc_CI desc(m_CurrentHandle, CSeqdesc::e_Title);
-                if ( desc ) {
-                    const string& title = desc->GetTitle();
-                    if (!NStr::IsBlank(title)
-                        && NStr::FindNoCase(title, "complete sequence") == string::npos
-                        && NStr::FindNoCase(title, "complete genome") == string::npos) {
-                        if (seq.IsSetInst() && seq.GetInst().IsSetTopology()
-                            && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
-                            const CSeq_entry& ctx = *seq.GetParentEntry();
-                            PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
-                                    "Circular topology has complete flag set, but title should say complete sequence or complete genome",
-                                    ctx, *desc);
-                        } else {
-                            PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
-                                    "Suspicious use of complete", seq);
-                            reported = true;
-                        }
-                    }
+                if (seq.IsSetInst() && seq.GetInst().IsSetTopology()
+                    && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
+                    const CSeq_entry& ctx = *seq.GetParentEntry();
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
+                            "Circular topology has complete flag set, but title should say complete sequence or complete genome",
+                            ctx, *desc);
+                } else {
+                    PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                            "Suspicious use of complete", seq);
+                    reported = true;
                 }
             }
         }
