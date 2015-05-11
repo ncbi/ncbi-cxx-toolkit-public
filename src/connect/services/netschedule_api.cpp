@@ -46,10 +46,6 @@
 #include <memory>
 #include <stdio.h>
 
-#ifdef NCBI_OS_LINUX
-#include <sys/prctl.h>
-#endif
-
 
 #define COMPATIBLE_NETSCHEDULE_VERSION "4.10.0"
 
@@ -253,11 +249,9 @@ bool SServerNotifications::GetNextNotification(string* ns_node)
 
 void* SNetScheduleNotificationThread::Main()
 {
-#ifdef NCBI_OS_LINUX
-    prctl(PR_SET_NAME, (unsigned long)
+    SetCurrentThreadName(
             (CNcbiApplication::Instance()->GetProgramDisplayName() +
-                    "_nt").c_str(), 0, 0, 0);
-#endif
+                    "_nt").c_str());
 
     static const STimeout two_seconds = {2, 0};
 

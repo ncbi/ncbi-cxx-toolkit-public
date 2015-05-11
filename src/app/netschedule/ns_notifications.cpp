@@ -839,7 +839,7 @@ void CGetJobNotificationThread::WakeUp(void)
 
 void *  CGetJobNotificationThread::Main(void)
 {
-    prctl(PR_SET_NAME, "netscheduled_nt", 0, 0, 0);
+    SetCurrentThreadName("netscheduled_nt");
     m_NextScheduled = CNSPreciseTime::Current() + m_Period;
 
     CNSPreciseTime  delay = m_Period;

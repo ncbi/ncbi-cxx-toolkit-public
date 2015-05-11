@@ -576,6 +576,10 @@ public:
     /// This amount does not contain main thread.
     static unsigned int GetThreadsCount();
 
+    /// Set name for the current thread.
+    /// This works only on Linux, no-op on other platforms
+    static void SetCurrentThreadName(const char*);
+
     /// Initialize main thread's TID.
     /// The function must be called from the main thread if the application
     /// is using non-toolkit threads. Otherwise getting thread id of a

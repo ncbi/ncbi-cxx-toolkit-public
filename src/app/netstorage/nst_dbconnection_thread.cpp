@@ -36,8 +36,6 @@
 #include "nst_precise_time.hpp"
 #include "nst_database.hpp"
 
-#include <sys/prctl.h>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -74,7 +72,7 @@ void CNSTDBConnectionThread::Wakeup(void)
 
 void *  CNSTDBConnectionThread::Main(void)
 {
-    prctl(PR_SET_NAME, "netstoraged_dbc", 0, 0, 0);
+    SetCurrentThreadName("netstoraged_dbc");
     for (;;) {
         try {
             if (m_StopFlag.Get() != 0)

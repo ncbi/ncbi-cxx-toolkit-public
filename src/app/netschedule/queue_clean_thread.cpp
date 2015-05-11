@@ -75,7 +75,7 @@ void CJobQueueCleanerThread::RequestStop(void)
 
 void *  CJobQueueCleanerThread::Main(void)
 {
-    prctl(PR_SET_NAME,"netscheduled_gc", 0, 0, 0);
+    SetCurrentThreadName("netscheduled_gc");
     while (1) {
         x_DoJob();
 
@@ -192,7 +192,7 @@ void CJobQueueExecutionWatcherThread::RequestStop(void)
 
 void *  CJobQueueExecutionWatcherThread::Main(void)
 {
-    prctl(PR_SET_NAME, "netscheduled_ew", 0, 0, 0);
+    SetCurrentThreadName("netscheduled_ew");
     while (1) {
         x_DoJob();
 

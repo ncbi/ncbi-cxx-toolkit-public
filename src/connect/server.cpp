@@ -36,10 +36,6 @@
 #include <connect/ncbi_buffer.h>
 #include <connect/error_codes.hpp>
 
-#ifdef NCBI_OS_LINUX
-# include <sys/prctl.h>
-#endif
-
 
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
@@ -222,9 +218,7 @@ CThreadInPool_ForServer::Main(void)
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
         thr_name += m_Pool->m_ThrSuffix;
-#if defined(NCBI_OS_LINUX)  &&  defined(PR_SET_NAME)
-        prctl(PR_SET_NAME, (unsigned long)thr_name.c_str(), 0, 0, 0);
-#endif
+        SetCurrentThreadName(thr_name.c_str());
     }
 
     if ( !m_Pool->Register(*this) ) {

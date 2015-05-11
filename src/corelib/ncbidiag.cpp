@@ -55,10 +55,6 @@
 #  include <sys/utsname.h>
 #endif
 
-#ifdef NCBI_OS_LINUX
-# include <sys/prctl.h>
-#endif
-
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
 
@@ -6466,9 +6462,7 @@ CAsyncDiagThread::Main(void)
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
         thr_name += m_ThreadSuffix;
-#if defined(NCBI_OS_LINUX)  &&  defined(PR_SET_NAME)
-        prctl(PR_SET_NAME, (unsigned long)thr_name.c_str(), 0, 0, 0);
-#endif
+        SetCurrentThreadName(thr_name.c_str());
     }
 
     const int batch_size = TAsyncBatchSizeParam::GetDefault();

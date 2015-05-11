@@ -48,6 +48,9 @@
 #ifdef NCBI_POSIX_THREADS
 #  include <sys/time.h> // for gettimeofday()
 #endif
+#ifdef NCBI_OS_LINUX
+#  include <sys/prctl.h>
+#endif
 
 #include "ncbidbg_p.hpp"
 
@@ -862,6 +865,18 @@ void CThread::GetSystemID(TThreadSystemID* id)
 {
     *id = GetCurrentThreadSystemID();
 }
+
+
+#if defined(NCBI_OS_LINUX) && defined(PR_SET_NAME)
+void CThread::SetCurrentThreadName(const char* name)
+{
+    prctl(PR_SET_NAME, (unsigned long)name, 0, 0, 0);
+}
+#else
+void CThread::SetCurrentThreadName(const char*)
+{
+}
+#endif
 
 
 const char* CThreadException::GetErrCodeString(void) const

@@ -35,7 +35,6 @@
 
 #include "background_host.hpp"
 #include <util/thread_nonstop.hpp>
-#include <sys/prctl.h>
 
 
 BEGIN_NCBI_SCOPE
