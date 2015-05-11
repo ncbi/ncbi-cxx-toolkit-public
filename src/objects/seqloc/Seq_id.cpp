@@ -2069,7 +2069,7 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
     case e_Local:
         {
             if ( !acc.empty()  &&  acc[0] >= '1'  &&  acc[0] <= '9'
-                &&  (the_id = NStr::StringToNonNegativeInt(acc)) >= 0) {
+                &&  (the_id = NStr::StringToNonNegativeInt(acc)) > 0) {
                 SetLocal().SetId(the_id);
             } else { // to cover case where embedded vertical bar in
                 // string, could add code here, to concat a
@@ -2150,9 +2150,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
             CDbtag&     dbt  = SetGeneral();
             dbt.SetDb(acc);
             CObject_id& oid = dbt.SetTag();
-            the_id = NStr::StringToNonNegativeInt(name);
-            if (the_id >= 0  && 
-                (name.size() == 1 || (name[0] != '0' && name[0] != '+'))) {
+            if ( !name.empty()  &&  name[0] >= '1'  &&  name[0] <= '9'
+                 &&  (the_id = NStr::StringToNonNegativeInt(name)) > 0) {
                 oid.SetId(the_id);
             } else {
                 oid.SetStr(name);

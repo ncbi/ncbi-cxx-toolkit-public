@@ -1054,6 +1054,13 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     // The array sc_Ids is sorted to match CompareOrdered().
     // Some elements may compare equal.
     static const char* const sc_Ids[] = {
+        "lcl|-723121231214", // 64-bit id
+        "lcl|-723121231214", // 64-bit id
+        "lcl|-12",
+        "lcl|-11",
+        "lcl|-11",
+        "lcl|0",
+        "lcl|0",
         "lcl|12",
         "lcl|12",
         "lcl|13",
@@ -1062,7 +1069,8 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "lcl|123",
         "lcl|124",
         "lcl|124",
-        "lcl|0012",
+        "lcl|723121231214", // 64-bit id
+        "lcl|0012", // non-integer ids
         "lcl|00123",
         "lcl|00124",
         "lcl|0013",
@@ -1080,7 +1088,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "ref|NC_000001.9|chr1_build36",
         "gnl|ti|-623121231214", // 64-bit id
         "gnl|ti|-12312",
-        "gnl|ti|0",
+        "gnl|ti|-1231",
         "gnl|ti|0",
         "gnl|ti|12312",
         "gnl|ti|12312",
@@ -1098,9 +1106,10 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "gnl|ti|22312-234",
         "gnl|TI|str",
         "gnl|trace|-623121231214", // 64-bit id
+        "gnl|trace|-623121231214", // 64-bit id
         "gnl|TRACE|-12312",
-        "gnl|TRACE|0",
-        "gnl|TRACE|0",
+        "gnl|TRACE|-12312",
+        "gnl|TRACE|-123",
         "gnl|TRACE|0",
         "gnl|TRACE|12312",
         "gnl|TRACE|12312",
@@ -1123,20 +1132,37 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     vector<TRef> ids;
     for ( size_t i = 0; i < ArraySize(sc_Ids); ++i ) {
         ids.push_back(TRef(new CSeq_id(sc_Ids[i])));
-        if ( ids.back()->IsLocal() ) {
-            BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
-            if ( i > 0 && strcmp(sc_Ids[i], sc_Ids[i-1]) == 0 ) {
+        //NcbiCout << "Id["<<i<<"] from \""<<sc_Ids[i]<<"\""<<NcbiEndl;
+        if ( ids[i]->IsLocal() ) {
+            BOOST_CHECK_EQUAL(ids[i]->AsFastaString(), sc_Ids[i]);
+            if ( ids[i]->GetLocal().IsId() ) {
                 int id = ids[i]->GetLocal().GetId();
-                ids[i]->SetLocal().SetStr(NStr::NumericToString(id));
-                BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
+                BOOST_CHECK(id > 0);
+                if ( i > 0 && strcmp(sc_Ids[i], sc_Ids[i-1]) == 0 ) {
+                    ids[i]->SetLocal().SetStr(NStr::NumericToString(id));
+                    BOOST_CHECK_EQUAL(ids[i]->AsFastaString(), sc_Ids[i]);
+                }
+            }
+            else {
+                const string& id = ids[i]->GetLocal().GetStr();
+                BOOST_CHECK(NStr::StringToNonNegativeInt(id) <= 0 ||
+                            id[0] < '1' || id[0] > '9');
             }
         }
-        if ( ids.back()->IsGeneral() ) {
-            BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
-            if ( i > 0 && strcmp(sc_Ids[i], sc_Ids[i-1]) == 0 ) {
+        if ( ids[i]->IsGeneral() ) {
+            BOOST_CHECK_EQUAL(ids[i]->AsFastaString(), sc_Ids[i]);
+            if ( ids[i]->GetGeneral().GetTag().IsId() ) {
                 int id = ids[i]->GetGeneral().GetTag().GetId();
-                ids[i]->SetGeneral().SetTag().SetStr(NStr::NumericToString(id));
-                BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
+                BOOST_CHECK(id > 0);
+                if ( i > 0 && strcmp(sc_Ids[i], sc_Ids[i-1]) == 0 ) {
+                    ids[i]->SetGeneral().SetTag().SetStr(NStr::NumericToString(id));
+                    BOOST_CHECK_EQUAL(ids[i]->AsFastaString(), sc_Ids[i]);
+                }
+            }
+            else {
+                const string& id = ids[i]->GetGeneral().GetTag().GetStr();
+                BOOST_CHECK(NStr::StringToNonNegativeInt(id) <= 0 ||
+                            id[0] < '1' || id[0] > '9');
             }
         }
     }
@@ -1327,6 +1353,13 @@ void s_CheckMatches(const CSeq_id_Handle& id,
                 break;
             }
         }
+        ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
+            if ( !exp_matches.count(*it) &&
+                 count(ids.begin(), ids.end(), *it) ) {
+                good_matches = false;
+                break;
+            }
+        }
     }
     if ( !good_matches ) {
         NcbiCerr << "Bad " << type << " matches for " << id << NcbiEndl;
@@ -1344,6 +1377,10 @@ void s_Match_id(size_t num_ids,
                 const char* const weak_match_to_ids[],
                 bool strict = true)
 {
+    ERR_POST("num_ids="<<num_ids);
+    for ( size_t xi = 0; xi < num_ids; ++xi ) {
+        ERR_POST("id["<<xi<<"]="<<CSeq_id_Handle::GetHandle(fasta_ids[xi]));
+    }
     for ( size_t xi = 0; xi <= num_ids; ++xi ) {
         set<string> strs;
         vector<CSeq_id_Handle> ids;
@@ -1399,6 +1436,12 @@ void s_Match_id(size_t num_ids,
             s_CheckMatches(ids[i], ids, matches, exp_matches, strict, "");
             ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
                 BOOST_CHECK(ids[i].MatchesTo(*it));
+            }
+            for ( size_t j = 0; j < ids.size(); ++j ) {
+                if ( j == xi || matches.count(ids[j]) ) {
+                    continue;
+                }
+                BOOST_CHECK(!ids[i].MatchesTo(ids[j]));
             }
         }
         for ( size_t i = 0; i < ids.size(); ++i ) {
@@ -1549,6 +1592,7 @@ BOOST_AUTO_TEST_CASE(Match_id3)
         "tpg|A000002",
         "tpg|A000002.2",
         "tpg|A000002.5",
+        "tpg|A000002.5|name2",
     };
     const char* const match_to_ids[] = {
         "",
@@ -1562,7 +1606,8 @@ BOOST_AUTO_TEST_CASE(Match_id3)
         "gb|A000002",
         "",
         "tpg|A000002",
-        "tpg|A000002",
+        "tpg|A000002,tpg|A000002.5|name2",
+        "tpg|A000002,tpg|A000002.5",
     };
     const char* const weak_match_to_ids[] = {
         "tpg|A000001",
@@ -1576,8 +1621,34 @@ BOOST_AUTO_TEST_CASE(Match_id3)
         "tpg|A000002,gb|A000002",
         "gb|A000002",
         "gb|A000002,gb|A000002.2,tpg|A000002",
-        "gb|A000002,tpg|A000002",
+        "gb|A000002,tpg|A000002,tpg|A000002.5|name2",
+        "gb|A000002,tpg|A000002,tpg|A000002.5",
     };
     s_Match_id(ArraySize(fasta_ids),
                fasta_ids, match_to_ids, weak_match_to_ids, false);
+}
+
+BOOST_AUTO_TEST_CASE(s_TempTest)
+{
+    string acc = "HP56600";
+    for ( int i = 0; i < 10; ++i ) {
+        CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+        cout << acc << " -> " << type << " = 0x" << hex << type << dec << endl;
+        acc.erase(acc.size()-1);
+        acc += "01";
+    }
+    acc = "ALWX010";
+    for ( int i = 0; i < 10; ++i ) {
+        CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+        cout << acc << " -> " << type << " = 0x" << hex << type << dec << endl;
+        acc.erase(acc.size()-1);
+        acc += "01";
+    }
+    acc = "GANF010";
+    for ( int i = 0; i < 10; ++i ) {
+        CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+        cout << acc << " -> " << type << " = 0x" << hex << type << dec << endl;
+        acc.erase(acc.size()-1);
+        acc += "01";
+    }
 }
