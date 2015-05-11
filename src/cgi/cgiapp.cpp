@@ -762,7 +762,7 @@ const CArgs& CCgiApplication::GetArgs(void) const
         m_CgiArgs.reset(new CArgs());
 
     // Copy cmd-line arg values to CGI args
-    *m_CgiArgs = CParent::GetArgs();
+    m_CgiArgs->Assign(CParent::GetArgs());
 
     // Add CGI parameters to the CGI version of args
     GetArgDescriptions()->ConvertKeys(m_CgiArgs.get(),
