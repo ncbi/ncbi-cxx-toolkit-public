@@ -181,7 +181,7 @@ int CReadBlastApp::AnalyzeSeqs(void)
 // w.out CTypeConstIterator
 int CReadBlastApp::AnalyzeSeqs(CBioseq_set::TSeq_set& seqs)
 {
-   CArgs args = GetArgs();
+   const CArgs& args = GetArgs();
    IncreaseVerbosity();
    string tblFile;
    if (args["outTbl"].HasValue())

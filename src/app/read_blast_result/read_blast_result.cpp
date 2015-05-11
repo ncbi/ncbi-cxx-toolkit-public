@@ -220,7 +220,7 @@ void CReadBlastApp::Init(void)
 int CReadBlastApp::Run(void)
 {
 // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
 
 // verbosity
