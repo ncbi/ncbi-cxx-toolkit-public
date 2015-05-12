@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(TestSingle)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(!it.IsSetStrand());
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(TestDouble)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(TestDouble)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     BOOST_CHECK(it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 26));
     BOOST_CHECK(it.IsSetStrand());
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(27, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(TestEdit1)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(TestEdit1)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(TestEdit1)
                       "  strand minus,\n"
                       "  id gi 3\n"
                       "}\n");
-    it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(2));
+    it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(TIntId(2)));
     it.SetStrand(eNa_strand_plus);
     BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
                       "Seq-loc ::= pnt {\n"
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(TestEdit2)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(TestEdit2)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(TestEdit2)
                       "  strand minus,\n"
                       "  id gi 3\n"
                       "}\n");
-    it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(2));
+    it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
                       "Seq-loc ::= pnt {\n"
                       "  point 30,\n"
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(TestEdit3)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE(TestEdit3)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -510,7 +510,7 @@ BOOST_AUTO_TEST_CASE(TestEdit3)
                       "  strand minus,\n"
                       "  id gi 3\n"
                       "}\n");
-    it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(2));
+    it.SetSeq_id_Handle(CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK_EQUAL(MakeASN(*it.GetRangeAsSeq_loc()),
                       "Seq-loc ::= pnt {\n"
                       "  point 30,\n"
@@ -551,7 +551,7 @@ BOOST_AUTO_TEST_CASE(TestBond)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
     BOOST_CHECK(it.IsSetStrand());
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(TestBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -622,7 +622,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
     BOOST_CHECK(it.IsSetStrand());
@@ -641,7 +641,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(4));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(4)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(40, 40));
     BOOST_CHECK(!it.IsSetStrand());
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     it.SetPos(0);
     it.MakeBondAB();
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
     BOOST_CHECK(it.IsSetStrand());
@@ -700,7 +700,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -719,7 +719,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(4));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(4)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(40, 40));
     BOOST_CHECK(!it.IsSetStrand());
@@ -761,7 +761,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     it.SetPos(0);
     it.RemoveBond();
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 10));
     BOOST_CHECK(it.IsSetStrand());
@@ -780,7 +780,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(TestMakeBond)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(4));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(4)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(40, 40));
     BOOST_CHECK(!it.IsSetStrand());
@@ -857,7 +857,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv1)
     BOOST_CHECK(it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -877,7 +877,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv1)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -902,7 +902,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv1)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 26));
     BOOST_CHECK(it.IsSetStrand());
@@ -927,7 +927,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv1)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(27, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -952,7 +952,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv1)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -1066,7 +1066,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv2)
     BOOST_CHECK(it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -1091,7 +1091,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv2)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 26));
     BOOST_CHECK(it.IsSetStrand());
@@ -1116,7 +1116,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv2)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(27, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -1289,10 +1289,10 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv7)
                       "}\n");
 
     it.SetEquivMode(it.eEquiv_new_equiv);
-    it.InsertInterval(CSeq_id_Handle::GetHandle(10), 100, 200);
+    it.InsertInterval(CSeq_id_Handle::GetGiHandle(TIntId(10)), 100, 200);
     it.SetEquivMode(it.eEquiv_new_part);
-    it.InsertInterval(CSeq_id_Handle::GetHandle(10), 100, 149);
-    it.InsertInterval(CSeq_id_Handle::GetHandle(10), 150, 200, eNa_strand_minus);
+    it.InsertInterval(CSeq_id_Handle::GetGiHandle(TIntId(10)), 100, 149);
+    it.InsertInterval(CSeq_id_Handle::GetGiHandle(TIntId(10)), 150, 200, eNa_strand_minus);
 
     loc2 = MakeASN(*it.MakeSeq_loc(CSeq_loc_I::eMake_PreserveType));
     BOOST_CHECK_EQUAL(loc2,
@@ -1318,7 +1318,7 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv7)
                       "}\n");
 
     it.SetEquivMode(it.eEquiv_none);
-    it.InsertInterval(CSeq_id_Handle::GetHandle(10), 201, 300, eNa_strand_plus);
+    it.InsertInterval(CSeq_id_Handle::GetGiHandle(TIntId(10)), 201, 300, eNa_strand_plus);
 
     loc2 = MakeASN(*it.MakeSeq_loc(CSeq_loc_I::eMake_PreserveType));
     BOOST_CHECK_EQUAL(loc2,
