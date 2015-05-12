@@ -306,9 +306,9 @@ s_ReadVariableParams(void)
     s_WarnLimitOffPct = s_WarnLimitOnPct - Uint1(warn_pct);
 
     SetWBSoftSizeLimit(NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, "write_back_soft_size_limit", "4 GB")));
+                       kNCStorage_RegSection, "write_back_soft_size_limit", "3 GB")));
     SetWBHardSizeLimit(NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, "write_back_hard_size_limit", "6 GB")));
+                       kNCStorage_RegSection, "write_back_hard_size_limit", "4 GB")));
 
     int to2 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout", 1000);
     int to1 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout_startup", to2);
