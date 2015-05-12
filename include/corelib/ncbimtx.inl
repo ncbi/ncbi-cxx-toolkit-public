@@ -388,7 +388,17 @@ void CRWLockHolder::RemoveListener(IRWLockHolder_Listener* listener)
     _ASSERT(m_Lock);
 
     m_ObjLock.Lock();
-    m_Listeners.remove(TRWLockHolder_ListenerWeakRef(listener));
+    // m_Listeners.remove(TRWLockHolder_ListenerWeakRef(listener));
+    // The above gives strange errors about invalid operands to operator==
+    // with the Apple Developer Tools release containing Xcode 6.3.1 and
+    // "Apple LLVM version 6.1.0 (clang-602.0.49) (based on LLVM 3.6.0svn)".
+    // The below workaround should be equivalent.
+    TRWLockHolder_ListenerWeakRef ref(listener);
+    TListenersList::iterator it;
+    while ((it = find(m_Listeners.begin(), m_Listeners.end(), ref))
+           != m_Listeners.end()) {
+        m_Listeners.erase(it);
+    }
     m_ObjLock.Unlock();
 }
 
