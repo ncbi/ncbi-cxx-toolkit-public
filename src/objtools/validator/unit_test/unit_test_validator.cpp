@@ -5141,15 +5141,19 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnwantedCompleteFlag)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // still get error if not viral
+    CLEAR_ERRORS
+
+    // suppress if complete sequence or complete genome in title
     SetTitle(entry, "complete sequence");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS
-
     // suppress if viral
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetTitle(entry, "a title without the word");
+    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123457");
     unit_test_util::SetLineage(entry, "Viruses");
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -7935,8 +7939,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
     SetTitle (entry, "Sebaea microphylla, complete genome.");
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnwantedCompleteFlag",
-                              "Suspicious use of complete"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceNeedsChromosome",
                               "Non-viral complete genome not labeled as chromosome"));
 
@@ -7954,8 +7956,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
     // if not genomic
     unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_mRNA);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnwantedCompleteFlag",
-                              "Suspicious use of complete"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_genomic);
