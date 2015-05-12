@@ -1013,7 +1013,7 @@ CSeqDBVol::x_GetTaxDefline(int                    oid,
     
     // 2. if there is a preferred gi, bump it to the top.
     
-    if (preferred_gi != ZERO_GI || preferred_seqid) {
+    if (preferred_gi || preferred_seqid) {
         CRef<CBlast_def_line_set> new_bdls(new CBlast_def_line_set);
         
         CRef<const CSeq_id> seqid;
