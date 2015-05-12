@@ -533,8 +533,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
         BOOST_CHECK(mapfile);
         AutoPtr<CIdMapperConfig> mapper
             (new CIdMapperConfig(mapfile, "", false));
-        mapper->AddMapping(CSeq_id_Handle::GetHandle(GI_FROM(int,20)),
-                           main_idh = CSeq_id_Handle::GetHandle(GI_FROM(int,51511747)));
+        mapper->AddMapping(CSeq_id_Handle::GetHandle(TIntId(20)),
+                           main_idh = CSeq_id_Handle::GetHandle(TIntId(51511747)));
         params.m_IdMapper.reset(mapper.release());
         id = "NC_000020.9";
         from = 0;
@@ -622,8 +622,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
         BOOST_CHECK(mapfile);
         AutoPtr<CIdMapperConfig> mapper
             (new CIdMapperConfig(mapfile, "", false));
-        mapper->AddMapping(CSeq_id_Handle::GetHandle(GI_FROM(int,20)),
-                           main_idh = CSeq_id_Handle::GetHandle(GI_FROM(int,51511747)));
+        mapper->AddMapping(CSeq_id_Handle::GetHandle(TIntId(20)),
+                           main_idh = CSeq_id_Handle::GetHandle(TIntId(51511747)));
         params.m_IdMapper.reset(mapper.release());
         id = "NC_000020.9";
         from = 0;
