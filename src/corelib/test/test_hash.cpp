@@ -256,7 +256,7 @@ bool TestSet(TSet& hs, const string& set_name, const TKeys& keys)
 int CTestHash::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     MaxHashSize = args["elements"].AsInteger();
     ReadLoops = args["cycles"].AsInteger();
     bool test_std = args["test_std"].HasValue();
