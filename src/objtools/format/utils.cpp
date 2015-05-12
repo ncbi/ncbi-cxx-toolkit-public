@@ -834,10 +834,26 @@ void CleanAndCompress(string& dest, const CTempString& instr)
         case space_bracket: // skip space before bracket
             break;
         case space_comma:
-        case space_semicolon: // swap characters
             *out++ = next;
             next = curr;
-            two_chars = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ',') {
+                next = *in;
+                in++;
+                left--;
+            }
+            two_chars = next;
+            break;
+        case space_semicolon:
+            *out++ = next;
+            next = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ';') {
+                next = *in;
+                in++;
+                left--;
+            }
+            two_chars = next;
             break;
         case comma_space:
             *out++ = curr;
