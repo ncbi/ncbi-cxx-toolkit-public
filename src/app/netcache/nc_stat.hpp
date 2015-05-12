@@ -43,6 +43,10 @@ struct SConstCharCompare
 
 struct SNCStateStat
 {
+    SNCStateStat(void) {
+        memset(this, 0, sizeof(SNCStateStat));
+        state_time = CSrvTime::Current();
+    }
     CSrvTime state_time;
     Uint4 progress_cmds;
     Uint4 db_files;
@@ -131,10 +135,6 @@ private:
     SNCStateStat m_StartState;
     SNCStateStat m_EndState;
     Uint8 m_StartedCmds;
-    TSrvTimeTerm m_CmdLens;
-    TCmdCountsMap m_CmdsByName;
-    TStatusCmdLens m_LensByStatus;
-    CSrvStatTerm<Uint8> m_ConnCmds;
     Uint8 m_ClDataWrite;
     Uint8 m_ClDataRead;
     Uint8 m_PeerDataWrite;
@@ -157,6 +157,10 @@ private:
     Uint8 m_PeerSynOps;
     Uint8 m_CntCleanedFiles;
     Uint8 m_CntFailedFiles;
+    TSrvTimeTerm m_CmdLens;
+    TCmdCountsMap m_CmdsByName;
+    TStatusCmdLens m_LensByStatus;
+    CSrvStatTerm<Uint8> m_ConnCmds;
     CSrvStatTerm<Uint4> m_CheckedRecs;
     CSrvStatTerm<Uint4> m_MovedRecs;
     CSrvStatTerm<Uint4> m_MovedSize;

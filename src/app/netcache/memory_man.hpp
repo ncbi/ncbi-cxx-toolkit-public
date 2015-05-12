@@ -51,6 +51,9 @@ static const Uint2 kMMCntBlockSizes = 39;
 
 struct SMMStateStat
 {
+    SMMStateStat(void) {
+        memset(this, 0, sizeof(SMMStateStat));
+    }
     Uint8 m_UserBlocks[kMMCntBlockSizes];
     Uint8 m_SysBlocks[kMMCntBlockSizes];
     Uint8 m_BigBlocksCnt;
@@ -62,6 +65,10 @@ struct SMMStateStat
 
 struct SMMStat
 {
+    SMMStat(void) {
+        ClearStats();
+    }
+
     void InitStartState(void);
     void TransferEndState(SMMStat* src_stat);
     void CopyStartState(SMMStat* src_stat);

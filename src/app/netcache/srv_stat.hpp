@@ -184,6 +184,8 @@ g_SrvTimeTerm(Map& map, Key key)
 
 struct SSrvStateStat
 {
+    SSrvStateStat(void) : cnt_threads(0), cnt_sockets(0) {
+    }
     Uint4 cnt_threads;
     Uint4 cnt_sockets;
 };

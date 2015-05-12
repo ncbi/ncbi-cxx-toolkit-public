@@ -812,16 +812,16 @@ SMMStat::SaveEndState(void)
 {
     Uint8 total_data = 0;
     for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
-        Uint8 cnt = m_StartState.m_UserBlocks[i]
-                        + m_UserBlAlloced[i] - m_UserBlFreed[i];
+        Uint8 cnt = (m_StartState.m_UserBlocks[i]
+                        + m_UserBlAlloced[i]) - m_UserBlFreed[i];
         m_EndState.m_UserBlocks[i] = cnt;
         total_data += cnt * kMMBlockSizes[i];
-        m_EndState.m_SysBlocks[i] = m_StartState.m_SysBlocks[i]
-                                      + m_SysBlAlloced[i] - m_SysBlFreed[i];
+        m_EndState.m_SysBlocks[i] = (m_StartState.m_SysBlocks[i]
+                                      + m_SysBlAlloced[i]) - m_SysBlFreed[i];
     }
-    m_EndState.m_BigBlocksCnt = m_StartState.m_BigBlocksCnt
-                                 + m_BigAllocedCnt - m_BigFreedCnt;
-    Uint8 size = m_StartState.m_BigBlocksSize + m_BigAllocedSize - m_BigFreedSize;
+    m_EndState.m_BigBlocksCnt = (m_StartState.m_BigBlocksCnt
+                                 + m_BigAllocedCnt) - m_BigFreedCnt;
+    Uint8 size = (m_StartState.m_BigBlocksSize + m_BigAllocedSize) - m_BigFreedSize;
     m_EndState.m_BigBlocksSize = size;
     total_data += size;
     m_EndState.m_TotalData = total_data;
@@ -832,10 +832,10 @@ void
 SMMStat::ClearStats(void)
 {
     memset(m_UserBlAlloced, 0, sizeof(m_UserBlAlloced));
-    memset(m_UserBlFreed, 0, sizeof(m_UserBlFreed));
-    memset(m_SysBlAlloced, 0, sizeof(m_SysBlAlloced));
-    memset(m_SysBlFreed, 0, sizeof(m_SysBlFreed));
-    m_BigAllocedCnt = m_BigFreedCnt = 0;
+    memset(m_UserBlFreed,   0, sizeof(m_UserBlFreed));
+    memset(m_SysBlAlloced,  0, sizeof(m_SysBlAlloced));
+    memset(m_SysBlFreed,    0, sizeof(m_SysBlFreed));
+    m_BigAllocedCnt  = m_BigFreedCnt  = 0;
     m_BigAllocedSize = m_BigFreedSize = 0;
     m_TotalSysMem.Initialize();
     m_TotalDataMem.Initialize();
@@ -845,15 +845,15 @@ void
 SMMStat::AddStats(SMMStat* src_stat)
 {
     for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
-        m_UserBlAlloced[i] += src_stat->m_UserBlAlloced[i];
-        m_UserBlFreed[i] += src_stat->m_UserBlFreed[i];
-        m_SysBlAlloced[i] += src_stat->m_SysBlAlloced[i];
-        m_SysBlFreed[i] += src_stat->m_SysBlFreed[i];
+        AtomicAdd(m_UserBlAlloced[i], src_stat->m_UserBlAlloced[i]);
+        AtomicAdd(m_UserBlFreed[i],   src_stat->m_UserBlFreed[i]);
+        AtomicAdd(m_SysBlAlloced[i],  src_stat->m_SysBlAlloced[i]);
+        AtomicAdd(m_SysBlFreed[i],    src_stat->m_SysBlFreed[i]);
     }
-    m_BigAllocedCnt += src_stat->m_BigAllocedCnt;
-    m_BigAllocedSize += src_stat->m_BigAllocedSize;
-    m_BigFreedCnt += src_stat->m_BigFreedCnt;
-    m_BigFreedSize += src_stat->m_BigFreedSize;
+    AtomicAdd(m_BigAllocedCnt,  src_stat->m_BigAllocedCnt);
+    AtomicAdd(m_BigAllocedSize, src_stat->m_BigAllocedSize);
+    AtomicAdd(m_BigFreedCnt,    src_stat->m_BigFreedCnt);
+    AtomicAdd(m_BigFreedSize,   src_stat->m_BigFreedSize);
     m_TotalSysMem.AddValues(src_stat->m_TotalSysMem);
     m_TotalDataMem.AddValues(src_stat->m_TotalDataMem);
 }
@@ -870,16 +870,16 @@ SMMStat::PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy)
 {
     CSrvDiagMsg diag;
     diag.PrintExtra(ctx);
-    diag.PrintParam("start_sys_mem", m_StartState.m_TotalSys)
-        .PrintParam("end_sys_mem", m_EndState.m_TotalSys)
-        .PrintParam("avg_sys_mem", m_TotalSysMem.GetAverage())
-        .PrintParam("max_sys_mem", m_TotalSysMem.GetMaximum())
-        .PrintParam("start_data_mem", m_StartState.m_TotalData)
-        .PrintParam("end_data_mem", m_EndState.m_TotalData)
-        .PrintParam("avg_data_mem", m_TotalDataMem.GetAverage())
-        .PrintParam("max_data_mem", m_TotalDataMem.GetMaximum())
-        .PrintParam("mmap_page_cnt", s_TotalPageCount)
-        .PrintParam("big_blocks_cnt", m_EndState.m_BigBlocksCnt)
+    diag.PrintParam("start_sys_mem",   m_StartState.m_TotalSys)
+        .PrintParam("end_sys_mem",     m_EndState.m_TotalSys)
+        .PrintParam("avg_sys_mem",     m_TotalSysMem.GetAverage())
+        .PrintParam("max_sys_mem",     m_TotalSysMem.GetMaximum())
+        .PrintParam("start_data_mem",  m_StartState.m_TotalData)
+        .PrintParam("end_data_mem",    m_EndState.m_TotalData)
+        .PrintParam("avg_data_mem",    m_TotalDataMem.GetAverage())
+        .PrintParam("max_data_mem",    m_TotalDataMem.GetMaximum())
+        .PrintParam("mmap_page_cnt",   s_TotalPageCount)
+        .PrintParam("big_blocks_cnt",  m_EndState.m_BigBlocksCnt)
         .PrintParam("big_blocks_size", m_EndState.m_BigBlocksSize);
     diag.Flush();
 
