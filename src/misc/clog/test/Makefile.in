@@ -1,7 +1,11 @@
 # $Id$
 
 LIB_PROJ = 
-APP_PROJ = test_ncbi_clog_mt test_ncbi_clog_mt_ctx
+APP_PROJ = \
+    test_ncbi_clog_mt \
+    test_ncbi_clog_mt_ctx \
+    test_ncbi_clog_templates
+    
 PROJ_TAG = test
 
 srcdir = @srcdir@

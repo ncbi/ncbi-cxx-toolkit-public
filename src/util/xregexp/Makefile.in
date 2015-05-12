@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = xregexp
+LIB_PROJ = xregexp xregexp_template_tester
 PROJ_TAG = core
 
 srcdir = @srcdir@

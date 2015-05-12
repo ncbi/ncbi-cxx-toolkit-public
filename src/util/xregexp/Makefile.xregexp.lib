@@ -1,7 +1,6 @@
 # $Id$
 
 SRC = regexp arg_regexp mask_regexp
-
 LIB = xregexp
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)
@@ -9,8 +8,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)
 DLL_LIB = $(PCRE_LIB)
 LIBS    = $(PCRE_LIBS)
 
-WATCHERS = ivanov
-
-
 USES_LIBRARIES =  \
     $(PCRE_LIB) $(PCRE_LIBS) xncbi
+
+WATCHERS = ivanov
