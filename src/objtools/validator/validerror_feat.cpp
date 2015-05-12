@@ -5294,6 +5294,16 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
                     }}
                     break;
 
+                case CSeqFeatData::eQual_product:
+                    {{
+                        CSeqFeatData::E_Choice chs = feat.GetData().Which();
+                        if (chs == CSeqFeatData::e_Gene) {
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_SuspiciousQualifierValue, 
+                                    "A product qualifier is not normally used on a gene feature", feat);
+                        }
+                    }}
+                    break;
+
                   default:
                       break;
                 }
