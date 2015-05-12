@@ -955,6 +955,9 @@ public:
 
     explicit CStrictGi(Int4 value) : m_Gi(value) {}
 
+    operator bool(void) const { return m_Gi != 0; }
+    bool operator!(void) const { return m_Gi == 0; }
+
 private:
     CStrictGi& operator=(Int4);
     operator Int4(void) const;
