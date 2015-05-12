@@ -45,6 +45,7 @@ void InitMemoryMan(void);
 void AssignThreadMemMgr(SSrvThread* thr);
 void ReleaseThreadMemMgr(SSrvThread* thr);
 size_t GetMemSize(void* ptr);
+Int8   GetMPageCount(void);
 
 static const Uint2 kMMCntBlockSizes = 39;
 

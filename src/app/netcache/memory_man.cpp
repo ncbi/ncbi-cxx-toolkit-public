@@ -120,7 +120,7 @@ static SMMFreePageGrades s_FreePages[kMMCntBlockSizes];
 static SMMMemPoolsSet s_MainPoolsSet;
 static CMMFlusher* s_Flusher;
 static Uint8 s_TotalSysMem = 0;
-static Uint8 s_TotalPageCount = 0;
+static Int8 s_TotalPageCount = 0;
 static SMMStateStat s_StartState;
 
 static const Uint4 kMMPageDataSize = kMMAllocPageSize - sizeof(SMMPageHeader);
@@ -142,6 +142,10 @@ static Uint2 kMMSizeIndexes[kMMMaxBlockSize / 8 + 1] = {0};
 static Uint2 kMMCntForSize[kMMCntBlockSizes] = {0};
 
 
+Int8   GetMPageCount(void)
+{
+    return s_TotalPageCount;
+}
 
 static inline void
 s_InitPoolsSet(SMMMemPoolsSet* pool_set)
@@ -873,7 +877,10 @@ SMMStat::PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy)
         .PrintParam("start_data_mem", m_StartState.m_TotalData)
         .PrintParam("end_data_mem", m_EndState.m_TotalData)
         .PrintParam("avg_data_mem", m_TotalDataMem.GetAverage())
-        .PrintParam("max_data_mem", m_TotalDataMem.GetMaximum());
+        .PrintParam("max_data_mem", m_TotalDataMem.GetMaximum())
+        .PrintParam("mmap_page_cnt", s_TotalPageCount)
+        .PrintParam("big_blocks_cnt", m_EndState.m_BigBlocksCnt)
+        .PrintParam("big_blocks_size", m_EndState.m_BigBlocksSize);
     diag.Flush();
 
     x_PrintUnstructured(proxy);
@@ -1030,7 +1037,7 @@ void SMMStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("big_blocks_cnt").WriteText(is).WriteNumber(m_EndState.m_BigBlocksCnt);
     task.WriteText(eol).WriteText("big_blocks_size" ).WriteText(iss)
                                      .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_BigBlocksSize)).WriteText(qt);
-    task.WriteText(eol).WriteText("mmap_page_usage").WriteText(is).WriteNumber(s_TotalPageCount);
+    task.WriteText(eol).WriteText("mmap_page_cnt").WriteText(is).WriteNumber(s_TotalPageCount);
 }
 
 END_NCBI_SCOPE;
