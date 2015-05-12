@@ -924,37 +924,47 @@ extern void NcbiLog_Perf(int status, double timespan,
 
 
 /** Writes a message to the <appname>.trace file at level 'TRACE'.
- *  Note that the default log level is INFO, meaning that unless the log
- *  level is explicitly set lower, messages logged via TRACE will not be
- *  seen or recorded.
+ *  Note that the default log level is ERROR.
+ *
+ *  @sa NcbiLog_SetPostLevel
  */
 extern void NcbiLog_Trace(const char* msg);
 
 
 /** Writes a message to the <appname>.trace file at level 'INFO'.
- *  Note that the default log level is INFO, meaning that these messages
- *  will be stored to disk or sent to stderr/stdout.
+ *  Note that the default log level is ERROR.
+ *
+ *  @sa NcbiLog_SetPostLevel
  */
 extern void NcbiLog_Info(const char* msg);
 
 
 /** Writes a message to the <appname>.err log at level 'WARNING'.
+ *  Note that the default log level is ERROR.
+ *
+ *  @sa NcbiLog_SetPostLevel
  */
 extern void NcbiLog_Warning(const char* msg);
 
 
 /** Writes a message to the <appname>.err log at level 'ERROR'.
+ *
+ *  @sa NcbiLog_SetPostLevel
  */
 extern void NcbiLog_Error(const char* msg);
 
 
 /** Writes a message to the <appname>.err log at level 'CRITICAL'.
+ *
+ *  @sa NcbiLog_SetPostLevel
  */
 extern void NcbiLog_Critical(const char* msg);
 
 
 /** Writes a message to the <appname>.err log at level 'FATAL' and then
  *  terminate the application.
+ *
+ *  @sa NcbiLog_SetPostLevel
  */
 extern void NcbiLog_Fatal(const char* msg);
 
