@@ -702,7 +702,7 @@ pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
             try {
-                ret.first = *idx->NUC_ROW_ID(gi);
+                ret.first = *idx->NUC_ROW_ID(TIntId(gi));
             }
             catch ( CSraException& exc ) {
                 if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
@@ -712,7 +712,7 @@ pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
         }
         if ( !ret.first && idx->m_PROT_ROW_ID ) {
             try {
-                ret.first = *idx->PROT_ROW_ID(gi);
+                ret.first = *idx->PROT_ROW_ID(TIntId(gi));
                 if ( ret.first ) {
                     ret.second = true;
                 }
@@ -735,7 +735,7 @@ uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
             try {
-                ret = *idx->NUC_ROW_ID(gi);
+                ret = *idx->NUC_ROW_ID(TIntId(gi));
             }
             catch ( CSraException& exc ) {
                 if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
@@ -755,7 +755,7 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_PROT_ROW_ID ) {
             try {
-                ret = *idx->PROT_ROW_ID(gi);
+                ret = *idx->PROT_ROW_ID(TIntId(gi));
             }
             catch ( CSraException& exc ) {
                 if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
@@ -2331,7 +2331,7 @@ bool CWGSGiIterator::x_Excluded(void)
 {
     if ( m_FilterSeqType != eProt && m_Idx->m_NUC_ROW_ID ) {
         try {
-            m_CurrRowId = m_Idx->NUC_ROW_ID(m_CurrGi);
+            m_CurrRowId = m_Idx->NUC_ROW_ID(TIntId(m_CurrGi));
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eNuc;
                 return false;
@@ -2345,7 +2345,7 @@ bool CWGSGiIterator::x_Excluded(void)
     }
     if ( m_FilterSeqType != eNuc && m_Idx->m_PROT_ROW_ID ) {
         try {
-            m_CurrRowId = m_Idx->PROT_ROW_ID(m_CurrGi);
+            m_CurrRowId = m_Idx->PROT_ROW_ID(TIntId(m_CurrGi));
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eProt;
                 return false;
