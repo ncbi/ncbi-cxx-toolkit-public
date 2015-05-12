@@ -1088,6 +1088,8 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     AddCompilerSetting( *settings, cfg, "FRAMEWORK_SEARCH_PATHS");
     AddCompilerSetting( *settings, cfg, "USE_HEADERMAP");
 
+    AddCompilerSetting( *settings, cfg, "OTHER_CPLUSPLUSFLAGS");
+
     AddLinkerSetting( *settings, cfg, "DEAD_CODE_STRIPPING");
     AddLinkerSetting( *settings, cfg, "PREBINDING");
 //    AddLinkerSetting( *settings, cfg, "ZERO_LINK");
