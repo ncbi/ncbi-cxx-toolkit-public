@@ -277,9 +277,17 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(
         }
     }
 
+    const CSeq_align& seq_aln = *aln_stats.GetAlnVec()[aln_idx];
     // Flags
     int anchor_flags = CPairwiseAln::fKeepNormalized;
-    int flags = CPairwiseAln::fKeepNormalized | CPairwiseAln::fAllowMixedDir;
+    int flags = CPairwiseAln::fKeepNormalized |
+        CPairwiseAln::fAllowMixedDir;
+    if ( seq_aln.GetSegs().IsStd() ) {
+        // Std-segs may contain overlaps (in this case the alignment will be split
+        // into segments later).
+        anchor_flags |= CPairwiseAln::fAllowOverlap;
+        flags |= CPairwiseAln::fAllowOverlap;
+    }
 
     if ((options.m_MergeFlags & CAlnUserOptions::fIgnoreInsertions) != 0) {
         anchor_flags |= CPairwiseAln::fIgnoreInsertions;
@@ -288,7 +296,7 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(
 
     // Create pairwises
     typedef typename _TAlnStats::TIdVec TIdVec;
-    TIdVec ids = aln_stats.GetSeqIdsForAln(aln_idx);
+    const TIdVec ids = aln_stats.GetSeqIdsForAln(aln_idx);
     CAnchoredAln::TPairwiseAlnVector pairwises;
     pairwises.resize(dim);
     int empty_rows = 0;
@@ -298,12 +306,10 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(
             row == anchor_row ? anchor_flags : flags));
 
         ConvertSeqAlignToPairwiseAln(
-            *pairwise_aln,
-            *aln_stats.GetAlnVec()[aln_idx],
-            anchor_row,
-            row,
+            *pairwise_aln, seq_aln,
+            anchor_row, row,
             row == anchor_row ? CAlnUserOptions::eDirect : options.m_Direction,
-            &aln_stats.GetSeqIdsForAln(aln_idx));
+            &ids);
 
         if ( force_widths ) {
             // Need to convert coordinates to genomic.
@@ -363,17 +369,63 @@ void CreateAnchoredAlnVec(_TAlnStats&            aln_stats,
     for (size_t aln_idx = 0; aln_idx < aln_stats.GetAlnCount(); ++aln_idx) {
         CRef<CAnchoredAln> anchored_aln =
             CreateAnchoredAlnFromAln(aln_stats, aln_idx, options);
+        if ( !anchored_aln ) continue;
 
-        if ( anchored_aln ) {
-            out_vec.push_back(anchored_aln);
-            // Calc scores
-            for (typename _TAlnStats::TDim row = 0; row < anchored_aln->GetDim(); ++row) {
-                ITERATE(CPairwiseAln, rng_it, *anchored_aln->GetPairwiseAlns()[row]) {
-                    anchored_aln->SetScore() += rng_it->GetLength();
+        const CSeq_align& aln = *aln_stats.GetAlnVec()[aln_idx];
+        if (aln.GetSegs().IsStd()) {
+            bool need_split = false;
+            ITERATE(CAnchoredAln::TPairwiseAlnVector, it, anchored_aln->GetPairwiseAlns()) {
+                const CPairwiseAln& pw = **it;
+                if (pw.IsSet(CPairwiseAln::fMixedDir) ||
+                    pw.IsSet(CPairwiseAln::fOverlap)) {
+                    need_split = true;
+                    break;
                 }
             }
-            anchored_aln->SetScore() /= anchored_aln->GetDim();
+            if (need_split) {
+                // The std-seg contains overlaps and needs to be split into
+                // separate rows/segments.
+                CAnchoredAln::TDim anchor_row = anchored_aln->GetAnchorRow();
+                const CPairwiseAln& apw = *anchored_aln->GetPairwiseAlns()[anchor_row];
+                for (CAnchoredAln::TDim row = 0; row < anchored_aln->GetDim(); ++row) {
+                    if (row == anchor_row) continue;
+                    const CPairwiseAln& rpw = *anchored_aln->GetPairwiseAlns()[row];
+                    for (size_t seg = 0; seg < rpw.size(); ++seg) {
+                        CRef<CAnchoredAln> sub_anchored_aln(new CAnchoredAln);
+                        sub_anchored_aln->SetPairwiseAlns().resize(2);
+                        sub_anchored_aln->SetDim(2);
+                        CRef<CPairwiseAln> sub_row(new CPairwiseAln(
+                            rpw.GetFirstId(), rpw.GetSecondId(), rpw.GetPolicyFlags()));
+                        sub_row->insert(sub_row->end(), rpw[seg]);
+                        CRef<CPairwiseAln> sub_anchor_row(new CPairwiseAln(
+                            apw.GetFirstId(), apw.GetSecondId(), apw.GetPolicyFlags()));
+                        sub_anchor_row->insert(sub_anchor_row->end(), apw[seg]);
+                        if (anchor_row == 0) {
+                            sub_anchored_aln->SetAnchorRow(0);
+                            sub_anchored_aln->SetPairwiseAlns()[0] = sub_anchor_row;
+                            sub_anchored_aln->SetPairwiseAlns()[1] = sub_row;
+                        }
+                        else {
+                            sub_anchored_aln->SetAnchorRow(1);
+                            sub_anchored_aln->SetPairwiseAlns()[0] = sub_row;
+                            sub_anchored_aln->SetPairwiseAlns()[1] = sub_anchor_row;
+                        }
+                        out_vec.push_back(sub_anchored_aln);
+                        sub_anchored_aln->SetScore(rpw[seg].GetLength());
+                    }
+                }
+                continue; // Done splitting std-seg
+            }
         }
+
+        out_vec.push_back(anchored_aln);
+        // Calc scores
+        for (typename _TAlnStats::TDim row = 0; row < anchored_aln->GetDim(); ++row) {
+            ITERATE(CPairwiseAln, rng_it, *anchored_aln->GetPairwiseAlns()[row]) {
+                anchored_aln->SetScore() += rng_it->GetLength();
+            }
+        }
+        anchored_aln->SetScore() /= anchored_aln->GetDim();
     }
 }
 
