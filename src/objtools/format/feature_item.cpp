@@ -1217,47 +1217,35 @@ void CFeatureItem::x_AddQualPseudo(
     {
         switch (subtype) {
             case  CSeqFeatData::eSubtype_allele:
-            case  CSeqFeatData::eSubtype_attenuator:
-            case  CSeqFeatData::eSubtype_CAAT_signal:
             case  CSeqFeatData::eSubtype_conflict:
             case  CSeqFeatData::eSubtype_D_loop:
-            case  CSeqFeatData::eSubtype_enhancer:
-            case  CSeqFeatData::eSubtype_GC_signal:
             case  CSeqFeatData::eSubtype_iDNA:
             case  CSeqFeatData::eSubtype_LTR:
             case  CSeqFeatData::eSubtype_misc_binding:
             case  CSeqFeatData::eSubtype_misc_difference:
             case  CSeqFeatData::eSubtype_misc_recomb:
             case  CSeqFeatData::eSubtype_misc_RNA:
-            case  CSeqFeatData::eSubtype_misc_signal:
             case  CSeqFeatData::eSubtype_misc_structure:
             case  CSeqFeatData::eSubtype_modified_base:
             case  CSeqFeatData::eSubtype_mutation:
             case  CSeqFeatData::eSubtype_old_sequence:
-            case  CSeqFeatData::eSubtype_polyA_signal:
             case  CSeqFeatData::eSubtype_polyA_site:
             case  CSeqFeatData::eSubtype_precursor_RNA:
             case  CSeqFeatData::eSubtype_prim_transcript:
             case  CSeqFeatData::eSubtype_primer_bind:
             case  CSeqFeatData::eSubtype_protein_bind:
-            case  CSeqFeatData::eSubtype_RBS:
             case  CSeqFeatData::eSubtype_repeat_region:
             case  CSeqFeatData::eSubtype_repeat_unit:
             case  CSeqFeatData::eSubtype_rep_origin:
             case  CSeqFeatData::eSubtype_satellite:
             case  CSeqFeatData::eSubtype_stem_loop:
             case  CSeqFeatData::eSubtype_STS:
-            case  CSeqFeatData::eSubtype_TATA_signal:
-            case  CSeqFeatData::eSubtype_terminator:
             case  CSeqFeatData::eSubtype_unsure:
             case  CSeqFeatData::eSubtype_variation:
             case  CSeqFeatData::eSubtype_3clip:
             case  CSeqFeatData::eSubtype_3UTR:
             case  CSeqFeatData::eSubtype_5clip:
             case  CSeqFeatData::eSubtype_5UTR:
-            case  CSeqFeatData::eSubtype_10_signal:
-            case  CSeqFeatData::eSubtype_35_signal:
-            case  CSeqFeatData::eSubtype_regulatory:
                 return;
             default:
                 break;
