@@ -143,6 +143,7 @@ static string s_GetGOText(
             go_text += *evidence;
         }
     } else { 
+        bool add_dash = false;
         if (go_id != NULL) {
             go_text = string( "GO:" );
             if( is_html ) {
@@ -152,15 +153,18 @@ static string s_GetGOText(
             if( is_html ) {
                 go_text += "</a>";
             }
+            add_dash = true;
         } else {
             go_text.clear();
         }
         if ( text_string != 0 && text_string->length() > 0 ) {
-            go_text += string( " - " );
+            if (add_dash) {
+              go_text += string( " - " );
+            }
             if( is_html && go_id != NULL ) {
                 go_text += "<a href=\"" + strLinkBaseGeneOntology + *go_id + "\">";
             }
-            // Yes, we have the dash here even if there's no go_id (compatibility with C)
+            // NO, we NO LONGER have the dash here even if there's no go_id (RETAIN compatibility with CHANGE in C)
             go_text += *text_string;
             if( is_html && go_id != NULL ) {
                 go_text += "</a>";
