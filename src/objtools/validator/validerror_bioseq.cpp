@@ -4173,8 +4173,15 @@ void CValidError_bioseq::x_ValidateCompletness
                             "Circular topology has complete flag set, but title should say complete sequence or complete genome",
                             ctx, *desc);
                 } else {
-                    PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                    CConstRef<CSeqdesc> closest_molinfo = seq.GetClosestDescriptor(CSeqdesc::e_Molinfo);
+                    if (closest_molinfo) {
+                        const CSeq_entry& ctx = *seq.GetParentEntry();
+                        PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                            "Suspicious use of complete", ctx, *closest_molinfo);
+                    } else {
+                        PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
                             "Suspicious use of complete", seq);
+                    }
                     reported = true;
                 }
             }
