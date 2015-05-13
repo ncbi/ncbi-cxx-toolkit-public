@@ -2721,6 +2721,15 @@ void CNewCleanup_imp::AffilBC( CAffil& af )
                     ChangeMade (CCleanupChange::eChangePublication);
                 }
             }
+
+            if (std.CanGetSub() ) {
+                string oldsub = std.GetSub();
+                string newsub = NStr::Replace(oldsub, ".", "");
+                if ( ! NStr::EqualNocase(oldsub, newsub) ) {
+                    SET_FIELD( std, Sub, newsub);
+                    ChangeMade (CCleanupChange::eChangePublication);
+                }
+            }
             break;
         }}
         default:
