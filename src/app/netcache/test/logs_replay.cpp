@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -48,6 +49,10 @@
 #endif
 
 #define DO_TEST 0
+
+#if NCBI_DEVELOPMENT_VER < 20150311
+#define ERR_FATAL(x) LOG_POST(Fatal << x)
+#endif
 
 USING_NCBI_SCOPE;
 
