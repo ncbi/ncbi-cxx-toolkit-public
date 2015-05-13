@@ -99,6 +99,12 @@ On startup, added duplication of error messages into the standard output.
 Added monitoring  of periodic synchronization activity and aborting it when it appears stalled.
 Tweaked initial synchronization sequence of actions and corrected resetting synchronization data.
 
+May 13, 2015
+version 6.8.6
+Added alert mechanism.
+Enhanced status reporting, added more report types.
+Corrected storage and search of un-synchronized blobs, and blobs not found locally.
+Fixed errors in peer-to-peer communications.
 
 
 
