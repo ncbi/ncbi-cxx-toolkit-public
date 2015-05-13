@@ -837,7 +837,7 @@ void CleanAndCompress(string& dest, const CTempString& instr)
             *out++ = next;
             next = curr;
             *out++ = ' ';
-            while (next == ' ' || next == ',') {
+            while ((next == ' ' || next == ',') && left > 0) {
                 next = *in;
                 in++;
                 left--;
@@ -848,7 +848,7 @@ void CleanAndCompress(string& dest, const CTempString& instr)
             *out++ = next;
             next = curr;
             *out++ = ' ';
-            while (next == ' ' || next == ';') {
+            while ((next == ' ' || next == ';') && left > 0) {
                 next = *in;
                 in++;
                 left--;
@@ -858,7 +858,7 @@ void CleanAndCompress(string& dest, const CTempString& instr)
         case comma_space:
             *out++ = curr;
             *out++ = ' ';
-            while (next == ' ' || next == ',') {
+            while ((next == ' ' || next == ',') && left > 0) {
                 next = *in;
                 in++;
                 left--;
@@ -868,7 +868,7 @@ void CleanAndCompress(string& dest, const CTempString& instr)
         case semicolon_space:
             *out++ = curr;
             *out++ = ' ';
-            while (next == ' ' || next == ';') {
+            while ((next == ' ' || next == ';') && left > 0) {
                 next = *in;
                 in++;
                 left--;
@@ -881,7 +881,9 @@ void CleanAndCompress(string& dest, const CTempString& instr)
         }
 
         curr = next;
-        left--;
+        if (left > 0) {
+            left--;
+        }
     }
 
     if (curr > 0 && curr != ' ') {
