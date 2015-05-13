@@ -191,6 +191,7 @@ cdd needs cn3d
 cdd needs scoremat
 clog needs3party $(ORIG_LIBS)
 cluster needs3party $(ORIG_LIBS)
+cluster_assignment needs xser
 clustering needs cobalt
 cn3d needs mmdb
 cobalt needs $(BLAST_LIBS)
@@ -1443,6 +1444,7 @@ xqueryparse needs xncbi
 xregexp needs $(PCRE_LIB)
 xregexp needs xncbi
 xregexp needs3party $(PCRE_LIBS)
+xregexp_template_tester needs xregexp
 xrepeatdb needs gpipe_objutil
 xsd_sample_lib needs xser
 xser needs xutil
