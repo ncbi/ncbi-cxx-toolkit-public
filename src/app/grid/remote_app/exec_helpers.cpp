@@ -103,8 +103,9 @@ class CRemoteAppReaper
     class CCollector : public CThread
     {
     public:
-        CCollector(CContext& context)
-            : m_Context(context)
+        CCollector(CContext& context, const string& app_name)
+            : m_Context(context),
+              m_ThreadName(app_name + "_cl")
         {
             if (m_Context.Enabled()) {
                 Run();
@@ -121,9 +122,15 @@ class CRemoteAppReaper
 
     private:
         // This is the only method called in a different thread
-        void* Main(void) { m_Context.CollectorImpl(); return NULL; }
+        void* Main(void)
+        {
+            SetCurrentThreadName(m_ThreadName);
+            m_Context.CollectorImpl();
+            return NULL;
+        }
 
         CContext& m_Context;
+        const string m_ThreadName;
     };
 
 public:
@@ -144,7 +151,7 @@ public:
         friend class CRemoteAppReaper;
     };
 
-    CRemoteAppReaper(int sleep, int max_attempts);
+    CRemoteAppReaper(int sleep, int max_attempts, const string& app_name);
 
     CManager& GetManager() { return m_Manager; }
 
@@ -239,10 +246,11 @@ bool CRemoteAppReaper::CContext::FillBacklog(TChildren_I& backlog_end)
     return false;
 }
 
-CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts)
+CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts,
+        const string& app_name)
     : m_Context(sleep, max_attempts),
       m_Manager(m_Context),
-      m_Collector(new CCollector(m_Context))
+      m_Collector(new CCollector(m_Context, app_name))
 {
 }
 
@@ -389,11 +397,12 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
          m_AddedEnv[s] = reg.GetString("env_set", s, "");
     }
 
+    const string name = CNcbiApplication::Instance()->GetProgramDisplayName();
     int sleep = reg.GetInt(sec_name,
             "sleep_between_reap_attempts", 60, 0, IRegistry::eReturn);
     int max_attempts = reg.GetInt(sec_name,
             "max_reap_attempts_after_kill", 60, 0, IRegistry::eReturn);
-    m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts));
+    m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts, name));
 
     const string cmd = reg.GetString(sec_name, "version_cmd", m_AppPath);
     const string args = reg.GetString(sec_name, "version_args", "-version");

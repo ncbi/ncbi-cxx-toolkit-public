@@ -77,7 +77,8 @@ class CGridControlThread : public CThread
 public:
     CGridControlThread(SGridWorkerNodeImpl* worker_node,
         unsigned int start_port, unsigned int end_port) : m_Control(
-            new CWorkerNodeControlServer(worker_node, start_port, end_port))
+            new CWorkerNodeControlServer(worker_node, start_port, end_port)),
+          m_ThreadName(worker_node->GetAppName() + "_ct")
     {
     }
 
@@ -94,6 +95,7 @@ public:
 protected:
     virtual void* Main(void)
     {
+        SetCurrentThreadName(m_ThreadName);
         m_Control->Run();
         return NULL;
     }
@@ -107,6 +109,7 @@ protected:
 
 private:
     auto_ptr<CWorkerNodeControlServer> m_Control;
+    const string m_ThreadName;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -187,6 +190,7 @@ private:
     unsigned int        m_AutoShutdown;
     CStopWatch          m_AutoShutdownSW;
     mutable CFastMutex  m_Mutex;
+    const string m_ThreadName;
 
     CWorkerNodeIdleThread(const CWorkerNodeIdleThread&);
     CWorkerNodeIdleThread& operator=(const CWorkerNodeIdleThread&);
@@ -200,11 +204,14 @@ CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask* task,
       m_Wait1(0,100000), m_Wait2(0,1000000),
       m_StopFlag(false), m_ShutdownFlag(false),
       m_RunInterval(run_delay),
-      m_AutoShutdown(auto_shutdown), m_AutoShutdownSW(CStopWatch::eStart)
+      m_AutoShutdown(auto_shutdown), m_AutoShutdownSW(CStopWatch::eStart),
+      m_ThreadName(worker_node->GetAppName() + "_id")
 {
 }
 void* CWorkerNodeIdleThread::Main()
 {
+    SetCurrentThreadName(m_ThreadName);
+
     while (!m_ShutdownFlag) {
         if ( x_IsAutoShutdownTime() ) {
             LOG_POST_X(47, Info <<
@@ -444,7 +451,9 @@ void SGridWorkerNodeImpl::x_StartWorkerThreads()
 {
     _ASSERT(m_MaxThreads > 0);
 
-    m_ThreadPool = new CStdPoolOfThreads(m_MaxThreads, 0);
+    m_ThreadPool = new CStdPoolOfThreads(m_MaxThreads, 0, 1, kMax_UInt,
+            GetAppName() + "_wr");
+
     try {
         unsigned init_threads = m_App.GetConfig().GetInt("server",
                 "init_threads", 1, 0, IRegistry::eReturn);

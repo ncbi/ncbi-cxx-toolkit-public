@@ -868,12 +868,12 @@ void CThread::GetSystemID(TThreadSystemID* id)
 
 
 #if defined(NCBI_OS_LINUX) && defined(PR_SET_NAME)
-void CThread::SetCurrentThreadName(const char* name)
+void CThread::SetCurrentThreadName(const CTempString& name)
 {
-    prctl(PR_SET_NAME, (unsigned long)name, 0, 0, 0);
+    prctl(PR_SET_NAME, (unsigned long)name.data(), 0, 0, 0);
 }
 #else
-void CThread::SetCurrentThreadName(const char*)
+void CThread::SetCurrentThreadName(const CTempString&)
 {
 }
 #endif

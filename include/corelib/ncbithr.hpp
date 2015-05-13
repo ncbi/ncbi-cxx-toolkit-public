@@ -578,7 +578,7 @@ public:
 
     /// Set name for the current thread.
     /// This works only on Linux, no-op on other platforms
-    static void SetCurrentThreadName(const char*);
+    static void SetCurrentThreadName(const CTempString&);
 
     /// Initialize main thread's TID.
     /// The function must be called from the main thread if the application

@@ -546,6 +546,7 @@ void SWorkerNodeJobContextImpl::x_RunJob()
 
 void* CMainLoopThread::Main()
 {
+    SetCurrentThreadName(m_ThreadName);
     CDeadline max_wait_for_servers(
             TWorkerNode_MaxWaitForServers::GetDefault());
 

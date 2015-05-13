@@ -6462,7 +6462,7 @@ CAsyncDiagThread::Main(void)
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
         thr_name += m_ThreadSuffix;
-        SetCurrentThreadName(thr_name.c_str());
+        SetCurrentThreadName(thr_name);
     }
 
     const int batch_size = TAsyncBatchSizeParam::GetDefault();

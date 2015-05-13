@@ -66,11 +66,7 @@ private:
 class CJobCommitterThread : public CThread
 {
 public:
-    CJobCommitterThread(SGridWorkerNodeImpl* worker_node) :
-        m_WorkerNode(worker_node),
-        m_Semaphore(0, 1)
-    {
-    }
+    CJobCommitterThread(SGridWorkerNodeImpl* worker_node);
 
     CWorkerNodeJobContext AllocJobContext();
 
@@ -96,6 +92,7 @@ private:
     CSemaphore m_Semaphore;
     TCommitJobTimeline m_ImmediateActions, m_Timeline, m_JobContextPool;
     CFastMutex m_TimelineMutex;
+    const string m_ThreadName;
 
     typedef CGuard<CFastMutex, SSimpleUnlock<CFastMutex>,
             SSimpleLock<CFastMutex> > TFastMutexUnlockGuard;

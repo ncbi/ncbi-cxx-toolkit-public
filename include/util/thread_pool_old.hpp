@@ -406,7 +406,8 @@ public:
     ///   The maximum number of urgent threads running simultaneously
     CPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
                    unsigned int spawn_threshold = 1, 
-                   unsigned int max_urgent_threads = kMax_UInt);
+                   unsigned int max_urgent_threads = kMax_UInt,
+                   const string& thread_name = kEmptyStr);
 
     /// Destructor
     virtual ~CPoolOfThreads(void);
@@ -515,6 +516,8 @@ protected:
     TQueue                   m_Queue;
     bool                     m_QueuingForbidden;
 
+    const string             m_ThreadName;
+
 private:
     friend class CThreadInPool<TRequest>;
     TItemHandle x_AcceptRequest(const TRequest& req, 
@@ -619,8 +622,10 @@ public:
     ///   The maximum number of urgent threads running simultaneously
     CStdPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
                       unsigned int spawn_threshold = 1,
-                      unsigned int max_urgent_threads = kMax_UInt)
-        : TParent(max_threads, queue_size, spawn_threshold, max_urgent_threads)
+                      unsigned int max_urgent_threads = kMax_UInt,
+                      const string& thread_name = kEmptyStr)
+        : TParent(max_threads, queue_size, spawn_threshold, max_urgent_threads,
+                thread_name)
         {}
 
     virtual ~CStdPoolOfThreads();
@@ -997,6 +1002,14 @@ void CThreadInPool<TRequest>::x_HandleOneRequest(bool catch_all)
 template <typename TRequest>
 void* CThreadInPool<TRequest>::Main(void)
 {
+    _ASSERT(m_Pool);
+
+    const string& name = m_Pool->m_ThreadName;
+
+    if (!name.empty()) {
+        SetCurrentThreadName(name);
+    }
+
     try {
         m_Pool->Register(*this);
     } catch (CThreadException&) {
@@ -1042,11 +1055,13 @@ template <typename TRequest>
 CPoolOfThreads<TRequest>::CPoolOfThreads(unsigned int max_threads,
                                          unsigned int queue_size,
                                          unsigned int spawn_threshold, 
-                                         unsigned int max_urgent_threads)
+                                         unsigned int max_urgent_threads,
+                                         const string& thread_name)
     : m_MaxThreads(max_threads), m_MaxUrgentThreads(max_urgent_threads),
       m_Threshold(spawn_threshold), m_Delta(0),
       m_Queue(queue_size > 0 ? queue_size : max_threads),
-      m_QueuingForbidden(queue_size == 0)
+      m_QueuingForbidden(queue_size == 0),
+      m_ThreadName(thread_name)
 {
     m_ThreadCount.Set(0);
     m_UrgentThreadCount.Set(0);

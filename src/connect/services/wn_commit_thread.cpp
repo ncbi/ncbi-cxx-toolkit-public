@@ -58,6 +58,13 @@ static void s_TlsCleanup(IWorkerNodeJob* p_value, void* /* data */ )
 /// @internal
 static CStaticTls<IWorkerNodeJob> s_tls;
 
+CJobCommitterThread::CJobCommitterThread(SGridWorkerNodeImpl* worker_node) :
+    m_WorkerNode(worker_node),
+    m_Semaphore(0, 1),
+    m_ThreadName(worker_node->GetAppName() + "_cm")
+{
+}
+
 CWorkerNodeJobContext CJobCommitterThread::AllocJobContext()
 {
     TFastMutexGuard mutex_lock(m_TimelineMutex);
@@ -100,6 +107,7 @@ void CJobCommitterThread::Stop()
 
 void* CJobCommitterThread::Main()
 {
+    SetCurrentThreadName(m_ThreadName);
     TFastMutexGuard mutex_lock(m_TimelineMutex);
 
     do {
