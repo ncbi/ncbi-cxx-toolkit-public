@@ -1272,7 +1272,7 @@ int CWig2tableApplication::Run(void)
 {
     SetDiagPostLevel(eDiag_Warning);
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     if ( args["mapfile"] ) {
         m_IdMapper.reset(new CIdMapperConfig(args["mapfile"].AsInputFile(),
