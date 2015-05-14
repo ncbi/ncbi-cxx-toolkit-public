@@ -2722,12 +2722,21 @@ void CNewCleanup_imp::AffilBC( CAffil& af )
                 }
             }
 
-            if (std.CanGetSub() ) {
-                string oldsub = std.GetSub();
-                string newsub = NStr::Replace(oldsub, ".", "");
-                if ( ! NStr::EqualNocase(oldsub, newsub) ) {
-                    SET_FIELD( std, Sub, newsub);
+            if (std.CanGetCountry() ) {
+                if ( NStr::EqualNocase(std.GetCountry(), "USA") && ! NStr::EqualCase(std.GetCountry(), "USA") ) {
+                    SET_FIELD( std, Country, "USA");
                     ChangeMade (CCleanupChange::eChangePublication);
+                }
+            }
+
+            if (std.CanGetSub() && std.CanGetCountry() ) {
+                if ( NStr::EqualCase(std.GetCountry(), "USA") ) {
+                    string oldsub = std.GetSub();
+                    string newsub = NStr::Replace(oldsub, ".", "");
+                    if ( ! NStr::EqualNocase(oldsub, newsub) ) {
+                        SET_FIELD( std, Sub, newsub);
+                        ChangeMade (CCleanupChange::eChangePublication);
+                    }
                 }
             }
             break;
