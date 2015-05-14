@@ -50,3 +50,17 @@ Here is a brief description of the containing applications:
     An integrated stress test for Grid. It submits and then waits for
     the specified number of NetSchedule jobs.  It is also possible to
     specify the amount of data transmitted through NetCache.
+
+* cidtool
+
+    Generate and decode identifiers in CompoundID format.
+
+* file_upload.cgi
+
+    Utility that writes its input to a segregated NetCache instance
+    with a short TTL.
+
+* ncfetch.cgi
+
+   Compose HTTP response out of NetCache data.
+
