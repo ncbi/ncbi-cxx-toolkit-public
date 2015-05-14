@@ -782,11 +782,7 @@ struct SWriteHelper
         : m_Dest(dest),
           m_Result(eRW_Success),
           m_Empty(true)
-    {
-        // Clang optimizes too much,
-        // tests for empty objects would fail without this explicit write
-        m_Dest.Write(this, 0, 0);
-    }
+    {}
 
     void Close(const SCtx& ctx)
     {
