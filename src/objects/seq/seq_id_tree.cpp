@@ -596,7 +596,7 @@ CSeq_id_Handle CSeq_id_Gi_Tree::FindInfo(const CSeq_id& id) const
 {
     CSeq_id_Handle ret;
     _ASSERT(x_Check(id));
-    TPacked gi = GI_TO(TPacked, x_Get(id));
+    TPacked gi = x_Get(id);
     if (gi) {
         ret = CSeq_id_Handle(m_SharedInfo, gi);
     }
