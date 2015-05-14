@@ -117,6 +117,14 @@ public:
 };
 
 
+#ifdef NCBI_INT8_GI
+# define eGi eInt8
+# define AsGi AsInt8
+#else
+# define eGi eInteger
+# define AsGi AsInteger
+#endif
+
 void CDemoApp::Init(void)
 {
     CONNECT_Init(&GetConfig());
@@ -130,7 +138,7 @@ void CDemoApp::Init(void)
     // GI to fetch
     arg_desc->AddOptionalKey("gi", "SeqEntryID",
                              "GI id of the Seq-Entry to fetch",
-                             CArgDescriptions::eInteger);
+                             CArgDescriptions::eGi);
     arg_desc->AddOptionalKey("id", "SeqEntryID",
                              "Seq-id of the Seq-Entry to fetch",
                              CArgDescriptions::eString);
@@ -573,7 +581,7 @@ void CDemoApp::GetIds(CScope& scope, const CSeq_id_Handle& idh)
     }
     if ( args["get_acc"] ) {
         if ( args["gi"] ) {
-            TGi gi = GI_FROM(int, args["gi"].AsInteger());
+            TGi gi = args["gi"].AsGi();
             NcbiCout << "Acc: "
                      << sequence::GetAccessionForGi(gi, scope, sequence::eWithoutAccessionVersion)
                      << NcbiEndl;
@@ -624,7 +632,7 @@ int CDemoApp::Run(void)
     CRef<CSeq_id> id;
     CRef<CSeq_loc> range_loc;
     if ( args["gi"] ) {
-        TGi gi = GI_FROM(int, args["gi"].AsInteger());
+        TGi gi = args["gi"].AsGi();
         id.Reset(new CSeq_id);
         id->SetGi(gi);
     }
