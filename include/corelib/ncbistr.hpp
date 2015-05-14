@@ -4682,21 +4682,21 @@ template<> inline
 string NStr::NumericToString(TGi value,
                              TNumToStringFlags flags, int base)
 {
-    return NumericToString(GI_TO(TIntId, value), flags, base);
+    return NumericToString<TIntId>(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, TGi value,
                            TNumToStringFlags flags, int base)
 {
-    return NumericToString(out_str, GI_TO(TIntId, value), flags, base);
+    return NumericToString<TIntId>(out_str, value, flags, base);
 }
 
 template <> inline
 TGi NStr::StringToNumeric(const CTempString& str, 
                           TStringToNumFlags flags, int base)
 {
-    return GI_FROM(TIntId, StringToNumeric<TIntId>(str, flags, base));
+    return StringToNumeric<TIntId>(str, flags, base);
 }
 
 template <> inline
