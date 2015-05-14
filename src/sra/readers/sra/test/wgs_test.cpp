@@ -414,6 +414,9 @@ int CWGSTestApp::Run(void)
             if ( it.GetGBState() ) {
                 out << " gbstate: "<<it.GetGBState();
             }
+            if ( it.HasSeqHash() ) {
+                out << " hash: 0x"<<hex<<it.GetSeqHash()<<dec;
+            }
             out << '\n';
             CRef<CBioseq> seq1 = it.GetBioseq();
             CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);

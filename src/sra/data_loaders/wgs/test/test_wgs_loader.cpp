@@ -1290,3 +1290,26 @@ BOOST_AUTO_TEST_CASE(GITest)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(TIntId(2)));
     BOOST_CHECK(!bh);
 }
+
+
+BOOST_AUTO_TEST_CASE(HashTest)
+{
+    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("BBXB01000080.1");
+
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    CScope wgs_scope(*om);
+    wgs_scope.AddDefaults();
+
+    int wgs_hash = wgs_scope.GetSequenceHash(id);
+    BOOST_CHECK(wgs_hash != 0);
+
+    sx_InitGBLoader(*om);
+    CScope gb_scope(*om);
+    gb_scope.AddDataLoader("GBLOADER");
+    
+    int gb_hash = gb_scope.GetSequenceHash(id);
+    BOOST_CHECK(gb_hash != 0);
+
+    BOOST_CHECK_EQUAL(wgs_hash, gb_hash);
+}

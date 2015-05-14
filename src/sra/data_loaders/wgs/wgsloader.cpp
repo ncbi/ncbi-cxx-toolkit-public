@@ -286,6 +286,12 @@ TSeqPos CWGSDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
+int CWGSDataLoader::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    return m_Impl->GetSequenceHash(idh);
+}
+
+
 CSeq_inst::TMol CWGSDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetSequenceType(idh);

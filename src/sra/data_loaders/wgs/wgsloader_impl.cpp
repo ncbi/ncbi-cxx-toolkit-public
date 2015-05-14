@@ -618,6 +618,35 @@ TSeqPos CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
+int CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        switch ( info.seq_type ) {
+        case 'S':
+            /*
+            if ( CWGSScaffoldIterator it = info.GetScaffoldIterator() ) {
+                return it.GetSeqHash();
+            }
+            */
+            break;
+        case 'P':
+            /*
+            if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
+                return it.GetSeqHash();
+            }
+            */
+            break;
+        default:
+            if ( CWGSSeqIterator it = info.GetContigIterator() ) {
+                return it.GetSeqHash();
+            }
+            break;
+        }
+    }
+    return 0;
+}
+
+
 CSeq_inst::TMol CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 {
     if ( GetBlobId(idh) ) {

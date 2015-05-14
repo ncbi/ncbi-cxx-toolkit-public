@@ -235,6 +235,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, GAP_LINKAGE);
         DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
         DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
+        DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
     };
 
     // SSeqTableCursor is helper accessor structure for SCAFFOLD table
@@ -483,6 +484,9 @@ public:
     int GetTaxId(void) const;
 
     TSeqPos GetSeqLength(void) const;
+
+    bool HasSeqHash(void) const;
+    int GetSeqHash(void) const;
 
     enum EFlags {
         fIds_gi       = 1<<0,

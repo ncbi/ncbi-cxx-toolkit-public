@@ -195,7 +195,8 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
       INIT_OPTIONAL_VDB_COLUMN(GAP_PROPS),
       INIT_OPTIONAL_VDB_COLUMN(GAP_LINKAGE),
       INIT_OPTIONAL_VDB_COLUMN(QUALITY),
-      INIT_OPTIONAL_VDB_COLUMN(CIRCULAR)
+      INIT_OPTIONAL_VDB_COLUMN(CIRCULAR),
+      INIT_OPTIONAL_VDB_COLUMN(HASH)
 {
 }
 
@@ -979,6 +980,19 @@ TSeqPos CWGSSeqIterator::GetSeqLength(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeqLength");
     return *m_Seq->READ_LEN(m_CurrId);
+}
+
+
+bool CWGSSeqIterator::HasSeqHash(void) const
+{
+    x_CheckValid("CWGSSeqIterator::GetSeqHash");
+    return m_Seq->m_HASH;
+}
+
+
+int CWGSSeqIterator::GetSeqHash(void) const
+{
+    return HasSeqHash()? *m_Seq->HASH(m_CurrId): 0;
 }
 
 
