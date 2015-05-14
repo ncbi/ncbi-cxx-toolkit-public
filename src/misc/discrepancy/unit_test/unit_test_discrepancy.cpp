@@ -87,7 +87,8 @@ NCBITEST_AUTO_FINI()
 
 BOOST_AUTO_TEST_CASE(NON_EXISTENT)
 {
-    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(CScope(*CObjectManager::GetInstance()));
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("NON-EXISTENT");
     const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 0);
