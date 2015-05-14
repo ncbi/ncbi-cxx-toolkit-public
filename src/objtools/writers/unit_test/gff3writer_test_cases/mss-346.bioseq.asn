@@ -2,6 +2,12 @@ Bioseq ::= {
   id {
     gi 1000000 
   },
+  descr {
+    title "GFF3 writer test case MSS-346, genomic." ,
+    molinfo {
+      biomol genomic 
+    } 
+  },
   inst {
     repr raw ,
     mol dna ,
