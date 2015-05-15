@@ -13,5 +13,6 @@ REQUIRES = Boost.Test.Included
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_netstorage_rpc
 CHECK_TIMEOUT = 1600
+CHECK_COPY = test_netstorage_rpc.ini
 
 WATCHERS = sadyrovr
