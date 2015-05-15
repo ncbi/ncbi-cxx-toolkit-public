@@ -134,7 +134,6 @@ int CMemTestApp::Run(void)
     }
     else if ( gi > ZERO_GI ) {
         for ( int count = 0; count < repeat_count; ++count ) {
-            typedef CNCBI2na TObject;
             typedef map<const CObject*, int> TCounterMap;
             TCounterMap cnt;
             {
