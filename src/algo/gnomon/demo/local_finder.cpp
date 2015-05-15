@@ -93,7 +93,7 @@ void CLocalFinderApp::Init(void)
 
 int CLocalFinderApp::Run(void)
 {
-    CArgs myargs = GetArgs();
+    const CArgs& myargs = GetArgs();
 
     int left            = myargs["from"].AsInteger();
     int right           = myargs["to"].AsInteger();

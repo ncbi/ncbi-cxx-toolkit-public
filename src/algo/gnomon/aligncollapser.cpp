@@ -241,7 +241,7 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
 }
 
 CAlignCollapser::CAlignCollapser(string contig, CScope* scope) : m_count(0), m_scope(scope) {
-    CArgs args = CNcbiApplication::Instance()->GetArgs();
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     m_filtersr = args["filtersr"];
     m_filterest = args["filterest"];
     m_filtermrna = args["filtermrna"];
@@ -917,7 +917,7 @@ int TotalFrameShift(const TInDels& indels, TSignedSeqRange range = TSignedSeqRan
 
 void CAlignCollapser::FilterAlignments() {
 
-    CArgs args = CNcbiApplication::Instance()->GetArgs();
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     m_left_end = numeric_limits<int>::max();
     int right_end = 0;
@@ -1840,7 +1840,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
     FilterAlignments();
 
-    CArgs args = CNcbiApplication::Instance()->GetArgs();
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     int oep = args["oep"].AsInteger();
     int max_extend = args["max-extension"].AsInteger();
 
