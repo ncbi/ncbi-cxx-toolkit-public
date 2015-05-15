@@ -164,7 +164,7 @@ int CSeqVecBench::result_mask = 0;
 
 int CSeqVecBench::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CRef<CSeq_id> id;
     try {
