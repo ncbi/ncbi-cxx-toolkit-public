@@ -129,7 +129,7 @@ void CTestShiftApp::Init(void)
 int CTestShiftApp::Run() 
 {
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     CNcbiIstream& input_istream = args["i"].AsInputFile();
     bool verbose = args["v"].AsBoolean();
     bool check = args["c"].AsBoolean();

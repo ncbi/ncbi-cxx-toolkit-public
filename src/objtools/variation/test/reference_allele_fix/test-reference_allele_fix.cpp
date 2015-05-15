@@ -208,7 +208,7 @@ void CReferenceAlleleFixApp::CheckFeats( CObjectIStream& input_objstream,
 
 int CReferenceAlleleFixApp::Run() 
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     CNcbiIstream& input_istream = args["i"].AsInputFile();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
