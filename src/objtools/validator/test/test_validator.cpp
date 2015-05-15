@@ -124,8 +124,8 @@ private:
 
 
 CTest_validatorApplication::CTest_validatorApplication(void) :
-    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_Level(0),
-    m_Reported(0), m_OnlyAnnots(false)
+    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false),
+    m_OnlyAnnots(false), m_Level(0), m_Reported(0)
 {
 }
 
