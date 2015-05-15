@@ -854,12 +854,8 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
         if (!IsOptionSet(eWaitTimeout))
             rnj_result = job_reader.ReadNextJob(&job, &job_status);
         else {
-            CDeadline deadline(m_Opts.timeout, 0);
-            do {
-                CTimeout timeout(deadline.GetRemainingTime());
-                rnj_result = job_reader.ReadNextJob(&job,
-                        &job_status, &timeout);
-            } while (rnj_result == CNetScheduleJobReader::eRNJ_NoMoreJobs);
+            CTimeout timeout(m_Opts.timeout);
+            rnj_result = job_reader.ReadNextJob(&job, &job_status, &timeout);
         }
 
         switch (rnj_result) {
@@ -883,8 +879,16 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
         case CNetScheduleJobReader::eRNJ_Interrupt:
             return 3;
 
-        default:
-            break;
+        case CNetScheduleJobReader::eRNJ_Timeout:
+            if (IsOptionSet(eWaitTimeout)) {
+                PrintLine("TIMEOUT");
+            }
+
+            return 0;
+
+        case CNetScheduleJobReader::eRNJ_NoMoreJobs:
+            PrintLine("NOJOBS");
+            return 0;
         }
     } else {
         if (!IsOptionSet(eJobId)) {

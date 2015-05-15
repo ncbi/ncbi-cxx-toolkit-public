@@ -142,8 +142,10 @@ static bool s_ParseReadJobResponse(const string& response,
         case 'n':
             if (field->name == "ncbi_phid")
                 job.page_hit_id = field->value;
-            else if (field->name == "no_more_jobs")
+            else if (field->name == "no_more_jobs") {
+                _ASSERT(no_more_jobs);
                 *no_more_jobs = NStr::StringToBool(field->value.c_str());
+            }
         }
     }
 
@@ -187,7 +189,8 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
 {
-    *no_more_jobs = false;
+    _ASSERT(no_more_jobs);
+    *no_more_jobs = true;
 
     if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
         m_Timeline.NextDiscoveryIteration(m_API);
@@ -202,7 +205,6 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
         return false;
 
     CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
-
     timeline_entry->ResetTimeout(READJOB_TIMEOUT);
 
     try {
@@ -248,10 +250,9 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     CDeadline deadline(timeout ? *timeout : CTimeout());
 
     bool no_more_jobs;
+    bool matching_job_exists = false;
 
     for (;;) {
-        bool matching_job_exists = false;
-
         while (m_Timeline.HasImmediateActions()) {
             if (x_PerformTimelineAction(m_Timeline.PullImmediateAction(),
                     *job, job_status, &no_more_jobs))
@@ -280,9 +281,8 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             return CNetScheduleJobReader::eRNJ_Timeout;
 
         // There's still time. Wait for notifications and query the servers.
-        if (!m_Timeline.HasScheduledActions()) {
+        if (m_Timeline.HasScheduledActions()) {
             const CDeadline next_event_time = m_Timeline.GetNextTimeout();
-
             if (deadline < next_event_time) {
                 if (!m_API->m_NotificationThread->
                         m_ReadNotifications.Wait(deadline))
@@ -294,7 +294,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             else if (x_PerformTimelineAction(m_Timeline.PullScheduledAction(),
                     *job, job_status, &no_more_jobs))
                 return CNetScheduleJobReader::eRNJ_JobReady;
-            else if (no_more_jobs)
+            else if (!matching_job_exists && no_more_jobs)
                 return CNetScheduleJobReader::eRNJ_NoMoreJobs;
         }
     }
