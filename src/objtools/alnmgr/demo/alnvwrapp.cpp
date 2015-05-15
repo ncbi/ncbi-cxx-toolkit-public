@@ -364,7 +364,7 @@ void CAlnVwrApp::View10()
 
 int CAlnVwrApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     if ( args["log"] ) {
         SetDiagStream( &args["log"].AsOutputFile() );
