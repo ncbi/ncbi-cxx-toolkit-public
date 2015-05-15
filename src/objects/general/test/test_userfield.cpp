@@ -87,7 +87,7 @@ void CTestApp::Init(void)
 
 int CTestApp::Run(void)
 {
-    CArgs      args = GetArgs();
+    const CArgs& args = GetArgs();
     string inFmt   = args["infmt"].AsString();
     string outFmt  = args["outfmt"].AsString();
     string mode    = args["mode"].AsString();

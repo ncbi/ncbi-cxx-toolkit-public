@@ -166,7 +166,7 @@ void CEntrez2ClientApp::Init(void)
 
 int CEntrez2ClientApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     string db          = args["db"].AsString();
     string query       = args["query"].AsString();
