@@ -136,7 +136,7 @@ int COMSSAMerge::Run()
 
     try {
 
-	CArgs args = GetArgs();
+	const CArgs& args = GetArgs();
 
 
     CRef <COMSSASearch> MySearch(new COMSSASearch);

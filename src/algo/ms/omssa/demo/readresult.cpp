@@ -82,7 +82,7 @@ int main(int argc, const char* argv[])
 // run application
 int CReadresult::Run()
 {    
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 	
     try {
 		

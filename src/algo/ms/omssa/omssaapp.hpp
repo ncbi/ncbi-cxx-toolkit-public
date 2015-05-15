@@ -102,7 +102,7 @@ public:
     /**
      * Set search settings given args
      */
-    void SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings);
+    void SetSearchSettings(const CArgs& args, CRef<CMSSearchSettings> Settings);
 
 	typedef vector < CRef<CSearch> > TSearchThreads;
 

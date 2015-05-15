@@ -372,7 +372,7 @@ void COMSSABase::SetOutFile(bool IncludeSpectra,
 }
 
 
-void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
+void COMSSABase::SetSearchSettings(const CArgs& args, CRef<CMSSearchSettings> Settings)
 {
 
     CRef <CMSInFile> Infile; 

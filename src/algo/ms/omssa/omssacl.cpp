@@ -108,7 +108,7 @@ int COMSSA::Run()
 
     try {
 
-	CArgs args = GetArgs();
+	const CArgs& args = GetArgs();
     CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
 
     // turn off informational messages if requested
