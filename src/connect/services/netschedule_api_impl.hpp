@@ -411,16 +411,48 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-class CNotificationTimeline
+struct SServerTimelineEntry : public CWorkerNodeTimelineEntry
 {
+    SServerAddress m_ServerAddress;
+
+    unsigned m_DiscoveryIteration;
+
+    SServerTimelineEntry(const SServerAddress& server_address,
+            unsigned discovery_iteration) :
+        m_ServerAddress(server_address),
+        m_DiscoveryIteration(discovery_iteration)
+    {
+    }
+};
+
+class CServerTimelineEntries
+{
+public:
+    ~CServerTimelineEntries();
+
+    SServerTimelineEntry* GetEntry(SNetServerImpl* server_impl, unsigned iteration);
+
 private:
-    struct TEntry;
+    typedef SServerTimelineEntry TEntry;
 
-protected:
-    typedef CRef<TEntry> TTimelineEntry;
+    struct SLess
+    {
+        bool operator ()(const TEntry* left, const TEntry* right) const
+        {
+            return left->m_ServerAddress < right->m_ServerAddress;
+        }
+    };
 
-    CNotificationTimeline();
-    ~CNotificationTimeline();
+    typedef set<TEntry*, SLess> TTimelineEntries;
+    TTimelineEntries m_TimelineEntryByAddress;
+};
+
+class CServerTimeline
+{
+public:
+    typedef CRef<SServerTimelineEntry> TEntryRef;
+
+    CServerTimeline();
 
     bool HasImmediateActions() const { return !m_ImmediateActions.IsEmpty(); }
     bool HasScheduledActions() const { return !m_Timeline.IsEmpty(); }
@@ -437,46 +469,47 @@ protected:
         return m_Timeline.GetHead()->GetTimeout();
     }
 
-    TTimelineEntry PullImmediateAction()
+    TEntryRef PullImmediateAction()
     {
-        TTimelineEntry entry;
+        TEntryRef entry;
         m_ImmediateActions.Shift(entry);
         return entry;
     }
 
-    TTimelineEntry PullScheduledAction()
+    TEntryRef PullScheduledAction()
     {
-        TTimelineEntry entry;
+        TEntryRef entry;
         m_Timeline.Shift(entry);
         return entry;
     }
 
-    bool IsDiscoveryAction(TTimelineEntry entry) const
+    bool IsDiscoveryAction(TEntryRef entry) const
     {
         return !entry->m_DiscoveryIteration;
     }
 
-    bool IsOutdatedAction(TTimelineEntry entry) const
+    bool IsOutdatedAction(TEntryRef entry) const
     {
         return entry->m_DiscoveryIteration != m_DiscoveryIteration;
     }
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
-        x_GetTimelineEntry(server_impl)->MoveTo(&m_ImmediateActions);
+        m_ServerTimeline.GetEntry(server_impl, m_DiscoveryIteration)->
+            MoveTo(&m_ImmediateActions);
     }
 
-    void PushImmediateAction(TTimelineEntry entry)
+    void PushImmediateAction(TEntryRef entry)
     {
         m_ImmediateActions.Push(entry);
     }
 
-    void PushScheduledAction(TTimelineEntry entry)
+    void PushScheduledAction(TEntryRef entry)
     {
         m_Timeline.Push(entry);
     }
 
-    CNetServer GetServer(CNetScheduleAPI api, TTimelineEntry entry)
+    CNetServer GetServer(CNetScheduleAPI api, TEntryRef entry)
     {
         return api.GetService().GetServer(entry->m_ServerAddress);
     }
@@ -488,7 +521,8 @@ protected:
         for (CNetServiceIterator it =
                 api.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
-            TEntry* srv_entry = x_GetTimelineEntry(*it);
+            SServerTimelineEntry* srv_entry = m_ServerTimeline.GetEntry(*it,
+                    m_DiscoveryIteration);
             srv_entry->m_DiscoveryIteration = m_DiscoveryIteration;
             if (!srv_entry->IsInTimeline())
                 m_ImmediateActions.Push(srv_entry);
@@ -509,41 +543,16 @@ protected:
     }
 
 private:
-    struct TEntry : public CWorkerNodeTimelineEntry
-    {
-        SServerAddress m_ServerAddress;
+    CServerTimelineEntries m_ServerTimeline;
 
-        unsigned m_DiscoveryIteration;
-
-        TEntry(const SServerAddress& server_address,
-                unsigned discovery_iteration) :
-            m_ServerAddress(server_address),
-            m_DiscoveryIteration(discovery_iteration)
-        {
-        }
-    };
-
-    TEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
-
-    typedef CWorkerNodeTimeline<TEntry, TTimelineEntry> TNotificationTimeline;
-    TNotificationTimeline m_ImmediateActions, m_Timeline;
+    typedef CWorkerNodeTimeline<SServerTimelineEntry, TEntryRef> TTimeline;
+    TTimeline m_ImmediateActions, m_Timeline;
 
     unsigned m_DiscoveryIteration;
-    TTimelineEntry m_DiscoveryAction;
-
-    struct SLess
-    {
-        bool operator ()(const TEntry* left, const TEntry* right) const
-        {
-            return left->m_ServerAddress < right->m_ServerAddress;
-        }
-    };
-
-    typedef set<TEntry*, SLess> TTimelineEntries;
-    TTimelineEntries m_TimelineEntryByAddress;
+    TEntryRef m_DiscoveryAction;
 };
 
-struct SNetScheduleJobReaderImpl : public CObject, public CNotificationTimeline
+struct SNetScheduleJobReaderImpl : public CObject
 {
     SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl) :
         m_API(ns_api_impl)
@@ -569,7 +578,7 @@ struct SNetScheduleJobReaderImpl : public CObject, public CNotificationTimeline
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
-    bool x_PerformTimelineAction(TTimelineEntry timeline_entry,
+    bool x_PerformTimelineAction(CServerTimeline::TEntryRef timeline_entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
@@ -581,6 +590,9 @@ struct SNetScheduleJobReaderImpl : public CObject, public CNotificationTimeline
         CTimeout* timeout);
 
     virtual ~SNetScheduleJobReaderImpl();
+
+private:
+    CServerTimeline m_Timeline;
 };
 
 struct SNetScheduleAdminImpl : public CObject

@@ -306,7 +306,7 @@ bool g_IsRequestStopEventEnabled();
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class CMainLoopThread : public CThread, public CNotificationTimeline
+class CMainLoopThread : public CThread
 {
 public:
     CMainLoopThread(SGridWorkerNodeImpl* worker_node) :
@@ -322,8 +322,9 @@ private:
     SGridWorkerNodeImpl* m_WorkerNode;
     CSemaphore m_Semaphore;
     const string m_ThreadName;
+    CServerTimeline m_Timeline;
 
-    bool x_PerformTimelineAction(TTimelineEntry timeline_entry,
+    bool x_PerformTimelineAction(CServerTimeline::TEntryRef timeline_entry,
             CNetScheduleJob& job);
     bool x_EnterSuspendedState();
     void x_ProcessRequestJobNotification();

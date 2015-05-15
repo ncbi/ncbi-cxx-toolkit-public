@@ -52,15 +52,8 @@ void CNetScheduleJobReader::SetAffinity(const string& affinity)
     m_Impl->m_Affinity = affinity;
 }
 
-CNotificationTimeline::CNotificationTimeline() :
-    m_DiscoveryIteration(1),
-    m_DiscoveryAction(new TEntry(SServerAddress(0, 0), 0))
-{
-    m_ImmediateActions.Push(m_DiscoveryAction);
-}
-
-CNotificationTimeline::TEntry*
-CNotificationTimeline::x_GetTimelineEntry(SNetServerImpl* server_impl)
+CServerTimelineEntries::TEntry*
+CServerTimelineEntries::GetEntry(SNetServerImpl* server_impl, unsigned iteration)
 {
     TEntry search_pattern(server_impl->m_ServerInPool->m_Address, 0);
 
@@ -70,8 +63,7 @@ CNotificationTimeline::x_GetTimelineEntry(SNetServerImpl* server_impl)
     if (it != m_TimelineEntryByAddress.end())
         return *it;
 
-    TEntry* new_entry = new TEntry(
-            search_pattern.m_ServerAddress, m_DiscoveryIteration);
+    TEntry* new_entry = new TEntry(search_pattern.m_ServerAddress, iteration);
 
     m_TimelineEntryByAddress.insert(new_entry);
     new_entry->AddReference();
@@ -79,11 +71,18 @@ CNotificationTimeline::x_GetTimelineEntry(SNetServerImpl* server_impl)
     return new_entry;
 }
 
-CNotificationTimeline::~CNotificationTimeline()
+CServerTimelineEntries::~CServerTimelineEntries()
 {
     ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
         (*it)->RemoveReference();
     }
+}
+
+CServerTimeline::CServerTimeline() :
+    m_DiscoveryIteration(1),
+    m_DiscoveryAction(new SServerTimelineEntry(SServerAddress(0, 0), 0))
+{
+    m_ImmediateActions.Push(m_DiscoveryAction);
 }
 
 SNetScheduleJobReaderImpl::~SNetScheduleJobReaderImpl()
@@ -183,26 +182,26 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 }
 
 bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
-        TTimelineEntry timeline_entry,
+        CServerTimeline::TEntryRef timeline_entry,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
 {
     *no_more_jobs = false;
 
-    if (IsDiscoveryAction(timeline_entry)) {
-        NextDiscoveryIteration(m_API);
+    if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
+        m_Timeline.NextDiscoveryIteration(m_API);
 
         timeline_entry->ResetTimeout(READJOB_TIMEOUT);
-        PushScheduledAction(timeline_entry);
+        m_Timeline.PushScheduledAction(timeline_entry);
         return false;
     }
 
     // Skip servers that disappeared from LBSM.
-    if (IsOutdatedAction(timeline_entry))
+    if (m_Timeline.IsOutdatedAction(timeline_entry))
         return false;
 
-    CNetServer server(GetServer(m_API, timeline_entry));
+    CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
     timeline_entry->ResetTimeout(READJOB_TIMEOUT);
 
@@ -212,12 +211,12 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
             // A job has been returned; add the server to
             // immediate actions because there can be more
             // jobs in the queue.
-            PushImmediateAction(timeline_entry);
+            m_Timeline.PushImmediateAction(timeline_entry);
             return true;
         } else {
             // No job has been returned by this server;
             // query the server later.
-            PushScheduledAction(timeline_entry);
+            m_Timeline.PushScheduledAction(timeline_entry);
             return false;
         }
     }
@@ -237,7 +236,7 @@ void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
     while (m_API->m_NotificationThread->m_ReadNotifications.GetNextNotification(
                 &ns_node))
         if (m_API->GetServerByNode(ns_node, &server))
-            MoveToImmediateActions(server);
+            m_Timeline.MoveToImmediateActions(server);
 }
 
 CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
@@ -253,15 +252,15 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     for (;;) {
         bool matching_job_exists = false;
 
-        while (HasImmediateActions()) {
-            if (x_PerformTimelineAction(PullImmediateAction(),
+        while (m_Timeline.HasImmediateActions()) {
+            if (x_PerformTimelineAction(m_Timeline.PullImmediateAction(),
                     *job, job_status, &no_more_jobs))
                 return CNetScheduleJobReader::eRNJ_JobReady;
 
             if (!no_more_jobs)
                 matching_job_exists = true;
 
-            CheckScheduledActions();
+            m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
             x_ProcessReadJobNotifications();
@@ -281,8 +280,8 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             return CNetScheduleJobReader::eRNJ_Timeout;
 
         // There's still time. Wait for notifications and query the servers.
-        if (!HasScheduledActions()) {
-            const CDeadline next_event_time = GetNextTimeout();
+        if (!m_Timeline.HasScheduledActions()) {
+            const CDeadline next_event_time = m_Timeline.GetNextTimeout();
 
             if (deadline < next_event_time) {
                 if (!m_API->m_NotificationThread->
@@ -292,7 +291,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             } else if (m_API->m_NotificationThread->
                     m_ReadNotifications.Wait(next_event_time))
                 x_ProcessReadJobNotifications();
-            else if (x_PerformTimelineAction(PullScheduledAction(),
+            else if (x_PerformTimelineAction(m_Timeline.PullScheduledAction(),
                     *job, job_status, &no_more_jobs))
                 return CNetScheduleJobReader::eRNJ_JobReady;
             else if (no_more_jobs)

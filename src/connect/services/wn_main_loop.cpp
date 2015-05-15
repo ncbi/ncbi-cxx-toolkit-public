@@ -621,24 +621,25 @@ void* CMainLoopThread::Main()
 }
 
 bool CMainLoopThread::x_PerformTimelineAction(
-        TTimelineEntry timeline_entry, CNetScheduleJob& job)
+        CServerTimeline::TEntryRef timeline_entry, CNetScheduleJob& job)
 {
-    if (IsDiscoveryAction(timeline_entry)) {
+    if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
         if (!x_EnterSuspendedState()) {
-            NextDiscoveryIteration(m_WorkerNode->m_NetScheduleAPI);
+            m_Timeline.NextDiscoveryIteration(m_WorkerNode->m_NetScheduleAPI);
         }
 
         timeline_entry->ResetTimeout(m_WorkerNode->m_NSTimeout);
-        PushScheduledAction(timeline_entry);
+        m_Timeline.PushScheduledAction(timeline_entry);
         return false;
     }
 
     if (x_EnterSuspendedState() ||
             // Skip servers that disappeared from LBSM.
-            IsOutdatedAction(timeline_entry))
+            m_Timeline.IsOutdatedAction(timeline_entry))
         return false;
 
-    CNetServer server(GetServer(m_WorkerNode->m_NetScheduleAPI, timeline_entry));
+    CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,
+                timeline_entry));
 
     timeline_entry->ResetTimeout(m_WorkerNode->m_NSTimeout);
 
@@ -648,12 +649,12 @@ bool CMainLoopThread::x_PerformTimelineAction(
             // A job has been returned; add the server to
             // immediate actions because there can be more
             // jobs in the queue.
-            PushImmediateAction(timeline_entry);
+            m_Timeline.PushImmediateAction(timeline_entry);
             return true;
         } else {
             // No job has been returned by this server;
             // query the server later.
-            PushScheduledAction(timeline_entry);
+            m_Timeline.PushScheduledAction(timeline_entry);
             return false;
         }
     }
@@ -678,13 +679,13 @@ bool CMainLoopThread::x_EnterSuspendedState()
             if (!m_WorkerNode->m_TimelineIsSuspended) {
                 // Stop the timeline.
                 m_WorkerNode->m_TimelineIsSuspended = true;
-                Suspend(m_WorkerNode->m_NSTimeout);
+                m_Timeline.Suspend(m_WorkerNode->m_NSTimeout);
             }
         } else { /* event == RESUME_EVENT */
             if (m_WorkerNode->m_TimelineIsSuspended) {
                 // Resume the timeline.
                 m_WorkerNode->m_TimelineIsSuspended = false;
-                Resume();
+                m_Timeline.Resume();
             }
         }
     }
@@ -700,18 +701,18 @@ void CMainLoopThread::x_ProcessRequestJobNotification()
         if (m_WorkerNode->m_NSExecutor->
                 m_NotificationHandler.CheckRequestJobNotification(
                         m_WorkerNode->m_NSExecutor, &server))
-            MoveToImmediateActions(server);
+            m_Timeline.MoveToImmediateActions(server);
     }
 }
 
 bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
 {
     for (;;) {
-        while (HasImmediateActions()) {
-            if (x_PerformTimelineAction(PullImmediateAction(), job))
+        while (m_Timeline.HasImmediateActions()) {
+            if (x_PerformTimelineAction(m_Timeline.PullImmediateAction(), job))
                 return true;
 
-            CheckScheduledActions();
+            m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
             while (m_WorkerNode->m_NSExecutor->
@@ -722,11 +723,13 @@ bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
         if (CGridGlobals::GetInstance().IsShuttingDown())
             return false;
 
-        if (HasScheduledActions()) {
+        if (m_Timeline.HasScheduledActions()) {
             if (m_WorkerNode->m_NSExecutor->
-                    m_NotificationHandler.WaitForNotification(GetNextTimeout()))
+                    m_NotificationHandler.WaitForNotification(
+                        m_Timeline.GetNextTimeout()))
                 x_ProcessRequestJobNotification();
-            else if (x_PerformTimelineAction(PullScheduledAction(), job))
+            else if (x_PerformTimelineAction(
+                        m_Timeline.PullScheduledAction(), job))
                 return true;
         }
     }
