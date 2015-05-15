@@ -114,7 +114,7 @@ void CNgAlignTest::Init()
 
 int CNgAlignTest::Run()
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);

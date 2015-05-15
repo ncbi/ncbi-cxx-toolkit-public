@@ -121,7 +121,7 @@ bool s_TimerCallback(void* Data) {
 int
 CMergeyApp::Run()
 {
-    const CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     
   
 	CRef<CObjectManager> OM = CObjectManager::GetInstance();

@@ -199,7 +199,7 @@ void CNgAlignApp::Init()
 
 int CNgAlignApp::Run()
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
 	if(args["info"].HasValue())
 		SetDiagPostLevel(eDiag_Info);  
@@ -377,7 +377,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                         0, 1, 1, 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, "mean", 0, false, 0, false);
     }
 
-    CArgs Args = GetArgs();
+    const CArgs& Args = GetArgs();
 
 
 	if(Type == "seqidlist") {
@@ -707,7 +707,7 @@ void CNgAlignApp::x_LoadExternalSequences(IRegistry* RunRegistry,
 								const string& Category,
 								list<CRef<CSeq_id> >& LoadedIds)
 {
-    CArgs Args = GetArgs();
+    const CArgs& Args = GetArgs();
     
     if(Args["fasta"].HasValue()) {
         CNcbiIstream& In = Args["fasta"].AsInputFile();
@@ -849,7 +849,7 @@ void CNgAlignApp::x_AddScorers(CNgAligner& NgAligner, IRegistry* RunRegistry)
 
 void CNgAlignApp::x_AddFilters(CNgAligner& NgAligner, IRegistry* RunRegistry)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 	
     int Rank = 0;
     
@@ -927,7 +927,7 @@ CNgAlignApp::x_CreateBlastAligner(IRegistry* RunRegistry, const string& Name)
 	int Filter = RunRegistry->GetInt(Name, "filter", -1);
     bool UseNegatives = RunRegistry->GetBool(Name, "useneg", true);
 
-	CArgs Args = GetArgs();	
+	const CArgs& Args = GetArgs();	
 	
 	
 	if(Args["softfilter"].HasValue())
@@ -954,7 +954,7 @@ CNgAlignApp::x_CreateRemoteBlastAligner(IRegistry* RunRegistry, const string& Na
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
 	//int Filter = RunRegistry->GetInt(Name, "filter", -1);
 
-	CArgs Args = GetArgs();	
+	const CArgs& Args = GetArgs();	
 	
 
 	CRef<CRemoteBlastAligner> Blaster;
