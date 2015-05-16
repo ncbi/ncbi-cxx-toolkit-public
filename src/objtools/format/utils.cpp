@@ -776,6 +776,7 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
 #define twochars(a,b) Uint2((a) << 8 | (b))
 #define twocommas twochars(',',',')
 #define twospaces twochars(' ',' ')
+#define twosemicolons twochars(';',';')
 #define space_comma twochars(' ',',')
 #define space_bracket twochars(' ',')')
 #define bracket_space twochars('(',' ')
@@ -825,7 +826,9 @@ void CleanAndCompress(string& dest, const CTempString& instr)
             *out++ = curr;
             next = ' ';
             break;
-        case twospaces: // skip multispaces (only print last one)
+        case twospaces: // skip multiple spaces (only print last one)
+            break;
+        case twosemicolons: // skip multiple semicolons (only print last one)
             break;
         case bracket_space: // skip space after bracket
             next = curr;
