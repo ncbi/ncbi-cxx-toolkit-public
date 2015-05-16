@@ -7880,9 +7880,9 @@ DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TInTrSpMap, sc_ITSMap, sc_its_map);
 
 bool CNewCleanup_imp::IsInternalTranscribedSpacer(const string& name)
 {
-    if (NStr::Equal(name, "internal transcribed spacer 1") ||
-        NStr::Equal(name, "internal transcribed spacer 2") ||
-        NStr::Equal(name, "internal transcribed spacer 3")) {
+    if (NStr::EqualNocase(name, "internal transcribed spacer 1") ||
+        NStr::EqualNocase(name, "internal transcribed spacer 2") ||
+        NStr::EqualNocase(name, "internal transcribed spacer 3")) {
         return true;
     }
     return false;
