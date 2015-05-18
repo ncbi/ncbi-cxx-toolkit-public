@@ -4171,7 +4171,7 @@ void CValidError_bioseq::x_ValidateCompletness
                     const CSeq_entry& ctx = *seq.GetParentEntry();
                     PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
                             "Circular topology has complete flag set, but title should say complete sequence or complete genome",
-                            ctx, *desc);
+                            ctx);
                 } else {
                     CConstRef<CSeqdesc> closest_molinfo = seq.GetClosestDescriptor(CSeqdesc::e_Molinfo);
                     if (closest_molinfo) {
