@@ -9627,9 +9627,23 @@ special  CDG58552           embl_tpa_prot
 special  CDG80630-CDG80632  embl_tpa_prot
 special  CDG86183-CDG86301  embl_tpa_prot
 special  CDI30255-CDI40096  embl_tpa_prot
+special  CDI70255-CDI70287  embl_tpa_prot
+special  CDI70965-CDI70967  embl_tpa_prot
 special  CDK02602-CDK08087  embl_tpa_prot
 special  CDK08089-CDK12444  embl_tpa_prot
 special  CDM98735-CDM98850  embl_tpa_prot
+special  CEL64082-CEL71605  embl_tpa_prot
+special  CEL71607-CEL73228  embl_tpa_prot
+special  CEL73230-CEL73266  embl_tpa_prot
+special  CEL73268-CEL74800  embl_tpa_prot
+special  CEL74802-CEL75130  embl_tpa_prot
+special  CEL75132-CEL75550  embl_tpa_prot
+special  CEL75552-CEL76203  embl_tpa_prot
+special  CEL76205-CEL76766  embl_tpa_prot
+special  CEL76768-CEL77188  embl_tpa_prot
+special  CEL77190-CEL78176  embl_tpa_prot
+special  CEL78178-CEL78353  embl_tpa_prot
+special  CEL78355-CEL78878  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CEP27845-CZZ99999  unreserved_prot
+#special CRI73780-CZZ99999  unreserved_prot
