@@ -2920,6 +2920,10 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         CloneContainer<CSeq_loc, CSeq_align::TBounds, CSeq_align::TBounds>(
             m_OrigAlign->GetBounds(), dst->SetBounds());
     }
+    if (m_OrigAlign->IsSetId()) {
+        CloneContainer<CObject_id, CSeq_align::TId, CSeq_align::TId>(
+            m_OrigAlign->GetId(), dst->SetId());
+    }
     if (m_OrigAlign->IsSetExt()) {
         CloneContainer<CUser_object, CSeq_align::TExt, CSeq_align::TExt>(
             m_OrigAlign->GetExt(), dst->SetExt());

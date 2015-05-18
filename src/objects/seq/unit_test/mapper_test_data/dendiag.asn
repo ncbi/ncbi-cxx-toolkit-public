@@ -32,6 +32,33 @@ Seq-align ::= {
       },
       len 70
     }
+  },
+  bounds {
+    int {
+      from 915,
+      to 985,
+      id gi 3
+    },
+    int {
+      from 15,
+      to 85,
+      id gi 4
+    }
+  },
+  id {
+    str "test-alignment-id-1",
+    str "test-alignment-id-2"
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
+    }
   }
 }
 -- Single segment: expected
@@ -50,6 +77,33 @@ Seq-align ::= {
         115
       },
       len 70
+    }
+  },
+  bounds {
+    int {
+      from 915,
+      to 985,
+      id gi 3
+    },
+    int {
+      from 15,
+      to 85,
+      id gi 4
+    }
+  },
+  id {
+    str "test-alignment-id-1",
+    str "test-alignment-id-2"
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
     }
   }
 }

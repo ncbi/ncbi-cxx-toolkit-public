@@ -33,6 +33,33 @@ Seq-align ::= {
     lens {
       90
     }
+  },
+  bounds {
+    int {
+      from 915,
+      to 985,
+      id gi 3
+    },
+    int {
+      from 15,
+      to 85,
+      id gi 4
+    }
+  },
+  id {
+    str "test-alignment-id-1",
+    str "test-alignment-id-2"
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
+    }
   }
 }
 -- Nuc to prot, converted to std-seg (mixed types): expected
@@ -56,6 +83,33 @@ Seq-align ::= {
           from 110,
           to 129,
           id gi 6
+        }
+      }
+    }
+  },
+  bounds {
+    int {
+      from 915,
+      to 985,
+      id gi 3
+    },
+    int {
+      from 15,
+      to 85,
+      id gi 4
+    }
+  },
+  id {
+    str "test-alignment-id-1",
+    str "test-alignment-id-2"
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
         }
       }
     }

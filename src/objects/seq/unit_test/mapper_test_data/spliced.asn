@@ -50,6 +50,22 @@ Seq-align ::= {
     },
     product-length 100
   },
+  bounds {
+    int {
+      from 0,
+      to 99,
+      id gi 3
+    },
+    int {
+      from 0,
+      to 99,
+      id gi 4
+    }
+  },
+  id {
+    str "test-alignment-id-1",
+    str "test-alignment-id-2"
+  },
   ext {
     {
       type str "info",
@@ -96,6 +112,23 @@ Seq-align ::= {
       }
     },
     product-length 100
+  },
+  bounds {
+    int {
+      from 0,
+      to 99,
+      id gi 3
+    },
+    int {
+      from 110,
+      to 199,
+      id gi 5,
+      fuzz-from lim lt
+    }
+  },
+  id {
+    str "test-alignment-id-1",
+    str "test-alignment-id-2"
   },
   ext {
     {
