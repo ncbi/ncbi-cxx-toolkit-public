@@ -183,8 +183,7 @@ CSeqMaskerIstatFactory::EStatType CSeqMaskerIstatFactory::DiscoverStatType(
     if( check ) {
         Uint4 data = 1;
 
-        if( check.readsome( 
-                    (char *)&data, sizeof( Uint4 ) ) == sizeof( Uint4 ) ) {
+        if( check.read( (char *)&data, sizeof( Uint4 ) ) ) {
             if( data == 0 ) return eBinary;
             if( data == 0x41414141 ) return eOAscii;
             if( data == 1 || data == 2 ) return eOBinary;
@@ -252,7 +251,7 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                    use_ba, skip );
                            break;
 
-            default: break;
+			default: NCBI_THROW(Exception, eCreateFail, "unrecognized unit counts format");
         }
 
         {
