@@ -764,102 +764,6 @@ void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
     x_TruncateSpacesMarkChanged( GET_MUTABLE(*pObjectId, Str) );
 }
 
-typedef SStaticPair<const char*, TORGMOD_SUBTYPE>  TOrgModElem;
-static const TOrgModElem sc_orgmod_map[] = {
-    { "Acronym",            NCBI_ORGMOD(acronym) },
-    { "Anamorph",           NCBI_ORGMOD(anamorph) },
-    { "Authority",          NCBI_ORGMOD(authority) },
-    { "Bio-material",       NCBI_ORGMOD(bio_material) },
-    { "Biotype",            NCBI_ORGMOD(biotype) },
-    { "Biovar",             NCBI_ORGMOD(biovar) },
-    { "Breed",              NCBI_ORGMOD(breed) },
-    { "Chemovar",           NCBI_ORGMOD(chemovar) },
-    { "Common",             NCBI_ORGMOD(common) },
-    { "Cultivar",           NCBI_ORGMOD(cultivar) },
-    { "Culture-collection", NCBI_ORGMOD(culture_collection)  },
-    { "Ecotype",            NCBI_ORGMOD(ecotype) },
-    { "Forma",              NCBI_ORGMOD(forma) },
-    { "Forma-specialis",    NCBI_ORGMOD(forma_specialis) },
-    { "Group",              NCBI_ORGMOD(group) },
-    { "Host",               NCBI_ORGMOD(nat_host) },
-    { "Isolate",            NCBI_ORGMOD(isolate) },
-    { "Metagenome-source",  NCBI_ORGMOD(metagenome_source) },
-    { "Pathovar",           NCBI_ORGMOD(pathovar) },
-    { "Serogroup",          NCBI_ORGMOD(serogroup) },
-    { "Serotype",           NCBI_ORGMOD(serotype) },
-    { "Serovar",            NCBI_ORGMOD(serovar) },
-    { "Specimen-voucher",   NCBI_ORGMOD(specimen_voucher) },
-    { "Strain",             NCBI_ORGMOD(strain) },
-    { "Sub-species",        NCBI_ORGMOD(sub_species) },
-    { "Subgroup",           NCBI_ORGMOD(subgroup) },
-    { "Substrain",          NCBI_ORGMOD(substrain) },
-    { "Subtype",            NCBI_ORGMOD(subtype) },
-    { "Synonym",            NCBI_ORGMOD(synonym) },
-    { "Teleomorph",         NCBI_ORGMOD(teleomorph) },
-    { "Type",               NCBI_ORGMOD(type) },
-    { "Variety",            NCBI_ORGMOD(variety) }
-};
-typedef CStaticArrayMap<string, TORGMOD_SUBTYPE, PNocase> TOrgModMap;
-DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TOrgModMap, sc_OrgModMap, sc_orgmod_map);
-
-static const TOrgModElem sc_orgmodalias_map[] = {
-    { "nat-host",      NCBI_ORGMOD(nat_host) },
-    { "specific-host", NCBI_ORGMOD(nat_host) },
-    { "sub-strain",     NCBI_ORGMOD(substrain) },
-    { "subspecies",    NCBI_ORGMOD(sub_species) }
-};
-DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TOrgModMap, sc_OrgModAliasMap, sc_orgmodalias_map);
-
-typedef SStaticPair<const char*, TORGMOD_SUBTYPE>  TSubsourceElem;
-static const TSubsourceElem sc_subsource_map[] = {
-    { "Cell-line",             NCBI_SUBSOURCE(cell_line) },
-    { "Cell-type",             NCBI_SUBSOURCE(cell_type) },
-    { "Chromosome",            NCBI_SUBSOURCE(chromosome) },
-    { "Clone",                 NCBI_SUBSOURCE(clone) },
-    { "Clone-lib",             NCBI_SUBSOURCE(clone_lib) },
-    { "Collected-by",          NCBI_SUBSOURCE(collected_by) },
-    { "Collection-date",       NCBI_SUBSOURCE(collection_date) },
-    { "Country",               NCBI_SUBSOURCE(country) },
-    { "Dev-stage",             NCBI_SUBSOURCE(dev_stage) },
-    { "Endogenous-virus-name", NCBI_SUBSOURCE(endogenous_virus_name) },
-    { "Environmental-sample",  NCBI_SUBSOURCE(environmental_sample) },
-    { "Frequency",             NCBI_SUBSOURCE(frequency) },
-    { "Genotype",              NCBI_SUBSOURCE(genotype) },
-    { "Germline",              NCBI_SUBSOURCE(germline) },
-    { "Haplogroup",            NCBI_SUBSOURCE(haplogroup) },
-    { "Haplotype",             NCBI_SUBSOURCE(haplotype) },
-    { "Identified-by",         NCBI_SUBSOURCE(identified_by) },
-    { "Isolation-source",      NCBI_SUBSOURCE(isolation_source) },
-    { "Lab-host",              NCBI_SUBSOURCE(lab_host) },
-    { "Lat-Lon",               NCBI_SUBSOURCE(lat_lon) },
-    { "Linkage-group",         NCBI_SUBSOURCE(linkage_group) },
-    { "Map",                   NCBI_SUBSOURCE(map) },
-    { "Mating-type",           NCBI_SUBSOURCE(mating_type) },
-    { "Metagenomic",           NCBI_SUBSOURCE(metagenomic) },
-    { "Plasmid-name",          NCBI_SUBSOURCE(plasmid_name) },
-    { "Pop-variant",           NCBI_SUBSOURCE(pop_variant) },
-    { "Rearranged",            NCBI_SUBSOURCE(rearranged) },
-    { "Segment",               NCBI_SUBSOURCE(segment) },
-    { "Sex",                   NCBI_SUBSOURCE(sex) },
-    { "Subclone",              NCBI_SUBSOURCE(subclone) },
-    { "Tissue-lib",            NCBI_SUBSOURCE(tissue_lib) },
-    { "Tissue-type",           NCBI_SUBSOURCE(tissue_type) },
-    { "Transgenic",            NCBI_SUBSOURCE(transgenic) }
-};
-typedef CStaticArrayMap<string, TSUBSOURCE_SUBTYPE, PNocase> TSubsourceMap;
-DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSubsourceMap, sc_SubsourceMap, sc_subsource_map);
-
-static const TSubsourceElem sc_subsourcealias_map[] = {
-    { "fwd-primer-name",    NCBI_SUBSOURCE(fwd_primer_name) },
-    { "fwd-primer-seq",     NCBI_SUBSOURCE(fwd_primer_seq) },
-    { "Lat-long",           NCBI_SUBSOURCE(lat_lon) },
-    { "Latitude-Longitude", NCBI_SUBSOURCE(lat_lon) },
-    { "rev-primer-name",    NCBI_SUBSOURCE(rev_primer_name) },
-    { "rev-primer-seq",     NCBI_SUBSOURCE(rev_primer_seq) },
-    { "sub-clone",          NCBI_SUBSOURCE(subclone) }
-};
-DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSubsourceMap, sc_SubsourceAliasMap, sc_subsourcealias_map);
-
 // change the target string by searching for the given search_pattern
 // and replacing it with replacement up to max_replace times (0 means unlimited)
 //
@@ -1221,39 +1125,33 @@ typename TSetType::const_iterator s_FindInSetAsPrefix( const string &str, const 
     return the_set.end();
 }
 
+
 // copy "str" because we're changing it anyway
 // returns true if we found anything
 static
 bool s_StringHasOrgModPrefix(const string &str, string::size_type &out_val_start_pos, TORGMOD_SUBTYPE &out_subtype)
 {
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
     bool found_something = false;
 
-    TOrgModMap::const_iterator orgmod_it = s_FindInMapAsPrefix<TOrgModMap>( str, sc_OrgModMap );
-    if( orgmod_it != sc_OrgModMap.end() && orgmod_it->second != NCBI_ORGMOD(nat_host) ) {
-        out_val_start_pos = orgmod_it->first.length();
-        out_subtype = orgmod_it->second;
-        found_something = true;
-    } else {
-        TOrgModMap::const_iterator orgmodalias_it = s_FindInMapAsPrefix<TOrgModMap>( str, sc_OrgModAliasMap );
-        if( orgmodalias_it != sc_OrgModAliasMap.end() && orgmodalias_it->second != NCBI_ORGMOD(nat_host) ) {
-            out_val_start_pos = orgmodalias_it->first.length();
-            out_subtype = orgmodalias_it->second;
+    vector<string> tokens;
+    NStr::Tokenize(str, " =", tokens);
+    if (NStr::IsBlank(tokens[0])) {
+        return false;
+    }
+    try {
+        COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(tokens[0]);
+        if (!COrgMod::IsDiscouraged(subtype) && tokens.size() > 1 && !NStr::IsBlank(tokens[1])) {
+            out_val_start_pos = tokens[0].length();
+            if (tokens.size() > 1) {
+                out_val_start_pos++;
+            }
+            out_subtype = subtype;
             found_something = true;
         }
-    }
-
-    if( (! found_something) && ( str.find_first_of("-") != string::npos ) ) { 
-        string new_str = str;
-        NStr::ReplaceInPlace( new_str, "-", "_" );
-        return s_StringHasOrgModPrefix( new_str, out_val_start_pos, out_subtype );
-    }
-
-    if( found_something ) {
-        // move out_val_start_pos to where the val begins, since we're probably on an equal sign or something
-        out_val_start_pos = str.find_first_not_of("=: ", out_val_start_pos);
-        if( string::npos == out_val_start_pos ) {
-            out_val_start_pos = str.length();
-        }
+    } catch (CSerialException& e) {
     }
 
     return found_something;
@@ -1263,42 +1161,56 @@ bool s_StringHasOrgModPrefix(const string &str, string::size_type &out_val_start
 static
 bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_start_pos, TSUBSOURCE_SUBTYPE &out_subtype)
 {
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
     bool found_something = false;
 
-    // We check alias before regular because regular contains "Lat-Lon" which is a strict prefix
-    // of "Lat-Long" in alias.
-    TOrgModMap::const_iterator subsrcalias_it = s_FindInMapAsPrefix<TSubsourceMap>( str, sc_SubsourceAliasMap );
-    if( subsrcalias_it != sc_SubsourceAliasMap.end() ) {
-        out_val_start_pos = subsrcalias_it->first.length();
-        out_subtype = subsrcalias_it->second;
-        found_something = true;
-    } else {
-        TOrgModMap::const_iterator subsrc_it = s_FindInMapAsPrefix<TSubsourceMap>( str, sc_SubsourceMap );
-        if( subsrc_it != sc_SubsourceMap.end() ) {
-            out_val_start_pos = subsrc_it->first.length();
-            out_subtype = subsrc_it->second;
+    vector<string> tokens;
+    NStr::Tokenize(str, " =", tokens);
+    if (NStr::IsBlank(tokens[0])) {
+        return false;
+    }
+    try {
+        CSubSource::TSubtype subtype;
+        if (NStr::EqualNocase(tokens[0], "Lat-long") || NStr::EqualNocase(tokens[0], "Latitude-Longitude")) {
+            subtype = CSubSource::eSubtype_lat_lon;
+        } else {
+            subtype = CSubSource::GetSubtypeValue(tokens[0]);
+        }
+        if (!CSubSource::IsDiscouraged(subtype) &&
+            (CSubSource::NeedsNoText(subtype) || (tokens.size() > 1 && !NStr::IsBlank(tokens[1])))) {
+            out_val_start_pos = tokens[0].length();
+            if (tokens.size() > 1) {
+                out_val_start_pos++;
+            }
+            out_subtype = subtype;
             found_something = true;
         }
+    } catch (CSerialException& e) {
     }
-
-    if( (! found_something) && ( str.find_first_of("-") != string::npos ) ) { 
-        string new_str = str;
-        NStr::ReplaceInPlace( new_str, "-", "_" );
-        return s_StringHasSubSourcePrefix( new_str, out_val_start_pos, out_subtype );
-    }
-
-    if( found_something ) {
-        // move out_val_start_pos to where the val begins, since we're probably on an equal sign or something
-        out_val_start_pos = str.find_first_not_of("=: ", out_val_start_pos);
-        if( string::npos == out_val_start_pos ) {
-            out_val_start_pos = str.length();
-        }
-    }
-
     return found_something;
 }
 
-static CSubSource* s_StringToSubSource (
+static bool s_ValueOkForQual(const string& value)
+{
+    if (NStr::Find(value, ",") != string::npos) {
+        return false;
+    }
+    size_t num_space = 0;
+    ITERATE(string, it, value) {
+        if (isspace(*it)) {
+            num_space++;
+        }
+    }
+    if (num_space > 4) {
+        return false;
+    }
+    return true;
+}
+
+
+static CRef<CSubSource> s_StringToSubSource (
     const string& str
 )
 
@@ -1306,19 +1218,22 @@ static CSubSource* s_StringToSubSource (
     string::size_type val_start_pos;
     TSUBSOURCE_SUBTYPE subtype = -1;
     if( ! s_StringHasSubSourcePrefix( str, val_start_pos, subtype ) ) {
-        return NULL;
+        return CRef<CSubSource>(NULL);
     }
 
     // we should have split on something non-alphanumeric
     // (equals sign, colon, or whatever)
     if( (val_start_pos < 1) || 
         ( val_start_pos < str.length() && isalnum( str[val_start_pos-1] ) ) ) {
-        return NULL;
+        return CRef<CSubSource>(NULL);
     }
 
-    CSubSource *result = new CSubSource;
-    result->SetSubtype( subtype );
-    result->SetName( str.substr(val_start_pos) );
+    string value = str.substr(val_start_pos);
+    if (!s_ValueOkForQual(value)) {
+        return CRef<CSubSource>(NULL);
+    }
+
+    CRef<CSubSource> result(new CSubSource(subtype, value));
 
     return result;
 }
@@ -1613,24 +1528,8 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
         ChangeMade(CCleanupChange::eChangeBioSourceGenome);
     }
 
-    if (BIOSOURCE_HAS_ORGREF (biosrc)) {
-        COrg_ref& org = GET_MUTABLE (biosrc, Org);
-
-        // convert COrg_reg.TMod string to SubSource objects
-        EDIT_EACH_MOD_ON_ORGREF (it, org) {
-            string& str = *it;
-            CRef<CSubSource> sbs (s_StringToSubSource (str));
-            if (! sbs) continue;
-            ADD_SUBSOURCE_TO_BIOSOURCE (biosrc, sbs);
-            ERASE_MOD_ON_ORGREF (it, org);
-            ChangeMade (CCleanupChange::eChangeSubsource);
-        }
-
-        if( MOD_ON_ORGREF_IS_EMPTY(org) ) {
-            RESET_FIELD(org, Mod);
-            ChangeMade (CCleanupChange::eRemoveOrgmod);
-        }
-    }
+    // note - move this 
+    x_ConvertOrgref_modToSubSource(biosrc);
 
     if (BIOSOURCE_HAS_SUBSOURCE (biosrc)) {
 
@@ -1695,7 +1594,31 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
     }
 }
 
-static COrgMod* s_StringToOrgMod (
+
+void CNewCleanup_imp::x_ConvertOrgref_modToSubSource( CBioSource& biosrc )
+{
+    if (BIOSOURCE_HAS_ORGREF (biosrc)) {
+        COrg_ref& org = GET_MUTABLE (biosrc, Org);
+
+        // convert COrg_reg.TMod string to SubSource objects
+        EDIT_EACH_MOD_ON_ORGREF (it, org) {
+            string& str = *it;
+            CRef<CSubSource> sbs = s_StringToSubSource (str);
+            if (! sbs) continue;
+            ADD_SUBSOURCE_TO_BIOSOURCE (biosrc, sbs);
+            ERASE_MOD_ON_ORGREF (it, org);
+            ChangeMade (CCleanupChange::eChangeSubsource);
+        }
+
+        if( MOD_ON_ORGREF_IS_EMPTY(org) ) {
+            RESET_FIELD(org, Mod);
+            ChangeMade (CCleanupChange::eRemoveOrgmod);
+        }
+    }
+}
+
+
+static CRef<COrgMod> s_StringToOrgMod (
     const string& str
 )
 
@@ -1703,18 +1626,21 @@ static COrgMod* s_StringToOrgMod (
     string::size_type val_start_pos;
     TORGMOD_SUBTYPE subtype = -1;
     if( ! s_StringHasOrgModPrefix( str, val_start_pos, subtype) ) {
-        return NULL;
+        return CRef<COrgMod>(NULL);
     }
 
     // we should have split on something non-alphanumeric
     // (equals sign, colon, or whatever)
     if( (val_start_pos < 1) || isalnum( str[val_start_pos-1] ) ) {
-        return NULL;
+        return CRef<COrgMod>(NULL);
     }
 
-    COrgMod *result = new COrgMod;
-    result->SetSubtype( subtype );
-    result->SetSubname( str.substr(val_start_pos) );
+    string value = str.substr(val_start_pos);
+    if (!s_ValueOkForQual(value)) {
+        return CRef<COrgMod>(NULL);
+    }
+
+    CRef<COrgMod> result(new COrgMod(subtype, value));
 
     return result;
 }
@@ -1753,12 +1679,12 @@ void CNewCleanup_imp::OrgrefBC (
 {
     CLEAN_STRING_MEMBER (org, Taxname);
     CLEAN_STRING_MEMBER (org, Common);
-    CLEAN_STRING_LIST (org, Mod);
+//    CLEAN_STRING_LIST (org, Mod);
     CLEAN_STRING_LIST (org, Syn);
 
     EDIT_EACH_MOD_ON_ORGREF (it, org) {
         string& str = *it;
-        CRef<COrgMod> omd (s_StringToOrgMod (str));
+        CRef<COrgMod> omd  = s_StringToOrgMod (str);
         if (! omd) continue;
         ADD_ORGMOD_TO_ORGREF (org, omd);
         ERASE_MOD_ON_ORGREF (it, org);
@@ -3529,6 +3455,43 @@ bool s_IsAllDigits( const string &str )
     return all_digits_regex->IsMatch(str);
 }
 
+
+static bool SetExceptFromGbqual(const CGb_qual& gb_qual, CSeq_feat& feat)
+{
+    bool rval = false;
+    if (!feat.IsSetExcept() || !feat.GetExcept()) {
+        feat.SetExcept(true);
+        rval = true;
+    }
+
+    if (!gb_qual.IsSetQual()) {
+        return rval;
+    }
+    if (feat.IsSetExcept_text() && !NStr::IsBlank(feat.GetExcept_text())) {
+        return rval;
+    }
+    // for whatever reason, C Toolkit only sets text if Gbqual was blank
+    if (gb_qual.IsSetVal() && !NStr::IsBlank(gb_qual.GetVal())) {
+        return rval;
+    }
+    string exc = gb_qual.GetQual();
+    NStr::ReplaceInPlace (exc, "-", " ");
+    NStr::ReplaceInPlace (exc, "_", " ");
+    feat.SetExcept_text(exc);
+    return true;
+}
+
+
+static bool s_StringsAreEquivalent(const string& str1, const string& str2)
+{
+    string s1 = NStr::Replace(str1, " ", "_");
+    NStr::ReplaceInPlace(s1, "-", "_");
+    string s2 = NStr::Replace(str2, " ", "_");
+    NStr::ReplaceInPlace(s2, "-", "_");
+    return NStr::EqualNocase(s1, s2);
+}
+
+
 CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSeq_feat& feat)
 {
     if( ! FIELD_IS_SET(feat, Data) ) {
@@ -3550,6 +3513,13 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
     }
 
     if (NStr::EqualNocase(qual, "cons_splice")) {
+        return eAction_Erase;
+    } else if (s_StringsAreEquivalent(qual, "ribosomal-slippage") ||
+               s_StringsAreEquivalent(qual, "trans-splicing") || 
+               s_StringsAreEquivalent(qual, "artificial-location")) {
+        if (SetExceptFromGbqual(gb_qual, feat)) {
+            ChangeMade (CCleanupChange::eChangeException);
+        }
         return eAction_Erase;
     } else if (NStr::EqualNocase(qual, "partial")) {
         feat.SetPartial(true);
@@ -8292,28 +8262,17 @@ void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
             const string &val = GET_FIELD(gb_qual, Val);
 
             // determine whether we should convert this gbqual into an orgmod
-            bool do_gbqual_to_orgmod = false;
-            TOrgModMap::const_iterator orgmod_it = s_FindInMapAsPrefix<TOrgModMap>( qual, sc_OrgModMap );
-            if( orgmod_it != sc_OrgModMap.end() && orgmod_it->second != NCBI_ORGMOD(nat_host) ) {
-                do_gbqual_to_orgmod = true;
-            }
-            if( ! do_gbqual_to_orgmod ) {
-                TOrgModMap::const_iterator orgmodalias_it = s_FindInMapAsPrefix<TOrgModMap>( qual, sc_OrgModAliasMap );
-                if( orgmodalias_it != sc_OrgModAliasMap.end() && orgmodalias_it->second != NCBI_ORGMOD(nat_host) ) {
-                    do_gbqual_to_orgmod = true;
-                }
-            }
-            if( ! do_gbqual_to_orgmod ) {
-                if( s_FindInMapAsPrefix<TSubsourceMap>( qual, sc_SubsourceMap) != sc_SubsourceMap.end() ||
-                    s_FindInMapAsPrefix<TSubsourceMap>( qual, sc_SubsourceAliasMap) != sc_SubsourceAliasMap.end() ) 
-                {
-                    do_gbqual_to_orgmod = true;
-                }
-            }
+            string mod_val = qual + "=" + val;
+            size_t val_pos;
+            COrgMod::TSubtype ost;
+            CSubSource::TSubtype sst;
+            bool do_gbqual_to_orgmod = 
+                s_StringHasOrgModPrefix(mod_val, val_pos, ost) ||
+                s_StringHasSubSourcePrefix(mod_val, val_pos, sst);
 
             // if required, do the conversion
             if( do_gbqual_to_orgmod ) {
-                org.SetMod().push_back( qual + "=" + val );
+                org.SetMod().push_back( mod_val );
                 ERASE_GBQUAL_ON_SEQFEAT( qual_iter, seqfeat );
                 ChangeMade(CCleanupChange::eAddOrgMod);
                 ChangeMade(CCleanupChange::eRemoveQualifier);
