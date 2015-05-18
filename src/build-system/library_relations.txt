@@ -476,6 +476,11 @@ gpipe_sadb needs $(COMPRESS_LIBS)
 gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
+gpipe_sqlite needs $(SDBAPI_LIB)
+gpipe_sqlite needs sqlitewrapp
+gpipe_sqlite needs xconnect
+gpipe_sqlite needs xregexp
+gpipe_sqlite needs xutil
 gpipe_standalone needs gpipe_an_base
 gpipe_tree needs gpipe_property
 gpipe_tree needs xalgophytree
@@ -1086,6 +1091,9 @@ u2tl needs3party $(SYBASE_DLLS)
 u2tl needs3party $(SYBASE_LIBS)
 u2tl needs3party $(Z_LIBS)
 uilist needs xser
+unicoll_dump_access needs $(SEQ_LIBS)
+unicoll_dump_access needs gpipe_sqlite
+unicoll_dump_access needs pub
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
 uudutil needs xconnserv
