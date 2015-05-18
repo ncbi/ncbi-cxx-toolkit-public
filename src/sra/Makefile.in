@@ -4,7 +4,7 @@ SUB_PROJ = sdk readers data_loaders app
 
 WATCHERS = vasilche ucko
 
-REQUIRES = VDB
+REQUIRES = -AIX -BSD -Cygwin -IRIX -OSF
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
