@@ -517,6 +517,10 @@ string CSubSource::x_ParseDateRangeWithDelimiter(const string& orig_date, const 
     if (pos == string::npos) {
         return "";
     }
+    size_t second_pos = NStr::Find(orig_date.substr(pos + 1), delim, NStr::eNocase);
+    if (second_pos != string::npos) {
+        return "";
+    }
     bool month_ambig = false;
     string first_date = FixDateFormat(orig_date.substr(0, pos), true, month_ambig);
     if (month_ambig || NStr::IsBlank(first_date)) {
