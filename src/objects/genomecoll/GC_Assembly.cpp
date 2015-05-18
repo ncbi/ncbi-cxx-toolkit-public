@@ -317,26 +317,26 @@ void CGC_Assembly::Find(const CSeq_id_Handle& id,
     }
 }
 
-void CGC_Assembly::GetRepliconTypeLocRole(const CSeq_id_Handle& id, string& type, string& location, int& role) const
+void CGC_Assembly::GetRepliconTypeLocRole(const CSeq_id_Handle& id, string& type, string& location, set<int>& role) const
 {
     CGC_Assembly::TSequenceList seqs;
     Find(id, seqs);
 
-    role = 0;
-
     ITERATE(CGC_Assembly::TSequenceList, its, seqs)
     {
+        if(type.empty() || location.empty())
+        {
         CConstRef<CGC_Replicon> repl((*its)->GetReplicon());
         if(repl)
         {
             type = repl->GetMoleculeType();
             location = repl->GetMoleculeLocation();
         }
-        if     ((*its)->HasRole(eGC_SequenceRole_chromosome) && (!role || role > eGC_SequenceRole_chromosome)) role = eGC_SequenceRole_chromosome;
-        else if((*its)->HasRole(eGC_SequenceRole_scaffold)   && (!role || role > eGC_SequenceRole_scaffold  )) role = eGC_SequenceRole_scaffold;
+        }
 
-        if(!type.empty() && !location.empty() && role > 0)
-            return;
+        if((*its)->HasRole(eGC_SequenceRole_chromosome     ))    role.insert(eGC_SequenceRole_chromosome);
+        if((*its)->HasRole(eGC_SequenceRole_scaffold       ))    role.insert(eGC_SequenceRole_scaffold);
+        if((*its)->HasRole(eGC_SequenceRole_pseudo_scaffold))    role.insert(eGC_SequenceRole_pseudo_scaffold);
     }
 }
 

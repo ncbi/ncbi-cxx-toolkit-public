@@ -132,7 +132,7 @@ public:
     CConstRef<CGC_Sequence> Find(const CSeq_id_Handle& id) const;
 
     /// Returns replicon type, location and role
-    void GetRepliconTypeLocRole(const CSeq_id_Handle& id, string& type, string& location, int& role) const;
+    void GetRepliconTypeLocRole(const CSeq_id_Handle& id, string& type, string& location, set<int>& role) const;
 
     /// PreWrite() / PostRead() handle events for indexing of local structures
     void PreWrite() const;
