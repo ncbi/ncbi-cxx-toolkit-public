@@ -1141,8 +1141,10 @@ bool s_StringHasOrgModPrefix(const string &str, string::size_type &out_val_start
     if (NStr::IsBlank(tokens[0])) {
         return false;
     }
+    string val = tokens[0];
+    NStr::ReplaceInPlace( val, ":", "" );
     try {
-        COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(tokens[0]);
+        COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val);
         if (!COrgMod::IsDiscouraged(subtype) && tokens.size() > 1 && !NStr::IsBlank(tokens[1])) {
             out_val_start_pos = tokens[0].length();
             if (tokens.size() > 1) {
@@ -1171,12 +1173,14 @@ bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_st
     if (NStr::IsBlank(tokens[0])) {
         return false;
     }
+    string val = tokens[0];
+    NStr::ReplaceInPlace( val, ":", "" );
     try {
         CSubSource::TSubtype subtype;
-        if (NStr::EqualNocase(tokens[0], "Lat-long") || NStr::EqualNocase(tokens[0], "Latitude-Longitude")) {
+        if (NStr::EqualNocase(val, "Lat-long") || NStr::EqualNocase(val, "Latitude-Longitude")) {
             subtype = CSubSource::eSubtype_lat_lon;
         } else {
-            subtype = CSubSource::GetSubtypeValue(tokens[0]);
+            subtype = CSubSource::GetSubtypeValue(val);
         }
         if (!CSubSource::IsDiscouraged(subtype) &&
             (CSubSource::NeedsNoText(subtype) || (tokens.size() > 1 && !NStr::IsBlank(tokens[1])))) {
