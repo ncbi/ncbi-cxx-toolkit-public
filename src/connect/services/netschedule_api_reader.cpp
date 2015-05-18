@@ -244,7 +244,7 @@ void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
 CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
-        CTimeout* timeout)
+        const CTimeout* timeout)
 {
     x_StartNotificationThread();
     CDeadline deadline(timeout ? *timeout : CTimeout());
@@ -294,8 +294,6 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             else if (x_PerformTimelineAction(m_Timeline.PullScheduledAction(),
                     *job, job_status, &no_more_jobs))
                 return CNetScheduleJobReader::eRNJ_JobReady;
-            else if (!matching_job_exists && no_more_jobs)
-                return CNetScheduleJobReader::eRNJ_NoMoreJobs;
         }
     }
 }
@@ -303,7 +301,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
 CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
-        CTimeout* timeout)
+        const CTimeout* timeout)
 {
     _ASSERT(m_Impl);
     return m_Impl->ReadNextJob(job, job_status, timeout);

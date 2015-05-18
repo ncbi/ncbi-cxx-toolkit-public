@@ -587,7 +587,7 @@ struct SNetScheduleJobReaderImpl : public CObject
     CNetScheduleJobReader::EReadNextJobResult ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
-        CTimeout* timeout);
+        const CTimeout* timeout);
 
     virtual ~SNetScheduleJobReaderImpl();
 

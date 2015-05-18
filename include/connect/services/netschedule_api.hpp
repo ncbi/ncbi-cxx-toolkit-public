@@ -845,7 +845,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
     ///
     EReadNextJobResult ReadNextJob(CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
-        CTimeout* timeout = NULL);
+        const CTimeout* timeout = NULL);
 
     /// Abort waiting for a completed job in the above method.
     /// Can be called from a signal handler or a parallel thread.
