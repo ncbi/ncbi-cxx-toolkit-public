@@ -76,7 +76,7 @@ public:
     /// CSeq_interval in the CPacked_seqint is the overall match. Subsequent
     /// CSeq_intervals are matches to sub-patterns. Begins search of seq at 0
     /// based offset. Returns 0 based position of first character in seq of
-    /// match.  If no match found, returns kMax_ULong and loc is set to
+    /// match.  If no match found, returns kInvalidSeqPos and loc is set to
     /// an empty packed-int type CSeq_loc. See CRegexp.hpp for information
     /// about flags.
     TSeqPos GetLoc (const char *seq,            // Sequence to search

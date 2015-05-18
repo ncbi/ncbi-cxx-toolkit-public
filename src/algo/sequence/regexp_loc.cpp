@@ -76,7 +76,7 @@ TSeqPos CRegexp_loc::GetLoc
     if (m_regexp->NumFound() > 0) {
         return m_regexp->GetResults(0)[0];
     } else {
-        return kMax_ULong;
+        return kInvalidSeqPos;
     }
 }
 
