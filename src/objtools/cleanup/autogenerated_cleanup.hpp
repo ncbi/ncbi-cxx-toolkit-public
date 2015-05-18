@@ -453,9 +453,6 @@ void x_BasicCleanupSeqFeat_cit_cit_pub_ETC( Tcontainer_ncbi_cref_cpub_ & arg0 );
   void x_BasicCleanupSeqFeat_comment_ETC( std::string & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
 void x_BasicCleanupSeqFeat_support_support_model_evidence_E_E_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_E_ETC( std::string & arg0 );
-  template< typename Tcontainer_std_string_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_E_E_ETC( COrgMod & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_E_ETC( COrgMod & arg0 );
   template< typename Tcontainer_ncbi_cref_corgmod_ >
