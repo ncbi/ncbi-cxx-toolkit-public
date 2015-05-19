@@ -9252,6 +9252,8 @@ public:
 
 void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
 {
+    CPCRPrimer *last = NULL;
+
     EDIT_EACH_PCRPRIMER_IN_PCRPRIMERSET( primer_iter, primer_set ) {
         CPCRPrimer &primer = **primer_iter;
         
@@ -9282,9 +9284,30 @@ void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
             }
         }
 
+        if (last != NULL) {
+            CPCRPrimer &lastprimer = *last;
+            if (FIELD_IS_SET(lastprimer, Name) && FIELD_IS_SET(primer, Name)) {
+                string &name1 = GET_MUTABLE(lastprimer, Name).Set();
+                string &name2 = GET_MUTABLE(primer, Name).Set();
+                if (NStr::EqualNocase(name1, name2)) {
+                    if (! FIELD_IS_SET(lastprimer, Seq)) {
+                        SET_FIELD(lastprimer, Seq, GET_FIELD(primer, Seq) );
+                        RESET_FIELD(primer, Name);
+                        RESET_FIELD(primer, Seq);
+                        ChangeMade(CCleanupChange::eChangePCRPrimers);
+                    } else if (! FIELD_IS_SET(primer, Seq)) {
+                        RESET_FIELD(primer, Name);
+                        ChangeMade(CCleanupChange::eChangePCRPrimers);
+                    }
+                }
+            }
+        }
+
         if( ! FIELD_IS_SET(primer, Name) && ! FIELD_IS_SET(primer, Seq) ) {
             ERASE_PCRPRIMER_IN_PCRPRIMERSET(primer_iter, primer_set);
             ChangeMade(CCleanupChange::eChangePCRPrimers);
+        } else {
+            last = *primer_iter;
         }
     }
 
