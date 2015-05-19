@@ -644,7 +644,7 @@ TGi CCdCore::GetGIFromSequenceList(int SeqIndex) const {
       }
     }
   }
-  return -1;
+  return INVALID_GI;
 }
   
 
