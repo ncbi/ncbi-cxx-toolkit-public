@@ -821,6 +821,7 @@ ncbils2_authxml needs xser
 ncbils2_cli needs ncbils2_asn
 ncbils2_cli needs xconnect
 ncbils2_cmn needs $(LIBSSSUTILS)
+ncbils2_cmn needs3party $(GCRYPT_LIBS)
 ncbils2_dispxml needs xser
 ncbimime needs cdd
 ncbimla needs3party ncbiobj
