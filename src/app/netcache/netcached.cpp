@@ -248,11 +248,10 @@ void CNCHeartBeat::CheckConfFile(void)
         return;
     }
     if (!cfg.Exists()) {
-        if (modified != 0) {
+        if (modified != 1) {
             CNCAlerts::Register(CNCAlerts::eStartupConfigChanged, GetConfName() + ": file not found");
-        } else {
-            modified = 0;
         }
+        modified = 1;
         return;
     }
     time_t mod = 0;
