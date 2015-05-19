@@ -191,6 +191,7 @@ public:
 
     TGi GetGi(void) const;
     const CSeq_id& GetSeq_id(void) const;
+    void SetGi(TGi gi);
 
     size_t GetSize(void) const;
     const SSNP_Info& GetInfo(size_t index) const;

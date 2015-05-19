@@ -1028,6 +1028,14 @@ void CSeq_annot_SNP_Info::x_SetGi(TGi gi)
 }
 
 
+void CSeq_annot_SNP_Info::SetGi(TGi gi)
+{
+    m_Gi = gi;
+    m_Seq_id.Reset(new CSeq_id);
+    m_Seq_id->SetGi(gi);
+}
+
+
 void CSeq_annot_SNP_Info::x_FinishParsing(void)
 {
     // we don't need index maps anymore
