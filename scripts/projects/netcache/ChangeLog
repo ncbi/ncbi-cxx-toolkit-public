@@ -106,6 +106,9 @@ Enhanced status reporting, added more report types.
 Corrected storage and search of un-synchronized blobs, and blobs not found locally.
 Fixed errors in peer-to-peer communications.
 
+May 19, 2015
+version 6.8.7
+Corrected format of alert reports.
 
 
 
