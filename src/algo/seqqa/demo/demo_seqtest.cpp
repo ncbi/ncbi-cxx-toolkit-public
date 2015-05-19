@@ -84,7 +84,7 @@ void CDemoSeqQaApp::Init()
 
 int CDemoSeqQaApp::Run()
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CNcbiIstream& istr = args["i"].AsInputFile();
     CNcbiOstream& ostr = args["o"].AsOutputFile();
