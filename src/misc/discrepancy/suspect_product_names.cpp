@@ -157,7 +157,6 @@ static map<CSeq_inst::EStrand, string> strand_strname;          // sema: need to
 typedef map<string, string> Str2Str;
 
 void GetSeqFeatLabel(const CSeq_feat&, string&);
-const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
 
 
 static bool IsStringConstraintEmpty(const CString_constraint* constraint)
@@ -1214,7 +1213,7 @@ static bool DoesFeatureMatchLocationConstraint(const CDiscrepancyContext& contex
     if (loc_cons.GetStrand() != eStrand_constraint_any) {
         if (!context.GetCurrentBioseq()) return false;
         else if (context.GetCurrentBioseq()->IsAa()) {
-            const CSeq_feat* cds = GetCDSForProduct(*context.GetCurrentBioseq().GetPointer(), &context.GetScope());     // sema: how efficient is it?
+            const CSeq_feat* cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq().GetPointer(), &context.GetScope());     // sema: how efficient is it?
             if (!cds) return false;
             else if (!DoesStrandMatchConstraint(cds->GetLocation(), loc_cons)) return false;
         }
