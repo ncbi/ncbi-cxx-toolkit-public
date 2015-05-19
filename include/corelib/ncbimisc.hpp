@@ -922,10 +922,11 @@ typedef int TSignedSeqPos;
 
 #ifdef NCBI_INT8_GI
 
+// Generic id type which needs to be the same size as GI.
+typedef Int8 TIntId;
+typedef Uint8 TUintId;
+
 #ifdef NCBI_STRICT_GI
-
-
-class CTypeInfo;
 
 // Strict mode can be enabled only for Int8 GIs.
 
@@ -946,12 +947,12 @@ public:
     CStrictGi& operator--(void) { m_Gi--; return *this; }
     CStrictGi operator--(int) { CStrictGi tmp = *this; m_Gi--; return tmp; }
 
-    CStrictGi operator+(const CStrictGi& gi) const { return CStrictGi(m_Gi + gi.m_Gi); }
-    CStrictGi operator-(const CStrictGi& gi) const { return CStrictGi(m_Gi - gi.m_Gi); }
+    CStrictGi operator+(TIntId offset) const { return m_Gi + offset; }
+    CStrictGi operator-(TIntId offset) const { return m_Gi - offset; }
 
-    CStrictGi(Int8 value) : m_Gi(value) {}
-    CStrictGi& operator=(Int8 value) { m_Gi = value; return *this; }
-    operator Int8(void) const { return m_Gi; }
+    CStrictGi(TIntId value) : m_Gi(value) {}
+    CStrictGi& operator=(TIntId value) { m_Gi = value; return *this; }
+    operator TIntId(void) const { return m_Gi; }
 
     explicit CStrictGi(Int4 value) : m_Gi(value) {}
 
@@ -971,37 +972,27 @@ private:
     operator Uint8(void) const;
 
 private:
-    Int8 m_Gi;
+    TIntId m_Gi;
 };
 
 
 inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictGi& gi)
 {
-    out << Int8(gi);
-    return out;
+    return out << TIntId(gi);
 }
 
 typedef CStrictGi TGi;
 
-#define ZERO_GI TGi(0)
-#define INVALID_GI TGi(-1)
-
-
 #else // NCBI_STRICT_GI
 
-
-typedef Int8 TGi;
-#define ZERO_GI 0
-#define INVALID_GI -1
-
+typedef TIntId TGi;
 
 #endif // NCBI_STRICT_GI
 
 
-// Generic id type which needs to be the same size as GI.
-typedef Int8 TIntId;
-typedef Uint8 TUintId;
+#define ZERO_GI TGi(0)
+#define INVALID_GI TGi(-1)
 
 
 #else // NCBI_INT8_GI
