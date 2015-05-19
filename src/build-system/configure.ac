@@ -4252,7 +4252,6 @@ NETWORK_PURE_LIBS="$NETWORK_LIBS"
 ncbi_xreader_pubseqos=
 UNLESS_PUBSEQOS=
 if test "$with_sybase" != "no" ; then
-   sybase_lib=lib$bit64_sfx
    resolve_sybase=true
    default_pointer=default-${NCBI_PLATFORM_BITS}bit
    : ${with_sybase_new:="no"}
@@ -4387,11 +4386,26 @@ if test "$with_sybase" != "no" ; then
       fi
    fi
 
-   SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
+   if test -f "$SYBASE_PATH/SYBASE.env"; then
+      ocs=`sed -ne 's:^SYBASE_OCS=:/:p' "$SYBASE_PATH/SYBASE.env"`
+   else
+      ocs=
+   fi
+   if test -d "$SYBASE_PATH$ocslib$bit64_sfx"; then
+      SYBASE_LIBPATH="$SYBASE_PATH$ocs/lib$bit64_sfx"
+   else
+      SYBASE_LIBPATH="$SYBASE_PATH$ocs/lib"
+   fi
    syb_sfx=$bit64_sfx
+   if test -f "$SYBASE_LIBPATH/libsybct$syb_sfx.a"; then
+      syb_pfx=syb
+   else
+      syb_pfx=
+   fi
+
    if test "$with_mt" = "yes" ; then
       AC_CACHE_CHECK([for reentrant Sybase libraries], ncbi_cv_lib_sybase_r,
-         [if test -f "$SYBASE_LIBPATH/libct_r$bit64_sfx.so"; then
+         [if test -f "$SYBASE_LIBPATH/lib${syb_pfx}ct_r$bit64_sfx.so"; then
              ncbi_cv_lib_sybase_r=yes
           else
              ncbi_cv_lib_sybase_r=no
@@ -4402,7 +4416,7 @@ if test "$with_sybase" != "no" ; then
    fi
    case "$host_os" in
       linux*) sybtcl=-lsybtcl$syb_sfx; sybtli="" ;;
-      *)      sybtcl=-ltcl$syb_sfx;    sybtli=-ltli$syb_sfx ;;
+      *)      sybtcl=-l${syb_pfx}tcl$syb_sfx; sybtli=-ltli$syb_sfx ;;
    esac
    test -f "$SYBASE_LIBPATH/libtli.so" || sybtli=
 
@@ -4417,19 +4431,25 @@ if test "$with_sybase" != "no" ; then
       SYBASE_NETWORK_LIBS="$NETWORK_LIBS"
    fi
 
+   if test -f "$SYBASE_LIBPATH/libsybunic${bit64_sfx}.a"; then
+      sybunic=-lsybunic${bit64_sfx}
+   fi
+
    test -n "$bit64_sfx"  &&  SYBASE_INCLUDE="-DSYB_LP64"
-   SYBASE_LIBLIST="-lblk$syb_sfx -lct$syb_sfx -lcs$syb_sfx $sybtcl"
-   SYBASE_LIBLIST="$SYBASE_LIBLIST -lcomn$syb_sfx -lintl$syb_sfx"
+   SYBASE_LIBLIST="-l${syb_pfx}blk$syb_sfx -l${syb_pfx}ct$syb_sfx"
+   SYBASE_LIBLIST="$SYBASE_LIBLIST -l${syb_pfx}cs$syb_sfx $sybtcl"
+   SYBASE_LIBLIST="$SYBASE_LIBLIST -l${syb_pfx}comn$syb_sfx"
+   SYBASE_LIBLIST="$SYBASE_LIBLIST -l${syb_pfx}intl$syb_sfx $sybunic"
    SYBASE_DLLLIST="$sybtli"
 
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
-   SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
+   SYBASE_INCLUDE="-I$SYBASE_PATH$ocs/include $SYBASE_INCLUDE"
    if test -z "$SYBASE_LCL_PATH" ; then
       NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LIBPATH)
    else
-      SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/${sybase_lib}"
+      SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH$ocs/${sybase_lib}"
       NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH)
-      SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include $SYBASE_INCLUDE"
+      SYBASE_INCLUDE="-I$SYBASE_LCL_PATH$ocs/include $SYBASE_INCLUDE"
    fi
    SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
@@ -4469,7 +4489,7 @@ if test "$with_sybase" != "no" ; then
          fi
       fi
 
-      SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
+      SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx} $sybunic"
       AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
          [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"

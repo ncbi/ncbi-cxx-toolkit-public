@@ -22,12 +22,6 @@
 
 #include <cstypes.h>
 
-#ifndef NCBI_DBAPI_RENAME_CTLIB
-#  define NCBI_DBAPI_RENAME_CTLIB
-#endif
-#include <dbapi/driver/ctlib/ncbi_dbapi_rename_ctlib.h>
-
-
 #undef TDS_STATIC_CAST
 #ifdef __cplusplus
 #define TDS_STATIC_CAST(type, a) static_cast<type>(a)

@@ -454,6 +454,9 @@ bool CTL_BCPInCmd::x_AssignParams()
                 numeric.precision = par.Precision();
                 numeric.scale     = par.Scale();
                 memcpy(numeric.array, par.RawData(), sizeof(numeric.array));
+
+                param_fmt.precision = numeric.precision;
+                param_fmt.scale     = numeric.scale;
   
                 // cutoffs per
                 // http://msdn.microsoft.com/en-us/library/ms187746.aspx

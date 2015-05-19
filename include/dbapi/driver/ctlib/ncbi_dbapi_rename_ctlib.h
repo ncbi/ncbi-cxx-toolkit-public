@@ -115,6 +115,10 @@
 #  define blk_srvinit       blk_srvinit_ver64
 #  define blk_textxfer      blk_textxfer_ver64
 
+/* Also cover type names that appear as template parameters */
+#  define _cs_datafmt _cs_datafmt_ver64
+#  define _cs_varchar _cs_varchar_ver64
+
 #endif  /* NCBI_DBAPI_RENAME_CTLIB */
 
 
