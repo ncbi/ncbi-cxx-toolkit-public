@@ -174,9 +174,9 @@ public:
 
     template<typename T> void Call(CDiscrepancyVisitor<T>* disc, const T* obj){ disc->Call(obj, *this);}
 
-    CConstRef<CBioseq> GetCurrentBioseq(){ return m_Current_Bioseq;}
-    CConstRef<CSeq_feat> GetCurrentSeq_feat(){ return m_Current_Seq_feat;}
-    objects::CScope& GetScope(){ return m_Scope;}
+    CConstRef<CBioseq> GetCurrentBioseq() const { return m_Current_Bioseq;}
+    CConstRef<CSeq_feat> GetCurrentSeq_feat() const { return m_Current_Seq_feat;}
+    objects::CScope& GetScope() const { return m_Scope;}
 
     void SetSuspectRules(const string& name);
     CConstRef<CSuspect_rule_set> GetProductRules();

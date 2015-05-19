@@ -643,10 +643,16 @@ int GetTaxId(const CBioseq_Handle& handle);
 /// Retrieve the MolInfo object for a given bioseq handle.  If the supplied
 /// sequence does not have a MolInfo associated with it, this will return NULL
 NCBI_XOBJUTIL_EXPORT
+const CMolInfo* GetMolInfo(const CBioseq& bioseq);
+
+NCBI_XOBJUTIL_EXPORT
 const CMolInfo* GetMolInfo(const CBioseq_Handle& handle);
 
 /// Retrieve the BioSource object for a given bioseq handle.  If the supplied
 /// sequence does not have a MolInfo associated with it, this will return NULL
+NCBI_XOBJUTIL_EXPORT
+const CBioSource* GetBioSource(const CBioseq& bioseq);
+
 NCBI_XOBJUTIL_EXPORT
 const CBioSource* GetBioSource(const CBioseq_Handle& handle);
 

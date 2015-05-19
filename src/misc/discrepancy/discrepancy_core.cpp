@@ -86,13 +86,6 @@ string GetDiscrepancyCaseName(const string& name)
     return CDiscrepancyConstructor::GetDiscrepancyCaseName(name);
 }
 
-/*
-CRef<CDiscrepancyCase> GetDiscrepancyCase(const string& name)
-{
-    const CDiscrepancyConstructor* constr = CDiscrepancyConstructor::GetDiscrepancyConstructor(name);
-    return constr ? constr->Create() : CRef<CDiscrepancyCase>(0);
-}
-*/
 
 vector<string> GetDiscrepancyNames()
 {

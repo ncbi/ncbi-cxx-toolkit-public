@@ -42,6 +42,7 @@ bool IsWholeWord(const string& str, const string& phrase);
 bool IsAllCaps(const string& str);
 bool IsAllLowerCase(const string& str);
 bool IsAllPunctuation(const string& str);
+string GetTwoFieldSubfield(const string& str, unsigned subfield);
 
 
 template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs)

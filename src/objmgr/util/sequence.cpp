@@ -133,6 +133,16 @@ static string s_GetFastaTitle(const CBioseq& bs,
     }
 }
 
+const CBioSource* GetBioSource(const CBioseq& bioseq)
+{
+    ITERATE(CBioseq::TDescr::Tdata, it, bioseq.GetDescr().Get())
+    {
+        if ((**it).IsSource())
+            return &(**it).GetSource();
+    }
+
+    return NULL;
+}
 
 const CBioSource* GetBioSource(const CBioseq_Handle& handle)
 {
@@ -189,6 +199,17 @@ int GetTaxId(const CBioseq_Handle& handle)
         return org_ref->GetTaxId();
     }
     return 0;
+}
+
+
+const CMolInfo* GetMolInfo(const CBioseq& bioseq)
+{
+    ITERATE(CBioseq::TDescr::Tdata, it, bioseq.GetDescr().Get())
+    {
+        if ((**it).IsMolinfo())
+            return &(**it).GetMolinfo();
+    }
+    return NULL;
 }
 
 

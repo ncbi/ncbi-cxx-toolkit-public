@@ -44,7 +44,7 @@ bool IsAllCaps(const string& str)
     up_str = NStr::ToUpper(up_str);
     if (up_str == str) return true;
     else return false;
-};
+}
 
 
 bool IsAllLowerCase(const string& str)
@@ -63,7 +63,7 @@ bool IsAllPunctuation(const string& str)
         if (!ispunct(str[i])) return false;
     }
     return true;
-};
+}
 
 
 bool IsWholeWord(const string& str, const string& phrase)
@@ -74,8 +74,30 @@ bool IsWholeWord(const string& str, const string& phrase)
     size_t pos2 = pos+phrase.size();
     if ((!pos || !isalnum(str[pos-1])) && ((str.size() == pos2) || !isalnum(str[pos2]))) return true;
     else return false;
-  
-}; //CTestAndRepData
+}
+
+
+string GetTwoFieldSubfield(const string& str, unsigned subfield)
+{
+    string strtmp;
+    if (str.empty() || subfield > 2)  return "";
+    if (!subfield) return str;
+    else {
+        size_t pos = str.find(':');
+        if (pos == string::npos) {
+            if (subfield == 1) return str;
+            else return kEmptyStr;
+        }
+        else {
+            if (subfield == 1) return str.substr(0, pos);
+            else {
+                strtmp = CTempString(str).substr(pos+1).empty();
+                if (!strtmp.empty()) return strtmp;
+                else return "";
+            }
+        }
+    }
+}
 
 
 END_SCOPE(NDiscrepancy)
