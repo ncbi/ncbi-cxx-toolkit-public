@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Comp)
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
 
     // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986); // AAFC03080232.1
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(int, 112070986)); // AAFC03080232.1
 }
 
 
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryMap)
         CGencollIdMapper Mapper(GenColl);
         CConstRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
         // Check that Map results meet expectations
-        BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 224589800);
+        BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(int, 224589800));
     }}
 
 
@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryMap)
         CGencollIdMapper Mapper(GenColl);
         CConstRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
         // Check that Map results meet expectations
-        BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 224384768);
+        BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(int, 224384768));
     }}
 
 }
@@ -597,7 +597,7 @@ BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryGuess)
 {
     // Simple ID
     CRef<CSeq_loc> OrigLoc(new CSeq_loc());
-    OrigLoc->SetWhole().SetGi(224589800);
+    OrigLoc->SetWhole().SetGi(GI_FROM(int, 224589800));
     
 
     // Guess both RefSeq and Genbank assemblies with the same spec and id
