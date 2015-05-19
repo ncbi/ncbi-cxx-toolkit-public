@@ -37,6 +37,9 @@
 # include <sys/mman.h>
 #endif
 
+// adds few sanity tests
+#define __NC_MEMMAN_DEBUG 0
+static Uint8 s_fdMemManStamp = 0xFEEDFEEDFEEDFEED;
 
 BEGIN_NCBI_SCOPE;
 
@@ -624,24 +627,30 @@ s_AllocMemory(size_t size)
 
     SMMMemPoolsSet* pool_set = s_GetCurPoolsSet();
     SMMStat* stat = (pool_set? &pool_set->stat: &s_MainPoolsSet.stat);
+    void* ptr = nullptr;
     if (size <= kMMMaxBlockSize) {
         Uint2 size_idx = s_CalcSizeIndex(size);
         AtomicAdd(stat->m_UserBlAlloced[size_idx], 1);
         if (pool_set)
-            return s_GetFromPool(&pool_set->pools[size_idx], stat);
+            ptr = s_GetFromPool(&pool_set->pools[size_idx], stat);
         else
-            return s_GetFromGlobal(size_idx, stat);
+            ptr = s_GetFromGlobal(size_idx, stat);
     }
     else {
-        return s_AllocBigPage(size, stat);
+        ptr = s_AllocBigPage(size, stat);
     }
+#if __NC_MEMMAN_DEBUG
+    memset(ptr, 0, sizeof(s_fdMemManStamp));
+#endif
+    return ptr;
 }
 
 static void
 s_DeallocMemory(void* ptr)
 {
-    if (!ptr)
+    if (!ptr) {
         return;
+    }
 
     SMMMemPoolsSet* pool_set = s_GetCurPoolsSet();
     SMMStat* stat = (pool_set? &pool_set->stat: &s_MainPoolsSet.stat);
@@ -649,12 +658,26 @@ s_DeallocMemory(void* ptr)
     if (page->block_size <= kMMMaxBlockSize) {
         Uint2 size_idx = s_CalcSizeIndex(page->block_size);
         AtomicAdd(stat->m_UserBlFreed[size_idx], 1);
+
+#if __NC_MEMMAN_DEBUG
+        if (memcmp(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+            abort();
+        }
+        memcpy(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+#endif
         if (pool_set)
             s_PutToPool(&pool_set->pools[size_idx], ptr, stat);
         else
             s_ReleaseToFreePages(&ptr, 1, size_idx, stat);
     }
     else {
+
+#if __NC_MEMMAN_DEBUG
+        if (memcmp(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+            abort();
+        }
+        memcpy(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+#endif
         s_DeallocBigPage(page, stat);
     }
 }
@@ -770,7 +793,7 @@ SMMStat::InitStartState(void)
         Uint8 total_data = 0;
         SMMStat* main_stat = &s_MainPoolsSet.stat;
         for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
-            Uint8 cnt = main_stat->m_UserBlAlloced[i] - main_stat->m_UserBlFreed[i];
+            Int8 cnt = main_stat->m_UserBlAlloced[i] - main_stat->m_UserBlFreed[i];
             s_StartState.m_UserBlocks[i] = cnt;
             total_data += cnt * kMMBlockSizes[i];
             s_StartState.m_SysBlocks[i]  = main_stat->m_SysBlAlloced[i]
@@ -778,7 +801,7 @@ SMMStat::InitStartState(void)
         }
         s_StartState.m_BigBlocksCnt = main_stat->m_BigAllocedCnt
                                         - main_stat->m_BigFreedCnt;
-        Uint8 size = main_stat->m_BigAllocedSize - main_stat->m_BigFreedSize;
+        Int8 size = main_stat->m_BigAllocedSize - main_stat->m_BigFreedSize;
         s_StartState.m_BigBlocksSize = size;
         total_data += size;
         s_StartState.m_TotalData = total_data;
@@ -805,14 +828,20 @@ void
 SMMStat::CopyEndState(SMMStat* src_stat)
 {
     m_EndState = src_stat->m_EndState;
+
+    for (size_t i = 0; i < kMMCntBlockSizes; ++i) {
+        if (m_EndState.m_UserBlocks[i] < 0) {
+            m_EndState.m_UserBlocks[i] = 0;
+        }
+    }
 }
 
 void
 SMMStat::SaveEndState(void)
 {
     Uint8 total_data = 0;
-    for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
-        Uint8 cnt = (m_StartState.m_UserBlocks[i]
+    for (size_t i = 0; i < kMMCntBlockSizes; ++i) {
+        Int8 cnt = (m_StartState.m_UserBlocks[i]
                         + m_UserBlAlloced[i]) - m_UserBlFreed[i];
         m_EndState.m_UserBlocks[i] = cnt;
         total_data += cnt * kMMBlockSizes[i];
@@ -821,7 +850,7 @@ SMMStat::SaveEndState(void)
     }
     m_EndState.m_BigBlocksCnt = (m_StartState.m_BigBlocksCnt
                                  + m_BigAllocedCnt) - m_BigFreedCnt;
-    Uint8 size = (m_StartState.m_BigBlocksSize + m_BigAllocedSize) - m_BigFreedSize;
+    Int8 size = (m_StartState.m_BigBlocksSize + m_BigAllocedSize) - m_BigFreedSize;
     m_EndState.m_BigBlocksSize = size;
     total_data += size;
     m_EndState.m_TotalData = total_data;
@@ -904,7 +933,7 @@ s_PrintSizeDiff(CSrvPrintProxy& proxy, Uint2 size_idx,
 }
 
 static void
-s_PrintBlocksState(CSrvPrintProxy& proxy, Uint8* start_blocks, Uint8* end_blocks)
+s_PrintBlocksState(CSrvPrintProxy& proxy, Int8* start_blocks, Int8* end_blocks)
 {
     Uint2 low_size = 0;
     Uint2 size = 0;

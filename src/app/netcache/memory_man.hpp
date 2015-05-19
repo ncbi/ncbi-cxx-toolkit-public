@@ -54,10 +54,10 @@ struct SMMStateStat
     SMMStateStat(void) {
         memset(this, 0, sizeof(SMMStateStat));
     }
-    Uint8 m_UserBlocks[kMMCntBlockSizes];
-    Uint8 m_SysBlocks[kMMCntBlockSizes];
-    Uint8 m_BigBlocksCnt;
-    Uint8 m_BigBlocksSize;
+    Int8 m_UserBlocks[kMMCntBlockSizes];
+    Int8 m_SysBlocks[kMMCntBlockSizes];
+    Int8 m_BigBlocksCnt;
+    Int8 m_BigBlocksSize;
     Uint8 m_TotalSys;
     Uint8 m_TotalData;
 };

@@ -268,10 +268,11 @@ g_ToSizeStr(Uint8 size)
             NStr::fDS_PutSpaceBeforeSuffix | NStr::fDS_PutBSuffixToo);
 }
 
+template<typename T>
 inline string
-g_ToSmartStr(Uint8 num)
+g_ToSmartStr(T num)
 {
-    return NStr::UInt8ToString(num, NStr::fWithCommas);
+    return NStr::NumericToString(num, NStr::fWithCommas);
 }
 
 inline double
