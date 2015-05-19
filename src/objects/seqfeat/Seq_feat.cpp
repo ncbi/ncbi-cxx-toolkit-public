@@ -508,6 +508,63 @@ CRef<CUser_object> CSeq_feat::FindExt(const string& ext_type)
     return ret;
 }
 
+void
+CSeq_feat::AddExt(CRef<CUser_object> ext)
+{
+    // ext must have type set
+    if( ! ext->IsSetType() || ! ext->GetType().IsStr()) {
+        NCBI_USER_THROW("Seq-feat Ext must have a type");
+    }
+    SetExts().push_back(ext);
+}
+
+void
+CSeq_feat::RemoveExt(const string& ext_type)
+{
+    if ( IsSetExts() ) {
+        TExts & exts = SetExts();
+        // Exts are list, so constant time removal per element
+        ERASE_ITERATE(TExts, it, exts) {
+            const CObject_id& obj_type = (*it)->GetType();
+            if ( obj_type.IsStr()  &&  obj_type.GetStr() == ext_type ) {
+                exts.erase(it);
+            }
+        }
+        if( exts.empty() ) {
+            ResetExts();
+        }
+    }
+    if ( IsSetExt()) {
+        if (GetExt().GetType().IsStr()) {
+            if (GetExt().GetType().GetStr() == ext_type) {
+                ResetExt();
+            }
+            else if (GetExt().GetType().GetStr() == "CombinedFeatureUserObjects") {
+                // build new ext vector since cannot remove easily as
+                // we go along.
+                TExt::TData new_ext_data;
+                TExt::TData & curr_ext_data = SetExt().SetData();
+                NON_CONST_ITERATE (TExt::TData, it, curr_ext_data) {
+                    CUser_field& f = **it;
+                    if (f.GetData().IsObject()  &&
+                        f.GetData().GetObject().GetType().IsStr()  &&
+                        f.GetData().GetObject().GetType().GetStr()  == ext_type) {
+                        continue;
+                    }
+                    new_ext_data.push_back(*it);
+                }
+
+                if( new_ext_data.empty() ) {
+                    ResetExt();
+                } else if( new_ext_data.size() != curr_ext_data.size() ) {
+                    // swap is constant time
+                    new_ext_data.swap(curr_ext_data);
+                }
+            }
+        }
+    }
+}
+
 
 ISeq_feat::~ISeq_feat(void)
 {

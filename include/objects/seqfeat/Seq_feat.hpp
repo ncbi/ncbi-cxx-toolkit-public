@@ -171,6 +171,21 @@ public:
     /// Non-const version of FindExt().
     CRef<CUser_object> FindExt(const string& ext_type);
 
+    /// Add an extension by type in exts container.  Note that it's
+    /// always added to the Exts field, never the Ext field.
+    /// Also, it does not check for dups.
+    /// 
+    /// @param ext
+    ///   The ext to be added.  It will NOT be copied.
+    void AddExt(CRef<CUser_object> ext);
+
+    /// Remove all Exts with the given type.  Note: Runs in linear time
+    /// relative to the number of Exts total.
+    ///
+    /// @param ext_type
+    ///   String id of the extension to find.
+    void RemoveExt(const string& ext_type);
+
 private:
 
     /// Prohibit copy constructor and assignment operator
