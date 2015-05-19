@@ -2060,7 +2060,7 @@ void CFeatureItem::x_AddQualTranslationTable(
     if ( gcode == 1 || gcode == 255 ) {
         return;
     }
-    if ( ctx.Config().IsFormatGBSeq() || gcode != 1 ) {
+    if ( ctx.Config().IsFormatGBSeq() || gcode > 1 ) {
         x_AddQual(eFQ_transl_table, new CFlatIntQVal(gcode));
     }
 }
