@@ -33,3 +33,7 @@ getseqidsfromgi._storage_type = ncbi::TIntId
 getgihist._storage_type = ncbi::TIntId
 getgirev._storage_type = ncbi::TIntId
 getgistate._storage_type = ncbi::TIntId
+
+[ID1blob-info]
+gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId
