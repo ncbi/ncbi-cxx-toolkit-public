@@ -248,7 +248,7 @@ void CNCHeartBeat::CheckConfFile(void)
         return;
     }
     if (!cfg.Exists()) {
-        CNCAlerts::Register(CNCAlerts::eStartupConfigChanged, "file not found");
+        CNCAlerts::Register(CNCAlerts::eStartupConfigChanged, GetConfName() + ": file not found");
         return;
     }
     time_t mod = 0;
@@ -257,7 +257,7 @@ void CNCHeartBeat::CheckConfFile(void)
         return;
     }
     modified = mod;
-    string msg("modified on ");
+    string msg(GetConfName() + ": modified on ");
     CTime tm;
     if (cfg.GetTime(&tm)) {
         msg += tm.AsString();
@@ -822,7 +822,7 @@ int main(int argc, const char* argv[])
                 pid_file = argv[++i];
                 ok = !pid_file.empty() && pid_file[0] != '-' && s_ReportPid(pid_file);
                 if (!ok) {
-                    CNCAlerts::Register(CNCAlerts::ePidFileFailed, pid_file);
+                    CNCAlerts::Register(CNCAlerts::ePidFileFailed, pid_file + ": cannot write into");
                     cerr << "Cannot write into pidfile: " << pid_file << endl;
                     ERR_POST(Critical << "Cannot write into pidfile: " << pid_file);
                 }

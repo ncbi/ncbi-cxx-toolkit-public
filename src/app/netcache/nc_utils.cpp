@@ -94,9 +94,10 @@ EHTTPStatus GetStatusByMessage(const string& msg, EHTTPStatus def)
 class NCAlertData
 {
 public:
-    NCAlertData(const string& message) :
+    NCAlertData(const string& name, const string& message) :
         m_LastDetectedTimestamp(CSrvTime::Current()),
-        m_Message(message), m_TotalCount(1), m_ThisCount(1), m_On(true) {
+        m_Name(name), m_Message(message),
+        m_TotalCount(1), m_ThisCount(1), m_On(true) {
     }
     void Update(const string& message) {
         m_LastDetectedTimestamp = CSrvTime::Current();
@@ -117,6 +118,7 @@ public:
 private:
     CSrvTime      m_LastDetectedTimestamp;
     CSrvTime      m_AcknowledgedTimestamp;
+    string        m_Name;
     string        m_Message;
     string        m_User;
     size_t        m_TotalCount;
@@ -133,7 +135,8 @@ void NCAlertData::Report(CSrvSocketTask& task)
     string is("\": "),iss("\": \""), eol(",\n\""), eos("\"");
 
     task.WriteText("{\n");
-    task.WriteText(eos).WriteText("message" ).WriteText(iss).WriteText(m_Message).WriteText(eos);
+    task.WriteText(eos).WriteText("name" ).WriteText(iss).WriteText(m_Name).WriteText(eos);
+    task.WriteText(eol).WriteText("message" ).WriteText(iss).WriteText(m_Message).WriteText(eos);
     m_LastDetectedTimestamp.Print(time_buf, CSrvTime::eFmtHumanSeconds);
     task.WriteText(eol).WriteText("on" ).WriteText(is).WriteText(m_On? "true" : "false");
     task.WriteText(eol).WriteText("count" ).WriteText(is).WriteNumber(m_ThisCount);
@@ -171,13 +174,12 @@ void CNCAlerts::Report(CSrvSocketTask& task, bool report_all)
 
 void CNCAlerts::Register(EAlertType alert_type, const string&  message)
 {
-    string msg(x_TypeToId(alert_type) + ": " + message);
     s_Lock.Lock();
     map< EAlertType, NCAlertData >::iterator found = s_Alerts.find(alert_type);
     if (found != s_Alerts.end()) {
-        found->second.Update(msg);
+        found->second.Update(message);
     } else {
-        s_Alerts.insert( make_pair(alert_type, NCAlertData(msg)));
+        s_Alerts.insert( make_pair(alert_type, NCAlertData(x_TypeToId(alert_type), message)));
     }
     s_Lock.Unlock();
 }

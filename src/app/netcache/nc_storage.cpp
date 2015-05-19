@@ -421,7 +421,8 @@ s_LockInstanceGuard(void)
         if (!s_CleanStart  &&  CFile(s_GuardName).GetLength() == 0)
             s_CleanStart = true;
         if (!s_CleanStart) {
-            CNCAlerts::Register(CNCAlerts::eStartAfterCrash, "InstanceGuard file was present on startup");
+            CNCAlerts::Register(CNCAlerts::eStartAfterCrash, 
+                "InstanceGuard file " + s_GuardName + " was present on startup");
             INFO("NetCache wasn't finished cleanly in previous run. "
                  "Will try to work with storage as is.");
         }
