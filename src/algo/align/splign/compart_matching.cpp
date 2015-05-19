@@ -2046,7 +2046,7 @@ void CElementaryMatching::x_InitBasic(void)
     m_MaxVolSize = 512 * 1024 * 1024;
 
     m_MinQueryLength = 50;
-    m_MaxQueryLength = 100000;
+    m_MaxQueryLength = 500000;
     m_MinHitLength = 1;
 }
 
