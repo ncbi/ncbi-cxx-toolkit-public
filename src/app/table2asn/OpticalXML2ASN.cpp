@@ -124,85 +124,6 @@ public:
 };
 
 
-
-#if 0
-
-void COpticalxml2asnOperatorImpl::Init(void)
-{
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Optical Map XML data to ASN.1");
-
-    // Describe the expected command-line arguments
-    arg_desc->AddDefaultKey
-        ("in", "InputFile",
-        "name of file to read from (standard input by default)",
-        CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-
-    arg_desc->AddDefaultKey
-        ("out", "OutputFile",
-        "name of file to write to (InputFile.asn by default)",
-        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
-
-    arg_desc->AddDefaultKey
-        ("taxid", "Taxonomy_ID",
-        "Organism taxonomy ID (optional)", CArgDescriptions::eInteger, "0");
-
-    arg_desc->AddDefaultKey
-        ("taxname", "Taxonomy_name",
-        "Taxonomy name (optional)", CArgDescriptions::eString, "");
-
-    arg_desc->AddDefaultKey
-        ("tmpl", "TemplateFile",
-        "Template file with common ASN.1 nodes to add to output (optional)", CArgDescriptions::eIOFile, "-");
-
-    arg_desc->AddDefaultKey
-        ("ft_url", "FileTrack_URL",
-        "FileTrack URL for the XML file retrieval (optional)", CArgDescriptions::eString, "");
-
-    arg_desc->AddDefaultKey
-        ("bpid", "BioProject_accession",
-        "BioProject accession (optional)", CArgDescriptions::eString, "");
-
-    arg_desc->AddDefaultKey
-        ("strain", "Strain_name",
-        "Strain name (optional)", CArgDescriptions::eString, "");
-
-    SetupArgDescriptions(arg_desc.release());
-}
-
-int COpticalxml2asnOperatorImpl::Run(void)
-{
-    CArgs args = GetArgs();
-    int nChr = GetOpticalXMLData(args["in"].AsString());
-    if (nChr <= 0)
-        return -1;
-
-    string out(args["out"].AsString());
-    if (out == "-")
-        out = args["in"].AsString() + ".asn";
-    string tmpl(args["tmpl"].AsString());
-
-    m_taxid = args["taxid"].AsInteger();
-    m_taxname = args["taxname"].AsString();
-
-    if (m_taxid == 0 && m_taxname.empty()) {
-        cerr << endl << "Error: No taxonomy information has been provided." << endl;
-        return 100;
-    }
-    m_ft_url = args["ft_url"].AsString();
-    m_bpid = args["bpid"].AsString();
-    m_strain = args["strain"].AsString();
-    m_genome = CBioSource::eGenome_chromosome; // eGenome_plasmid ??
-
-    return (nChr > 1 ? BuildOpticalASNDataSet(out) : BuildOpticalASNData(out, tmpl));
-}
-
-#endif
-
-
 void COpticalxml2asnOperatorImpl::SetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context)
 {
     CAutoAddDesc desc(SD, CSeqdesc::e_Molinfo);
@@ -369,34 +290,6 @@ CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CT
 
 void COpticalxml2asnOperator::UpdatePubDate(CSerialObject& obj)
 {
-#if 0
-    CSeq_entry* entry = 0;
-    if (obj.GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
-        entry = (CSeq_entry*)(&obj);
-    else
-        return;
-
-    if (entry->IsSeq())
-    {
-        NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry->SetDescr().Set())
-        {
-            if ((**it).IsPub())
-            {
-                CSeqdesc::TPub& pub = (**it).SetPub();
-                if (pub.IsSetPub())
-                {
-                    pub.SetPub().Set().
-                }
-            }
-        }
-    }
-    else
-    if (entry->IsSet())
-    NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
-    {
-        return UpdatePubDate(**it);
-    }
-#endif
 }
 
 

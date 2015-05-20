@@ -126,50 +126,7 @@ void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifi
         smp.ApplyAllMods(bioseq);
 
         x_ApplySourceQualifiers(bioseq, smp);
-#if 0
-//        if( TestFlag(fUnknModThrow) )
-        {
-            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-            if( ! unused_mods.empty() )
-            {
-                // there are unused mods and user specified to throw if any
-                // unused
-                CNcbiOstrstream err;
-                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
-
-                // get sequence ID
-                const CSeq_id* seq_id = bioseq.GetFirstId();
-                if( seq_id ) {
-                    err << seq_id->GetSeqIdString();
-                } else {
-                    // seq-id unknown
-                    err << "sequence";
-                }
-
-                err << ":";
-                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
-                }
-                err << " around line " + NStr::NumericToString(iLineNum);
-                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
-                    (string)CNcbiOstrstreamToString(err),
-                    iLineNum);
-            }
-        }
-#endif
-
-#if 0
-        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
-
-        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
-            inserter(m_BadMods, m_BadMods.begin()) );
-        CSourceModParser::TMods unused_mods =
-            smp.GetMods(CSourceModParser::fUnusedMods);
-        copy( unused_mods.begin(), unused_mods.end(),
-            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
-#endif
     }
-
 }
 
 };
@@ -391,34 +348,11 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
         {
             CRef<CPub> pub(new CPub);
             pub->SetSub().Assign(m_submit_template->GetSub().GetCit());
-#if 0
-            if (!pub->SetSub().IsSetDate())
-            {
-                CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-                pub->SetSub().SetDate(*date);
-            }
-#endif
 
             CRef<CSeqdesc> pub_desc(new CSeqdesc);
             pub_desc->SetPub().SetPub().Set().push_back(pub);
             object->SetDescr().Set().push_back(pub_desc);
         }
-
-#if 0
-        if (m_submit_template->IsSetSub() &&
-            m_submit_template->GetSub().IsSetContact() &&
-            m_submit_template->GetSub().GetContact().IsSetContact())
-        {
-            CRef<CAuthor> author(new CAuthor);
-            author->Assign(m_submit_template->GetSub().GetContact().GetContact());
-            CRef<CPub> pub(new CPub);
-            pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
-
-            CRef<CSeqdesc> pub_desc(new CSeqdesc);
-            pub_desc->SetPub().SetPub().Set().push_back(pub);
-            object->SetDescr().Set().push_back(pub_desc);
-        }
-#endif
 
         object->Parentize();
     }

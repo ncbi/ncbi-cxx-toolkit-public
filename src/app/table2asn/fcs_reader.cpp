@@ -38,32 +38,6 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
-#if 0
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqfeat/Variation_ref.hpp>
-
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_equiv.hpp>
-#include <objects/biblio/Cit_sub.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/general/Object_id.hpp>
-#include <corelib/ncbistre.hpp>
-
-#include <serial/iterator.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/serial.hpp>
-
-#endif
-
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_data.hpp>
