@@ -691,6 +691,15 @@ void CNewCleanup_imp::x_TruncateSpacesMarkChanged( std::string & str )
     }
 }
 
+void CNewCleanup_imp::x_TrimInternalSemicolonsMarkChanged( std::string & str )
+{
+    const size_t old_str_size = str.length();
+    TrimInternalSemicolons(str);
+    if( old_str_size != str.length() ) {
+        ChangeMade(CCleanupChange::eTrimInternalSemicolons);
+    }
+}
+
 void CNewCleanup_imp::SeqsetBC (
     CBioseq_set& bss
 )

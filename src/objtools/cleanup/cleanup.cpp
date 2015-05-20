@@ -402,6 +402,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Decode XML", // 90
     "Remove Dup BioSource",
     "Clean Org-ref",
+    "Trim Internal Semicolons",
 
     // set when any other change is made.
     "Change Other", 

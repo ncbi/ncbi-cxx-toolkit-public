@@ -438,6 +438,7 @@ private:
     void x_StripSpacesMarkChanged( std::string& str );
     void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
     void x_TruncateSpacesMarkChanged( std::string & str );
+    void x_TrimInternalSemicolonsMarkChanged( std::string & str );
 
     void x_PostSeqFeat( CSeq_feat& seq_feat );
     void x_PostOrgRef( COrg_ref& org );

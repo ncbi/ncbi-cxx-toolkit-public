@@ -158,6 +158,7 @@ public:
         eDecodeXML,
         eRemoveDupBioSource, // 90
         eCleanOrgref,
+        eTrimInternalSemicolons,
 
         // set when any other change is made.
         eChangeOther,
