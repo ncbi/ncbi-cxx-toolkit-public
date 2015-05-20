@@ -47,6 +47,8 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objects/macro/CDSGenePr_constraint_field.hpp>
+#include <objects/macro/CDSGenePr_pseudo_constrain.hpp>
 #include <objects/macro/CDSGenePro_qual_constraint.hpp>
 #include <objects/macro/Constraint_choice.hpp>
 #include <objects/macro/Constraint_choice_set.hpp>
@@ -1022,7 +1024,7 @@ static bool DoesObjectMatchStringConstraint(const CBioSource& biosrc, const CStr
 }
 
 
-static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, const vector <string>& strs, const CString_constraint& str_cons)
+static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const vector<string>& strs, const CString_constraint& str_cons)
 {
     bool rval = false;
     ITERATE (vector <string>, it, strs) { 
@@ -1031,10 +1033,10 @@ static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, 
     }
     if (!rval) {
         string str(kEmptyStr);
-        switch (context.GetCurrentSeq_feat()->GetData().Which()) {
+        switch (seq_feat.GetData().Which()) {
             case CSeqFeatData::e_Cdregion: 
-                if (context.GetCurrentSeq_feat()->CanGetProduct()) {
-                    CBioseq_Handle bioseq_hl = sequence::GetBioseqFromSeqLoc(context.GetCurrentSeq_feat()->GetProduct(), context.GetScope());    // sema: may be inefficient
+                if (seq_feat.CanGetProduct()) {
+                    CBioseq_Handle bioseq_hl = sequence::GetBioseqFromSeqLoc(seq_feat.GetProduct(), context.GetScope());    // sema: may be inefficient
                     if (bioseq_hl) {
                         CFeat_CI ci(bioseq_hl, SAnnotSelector(CSeqFeatData::eSubtype_prot)); 
                         if (ci) {
@@ -1049,7 +1051,7 @@ static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, 
                 }
                 break;
             case CSeqFeatData::e_Rna:
-                if (context.GetCurrentSeq_feat()->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+                if (seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
                     GetSeqFeatLabel(*context.GetCurrentSeq_feat(), str);
                     rval = DoesSingleStringMatchConstraint(str, &str_cons);
                     if (!rval) {
@@ -1059,7 +1061,7 @@ static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, 
                 }
                 break;
             case CSeqFeatData::e_Imp:
-                rval = DoesSingleStringMatchConstraint(context.GetCurrentSeq_feat()->GetData().GetImp().GetKey(), &str_cons);
+                rval = DoesSingleStringMatchConstraint(seq_feat.GetData().GetImp().GetKey(), &str_cons);
                 break;
             default: break;
         }
@@ -1399,7 +1401,7 @@ static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const
 }
 
 
-static string GetFirstStringMatch(const list <string>& strs, const CString_constraint* str_cons)
+static string GetFirstStringMatch(const list<string>& strs, const CString_constraint* str_cons)
 {
     ITERATE (list <string>, sit, strs) {
         if ( !(*sit).empty() && DoesStringMatchConstraint (*sit, str_cons))
@@ -1409,9 +1411,9 @@ static string GetFirstStringMatch(const list <string>& strs, const CString_const
 }
 
 
-static string GetFirstStringMatch(const vector <string>& strs, const CString_constraint* str_cons)
+static string GetFirstStringMatch(const vector<string>& strs, const CString_constraint* str_cons)
 {
-    ITERATE (vector <string>, sit, strs) {
+    ITERATE (vector<string>, sit, strs) {
         if ( !(*sit).empty() && DoesStringMatchConstraint (*sit, str_cons))
         return (*sit);
     }
@@ -1534,7 +1536,7 @@ static string GetNotTextqualSrcQualValue(const CBioSource& biosrc, const CSource
 }
 
 
-static void GetSubSrcValues(const CBioSource& biosrc, const string& type_name, vector <string>& strs)
+static void GetSubSrcValues(const CBioSource& biosrc, const string& type_name, vector<string>& strs)
 {
     if (!biosrc.CanGetSubtype()) return;
     ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
@@ -2701,7 +2703,7 @@ static bool DoesObjectMatchMolinfoFieldConstraint(const CDiscrepancyContext& con
 }
 
 
-static string GetCodeBreakString(const CDiscrepancyContext& context)
+static string GetCodeBreakString(const CSeq_feat& seq_feat)
 {
     NCBI_USER_THROW("This cannot be because it never can be!");
     string str(kEmptyStr);
@@ -2771,7 +2773,7 @@ static string GetAnticodonLocString(const CTrna_ext& trna)
 }
 
 
-static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, const CFeat_qual_choice& feat_qual, const CString_constraint* str_cons)
+static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CFeat_qual_choice& feat_qual, const CString_constraint* str_cons)
 {
     string str(kEmptyStr);
     bool is_legal_qual = feat_qual.IsLegal_qual();
@@ -2779,19 +2781,19 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
     EFeat_qual_legal legal_qual = feat_qual.IsLegal_qual() ? feat_qual.GetLegal_qual() : eFeat_qual_legal_allele;
     const CString_constraint* illegal_qual = feat_qual.IsIllegal_qual() ? &(feat_qual.GetIllegal_qual()) : 0;
 
-    const CSeqFeatData& seq_fdt = context.GetCurrentSeq_feat()->GetData();
+    const CSeqFeatData& seq_fdt = seq_feat.GetData();
     // for gene fields 
     // GetGeneInfoForFeature (seq_feat, grp, gene);
     CGene_ref* gene_ref = 0;
     CConstRef<CSeq_feat> gene_feat(0);
-    if (context.GetCurrentSeq_feat()->GetData().IsGene()) {
+    if (seq_feat.GetData().IsGene()) {
         gene_ref = const_cast<CGene_ref*>(&(seq_fdt.GetGene()));
-        gene_feat = context.GetCurrentSeq_feat();
+        gene_feat = CConstRef <CSeq_feat> (&seq_feat);
     }
     else {
-        gene_ref = const_cast<CGene_ref*>(context.GetCurrentSeq_feat()->GetGeneXref());
+        gene_ref = const_cast<CGene_ref*>(seq_feat.GetGeneXref());
         if (!gene_ref) {
-            gene_feat = sequence::GetBestOverlappingFeat(context.GetCurrentSeq_feat()->GetLocation(), CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
+            gene_feat = sequence::GetBestOverlappingFeat(seq_feat.GetLocation(), CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
             if (gene_feat.NotEmpty()) {
                 gene_ref = const_cast<CGene_ref*>(&(gene_feat->GetData().GetGene()));
             }
@@ -2804,10 +2806,10 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
     CBioseq_Handle prot_hl;
     if (seq_fdt.IsProt()) prot = &(seq_fdt.GetProt());
     else if (seq_fdt.IsCdregion()) {
-        prot = context.GetCurrentSeq_feat()->GetProtXref();
-        if (!prot && context.GetCurrentSeq_feat()->CanGetProduct()) {
+        prot = seq_feat.GetProtXref();
+        if (!prot && seq_feat.CanGetProduct()) {
             CConstRef<CSeq_feat> prot_seq_feat;
-            prot_seq_feat = CConstRef<CSeq_feat>(sequence::GetBestOverlappingFeat(context.GetCurrentSeq_feat()->GetProduct(), CSeqFeatData::e_Prot, sequence::eOverlap_Contains, context.GetScope()));
+            prot_seq_feat = CConstRef<CSeq_feat>(sequence::GetBestOverlappingFeat(seq_feat.GetProduct(), CSeqFeatData::e_Prot, sequence::eOverlap_Contains, context.GetScope()));
             if (prot_seq_feat.NotEmpty()) {
                 prot = &(prot_seq_feat->GetData().GetProt());
             }
@@ -2817,46 +2819,46 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
     /* fields common to all features */
     /* note, also known as comment */
     if ((is_legal_qual && legal_qual == eFeat_qual_legal_note) || (is_illegal_qual && DoesStringMatchConstraint("note", illegal_qual))) {
-        if (context.GetCurrentSeq_feat()->CanGetComment()) {
-            str =  context.GetCurrentSeq_feat()->GetComment();
+        if (seq_feat.CanGetComment()) {
+            str =  seq_feat.GetComment();
         }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_db_xref) || (is_illegal_qual && DoesStringMatchConstraint("db_xref", illegal_qual))) {
         /* db-xref */
-        if (context.GetCurrentSeq_feat()->CanGetDbxref()) {
-            str = GetDbxrefString (context.GetCurrentSeq_feat()->GetDbxref(), str_cons);
+        if (seq_feat.CanGetDbxref()) {
+            str = GetDbxrefString(seq_feat.GetDbxref(), str_cons);
         }
         return str;
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_exception) || (is_illegal_qual && DoesStringMatchConstraint("exception", illegal_qual))) {
         /* exception */
-        if (context.GetCurrentSeq_feat()->CanGetExcept_text()) {
-            str = context.GetCurrentSeq_feat()->GetExcept_text();
+        if (seq_feat.CanGetExcept_text()) {
+            str = seq_feat.GetExcept_text();
         }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_evidence) || (is_illegal_qual && DoesStringMatchConstraint("evidence", illegal_qual))) {
         /* evidence */
-        if (context.GetCurrentSeq_feat()->CanGetExp_ev()) {
-            str = (context.GetCurrentSeq_feat()->GetExp_ev() == CSeq_feat::eExp_ev_experimental) ? "experimental" : "non-experimental";
+        if (seq_feat.CanGetExp_ev()) {
+            str = (seq_feat.GetExp_ev() == CSeq_feat::eExp_ev_experimental) ? "experimental" : "non-experimental";
         }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_citation) || (is_illegal_qual && DoesStringMatchConstraint("citation", illegal_qual))) {
         /* citation */ // ####?????
     //    str = GetCitationTextFromFeature (sfp, str_cons, batch_extra == NULL ? NULL : batch_extra->cit_list);
-        if (context.GetCurrentSeq_feat()->CanGetCit()) {
+        if (seq_feat.CanGetCit()) {
             str = kEmptyStr;
-            context.GetCurrentSeq_feat()->GetCit().GetLabel(&str);
+            seq_feat.GetCit().GetLabel(&str);
         }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_location) || (is_illegal_qual && DoesStringMatchConstraint("location", illegal_qual))) {
         /* location */
-        return SeqLocPrintUseBestID (context.GetCurrentSeq_feat()->GetLocation(), &context.GetScope());
+        return SeqLocPrintUseBestID(seq_feat.GetLocation(), &context.GetScope());
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_pseudo) || (is_illegal_qual && DoesStringMatchConstraint("pseudogene", illegal_qual))) {
         /* pseudo */
-        if (context.GetCurrentSeq_feat()->CanGetQual()) {
-            str = GetFirstGBQualMatch(context.GetCurrentSeq_feat()->GetQual(), "pseudogene", 0, str_cons);
-            if (str.empty() && context.GetCurrentSeq_feat()->CanGetPseudo() && context.GetCurrentSeq_feat()->GetPseudo()) {
+        if (seq_feat.CanGetQual()) {
+            str = GetFirstGBQualMatch(seq_feat.GetQual(), "pseudogene", 0, str_cons);
+            if (str.empty() && seq_feat.CanGetPseudo() && seq_feat.GetPseudo()) {
                 str = "unqualified";
             }
         }
@@ -2871,7 +2873,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
             }
         } 
         else if (seq_fdt.IsRna()) {
-            str = GetRNAProductString(*context.GetCurrentSeq_feat());
+            str = GetRNAProductString(seq_feat);
         }
     }
     else { /* Gene fields */
@@ -2909,7 +2911,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
         else if ((is_legal_qual && legal_qual == eFeat_qual_legal_synonym) || (is_illegal_qual && DoesStringMatchConstraint("synonym", illegal_qual))) {
             /* synonym */
             if (has_gene_ref && gene_ref->CanGetSyn()) {
-                return GetFirstStringMatch (gene_ref->GetSyn(), str_cons);
+                return GetFirstStringMatch(gene_ref->GetSyn(), str_cons);
             }
         }
         else if (is_legal_qual && legal_qual == eFeat_qual_legal_gene_comment) {
@@ -2943,7 +2945,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
                 /* transl_except */
                 if (is_legal_qual && legal_qual == eFeat_qual_legal_transl_except) {
                     if (has_cd) {
-                        return GetCodeBreakString(context);
+                        return GetCodeBreakString(seq_feat);
                     }
                 }
                 else if (is_legal_qual && legal_qual == eFeat_qual_legal_transl_table) {
@@ -2960,7 +2962,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
                 }
                 else if (is_legal_qual && legal_qual ==eFeat_qual_legal_translation) {
                     /* translation */  // try CSeqTranslator
-                    if (has_cd && context.GetCurrentSeq_feat()->CanGetProduct()) {
+                    if (has_cd && seq_feat.CanGetProduct()) {
                         if (prot_hl && prot_hl.CanGetInst_Length()) {
                             CSeqVector seq_vec = prot_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                             seq_vec.GetSeqData(0, prot_hl.GetInst_Length(), str);
@@ -3014,19 +3016,19 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
                         /* special region qualifiers */
                         str = seq_fdt.GetRegion();
                     } 
-                    else if (is_legal_qual && context.GetCurrentSeq_feat()->CanGetQual()) {
+                    else if (is_legal_qual && seq_feat.CanGetQual()) {
                         // actual GenBank qualifiers
                         string feat_qual_name = featquallegal_name[legal_qual];
                         bool has_subfield = (featquallegal_subfield.find(legal_qual) != featquallegal_subfield.end());
                         unsigned subfield = has_subfield ? featquallegal_subfield[legal_qual] : 0;
                         if (feat_qual_name != "name" || feat_qual_name !="location") {
                             // gbqual > -1
-                            return GetFirstGBQualMatch(context.GetCurrentSeq_feat()->GetQual(), feat_qual_name, subfield, str_cons);
+                            return GetFirstGBQualMatch(seq_feat.GetQual(), feat_qual_name, subfield, str_cons);
                         }
                     }
                     else {
                         //GetFirstGBQualMatchConstraintName:the arg qua_name=first->data.ptrval is 0?
-                        ITERATE (vector<CRef<CGb_qual> >, it, context.GetCurrentSeq_feat()->GetQual()) {
+                        ITERATE (vector<CRef<CGb_qual> >, it, seq_feat.GetQual()) {
                             str = (*it)->GetVal();
                             if (!str.empty() && DoesStringMatchConstraint(str, str_cons)) {
                                 return str;
@@ -3046,11 +3048,11 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
 }
 
 
-static string GetQualFromFeature(const CDiscrepancyContext& context, const CFeature_field& feat_field, const CString_constraint* str_cons)
+static string GetQualFromFeature(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CFeature_field& feat_field, const CString_constraint* str_cons)
 {
     EMacro_feature_type feat_field_type = feat_field.GetType();
-    if (eMacro_feature_type_any != feat_field_type && context.GetCurrentSeq_feat()->GetData().GetSubtype() != feattype_featdef[feat_field_type]) return (kEmptyStr);
-    return (GetQualFromFeatureAnyType(context, feat_field.GetField(), str_cons));
+    if (eMacro_feature_type_any != feat_field_type && seq_feat.GetData().GetSubtype() != feattype_featdef[feat_field_type]) return (kEmptyStr);
+    return GetQualFromFeatureAnyType(context, seq_feat, feat_field.GetField(), str_cons);
 }
 
 
@@ -3079,12 +3081,12 @@ static bool DoesFeatureMatchRnaType(const CSeq_feat& seq_feat, const CRna_feat_t
 }
 
 
-static string GetRNAQualFromFeature(const CDiscrepancyContext& context, const CRna_qual& rna_qual, const CString_constraint* str_cons)
+static string GetRNAQualFromFeature(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CRna_qual& rna_qual, const CString_constraint* str_cons)
 {
-    if (!context.GetCurrentSeq_feat()->GetData().IsRna() || !DoesFeatureMatchRnaType(*context.GetCurrentSeq_feat(), rna_qual.GetType())) return kEmptyStr;
+    if (!seq_feat.GetData().IsRna() || !DoesFeatureMatchRnaType(seq_feat, rna_qual.GetType())) return kEmptyStr;
     CFeat_qual_choice feat_qual;
     feat_qual.SetLegal_qual(rnafield_featquallegal[rna_qual.GetField()]);
-    return GetQualFromFeatureAnyType(context, feat_qual, str_cons);
+    return GetQualFromFeatureAnyType(context, seq_feat, feat_qual, str_cons);
 }
 
 
@@ -3313,7 +3315,7 @@ static string GetFieldValueForObjectEx(const CDiscrepancyContext& context, const
 }
 
 
-static string GetConstraintFieldFromObject(const CDiscrepancyContext& context, const CField_type& field, const CString_constraint* str_cons = 0)
+static string GetConstraintFieldFromObject(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CField_type& field, const CString_constraint* str_cons = 0)
 {
     string str(kEmptyStr);
     switch (field.Which()) {
@@ -3324,14 +3326,14 @@ static string GetConstraintFieldFromObject(const CDiscrepancyContext& context, c
             }
             break;
         case CField_type::e_Feature_field:
-            return GetQualFromFeature(context, field.GetFeature_field(), str_cons);
+            return GetQualFromFeature(context, seq_feat, field.GetFeature_field(), str_cons);
         case CField_type::e_Rna_field:
-            return GetRNAQualFromFeature(context, field.GetRna_field(), str_cons);
+            return GetRNAQualFromFeature(context, seq_feat, field.GetRna_field(), str_cons);
             break;
         case CField_type::e_Cds_gene_prot:
             {
                 CRef<CFeature_field> ff = FeatureFieldFromCDSGeneProtField(field.GetCds_gene_prot());
-                return  GetQualFromFeature(context, const_cast<CFeature_field&>(*ff), str_cons);
+                return  GetQualFromFeature(context, seq_feat, const_cast<CFeature_field&>(*ff), str_cons);
             }
             break;
         case CField_type::e_Molinfo_field:
@@ -3434,15 +3436,616 @@ static bool DoesCodingRegionMatchTranslationConstraint(const CDiscrepancyContext
 }
 
 
+static bool DoesObjectMatchFeatureFieldConstraint(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CFeature_field& feat_field, const CString_constraint& str_cons)
+{
+    if (IsStringConstraintEmpty (&str_cons)) return true;
+    CString_constraint tmp_cons;
+    tmp_cons.Assign(str_cons);
+    tmp_cons.SetNot_present(false);
+    string str = GetQualFromFeature(context, seq_feat, feat_field, &tmp_cons);
+    bool rval = str.empty() ? false : true;
+    if (str_cons.GetNot_present()) rval = !rval;
+    return rval;
+}
+
+
+static bool DoesObjectMatchRnaQualConstraint(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CRna_qual& rna_qual, const CString_constraint& str_cons)
+{
+    bool rval = false;
+    string str;
+    CString_constraint tmp_cons;
+    if (IsStringConstraintEmpty(&str_cons)) return true;
+    tmp_cons.Assign(str_cons);
+    tmp_cons.SetNot_present(false);
+    str = GetRNAQualFromFeature(context, seq_feat, rna_qual, &tmp_cons);
+    if (!str.empty()) rval = true;
+    if (str_cons.GetNot_present()) rval = !rval;
+    return rval;
+}
+
+
+static bool DoesObjectMatchFieldConstraint(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CField_constraint& field_cons)
+{
+    const CString_constraint& str_cons = field_cons.GetString_constraint();
+    if (IsStringConstraintEmpty (&str_cons)) return true;
+
+    bool rval = false;
+    string str(kEmptyStr);
+    const CField_type& field_type = field_cons.GetField();
+    switch (field_type.Which()) {
+        case CField_type::e_Source_qual:
+            {
+                const CBioSource* biosrc = sequence::GetBioSource(*context.GetCurrentBioseq());
+                if (biosrc) str = GetSrcQualValue4FieldType(*biosrc, field_type.GetSource_qual(), &str_cons);
+                if (!str.empty()) rval = true;
+            }
+            break;
+        case CField_type:: e_Feature_field:
+            {
+                const CFeature_field& feat_field = field_type.GetFeature_field();
+                rval = DoesObjectMatchFeatureFieldConstraint(context, seq_feat, feat_field, str_cons);
+            }
+            break;
+        case CField_type:: e_Rna_field:
+            rval = DoesObjectMatchRnaQualConstraint(context, seq_feat, field_type.GetRna_field(), str_cons);
+        case CField_type:: e_Cds_gene_prot:
+            {
+                CRef<CFeature_field> feat_field = FeatureFieldFromCDSGeneProtField (field_type.GetCds_gene_prot());
+                rval = DoesObjectMatchFeatureFieldConstraint(context, seq_feat, const_cast<CFeature_field&>(*feat_field), str_cons);
+            }
+            break;
+        case CField_type:: e_Molinfo_field:
+            if (context.GetCurrentBioseq()) {
+                str = GetSequenceQualFromBioseq(context, field_type.GetMolinfo_field());
+                if ((str.empty() && str_cons.GetNot_present()) || (!str.empty() && DoesStringMatchConstraint (str, &str_cons))) rval = true;
+            }
+            break;
+        case CField_type:: e_Misc:
+        case CField_type:: e_Dblink:
+            if (context.GetCurrentBioseq()) {
+                str = GetFieldValueForObjectEx(context, field_type, str_cons);
+                if (!str.empty()) rval = true;
+            }
+            break;
+        /* TODO LATER */ 
+        case CField_type:: e_Pub:
+            break;
+        default: break;
+    }
+    return rval; 
+}
+
+
+static CConstRef<CSeq_feat> GetGeneForFeature(const CDiscrepancyContext& context, const CSeq_feat& seq_feat)        // sema: must be a way to do it better
+{
+    const CGene_ref* gene = seq_feat.GetGeneXref();
+    if (gene && gene->IsSuppressed()) {
+        return (CConstRef <CSeq_feat>());
+    }
+
+    if (gene) {
+        CBioseq_Handle bioseq_hl =  sequence::GetBioseqFromSeqLoc(seq_feat.GetLocation(), context.GetScope());
+
+        if (!bioseq_hl) return CConstRef<CSeq_feat> ();
+        CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
+        if (gene->CanGetLocus_tag() && !gene->GetLocus_tag().empty()) {
+            CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
+            if (seq_feat_hl) return seq_feat_hl.GetOriginalSeq_feat();
+        }
+        else if (gene->CanGetLocus() && !gene->GetLocus().empty()) {
+            CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
+            if (seq_feat_hl) return seq_feat_hl.GetOriginalSeq_feat();
+        }
+        else return CConstRef <CSeq_feat>();
+    }
+    else {
+        return CConstRef<CSeq_feat>(GetBestOverlappingFeat(seq_feat.GetLocation(), CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope()));
+    }
+    return CConstRef <CSeq_feat>();
+}
+
+
+static void ListFeaturesInLocation(const CDiscrepancyContext& context, const CSeq_loc& seq_loc, CSeqFeatData::ESubtype subtype, vector <const CSeq_feat*> feat_list)
+{
+    unsigned loc_left = seq_loc.GetStart(eExtreme_Positional);
+    unsigned loc_right = seq_loc.GetStop(eExtreme_Positional);
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(subtype);
+    //for (CFeat_CI ci(m_bioseq_hl, sel); ci; ++ci) {
+    ITERATE(CBioseq::TAnnot, annot_it, context.GetCurrentBioseq()->GetAnnot()) {
+        if (!(*annot_it)->IsFtable()) continue;
+        ITERATE(CSeq_annot::TData::TFtable, feat_it, (*annot_it)->GetData().GetFtable()) {
+            if (1) continue;
+            //const CSeq_feat& feat = ci->GetOriginalFeature();
+            const CSeq_loc& feat_loc = (*feat_it)->GetLocation();
+            if (feat_loc.GetStart(eExtreme_Positional) > loc_right) break;
+            if (feat_loc.GetStop(eExtreme_Positional) < loc_left) continue;
+            sequence::ECompare loc_comp = sequence::Compare(feat_loc, seq_loc, &context.GetScope(), sequence::fCompareOverlapping);
+            if (loc_comp == sequence::eContained) feat_list.push_back(*feat_it);
+        }
+    }
+}
+
+
+static bool DoesFeatureMatchCGPPseudoConstraint(const CDiscrepancyContext& context, const CCDSGeneProt_pseudo_constraint& cgp_p_cons)
+{
+    bool any_pseudo = false;
+    const CSeqFeatData& sf_dt = context.GetCurrentSeq_feat()->GetData();
+    const CSeq_loc& sf_loc = context.GetCurrentSeq_feat()->GetLocation();
+    bool sf_is_pseudo = (context.GetCurrentSeq_feat()->CanGetPseudo() && context.GetCurrentSeq_feat()->GetPseudo());
+    switch (cgp_p_cons.GetFeature()) {
+        case eCDSGeneProt_feature_type_constraint_gene :
+            if (sf_dt.IsGene()) {
+                if (sf_is_pseudo) any_pseudo = true;
+            } 
+            else if (sf_dt.IsProt()) {
+                const CSeq_feat* cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq().GetPointer(), &context.GetScope());
+                if (cds) {
+                    CConstRef<CSeq_feat> gene = GetGeneForFeature(context, *cds);
+                    if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo()) any_pseudo = true;
+                }
+            } 
+            else {
+                CConstRef <CSeq_feat> gene = GetGeneForFeature(context, *context.GetCurrentSeq_feat());
+                if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo()) any_pseudo = true;
+            }
+            break;
+        case eCDSGeneProt_feature_type_constraint_mRNA :
+            {
+                CConstRef <CSeq_feat> mrna(0);
+                if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                    if (sf_is_pseudo) any_pseudo = true;
+                } 
+                else if (sf_dt.IsProt()) {
+                    const CSeq_feat* cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq().GetPointer(), &context.GetScope());
+                    if (!cds) {
+                        mrna = sequence::GetBestMrnaForCds(*cds, context.GetScope()); //GetmRNAforCDS (cds); above
+                        if (mrna.NotEmpty() && mrna->CanGetPseudo() && mrna->GetPseudo()) any_pseudo = true;
+                    }
+                } 
+                else {
+                    mrna = sequence::GetBestMrnaForCds(*context.GetCurrentSeq_feat(), context.GetScope()); // GetmRNAforCDS (sfp);
+                    if (mrna.NotEmpty() && mrna->CanGetPseudo() && mrna->GetPseudo()) any_pseudo = true;
+                }
+            }
+            break;
+        case eCDSGeneProt_feature_type_constraint_cds :
+            if (sf_dt.IsCdregion()) {
+                if (sf_is_pseudo) any_pseudo = true;
+            } 
+            else if (sf_dt.IsProt()) {
+                const CSeq_feat* cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq().GetPointer(), &context.GetScope());
+                if (cds && cds->CanGetPseudo() && cds->GetPseudo()) any_pseudo = true;
+            } 
+            else {
+                vector <const CSeq_feat*> feat_list;
+                ListFeaturesInLocation(context, sf_loc, CSeqFeatData::eSubtype_cdregion, feat_list);
+                ITERATE (vector <const CSeq_feat*>, it, feat_list) {
+                    if ((*it)->CanGetPseudo() && (*it)->GetPseudo()) {
+                        any_pseudo = true; 
+                        break;
+                    }
+                }
+                feat_list.clear();
+            }
+            break;
+        case eCDSGeneProt_feature_type_constraint_prot :
+            if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_prot) {
+                if (sf_is_pseudo) any_pseudo = true;
+            } 
+            else if (sf_dt.IsProt()) {
+                const CSeq_feat* prot = sequence::GetPROTForProduct(*context.GetCurrentBioseq().GetPointer(), &context.GetScope());  // mature prot
+                if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
+                    any_pseudo = true;
+                }
+            }
+            else if (sf_dt.IsCdregion()) {
+                if (context.GetCurrentSeq_feat()->CanGetProduct()) {
+                    const CSeq_feat* prot = sequence::GetPROTForProduct(sequence::GetBioseqFromSeqLoc(context.GetCurrentSeq_feat()->GetProduct(), context.GetScope()));
+                    if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
+                        any_pseudo = true;
+                    }
+                }
+            }
+            else {
+                vector <const CSeq_feat*> feat_list;
+                ListFeaturesInLocation(context, sf_loc, CSeqFeatData::eSubtype_cdregion, feat_list);
+                ITERATE (vector <const CSeq_feat*>, it, feat_list) {
+                    if ((*it)->CanGetProduct()) {
+                        const CSeq_feat* prot = sequence::GetPROTForProduct(sequence::GetBioseqFromSeqLoc((*it)->GetProduct(), context.GetScope()));
+                        if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
+                            any_pseudo = true;
+                            break;
+                        }
+                    }
+                }
+                feat_list.clear();
+            }
+            break;
+        case eCDSGeneProt_feature_type_constraint_mat_peptide :
+            if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_mat_peptide_aa) {
+                if (sf_is_pseudo) any_pseudo = true;
+            }
+            break;
+        default: break;
+    }
+
+    if ((any_pseudo && cgp_p_cons.GetIs_pseudo()) || (!any_pseudo && !cgp_p_cons.GetIs_pseudo())) return true;
+    else return false;
+}
+
+
+class CCGPSetData : public CObject          // sema: do we really need that??
+{
+public:
+    CCGPSetData() : cds(0), gene(0), mrna(0) {}
+    const CSeq_feat* cds;
+    const CSeq_feat* gene;
+    const CSeq_feat* mrna;
+    CConstRef <CSeq_feat> prot;
+    vector <const CSeq_feat*> mat_peptide_list;
+};
+
+
+static CConstRef<CSeq_feat> AddProtFeatForCds(const CSeq_feat& cd_feat, const CBioseq_Handle& protbsp)
+{
+    CRef <CSeq_id> prot_id (new CSeq_id());
+    prot_id->Assign(*(protbsp.GetId().front().GetSeqId()));
+    CRef <CSeq_feat> prot_feat(new CSeq_feat);
+    prot_feat->SetData().SetProt();
+    prot_feat->SetLocation().SetInt().SetId(*prot_id);
+    prot_feat->SetLocation().SetInt().SetFrom(0);
+    prot_feat->SetLocation().SetInt().SetTo(protbsp.GetInst_Length() - 1);
+    bool partial5 = cd_feat.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = cd_feat.GetLocation().IsPartialStop(eExtreme_Biological);
+    prot_feat->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+    prot_feat->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
+    if (partial5 || partial3) prot_feat->SetPartial(true);
+    else prot_feat->ResetPartial();
+    return prot_feat;
+}
+
+
+static void GetProtFromCodingRegion(const CDiscrepancyContext& context, CRef<CCGPSetData> cgp, const CSeq_feat& cd_feat)
+{
+    if (cd_feat.CanGetProduct()) {
+        CBioseq_Handle prot_bhl = sequence::GetBioseqFromSeqLoc(cd_feat.GetProduct(), context.GetScope());      // sema: @#$@!#$!...
+        if (prot_bhl) {
+            cgp->prot = sequence::GetPROTForProduct(prot_bhl);
+            /* if there is no full-length protein feature, make one */
+            if (cgp->prot.Empty())
+            {
+                cgp->prot = AddProtFeatForCds(cd_feat, prot_bhl);
+                // Why?       if (prot != NULL) ResynchCDSPartials (cds, NULL);
+            }
+            /* also add in mat_peptides from protein feature */
+            for (CFeat_CI fci(prot_bhl, SAnnotSelector(CSeqFeatData::eSubtype_mat_peptide_aa).SetByProduct()); fci; ++fci) {
+                cgp->mat_peptide_list.push_back(fci->GetSeq_feat());
+            }
+        }
+    }
+}
+
+
+static string GetFieldValueFromCGPSet(const CDiscrepancyContext& context, const CCGPSetData& c, ECDSGeneProt_field field, const CString_constraint* str_cons = 0)
+{
+    string str(kEmptyStr);
+    if (c.cds) {
+        switch (field) {
+            case eCDSGeneProt_field_cds_comment:
+            case eCDSGeneProt_field_cds_inference:
+            case eCDSGeneProt_field_codon_start:
+            {
+                CRef<CFeature_field> ffield = FeatureFieldFromCDSGeneProtField (field);
+                if (c.cds) str = GetQualFromFeature(context, *c.cds, const_cast<CFeature_field&>(*ffield), str_cons);
+                break;
+            }
+            case eCDSGeneProt_field_gene_locus:
+            case eCDSGeneProt_field_gene_inference:
+            {
+                CRef<CFeature_field> ffield = FeatureFieldFromCDSGeneProtField (field);
+                if (c.gene) str = GetQualFromFeature(context, *c.gene, const_cast<CFeature_field&>(*ffield), str_cons);
+                break;
+            }
+            default: break;
+        }
+    }
+    else if (c.gene) {
+        const CGene_ref& g_ref = c.gene->GetData().GetGene();
+        switch (field) {
+            case eCDSGeneProt_field_gene_description:
+                if (g_ref.CanGetDesc()) str = c.gene->GetData().GetGene().GetDesc();
+                break;
+            case eCDSGeneProt_field_gene_comment:
+                if (c.gene->CanGetComment()) str = c.gene->GetComment();
+                break;
+            case eCDSGeneProt_field_gene_allele:
+                if (g_ref.CanGetAllele()) str = c.gene->GetData().GetGene().GetAllele();
+                break;
+            case eCDSGeneProt_field_gene_maploc:
+                if (g_ref.CanGetMaploc()) str = c.gene->GetData().GetGene().GetMaploc();
+                break;
+            case eCDSGeneProt_field_gene_locus_tag:
+                if (g_ref.CanGetLocus_tag()) str = g_ref.GetLocus_tag();
+                break;
+            case eCDSGeneProt_field_gene_synonym:
+                if (g_ref.CanGetSyn()) str = GetFirstStringMatch(g_ref.GetSyn(), str_cons);
+                break;
+            case eCDSGeneProt_field_gene_old_locus_tag:
+                if (c.gene->CanGetQual()) str = GetFirstGBQualMatch(c.gene->GetQual(), "old_locus_tag", 0, str_cons);
+                break;
+            default: break;
+        }
+    }
+    else if (c.mrna) {
+        const CRNA_ref& r_ref = c.mrna->GetData().GetRna();
+        switch (field) {
+            case eCDSGeneProt_field_mrna_product:
+                if (r_ref.CanGetExt() && r_ref.GetExt().IsName()) str = r_ref.GetExt().GetName();
+                break; 
+            case eCDSGeneProt_field_mrna_comment:
+                if (c.mrna->CanGetComment()) str = c.mrna->GetComment();
+                break;
+            default: break;
+        }
+    }
+    else if (!c.prot) {
+        const CProt_ref& p_ref = c.prot->GetData().GetProt();
+        switch (field) {
+            case eCDSGeneProt_field_prot_name:
+                if (p_ref.CanGetName()) str = GetFirstStringMatch(p_ref.GetName(), str_cons);
+                break;
+            case eCDSGeneProt_field_prot_description:
+                if (p_ref.CanGetDesc()) str = p_ref.GetDesc();
+                break;
+            case eCDSGeneProt_field_prot_ec_number:
+                if (p_ref.CanGetEc()) str = GetFirstStringMatch(p_ref.GetEc(), str_cons);
+                break;
+            case eCDSGeneProt_field_prot_activity:
+                if (p_ref.CanGetActivity()) str = GetFirstStringMatch(p_ref.GetActivity(), str_cons);
+                break;
+            case eCDSGeneProt_field_prot_comment:
+                if (c.prot->CanGetComment()) str = c.prot->GetComment();
+                break;
+            default: break;
+        }
+    }
+    else if (!c.mat_peptide_list.empty()) {
+        switch (field) {
+            case eCDSGeneProt_field_mat_peptide_name:
+                ITERATE (vector <const CSeq_feat*>, it, c.mat_peptide_list) {
+                    if ((*it)->GetData().GetProt().CanGetName()) {
+                        str = GetFirstStringMatch((*it)->GetData().GetProt().GetName(), str_cons);
+                        if (!str.empty()) break;
+                    }
+                }
+                break;
+            case eCDSGeneProt_field_mat_peptide_description:
+                ITERATE (vector <const CSeq_feat*>, it, c.mat_peptide_list) {
+                    if ((*it)->GetData().GetProt().CanGetDesc()) {
+                        str = (*it)->GetData().GetProt().GetDesc();
+                        if (!str.empty() && DoesStringMatchConstraint(str, str_cons)) break;
+                    }
+                }
+                break;
+            case eCDSGeneProt_field_mat_peptide_ec_number:
+                ITERATE (vector <const CSeq_feat*>, it, c.mat_peptide_list) {
+                    if ((*it)->GetData().GetProt().CanGetEc()) {
+                        str = GetFirstStringMatch((*it)->GetData().GetProt().GetEc(), str_cons);
+                        if (!str.empty()) break;
+                    }
+                }
+                break;
+            case eCDSGeneProt_field_mat_peptide_activity:
+                ITERATE (vector <const CSeq_feat*>, it, c.mat_peptide_list) {
+                    if ((*it)->GetData().GetProt().CanGetActivity()) {
+                        str = GetFirstStringMatch((*it)->GetData().GetProt().GetActivity(), str_cons);
+                        if (!str.empty()) break;
+                    }
+                }
+                break;
+            case eCDSGeneProt_field_mat_peptide_comment:
+                ITERATE (vector <const CSeq_feat*>, it, c.mat_peptide_list) {
+                    if ((*it)->CanGetComment()) {
+                        str = (*it)->GetComment();
+                        if (!str.empty() && DoesStringMatchConstraint(str, str_cons)) break;
+                    }
+                }
+                break;
+            default: break;
+        }
+    }
+    if (str.empty() || !DoesStringMatchConstraint(str, str_cons)) str = kEmptyStr;
+    return str;
+}
+
+
+static bool CanGetFieldString(const CDiscrepancyContext& context, const CCGPSetData& c, const ECDSGeneProt_field field, const CString_constraint& str_cons)
+{
+    string str = GetFieldValueFromCGPSet(context, c, field, &str_cons);
+    if (str.empty()) {
+        if (str_cons.GetNot_present()) {
+            str = GetFieldValueFromCGPSet(context, c, field, 0);
+            if (str.empty()) return true;
+        }
+    }
+    else return true;
+    return false;
+}
+
+
+static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, const CCGPSetData& cgp, const CString_constraint& str_cons)
+{
+    // needed? if (scp == NULL) return TRUE;
+    /* CDS-Gene-Prot set */
+    bool all_match = true, any_match = false;
+    if (cgp.gene) {
+        //m_bioseq_hl = GetBioseqFromSeqLoc(cgp.gene->GetLocation(), *thisInfo.scope);      // sema: wtf was this for???
+        vector<string> strs;
+        GetStringsFromObject(*cgp.gene, strs);
+        if (DoesObjectMatchStringConstraint(context, *cgp.gene, strs, str_cons)) {
+            any_match = true;
+        }
+        else {
+            any_match = false;
+        }
+    }
+    if (cgp.cds && (!any_match || all_match)) {
+        vector<string> strs;
+        GetStringsFromObject(*cgp.cds, strs);
+        if (DoesObjectMatchStringConstraint(context, *cgp.cds, strs, str_cons)) {
+            any_match = true;
+        }
+        else {
+            all_match = false;
+        }
+    }
+    if (cgp.mrna && (!any_match || all_match)) {
+        vector<string> strs;
+        GetStringsFromObject(*cgp.mrna, strs);
+        if (DoesObjectMatchStringConstraint(context, *cgp.mrna, strs, str_cons)) {
+            any_match = true;
+        }
+        else {
+            all_match = false;
+        }
+    }
+    if (cgp.prot  && (!any_match || all_match)) {
+        vector<string> strs;
+        GetStringsFromObject(*cgp.prot, strs);
+        if (DoesObjectMatchStringConstraint(context, *cgp.prot, strs, str_cons)) any_match = true;
+        else all_match = false;
+    }
+    if (!any_match || all_match) {
+        ITERATE (vector <const CSeq_feat*>, it, cgp.mat_peptide_list) {
+            vector<string> strs;
+            GetStringsFromObject(**it, strs);
+            if (DoesObjectMatchStringConstraint(context, **it, strs, str_cons)) any_match = true;
+            else all_match = false;
+            if (any_match && !all_match) break;
+        }
+    }
+
+    if (str_cons.GetNot_present()) return all_match;
+    else return any_match;
+}
+
+
+static bool DoesCGPSetMatchQualConstraint(const CDiscrepancyContext& context, const CCGPSetData& c, const CCDSGeneProt_qual_constraint& cgp_cons)
+{
+    const CString_constraint* str_cons = cgp_cons.CanGetConstraint() ? &(cgp_cons.GetConstraint()) : 0; 
+    bool has_field1 = cgp_cons.CanGetField1() && cgp_cons.GetField1().IsField();
+    bool has_field2 = cgp_cons.CanGetField2() && cgp_cons.GetField2().IsField();
+    string str(kEmptyStr), str1, str2;
+    bool rval = false;
+    if (!str_cons || IsStringConstraintEmpty (str_cons)) {
+        /* looking for qual present */
+        if (has_field1 && !has_field2) {
+            str = GetFieldValueFromCGPSet(context, c, cgp_cons.GetField1().GetField());
+            if (!str.empty()) rval = true;
+        } 
+        else if (has_field2 && !has_field1) {
+            str = GetFieldValueFromCGPSet(context, c, cgp_cons.GetField2().GetField());
+            if (str.empty()) rval = false;
+        } 
+        else if (has_field1 && has_field2) { /* looking for quals to match */
+            str1 = GetFieldValueFromCGPSet(context, c, cgp_cons.GetField1().GetField());
+            str2 = GetFieldValueFromCGPSet(context, c, cgp_cons.GetField2().GetField());
+            if (str1 == str2) rval = true;
+        } 
+        else rval = true; /* nothing specified, automatic match */
+    } 
+    else {
+        if (has_field1 && !has_field2) {
+            rval = CanGetFieldString(context, c, cgp_cons.GetField1().GetField(), *str_cons);
+        } 
+        else if (has_field2 && !has_field1) {
+            rval = CanGetFieldString(context, c, cgp_cons.GetField2().GetField(), *str_cons);
+        } 
+        else if (has_field1 && has_field2 ) {
+            str1 = GetFieldValueFromCGPSet(context, c, cgp_cons.GetField1().GetField(), str_cons);
+            str2 = GetFieldValueFromCGPSet(context, c, cgp_cons.GetField2().GetField(), str_cons);
+            if (str1 == str2) {
+                rval = true;
+            }
+        } 
+        else {
+            /* generic string constraint */
+            rval = DoesObjectMatchStringConstraint(context, c, *str_cons);
+        }
+    }
+    return rval;
+}
+
+
+static string GetFieldValue(const CDiscrepancyContext& context, const CCGPSetData& cgp, const CSeq_feat& feat, ECDSGeneProt_field val, const CString_constraint* str_cons)
+{
+    string str;
+    if (val == eCDSGeneProt_field_mat_peptide_name
+            || val == eCDSGeneProt_field_mat_peptide_description
+            || val == eCDSGeneProt_field_mat_peptide_ec_number
+            || val == eCDSGeneProt_field_mat_peptide_activity
+            || val == eCDSGeneProt_field_mat_peptide_comment) {
+        CRef <CFeature_field> ff = FeatureFieldFromCDSGeneProtField (val);
+        str = GetQualFromFeature(context, feat, const_cast<CFeature_field&>(*ff), str_cons);
+    }
+    else str = GetFieldValueFromCGPSet(context, cgp, val, str_cons);
+    return str;
+}
+
+
+static bool DoesFeatureMatchCGPQualConstraint(const CDiscrepancyContext& context, const CCDSGeneProt_qual_constraint& cons)
+{
+    CRef<CCGPSetData> cgp_set(new CCGPSetData);
+    const CSeqFeatData& feat_dt = context.GetCurrentSeq_feat()->GetData();
+    if (feat_dt.IsCdregion() || feat_dt.IsProt()) {
+        if (feat_dt.IsProt()) cgp_set->cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq(), &context.GetScope());
+        else cgp_set->cds = context.GetCurrentSeq_feat();
+
+        cgp_set->gene = GetGeneForFeature(context, *(cgp_set->cds)).GetPointer(); // ??why return ref
+        cgp_set->mrna = sequence::GetBestMrnaForCds(*(cgp_set->cds), context.GetScope());
+
+        GetProtFromCodingRegion(context, cgp_set, *(cgp_set->cds));
+    }
+    else if (feat_dt.IsGene()) cgp_set->gene = context.GetCurrentSeq_feat();
+    else if (feat_dt.IsRna() && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        // c = BuildCGPSetFrommRNA (feat);
+        cgp_set->mrna = context.GetCurrentSeq_feat();
+        cgp_set->gene = GetGeneForFeature(context, *context.GetCurrentSeq_feat()).GetPointer();
+    }
+    if (!cgp_set->cds && !cgp_set->gene && !cgp_set->mrna && cgp_set->prot.Empty() && cgp_set->mat_peptide_list.empty()) return false;
+
+    bool rval = DoesCGPSetMatchQualConstraint(context, *cgp_set, cons);
+    bool has_field1_dt = (cons.CanGetField1() && cons.GetField1().IsField());
+    bool has_field2_dt = (cons.CanGetField2() && cons.GetField2().IsField());
+    string str1, str2;
+    const CString_constraint* str_cons = cons.CanGetConstraint() ? &(cons.GetConstraint()) : 0;
+    if (rval && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mat_peptide_aa) {
+        if (has_field1_dt) {
+            str1 = GetFieldValue(context, *cgp_set, *context.GetCurrentSeq_feat(), cons.GetField1().GetField(), str_cons);
+            if (str1.empty()) rval = false;
+        }
+        if (has_field2_dt) {
+            str2 = GetFieldValue(context, *cgp_set, *context.GetCurrentSeq_feat(), cons.GetField2().GetField(), str_cons);
+            if (str2.empty()) rval = false;
+        }
+        if (rval && cons.CanGetField1() && cons.CanGetField2() && str1 != str2) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
 static bool DoesObjectMatchConstraint(const CDiscrepancyContext& context, const vector <string>& strs, const CConstraint_choice& cons)
 {
     switch (cons.Which()) {
         case CConstraint_choice::e_String :
-            return DoesObjectMatchStringConstraint(context, strs, cons.GetString());
+            return DoesObjectMatchStringConstraint(context, *context.GetCurrentSeq_feat(), strs, cons.GetString());
         case CConstraint_choice::e_Location :
             return DoesFeatureMatchLocationConstraint(context, cons.GetLocation());
         case CConstraint_choice::e_Field :
-            ///return DoesObjectMatchFieldConstraint(context, cons.GetField());
+            return DoesObjectMatchFieldConstraint(context, *context.GetCurrentSeq_feat(), cons.GetField());
         case CConstraint_choice::e_Source :
             if (context.GetCurrentSeq_feat()->GetData().IsBiosrc()) {
                 return DoesBiosourceMatchConstraint(context.GetCurrentSeq_feat()->GetData().GetBiosrc(), cons.GetSource());
@@ -3457,9 +4060,9 @@ static bool DoesObjectMatchConstraint(const CDiscrepancyContext& context, const 
             }
             break;
         case CConstraint_choice::e_Cdsgeneprot_qual :
-            ///return DoesFeatureMatchCGPQualConstraint(context, cons.GetCdsgeneprot_qual());
+            return DoesFeatureMatchCGPQualConstraint(context, cons.GetCdsgeneprot_qual());
         case CConstraint_choice::e_Cdsgeneprot_pseudo :
-    ///        return DoesFeatureMatchCGPPseudoConstraint (data, cons.GetCdsgeneprot_pseudo());
+            return DoesFeatureMatchCGPPseudoConstraint(context, cons.GetCdsgeneprot_pseudo());
         case CConstraint_choice::e_Sequence :
             if (context.GetCurrentBioseq()) return DoesSequenceMatchSequenceConstraint(context, cons.GetSequence());
             break;
@@ -3469,7 +4072,7 @@ static bool DoesObjectMatchConstraint(const CDiscrepancyContext& context, const 
         case CConstraint_choice::e_Molinfo:
             return DoesObjectMatchMolinfoFieldConstraint(context, cons.GetMolinfo());
         case CConstraint_choice::e_Field_missing:
-            return GetConstraintFieldFromObject(context, cons.GetField_missing()).empty();
+            return GetConstraintFieldFromObject(context, *context.GetCurrentSeq_feat(), cons.GetField_missing()).empty();
         case CConstraint_choice::e_Translation:
             // must be coding region or protein feature
             if (context.GetCurrentSeq_feat()->GetData().IsProt()) {
