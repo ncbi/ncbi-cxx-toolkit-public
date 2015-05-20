@@ -410,7 +410,10 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     } else {
         app_reg_config.reset(FindSection(default_config_sections,
                     config->GetTree(), &section));
-        config = app_reg_config.get();
+
+        if (app_reg_config.get()) {
+            config = app_reg_config.get();
+        }
     }
 
     m_ServiceName = service_name;
