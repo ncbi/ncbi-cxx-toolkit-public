@@ -233,10 +233,6 @@ use m_NewCleanup.BiosourceBC { BioSource }
 use m_NewCleanup.x_PostBiosource { POST BioSource }
 use m_NewCleanup.x_ModernizePCRPrimers { POST BioSource }
 use m_NewCleanup.PCRReactionSetBC { BioSource.pcr-primers }
-use m_NewCleanup.x_GBQualToOrgRef {  
-    Seq-feat.data.org AND Seq-feat ,
-    Seq-feat.data.biosrc.org AND Seq-feat
-}
 use m_NewCleanup.x_CleanupOrgModAndSubSourceOther { BioSource.org.orgname AND BioSource }
 
 use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat }
@@ -247,6 +243,11 @@ use m_NewCleanup.x_ExpandCombinedQuals { Seq-feat.qual }
 
 use m_NewCleanup.OrgrefBC { Org-ref }
 use m_NewCleanup.x_PostOrgRef { POST Org-ref }
+
+use m_NewCleanup.x_GBQualToOrgRef {  
+    Seq-feat.data.org AND Seq-feat ,
+    Seq-feat.data.biosrc.org AND Seq-feat
+}
 
 use m_NewCleanup.x_DateStdBC { Date-std }
 
