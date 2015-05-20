@@ -897,7 +897,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                     " overhanging bases on source location");
                 src_total_len -= src_total_len % 3;
             }
-            if (dst_total_len*3 != src_total_len) {
+            // Allow partial codon mismatch
+            if (dst_total_len*3 >= src_total_len + 3  ||
+                dst_total_len*3 + 3 <= src_total_len) {
                 ERR_POST_X(31, Warning <<
                     "Source and destination lengths do not match.");
             }
@@ -915,7 +917,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                     " overhanging bases on destination location");
                 dst_total_len -= dst_total_len % 3;
             }
-            if (src_total_len*3 != dst_total_len) {
+            // Allow partial codon mismatch
+            if (src_total_len*3 >= dst_total_len + 3  ||
+                src_total_len*3 + 3 <= dst_total_len) {
                 ERR_POST_X(31, Warning <<
                     "Source and destination lengths do not match.");
            }
