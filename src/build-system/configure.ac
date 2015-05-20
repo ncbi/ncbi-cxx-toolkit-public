@@ -4133,7 +4133,7 @@ AC_PATH_PROG(LIBGNUTLS_CONFIG, libgnutls-config, [], [$gnutls_config_path])
 if test "x$with_gnutls" != xno; then
    if test -x "$LIBGNUTLS_CONFIG"; then
       if test -z "$GNUTLS_PATH"; then
-         p=`libgnutls-config --prefix`
+         p=`$LIBGNUTLS_CONFIG --prefix`
          test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
       fi
    else
