@@ -1045,6 +1045,17 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2164)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_4111)
+{
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China:, Guangdong Province, Guangzhou City, Tianlu Lake Forest Park", false), 
+                      "China: Guangdong Province, Guangzhou City, Tianlu Lake Forest Park");
+
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China", false), "China");
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China: ,", false), "China");
+    BOOST_CHECK_EQUAL(CCountries::CountryFixupItem("China: Guangdong Province", false), "China: Guangdong Province");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_GB_3965)
 {
     bool ambig = false;

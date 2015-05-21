@@ -3484,16 +3484,25 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
 {
     string country = NewFixCountry (input);
     string new_country = country;
-    SIZE_TYPE pos = NStr::Find(country,":");
-    if (pos != NPOS)
+    SIZE_TYPE country_end_pos = NStr::Find(country,":");
+    if (country_end_pos != NPOS)
     {
-        string after = country.substr(pos+1);
-        if (!after.empty())
+        SIZE_TYPE pos = country_end_pos;
+        while (country.c_str()[pos] == ',' || country.c_str()[pos] == ':' 
+               || isspace(country.c_str()[pos])) 
         {
+            pos++;
+        }
+        string after = country.substr(pos);
+        if (after.empty()) {
+            if (pos > country_end_pos) {
+                new_country = country.substr(0, country_end_pos);
+            }
+        } else {
             NStr::TruncateSpacesInPlace(after,NStr::eTrunc_Begin);
             if (capitalize_after_colon) 
                 after = CapitalizeFirstLetterOfEveryWord (after);
-            new_country = country.substr(0,pos);
+            new_country = country.substr(0,country_end_pos);
             new_country += ": " + after;
         }
     }
