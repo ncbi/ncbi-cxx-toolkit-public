@@ -913,11 +913,11 @@ typedef int TSignedSeqPos;
 ///
 /// Use this typedef rather than its expansion, which may change.
 
-//#define NCBI_STRICT_GI
-//#define NCBI_INT8_GI
+#define NCBI_STRICT_GI
+#define NCBI_INT8_GI
 
 #ifdef NCBI_STRICT_GI
-#define NCBI_INT8_GI
+# define NCBI_INT8_GI
 #endif
 
 #ifdef NCBI_INT8_GI
@@ -954,22 +954,48 @@ public:
     CStrictGi& operator=(TIntId value) { m_Gi = value; return *this; }
     operator TIntId(void) const { return m_Gi; }
 
+#ifdef NCBI_INT8_GI
+# ifdef NCBI_TEST_APPLICATION
+    CStrictGi(Int4 value) : m_Gi(value) {}
+    CStrictGi& operator=(Int4 value) { m_Gi = value; return *this; }
+    bool operator==(Int4 value) const { return m_Gi == value; }
+# else
     explicit CStrictGi(Int4 value) : m_Gi(value) {}
+# endif
+#endif
 
     operator bool(void) const { return m_Gi != 0; }
-    bool operator!(void) const { return m_Gi == 0; }
 
 private:
-    CStrictGi& operator=(Int4);
-    operator Int4(void) const;
-
+    CStrictGi(Int1);
+    CStrictGi(Uint1);
+    CStrictGi(Int2);
+    CStrictGi(Uint2);
     CStrictGi(Uint4);
-    CStrictGi& operator=(Uint4);
-    operator Uint4(void) const;
-
     CStrictGi(Uint8);
+    CStrictGi(float);
+    CStrictGi(double);
+    CStrictGi& operator=(Int1);
+    CStrictGi& operator=(Uint1);
+    CStrictGi& operator=(Int2);
+    CStrictGi& operator=(Uint2);
+    CStrictGi& operator=(Uint4);
     CStrictGi& operator=(Uint8);
+    CStrictGi& operator=(float);
+    CStrictGi& operator=(double);
+    operator Int1(void) const;
+    operator Uint1(void) const;
+    operator Int2(void) const;
+    operator Uint2(void) const;
+#ifdef NCBI_INT8_GI
+# ifndef NCBI_TEST_APPLICATION
+    operator Int4(void) const;
+# endif
+#endif
+    operator Uint4(void) const;
     operator Uint8(void) const;
+    operator float(void) const;
+    operator double(void) const;
 
 private:
     TIntId m_Gi;
