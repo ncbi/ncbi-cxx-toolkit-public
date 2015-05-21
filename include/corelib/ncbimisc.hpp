@@ -913,8 +913,8 @@ typedef int TSignedSeqPos;
 ///
 /// Use this typedef rather than its expansion, which may change.
 
-#define NCBI_STRICT_GI
-#define NCBI_INT8_GI
+//#define NCBI_STRICT_GI
+//#define NCBI_INT8_GI
 
 #ifdef NCBI_STRICT_GI
 # define NCBI_INT8_GI
@@ -953,6 +953,7 @@ public:
     CStrictGi(TIntId value) : m_Gi(value) {}
     CStrictGi& operator=(TIntId value) { m_Gi = value; return *this; }
     operator TIntId(void) const { return m_Gi; }
+    bool operator==(TIntId value) const { return m_Gi == value; }
 
 #ifdef NCBI_INT8_GI
 # ifdef NCBI_TEST_APPLICATION
