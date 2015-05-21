@@ -139,56 +139,232 @@ static const string ok_num_prefix[] = {
 static const string months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 static const string dblink_names[] = { "Trace Assembly Archive", "BioSample", "ProbeDB", "Sequence Read Archive", "BioProject,Assembly" };
 
-static map<ESource_qual, string> srcqual_names;                 // sema: need to initialize!
-static map<int, string> genome_names;                           // sema: need to initialize!
-static map<ESource_qual, COrgMod::ESubtype> srcqual_orgmod;     // sema: need to initialize!
-static map<ESource_qual, CSubSource::ESubtype> srcqual_subsrc;  // sema: need to initialize!
+static map<ESource_qual, COrgMod::ESubtype> srcqual_orgmod;
+static map<ESource_qual, CSubSource::ESubtype> srcqual_subsrc;
+static map<ESource_qual, string> srcqual_names;
+static map<int, string> genome_names;
 static map<ESequence_constraint_rnamol, CMolInfo::EBiomol> scrna_mirna;
 static map<EMacro_feature_type, CSeqFeatData::ESubtype> feattype_featdef;
-static map<string, string> pub_class_quals;                     // sema: need to initialize!
-static map<EMolecule_type, CMolInfo::EBiomol> moltp_biomol;     // sema: need to initialize!
-static map<ETechnique_type, CMolInfo::ETech> techtp_mitech;     // sema: need to initialize!
-static map<EFeat_qual_legal, string> featquallegal_name;        // sema: need to initialize!
-static map<EFeat_qual_legal, unsigned> featquallegal_subfield;  // sema: need to initialize!
+static map<string, string> pub_class_quals;
+static map<EMolecule_type, CMolInfo::EBiomol> moltp_biomol;
+static map<ETechnique_type, CMolInfo::ETech> techtp_mitech;
+static map<EFeat_qual_legal, string> featquallegal_name;
+static map<EFeat_qual_legal, unsigned> featquallegal_subfield;
 static map<CRna_feat_type::E_Choice, CRNA_ref::EType> rnafeattp_rnareftp;
-static map<ERna_field, EFeat_qual_legal> rnafield_featquallegal;// sema: need to initialize!
-static map<CSeq_inst::EMol, string> mol_molname;                // sema: need to initialize!
-static map<CSeq_inst::EStrand, string> strand_strname;          // sema: need to initialize!
+static map<ERna_field, EFeat_qual_legal> rnafield_featquallegal;
+static map<CSeq_inst::EMol, string> mol_molname;
+static map<CSeq_inst::EStrand, string> strand_strname;
 
 static void InitMaps()
 {
     static bool ready = false;
     if(ready) return;
-/*
-    map<string, COrgMod::ESubtype> orgmodnm_subtp;
+
+    // ini of srcqual_orgmod, srcqual_subsrc, srcqual_names
+    map <string, ESource_qual> srcnm_qual;
+    map <string, COrgMod::ESubtype> orgmodnm_subtp;
+    for (size_t i = eSource_qual_acronym; i <= eSource_qual_type_material; i++) {
+        string strtmp = ENUM_METHOD_NAME(ESource_qual)()->FindName(i, true);
+        if (!strtmp.empty()) {
+            srcnm_qual[strtmp] = (ESource_qual)i;
+            if (strtmp == "bio-material-INST")  strtmp = "bio-material-inst";
+            else if (strtmp == "bio-material-COLL")  strtmp = "bio-material-coll";
+            else if (strtmp == "bio-material-SpecID") strtmp = "bio-material-specid";
+            else if (strtmp == "common-name") strtmp = "common name";
+            else if (strtmp == "culture-collection-INST") strtmp = "culture-collection-inst";
+            else if (strtmp == "culture-collection-COLL") strtmp = "culture-collection-coll";
+            else if (strtmp == "culture-collection-SpecID") strtmp = "culture-collection-specid";
+            else if (strtmp == "orgmod-note") strtmp = "note-orgmod";
+            else if (strtmp == "nat-host") strtmp = "host";
+            else if (strtmp == "subsource-note") strtmp = "sub-species";
+            else if (strtmp == "all-notes") strtmp = "All Notes";
+            else if (strtmp == "all-quals") strtmp = "All";
+            else if (strtmp == "all-primers") strtmp = "All Primers";
+            srcqual_names[(ESource_qual)i] = strtmp;
+        }
+    }
+
+    map<string, CSubSource::ESubtype> subsrcnm_subtp;
+    for (size_t i = CSubSource::eSubtype_chromosome; i<= CSubSource::eSubtype_altitude; i++) {
+       string strtmp = CSubSource::ENUM_METHOD_NAME(ESubtype)()->FindName(i, true);
+       if (!strtmp.empty()) subsrcnm_subtp[strtmp] = (CSubSource::ESubtype)i;
+    }
+
     typedef map <string, ESource_qual> maptp;
     ITERATE (maptp, it, srcnm_qual) {
-        if (orgmodnm_subtp.find(it->first) != orgmodnm_subtp.end()) {
-            srcqual_orgmod[it->second] = orgmodnm_subtp[it->first];
-        }
-        else if (it->first == "bio-material-INST" || it->first == "bio-material-COLL" || it->first == "bio-material-SpecID") {
-            srcqual_orgmod[it->second] = orgmodnm_subtp["bio-material"]; 
-        }
-        else if (it->first == "culture-collection-INST" || it->first == "culture-collection-COLL" || it->first == "culture-collection-SpecID") {
-            srcqual_orgmod[it->second] = orgmodnm_subtp["culture-collection"];
-        }
-        else if (subsrcnm_subtp.find(it->first) != subsrcnm_subtp.end()) {
-            srcqual_subsrc[it->second] = subsrcnm_subtp[it->first];
-        }
-        else if (it->first == "subsource-note") {
-            srcqual_subsrc[it->second] = CSubSource::eSubtype_other;
-        }
+       if (orgmodnm_subtp.find(it->first) != orgmodnm_subtp.end()) srcqual_orgmod[it->second] = orgmodnm_subtp[it->first];
+       else if (it->first == "bio-material-INST" || it->first == "bio-material-COLL" || it->first == "bio-material-SpecID") srcqual_orgmod[it->second] = orgmodnm_subtp["bio-material"]; 
+       else if (it->first == "culture-collection-INST" || it->first == "culture-collection-COLL" || it->first == "culture-collection-SpecID") srcqual_orgmod[it->second] = orgmodnm_subtp["culture-collection"];
+       else if (subsrcnm_subtp.find(it->first) != subsrcnm_subtp.end()) srcqual_subsrc[it->second] = subsrcnm_subtp[it->first];
+       else if (it->first == "subsource-note") srcqual_subsrc[it->second] = CSubSource::eSubtype_other;
     } 
 
-
+   // ini. of srcloc_names & genome_names;
     for (size_t i = eSource_location_unknown; i <= eSource_location_chromatophore; i++) {
         string strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
         strtmp = (strtmp == "unknown") ? kEmptyStr : ((strtmp == "extrachrom") ? "extrachromosomal" : strtmp);
-        //thisInfo.srcloc_names[(ESource_location)i] = strtmp;
+        //srcloc_names[(ESource_location)i] = strtmp;
         genome_names[i] = strtmp;
     }
 
-*/
+    // ini of scrna_mirna
+    for (size_t i = eSequence_constraint_rnamol_genomic; i <= eSequence_constraint_rnamol_transfer_messenger_RNA; i++) {
+        string strtmp = ENUM_METHOD_NAME(ESequence_constraint_rnamol)()->FindName(i, true);
+        if (!strtmp.empty()) {
+            strtmp = (strtmp == "precursor-RNA") ? "pre-RNA" : ((strtmp == "transfer-messenger-RNA") ? "tmRNA" : strtmp);
+            scrna_mirna[(ESequence_constraint_rnamol)i] = (CMolInfo::EBiomol)CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
+        }
+    }
+
+    // ini of feattype_featdef & feattype_name
+    for (size_t i = eMacro_feature_type_any; i <= eMacro_feature_type_mobile_element; i++) {
+        string strtmp = ENUM_METHOD_NAME(EMacro_feature_type)()->FindName(i, true);
+        string tmp = strtmp;
+        if (strtmp == "cds") { strtmp == "cdregion"; tmp = "CDS";}
+        else if (strtmp == "prot") tmp = "Protein";
+        else if (strtmp == "otherRNA") tmp = "misc_RNA";
+        else if (strtmp == "c-region") strtmp = "C-region";
+        else if (strtmp == "caat-signal") strtmp = "CAAT-signal";
+        else if (strtmp == "imp-CDS") strtmp = "Imp-CDS";
+        else if (strtmp == "d-loop") strtmp = "D-loop";
+        else if (strtmp == "d-segment") strtmp = "D-segment";
+        else if (strtmp == "gC-signal") strtmp = "GC-signal";
+        else if (strtmp == "j-segmrnt") strtmp = "J-segment";
+        else if (strtmp == "ltr") strtmp = tmp = "LTR";  
+        else if (strtmp == "misc-RNA") strtmp = "otherRNA";
+        else if (strtmp == "precursor-RNA") strtmp = "preRNA";
+        else if (strtmp == "rbs") strtmp = "RBS";
+        else if (strtmp == "s-region") strtmp = "S-region";
+        else if (strtmp == "sts") strtmp = "STS";
+        else if (strtmp == "tata-signal") strtmp = "TATA-signal";
+        else if (strtmp == "v-region") strtmp = "V-region";
+        else if (strtmp == "v-segment") strtmp = "V-segment";
+        else if (strtmp == "n35-signal") strtmp = tmp = "35-signal";
+        else if (strtmp == "n10-signal") strtmp = tmp = "10-signal";
+        else if (strtmp.find("n3") != string::npos || strtmp.find("n5") != string::npos) {
+            strtmp = strtmp[1] + strtmp.substr(2);
+            tmp = strtmp[1] + (string)"'" + strtmp.substr(2);
+        }
+        feattype_featdef[(EMacro_feature_type)i] = CSeqFeatData::SubtypeNameToValue(strtmp);
+        //vector<string> arr = NStr::Tokenize(tmp, "_", arr);
+        //if (!arr.empty()) tmp = NStr::Join(arr, "-");
+        //feattype_name[(EMacro_feature_type)i] = tmp;
+    }
+
+    // ini of pub_class_quals
+    ostringstream output;
+    output << CPub::e_Gen << ePub_type_unpublished << 0;
+    pub_class_quals[output.str()] = "unpublished";
+    output.clear(); output << CPub::e_Sub << ePub_type_in_press << 0;
+    pub_class_quals[output.str()] = "in-press submission";
+    output.clear(); output << CPub::e_Sub << ePub_type_published << 0;
+    pub_class_quals[output.str()] = "submission";
+    output.clear(); output << CPub::e_Article << ePub_type_in_press << 1;
+    pub_class_quals[output.str()] = "in-press journal";
+    output.clear(); output << CPub::e_Article << ePub_type_published << 1;
+    pub_class_quals[output.str()] = "journal";
+    output.clear(); output << CPub::e_Article << ePub_type_in_press << 2;
+    pub_class_quals[output.str()] = "in-press book chapter";
+    output.clear(); output << CPub::e_Article << ePub_type_published << 2;
+    pub_class_quals[output.str()] = "book chapter";
+    output.clear(); output << CPub::e_Article << ePub_type_in_press << 3;
+    pub_class_quals[output.str()] = "in-press proceedings chapter";
+    output.clear(); output << CPub::e_Article << ePub_type_published << 3;
+    pub_class_quals[output.str()] = "proceedings chapter";
+    output.clear(); output << CPub::e_Book << ePub_type_in_press << 0;
+    pub_class_quals[output.str()] = "in-press book";
+    output.clear(); output << CPub::e_Book << ePub_type_published << 0;
+    pub_class_quals[output.str()] = "book";
+    output.clear(); output << CPub::e_Man << ePub_type_in_press << 0;
+    pub_class_quals[output.str()] = "in-press thesis";
+    output.clear(); output << CPub::e_Man << ePub_type_published << 0;
+    pub_class_quals[output.str()] = "thesis";
+    output.clear(); output << CPub::e_Proc << ePub_type_in_press << 0;
+    pub_class_quals[output.str()] = "in-press proceedings";
+    output.clear(); output << CPub::e_Proc << ePub_type_published << 0;
+    pub_class_quals[output.str()] = "proceedings";
+    output.clear(); output << CPub::e_Patent << ePub_type_any << 0;
+    pub_class_quals[output.str()] = "patent";
+
+    // ini of moltp_biomol: BiomolFromMoleculeType(), and moltp_name
+    for (size_t i = eMolecule_type_unknown; i <= eMolecule_type_macro_other; i++) {
+        string strtmp = ENUM_METHOD_NAME(EMolecule_type)()->FindName(i, true);
+        if (!strtmp.empty()) {
+            //string tmp = strtmp; 
+            strtmp = (strtmp == "precursor-RNA") ? "pre-RNA" : ((strtmp == "transfer-messenger-RNA") ? "tmRNA" : ((strtmp == "macro-other") ? "other": strtmp));
+            moltp_biomol[(EMolecule_type)i] = (CMolInfo::EBiomol)CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
+            //if (tmp == "macro-other") tmp = "other-genetic";
+            //else if (tmp == "transfer_messenger_RNA") tmp = strtmp;
+            //else if (tmp.find("-") != string::npos) tmp = NStr::Replace (tmp, "-", " ");
+            //moltp_name[(EMolecule_type)i] = tmp;
+        }
+    }
+
+    // ini of techtp_mitech: TechFromTechniqueType(), and techtp_name
+    for (size_t i = eTechnique_type_unknown; i <= eTechnique_type_other; i++) {
+        string strtmp = ENUM_METHOD_NAME(ETechnique_type)()->FindName(i, true);
+        if (!strtmp.empty()) {
+            string tmp = strtmp;
+            strtmp = (strtmp == "genetic-map") ? "genemap" : ((strtmp == "physical-map")? "physmap" : ((strtmp == "fli-cDNA") ? "fli-cdna" : strtmp));
+            techtp_mitech[(ETechnique_type)i] = (CMolInfo::ETech)CMolInfo::ENUM_METHOD_NAME(ETech)()->FindValue(strtmp);
+            //if (tmp == "ets" || tmp == "sts" || tmp == "htgs-1" || tmp == "htgs-2" || tmp == "htgs-3" || tmp == "htgs-0" || tmp == "htc" || tmp == "WGS" || tmp == "barcode" || tmp == "tsa") tmp = NStr::ToUpper(tmp);
+            //else if (tmp == "composite-wgs-htgs") tmp = "composite-wgs-htgs";
+            //techtp_name[(ETechnique_type)i] = tmp;
+        }
+    }
+
+    // ini featquallegal_name, featquallegal_subfield;
+    for (size_t i= eFeat_qual_legal_allele; i<= eFeat_qual_legal_pcr_conditions; i++) {
+        string strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
+        unsigned subfield=0;
+        if (strtmp == "mobile-element-type-type") { strtmp = "mobile-element-type"; subfield = 1;}
+        else if (strtmp == "mobile-element-name") { strtmp = "mobile-element-type"; subfield = 2;}
+        else if (strtmp == "satellite-type") { strtmp = "satellite"; subfield = 1;}
+        else if (strtmp == "satellite-name") { strtmp = "satellite"; subfield = 2;}
+        else if (strtmp == "ec-number") strtmp = "EC-number";
+        else if (strtmp == "pcr-conditions") strtmp = "PCR-conditions";
+        else if (strtmp == "pseudo") strtmp = "pseudogene";
+        if (!strtmp.empty()) featquallegal_name[(EFeat_qual_legal)i] = strtmp;
+        if (subfield) featquallegal_subfield[(EFeat_qual_legal)i] = subfield;
+    }
+
+    // ini. of rnafeattp_rnareftp
+    for (size_t i = CRna_feat_type::e_PreRNA; i <= CRna_feat_type::e_RRNA; i++) rnafeattp_rnareftp[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i-1);
+    for (size_t i = CRna_feat_type::e_NcRNA; i <= CRna_feat_type::e_MiscRNA; i++) rnafeattp_rnareftp[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i+2); 
+
+    // ini of rnafield_featquallegal & rnafield_names
+    for (size_t i = eRna_field_product; i<= eRna_field_tag_peptide; i++) {
+        string rnafield_val = ENUM_METHOD_NAME(ERna_field)()->FindName(i, true);
+        if (rnafield_val == "comment") rnafield_val = "note";
+        else if (rnafield_val == "ncrna-class") rnafield_val = "ncRNA-class";
+        else if (rnafield_val == "gene-locus") rnafield_val = "gene";
+        else if (rnafield_val == "gene-maploc") rnafield_val = "map";
+        else if (rnafield_val == "gene-locus-tag") rnafield_val = "locus-tag";
+        else if (rnafield_val == "gene-synonym") rnafield_val = "synonym";
+        rnafield_featquallegal[(ERna_field)i] = (EFeat_qual_legal)(ENUM_METHOD_NAME(EFeat_qual_legal)()->FindValue(rnafield_val));
+        //vector<string> arr;
+        //if (strtmp.find("-") != string::npos) arr = NStr::Tokenize(strtmp, "-", arr);
+        //else arr.push_back(strtmp);
+        //if (arr[0] == "ncrna") arr[0] = "ncRNA";
+        //else if (arr.size() >=2 && arr[1] == "id") arr[1] = "ID";
+        //rnafield_names[(ERna_field)i] = NStr::Join(arr, " ");
+    }
+
+    // ini of mol_molname
+    mol_molname[CSeq_inst::eMol_not_set] = kEmptyStr;
+    mol_molname[CSeq_inst::eMol_dna] = "DNA";
+    mol_molname[CSeq_inst::eMol_rna] = "RNA";
+    mol_molname[CSeq_inst::eMol_aa] = "protein";
+    mol_molname[CSeq_inst::eMol_na] = "nucleotide";
+    mol_molname[CSeq_inst::eMol_other] = "other";
+
+    // ini of strand_strname
+    strand_strname[CSeq_inst::eStrand_not_set] = kEmptyStr;
+    strand_strname[CSeq_inst::eStrand_ss] = "single";
+    strand_strname[CSeq_inst::eStrand_ds] = "double";
+    strand_strname[CSeq_inst::eStrand_mixed] = "mixed";
+    strand_strname[CSeq_inst::eStrand_other] = "other";
+
     ready = true;
 }
 
