@@ -226,6 +226,8 @@ struct SNetScheduleAPIImpl : public CObject
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
 
+    ~SNetScheduleAPIImpl();
+
     CNetScheduleServerListener* GetListener()
     {
         return static_cast<CNetScheduleServerListener*>(
@@ -286,7 +288,6 @@ struct SNetScheduleAPIImpl : public CObject
 
     void AllocNotificationThread();
     void StartNotificationThread();
-    void StopNotificationThread();
 
     // Unregister client-listener. After this call, the
     // server will not try to send any notification messages or
@@ -561,13 +562,9 @@ struct SNetScheduleJobReaderImpl : public CObject
 
     CNetScheduleAPI m_API;
 
-    CAtomicCounter_WithAutoInit m_NotificationThreadIsRunning;
-
     void x_StartNotificationThread()
     {
-        if (m_NotificationThreadIsRunning.Get() == 0 &&
-                m_NotificationThreadIsRunning.Add(1) == 1)
-            m_API->StartNotificationThread();
+        m_API->StartNotificationThread();
     }
 
     string m_JobGroup;
@@ -588,8 +585,6 @@ struct SNetScheduleJobReaderImpl : public CObject
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
         const CTimeout* timeout);
-
-    virtual ~SNetScheduleJobReaderImpl();
 
 private:
     CServerTimeline m_Timeline;

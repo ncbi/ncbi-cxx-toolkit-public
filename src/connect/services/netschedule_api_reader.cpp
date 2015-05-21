@@ -85,12 +85,6 @@ CServerTimeline::CServerTimeline() :
     m_ImmediateActions.Push(m_DiscoveryAction);
 }
 
-SNetScheduleJobReaderImpl::~SNetScheduleJobReaderImpl()
-{
-    if (m_NotificationThreadIsRunning.Get() != 0)
-        m_API->StopNotificationThread();
-}
-
 // True if a job is returned.
 static bool s_ParseReadJobResponse(const string& response,
         CNetScheduleJob& job,

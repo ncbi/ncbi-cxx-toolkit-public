@@ -350,7 +350,7 @@ void SNetScheduleAPIImpl::StartNotificationThread()
         m_NotificationThread->Run();
 }
 
-void SNetScheduleAPIImpl::StopNotificationThread()
+SNetScheduleAPIImpl::~SNetScheduleAPIImpl()
 {
     if (m_NotificationThreadStartStopCounter.Add(-1) == 0) {
         CFastMutexGuard guard(m_NotificationThreadMutex);
@@ -918,7 +918,6 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 
 CNetScheduleExecutor CNetScheduleAPI::GetExecutor()
 {
-    m_Impl->AllocNotificationThread();
     return new SNetScheduleExecutorImpl(m_Impl);
 }
 
