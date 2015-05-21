@@ -126,34 +126,8 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         NStr::Equal(variable, CONFIG_DUMP_VARIABLE);
 #endif
 
-    if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app  &&  app->HasLoadedConfig() ) {
-            const string& str = app->GetConfig().Get(section, variable);
-            if ( !str.empty() ) {
-                try {
-                    bool value = s_StringToBool(str);
-#ifdef _DEBUG
-                    if ( is_config_dump ) {
-                        s_ConfigDump = value;
-                    }
-                    if ( s_CanDumpConfig() ) {
-                        DUMP_CONFIG(5, "NCBI_CONFIG: bool variable"
-                                       " [" << section << "]"
-                                       " " << variable <<
-                                       " = " << value <<
-                                       " from registry");
-                    }
-#endif
-                    return value;
-                }
-                catch ( ... ) {
-                    // ignored
-                }
-            }
-        }
-    }
+    // Check the environment first - if the name is customized CNcbiRegistry
+    // will not find it and can use INI file value instead.
     const TXChar* str = s_GetEnv(section, variable, env_var_name);
     if ( str && *str ) {
         try {
@@ -183,6 +157,35 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         }
         catch ( ... ) {
             // ignored
+        }
+    }
+
+    if ( section  &&  *section ) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app  &&  app->HasLoadedConfig() ) {
+            const string& str = app->GetConfig().Get(section, variable);
+            if ( !str.empty() ) {
+                try {
+                    bool value = s_StringToBool(str);
+#ifdef _DEBUG
+                    if ( is_config_dump ) {
+                        s_ConfigDump = value;
+                    }
+                    if ( s_CanDumpConfig() ) {
+                        DUMP_CONFIG(5, "NCBI_CONFIG: bool variable"
+                                       " [" << section << "]"
+                                       " " << variable <<
+                                       " = " << value <<
+                                       " from registry");
+                    }
+#endif
+                    return value;
+                }
+                catch ( ... ) {
+                    // ignored
+                }
+            }
         }
     }
     bool value = default_value;
@@ -215,31 +218,8 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                                      const char* env_var_name,
                                      int default_value)
 {
-    if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app  &&  app->HasLoadedConfig() ) {
-            const string& str = app->GetConfig().Get(section, variable);
-            if ( !str.empty() ) {
-                try {
-                    int value = NStr::StringToInt(str);
-#ifdef _DEBUG
-                    if ( s_CanDumpConfig() ) {
-                        DUMP_CONFIG(10, "NCBI_CONFIG: int variable"
-                                        " [" << section << "]"
-                                        " " << variable <<
-                                        " = " << value <<
-                                        " from registry");
-                    }
-#endif
-                    return value;
-                }
-                catch ( ... ) {
-                    // ignored
-                }
-            }
-        }
-    }
+    // Check the environment first - if the name is customized CNcbiRegistry
+    // will not find it and can use INI file value instead.
     const TXChar* str = s_GetEnv(section, variable, env_var_name);
     if ( str && *str ) {
         try {
@@ -266,6 +246,32 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
         }
         catch ( ... ) {
             // ignored
+        }
+    }
+
+    if ( section  &&  *section ) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app  &&  app->HasLoadedConfig() ) {
+            const string& str = app->GetConfig().Get(section, variable);
+            if ( !str.empty() ) {
+                try {
+                    int value = NStr::StringToInt(str);
+#ifdef _DEBUG
+                    if ( s_CanDumpConfig() ) {
+                        DUMP_CONFIG(10, "NCBI_CONFIG: int variable"
+                                        " [" << section << "]"
+                                        " " << variable <<
+                                        " = " << value <<
+                                        " from registry");
+                    }
+#endif
+                    return value;
+                }
+                catch ( ... ) {
+                    // ignored
+                }
+            }
         }
     }
     int value = default_value;
@@ -295,33 +301,8 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
                                            const char* env_var_name,
                                            double default_value)
 {
-    if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app  &&  app->HasLoadedConfig() ) {
-            const string& str = app->GetConfig().Get(section, variable);
-            if ( !str.empty() ) {
-                try {
-                    double value = NStr::StringToDouble(str,
-                        NStr::fDecimalPosixOrLocal |
-                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-#ifdef _DEBUG
-                    if ( s_CanDumpConfig() ) {
-                        DUMP_CONFIG(10, "NCBI_CONFIG: double variable"
-                                        " [" << section << "]"
-                                        " " << variable <<
-                                        " = " << value <<
-                                        " from registry");
-                    }
-#endif
-                    return value;
-                }
-                catch ( ... ) {
-                    // ignored
-                }
-            }
-        }
-    }
+    // Check the environment first - if the name is customized CNcbiRegistry
+    // will not find it and can use INI file value instead.
     const TXChar* str = s_GetEnv(section, variable, env_var_name);
     if ( str && *str ) {
         try {
@@ -352,6 +333,34 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
             // ignored
         }
     }
+
+    if ( section  &&  *section ) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app  &&  app->HasLoadedConfig() ) {
+            const string& str = app->GetConfig().Get(section, variable);
+            if ( !str.empty() ) {
+                try {
+                    double value = NStr::StringToDouble(str,
+                        NStr::fDecimalPosixOrLocal |
+                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+#ifdef _DEBUG
+                    if ( s_CanDumpConfig() ) {
+                        DUMP_CONFIG(10, "NCBI_CONFIG: double variable"
+                                        " [" << section << "]"
+                                        " " << variable <<
+                                        " = " << value <<
+                                        " from registry");
+                    }
+#endif
+                    return value;
+                }
+                catch ( ... ) {
+                    // ignored
+                }
+            }
+        }
+    }
     double value = default_value;
 #ifdef _DEBUG
     if ( s_CanDumpConfig() ) {
@@ -379,25 +388,8 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* env_var_name,
                                            const char* default_value)
 {
-    if ( section  &&  *section ) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app  &&  app->HasLoadedConfig() ) {
-            const string& value = app->GetConfig().Get(section, variable);
-            if ( !value.empty() ) {
-#ifdef _DEBUG
-                if ( s_CanDumpConfig() ) {
-                    DUMP_CONFIG(15, "NCBI_CONFIG: str variable"
-                                    " [" << section << "]"
-                                    " " << variable <<
-                                    " = \"" << value << "\""
-                                    " from registry");
-                }
-#endif
-                return value;
-            }
-        }
-    }
+    // Check the environment first - if the name is customized CNcbiRegistry
+    // will not find it and can use INI file value instead.
     const TXChar* value = s_GetEnv(section, variable, env_var_name);
     if ( value ) {
 #ifdef _DEBUG
@@ -419,6 +411,26 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
         }
 #endif
         return _T_STDSTRING(value);
+    }
+
+    if ( section  &&  *section ) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app  &&  app->HasLoadedConfig() ) {
+            const string& value = app->GetConfig().Get(section, variable);
+            if ( !value.empty() ) {
+#ifdef _DEBUG
+                if ( s_CanDumpConfig() ) {
+                    DUMP_CONFIG(15, "NCBI_CONFIG: str variable"
+                                    " [" << section << "]"
+                                    " " << variable <<
+                                    " = \"" << value << "\""
+                                    " from registry");
+                }
+#endif
+                return value;
+            }
+        }
     }
     const char* dvalue = default_value? default_value: "";
 #ifdef _DEBUG
