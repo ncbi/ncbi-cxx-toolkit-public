@@ -3015,6 +3015,11 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         keys.insert("DLL_DEP");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_User, keys);
     }}
+    {{
+        set<string> keys;
+        SMakeProjectT::DoResolveDefs(resolver, makefiles.m_In, keys);
+        SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Dll, keys);
+    }}
 }
 
 
