@@ -155,10 +155,62 @@ static map<ERna_field, EFeat_qual_legal> rnafield_featquallegal;// sema: need to
 static map<CSeq_inst::EMol, string> mol_molname;                // sema: need to initialize!
 static map<CSeq_inst::EStrand, string> strand_strname;          // sema: need to initialize!
 
+static void InitMaps()
+{
+    static bool ready = false;
+    if(ready) return;
+/*
+    map<string, COrgMod::ESubtype> orgmodnm_subtp;
+    typedef map <string, ESource_qual> maptp;
+    ITERATE (maptp, it, srcnm_qual) {
+        if (orgmodnm_subtp.find(it->first) != orgmodnm_subtp.end()) {
+            srcqual_orgmod[it->second] = orgmodnm_subtp[it->first];
+        }
+        else if (it->first == "bio-material-INST" || it->first == "bio-material-COLL" || it->first == "bio-material-SpecID") {
+            srcqual_orgmod[it->second] = orgmodnm_subtp["bio-material"]; 
+        }
+        else if (it->first == "culture-collection-INST" || it->first == "culture-collection-COLL" || it->first == "culture-collection-SpecID") {
+            srcqual_orgmod[it->second] = orgmodnm_subtp["culture-collection"];
+        }
+        else if (subsrcnm_subtp.find(it->first) != subsrcnm_subtp.end()) {
+            srcqual_subsrc[it->second] = subsrcnm_subtp[it->first];
+        }
+        else if (it->first == "subsource-note") {
+            srcqual_subsrc[it->second] = CSubSource::eSubtype_other;
+        }
+    } 
 
-typedef map<string, string> Str2Str;
+
+    for (size_t i = eSource_location_unknown; i <= eSource_location_chromatophore; i++) {
+        string strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
+        strtmp = (strtmp == "unknown") ? kEmptyStr : ((strtmp == "extrachrom") ? "extrachromosomal" : strtmp);
+        //thisInfo.srcloc_names[(ESource_location)i] = strtmp;
+        genome_names[i] = strtmp;
+    }
+
+*/
+    ready = true;
+}
+
+
+static map<ESource_qual, string>& Get_srcqual_names()                           { InitMaps(); return srcqual_names; }
+static map<int, string> Get_genome_names()                                      { InitMaps(); return genome_names; }
+static map<ESource_qual, COrgMod::ESubtype> Get_srcqual_orgmod()                { InitMaps(); return srcqual_orgmod; }
+static map<ESource_qual, CSubSource::ESubtype> Get_srcqual_subsrc()             { InitMaps(); return srcqual_subsrc; }
+static map<ESequence_constraint_rnamol, CMolInfo::EBiomol> Get_scrna_mirna()    { InitMaps(); return scrna_mirna; }
+static map<EMacro_feature_type, CSeqFeatData::ESubtype> Get_feattype_featdef()  { InitMaps(); return feattype_featdef; }
+static map<string, string> Get_pub_class_quals()                                { InitMaps(); return pub_class_quals; }
+static map<EMolecule_type, CMolInfo::EBiomol> Get_moltp_biomol()                { InitMaps(); return moltp_biomol; }
+static map<ETechnique_type, CMolInfo::ETech> Get_techtp_mitech()                { InitMaps(); return techtp_mitech; }
+static map<EFeat_qual_legal, string> Get_featquallegal_name()                   { InitMaps(); return featquallegal_name; }
+static map<EFeat_qual_legal, unsigned> Get_featquallegal_subfield()             { InitMaps(); return featquallegal_subfield; }
+static map<CRna_feat_type::E_Choice, CRNA_ref::EType> Get_rnafeattp_rnareftp()  { InitMaps(); return rnafeattp_rnareftp; }
+static map<ERna_field, EFeat_qual_legal> Get_rnafield_featquallegal()           { InitMaps(); return rnafield_featquallegal; }
+static map<CSeq_inst::EMol, string> Get_mol_molname()                           { InitMaps(); return mol_molname; }
+static map<CSeq_inst::EStrand, string> Get_strand_strname()                     { InitMaps(); return strand_strname; }
 
 void GetSeqFeatLabel(const CSeq_feat&, string&);
+typedef map<string, string> Str2Str;
 
 
 static bool IsStringConstraintEmpty(const CString_constraint* constraint)
@@ -1605,7 +1657,7 @@ static string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name,
         ret_str = Get1SubSrcValue(biosrc, qual_name);
     }
     else if (qual_name == "location") {
-        ret_str = genome_names[biosrc.GetGenome()];
+        ret_str = Get_genome_names()[biosrc.GetGenome()];
     }
     else if (qual_name == "taxname") {
         ret_str = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
@@ -1698,7 +1750,7 @@ static string GetSrcQualValue4FieldType(const CBioSource& biosrc, const CSource_
         case CSource_qual_choice::e_Textqual:
             {
                 ESource_qual text_qual= src_qual.GetTextqual();
-                string qual_name = srcqual_names[text_qual];
+                string qual_name = Get_srcqual_names()[text_qual];
                 bool is_subsrc = IsSubsrcQual(text_qual);
                 str = GetSrcQualValue(biosrc, qual_name, is_subsrc, str_cons);
             }
@@ -1714,17 +1766,17 @@ static string GetSrcQualValue4FieldType(const CBioSource& biosrc, const CSource_
 
 static bool IsNonTextSourceQualPresent(const CBioSource& biosrc, ESource_qual srcqual)
 {
-    if (srcqual_orgmod.find(srcqual) != srcqual_orgmod.end()) {
+    if (Get_srcqual_orgmod().find(srcqual) != Get_srcqual_orgmod().end()) {
         if (biosrc.IsSetOrgMod()) {
             ITERATE (list<CRef<COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
-                if ((*it)->GetSubtype() == srcqual_orgmod[srcqual]) return true;
+                if ((*it)->GetSubtype() == Get_srcqual_orgmod()[srcqual]) return true;
             }
         }
     }
-    else if (srcqual_subsrc.find(srcqual) != srcqual_subsrc.end()) {
+    else if (Get_srcqual_subsrc().find(srcqual) != Get_srcqual_subsrc().end()) {
         if (biosrc.CanGetSubtype()) {
             ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
-                if ( (*it)->GetSubtype() == srcqual_subsrc[srcqual] ) return true;
+                if ( (*it)->GetSubtype() == Get_srcqual_subsrc()[srcqual] ) return true;
             }
         }
     }
@@ -2100,7 +2152,7 @@ static bool DoesSequenceMatchSequenceConstraint(const CDiscrepancyContext& conte
                 if (seq_cons.GetSeqtype().GetRna() != eSequence_constraint_rnamol_any) {
                     const CMolInfo* mol = sequence::GetMolInfo(*context.GetCurrentBioseq());
                     if (!mol) return false;
-                    if (scrna_mirna[seq_cons.GetSeqtype().GetRna()] != mol->GetBiomol()) return false;
+                    if (Get_scrna_mirna()[seq_cons.GetSeqtype().GetRna()] != mol->GetBiomol()) return false;
                 }
                 break;
             case CSequence_constraint_mol_type_constraint::e_Protein :
@@ -2111,7 +2163,7 @@ static bool DoesSequenceMatchSequenceConstraint(const CDiscrepancyContext& conte
     }
 
     if (seq_cons.GetFeature() != eMacro_feature_type_any) {
-        if (seq_cons.CanGetNum_type_features() && !DoesFeatureCountMatchQuantityConstraint(context, feattype_featdef[seq_cons.GetFeature()], seq_cons.GetNum_type_features())) return false;
+        if (seq_cons.CanGetNum_type_features() && !DoesFeatureCountMatchQuantityConstraint(context, Get_feattype_featdef()[seq_cons.GetFeature()], seq_cons.GetNum_type_features())) return false;
     }
 
     if (seq_cons.CanGetId() && !IsStringConstraintEmpty(&seq_cons.GetId()) && !DoesSeqIDListMeetStringConstraint(context.GetCurrentBioseq()->GetId(), seq_cons.GetId())) return false;
@@ -2193,10 +2245,10 @@ static string GetPubclassFromPub(const CPub& the_pub)
     output << the_pub.Which() << GetPubMLStatus(the_pub) << (the_pub.IsArticle() ? the_pub.GetArticle().GetFrom().Which() :  0);
   
     string strtmp = output.str();
-    if (pub_class_quals.find(strtmp) != pub_class_quals.end()) return pub_class_quals[strtmp];
+    if (Get_pub_class_quals().find(strtmp) != Get_pub_class_quals().end()) return Get_pub_class_quals()[strtmp];
     else {
         string map_str;
-        ITERATE (Str2Str, it, pub_class_quals) {
+        ITERATE (Str2Str, it, Get_pub_class_quals()) {
             map_str = it->first;
             if (strtmp[0] == map_str[0] && (strtmp[1] == map_str[1] || strtmp[1] == '0' || map_str[1] == '0') && (strtmp[2] == map_str[2] || strtmp[2] == '0' || map_str[2] == '0')) return it->second;
         }
@@ -2649,14 +2701,14 @@ static bool DoesObjectMatchMolinfoFieldConstraint(const CDiscrepancyContext& con
         case CMolinfo_field::e_Molecule:
             if (!mol && mol_field.GetMolecule() == eMolecule_type_unknown) {
                 return true;
-            } else if (mol && mol->GetBiomol() == moltp_biomol[mol_field.GetMolecule()]) {
+            } else if (mol && mol->GetBiomol() == Get_moltp_biomol()[mol_field.GetMolecule()]) {
                 return true; 
             }
             break;
         case CMolinfo_field::e_Technique:
             if (!mol && mol_field.GetTechnique() == eTechnique_type_unknown) {
                 return true;
-            } else if (mol && mol->GetTech() == techtp_mitech[mol_field.GetTechnique()]) {
+            } else if (mol && mol->GetTech() == Get_techtp_mitech()[mol_field.GetTechnique()]) {
                 return true;
             }
             break;
@@ -3018,9 +3070,9 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
                     } 
                     else if (is_legal_qual && seq_feat.CanGetQual()) {
                         // actual GenBank qualifiers
-                        string feat_qual_name = featquallegal_name[legal_qual];
-                        bool has_subfield = (featquallegal_subfield.find(legal_qual) != featquallegal_subfield.end());
-                        unsigned subfield = has_subfield ? featquallegal_subfield[legal_qual] : 0;
+                        string feat_qual_name = Get_featquallegal_name()[legal_qual];
+                        bool has_subfield = (Get_featquallegal_subfield().find(legal_qual) != Get_featquallegal_subfield().end());
+                        unsigned subfield = has_subfield ? Get_featquallegal_subfield()[legal_qual] : 0;
                         if (feat_qual_name != "name" || feat_qual_name !="location") {
                             // gbqual > -1
                             return GetFirstGBQualMatch(seq_feat.GetQual(), feat_qual_name, subfield, str_cons);
@@ -3051,7 +3103,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
 static string GetQualFromFeature(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CFeature_field& feat_field, const CString_constraint* str_cons)
 {
     EMacro_feature_type feat_field_type = feat_field.GetType();
-    if (eMacro_feature_type_any != feat_field_type && seq_feat.GetData().GetSubtype() != feattype_featdef[feat_field_type]) return (kEmptyStr);
+    if (eMacro_feature_type_any != feat_field_type && seq_feat.GetData().GetSubtype() != Get_feattype_featdef()[feat_field_type]) return (kEmptyStr);
     return GetQualFromFeatureAnyType(context, seq_feat, feat_field.GetField(), str_cons);
 }
 
@@ -3062,7 +3114,7 @@ static bool DoesFeatureMatchRnaType(const CSeq_feat& seq_feat, const CRna_feat_t
     if (rna_type.IsAny()) return true;
     const CRNA_ref& rna_ref = seq_feat.GetData().GetRna();
 
-    if (rna_ref.GetType() == rnafeattp_rnareftp[rna_type.Which()]) {
+    if (rna_ref.GetType() == Get_rnafeattp_rnareftp()[rna_type.Which()]) {
         switch (rna_type.Which()) {
             case CRna_feat_type::e_NcRNA:
                 if (rna_type.GetNcRNA().empty()) rval = true;
@@ -3085,7 +3137,7 @@ static string GetRNAQualFromFeature(const CDiscrepancyContext& context, const CS
 {
     if (!seq_feat.GetData().IsRna() || !DoesFeatureMatchRnaType(seq_feat, rna_qual.GetType())) return kEmptyStr;
     CFeat_qual_choice feat_qual;
-    feat_qual.SetLegal_qual(rnafield_featquallegal[rna_qual.GetField()]);
+    feat_qual.SetLegal_qual(Get_rnafield_featquallegal()[rna_qual.GetField()]);
     return GetQualFromFeatureAnyType(context, seq_feat, feat_qual, str_cons);
 }
 
@@ -3197,13 +3249,13 @@ static string GetSequenceQualFromBioseq(const CDiscrepancyContext& context, cons
             str = CMolInfo::ENUM_METHOD_NAME(ECompleteness)()->FindName(molinfo->GetCompleteness(), true);
             break;
         case CMolinfo_field::e_Mol_class:
-            if (context.GetCurrentBioseq()->GetInst().CanGetMol()) str = mol_molname[context.GetCurrentBioseq()->GetInst().GetMol()];
+            if (context.GetCurrentBioseq()->GetInst().CanGetMol()) str = Get_mol_molname()[context.GetCurrentBioseq()->GetInst().GetMol()];
             break;
         case CMolinfo_field::e_Topology:
             if (context.GetCurrentBioseq()->GetInst().CanGetTopology()) str = CSeq_inst::ENUM_METHOD_NAME(ETopology)()->FindName(context.GetCurrentBioseq()->GetInst().GetTopology(), true);
             break;
         case CMolinfo_field::e_Strand:
-            if (context.GetCurrentBioseq()->GetInst().CanGetStrand()) str = strand_strname[context.GetCurrentBioseq()->GetInst().GetStrand()];
+            if (context.GetCurrentBioseq()->GetInst().CanGetStrand()) str = Get_strand_strname()[context.GetCurrentBioseq()->GetInst().GetStrand()];
             break;
         default: break;
     }
@@ -3545,17 +3597,17 @@ static CConstRef<CSeq_feat> GetGeneForFeature(const CDiscrepancyContext& context
 }
 
 
-static void ListFeaturesInLocation(const CDiscrepancyContext& context, const CSeq_loc& seq_loc, CSeqFeatData::ESubtype subtype, vector <const CSeq_feat*> feat_list)
+static void ListFeaturesInLocation(const CDiscrepancyContext& context, const CSeq_loc& seq_loc, CSeqFeatData::ESubtype subtype, vector<const CSeq_feat*> feat_list)
 {
     unsigned loc_left = seq_loc.GetStart(eExtreme_Positional);
     unsigned loc_right = seq_loc.GetStop(eExtreme_Positional);
-    SAnnotSelector sel;
-    sel.IncludeFeatSubtype(subtype);
+    //SAnnotSelector sel;
+    //sel.IncludeFeatSubtype(subtype);
     //for (CFeat_CI ci(m_bioseq_hl, sel); ci; ++ci) {
     ITERATE(CBioseq::TAnnot, annot_it, context.GetCurrentBioseq()->GetAnnot()) {
         if (!(*annot_it)->IsFtable()) continue;
         ITERATE(CSeq_annot::TData::TFtable, feat_it, (*annot_it)->GetData().GetFtable()) {
-            if (1) continue;
+            if ((*feat_it)->GetData().GetSubtype() != subtype) continue;
             //const CSeq_feat& feat = ci->GetOriginalFeature();
             const CSeq_loc& feat_loc = (*feat_it)->GetLocation();
             if (feat_loc.GetStart(eExtreme_Positional) > loc_right) break;
@@ -4114,7 +4166,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
     const CProt_ref& prot = obj->GetProt();
     string prot_name = *(prot.GetName().begin()); 
 
-    ITERATE (list <CRef <CSuspect_rule> >, rule, rules->Get()) {
+    ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {
         const CSearch_func& find = (*rule)->GetFind();
         if (!MatchesSearchFunc(prot_name, find)) continue;
         if ((*rule)->CanGetExcept()) {
@@ -4165,7 +4217,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData)
     const CProt_ref& prot = obj->GetProt();
     string prot_name = *(prot.GetName().begin()); 
 
-    ITERATE (list <CRef <CSuspect_rule> >, rule, rules->Get()) {
+    ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {
         const CSearch_func& find = (*rule)->GetFind();
         if (!MatchesSearchFunc(prot_name, find)) continue;
         if ((*rule)->CanGetExcept()) {
