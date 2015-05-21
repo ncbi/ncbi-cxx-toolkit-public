@@ -1967,4 +1967,73 @@ class Scenario1545( TestBase ):
         return True
 
 
+class Scenario1600( TestBase ):
+    " Scenario 1600 "
 
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with a1, CHRAFF as identified (add a0, a2), " \
+               "READ2 reader_aff = 1 affinity_may_change=1/0"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1600' )
+        ns_client.set_client_identification( 'node', 'session' )
+        execAny( ns_client, "CHRAFF add=a0,a2" )
+
+        receivedJobID = self.ns.getJob( 'TEST', -1, 'a1' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+
+        output = execAny( ns_client,
+                          'READ2 reader_aff=1 any_aff=0 affinity_may_change=1' )
+        if output != "no_more_jobs=false":
+            raise Exception( "Expect no more jobs == false, but received: " + output )
+        output = execAny( ns_client,
+                          'READ2 reader_aff=1 any_aff=0 affinity_may_change=0' )
+        if output != "no_more_jobs=true":
+            raise Exception( "Expect no more jobs == true, but received: " + output )
+        return True
+
+class Scenario1601( TestBase ):
+    " Scenario 1601 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with g1 " \
+               "READ2 g='g2' group_may_change=1/0"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', group='g1' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1601' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+
+        output = execAny( ns_client,
+                          'READ2 reader_aff=0 any_aff=1 group=g2 group_may_change=1' )
+        if output != "no_more_jobs=false":
+            raise Exception( "Expect no more jobs == false, but received: " + output )
+        output = execAny( ns_client,
+                          'READ2 reader_aff=0 any_aff=1 group=g2 group_may_change=0' )
+        if output != "no_more_jobs=true":
+            raise Exception( "Expect no more jobs == true, but received: " + output )
+        return True

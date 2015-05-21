@@ -37,11 +37,12 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.21.1"
+latestNetscheduleVersion = "4.22.0"
 
 READ2_tests = [
     50, 108, 109, 110, 115, 116, 144, 148, 150, 151, 153, 154, 155, 156,
-    157, 158, 159, 162, 166, 167, 168, 172, 173, 174, 175, 500, 502
+    157, 158, 159, 162, 166, 167, 168, 172, 173, 174, 175, 500, 502,
+    1600, 1601
 ]
 
 # The map below describes what tests should be excluded for a certain
@@ -147,14 +148,20 @@ excludeTestsMap = \
                   1530, 1531, 1532, 1533, 1534, 1535, 1536, 1537, 1538, 1539,
                   1540, 1541, 1542, 1543, 1544, 1545 ],
     "4.20.0":   [ 801,
-                  1202, 1203, 1204 ],
+                  1202, 1203, 1204,
+                  1600, 1601 ],
     "4.20.1":   [ 801,
-                  1202, 1203, 1204 ],
+                  1202, 1203, 1204,
+                  1600, 1601 ],
     "4.20.2":   [ 801,
-                  1202, 1203, 1204 ],
+                  1202, 1203, 1204,
+                  1600, 1601 ],
     "4.21.0":   [ 801,
-                  1202, 1203, 1204 ],
-    "4.21.1":   [ 801 ],
+                  1202, 1203, 1204,
+                  1600, 1601 ],
+    "4.21.1":   [ 801,
+                  1600, 1601 ],
+    "4.22.0":   [ 801 ],
 }
 
 
@@ -657,6 +664,9 @@ def main():
               pack_4_18.Scenario1543( netschedule ),
               pack_4_18.Scenario1544( netschedule ),
               pack_4_18.Scenario1545( netschedule ),
+
+              pack_4_18.Scenario1600( netschedule ),
+              pack_4_18.Scenario1601( netschedule ),
             ]
 
     # Calculate the start test index

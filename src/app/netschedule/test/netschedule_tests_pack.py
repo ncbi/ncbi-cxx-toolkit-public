@@ -9,7 +9,8 @@ Netschedule server tests pack
 """
 
 import time
-from ncbi_grid_1_0.ncbi.grid import ns, ipc
+from ncbi_grid_1_0.ncbi.grid import ns
+#, ipc
 
 
 def execAny( ns, cmd, serverIndex = 0, isMultiline = False ):
