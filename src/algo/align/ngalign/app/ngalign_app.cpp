@@ -60,7 +60,7 @@
 #include <algo/align/ngalign/banded_aligner.hpp>
 #include <algo/align/ngalign/merge_aligner.hpp>
 //#include <algo/align/ngalign/coverage_aligner.hpp>
-#include <algo/align/ngalign/overlap_aligner.hpp>
+//#include <algo/align/ngalign/overlap_aligner.hpp>
 #include <algo/align/ngalign/inversion_merge_aligner.hpp>
 #include <algo/align/ngalign/alignment_scorer.hpp>
 #include <algo/align/ngalign/unordered_spliter.hpp>
@@ -468,7 +468,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -490,7 +490,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -512,7 +512,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -534,7 +534,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < 50) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -954,7 +954,7 @@ CNgAlignApp::x_CreateRemoteBlastAligner(IRegistry* RunRegistry, const string& Na
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
 	//int Filter = RunRegistry->GetInt(Name, "filter", -1);
 
-	const CArgs& Args = GetArgs();	
+	//const CArgs& Args = GetArgs();
 	
 
 	CRef<CRemoteBlastAligner> Blaster;
