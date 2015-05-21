@@ -27,7 +27,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 11024
+          tag str "HGNC:11024"
         },
         {
           db "HPRD",
@@ -463,7 +463,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 2195
+          tag str "HGNC:2195"
         },
         {
           db "MIM",
@@ -1724,7 +1724,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 14005
+          tag str "HGNC:14005"
         },
         {
           db "MIM",
@@ -1962,7 +1962,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 2195
+          tag str "HGNC:2195"
         },
         {
           db "MIM",
@@ -7070,6 +7070,7 @@ Seq-annot ::= {
         locus "MIR155",
         desc "microRNA 155",
         syn {
+          "mir-155",
           "MIRN155",
           "miRNA155"
         }
@@ -7090,7 +7091,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 31542
+          tag str "HGNC:31542"
         },
         {
           db "MIM",
@@ -7378,6 +7379,10 @@ Seq-annot ::= {
         {
           db "miRBase",
           tag str "MI0011289"
+        },
+        {
+          db "GeneID",
+          tag id 12798493
         }
       }
     },
@@ -7498,6 +7503,10 @@ Seq-annot ::= {
         {
           db "FLYBASE",
           tag str "FBgn0085813"
+        },
+        {
+          db "GeneID",
+          tag id 5740420
         }
       }
     },
@@ -9307,7 +9316,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 2885
+          tag str "HGNC:2885"
         },
         {
           db "MIM",
@@ -9419,7 +9428,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 4450
+          tag str "HGNC:4450"
         },
         {
           db "HPRD",
@@ -9633,7 +9642,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 99
+          tag str "HGNC:99"
         },
         {
           db "HPRD",
@@ -10289,7 +10298,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 31270
+          tag str "HGNC:31270"
         },
         {
           db "HPRD",
