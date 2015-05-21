@@ -6511,7 +6511,7 @@ if test "$with_vdb" != "no" ; then
    vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
    if test "$with_included_vdb" != "yes"; then
       if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
-         : ${VDB_PATH=$with_vdb}
+         VDB_PATH=$with_vdb
       fi
       if test -z "$VDB_PATH"; then
          in_path=
