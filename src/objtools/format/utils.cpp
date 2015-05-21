@@ -131,7 +131,21 @@ bool IsPartOfUrl(
     }
     
     return false; /* never found the terminating '/' */
-};     
+};
+
+static bool s_RunOfStars(string& s, SIZE_TYPE start, SIZE_TYPE length)
+{
+    SIZE_TYPE max = start + 66;
+    if (max >= length) {
+        return false;
+    }
+    for (SIZE_TYPE i = start; i < max; i++) {
+        if (s[i] != '*') {
+            return false;
+        }
+    }
+    return true;
+}
 
 void ExpandTildes(string& s, ETildeStyle style)
 {
@@ -203,6 +217,10 @@ void ExpandTildes(string& s, ETildeStyle style)
                 result += "\n";
             }
             start = tilde + 1;
+            if (s[start] == ' ' && s_RunOfStars(s, start+1, length)) {
+              start++;
+              result += '\n';
+            }
             break;
 
         default: // just keep it, for lack of better ideas
