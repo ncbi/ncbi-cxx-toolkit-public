@@ -509,12 +509,20 @@ CRef<CUser_object> CSeq_feat::FindExt(const string& ext_type)
 }
 
 void
-CSeq_feat::AddExt(CRef<CUser_object> ext)
+CSeq_feat::AddExt(CRef<CUser_object> ext, TAddExt add_flags)
 {
     // ext must have type set
     if( ! ext->IsSetType() || ! ext->GetType().IsStr()) {
         NCBI_USER_THROW("Seq-feat Ext must have a type");
     }
+
+    // if requested, remove all previous ones, effectively simulating
+    // a replace function.
+    if( add_flags & fAddExt_ReplaceAll ) {
+        const string & ext_type = ext->GetType().GetStr();
+        RemoveExt(ext_type);
+    }
+
     SetExts().push_back(ext);
 }
 

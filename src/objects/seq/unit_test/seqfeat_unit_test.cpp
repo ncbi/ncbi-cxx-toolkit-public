@@ -64,7 +64,21 @@ namespace {
         uobj->SetType().SetStr(type_str);
         return uobj;
     }
-    
+
+    // maps an ext_type to the number of times it appears
+    // (only looks at GetExts(), not GetExt())
+    typedef map<string, size_t> TExtsTypeToCount;
+    TExtsTypeToCount s_CalcExtsTypesCounts(const CSeq_feat & seq_feat)
+    {
+        TExtsTypeToCount counting_map;
+        if( seq_feat.IsSetExts() ) {
+            ITERATE(CSeq_feat::TExts, ext_it, seq_feat.GetExts() ) {
+                ++counting_map[(*ext_it)->GetType().GetStr()];
+            }
+        }
+        return counting_map;
+    }
+
 }
 
 BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
@@ -147,4 +161,36 @@ BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
                               combo_test_ext_names[idx]);
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(Test_AddExtWithAndWithoutReplace)
+{
+    CAutoInitRef<CSeq_feat> seq_feat;
+
+    const static string ext_type("foo");
+
+    // load a few foo's
+    seq_feat->AddExt(s_CreateSimpleUserObj(ext_type));
+    seq_feat->AddExt(s_CreateSimpleUserObj(ext_type));
+    seq_feat->AddExt(s_CreateSimpleUserObj(ext_type));
+    seq_feat->AddExt(s_CreateSimpleUserObj(ext_type));
+    TExtsTypeToCount counting_map_1 = s_CalcExtsTypesCounts(*seq_feat);
+    BOOST_CHECK_EQUAL(counting_map_1.size(), 1u);
+    BOOST_CHECK_EQUAL(counting_map_1[ext_type], 4u);
+
+    // add another
+    const static string ext_type_2("baz");
+    seq_feat->AddExt(s_CreateSimpleUserObj(ext_type_2));
+    TExtsTypeToCount counting_map_2 = s_CalcExtsTypesCounts(*seq_feat);
+    BOOST_CHECK_EQUAL(counting_map_2.size(), 2u);
+    BOOST_CHECK_EQUAL(counting_map_2[ext_type], 4u);
+    BOOST_CHECK_EQUAL(counting_map_2[ext_type_2], 1u);
+
+    // test replacement
+    seq_feat->AddExt(s_CreateSimpleUserObj(ext_type),
+                     CSeq_feat::fAddExt_ReplaceAll);
+    TExtsTypeToCount counting_map_3 = s_CalcExtsTypesCounts(*seq_feat);
+    BOOST_CHECK_EQUAL(counting_map_3.size(), 2u);
+    BOOST_CHECK_EQUAL(counting_map_3[ext_type], 1u);
+    BOOST_CHECK_EQUAL(counting_map_3[ext_type_2], 1u);
 }

@@ -171,13 +171,18 @@ public:
     /// Non-const version of FindExt().
     CRef<CUser_object> FindExt(const string& ext_type);
 
+    enum EAddExt {
+        fAddExt_ReplaceAll = 1 << 0 ///< Before adding, remove all previous
+    };
+    typedef int TAddExt; ///< binary OR of EAddExt
+    
     /// Add an extension by type in exts container.  Note that it's
     /// always added to the Exts field, never the Ext field.
     /// Also, it does not check for dups.
     /// 
     /// @param ext
     ///   The ext to be added.  It will NOT be copied.
-    void AddExt(CRef<CUser_object> ext);
+    void AddExt(CRef<CUser_object> ext, TAddExt add_flags = 0);
 
     /// Remove all Exts with the given type.  Note: Runs in linear time
     /// relative to the number of Exts total.
