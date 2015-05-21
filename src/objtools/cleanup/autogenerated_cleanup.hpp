@@ -519,6 +519,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_ET
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_clone_clone_ETC( CClone_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_clone_ETC( CClone_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity_E_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_desc_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_formal_name_formal_name_ETC( CGene_nomenclature & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_formal_name_ETC( CGene_nomenclature & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_locus_tag_ETC( std::string & arg0 );

@@ -76,7 +76,8 @@ use m_NewCleanup.x_CompressStringSpacesMarkChanged {
     Prot-ref.name.E ,
     RNA-ref.ext.name ,
     Seq-feat.data.region ,
-    Seqdesc.title 
+    Seqdesc.title ,
+    Gene-ref.desc ,
 }
 
 membermacro CLEAN_STRING_MEMBER {
