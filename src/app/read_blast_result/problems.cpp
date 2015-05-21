@@ -889,7 +889,7 @@ int CReadBlastApp::CollectRNAFeatures(TProblem_locs& problem_locs)
 
 int CReadBlastApp::CollectFrameshiftedSeqs(map<string,string>& problem_names)
 {
-  CArgs args = GetArgs();
+  const CArgs& args = GetArgs();
   bool keep_frameshifted = args["kfs"].HasValue();
   ITERATE( diagMap, feat, m_diag)
     {
