@@ -1,3 +1,4 @@
+//#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <corelib/ncbicfg.h>
 #include <corelib/error_codes.hpp>
@@ -68,7 +69,9 @@ int CTestApplication::Run(void)
     _ASSERT(std::toupper('A') == 'A');
     _ASSERT(::toupper('A') == 'A');
 #if 1 // should fail
-    _ASSERT(toupper('A'=='A'));
+    //_ASSERT(toupper('A'=='A'));
+    TGi gi = 2;
+    NcbiCout << "GI = " << gi << NcbiEndl;
 #endif
     NcbiCout << "Passed" << NcbiEndl;
     return 1;
