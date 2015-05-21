@@ -1383,6 +1383,8 @@ void CNewCleanup_imp::BiosourceBC (
         ChangeMade ( CCleanupChange::eChangeBioSourceOrigin );
     }
 
+    // note - move this 
+    x_ConvertOrgref_modToSubSource(biosrc);
 
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     if( FIELD_IS_SET(biosrc, Subtype) ) {
@@ -1540,9 +1542,6 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
         RESET_FIELD(biosrc, Genome);
         ChangeMade(CCleanupChange::eChangeBioSourceGenome);
     }
-
-    // note - move this 
-    x_ConvertOrgref_modToSubSource(biosrc);
 
     if (BIOSOURCE_HAS_SUBSOURCE (biosrc)) {
 
@@ -2841,16 +2840,16 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
         CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
         if (CSeqFeatData::IsRegulatory(subtype)) {
             string regulatory_class = CSeqFeatData::GetRegulatoryClass(subtype);
-            if (!NStr::IsBlank(regulatory_class)) {
-                SET_FIELD(imf, Key, "regulatory");
-                ChangeMade(CCleanupChange::eChangeKeywords);
-
-                CRef<CGb_qual> regulatory_class_qual( new CGb_qual );
-                regulatory_class_qual->SetQual("regulatory_class");
+            SET_FIELD(imf, Key, "regulatory");
+            ChangeMade(CCleanupChange::eChangeKeywords);
+            CRef<CGb_qual> regulatory_class_qual( new CGb_qual );
+            regulatory_class_qual->SetQual("regulatory_class");
+            if (NStr::IsBlank(regulatory_class)) {
+                regulatory_class_qual->SetVal( "other" );
+            } else {
                 regulatory_class_qual->SetVal( regulatory_class );
-
-                feat.SetQual().push_back( regulatory_class_qual );
             }
+            feat.SetQual().push_back( regulatory_class_qual );
         }
 
         if( key == "repeat_region" && ! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
