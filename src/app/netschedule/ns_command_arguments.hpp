@@ -91,6 +91,10 @@ struct SNSCommandArguments
     bool            blacklist;  // RETURN2 only: add or not to blacklist
     bool            no_retries; // FPUT2 only
 
+    // READ/READ2 commands
+    bool            affinity_may_change;
+    bool            group_may_change;
+
     vector<TJobStatus>  job_statuses;
 
     void AssignValues(TNSProtoParams &           params,

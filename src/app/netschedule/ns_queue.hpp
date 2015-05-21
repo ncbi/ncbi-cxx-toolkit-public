@@ -305,6 +305,8 @@ public:
                                 bool                      any_affinity,
                                 bool                      exclusive_new_affinity,
                                 const string &            group,
+                                bool                      affinity_may_change,
+                                bool                      group_may_change,
                                 CJob *                    job,
                                 bool *                    no_more_jobs,
                                 CNSRollbackInterface * &  rollback_action,
@@ -574,7 +576,9 @@ private:
                           bool                  reader_affinity,
                           bool                  any_affinity,
                           bool                  exclusive_new_affinity,
-                          const string &        group);
+                          const string &        group,
+                          bool                  affinity_may_change,
+                          bool                  group_may_change);
 
 private:
     friend class CJob;

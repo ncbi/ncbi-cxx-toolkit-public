@@ -88,6 +88,9 @@ void SNSCommandArguments::x_Reset()
     blacklist = true;
     no_retries = false;
 
+    affinity_may_change = false;
+    group_may_change = false;
+
     job_statuses.clear();
 
     return;
@@ -144,6 +147,13 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             }
             else if (key == "alert") {
                 alert = NStr::ParseEscapes(val);
+            }
+            else if (key == "affinity_may_change") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "affinity_may_change accepted values are 0 and 1.");
+                affinity_may_change = (tmp == 1);
             }
             break;
         case 'b':
@@ -202,6 +212,13 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             if (key == "group") {
                 group = NStr::ParseEscapes(val);
                 size_to_check = group.size();
+            }
+            else if (key == "group_may_change") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "group_may_change accepted values are 0 and 1.");
+                group_may_change = (tmp == 1);
             }
             break;
         case 'i':

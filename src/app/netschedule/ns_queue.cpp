@@ -350,12 +350,15 @@ CNSPreciseTime  CQueue::x_GetSubmitTime(unsigned int  job_id)
 }
 
 
+// It is called only if there was no job for reading
 bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
                               const TNSBitVector &  aff_ids,
                               bool                  reader_affinity,
                               bool                  any_affinity,
                               bool                  exclusive_new_affinity,
-                              const string &        group)
+                              const string &        group,
+                              bool                  affinity_may_change,
+                              bool                  group_may_change)
 {
     // This certain condition guarantees that there will be no job given
     if (!reader_affinity &&
@@ -368,31 +371,47 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     // Operation lock has to be already taken.
     // Provides true if there are no more jobs for reading.
     vector<CNetScheduleAPI::EJobStatus>     from_state;
+    TNSBitVector                            pending_running_jobs;
+    TNSBitVector                            other_jobs;
 
     from_state.push_back(CNetScheduleAPI::ePending);
     from_state.push_back(CNetScheduleAPI::eRunning);
+    pending_running_jobs = m_StatusTracker.GetJobs(from_state);
+
+    from_state.clear();
     from_state.push_back(CNetScheduleAPI::eDone);
     from_state.push_back(CNetScheduleAPI::eFailed);
     from_state.push_back(CNetScheduleAPI::eCanceled);
+    other_jobs = m_StatusTracker.GetJobs(from_state);
 
-    TNSBitVector    candidates = m_StatusTracker.GetJobs(from_state);
-    // Remove those which have been read or in process of reading
-    candidates -= m_ReadJobs;
+    // Remove those which have been read or in process of reading. This cannot
+    // affect the pending and running jobs
+    other_jobs -= m_ReadJobs;
     // Add those which are in a process of reading.
     // This needs to be done after '- m_ReadJobs' because that vector holds
     // both jobs which have been read and jobs which are in a process of
     // reading. When calculating 'no_more_jobs' the only already read jobs must
     // be excluded.
-    candidates |= m_StatusTracker.GetJobs(CNetScheduleAPI::eReading);
+    TNSBitVector        reading_jobs =
+                            m_StatusTracker.GetJobs(CNetScheduleAPI::eReading);
+    if (!group.empty()) {
+        // The pending and running jobs may change their group and or affinity
+        // later via the RESCHEDULE command
+        TNSBitVector                            group_jobs;
+        group_jobs = m_GroupRegistry.GetJobs(group, false);
+        if (!group_may_change)
+            pending_running_jobs &= group_jobs;
+
+        // The job group cannot be changed for the other job states
+        other_jobs |= reading_jobs;
+        other_jobs &= group_jobs;
+    } else
+        other_jobs |= reading_jobs;
+
+    TNSBitVector    candidates = pending_running_jobs | other_jobs;
     if (!candidates.any())
         return true;
 
-    // Apply the group limit if so
-    if (!group.empty()) {
-        candidates &= m_GroupRegistry.GetJobs(group, false);
-        if (!candidates.any())
-            return true;
-    }
 
     // Deal with affinities
     // The weakest condition is if any affinity is suitable
@@ -419,7 +438,14 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
                                                                         eRead);
     suitable_affinities |= aff_ids;
 
-    candidates &= m_AffinityRegistry.GetJobsWithAffinities(suitable_affinities);
+    TNSBitVector    suitable_aff_jobs =
+                        m_AffinityRegistry.GetJobsWithAffinities(
+                                                        suitable_affinities);
+    if (affinity_may_change)
+        candidates = pending_running_jobs |
+                     (other_jobs & suitable_aff_jobs);
+    else
+        candidates &= suitable_aff_jobs;
     return !candidates.any();
 }
 
@@ -2177,6 +2203,8 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                bool                      any_affinity,
                                bool                      exclusive_new_affinity,
                                const string &            group,
+                               bool                      affinity_may_change,
+                               bool                      group_may_change,
                                CJob *                    job,
                                bool *                    no_more_jobs,
                                CNSRollbackInterface * &  rollback_action,
@@ -2237,7 +2265,9 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                 if (job_pick.job_id == 0) {
                     *no_more_jobs = x_NoMoreReadJobs(client, aff_ids,
                                                  reader_affinity, any_affinity,
-                                                 exclusive_new_affinity, group);
+                                                 exclusive_new_affinity, group,
+                                                 affinity_may_change,
+                                                 group_may_change);
                     if (timeout != 0 && port > 0)
                         x_RegisterReadListener(client, port, timeout, aff_ids,
                                            reader_affinity, any_affinity,
