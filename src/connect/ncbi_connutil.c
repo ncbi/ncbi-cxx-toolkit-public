@@ -476,12 +476,17 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     }
 
     /* "user:pass@host:port" first [any optional] */
-    if ((s = strstr(url, "://")) != 0) {
-        len = (size_t)(s - url);
-        if ((scheme = x_ParseScheme(url, len)) == eURL_Unspec)
-            return 0/*failure*/;
-
-        host    = s + 3;
+    if ((s = strstr(url, "//")) != 0) {
+        /* scheme is now optional, too */
+        if (s > url) {
+            if (s[-1] != ':')
+                return 0/*failure*/;
+            len = (size_t)(s - url) - 1;
+            if ((scheme = x_ParseScheme(url, len)) == eURL_Unspec)
+                return 0/*failure*/;
+        } else
+            scheme = (EURLScheme) info->scheme;
+        host    = s + 2;
         hostlen = strcspn(host, "/?#");
         path    = host + hostlen;
 
