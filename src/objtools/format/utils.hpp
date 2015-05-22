@@ -126,7 +126,7 @@ struct SModelEvidance
     TSpanType     span; // start, then end. 0-based
 
     SModelEvidance(void) :
-        name(kEmptyStr), method(kEmptyStr), mrnaEv(false), estEv(false), gi(TGi(-1)), span(-1, -1)
+        name(kEmptyStr), method(kEmptyStr), mrnaEv(false), estEv(false), gi(INVALID_GI), span(-1, -1)
     {}
 };
 
