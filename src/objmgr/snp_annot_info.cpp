@@ -768,13 +768,13 @@ void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
-    : m_Gi(-1)
+    : m_Gi(INVALID_GI)
 {
 }
 
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(CSeq_annot& annot)
-    : m_Gi(-1), m_Seq_annot(&annot)
+    : m_Gi(INVALID_GI), m_Seq_annot(&annot)
 {
 }
 
