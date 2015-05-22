@@ -5073,7 +5073,17 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
                    then
                      found=yes
                      break
+                   else
+                     for ext in .a .so; do
+                       name=libboost_system$base$bsfx$ext
+                       path=`$CXX -L$BOOST_LIBPATH_ -print-file-name=$name \
+                             2>/dev/null`
+                       case "$path" in
+                         $BOOST_PATH/*/$name ) found=yes; break ;;
+                       esac
+                     done
                    fi
+                   test "$found" = yes  &&  break
                  done
                  test "$found" = yes  &&  break
                done

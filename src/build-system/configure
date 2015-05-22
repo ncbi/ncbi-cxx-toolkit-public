@@ -30316,7 +30316,17 @@ echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6; }
                    then
                      found=yes
                      break
+                   else
+                     for ext in .a .so; do
+                       name=libboost_system$base$bsfx$ext
+                       path=`$CXX -L$BOOST_LIBPATH_ -print-file-name=$name \
+                             2>/dev/null`
+                       case "$path" in
+                         $BOOST_PATH/*/$name ) found=yes; break ;;
+                       esac
+                     done
                    fi
+                   test "$found" = yes  &&  break
                  done
                  test "$found" = yes  &&  break
                done
