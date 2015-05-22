@@ -34,15 +34,18 @@
 #include <objects/blast/names.hpp>
 #include <objects/blast/blast__.hpp>
 #include <objects/scoremat/scoremat__.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CBlast4Field::TFieldMap CBlast4Field::m_Fields;
-
 CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
 {
+	{
+   	DEFINE_STATIC_MUTEX(mx);
+   	CMutexGuard guard(mx);
     if (m_Fields.count(opt) == 0) {
         switch (opt) {
         //case eBlastOpt_Program:
@@ -330,6 +333,7 @@ CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
             break;
         }
     }
+	}
     _ASSERT(m_Fields.count(opt) != 0);
     return m_Fields[opt];
 }
