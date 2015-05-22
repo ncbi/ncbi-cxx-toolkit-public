@@ -5670,8 +5670,7 @@ LDFLAGS=$orig_LDFLAGS
 
 
 ## wxWidgets
-# Insist on single-byte builds by default, per various projects' expectations.
-: ${with_wxwidgets_ucs=no}
+# : ${with_wxwidgets_ucs=no}
 if test "$with_wxwidgets" != "no" ; then
    case "$with_wxwidgets" in
       yes | "" ) ;;
