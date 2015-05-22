@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
     }
 
     /* Run the tests */
-    flags = fHTTP_KeepHeader | fHTTP_UrlCodec | fHCC_UrlEncodeArgs/*obsolete*/;
+    flags = fHTTP_KeepHeader | (fHCC_UrlCodec|fHCC_UrlEncodeArgs)/*obsolete*/;
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
-    flags = fHTTP_AutoReconnect | fHTTP_UrlCodec;
+    flags = fHTTP_AutoReconnect | fHCC_UrlCodec/*obsolete*/;
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
