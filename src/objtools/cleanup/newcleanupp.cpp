@@ -2459,6 +2459,13 @@ CNewCleanup_imp::EAction CNewCleanup_imp::CitPatBC(CCit_pat& citpat, bool fix_in
         AuthListBC( GET_MUTABLE(citpat, Assignees), fix_initials);
     }
 
+    if ( FIELD_IS_SET(citpat, Country) ) {
+        if (NStr::Equal(citpat.GetCountry(), "USA")) {
+            citpat.SetCountry("US");
+            ChangeMade(CCleanupChange::eChangePublication);
+        }
+    }
+
     return eAction_Nothing;
 }
 
