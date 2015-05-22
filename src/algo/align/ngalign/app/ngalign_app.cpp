@@ -468,7 +468,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_CONST(50)) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -490,7 +490,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_CONST(50)) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -512,7 +512,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_CONST(50)) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
@@ -534,7 +534,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
                     NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
-                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_CONST(50)) {
+                    if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_FROM(int, 50)) {
                         Loc->SetInt().SetId().SetLocal().SetId() = NStr::StringToInt(Tokens[0]);
                     }
 
