@@ -313,6 +313,8 @@ void CDeflineGenerator::x_SetFlags (
 
     m_Source.Reset();
     m_Taxname.clear();
+    m_Genus.clear();
+    m_Species.clear();
     m_Multispecies = false;
     m_Genome = NCBI_GENOME(unknown);
     m_IsPlasmid = false;
@@ -743,7 +745,15 @@ void CDeflineGenerator::x_SetBioSrc (
             const COrgName& onp = m_Source->GetOrgname();
             if (onp.IsSetName()) {
                 const COrgName::TName& nam = onp.GetName();
-                if (nam.IsPartial()) {
+                if (nam.IsBinomial()) {
+                    const CBinomialOrgName& bon = nam.GetBinomial();
+                    if (bon.IsSetGenus()) {
+                        m_Genus = bon.GetGenus();
+                    }
+                    if (bon.IsSetSpecies()) {
+                        m_Species = bon.GetSpecies();
+                    }
+                } else if (nam.IsPartial()) {
                     const CPartialOrgName& pon = nam.GetPartial();
                     if (pon.IsSet()) {
                         const CPartialOrgName::Tdata& tx = pon.Get();
@@ -1021,15 +1031,15 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
         joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
     } else if ( ! m_Organelle.empty() ) {
         if ( m_Chromosome.empty() ) {
-			switch (m_Genome) {
-				case NCBI_GENOME(mitochondrion):
-				case NCBI_GENOME(chloroplast):
-				case NCBI_GENOME(kinetoplast):
-				case NCBI_GENOME(plastid):
-				case NCBI_GENOME(apicoplast):
-					joiner.Add(" ").Add(m_Organelle);
-					break;
-        	}
+            switch (m_Genome) {
+                case NCBI_GENOME(mitochondrion):
+                case NCBI_GENOME(chloroplast):
+                case NCBI_GENOME(kinetoplast):
+                case NCBI_GENOME(plastid):
+                case NCBI_GENOME(apicoplast):
+                    joiner.Add(" ").Add(m_Organelle);
+                    break;
+            }
             joiner.Add(gen_tag);
         } else if (m_IsChromosome) {
             joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
@@ -2213,6 +2223,29 @@ static void x_CompressRunsOfSpaces (string& str)
 }
 */
 
+static size_t s_TitleEndsInOrganism (
+    string& title,
+    CTempString taxname
+)
+
+{
+    size_t  pos;
+    int     len1, len2, idx;
+
+    len1 = title.length();
+    len2 = taxname.length();
+
+    idx = len1 - len2 - 3;
+    if (len1 > len2 + 4 && title [idx] == ' ' && title [idx + 1] == '[' && title [len1 - 1] == ']') {
+        pos = NStr::FindNoCase(title, taxname, 0, NPOS, NStr::eLast);
+        if (pos == idx + 2) {
+            return pos - 1;
+        }
+    }
+
+    return NPOS;
+}
+
 void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     const CBioseq_Handle& bsh
 )
@@ -2220,7 +2253,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 {
     CBioSource::TGenome   genome;
     size_t                pos;
-    int                   len1, len2, idx;
+    int                   len1, len2;
     bool                  partial = false;
     CConstRef<CBioSource> src;
 
@@ -2231,6 +2264,21 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     }
     if (m_Source->IsSetGenome()) {
         m_Genome = m_Source->GetGenome();
+    }
+    if (m_Source->IsSetOrgname()) {
+        const COrgName& onp = m_Source->GetOrgname();
+        if (onp.IsSetName()) {
+            const COrgName::TName& nam = onp.GetName();
+            if (nam.IsBinomial()) {
+                const CBinomialOrgName& bon = nam.GetBinomial();
+                if (bon.IsSetGenus()) {
+                    m_Genus = bon.GetGenus();
+                }
+                if (bon.IsSetSpecies()) {
+                    m_Species = bon.GetSpecies();
+                }
+            }
+        }
     }
 
     switch (m_MICompleteness) {
@@ -2250,6 +2298,42 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     len2 = m_Taxname.length();
 
     // remove [taxname]
+
+    if (len1 > len2 + 4) {
+        pos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos);
+            s_TrimMainTitle (m_MainTitle);
+            len1 = m_MainTitle.length();
+        } else {
+            string binomial = m_Genus;
+            binomial += " ";
+            binomial += m_Species;
+            pos = s_TitleEndsInOrganism(m_MainTitle, binomial);
+            if (pos != NPOS) {
+                m_MainTitle.erase (pos);
+                s_TrimMainTitle (m_MainTitle);
+                len1 = m_MainTitle.length();
+            } else {
+                if (m_IsCrossKingdom) {
+                    pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
+                    if (pos != NPOS) {
+                        m_MainTitle.erase (pos + 1);
+                        s_TrimMainTitle (m_MainTitle);
+                        pos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
+                        if (pos != NPOS) {
+                            m_MainTitle.erase (pos);
+                            s_TrimMainTitle (m_MainTitle);
+                            len1 = m_MainTitle.length();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    /*
     if (len1 > len2 + 4) {
         idx = len1 - len2 - 3;
         if (m_MainTitle [idx] == ' ' && m_MainTitle [idx + 1] == '[' && m_MainTitle [len1 - 1] == ']') {
@@ -2277,6 +2361,8 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
             }
         }
     }
+    */
+
     /*
     if (len1 > 2 && m_MainTitle [len1 - 1] == ']') {
         pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);

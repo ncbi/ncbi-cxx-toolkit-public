@@ -239,6 +239,8 @@ private:
     /// biosource fields
     CConstRef<CBioSource> m_Source;
     CTempString m_Taxname;
+    CTempString m_Genus;
+    CTempString m_Species;
     bool m_Multispecies;
     CBioSource::TGenome m_Genome;
     bool m_IsPlasmid;
