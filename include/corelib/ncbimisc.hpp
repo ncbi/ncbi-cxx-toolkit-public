@@ -1033,11 +1033,11 @@ public:
 
 /// Temporary macros to convert TGi to other types (int, unsigned etc.).
 #define GI_TO(T, gi) (static_cast<T>(TIntId(gi)))
-#define GI_FROM(T, value) (TGi(TIntId(value)))
+#define GI_FROM(T, value) (TGi(static_cast<TIntId>(value)))
 
 /// Convert gi-compatible int to/from other types.
 #define INT_ID_TO(T, id) (static_cast<T>(id))
-#define INT_ID_FROM(T, value) (TIntId(value))
+#define INT_ID_FROM(T, value) (static_cast<TIntId>(value))
 
 
 /// Helper address class
