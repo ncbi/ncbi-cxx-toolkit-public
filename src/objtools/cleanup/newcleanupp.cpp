@@ -6605,17 +6605,6 @@ void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
     const string::size_type original_ec_num_length = ec_num.length();
     NStr::TruncateSpacesInPlace( ec_num );
 
-    // remove any final periods
-    string::size_type last_non_period = ec_num.find_last_not_of(".");
-    if( last_non_period == string::npos ) {
-        if( ! ec_num.empty() ) {
-            ec_num.clear();
-            ChangeMade(CCleanupChange::eCleanECNumber);
-        }
-        return;
-    }
-    ec_num.resize( last_non_period + 1 );
-
     // remove any unnecessary "EC " prefix
     s_RemoveInitial( ec_num, "EC ", NStr::eNocase );
     s_RemoveInitial( ec_num, "EC:", NStr::eNocase );

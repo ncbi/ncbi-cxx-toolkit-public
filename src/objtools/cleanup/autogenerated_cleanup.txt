@@ -131,7 +131,6 @@ membermacro CLEAN_AND_COMPRESS_STRING_MEMBER {
     Org-ref.common ,
     Org-ref.taxname ,
     OrgMod.attrib ,
-    Prot-ref.desc ,
     RNA-gen.class ,
     RNA-gen.product ,
     RNA-gen.quals.E.qual ,
@@ -149,9 +148,6 @@ use m_NewCleanup.x_ConvertDoubleQuotesMarkChanged {
     Gene-ref.locus-tag ,
     Gene-ref.maploc ,
     Gene-ref.syn.E ,
-    Prot-ref.activity.E ,
-    Prot-ref.desc ,
-    Prot-ref.ec.E ,
     Prot-ref.name.E ,
     Pubdesc.comment ,
     RNA-gen.class ,
@@ -181,8 +177,6 @@ use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
 membermacro CLEAN_STRING_LIST {
     POST Gene-ref.syn ,
     POST Org-ref.syn ,
-    POST Prot-ref.activity ,
-    POST Prot-ref.ec ,
     POST Prot-ref.name ,
 }
 
@@ -194,7 +188,6 @@ use m_NewCleanup.x_RemoveFlankingQuotes {
     RNA-ref.ext.name ,
     RNA-gen.product ,
     Prot-ref.name.E ,
-    Prot-ref.desc
 }
 
 use m_NewCleanup.x_FixUpEllipsis {
@@ -209,7 +202,10 @@ use m_NewCleanup.SeqIdBC { Seq-id }
 
 use m_NewCleanup.SeqLocBC { Seq-loc }
 use m_NewCleanup.ConvertSeqLocWholeToInt {
-    Seq-loc EXCEPT { product }
+    Seq-loc EXCEPT {
+        product ,
+        Seq-inst.ext.seg.E ,
+    }
 }
 use m_NewCleanup.SeqLocMixBC { Seq-loc.mix }
 
