@@ -271,6 +271,7 @@ private:
     void Except_textBC (string& except_text);
 
     void GenerefBC (CGene_ref& gr);
+    void ProtNameBC (  std::string & str );
     void ProtrefBC (CProt_ref& pr);
     void RnarefBC (CRNA_ref& rr);
 

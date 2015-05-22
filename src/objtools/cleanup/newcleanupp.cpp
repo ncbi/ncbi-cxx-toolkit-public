@@ -7597,6 +7597,16 @@ void CNewCleanup_imp::GeneFeatBC (
     }
 }
 
+void CNewCleanup_imp::ProtNameBC (  std::string & str )
+{
+    const string::size_type old_length = str.length();
+    CleanVisStringJunk (str);
+    TrimInternalSemicolons (str);
+    if (str.length() != old_length) {
+        ChangeMade (CCleanupChange::eChangeProtNames);
+    }
+}
+
 void CNewCleanup_imp::ProtrefBC (
     CProt_ref& prot_ref
 )
@@ -7609,9 +7619,6 @@ void CNewCleanup_imp::ProtrefBC (
     }
 
     CLEAN_STRING_MEMBER (prot_ref, Desc);
-    if (CleanStringList (GET_MUTABLE (prot_ref, Name))) {
-        ChangeMade (CCleanupChange::eChangeProtNames);
-    }
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(prot_ref);
 
     CLEAN_STRING_LIST (prot_ref, Ec);

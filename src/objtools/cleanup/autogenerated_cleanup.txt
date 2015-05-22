@@ -220,6 +220,8 @@ use m_NewCleanup.ImpFeatBC { Seq-feat }
 use m_NewCleanup.SeqfeatBC { Seq-feat }
 use m_NewCleanup.x_PostSeqFeat { POST Seq-feat }
 
+use m_NewCleanup.ProtNameBC { Prot-ref.name.E }
+
 # Seq-feat data stuff
 use m_NewCleanup.GeneFeatBC { Seq-feat.data.gene AND Seq-feat }
 use m_NewCleanup.GenerefBC { POST Gene-ref }
