@@ -35,7 +35,7 @@ BEGIN_SCOPE(objects)
 
 CSeqref::CSeqref(void)
     : m_Flags(fBlobHasAllLocal),
-      m_Gi(0), m_Sat(0), m_SubSat(eSubSat_main), m_SatKey(0),
+      m_Gi(ZERO_GI), m_Sat(0), m_SubSat(eSubSat_main), m_SatKey(0),
       m_Version(0)
 {
 }
