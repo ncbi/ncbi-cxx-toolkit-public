@@ -573,15 +573,9 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("Name");
     if (it != attrs_left.end()) {
         if (0 == NStr::CompareNocase(Type(), "cds")) {
-            CRef<CSeqFeatData> pData(new CSeqFeatData);
-            pData->SetProt().SetName().push_back(it->second);
-            CRef<CSeqFeatXref> pName(new CSeqFeatXref);
-            pName->SetData(*pData);
-            pFeature->SetXref().push_back(pName);
-            //attrs_left.erase(it);
+            attrs_left.erase(it);
         }
         if (0 == NStr::CompareNocase(Type(), "mRNA")) {
-            pFeature->SetData().SetRna().SetExt().SetName(it->second);
             attrs_left.erase(it);
         }
     }

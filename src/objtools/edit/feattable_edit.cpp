@@ -213,25 +213,21 @@ void CFeatTableEdit::SubmitFixProducts()
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     for (CFeat_CI it(mHandle, sel); it; ++it){
         CMappedFeat mf = *it;
-        CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
-        const CSeq_feat::TQual& quals = mf.GetQual();
-
-        string product = mf.GetNamedQual("Product");
+        //debug CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
+        string product = mf.GetNamedQual("product");
         if (product.empty()) {
-            product = mf.GetNamedQual("product");
-        }
-        if (product.empty()) {
-            product = mf.GetNamedQual("Name");
-        }
-        if (!mf.IsSetProduct()  &&  product.empty()) {
-            continue;
+            product = mf.GetNamedQual("Product");
         }
         CRef<CSeq_feat> pEditedFeature(new CSeq_feat);
         pEditedFeature->Assign(mf.GetOriginalFeature());
-        pEditedFeature->SetProduct(*sProductFromString(product));
+        if (product.empty()) {
+            pEditedFeature->ResetProduct();
+        }
+        else {
+            pEditedFeature->SetProduct(*sProductFromString(product));
+        }
         pEditedFeature->RemoveQualifier("Product");
         pEditedFeature->RemoveQualifier("product");
-        pEditedFeature->RemoveQualifier("Name");
         CSeq_feat_EditHandle feh(mf);
         feh.Replace(*pEditedFeature);
     }   
