@@ -73,15 +73,15 @@ extern "C" {
  *       any server error, which then is made available for reading as well)
  *       *NOTE* this flag disables automatic authorization and redirection.
  *
- * @var fHTTP_UrlDecodeInput
+ * @var fHCC_UrlDecodeInput
  *       Assume the response body as single-part, URL-encoded;  perform the
- *       URL-decoding on read, and deliver decoded data to the user.
+ *       URL-decoding on read, and deliver decoded data to the user.  Obsolete.
  *
  * @var fHTTP_NoUpread
  *       Do *not* do internal reading into temporary buffer while sending data
- *       to HTTP server;  by default any send operation tries to extract data
- *       as they are coming back from the server in order to prevent stalling
- *       due to data clogging the connection.
+ *       to HTTP server;  by default any send operation tries to fetch data as
+ *       they are coming back from the server in order to prevent stalling due
+ *       to data clogging the connection.
  *
  * @var fHTTP_DropUnread
  *       Do not collect incoming data in "Read" mode before switching into
@@ -100,7 +100,7 @@ extern "C" {
  *       this flag allows such redirects (when encountered) to be honored.
  *
  * @note
- *  URL encoding/decoding (in the "fHTTP_Url*" cases and "net_info->args")
+ *  URL encoding/decoding (in the "fHCC_Url*" cases and "net_info->args")
  *  is performed by URL_Encode() and URL_Decode() -- see "ncbi_connutil.[ch]".
  *
  * @sa
@@ -110,10 +110,10 @@ enum EHTTP_Flag {
     fHTTP_AutoReconnect   = 0x1,  /**< See HTTP_CreateConnectorEx()          */
     fHTTP_Flushable       = 0x2,  /**< Connector will really flush on Flush()*/
     fHTTP_KeepHeader      = 0x4,  /**< Keep HTTP header (see limitations)    */
-    /*fHTTP_UrlEncodeArgs = 0x8,       URL-encode "info->args" (w/o fragment)*/
-    fHTTP_UrlDecodeInput  = 0x10, /**< URL-decode response body              */
-    fHTTP_UrlEncodeOutput = 0x20, /**< URL-encode all output data            */
-    fHTTP_UrlCodec        = 0x30, /**< fHTTP_UrlDecodeInput | ...EncodeOutput*/
+    /*fHTTP_UrlEncodeArgs = 0x8,       URL-encode "info->args" (w/o fragment)
+    fHTTP_UrlDecodeInput  = 0x10,      URL-decode response body
+    fHTTP_UrlEncodeOutput = 0x20,      URL-encode all output data
+    fHTTP_UrlCodec        = 0x30,      fHTTP_UrlDecodeInput | ...EncodeOutput*/
     fHTTP_NoUpread        = 0x40, /**< Do not use SOCK_SetReadOnWrite()      */
     fHTTP_DropUnread      = 0x80, /**< Each microsession drops unread data   */
     fHTTP_NoAutoRetry     = 0x100,/**< No auto-retries allowed               */
@@ -129,10 +129,10 @@ typedef enum {
     fHCC_AutoReconnect    = fHTTP_AutoReconnect,
     fHCC_SureFlush        = fHTTP_Flushable,
     fHCC_KeepHeader       = fHTTP_KeepHeader,
-    fHCC_UrlDecodeInput   = fHTTP_UrlDecodeInput,
-    fHCC_UrlEncodeOutput  = fHTTP_UrlEncodeOutput,
-    fHCC_UrlCodec         = fHTTP_UrlCodec,
     fHCC_UrlEncodeArgs    = 0x8,  /**< NB: Error-prone semantics, do not use!*/
+    fHCC_UrlDecodeInput   = 0x10, /**< Obsolete, may not work, do not use!   */
+    fHCC_UrlEncodeOutput  = 0x20, /**< Obsolete, may not work, do not use!   */
+    fHCC_UrlCodec         = 0x30, /**< fHCC_UrlDecodeInput | ...EncodeOutput */
     fHCC_DropUnread       = fHTTP_DropUnread,
     fHCC_NoUpread         = fHTTP_NoUpread,
     fHCC_Flushable        = fHTTP_Flushable,
