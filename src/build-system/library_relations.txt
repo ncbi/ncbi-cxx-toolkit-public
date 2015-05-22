@@ -74,7 +74,6 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
-an_core includes gencoll_client
 an_core needs 16S_common
 an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
@@ -83,7 +82,6 @@ an_core needs gpipe_kmer
 an_core needs gpipe_val
 an_core needs ncbi_xcache_netcache
 an_core needs reftrack_access
-an_euk_pipeline includes gencoll_client
 an_euk_pipeline needs $(GPIPE_COMMON_LIBS)
 an_euk_pipeline needs bag_access
 an_euk_pipeline needs gpipe_an_base
@@ -91,14 +89,12 @@ an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs reftrack_admin
 an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
 an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
-an_prok_pipeline includes gencoll_client
 an_prok_pipeline needs $(GPIPE_COMMON_LIBS)
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs xobjwrite
 an_rnaseq needs gpipe_an_base
 an_rnaseq needs matchhits
-an_worker_nodes includes gencoll_client
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
 asn_config needs build_config_base
@@ -496,7 +492,7 @@ gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xml needs taxon1
 gpipe_xml needs taxon3
-gpipe_xmlutil includes xmlwrapp
+gpipe_xmlutil needs xmlwrapp
 gpipe_xmlutil needs xutil
 gpxapi needs general
 gpxapi needs xconnect
@@ -611,7 +607,6 @@ idx needs $(CONNEXT)
 idx needs dbapi_driver
 idx needs spellsrvbase
 idx needs xutil
-idxgenome2 includes idxseq2base
 idxgenome2 needs idxnucleotide2
 idxlinkout needs $(CONNEXT)
 idxlinkout needs $(IDX_COMMON_LIB)
@@ -907,8 +902,8 @@ pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
 python2.5 needs3party $(ORIG_LIBS)
-python_ncbi_dbapi includes connect
-python_ncbi_dbapi includes dbapi
+python_ncbi_dbapi needs connect
+python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 rcobaltasn_g needs xser
 refseq_aln_source needs $(COMPRESS_LIBS)
@@ -1486,7 +1481,6 @@ xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs uudutil
 xsvcgi needs3party $(SYBASE_DLLS)
 xsvcgi needs3party $(SYBASE_LIBS)
-xsvdata includes trackmgr
 xsvdata needs $(BLAST_INPUT_LIBS)
 xsvdata needs $(DBAPI_CTLIB)
 xsvdata needs $(ncbi_xreader_pubseqos2)
@@ -1494,6 +1488,7 @@ xsvdata needs gui_objects
 xsvdata needs hgvs
 xsvdata needs ncbi_xcache_netcache
 xsvdata needs sv_objects
+xsvdata needs trackmgr
 xsvdata needs uudutil
 xsvdata needs xalgophytree
 xsvdata needs xobjreadex
