@@ -26513,6 +26513,8 @@ if test "x$with_gnutls" != xno; then
     done
     GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_R_flags}"
  fi
+           GNUTLS_CONFIG_LIBS=`$LIBGNUTLS_CONFIG --libs-only-l`
+           GNUTLS_CONFIG_LIBS="$GNUTLS_LIBPATH $GNUTLS_CONFIG_LIBS $Z_LIBS"
            ;;
        no)
            ;;
@@ -26542,12 +26544,12 @@ if test "x$with_gnutls" != xno; then
     done
     GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_R_flags}"
  fi
+           GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
            ;;
    esac
 
    if test "x$LIBGNUTLS_CONFIG" != xno; then
       GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
-      GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
    fi
 else
    $as_unset GNUTLS_CONFIG_LIBS || test "${GNUTLS_CONFIG_LIBS+set}" != set || { GNUTLS_CONFIG_LIBS=; export GNUTLS_CONFIG_LIBS; }

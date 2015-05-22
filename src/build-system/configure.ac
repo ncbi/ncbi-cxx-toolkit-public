@@ -4144,18 +4144,20 @@ if test "x$with_gnutls" != xno; then
        eval\ *)
            NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
              [$LIBGNUTLS_CONFIG --libs-only-L])
+           GNUTLS_CONFIG_LIBS=`$LIBGNUTLS_CONFIG --libs-only-l`
+           GNUTLS_CONFIG_LIBS="$GNUTLS_LIBPATH $GNUTLS_CONFIG_LIBS $Z_LIBS"
            ;;
        no)
            ;;
        *)
            NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
              [$LIBGNUTLS_CONFIG --exec-prefix], [s,^,-L,; s,$,/lib,;])
+           GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
            ;;
    esac
 
    if test "x$LIBGNUTLS_CONFIG" != xno; then
       GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
-      GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
    fi
 else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
