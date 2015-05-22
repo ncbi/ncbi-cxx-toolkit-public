@@ -1538,13 +1538,23 @@ void s_AddLiteral(CSeq_inst& inst, const string& element)
 }
 
 
-void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown, bool is_assembly_gap = false)
+void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown, bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 )
 {
     CRef<CDelta_seq> gap(new CDelta_seq());
     if (is_assembly_gap)
     {
         gap->SetLiteral().SetSeq_data().SetGap();
-        gap->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
+        gap->SetLiteral().SetSeq_data().SetGap().SetType(gap_type);
+        if (linkage >= 0)
+        {
+            gap->SetLiteral().SetSeq_data().SetGap().SetLinkage(linkage);
+        }
+        if (linkage_evidence >= 0)
+        {
+            CRef<CLinkage_evidence> link_ev(new CLinkage_evidence);
+            link_ev->SetType(linkage_evidence);
+            gap->SetLiteral().SetSeq_data().SetGap().SetLinkage_evidence().push_back(link_ev);
+        }
     }
     if (is_unknown) {
         gap->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
