@@ -5744,12 +5744,17 @@ if test "$with_wxwidgets" != "no" ; then
          libsed=$basesed
          ;;
    esac
+   case "`"$wxconf" $wxcfflags --version`" in
+      1.* | 2.[[0-7]].* ) wxlibs=std ;;
+      *                 ) wxlibs=std,richtext,aui,propgrid ;;
+   esac
    AC_CACHE_CHECK(
       [for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}],
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
-          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, ["$wxconf" $wxcfflags --libs],
+          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS,
+             ["$wxconf" $wxcfflags --libs $wxlibs],
              [$libsed; s/ -lm / /g;])
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
@@ -5777,13 +5782,8 @@ if test "$with_wxwidgets" = "no" ; then
 else
    NCBI_PACKAGE(wxWidgets)
    case "`"$wxconf" $wxcfflags --version`" in
-      1.* | 2.[[0-7]].*)
-         wxlibs=std
-         ;;
-      * )
-         NCBI_PACKAGE(wx2.8)
-         wxlibs=std,richtext,aui,propgrid
-         ;;
+      1.* | 2.[[0-7]].*) ;;
+      * ) NCBI_PACKAGE(wx2.8) ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then

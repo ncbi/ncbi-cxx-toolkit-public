@@ -33967,6 +33967,10 @@ fi
          libsed=$basesed
          ;;
    esac
+   case "`"$wxconf" $wxcfflags --version`" in
+      1.* | 2.[0-7].* ) wxlibs=std ;;
+      *                 ) wxlibs=std,richtext,aui,propgrid ;;
+   esac
    { echo "$as_me:$LINENO: checking for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}" >&5
 echo $ECHO_N "checking for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_wxwidgets+set}" = set; then
@@ -33975,13 +33979,13 @@ else
   if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    WXWIDGETS_LIBS=`"$wxconf" $wxcfflags --libs | sed -e "$libsed; s/ -lm / /g;"`
+    WXWIDGETS_LIBS=`"$wxconf" $wxcfflags --libs $wxlibs | sed -e "$libsed; s/ -lm / /g;"`
  else
     WXWIDGETS_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `"$wxconf" $wxcfflags --libs | sed -e "$libsed; s/ -lm / /g;"`; do
+    for x in `"$wxconf" $wxcfflags --libs $wxlibs | sed -e "$libsed; s/ -lm / /g;"`; do
        case "$x" in
           -L*)
              WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
@@ -34087,13 +34091,8 @@ if test "$with_wxwidgets" = "no" ; then
 else
              WithPackages="$WithPackages${WithPackagesSep}wxWidgets"; WithPackagesSep=" "
    case "`"$wxconf" $wxcfflags --version`" in
-      1.* | 2.[0-7].*)
-         wxlibs=std
-         ;;
-      * )
-                   WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" "
-         wxlibs=std,richtext,aui,propgrid
-         ;;
+      1.* | 2.[0-7].*) ;;
+      * )           WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" " ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
