@@ -115,6 +115,12 @@ int CTestApplication::Run(void)
     _ASSERT(::toupper('A'=='A'));
 #endif
     TGi gi = 2;
+    gi = 3;
+    gi = INVALID_GI;
+    gi = GI_CONST(192377853);
+#ifdef NCBI_INT8_GI
+    gi = GI_CONST(192377853343);
+#endif
     NcbiCout << "GI = " << gi << NcbiEndl;
     NcbiCout << "Passed" << NcbiEndl;
     return 0;

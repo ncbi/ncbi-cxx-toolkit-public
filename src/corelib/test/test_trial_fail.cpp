@@ -71,7 +71,10 @@ int CTestApplication::Run(void)
 #if 1 // should fail
 # if defined(NCBI_STRICT_GI) && defined(NCBI_INT8_GI)
     // test only if CStrictGi is on
-    TGi gi = 2;
+    TGi gi;
+    //gi = 2;
+    const TIntId& id = gi;
+    gi = GI_CONST(id);
     NcbiCout << "GI = " << gi << NcbiEndl;
 # else
     _ASSERT(toupper('A'=='A'));

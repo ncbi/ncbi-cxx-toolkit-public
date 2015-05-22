@@ -955,19 +955,20 @@ public:
     operator TIntId(void) const { return m_Gi; }
     bool operator==(TIntId value) const { return m_Gi == value; }
 
-#ifdef NCBI_INT8_GI
-# ifdef NCBI_TEST_APPLICATION
+#if defined(NCBI_INT8_GI) && defined(NCBI_TEST_APPLICATION)
     CStrictGi(Int4 value) : m_Gi(value) {}
     CStrictGi& operator=(Int4 value) { m_Gi = value; return *this; }
     bool operator==(Int4 value) const { return m_Gi == value; }
-# else
-    explicit CStrictGi(Int4 value) : m_Gi(value) {}
-# endif
 #endif
 
     operator bool(void) const { return m_Gi != 0; }
 
 private:
+#if defined(NCBI_INT8_GI) && !defined(NCBI_TEST_APPLICATION)
+    CStrictGi(Int4);
+    CStrictGi& operator=(Int4);
+    operator Int4(void) const;
+#endif
     CStrictGi(Int1);
     CStrictGi(Uint1);
     CStrictGi(Int2);
@@ -988,11 +989,6 @@ private:
     operator Uint1(void) const;
     operator Int2(void) const;
     operator Uint2(void) const;
-#ifdef NCBI_INT8_GI
-# ifndef NCBI_TEST_APPLICATION
-    operator Int4(void) const;
-# endif
-#endif
     operator Uint4(void) const;
     operator Uint8(void) const;
     operator float(void) const;
@@ -1017,32 +1013,31 @@ typedef TIntId TGi;
 
 #endif // NCBI_STRICT_GI
 
-
-#define ZERO_GI TGi(0)
-#define INVALID_GI TGi(-1)
-
-
 #else // NCBI_INT8_GI
-
 
 typedef int TGi;
 typedef Int4 TIntId;
 typedef Uint4 TUintId;
 
-#define ZERO_GI 0
-#define INVALID_GI -1
-
-
 #endif
 
+/// a helper template to enforce constness of argument to GI_CONST macro
+template<TIntId gi>
+class CConstGIChecker {
+public:
+    static const TIntId value = gi;
+};
+#define GI_CONST(gi) (TGi(CConstGIChecker<gi>::value))
+#define ZERO_GI GI_CONST(0)
+#define INVALID_GI GI_CONST(-1)
 
 /// Temporary macros to convert TGi to other types (int, unsigned etc.).
-#define GI_TO(T, gi) (T)(TIntId(gi))
-#define GI_FROM(T, value) TGi(TIntId(value))
+#define GI_TO(T, gi) (static_cast<T>(TIntId(gi)))
+#define GI_FROM(T, value) (TGi(TIntId(value)))
 
 /// Convert gi-compatible int to/from other types.
-#define INT_ID_TO(T, id) (T)(id)
-#define INT_ID_FROM(T, value) TIntId(value)
+#define INT_ID_TO(T, id) (static_cast<T>(id))
+#define INT_ID_FROM(T, value) (TIntId(value))
 
 
 /// Helper address class
