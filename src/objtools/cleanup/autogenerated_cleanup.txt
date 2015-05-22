@@ -221,6 +221,7 @@ use m_NewCleanup.SeqfeatBC { Seq-feat }
 use m_NewCleanup.x_PostSeqFeat { POST Seq-feat }
 
 use m_NewCleanup.ProtNameBC { Prot-ref.name.E }
+use m_NewCleanup.ProtActivityBC { Prot-ref.activity.E }
 
 # Seq-feat data stuff
 use m_NewCleanup.GeneFeatBC { Seq-feat.data.gene AND Seq-feat }

@@ -272,6 +272,7 @@ private:
 
     void GenerefBC (CGene_ref& gr);
     void ProtNameBC (  std::string & str );
+    void ProtActivityBC (  std::string & str );
     void ProtrefBC (CProt_ref& pr);
     void RnarefBC (CRNA_ref& rr);
 

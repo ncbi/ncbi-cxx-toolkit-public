@@ -7607,6 +7607,16 @@ void CNewCleanup_imp::ProtNameBC (  std::string & str )
     }
 }
 
+void CNewCleanup_imp::ProtActivityBC (  std::string & str )
+{
+    const string::size_type old_length = str.length();
+    CleanVisStringJunk (str);
+    TrimInternalSemicolons (str);
+    if (str.length() != old_length) {
+        ChangeMade (CCleanupChange::eTrimSpaces);
+    }
+}
+
 void CNewCleanup_imp::ProtrefBC (
     CProt_ref& prot_ref
 )
@@ -7622,7 +7632,6 @@ void CNewCleanup_imp::ProtrefBC (
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(prot_ref);
 
     CLEAN_STRING_LIST (prot_ref, Ec);
-    CLEAN_STRING_LIST_JUNK (prot_ref, Activity);
 
     UNIQUE_WITHOUT_SORT_ACTIVITY_ON_PROTREF( prot_ref, PNocase );
 

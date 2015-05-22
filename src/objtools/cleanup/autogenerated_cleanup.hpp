@@ -544,6 +544,9 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_syn_ETC( Tc
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_ETC( COrgName & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity_E_ETC( std::string & arg0 );
+  template< typename Tcontainer_std_string_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity_ETC( Tcontainer_std_string_ & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_E_ETC( std::string & arg0 );
