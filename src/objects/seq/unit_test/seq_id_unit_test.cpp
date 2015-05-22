@@ -30,7 +30,7 @@
  *
  * ===========================================================================
  */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("  1234 ")));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK(id->GetGi() == GI_FROM(TIntId, 1234));
+    BOOST_CHECK(id->GetGi() == 1234);
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1234.5")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("-1234")));
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
 #ifdef NCBI_INT8_GI
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("9876543210")));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK(id->GetGi() == GI_FROM(TIntId, 9876543210));
+    BOOST_CHECK(id->GetGi() == 9876543210);
 #else
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("9876543210")));
 #endif
@@ -525,7 +525,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGI)
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gi|1234")));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), GI_FROM(TIntId, 1234));
+    BOOST_CHECK_EQUAL(id->GetGi(), 1234);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaDdbj)
@@ -644,11 +644,11 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
 
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", "12345")));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), GI_FROM(TIntId, 12345));
+    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
 
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", 12345)));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), GI_FROM(TIntId, 12345));
+    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
 
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("taxon", 9606)));
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, true)));
@@ -665,7 +665,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromInt)
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, 1234)));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), GI_FROM(TIntId, 1234));
+    BOOST_CHECK_EQUAL(id->GetGi(), 1234);
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Pdb, 1234)));
@@ -827,19 +827,19 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
 
         BOOST_CHECK(loc1->IsWhole());
         BOOST_CHECK(loc1->GetWhole().IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetWhole().GetGi(), GI_FROM(TIntId, 1));
+        BOOST_CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
 
         BOOST_CHECK(loc2->IsEmpty());
         BOOST_CHECK(loc2->GetEmpty().IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
 
         BOOST_CHECK(loc1->GetId());
         BOOST_CHECK(loc1->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), GI_FROM(TIntId, 1));
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
 
         BOOST_CHECK(loc2->GetId());
         BOOST_CHECK(loc2->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
 
         loc1->Assign(*loc2);
 
@@ -848,19 +848,19 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
 
         BOOST_CHECK(loc1->IsEmpty());
         BOOST_CHECK(loc1->GetEmpty().IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetEmpty().GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
 
         BOOST_CHECK(loc2->IsEmpty());
         BOOST_CHECK(loc2->GetEmpty().IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
 
         BOOST_CHECK(loc1->GetId());
         BOOST_CHECK(loc1->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
 
         BOOST_CHECK(loc2->GetId());
         BOOST_CHECK(loc2->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
     }
     {
         CRef<CSeq_id> id1(new CSeq_id("gi|1"));
@@ -879,19 +879,19 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
 
         BOOST_CHECK(loc1->IsWhole());
         BOOST_CHECK(loc1->GetWhole().IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetWhole().GetGi(), GI_FROM(TIntId, 1));
+        BOOST_CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
 
         BOOST_CHECK(loc2->IsEmpty());
         BOOST_CHECK(loc2->GetEmpty().IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
 
         BOOST_CHECK(loc1->GetId());
         BOOST_CHECK(loc1->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), GI_FROM(TIntId, 1));
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
 
         BOOST_CHECK(loc2->GetId());
         BOOST_CHECK(loc2->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
 
         feat1->Assign(*feat2);
 
@@ -903,19 +903,19 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
 
         BOOST_CHECK(loc1->IsEmpty());
         BOOST_CHECK(loc1->GetEmpty().IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetEmpty().GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
 
         BOOST_CHECK(loc2->IsEmpty());
         BOOST_CHECK(loc2->GetEmpty().IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
 
         BOOST_CHECK(loc1->GetId());
         BOOST_CHECK(loc1->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
 
         BOOST_CHECK(loc2->GetId());
         BOOST_CHECK(loc2->GetId()->IsGi());
-        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), GI_FROM(TIntId, 2));
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
     }
 }
 
