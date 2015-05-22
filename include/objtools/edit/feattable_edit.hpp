@@ -63,7 +63,7 @@ public:
     void EliminateBadQualifiers();
     void GenerateProteinAndTranscriptIds();
     void GenerateLocusIds();
-    void SubmitEraseProducts();
+    void SubmitFixProducts();
 
 protected:
     void xGenerateLocusIdsUseExisting();

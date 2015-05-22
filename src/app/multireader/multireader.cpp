@@ -1179,9 +1179,9 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.InferParentMrnas();
     fte.InferParentGenes();
     fte.EliminateBadQualifiers();
-	fte.GenerateLocusTags();
+    fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();
-    fte.SubmitEraseProducts();
+    fte.SubmitFixProducts();
 }
 
 //  ----------------------------------------------------------------------------

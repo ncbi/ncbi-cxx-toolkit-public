@@ -50,6 +50,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+//  ----------------------------------------------------------------------------
+CRef<CSeq_loc> sProductFromString(
+const string str)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_loc> pProduct(new CSeq_loc(CSeq_loc::e_Whole));
+    CRef<CSeq_id> pId(new CSeq_id(CSeq_id::e_Local, str));
+    pProduct->SetId(*pId);
+    return pProduct;
+}
+
 //  -------------------------------------------------------------------------
 CFeatTableEdit::CFeatTableEdit(
     CSeq_annot& annot,
@@ -193,20 +204,34 @@ void CFeatTableEdit::InferPartials()
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::SubmitEraseProducts()
+void CFeatTableEdit::SubmitFixProducts()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    //sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     for (CFeat_CI it(mHandle, sel); it; ++it){
         CMappedFeat mf = *it;
-        if (!mf.IsSetProduct()) {
+        CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
+        const CSeq_feat::TQual& quals = mf.GetQual();
+
+        string product = mf.GetNamedQual("Product");
+        if (product.empty()) {
+            product = mf.GetNamedQual("product");
+        }
+        if (product.empty()) {
+            product = mf.GetNamedQual("Name");
+        }
+        if (!mf.IsSetProduct()  &&  product.empty()) {
             continue;
         }
         CRef<CSeq_feat> pEditedFeature(new CSeq_feat);
         pEditedFeature->Assign(mf.GetOriginalFeature());
-        pEditedFeature->ResetProduct();
+        pEditedFeature->SetProduct(*sProductFromString(product));
+        pEditedFeature->RemoveQualifier("Product");
+        pEditedFeature->RemoveQualifier("product");
+        pEditedFeature->RemoveQualifier("Name");
         CSeq_feat_EditHandle feh(mf);
         feh.Replace(*pEditedFeature);
     }   
@@ -232,6 +257,15 @@ void CFeatTableEdit::EliminateBadQualifiers()
                 continue;
             }
             if (qualVal == "protein_id") {
+                continue;
+            }
+            if (qualVal == "Protein") {
+                continue;
+            }
+            if (qualVal == "protein") {
+                continue;
+            }
+            if (qualVal == "Name") {
                 continue;
             }
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
@@ -420,16 +454,6 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CSeq_loc> sProductFromProteinId(
-    const string protein_id)
-    //  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_loc> pProduct(new CSeq_loc(CSeq_loc::e_Whole));
-    CRef<CSeq_id> pId(new CSeq_id(CSeq_id::e_Local, protein_id));
-    pProduct->SetId(*pId);
-    return pProduct;
-}
-//  ----------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateLocusIdsUseExisting()
 //  ----------------------------------------------------------------------------
 {
@@ -607,6 +631,7 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
+    //const CSeq_loc& loc = rna.GetOriginalFeature().GetLocation();
     CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(rna.GetOriginalFeature());
     CSeq_annot_Handle sah = sfh.GetAnnot();
     if (!sah) {

@@ -578,7 +578,7 @@ bool CGff2Record::x_MigrateAttributes(
             CRef<CSeqFeatXref> pName(new CSeqFeatXref);
             pName->SetData(*pData);
             pFeature->SetXref().push_back(pName);
-            attrs_left.erase(it);
+            //attrs_left.erase(it);
         }
         if (0 == NStr::CompareNocase(Type(), "mRNA")) {
             pFeature->SetData().SetRna().SetExt().SetName(it->second);
@@ -741,7 +741,7 @@ bool CGff2Record::x_MigrateAttributes(
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);
         }
-        attrs_left.erase(it);
+        //attrs_left.erase(it);
     }
 
     it = attrs_left.find("protein_id");
