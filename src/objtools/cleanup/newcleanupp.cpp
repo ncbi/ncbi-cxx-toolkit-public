@@ -4635,16 +4635,11 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
             return eAction_Erase;
         }
     } else if (NStr::EqualNocase(gb_qual_qual, "anticodon") ) {
-        if (!rna.IsSetType()) {
-            rna.SetType(CRNA_ref::eType_tRNA);
+        if (!rna.IsSetType() || rna.GetType() == CRNA_ref::eType_unknown) {
+            rna.SetType(CRNA_ref::eType_other);
             ChangeMade(CCleanupChange::eChangeKeywords);
         }
-        _ASSERT(rna.IsSetType());
-        CRNA_ref::TType type = rna.GetType();
-        if (type == CRNA_ref::eType_unknown) {
-            rna.SetType(CRNA_ref::eType_tRNA);
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        } else if (type != CRNA_ref::eType_tRNA) {
+        if (rna.GetType() != CRNA_ref::eType_tRNA) {
             return eAction_Nothing;
         }
         if (!rna.IsSetExt()) {
