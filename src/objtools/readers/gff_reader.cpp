@@ -1277,7 +1277,7 @@ CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
     }
     try {
         CRef<CSeq_id> pId(new CSeq_id(name));
-        if (!pId || (pId->IsGi() && pId->GetGi() < GI_CONST(500)) ) {
+        if (!pId || (pId->IsGi() && pId->GetGi() < GI_FROM(int, 500)) ) {
             pId = new CSeq_id(CSeq_id::e_Local, name);
         }
         return pId;
