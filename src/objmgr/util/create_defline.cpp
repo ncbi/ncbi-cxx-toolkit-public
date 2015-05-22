@@ -2252,7 +2252,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
 {
     CBioSource::TGenome   genome;
-    size_t                pos;
+    size_t                pos = NPOS;
     int                   len1, len2;
     bool                  partial = false;
     CConstRef<CBioSource> src;
@@ -2332,6 +2332,8 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
         }
     }
 
+    /* do not change unless [genus species] was at the end */
+    if (pos == NPOS) return;
 
     /*
     if (len1 > len2 + 4) {
