@@ -7615,7 +7615,7 @@ void CNewCleanup_imp::ProtrefBC (
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(prot_ref);
 
     CLEAN_STRING_LIST (prot_ref, Ec);
-    CLEAN_STRING_LIST (prot_ref, Activity);
+    CLEAN_STRING_LIST_JUNK (prot_ref, Activity);
 
     UNIQUE_WITHOUT_SORT_ACTIVITY_ON_PROTREF( prot_ref, PNocase );
 
