@@ -1428,7 +1428,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     if (uuu->net_info->req_method == eReqMethod_Head) {
         status = eIO_Closed;
         *n_read = 0;
-    } else if (uuu->flags & fHTTP_UrlDecodeInput) {
+    } else if (uuu->flags & fHCC_UrlDecodeInput) {
         /* read and URL-decode */
         size_t         n_peeked, n_decoded;
         TNCBI_BigCount remain    = uuu->expected - uuu->received;
@@ -1493,7 +1493,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             }
         } else {
             if (uuu->expected < uuu->received) {
-                if (uuu->flags & fHTTP_UrlDecodeInput) {
+                if (uuu->flags & fHCC_UrlDecodeInput) {
                     assert(*n_read);
                     --(*n_read);
                 } else {
@@ -1717,7 +1717,7 @@ static EIO_Status s_VT_Write
     uuu->can_connect |= fCC_Once;
 
     /* accumulate all output in the memory buffer */
-    if (size  &&  (uuu->flags & fHTTP_UrlEncodeOutput)) {
+    if (size  &&  (uuu->flags & fHCC_UrlEncodeOutput)) {
         /* with URL-encoding */
         size_t dst_size = 3 * size;
         void*  dst = malloc(dst_size);
