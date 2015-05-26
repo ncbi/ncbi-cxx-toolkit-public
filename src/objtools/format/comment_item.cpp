@@ -1371,7 +1371,7 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
         }
         str << sfx;
     }
-    str << " available for this genome";
+    str << " available for this genome.";
 
     return CNcbiOstrstreamToString(str);
 }
