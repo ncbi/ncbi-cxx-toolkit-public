@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
 
     // This should convert the first run of Ns (15) to a gap of known length
     // and the second run of Ns (5) to a gap of unknown length
-    edit::ConvertRawToDeltaByNs(inst, 5, 5, 10, -1);
+    edit::ConvertRawToDeltaByNs(inst, 5, 5, 10, -1, true);
     edit::NormalizeUnknownLengthGaps(inst);
     BOOST_CHECK_EQUAL(inst.GetRepr(), CSeq_inst::eRepr_delta);
     BOOST_CHECK_EQUAL(inst.GetExt().GetDelta().Get().size(), 5);
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
     scope.AddDefaults();
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
     CBioseq_Handle bsh = seh.GetSeq();
-    edit::ConvertRawToDeltaByNs(bsh, 5, 5, 10, -1);
+    edit::ConvertRawToDeltaByNs(bsh, 5, 5, 10, -1, true);
 
     CFeat_CI fi(bsh);
     while (fi) {

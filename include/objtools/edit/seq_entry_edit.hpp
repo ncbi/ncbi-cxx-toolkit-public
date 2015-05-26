@@ -154,12 +154,14 @@ bool HasRepairedIDs(const CSeq_entry& entry);
 NCBI_XOBJEDIT_EXPORT
 void ConvertRawToDeltaByNs(CSeq_inst& inst, 
                            size_t min_unknown, int max_unknown, 
-                           size_t min_known, int max_known);
+                           size_t min_known, int max_known,
+                           bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 );
 
 NCBI_XOBJEDIT_EXPORT
 void ConvertRawToDeltaByNs(CBioseq_Handle bsh, 
                            size_t min_unknown, int max_unknown, 
-                           size_t min_known, int max_known);
+                           size_t min_known, int max_known,
+                           bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 );
 
 typedef pair<size_t, int> TLocAdjustment;
 typedef vector<TLocAdjustment> TLocAdjustmentVector;

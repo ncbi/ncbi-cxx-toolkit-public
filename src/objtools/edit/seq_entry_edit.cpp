@@ -1586,7 +1586,8 @@ void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown, bool is_assembly_g
 /// @return            none
 void ConvertRawToDeltaByNs(CSeq_inst& inst, 
                            size_t min_unknown, int max_unknown, 
-                           size_t min_known,   int max_known)
+                           size_t min_known,   int max_known, 
+                           bool is_assembly_gap, int gap_type, int linkage, int linkage_evidence )
 {
     // can only convert if starting as raw
     if (!inst.IsSetRepr() || inst.GetRepr() != CSeq_inst::eRepr_raw
@@ -1640,7 +1641,7 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
                         element = element.substr(0, element.length() - n_len);
                         s_AddLiteral(inst, element);
                     }
-                    s_AddGap(inst, n_len, is_unknown);
+                    s_AddGap(inst, n_len, is_unknown, is_assembly_gap, gap_type, linkage, linkage_evidence);
                     element = "";
                 }
                 n_len = 0;
@@ -1665,7 +1666,7 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
                 element = element.substr(0, element.length() - n_len);
                 s_AddLiteral(inst, element);
             }
-            s_AddGap(inst, n_len, is_unknown);
+            s_AddGap(inst, n_len, is_unknown, is_assembly_gap, gap_type, linkage, linkage_evidence);
         }
     } else {
         s_AddLiteral(inst, element);
@@ -1723,12 +1724,13 @@ TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_
 
 void ConvertRawToDeltaByNs(CBioseq_Handle bsh, 
                            size_t min_unknown, int max_unknown, 
-                           size_t min_known, int max_known)
+                           size_t min_known, int max_known, 
+                           bool is_assembly_gap, int gap_type, int linkage, int linkage_evidence )
 {
     CRef<CSeq_inst> inst(new CSeq_inst());
     inst->Assign(bsh.GetInst());
 
-    ConvertRawToDeltaByNs(*inst, min_unknown, max_unknown, min_known, max_known);
+    ConvertRawToDeltaByNs(*inst, min_unknown, max_unknown, min_known, max_known, is_assembly_gap, gap_type, linkage, linkage_evidence);
     TLocAdjustmentVector changes = NormalizeUnknownLengthGaps(*inst);
     CBioseq_EditHandle beh = bsh.GetEditHandle();
     beh.SetInst(*inst);
