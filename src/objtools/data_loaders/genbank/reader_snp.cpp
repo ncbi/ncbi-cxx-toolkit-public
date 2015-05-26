@@ -337,16 +337,11 @@ static void write_gi(CNcbiOstream& stream,
                      const char* name)
 {
     TIntId n = gi;
-    char c[8] = {
-        char(n >> 56),
-        char(n >> 48),
-        char(n >> 40),
-        char(n >> 32),
-        char(n >> 24),
-        char(n >> 16),
-        char(n >>  8),
-        char(n      )
-    };
+    char c[8];
+    for ( int i = 7; i >= 0; --i ) {
+        c[i] = char(n);
+        n >>= 8;
+    }
     stream.write(c, sizeof(c));
 }
 
