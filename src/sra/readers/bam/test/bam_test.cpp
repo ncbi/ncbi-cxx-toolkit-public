@@ -332,7 +332,11 @@ int LowLevelTest()
     VFSManager* vfs_mgr;
     CALL(VFSManagerMake(&vfs_mgr));
     VPath* bam_path = 0;
-#define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+#ifdef _MSC_VER
+# define BAM_FILE "//traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+#else
+# define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+#endif
     CALL(VFSManagerMakeSysPath(vfs_mgr, &bam_path, BAM_FILE));
     VPath* bai_path = 0;
     CALL(VFSManagerMakeSysPath(vfs_mgr, &bai_path, BAM_FILE ".bai"));
