@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <sra/data_loaders/bam/bamloader.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
