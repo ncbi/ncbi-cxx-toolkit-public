@@ -1189,11 +1189,16 @@ public:
                                                 list<TGi>& use_this_gi,
                                                 TGi& gi);
 
-	///Check if accession is WGS
+    ///Check if accession is WGS
     ///@param accession: string accession [in]
     ///@param wgsProj: string  wgsProj [out]      
     ///@return: bool indicating if accession is WGS
-	static bool IsWGSAccession(string &accession, string &wgsProj);
+    static bool IsWGSAccession(string &accession, string &wgsProj);
+
+    ///Check if accession is WGS
+    ///@param accession: string accession [in]    
+    ///@return: bool indicating if accession is WGS
+    static bool IsWGSPattern(string &wgsAccession);
 
     ///Get Gene symobol for gi
     ///@param  giForGeneLookup: gi
