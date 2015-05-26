@@ -30,7 +30,7 @@
  *
  * ===========================================================================
  */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <objects/seqloc/seqloc__.hpp>
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(TestSingle)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(!it.IsSetStrand());
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(TestDouble)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(TestDouble)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     BOOST_CHECK(it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(25, 26));
     BOOST_CHECK(it.IsSetStrand());
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(27, 27));
     BOOST_CHECK(it.IsSetStrand());
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(TestEquiv)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(TestEdit1)
     BOOST_CHECK(!it.HasEquivSets());
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(10, 20));
     BOOST_CHECK(it.IsSetStrand());
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(TestEdit1)
     ++it;
 
     BOOST_REQUIRE(it);
-    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(TIntId(3)));
+    BOOST_CHECK_EQUAL(it.GetSeq_id_Handle(), CSeq_id_Handle::GetGiHandle(3));
     BOOST_CHECK(it.GetSeq_id().IsGi());
     BOOST_CHECK_EQUAL(it.GetRange(), CRange<TSeqPos>(30, 30));
     BOOST_CHECK(it.IsSetStrand());
