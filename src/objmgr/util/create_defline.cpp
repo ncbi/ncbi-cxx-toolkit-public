@@ -2252,7 +2252,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
 {
     CBioSource::TGenome   genome;
-    size_t                pos = NPOS;
+    size_t                pos, tpos = NPOS, opos = NPOS;
     int                   len1, len2;
     bool                  partial = false;
     CConstRef<CBioSource> src;
@@ -2297,35 +2297,22 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     len1 = m_MainTitle.length();
     len2 = m_Taxname.length();
 
-    // remove [taxname]
+    // find [taxname]
 
     if (len1 > len2 + 4) {
-        pos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
-        if (pos != NPOS) {
-            m_MainTitle.erase (pos);
-            s_TrimMainTitle (m_MainTitle);
-            len1 = m_MainTitle.length();
-        } else {
+        tpos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
+        if (tpos == NPOS) {
             string binomial = m_Genus;
             binomial += " ";
             binomial += m_Species;
-            pos = s_TitleEndsInOrganism(m_MainTitle, binomial);
-            if (pos != NPOS) {
-                m_MainTitle.erase (pos);
-                s_TrimMainTitle (m_MainTitle);
-                len1 = m_MainTitle.length();
-            } else {
+            tpos = s_TitleEndsInOrganism(m_MainTitle, binomial);
+            if (tpos == NPOS) {
                 if (m_IsCrossKingdom) {
                     pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
                     if (pos != NPOS) {
                         m_MainTitle.erase (pos + 1);
                         s_TrimMainTitle (m_MainTitle);
-                        pos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
-                        if (pos != NPOS) {
-                            m_MainTitle.erase (pos);
-                            s_TrimMainTitle (m_MainTitle);
-                            len1 = m_MainTitle.length();
-                        }
+                        tpos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
                     }
                 }
             }
@@ -2333,54 +2320,14 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     }
 
     /* do not change unless [genus species] was at the end */
-    if (pos == NPOS) return;
+    if (tpos == NPOS) return;
 
-    /*
-    if (len1 > len2 + 4) {
-        idx = len1 - len2 - 3;
-        if (m_MainTitle [idx] == ' ' && m_MainTitle [idx + 1] == '[' && m_MainTitle [len1 - 1] == ']') {
-            pos = NStr::FindNoCase(m_MainTitle, m_Taxname, 0, NPOS, NStr::eLast);
-            if (pos == idx + 2) {
-                m_MainTitle.erase (idx + 1);
-                s_TrimMainTitle (m_MainTitle);
-                len1 = m_MainTitle.length();
-            }
-        } else if (m_IsCrossKingdom) {
-            pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
-            if (pos != NPOS) {
-                m_MainTitle.erase (pos + 1);
-                s_TrimMainTitle (m_MainTitle);
-                len1 = m_MainTitle.length();
-                idx = len1 - len2 - 3;
-                if (len1 > len2 + 4 && m_MainTitle [idx] == ' ' && m_MainTitle [idx + 1] == '[' && m_MainTitle [len1 - 1] == ']') {
-                    pos = NStr::FindNoCase(m_MainTitle, m_Taxname, 0, NPOS, NStr::eLast);
-                    if (pos == idx + 2) {
-                        m_MainTitle.erase (idx + 1);
-                        s_TrimMainTitle (m_MainTitle);
-                        len1 = m_MainTitle.length();
-                    }
-                }
-            }
-        }
-    }
-    */
+    m_MainTitle.erase (tpos);
+    s_TrimMainTitle (m_MainTitle);
+    len1 = m_MainTitle.length();
 
-    /*
-    if (len1 > 2 && m_MainTitle [len1 - 1] == ']') {
-        pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
-        if (pos != NPOS) {
-            m_MainTitle.erase (pos + 1);
-        }
-        pos = m_MainTitle.find_last_of ("[");
-        if (pos != NPOS) {
-            m_MainTitle.erase (pos);
-        }
-        s_TrimMainTitle (m_MainTitle);
-        len1 = m_MainTitle.length();
-    }
-    */
+    // find (organelle)
 
-    // remove (organelle)
     if (len1 > 2 && m_MainTitle [len1 - 1] == ')') {
         pos = m_MainTitle.find_last_of ("(");
         if (pos != NPOS) {
@@ -2389,12 +2336,18 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
                 if ( ! str.empty() ) {
                     string paren = "(" + str + ")";
                     if (NStr::EndsWith (m_MainTitle, paren )) {
-                        m_MainTitle.erase (pos);
+                        opos = pos;
                         break;
                     }
                 }
             }
         }
+        s_TrimMainTitle (m_MainTitle);
+        len1 = m_MainTitle.length();
+    }
+
+    if (opos != NPOS) {
+        m_MainTitle.erase (opos);
         s_TrimMainTitle (m_MainTitle);
         len1 = m_MainTitle.length();
     }
