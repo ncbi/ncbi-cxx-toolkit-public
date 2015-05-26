@@ -37,9 +37,11 @@
 # include <sys/mman.h>
 #endif
 
-// adds few sanity tests
+// adds few sanity checks
 #define __NC_MEMMAN_DEBUG 0
+#if __NC_MEMMAN_DEBUG
 static Uint8 s_fdMemManStamp = 0xFEEDFEEDFEEDFEED;
+#endif
 
 BEGIN_NCBI_SCOPE;
 
