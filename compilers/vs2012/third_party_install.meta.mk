@@ -294,8 +294,8 @@ install_libxslt : $(LIBXSLT_SRC).libxslt_install
 clean_libxslt : $(LIBXSLT_SRC).libxslt_clean
 
 
-VDB_ORIG = $(INSTALL_BINPATH)\ncbi-vdb.dll
-VDB_COPY = $(INSTALL_BINPATH)\ncbi-vdb-dll.dll
+VDB_ORIG = $(INSTALL_BINPATH)\ncbi-vdb-md.dll
+VDB_COPY = $(INSTALL_BINPATH)\ncbi-vdb-dll-md.dll
 $(VDB_SRC).vdb_install :
 	@echo ---- & echo Copying VDB DLLs & $(INSTALL_CMD)
 # The trailing * suppresses a spurious prompt, per
