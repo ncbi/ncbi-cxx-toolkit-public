@@ -12,8 +12,7 @@ LIB = ncbi_xreader
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = 
-DLL_DLIB = $(GENBANK_READER_LDEP)
+DLL_LIB = $(GENBANK_READER_LDEP)
 
 WATCHERS = vasilche
 
