@@ -41,6 +41,7 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/annot_selector.hpp>
 
+#include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/drivers.hpp>
@@ -118,10 +119,10 @@ public:
 
 
 template<>
-class CDB_Int_For<Int8> : public CDB_BigInt
+class CDB_Int_For<Int8> : public CDB_Int // should be CDB_BigInt
 {
 public:
-    typedef CDB_BigInt TParent;
+    typedef CDB_Int TParent;
     typedef Int8 value_type;
     CDB_Int_For()
         {
@@ -557,13 +558,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
 
     if ( seq_id.IsGi() ) {
         _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
-        TGi gi;
-        if ( seq_id.IsGi() ) {
-            gi = seq_id.GetGi();
-        }
-        else {
-            gi = seq_id.GetSeqId()->GetGi();
-        }
+        TGi gi = seq_id.GetGi();
         if (gi != ZERO_GI) {
             _TRACE("ResolveGi to Acc: " << gi);
 
@@ -572,7 +567,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                 CDB_Connection* db_conn = x_GetConnection(conn);
     
                 AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_accn_ver_by_gi"));
-                CDB_Int_For<TIntId> giIn(gi);
+                CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(gi));
                 cmd->SetParam("@gi", &giIn);
                 cmd->Send();
                 
@@ -644,11 +639,11 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
     {{
         CNcbiOstrstream oss;
         if ( seq_id.IsGi() ) {
-            oss << "Seq-id ::= gi " << seq_id.GetGi();
+            oss << "Seq-id ::= gi " << CProcessor::ConvertGiFromOM(seq_id.GetGi());
         }
         else {
             CObjectOStreamAsn ooss(oss);
-            ooss << *seq_id.GetSeqId();
+            ooss << *CProcessor::ConvertIdFromOM(seq_id).GetSeqId();
         }
         asnIn = CNcbiOstrstreamToString(oss);
     }}
@@ -716,7 +711,8 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                         dbr->GetItem(&namedAnnotsGot);
                         _TRACE("named_annots = "<<namedAnnotsGot.Value());
                         if ( namedAnnotsGot.Value() ) {
-                            named_gi = giGot.Value();
+                            named_gi = GI_FROM(int, giGot.Value());
+                            CProcessor::OffsetGiToOM(named_gi);
                         }
                     }
                     else {
@@ -724,7 +720,8 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                 }
 
-                TGi gi = giGot.Value();
+                TGi gi = GI_FROM(int, giGot.Value());
+                CProcessor::OffsetGiToOM(gi);
                 int sat = satGot.Value();
                 TIntId sat_key = satKeyGot.Value();
                 
@@ -766,7 +763,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                             ext_feat -= bit;
                             blob_id = new CBlob_id;
                             blob_id->SetSat(GetAnnotSat(bit));
-                            blob_id->SetSatKey(gi);
+                            blob_id->SetSatKey(CProcessor::ConvertGiFromOM(gi));
                             blob_id->SetSubSat(bit);
                             blob_ids.push_back(CBlob_Info(blob_id,
                                                           fBlobHasExtAnnot));
@@ -790,7 +787,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
 
         if ( with_named_accs && named_gi != ZERO_GI ) {
             // postponed read of named annot accessions
-            CDB_Int_For<TIntId> giIn(named_gi);
+            CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(named_gi));
             AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_annot_types"));
             cmd->SetParam("@gi", &giIn);
             cmd->Send();
@@ -890,7 +887,7 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi"));
-        CDB_Int_For<TIntId> giIn(gi);
+        CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(gi));
         CDB_TinyInt binIn = 1;
         cmd->SetParam("@gi", &giIn);
         cmd->SetParam("@bin", &binIn);
@@ -927,6 +924,7 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
                 CSeq_id id;
                 while ( in.HaveMoreData() ) {
                     in >> id;
+                    CProcessor::OffsetIdToOM(id);
                     ids.push_back(CSeq_id_Handle::GetHandle(id));
                 }
                 if ( in.HaveMoreData() ) {
@@ -1016,7 +1014,7 @@ bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class"));
-        CDB_Int_For<TIntId> giIn(gi);
+        CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(gi));
         CDB_TinyInt hashIn = 1;
         cmd->SetParam("@gi", &giIn);
         cmd->SetParam("@ver", &hashIn);

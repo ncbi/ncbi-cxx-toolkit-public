@@ -40,6 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
+class CBeginInfo;
 class CStopWatch;
 
 BEGIN_SCOPE(objects)
@@ -53,6 +54,7 @@ class CID2_Reply_Data;
 class CLoadLockBlob;
 class CLoadLockSetter;
 class CTSE_Chunk_Info;
+class CTSE_SetObjectInfo;
 class CDataLoader;
 struct STimeSizeStatistics;
 
@@ -116,6 +118,52 @@ public:
     static void AddWGSMaster(CLoadLockSetter& blob);
     static void LoadWGSMaster(CDataLoader* loader,
                               CRef<CTSE_Chunk_Info> chunk);
+
+    static TIntId GetGiOffset(void);
+    static void OffsetGi(TGi& gi, TIntId gi_offset)
+    {
+        if ( gi ) {
+            gi = gi + gi_offset;
+        }
+    }
+#ifdef NCBI_STRICT_GI
+    static void OffsetGi(TIntId& gi, TIntId gi_offset)
+    {
+        if ( gi ) {
+            gi = gi + gi_offset;
+        }
+    }
+#endif
+    static bool OffsetId(CSeq_id& id, TIntId gi_offset);
+    static bool OffsetId(CSeq_id_Handle& id, TIntId gi_offset);
+    static void OffsetAllGis(CBeginInfo obj, TIntId gi_offset);
+    static void OffsetAllGis(CTSE_SetObjectInfo& set_info, TIntId gi_offset);
+
+    static TGi ConvertGiFromOM(TGi gi)
+    {
+        OffsetGi(gi, -GetGiOffset());
+        return gi;
+    }
+    static TGi ConvertGiToOM(TGi gi)
+    {
+        OffsetGi(gi, GetGiOffset());
+        return gi;
+    }
+    static CSeq_id_Handle ConvertIdFromOM(CSeq_id_Handle id)
+    {
+        OffsetId(id, -GetGiOffset());
+        return id;
+    }
+    static void OffsetGiToOM(TGi& gi)
+    {
+        OffsetGi(gi, GetGiOffset());
+    }
+    static void OffsetIdToOM(CSeq_id& id)
+    {
+        OffsetId(id, GetGiOffset());
+    }
+    static void OffsetAllGisFromOM(CBeginInfo obj);
+    static void OffsetAllGisToOM(CBeginInfo obj, CTSE_SetObjectInfo* set_info = 0);
 
 protected:
     CProcessor(CReadDispatcher& dispatcher);
@@ -181,6 +229,7 @@ NCBI_PARAM_DECL(bool, GENBANK, USE_MEMORY_POOL);
 NCBI_PARAM_DECL(int, GENBANK, READER_STATS);
 NCBI_PARAM_DECL(bool, GENBANK, CACHE_RECOMPRESS);
 NCBI_PARAM_DECL(bool, GENBANK, ADD_WGS_MASTER);
+NCBI_PARAM_DECL(Int8, GENBANK, GI_OFFSET);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

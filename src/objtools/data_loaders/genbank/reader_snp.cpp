@@ -332,6 +332,56 @@ static unsigned read_unsigned(CNcbiIstream& stream,
 }
 
 
+static void write_gi(CNcbiOstream& stream,
+                     TGi gi,
+                     const char* name)
+{
+    TIntId n = gi;
+    char c[8] = {
+        char(n >> 56),
+        char(n >> 48),
+        char(n >> 40),
+        char(n >> 32),
+        char(n >> 24),
+        char(n >> 16),
+        char(n >>  8),
+        char(n      )
+    };
+    stream.write(c, sizeof(c));
+}
+
+
+static TGi read_gi(CNcbiIstream& stream,
+                   const char* name)
+{
+    char c[8];
+    stream.read(c, sizeof(c));
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   string("Cannot read ")+name);
+    }
+    TIntId n =
+        (Uint1(c[4])<<24) | 
+        (Uint1(c[5])<<16) |
+        (Uint1(c[6])<< 8) |
+        (Uint1(c[7])    );
+    TIntId n2 =
+        (Uint1(c[0])<<24) | 
+        (Uint1(c[1])<<16) |
+        (Uint1(c[2])<< 8) |
+        (Uint1(c[3])    );
+#ifdef NCBI_INT8_GI
+    n |= n2<<32;
+#else
+    if ( n2 != (n>>31) ) { // high 32-bits must be the same as sign bit
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   string("GI overflow ")+name);
+    }
+#endif
+    return n;
+}
+
+
 static void write_size(CNcbiOstream& stream, size_t size)
 {
     // use ASN.1 binary like format
@@ -490,7 +540,7 @@ public:
 }
 
 
-static const unsigned MAGIC = 0x12340007;
+static const unsigned MAGIC = 0x12340008;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,
@@ -600,7 +650,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
 {
     // header
     write_unsigned(stream, MAGIC, "SNP table magic number");
-    write_unsigned(stream, GI_TO(unsigned, snp_info.GetGi()), "SNP table GI");
+    write_gi(stream, snp_info.GetGi(), "SNP table GI");
 
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
@@ -633,7 +683,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
-    snp_info.x_SetGi(GI_FROM(unsigned, read_unsigned(stream, "SNP table GI")));
+    snp_info.x_SetGi(read_gi(stream, "SNP table GI"));
 
     // strings
     LoadIndexedStringsFrom(stream,

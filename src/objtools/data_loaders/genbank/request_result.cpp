@@ -39,6 +39,7 @@
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <corelib/ncbithr.hpp>
+#include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,6 +47,23 @@ BEGIN_SCOPE(objects)
 using namespace GBL;
 
 static const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
+
+NCBI_PARAM_DECL(int, GENBANK, TRACE_LOAD);
+NCBI_PARAM_DEF_EX(int, GENBANK, TRACE_LOAD, 0,
+                  eParam_NoThread, GENBANK_TRACE_LOAD);
+
+
+static
+int s_GetLoadTraceLevel(void)
+{
+    static volatile int load_trace_level;
+    static volatile bool initialized;
+    if ( !initialized ) {
+        load_trace_level = NCBI_PARAM_TYPE(GENBANK, TRACE_LOAD)::GetDefault();
+        initialized = true;
+    }
+    return load_trace_level;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -116,6 +134,20 @@ string CFixedSeq_ids::FindLabel(void) const
 }
 
 
+CNcbiOstream& operator<<(CNcbiOstream& out, const CFixedSeq_ids& ids)
+{
+    const char* sep = "( ";
+    const char* end = "()";
+    ITERATE ( CFixedSeq_ids, it, ids ) {
+        out << sep << *it;
+        sep = ", ";
+        end = " )";
+    }
+    out << end;
+    return out;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CFixedBlob_ids
 /////////////////////////////////////////////////////////////////////////////
@@ -153,6 +185,20 @@ CFixedBlob_ids::CFixedBlob_ids(ENcbiOwnership ownership, TList& list,
     if ( empty() ) {
         m_State |= CBioseq_Handle::fState_no_data;
     }
+}
+
+
+CNcbiOstream& operator<<(CNcbiOstream& out, const CFixedBlob_ids& ids)
+{
+    const char* sep = "( ";
+    const char* end = "()";
+    ITERATE ( CFixedBlob_ids, it, ids ) {
+        out << sep << it->GetBlob_id();
+        sep = ", ";
+        end = " )";
+    }
+    out << end;
+    return out;
 }
 
 
@@ -395,6 +441,70 @@ void CLoadLockBlob::x_ObtainTSE_LoadLock(CReaderRequestResult& result)
 /////////////////////////////////////////////////////////////////////////////
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+struct SBlobId
+{
+    SBlobId(const CTSE_Info& tse)
+        : m_TSE(tse)
+        {
+        }
+
+    const CTSE_Info& m_TSE;
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& out, const SBlobId& id)
+{
+    out << id.m_TSE.GetBlobId().ToString();
+    return out;
+}
+
+struct SChunkId
+{
+    SChunkId(const CTSE_Chunk_Info& chunk)
+        : m_Chunk(chunk)
+        {
+        }
+
+    const CTSE_Chunk_Info& m_Chunk;
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& out, const SChunkId& id)
+{
+    out << id.m_Chunk.GetSplitInfo().GetBlobId().ToString()<<"."<<id.m_Chunk.GetChunkId();
+    return out;
+}
+
+struct SSeqIds
+{
+    SSeqIds(const CSeq_entry& entry)
+        : m_Entry(entry)
+        {
+        }
+
+    const CSeq_entry& m_Entry;
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& out, const SSeqIds& ids)
+{
+    for ( CTypeConstIterator<CBioseq> it = Begin(ids.m_Entry); it; ++it ) {
+        const CBioseq& seq = *it;
+        const char* sep = "Bioseq( ";
+        const char* end = "Bioseq()";
+        ITERATE ( CBioseq::TId, it2, seq.GetId() ) {
+            out << sep << (*it2)->AsFastaString();
+            sep = ", ";
+            end = " )";
+        }
+        out << end;
+        break;
+    }
+    return out;
+}
+
+END_LOCAL_NAMESPACE;
+
+
 CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock)
 {
     x_Init(lock, lock.GetSelectedChunkId());
@@ -467,6 +577,9 @@ void CLoadLockSetter::SetLoaded(void)
 {
     _ASSERT(!IsLoaded());
     if ( !m_Chunk ) {
+        if ( s_GetLoadTraceLevel() > 0 ) {
+            LOG_POST(Info<<"GBLoader:"<<SBlobId(*m_TSE_LoadLock)<<" loaded");
+        }
         m_TSE_LoadLock.SetLoaded();
         TParent::SetLoaded(m_TSE_LoadLock);
         CReaderRequestResult& result =
@@ -474,6 +587,11 @@ void CLoadLockSetter::SetLoaded(void)
         result.x_AddTSE_LoadLock(m_TSE_LoadLock);
     }
     else {
+        if ( s_GetLoadTraceLevel() >= 2 ||
+             (s_GetLoadTraceLevel() >= 1 &&
+              m_Chunk->GetChunkId() >= kMasterWGS_ChunkId) ) {
+            LOG_POST(Info<<"GBLoader:"<<SChunkId(*m_Chunk)<<" loaded");
+        }
         m_Chunk->SetLoaded();
     }
 }
@@ -539,9 +657,15 @@ void CLoadLockSetter::SetSeq_entry(CSeq_entry& entry,
 {
     _ASSERT(!IsLoaded());
     if ( !m_Chunk ) {
+        if ( s_GetLoadTraceLevel() > 0 ) {
+            LOG_POST(Info<<"GBLoader:"<<SBlobId(*m_TSE_LoadLock)<<" entry = "<<SSeqIds(entry));
+        }
         m_TSE_LoadLock->SetSeq_entry(entry, set_info);
     }
     else {
+        if ( s_GetLoadTraceLevel() > 0 ) {
+            LOG_POST(Info<<"GBLoader:"<<SChunkId(*m_Chunk)<<" entry = "<<SSeqIds(entry));
+        }
         m_Chunk->x_LoadSeq_entry(entry, set_info);
     }
 }
@@ -761,7 +885,7 @@ CGBInfoManager::~CGBInfoManager(void)
 
 
 CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
-                                  const CSeq_id_Handle& id)
+                                 const CSeq_id_Handle& id)
     : TParent(result.GetLoadLockSeqIds(id))
 {
 }
@@ -916,6 +1040,9 @@ bool
 CReaderRequestResult::SetLoadedSeqIds(const CSeq_id_Handle& id,
                                       const CFixedSeq_ids& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") seq_ids = "<<value);
+    }
     return GetGBInfoManager().m_CacheSeqIds.SetLoaded(*this, id, value);
 }
 
@@ -958,6 +1085,9 @@ bool
 CReaderRequestResult::SetLoadedSeqIds(const string& id,
                                       const CFixedSeq_ids& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:StrId("<<id<<") seq_ids = "<<value);
+    }
     return GetGBInfoManager().m_CacheStrSeqIds.SetLoaded(*this, id, value);
 }
 
@@ -970,6 +1100,9 @@ bool
 CReaderRequestResult::SetLoadedSeqIds(const CSeq_id_Handle& id,
                                       const CLoadLockSeqIds& ids)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") seq_ids = "<<ids.GetData());
+    }
     CLoadLockSeqIds lock(*this, id);
     return lock.SetLoadedSeq_ids(ids);
 }
@@ -980,6 +1113,9 @@ CReaderRequestResult::SetLoadedBlobIds(const CSeq_id_Handle& id,
                                        const SAnnotSelector* sel,
                                        const CLoadLockBlobIds& ids)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") blob_ids = "<<ids.GetData());
+    }
     CLoadLockBlobIds lock(*this, id, sel);
     return lock.SetLoadedBlob_ids(ids);
 }
@@ -1033,6 +1169,9 @@ bool
 CReaderRequestResult::SetLoadedAcc(const CSeq_id_Handle& id,
                                    const CSeq_id_Handle& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") acc = "<<value);
+    }
     return GetGBInfoManager().m_CacheAcc.SetLoaded(*this, id, value);
 }
 
@@ -1055,6 +1194,9 @@ bool CReaderRequestResult::SetLoadedAccFromSeqIds(const CSeq_id_Handle& id,
                                                   const CLoadLockSeqIds& ids)
 {
     CSeq_id_Handle acc = ids.GetSeq_ids().FindAccVer();
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") acc = "<<acc);
+    }
     TExpirationTime exp_time = ids.GetExpirationTime();
     return GetGBInfoManager().m_CacheAcc.SetLoaded(*this, id, acc, exp_time);
 }
@@ -1068,6 +1210,9 @@ CReaderRequestResult::SetLoadedSeqIdsFromZeroGi(const CSeq_id_Handle& id,
                                                 const CLoadLockGi& gi_lock)
 {
     _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi() == ZERO_GI);
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") seq_ids = null");
+    }
     CLoadLockSeqIds lock(*this, id);
     TBlobState state = CBioseq_Handle::fState_no_data;
     return lock.SetLoadedSeq_ids(CFixedSeq_ids(state),
@@ -1081,6 +1226,9 @@ CReaderRequestResult::SetLoadedBlobIdsFromZeroGi(const CSeq_id_Handle& id,
                                                  const CLoadLockGi& gi_lock)
 {
     _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi() == ZERO_GI);
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") blob_ids = null");
+    }
     CLoadLockBlobIds lock(*this, id, sel);
     TBlobState state = CBioseq_Handle::fState_no_data;
     return lock.SetNoBlob_ids(state,
@@ -1103,6 +1251,9 @@ bool CReaderRequestResult::SetLoadedGiFromSeqIds(const CSeq_id_Handle& id,
                                                  const CLoadLockSeqIds& ids)
 {
     TGi gi = ids.GetSeq_ids().FindGi();
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") gi = "<<gi);
+    }
     TExpirationTime exp_time = ids.GetExpirationTime();
     return GetGBInfoManager().m_CacheGi.SetLoaded(*this, id, gi, exp_time);
 }
@@ -1155,6 +1306,9 @@ bool
 CReaderRequestResult::SetLoadedGi(const CSeq_id_Handle& id,
                                   const TGi& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") gi = "<<value);
+    }
     return GetGBInfoManager().m_CacheGi.SetLoaded(*this, id, value);
 }
 
@@ -1206,6 +1360,9 @@ bool
 CReaderRequestResult::SetLoadedGi(const string& id,
                                   const TGi& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:StrId("<<id<<") gi = "<<value);
+    }
     return GetGBInfoManager().m_CacheStrGi.SetLoaded(*this, id, value);
 }
 
@@ -1228,6 +1385,9 @@ bool CReaderRequestResult::SetLoadedLabelFromSeqIds(const CSeq_id_Handle& id,
                                                     const CLoadLockSeqIds& ids)
 {
     string label = ids.GetSeq_ids().FindLabel();
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") label = "<<label);
+    }
     TExpirationTime exp_time = ids.GetExpirationTime();
     return GetGBInfoManager().m_CacheLabel.SetLoaded(*this, id, label, exp_time);
 }
@@ -1271,6 +1431,9 @@ bool
 CReaderRequestResult::SetLoadedLabel(const CSeq_id_Handle& id,
                                      const string& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") label = "<<value);
+    }
     return GetGBInfoManager().m_CacheLabel.SetLoaded(*this, id, value);
 }
 
@@ -1313,6 +1476,9 @@ bool
 CReaderRequestResult::SetLoadedTaxId(const CSeq_id_Handle& id,
                                      const TTaxId& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") tax_id = "<<value);
+    }
     return GetGBInfoManager().m_CacheTaxId.SetLoaded(*this, id, value);
 }
 
@@ -1355,6 +1521,9 @@ bool
 CReaderRequestResult::SetLoadedHash(const CSeq_id_Handle& id,
                                     const TSequenceHash& value)
 {
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
+    }
     return GetGBInfoManager().m_CacheHash.SetLoaded(*this, id, value);
 }
 
@@ -1407,7 +1576,9 @@ CReaderRequestResult::SetLoadedBlobIds(const CSeq_id_Handle& id,
                                        const CFixedBlob_ids& value)
 {
     TKeyBlob_ids key = s_KeyBlobIds(id, sel);
-    LOG_POST("SetLoadedBlobIds("<<id<<","<<key.second<<")");
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") blob_ids("<<key.second<<") = "<<value);
+    }
     return GetGBInfoManager().m_CacheBlobIds.SetLoaded(*this, key, value);
 }
 
@@ -1439,6 +1610,9 @@ bool CReaderRequestResult::SetLoadedBlobState(const CBlob_id& blob_id,
                                                                  blob_id,
                                                                  state);
     if ( changed ) {
+        if ( s_GetLoadTraceLevel() > 0 ) {
+            LOG_POST(Info<<"GBLoader:"<<blob_id<<" state = "<<state);
+        }
         // set to TSE_Info
         CLoadLockBlob blob(*this, blob_id);
         if ( blob.IsLoadedBlob() ) {
@@ -1494,6 +1668,9 @@ bool CReaderRequestResult::SetLoadedBlobVersion(const CBlob_id& blob_id,
                                                                    blob_id,
                                                                    version);
     if ( changed ) {
+        if ( s_GetLoadTraceLevel() > 0 ) {
+            LOG_POST(Info<<"GBLoader:"<<blob_id<<" version = "<<version);
+        }
         // set to TSE_Info
         CLoadLockBlob blob(*this, blob_id);
         if ( blob.IsLoadedBlob() ) {

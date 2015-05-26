@@ -196,7 +196,7 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
     CLoadLockGi lock(result, seq_id);
     if ( lock.IsLoadedGi() ) {
         CStoreBuffer str;
-        str.StoreInt4(GI_TO(Int4, lock.GetGi()));
+        str.StoreInt8(lock.GetGi());
         x_WriteId(seq_id, GetGiSubkey(), str);
     }
 }
@@ -224,7 +224,7 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
     CLoadLockGi lock(result, seq_id);
     if ( lock.IsLoadedGi() ) {
         CStoreBuffer str;
-        str.StoreInt4(GI_TO(Int4, lock.GetGi()));
+        str.StoreInt8(lock.GetGi());
         x_WriteId(GetIdKey(seq_id), GetGiSubkey(), str);
     }
 }

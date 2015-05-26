@@ -55,10 +55,10 @@ void CTestApplication::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->AddDefaultKey("gi_from", "GiFrom",
                             "first GI to fetch",
-                            CArgDescriptions::eInteger, "100");
+                            CArgDescriptions::eInt8, "100");
     arg_desc->AddDefaultKey("gi_to", "GiTo",
                             "last GI to fetch",
-                            CArgDescriptions::eInteger, "200");
+                            CArgDescriptions::eInt8, "200");
     arg_desc->AddDefaultKey("count", "Count",
                             "number of passes",
                             CArgDescriptions::eInteger, "1");
@@ -86,8 +86,8 @@ int CTestApplication::Run(void)
 
     const CArgs& args = GetArgs();
     int count = args["count"].AsInteger();
-    int gi_from = args["gi_from"].AsInteger();
-    int gi_to = args["gi_to"].AsInteger();
+    Int8 gi_from = args["gi_from"].AsInt8();
+    Int8 gi_to = args["gi_to"].AsInt8();
 
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     for ( int i = 0; i < 100; ++i ) {
@@ -97,9 +97,9 @@ int CTestApplication::Run(void)
         CRef<CReadDispatcher> dispatcher(new CReadDispatcher);
         CRef<CReader> reader(new CId1Reader);
         dispatcher->InsertReader(0, reader);
-        for ( int gi = gi_from; gi <= gi_to; gi++ ) {
+        for ( Int8 gi = gi_from; gi <= gi_to; gi++ ) {
             NcbiCout << "gi: " << gi << ": " << NcbiEndl;
-            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(GI_FROM(int, gi));
+            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
             CStandaloneRequestResult request(seq_id);
             dispatcher->LoadSeq_idSeq_ids(request, seq_id);
             CLoadLockSeqIds seq_ids(request, seq_id);

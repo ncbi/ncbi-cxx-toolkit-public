@@ -48,9 +48,7 @@
 
 #include <objects/id1/id1__.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
-#include <objects/seqsplit/ID2S_Split_Info.hpp>
-#include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
-#include <objects/seqsplit/ID2S_Chunk.hpp>
+#include <objects/seqsplit/seqsplit__.hpp>
 // for read hooks setup
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -407,6 +405,193 @@ inline
 CWriter* CProcessor::GetWriter(const CReaderRequestResult& result) const
 {
     return m_Dispatcher->GetWriter(result, CWriter::eBlobWriter);
+}
+
+
+NCBI_PARAM_DEF_EX(Int8, GENBANK, GI_OFFSET, 0,
+                  eParam_NoThread, GENBANK_GI_OFFSET);
+
+
+TIntId CProcessor::GetGiOffset(void)
+{
+    static volatile TIntId gi_offset;
+    static volatile bool initialized;
+    if ( !initialized ) {
+        gi_offset = NCBI_PARAM_TYPE(GENBANK, GI_OFFSET)::GetDefault();
+        initialized = true;
+    }
+    return gi_offset;
+}
+
+
+bool CProcessor::OffsetId(CSeq_id& id, TIntId gi_offset)
+{
+    if ( !gi_offset ) {
+        return false;
+    }
+    if ( id.IsGi() ) {
+        if ( TGi gi = id.GetGi() ) {
+            id.SetGi(gi + gi_offset);
+            return true;
+        }
+    }
+    else if ( id.IsGeneral() ) {
+        CDbtag& dbtag = id.SetGeneral();
+        CObject_id& tag = dbtag.SetTag();
+        if ( tag.IsStr() &&
+             NStr::EqualNocase(dbtag.GetDb(), "NAnnot") ) {
+            // Named annotation virtual sequence id:
+            // gnl|NAnnot|12345:NA000012345.1
+            const string& s = tag.GetStr();
+            SIZE_TYPE sep = s.find(':');
+            Int8 id8;
+            if ( sep != NPOS &&
+                 NStr::StringToNumeric(s, &id8, NStr::fConvErr_NoThrow) &&
+                 id8 != 0 ) {
+                // offset only non-zero GIs
+                tag.SetStr(NStr::NumericToString(id8 + gi_offset) +
+                           s.substr(sep));
+                return true;
+            }
+        }
+        else if ( NStr::StartsWith(dbtag.GetDb(), "ANNOT:", NStr::eNocase) ) {
+            // External annotation virtual sequence id:
+            // gnl|Annot:SNP|12345 
+            CObject_id::TId8 id8 = 0;
+            if ( tag.GetId8(id8) &&
+                 id8 != 0 ) {
+                // offset only non-zero GIs
+                tag.SetId8(id8 + gi_offset);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CProcessor::OffsetId(CSeq_id_Handle& id, TIntId gi_offset)
+{
+    if ( !gi_offset ) {
+        return false;
+    }
+    if ( id.IsGi() ) {
+        if ( TGi gi = id.GetGi() ) {
+            id = CSeq_id_Handle::GetGiHandle(gi + gi_offset);
+            return true;
+        }
+    }
+    else if ( id.Which() == CSeq_id::e_General ) {
+        CRef<CSeq_id> seq_id(SerialClone(*id.GetSeqId()));
+        if ( OffsetId(*seq_id, gi_offset) ) {
+            id = CSeq_id_Handle::GetHandle(*seq_id);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CProcessor::OffsetAllGis(CBeginInfo obj, TIntId gi_offset)
+{
+    if ( !gi_offset ) {
+        return;
+    }
+    for ( CTypeIterator<CSeq_id> it(obj); it; ++it ) {
+        OffsetId(*it, gi_offset);
+    }
+
+    // ID2
+    for ( CTypeIterator<CID1server_request> it(obj); it; ++it ) {
+        CID1server_request& req = *it;
+        switch ( req.Which() ) {
+        case CID1server_request::e_Getseqidsfromgi:
+            OffsetGi(req.SetGetseqidsfromgi(), gi_offset);
+            break;
+        case CID1server_request::e_Getgihist:
+            OffsetGi(req.SetGetgihist(), gi_offset);
+            break;
+        case CID1server_request::e_Getgirev:
+            OffsetGi(req.SetGetgirev(), gi_offset);
+            break;
+        case CID1server_request::e_Getgistate:
+            OffsetGi(req.SetGetgistate(), gi_offset);
+            break;
+        default:
+            break;
+        }
+    }
+    for ( CTypeIterator<CID1server_maxcomplex> it(obj); it; ++it ) {
+        OffsetGi(it->SetGi(), gi_offset);
+    }
+    for ( CTypeIterator<CID1server_back> it(obj); it; ++it ) {
+        CID1server_back& reply = *it;
+        if ( reply.IsGotgi() ) {
+            OffsetGi(reply.SetGotgi(), gi_offset);
+        }
+    }
+    for ( CTypeIterator<CID1blob_info> it(obj); it; ++it ) {
+        OffsetGi(it->SetGi(), gi_offset);
+    }
+    
+    // ID2
+    for ( CTypeIterator<CID2S_Seq_loc> it(obj); it; ++it ) {
+        CID2S_Seq_loc& loc = *it;
+        if ( loc.IsWhole_gi() ) {
+            OffsetGi(loc.SetWhole_gi(), gi_offset);
+        }
+    }
+    for ( CTypeIterator<CID2S_Gi_Range> it(obj); it; ++it ) {
+        OffsetGi(it->SetStart(), gi_offset);
+    }
+    for ( CTypeIterator<CID2S_Gi_Interval> it(obj); it; ++it ) {
+        OffsetGi(it->SetGi(), gi_offset);
+    }
+    for ( CTypeIterator<CID2S_Gi_Ints> it(obj); it; ++it ) {
+        OffsetGi(it->SetGi(), gi_offset);
+    }
+    for ( CTypeIterator<CID2S_Bioseq_Ids> it(obj); it; ++it ) {
+        NON_CONST_ITERATE ( CID2S_Bioseq_Ids::Tdata, it2, it->Set() ) {
+            if ( (*it2)->IsGi() ) {
+                OffsetGi((*it2)->SetGi(), gi_offset);
+            }
+        }
+    }
+    for ( CTypeIterator<CID2S_Chunk_Data> it(obj); it; ++it ) {
+        if ( it->SetId().IsGi() ) {
+            OffsetGi(it->SetId().SetGi(), gi_offset);
+        }
+    }
+}
+
+
+void CProcessor::OffsetAllGis(CTSE_SetObjectInfo& set_info, TIntId gi_offset)
+{
+    if ( !gi_offset ) {
+        return;
+    }
+    NON_CONST_ITERATE ( CTSE_SetObjectInfo::TSeq_annot_InfoMap, it,
+                        set_info.m_Seq_annot_InfoMap ) {
+        CSeq_annot_SNP_Info& snp_info = *it->second.m_SNP_annot_Info;
+        snp_info.SetGi(TIntId(snp_info.GetGi())+gi_offset);
+    }
+}
+
+
+void CProcessor::OffsetAllGisFromOM(CBeginInfo obj)
+{
+    OffsetAllGis(obj, -GetGiOffset());
+}
+
+
+void CProcessor::OffsetAllGisToOM(CBeginInfo obj, CTSE_SetObjectInfo* set_info)
+{
+    if ( TIntId gi_offset = GetGiOffset() ) {
+        OffsetAllGis(obj, gi_offset);
+        if ( set_info ) {
+            OffsetAllGis(*set_info, gi_offset);
+        }
+    }
 }
 
 
@@ -770,6 +955,7 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
         if ( entry.first ) {
+            OffsetAllGisToOM(*entry.first);
             setter.SetSeq_entry(*entry.first);
         }
         setter.SetLoaded();
@@ -989,6 +1175,7 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
         if ( entry.first ) {
+            OffsetAllGisToOM(*entry.first, &set_info);
             setter.SetSeq_entry(*entry.first, &set_info);
         }
         setter.SetLoaded();
@@ -1079,6 +1266,7 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         }}
 
         
+        OffsetAllGisToOM(*seq_entry);
         setter.SetSeq_entry(*seq_entry);
         if ( chunk_id == kMain_ChunkId &&
              result.GetAddWGSMasterDescr() ) {
@@ -1204,6 +1392,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
             }
         }
     }}
+    OffsetAllGisToOM(*seq_entry, &set_info);
     setter.SetSeq_entry(*seq_entry, &set_info);
     setter.SetLoaded();
 }
@@ -1481,6 +1670,7 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
     if ( writer ) {
         SaveSNPBlob(result, blob_id, chunk_id, writer, *seq_entry, blob_state, set_info);
     }
+    OffsetAllGisToOM(*seq_entry, &set_info);
     setter.SetSeq_entry(*seq_entry, &set_info);
     setter.SetLoaded();
 }
@@ -1609,6 +1799,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         result.SetAndSaveBlobState(blob_id, blob_state);
         CLoadLockSetter setter(blob);
         if ( !setter.IsLoaded() ) {
+            OffsetAllGisToOM(*entry);
             setter.SetSeq_entry(*entry);
             if ( result.GetAddWGSMasterDescr() ) {
                 AddWGSMaster(setter);
@@ -1682,6 +1873,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         if ( !setter.IsLoaded() ) {
             CTSE_LoadLock& lock = setter.GetTSE_LoadLock();
             lock->GetSplitInfo().SetSplitVersion(split_version);
+            OffsetAllGisToOM(*split_info);
             CSplitParser::Attach(*lock, *split_info);
             if ( result.GetAddWGSMasterDescr() ) {
                 AddWGSMaster(setter);
@@ -1729,6 +1921,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             CReaderRequestResultRecursion r(result);
             
             x_ReadData(data, Begin(*chunk), data_size);
+            OffsetAllGisToOM(*chunk);
             CSplitParser::Load(setter.GetTSE_Chunk_Info(), *chunk);
             
             LogStat(r, blob_id, chunk_id,
@@ -2275,7 +2468,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         setter.GetTSE_LoadLock()->SetName(name);
     }
 
-    TGi gi = blob_id.GetSatKey();
+    TGi gi = ConvertGiToOM(blob_id.GetSatKey());
     CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
     CSeq_id seq_id;
     seq_id.SetGeneral().SetDb(db_name);

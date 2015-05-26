@@ -120,6 +120,11 @@ protected:
             {
                 StoreUint4(v);
             }
+        void StoreInt8(Int8 v)
+            {
+                StoreInt4(v>>32);
+                StoreUint4(Uint4(v));
+            }
         void StoreString(const string& s);
 
         static Uint4 ToUint4(size_t size)

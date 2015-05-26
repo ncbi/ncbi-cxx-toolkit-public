@@ -153,7 +153,7 @@ void SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel,
 
 const char* SCacheInfo::GetGiSubkey(void)
 {
-    return "gi4";
+    return "gi8";
 }
 
 
@@ -377,6 +377,12 @@ namespace {
         Int4 ParseInt4(void)
             {
                 return ParseUint4();
+            }
+        Int8 ParseInt8(void)
+            {
+                Int8 n = Int8(ParseInt4()) << 32;
+                n |= ParseUint4();
+                return n;
             }
         string ParseString(void);
         string FullString(void);
@@ -684,7 +690,16 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     CConn conn(result, this);
     CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetGiSubkey());
     if ( str.Found() ) {
-        TGi gi = GI_FROM(Int4, str.ParseInt4());
+        Int8 gi_num = str.ParseInt8();
+#ifdef NCBI_INT8_GI
+        TGi gi = gi_num;
+#else
+        if ( gi_num != Int4(gi_num) ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "64-bit gi overflow");
+        }
+        TGi gi = Int4(gi_num);
+#endif
         if ( str.Done() ) {
             conn.Release();
             lock.SetLoadedGi(gi, str.GetExpirationTime());

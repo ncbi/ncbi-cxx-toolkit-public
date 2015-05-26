@@ -56,6 +56,7 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
+#include <serial/iterator.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
 #include <util/static_map.hpp>
@@ -410,8 +411,13 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
             if ( iter != sc_SatMap.end() ) {
                 TBlobIds blob_ids;
                 CRef<CBlob_id> blob_id(new CBlob_id);
-                blob_id->SetSat(iter->second.first);
-                blob_id->SetSatKey(num);
+                ESat sat = iter->second.first;
+                Int8 sat_key = num;
+                if ( sat == eSat_ANNOT_CDD || sat == eSat_ANNOT ) {
+                    sat_key = CProcessor::ConvertGiFromOM(sat_key);
+                }
+                blob_id->SetSat(sat);
+                blob_id->SetSatKey(sat_key);
                 blob_id->SetSubSat(iter->second.second);
                 blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
                 ids.SetLoadedBlob_ids(CFixedBlob_ids(eTakeOwnership, blob_ids));
@@ -523,7 +529,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
                 ext_feat -= bit;
                 CRef<CBlob_id> blob_id(new CBlob_id);
                 blob_id->SetSat(GetAnnotSat(bit));
-                blob_id->SetSatKey(gi);
+                blob_id->SetSatKey(CProcessor::ConvertGiFromOM(gi));
                 blob_id->SetSubSat(bit);
                 blob_ids.push_back(CBlob_Info(blob_id, fBlobHasExtAnnot));
             }
@@ -596,7 +602,7 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
 CReader::TBlobVersion
 CId1Reader::x_ResolveId(CReaderRequestResult& result,
                         CID1server_back& reply,
-                        const CID1server_request& request)
+                        CID1server_request& request)
 {
     CConn conn(result, this);
     x_SendRequest(conn, request);
@@ -702,8 +708,9 @@ void CId1Reader::x_SendRequest(const CBlob_id& blob_id, TConn conn)
 
 
 void CId1Reader::x_SendRequest(TConn conn,
-                               const CID1server_request& request)
+                               CID1server_request& request)
 {
+    CProcessor::OffsetAllGisFromOM(Begin(request));
     CConn_IOStream* stream = x_GetConnection(conn);
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
@@ -768,6 +775,7 @@ void CId1Reader::x_ReceiveReply(TConn conn,
             s << " ID1server-back.";
         }
     }
+    CProcessor::OffsetAllGisToOM(Begin(reply));
 }
 
 END_SCOPE(objects)

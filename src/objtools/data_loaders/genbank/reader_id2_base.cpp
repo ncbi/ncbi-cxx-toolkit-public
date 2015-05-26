@@ -1365,6 +1365,8 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     CRef<CID2_Reply> reply;
     try {
         // send request
+
+        CProcessor::OffsetAllGisFromOM(packet);
         {{
             if ( GetDebugLevel() >= eTraceConn ) {
                 CDebugPrinter s(conn, "CId2Reader");
@@ -1455,6 +1457,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                     }
                 }
             }
+            CProcessor::OffsetAllGisToOM(*reply);
             int num = reply->GetSerial_number() - start_serial_num;
             if ( reply->IsSetDiscard() ) {
                 // discard whole reply for now

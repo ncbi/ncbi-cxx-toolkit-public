@@ -92,9 +92,9 @@ protected:
     // returns error blob state parsed from ID1server-back.error
     TBlobState x_ResolveId(CReaderRequestResult& result,
                            CID1server_back& id1_reply,
-                           const CID1server_request& id1_request);
+                           CID1server_request& id1_request);
 
-    void x_SendRequest(TConn conn, const CID1server_request& request);
+    void x_SendRequest(TConn conn, CID1server_request& request);
     void x_ReceiveReply(TConn conn, CID1server_back& reply);
     void x_SendRequest(const CBlob_id& blob_id, TConn conn);
 
