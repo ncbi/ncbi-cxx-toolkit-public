@@ -1048,6 +1048,7 @@ public:
             CNetScheduleAPI::EJobStatus* job_status,
             int* last_event_index = NULL);
 
+    // This method requires calling SubmitJob prior with wait_time set
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
             CDeadline& deadline, CNetScheduleAPI ns_api);
 
