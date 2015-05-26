@@ -44,7 +44,7 @@
 
 #define NCBI_USE_ERRCODE_X  NetStorage_RPC
 
-#define NST_PROTOCOL_VERSION 1
+#define NST_PROTOCOL_VERSION "1.0.0"
 
 #define READ_CHUNK_SIZE (64 * 1024)
 
@@ -597,7 +597,7 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
         if (app != NULL)
             hello.SetString("Application", app->GetProgramExecutablePath());
     }}
-    hello.SetInteger("ProtocolVersion", NST_PROTOCOL_VERSION);
+    hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
 
     m_Service = new SNetServiceImpl("NetStorageAPI", m_ClientName,
             new CNetStorageServerListener(hello));
