@@ -257,11 +257,11 @@ BOOST_AUTO_TEST_CASE(Test_BuiltinIdMapper)
          loc1.SetId(id1);
 
          CSeq_id_Handle mapped_idh = mapper.Map(idh1);
-         BOOST_CHECK_EQUAL(GI_FROM(int, 224589800), mapped_idh.GetGi());
+         BOOST_CHECK_EQUAL(GI_CONST(224589800), mapped_idh.GetGi());
 
          CRef<CSeq_loc> loc2 = mapper.Map(loc1);
          mapped_idh = CSeq_id_Handle::GetHandle(*loc2->GetId());
-         BOOST_CHECK_EQUAL(GI_FROM(int, 224589800), mapped_idh.GetGi());
+         BOOST_CHECK_EQUAL(GI_CONST(224589800), mapped_idh.GetGi());
          BOOST_CHECK_EQUAL(loc2->GetInt().GetFrom(), (TSeqPos)10);
          BOOST_CHECK_EQUAL(loc2->GetInt().GetTo(), (TSeqPos)100);
      }}
@@ -273,11 +273,11 @@ BOOST_AUTO_TEST_CASE(Test_BuiltinIdMapper)
          loc2.SetId(id2);
 
          CSeq_id_Handle mapped_idh = mapper.Map(idh2);
-         BOOST_CHECK_EQUAL(GI_FROM(int, 224589811), mapped_idh.GetGi());
+         BOOST_CHECK_EQUAL(GI_CONST(224589811), mapped_idh.GetGi());
 
          CRef<CSeq_loc> loc3 = mapper.Map(loc2);
          mapped_idh = CSeq_id_Handle::GetHandle(*loc3->GetId());
-         BOOST_CHECK_EQUAL(GI_FROM(int, 224589811), mapped_idh.GetGi());
+         BOOST_CHECK_EQUAL(GI_CONST(224589811), mapped_idh.GetGi());
          BOOST_CHECK_EQUAL(loc3->GetInt().GetFrom(), (TSeqPos)10);
          BOOST_CHECK_EQUAL(loc3->GetInt().GetTo(), (TSeqPos)100);
      }}

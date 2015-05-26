@@ -112,7 +112,7 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
         }
         if (pId->IsGi()) {
             if (flags & CReaderBase::fNumericIdsAsLocal  ||
-                    pId->GetGi() < GI_FROM(int, 500)) {
+                    pId->GetGi() < GI_CONST(500)) {
                 pId.Reset(new CSeq_id);
                 if (!localInts) {
                     pId->SetLocal().SetStr(rawId);
