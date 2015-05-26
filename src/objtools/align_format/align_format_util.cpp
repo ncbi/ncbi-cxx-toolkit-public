@@ -3007,7 +3007,7 @@ static string s_MapURLLink(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *se
 
 
 
-static bool s_IsWGSPattern(string &wgsAccession)
+bool CAlignFormatUtil::IsWGSPattern(string &wgsAccession)
 {
 	//const string  kWgsAccessionPattern = "^[A-Z]{4}[0-9]{8,10}(\.[0-9]+){0,1}$"; //example AUXO013124042 or AUXO013124042.1	    
     const unsigned int kWgsProjLength = 4;
@@ -3048,7 +3048,7 @@ static bool s_IsWGSPattern(string &wgsAccession)
 bool CAlignFormatUtil::IsWGSAccession(string &wgsAccession, string &wgsProjName)
 {	
 	const unsigned int  kWgsProgNameLength = 6;	
-	bool isWGS = s_IsWGSPattern(wgsAccession);
+	bool isWGS = IsWGSPattern(wgsAccession);
 	if(isWGS) {
 		wgsProjName = wgsAccession.substr(0,kWgsProgNameLength);		
 	}
