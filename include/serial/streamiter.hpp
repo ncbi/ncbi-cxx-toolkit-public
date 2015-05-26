@@ -233,11 +233,14 @@ public:
     }
 protected:
     CIStreamIterator_Base()
+        : m_Reader(nullptr)
     {
     }
     ~CIStreamIterator_Base(void)
     {
-        m_Reader->Stop();
+        if (m_Reader) {
+            m_Reader->Stop();
+        }
     }
 private:
     // prohibit copy
