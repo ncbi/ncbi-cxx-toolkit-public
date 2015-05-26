@@ -683,7 +683,7 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
     // Fix up the ID if its not as well formed as it could be.
     // Because GenColl only stores perfectly formed IDs.
 
-    if (Id->IsGi() && Id->GetGi() < GI_FROM(int, 50)) {
+    if (Id->IsGi() && Id->GetGi() < GI_CONST(50)) {
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->SetLocal().SetStr() = NStr::NumericToString(Id->GetGi());
         Id = NewId;
@@ -1269,7 +1269,7 @@ CGencollIdMapper::x_IsParentSequence(const CSeq_id& Id,
 CConstRef<CGC_Sequence>
 CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spec) const
 {
-    if (Id.IsGi() && Id.GetGi() > GI_FROM(int, 50)) {
+    if (Id.IsGi() && Id.GetGi() > GI_CONST(50)) {
         return CConstRef<CGC_Sequence>();
     }
     if (CSeq_id::IdentifyAccession(Id.GetSeqIdString(true)) >= CSeq_id::eAcc_type_mask) {
