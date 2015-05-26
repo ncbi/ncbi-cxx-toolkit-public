@@ -23,6 +23,7 @@ seqdbgimask \
 seqdbobj
 
 LIB = seqdb
+DLL_LIB = blastdb
 
 CFLAGS   = $(FAST_CFLAGS)
 CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)

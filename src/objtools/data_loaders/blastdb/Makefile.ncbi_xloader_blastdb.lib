@@ -3,6 +3,8 @@
 LIB = ncbi_xloader_blastdb
 SRC = bdbloader cached_sequence local_blastdb_adapter
 
+DLL_LIB = seqdb
+
 CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 
 ASN_DEP = blastdb seqset

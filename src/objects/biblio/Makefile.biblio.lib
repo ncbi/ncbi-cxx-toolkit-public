@@ -1,6 +1,7 @@
 LIB = biblio
 SRC = biblio__ biblio___ citation_base
 
+DLL_LIB = general
 
 USES_LIBRARIES =  \
     general

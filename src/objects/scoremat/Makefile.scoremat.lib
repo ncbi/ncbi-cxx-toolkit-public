@@ -1,6 +1,7 @@
 LIB = scoremat
 SRC = scoremat__ scoremat___
 
+DLL_LIB = seqset
 
 USES_LIBRARIES =  \
     seqset

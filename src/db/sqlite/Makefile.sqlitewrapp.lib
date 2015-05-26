@@ -4,6 +4,7 @@ SRC = sqlitewrapp
 LIB = sqlitewrapp
 
 CPPFLAGS= $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)
+LIBS    = $(SQLITE3_LIBS) $(ORIG_LIBS)
 
 REQUIRES = SQLITE3
 

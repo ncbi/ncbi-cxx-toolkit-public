@@ -3,6 +3,7 @@ ASN_DEP = xnetblast
 LIB = xnetblastcli
 SRC = blastclient blastclient_
 
+DLL_LIB = xconnect
 
 USES_LIBRARIES =  \
     xconnect xnetblast

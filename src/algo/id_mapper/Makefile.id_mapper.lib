@@ -3,6 +3,8 @@
 LIB = xid_mapper
 SRC = id_mapper
 
+DLL_LIB = $(SOBJMGR_LIBS)
+
 ASN_DEP = genome_collection seqset
 
 WATCHERS = boukn meric

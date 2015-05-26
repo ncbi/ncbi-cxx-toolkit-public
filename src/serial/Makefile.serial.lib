@@ -18,6 +18,8 @@ SRC = \
 
 LIB    = xser
 
+DLL_LIB = xutil
+
 WATCHERS = gouriano
 
 

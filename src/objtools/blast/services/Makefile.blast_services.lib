@@ -8,6 +8,8 @@ SRC = blast_services
 
 LIB = blast_services
 
+DLL_LIB = xnetblastcli xnetblast
+
 CFLAGS   = $(FAST_CFLAGS)
 CPPFLAGS = -DNCBI_MODULE=NETBLAST $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

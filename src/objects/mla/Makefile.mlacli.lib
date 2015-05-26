@@ -3,6 +3,7 @@ ASN_DEP = mla
 LIB = mlacli
 SRC = mla_client mla_client_
 
+DLL_LIB = xconnect
 
 USES_LIBRARIES =  \
     mla xconnect

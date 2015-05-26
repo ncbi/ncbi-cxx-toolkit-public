@@ -1,6 +1,7 @@
 LIB = general
 SRC = general__ general___ uoconv
 
+DLL_LIB = xser
 
 USES_LIBRARIES =  \
     xser

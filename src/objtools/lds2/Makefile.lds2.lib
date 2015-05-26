@@ -8,9 +8,9 @@ LIB = lds2
 SRC = lds2 lds2_db lds2_handlers
 
 # Dependencies for shared library
-#DLL_LIB = sqlitewrapp
+DLL_LIB = sqlitewrapp
 
-LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
+LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(SQLITE3_INCLUDE) $(CMPRS_INCLUDE) $(ORIG_CPPFLAGS)
 

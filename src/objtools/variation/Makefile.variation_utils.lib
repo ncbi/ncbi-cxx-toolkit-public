@@ -3,9 +3,8 @@
 LIB = variation_utils
 SRC = variation_utils
 
+DLL_LIB = variation
+
 ASN_DEP = blastdb genome_collection submit variation
 USES_LIBRARIES =  \
     variation xobjutil
-
-LDFLAGS = $(ORIG_LDFLAGS) -pthread -L../../../../../lib/ 
-CXXFLAGS = $(ORIG_CXXFLAGS)  

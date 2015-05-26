@@ -18,6 +18,8 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
       gap_item genome_project_item sam_formatter cigar_formatter \
       gather_iter html_anchor_item inst_info_map gene_finder flat_qual_slots
 
+DLL_LIB = xalnmgr xconnect
+
 WATCHERS = ludwigf dicuccio kornbluh
 
 

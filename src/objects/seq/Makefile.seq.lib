@@ -12,6 +12,8 @@ SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util \
       seq_loc_mapper_base seq_align_mapper_base seqlocinfo sofa_map \
       seq_loc_from_string seq_loc_reverse_complementer
 
+DLL_LIB = seqcode pub general xser sequtil
+
 WATCHERS = vasilche grichenk
 
 

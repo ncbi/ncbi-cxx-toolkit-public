@@ -1,6 +1,8 @@
 LIB = xnetblast
 SRC = blast__ blast___ names
 
+DLL_LIB = seqset scoremat
+
 WATCHERS = camacho
 
 

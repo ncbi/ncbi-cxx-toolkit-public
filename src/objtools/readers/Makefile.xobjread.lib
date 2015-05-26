@@ -3,7 +3,7 @@
 WATCHERS = jcherry sapojnik bollin ludwigf ucko kornbluh gotvyans
 
 
-ASN_DEP = seq seqset
+ASN_DEP = submit
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
@@ -21,7 +21,7 @@ SRC = read_util format_guess_ex \
       message_listener line_error
 
 
-DLL_LIB = creaders
+DLL_LIB = submit seqset $(SEQ_LIBS) general creaders xutil
 
 
 

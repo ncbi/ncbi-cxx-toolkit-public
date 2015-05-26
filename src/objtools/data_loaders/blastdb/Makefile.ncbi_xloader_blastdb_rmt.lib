@@ -3,6 +3,8 @@
 LIB = ncbi_xloader_blastdb_rmt
 SRC = bdbloader_rmt remote_blastdb_adapter
 
+DLL_LIB = blast_services
+
 CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 
 ASN_DEP = blastdb xnetblast
