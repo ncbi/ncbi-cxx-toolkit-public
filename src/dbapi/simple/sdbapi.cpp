@@ -2109,6 +2109,7 @@ CQuery::CField::~CField(void)
 {}
 
 
+// NB: x_InitBeforeExec resets many of these fields.
 inline
 CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
     : m_DBImpl(db_impl),
@@ -2333,7 +2334,7 @@ CQueryImpl::x_Close(void)
 inline void
 CQueryImpl::x_InitBeforeExec(void)
 {
-    m_IgnoreBounds = false;
+    m_IgnoreBounds = true;
     m_HasExplicitMode = false;
     m_RSBeginned = false;
     m_RSFinished = true;
@@ -2461,8 +2462,10 @@ void CQueryImpl::x_CheckRowCount(void)
     unsigned int n;
     if ( !m_IgnoreBounds ) {
         n = m_CurRelRowNo;
+#if 0 // Counts rows affected by INSERT and the like.
     } else if (m_RowCount > 0) {
         n = m_RowCount;
+#endif
     } else {
         n = m_CurRowNo;
     }
