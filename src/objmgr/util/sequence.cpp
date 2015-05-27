@@ -176,7 +176,7 @@ const COrg_ref* GetOrg_refOrNull(const CBioseq_Handle& handle)
         }
         if ( desc.IsOrg() ) {
             return &desc.GetOrg();
-    }
+        }
     }
     return 0;
 }
@@ -185,7 +185,7 @@ const COrg_ref* GetOrg_refOrNull(const CBioseq_Handle& handle)
 const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle)
 {
     const COrg_ref* org_ref = GetOrg_refOrNull(handle);
-    if (org_ref) {
+    if ( org_ref ) {
         return *org_ref;
     }
     NCBI_THROW(CException, eUnknown, "No organism set");
@@ -2486,7 +2486,7 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
     try {
         const COrg_ref & org = sequence::GetOrg_ref(handle);
         if( org.IsSetTaxname() ) {
-            x_PrintStringModIfNotDup( organism_seen, "organism", org.GetTaxname() );
+            x_PrintStringModIfNotDup( &organism_seen, "organism", org.GetTaxname() );
         }
         if( org.IsSetOrgname() ) {
             const COrg_ref::TOrgname & orgname = org.GetOrgname();
@@ -2497,7 +2497,7 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
                         switch( mod.GetSubtype() ) {
                             case COrgMod::eSubtype_strain:
                                 if( mod.IsSetSubname() ) {
-                                    x_PrintStringModIfNotDup( strain_seen, "strain", mod.GetSubname() );
+                                    x_PrintStringModIfNotDup( &strain_seen, "strain", mod.GetSubname() );
                                 }
                                 break;
                             default:
@@ -2508,7 +2508,7 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
                 }
             }
             if( orgname.IsSetGcode() ) {
-                x_PrintIntModIfNotDup( gcode_seen, "gcode", orgname.GetGcode() );
+                x_PrintIntModIfNotDup( &gcode_seen, "gcode", orgname.GetGcode() );
             }
         }
     } catch( CException & ) {
@@ -2555,41 +2555,12 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
         if( molinfo.IsSetTech() ) {
             TTechMap::const_iterator find_iter = sc_TechMap.find(molinfo.GetTech());
             if( find_iter != sc_TechMap.end() ) {
-                x_PrintStringModIfNotDup( tech_seen, "tech", 
+                x_PrintStringModIfNotDup( &tech_seen, "tech", 
                     find_iter->second );
             }
         }
     }
 
-    const CBioSource* source = sequence::GetBioSource(*handle.GetBioseqCore());
-    if (source)
-    {
-        if (source->CanGetGenome() && source->GetGenome() != CBioSource::eGenome_unknown)
-        {           
-            const string& name = source->GetTypeInfo_enum_EGenome()->FindName(source->GetGenome(), false);
-
-            bool seen(false);
-            x_PrintStringModIfNotDup(seen, "genome", name);
-        }
-        if (false && source->CanGetSubtype())
-        {
-            ITERATE(CBioSource::TSubtype, it, source->GetSubtype())
-            {
-                const string& subtypename = (**it).GetTypeInfo_enum_ESubtype()->FindName((**it).GetSubtype(), false);
-                //const string& name = (**it).Get
-                bool seen(false);
-                //x_PrintStringModIfNotDup(seen, "genome", name);
-            }
-
-        }
-        if (source->CanGetOrigin() && source->GetOrigin() != CBioSource::eOrigin_unknown)
-        {
-            const string& name = source->GetTypeInfo_enum_EOrigin()->FindName(source->GetOrigin(), false);
-            bool seen(false);
-            x_PrintStringModIfNotDup(seen, "origin", name);
-        }
-
-    }
     m_Out << '\n';
 }
 
@@ -2633,11 +2604,11 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
 }
 
 void CFastaOstream::x_PrintStringModIfNotDup(
-    bool& seen, const CTempString & key, const CTempString & value )
+    bool *seen, const CTempString & key, const CTempString & value )
 {
-    //_ASSERT( NULL != seen );
+    _ASSERT( NULL != seen );
     _ASSERT( ! key.empty() );
-    if( seen ) {
+    if( *seen ) {
         ERR_POST_X(9, Warning << "CFastaOstream::x_PrintStringModIfNotDup: "
             << "key " << key << " would appear multiple times, but only using the first." );
         return;
@@ -2659,11 +2630,11 @@ void CFastaOstream::x_PrintStringModIfNotDup(
         m_Out << '"' << NStr::Replace( value, "\"", "'") << '"';
     }
     m_Out << ']';
-    seen = true;
+    *seen = true;
 }
 
 void CFastaOstream::x_PrintIntModIfNotDup(
-    bool& seen, const CTempString & key, const int value )
+    bool *seen, const CTempString & key, const int value )
 {
     CNcbiOstrstream strm;
     strm << value;
@@ -2674,10 +2645,10 @@ void CFastaOstream::x_PrintIntModIfNotDup(
 
 void CFastaOstream::WriteTitle(const CBioseq& bioseq,
                                const CSeq_loc* location,
-                               EUseScope use_scope,
+                               bool no_scope,
                                const string& custom_title)
 {
-    if (use_scope == eUS_noscope && !location) {
+    if ( no_scope && ! location ) {
         x_WriteSeqIds(bioseq, NULL);
         if( (m_Flags & fShowModifiers) != 0 ) {
             CScope scope(*CObjectManager::GetInstance());
@@ -3027,19 +2998,19 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
 
 
 void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location,
-    EUseScope use_scope)
+                          bool no_scope)
 {
-    if (location || use_scope == eUS_usescope) {
+    if (location || !no_scope) {
         CScope scope(*CObjectManager::GetInstance());        
         Write(scope.AddTopLevelSeqEntry(entry), location);
     } else {
         switch (entry.Which()) {
         case CSeq_entry::e_Seq:
-            Write(entry.GetSeq(), location, use_scope);
+            Write(entry.GetSeq(), location, no_scope);
             break;
         case CSeq_entry::e_Set:
             ITERATE (CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set()) {
-                Write(**it, location, use_scope);
+                Write(**it, location, no_scope);
             }
             break;
         default:
@@ -3051,9 +3022,9 @@ void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location,
 
 
 void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location,
-    EUseScope use_scope, const string& custom_title)
+                          bool no_scope, const string& custom_title )
 {
-    if (location || use_scope == eUS_usescope) {
+    if (location || !no_scope) {
         CScope scope(*CObjectManager::GetInstance());
         Write(scope.AddBioseq(seq), location, custom_title);
     } else {

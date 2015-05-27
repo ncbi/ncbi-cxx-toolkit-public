@@ -720,7 +720,7 @@ public:
         fKeepUnknGapNomLen  = 0x0800, ///< Keep unknown gap's nominal length.  That is, when a gap has an unknown length but nominal length, use that instead of just making it 100.
         fShowGapsOfSizeZero = 0x1000, ///< Use this to show gaps of size zero as a lone hyphen at the end of a line.
         // historically misnamed as eFlagName
-        eAssembleParts = fAssembleParts,
+        eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
     };
     typedef int TFlags; ///< binary OR of EFlags
@@ -733,11 +733,6 @@ public:
         eGM_dashes,   ///< Multiple inline dashes.
         eGM_letters,  ///< Multiple inline Ns or Xs as appropriate (default).
         eGM_count     ///< >?N or >?unk100, as appropriate.
-    };
-
-    enum EUseScope { 
-        eUS_usescope, 
-        eUS_noscope
     };
 
     CFastaOstream(CNcbiOstream& out);
@@ -758,12 +753,12 @@ public:
 
     /// These versions may set up a temporary object manager scope
     /// In the common case of a raw bioseq, no scope is needed
-    virtual void Write(const CSeq_entry& entry, const CSeq_loc* location = 0,
-        EUseScope use_scope = eUS_usescope);
-    virtual void Write(const CBioseq&    seq, const CSeq_loc* location = 0,
-        EUseScope use_scope = eUS_usescope, const string& custom_title = kEmptyStr);
-    virtual void WriteTitle(const CBioseq& seq, const CSeq_loc* location = 0,
-        EUseScope use_scope = eUS_usescope, const string& custom_title = kEmptyStr);
+    void Write(const CSeq_entry& entry, const CSeq_loc* location = 0,
+               bool no_scope = false);
+    void Write(const CBioseq&    seq,   const CSeq_loc* location = 0,
+               bool no_scope = false,   const string& custom_title = kEmptyStr);
+    void WriteTitle(const CBioseq& seq, const CSeq_loc* location = 0,
+                    bool no_scope=false, const string& custom_title=kEmptyStr);
 
     /// Used only by Write(CSeq_entry[_Handle], ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
@@ -847,9 +842,9 @@ private:
     sequence::CDeflineGenerator::TUserFlags x_GetTitleFlags(void) const;
 
     void x_PrintStringModIfNotDup(
-        bool& seen, const CTempString & key, const CTempString & value );
+        bool *seen, const CTempString & key, const CTempString & value );
     void x_PrintIntModIfNotDup(
-        bool& seen, const CTempString & key, const int value );
+        bool *seen, const CTempString & key, const int value );
 
     CConstRef<CSeq_loc> x_MapMask(CSeq_loc_Mapper& mapper, const CSeq_loc& mask,
                                   const CSeq_id* base_seq_id, CScope* scope);
