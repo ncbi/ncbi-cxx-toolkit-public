@@ -5596,6 +5596,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SNOMNH	s	Sam Nobel Oklahoma Museum of Natural History",
 "SNP<MYS>	s	Sabah Parks, Botany Section",
 "SNPH	s	Sehlabathebe National Park",
+"SNSD	s	Senckenberg Natural History Collections Dresden, Museum of Zoology",
+"SNSD:Moll	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, ",
 "SNU	s	Seoul National University, School of Biological Sciences",
 "SNUA	s	Seoul National University, The Arboretum",
 "SNW	s	Shropshire and North Wales Natural History and Antiquarian Society",
