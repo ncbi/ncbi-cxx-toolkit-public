@@ -34,7 +34,7 @@ GMC needs softparse
 GMC needs xgridcgi
 GMU needs $(COMPRESS_LIBS)
 GMU needs geoauth
-OSMesa includes3party $(OPENGL_LIBS)
+OSMesa needs3party $(OPENGL_LIBS)
 OSMesa needs3party $(ORIG_LIBS)
 VDBUtils needs bdbasncli
 VDBUtils needs ncbi_xloader_csra
