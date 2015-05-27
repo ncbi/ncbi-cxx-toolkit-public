@@ -1,4 +1,6 @@
 corelib$
+corelib/impl$
+corelib/hash_impl$
 util$
 util/regexp$
 util/xregexp
