@@ -7,6 +7,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
+#include <objects/seq/MolInfo.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objects/submit/Seq_submit.hpp>
 

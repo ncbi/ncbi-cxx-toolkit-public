@@ -83,7 +83,7 @@ public:
     TSeqPos m_gapNmin;
     TSeqPos m_gap_Unknown_length;
     TSeqPos m_minimal_sequence_length;
-    int    m_gap_evidence;
+    set<int> m_gap_evidences;
     int    m_gap_type;
     bool   m_fcs_trim;
     bool   m_avoid_submit_block;

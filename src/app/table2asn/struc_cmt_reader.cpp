@@ -284,7 +284,8 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
             CBioseq_Handle b_handle = scope.GetBioseqHandle(seq_id);
             if (b_handle && b_handle.GetEditHandle())
             {
-                ApplyAllQualifiers(cols, values, *(CBioseq*)b_handle.GetEditHandle().GetCompleteBioseq().GetPointerOrNull());
+                CBioseq* bioseq = (CBioseq*)b_handle.GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
+                ApplyAllQualifiers(cols, values, *bioseq);
             }
         }
     }

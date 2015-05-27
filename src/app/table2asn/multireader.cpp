@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/readers/fasta.hpp>
-#include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/bed_reader.hpp>
 
@@ -134,20 +133,16 @@ void DumpMemory(const string& prefix)
     }
 }
 
-bool CMultiReader::xReadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<CSeq_submit>& submit)
+bool CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    CNcbiIfstream istr(ifname.c_str());
-    //CNcbiStreambuf istr;
-
-    xSetFormat(m_context, istr);
-    xSetFlags(m_context, istr);
-    xSetMapper(m_context);
-    xSetErrorContainer(m_context);
+    xSetFormat(istr);
+    m_iFlags = 0;
+    m_iFlags |= CFastaReader::fNoUserObjs;
 
     switch( m_uFormat )
     {
     case CFormatGuess::eTextASN:
-        return xReadASN1(istr, entry, submit);
+        return xReadASN1(m_uFormat, istr, entry, submit);
         break;
     case CFormatGuess::eGff2:
     case CFormatGuess::eGff3:
@@ -164,9 +159,9 @@ bool CMultiReader::xReadFile(const string& ifname, CRef<objects::CSeq_entry>& en
 }
 
 bool 
-CMultiReader::xReadASN1(CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<CSeq_submit>& submit)
+CMultiReader::xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(instream);
+    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(format, instream);
 
     // guess object type
     const string sType = pObjIstrm->ReadFileHeader();
@@ -204,7 +199,8 @@ CMultiReader::xReadASN1(CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry
     if (m_context.m_gapNmin > 0)
         CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, 
         (CSeq_gap::EType)m_context.m_gap_type,
-        (CLinkage_evidence::EType)m_context.m_gap_evidence);
+        //(CLinkage_evidence::EType)
+        m_context.m_gap_evidences);
 
     return entry.NotNull();
 }
@@ -246,16 +242,24 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
 
     CStreamLineReader lr( instream );
+#ifdef NEW_VERSION
+    auto_ptr<CBaseFastaReader> pReader(new CBaseFastaReader(m_iFlags));
+//    auto_ptr<CBaseFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
+#else
     auto_ptr<CFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
+#endif
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
+#ifdef NEW_VERSION
+    CRef<CSeq_entry> result = pReader->ReadSeqEntry(lr , m_context.m_logger);
+#else
     if (m_context.m_gapNmin > 0)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
-        if (m_context.m_gap_evidence>=0 || m_context.m_gap_type>=0)
-            pReader->SetGapLinkageEvidence((CSeq_gap::EType)m_context.m_gap_type, (CLinkage_evidence::EType)m_context.m_gap_evidence);
+        if (m_context.m_gap_evidences.size() >0 || m_context.m_gap_type>=0)
+            pReader->SetGapLinkageEvidences((CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences);
     }
 
     int max_seqs = kMax_Int;
@@ -266,14 +270,19 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
             "File " + m_context.m_current_file + " contains multiple sequences")));
     }
+#endif
     return result;
 
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReader::xSetFormat(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr )
+CFormatGuess::EFormat CMultiReader::GetFormat(CNcbiIstream& in)
+{
+    xSetFormat(in);
+    return m_uFormat;
+}
+
+void CMultiReader::xSetFormat(CNcbiIstream& istr )
     //  ----------------------------------------------------------------------------
 {
     m_uFormat = CFormatGuess::eUnknown;
@@ -339,68 +348,6 @@ void CMultiReader::xSetFormat(
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReader::xSetFlags(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr)
-    //  ----------------------------------------------------------------------------
-{
-    m_iFlags = 0;
-#if 0
-    if (m_uFormat == CFormatGuess::eUnknown) {
-        xSetFormat(args, istr);
-    }
-    m_iFlags = NStr::StringToInt(
-        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
-
-    switch( m_uFormat ) {
-
-    case CFormatGuess::eWiggle:
-        if ( args["join-same"] ) {
-            m_iFlags |= CWiggleReader::fJoinSame;
-        }
-        //by default now. But still tolerate if explicitly specified.
-        m_iFlags |= CWiggleReader::fAsByte;
-
-        if ( args["as-graph"] ) {
-            m_iFlags |= CWiggleReader::fAsGraph;
-        }
-
-        if ( args["raw"] ) {
-            m_iFlags |= CReaderBase::fAsRaw;
-        }
-        break;
-
-    case CFormatGuess::eBed:
-        if ( args["all-ids-as-local"] ) {
-            m_iFlags |= CBedReader::fAllIdsAsLocal;
-        }
-        if ( args["numeric-ids-as-local"] ) {
-            m_iFlags |= CBedReader::fNumericIdsAsLocal;
-        }
-        if ( args["raw"] ) {
-            m_iFlags |= CReaderBase::fAsRaw;
-        }
-        break;
-
-    case CFormatGuess::eGtf:
-        if ( args["all-ids-as-local"] ) {
-            m_iFlags |= CGFFReader::fAllIdsAsLocal;
-        }
-        if ( args["numeric-ids-as-local"] ) {
-            m_iFlags |= CGFFReader::fNumericIdsAsLocal;
-        }
-
-    default:
-        break;
-    }
-    m_AnnotName = args["name"].AsString();
-    m_AnnotTitle = args["title"].AsString();
-#endif
-    m_iFlags |= objects::CFastaReader::fNoUserObjs;
-    //m_bCheckOnly = false; //args["checkonly"];
-}
-
-//  ----------------------------------------------------------------------------
 void CMultiReader::WriteObject(
     const CSerialObject& object,
     ostream& ostr)
@@ -410,70 +357,6 @@ void CMultiReader::WriteObject(
          //<< MSerial_VerifyNo
          << object;
     ostr.flush();
-}
-
-//  ----------------------------------------------------------------------------
-void CMultiReader::xSetMapper(const CTable2AsnContext& args)
-    //  ----------------------------------------------------------------------------
-{
-#if 0
-    string strBuild = args["genome"].AsString();
-    string strMapFile = args["mapfile"].AsString();
-
-    if (strBuild.empty() && strMapFile.empty()) {
-        return;
-    }
-    if (!strMapFile.empty()) {
-        CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
-        m_pMapper.reset(
-            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors));
-    }
-    else {
-        m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
-    }
-#endif
-}
-
-//  ----------------------------------------------------------------------------
-void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
-    //  ----------------------------------------------------------------------------
-{
-#if 0
-    //
-    //  By default, allow all errors up to the level of "warning" but nothing
-    //  more serious. -strict trumps everything else, -lenient is the second
-    //  strongest. In the absence of -strict and -lenient, -max-error-count and
-    //  -max-error-level become additive, i.e. both are enforced.
-    //
-    if ( args["noerrors"] ) {   // not using error policy at all
-        m_pErrors = 0;
-        return;
-    }
-    if ( args["strict"] ) {
-        m_pErrors = new CErrorContainerStrict;
-        return;
-    }
-    if ( args["lenient"] ) {
-        m_pErrors = new CErrorContainerLenient;
-        return;
-    }
-
-    int iMaxErrorCount = args["max-error-count"].AsInteger();
-    int iMaxErrorLevel = eDiag_Error;
-    string strMaxErrorLevel = args["max-error-level"].AsString();
-    if ( strMaxErrorLevel == "info" ) {
-        iMaxErrorLevel = eDiag_Info;
-    }
-    else if ( strMaxErrorLevel == "error" ) {
-        iMaxErrorLevel = eDiag_Error;
-    }
-
-    if ( iMaxErrorCount == -1 ) {
-        m_pErrors.Reset(new CErrorContainerLevel(iMaxErrorLevel));
-        return;
-    }
-    m_pErrors.Reset(new CErrorContainerCustom(iMaxErrorCount, iMaxErrorLevel));
-#endif
 }
 
 CMultiReader::CMultiReader(const CTable2AsnContext& context)
@@ -530,7 +413,7 @@ void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_
 
     CNcbiIfstream istrm(ifname.c_str());
 
-    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(istrm);
+    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(CFormatGuess::eUnknown, istrm);
 
     // guess object type
     //const string sType = pObjIstrm->ReadFileHeader();
@@ -597,7 +480,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     CNcbiIfstream istrm(ifname.c_str());
 
-    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(istrm);
+    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(CFormatGuess::eUnknown, istrm);
 
     // guess object type
     string sType = pObjIstrm->ReadFileHeader();
@@ -779,7 +662,7 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
     desc.Set(duplicates).Assign(source);
 }
 
-void CMultiReader::ApplyDescriptors(objects::CSeq_entry& entry, const CSeq_descr& source)
+void CMultiReader::ApplyDescriptors(CSeq_entry& entry, const CSeq_descr& source)
 {
     MergeDescriptors(entry.SetDescr(), source);
 }
@@ -794,9 +677,9 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
     return result;
 }
 
-CFormatGuess::EFormat CMultiReader::LoadFile(const string& ifname, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
+CFormatGuess::EFormat CMultiReader::LoadFile(CNcbiIstream& istream, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    xReadFile(ifname, entry, submit);
+    xReadFile(istream, entry, submit);
     if (entry.NotEmpty())
     {
         m_context.MergeWithTemplate(*entry);
@@ -1114,15 +997,15 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     return entry;
 }
 
-auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CNcbiIstream& instream)
+auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream)
 {
     // guess format
     ESerialDataFormat eSerialDataFormat = eSerial_None;
     {{
-        CFormatGuess::EFormat eFormat =
-            CFormatGuess::Format(instream);
+        if (format == CFormatGuess::eUnknown)
+            format = CFormatGuess::Format(instream);
 
-        switch(eFormat) {
+        switch(format) {
         case CFormatGuess::eBinaryASN:
             eSerialDataFormat = eSerial_AsnBinary;
             break;
@@ -1135,11 +1018,11 @@ auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CNcbiIstream& instream)
         default:
             NCBI_USER_THROW_FMT(
                 "Descriptor file seems to be in an unsupported format: "
-                << CFormatGuess::GetFormatName(eFormat) );
+                << CFormatGuess::GetFormatName(format) );
             break;
         }
 
-        instream.seekg(0);
+        //instream.seekg(0);
     }}
 
     auto_ptr<CObjectIStream> pObjIstrm(
@@ -1152,13 +1035,28 @@ CMultiReader::~CMultiReader()
 {
 }
 
-CRef<objects::CSeq_entry> CMultiReader::xReadBed(CNcbiIstream& instream)
+bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
+{
+    CRef<CSeq_entry> entry;
+    CRef<CSeq_submit> submit;
+    if (xReadFile(in, entry, submit)
+        && entry->IsSetAnnot() && !entry->GetAnnot().empty())
+    {
+        obj.SetAnnot().insert(obj.SetAnnot().end(),
+            entry->SetAnnot().begin(), entry->SetAnnot().end());
+
+        return true;
+    }
+    return false;
+}
+
+CRef<CSeq_entry> CMultiReader::xReadBed(CNcbiIstream& instream)
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags);
     CStreamLineReader lr(instream);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_context.m_logger);
-    CRef<objects::CSeq_entry> entry(new CSeq_entry);
+    CRef<CSeq_entry> entry(new CSeq_entry);
     while(pAnnot) {
         entry->SetSeq().SetAnnot().push_back(pAnnot);
         pAnnot.Reset();

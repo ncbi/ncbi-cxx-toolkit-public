@@ -14,6 +14,7 @@ class CSeqdesc;
 class IMessageListener;
 class CIdMapper;
 class CBioseq;
+class CSeq_annot;
 };
 
 class CTable2AsnContext;
@@ -27,7 +28,8 @@ public:
    CMultiReader(const CTable2AsnContext& context);
    ~CMultiReader();
  
-   CFormatGuess::EFormat LoadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+   CFormatGuess::EFormat LoadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+   CFormatGuess::EFormat GetFormat(CNcbiIstream& in);
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);
@@ -37,25 +39,21 @@ public:
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
+   bool LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in);
 
 
 protected:
 private:
-    bool xReadFile(const string& ifname, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+    bool xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
-    bool xReadASN1(CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+    bool xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadBed(CNcbiIstream& instream);
 
-    auto_ptr<CObjectIStream> xCreateASNStream(CNcbiIstream& instream);
+    auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 
-    void xSetFormat(const CTable2AsnContext&, CNcbiIstream&);
-    void xSetFlags(const CTable2AsnContext&, CNcbiIstream&);
-    void xSetMapper(const CTable2AsnContext&);
-    void xSetErrorContainer(const CTable2AsnContext&);
-
-//    void xDumpErrors(CNcbiOstream& );
+    void xSetFormat(CNcbiIstream&);
 
     CFormatGuess::EFormat m_uFormat;
     bool m_bDumpStats;
@@ -63,7 +61,6 @@ private:
     string m_AnnotName;
     string m_AnnotTitle;
 
-    auto_ptr<objects::CIdMapper> m_pMapper;
     const CTable2AsnContext& m_context;
 };
 

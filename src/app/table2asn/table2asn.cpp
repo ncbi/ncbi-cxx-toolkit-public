@@ -75,6 +75,8 @@
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+//#include <objtools/writers/fasta_writer.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -91,7 +93,7 @@ protected:
     virtual void PutProgress(
         const string & sMessage,
         const Uint8 iNumDone = 0,
-        const Uint8 iNumTotal = 0 )
+        const Uint8 iNumTotal = 0)
     {
         if (m_enable_log)
             CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
@@ -128,6 +130,7 @@ private:
     void ProcessPEPFile(const string& pathname, CSeq_entry& result);
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
+    void ProcessAnnotFile(const string& pathname, CSeq_entry& result);
 
     CRef<CScope> GetScope(void);
 
@@ -144,17 +147,17 @@ private:
 
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
-    int build_num = 
+    int build_num =
 #if defined(NCBI_PRODUCTION_VER)
-    NCBI_PRODUCTION_VER
+        NCBI_PRODUCTION_VER
 #elif defined(NCBI_DEVELOPMENT_VER)
-    NCBI_DEVELOPMENT_VER 
+        NCBI_DEVELOPMENT_VER
 #else
-    0
+        0
 #endif
-    ;   
+        ;
 
-    SetVersion(CVersionInfo(1,0,build_num));
+    SetVersion(CVersionInfo(1, 0, build_num));
 }
 
 
@@ -292,7 +295,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
-    arg_desc->AddOptionalKey("X",  "String", "Extra Flags (combine any of the following letters)\n\
+    arg_desc->AddOptionalKey("X", "String", "Extra Flags (combine any of the following letters)\n\
       A Automatic definition line generator\n\
       C Apply comments in .cmt files to all sequences\n\
       E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
@@ -314,7 +317,7 @@ void CTbl2AsnApp::Init(void)
       within-clone\n\
       clone-contig\n\
       map\n\
-      strobe", CArgDescriptions::eString);  //done
+      strobe", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);  //done
 
     arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
       unknown\n\
@@ -438,8 +441,8 @@ int CTbl2AsnApp::Run(void)
     m_context.m_delay_genprodset = args["J"].AsBoolean();
     if (args["X"])
     {
-       const string& extra = args["X"].AsString();
-       m_context.m_flipped_struc_cmt = extra.find('C')!=string::npos;
+        const string& extra = args["X"].AsString();
+        m_context.m_flipped_struc_cmt = extra.find('C') != string::npos;
     }
 
     if (args["M"])
@@ -462,11 +465,11 @@ int CTbl2AsnApp::Run(void)
     if (args["taxname"])
         m_context.m_OrganismName = args["taxname"].AsString();
     if (args["taxid"])
-        m_context.m_taxid   = args["taxid"].AsInteger();
+        m_context.m_taxid = args["taxid"].AsInteger();
     if (args["strain-name"])
-        m_context.m_strain  = args["strain-name"].AsString();
+        m_context.m_strain = args["strain-name"].AsString();
     if (args["ft-url"])
-        m_context.m_ft_url     = args["ft-url"].AsString();
+        m_context.m_ft_url = args["ft-url"].AsString();
     if (args["ft-url-mod"])
         m_context.m_ft_url_mod = args["ft-url-mod"].AsString();
     if (args["A"])
@@ -494,7 +497,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["type-aa"] && args["type-nuc"])
     {
-       NCBI_THROW(CArgException, eConstraint, "type-aa flag cannot be used with type-nuc");
+        NCBI_THROW(CArgException, eConstraint, "type-aa flag cannot be used with type-nuc");
     }
     m_context.m_handle_as_aa = args["type-aa"].AsBoolean();
     m_context.m_handle_as_nuc = args["type-nuc"].AsBoolean();
@@ -504,13 +507,13 @@ int CTbl2AsnApp::Run(void)
         const string& a_arg = args["a"].AsString();
         if (a_arg.length() > 2 && a_arg[0] == 'r')
         {
-            switch (*(a_arg.end()-1))
+            switch (*(a_arg.end() - 1))
             {
             case 'u':
                 m_context.m_gap_Unknown_length = 100; // yes, it's hardcoded value
                 // do not put break statement here
             case 'k':
-                m_context.m_gapNmin = NStr::StringToUInt(a_arg.substr(1, a_arg.length()-2));
+                m_context.m_gapNmin = NStr::StringToUInt(a_arg.substr(1, a_arg.length() - 2));
                 break;
             default:
                 // error
@@ -518,16 +521,16 @@ int CTbl2AsnApp::Run(void)
             }
         }
         else
-        if (a_arg.length() == 1)
-        switch (a_arg[0])
-        {
-            case 's':
-                m_context.m_HandleAsSet = true;
-                break;
-            default:
-                // error
-                break;
-        }
+            if (a_arg.length() == 1)
+                switch (a_arg[0])
+            {
+                case 's':
+                    m_context.m_HandleAsSet = true;
+                    break;
+                default:
+                    // error
+                    break;
+            }
     }
     if (args["gaps-min"])
         m_context.m_gapNmin = args["gaps-min"].AsInteger();
@@ -536,25 +539,28 @@ int CTbl2AsnApp::Run(void)
 
     if (args["l"])
     {
-        const CEnumeratedTypeValues::TNameToValue& 
+        const CEnumeratedTypeValues::TNameToValue&
             linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
 
-        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["l"].AsString());
-        if (it == linkage_evidence_to_value_map.end())
+        ITERATE(CArgValue::TStringArray, arg_it, args["l"].GetStringList())
         {
-            NCBI_THROW(CArgException, eConvert,
-                "Unrecognized linkage evidence " + args["l"].AsString());
-        }
-        else
-        {
-            m_context.m_gap_evidence = it->second;
-            m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
+            CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(*arg_it);
+            if (it == linkage_evidence_to_value_map.end())
+            {
+                NCBI_THROW(CArgException, eConvert,
+                    "Unrecognized linkage evidence " + *arg_it);
+            }
+            else
+            {
+                m_context.m_gap_evidences.insert(it->second);
+                m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
+            }
         }
     }
 
     if (args["gap-type"])
     {
-        const CEnumeratedTypeValues::TNameToValue& 
+        const CEnumeratedTypeValues::TNameToValue&
             linkage_evidence_to_value_map = CSeq_gap::GetTypeInfo_enum_EType()->NameToValue();
 
         CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["gap-type"].AsString());
@@ -573,7 +579,7 @@ int CTbl2AsnApp::Run(void)
     if (m_context.m_gapNmin < 0)
         m_context.m_gapNmin = 0;
 
-    if (m_context.m_gapNmin == 0 || m_context.m_gap_Unknown_length < 0 )
+    if (m_context.m_gapNmin == 0 || m_context.m_gap_Unknown_length < 0)
         m_context.m_gap_Unknown_length = 0;
 
     if (args["k"])
@@ -583,15 +589,15 @@ int CTbl2AsnApp::Run(void)
     {
         try
         {
-            CTime time(args["H"].AsString(), "M/D/Y" );
+            CTime time(args["H"].AsString(), "M/D/Y");
             m_context.m_HoldUntilPublish.Reset(new CDate(time, CDate::ePrecision_day));
         }
-        catch( const CException & )
+        catch (const CException &)
         {
             int years = NStr::StringToInt(args["H"].AsString());
             CTime time;
             time.SetCurrent();
-            time.SetYear(time.Year()+years);
+            time.SetYear(time.Year() + years);
             m_context.m_HoldUntilPublish.Reset(new CDate(time, CDate::ePrecision_day));
         }
     }
@@ -669,24 +675,24 @@ int CTbl2AsnApp::Run(void)
     }
 
     if (m_logger->Count() == 0)
-    try
+        try
     {
-    // Designate where do we get input: single file or a folder or folder structure
-        if ( args["p"] )
+        // Designate where do we get input: single file or a folder or folder structure
+        if (args["p"])
         {
             CDir directory(args["p"].AsString());
             if (directory.Exists())
             {
                 CMaskFileName masks;
-                masks.Add("*" +args["x"].AsString());
+                masks.Add("*" + args["x"].AsString());
 
-                ProcessOneDirectory (directory, masks, args["E"].AsBoolean());
+                ProcessOneDirectory(directory, masks, args["E"].AsBoolean());
             }
         } else {
             if (args["i"])
             {
                 m_context.m_current_file = args["i"].AsString();
-                ProcessOneFile ();
+                ProcessOneFile();
             }
         }
     }
@@ -727,9 +733,9 @@ int CTbl2AsnApp::Run(void)
         m_logger->Dump();
         //m_logger->DumpAsXML(NcbiCout);
 
-        int errors = m_logger->LevelCount(eDiag_Critical) +
-                     m_logger->LevelCount(eDiag_Error) +
-                     m_logger->LevelCount(eDiag_Fatal);
+        size_t errors = m_logger->LevelCount(eDiag_Critical) +
+            m_logger->LevelCount(eDiag_Error) +
+            m_logger->LevelCount(eDiag_Fatal);
         // all errors reported as failure
         if (errors > 0)
             return 1;
@@ -744,7 +750,7 @@ int CTbl2AsnApp::Run(void)
 }
 
 
-CRef<CScope> CTbl2AsnApp::GetScope (void)
+CRef<CScope> CTbl2AsnApp::GetScope(void)
 {
     return m_context.m_scope;
 }
@@ -758,7 +764,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     bool avoid_submit_block = false;
     bool do_dates = false;
 
-    if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
+    if (m_context.m_current_file.substr(m_context.m_current_file.length() - 4).compare(".xml") == 0)
     {
         avoid_submit_block = m_context.m_avoid_submit_block;
         COpticalxml2asnOperator op;
@@ -768,7 +774,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
-        CFormatGuess::EFormat format = m_reader->LoadFile(m_context.m_current_file, entry, submit);
+        CNcbiIfstream in(m_context.m_current_file.c_str());
+
+        CFormatGuess::EFormat format = m_reader->LoadFile(in, entry, submit);
         if (m_fcs_reader.get())
         {
             m_fcs_reader->PostProcess(*entry);
@@ -808,7 +816,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         fr.FindOpenReadingFrame(*entry);
 
     fr.m_replacement_protein = m_replacement_proteins;
-    
+
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
     if (m_possible_proteins.NotEmpty())
@@ -911,7 +919,7 @@ void CTbl2AsnApp::ProcessOneFile()
             "File " + m_context.m_current_file + " does not exists")));
         return;
     }
-    
+
     CFile log_name;
     if (!DryRun() && m_context.m_split_log_files)
     {
@@ -924,7 +932,7 @@ void CTbl2AsnApp::ProcessOneFile()
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
 
-        if (!IsDryRun() && 
+        if (!IsDryRun() &&
             !(m_context.m_master_genome_flag.empty() && m_context.m_validate.empty()))
         {
             Uint4 validator_opts = 0;
@@ -972,7 +980,7 @@ void CTbl2AsnApp::ProcessOneFile()
                     delete output;
                 output = 0;
             }
-            catch(...)
+            catch (...)
             {
                 // if something goes wrong - remove the partial output to avoid confuse
                 if (m_context.m_output == 0)
@@ -989,7 +997,7 @@ void CTbl2AsnApp::ProcessOneFile()
             m_logger->SetProgressOstream(&NcbiCout);
         }
     }
-    catch(...)
+    catch (...)
     {
         if (!log_name.GetPath().empty())
         {
@@ -1019,7 +1027,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
         else
             if (recurse)
             {
-                ProcessOneDirectory(**it, mask, recurse);
+            ProcessOneDirectory(**it, mask, recurse);
             }
     }
 
@@ -1038,8 +1046,8 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 
     m_context.m_ObjMgr = CObjectManager::GetInstance();
 
-    m_context.m_scope.Reset(new CScope (*m_context.m_ObjMgr));
-    if ( args["R"] ) {
+    m_context.m_scope.Reset(new CScope(*m_context.m_ObjMgr));
+    if (args["R"]) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
@@ -1068,13 +1076,13 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     string name = dir + base;
 
     if (m_context.m_single_table5_file.empty())
-       ProcessTBLFile(name + ".tbl", result);
+        ProcessTBLFile(name + ".tbl", result);
     else
-       ProcessTBLFile(m_context.m_single_table5_file, result);
+        ProcessTBLFile(m_context.m_single_table5_file, result);
 
-    ProcessSRCFile(name + ".src", result, ext == ".xml"? (name+".xml") : "");
+    ProcessSRCFile(name + ".src", result, ext == ".xml" ? (name + ".xml") : "");
     if (!m_context.m_single_source_qual_file.empty())
-      ProcessSRCFile(m_context.m_single_source_qual_file, result, ext == ".xml"? (name+".xml") : "");
+        ProcessSRCFile(m_context.m_single_source_qual_file, result, ext == ".xml" ? (name + ".xml") : "");
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
     ProcessCMTFile(name + ".cmt", result, m_context.m_flipped_struc_cmt);
@@ -1082,6 +1090,11 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     ProcessPEPFile(name + ".pep", result);
     ProcessRNAFile(name + ".rna", result);
     ProcessPRTFile(name + ".prt", result);
+
+    ProcessAnnotFile(name + ".gff3", result);
+    ProcessAnnotFile(name + ".gff3", result);
+    ProcessAnnotFile(name + ".gff2", result);
+    ProcessAnnotFile(name + ".bed", result);
 }
 
 void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
@@ -1166,6 +1179,16 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
     CFeatureTableReader prts(m_context.m_logger);
 
     m_possible_proteins = prts.ReadProtein(*reader);
+}
+
+void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
+{
+    CFile file(pathname);
+    if (!file.Exists()) return;
+
+    CNcbiIfstream in(pathname.c_str());
+
+    m_reader->LoadAnnot(entry, in);
 }
 
 /////////////////////////////////////////////////////////////////////////////

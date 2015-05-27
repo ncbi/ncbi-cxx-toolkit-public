@@ -219,7 +219,7 @@ public:
     static string CanonicalizeString(const CTempString & sValue);
 
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
-    void SetGapLinkageEvidence(CSeq_gap::EType type, CLinkage_evidence::EType evidence);
+    void SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences);
 
     void IgnoreProblem(ILineError::EProblem problem);
 

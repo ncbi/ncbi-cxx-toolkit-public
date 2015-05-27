@@ -2166,8 +2166,7 @@ CFastaReader::SGap::SGap(
 {
 }
 
-
-void CFastaReader::SetGapLinkageEvidence(CSeq_gap::EType type, CLinkage_evidence::EType evidence)
+void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences)
 {
    if (type == -1)
       m_gap_type.Release();
@@ -2175,8 +2174,10 @@ void CFastaReader::SetGapLinkageEvidence(CSeq_gap::EType type, CLinkage_evidence
       m_gap_type.Reset(new SGap::TGapTypeObj(type));
 
    m_gap_linkage_evidence.clear();
-   if (evidence != -1)
-      m_gap_linkage_evidence.insert(evidence);
+   ITERATE(set<int>, it, evidences)
+   {
+       m_gap_linkage_evidence.insert((CLinkage_evidence::EType)*it);
+   }
 }
 
 void CFastaReader::PostWarning(

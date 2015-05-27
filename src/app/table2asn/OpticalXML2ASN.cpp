@@ -106,7 +106,7 @@ public:
       {
       }
 
-      int GetOpticalXMLData(const string& FileIn);
+      size_t GetOpticalXMLData(const string& FileIn);
       CRef<CSeq_entry> BuildOpticalASNData(const CTable2AsnContext& context);
 private:
     void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq& bioseq);
@@ -294,7 +294,7 @@ void COpticalxml2asnOperator::UpdatePubDate(CSerialObject& obj)
 
 
 using namespace xml;
-int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
+size_t COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
 {
     error_messages msg;
     document *doc;

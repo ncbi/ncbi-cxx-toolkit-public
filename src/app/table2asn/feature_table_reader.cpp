@@ -191,7 +191,7 @@ namespace
     struct SSeqAnnotCompare
     {
         static inline
-        int mapwhich(CSeqFeatData::E_Choice c)
+        size_t mapwhich(CSeqFeatData::E_Choice c)
         {
             const char* m = mapids;
             if (c == CSeqFeatData::e_Gene)
@@ -828,6 +828,19 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
 
 bool CFeatureTableReader::CheckIfNeedConversion(const CSeq_entry& entry) const
 {
+    if (entry.GetParentEntry() && 
+        entry.GetParentEntry()->IsSet() &&
+        entry.GetParentEntry()->GetSet().IsSetClass())
+    {
+        switch (entry.GetParentEntry()->GetSet().GetClass())
+        {
+        case CBioseq_set::eClass_nuc_prot:
+            return false;
+        default:
+            break;
+        }
+    }
+
     ITERATE(CSeq_entry::TAnnot, annot_it, entry.GetAnnot())
     {
         if ((**annot_it).IsFtable())
@@ -839,6 +852,7 @@ bool CFeatureTableReader::CheckIfNeedConversion(const CSeq_entry& entry) const
                     switch ((**feat_it).GetData().Which())
                     {
                     case CSeqFeatData::e_Cdregion:
+                    //case CSeqFeatData::e_Gene:
                         return true;
                     default:
                         break;
@@ -892,7 +906,7 @@ void s_ExtendIntervalToEnd (CSeq_interval& ival, CBioseq_Handle bsh)
             ival.SetFrom(0);
         }
     } else {
-        size_t len = bsh.GetBioseqLength();
+        TSeqPos len = bsh.GetBioseqLength();
         if (ival.GetTo() < len - 4) {
             ival.SetTo(ival.GetTo() + 3);
         } else {
@@ -1325,7 +1339,10 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
     }
 
 
-    return CGapsEditor::CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length, gap_type, evidence);
+    set<int> evidences; 
+    if (evidence != -1)
+       evidences.insert(evidence);
+    return CGapsEditor::CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length, gap_type, evidences);
 }
 
 void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
