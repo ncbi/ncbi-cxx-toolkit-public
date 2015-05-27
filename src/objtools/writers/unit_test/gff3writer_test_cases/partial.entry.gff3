@@ -37,9 +37,9 @@ NW_001838553.2	BestRefSeq	CDS	8621	8707	.	-	2	ID=cds1;Parent=rna1;Dbxref=GeneID:
 NW_001838553.2	BestRefSeq	CDS	8043	8157	.	-	2	ID=cds1;Parent=rna1;Dbxref=GeneID:163882,Genbank:NP_001132931.1,HGNC:26486,MIM:613439;Name=NP_001132931.1;Note=isoform 2 is encoded by transcript variant 2%3B The RefSeq protein has 1 substitution and aligns at 50%25 coverage compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=CNST;partial=true;product=consortin isoform 2;protein_id=NP_001132931.1
 NW_001838553.2	BestRefSeq	CDS	889	910	.	-	1	ID=cds1;Parent=rna1;Dbxref=GeneID:163882,Genbank:NP_001132931.1,HGNC:26486,MIM:613439;Name=NP_001132931.1;Note=isoform 2 is encoded by transcript variant 2%3B The RefSeq protein has 1 substitution and aligns at 50%25 coverage compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=CNST;partial=true;product=consortin isoform 2;protein_id=NP_001132931.1
 NW_001838553.2	BestRefSeq	CDS	622	718	.	-	0	ID=cds1;Parent=rna1;Dbxref=GeneID:163882,Genbank:NP_001132931.1,HGNC:26486,MIM:613439;Name=NP_001132931.1;Note=isoform 2 is encoded by transcript variant 2%3B The RefSeq protein has 1 substitution and aligns at 50%25 coverage compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=CNST;partial=true;product=consortin isoform 2;protein_id=NP_001132931.1;start_range=.,622
-NW_001838553.2	Gnomon	gene	5395	6696	.	+	.	ID=gene1;Dbxref=GeneID:101928112;Name=LOC101928112;gbkey=Gene;gene=LOC101928112;gene_biotype=other;pseudo=true
+NW_001838553.2	Gnomon	gene	5395	6696	.	+	.	ID=gene1;Dbxref=GeneID:101928112;Name=LOC101928112;gbkey=Gene;gene=LOC101928112;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	Gnomon	exon	5395	6696	.	+	.	ID=id17;Parent=gene1;Dbxref=GeneID:101928112;exon_number=1;gbkey=exon;gene=LOC101928112
-NW_001838553.2	Curated Genomic	gene	6107	7148	.	+	.	ID=gene2;Dbxref=GeneID:100887078;Name=LOC100887078;description=endogenous retrovirus group 3%2C member 1 pseudogene;gbkey=Gene;gene=LOC100887078;gene_biotype=other;pseudo=true
+NW_001838553.2	Curated Genomic	gene	6107	7148	.	+	.	ID=gene2;Dbxref=GeneID:100887078;Name=LOC100887078;description=endogenous retrovirus group 3%2C member 1 pseudogene;gbkey=Gene;gene=LOC100887078;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	RefSeq	STS	34877	35156	.	+	.	ID=id18;Dbxref=UniSTS:175623;gbkey=STS;gene=CNST
 NW_001838553.2	Gnomon	gene	35613	37838	.	-	.	ID=gene3;Dbxref=GeneID:101928139;Name=LOC101928139;gbkey=Gene;gene=LOC101928139;gene_biotype=misc_RNA
 NW_001838553.2	Gnomon	transcript	35613	37838	.	-	.	ID=rna2;Parent=gene3;Dbxref=GeneID:101928139,Genbank:XR_248740.1;Name=XR_248740.1;gbkey=misc_RNA;gene=LOC101928139;product=uncharacterized LOC101928139;transcript_id=XR_248740.1
@@ -202,7 +202,7 @@ NW_001838553.2	RefSeq	STS	1263591	1263735	.	+	.	ID=id117;Dbxref=UniSTS:23928;gbk
 NW_001838553.2	RefSeq	STS	1309207	1309326	.	+	.	ID=id118;Dbxref=UniSTS:42541;gbkey=STS;gene=KIF26B
 NW_001838553.2	RefSeq	STS	1342765	1343035	.	+	.	ID=id119;Dbxref=UniSTS:135842;gbkey=STS;gene=KIF26B
 NW_001838553.2	RefSeq	STS	1359412	1359705	.	+	.	ID=id120;Dbxref=UniSTS:177729;gbkey=STS;gene=KIF26B
-NW_001838553.2	Curated Genomic	gene	1363675	1367138	.	+	.	ID=gene9;Dbxref=GeneID:100861455,HGNC:45071;Name=DNAJC19P8;description=DnaJ (Hsp40) homolog%2C subfamily C%2C member 19 pseudogene 8;gbkey=Gene;gene=DNAJC19P8;gene_biotype=other;pseudo=true
+NW_001838553.2	Curated Genomic	gene	1363675	1367138	.	+	.	ID=gene9;Dbxref=GeneID:100861455,HGNC:45071;Name=DNAJC19P8;description=DnaJ (Hsp40) homolog%2C subfamily C%2C member 19 pseudogene 8;gbkey=Gene;gene=DNAJC19P8;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	RefSeq	STS	1388147	1388270	.	+	.	ID=id121;Dbxref=UniSTS:49895;gbkey=STS;gene=KIF26B
 NW_001838553.2	RefSeq	STS	1512961	1513085	.	+	.	ID=id122;Dbxref=UniSTS:60008;gbkey=STS
 NW_001838553.2	RefSeq	STS	1515052	1515223	.	+	.	ID=id123;Dbxref=UniSTS:60005;gbkey=STS
@@ -398,7 +398,7 @@ NW_001838553.2	BestRefSeq	CDS	1960091	1960163	.	-	0	ID=cds11;Parent=rna18;Dbxref
 NW_001838553.2	BestRefSeq	CDS	1957414	1957507	.	-	2	ID=cds11;Parent=rna18;Dbxref=GeneID:51029,Genbank:NP_057160.2,HGNC:24264,HPRD:15153,MIM:614638;Name=NP_057160.2;gbkey=CDS;gene=DESI2;product=desumoylating isopeptidase 2;protein_id=NP_057160.2
 NW_001838553.2	BestRefSeq	CDS	1954735	1954876	.	-	1	ID=cds11;Parent=rna18;Dbxref=GeneID:51029,Genbank:NP_057160.2,HGNC:24264,HPRD:15153,MIM:614638;Name=NP_057160.2;gbkey=CDS;gene=DESI2;product=desumoylating isopeptidase 2;protein_id=NP_057160.2
 NW_001838553.2	BestRefSeq	CDS	1940982	1941215	.	-	0	ID=cds11;Parent=rna18;Dbxref=GeneID:51029,Genbank:NP_057160.2,HGNC:24264,HPRD:15153,MIM:614638;Name=NP_057160.2;gbkey=CDS;gene=DESI2;product=desumoylating isopeptidase 2;protein_id=NP_057160.2
-NW_001838553.2	Curated Genomic	gene	1952035	1952325	.	+	.	ID=gene15;Dbxref=GeneID:100271014,HGNC:36279;Name=RPL37P8;description=ribosomal protein L37 pseudogene 8;gbkey=Gene;gene=RPL37P8;gene_biotype=other;gene_synonym=RPL37_2_190;pseudo=true
+NW_001838553.2	Curated Genomic	gene	1952035	1952325	.	+	.	ID=gene15;Dbxref=GeneID:100271014,HGNC:36279;Name=RPL37P8;description=ribosomal protein L37 pseudogene 8;gbkey=Gene;gene=RPL37P8;gene_biotype=pseudogene;gene_synonym=RPL37_2_190;pseudo=true
 NW_001838553.2	RefSeq	STS	1957795	1958085	.	+	.	ID=id250;Dbxref=UniSTS:133429;gbkey=STS;gene=DESI2
 NW_001838553.2	RefSeq	STS	1958251	1958546	.	+	.	ID=id251;Dbxref=UniSTS:102312;gbkey=STS;gene=DESI2
 NW_001838553.2	BestRefSeq	gene	2006379	2185387	.	-	.	ID=gene16;Dbxref=GeneID:257044,HGNC:28491,HPRD:14561;Name=C1orf101;description=chromosome 1 open reading frame 101;gbkey=Gene;gene=C1orf101;gene_biotype=protein_coding;gene_synonym=RP11-523K4.1
@@ -527,7 +527,7 @@ NW_001838553.2	BestRefSeq	CDS	2011246	2011254	.	-	0	ID=cds14;Parent=rna20;Dbxref
 NW_001838553.2	RefSeq	STS	2030523	2030657	.	+	.	ID=id314;Dbxref=UniSTS:14105;gbkey=STS;gene=C1orf101
 NW_001838553.2	RefSeq	STS	2030786	2030918	.	+	.	ID=id315;Dbxref=UniSTS:94104;gbkey=STS;gene=C1orf101
 NW_001838553.2	RefSeq	STS	2031561	2031869	.	+	.	ID=id316;Dbxref=UniSTS:138451;gbkey=STS;gene=C1orf101
-NW_001838553.2	Curated Genomic	gene	2048050	2048347	.	+	.	ID=gene17;Dbxref=GeneID:360158,HGNC:24416;Name=CYCSP5;description=cytochrome c%2C somatic pseudogene 5;gbkey=Gene;gene=CYCSP5;gene_biotype=other;gene_synonym=HCP5;pseudo=true
+NW_001838553.2	Curated Genomic	gene	2048050	2048347	.	+	.	ID=gene17;Dbxref=GeneID:360158,HGNC:24416;Name=CYCSP5;description=cytochrome c%2C somatic pseudogene 5;gbkey=Gene;gene=CYCSP5;gene_biotype=pseudogene;gene_synonym=HCP5;pseudo=true
 NW_001838553.2	BestRefSeq	gene	2194625	2238252	.	+	.	ID=gene18;Dbxref=GeneID:159,HGNC:292,MIM:103060;Name=ADSS;description=adenylosuccinate synthase;gbkey=Gene;gene=ADSS;gene_biotype=protein_coding;gene_synonym=ADEH,ADSS 2
 NW_001838553.2	BestRefSeq	mRNA	2194625	2238252	.	+	.	ID=rna22;Parent=gene18;Dbxref=GeneID:159,Genbank:NM_001126.3,HGNC:292,MIM:103060;Name=NM_001126.3;Note=The RefSeq transcript has 2 substitutions and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=ADSS;product=adenylosuccinate synthase;transcript_id=NM_001126.3
 NW_001838553.2	BestRefSeq	exon	2194625	2195124	.	+	.	ID=id317;Parent=rna22;Dbxref=GeneID:159,Genbank:NM_001126.3,HGNC:292,MIM:103060;Note=The RefSeq transcript has 2 substitutions and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=ADSS;product=adenylosuccinate synthase;transcript_id=NM_001126.3
@@ -562,7 +562,7 @@ NW_001838553.2	BestRefSeq	STS	2229007	2229322	.	+	.	ID=id332;Dbxref=UniSTS:16895
 NW_001838553.2	BestRefSeq	STS	2237173	2237372	.	+	.	ID=id333;Dbxref=UniSTS:22913,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
 NW_001838553.2	BestRefSeq	STS	2237269	2237539	.	+	.	ID=id334;Dbxref=UniSTS:49018,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
 NW_001838553.2	BestRefSeq	STS	2237618	2237744	.	+	.	ID=id335;Dbxref=UniSTS:17427,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
-NW_001838553.2	Curated Genomic	gene	2239578	2251635	.	+	.	ID=gene19;Dbxref=GeneID:126826,HGNC:33317;Name=TGIF2P1;description=TGFB-induced factor homeobox 2 pseudogene 1;gbkey=Gene;gene=TGIF2P1;gene_biotype=other;pseudo=true
+NW_001838553.2	Curated Genomic	gene	2239578	2251635	.	+	.	ID=gene19;Dbxref=GeneID:126826,HGNC:33317;Name=TGIF2P1;description=TGFB-induced factor homeobox 2 pseudogene 1;gbkey=Gene;gene=TGIF2P1;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	BestRefSeq	gene	2257536	2293876	.	-	.	ID=gene20;Dbxref=GeneID:200159,HGNC:30435;Name=C1orf100;description=chromosome 1 open reading frame 100;gbkey=Gene;gene=C1orf100;gene_biotype=protein_coding;gene_synonym=RP11-518L10.1
 NW_001838553.2	BestRefSeq	mRNA	2257536	2293876	.	-	.	ID=rna23;Parent=gene20;Dbxref=GeneID:200159,Genbank:NM_001276349.1,HGNC:30435;Name=NM_001276349.1;gbkey=mRNA;gene=C1orf100;product=chromosome 1 open reading frame 100%2C transcript variant 3;transcript_id=NM_001276349.1
 NW_001838553.2	BestRefSeq	exon	2293777	2293876	.	-	.	ID=id336;Parent=rna23;Dbxref=GeneID:200159,Genbank:NM_001276349.1,HGNC:30435;gbkey=mRNA;gene=C1orf100;product=chromosome 1 open reading frame 100%2C transcript variant 3;transcript_id=NM_001276349.1
@@ -737,7 +737,7 @@ NW_001838553.2	BestRefSeq	STS	2912084	2912165	.	+	.	ID=id434;Dbxref=UniSTS:93703
 NW_001838553.2	BestRefSeq	STS	3013409	3013529	.	+	.	ID=id435;Dbxref=UniSTS:43697,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	BestRefSeq	STS	3019299	3019547	.	+	.	ID=id436;Dbxref=UniSTS:151125,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	BestRefSeq	STS	3019474	3019573	.	+	.	ID=id437;Dbxref=UniSTS:30601,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	Curated Genomic	gene	3025438	3026174	.	+	.	ID=gene26;Dbxref=GeneID:100506953,HGNC:41951;Name=FABP7P1;description=fatty acid binding protein 7%2C brain pseudogene 1;gbkey=Gene;gene=FABP7P1;gene_biotype=other;pseudo=true
+NW_001838553.2	Curated Genomic	gene	3025438	3026174	.	+	.	ID=gene26;Dbxref=GeneID:100506953,HGNC:41951;Name=FABP7P1;description=fatty acid binding protein 7%2C brain pseudogene 1;gbkey=Gene;gene=FABP7P1;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	BestRefSeq	STS	3032624	3032941	.	+	.	ID=id438;Dbxref=UniSTS:169284,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	BestRefSeq	STS	3050483	3050605	.	+	.	ID=id439;Dbxref=UniSTS:73813,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	BestRefSeq	STS	3102786	3102913	.	+	.	ID=id440;Dbxref=UniSTS:49850,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
@@ -801,7 +801,7 @@ NW_001838553.2	BestRefSeq	exon	3303993	3304014	.	-	.	ID=id474;Parent=rna37;Dbxre
 NW_001838553.2	BestRefSeq	ncRNA	3304030	3304051	.	-	.	ID=rna38;Parent=gene28;Dbxref=GeneID:100616343,miRBase:MIMAT0019760,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;ncrna_class=miRNA;product=hsa-miR-4677-5p
 NW_001838553.2	BestRefSeq	exon	3304030	3304051	.	-	.	ID=id475;Parent=rna38;Dbxref=GeneID:100616343,miRBase:MIMAT0019760,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;ncrna_class=miRNA;product=hsa-miR-4677-5p
 NW_001838553.2	RefSeq	STS	3360140	3360259	.	+	.	ID=id476;Dbxref=UniSTS:22357;gbkey=STS;gene=SDCCAG8
-NW_001838553.2	Curated Genomic	gene	3381919	3382420	.	+	.	ID=gene29;Dbxref=GeneID:100422536,HGNC:44619;Name=FCF1P7;description=FCF1 pseudogene 7;gbkey=Gene;gene=FCF1P7;gene_biotype=other;pseudo=true
+NW_001838553.2	Curated Genomic	gene	3381919	3382420	.	+	.	ID=gene29;Dbxref=GeneID:100422536,HGNC:44619;Name=FCF1P7;description=FCF1 pseudogene 7;gbkey=Gene;gene=FCF1P7;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	RefSeq	STS	3393541	3393724	.	+	.	ID=id477;Dbxref=UniSTS:89985;gbkey=STS;gene=SDCCAG8
 NW_001838553.2	BestRefSeq	gene	3394634	3459432	.	+	.	ID=gene30;Dbxref=GeneID:9859,HGNC:28920,MIM:613023;Name=CEP170;description=centrosomal protein 170kDa;end_range=3459432,.;gbkey=Gene;gene=CEP170;gene_biotype=protein_coding;gene_synonym=FAM68A,KAB,KIAA0470;partial=true
 NW_001838553.2	BestRefSeq	mRNA	3394634	3459432	.	+	.	ID=rna39;Parent=gene30;Dbxref=GeneID:9859,Genbank:NM_014812.2,HGNC:28920,MIM:613023;Name=NM_014812.2;Note=The RefSeq transcript has 3 substitutions and aligns at 19%25 coverage compared to this genomic sequence;end_range=3459432,.;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=CEP170;partial=true;product=centrosomal protein 170kDa%2C transcript variant alpha;transcript_id=NM_014812.2

@@ -3541,8 +3541,8 @@ bool GetFeatureGeneBiotype(
     }
 
     //3a
-    // If vecCds is empty then gene_biotype="other".
-    if (vecCds.empty()) {
+    // If vecCds is empty then gene_biotype="other", unless pseudo=TRUE
+    if (vecCds.empty() && (!mf.IsSetPseudo() || !mf.GetPseudo())) {
         biotype = "other";
         return true;
     }
@@ -3568,8 +3568,9 @@ bool GetFeatureGeneBiotype(
     }
 
     //3c
-    // If we made it to that point then all members of the non-empty vecCds are pseudo and 
-    // gene_biotype="pseudogene".
+    // If we made it to that point then all members of the non-empty vecCds are pseudo or 
+    // vecCds is empty and the gene itself is pseudo. 
+    // In this case, gene_biotype="pseudogene".
     biotype = "pseudogene";
 
     return true;
