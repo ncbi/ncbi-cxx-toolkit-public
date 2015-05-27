@@ -288,8 +288,8 @@ Added possibility of customization of BINPATH in component description
 Corrected project dependecies analysis to exclude unneeded projects
 Changed the way Microsoft Visual Studio project are generated to use property sheets.
 
-May 26, 2015
-version 4.1.0,   CXX-5962
+May 27, 2015
+version 4.1.1,   CXX-5962
 Corrected source files collection in ASN projects.
 Added recognition of static/dll suffixes in 3rd party libraries.
 Added possibility to configure Xcode projects to use C++11 compliant underlying compiler.
