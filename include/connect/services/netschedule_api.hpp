@@ -1021,6 +1021,7 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
      CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
 
+/// @internal
 class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 {
 public:
@@ -1058,13 +1059,26 @@ public:
             CNetScheduleAPI::EJobStatus* job_status,
             int* last_event_index);
 
+    enum EJobStatusMask {
+        fJSM_Pending        = 1 << CNetScheduleAPI::ePending,
+        fJSM_Running        = 1 << CNetScheduleAPI::eRunning,
+        fJSM_Canceled       = 1 << CNetScheduleAPI::eCanceled,
+        fJSM_Failed         = 1 << CNetScheduleAPI::eFailed,
+        fJSM_Done           = 1 << CNetScheduleAPI::eDone,
+        fJSM_Reading        = 1 << CNetScheduleAPI::eReading,
+        fJSM_Confirmed      = 1 << CNetScheduleAPI::eConfirmed,
+        fJSM_ReadFailed     = 1 << CNetScheduleAPI::eReadFailed,
+        fJSM_Deleted        = 1 << CNetScheduleAPI::eDeleted
+    };
+    typedef int TJobStatusMask;
+
     CNetScheduleAPI::EJobStatus WaitForJobEvent(
             const string& job_key,
             CDeadline& deadline,
             CNetScheduleAPI ns_api,
-            int status_mask,
-            int last_event_index,
-            int *new_event_index);
+            TJobStatusMask status_mask,
+            int last_event_index = 0,
+            int *new_event_index = NULL);
 
 // Worker node methods.
 public:

@@ -512,11 +512,11 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
         const string& job_key,
         CDeadline& deadline,
         CNetScheduleAPI ns_api,
-        int status_mask,
+        TJobStatusMask status_mask,
         int last_event_index,
         int *new_event_index)
 {
-    *new_event_index = -1;
+    int index = -1;
 
     CNetScheduleAPI::EJobStatus job_status;
 
@@ -531,22 +531,24 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
             last_wait = true;
         }
 
-        if (RequestJobWatching(ns_api, job_key,
-                        timeout, &job_status, new_event_index) &&
+        if (RequestJobWatching(ns_api, job_key, timeout, &job_status, &index) &&
                 ((status_mask & (1 << job_status)) != 0 ||
-                *new_event_index > last_event_index))
+                index > last_event_index))
             break;
 
         if (deadline.GetRemainingTime().IsZero())
             break;
 
         if (WaitForNotification(timeout) &&
-                CheckJobStatusNotification(job_key, &job_status,
-                        new_event_index) &&
+                CheckJobStatusNotification(job_key, &job_status, &index) &&
                 ((status_mask & (1 << job_status)) != 0 ||
-                *new_event_index > last_event_index))
+                index > last_event_index))
             break;
     } while (!last_wait);
+
+    if (new_event_index) {
+        *new_event_index = index;
+    }
 
     return job_status;
 }
