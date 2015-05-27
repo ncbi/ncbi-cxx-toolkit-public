@@ -337,8 +337,8 @@ export FEATURES
 NCBI_CONFIG__LOG__FILE="-"
 export NCBI_CONFIG__LOG__FILE
 
-# Add current, build and scripts directories to PATH
-PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\${PATH}"
+# Add additional necessaary directories to PATH: current, build, scripts, utility.
+PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
@@ -358,7 +358,7 @@ export CHECK_SIGNATURE
 # Debug tools to get stack/back trace (except running under memory checkers)
 NCBI_CHECK_STACK_TRACE=''
 NCBI_CHECK_BACK_TRACE=''
-if test "\$NCBI_CHECK_TOOLS" == "regular"; then
+if test "\$NCBI_CHECK_TOOLS" = "regular"; then
    if (which gdb) >/dev/null 2>&1; then
        NCBI_CHECK_BACK_TRACE='gdb --batch --quiet -ex "thread apply all bt" -ex "quit"'
    fi
@@ -472,26 +472,34 @@ RunTest()
         
         x_cmd="[\$x_work_dir_tail] \$x_name"
         if test \$tool_lo = "regular"; then
-            #x_cmd="[\$x_work_dir_tail] \$x_name"
-            x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
-            x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
-            x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
+           #x_cmd="[\$x_work_dir_tail] \$x_name"
+           x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
+           x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
+           x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
+           x_applog_sh="\$x_work_dir/\$x_test.applog\$x_ext.sh"
         else
-            #x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
-            x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext.\$tool_lo"
-            x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext.\$tool_lo"
-            x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext.\$tool_lo"
+           #x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
+           x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext.\$tool_lo"
+           x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext.\$tool_lo"
+           x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext.\$tool_lo"
+           x_applog_sh="\$x_work_dir/\$x_test.applog\$x_ext.\$tool_lo.sh"
         fi
 
         if \$is_db_load; then
             case \`uname -s\` in
               CYGWIN* )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" "\$(cygpath -w "\$x_applog_sh")" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
               IRIX* )
-                \$NCBI/bin/_production/CPPCORE/test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+                test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" "\$x_applog_sh" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
               * )
-                \$NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+                test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" "\$x_applog_sh" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
             esac
+            if test -f \$x_applog_sh; then
+               chmod a+x \$x_applog_sh 2>&1
+               \$x_applog_sh >> "$x_build_dir/test_stat_load.log" 2>&1
+            else
+               echo "Error generating \$x_applog_sh "
+            fi
             continue
         fi
         

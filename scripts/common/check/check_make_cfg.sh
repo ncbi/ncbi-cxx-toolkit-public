@@ -147,7 +147,7 @@ fi
 
 # Check timeout multiplier (increase default check timeout in x times)
 x_check_mult=1
-if test $x_compiler == "MSVC" ; then
+if test $x_compiler = "MSVC" ; then
     case "$x_cfg" in
        Debug* )
            x_check_mult=3
@@ -269,6 +269,7 @@ case "\$method" in
 #----------------------------------------------------------
    load_to_db )
       is_db_load=true
+      rm -f "\$build_dir/test_stat_load.log"
       # See RunTest() below
       ;;
 #----------------------------------------------------------

@@ -57,7 +57,7 @@ x_tpath=$x_srcdir_rel/$x_test
 if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
    # Check ignore list
    x_use_ignore_list=`echo $x_use_ignore_list | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
-   if test "$x_use_ignore_list"=='Y' ; then
+   if test "$x_use_ignore_list"='Y' ; then
       root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
       ignore_list="$root_dir/src/check/ignore.lst"
       if [ -f "$ignore_list" ]; then
