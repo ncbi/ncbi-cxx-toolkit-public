@@ -162,10 +162,7 @@ use m_NewCleanup.x_ConvertDoubleQuotesMarkChanged {
 
 use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
     Org-ref.common ,
-    GB-block.origin ,
     Gene-ref.locus ,
-    Gene-ref.maploc ,
-    Gene-ref.locus-tag ,
     Seq-feat.comment ,
     Seq-feat.title ,
     Seq-feat.data.region ,
@@ -235,6 +232,7 @@ use m_NewCleanup.PubdescBC { POST Pubdesc }
 use m_NewCleanup.SiteFeatBC { Seq-feat.data.site AND Seq-feat }
 use m_NewCleanup.CdregionFeatBC { Seq-feat.data.cdregion AND Seq-feat }
 
+use m_NewCleanup.GBblockOriginBC { GB-block.origin }
 use m_NewCleanup.GBblockBC { GB-block }
 use m_NewCleanup.EMBLblockBC { EMBL-block }
 
@@ -254,6 +252,7 @@ use m_NewCleanup.x_CopyGBBlockDivToOrgnameDiv { Seq-entry }
 
 use m_NewCleanup.x_ExpandCombinedQuals { Seq-feat.qual }
 
+use m_NewCleanup.OrgrefModBC { Org-ref.mod.E }
 use m_NewCleanup.OrgrefBC { Org-ref }
 use m_NewCleanup.x_PostOrgRef { POST Org-ref }
 

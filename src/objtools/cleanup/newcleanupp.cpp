@@ -993,6 +993,15 @@ static bool s_AccessionEqual (
     return false;
 }
 
+
+void CNewCleanup_imp::GBblockOriginBC ( string& str )
+{
+    if (CleanVisStringJunk(str)) {
+        ChangeMade (CCleanupChange::eTrimSpaces);
+    }
+}
+
+
 void CNewCleanup_imp::GBblockBC (
     CGB_block& gbk
 )
@@ -1050,7 +1059,6 @@ void CNewCleanup_imp::GBblockBC (
         RESET_FIELD(gbk, Source);
         ChangeMade(CCleanupChange::eRemoveQualifier);
     }
-    CLEAN_STRING_MEMBER_JUNK (gbk, Origin);
     if( FIELD_EQUALS(gbk, Origin, ".") ) {
         RESET_FIELD(gbk, Origin);
         ChangeMade(CCleanupChange::eRemoveQualifier);
@@ -1684,6 +1692,15 @@ static bool s_DbtagIsBad (
     return false;
 }
 
+void CNewCleanup_imp::OrgrefModBC (string& str)
+{
+    const string::size_type old_length = str.length();
+    CleanVisString (str);
+    if (str.length() != old_length) {
+        ChangeMade (CCleanupChange::eTrimSpaces);
+    }
+}
+
 void CNewCleanup_imp::OrgrefBC (
     COrg_ref& org
 )
@@ -1691,7 +1708,6 @@ void CNewCleanup_imp::OrgrefBC (
 {
     CLEAN_STRING_MEMBER (org, Taxname);
     CLEAN_STRING_MEMBER (org, Common);
-//    CLEAN_STRING_LIST (org, Mod);
     CLEAN_STRING_LIST (org, Syn);
 
     EDIT_EACH_MOD_ON_ORGREF (it, org) {
@@ -3283,7 +3299,7 @@ void CNewCleanup_imp::GBQualBC (
         ChangeMade(CCleanupChange::eChangeQualifiers);
     }
 
-    CLEAN_STRING_MEMBER (gbq, Val);
+    //CLEAN_STRING_MEMBER (gbq, Val);
     if (FIELD_IS_SET (gbq, Val) && s_IsJustQuotes (GET_FIELD (gbq, Val))) {
         SET_FIELD (gbq, Val, kEmptyStr);
         ChangeMade (CCleanupChange::eCleanDoubleQuotes);

@@ -225,11 +225,13 @@ private:
 
     void SeqIdBC( CSeq_id &seq_id );
 
+    void GBblockOriginBC( string& str); 
     void GBblockBC (CGB_block& gbk);
     void EMBLblockBC (CEMBL_block& emb);
 
     void BiosourceFeatBC (CBioSource& biosrc, CSeq_feat & seqfeat);
     void BiosourceBC (CBioSource& bsc);
+    void OrgrefModBC (string& str);
     void OrgrefBC (COrg_ref& org);
     void OrgnameBC (COrgName& onm, COrg_ref &org_ref);
     void OrgmodBC (COrgMod& omd);
