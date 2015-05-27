@@ -1,0 +1,8 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_str* functions (as of ICC [20]13).
+
+ifeq "$(COMPILER)" "icc"
+  config.o login.o query.o threadsafe.o: CFLAGS += -fno-builtin-strcat
+endif
