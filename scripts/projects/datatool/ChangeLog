@@ -135,8 +135,8 @@ Fixed bug in XML schema generation.
 Fixed bug in renaming nested classes.
 Changed to allow different data types when converting data file.
 
-May 26, 2015
-version 2.13.0,  CXX-5867
+May 27, 2015
+version 2.13.1,  CXX-5867
 Fixed code generation and serialization of sequences of base64binary elements.
 Use HTML entities in Identifier names if needed and possible.
 Added possibility to rename enum values from DEF file.
