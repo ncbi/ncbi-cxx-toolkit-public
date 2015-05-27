@@ -1,6 +1,7 @@
 LIB = medline
 SRC = medline__ medline___
 
+DLL_LIB = biblio general
 
 USES_LIBRARIES =  \
     biblio

@@ -6,6 +6,8 @@ ASN_DEP = xnetblast
 
 SRC = contig_assembly
 
+DLL_LIB = xalnmgr
+
 LIB = xalgocontig_assembly
 
 CXXFLAGS = $(FAST_CXXFLAGS)

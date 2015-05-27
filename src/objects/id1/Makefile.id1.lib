@@ -3,6 +3,8 @@ ASN_DEP = seq
 LIB = id1
 SRC = id1__ id1___
 
+DLL_LIB = seqset
+
 WATCHERS = vasilche
 
 

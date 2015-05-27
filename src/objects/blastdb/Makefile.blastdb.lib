@@ -3,6 +3,8 @@
 LIB = blastdb
 SRC = blastdb__ blastdb___
 
+DLL_LIB = xser
+
 WATCHERS = camacho
 
 
