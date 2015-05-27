@@ -37382,7 +37382,7 @@ echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
       fi
    fi
    if test "$with_included_vdb" != "no" -a -z "$VDB_LIBS" \
-           -a -d "$real_srcdir/src/sra/sdk"; then
+           -a -d "$real_srcdir/src/sra/sdk/interfaces"; then
       case "$host_os" in
          darwin* | linux* | solaris* )
             { echo "$as_me:$LINENO: Using local NCBI SRA/VDB copy in src/sra/sdk" >&5

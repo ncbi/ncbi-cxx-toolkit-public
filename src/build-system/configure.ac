@@ -6582,7 +6582,7 @@ if test "$with_vdb" != "no" ; then
       fi
    fi
    if test "$with_included_vdb" != "no" -a -z "$VDB_LIBS" \
-           -a -d "$real_srcdir/src/sra/sdk"; then
+           -a -d "$real_srcdir/src/sra/sdk/interfaces"; then
       case "$host_os" in
          darwin* | linux* | solaris* )
             AC_MSG_NOTICE([Using local NCBI SRA/VDB copy in src/sra/sdk])
