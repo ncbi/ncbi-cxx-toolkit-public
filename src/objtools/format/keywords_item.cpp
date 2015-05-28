@@ -247,12 +247,9 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     // propagate TSA keyword from nuc to prot in same nuc-prot set
-    if( ! is_tsa && ctx.IsProt() ) {
-        CBioseq_set_Handle parent_bioseq_set = 
-            ctx.GetHandle().GetParentBioseq_set();
-        if( parent_bioseq_set && parent_bioseq_set.CanGetLevel() &&
-            parent_bioseq_set.GetLevel() == CBioseq_set::eClass_nuc_prot )
-        {
+    if( ! is_tsa && ctx.IsProt() && ctx.IsInNucProt() ) {
+        CBioseq_set_Handle parent_bioseq_set = ctx.GetHandle().GetParentBioseq_set();
+        if( parent_bioseq_set ) {
             CBioseq_CI bioseq_ci( parent_bioseq_set, CSeq_inst::eMol_na );
             if( bioseq_ci ) {
                 CBioseq_Handle nuc = *bioseq_ci;
