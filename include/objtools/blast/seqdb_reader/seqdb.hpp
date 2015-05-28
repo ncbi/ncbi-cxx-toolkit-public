@@ -217,8 +217,8 @@ public:
     typedef int TPIG;
 
     /// Sequence type accepted and returned for GI indices.
-    typedef int TGI;
-
+    typedef TGi TGI;
+    
     /// Structure to represent a range
     struct TOffsetPair {
         TSeqPos first;
@@ -472,7 +472,7 @@ public:
     /// all filtering is applied (e.g.: GI list restriction or membership bit).
     /// If you need those checks, please use GetGis()
     /// @sa GetGis
-    int GetSeqGI(int oid) const;
+    TGi GetSeqGI(int oid) const;
 
     /// Returns an unbiased, approximate sequence length.
     ///
@@ -592,7 +592,7 @@ public:
     /// @return
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GetBioseq(int             oid,
-                            int             target_gi = 0,
+                            TGi             target_gi = ZERO_GI,
                             const CSeq_id * target_seq_id = NULL) const;
 
     /// Get a CBioseq for a sequence without sequence data.
@@ -612,7 +612,7 @@ public:
     ///   A CBioseq object corresponding to the sequence, but without
     ///   sequence data.
     CRef<CBioseq> GetBioseqNoData(int             oid,
-                                  int             target_gi = 0,
+                                  TGi             target_gi = ZERO_GI,
                                   const CSeq_id * target_seq_id = NULL) const;
 
     /// Extract a Blast-def-line-set object from a Bioseq retrieved by CSeqDB
@@ -771,7 +771,7 @@ public:
     ///   The returned list of gis.
     /// @param append
     ///   Specify true to append to gis, keeping existing elements.
-    void GetGis(int oid, vector<int> & gis, bool append = false) const;
+    void GetGis(int oid, vector<TGi> & gis, bool append = false) const;
 
     /// Returns the type of database opened - protein or nucleotide.
     ///
@@ -1011,16 +1011,16 @@ public:
     bool TiToOid(Int8 ti, int & oid) const;
 
     /// Translate an OID to a GI.
-    bool OidToGi(int oid, int & gi) const;
+    bool OidToGi(int oid, TGi & gi) const;
 
     /// Translate a GI to an OID.
-    bool GiToOid(int gi, int & oid) const;
+    bool GiToOid(TGi gi, int & oid) const;
 
     /// Translate a GI to a PIG.
-    bool GiToPig(int gi, int & pig) const;
+    bool GiToPig(TGi gi, int & pig) const;
 
     /// Translate a PIG to a GI.
-    bool PigToGi(int pig, int & gi) const;
+    bool PigToGi(int pig, TGi & gi) const;
 
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<int> & oids) const;
@@ -1057,7 +1057,7 @@ public:
     ///   The GI of the sequence.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GiToBioseq(int gi) const;
+    CRef<CBioseq> GiToBioseq(TGi gi) const;
 
     /// Get a CBioseq for a given PIG
     ///
@@ -1631,7 +1631,7 @@ public:
     /// Returns the BLASTDB list originally provided in the constructor
     string GetOrigDbList() const { return m_OrigWgsList; }
 private:
-    typedef map<string, vector<int> > TGiLists;
+    typedef map<string, vector<TGi> > TGiLists;
     /// Reads the gi lists for each of the BLAST DBs provided in the
     /// constructor, ignoring those that can't be found
     TGiLists x_ReadGiListsForDbs();

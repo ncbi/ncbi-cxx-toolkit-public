@@ -71,7 +71,7 @@ public:
     {
         CSeqDB nr("nr", CSeqDB::eProtein);
         
-        int gi(129295);
+        TGi gi = GI_CONST(129295);
         int oid(0);
         
         if (nr.GiToOid(gi, oid)) {

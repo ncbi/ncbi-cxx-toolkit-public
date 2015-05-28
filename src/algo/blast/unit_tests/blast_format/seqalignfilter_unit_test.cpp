@@ -195,8 +195,8 @@ s_Check_GiListConsistency(CRef<CSeq_align> /*sa_orig*/,
 static void s_Check_GiEquivalenceInDB(TGi gi1, TGi gi2, CRef<CSeqDB> db)
 {
     int oid1 = -1, oid2 = -1;
-    db->GiToOid(GI_TO(int, gi1), oid1);
-    db->GiToOid(GI_TO(int, gi2), oid2);
+    db->GiToOid(gi1, oid1);
+    db->GiToOid(gi2, oid2);
 
     BOOST_REQUIRE(oid1 > 0);
     BOOST_REQUIRE(oid2 > 0);

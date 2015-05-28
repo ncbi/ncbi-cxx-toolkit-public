@@ -29,7 +29,7 @@
  *   Unit test.
  *
  */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <objtools/blast/seqdb_reader/column_reader.hpp>
@@ -92,7 +92,7 @@ static void s_TestPartialAmbigRange(CSeqDB & db, int oid, int begin, int end)
     db.RetAmbigSeq(& slice);
 }
 
-static void s_TestPartialAmbig(CSeqDB & db, int nt_gi)
+static void s_TestPartialAmbig(CSeqDB & db, TGi nt_gi)
 {
     int oid(-1);
     bool success = db.GiToOid(nt_gi, oid);
@@ -839,7 +839,7 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
 
     CSeqDB nr("nr", CSeqDB::eProtein);
 
-    Uint4 gi_list[] = {
+    TGi gi_list[] = {
         329847,   737263,   1708889,  2612955,  2982661,  3115393,
         3318935,  3930059,  4868071,  6573653,  7530437,  9657431,
         9951219,  12698889
@@ -857,17 +857,18 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
         394,      174
     };
 
-    Uint4 L_gi  = Uint4(sizeof(gi_list)  / sizeof(gi_list[0]));
-    Uint4 L_pig = Uint4(sizeof(pig_list) / sizeof(pig_list[0]));
-    Uint4 L_len = Uint4(sizeof(len_list) / sizeof(len_list[0]));
+    size_t L_gi  = ArraySize(gi_list);
+    size_t L_pig = ArraySize(pig_list);
+    size_t L_len = ArraySize(len_list);
 
     // In case of hand-editing
     BOOST_REQUIRE((L_gi == L_len) && (L_len == L_pig));
 
-    for(Uint4 i = 0; i<L_gi; i++) {
-        int arr_gi(0), arr_pig(0), arr_len(0),
-            gi2pig(0), gi2oid(0), pig2gi(0), pig2oid(0),
-            oid2len(0), oid2pig(0), oid2gi(0),
+    for(size_t i = 0; i<L_gi; i++) {
+        TGi arr_gi = ZERO_GI, pig2gi = ZERO_GI, oid2gi = ZERO_GI;
+        int arr_pig(0), arr_len(0),
+            gi2pig(0), gi2oid(0), pig2oid(0),
+            oid2len(0), oid2pig(0),
             pig2gi2oid(0);
 
         bool b1,b2,b3,b4,b5,b6,b7;
@@ -947,23 +948,23 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
 
     // Each set of strings should produce a set of GIs.
 
-    Uint4 * gi_list[NUM_ITEMS];
+    TGi * gi_list[NUM_ITEMS];
 
-    Uint4 g0[] =
+    TGi g0[] =
         { 32894304, 32894290, 32894276, 32894262, 32894248,
           32894234, 32894220, 32894206, 32894192, 32894178,
           32894164, 32894150, 32894136, 32894122, 32894108,
           32894066, 32894052, 32894038, 32894024, 32894010,
           0 };
-    Uint4 g1[] =
+    TGi g1[] =
         { 129295, 0 };
-    Uint4 g2[] =
+    TGi g2[] =
         { 433552084, 433552085, 0 };
-    Uint4 g3[] =
+    TGi g3[] =
         { 433552084, 433552085, 0 };
-    Uint4 g4[] =
+    TGi g4[] =
         { 157831779, 0 };
-    Uint4 g5[] =
+    TGi g5[] =
         { 157878050, 28948349, 0 };
 
     gi_list[0] = g0;
@@ -989,9 +990,9 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     len_list[4] = l4;
     len_list[5] = l5;
 
-    Uint4 L_gi  = Uint4(sizeof(gi_list)  / sizeof(gi_list[0]));
-    Uint4 L_str = Uint4(sizeof(gi_list)  / sizeof(gi_list[0]));
-    Uint4 L_len = Uint4(sizeof(len_list) / sizeof(len_list[0]));
+    size_t L_gi  = ArraySize(gi_list);
+    size_t L_str = ArraySize(gi_list);
+    size_t L_len = ArraySize(len_list);
 
     // Verify lengths in case of typo.
 
@@ -1006,7 +1007,7 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
         set<int> exp_len;
         set<int> oid_len;
 
-        for(Uint4 * gip = gi_list[i]; *gip; gip++) {
+        for(TGi * gip = gi_list[i]; *gip; gip++) {
             int oid1(-1);
             bool worked = nr.GiToOid(*gip, oid1);
 
@@ -1084,7 +1085,7 @@ BOOST_AUTO_TEST_CASE(AmbigBioseq)
     const char * dbname = "nt";
 
     bool is_prot = false;
-    int gi = 12831944;
+    TGi gi = 12831944;
 
     CNcbiOstrstream oss_fn;
     oss_fn << "." << dbname << "." << gi;
@@ -1566,8 +1567,8 @@ BOOST_AUTO_TEST_CASE(OidRanges)
 BOOST_AUTO_TEST_CASE(GiListOidRange)
 {
 
-    int low_gi  = 20*1000*1000;
-    int high_gi = 30*1000*1000;
+    TGi low_gi  = 20*1000*1000;
+    TGi high_gi = 30*1000*1000;
 
     int low_oid  = 50;
     int high_oid = 150;
@@ -1603,7 +1604,7 @@ BOOST_AUTO_TEST_CASE(GiListOidRange)
 
                 ITERATE(list< CRef<CSeq_id> >, seqid, ids) {
                     if ((**seqid).IsGi()) {
-                        int gi = GI_TO(int, (**seqid).GetGi());
+                        TGi gi = (**seqid).GetGi();
 
                         if ((gi > low_gi) && (gi < high_gi)) {
                             gi_in_range = true;
@@ -1780,7 +1781,7 @@ BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
     dbs.push_back("Test/baylor_wgs_contigs.01");
     dbs.push_back(dbs[0] + " " + dbs[1]);
 
-    vector< vector<int> >    gis(dbs.size());
+    vector< vector<TGi> >    gis(dbs.size());
     vector< vector<string> > volumes(dbs.size());
 
     for(int i = 0; i < (int)dbs.size(); i++) {
@@ -1803,7 +1804,7 @@ BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
     BOOST_REQUIRE(volumes[0] == volumes[2]);
     BOOST_REQUIRE_EQUAL(gis[0].size() + gis[1].size(), gis[2].size());
 
-    vector<int> zero_one(gis[0]);
+    vector<TGi> zero_one(gis[0]);
     zero_one.insert(zero_one.end(), gis[1].begin(), gis[1].end());
 
     sort(zero_one.begin(), zero_one.end());
@@ -1815,11 +1816,11 @@ BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
 BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid)
 {
 
-    TGi gi1a = GI_FROM(int,446106212);
+    TGi gi1a = 446106212;
     int tax1 = 1386;
 
-    TGi gi2a = GI_FROM(int,494110381);
-    TGi gi2b = GI_FROM(int,30172867);
+    TGi gi2a = 494110381;
+    TGi gi2b = 30172867;
     int tax2a = 1678;
     int tax2b = 206672;
 
@@ -1860,7 +1861,7 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid)
 BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_gi_to_taxid_set)
 {
 
-    int gi1a = 446106212;
+    TGi gi1a = 446106212;
     int tax1[] = {
             1386,
             1392,
@@ -1869,7 +1870,7 @@ BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_gi_to_taxid_set)
             1234146
     };
 
-    int gi2a = 494110381;
+    TGi gi2a = 494110381;
     int tax2a[] = {
             1678,
             216816,
@@ -1890,7 +1891,7 @@ BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_gi_to_taxid_set)
 
     BOOST_REQUIRE(oid1 != oid2);
 
-    map<int, set<int> > gi2taxids;
+    map<TGi, set<int> > gi2taxids;
 
     set<int> expected1;
     expected1.insert(BEGIN(tax1), END(tax1));
@@ -1937,7 +1938,7 @@ BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_gi_to_taxid_set)
 BOOST_AUTO_TEST_CASE(GetTaxIDs_vector_of_taxids)
 {
 
-    int gi1a = 446106212;
+    TGi gi1a = 446106212;
     int tax1[] = {
             198094,
             261594,
@@ -1985,7 +1986,7 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_vector_of_taxids)
             1437442
     };
 
-    int gi2a = 494110381;
+    TGi gi2a = 494110381;
     int tax2a[] = {
             206672,
             205913,
@@ -2073,12 +2074,12 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_vector_of_taxids)
 BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_vector_of_taxids)
 {
 
-    int gi1a = 446106212;
+    TGi gi1a = 446106212;
     int tax1[] = {
             1386, 1392, 1396, 1428, 1234146
     };
 
-    int gi2a = 494110381;
+    TGi gi2a = 494110381;
     int tax2a[] = {
             1678, 216816, 469594, 1263059
     };
@@ -2935,7 +2936,7 @@ BOOST_AUTO_TEST_CASE(OidToGiLookup)
 {
     CSeqDB dbp("data/ranges/twenty", CSeqDB::eProtein);
     for(int oid = 0; dbp.CheckOrFindOID(oid); oid++) {
-        int gi = dbp.GetSeqGI(oid);
+        TGi gi = dbp.GetSeqGI(oid);
         int the_oid;
         BOOST_REQUIRE( dbp.GiToOid(gi, the_oid));
         BOOST_REQUIRE_EQUAL(oid, the_oid);
@@ -2943,7 +2944,7 @@ BOOST_AUTO_TEST_CASE(OidToGiLookup)
 
     CSeqDB dbn("data/seqn", CSeqDB::eNucleotide);
     for(int oid = 0; dbp.CheckOrFindOID(oid); oid++) {
-        int gi = dbp.GetSeqGI(oid);
+        TGi gi = dbp.GetSeqGI(oid);
         int the_oid;
         BOOST_REQUIRE( dbp.GiToOid(gi, the_oid));
         BOOST_REQUIRE_EQUAL(oid, the_oid);
@@ -3101,9 +3102,9 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     BOOST_REQUIRE_THROW(db.GetSeqLengthApprox(0), CSeqDBException);
     BOOST_REQUIRE_THROW(db.GetHdr(0), CSeqDBException);
 
-    map<int, int> gi_to_taxid;
+    map<TGi, int> gi_to_taxid;
     vector<int>   taxids;
-    vector<int>   gis;
+    vector<TGi>   gis;
 
     BOOST_REQUIRE_THROW(db.GetTaxIDs(0, gi_to_taxid), CSeqDBException);
     BOOST_REQUIRE_THROW(db.GetTaxIDs(0, taxids), CSeqDBException);
@@ -3172,7 +3173,8 @@ CSeqDBException);
     BOOST_REQUIRE_EQUAL(db.GetGiList(), (CSeqDBGiList*)NULL);
     BOOST_REQUIRE_NO_THROW(db.SetMemoryBound(1024*1024*512));
 
-    int pig(123), gi(129295);
+    int pig(123);
+    TGi gi = 129295;
     string acc("P01013");
     CSeq_id seqid("sp|P01013|OVALX_CHICK");
 
@@ -3294,14 +3296,14 @@ BOOST_AUTO_TEST_CASE(GetSequenceAsString)
 
     string nucl, prot;
 
-    int nucl_gi = 46071107;
+    TGi nucl_gi = 46071107;
     string nucl_str = ("AAGCTCTTCATTGATGGTAGAGAGCCTATTAACAGGCAAC"
                        "AGTCAATGCTCCAAAGTCCAAACAAGATTACCTGTGCAAA"
                        "GAACTTGCAGTGTAACAAACCCCNTTCACGGCCAGAAGTA"
                        "TTTGCAACAATGTTGAAAGTCCTTCTGGCAGAGGAGGAGT"
                        "CTAAT");
 
-    int prot_gi = 43914529;
+    TGi prot_gi = 43914529;
     string prot_str = "MINKSGYEAKYKKSIKNNEEFWRKEGKRITWIKPYKKIKNVRYS";
 
     int nucl_oid(-1), prot_oid(-1);
@@ -3369,15 +3371,15 @@ static void s_MapAllGis(CSeqDB       & db,
                         int          & total)
 {
     total = 0;
-    vector<int> gis;
+    vector<TGi> gis;
 
     for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
         gis.clear();
 
         db.GetGis(oid, gis, false);
 
-        ITERATE(vector<int>, iter, gis) {
-            s_ModifyMap(m, *iter, change, total);
+        ITERATE(vector<TGi>, iter, gis) {
+            s_ModifyMap(m, GI_TO(int, *iter), change, total);
         }
     }
 }
@@ -3460,7 +3462,7 @@ BOOST_AUTO_TEST_CASE(NegativeGiList)
     // database, I want to check that it affects the header data that
     // is reported from SeqDB::GetHdr().
 
-    int gi1 = 27360885;
+    TGi gi1 = 27360885;
     int oid1 = -1;
 
     bool ok = have_got.GiToOid(gi1, oid1);
@@ -3501,7 +3503,7 @@ BOOST_AUTO_TEST_CASE(NegativeListNr)
     bool found = have_got.GiToOid(gis[0], oid);
     BOOST_REQUIRE(found);
 
-    vector<int> gis_w, gis_wo;
+    vector<TGi> gis_w, gis_wo;
     have_got.GetGis(oid, gis_w);
     have_not.GetGis(oid, gis_wo);
 
@@ -3535,7 +3537,7 @@ BOOST_AUTO_TEST_CASE(NegativeListSwissprot)
     bool found = have_got.GiToOid(gis[0], oid);
     BOOST_REQUIRE(found);
 
-    vector<int> gis_w, gis_wo;
+    vector<TGi> gis_w, gis_wo;
     have_got.GetGis(oid, gis_w);
     have_not.GetGis(oid, gis_wo);
 
@@ -4197,7 +4199,7 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
     string blastdb_name = alias_file_tmpfile.GetFileName() + ".pal";
     CFileDeleteAtExit::Add(gilist_name);
     CFileDeleteAtExit::Add(blastdb_name);
-    const int kGiIncluded = 129295;
+    const TGi kGiIncluded = 129295;
 
     {{
         ofstream stream(gilist_name.c_str());
@@ -4215,12 +4217,12 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
     CRef<CSeqDB> db(new CSeqDB(alias_file_tmpfile.GetFileName(),
                                CSeqDB::eProtein));
     vector<int> oids;
-    db->AccessionToOids(NStr::IntToString(kGiIncluded), oids);
+    db->AccessionToOids(NStr::NumericToString(kGiIncluded), oids);
     BOOST_REQUIRE_EQUAL(1U, oids.size());
 
-    int gi2search = 129;    // shouldn't be found
+    TGi gi2search = 129;    // shouldn't be found
     oids.clear();
-    db->AccessionToOids(NStr::IntToString(gi2search), oids);
+    db->AccessionToOids(NStr::NumericToString(gi2search), oids);
     BOOST_CHECK_EQUAL(0U, oids.size());
     /*
     list< CRef< CSeq_id> > filtered_ids = db->GetSeqIDs(oids[0]);
@@ -4265,7 +4267,7 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleNoRemove)
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
     ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(*gi);
+        trimmer.AddGi(GI_FROM(int, *gi));
     }
     const string kExpectedResult = "WGS/AA/D/wgs.AADN WGS/AB/D/wgs.ABDC";
     const string kActualResult = trimmer.GetDbList();
@@ -4284,7 +4286,7 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleRemove)
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
     ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(*gi);
+        trimmer.AddGi(GI_FROM(int, *gi));
     }
     const string kExpectedResult = "WGS/AB/D/wgs.ABDC";
     const string kActualResult = trimmer.GetDbList();
@@ -4305,7 +4307,7 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleWithNtRemove)
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
     ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(*gi);
+        trimmer.AddGi(GI_FROM(int, *gi));
     }
     const string kExpectedResult = "WGS/AB/D/wgs.ABDC nt";
     const string kActualResult = trimmer.GetDbList();
@@ -4344,7 +4346,7 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerLongExample)
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
     ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(*gi);
+        trimmer.AddGi(GI_FROM(int, *gi));
     }
 
     const int kExpectedNumDbs = 7511;

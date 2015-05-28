@@ -455,7 +455,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 }
 
 void CSeqDBImpl::GetTaxIDs(int             oid,
-                           map<TGi, int> & gi_to_taxid,
+                           map<int, int> & gi_to_taxid,
                            bool            persist)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -484,7 +484,7 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
                     continue;
                 }
 
-                gi_to_taxid[(**seqid).GetGi()] = (*defline)->GetTaxid();
+                gi_to_taxid[GI_TO(int, (**seqid).GetGi())] = (*defline)->GetTaxid();
             }
         }
     }
@@ -517,7 +517,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
 
 void CSeqDBImpl::GetLeafTaxIDs(
         int                  oid,
-        map<TGi, set<int> >& gi_to_taxid_set,
+        map<int, set<int> >& gi_to_taxid_set,
         bool                 persist
 )
 {
@@ -544,7 +544,7 @@ void CSeqDBImpl::GetLeafTaxIDs(
                 }
 
                 CBlast_def_line::TTaxIds taxids = (*defline)->GetLeafTaxIds();
-                gi_to_taxid_set[(**seqid).GetGi()].insert(
+                gi_to_taxid_set[GI_TO(int, (**seqid).GetGi())].insert(
                         taxids.begin(), taxids.end()
                 );
             }

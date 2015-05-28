@@ -64,7 +64,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
         m_Oid = id.GetOID();
     } else if (id.IsGi()) {
         m_Gi = id.GetGi();
-        m_BlastDb.GiToOid(GI_TO(int,m_Gi), m_Oid);
+        m_BlastDb.GiToOid(m_Gi, m_Oid);
         if (m_TargetOnly || ! get_data) target_gi = m_Gi;
     } else if (id.IsPig()) {
         m_BlastDb.PigToOid(id.GetPig(), m_Oid);
@@ -110,11 +110,11 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
 
     try {
         if (get_data) {
-            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, GI_TO(int,target_gi), target_seq_id));
+            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id));
         }
 	else if (m_Gi <= ZERO_GI)
 	{  // If no GI, then all the Gi2XMaps will fail.
-	    m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, GI_TO(int,target_gi), target_seq_id));
+	    m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id));
 	}
 
     } catch (const CSeqDBException& e) {

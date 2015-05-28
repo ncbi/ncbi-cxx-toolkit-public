@@ -206,7 +206,7 @@ void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
 
             // get the corresponding oid from the db (!!! can we rely on this? !!!)
             int oid_aligned_seq = -1;
-            db->GiToOid(GI_TO(int, gi_aligned_seq), oid_aligned_seq);
+            db->GiToOid(gi_aligned_seq, oid_aligned_seq);
 
             // retrieve the filtered list of gi's corresponding to this oid
             vector<TGi> vec_gis_from_DB;

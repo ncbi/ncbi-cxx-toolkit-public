@@ -29,7 +29,7 @@
  *   CWriteDB unit test.
  *
  */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
@@ -78,7 +78,7 @@ s_FetchRawData(CSeqDBExpert & seqdb,
 
 // Return a Seq-id built from the given int (gi).
 
-CRef<CSeq_id> s_GiToSeqId(int gi)
+CRef<CSeq_id> s_GiToSeqId(TGi gi)
 {
     CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gi));
     
@@ -225,7 +225,7 @@ s_DupIdsBioseq(CWriteDB      & w,
         BOOST_REQUIRE_CUTPOINT(5);
         
         if (seqid->IsGi()) {
-            bs = s.GetBioseq(oid, GI_TO(int, seqid->GetGi()));
+            bs = s.GetBioseq(oid, seqid->GetGi());
         } else {
             bs = s.GetBioseq(oid);
         }
@@ -344,7 +344,8 @@ s_TestDatabase(CSeqDBExpert & src,
     CSeqDBExpert dst(name, src.GetSequenceType());
     
     for(int oid = 0; dst.CheckOrFindOID(oid); oid++) {
-        int gi(0), src_oid(0);
+        TGi gi = ZERO_GI;
+        int src_oid(0);
         
         bool rv1 = dst.OidToGi(oid, gi);
         bool rv2 = src.GiToOid(gi, src_oid);
@@ -564,9 +565,9 @@ static CRef<CScope> s_GetScope()
     return scope;
 }
 
-static void s_BuildIds(TIdList & ids, int * gis)
+static void s_BuildIds(TIdList & ids, TGi * gis)
 {
-    for(int * ptr = gis; *ptr; ptr ++) {
+    for(TGi * ptr = gis; *ptr; ptr ++) {
         ids.push_back(s_GiToSeqId(*ptr));
     }
 }
@@ -612,7 +613,7 @@ CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
 static void s_NuclBioseqDupSwitch(int cutpoint)
 {
         
-    int gis[] = {
+    TGi gis[] = {
         78883515, 78883517, /*71143095,*/ 24431485, 19110479, 15054463,
         15054465, 15054467, 15054469, 15054471, 19570808, 18916476,
         1669608,  1669610,  1669612,  1669614,  1669616,  10944307,
@@ -1061,7 +1062,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDup)
 BOOST_AUTO_TEST_CASE(ProtBioseqDup)
 {
         
-    int gis[] = {
+    TGi gis[] = {
         1477444,   1669609,   1669611,  1669615, 1669617, 7544146,
         22652804, /*1310870,*/ 3114354, 3891778, 3891779, 81294290,
         81294330,  49089974,  62798905, 3041810, 7684357, 7684359,
@@ -1231,14 +1232,14 @@ BOOST_AUTO_TEST_CASE(SetPig)
     
     for(; db2.CheckOrFindOID(oid); oid++) {
         int pig(0);
-        vector<int> gis;
+        vector<TGi> gis;
         
         bool rv1 = db2.OidToPig(oid, pig);
         db2.GetGis(oid, gis, false);
         
         bool found_gi = false;
         for(unsigned i = 0; i < gis.size(); i++) {
-            if (gis[i] == (129295 + oid)) {
+            if (gis[i] == 129295 + oid) {
                 found_gi = true;
             }
         }
@@ -1431,8 +1432,8 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     CSeqDBExpert nr("nr", CSeqDB::eProtein);
     CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
     
-    int prot_gis[] = { 129295, 129296, 129297, 0 };
-    int nucl_gis[] = { 555, 556, 405832, 0 };
+    TGi prot_gis[] = { 129295, 129296, 129297, 0 };
+    TGi nucl_gis[] = { 555, 556, 405832, 0 };
     
     TIdList prot_ids, nucl_ids;
     s_BuildIds(prot_ids, prot_gis);
@@ -2534,7 +2535,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
     const CFastaReader::TFlags flags = 
         CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds;
     CFastaReader reader("data/rabbit_mrna.fsa", flags);
-    set<int> gis;
+    set<TGi> gis;
     while (!reader.AtEOF()) {
         CRef<CSeq_entry> se = reader.ReadOneSeq();
         BOOST_REQUIRE(se.NotEmpty());
@@ -2544,12 +2545,12 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
         tis.FixTaxId(bds);
         blastdb.AddSequence(*bs);
         blastdb.SetDeflines(*bds);
-        gis.insert(GI_TO(int, FindGi(bs->GetId())));
+        gis.insert(FindGi(bs->GetId()));
     }
     blastdb.Close();
 
     CSeqDB db(kDbName, CSeqDB::eNucleotide);
-    ITERATE(set<int>, gi, gis) {
+    ITERATE(set<TGi>, gi, gis) {
         int oid = -1;
         if (db.GiToOid(*gi, oid)) {
             vector<int> taxids;
