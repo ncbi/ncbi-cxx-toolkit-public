@@ -164,10 +164,8 @@ use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
     Org-ref.common ,
     Gene-ref.locus ,
     Seq-feat.comment ,
-    Seq-feat.title ,
     Seq-feat.data.region ,
     Pubdesc.comment ,
-    Gb-qual.val ,
 }
  
 # These are POST in case substrings will be cleaned some way first

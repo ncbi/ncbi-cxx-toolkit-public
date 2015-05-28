@@ -1945,6 +1945,7 @@ void CNewCleanup_imp::OrgmodBC (
 {
     CLEAN_AND_COMPRESS_STRING_MEMBER (omd, Subname);
     if (FIELD_IS_SET (omd, Subname)) {
+        x_TrimInternalSemicolonsMarkChanged( GET_MUTABLE(omd, Subname) );
         x_RemoveFlankingQuotes( GET_MUTABLE(omd, Subname) );
     }
 
@@ -3299,7 +3300,14 @@ void CNewCleanup_imp::GBQualBC (
         ChangeMade(CCleanupChange::eChangeQualifiers);
     }
 
-    //CLEAN_STRING_MEMBER (gbq, Val);
+    if (FIELD_IS_SET (gbq, Val)) {
+        const string::size_type old_length = gbq.GetVal().length();
+        CleanVisString (gbq.SetVal());
+        x_CompressSpaces( gbq.SetVal() );
+        if (gbq.GetVal().length() != old_length) {
+            ChangeMade (CCleanupChange::eTrimSpaces);
+        }
+    }
     if (FIELD_IS_SET (gbq, Val) && s_IsJustQuotes (GET_FIELD (gbq, Val))) {
         SET_FIELD (gbq, Val, kEmptyStr);
         ChangeMade (CCleanupChange::eCleanDoubleQuotes);
