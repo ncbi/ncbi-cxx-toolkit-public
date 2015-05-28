@@ -751,7 +751,7 @@ BOOST_AUTO_TEST_CASE(Test_RptUnit)
 
     changes = cleanup.BasicCleanup (*feat);
     BOOST_CHECK_EQUAL(feat->GetQual().size(), 4);
-    BOOST_CHECK_EQUAL(feat->GetQual()[0]->GetVal(), "()(),    4235  . 236  ()");
+    BOOST_CHECK_EQUAL(feat->GetQual()[0]->GetVal(), "()(), 4235 . 236 ()");
     BOOST_CHECK_EQUAL(feat->GetQual()[1]->GetVal(), "abc");
     BOOST_CHECK_EQUAL(feat->GetQual()[2]->GetVal(), "def");
     BOOST_CHECK_EQUAL(feat->GetQual()[3]->GetVal(), "hjusdf sdf");
