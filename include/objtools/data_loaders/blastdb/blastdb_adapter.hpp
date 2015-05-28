@@ -102,7 +102,7 @@ public:
     /// the header information.
     /// @return object corresponding to the sequence, but without
     ///   sequence data.
-    virtual CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0, const CSeq_id * target_id = NULL) = 0;
+    virtual CRef<CBioseq> GetBioseqNoData(int oid, TGi target_gi = ZERO_GI, const CSeq_id * target_id = NULL) = 0;
     
     /// Get all or part of the sequence data as a Seq-data object.
     /// @param oid    Identifies which sequence to get.

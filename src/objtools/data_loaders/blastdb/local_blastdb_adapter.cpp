@@ -85,7 +85,7 @@ CLocalBlastDbAdapter::GetSeqIDs(int oid)
 }
 
 CRef<CBioseq> 
-CLocalBlastDbAdapter::GetBioseqNoData(int oid, int target_gi /* = 0 */, const CSeq_id * target_id /* = NULL */)
+CLocalBlastDbAdapter::GetBioseqNoData(int oid, TGi target_gi /* = 0 */, const CSeq_id * target_id /* = NULL */)
 {
     return m_SeqDB->GetBioseqNoData(oid, target_gi, target_id);
 }

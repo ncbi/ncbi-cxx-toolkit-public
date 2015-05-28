@@ -79,7 +79,7 @@ CRemoteBlastDbAdapter::GetSeqIDs(int oid)
 }
 
 CRef<CBioseq> 
-CRemoteBlastDbAdapter::GetBioseqNoData(int oid, int /* target_gi = 0 */, const CSeq_id * target_id /* = NULL */)
+CRemoteBlastDbAdapter::GetBioseqNoData(int oid, TGi /* target_gi = 0 */, const CSeq_id * target_id /* = NULL */)
 {
     /// @todo FIXME we should do something with the target_gi
     _ASSERT(m_Cache[oid].IsValid());

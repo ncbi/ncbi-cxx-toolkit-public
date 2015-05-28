@@ -59,7 +59,7 @@ CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
     m_TSE.Reset();
     m_Length = m_BlastDb.GetSeqLength(m_OID);
 
-    CRef<CBioseq> bioseq(m_BlastDb.GetBioseqNoData(m_OID, 0, &*(m_SIH.GetSeqId())));
+    CRef<CBioseq> bioseq(m_BlastDb.GetBioseqNoData(m_OID, ZERO_GI, &*(m_SIH.GetSeqId())));
 
     CConstRef<CSeq_id> first_id( bioseq->GetFirstId() );
     _ASSERT(first_id);

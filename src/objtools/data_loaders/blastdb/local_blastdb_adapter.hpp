@@ -63,7 +63,7 @@ public:
 	/** @inheritDoc */
     virtual TSeqIdList GetSeqIDs(int oid);
 	/** @inheritDoc */
-    virtual CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0, const CSeq_id * target_id = NULL);
+    virtual CRef<CBioseq> GetBioseqNoData(int oid, TGi target_gi = ZERO_GI, const CSeq_id * target_id = NULL);
 	/** @inheritDoc */
     virtual CRef<CSeq_data> GetSequence(int oid, int begin = 0, int end = 0);
 	/** @inheritDoc */
