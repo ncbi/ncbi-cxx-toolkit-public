@@ -2838,46 +2838,50 @@ void CFlatGatherer::x_GatherFeatures(void) const
             feat_it = CFeat_CI(handle, sel);
         }
         if (feat_it) {
-            CMappedFeat cds = *feat_it;
+            try {
+                CMappedFeat cds = *feat_it;
 
-            // map CDS location to its location on the product
-            CSeq_loc_Mapper mapper(*cds.GetOriginalSeq_feat(),
-                CSeq_loc_Mapper::eLocationToProduct,
-                &ctx.GetScope());
-            mapper.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle | CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
-            CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
-            cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
+                // map CDS location to its location on the product
+                CSeq_loc_Mapper mapper(*cds.GetOriginalSeq_feat(),
+                    CSeq_loc_Mapper::eLocationToProduct,
+                    &ctx.GetScope());
+                mapper.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle | CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
+                CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
+                cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
 
-            // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
-            // In that case, we shrink the cds's location back one residue.
-            if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
-                const CSeq_id *cds_prod_seq_id = cds.GetProduct().GetId();
-                if( cds_prod_seq_id != NULL ) {
-                    CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( *cds_prod_seq_id );
-                    if( prod_bioseq_handle ) {
-                        const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
-                        if( cds_prod->GetInt().GetTo() >= bioseq_len ) {
-                            cds_prod->SetInt().SetTo( bioseq_len - 1 );
+                // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
+                // In that case, we shrink the cds's location back one residue.
+                if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
+                    const CSeq_id *cds_prod_seq_id = cds.GetProduct().GetId();
+                    if( cds_prod_seq_id != NULL ) {
+                        CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( *cds_prod_seq_id );
+                        if( prod_bioseq_handle ) {
+                            const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
+                            if( cds_prod->GetInt().GetTo() >= bioseq_len ) {
+                                cds_prod->SetInt().SetTo( bioseq_len - 1 );
+                            }
                         }
                     }
                 }
+
+                // if there are any gaps in the location, we know that there was an issue with the mapping, so
+                // we fall back on the product.
+                if( s_ContainsGaps(*cds_prod) ) {
+                    cds_prod->Assign( cds.GetProduct() );
+                }
+
+                // remove fuzz
+                cds_prod->SetPartialStart( false, eExtreme_Positional );
+                cds_prod->SetPartialStop ( false, eExtreme_Positional );
+
+                item.Reset(
+                    x_NewFeatureItem(cds, ctx, &*cds_prod, m_Feat_Tree,
+                        CFeatureItem::eMapped_from_cdna) );
+
+                out << item;
+            } catch (CAnnotMapperException& e) {
+                LOG_POST_X(2, Error << e );
             }
-
-            // if there are any gaps in the location, we know that there was an issue with the mapping, so
-            // we fall back on the product.
-            if( s_ContainsGaps(*cds_prod) ) {
-                cds_prod->Assign( cds.GetProduct() );
-            }
-
-            // remove fuzz
-            cds_prod->SetPartialStart( false, eExtreme_Positional );
-            cds_prod->SetPartialStop ( false, eExtreme_Positional );
-
-            item.Reset(
-                x_NewFeatureItem(cds, ctx, &*cds_prod, m_Feat_Tree,
-                    CFeatureItem::eMapped_from_cdna) );
-
-            out << item;
         }
 
         // look for Prot features (only for RefSeq records or
