@@ -3303,6 +3303,7 @@ void CNewCleanup_imp::GBQualBC (
     if (FIELD_IS_SET (gbq, Val)) {
         const string::size_type old_length = gbq.GetVal().length();
         CleanVisString (gbq.SetVal());
+        TrimInternalSemicolons (gbq.SetVal());
         x_CompressSpaces( gbq.SetVal() );
         if (gbq.GetVal().length() != old_length) {
             ChangeMade (CCleanupChange::eTrimSpaces);
