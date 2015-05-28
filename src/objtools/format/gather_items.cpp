@@ -769,7 +769,9 @@ void CFlatGatherer::x_GatherComments(void) const
 
     // There are some comments that we want to know the existence of right away, but we don't
     // want to add until later:
-    CConstRef<CUser_object> firstGenAnnotSCAD = x_PrepareAnnotDescStrucComment(ctx);
+    // CConstRef<CUser_object> firstGenAnnotSCAD = x_PrepareAnnotDescStrucComment(ctx);
+
+    m_FirstGenAnnotSCAD = x_PrepareAnnotDescStrucComment(ctx);
 
     x_UnverifiedComment(ctx);
 
@@ -777,9 +779,9 @@ void CFlatGatherer::x_GatherComments(void) const
 
     // Gather comments related to the seq-id
     x_IdComments(ctx, 
-        ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
+        ( m_FirstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
     x_RefSeqComments(ctx,
-        ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
+        ( m_FirstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
 
     /*
     if ( s_NsAreGaps(ctx.GetHandle(), ctx) ) {
@@ -803,9 +805,6 @@ void CFlatGatherer::x_GatherComments(void) const
     x_HTGSComments(ctx);
     if( ctx.ShowAnnotCommentAsCOMMENT() ) {
         x_AnnotComments(ctx);
-    }
-    if( firstGenAnnotSCAD ) {
-        x_AddComment(new CCommentItem(*firstGenAnnotSCAD, ctx));
     }
 //    x_FeatComments(ctx);
 
@@ -1285,7 +1284,18 @@ void CFlatGatherer::x_NameComments(CBioseqContext& ctx) const
 void CFlatGatherer::x_StructuredComments(CBioseqContext& ctx) const
 {
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
+        const CSeqdesc & desc = *it;
+        if (m_FirstGenAnnotSCAD && desc.IsUser()) {
+            const CUser_object& usr = desc.GetUser();
+            const CUser_object& fst = *m_FirstGenAnnotSCAD;
+            if (&usr == &fst) {
+                m_FirstGenAnnotSCAD.Reset();
+            }
+        }
         x_AddComment(new CCommentItem(*it, ctx));
+    }
+    if ( m_FirstGenAnnotSCAD ) {
+        x_AddComment(new CCommentItem(*m_FirstGenAnnotSCAD, ctx));
     }
 }
 

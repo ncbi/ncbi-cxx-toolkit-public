@@ -187,6 +187,8 @@ protected:
     mutable CRef<CBioseqContext>     m_Current;
     mutable TCommentVec              m_Comments;
 
+    mutable  CConstRef<CUser_object> m_FirstGenAnnotSCAD;
+
     // Raw pointer because we do NOT own it
     const ICanceled * m_pCanceledCallback;
 
