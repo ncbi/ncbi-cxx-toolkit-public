@@ -1632,6 +1632,20 @@ void CBlastFormat::ResetScopeHistory()
     }
 }
 
+static string s_GetBaseName(const string & baseFile, bool isXML)
+{
+	size_t length = baseFile.size();
+	size_t ext_length = isXML? 4: 5;
+	if(length > ext_length) {
+		string  last = baseFile.substr(length - ext_length);
+		if((isXML && NStr::CompareNocase(last, ".xml") == 0 ) ||
+		   ( !isXML && NStr::CompareNocase(last, ".json") == 0)){
+			return baseFile.substr(0, length - ext_length);
+		}
+	}
+	return baseFile;
+}
+
 void CBlastFormat::x_WriteXML2(CCmdLineBlastXML2ReportData & report_data)
 {
 	if(m_BaseFile == kEmptyStr) {
@@ -1642,12 +1656,13 @@ void CBlastFormat::x_WriteXML2(CCmdLineBlastXML2ReportData & report_data)
 	}
 	else {
 		m_XMLFileCount++;
+
 		if(m_FormatType == CFormattingArgs::eXml2) {
-			string file_name = m_BaseFile + "_" + NStr::IntToString(m_XMLFileCount) + ".xml";
+			string file_name = s_GetBaseName(m_BaseFile, true) + "_" + NStr::IntToString(m_XMLFileCount) + ".xml";
 			BlastXML2_FormatReport(&report_data, file_name);
 		}
 		else {
-			string file_name = m_BaseFile + "_" + NStr::IntToString(m_XMLFileCount) + ".json";
+			string file_name = s_GetBaseName(m_BaseFile, false) + "_" + NStr::IntToString(m_XMLFileCount) + ".json";
 			BlastJSON_FormatReport(&report_data, file_name);
 		}
 	}
@@ -1719,10 +1734,13 @@ void CBlastFormat::x_GenerateXML2MasterFile(void)
 	if(m_BaseFile == kEmptyStr)
 		return;
 
-	m_Outfile << "<?xml version=\"1.0\"?>\n<BlastXML xmlns:xi=\"http://www.w3.org/2003/XInclude\">\n";
+	m_Outfile << "<?xml version=\"1.0\"?>\n<BlastXML\n"
+			"xmlns=\"http://www.ncbi.nlm.nih.gov\"\n"
+			"xmlns:xi=\"http://www.w3.org/2003/XInclude\">\n";
 
+	string base = s_GetBaseName(m_BaseFile, true);
 	for(int i = 1; i <= m_XMLFileCount; i ++) {
-		string file_name = m_BaseFile + "_" + NStr::IntToString(i) + ".xml";
+		string file_name = base + "_" + NStr::IntToString(i) + ".xml";
 		m_Outfile << "\t<xi:include href=\"" + file_name + "\"/>\n";
 	}
 	m_Outfile << "</BlastXML>\n";
@@ -1735,8 +1753,9 @@ void CBlastFormat::x_GenerateJSONMasterFile(void)
 
 	m_Outfile << "{\n\t\"BlastJSON\": [\n";
 
+	string base = s_GetBaseName(m_BaseFile, true);
 	for(int i = 1; i <= m_XMLFileCount; i ++) {
-		string file_name = m_BaseFile + "_" + NStr::IntToString(i) + ".json";
+		string file_name = base + "_" + NStr::IntToString(i) + ".json";
 		m_Outfile << "\t\t{\"File\": \"" + file_name + "\" }";
 		if(i != m_XMLFileCount)
 			m_Outfile << ",";
