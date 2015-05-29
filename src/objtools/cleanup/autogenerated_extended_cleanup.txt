@@ -49,6 +49,18 @@ deprecated {
 
 # Don't forget: order matters!
 
+# some string cleanups that Basic does not do but extended does
+use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
+    OrgName.attrib ,
+    OrgName.lineage ,
+    GB-block.origin ,
+    Gene-ref.maploc ,
+    Gene-ref.locus-tag ,
+    Seq-feat.title ,
+    Imp-feat.key ,
+    Imp-feat.loc ,
+}
+
 use m_NewCleanup.x_BioseqSetEC
 {
     Bioseq-set

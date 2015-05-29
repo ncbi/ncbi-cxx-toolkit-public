@@ -39,12 +39,17 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/MultiOrgName.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/Txinit.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Map_ext.hpp>
@@ -76,12 +81,29 @@ public:
   void ExtendedCleanupSeqFeat( CSeq_feat & arg0_raw );
 
 private: 
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_lineage_ETC( std::string & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_E1798_ETC( COrgName & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid_hybrid_E( COrgName & arg0 );
+  template< typename Tcontainer_ncbi_cref_corgname_ >
+void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid_hybrid( Tcontainer_ncbi_cref_corgname_ & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid( CMultiOrgName & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name( COrgName::C_Name & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname1799_ETC( COrgName & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_ETC( COrgName & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_ETC( COrg_ref & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_ETC( COrg_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC( CBioSource & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
   void x_ExtendedCleanupSeqFeat_data_data_gene_gene( CGene_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_data_data_gene( CGene_ref & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_imp_imp_ETC( CImp_feat & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_imp_ETC( CImp_feat & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ETC( CProt_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_ETC( CProt_ref & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_ETC( CGene_ref & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_ETC( CGene_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cgene_ref_ >
+void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_ETC( Tcontainer_ncbi_cref_cgene_ref_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cprot_ref_ >
 void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_ETC( Tcontainer_ncbi_cref_cprot_ref_ & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_ETC( CTxinit & arg0 );
@@ -101,6 +123,8 @@ void x_ExtendedCleanupSeqAnnot_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & ar
   void x_ExtendedCleanupBioseq_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
+  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_genbank_genbank_ETC( CGB_block & arg0 );
+  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_genbank_ETC( CGB_block & arg0 );
   void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_ETC( CSeqdesc & arg0 );
   void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_ETC( CSeqdesc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqdesc_ >

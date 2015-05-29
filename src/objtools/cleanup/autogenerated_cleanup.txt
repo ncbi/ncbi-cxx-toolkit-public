@@ -165,6 +165,7 @@ use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
     Gene-ref.locus ,
     Seq-feat.comment ,
     Seq-feat.data.region ,
+    Prot-ref.desc ,
     Pubdesc.comment ,
 }
  
