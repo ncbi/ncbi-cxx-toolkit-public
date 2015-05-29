@@ -293,8 +293,8 @@ public:
         eAcc_embl_dirsub    = e_Embl | eAcc_dirsub     | fAcc_nuc,  // V
         eAcc_embl_patent    = e_Embl | eAcc_div_patent | fAcc_nuc,  // A
         eAcc_embl_tsa_nuc   = e_Embl | eAcc_tsa        | fAcc_nuc,  // IAAA
-        eAcc_embl_tsa_prot  = e_Embl | eAcc_tsa        | fAcc_prot,
-        eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,
+        eAcc_embl_tsa_prot  = e_Embl | eAcc_tsa        | fAcc_prot, // unused
+        eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,  // unused
         eAcc_embl_htgs      = e_Embl | eAcc_htgs       | fAcc_nuc,  // unused
         eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,  // AN
         eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs        | fAcc_nuc,  // CAAA
@@ -341,10 +341,10 @@ public:
         eAcc_ddbj_patent    = e_Ddbj | eAcc_div_patent | fAcc_nuc,  // E
         eAcc_ddbj_mrna      = e_Ddbj | eAcc_mrna       | fAcc_nuc,  // AK
         eAcc_ddbj_tsa_nuc   = e_Ddbj | eAcc_tsa        | fAcc_nuc,  // FX
-        eAcc_ddbj_tsa_prot  = e_Ddbj | eAcc_tsa        | fAcc_prot,
+        eAcc_ddbj_tsa_prot  = e_Ddbj | eAcc_tsa        | fAcc_prot, // LAA
         eAcc_ddbj_gss       = e_Ddbj | eAcc_gss        | fAcc_nuc,  // DE
         eAcc_ddbj_genome    = e_Ddbj | eAcc_genome     | fAcc_nuc,  // AP
-        eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs       | fAcc_nuc,
+        eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs       | fAcc_nuc,  // unused
         eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,  // BA
         eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,  // BAAA
         eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot, // GAA
@@ -367,7 +367,7 @@ public:
         eAcc_embl_tpa_nuc        = e_Tpe | eAcc_other | fAcc_nuc,       // BN
         eAcc_embl_tpa_prot       = e_Tpe | eAcc_other | fAcc_prot,      // CAD29848
         eAcc_embl_tpa_wgs_nuc    = e_Tpe | eAcc_wgs        | fAcc_nuc,  // FAAA
-        eAcc_embl_tpa_wgs_prot   = e_Tpe | eAcc_wgs        | fAcc_prot,
+        eAcc_embl_tpa_wgs_prot   = e_Tpe | eAcc_wgs        | fAcc_prot, // unused
         eAcc_embl_tpa_wgsm_nuc   = e_Tpe | eAcc_wgs_master | fAcc_nuc,
         eAcc_embl_tpa_wgsm_prot  = e_Tpe | eAcc_wgs_master | fAcc_prot,
 
