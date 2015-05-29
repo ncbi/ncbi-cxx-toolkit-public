@@ -195,15 +195,27 @@ T53Partialness GetTerminalPartialness(const CSeq_align& spliced_aln,
         partialness.first = GetUnalignedLength_5p(spliced_aln) > unaligned_ends_partialness_thr;
         partialness.second = GetUnalignedLength_3p(spliced_aln) > unaligned_ends_partialness_thr;
     } else {
-        //cds-exons 5p/3p-terminal partialness is based on whether the product-cds-loc extends past the alignment
-        bool left_partial = product_cds_loc->GetStart(eExtreme_Positional) < spliced_aln.GetSeqStart(0);
-        bool right_partial = product_cds_loc->GetStop(eExtreme_Positional) > spliced_aln.GetSeqStop(0);
+        // cds-exons 5p/3p-terminal partialness is based on whether the product-cds-loc terminals are
+        // covered by the alignment.
+        const TSeqPos cds_start = product_cds_loc->GetStart(eExtreme_Positional);
+        const TSeqPos cds_stop  = product_cds_loc->GetStop(eExtreme_Positional);
+        
+        bool start_covered = false;
+        bool stop_covered = false;
+        ITERATE(CSpliced_seg::TExons, it, spliced_aln.GetSegs().GetSpliced().GetExons()) {
+            const CSpliced_exon& exon = **it;
+            start_covered |= cds_start >= exon.GetProduct_start().GetNucpos()
+                          && cds_start <= exon.GetProduct_end().GetNucpos();
 
-        partialness.first =  (left_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_plus)
-                          || (right_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_minus);
+            stop_covered |= cds_stop >= exon.GetProduct_start().GetNucpos()
+                         && cds_stop <= exon.GetProduct_end().GetNucpos();
+        }
 
-        partialness.second = (left_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_minus)
-                          || (right_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_plus);
+        partialness.first  = !start_covered;
+        partialness.second = !stop_covered;
+        if(spliced_aln.GetSeqStrand(0) == eNa_strand_minus) {
+            swap(partialness.first, partialness.second);
+        }
     }
     return partialness;
 }
