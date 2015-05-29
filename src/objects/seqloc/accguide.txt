@@ -16,6 +16,7 @@ version  1 # of file format
 3+5  I??  ddbj_tpa_wgs_prot
 3+5  J??  gb_tsa_prot
 3+5  K??  gb_wgs_prot
+3+5  L??  ddbj_tsa_prot
 3+5  ???  unreserved_prot
 
 # Genome pipeline accessions
@@ -97,6 +98,9 @@ version  1 # of file format
 4+8   O???  embl_tpa_wgs_nuc
 4+9   O???  embl_tpa_wgs_nuc
 4+10  O???  embl_tpa_wgs_nuc
+4+8   P???  ddbj_tsa_nuc
+4+9   P???  ddbj_tsa_nuc
+4+10  P???  ddbj_tsa_nuc
 
 # Mass sequence Genome for Annotation
 5+7   A???? ddbj_other_nuc
