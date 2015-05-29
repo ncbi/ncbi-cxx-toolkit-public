@@ -7365,7 +7365,7 @@ void CNewCleanup_imp::GenerefBC (
 
     EDIT_EACH_SYNONYM_ON_GENEREF (syn_itr, gr) {
         string& syn = *syn_itr;
-        if (NStr::EqualNocase (locus, syn)) {
+        if (NStr::Equal (locus, syn)) {
             ERASE_SYNONYM_ON_GENEREF (syn_itr, gr);
             ChangeMade (CCleanupChange::eChangeGeneRef);
         }
