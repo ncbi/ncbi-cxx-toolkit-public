@@ -473,10 +473,11 @@ gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
+gpipe_sqlite needs $(SEQ_LIBS)
+gpipe_sqlite needs pub
 gpipe_sqlite needs sqlitewrapp
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
-gpipe_sqlite needs xutil
 gpipe_standalone needs gpipe_an_base
 gpipe_tree needs gpipe_property
 gpipe_tree needs xalgophytree
@@ -527,11 +528,9 @@ gui_glmesa needs xhtml
 gui_glmesa needs ximage
 gui_glmesa needs3party $(OSMESA_LIBS)
 gui_graph needs gui_opengl
-gui_objects needs $(COMPRESS_LIBS)
 gui_objects needs gui_objutils
+gui_objutils needs $(COMPRESS_LIBS)
 gui_objutils needs $(EUTILS_LIBS)
-gui_objutils needs $(OBJEDIT_LIBS)
-gui_objutils needs $(XFORMAT_LIBS)
 gui_objutils needs biotree
 gui_objutils needs entrez2cli
 gui_objutils needs entrezgene
@@ -540,11 +539,11 @@ gui_objutils needs gencoll_client
 gui_objutils needs gui_utils
 gui_objutils needs macro
 gui_objutils needs snputil
-gui_objutils needs valerr
 gui_objutils needs xalgoalignutil
 gui_objutils needs xcgi
 gui_objutils needs xmlwrapp
 gui_objutils needs xobjwrite
+gui_objutils needs xvalidate
 gui_opengl needs gui_utils
 gui_opengl needs ximage
 gui_opengl needs3party $(FTGL_LIBS)
@@ -1064,8 +1063,8 @@ tv_objects needs biotree
 tvlib needs $(OBJMGR_LIBS)
 tvlib needs gui_glmesa
 tvlib needs tv_objects
+tvlib needs uudutil
 tvlib needs w_phylo_tree
-tvlib needs xconnserv
 txclient needs xconnect
 txserv includes txservbase
 txserv needs txxmldoc
@@ -1087,9 +1086,7 @@ u2tl needs3party $(SYBASE_DLLS)
 u2tl needs3party $(SYBASE_LIBS)
 u2tl needs3party $(Z_LIBS)
 uilist needs xser
-unicoll_dump_access needs $(SEQ_LIBS)
 unicoll_dump_access needs gpipe_sqlite
-unicoll_dump_access needs pub
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
 uudutil needs xconnserv
@@ -1127,7 +1124,6 @@ w_edit needs align_format
 w_edit needs ncbi_xloader_blastdb
 w_edit needs prosplign
 w_edit needs w_loaders
-w_edit needs xvalidate
 w_feat_table needs w_wx
 w_gl needs w_wx
 w_grid_widget needs w_data
@@ -1144,7 +1140,6 @@ w_loaders needs xobjreadex
 w_macro_edit needs w_wx
 w_object_list needs w_text_widget
 w_phylo_tree needs gui_graph
-w_phylo_tree needs gui_print
 w_phylo_tree needs w_data
 w_phylo_tree needs w_gl
 w_phylo_tree needs xalgophytree
@@ -1153,7 +1148,6 @@ w_seq_graphic needs genesbyloc
 w_seq_graphic needs gui_config
 w_seq_graphic needs gui_graph
 w_seq_graphic needs gui_objects
-w_seq_graphic needs gui_print
 w_seq_graphic needs hgvs
 w_seq_graphic needs w_aln_score
 w_seq_graphic needs w_gl
@@ -1170,9 +1164,8 @@ w_snp_utils needs xncbi
 w_taxtree needs gui_objutils
 w_taxtree needs3party $(WXWIDGETS_LIBS)
 w_text_widget needs w_data
-w_wx needs $(COMPRESS_LIBS)
 w_wx needs gui_objutils
-w_wx needs gui_opengl
+w_wx needs gui_print
 w_wx needs3party $(WXWIDGETS_GL_LIBS)
 w_wx needs3party $(WXWIDGETS_LIBS)
 we_cpp needs xser
