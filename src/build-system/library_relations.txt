@@ -450,7 +450,6 @@ gpipe_jira needs gpinit_access
 gpipe_jira needs gpipe_attr
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs biotree
-gpipe_kmer needs kmer_metadata
 gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
