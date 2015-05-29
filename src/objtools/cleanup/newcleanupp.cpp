@@ -1148,69 +1148,47 @@ typename TSetType::const_iterator s_FindInSetAsPrefix( const string &str, const 
 static
 bool s_StringHasOrgModPrefix(const string &str, string::size_type &out_val_start_pos, TORGMOD_SUBTYPE &out_subtype)
 {
-    if (NStr::IsBlank(str)) {
-        return false;
-    }
-    bool found_something = false;
-
-    vector<string> tokens;
-    NStr::Tokenize(str, " =", tokens);
-    if (NStr::IsBlank(tokens[0])) {
-        return false;
-    }
-    string val = tokens[0];
-    NStr::ReplaceInPlace( val, ":", "" );
-    try {
-        COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val);
-        if (!COrgMod::IsDiscouraged(subtype) && tokens.size() > 1 && !NStr::IsBlank(tokens[1])) {
-            out_val_start_pos = tokens[0].length();
-            if (tokens.size() > 1) {
-                out_val_start_pos++;
+    SIZE_TYPE pos = str.find_first_of(": ="), pos2;
+    if (pos != 0  &&  pos != NPOS
+        &&  (pos2 = str.find_first_not_of(": =", pos)) != NPOS) {
+        try {
+            string val = str.substr(0, pos);
+            COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val);
+            if ( !COrgMod::IsDiscouraged(subtype) ) {
+                out_subtype       = subtype;
+                out_val_start_pos = pos2;
+                return true;
             }
-            out_subtype = subtype;
-            found_something = true;
+        } catch (CSerialException&) {
         }
-    } catch (CSerialException& e) {
     }
-
-    return found_something;
+    return false;
 }
 
 // returns true if we found anything
 static
 bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_start_pos, TSUBSOURCE_SUBTYPE &out_subtype)
 {
-    if (NStr::IsBlank(str)) {
-        return false;
-    }
-    bool found_something = false;
-
-    vector<string> tokens;
-    NStr::Tokenize(str, " =", tokens);
-    if (NStr::IsBlank(tokens[0])) {
-        return false;
-    }
-    string val = tokens[0];
-    NStr::ReplaceInPlace( val, ":", "" );
-    try {
-        CSubSource::TSubtype subtype;
-        if (NStr::EqualNocase(val, "Lat-long") || NStr::EqualNocase(val, "Latitude-Longitude")) {
-            subtype = CSubSource::eSubtype_lat_lon;
-        } else {
-            subtype = CSubSource::GetSubtypeValue(val);
-        }
-        if (!CSubSource::IsDiscouraged(subtype) &&
-            (CSubSource::NeedsNoText(subtype) || (tokens.size() > 1 && !NStr::IsBlank(tokens[1])))) {
-            out_val_start_pos = tokens[0].length();
-            if (tokens.size() > 1) {
-                out_val_start_pos++;
+    SIZE_TYPE pos = str.find_first_of(": ="), pos2;
+    if (pos != 0  &&  pos != NPOS
+        &&  (pos2 = str.find_first_not_of(": =", pos)) != NPOS) {
+        try {
+            string val = str.substr(0, pos);
+            CSubSource::TSubtype subtype;
+            if (NStr::EqualNocase(val, "Lat-long") || NStr::EqualNocase(val, "Latitude-Longitude")) {
+                subtype = CSubSource::eSubtype_lat_lon;
+            } else {
+                subtype = CSubSource::GetSubtypeValue(val);
             }
-            out_subtype = subtype;
-            found_something = true;
+            if ( !CSubSource::IsDiscouraged(subtype) ) {
+                out_subtype       = subtype;
+                out_val_start_pos = pos2;
+                return true;
+            }
+        } catch (CSerialException&) {
         }
-    } catch (CSerialException& e) {
     }
-    return found_something;
+    return false;
 }
 
 static bool s_ValueOkForQual(const string& value)
