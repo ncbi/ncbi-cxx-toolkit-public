@@ -623,7 +623,6 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId=" },
     { CDbtag::eDbtagType_PFAM, "http://pfam.sanger.ac.uk/family?acc=" },
     { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" },
-    { CDbtag::eDbtagType_Pathema, "http://pathema.jcvi.org/cgi-bin/Burkholderia/shared/GenePage.cgi?all=1&locus=" },
     { CDbtag::eDbtagType_Phytozome, "http://www.phytozome.net/genePage.php?db=Phytozome&crown&method=0&search=1&detail=1&searchText=locusname:" },
     { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" },
     { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/getAnnotation.do?locusID=" },
