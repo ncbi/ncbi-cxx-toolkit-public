@@ -259,12 +259,15 @@ static const SStringNumericValues s_Str2NumTests[] = {
     { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38f, 7E-38, 0. },
 #endif
     { "7E38",    DF, -1, kBad, kBad, kBad, kBad, kBad, 7E38, 0. },
-    { "7E-500",  DF, -1, kBad, kBad, kBad, kBad, kBad, kBad, 0. },
-    { "7E-512",  DF, -1, kBad, kBad, kBad, kBad, kBad, kBad, 0. },
-    { "7E500",   DF, -1, kBad, kBad, kBad, kBad, kBad, kBad, 0. },
-    { "7E512",   DF, -1, kBad, kBad, kBad, kBad, kBad, kBad, 0. },
-    { "7E768",   DF, -1, kBad, kBad, kBad, kBad, kBad, kBad, 0. },
-    { "7E4294967306", DF, -1, kBad, kBad, kBad, kBad, kBad, kBad, 0. },
+
+    { "2.2e-308",DF, -1, kBad, kBad, kBad, kBad, 0, 0, DBL_MIN },
+    { "-2.2e-310",DF, -1, kBad, kBad, kBad, kBad, 0, 0, DBL_MIN },
+    { "7E-500",  DF, -1, kBad, kBad, kBad, kBad, 0, 0, 0. },
+    { "7E-512",  DF, -1, kBad, kBad, kBad, kBad, 0, 0, 0. },
+    { "7E500",   DF, -1, kBad, kBad, kBad, kBad, kBad, HUGE_VAL, 0. },
+    { "7E512",   DF, -1, kBad, kBad, kBad, kBad, kBad, HUGE_VAL, 0. },
+    { "7E768",   DF, -1, kBad, kBad, kBad, kBad, kBad, HUGE_VAL, 0. },
+    { "7E4294967306", DF, -1, kBad, kBad, kBad, kBad, kBad, HUGE_VAL, 0. },
     { ".000000000000000000000000000001", DF, -1, kBad, kBad, kBad, kBad,
        .000000000000000000000000000001f, .000000000000000000000000000001, 1e-46 },
     { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123, -123, 0. }
@@ -648,8 +651,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             int err = errno;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<double>(str, 
                               flags | NStr::fConvErr_NoThrow));
-            if ( value || !err ) {
-                BOOST_CHECK(!err);
+            if ( value || (err == 0 || err == ERANGE)) {
                 BOOST_CHECK(test->IsGoodDouble());
                 BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
             }
@@ -668,8 +670,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             int err = errno;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<double>(str, 
                               flags | NStr::fDecimalPosix | NStr::fConvErr_NoThrow));
-            if ( value || !err ) {
-                BOOST_CHECK(!err);
+            if ( value || (err == 0 || err == ERANGE)) {
                 BOOST_CHECK(test->IsGoodDouble());
                 BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
             }

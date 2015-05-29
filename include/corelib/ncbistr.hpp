@@ -450,6 +450,8 @@ public:
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
     ///   - Otherwise, set errno to non-zero and return zero.
+    ///   - Denormal or infinite results are considered successful conversion.
+    ///   - To enforce finite and normalized result, use fDecimalPosixFinite flag.
     ///   - This function is meant to be more "low-level" than other
     ///     StringToXxx functions - for example, it allows trailing characters
     ///     (and doesn't include a flags parameter for tweaking such behavior).
@@ -474,6 +476,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
+    /// @note
+    ///   - Denormal or infinite results are considered successful conversion.
+    ///   - To enforce finite and normalized result, use fDecimalPosixFinite flag.
     static double StringToDouble(const CTempStringEx& str,
                                  TStringToNumFlags    flags = 0);
 

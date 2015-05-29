@@ -1191,9 +1191,28 @@ static double s_StringToDouble(const char* str, size_t size,
     if ( !endptr  ||  endptr == begptr ) {
         S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, s_DiffPtr(endptr, begptr) + pos);
     }
-    if ( errno_ref ) {
+    // some libs set ERANGE, others do not
+    // here, we do not consider ERANGE as error
+    if ( errno_ref && errno_ref != ERANGE ) {
         S2N_CONVERT_ERROR(double, kEmptyStr, errno_ref, s_DiffPtr(endptr, begptr) + pos);
     }
+    // special cases
+    if ((flags & NStr::fDecimalPosixFinite) && n != 0. && !isnan(n))
+    {
+        bool is_negative = n < 0.;
+        if (is_negative) {
+            n = -n;
+        }
+        if ( n < DBL_MIN) {
+            n = DBL_MIN;
+        } else if (!finite(n)) {
+            n = DBL_MAX;
+        }
+        if (is_negative) {
+            n = -n;
+        }
+    }
+
     pos += s_DiffPtr(endptr, begptr);
 
     // Skip allowed trailing symbols
