@@ -81,6 +81,7 @@ an_core needs gpipe_an_base
 an_core needs gpipe_kmer
 an_core needs gpipe_val
 an_core needs ncbi_xcache_netcache
+an_core needs pathogen_connection
 an_core needs reftrack_access
 an_euk_pipeline needs $(GPIPE_COMMON_LIBS)
 an_euk_pipeline needs bag_access
@@ -449,7 +450,7 @@ gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs gpinit_access
 gpipe_jira needs gpipe_attr
 gpipe_jira needs3party $(GSOAP_LIBS)
-gpipe_kmer needs biotree
+gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
@@ -636,7 +637,8 @@ jirasvc needs xser
 jpeg needs3party $(ORIG_LIBS)
 k5crypto needs3party $(ORIG_LIBS)
 kmer_metadata needs $(GPIPE_COMMON_LIBS)
-kmer_metadata needs gpipe_objutil
+kmer_metadata needs biotree
+kmer_metadata needs gpipe_kmer
 kmer_metadata needs pathogen_connection
 krb5 needs3party $(NETWORK_LIBS)
 krb5 needs3party $(ORIG_LIBS)
