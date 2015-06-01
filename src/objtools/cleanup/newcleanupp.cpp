@@ -3131,7 +3131,6 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
         }
     }
 
-    x_BothStrandBC(loc);
 }
 
 void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
@@ -7209,6 +7208,10 @@ void CNewCleanup_imp::SeqfeatBC (
     }
 
     CALL_IF_SET( PubSetBC, sf, Cit );
+
+    if (!CSeqFeatData::AllowStrandBoth(sf.GetData().GetSubtype())) {
+        x_BothStrandBC(sf.SetLocation());
+    }
 }
 
 void CNewCleanup_imp::x_PostSeqFeat( CSeq_feat& sf )
