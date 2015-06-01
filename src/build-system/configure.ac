@@ -5936,7 +5936,7 @@ else
                    [Define to 1 if the NCBI SSS UTILS library is available.])
          NCBI_PACKAGE(SSSUTILS)
          if test -f "$local_sss/../ncbils2/asn/login.asn" \
-	   -a -n "$GCRYPT_LIBS"; then
+           -a -n "$GCRYPT_LIBS"; then
             if test "$with_included_sss" = yes  || \
                grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
                NCBI_PACKAGE(LocalNCBILS) # temporary compatibility measure
