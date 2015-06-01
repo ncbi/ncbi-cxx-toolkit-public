@@ -108,6 +108,9 @@ use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
 use m_NewCleanup.AddProteinTitles { Bioseq }
 
+use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc }
+use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat }
+
 use m_NewCleanup.BioSourceEC { BioSource }
 
 use m_NewCleanup.x_RemoveEmptyFeatures
