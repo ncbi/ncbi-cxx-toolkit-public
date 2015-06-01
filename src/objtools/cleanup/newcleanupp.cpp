@@ -1366,6 +1366,53 @@ void CNewCleanup_imp::BiosourceFeatBC (
     }
 }
 
+static void s_CorrectTildes (
+    string& str
+)
+
+{
+#ifndef NCBI_OS_MSWIN
+    NStr::ReplaceInPlace (str, "were ~25 cm in height (~3 weeks)", "were ~~25 cm in height (~~3 weeks)");
+    NStr::ReplaceInPlace (str, "generally ~3 weeks", "generally ~~3 weeks");
+    NStr::ReplaceInPlace (str, "sequencing (~4 96-well plates)", "sequencing (~~4 96-well plates)");
+    NStr::ReplaceInPlace (str, "size distribution (~2 kb)", "size distribution (~~2 kb)");
+    NStr::ReplaceInPlace (str, "sequencing (~3 96-well plates)", "sequencing (~~3 96-well plates)");
+    NStr::ReplaceInPlace (str, "vector. 1~2 ul of ligated", "vector. 1~~2 ul of ligated");
+    /*
+    NStr::ReplaceInPlace (str, "Lambda FLC I.~Islet cells were provided", "Lambda FLC I.~~Islet cells were provided");
+    */
+    NStr::ReplaceInPlace (str, "different strains~of mice", "different strains of mice");
+    NStr::ReplaceInPlace (str, "oligo-dT-NotI primer~(5'-biotin", "oligo-dT-NotI primer (5'-biotin");
+    NStr::ReplaceInPlace (str, "sizes of 200~800 bp were purified", "sizes of 200~~800 bp were purified");
+    NStr::ReplaceInPlace (str, "Tween 20 (~50 ml per tree)", "Tween 20 (~~50 ml per tree)");
+    NStr::ReplaceInPlace (str, "the SMART approach (~http://www.evrogen.com", "the SMART approach (http://www.evrogen.com");
+    NStr::ReplaceInPlace (str, "the morning (~10 am) with", "the morning (~~10 am) with");
+    NStr::ReplaceInPlace (str, "(host) sequences (~10%)", "(host) sequences (~~10%)");
+    /*
+    NStr::ReplaceInPlace (str, "unidirectionally.~ High quality", "unidirectionally. High quality");
+    NStr::ReplaceInPlace (str, "onlysubmitted.~ Average", "onlysubmitted. Average");
+    */
+    NStr::ReplaceInPlace (str, "Plasmid; ~The F03-1270", "Plasmid; The F03-1270");
+    NStr::ReplaceInPlace (str, "using STS-PCR~from Eb", "using STS-PCR from Eb");
+    NStr::ReplaceInPlace (str, "specific to~the Eb", "specific to the Eb");
+    NStr::ReplaceInPlace (str, "side of insert); , M.F., Lennon", "side of insert); Bonaldo, M.F., Lennon");
+    NStr::ReplaceInPlace (str, "Uni-ZAP XR vector. 1~2 ul of", "Uni-ZAP XR vector. 1~~2 ul of");
+    NStr::ReplaceInPlace (str, "from diploid~Secale montanum", "from diploid Secale montanum");
+    NStr::ReplaceInPlace (str, "homology with~U43516,", "homology with U43516,");
+    /*
+    NStr::ReplaceInPlace (str, "from http//www.biobase.dk/~ddbase", "from http//www.biobase.dk/~~ddbase");
+    */
+    NStr::ReplaceInPlace (str, "plasmid; ~Assembled EST", "plasmid; Assembled EST");
+    NStr::ReplaceInPlace (str, "databases.~Different cDNA", "databases. Different cDNA");
+    NStr::ReplaceInPlace (str, "enzyme PstI.~DH5-alpha", "enzyme PstI. DH5-alpha");
+    NStr::ReplaceInPlace (str, "as they~were prepared", "as they were prepared");
+    NStr::ReplaceInPlace (str, "loci in~the genome", "loci in the genome");
+    NStr::ReplaceInPlace (str, "P{CaSpeR}Cp1~50C (FBti0004219)", "P{CaSpeR}Cp1~~50C (FBti0004219)");
+    NStr::ReplaceInPlace (str, "seedlings with 2~4 leaves", "seedlings with 2~~4 leaves");
+    NStr::ReplaceInPlace (str, "tween 20 (~50mLs per tree)", "tween 20 (~~50mLs per tree)");
+#endif //NCBI_OS_MSWIN
+}
+
 void CNewCleanup_imp::BiosourceBC (
     CBioSource& biosrc
 )
@@ -1530,6 +1577,35 @@ void CNewCleanup_imp::BiosourceBC (
             RESET_FIELD(biosrc, Pcr_primers);
             ChangeMade(CCleanupChange::eChangePCRPrimers);
         }
+    }
+
+    // correct specific cases of inconsistently applied tildes
+    EDIT_EACH_ORGMOD_ON_BIOSOURCE(orgmod_it, biosrc) {
+        COrgMod & orgmod = **orgmod_it;
+
+        // we're only correcting tildes for the ones of type "other"
+        if( ! FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
+            ! FIELD_IS_SET(orgmod, Subname) ) 
+        {
+            continue;
+        }
+
+        string &subname = GET_MUTABLE (orgmod, Subname);
+        s_CorrectTildes(subname);
+    }
+
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE( subsrc_iter, biosrc ) {
+        CSubSource &subsrc = **subsrc_iter;
+
+        // we're only correcting tildes for the ones of type "other"
+        if( ! FIELD_EQUALS(subsrc, Subtype, NCBI_SUBSOURCE(other) ) ||
+            ! FIELD_IS_SET(subsrc, Name) ) 
+        {
+            continue;
+        }
+
+        string &name = GET_MUTABLE(subsrc, Name);
+        s_CorrectTildes(name);
     }
 }
 
