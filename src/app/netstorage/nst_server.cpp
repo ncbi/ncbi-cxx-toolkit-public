@@ -89,7 +89,12 @@ CNetStorageServer::SetParameters(
         return CJsonNode::NewNullNode();
     }
 
-    // Here: it is reconfiguration. Need to consider log and admin names only.
+    // Here: it is reconfiguration.
+    // Need to consider:
+    // - log
+    // - admin names
+    // - max connections
+    // - network timeout
 
     set<string>     new_admins = x_GetAdminClientNames(
                                         params.admin_client_names);
@@ -110,7 +115,12 @@ CNetStorageServer::SetParameters(
         m_AdminClientNames = new_admins;
     }
 
+    SServer_Parameters      current_params;
+    CServer::GetParameters(&current_params);
+
     if (m_Log == params.log && m_LogTiming == params.log_timing &&
+        m_NetworkTimeout == params.network_timeout &&
+        current_params.max_connections == params.max_connections &&
         added.empty() && deleted.empty())
         return CJsonNode::NewNullNode();
 
@@ -135,6 +145,31 @@ CNetStorageServer::SetParameters(
 
         m_LogTiming = params.log_timing;
     }
+
+    if (m_NetworkTimeout != params.network_timeout) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("Old", CJsonNode::NewIntegerNode(m_NetworkTimeout));
+        values.SetByKey("New", CJsonNode::NewIntegerNode(
+                                                    params.network_timeout));
+        diff.SetByKey("network_timeout", values);
+
+        m_NetworkTimeout = params.network_timeout;
+    }
+
+    if (current_params.max_connections != params.max_connections) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("Old", CJsonNode::NewIntegerNode(
+                                            current_params.max_connections));
+        values.SetByKey("New", CJsonNode::NewIntegerNode(
+                                            params.max_connections));
+        diff.SetByKey("max_connections", values);
+
+        current_params.max_connections = params.max_connections;
+        CServer::SetParameters(current_params);
+    }
+
 
     if (!added.empty() || !deleted.empty())
         diff.SetByKey("admin_client_name", x_diffInJson(added, deleted));
