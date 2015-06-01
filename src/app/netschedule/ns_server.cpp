@@ -177,6 +177,31 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     if (admin_diff.GetSize() > 0)
         changes.SetByKey("admin_client_name", admin_diff);
 
+    if (m_InactivityTimeout != params.network_timeout) {
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendInteger(m_InactivityTimeout);
+        values.AppendInteger(params.network_timeout);
+        changes.SetByKey("network_timeout", values);
+    }
+    m_InactivityTimeout = params.network_timeout;
+
+    if (limited) {
+        // max_connections CServer parameter could be changed on the fly via
+        // the RECO command. So check if it was changed.
+        SServer_Parameters      current_params;
+        CServer::GetParameters(&current_params);
+        if (current_params.max_connections != params.max_connections) {
+            CJsonNode       values = CJsonNode::NewArrayNode();
+            values.AppendInteger(current_params.max_connections);
+            values.AppendInteger(params.max_connections);
+            changes.SetByKey("max_connections", values);
+
+            current_params.max_connections = params.max_connections;
+            CServer::SetParameters(current_params);
+        }
+    }
+
+
     if (changes.GetSize() > 0)
         what_changed.SetByKey("server_changes", changes);
 
@@ -202,8 +227,6 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         m_Host = CSocketAPI::gethostname();
     else
         m_Host = CSocketAPI::ntoa(m_HostNetAddr);
-
-    m_InactivityTimeout = params.network_timeout;
 
     // Purge related parameters
     m_DeleteBatchSize = params.del_batch_size;
