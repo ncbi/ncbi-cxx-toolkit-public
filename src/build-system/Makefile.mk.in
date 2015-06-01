@@ -489,6 +489,7 @@ VDB_LIB         = @VDB_LIB@
 VDB_LIBS        = @VDB_LIBS@
 VDB_STATIC_LIBS = @VDB_STATIC_LIBS@
 VDB_REQ         = @VDB_REQ@
+VDB_POST_LINK   = @VDB_POST_LINK@
 
 # SP:  headers, libraries
 SP_INCLUDE = @SP_INCLUDE@

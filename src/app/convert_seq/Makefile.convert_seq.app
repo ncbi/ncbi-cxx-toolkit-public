@@ -8,6 +8,8 @@ LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjwrite \
 LIBS = $(SRA_SDK_SYSLIBS) $(PCRE_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+POST_LINK = $(VDB_POST_LINK)
+
 REQUIRES = objects $(VDB_REQ)
 
 WATCHERS = ucko drozdov

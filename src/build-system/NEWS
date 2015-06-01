@@ -15,3 +15,5 @@ reconfigure after minor changes.
 
 2015-03-30: new @VDB_*@ variables to allow use of external SRA/VDB
 installations.
+
+2015-06-01: additional @VDB_*@ variables @VDB_REQ@ and @VDB_POST_LINK@.

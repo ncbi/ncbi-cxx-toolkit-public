@@ -16,6 +16,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE) $(SAMTOOLS_INCLUDE)
 LIB =   bamread $(BAM_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil xobjsimple \
         $(OBJMGR_LIBS)
 LIBS =  $(SAMTOOLS_LIBS) $(SRA_SDK_SYSLIBS) $(ORIG_LIBS)
+POST_LINK = $(VDB_POST_LINK)
 
 CHECK_CMD = bam_compare -q MT:10000-20000 /CHECK_NAME=bam_compare
 CHECK_CMD = bam_compare -q GL000207.1:1-2 /CHECK_NAME=bam_compare_none

@@ -10,6 +10,8 @@ LIB = ncbi_xloader_csra $(SRAREAD_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil \
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
+POST_LINK = $(VDB_POST_LINK)
+
 CHECK_COPY = mapfile
 CHECK_CMD = test_csra_loader
 CHECK_REQUIRES = in-house-resources -Solaris

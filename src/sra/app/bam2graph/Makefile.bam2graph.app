@@ -11,6 +11,7 @@ SRC = bam2graph
 
 LIB =   bamread xobjreadex $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS) $(BAM_LIBS)
 LIBS =  $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects
 

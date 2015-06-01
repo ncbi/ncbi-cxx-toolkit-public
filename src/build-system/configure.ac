@@ -6517,6 +6517,7 @@ fi
 
 
 # NCBI SRA/VDB
+VDB_POST_LINK=:
 VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
@@ -6576,6 +6577,19 @@ if test "$with_vdb" != "no" ; then
          else
             VDB_STATIC_LIBS=$VDB_LIBS
          fi
+         case "$host_os" in
+            darwin*)
+               inst_name=`otool -D $VDB_LIBDIR/libncbi-vdb.dylib 2>/dev/null \
+                          | grep -v ':$'`
+               case "$inst_name" in
+                   @executable_path* )
+                      major=`echo $inst_name | sed -ne 's,.*/libncbi-vdb\.\([[1-9]][[0-9]]*\).*\.dylib$,\1,p'`
+                      test -z "$major"  || \
+                         VDB_POST_LINK="install_name_tool -change $inst_name @rpath/libncbi-vdb.$major.dylib"
+                      ;;
+               esac
+               ;;
+         esac
       else
          VDB_INCLUDE=
          VDB_LIBS=
@@ -7660,6 +7674,7 @@ AC_SUBST(VDB_LIB)
 AC_SUBST(VDB_LIBS)
 AC_SUBST(VDB_STATIC_LIBS)
 AC_SUBST(VDB_REQ)
+AC_SUBST(VDB_POST_LINK)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)

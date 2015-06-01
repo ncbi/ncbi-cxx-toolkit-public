@@ -970,6 +970,7 @@ VDB_LIB
 VDB_LIBS
 VDB_STATIC_LIBS
 VDB_REQ
+VDB_POST_LINK
 SP_INCLUDE
 SP_LIBS
 ORBACUS_INCLUDE
@@ -37218,6 +37219,7 @@ fi
 
 
 # NCBI SRA/VDB
+VDB_POST_LINK=:
 VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
@@ -37377,6 +37379,19 @@ echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
          else
             VDB_STATIC_LIBS=$VDB_LIBS
          fi
+         case "$host_os" in
+            darwin*)
+               inst_name=`otool -D $VDB_LIBDIR/libncbi-vdb.dylib 2>/dev/null \
+                          | grep -v ':$'`
+               case "$inst_name" in
+                   @executable_path* )
+                      major=`echo $inst_name | sed -ne 's,.*/libncbi-vdb\.\([1-9][0-9]*\).*\.dylib$,\1,p'`
+                      test -z "$major"  || \
+                         VDB_POST_LINK="install_name_tool -change $inst_name @rpath/libncbi-vdb.$major.dylib"
+                      ;;
+               esac
+               ;;
+         esac
       else
          VDB_INCLUDE=
          VDB_LIBS=
@@ -41615,6 +41630,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -42774,6 +42790,7 @@ VDB_LIB!$VDB_LIB$ac_delim
 VDB_LIBS!$VDB_LIBS$ac_delim
 VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
 VDB_REQ!$VDB_REQ$ac_delim
+VDB_POST_LINK!$VDB_POST_LINK$ac_delim
 SP_INCLUDE!$SP_INCLUDE$ac_delim
 SP_LIBS!$SP_LIBS$ac_delim
 ORBACUS_INCLUDE!$ORBACUS_INCLUDE$ac_delim
@@ -42799,7 +42816,6 @@ ZORBA_INCLUDE!$ZORBA_INCLUDE$ac_delim
 ZORBA_LIBS!$ZORBA_LIBS$ac_delim
 ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
-FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42841,6 +42857,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
 AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
@@ -42886,7 +42903,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 43; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

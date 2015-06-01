@@ -14,6 +14,8 @@ LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil \
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
+POST_LINK = $(VDB_POST_LINK)
+
 CHECK_CMD      = test_wgs_loader
 CHECK_TIMEOUT  = 300
 CHECK_REQUIRES = in-house-resources -Solaris

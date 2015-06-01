@@ -9,6 +9,8 @@ LIB = ncbi_xloader_vdbgraph $(SRAREAD_LIBS) test_boost $(SOBJMGR_LIBS) $(CMPRS_L
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
+POST_LINK = $(VDB_POST_LINK)
+
 CHECK_CMD = test_vdbgraph_loader
 CHECK_REQUIRES = in-house-resources -MSWin -Solaris
 
