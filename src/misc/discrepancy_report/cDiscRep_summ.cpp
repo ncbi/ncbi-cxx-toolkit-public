@@ -144,7 +144,7 @@ static const char* distance_words[] = { NULL, "exactly", "no more than", "no les
 string CSummarizeSusProdRule :: SummarizeEndDistance (const CLocation_pos_constraint& lp_cons, const string& end_name)
 {
   if (lp_cons.Which() == CLocation_pos_constraint::e_not_set) return kEmptyStr;
-  int dist;
+  int dist = 0;
   switch (lp_cons.Which()) {
      case CLocation_pos_constraint :: e_Dist_from_end:
               dist = lp_cons.GetDist_from_end(); break;
