@@ -6517,6 +6517,7 @@ fi
 
 
 # NCBI SRA/VDB
+VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
    vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
@@ -6598,6 +6599,7 @@ if test "$with_vdb" != "no" ; then
             VDB_LIB=ncbi-vdb-read
             VDB_LIBS=$vdb_deps
             VDB_STATIC_LIBS=$VDB_LIBS
+            VDB_REQ=LocalVDB
             ;;
          * )
             if test -n "${with_vdb}${with_included_vdb}"; then
@@ -7657,6 +7659,7 @@ AC_SUBST(VDB_INCLUDE)
 AC_SUBST(VDB_LIB)
 AC_SUBST(VDB_LIBS)
 AC_SUBST(VDB_STATIC_LIBS)
+AC_SUBST(VDB_REQ)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)

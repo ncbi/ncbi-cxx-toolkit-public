@@ -969,6 +969,7 @@ VDB_INCLUDE
 VDB_LIB
 VDB_LIBS
 VDB_STATIC_LIBS
+VDB_REQ
 SP_INCLUDE
 SP_LIBS
 ORBACUS_INCLUDE
@@ -37217,6 +37218,7 @@ fi
 
 
 # NCBI SRA/VDB
+VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
    vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
@@ -37399,6 +37401,7 @@ echo "$as_me: Using local NCBI SRA/VDB copy in src/sra/sdk" >&6;}
             VDB_LIB=ncbi-vdb-read
             VDB_LIBS=$vdb_deps
             VDB_STATIC_LIBS=$VDB_LIBS
+            VDB_REQ=LocalVDB
             ;;
          * )
             if test -n "${with_vdb}${with_included_vdb}"; then
@@ -41611,6 +41614,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -42769,6 +42773,7 @@ VDB_INCLUDE!$VDB_INCLUDE$ac_delim
 VDB_LIB!$VDB_LIB$ac_delim
 VDB_LIBS!$VDB_LIBS$ac_delim
 VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
+VDB_REQ!$VDB_REQ$ac_delim
 SP_INCLUDE!$SP_INCLUDE$ac_delim
 SP_LIBS!$SP_LIBS$ac_delim
 ORBACUS_INCLUDE!$ORBACUS_INCLUDE$ac_delim
@@ -42795,7 +42800,6 @@ ZORBA_LIBS!$ZORBA_LIBS$ac_delim
 ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
-FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42837,6 +42841,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
 AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
@@ -42881,7 +42886,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 43; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
