@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,1,1) );
+    SetVersion( CVersionInfo(4,2,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -2789,7 +2789,8 @@ void  CProjBulderApp::RankDepGraph(void)
     vector< set<string> > graph;
     for (map<string, set<string> >::const_iterator d= m_GraphDepPrecedes.begin();
             d!= m_GraphDepPrecedes.end(); ++d) {
-        set<string> done;
+        list<string> done;
+        done.push_back(d->first);
         InsertDep(graph, d->first, done);
     }
     for (size_t s= 0; s<graph.size(); ++s) {
@@ -2799,21 +2800,23 @@ void  CProjBulderApp::RankDepGraph(void)
     }
 }
 
-void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep, set<string>& done)
+bool  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep, list<string>& done)
 {
-    if (m_GraphDepPrecedes.find(dep) == m_GraphDepPrecedes.end()) {
-        return;
-    }
-    if (done.find(dep) != done.end()) {
-        return;
-    }
-    done.insert(dep);
     const set<string>& dependents = m_GraphDepPrecedes[dep];
     size_t graphset=0;
     for (set<string>::const_iterator d = dependents.begin(); d != dependents.end(); ++d) {
         if (m_GraphDepPrecedes.find(*d) == m_GraphDepPrecedes.end()) {
             continue;
         }
+        if (find(done.begin(), done.end(), *d) != done.end()) {
+            done.push_back(*d);
+            PTB_ERROR_EX(m_Root, ePTB_ConfigurationError,
+                    "Library dependency cycle found: " << NStr::Join(done, " - "));
+            done.pop_back();
+            m_GraphDepPrecedes.erase(*d);
+            return false;
+        }
+        done.push_back(*d);
         for (bool found=false; !found; ) {
             for (size_t s= 0; !found && s<graph.size(); ++s) {
                 if (graph[s].find(*d) != graph[s].end()) {
@@ -2822,9 +2825,10 @@ void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep,
                 }
             }
             if (!found) {
-                InsertDep(graph, *d, done);
+                found  = !InsertDep(graph, *d, done);
             }
         }
+        done.pop_back();
     }
     if (!dependents.empty()) {
         ++graphset;
@@ -2836,6 +2840,7 @@ void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep,
         t.insert(dep);
         graph.push_back(t);
     }
+    return true;
 }
 
 string CProjBulderApp::ProcessLocationMacros(string raw_data)

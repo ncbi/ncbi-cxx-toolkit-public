@@ -227,7 +227,7 @@ private:
     void    LoadDepGraph(const string& filename);
     void    CollectDep(const string& libname, const string& depname);
     void    RankDepGraph(void);
-    void    InsertDep(vector< set<string> >& graph, const string& dep, set<string>& done);
+    bool    InsertDep(vector< set<string> >& graph, const string& dep, list<string>& done);
 
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
     void    GenerateMsvcProjects(CProjectItemsTree& projects_tree);
