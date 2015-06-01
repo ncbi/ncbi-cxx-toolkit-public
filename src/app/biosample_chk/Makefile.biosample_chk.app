@@ -15,7 +15,7 @@ LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xvalidate xcleanup $(XFORMAT_LIBS) \
 
 LIBS = $(PCRE_LIBS) $(SRA_SDK_SYSLIBS) $(ORIG_LIBS) $(LIBXML_LIBS) $(LIBXSLT_LIBS)
 
-REQUIRES = objects -BSD -Cygwin LIBXML LIBXSLT
+REQUIRES = objects $(VDB_REQ) LIBXML LIBXSLT
 
 
 WATCHERS = bollin

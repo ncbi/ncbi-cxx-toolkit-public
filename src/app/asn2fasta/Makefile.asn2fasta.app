@@ -17,7 +17,7 @@ LIB = $(XFORMAT_LIBS) ncbi_xloader_wgs $(SRAREAD_LIBS) \
 LIBS = $(FTDS_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) \
 	   $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -BSD -Cygwin
+REQUIRES = objects $(VDB_REQ)
 
 
 WATCHERS = ludwigf kornbluh

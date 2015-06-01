@@ -5,6 +5,7 @@
 
 sources = sources
 DATE    = /bin/date
+VDB_REQ = VDB
 
 # Interpret command-line specifications of APP_PROJ or LIB_PROJ as a
 # cue to clear out all other *_PROJ settings not also provided there.
