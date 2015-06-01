@@ -870,7 +870,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
     ConvertQuotesNotInHTMLTags(subname);
     CleanAndCompress(subname, subname.c_str());
     NStr::TruncateSpacesInPlace(subname);
-    ExpandTildes(subname, ( (flags & IFlatQVal::fIsNote) != 0  ? eTilde_note : eTilde_space ) );
+    ExpandTildes(subname, ( (flags & IFlatQVal::fIsNote) != 0  ? eTilde_tilde : eTilde_space ) );
     
     if (s_IsNote(flags, ctx)) {
         bool add_period = RemovePeriodFromEnd(subname, true);
