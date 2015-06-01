@@ -166,7 +166,6 @@ use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
     Seq-feat.comment ,
     Seq-feat.data.region ,
     Prot-ref.desc ,
-    Pubdesc.comment ,
 }
  
 # These are POST in case substrings will be cleaned some way first
