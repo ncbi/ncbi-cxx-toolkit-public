@@ -551,7 +551,11 @@ class Scenario1000( TestBase ):
         if nonEffectiveNetwrokTimeout != 360:
             raise Exception( "Unexpected !eff network timeout: " +
                              str( nonEffectiveNetwrokTimeout ) + ". Expected 360" )
-        if effectiveNetwrokTimeout != 180:
+
+        # The latest versions support changing the effective network timeout
+        # hence the second part of the comparison
+        if effectiveNetwrokTimeout != 180 and \
+           effectiveNetwrokTimeout != 360:
             raise Exception( "Unexpected eff network timeout: " +
                              str( effectiveNetwrokTimeout ) + ". Expected 180" )
 
