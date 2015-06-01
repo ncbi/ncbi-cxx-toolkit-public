@@ -3772,6 +3772,38 @@ CSeqFeatData::EFeatureLocationAllowed CSeqFeatData::AllowedFeatureLocation(ESubt
 }
 
 
+bool CSeqFeatData::AllowStrandBoth(ESubtype subtype)
+{
+    bool rval = false;
+
+    switch (subtype) {
+        case eSubtype_regulatory:
+        case eSubtype_protein_bind:
+        case eSubtype_misc_feature:
+        case eSubtype_repeat_region:
+        case eSubtype_rep_origin:
+        case eSubtype_misc_recomb:
+        case eSubtype_S_region:
+        case eSubtype_centromere:
+        case eSubtype_telomere:
+        case eSubtype_variation:
+        case eSubtype_misc_binding:
+        case eSubtype_misc_difference:
+        case eSubtype_misc_structure:
+        case eSubtype_mobile_element:
+        case eSubtype_assembly_gap:
+        case eSubtype_LTR:
+            rval = true;
+            break;
+        default:
+            rval = false;
+            break;
+    }
+
+    return rval;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

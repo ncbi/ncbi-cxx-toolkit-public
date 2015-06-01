@@ -382,6 +382,8 @@ private:
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
 
     void x_SeqIntervalBC( CSeq_interval & seq_interval );
+    void x_BothStrandBC( CSeq_loc &loc );
+    void x_BothStrandBC( CSeq_interval & seq_interval );
 
     void x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_new_dbtags );
 

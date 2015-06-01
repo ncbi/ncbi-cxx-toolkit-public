@@ -495,6 +495,7 @@ public:
 
     static EFeatureLocationAllowed AllowedFeatureLocation(ESubtype subtype);
 
+    static bool AllowStrandBoth(ESubtype subtype);
 
     // Internal structure to hold additional info
     struct SFeatDataInfo

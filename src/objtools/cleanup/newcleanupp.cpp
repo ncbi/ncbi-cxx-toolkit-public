@@ -3049,13 +3049,7 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
             // change both and both-rev to plus and minus, respectively
             if (pnt.CanGetStrand()) {
                 ENa_strand strand = pnt.GetStrand();
-                if (strand == eNa_strand_both) {
-                    pnt.SetStrand(eNa_strand_plus);
-                    ChangeMade(CCleanupChange::eChangeStrand);
-                } else if (strand == eNa_strand_both_rev) {
-                    pnt.SetStrand(eNa_strand_minus);
-                    ChangeMade(CCleanupChange::eChangeStrand);
-                } else if( strand == eNa_strand_unknown ) {
+                if( strand == eNa_strand_unknown ) {
                     pnt.ResetStrand();
                     ChangeMade(CCleanupChange::eChangeStrand);
                 }
@@ -3136,6 +3130,8 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
             ChangeMade(CCleanupChange::eChangeStrand);
         }
     }
+
+    x_BothStrandBC(loc);
 }
 
 void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
@@ -5328,14 +5324,59 @@ void CNewCleanup_imp::x_SeqIntervalBC( CSeq_interval & seq_interval )
     // change bad strand values.
     if (seq_interval.CanGetStrand()) {
         ENa_strand strand = seq_interval.GetStrand();
+        if (strand == eNa_strand_unknown ) {
+            seq_interval.ResetStrand();
+            ChangeMade(CCleanupChange::eChangeStrand);
+        }
+    }
+}
+
+void CNewCleanup_imp::x_BothStrandBC( CSeq_loc &loc )
+{
+    switch (loc.Which()) {
+    case CSeq_loc::e_Int :
+        x_BothStrandBC( GET_MUTABLE(loc, Int) );
+        break;
+    case CSeq_loc::e_Packed_int :
+        {
+            CSeq_loc::TPacked_int::Tdata& ints = loc.SetPacked_int().Set();
+            NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
+                x_BothStrandBC(**interval_it);
+            }
+        }
+        break;
+    case CSeq_loc::e_Pnt :
+        {
+            CSeq_loc::TPnt& pnt = loc.SetPnt();
+            
+            // change both and both-rev to plus and minus, respectively
+            if (pnt.CanGetStrand()) {
+                ENa_strand strand = pnt.GetStrand();
+                if (strand == eNa_strand_both) {
+                    pnt.SetStrand(eNa_strand_plus);
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                } else if (strand == eNa_strand_both_rev) {
+                    pnt.SetStrand(eNa_strand_minus);
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+void CNewCleanup_imp::x_BothStrandBC( CSeq_interval & seq_interval )
+{
+    if (seq_interval.CanGetStrand()) {
+        ENa_strand strand = seq_interval.GetStrand();
         if (strand == eNa_strand_both) {
             seq_interval.SetStrand(eNa_strand_plus);
             ChangeMade(CCleanupChange::eChangeStrand);
         } else if (strand == eNa_strand_both_rev) {
             seq_interval.SetStrand(eNa_strand_minus);
-            ChangeMade(CCleanupChange::eChangeStrand);
-        } else if (strand == eNa_strand_unknown ) {
-            seq_interval.ResetStrand();
             ChangeMade(CCleanupChange::eChangeStrand);
         }
     }
