@@ -294,3 +294,8 @@ Corrected source files collection in ASN projects.
 Added recognition of static/dll suffixes in 3rd party libraries.
 Added possibility to configure Xcode projects to use C++11 compliant underlying compiler.
 Added macro resolution in .in and .dll files.
+
+June 01, 2015
+version 4.1.2,   CXX-6005
+Added analysis and reporting of cyclic library dependencies.
+
