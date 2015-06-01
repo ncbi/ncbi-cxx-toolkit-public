@@ -1187,7 +1187,13 @@ CNetStorageHandler::x_ProcessReconfigure(
     }
 
     if (!m_Server->IsAdminClientName(m_Client)) {
-        string      msg = "Only administrators can reconfigure server";
+        string      msg = "Only administrators can reconfigure server "
+                          "(client: ";
+        if (m_Client.empty())
+            msg += "anonymous)";
+        else
+            msg += m_Client;
+
         m_Server->RegisterAlert(eAccess, msg);
         NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     }
