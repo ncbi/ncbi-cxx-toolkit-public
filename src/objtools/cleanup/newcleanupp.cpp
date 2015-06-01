@@ -1187,6 +1187,17 @@ bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_st
             }
         } catch (CSerialException&) {
         }
+    } else {
+        // did not find delimiters
+        try {
+            CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(str);
+            if ( !CSubSource::IsDiscouraged(subtype) && CSubSource::NeedsNoText(subtype)) {
+                out_subtype       = subtype;
+                out_val_start_pos = str.length();
+                return true;
+            }
+        } catch (CSerialException&) {
+        }
     }
     return false;
 }
