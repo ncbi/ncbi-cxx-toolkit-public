@@ -1,3 +1,10 @@
+Release X.X.X 
+
+Improvements and bug fixes:
+    * Ability to change [server]/max_connections and [server]/network_timeout
+      at runtime via RECONFIGURE (JIRA: CXX-5580)
+
+
 Release 2.0.2 cloned from 2.0.1 (2015-05-06)
 
 Improvements and bug fixes:
