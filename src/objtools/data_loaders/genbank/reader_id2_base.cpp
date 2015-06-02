@@ -1774,18 +1774,22 @@ CId2ReaderBase::x_GetBlobStateFromID2(const CBlob_id& blob_id,
     TBlobState blob_state = 0;
     if ( id2_state & (1<<eID2_Blob_State_suppressed_temp) ) {
         blob_state |= CBioseq_Handle::fState_suppress_temp;
+        blob_state |= CBioseq_Handle::fState_no_data;
     }
     if ( id2_state & (1<<eID2_Blob_State_suppressed) ) {
         blob_state |= CBioseq_Handle::fState_suppress_perm;
+        blob_state |= CBioseq_Handle::fState_no_data;
     }
     if ( id2_state & (1<<eID2_Blob_State_dead) ) {
         blob_state |= CBioseq_Handle::fState_dead;
     }
     if ( id2_state & (1<<eID2_Blob_State_protected) ) {
         blob_state |= CBioseq_Handle::fState_confidential;
+        blob_state |= CBioseq_Handle::fState_no_data;
     }
     if ( id2_state & (1<<eID2_Blob_State_withdrawn) ) {
         blob_state |= CBioseq_Handle::fState_withdrawn;
+        blob_state |= CBioseq_Handle::fState_no_data;
     }
     if ( blob_state ) {
         loaded_set.m_BlobStates[blob_id] |= blob_state;
