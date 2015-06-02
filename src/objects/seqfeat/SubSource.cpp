@@ -170,6 +170,7 @@ string CSubSource::GetSubtypeName(CSubSource::TSubtype stype,
 bool CSubSource::IsMultipleValuesAllowed(TSubtype subtype)
 {
     return subtype != eSubtype_chromosome
+        && subtype != eSubtype_sex
         && subtype != eSubtype_germline
         && subtype != eSubtype_rearranged
         && subtype != eSubtype_plasmid_name
