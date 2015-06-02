@@ -11,7 +11,7 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
         TMgr-BlastRIDDetail, TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
         TMgr-DTrackId, TMgr-DatasetItem, TMgr-DisplayTrackChoice,
-        TMgr-CreateUserTrackRequest, TMgr-CreateUserTrackReply,
+        TMgr-CreateUserTrackRequest, TMgr-CreateUserTrackReply, TMgr-Identity,
         TMgr-TrackAttrValueRequest, TMgr-TrackAttrValueReply,
         TMgr-AttrRequest, TMgr-AttrReply, TMgr-ValueRequest, TMgr-AttrValueReply,
         TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message, TMgr-DatasetItemSeq;
