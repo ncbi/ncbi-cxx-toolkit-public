@@ -100,38 +100,36 @@ enum {
 };
 
 
-template<typename Int> struct CDB_Int_For;
-
-template<>
-class CDB_Int_For<Int4> : public CDB_Int
+static void sx_SetIntId(CDB_RPCCmd& cmd, const char* param, TIntId id)
 {
-public:
-    typedef CDB_Int TParent;
-    typedef Int4 value_type;
-    CDB_Int_For()
-        {
-        }
-    CDB_Int_For(const value_type& i)
-        : TParent(i)
-        {
-        }
-};
+#ifdef NCBI_INT8_GI
+    if ( Int4(id) != id ) {
+        // do not fit in Int4
+        CDB_BigInt idIn(id);
+        cmd.SetParam(param, &idIn);
+        return;
+    }
+#endif
+    CDB_Int idIn(static_cast<Int4>(id));
+    cmd.SetParam(param, &idIn);
+}
 
 
-template<>
-class CDB_Int_For<Int8> : public CDB_Int // should be CDB_BigInt
+static TIntId sx_GetIntId(CDB_Result& dbr, int pos)
 {
-public:
-    typedef CDB_Int TParent;
-    typedef Int8 value_type;
-    CDB_Int_For()
-        {
-        }
-    CDB_Int_For(const value_type& i)
-        : TParent(i)
-        {
-        }
-};
+    CDB_BigInt idGot;
+    dbr.GetItem(&idGot);
+    Int8 id = idGot.Value();
+#ifndef NCBI_INT8_GI
+    if ( TIntId(id) != id ) {
+        NCBI_THROW_FMT(CLoaderException, eOtherError,
+                       dbr.ItemName(pos) << " value overflow: " << id);
+    }
+    return TIntId(id);
+#else
+    return id;
+#endif
+}
 
 
 struct SPubseqReaderReceiveData {
@@ -330,7 +328,7 @@ namespace {
     {
         string str = rpc;
         str += " ";
-        str += NStr::NumericToString<TIntId>(blob_id.GetSatKey());
+        str += NStr::NumericToString(blob_id.GetSatKey());
         str += ",";
         str += NStr::IntToString(blob_id.GetSat());
         str += ",";
@@ -567,8 +565,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                 CDB_Connection* db_conn = x_GetConnection(conn);
     
                 AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_accn_ver_by_gi"));
-                CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(gi));
-                cmd->SetParam("@gi", &giIn);
+                sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(gi));
                 cmd->Send();
                 
                 //bool not_found = false;
@@ -673,9 +670,9 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
             }
         
             while ( dbr->Fetch() ) {
-                CDB_Int_For<TIntId> giGot;
+                TGi gi = ZERO_GI;
                 CDB_Int satGot;
-                CDB_Int_For<TIntId> satKeyGot;
+                TIntId sat_key = 0;
                 CDB_Int extFeatGot;
                 CDB_Int namedAnnotsGot;
 
@@ -685,16 +682,17 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     const string& name = dbr->ItemName(pos);
                     _TRACE("next item: " << name);
                     if (name == "gi") {
-                        dbr->GetItem(&giGot);
-                        _TRACE("gi: "<<giGot.Value());
+                        gi = sx_GetIntId(*dbr, pos);
+                        _TRACE("gi: "<<gi);
+                        CProcessor::OffsetGiToOM(gi);
                     }
                     else if (name == "sat" ) {
                         dbr->GetItem(&satGot);
                         _TRACE("sat: "<<satGot.Value());
                     }
                     else if(name == "sat_key") {
-                        dbr->GetItem(&satKeyGot);
-                        _TRACE("sat_key: "<<satKeyGot.Value());
+                        sat_key = sx_GetIntId(*dbr, pos);
+                        _TRACE("sat_key: "<<sat_key);
                     }
                     else if(name == "extra_feat" || name == "ext_feat") {
                         dbr->GetItem(&extFeatGot);
@@ -711,8 +709,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                         dbr->GetItem(&namedAnnotsGot);
                         _TRACE("named_annots = "<<namedAnnotsGot.Value());
                         if ( namedAnnotsGot.Value() ) {
-                            named_gi = GI_FROM(int, giGot.Value());
-                            CProcessor::OffsetGiToOM(named_gi);
+                            named_gi = gi;
                         }
                     }
                     else {
@@ -720,10 +717,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                 }
 
-                TGi gi = GI_FROM(int, giGot.Value());
-                CProcessor::OffsetGiToOM(gi);
                 int sat = satGot.Value();
-                TIntId sat_key = satKeyGot.Value();
                 
                 if ( GetDebugLevel() >= 5 ) {
                     CDebugPrinter s(conn, "CPubseqReader");
@@ -741,7 +735,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                 }
 
-                if ( giGot.IsNULL() || gi == ZERO_GI ) {
+                if ( gi == ZERO_GI ) {
                     // no gi -> only one Seq-id - the one used as argument
                     SetAndSaveSeq_idGi(result, seq_id, ZERO_GI);
                 }
@@ -787,11 +781,10 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
 
         if ( with_named_accs && named_gi != ZERO_GI ) {
             // postponed read of named annot accessions
-            CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(named_gi));
+            _TRACE("id_get_annot_types "<<named_gi);
             AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_annot_types"));
-            cmd->SetParam("@gi", &giIn);
+            sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(named_gi));
             cmd->Send();
-            _TRACE("id_get_annot_types "<<giIn.Value());
             while(cmd->HasMoreResults()) {
                 AutoPtr<CDB_Result> dbr(cmd->Result());
                 if ( !dbr.get() ) {
@@ -805,25 +798,26 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                 }
                 
                 while ( dbr->Fetch() ) {
-                    CDB_Int_For<TIntId> giGot;
+                    TGi gi = ZERO_GI;
                     CDB_Int satGot;
-                    CDB_Int_For<TIntId> satKeyGot;
+                    TIntId satKeyGot;
                     CDB_Int typeGot;
                     CDB_VarChar nameGot;
                     for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
                         const string& name = dbr->ItemName(pos);
                         _TRACE("next item: " << name);
                         if (name == "gi") {
-                            dbr->GetItem(&giGot);
-                            _TRACE("ngi: "<<giGot.Value());
+                            gi = sx_GetIntId(*dbr, pos);
+                            _TRACE("ngi: "<<gi);
+                            CProcessor::OffsetGiToOM(gi);
                         }
                         else if (name == "sat" ) {
                             dbr->GetItem(&satGot);
                             _TRACE("nsat: "<<satGot.Value());
                         }
                         else if(name == "sat_key") {
-                            dbr->GetItem(&satKeyGot);
-                            _TRACE("nsat_key: "<<satKeyGot.Value());
+                            satKeyGot = sx_GetIntId(*dbr, pos);
+                            _TRACE("nsat_key: "<<satKeyGot);
                         }
                         else if(name == "type") {
                             dbr->GetItem(&typeGot);
@@ -839,7 +833,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                     CRef<CBlob_id> blob_id(new CBlob_id);
                     blob_id->SetSat(satGot.Value());
-                    blob_id->SetSatKey(satKeyGot.Value());
+                    blob_id->SetSatKey(satKeyGot);
                     CBlob_Info info(blob_id, fBlobHasNamedFeat);
                     CRef<CBlob_Annot_Info> annot_info(new CBlob_Annot_Info);
                     annot_info->AddNamedAnnotName(nameGot.Value());
@@ -887,9 +881,8 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi"));
-        CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(gi));
+        sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(gi));
         CDB_TinyInt binIn = 1;
-        cmd->SetParam("@gi", &giIn);
         cmd->SetParam("@bin", &binIn);
         cmd->Send();
 
@@ -1014,9 +1007,8 @@ bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class"));
-        CDB_Int_For<TIntId> giIn(CProcessor::ConvertGiFromOM(gi));
+        sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(gi));
         CDB_TinyInt hashIn = 1;
-        cmd->SetParam("@gi", &giIn);
         cmd->SetParam("@ver", &hashIn);
         cmd->Send();
 
@@ -1147,15 +1139,12 @@ I_BaseCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
                                         CDB_Connection* db_conn,
                                         const char* rpc)
 {
-    AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC(rpc));
-    CDB_SmallInt satIn(blob_id.GetSat());
-    CDB_Int_For<TIntId> satKeyIn(blob_id.GetSatKey());
-    CDB_Int ext_feat(blob_id.GetSubSat());
-
     _TRACE("x_SendRequest: "<<blob_id.ToString());
-
-    cmd->SetParam("@sat_key", &satKeyIn);
+    AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC(rpc));
+    sx_SetIntId(*cmd, "@sat_key", blob_id.GetSatKey());
+    CDB_SmallInt satIn(blob_id.GetSat());
     cmd->SetParam("@sat", &satIn);
+    CDB_Int ext_feat(blob_id.GetSubSat());
     cmd->SetParam("@ext_feat", &ext_feat);
     cmd->Send();
     return cmd.release();
