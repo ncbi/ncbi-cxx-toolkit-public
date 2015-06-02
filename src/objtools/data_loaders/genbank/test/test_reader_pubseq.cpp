@@ -21,7 +21,7 @@
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <iostream>
 #include <serial/serial.hpp>
@@ -54,7 +54,7 @@ int main()
         CRef<CReader> reader(new CPubseqReader);
         dispatcher->InsertReader(0, reader);
 
-        TGi gi = GI_FROM(int, 156895+k-1);
+        TGi gi = 156895+k-1;
 
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CStandaloneRequestResult request(seq_id);
