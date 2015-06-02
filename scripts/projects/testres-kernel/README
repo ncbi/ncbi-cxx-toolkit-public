@@ -5,4 +5,5 @@ Started as testipub replacement (CXX-2091)
 Package includes:
 1. TestRes kernel
 2. Test templates specific to the version
+3. TestRes kernel modules for foreign (TCeX and python) test import
 

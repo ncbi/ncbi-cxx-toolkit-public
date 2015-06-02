@@ -46,6 +46,22 @@ try:
                     gen_conf_path = gen_conf_path_src
                     def_run_path = def_run_path_src
 
+                    #delete Id svn keyword
+                    for fname in [gen_conf_path, gen_conf_path_src]:
+                        result = []
+                        modified = False
+
+                        with open(fname) as f:
+                            for line in f:
+                                if "$Id" not in line:
+                                    result.append(line)
+                                else:
+                                    modified = True
+
+                        if modified:
+                            with open(fname, "w") as f:
+                                f.writelines(result)
+
             if gen_conf_path and def_run_path:
                 module_dest_dir = os.path.join(modules_dest_dir, dir_entry)
                 os.makedirs(module_dest_dir)
