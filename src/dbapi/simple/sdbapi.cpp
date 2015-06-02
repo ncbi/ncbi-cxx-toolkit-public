@@ -1123,17 +1123,18 @@ void CSDB_ConnectionParam::x_ReportOverride(const CTempString& name,
                 x_ReportOverride(uait->name, uait->value, cmit->second);
             }
         }
+    } else if (name == x_GetName(eService)) {
+        ERR_POST_X(18, Info << "Using privately configured service alias "
+                   << code_value << " -> " << reg_value);
     } else {
-        Severity severity(eDiag_Warning);
         if (name == x_GetName(ePassword)) {
             code_value = "(redacted)";
             reg_value  = "(redacted)";
-        } else if (name == x_GetName(eService)) {
-            severity.m_Level = eDiag_Info;
         }
-        ERR_POST_X(17, severity << "Ignoring program-defined " << name
-                   << " parameter value " << code_value
-                   << " in favor of configured value " << reg_value);
+        ERR_POST_X(17, Warning << "Ignoring program-defined " << name
+                   << " parameter value " << code_value << " for "
+                   << m_Url.GetHost() << " in favor of configured value "
+                   << reg_value);
     }
 }
 
