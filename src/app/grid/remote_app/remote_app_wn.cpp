@@ -33,7 +33,6 @@
 
 #include "exec_helpers.hpp"
 
-#include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/remote_app.hpp>
 
@@ -275,8 +274,12 @@ private:
     string m_AppCmd;
 };
 
-class CRemoteAppListener : public CGridWorkerNodeApp_Listener
+class CRemoteAppListener : public CRemoteAppBaseListener
 {
+public:
+    CRemoteAppListener(const TLauncherPtr& launcher)
+        : CRemoteAppBaseListener(launcher) {}
+
     virtual void OnInit(CNcbiApplication* app);
 };
 
@@ -309,7 +312,7 @@ public:
                     "\" does not exists.");
         }
 
-        if (!CanExecRemoteApp(file)) {
+        if (!CRemoteAppLauncher::CanExec(file)) {
             NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
                     m_RemoteAppLauncher->GetAppPath() <<
                     "\" is not executable.");
@@ -341,11 +344,19 @@ public:
         return m_RemoteAppLauncher->GetAppVersion(GRID_APP_VERSION);
     }
 
+    CRemoteAppListener* CreateListener() const
+    {
+        return new CRemoteAppListener(m_RemoteAppLauncher);
+    }
+
 private:
     auto_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
     auto_ptr<CRemoteAppIdleTask> m_IdleTask;
 };
 
-NCBI_GRID_PKG_WORKER_NODE_MAIN(CRemoteAppJob,
-        CRemoteAppJobFactory, CRemoteAppListener);
+int main(int argc, const char* argv[])
+{
+    GRID_APP_CHECK_VERSION_ARGS();
+    return Main<CRemoteAppJobFactory, CRemoteAppListener>(argc, argv);
+}

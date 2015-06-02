@@ -32,9 +32,6 @@
 #include <ncbi_pch.hpp>
 
 #include <sstream>
-#include "exec_helpers.hpp"
-
-#include <connect/services/grid_worker.hpp>
 
 #include <connect/ncbi_pipe.hpp>
 
@@ -44,6 +41,8 @@
 #if defined(NCBI_OS_UNIX)
 #include <fcntl.h>
 #endif
+
+#include "exec_helpers.hpp"
 
 #define PIPE_SIZE 64 * 1024
 
@@ -106,6 +105,9 @@ class CRemoteAppReaper
         CCollector(CContext& context, const string& app_name)
             : m_Context(context),
               m_ThreadName(app_name + "_cl")
+        {}
+
+        void Start()
         {
             if (m_Context.Enabled()) {
                 Run();
@@ -154,6 +156,7 @@ public:
     CRemoteAppReaper(int sleep, int max_attempts, const string& app_name);
 
     CManager& GetManager() { return m_Manager; }
+    void StartCollector() { m_Collector->Start(); }
 
 private:
     CContext m_Context;
@@ -366,7 +369,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
             m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
         }
         CFile f(m_MonitorAppPath);
-        if (!f.Exists() || !CanExecRemoteApp(f)) {
+        if (!f.Exists() || !CanExec(f)) {
             ERR_POST("Can not execute \"" << m_MonitorAppPath
                      << "\". The Monitor application will not run!");
             m_MonitorAppPath = kEmptyStr;
@@ -412,7 +415,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-bool CanExecRemoteApp(const CFile& file)
+bool CRemoteAppLauncher::CanExec(const CFile& file)
 {
     CDirEntry::TMode user_mode  = 0;
     if (!file.GetMode(&user_mode))
@@ -875,6 +878,11 @@ bool CRemoteAppLauncher::MustFailNoRetries(int exit_code) const
 string CRemoteAppLauncher::GetAppVersion(const string& v) const
 {
     return m_Version->Get(v);
+}
+
+void CRemoteAppLauncher::OnGridWorkerStart()
+{
+    m_Reaper->StartCollector();
 }
 
 END_NCBI_SCOPE

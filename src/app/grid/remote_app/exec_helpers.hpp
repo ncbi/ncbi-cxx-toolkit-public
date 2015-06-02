@@ -37,14 +37,10 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <connect/services/grid_worker_app.hpp>
+
 BEGIN_NCBI_SCOPE
 
-class CFile;
-bool CanExecRemoteApp(const CFile& file);
-
-
-class IRegistry;
-class CWorkerNodeJobContext;
 class CRemoteAppReaper;
 class CRemoteAppVersion;
 
@@ -89,6 +85,10 @@ public:
 
     string GetAppVersion(const string&) const;
 
+    void OnGridWorkerStart();
+
+    static bool CanExec(const CFile& file);
+
 private:
     string m_AppPath;
     int m_MaxAppRunningTime;
@@ -112,6 +112,36 @@ private:
     auto_ptr<CRemoteAppReaper> m_Reaper;
     auto_ptr<CRemoteAppVersion> m_Version;
 };
+
+// This class is for starting CCollector (a separate thread) after Daemonize()
+class CRemoteAppBaseListener : public CGridWorkerNodeApp_Listener
+{
+public:
+    typedef auto_ptr<CRemoteAppLauncher> TLauncherPtr;
+
+    CRemoteAppBaseListener(const TLauncherPtr& launcher) : m_Launcher(launcher) {}
+
+    void OnGridWorkerStart()
+    {
+        _ASSERT(m_Launcher.get());
+        m_Launcher->OnGridWorkerStart();
+    }
+
+private:
+    const TLauncherPtr& m_Launcher;
+};
+
+template<class TFactory, class TListener>
+int Main(int argc, const char* argv[])
+{
+    GetDiagContext().SetOldPostFormat(false);
+    auto_ptr<TFactory> factory(new TFactory);
+    auto_ptr<TListener> listener(factory->CreateListener());
+    const string app_name(factory->GetAppName());
+    CGridWorkerApp app(factory.release());
+    app.SetListener(listener.release());
+    return app.AppMain(argc, argv, NULL, eDS_ToStdlog, NcbiEmptyCStr, app_name);
+}
 
 END_NCBI_SCOPE
 

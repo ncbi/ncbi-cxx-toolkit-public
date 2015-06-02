@@ -90,7 +90,7 @@ public:
     /// if the worker node cannot be launched at this time.
     /// The method is called from the Init() method of the
     /// worker node application prior to daemonizing.
-    virtual void OnInit(CNcbiApplication* app);
+    virtual void OnInit(CNcbiApplication*) {}
 
     /// Notify that CGridWorkerNode::Run() is about to be executed.
     /// This method can be overridden to implement worker node-

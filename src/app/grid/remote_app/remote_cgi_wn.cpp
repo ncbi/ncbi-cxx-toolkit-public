@@ -33,7 +33,6 @@
 
 #include "exec_helpers.hpp"
 
-#include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_globals.hpp>
 
 #include <cgi/ncbicgi.hpp>
@@ -305,14 +304,7 @@ private:
     string m_AppCmd;
 };
 
-class CRemoteCgiListener : public CGridWorkerNodeApp_Listener
-{
-    virtual void OnInit(CNcbiApplication* app);
-};
-
-void CRemoteCgiListener::OnInit(CNcbiApplication* /*app*/)
-{
-}
+typedef CRemoteAppBaseListener CRemoteCgiListener;
 
 #define GRID_APP_NAME "remote_cgi"
 
@@ -332,7 +324,7 @@ public:
                     "\" does not exists.");
         }
 
-        if (!CanExecRemoteApp(file)) {
+        if (!CRemoteAppLauncher::CanExec(file)) {
             NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
                     m_RemoteAppLauncher->GetAppPath() <<
                     "\" is not executable.");
@@ -364,11 +356,19 @@ public:
         return m_RemoteAppLauncher->GetAppVersion(GRID_APP_VERSION);
     }
 
+    CRemoteCgiListener* CreateListener() const
+    {
+        return new CRemoteCgiListener(m_RemoteAppLauncher);
+    }
+
 private:
     auto_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
     auto_ptr<CRemoteCgiIdleTask> m_IdleTask;
 };
 
-NCBI_GRID_PKG_WORKER_NODE_MAIN(CRemoteCgiJob,
-        CRemoteCgiJobFactory, CRemoteCgiListener);
+int main(int argc, const char* argv[])
+{
+    GRID_APP_CHECK_VERSION_ARGS();
+    return Main<CRemoteCgiJobFactory, CRemoteCgiListener>(argc, argv);
+}

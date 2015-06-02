@@ -84,10 +84,6 @@ CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
     return grid_app->GetWorkerNode().GetNetCacheAPI();
 }
 
-void IGridWorkerNodeApp_Listener::OnInit(CNcbiApplication* /*app*/)
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 
