@@ -476,9 +476,9 @@ void CSeqTableLocColumns::ParseDefaults(void)
     }
     if ( m_Gi ) {
         if ( m_Gi->IsSetDefault() ) {
-            m_DefaultIdHandle =
-                CSeq_id_Handle::GetGiHandle(
-                GI_FROM(CSeqTable_single_data::TInt, m_Gi->GetDefault().GetInt()));
+            TIntId gi;
+            m_Gi->GetDefault().GetValue(gi);
+            m_DefaultIdHandle = CSeq_id_Handle::GetGiHandle(gi);
         }
     }
 
