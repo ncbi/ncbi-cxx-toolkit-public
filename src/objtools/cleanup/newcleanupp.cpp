@@ -1687,7 +1687,8 @@ void CNewCleanup_imp::x_ConvertOrgref_modToSubSource( CBioSource& biosrc )
 
         // convert COrg_reg.TMod string to SubSource objects
         EDIT_EACH_MOD_ON_ORGREF (it, org) {
-            string& str = *it;
+            string str = *it;
+            NStr::TruncateSpacesInPlace(str);
             CRef<CSubSource> sbs = s_StringToSubSource (str);
             if (! sbs) continue;
             ADD_SUBSOURCE_TO_BIOSOURCE (biosrc, sbs);
@@ -1776,7 +1777,8 @@ void CNewCleanup_imp::OrgrefBC (
     CLEAN_STRING_LIST (org, Syn);
 
     EDIT_EACH_MOD_ON_ORGREF (it, org) {
-        string& str = *it;
+        string str = *it;
+        NStr::TruncateSpacesInPlace(str);
         CRef<COrgMod> omd  = s_StringToOrgMod (str);
         if (! omd) continue;
         ADD_ORGMOD_TO_ORGREF (org, omd);
