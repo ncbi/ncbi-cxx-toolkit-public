@@ -1395,7 +1395,7 @@ static void s_CorrectTildes (
     NStr::ReplaceInPlace (str, "Plasmid; ~The F03-1270", "Plasmid; The F03-1270");
     NStr::ReplaceInPlace (str, "using STS-PCR~from Eb", "using STS-PCR from Eb");
     NStr::ReplaceInPlace (str, "specific to~the Eb", "specific to the Eb");
-    NStr::ReplaceInPlace (str, "side of insert); , M.F., Lennon", "side of insert); Bonaldo, M.F., Lennon");
+    NStr::ReplaceInPlace (str, "side of insert);  , M.F., Lennon", "side of insert); Bonaldo, M.F., Lennon");
     NStr::ReplaceInPlace (str, "Uni-ZAP XR vector. 1~2 ul of", "Uni-ZAP XR vector. 1~~2 ul of");
     NStr::ReplaceInPlace (str, "from diploid~Secale montanum", "from diploid Secale montanum");
     NStr::ReplaceInPlace (str, "homology with~U43516,", "homology with U43516,");
