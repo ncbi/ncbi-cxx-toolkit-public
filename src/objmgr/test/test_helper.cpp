@@ -28,7 +28,7 @@
 * File Description:
 *   Bio sequence data generator to test Object Manager
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include "test_helper.hpp"
 #include <corelib/ncbithr.hpp>
@@ -119,7 +119,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
         id->SetLocal().SetStr("seq"+NStr::IntToString(11+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 11+index*1000));
+        id->SetGi(11+index*1000);
         id_list.push_back(id);
 
         // Description (name)
@@ -182,7 +182,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
             ce->SetId(112); // TSE=1; seq=1; feat=2
             gcode.push_back(ce);
             // feature location on the sequence (seq_Id + "whole" sequence)
-            feat->SetLocation().SetWhole().SetGi(GI_FROM(int, 11+index*1000));
+            feat->SetLocation().SetWhole().SetGi(11+index*1000);
             ftable.push_back(feat);
         }}
         annot_list.push_back(annot);
@@ -202,7 +202,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
         id->SetLocal().SetStr("seq"+NStr::IntToString(12+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 12+index*1000));
+        id->SetGi(12+index*1000);
         id_list.push_back(id);
 
         // Instance (sequence data)
@@ -241,7 +241,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 gcode.push_back(ce);
                 // feature location on the sequence: Seq_interval (gi seq_Id)
                 CSeq_interval& floc = feat->SetLocation().SetInt();
-                floc.SetId().SetGi(GI_FROM(int, 12+index*1000));
+                floc.SetId().SetGi(12+index*1000);
                 floc.SetFrom(20);
                 floc.SetTo(30);
                 // minus strand
@@ -288,10 +288,10 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 // list of Seq_ids (gi) (sequences in order)
                 CDense_diag::TIds& idlist = diag->SetIds();
                 CRef<CSeq_id> sid(new CSeq_id);
-                sid->SetGi(GI_FROM(int, 11+index*1000));
+                sid->SetGi(11+index*1000);
                 idlist.push_back(sid);
                 sid.Reset(new CSeq_id);
-                sid->SetGi(GI_FROM(int, 12+index*1000));
+                sid->SetGi(12+index*1000);
                 idlist.push_back(sid);
                 // start OFFSETS in ids order
                 CDense_diag::TStarts& start_list = diag->SetStarts();
@@ -345,7 +345,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1a(int index)
         id->SetLocal().SetStr("seq"+NStr::IntToString(11+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 11+index*1000));
+        id->SetGi(11+index*1000);
         id_list.push_back(id);
 
         // Instance (sequence data)
@@ -377,7 +377,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1a(int index)
         id->SetLocal().SetStr("seq"+NStr::IntToString(12+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 12+index*1000));
+        id->SetGi(12+index*1000);
         id_list.push_back(id);
 
         // Instance (sequence data)
@@ -448,7 +448,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
         id->SetLocal().SetStr("seq"+NStr::IntToString(21+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 21+index*1000));
+        id->SetGi(21+index*1000);
         id_list.push_back(id);
 
         // Description (name)
@@ -469,21 +469,21 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
         // Seq_interval (gi)
         CRef<CSeq_loc> loc(new CSeq_loc);
         CSeq_interval& ref_loc = loc->SetInt();
-        ref_loc.SetId().SetGi(GI_FROM(int, 11+index*1000));
+        ref_loc.SetId().SetGi(11+index*1000);
         ref_loc.SetFrom(0);
         ref_loc.SetTo(4);
         seg_list.push_back(loc);
 
         // whole sequence (gi)
         loc = new CSeq_loc;
-        loc->SetWhole().SetGi(GI_FROM(int, 12+index*1000));
+        loc->SetWhole().SetGi(12+index*1000);
         seg_list.push_back(loc);
 
         // Seq_interval (gi)
         loc = new CSeq_loc;
         CSeq_interval& ref_loc2 = loc->SetInt();
         // "simple" self-reference
-        ref_loc2.SetId().SetGi(GI_FROM(int, 21+index*1000));
+        ref_loc2.SetId().SetGi(21+index*1000);
         ref_loc2.SetFrom(0);
         ref_loc2.SetTo(9);
         seg_list.push_back(loc);
@@ -491,7 +491,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
         // More complicated self-reference
         loc = new CSeq_loc;
         CSeq_interval& ref_loc3 = loc->SetInt();
-        ref_loc3.SetId().SetGi(GI_FROM(int, 21+index*1000));
+        ref_loc3.SetId().SetGi(21+index*1000);
         ref_loc3.SetFrom(54);
         ref_loc3.SetTo(60);
         seg_list.push_back(loc);
@@ -541,7 +541,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
             gcode.push_back(ce);
             // feature location on the sequence: Seq_interval (gi seq_Id)
             CSeq_interval& floc = feat->SetLocation().SetInt();
-            floc.SetId().SetGi(GI_FROM(int, 11+index*1000));
+            floc.SetId().SetGi(11+index*1000);
             floc.SetFrom(5);
             floc.SetTo(15);
             ftable.push_back(feat);
@@ -564,7 +564,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
             ("seq"+NStr::IntToString(22+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 22+index*1000));
+        id->SetGi(22+index*1000);
         id_list.push_back(id);
 
         // Instance (sequence data)
@@ -596,7 +596,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
             ("seq"+NStr::IntToString(23+index*1000));
         id_list.push_back(id);
         id.Reset(new CSeq_id);
-        id->SetGi(GI_FROM(int, 23+index*1000));
+        id->SetGi(23+index*1000);
         id_list.push_back(id);
 
         // Instance (sequence data)
@@ -649,7 +649,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
         floc.SetFrom(1);
         floc.SetTo(20);
         // product of process (seq_loc = whole, gi)
-        feat->SetProduct().SetWhole().SetGi(GI_FROM(int, 12+index*1000));
+        feat->SetProduct().SetWhole().SetGi(12+index*1000);
         ftable.push_back(feat);
     }}
     set_annot_list.push_back(annot);
@@ -676,7 +676,7 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
     list< CRef<CSeq_interval> >& int_list = constr_loc.SetPacked_int();
 
     CRef<CSeq_interval> int_ref(new CSeq_interval);
-    int_ref->SetId().SetGi(GI_FROM(int, 11+idx*1000));
+    int_ref->SetId().SetGi(11+idx*1000);
     int_ref->SetFrom(5);
     int_ref->SetTo(10);
     if (index == 2) {
@@ -685,7 +685,7 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
     int_list.push_back(int_ref);
 
     int_ref.Reset(new CSeq_interval);
-    int_ref->SetId().SetGi(GI_FROM(int, 12+idx*1000));
+    int_ref->SetId().SetGi(12+idx*1000);
     int_ref->SetFrom(0);
     int_ref->SetTo(20);
     int_list.push_back(int_ref);
@@ -790,7 +790,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         //feat->SetLocation().SetWhole().SetGi(11+index*1000);
 
         CSeq_interval& interval = feat->SetLocation().SetInt();
-        interval.SetId().SetGi(GI_FROM(int, 11+index*1000));
+        interval.SetId().SetGi(11+index*1000);
         interval.SetFrom(1);
         interval.SetTo(9);
         interval.SetStrand(eNa_strand_unknown);
@@ -1471,22 +1471,22 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
         2, -1, 2+delta, 1+delta, 1, 0, 1+delta, 1+delta, 1, 0, true);
     // find seq. by GI
-    id.SetGi(GI_FROM(int, 12+idx*1000));
+    id.SetGi(12+idx*1000);
     ProcessBioseq(scope, id, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
         1, 2, 3, 1, 1, 1, 2, 1, 1, 1); //1, 3, 2, 1, 1, 2, 2, 1, 1);
     // segmented sequence
-    id.SetGi(GI_FROM(int, 21+idx*1000));
+    id.SetGi(21+idx*1000);
     ProcessBioseq(scope, id, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
         1, 6+delta, 2, 1, 0, 0, 1, 1, 0, 0);
-    id.SetGi(GI_FROM(int, 22+idx*1000));
+    id.SetGi(22+idx*1000);
     ProcessBioseq(scope, id, 20, "QGCGEQTMTLLAPTLAASRY", "",
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     // another seq.data format
-    id.SetGi(GI_FROM(int, 23+idx*1000));
+    id.SetGi(23+idx*1000);
     ProcessBioseq(scope, id, 13,
         "\\0\\3\\2\\1\\0\\2\\1\\3\\2\\3\\0\\1\\2",
         "\\3\\0\\1\\2\\3\\1\\2\\0\\1\\0\\3\\2\\1",

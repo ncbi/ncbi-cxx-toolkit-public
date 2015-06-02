@@ -29,7 +29,7 @@
  *
  * ===========================================================================
  */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
 #include <objects/general/general__.hpp>
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscChr)
     OrigLoc->SetWhole().SetLocal().SetStr("chr1");
     CRef<CSeq_loc> Result = mapper->Map(*OrigLoc);
 
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(TIntId, 224589800)); // NC_000001.10
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 224589800); // NC_000001.10
 }
 
 // pattern text
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(TestCaseChr)
     CConstRef<CSeq_loc> Result = mapper->Map(*OrigLoc);
 
     // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(TIntId, 224589800)); // NC_000001.10
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 224589800); // NC_000001.10
 }
 
 // pattern text
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Scaffold)
     CRef<CSeq_loc> Result = mapper->Map(*OrigLoc);
 
     // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(TIntId, 112070986)); // AAFC03080232.1
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986); // AAFC03080232.1
 }
 
 BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Comp)

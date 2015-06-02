@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -190,7 +190,7 @@ bool CTestObjectManager::Thread_Run(int idx)
         pScope2->AddTopLevelSeqEntry(*entry2);
         // Test with unresolvable references
         CSeq_id id;
-        id.SetGi(GI_FROM(int, 21+idx*1000));
+        id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id, 22,
           "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
           "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
@@ -200,7 +200,7 @@ bool CTestObjectManager::Thread_Run(int idx)
         TEntry entry1a(&CDataGenerator::CreateTestEntry1a(idx));
         pScope2->AddTopLevelSeqEntry(*entry1a);
         // Test with resolvable references
-        id.SetGi(GI_FROM(int, 21+idx*1000));
+        id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
