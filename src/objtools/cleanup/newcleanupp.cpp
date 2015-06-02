@@ -6773,7 +6773,22 @@ void CNewCleanup_imp::x_CleanupECNumberList( CProt_ref::TEc & ec_num_list )
                 CProt_ref::TEc::iterator next_ec_num_iter = ec_num_iter;
                 ++next_ec_num_iter;
                 ec_num_list.insert( next_ec_num_iter, new_ec_num );
+                ChangeMade(CCleanupChange::eCleanECNumber);
             }
+        }
+    }
+}
+
+void CNewCleanup_imp::x_CleanupECNumberListEC( CProt_ref::TEc & ec_num_list )
+{
+    // CProt_ref::TEc is a list, so the iterator stays valid even if we 
+    // add new entries after the current one
+    NON_CONST_ITERATE( CProt_ref::TEc, ec_num_iter, ec_num_list ) {
+        string & ec_num = *ec_num_iter;
+        size_t tlen = ec_num.length();
+        CleanVisStringJunk (ec_num);
+        if(tlen != ec_num.length()) {
+            ChangeMade(CCleanupChange::eCleanECNumber);
         }
     }
 }
@@ -10587,6 +10602,9 @@ void CNewCleanup_imp::ProtRefEC(CProt_ref& pr)
             pr.SetDesc(desc);
             ChangeMade(CCleanupChange::eChangeOther);
         }
+    }
+    if (pr.IsSetEc()) {
+        x_CleanupECNumberListEC(pr.SetEc());
     }
 }
 
