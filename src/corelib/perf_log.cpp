@@ -84,7 +84,9 @@ CDiagContext_Extra CPerfLogger::Post(int         status,
     if ( !status_msg.empty() ) {
         args.push_back(SDiagMessage::TExtraArg("status_msg", status_msg));
     }
-    CDiagContext_Extra extra = g_PostPerf((int)status, m_StopWatch->Elapsed(), args);
+    double elapsed = m_StopWatch->Elapsed() + m_Adjustment;
+    CDiagContext_Extra extra = g_PostPerf((int)status,
+        elapsed < 0.0 ? 0.0 : elapsed, args);
     Discard();
     return extra;
 }

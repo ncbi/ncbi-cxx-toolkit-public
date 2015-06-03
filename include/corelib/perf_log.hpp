@@ -143,6 +143,17 @@ public:
     /// Turn performance logging on/off globally.
     static void SetON(bool enable = true);
 
+    /// Adjust the printed elapsed time.
+    /// @param timespan
+    ///   Adjustment value, can be positive or negative. The value is
+    ///   added to the actual elapsed time before logging it in Post(),
+    ///   if the resuling adjusted timespan is negative, zero is logged.
+    ///   Multiple adjustments are accumulated.
+    /// @note
+    ///   The adjustment does not affect the actual elapsed time counted by
+    ///   the stopwatch, only the printed value is adjusted.
+    void Adjust(CTimeSpan timespan);
+
 private:
     bool x_CheckValidity(const CTempString& err_msg) const;
     friend class CPerfLogGuard;
@@ -150,8 +161,9 @@ private:
 private:
     auto_ptr<CStopWatch> m_StopWatchGuard; // Internal timer if auto-created.
     CStopWatch*          m_StopWatch;      // Timer (internal or provided by user)
-    CStopWatch::EStart   m_TimerState;     // Internal timer state to save cycles 
+    CStopWatch::EStart   m_TimerState;     // Internal timer state to save cycles
     bool                 m_IsDiscarded;    // TRUE if Post() or Discard() is already called
+    double               m_Adjustment;     // Accumulated elapsed time adjustment
 };
 
 
@@ -310,6 +322,7 @@ CPerfLogger::CPerfLogger(EStart state)
     m_StopWatchGuard.reset(new CStopWatch);
     m_StopWatch = m_StopWatchGuard.get();
     m_IsDiscarded = false;
+    m_Adjustment = 0.0;
     m_TimerState  = CStopWatch::eStop;
     if ( state == eStart ) {
         Start();
@@ -322,6 +335,7 @@ CPerfLogger::CPerfLogger(CStopWatch& stopwatch, EStart state)
 {
     m_StopWatch = &stopwatch;
     m_IsDiscarded = false;
+    m_Adjustment = 0.0;
     m_TimerState  = CStopWatch::eStop;
     if ( state == eStart ) {
         Start();
@@ -374,6 +388,13 @@ void CPerfLogger::Discard()
     // We don't need to "stop" CStopWatch here, it is nor actually running.
     m_TimerState  = CStopWatch::eStop;
     m_IsDiscarded = true;
+}
+
+
+inline
+void CPerfLogger::Adjust(CTimeSpan timespan)
+{
+    m_Adjustment += timespan.GetAsDouble();
 }
 
 
