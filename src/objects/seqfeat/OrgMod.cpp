@@ -514,6 +514,9 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
 bool 
 COrgMod::FixStructuredVoucher(string& val, const string& v_type)
 {
+    return false;
+#if 0
+    // removed from C Toolkit BasicCleanup
     string inst_code = "";
     string coll_code = "";
     string id = "";
@@ -553,6 +556,7 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
         val = MakeStructuredVoucher(new_inst_code, coll_code, id);
     }
     return rval;
+#endif
 }
 
 
