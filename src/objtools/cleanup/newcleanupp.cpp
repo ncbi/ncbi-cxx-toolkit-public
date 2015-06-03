@@ -1494,11 +1494,10 @@ void CNewCleanup_imp::BiosourceBC (
 
             if( chs == NCBI_SUBSOURCE(lat_lon) ) {
                 string &lat_lon = GET_MUTABLE(sbs, Name);
-                double            ns, ew;
-                char              lon, lat;
-                int               processed;
 
-                if (sscanf (lat_lon.c_str(), "%lf %c, %lf %c%n", &ns, &lat, &ew, &lon, &processed) == 4 && processed == lat_lon.length()) {
+                CCachedRegexp lat_lon_with_comma = regexpCache.Get(
+                    "^[-.0-9]+ ., [-.0-9]+ .$");
+                if( lat_lon_with_comma->IsMatch(lat_lon) ) {
                     // remove the comma
                     SIZE_TYPE comma_pos = lat_lon.find(',');
                     _ASSERT(comma_pos != NPOS );
