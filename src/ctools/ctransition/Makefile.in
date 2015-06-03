@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = ctransition
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

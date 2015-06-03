@@ -5,11 +5,10 @@
 # CTOOLS project cluster
 #################################
 
-REQUIRES = ctools C-Toolkit
-
 LIB_PROJ = ctools
-
 SUB_PROJ = asn test
+
+EXPENDABLE_SUB_PROJ = ctransition
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -3,7 +3,9 @@
 # Meta-makefile("ctools test" project)
 #################################
 
-APP_PROJ = test_asn_converter
+APP_PROJ = test_asn_converter 
+EXPENDABLE_APP_PROJ = test_ctransition
+
 PROJ_TAG = test
 
 srcdir = @srcdir@

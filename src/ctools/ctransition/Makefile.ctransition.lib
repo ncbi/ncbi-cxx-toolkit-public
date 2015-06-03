@@ -1,0 +1,9 @@
+# $Id$
+
+SRC = ct_ncbierr \
+      ct_ncbimem \
+      ct_ncbistr
+    
+LIB = ctransition
+
+WATCHERS = ivanov

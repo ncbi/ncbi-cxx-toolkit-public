@@ -8,5 +8,7 @@
 
 LIB_PROJ = asn
 
+REQUIRES = ctools C-Toolkit
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
