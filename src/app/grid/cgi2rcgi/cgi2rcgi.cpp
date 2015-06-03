@@ -948,8 +948,12 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         CGridCgiContext& grid_ctx, CNetScheduleAPI::EJobStatus status)
 {
     EJobPhase phase = eTerminated;
+    const string status_str = CNetScheduleAPI::StatusToString(status);
     grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
-        CNetScheduleAPI::StatusToString(status));
+            status_str);
+    grid_ctx.GetHTMLPage().AddTagMap("JOB_STATUS",
+            new CHTMLPlainText(status_str, true));
+
     switch (status) {
     case CNetScheduleAPI::eDone:
         // The worker node has finished the job and the
@@ -994,7 +998,9 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         break;
 
     default:
-        _ASSERT(0 && "Unexpected job state");
+#ifdef _DEBUG
+        LOG_POST("Unexpected job state");
+#endif
     }
     SetRequestId(grid_ctx.GetJobKey(), status == CNetScheduleAPI::eDone);
     return phase;
