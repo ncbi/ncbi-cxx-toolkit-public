@@ -328,7 +328,6 @@ gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
 gdsutil needs xncbi
-gencoll needs genome_collection
 gencoll_client needs genome_collection
 gencoll_client needs xconnect
 gencoll_load needs xser
