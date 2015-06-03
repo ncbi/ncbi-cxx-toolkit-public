@@ -76,7 +76,7 @@ bool CleanString(string& str, bool rm_trailing_period = false);
 
 bool CleanVisString( string &str );
 
-bool CleanVisStringJunk( string &str );
+bool CleanVisStringJunk( string &str, bool allow_ellipses = false );
 
 bool CleanStringList(list< string >& string_list);
 

@@ -7751,7 +7751,7 @@ void CNewCleanup_imp::GeneFeatBC (
 void CNewCleanup_imp::ProtNameBC (  std::string & str )
 {
     const string::size_type old_length = str.length();
-    CleanVisStringJunk (str);
+    CleanVisStringJunk (str, true);
     TrimInternalSemicolons (str);
     if (str.length() != old_length) {
         ChangeMade (CCleanupChange::eChangeProtNames);

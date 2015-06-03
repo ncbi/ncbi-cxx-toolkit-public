@@ -273,7 +273,7 @@ bool CleanVisString( string &str )
     }
 }
 
-bool CleanVisStringJunk( string &str )
+bool CleanVisStringJunk( string &str, bool allow_ellipses )
 {
     // This is based on the C function TrimSpacesAndJunkFromEnds.
     // Although it's updated to use iterators and such and to
@@ -325,6 +325,10 @@ bool CleanVisStringJunk( string &str )
         // allow one period at end
         if (isPeriod) {
             suffix = ".";
+            if ( allow_ellipses && (chars_in_junk >= 3) && 
+                str[start_of_junk_pos+1] == '.' && str[start_of_junk_pos+2] == '.' ) {
+                suffix = "...";
+            }
         } else if (isTilde ) {
             // allow double tilde(s) at the end
             if ( str[start_of_junk_pos] == '~' ) {
