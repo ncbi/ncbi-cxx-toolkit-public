@@ -522,6 +522,8 @@ GC-Scaf-stats ::= SEQUENCE {
         count-alt-scaf-with-alignment (110), -- number of alt scaffolds with alignment to primary assembly
         count-alt-loci-scaf (111), -- number of alt-loci scaffolds.
         count-real-scaffolds (112), -- number of scaffolds with gb_is_skipped = 0.
+        top-level-count (113), -- Number of chromosomes or plasmids, unplaced/unlocalized scaffolds, alt-loci scaffolds, and patch scaffolds
+        total-gap-length (114), -- Total length of gaps
 
         other (255) -- catch all
     },
