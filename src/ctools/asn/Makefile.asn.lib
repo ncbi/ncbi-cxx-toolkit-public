@@ -4,8 +4,8 @@
 #################################
 
 SRC = asnio asnwrite
-LIB    = xasn
-
+LIB = xasn
+ 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
   $(NCBI_C_INCLUDE)
 

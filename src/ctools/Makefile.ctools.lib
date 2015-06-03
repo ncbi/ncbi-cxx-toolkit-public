@@ -5,6 +5,8 @@ SRC = ctools asn_connection
 
 LIB    = xctools
 
+REQUIRES = C-Toolkit
+
 WATCHERS = gouriano
 
 
