@@ -1000,6 +1000,8 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     default:
 #ifdef _DEBUG
         LOG_POST("Unexpected job state");
+#else
+        break;
 #endif
     }
     SetRequestId(grid_ctx.GetJobKey(), status == CNetScheduleAPI::eDone);
