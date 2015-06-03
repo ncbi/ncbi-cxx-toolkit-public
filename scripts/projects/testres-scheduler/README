@@ -10,4 +10,5 @@ TestRes Scheduler Package includes:
 2. tr-dev (console test development environment) scripts
 3. presenters
 4. cgis
+5. TeamCity integration scripts
 
