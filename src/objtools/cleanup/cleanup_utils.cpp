@@ -568,8 +568,8 @@ bool Asn2gnbkCompressSpaces (string& val)
 {
     if (val.length() == 0) return false;
 
-    string new_val = val;
-    char * str = const_cast<char *>(new_val.c_str());
+    char * str = (char *) malloc (sizeof (char) * (val.length() + 1));
+    strcpy(str, val.c_str());
 
   char     ch;
   char *   dst;
@@ -686,8 +686,12 @@ bool Asn2gnbkCompressSpaces (string& val)
       *dst = '\0';
     }
   }
+    string new_val;
+    new_val.assign(str);
+    free(str);
+
     if (!NStr::Equal(val, new_val)) {
-        val = new_val.substr(0, strlen(str));
+        val = new_val;
         return true;
     } else {
         return false;
