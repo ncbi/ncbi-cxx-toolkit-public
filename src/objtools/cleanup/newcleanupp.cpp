@@ -9354,6 +9354,7 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
 
         SWITCH_ON_USERFIELD_CHOICE(user_field) {
         case NCBI_USERFIELD(Str):
+            x_CompressStringSpacesMarkChanged( user_field.SetData().SetStr() );
             x_CleanupStringMarkChanged( user_field.SetData().SetStr() );
             break;
         case NCBI_USERFIELD(Object):
@@ -9368,6 +9369,7 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
             break;
         case NCBI_USERFIELD(Strs):
             NON_CONST_ITERATE( CUser_field::C_Data::TStrs, str_iter, user_field.SetData().SetStrs() ) {
+                x_CompressStringSpacesMarkChanged( *str_iter );
                 x_CleanupStringMarkChanged( *str_iter );
             }
             break;
