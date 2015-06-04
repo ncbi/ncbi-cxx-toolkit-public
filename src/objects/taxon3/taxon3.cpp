@@ -84,6 +84,12 @@ CTaxon3::Init(const STimeout* timeout, unsigned reconnect_attempts)
 
     m_nReconnectAttempts = reconnect_attempts;
     m_pchService = "TaxService3";
+    const char* tmp;
+    if( ( (tmp=getenv("NI_TAXON3_SERVICE_NAME")) != NULL ) ||
+        ( (tmp=getenv("NI_SERVICE_NAME_TAXON3")) != NULL ) ) {
+        m_pchService = tmp;
+    }
+
 
 #ifdef USE_TEXT_ASN
 			m_eDataFormat = eSerial_AsnText;
