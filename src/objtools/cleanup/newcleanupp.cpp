@@ -1492,6 +1492,7 @@ void CNewCleanup_imp::BiosourceBC (
                 }
             }
 
+            /*
             if( chs == NCBI_SUBSOURCE(lat_lon) ) {
                 string &lat_lon = GET_MUTABLE(sbs, Name);
 
@@ -1505,6 +1506,7 @@ void CNewCleanup_imp::BiosourceBC (
                     ChangeMade(CCleanupChange::eCleanSubsource);
                 }
             }
+            */
 
             if ( chs == NCBI_SUBSOURCE(fwd_primer_seq) ||
                 chs == NCBI_SUBSOURCE(rev_primer_seq) )
