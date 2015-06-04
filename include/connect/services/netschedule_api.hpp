@@ -1077,7 +1077,7 @@ public:
             CDeadline& deadline,
             CNetScheduleAPI ns_api,
             TJobStatusMask status_mask,
-            int last_event_index = 0,
+            int last_event_index = kMax_Int,
             int *new_event_index = NULL);
 
 // Worker node methods.
