@@ -94,6 +94,9 @@ bool  RemoveSpacesBetweenTildes(string& str);
 /// "a;;b" will become "a;b".
 void TrimInternalSemicolons (string& str);
 
+/// weird space compression from C Toolkit
+bool Asn2gnbkCompressSpaces (string& val);
+
 /// Change double to single quotes
 bool CleanDoubleQuote(string& str);
 

@@ -553,6 +553,146 @@ void TrimInternalSemicolons (string& str)
     }
 }
 
+#define twocommas ((',') << 8 | (','))
+#define twospaces ((' ') << 8 | (' '))
+#define twosemicolons ((';') << 8 | (';'))
+#define space_comma ((' ') << 8 | (','))
+#define space_bracket ((' ') << 8 | (')'))
+#define bracket_space (('(') << 8 | (' '))
+#define space_semicolon ((' ') << 8 | (';'))
+#define comma_space ((',') << 8 | (' '))
+#define semicolon_space ((';') << 8 | (' '))
+
+bool Asn2gnbkCompressSpaces (string& val)
+
+{
+    if (val.length() == 0) return false;
+
+    string new_val = val;
+    char * str = const_cast<char *>(new_val.c_str());
+
+  char     ch;
+  char *   dst;
+  char *   ptr;
+
+  char     curr;
+  char     next;
+  char *   in;
+  char *   out;
+  unsigned short   two_chars;
+
+
+  in = str;
+  out = str;
+
+  curr = *in;
+  in++;
+
+  next = 0;
+  two_chars = curr;
+
+  while (curr != '\0') {
+    next = *in;
+    in++;
+
+    two_chars = (two_chars << 8) | next;
+
+    if (two_chars == twocommas) {
+        *out++ = curr;
+        next = ' ';
+    } else if (two_chars == twospaces) {
+    } else if (two_chars == twosemicolons) {
+    } else if (two_chars == bracket_space) {
+        next = curr;
+        two_chars = curr;
+    } else if (two_chars == space_bracket) {
+    } else if (two_chars == space_comma) {
+        *out++ = next;
+        next = curr;
+        *out++ = ' ';
+        while (next == ' ' || next == ',') {
+          next = *in;
+          in++;
+        }
+        two_chars = next;
+    } else if (two_chars == space_semicolon) {
+        *out++ = next;
+        next = curr;
+        *out++ = ' ';
+        while (next == ' ' || next == ';') {
+          next = *in;
+          in++;
+        }
+        two_chars = next;
+    } else if (two_chars == comma_space) {
+        *out++ = curr;
+        *out++ = ' ';
+        while (next == ' ' || next == ',') {
+          next = *in;
+          in++;
+        }
+        two_chars = next;
+    } else if (two_chars == semicolon_space) {
+        *out++ = curr;
+        *out++ = ' ';
+        while (next == ' ' || next == ';') {
+          next = *in;
+          in++;
+        }
+        two_chars = next;
+    } else {
+      *out++ = curr;
+    }
+
+     curr = next;
+  }
+
+  if (curr > 0 && curr != ' ') {
+    *out = curr;
+    out++;
+  }
+  *out = '\0';
+
+  /* TrimSpacesAroundString but allow leading/trailing tabs/newlines */
+
+  if (str != NULL && str [0] != '\0') {
+    dst = str;
+    ptr = str;
+    ch = *ptr;
+    while (ch != '\0' && ch == ' ') {
+      ptr++;
+      ch = *ptr;
+    }
+    while (ch != '\0') {
+      *dst = ch;
+      dst++;
+      ptr++;
+      ch = *ptr;
+    }
+    *dst = '\0';
+    dst = NULL;
+    ptr = str;
+    ch = *ptr;
+    while (ch != '\0') {
+      if (ch != ' ') {
+        dst = NULL;
+      } else if (dst == NULL) {
+        dst = ptr;
+      }
+      ptr++;
+      ch = *ptr;
+    }
+    if (dst != NULL) {
+      *dst = '\0';
+    }
+  }
+    if (!NStr::Equal(val, new_val)) {
+        val = new_val.substr(0, strlen(str));
+        return true;
+    } else {
+        return false;
+    }
+}
 
 bool OnlyPunctuation (string str)
 {
