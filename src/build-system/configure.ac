@@ -5741,7 +5741,8 @@ if test "$with_wxwidgets" != "no" ; then
       * )
          baseflags=`$gtkconf --cflags 2>/dev/null`
          basesed=$no_usr_lib
-         libsed=$basesed
+         deps=`$gtkconf --libs 2>/dev/null`
+         libsed="$basesed; s/\$/ $deps/"
          ;;
    esac
    case "`"$wxconf" $wxcfflags --version`" in
