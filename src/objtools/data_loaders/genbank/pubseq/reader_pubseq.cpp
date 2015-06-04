@@ -800,7 +800,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                 while ( dbr->Fetch() ) {
                     TGi gi = ZERO_GI;
                     CDB_Int satGot;
-                    TIntId satKeyGot;
+                    TIntId satKeyGot = 0;
                     CDB_Int typeGot;
                     CDB_VarChar nameGot;
                     for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
