@@ -591,6 +591,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     CCgiRequest& request = ctx.GetRequest();
     CCgiResponse& response = ctx.GetResponse();
     m_Response = &response;
+    m_Response->RequireWriteHeader(false);
 
     if (m_TargetEncodeMode != CHTMLPlainText::eHTMLEncode)
         response.SetContentType(m_ContentType);
