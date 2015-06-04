@@ -40,6 +40,10 @@
 //#define USE_SINGLE_ALLOC
 //#define USE_DEBUG_NEW
 
+#ifdef USE_DEBUG_NEW
+# include <cstring>
+#endif
+
 // There was a long and bootless discussion:
 // is it possible to determine whether the object has been created
 // on the stack or on the heap.
@@ -1345,8 +1349,6 @@ static const unsigned kAllocMagicFooter = 0x9e8e0e0e;
 static const unsigned kFreedMagicHeader = 0x8b0bdead;
 static const unsigned kFreedMagicFooter = 0x9e0edead;
 
-static std::bad_alloc bad_alloc_instance;
-
 DEFINE_STATIC_FAST_MUTEX(s_alloc_mutex);
 static NCBI_NS_NCBI::CAtomicCounter seq_number;
 static const size_t kLogSize = 64 * 1024;
@@ -1541,7 +1543,7 @@ void* operator new(size_t size) throw(std::bad_alloc)
 {
     void* ret = s_alloc_mem(size, false);
     if ( !ret )
-        throw bad_alloc_instance;
+        throw std::bad_alloc();
     return ret;
 }
 
@@ -1556,7 +1558,7 @@ void* operator new[](size_t size) throw(std::bad_alloc)
 {
     void* ret = s_alloc_mem(size, true);
     if ( !ret )
-        throw bad_alloc_instance;
+        throw std::bad_alloc();
     return ret;
 }
 
