@@ -75,6 +75,7 @@ NLM_EXTERN void*  LIBCALL Nlm_MemDup(const void* orig, size_t size);
 NLM_EXTERN size_t LIBCALL Nlm_MemSearch(const void* where, size_t where_size,
                                         const void* what, size_t what_size);
 
+#if 0
 #if defined(OS_MAC) || defined(OS_UNIX_DARWIN) || defined(OS_MSWIN) || defined(MSC_VIRT)
 NLM_EXTERN Nlm_Handle  LIBCALL Nlm_HandNew(size_t size);
 NLM_EXTERN Nlm_Handle  LIBCALL Nlm_HandGet(size_t size, Nlm_Boolean clear_out);
@@ -83,6 +84,7 @@ NLM_EXTERN Nlm_Handle  LIBCALL Nlm_HandFree(Nlm_Handle hnd);
 NLM_EXTERN void* LIBCALL Nlm_HandLock(Nlm_Handle hnd);
 NLM_EXTERN void* LIBCALL Nlm_HandUnlock(Nlm_Handle hnd);
 #endif
+#endif /*0*/
 
 
 

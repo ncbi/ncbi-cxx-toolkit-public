@@ -420,6 +420,7 @@ NLM_EXTERN size_t LIBCALL Nlm_MemSearch(const void* where, size_t where_size,
 }
 
 
+#if 0
 #if defined(OS_MAC) || defined(OS_UNIX_DARWIN) || defined(OS_MSWIN) || defined(MSC_VIRT)
 /***** Handle functions are for Macintosh and Windows only *****/
 /***** or Microsoft virtual memory manager ****/
@@ -678,6 +679,7 @@ NLM_EXTERN Nlm_VoidPtr LIBCALL  Nlm_HandUnlock (Nlm_Handle hnd)
 }
 
 #endif /* Mac or Win */
+#endif /*0*/
 
 
 
