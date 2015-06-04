@@ -720,8 +720,8 @@ mysqlclient needs3party $(NETWORK_LIBS)
 mysqlclient needs3party $(ORIG_LIBS)
 mysqlclient needs3party $(Z_LIBS)
 ncbi includes connect
-ncbi includes ctransition
 ncbi includes tables
+ncbi needs3party $(ORIG_LIBS)
 ncbi-vdb includes $(BZ2_LIB)
 ncbi-vdb includes $(Z_LIB)
 ncbi-vdb includes3party $(BZ2_LIBS)
@@ -1309,6 +1309,7 @@ xcontigdb needs ncbi_xdbapi_ftds
 xcontigdb needs xalnmgr
 xcser needs xser
 xcser needs3party $(NCBI_C_ncbi)
+xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
@@ -1501,5 +1502,6 @@ xvalidate needs $(OBJEDIT_LIBS)
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
+xxconnect needs xncbi
 xxconnect needs3party $(NCBI_C_ncbi)
 z needs3party $(ORIG_LIBS)
