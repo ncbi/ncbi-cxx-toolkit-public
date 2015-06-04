@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
