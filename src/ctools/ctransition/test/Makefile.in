@@ -1,7 +1,8 @@
 # $Id$
 
-LIB_PROJ = ctransition
-SUB_PROJ = test
+APP_PROJ = test_ctransition
+
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
