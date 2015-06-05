@@ -44,6 +44,7 @@
 #include <corelib/perf_log.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/compress/zlib.hpp>
+       #include <unistd.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -185,7 +186,7 @@ public:
         : m_NS_api(CNetScheduleAPI::eAppRegistry, NS_registry_section),
           m_Timeout(DefaultTimeout)
     {
-        LOG_POST(Trace << "NS: " << NS_registry_section);
+        ERR_POST(Trace << "NS: " << NS_registry_section);
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         static const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
         const string nc_reg(
@@ -203,7 +204,7 @@ public:
 
     void x_Init(const string& NC_registry_section)
     {
-        LOG_POST(Trace << "NS queue NC: " << NC_registry_section);
+        ERR_POST(Trace << "NS queue NC: " << NC_registry_section);
         m_NC_api = CNetCacheAPI(CNetCacheAPI::eAppRegistry, NC_registry_section);
         m_Grid_cli.reset(new CGridClient(m_NS_api.GetSubmitter(),
                                          m_NC_api,
@@ -238,17 +239,21 @@ public:
                                      job,
                                      m_Timeout
                                     );
-        LOG_POST(Trace << "submitted job: " << job.job_id);
+        ERR_POST(Trace << "submitted job: " << job.job_id);
         try {
             x_GetJobReply(submit_job_handler, job, reply);
         }
         catch (const CGridRPCBaseClientException& e) {
-            if (e.GetErrCode() != CGridRPCBaseClientException::eWaitTimeout) {
-                throw e;
-            }
-            else {
+            switch (e.GetErrCode()) {
+            case CGridRPCBaseClientException::eUnexpectedFailure:
                 timed_out = true;
+                break;
+
+            case CGridRPCBaseClientException::eWaitTimeout:
+            default:
+                break;
             }
+            throw e;
         }
         return make_pair(job, timed_out);
     }
@@ -262,21 +267,29 @@ protected:
     void x_GetJobReply(CNetScheduleNotificationHandler& job_handler, CNetScheduleJob& job, TReply& reply) const
     {
         CDeadline deadline(m_Timeout, 0);
-        // TODO The wait is over; the current job status is in the status
-        // variable. CNetScheduleAPI::StatusToString(status) can convert it
-        // to a human-readable string.
-        if (job_handler.WaitForJobCompletion(job, deadline, m_NS_api) == CNetScheduleAPI::eDone) {
-            // TODO The job has completed successfully.
-            CPerfLogGuard pl("x_GetJobReply read reply");
+        const int status_mask(
+            CNetScheduleNotificationHandler::fJSM_Done |
+            CNetScheduleNotificationHandler::fJSM_Canceled |
+            CNetScheduleNotificationHandler::fJSM_Failed
+        );
+        const auto evt = job_handler.WaitForJobEvent(job.job_id, deadline, m_NS_api, status_mask);
+        switch (evt) {
+        case CNetScheduleAPI::eDone:
+        {
+            m_NS_api.GetJobDetails(job);
             CStringOrBlobStorageReader reader(job.output, m_NC_api);
             CRStream rstr(&reader);
             auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
             *instr >> reply;
-            pl.Post(CRequestStatus::e200_Ok);
+            break;
         }
-        else {
-            // TODO Check 'status' to see if the job's still running or
-            // it has failed.
+        case CNetScheduleAPI::eFailed:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
+
+        case CNetScheduleAPI::eCanceled:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
+
+        default:
             NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, kEmptyStr);
         }
     }
