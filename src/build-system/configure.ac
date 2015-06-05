@@ -5733,7 +5733,7 @@ if test "$with_wxwidgets" != "no" ; then
          if test -n "$SYSROOT"; then
             deps=`"$wxconf" $wxcfflags --libs --static 2>/dev/null \
                   | sed -e 's/.*\.a//'`
-            libsed="$basesed; s/\$/ $deps/"
+            libsed="$basesed; s%\$% $deps%"
          else
             libsed=$basesed
          fi
@@ -5742,7 +5742,7 @@ if test "$with_wxwidgets" != "no" ; then
          baseflags=`$gtkconf --cflags 2>/dev/null`
          basesed=$no_usr_lib
          deps=`$gtkconf --libs 2>/dev/null`
-         libsed="$basesed; s/\$/ $deps/"
+         libsed="$basesed; s%\$% $deps%"
          ;;
    esac
    case "`"$wxconf" $wxcfflags --version`" in
