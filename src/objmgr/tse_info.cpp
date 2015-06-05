@@ -540,6 +540,9 @@ void CTSE_Info::x_DSAttachContents(CDataSource& ds)
 
     m_DataSource = &ds;
     TParent::x_DSAttachContents(ds);
+    if ( m_Split ) {
+        m_Split->x_DSAttach(ds);
+    }
     ITERATE ( TBioseqs, it, m_Bioseqs ) {
         ds.x_IndexSeqTSE(it->first, this);
     }
@@ -555,6 +558,9 @@ void CTSE_Info::x_DSDetachContents(CDataSource& ds)
         ds.x_UnindexSeqTSE(it->first, this);
     }
     ds.x_UnindexAnnotTSEs(this);
+    if ( m_Split ) {
+        m_Split->x_DSDetach(ds);
+    }
     TParent::x_DSDetachContents(ds);
     m_DataSource = 0;
 }

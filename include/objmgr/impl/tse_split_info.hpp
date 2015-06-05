@@ -68,7 +68,7 @@ public:
     typedef int                                     TSplitVersion;
     typedef CTSE_Chunk_Info::TChunkId               TChunkId;
     typedef vector<TChunkId>                        TChunkIds;
-    typedef map<CTSE_Info*, CRef<ITSE_Assigner> >       TTSE_Set;
+    typedef map<CTSE_Info*, CRef<ITSE_Assigner> >   TTSE_Set;
     typedef vector<pair<CSeq_id_Handle, TChunkId> > TSeqIdToChunks;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >   TChunks;
     typedef CTSE_Chunk_Info::TBioseqId              TBioseqId;
@@ -94,6 +94,8 @@ public:
     CDataLoader& GetDataLoader(void) const;
 
     // TSE connection
+    void x_DSAttach(CDataSource& ds);
+    void x_DSDetach(CDataSource& ds);
     void x_TSEAttach(CTSE_Info& tse_info, CRef<ITSE_Assigner>& assigner);
     void x_TSEDetach(CTSE_Info& tse_info);
 
@@ -159,6 +161,7 @@ protected:
 
 private:
     // identification of the blob
+    CDataSource*           m_DataLoader;
     TBlobId                m_BlobId;
     TBlobVersion           m_BlobVersion;
     TSplitVersion          m_SplitVersion;

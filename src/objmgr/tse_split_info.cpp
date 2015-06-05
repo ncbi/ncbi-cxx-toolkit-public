@@ -59,7 +59,8 @@ BEGIN_SCOPE(objects)
 
 
 CTSE_Split_Info::CTSE_Split_Info(void)
-    : m_BlobVersion(-1),
+    : m_DataLoader(0),
+      m_BlobVersion(-1),
       m_SplitVersion(-1),
       m_BioseqChunkId(-1),
       m_SeqIdToChunksSorted(false),
@@ -68,13 +69,14 @@ CTSE_Split_Info::CTSE_Split_Info(void)
 }
 
 CTSE_Split_Info::CTSE_Split_Info(TBlobId blob_id, TBlobVersion blob_ver)
-    : m_BlobId(blob_id),
+    : m_DataLoader(0),
+      m_BlobId(blob_id),
       m_BlobVersion(blob_ver),
       m_SplitVersion(-1),
       m_BioseqChunkId(-1),
       m_SeqIdToChunksSorted(false),
       m_ContainsBioseqs(false)
-{    
+{
 }
 
 
@@ -111,6 +113,24 @@ CRef<ITSE_Assigner> CTSE_Split_Info::GetAssigner(const CTSE_Info& tse)
     
     return CRef<ITSE_Assigner>();
 }
+
+
+void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
+{
+    if ( !m_DataLoader && ds.GetDataLoader() ) {
+        m_DataLoader = &ds;
+        _ASSERT(m_DataLoader);
+    }
+}
+
+
+void CTSE_Split_Info::x_DSDetach(CDataSource& ds)
+{
+    if ( m_DataLoader == &ds ) {
+        m_DataLoader = 0;
+    }
+}
+
 
 // identification
 CTSE_Split_Info::TBlobId CTSE_Split_Info::GetBlobId(void) const
@@ -149,8 +169,8 @@ CInitMutexPool& CTSE_Split_Info::GetMutexPool(void)
 
 CDataLoader& CTSE_Split_Info::GetDataLoader(void) const
 {
-    _ASSERT(!m_TSE_Set.empty());
-    CDataLoader* loader = m_TSE_Set.begin()->first->GetDataSource().GetDataLoader();
+    _ASSERT(m_DataLoader);
+    CDataLoader* loader = m_DataLoader->GetDataLoader();
     _ASSERT(loader);
     return *loader;
 }
