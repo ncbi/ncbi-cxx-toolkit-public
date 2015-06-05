@@ -1765,7 +1765,7 @@ void CNewCleanup_imp::OrgrefModBC (string& str)
     const string::size_type old_length = str.length();
     CleanVisString (str);
 
-    if (str.length() != old_length || x_CompressSpaces(str)) {
+    if (x_CompressSpaces(str) || str.length() != old_length) {
         ChangeMade (CCleanupChange::eTrimSpaces);
     }
 }
