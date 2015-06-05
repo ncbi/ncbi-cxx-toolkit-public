@@ -866,6 +866,9 @@ omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party $(RT_LIBS)
 osutils needs3party ctutils
+pathogen_cluster_loader needs $(SDBAPI_LIB)
+pathogen_cluster_loader needs xasmcompare
+pathogen_cluster_loader needs xconnect
 pathogen_connection needs connssl
 pathogen_connection needs gpipe_common
 pathogen_connection needs gpipe_dateutil
