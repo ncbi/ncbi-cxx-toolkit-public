@@ -1764,7 +1764,8 @@ void CNewCleanup_imp::OrgrefModBC (string& str)
 {
     const string::size_type old_length = str.length();
     CleanVisString (str);
-    if (str.length() != old_length) {
+
+    if (str.length() != old_length || x_CompressSpaces(str)) {
         ChangeMade (CCleanupChange::eTrimSpaces);
     }
 }
@@ -2397,7 +2398,7 @@ static bool s_IsEmpty(const CAuth_list::TAffil& affil)
 static
 bool s_IsEmpty( const CCit_gen &cg )
 {
-    return ( ! FIELD_IS_SET(cg, Cit) || GET_FIELD(cg, Cit).empty() ) &&
+    return ( ! FIELD_IS_SET(cg, Cit) ) &&
         ! FIELD_IS_SET(cg, Authors) &&
         ( ! FIELD_IS_SET(cg, Muid) || GET_FIELD(cg, Muid) <= 0 ) &&
         ! FIELD_IS_SET(cg, Journal) &&
