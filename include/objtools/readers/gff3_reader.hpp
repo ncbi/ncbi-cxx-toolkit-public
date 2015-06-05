@@ -148,8 +148,14 @@ protected:
 
     string xNextGenericId();
 
+    void xVerifyExonLocation(
+        const string&,
+        const CGff2Record&,
+        IMessageListener*);
+
     // Data:
     map<string, string> mCdsParentMap;
+    map<string, CRef<CSeq_interval> > mMrnaLocs;
     static unsigned int msGenericIdCounter;
 };
 

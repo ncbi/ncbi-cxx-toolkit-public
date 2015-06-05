@@ -206,6 +206,39 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 }
 
 //  ----------------------------------------------------------------------------
+void CGff3Reader::xVerifyExonLocation(
+    const string& mrnaId,
+    const CGff2Record& exon,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    map<string,CRef<CSeq_interval> >::const_iterator cit = mMrnaLocs.find(mrnaId);
+    if (cit == mMrnaLocs.end()) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Bad data line: Exon record referring to non-existing mRNA parent.",
+            ILineError::eProblem_FeatureBadStartAndOrStop));
+        ProcessError(*pErr, pEC);
+    }
+    const CSeq_interval& containingInt = cit->second.GetObject();
+    const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags);
+    const CSeq_interval& containedInt = pContainedLoc->GetInt();
+    bool failed = (containedInt.GetFrom() < containingInt.GetFrom())  ||
+        (containedInt.GetTo() > containingInt.GetTo());
+    if (failed) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Bad data line: Exon record that lies outside its parent location.",
+            ILineError::eProblem_FeatureBadStartAndOrStop));
+        ProcessError(*pErr, pEC);
+    }
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotExon(
     const CGff2Record& record,
     CRef<CSeq_feat>,
@@ -217,7 +250,9 @@ bool CGff3Reader::xUpdateAnnotExon(
     if (record.GetAttribute("Parent", parents)) {
         for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
                 ++it) {
-            IdToFeatureMap::iterator fit = m_MapIdToFeature.find(*it);
+            const string& parentId = *it; 
+            xVerifyExonLocation(parentId, record, pEC);
+            IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 if (!record.UpdateFeature(m_iFlags, fit->second)) {
                     return false;
@@ -243,7 +278,6 @@ bool CGff3Reader::xUpdateAnnotCds(
             0,
             "Bad data line: CDS record with bad parent assignments.",
             ILineError::eProblem_FeatureBadStartAndOrStop) );
-        pErr->SetLineNumber(m_uLineNumber);
         ProcessError(*pErr, pEC);
     }
 
@@ -325,7 +359,6 @@ bool CGff3Reader::xUpdateAnnotCds(
                     0,
                     "Bad data line: CDS record with bad parent assignment.",
                     ILineError::eProblem_MissingContext) );
-                pErr->SetLineNumber(m_uLineNumber);
                 ProcessError(*pErr, pEC);
             }
             if (m_iFlags & fGeneXrefs) {
@@ -336,7 +369,6 @@ bool CGff3Reader::xUpdateAnnotCds(
                         0,
                         "Bad data line: CDS record with bad parent assignment.",
                         ILineError::eProblem_MissingContext) );
-                    pErr->SetLineNumber(m_uLineNumber);
                     ProcessError(*pErr, pEC);
                 }
             }
@@ -468,6 +500,19 @@ bool CGff3Reader::xUpdateAnnotMrna(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
+    CRef<CSeq_interval> mrnaLoc(new CSeq_interval);
+    CSeq_loc::E_Choice choice = pFeature->GetLocation().Which();
+    if (choice != CSeq_loc::e_Int) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Internal error: Unexpected location type.",
+            ILineError::eProblem_BadFeatureInterval));
+    }
+    mrnaLoc->Assign(pFeature->GetLocation().GetInt());
+    mMrnaLocs[id] = mrnaLoc;
+
     string parentsStr;
     if ((m_iFlags & fGeneXrefs)  &&  record.GetAttribute("Parent", parentsStr)) {
         list<string> parents;
@@ -482,7 +527,6 @@ bool CGff3Reader::xUpdateAnnotMrna(
                     0,
                     "Bad data line: mRNA record with bad parent assignment.",
                     ILineError::eProblem_MissingContext) );
-                pErr->SetLineNumber(m_uLineNumber);
                 ProcessError(*pErr, pEC);
             }
         }

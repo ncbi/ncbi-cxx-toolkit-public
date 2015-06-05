@@ -183,7 +183,6 @@ CGff2Reader::ReadSeqAnnotsNew(
 //  ----------------------------------------------------------------------------
 {
     string line;
-    //int linecount = 0;
     while (xGetLine(lr, line)) {
         if (IsCanceled()) {
             AutoPtr<CObjReaderLineException> pErr(
