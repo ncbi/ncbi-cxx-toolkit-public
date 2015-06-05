@@ -97,6 +97,9 @@ void TrimInternalSemicolons (string& str);
 /// weird space compression from C Toolkit
 bool Asn2gnbkCompressSpaces (string& val);
 
+// special trimming function from C Toolkit
+bool TrimSpacesSemicolonsAndCommas (string& val);
+
 /// Change double to single quotes
 bool CleanDoubleQuote(string& str);
 

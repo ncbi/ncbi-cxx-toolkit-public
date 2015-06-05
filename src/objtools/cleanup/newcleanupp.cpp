@@ -1762,10 +1762,7 @@ static bool s_DbtagIsBad (
 
 void CNewCleanup_imp::OrgrefModBC (string& str)
 {
-    const string::size_type old_length = str.length();
-    CleanVisString (str);
-
-    if (x_CompressSpaces(str) || str.length() != old_length) {
+    if (TrimSpacesSemicolonsAndCommas(str)) {
         ChangeMade (CCleanupChange::eTrimSpaces);
     }
 }

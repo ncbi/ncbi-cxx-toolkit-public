@@ -698,6 +698,79 @@ bool Asn2gnbkCompressSpaces (string& val)
     }
 }
 
+bool TrimSpacesSemicolonsAndCommas (string& val)
+{
+    if (val.length() == 0) return false;
+
+    char * str = (char *) malloc (sizeof (char) * (val.length() + 1));
+    strcpy(str, val.c_str());
+
+  char *  amp;
+  unsigned char    ch;    /* to use 8bit characters in multibyte languages */
+  char *  dst;
+  char *  ptr;
+
+    dst = str;
+    ptr = str;
+    ch = *ptr;
+    if (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
+      while (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
+        ptr++;
+        ch = *ptr;
+      }
+      while (ch != '\0') {
+        *dst = ch;
+        dst++;
+        ptr++;
+        ch = *ptr;
+      }
+      *dst = '\0';
+    }
+    amp = NULL;
+    dst = NULL;
+    ptr = str;
+    ch = *ptr;
+    while (ch != '\0') {
+      if (ch == '&') {
+        amp = ptr;
+        dst = NULL;
+      } else if (ch <= ' ') {
+        if (dst == NULL) {
+          dst = ptr;
+        }
+        amp = NULL;
+      } else if (ch == ';') {
+        if (dst == NULL && amp == NULL) {
+          dst = ptr;
+        }
+      } else if (ch == ',') {
+        if (dst == NULL) {
+          dst = ptr;
+        }
+        amp = NULL;
+      } else {
+        dst = NULL;
+      }
+      ptr++;
+      ch = *ptr;
+    }
+    if (dst != NULL) {
+      *dst = '\0';
+    }
+
+    string new_val;
+    new_val.assign(str);
+    free(str);
+
+    if (!NStr::Equal(val, new_val)) {
+        val = new_val;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool OnlyPunctuation (string str)
 {
     bool found_other = false;
