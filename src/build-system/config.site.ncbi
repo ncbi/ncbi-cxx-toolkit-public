@@ -74,6 +74,18 @@ try_local() {
     done
 }
 
+build_info=`dirname $0`/../../build_info
+if [ -f "$build_info" -a -r "$build_info" ]; then
+    while read name eq value; do
+        [ "x$eq" = 'x=' ]  &&  eval build_info_$name='$value'
+    done < "$build_info"
+    case "$build_info_CODEBASE:$build_info_PURPOSE:$build_info_CUSTOM_NAME" in
+        TRUNK:TRIAL: | TRUNK:VALGRIND:HighFreq )
+            case "$ncbi_platform" in Linux64 | *MAC ) : ${with_vdb=rc} ;; esac
+            ;;
+    esac
+fi
+
 if test "$ncbi_favor_std_packages" = yes; then
     try_local
 fi
@@ -82,7 +94,9 @@ case "$ncbi_platform" in
     Linux32   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/32/\\1:&," ;;
     Linux64   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&," ;;
 esac
-ncbi_rpath_sed="$ncbi_rpath_sed; s,\\(/vdb-versions\\)/\\([1-9][0-9]*\\)[^/]*/,/\\1/cxx_toolkit/\\2/,"
+if [ "x$with_vdb" != 'xrc' ]; then
+    ncbi_rpath_sed="$ncbi_rpath_sed; s,\\(/vdb-versions\\)/\\([1-9][0-9]*\\)[^/]*/,/\\1/cxx_toolkit/\\2/,"
+fi
 if [ -d /panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software ]; then
     ncbi_rpath_sed="$ncbi_rpath_sed; s,/net/.*/\\(trace_software.*\\),&:/panfs/traces01.be-md.ncbi.nlm.nih.gov/\\1,"
 fi
@@ -271,7 +285,12 @@ esac
 
 case "$ncbi_platform" in
     Linux64 | *MAC )
-        : ${VDB_PATH=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.5.0}
+        vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
+        if [ "x$with_vdb" = 'xrc' ]; then
+            with_vdb=$vdb_base/cxx_toolkit/2-rc
+        else
+            : ${VDB_PATH=$vdb_base/2.5.0}
+        fi
         ;;
 esac
 
