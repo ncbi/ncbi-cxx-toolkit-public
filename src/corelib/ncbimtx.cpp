@@ -40,6 +40,9 @@
 #include "ncbidbg_p.hpp"
 #include <stdio.h>
 #include <algorithm>
+
+//#define LOG_MUTEX_EVENTS
+
 #ifdef NCBI_POSIX_THREADS
 #  include <sys/time.h> // for gettimeofday()
 #  include <sched.h>    // for sched_yield()
@@ -51,6 +54,8 @@
 #include <fcntl.h>
 #  if defined(NCBI_OS_MSWIN)
 #    include <io.h>
+#  else
+#    include <unistd.h>
 #  endif
 
 #endif
@@ -61,7 +66,6 @@
 
 #define NCBI_USE_ERRCODE_X  Corelib_Mutex
 
-//#define LOG_MUTEX_EVENTS
 
 BEGIN_NCBI_SCOPE
 
@@ -80,8 +84,8 @@ BEGIN_NCBI_SCOPE
 
 // Logging function, prints pointer to the mutex, system thread ID
 // and the message.
-void WriteMutexEvent(void* mutex_ptr, const char* message);
-#  define WRITE_MUTEX_EVENT(mutex, message) WriteMutexEvent(mutex, message)
+static void s_WriteMutexEvent(void* mutex_ptr, const char* message);
+#  define WRITE_MUTEX_EVENT(mutex, message) s_WriteMutexEvent(mutex, message)
 
 #else
 
@@ -93,7 +97,7 @@ void WriteMutexEvent(void* mutex_ptr, const char* message);
 
 #if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
 
-void WriteMutexEvent(void* mutex_ptr, const char* message)
+void s_WriteMutexEvent(void* mutex_ptr, const char* message)
 {
     static const int mode = O_WRONLY | O_APPEND | O_CREAT;
     static const mode_t perm = CDirEntry::MakeModeT(
