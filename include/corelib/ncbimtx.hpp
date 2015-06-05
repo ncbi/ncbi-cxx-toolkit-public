@@ -89,30 +89,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Log mutex events if LOG_MUTEX_EVENTS is defined.
-//
-//    The mutex events (create/destroy/lock/unlock) are logged into
-//    ./mutex_events.log or the one specified in MUTEX_EVENTS_LOG_FILE
-//    env. variable.
-//
-
-#if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
-
-// Logging function, prints pointer to the mutex, system thread ID
-// and the message.
-NCBI_XNCBI_EXPORT void WriteMutexEvent(void* mutex_ptr, const char* message);
-#  define WRITE_MUTEX_EVENT(mutex, message) WriteMutexEvent(mutex, message)
-
-#else
-
-#  define WRITE_MUTEX_EVENT(mutex, message) ((void)0)
-
-#endif
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // DECLARATIONS of internal (platform-dependent) representations

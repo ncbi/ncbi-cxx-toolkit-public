@@ -61,21 +61,56 @@
 
 #define NCBI_USE_ERRCODE_X  Corelib_Mutex
 
+//#define LOG_MUTEX_EVENTS
 
 BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Log mutex events if LOG_MUTEX_EVENTS is defined.
+//
+//    The mutex events (create/destroy/lock/unlock) are logged into
+//    ./mutex_events.log or the one specified in MUTEX_EVENTS_LOG_FILE
+//    env. variable.
+//
+
+
+#if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
+
+// Logging function, prints pointer to the mutex, system thread ID
+// and the message.
+void WriteMutexEvent(void* mutex_ptr, const char* message);
+#  define WRITE_MUTEX_EVENT(mutex, message) WriteMutexEvent(mutex, message)
+
+#else
+
+#  define WRITE_MUTEX_EVENT(mutex, message) ((void)0)
+
+#endif
+
 
 
 #if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
 
 void WriteMutexEvent(void* mutex_ptr, const char* message)
 {
-    static const int mode = O_WRONLY | O_APPEND | O_CREAT | O_TRUNC;
+    static const int mode = O_WRONLY | O_APPEND | O_CREAT;
     static const mode_t perm = CDirEntry::MakeModeT(
         CDirEntry::fRead | CDirEntry::fWrite,
         CDirEntry::fRead | CDirEntry::fWrite,
         CDirEntry::fRead | CDirEntry::fWrite,
         0);
-    static const char* file_name = getenv("MUTEX_EVENTS_LOG_FILE");
+    static const char* file_name = getenv("MUTEX_EVENTS_LOG_FILE"); /*This can
+    lead to multiple opens of a file in multithreaded mode, but left so by
+    intention, because:
+    1) with C++11-compatible compiler problem will be gone,
+       while any modification makes it worse adapted to C++11;
+    2) You cannot use mutexes in the function that is called by any mutex
+       create/delete/lock/unlock;
+    3) File is opened without O_TRUNC, so any write()'s to file will be saved
+       even if write()'s are made with different handles
+    4) This is a debug-only function.                                       */
     static int handle = open(file_name ? file_name : "mutex_events.log",
         mode, perm);
     CNcbiOstrstream str_os;
