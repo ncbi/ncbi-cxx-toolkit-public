@@ -44,7 +44,6 @@
 #include <corelib/perf_log.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/compress/zlib.hpp>
-       #include <unistd.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -272,7 +271,7 @@ protected:
             CNetScheduleNotificationHandler::fJSM_Canceled |
             CNetScheduleNotificationHandler::fJSM_Failed
         );
-        const auto evt = job_handler.WaitForJobEvent(job.job_id, deadline, m_NS_api, status_mask);
+        const CNetScheduleAPI::EJobStatus  evt = job_handler.WaitForJobEvent(job.job_id, deadline, m_NS_api, status_mask);
         switch (evt) {
         case CNetScheduleAPI::eDone:
         {
