@@ -3731,7 +3731,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         if (!NStr::IsBlank(val)) {
             CRef<CSeqFeatXref> xref(new CSeqFeatXref);
             xref->SetData().SetGene().SetLocus(val);
-            feat.SetXref().push_back(xref);
+            feat.SetXref().insert(feat.SetXref().begin(), xref);
             ChangeMade(CCleanupChange::eCopyGeneXref);
             return eAction_Erase;  // mark qual for deletion
         }
