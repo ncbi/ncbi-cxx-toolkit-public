@@ -25,3 +25,5 @@ internal/cppcore$
 internal/cppcore/testres
 internal/cppcore/testres/kernel
 internal/cppcore/testres/modules
+-internal/cppcore/testres/examples
+
