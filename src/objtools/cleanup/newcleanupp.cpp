@@ -1364,6 +1364,15 @@ void CNewCleanup_imp::BiosourceFeatBC (
         RESET_FIELD(seqfeat, Comment);
         ChangeMade ( CCleanupChange::eChangeComment );
     }
+
+    // special orgmod cleanup just for features (yes, is stupid, but is what C toolkit does)
+    if (biosrc.IsSetOrg() && biosrc.GetOrg().IsSetMod()) {
+        EDIT_EACH_MOD_ON_ORGREF (it, biosrc.SetOrg()) {
+            if (x_CompressSpaces(*it)) {
+                ChangeMade ( CCleanupChange::eTrimSpaces );
+            }
+        }
+    }
 }
 
 static void s_CorrectTildes (
