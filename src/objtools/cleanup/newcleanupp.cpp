@@ -7156,15 +7156,6 @@ static bool s_GbQualCompare (
     const string& ql1 = GET_FIELD (gbq1, Qual);
     const string& ql2 = GET_FIELD (gbq2, Qual);
 
-    // legal quals first
-    const bool is_illegal1 = s_IsIllegalQual(ql1);
-    const bool is_illegal2 = s_IsIllegalQual(ql2);
-    if( is_illegal1 && ! is_illegal2 ) {
-        return false;
-    } else if( ! is_illegal1 && is_illegal2 ) {
-        return true;
-    }
-
     int comp = s_CompareNoCaseCStyle(ql1, ql2);
     if (comp < 0) return true;
     if (comp > 0) return false;
@@ -7175,6 +7166,30 @@ static bool s_GbQualCompare (
     if (NStr::CompareNocase (vl1, vl2) < 0) return true;
 
     return false;
+}
+
+static bool s_GbQualCompareLegalFirst (
+    const CRef<CGb_qual>& gb1,
+    const CRef<CGb_qual>& gb2
+)
+
+{
+    const CGb_qual& gbq1 = *(gb1);
+    const CGb_qual& gbq2 = *(gb2);
+
+    const string& ql1 = GET_FIELD (gbq1, Qual);
+    const string& ql2 = GET_FIELD (gbq2, Qual);
+
+    // legal quals first
+    const bool is_illegal1 = s_IsIllegalQual(ql1);
+    const bool is_illegal2 = s_IsIllegalQual(ql2);
+    if( is_illegal1 && ! is_illegal2 ) {
+        return false;
+    } else if( ! is_illegal1 && is_illegal2 ) {
+        return true;
+    }
+
+    return s_GbQualCompare(gb1, gb2);
 }
 
 static bool s_GbQualEqual (
@@ -7273,7 +7288,7 @@ void CNewCleanup_imp::SeqfeatBC (
         ChangeMade (CCleanupChange::eCleanQualifiers);
     }
 
-    if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualEqual)) {
+    if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualCompare)) {
         UNIQUE_GBQUAL_ON_SEQFEAT (sf, s_GbQualEqual);
         ChangeMade (CCleanupChange::eRemoveQualifier);
     }
@@ -7286,6 +7301,11 @@ void CNewCleanup_imp::SeqfeatBC (
             ERASE_GBQUAL_ON_SEQFEAT (gbq_it, sf);
             ChangeMade (CCleanupChange::eRemoveQualifier);
         }
+    }
+
+    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
+        SORT_GBQUAL_ON_SEQFEAT (sf, s_GbQualCompare);
+        ChangeMade (CCleanupChange::eCleanQualifiers);
     }
 
     CLEAN_STRING_MEMBER (sf, Title);
@@ -7342,11 +7362,11 @@ void CNewCleanup_imp::x_PostSeqFeat( CSeq_feat& sf )
     }
 
     // sort/unique gbquals (yes, must do before *and* after )
-    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompare)) {
+    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
         SORT_GBQUAL_ON_SEQFEAT (sf, s_GbQualCompare);
         ChangeMade (CCleanupChange::eCleanQualifiers);
     }
-    if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualEqual)) {
+    if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualCompareLegalFirst)) {
         UNIQUE_GBQUAL_ON_SEQFEAT (sf, s_GbQualEqual);
         ChangeMade (CCleanupChange::eRemoveQualifier);
     }
