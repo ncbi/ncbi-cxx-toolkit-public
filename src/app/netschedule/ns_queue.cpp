@@ -40,6 +40,7 @@
 #include "queue_database.hpp"
 #include "ns_handler.hpp"
 #include "ns_ini_params.hpp"
+#include "ns_perf_logging.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -798,6 +799,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
     m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eDone);
     m_StatisticsCounters.CountTransition(old_status,
                                          CNetScheduleAPI::eDone);
+    g_DoPerfLogging(*this, job, 200);
     m_ClientsRegistry.UnregisterJob(job_id, eGet);
 
     m_GCRegistry.UpdateLifetime(job_id,
@@ -970,6 +972,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
             m_StatisticsCounters.CountTransition(
                                         CNetScheduleAPI::ePending,
                                         CNetScheduleAPI::eRunning);
+            g_DoPerfLogging(*this, *new_job, 200);
             if (outdated_job)
                 m_StatisticsCounters.CountOutdatedPick(eGet);
 
@@ -1544,6 +1547,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
             m_StatisticsCounters.CountNSGetRollback(1);
             break;
     }
+    g_DoPerfLogging(*this, job, 200);
     TimeLineRemove(job_id);
     m_ClientsRegistry.UnregisterJob(job_id, eGet);
     if (how == eWithBlacklist)
@@ -1680,6 +1684,7 @@ TJobStatus  CQueue::RescheduleJob(const CNSClientId &     client,
 
     m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
     m_StatisticsCounters.CountToPendingRescheduled(1);
+    g_DoPerfLogging(*this, job, 200);
 
     TimeLineRemove(job_id);
     m_ClientsRegistry.UnregisterJob(job_id, eGet);
@@ -1886,11 +1891,13 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
         }}
 
         m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eCanceled);
-        if (is_ns_rollback)
+        if (is_ns_rollback) {
             m_StatisticsCounters.CountNSSubmitRollback(1);
-        else
+        } else {
             m_StatisticsCounters.CountTransition(old_status,
                                                  CNetScheduleAPI::eCanceled);
+            g_DoPerfLogging(*this, job, 200);
+        }
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
@@ -1998,6 +2005,7 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
         m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eCanceled);
         m_StatisticsCounters.CountTransition(old_status,
                                              CNetScheduleAPI::eCanceled);
+        g_DoPerfLogging(*this, job, 200);
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
@@ -2330,6 +2338,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
 
             m_StatisticsCounters.CountTransition(old_status,
                                                  CNetScheduleAPI::eReading);
+            g_DoPerfLogging(*this, *job, 200);
 
             if (outdated_job)
                 m_StatisticsCounters.CountOutdatedPick(eRead);
@@ -2550,6 +2559,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
         m_StatisticsCounters.CountTransition(CNetScheduleAPI::eReading,
                                              target_status,
                                              path_option);
+    g_DoPerfLogging(*this, job, 200);
     if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
         m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
                                             job.GetListenerNotifPort(),
@@ -2969,6 +2979,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
             m_StatisticsCounters.CountTransition(CNetScheduleAPI::eRunning,
                                                  new_status,
                                                  CStatisticsCounters::eNone);
+        g_DoPerfLogging(*this, job, 200);
 
         TimeLineRemove(job_id);
 
@@ -3284,7 +3295,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                 m_ClientsRegistry.MoveJobToBlacklist(job_id, eGet);
                 m_StatisticsCounters.CountTransition(
                                             CNetScheduleAPI::eRunning,
-                                            CNetScheduleAPI::ePending,
+                                            new_status,
                                             CStatisticsCounters::eTimeout);
             } else {
                 m_ClientsRegistry.UnregisterJob(job_id, eGet);
@@ -3298,7 +3309,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                 m_ClientsRegistry.UnregisterJob(job_id, eRead);
                 m_StatisticsCounters.CountTransition(
                                             CNetScheduleAPI::eReading,
-                                            CNetScheduleAPI::eReadFailed,
+                                            new_status,
                                             CStatisticsCounters::eTimeout);
             } else {
                 // The target status could be Done, Failed, Canceled.
@@ -3310,6 +3321,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                                             CStatisticsCounters::eTimeout);
             }
         }
+        g_DoPerfLogging(*this, job, 200);
 
         if (new_status == CNetScheduleAPI::ePending &&
             m_PauseStatus == eNoPause)
@@ -3985,15 +3997,15 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
     // Update the memory map
     m_StatusTracker.SetStatus(job_id, new_status);
 
-    // Count the transition
-    CStatisticsCounters::ETransitionPathOption
-                                transition_path = CStatisticsCounters::eNone;
+    // Count the transition and do a performance logging
     if (event_type == CJobEvent::eClear)
-        transition_path = CStatisticsCounters::eClear;
-    else if (event_type == CJobEvent::eSessionChanged)
-        transition_path = CStatisticsCounters::eNewSession;
-    m_StatisticsCounters.CountTransition(status_from, new_status,
-                                         transition_path);
+        m_StatisticsCounters.CountTransition(status_from, new_status,
+                                             CStatisticsCounters::eClear);
+    else
+        // It is a new session case
+        m_StatisticsCounters.CountTransition(status_from, new_status,
+                                             CStatisticsCounters::eNewSession);
+    g_DoPerfLogging(*this, job, 200);
 
     m_GCRegistry.UpdateLifetime(job_id,
                                 job.GetExpirationTime(m_Timeout,

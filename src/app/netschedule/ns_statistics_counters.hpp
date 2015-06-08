@@ -30,7 +30,6 @@
  *
  * File Description: NetSchedule statistics counters
  *
- *
  */
 
 #include "background_host.hpp"

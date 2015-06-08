@@ -33,11 +33,6 @@
  *
  */
 
-/// @file ns_alert.hpp
-/// NetSchedule server alerts
-///
-/// @internal
-
 
 #include "ns_precise_time.hpp"
 #include <corelib/ncbimtx.hpp>
