@@ -2450,7 +2450,7 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
 
     ///
     /// set gene partialness if CDS is partial
-    if (gene_feat  &&  propagated_feat){
+    if (gene_feat  &&  propagated_feat && !mrna_feat){
         CSeq_loc& propagated_loc = propagated_feat->SetLocation();
         CSeq_loc& gene_loc = gene_feat->SetLocation();
         if (propagated_loc.IsPartialStart(eExtreme_Biological)) {

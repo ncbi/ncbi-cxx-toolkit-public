@@ -1869,9 +1869,7 @@ Seq-annot ::= {
         from 195029,
         to 196310,
         strand minus,
-        id gi 258441149,
-        fuzz-from lim lt,
-        fuzz-to lim gt
+        id gi 258441149
       }
     },
     {
@@ -8897,8 +8895,7 @@ Seq-annot ::= {
         from 4747,
         to 13756,
         strand plus,
-        id gi 312123950,
-        fuzz-from lim lt
+        id gi 312123950
       },
       dbxref {
         {
@@ -9632,8 +9629,7 @@ Seq-annot ::= {
         from 919042,
         to 1198698,
         strand minus,
-        id gi 157697769,
-        fuzz-to lim gt
+        id gi 157697769
       },
       dbxref {
         {
