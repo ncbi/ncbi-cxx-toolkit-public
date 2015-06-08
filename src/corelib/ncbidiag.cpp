@@ -915,6 +915,11 @@ static const Uint8 kOwnerTID_None = Uint8(-1);
 void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
 {
     if (m_RequestCtx->m_Ctx) {
+        // If pointers are the same (e.g. consecutive calls with the same ctx)
+        if (ctx == m_RequestCtx->m_Ctx.GetPointer()) {
+            return;
+        }
+
         // Reset TID in the context.
         m_RequestCtx->m_Ctx->m_OwnerTID = kOwnerTID_None;
     }
