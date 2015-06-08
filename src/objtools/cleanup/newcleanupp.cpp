@@ -4610,15 +4610,6 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 ChangeMade(CCleanupChange::eChangeRNAref);
             }
         }
-        if ( rna.IsSetExt() && rna.GetExt().IsTRNA() ) {
-            CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
-            if ( ! trp.IsSetAa() && ! trp.IsSetAnticodon() ) {
-                if( ! trp.IsSetCodon() || trp.GetCodon().empty() ) {
-                    rna.ResetExt();
-                    ChangeMade(CCleanupChange::eChangeRNAref);
-                }
-            }
-        }
         if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsName() ) {
             const string &name = rna.SetExt().SetName();
             bool justTrnaText = false;
@@ -8299,12 +8290,6 @@ void CNewCleanup_imp::RnarefBC (
 
                     REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(tRNA);
 
-                    if (! FIELD_IS_SET (tRNA, Aa) &&
-                        ! FIELD_IS_SET (tRNA, Codon) &&
-                        ! FIELD_IS_SET (tRNA, Anticodon)) {
-                        RESET_FIELD (rr, Ext);
-                        ChangeMade(CCleanupChange::eChangeRNAref);
-                    }
                 }
                 break;
             case NCBI_RNAEXT(Gen):
