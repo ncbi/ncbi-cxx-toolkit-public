@@ -8438,6 +8438,8 @@ void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
         return;
     }
 
+    bool any_conversions = false;
+
     EDIT_EACH_GBQUAL_ON_SEQFEAT( qual_iter, seqfeat ) {
         CGb_qual &gb_qual = **qual_iter;
         if( FIELD_IS_SET(gb_qual, Qual) && FIELD_IS_SET(gb_qual, Val) ) {
@@ -8459,8 +8461,14 @@ void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
                 ERASE_GBQUAL_ON_SEQFEAT( qual_iter, seqfeat );
                 ChangeMade(CCleanupChange::eAddOrgMod);
                 ChangeMade(CCleanupChange::eRemoveQualifier);
+                any_conversions = true;
             }
         }
+    }
+    if (any_conversions) {
+        if (seqfeat.GetData().IsBiosrc()) {
+            x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
+        }        
     }
 }
 
