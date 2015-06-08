@@ -54,7 +54,7 @@
 ///
 ///   - Do not use Local time and time_t and its dependent functions with
 ///     dates outside the range January 1, 1970 UTC to January 18, 2038 UTC.
-///     Also avoid to use GMT -> Local time conversion functions.
+///     Also avoid to use universal->local time conversion functions.
 ///
 ///   - Do not use DataBase conversion functions for dates
 ///     prior to January 1, 1900.
@@ -166,7 +166,11 @@ public:
         /// Don't recommended to use, can lead to odd results and incorrect
         /// time on parsing some time strings.
         fMatch_IgnoreSpaces  = (1 << 8),
-        
+
+        /// Prefer "UTC" over "GMT" abbreviation for universal time.
+        /// Used for output purposes only, parsing accept both.
+        fConf_UTC = (1 << 9),
+
         /// Default flags
         fDefault             = 0,  // fFormat_Simple | fMatch_Strict
 
@@ -275,13 +279,13 @@ private:
 /// Defines a standard Date/Time class.
 ///
 /// Can be used to span time (to represent elapsed time). Can operate with
-/// local and GMT (aka UTC) time. The time is kept in class in the format
-/// in which it was originally given.
+/// local and universal (GMT/UTC) time. The time is kept in class in
+/// the format in which it was originally given.
 ///
 /// Throw exception of type CTimeException on errors.
 ///
 /// NOTE: Do not use local time with time span and dates < "1/1/1900"
-/// (use GMT time only!!!).
+/// (use universal time only!!!).
 
 class NCBI_XNCBI_EXPORT CTime
 {
@@ -294,8 +298,9 @@ public:
 
     /// Which initial value to use for timezone.
     enum ETimeZone {
-        eLocal = 1,   ///< Use local time
-        eGmt          ///< Use GMT (Greenwich Mean Time)
+        eLocal = 1,   ///< Local time
+        eUTC,         ///< UTC (Universal Coordinated Time)
+        eGmt = eUTC,  ///< GMT (Greenwich Mean Time)
     };
 
     /// Current timezone. Used in AsString() method.
@@ -366,7 +371,7 @@ public:
     ///   Whether to build time object with current time or empty
     ///   time (default).
     /// @param tz
-    ///   Whether to use local time (default) or GMT.
+    ///   Whether to use local time (default) or UTC.
     /// @param tzp
     ///   What time zone precision to use.
     CTime(EInitMode          mode = eEmpty,
@@ -375,11 +380,11 @@ public:
 
     /// Conversion constructor for time_t representation of time.
     ///
-    /// Construct time object from GMT time_t value.
-    /// The constructed object will be in the eGMT format.
+    /// Construct time object from UTC time_t value.
+    /// The constructed object will be in the eUTC format.
     ///
     /// @param t
-    ///   Time in the GMT time_t format.
+    ///   Time in the UTC time_t format.
     /// @param tzp
     ///   What time zone precision to use.
     /// @sa SetTimeT, GetTimeT
@@ -417,7 +422,7 @@ public:
     /// @param nanosecond
     ///   Nanosecond part of time.
     /// @param tz
-    ///   Whether to use local time (default) or GMT.
+    ///   Whether to use local time (default) or UTC.
     /// @param tzp
     ///   What time zone precision to use.
     CTime(int year, int month, int day,
@@ -434,7 +439,7 @@ public:
     /// @param yearDayNumber
     ///   N-th day of the year.
     /// @param tz
-    ///   Whether to use local time (default) or GMT.
+    ///   Whether to use local time (default) or UTC.
     /// @param tzp
     ///   What time zone precision to use.
     CTime(int year, int yearDayNumber,
@@ -453,7 +458,7 @@ public:
     ///   method, or default "M/D/Y h:m:s".
     /// @param tz
     ///   If current format contains 'Z', then objects timezone will be set to:
-    ///     - eGMT if "str" has word "GMT" in the appropriate position;
+    ///     - eUTC if "str" has words "GMT" or "UTC" in the appropriate position;
     ///     - eLocal otherwise.
     ///   If current format does not contain 'Z', objects timezone
     ///   will be set to 'tz' value.
@@ -471,7 +476,7 @@ public:
     /// Assignment operator from string.
     ///
     /// If current format contains 'Z', then objects timezone will be set to:
-    ///   - eGMT if "str" has word "GMT" in the appropriate position;
+    ///   - eUTC if "str" has words "GMT" or "UTC" in the appropriate position;
     ///   - eLocal otherwise.
     /// If current format does not contain 'Z', objects timezone
     /// will not be changed.
@@ -485,7 +490,7 @@ public:
     /// Set time using time_t time value.
     ///
     /// @param t
-    ///   Time to set in time object. This is always in GMT time format, and
+    ///   Time to set in time object. This is always in UTC time format, and
     ///   nanoseconds will be truncated.
     /// @return
     ///   Time object that is set.
@@ -500,7 +505,7 @@ public:
     ///   Time in time_t format.
     time_t GetTimeT(void) const;
 
-    /// Get current GMT time in time_t format (with nanoseconds).
+    /// Get current UTC time in time_t format (with nanoseconds).
     ///
     /// @param sec
     ///   The function return the number of seconds elapsed since
@@ -597,10 +602,10 @@ public:
     ///   - p = am/pm                          (am/pm)
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
-    ///   - Z = timezone format                (GMT or none)
+    ///   - Z = timezone format                (GMT/UTC or none)
     ///
     ///   following available on POSIX platforms only:
-    ///   - z = timezone shift                 ([GMT]+/-HHMM)
+    ///   - z = timezone shift                 ([GMT/UTC]+/-HHMM)
     ///   - o = timezone shift                 (+/-HH:MM)
     ///
     ///   Format string can represent date/time partially, in this case
@@ -674,13 +679,14 @@ public:
     ///   Format specifier used to convert time to string.
     ///   If "format" is not defined, then GetFormat() will be used.
     /// @param out_tz
-    ///   Output timezone. This is a difference in seconds between GMT time
+    ///   Output timezone. This is a difference in seconds between universal
     ///   and local time for some place (for example, for EST5 timezone
     ///   its value is 18000). This parameter works only with local time.
-    ///   If the time object contains GMT time then it is ignored.
-    ///   Before transformation to string the time will be converted to output
-    ///   timezone. Timezone can be printed as a string 'GMT[+|-]HHMM' using
-    ///   the format symbol 'z'. By default the current timezone is used.
+    ///   If the time object contains universal (GMT/UTC) time it is ignored.
+    ///   Before doing transformation to string, the time will be converted
+    ///   to the output timezone. Timezone can be printed as a string 
+    ///   'GMT/UTC[+|-]HHMM' using the format symbol 'z'.
+    ///   By default the current timezone is used.
     /// @sa
     ///   GetFormat, SetFormat
     string AsString(const CTimeFormat& format = kEmptyStr,
@@ -1087,8 +1093,9 @@ public:
     /// Is time local time?
     bool IsLocalTime (void) const;
 
-    /// Is time GMT time?
-    bool IsGmtTime   (void) const;
+    /// Is time universal (GMT/UTC)?
+    bool IsUniversalTime(void) const;
+    bool IsGmtTime(void) const { return IsUniversalTime(); };
 
     /// Is DST (daylight savings time) in effect for this time?
     /// @note
@@ -1134,8 +1141,9 @@ public:
     /// Get the time as local time.
     CTime GetLocalTime(void) const;
 
-    /// Get the time as GMT time.
-    CTime GetGmtTime(void) const;
+    /// Get the time as universal (GMT/UTC) time.
+    CTime GetUniversalTime(void) const;
+    CTime GetGmtTime(void) const { return GetUniversalTime();  }
 
     /// Convert the time into specified time zone time.
     CTime& ToTime(ETimeZone val);
@@ -1143,8 +1151,9 @@ public:
     /// Convert the time into local time.
     CTime& ToLocalTime(void);
 
-    /// Convert the time into GMT time.
-    CTime& ToGmtTime(void);
+    /// Convert the time into universal (GMT/UTC) time.
+    CTime& ToUniversalTime(void);
+    CTime& ToGmtTime(void) { return ToUniversalTime(); };
 
     /// Get difference between local timezone for current time object and UTC in seconds.
     /// @deprecated Use CTime::TimeZoneOffset() instead.
@@ -1193,7 +1202,7 @@ private:
     /// barrier of winter & summer times) using "from" as a reference point.
     ///
     /// This does the adjustment only if the time object:
-    /// - contains local time (not GMT), and
+    /// - contains local time, and
     /// - has TimeZonePrecision != CTime::eNone, and
     /// - differs from "from" in the TimeZonePrecision (or larger) part.
     CTime& x_AdjustTime(const CTime& from, bool shift_time = true);
@@ -1230,11 +1239,11 @@ private:
         unsigned char hour        NCBI_TIME_BITFIELD( 5);  // 0..23
         unsigned char min         NCBI_TIME_BITFIELD( 6);  // 0..59
         unsigned char sec         NCBI_TIME_BITFIELD( 6);  // 0..61
-        // Difference between GMT and local time in seconds,
+        // Difference between universal and local times in seconds,
         // as stored during the last call to x_AdjustTime***().
         Int4          adjTimeDiff NCBI_TIME_BITFIELD(18);
         // Timezone and precision
-        ETimeZone     tz          NCBI_TIME_BITFIELD(3);  // local/GMT
+        ETimeZone     tz          NCBI_TIME_BITFIELD(3);  // local/universal
         ETimeZonePrecision tzprec NCBI_TIME_BITFIELD(4);  // Time zone precision
         NCBI_TIME_EMPTY_BITFIELD  // Force alignment
         Int4          nanosec;
@@ -2118,7 +2127,7 @@ CTime operator+ (const CTimeSpan& ts, const CTime& t)
 #ifdef CurrentTime // from <X11/X.h>, perhaps
 #  undef CurrentTime
 #endif
-// Get current time (in local or GMT format)
+// Get current time (in local or universal format)
 inline
 CTime CurrentTime(
     CTime::ETimeZone          tz  = CTime::eLocal,
@@ -2357,7 +2366,7 @@ inline
 bool CTime::IsLocalTime(void) const { return m_Data.tz == eLocal; }
 
 inline
-bool CTime::IsGmtTime(void) const { return m_Data.tz == eGmt; }
+bool CTime::IsUniversalTime(void) const { return m_Data.tz == eGmt; }
 
 inline
 CTime::ETimeZone CTime::GetTimeZone(void) const
@@ -2407,9 +2416,9 @@ CTime& CTime::ToLocalTime(void)
 }
 
 inline
-CTime& CTime::ToGmtTime(void)
+CTime& CTime::ToUniversalTime(void)
 {
-    ToTime(eGmt);
+    ToTime(eUTC);
     return *this;
 }
 

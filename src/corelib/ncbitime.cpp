@@ -413,7 +413,7 @@ static string s_TimeDump(const CTime& time)
         "min="     + NStr::Int8ToString(time.Minute()) + ", " +
         "sec="     + NStr::Int8ToString(time.Second()) + ", " +
         "nanosec=" + NStr::Int8ToString(time.NanoSecond()) + ", " +
-        "tz="      + (time.IsGmtTime() ? "GMT" : "Local") +
+        "tz="      + (time.IsUniversalTime() ? "UTC" : "Local") +
         "]";
     return out;
 }
@@ -641,10 +641,11 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             continue;
         }
 
-        // Timezone (GMT time)
+        // Timezone (UTC time)
         if (*fff == 'Z') {
-            if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
-                m_Data.tz = eGmt;
+            if ((NStr::strncasecmp(sss, "UTC", 3) == 0) ||
+                (NStr::strncasecmp(sss, "GMT", 3) == 0)) {
+                m_Data.tz = eUTC;
                 sss += 3;
             } else {
                 m_Data.tz = eLocal;
@@ -652,10 +653,11 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             continue;
         }
 
-        // Timezone (local time in format 'GMT+HHMM' or '+/-HH:MM')
+        // Timezone (local time in format '[GMT/UTC]+/-HHMM')
         if (*fff == 'z' || tz_fmt_check.fmt(fff)) {
-            m_Data.tz = eGmt;
-            if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
+            m_Data.tz = eUTC;
+            if ((NStr::strncasecmp(sss, "UTC", 3) == 0) ||
+                (NStr::strncasecmp(sss, "GMT", 3) == 0)) {
                 sss += 3;
             }
             SKIP_SPACES(sss);
@@ -706,7 +708,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             continue;
         }
 
-        // Timezone (local time in format GMT+HHMM)
+        // AM/PM modifier
         if (*fff == 'p'  ||  *fff == 'P') {
             if (NStr::strncasecmp(sss, "AM", 2) == 0) {
                 hour_format = eAM;
@@ -921,7 +923,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     if ( !IsValid() ) {
         X_INIT_ERROR(eConvert, "Unable to convert string '" + str + "' to CTime");
     }
-    // Adjust time to GMT time (see 'z' format symbol above)
+    // Adjust time to universal (see 'z' format symbol above)
     if ( adjust_needed ) {
         AddSecond(-adjust_tz, CTime::eIgnoreDaylight);
     }
@@ -984,7 +986,7 @@ CTime::CTime(EInitMode mode, ETimeZone tz, ETimeZonePrecision tzp)
 CTime::CTime(time_t t, ETimeZonePrecision tzp)
 {
     memset(&m_Data, 0, sizeof(m_Data));
-    m_Data.tz = eGmt;
+    m_Data.tz = eUTC;
     m_Data.tzprec = tzp;
     SetTimeT(t);
 }
@@ -1004,6 +1006,7 @@ CTime::CTime(const string& str, const CTimeFormat& fmt,
 {
     memset(&m_Data, 0, sizeof(m_Data));
     _ASSERT(eLocal > 0);
+    _ASSERT(eUTC   > 0);
     _ASSERT(eGmt   > 0);
     if ( !m_Data.tz ) {
         m_Data.tz = tz;
@@ -1284,7 +1287,7 @@ time_t s_GetTimeT(const CTime& ct)
     t.tm_sec   = ct.Second();
 #else
     // see below
-    t.tm_sec   = ct.Second() + (int)(ct.IsGmtTime() ? -TimeZone() : 0);
+    t.tm_sec   = ct.Second() + (int)(ct.IsUniversalTime() ? -TimeZone() : 0);
 #endif
     t.tm_min   = ct.Minute();
     t.tm_hour  = ct.Hour();
@@ -1297,9 +1300,9 @@ time_t s_GetTimeT(const CTime& ct)
     if ( tt == (time_t)(-1L) ) {
         return tt;
     }
-    return ct.IsGmtTime() ? tt+t.tm_gmtoff : tt;
+    return ct.IsUniversalTime() ? tt+t.tm_gmtoff : tt;
 #elif defined(HAVE_TIMEGM)
-    return ct.IsGmtTime() ? timegm(&t) : mktime(&t);
+    return ct.IsUniversalTime() ? timegm(&t) : mktime(&t);
 #else
     struct tm *ttemp;
     time_t timer;
@@ -1308,13 +1311,13 @@ time_t s_GetTimeT(const CTime& ct)
         return timer;
     }
 
-    // Correct timezone for GMT time
-    if ( ct.IsGmtTime() ) {
+    // Correct timezone for UTC time
+    if ( ct.IsUniversalTime() ) {
 
        // Somewhat hackish, but seem to work.
        // Local time is ambiguous and we don't know is DST on
        // for specified date/time or not, so we call mktime()
-       // second time for GMT time:
+       // second time for GMT/UTC time:
        // 1st - to get correct value of TimeZone().
        // 2nd - to get value of "timer".
 
@@ -1587,9 +1590,9 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                                 "on this platform");
 #else
                   if (!tz_fmt_make.active()) {
-                      str += "GMT";
+                      str += (fmt_flags & CTimeFormat::fConf_UTC) ? "UTC" : "GMT";
                   }
-                  if (IsGmtTime()) {
+                  if (IsUniversalTime()) {
                       break;
                   }
                   TSeconds tz = out_tz;
@@ -1608,7 +1611,10 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 #endif
                   break;
                   }
-        case 'Z': if (IsGmtTime()) str += "GMT";            break;
+        case 'Z': if (IsUniversalTime()) {
+                      str += (fmt_flags & CTimeFormat::fConf_UTC) ? "UTC" : "GMT";
+                  }
+                  break;
         case 'w': str += kWeekdayAbbr[t->DayOfWeek()];      break;
         case 'W': str += kWeekdayFull[t->DayOfWeek()];      break;
         default : str += *it;                               break;
@@ -2018,16 +2024,16 @@ CTime CTime::GetLocalTime(void) const
 }
 
 
-CTime CTime::GetGmtTime(void) const
+CTime CTime::GetUniversalTime(void) const
 {
     if ( IsEmptyDate() ) {
         NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
-    if ( IsGmtTime() ) {
+    if ( IsUniversalTime() ) {
         return *this;
     }
     CTime t(*this);
-    return t.ToGmtTime();
+    return t.ToUniversalTime();
 }
 
 
@@ -2175,7 +2181,7 @@ bool CTime::IsLeap(void) const
 TSeconds CTime::TimeZoneOffset(void) const
 {
     const CTime tl(GetLocalTime());
-    const CTime tg(GetGmtTime());
+    const CTime tg(GetUniversalTime());
 
     TSeconds dSecs  = tl.Second() - tg.Second();
     TSeconds dMins  = tl.Minute() - tg.Minute();
@@ -2247,8 +2253,8 @@ TSeconds CTime::DiffSecond(const CTime& from) const
     if (GetTimeZone() != from.GetTimeZone()) {
         t1 = *this;
         t2 =  from;
-        t1.ToGmtTime();
-        t2.ToGmtTime();
+        t1.ToUniversalTime();
+        t2.ToUniversalTime();
         p1 = &t1;
         p2 = &t2;
     } else {

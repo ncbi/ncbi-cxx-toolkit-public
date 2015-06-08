@@ -276,7 +276,7 @@ static void s_TestMisc(void)
         assert(t1.DiffTimeSpan(t2) == -ts);
 
         t1 = t2; // both local times
-        t1.SetTimeZone(CTime::eGmt);
+        t1.SetTimeZone(CTime::eUTC);
         ts = CTimeSpan(long(t1.DiffSecond(t2)));
         assert(ts.GetAsDouble() == double(t2.TimeZoneOffset()));
     }}
@@ -495,9 +495,9 @@ static void s_TestFormats(void)
         for (int i = 0;  s_Fmt[i].format;  i++) {
             const char* fmt = s_Fmt[i].format;
             
-            bool is_gmt = (strchr(fmt, 'Z') ||  strchr(fmt, 'z'));
+            bool is_UTC = (strchr(fmt, 'Z') ||  strchr(fmt, 'z'));
             CTime t1(2001, 4, 2, hour, 4, 5, 88888888,
-                     is_gmt ? CTime::eGmt : CTime::eLocal);
+                     is_UTC ? CTime::eUTC : CTime::eLocal);
             
             CTime::SetFormat(fmt);
             string t1_str = t1.AsString();
@@ -523,88 +523,94 @@ static void s_TestFormats(void)
     {{
         const char fmtstr[] = "M/D/Y h:m:s Z W";
         {{
-            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("02/10/2003 20:40:30 GMT Monday") == 0);
         }}
         {{
-            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("02/10/1998 20:40:30 GMT Tuesday") == 0);
         }}
         {{
-            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("03/13/2003 15:49:30 GMT Thursday") == 0);
         }}
         {{
-            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("03/13/2001 15:49:30 GMT Tuesday") == 0);
         }}
         {{
-            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("12/31/2002 23:59:59 GMT Tuesday") == 0);
         }}
         {{
-            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("01/01/2003 00:00:00 GMT Wednesday") == 0);
         }}
         {{
-            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("12/13/2002 12:34:56 GMT Friday") == 0);
+        }}
+        {{
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eUTC);
+            t.SetFormat(CTimeFormat(fmtstr, CTimeFormat::fConf_UTC));
+            string s = t.AsString();
+            assert(s.compare("02/10/2003 20:40:30 UTC Monday") == 0);
         }}
     }}
     {{
         const char fmtstr[] = "M/D/Y H:m:s P Z W";
         {{
-            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("02/10/2003 08:40:30 PM GMT Monday") == 0);
         }}
         {{
-            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("02/10/1998 08:40:30 PM GMT Tuesday") == 0);
         }}
         {{
-            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("03/13/2003 03:49:30 PM GMT Thursday") == 0);
         }}
         {{
-            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("03/13/2001 03:49:30 PM GMT Tuesday") == 0);
         }}
         {{
-            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("12/31/2002 11:59:59 PM GMT Tuesday") == 0);
         }}
         {{
-            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("01/01/2003 12:00:00 AM GMT Wednesday") == 0);
         }}
         {{
-            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("12/13/2002 12:34:56 PM GMT Friday") == 0);
@@ -613,43 +619,43 @@ static void s_TestFormats(void)
     {{
         const char fmtstr[] = "b d, Y H:m P";
         {{
-            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Feb 10, 2003 08:40 PM") == 0);
         }}
         {{
-            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Feb 10, 1998 08:40 PM") == 0);
         }}
         {{
-            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Mar 13, 2003 03:49 PM") == 0);
         }}
         {{
-            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Mar 13, 2001 03:49 PM") == 0);
         }}
         {{
-            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Dec 31, 2002 11:59 PM") == 0);
         }}
         {{
-            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Jan 1, 2003 12:00 AM") == 0);
         }}
         {{
-            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eUTC);
             t.SetFormat(fmtstr);
             string s = t.AsString();
             assert(s.compare("Dec 13, 2002 12:34 PM") == 0);
@@ -863,7 +869,7 @@ static void s_TestFormats(void)
 
     // SetFormat/AsString with flag parameter test
     {{
-        CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+        CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eUTC);
         string s;
         s = t.AsString("M/D/Y h:m:s");
         assert(s.compare("02/10/2003 20:40:30") == 0);
@@ -877,7 +883,7 @@ static void s_TestFormats(void)
 
     // CTimeFormat::GetPredefined() test
     {{
-        CTime t(2003, 2, 10, 20, 40, 30, 123456789, CTime::eGmt);
+        CTime t(2003, 2, 10, 20, 40, 30, 123456789, CTime::eUTC);
         string s;
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_Year));
         assert(s.compare("2003") == 0);
@@ -940,22 +946,28 @@ static void s_TestFormats(void)
 
 //============================================================================
 //
-// TestGMT
+// Test GMT
 //
 //============================================================================
 
-static void s_TestGMT(void)
+static void s_TestUTC(void)
 {
     //------------------------------------------------------------------------
-    // Local/GMT times
+    // Local/universal times
     {{
         CTime::SetFormat("M/D/Y h:m:s Z");
-        CTime t1(2001, 3, 12, 11, 22, 33, 999, CTime::eGmt);
+        CTime t1(2001, 3, 12, 11, 22, 33, 999, CTime::eUTC);
         assert(t1.AsString() == "03/12/2001 11:22:33 GMT");
         CTime t2(2001, 3, 12, 11, 22, 33, 999, CTime::eLocal);
         assert(t2.AsString() == "03/12/2001 11:22:33 ");
-        CTime t3(CTime::eCurrent, CTime::eLocal);
-        CTime t4(CTime::eCurrent, CTime::eGmt);
+
+        CTime::SetFormat(CTimeFormat("M/D/Y h:m:s Z", CTimeFormat::fConf_UTC));
+        CTime t3(2001, 3, 12, 11, 22, 33, 999, CTime::eUTC);
+        assert(t1.AsString() == "03/12/2001 11:22:33 UTC");
+
+        // Current time
+        CTime cur_tl(CTime::eCurrent, CTime::eLocal);
+        CTime cur_tu(CTime::eCurrent, CTime::eUTC);
     }}
     //------------------------------------------------------------------------
     // Process timezone string
@@ -982,7 +994,7 @@ static void s_TestGMT(void)
     {{   
 
         time_t timer = time(0);
-        CTime tgmt(CTime::eCurrent, CTime::eGmt,   CTime::eTZPrecisionDefault);
+        CTime tgmt(CTime::eCurrent, CTime::eUTC,   CTime::eTZPrecisionDefault);
         CTime tloc(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
         // Set the same time to all time objects
@@ -1002,7 +1014,7 @@ static void s_TestGMT(void)
         assert(timer == t_);
         assert(timer == g_);
         // On the day of changing to summer/winter time, the local time
-        // converted to GMT may differ from the value returned by time(0),
+        // converted to UTC may differ from the value returned by time(0),
         // because in the common case API don't know is DST in effect for
         // specified local time or not (see mktime()).
         if (timer != l_) {
@@ -1029,8 +1041,8 @@ static void s_TestGMT(void)
     {{   
         CTime tloc(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         struct tm l_ = tloc.GetTimeTM();
-        CTime tmp(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
-        assert(tmp.GetTimeZone() == CTime::eGmt);
+        CTime tmp(CTime::eCurrent, CTime::eUTC, CTime::eTZPrecisionDefault);
+        assert(tmp.GetTimeZone() == CTime::eUTC);
         tmp.SetTimeTM(l_);
         assert(tmp.GetTimeZone() == CTime::eLocal);
         assert(tloc.AsString() == tmp.AsString());
@@ -1080,7 +1092,7 @@ static void s_TestGMT(void)
         CTime tn;
         t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
 
-        t.SetTimeZone(CTime::eGmt);
+        t.SetTimeZone(CTime::eUTC);
         tn = t;
         tn.AddDay(5);  
         assert(tn.AsString() == "03/16/2007 01:01:00");
@@ -1152,13 +1164,13 @@ static void s_TestGMT(void)
 
 //============================================================================
 //
-// TestGMTSpeed
+// TestUTCSpeed
 //
 //============================================================================
 
 #if ENABLE_SPEED_TESTS
 
-static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz, 
+static void s_TestUTCSpeedRun(string comment, CTime::ETimeZone tz, 
                               CTime::ETimeZonePrecision tzp)
 {
     CTime t(CTime::eCurrent, tz, tzp);
@@ -1182,13 +1194,13 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     ERR_POST(Note << comment + ", duration = " + NStr::DoubleToString(timer.Elapsed()) + " sec.");
 }
 
-static void s_TestGMTSpeed(void)
+static void s_TestUTCSpeed(void)
 {
-    s_TestGMTSpeedRun("eLocal - eMinute", CTime::eLocal, CTime::eMinute);
-    s_TestGMTSpeedRun("eLocal - eHour  ", CTime::eLocal, CTime::eHour);
-    s_TestGMTSpeedRun("eLocal - eMonth ", CTime::eLocal, CTime::eMonth);
-    s_TestGMTSpeedRun("eLocal - eNone  ", CTime::eLocal, CTime::eNone);
-    s_TestGMTSpeedRun("eGmt   - eNone  ", CTime::eGmt,   CTime::eNone);
+    s_TestUTCSpeedRun("eLocal - eMinute", CTime::eLocal, CTime::eMinute);
+    s_TestUTCSpeedRun("eLocal - eHour  ", CTime::eLocal, CTime::eHour);
+    s_TestUTCSpeedRun("eLocal - eMonth ", CTime::eLocal, CTime::eMonth);
+    s_TestUTCSpeedRun("eLocal - eNone  ", CTime::eLocal, CTime::eNone);
+    s_TestUTCSpeedRun("eUTC   - eNone  ", CTime::eUTC,   CTime::eNone);
 }
 
 #endif
@@ -2364,9 +2376,9 @@ int main()
     try {
         s_TestMisc();
         s_TestFormats();
-        s_TestGMT();
+        s_TestUTC();
         #if ENABLE_SPEED_TESTS
-            s_TestGMTSpeed();
+            s_TestUTCSpeed();
         #endif
         s_TestTimeSpan();
         s_TestTimeSpan_AsSmartString();
