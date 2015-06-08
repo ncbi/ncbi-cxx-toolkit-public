@@ -10167,6 +10167,37 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
     }
 }
 
+void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
+{
+    EDIT_EACH_SEQDESC_ON_SEQDESCR( descr_iter, seq_descr ) {
+        CSeqdesc &desc = **descr_iter;
+        if( ! FIELD_IS(desc, Genbank) ) {
+            continue;
+        }
+
+        CGB_block& gb = desc.SetGenbank();
+
+        if (gb.IsSetTaxonomy()) {
+            gb.ResetTaxonomy();
+            ChangeMade(CCleanupChange::eChangeOther);
+        }
+
+        // remove empty GenBank blocks
+        if (!gb.IsSetExtra_accessions() &&
+            !gb.IsSetSource() &&
+            !gb.IsSetKeywords() &&
+            !gb.IsSetOrigin() &&
+            !gb.IsSetDate() &&
+            !gb.IsSetEntry_date() &&
+            !gb.IsSetDiv()) {
+           
+            ERASE_SEQDESC_ON_SEQDESCR(descr_iter, seq_descr);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        }
+    }
+  
+}
+
 bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(CGene_ref& gene)
 {
     bool should_remove = false;

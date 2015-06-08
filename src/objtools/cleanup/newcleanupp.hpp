@@ -495,6 +495,7 @@ private:
     void x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat& seq_feat );
 
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
+    void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
     void x_RemoveEmptyFeatures( CSeq_annot & seq_annot );
     void x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > > & annot_list);
     void x_RemoveEmptyFeatureTables( CBioseq & bioseq );
