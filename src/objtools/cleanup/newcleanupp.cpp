@@ -4345,6 +4345,15 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
             }
             CRef<CSeq_loc> anticodon = ReadLocFromText (pos_str, feat.GetLocation().GetId(), scope);
             if( anticodon ) {
+                CBioseq_Handle bsh = scope->GetBioseqHandle(*(feat.GetLocation().GetId()));
+                if (!bsh) {
+                    trna.Reset(NULL);
+                    return trna;
+                }
+                if (anticodon->GetStop(eExtreme_Positional) >= bsh.GetInst_Length()) {
+                    trna.Reset(NULL);
+                    return trna;
+                }
                 anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
             }
             if (anticodon == NULL) {
