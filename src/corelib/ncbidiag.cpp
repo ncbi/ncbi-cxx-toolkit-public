@@ -923,16 +923,23 @@ void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
         // Reset TID in the context.
         m_RequestCtx->m_Ctx->m_OwnerTID = kOwnerTID_None;
     }
-    m_RequestCtx->m_Ctx = ctx ? ctx : m_DefaultRequestCtx->m_Ctx;
-    if (ctx) {
-        if (ctx->m_OwnerTID != kOwnerTID_None  &&  ctx->m_OwnerTID != m_TID) {
-            ERR_POST_X_ONCE(29,
-                "Using the same CRequestContext in multiple threads is unsafe!"
-                << CStackTrace());
-        }
-        _ASSERT(ctx->m_OwnerTID == kOwnerTID_None);
+
+    if (!ctx) {
+        m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx;
+        return;
+    }
+
+    m_RequestCtx->m_Ctx = ctx;
+
+    if (ctx->m_OwnerTID == kOwnerTID_None) {
         // Save current TID in the context.
         ctx->m_OwnerTID = m_TID;
+    }
+    else if (ctx->m_OwnerTID != m_TID) {
+        ERR_POST_X_ONCE(29,
+            "Using the same CRequestContext in multiple threads is unsafe!"
+            << CStackTrace());
+        _TROUBLE;
     }
 }
 
