@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(TestParameters)
     // Very first test ...
     {
         // ExecuteStr("cursor.execute('SELECT name FROM syscolumns WHERE id = 4 and printfmt = @printfmt_par', {'@printfmt_par':None})\n");
-        ExecuteStr("cursor.execute('SELECT name FROM syscolumns WHERE id = @id', {'@id':None})\n");
+        ExecuteStr("cursor.execute('SELECT name FROM syscolumns WHERE id = CONVERT(INT, @id)', {'@id':None})\n");
 
         // fetchall
         ExecuteStr("print cursor.fetchall()\n");
