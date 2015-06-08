@@ -568,7 +568,7 @@ bool Asn2gnbkCompressSpaces (string& val)
 {
     if (val.length() == 0) return false;
 
-    char * str = (char *) malloc (sizeof (char) * (val.length() + 1));
+    char * str = new char[sizeof (char) * (val.length() + 1)];
     strcpy(str, val.c_str());
 
   char     ch;
@@ -688,7 +688,7 @@ bool Asn2gnbkCompressSpaces (string& val)
   }
     string new_val;
     new_val.assign(str);
-    free(str);
+    delete str;
 
     if (!NStr::Equal(val, new_val)) {
         val = new_val;
@@ -702,7 +702,7 @@ bool TrimSpacesSemicolonsAndCommas (string& val)
 {
     if (val.length() == 0) return false;
 
-    char * str = (char *) malloc (sizeof (char) * (val.length() + 1));
+    char * str = new char[sizeof (char) * (val.length() + 1)];
     strcpy(str, val.c_str());
 
   char *  amp;
@@ -760,7 +760,7 @@ bool TrimSpacesSemicolonsAndCommas (string& val)
 
     string new_val;
     new_val.assign(str);
-    free(str);
+    delete str;
 
     if (!NStr::Equal(val, new_val)) {
         val = new_val;
