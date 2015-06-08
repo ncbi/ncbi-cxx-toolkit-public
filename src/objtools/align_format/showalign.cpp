@@ -1029,10 +1029,9 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
                 (*iter)->feature_start.pop_front();
             }
             bool color_cds_mismatch = false; 
-            if(max_feature_num == 1 && (m_AlignOption & eHtml) && 
+            if((m_AlignOption & eHtml) && 
                (m_AlignOption & eShowCdsFeature) && row > 0){
                 //only for slaves, only for cds feature
-                //only color mismach if only one cds exists
                 color_cds_mismatch = true;
             } else if((m_AlignOption & eHtml) && 
                       !(m_AlignOption & eShowCdsFeature) &&
