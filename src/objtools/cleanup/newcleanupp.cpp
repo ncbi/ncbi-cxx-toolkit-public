@@ -1180,7 +1180,11 @@ bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_st
             } else {
                 subtype = CSubSource::GetSubtypeValue(val);
             }
-            if ( !CSubSource::IsDiscouraged(subtype) ) {
+            if ( subtype == CSubSource::eSubtype_fwd_primer_name ||
+                 subtype == CSubSource::eSubtype_fwd_primer_seq ||
+                 subtype == CSubSource::eSubtype_rev_primer_name ||
+                 subtype == CSubSource::eSubtype_rev_primer_seq ||
+                 !CSubSource::IsDiscouraged(subtype) ) {
                 out_subtype       = subtype;
                 out_val_start_pos = pos2;
                 return true;
