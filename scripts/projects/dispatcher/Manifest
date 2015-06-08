@@ -13,7 +13,7 @@ APP: lbsmd lbsmc lbsm_feedback
 APP: launcherd fwdaemon dispd.cgi
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
-DEFAULT_CONFIGURATIONS: Linux64-Centos:GCC Cygwin64:GCC
+DEFAULT_CONFIGURATIONS: Linux64-Centos:GCC
 
 COPY: $bindir/test_mghbn                     $installdir/bin/ncbi_mghbn
 COPY: $bindir/test_ncbi_dblb                 $installdir/bin/ncbi_dblb
@@ -37,4 +37,4 @@ Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --wit
 Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 FreeBSD32       : Clang : Clang.sh       --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
-Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
+# Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
