@@ -7290,21 +7290,26 @@ void CNewCleanup_imp::SeqfeatBC (
 {
     // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
 
-    // sort/unique gbquals
+    // clean before uniquing
+    EDIT_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
+        CGb_qual& gbq = **gbq_it;
+        GBQualBC(gbq);
+    }
 
+    // sort/unique gbquals, just alphabetically
     if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompare)) {
         SORT_GBQUAL_ON_SEQFEAT (sf, s_GbQualCompare);
         ChangeMade (CCleanupChange::eCleanQualifiers);
     }
 
-    if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualCompare)) {
+    if (!GBQUAL_ON_SEQFEAT_IS_UNIQUE(sf, s_GbQualEqual)) {
         UNIQUE_GBQUAL_ON_SEQFEAT (sf, s_GbQualEqual);
         ChangeMade (CCleanupChange::eRemoveQualifier);
     }
 
+    // move quals to other parts of the feature as appropriate
     EDIT_EACH_GBQUAL_ON_SEQFEAT (gbq_it, sf) {
         CGb_qual& gbq = **gbq_it;
-        GBQualBC(gbq);
         if( GBQualSeqFeatBC(gbq, sf) == eAction_Erase ) 
         {
             ERASE_GBQUAL_ON_SEQFEAT (gbq_it, sf);
@@ -7312,8 +7317,9 @@ void CNewCleanup_imp::SeqfeatBC (
         }
     }
 
+    // sort again, putting legal qualifiers first
     if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
-        SORT_GBQUAL_ON_SEQFEAT (sf, s_GbQualCompare);
+        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompareLegalFirst);
         ChangeMade (CCleanupChange::eCleanQualifiers);
     }
 
@@ -7372,7 +7378,7 @@ void CNewCleanup_imp::x_PostSeqFeat( CSeq_feat& sf )
 
     // sort/unique gbquals (yes, must do before *and* after )
     if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
-        SORT_GBQUAL_ON_SEQFEAT (sf, s_GbQualCompare);
+        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompareLegalFirst);
         ChangeMade (CCleanupChange::eCleanQualifiers);
     }
     if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualCompareLegalFirst)) {
