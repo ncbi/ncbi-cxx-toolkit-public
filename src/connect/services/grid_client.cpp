@@ -141,6 +141,7 @@ CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
     CloseStream();
     CNetScheduleAPI::EJobStatus status =
             GetNetScheduleSubmitter().SubmitJobAndWait(m_Job, wait_time);
+    x_CleanUpAllJobBlobs(status);
     m_JobDetailsRead = true;
     return status;
 }
@@ -249,13 +250,8 @@ CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
 //////////////////////////////////////////////////////////////////////////////
 //
 
-CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
+bool CGridClient::x_CleanUpAllJobBlobs(CNetScheduleAPI::EJobStatus status)
 {
-    time_t job_exptime = 0;
-
-    CNetScheduleAPI::EJobStatus status =
-        GetNetScheduleSubmitter().GetJobDetails(m_Job, &job_exptime);
-
     if (m_AutoCleanUp && (
               status == CNetScheduleAPI::eDone ||
               status == CNetScheduleAPI::eCanceled)) {
@@ -271,7 +267,20 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
                     RemoveDataBlob(m_Job.progress_msg.c_str() + 2);
             }
         }
-    } else {
+
+        return true;
+    }
+
+    return false;
+}
+CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
+{
+    time_t job_exptime = 0;
+
+    CNetScheduleAPI::EJobStatus status =
+        GetNetScheduleSubmitter().GetJobDetails(m_Job, &job_exptime);
+
+    if (!x_CleanUpAllJobBlobs(status)) {
         x_RenewAllJobBlobs(job_exptime);
     }
     m_JobDetailsRead = true;
