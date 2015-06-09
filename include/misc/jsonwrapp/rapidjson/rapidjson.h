@@ -433,6 +433,11 @@ RAPIDJSON_NAMESPACE_END
 
 #endif // RAPIDJSON_DIAG_*
 
+// NCBI
+#if NCBI_COMPILER_ICC
+#undef  RAPIDJSON_DIAG_OFF
+#define RAPIDJSON_DIAG_OFF(x)
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 // C++11 features
 
