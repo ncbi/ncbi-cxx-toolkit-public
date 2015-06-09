@@ -77,13 +77,13 @@ static void tds_iconv_info_close(TDSICONV * char_conv);
 /* this will contain real iconv names */
 static const char *iconv_names[sizeof(canonic_charsets) / sizeof(canonic_charsets[0])];
 static int iconv_initialized = 0;
-static const char *ucs2name;
+static const char *utf16name;
 
 enum
-{ POS_ISO1, POS_UTF8, POS_UCS2LE, POS_UCS2BE };
+{ POS_ISO1, POS_UTF8, POS_UTF16LE, POS_UTF16BE };
 
 /**
- * Initialize charset searching for UTF-8, UCS-2 and ISO8859-1
+ * Initialize charset searching for UTF-8, UTF-16 and ISO8859-1
  */
 static int
 tds_iconv_init(void)
@@ -94,8 +94,8 @@ tds_iconv_init(void)
 	/* first entries should be constants */
 	assert(strcmp(canonic_charsets[POS_ISO1].name, "ISO-8859-1") == 0);
 	assert(strcmp(canonic_charsets[POS_UTF8].name, "UTF-8") == 0);
-	assert(strcmp(canonic_charsets[POS_UCS2LE].name, "UCS-2LE") == 0);
-	assert(strcmp(canonic_charsets[POS_UCS2BE].name, "UCS-2BE") == 0);
+    assert(strcmp(canonic_charsets[POS_UTF16LE].name, "UTF-16LE") == 0);
+    assert(strcmp(canonic_charsets[POS_UTF16BE].name, "UTF-16BE") == 0);
 
 	/* fast tests for GNU-iconv */
 	cd = tds_sys_iconv_open("ISO-8859-1", "UTF-8");
@@ -131,22 +131,22 @@ tds_iconv_init(void)
 			return 1;
 	}
 
-	/* now search for UCS-2 */
-	cd = tds_sys_iconv_open(iconv_names[POS_ISO1], "UCS-2LE");
+    /* now search for UTF-16 */
+    cd = tds_sys_iconv_open(iconv_names[POS_ISO1], "UTF-16LE");
 	if (cd != (iconv_t) - 1) {
-		iconv_names[POS_UCS2LE] = "UCS-2LE";
+        iconv_names[POS_UTF16LE] = "UTF-16LE";
 		tds_sys_iconv_close(cd);
 	}
-	cd = tds_sys_iconv_open(iconv_names[POS_ISO1], "UCS-2BE");
+    cd = tds_sys_iconv_open(iconv_names[POS_ISO1], "UTF-16BE");
 	if (cd != (iconv_t) - 1) {
-		iconv_names[POS_UCS2BE] = "UCS-2BE";
+        iconv_names[POS_UTF16BE] = "UTF-16BE";
 		tds_sys_iconv_close(cd);
 	}
 
 	/* long search needed ?? */
-	if (!iconv_names[POS_UCS2LE] || !iconv_names[POS_UCS2BE]) {
+    if (!iconv_names[POS_UTF16LE] || !iconv_names[POS_UTF16BE]) {
 		for (i = 0; iconv_aliases[i].alias; ++i) {
-			if (strncmp(canonic_charsets[iconv_aliases[i].canonic].name, "UCS-2", 5) != 0)
+            if (strncmp(canonic_charsets[iconv_aliases[i].canonic].name, "UTF-16", 5) != 0)
 				continue;
 
 			cd = tds_sys_iconv_open(iconv_aliases[i].alias, iconv_names[POS_ISO1]);
@@ -175,9 +175,9 @@ tds_iconv_init(void)
 
 					/* save name without sequence (if present) */
 					if (ob[0])
-						il = POS_UCS2LE;
+                        il = POS_UTF16LE;
 					else
-						il = POS_UCS2BE;
+                        il = POS_UTF16BE;
 					if (!iconv_names[il] || !byte_sequence)
 						iconv_names[il] = iconv_aliases[i].alias;
 				}
@@ -185,11 +185,11 @@ tds_iconv_init(void)
 			}
 		}
 	}
-	/* we need a UCS-2 (big endian or little endian) */
-	if (!iconv_names[POS_UCS2LE] && !iconv_names[POS_UCS2BE])
+    /* we need a UTF-16 (big endian or little endian) */
+    if (!iconv_names[POS_UTF16LE] && !iconv_names[POS_UTF16BE])
 		return 2;
 
-	ucs2name = iconv_names[POS_UCS2LE] ? iconv_names[POS_UCS2LE] : iconv_names[POS_UCS2BE];
+    utf16name = iconv_names[POS_UTF16LE] ? iconv_names[POS_UTF16LE] : iconv_names[POS_UTF16BE];
 
 	for (i = 0; i < 4; ++i)
 		tdsdump_log(TDS_DBG_INFO1, "names for %s: %s\n", canonic_charsets[i].name,
@@ -210,14 +210,14 @@ tds_get_iconv_name(int charset)
 
 	assert(iconv_initialized);
 
-	/* try using canonic name and UTF-8 and UCS2 */
+    /* try using canonic name and UTF-8 and UTF-16 */
 	cd = tds_sys_iconv_open(iconv_names[POS_UTF8], canonic_charsets[charset].name);
 	if (cd != (iconv_t) - 1) {
 		iconv_names[charset] = canonic_charsets[charset].name;
 		tds_sys_iconv_close(cd);
 		return;
 	}
-	cd = tds_sys_iconv_open(ucs2name, canonic_charsets[charset].name);
+    cd = tds_sys_iconv_open(utf16name, canonic_charsets[charset].name);
 	if (cd != (iconv_t) - 1) {
 		iconv_names[charset] = canonic_charsets[charset].name;
 		tds_sys_iconv_close(cd);
@@ -236,7 +236,7 @@ tds_get_iconv_name(int charset)
 			return;
 		}
 
-		cd = tds_sys_iconv_open(ucs2name, iconv_aliases[i].alias);
+        cd = tds_sys_iconv_open(utf16name, iconv_aliases[i].alias);
 		if (cd != (iconv_t) - 1) {
 			iconv_names[charset] = iconv_aliases[i].alias;
 			tds_sys_iconv_close(cd);
@@ -305,7 +305,7 @@ tds_iconv_alloc(TDSSOCKET * tds)
  * Set up the initial iconv conversion descriptors.
  * When the socket is allocated, three TDSICONV structures are attached to iconv.  
  * They have fixed meanings:
- * 	\li 0. Client <-> UCS-2 (client2ucs2)
+ * 	\li 0. Client <-> UTF-16 (client2utf16)
  * 	\li 1. Client <-> server single-byte charset (client2server_chardata)
  *	\li 2. ISO8859-1  <-> server meta data	(iso2server_metadata)
  *
@@ -315,7 +315,7 @@ tds_iconv_alloc(TDSSOCKET * tds)
  * To solve different iconv names and portability problems FreeTDS maintains 
  * a list of aliases each charset.  
  * 
- * First we discover the names of our minimum required charsets (UTF-8, ISO8859-1 and UCS2).  
+ * First we discover the names of our minimum required charsets (UTF-8, ISO8859-1 and UTF-16).  
  * Later, as and when it's needed, we try to discover others.
  *
  * There is one list of canonic names (GNU iconv names) and two sets of aliases
@@ -325,17 +325,17 @@ tds_iconv_alloc(TDSSOCKET * tds)
 void
 tds_iconv_open(TDSSOCKET * tds, const char *charset)
 {
-	static const char UCS_2LE[] = "UCS-2LE";
+    static const char UTF_16LE[] = "UTF-16LE";
 	const char *name;
 	int fOK, ret;
 
-	TDS_ENCODING *client = &tds->char_convs[client2ucs2]->client_charset;
-	TDS_ENCODING *server = &tds->char_convs[client2ucs2]->server_charset;
+    TDS_ENCODING *client = &tds->char_convs[client2utf16]->client_charset;
+    TDS_ENCODING *server = &tds->char_convs[client2utf16]->server_charset;
 
 #if !HAVE_ICONV_ALWAYS
 
 	strcpy(client->name, "ISO-8859-1");
-	strcpy(server->name, UCS_2LE);
+    strcpy(server->name, UTF_16LE);
 
 	bytes_per_char(client);
 	bytes_per_char(server);
@@ -356,11 +356,11 @@ tds_iconv_open(TDSSOCKET * tds, const char *charset)
 	}
 
 	/* 
-	 * Client <-> UCS-2 (client2ucs2)
+     * Client <-> UTF-16 (client2utf16)
 	 */
 	tdsdump_log(TDS_DBG_FUNC, "iconv to convert client-side data to the \"%s\" character set\n", charset);
 
-	fOK = tds_iconv_info_init(tds->char_convs[client2ucs2], charset, UCS_2LE);
+    fOK = tds_iconv_info_init(tds->char_convs[client2utf16], charset, UTF_16LE);
 	if (!fOK)
 		return;
 
@@ -388,7 +388,7 @@ tds_iconv_open(TDSSOCKET * tds, const char *charset)
 	/* 
 	 * ISO8859-1 <-> server meta data
 	 */
-	name = UCS_2LE;
+    name = UTF_16LE;
 	if (tds->major_version < 7) {
 		name = "ISO-8859-1";
 		if (tds->env.charset)
@@ -450,12 +450,12 @@ tds_iconv_info_init(TDSICONV * char_conv, const char *client_name, const char *s
 	char_conv->flags = 0;
 	if (!iconv_names[server_canonical]) {
 		switch (server_canonical) {
-		case POS_UCS2LE:
-			server_canonical = POS_UCS2BE;
+        case POS_UTF16LE:
+            server_canonical = POS_UTF16BE;
 			char_conv->flags = TDS_ENCODING_SWAPBYTE;
 			break;
-		case POS_UCS2BE:
-			server_canonical = POS_UCS2LE;
+        case POS_UTF16BE:
+            server_canonical = POS_UTF16LE;
 			char_conv->flags = TDS_ENCODING_SWAPBYTE;
 			break;
 		}
@@ -509,7 +509,7 @@ tds_iconv_info_init(TDSICONV * char_conv, const char *client_name, const char *s
 		char_conv->flags |= TDS_ENCODING_INDIRECT;
 	}
 	
-	/* TODO, do some optimizations like UCS2 -> UTF8 min,max = 2,2 (UCS2) and 1,4 (UTF8) */
+    /* TODO, do some optimizations like UTF16 -> UTF8 min,max = 2,4 (UTF16) and 1,4 (UTF8) */
 
 	tdsdump_log(TDS_DBG_FUNC, "tds_iconv_info_init: converting \"%s\"->\"%s\"\n", client->name, server->name);
 
@@ -964,7 +964,7 @@ tds_iconv_get_info(TDSSOCKET * tds, const char *canonic_charset)
 
 	/* init */
 	/* TODO test allocation */
-	tds_iconv_info_init(info, tds->char_convs[client2ucs2]->client_charset.name, canonic_charset);
+    tds_iconv_info_init(info, tds->char_convs[client2utf16]->client_charset.name, canonic_charset);
 	return info;
 }
 

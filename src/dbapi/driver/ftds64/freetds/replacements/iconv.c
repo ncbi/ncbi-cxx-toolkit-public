@@ -84,7 +84,8 @@ tds_sys_iconv_open (const char* tocode, const char* fromcode)
 			encodings[i] = 0;
 		} else if (strcmp(enc_name, "US-ASCII") == 0) {
 			encodings[i] = 1;
-		} else if (strcmp(enc_name, "UCS-2LE") == 0) {
+        } else if (strcmp(enc_name, "UTF-16LE") == 0
+                   ||  strcmp(enc_name, "UCS-2LE") == 0) {
 			encodings[i] = 2;
 		} else if (strcmp(enc_name, "UTF-8") == 0) {
 			encodings[i] = 3;
@@ -104,16 +105,16 @@ tds_sys_iconv_open (const char* tocode, const char* fromcode)
 	case Like_to_Like:
 	case Latin1_ASCII:
 	case ASCII_Latin1:
-	case Latin1_UCS2LE:
-	case UCS2LE_Latin1:
-	case ASCII_UCS2LE:
-	case UCS2LE_ASCII:
+    case Latin1_UTF16LE:
+    case UTF16LE_Latin1:
+    case ASCII_UTF16LE:
+    case UTF16LE_ASCII:
 	case Latin1_UTF8:
 	case UTF8_Latin1:
 	case ASCII_UTF8:
 	case UTF8_ASCII:
-	case UCS2LE_UTF8:
-	case UTF8_UCS2LE:
+    case UTF16LE_UTF8:
+    case UTF8_UTF16LE:
 		return (iconv_t)fromto;
 		break;
 	default:
@@ -184,9 +185,9 @@ tds_sys_iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * out
 		ib += copybytes;
 		il -= copybytes;
 		break;
-	case ASCII_UCS2LE:
-	case Latin1_UCS2LE:
-		if (CD == ASCII_UCS2LE)
+    case ASCII_UTF16LE:
+    case Latin1_UTF16LE:
+        if (CD == ASCII_UTF16LE)
 			ascii_mask = 0x80;
 		while (il > 0 && ol > 1) {
 			if ((ib[0] & ascii_mask) != 0) {
@@ -199,9 +200,9 @@ tds_sys_iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * out
 			--il;
 		}
 		break;
-	case UCS2LE_ASCII:
-	case UCS2LE_Latin1:
-		if (CD == UCS2LE_ASCII)
+    case UTF16LE_ASCII:
+    case UTF16LE_Latin1:
+        if (CD == UTF16LE_ASCII)
 			ascii_mask = 0x80;
 		while (il > 1 && ol > 0) {
 			if ( ib[1] || (ib[0] & ascii_mask) != 0) {
@@ -263,7 +264,7 @@ tds_sys_iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * out
 			--il;
 		}
 		break;
-	case UTF8_UCS2LE:
+    case UTF8_UTF16LE:
 		while (il > 0 && ol > 1) {
 			/* silly case, ASCII */
 			if ( (ib[0] & 0x80) == 0) {
@@ -312,11 +313,51 @@ tds_sys_iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * out
 				continue;
 			}
 
+            if (il == 3) {
+                local_errno = EINVAL;
+                break;
+            } else if (ol < 4) {
+                break;
+            }
+
+            if ( (ib[0] & 0xF8) == 0xF0) {
+                /*
+                 * Need to use a surrogate pair:
+                 * 11110uts 10rqponm 10lkjihg 10fedcba ->
+                 * wvponmlk 110110yx hgfedcba 110111ji
+                 * where yxwv (aka topmost) = utsrq - 1
+                 */
+                unsigned int topmost;
+
+                if ( (ib[1] & 0xC0) != 0x80 || (ib[2] & 0xC0) != 0x80 ||
+                     (ib[3] & 0xC0) != 0x80) {
+                    local_errno = EILSEQ;
+                    break;
+                }
+
+                topmost = (((ib[0] & 0x7) << 2) | ((ib[1] & 0x30) >> 4)) - 1;
+                if (topmost > 0xFFFF) {
+                    local_errno = EILSEQ;
+                    break;
+                }
+
+                *ob++ = (((topmost & 0x3) << 6) | ((ib[1] & 0xF) << 2)
+                         | ((ib[2] & 0x30) >> 4));
+                *ob++ = 0xD8 | (topmost >> 2);
+                *ob++ = ((ib[2] & 0x3) << 6) | (ib[3] & 0x3F);
+                *ob++ = 0xDC | ((ib[2] & 0xC) >> 2);
+
+                ol -= 4;
+                ib += 4;
+                il -= 4;
+                continue;
+            }
+
 			local_errno = EILSEQ;
 			break;
 		}
 		break;
-	case UCS2LE_UTF8:
+    case UTF16LE_UTF8:
 		while (il > 1 && ol > 0) {
 			n = ((unsigned int)ib[1]) << 8 | ib[0];
 			/* ASCII */
@@ -342,6 +383,30 @@ tds_sys_iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * out
 
 			if (ol == 2)
 				break;
+
+            if (il >= 4 && (ib[1] & 0xFC) == 0xD8 && (ib[3] & 0xFC) == 0xDC) {
+                /* 
+                 * Surrogate pair:
+                 * rqponmlk 110110ts hgfedcba 110111ji ->
+                 * 11110yxw 10vuponm 10lkjihg 10fedcba
+                 * where yxwvu (aka topmost) = tsrq + 1
+                 */
+                unsigned int topmost;
+
+                if (ol == 3)
+                    break;
+
+                topmost = (((ib[1] & 0x3) << 2) | ((ib[0] & 0xC0) >> 6)) + 1;
+                *ob++ =  0xF0 | (topmost >> 2);
+                *ob++ =  0x80 | ((topmost & 0x3) << 4) | ((ib[0] & 0x3C) >> 2);
+                *ob++ = (0x80 | ((ib[0] & 0x3) << 4) | ((ib[3] & 0x3) << 2)
+                         | (ib[2] >> 6));
+                *ob++ =  0x80 | (ib[2] & 0x3F);
+                ol -= 4;
+                ib += 4;
+                il -= 4;
+                continue;
+            }
 
 			*ob++ = 0xE0 | (n >> 12);
 			*ob++ = 0x80 | ((n >> 6) & 0x3F);

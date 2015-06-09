@@ -1155,7 +1155,8 @@ struct tds_context
 
 enum TDS_ICONV_ENTRY
 {
-      client2ucs2
+      client2utf16
+    , client2ucs2 = client2utf16 /* historically used instead */
     , client2server_chardata
     , iso2server_metadata
     , initial_char_conv_count   /* keep last */
