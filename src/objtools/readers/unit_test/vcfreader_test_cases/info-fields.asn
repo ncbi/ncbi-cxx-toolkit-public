@@ -1,0 +1,177 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "vcf-meta-info",
+      data {
+        {
+          label str "meta-information",
+          num 18,
+          data strs {
+            "fileformat=VCFv4.1",
+            "fileDate=20090805",
+            "source=myImputationProgramV3.1",
+            "reference=file:///seq/references/1000GenomesPilot-NCBI36.fasta",
+            "contig=<ID=20,length=62435964,assembly=B36,md5=f126cdf8a6e0c7f379
+d618ff66beb2da,species=""Homo sapiens"",taxonomy=x>",
+            "phasing=partial",
+            "INFO=<ID=NS,Number=1,Type=Integer,Description=""Number of Samples
+ With Data"">",
+            "INFO=<ID=DP,Number=1,Type=Integer,Description=""Total Depth"">",
+            "INFO=<ID=AF,Number=A,Type=Float,Description=""Allele Frequency"">",
+            "INFO=<ID=AA,Number=1,Type=String,Description=""Ancestral Allele"">",
+            "INFO=<ID=DB,Number=0,Type=Flag,Description=""dbSNP membership,
+ build 129"">",
+            "INFO=<ID=H2,Number=0,Type=Flag,Description=""HapMap2 membership"">",
+            "FILTER=<ID=q10,Description=""Quality below 10"">",
+            "FILTER=<ID=s50,Description=""Less than 50% of samples have data"">",
+            "FORMAT=<ID=GT,Number=1,Type=String,Description=""Genotype"">",
+            "FORMAT=<ID=GQ,Number=1,Type=Integer,Description=""Genotype
+ Quality"">",
+            "FORMAT=<ID=DP,Number=1,Type=Integer,Description=""Read Depth"">",
+            "FORMAT=<ID=HQ,Number=2,Type=Integer,Description=""Haplotype
+ Quality"">"
+          }
+        },
+        {
+          label str "genotype-headers",
+          num 3,
+          data strs {
+            "NA00001",
+            "NA00002",
+            "NA00003"
+          }
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbSNP",
+          tag str "rs6040355"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 1110695,
+        id local id 20
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "score",
+            data real { 67, 10, 0 }
+          },
+          {
+            label str "filter",
+            data str "PASS"
+          },
+          {
+            label str "info",
+            data str "AA=T;AF=0.333,0.667;DB;DP=10;NS=2"
+          },
+          {
+            label str "format",
+            num 4,
+            data strs {
+              "GT",
+              "GQ",
+              "DP",
+              "HQ"
+            }
+          },
+          {
+            label str "genotype-data",
+            data fields {
+              {
+                label str "NA00001",
+                num 4,
+                data strs {
+                  "1|2",
+                  "21",
+                  "6",
+                  "23,27"
+                }
+              },
+              {
+                label str "NA00002",
+                num 4,
+                data strs {
+                  "2|1",
+                  "2",
+                  "0",
+                  "18,2"
+                }
+              },
+              {
+                label str "NA00003",
+                num 3,
+                data strs {
+                  "2/2",
+                  "35",
+                  "4"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
