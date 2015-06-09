@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = test_jsonwrapp
+APP_PROJ = test_jsonwrapp test_jsonwrapp_old
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
