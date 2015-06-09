@@ -2661,9 +2661,6 @@ void CDiagContext::x_StartRequest(void)
     ctx.StartRequest();
 
     // Print selected environment and registry values.
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if ( !app ) return;
     static CSafeStatic<TLogEnvironment> s_LogEnvironment;
     string log_args = s_LogEnvironment->Get();
     if ( !log_args.empty() ) {
@@ -2671,11 +2668,20 @@ void CDiagContext::x_StartRequest(void)
         NStr::Split(log_args, " ", log_args_list);
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogEnvironment", "true");
-        const CNcbiEnvironment& env = app->GetEnvironment();
-        ITERATE(list<string>, it, log_args_list) {
-            const string& val = env.Get(*it);
-            extra.Print(*it, val);
-        }
+        {{
+            // The guard must be released before flushing the extra -
+            // otherwise there may be a deadlock when accessing CParam-s
+            // from other threads.
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if ( app ) {
+                const CNcbiEnvironment& env = app->GetEnvironment();
+                ITERATE(list<string>, it, log_args_list) {
+                    const string& val = env.Get(*it);
+                    extra.Print(*it, val);
+                }
+            }
+        }}
         extra.Flush();
     }
     static CSafeStatic<TLogRegistry> s_LogRegistry;
@@ -2685,13 +2691,21 @@ void CDiagContext::x_StartRequest(void)
         NStr::Split(log_args, " ", log_args_list);
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogRegistry", "true");
-        const CNcbiRegistry& reg = app->GetConfig();
-        ITERATE(list<string>, it, log_args_list) {
-            string section, name;
-            NStr::SplitInTwo(*it, ":", section, name);
-            const string& val = reg.Get(section, name);
-            extra.Print(*it, val);
-        }
+        {{
+            // The guard must be released before flushing the extra -
+            // see above.
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if ( app ) {
+                const CNcbiRegistry& reg = app->GetConfig();
+                ITERATE(list<string>, it, log_args_list) {
+                    string section, name;
+                    NStr::SplitInTwo(*it, ":", section, name);
+                    const string& val = reg.Get(section, name);
+                    extra.Print(*it, val);
+                }
+            }
+        }}
         extra.Flush();
     }
 }
