@@ -510,7 +510,7 @@ private:
 
     bool x_IsDBLinkUserObj( const CSeqdesc & desc );
 
-    bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat);
+    bool x_FixMiscRNA(CSeq_feat& feat);
     void x_ModernizeRNAFeat(CSeq_feat& feat);
 
 protected:
