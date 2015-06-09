@@ -1661,6 +1661,25 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         seq_inst.ResetExt();
     }
 
+    if (m_flags & fAddTranslatedCDSAssembly) {
+        auto mrna_assembly = seqs.SetSeq_set().back()->GetSeq().GetInst().GetHist().GetAssembly().back();
+
+        CRef<CSeq_feat> cds_feat_on_assembly_mrna(new CSeq_feat);
+        cds_feat_on_assembly_mrna->Assign(*cds_feat_on_transcribed_mrna);
+        cds_feat_on_assembly_mrna->SetLocation().SetId(mrna_assembly->GetSeq_id(0));
+
+        if ( !cds_feat_on_assembly_mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
+            cds_feat_on_assembly_mrna->SetLocation().SetInt().SetTo() -= 3;
+        }
+
+        CSeq_loc_Mapper to_prot(*cds_feat_on_assembly_mrna, CSeq_loc_Mapper::eLocationToProduct);
+        auto prot_assembly = to_prot.Map(*mrna_assembly);
+
+        prot_assembly->SetSegs().SetSpliced().SetProduct_length(seq_inst.GetLength());
+
+        seq_inst.SetHist().SetAssembly().push_back(prot_assembly);
+    }
+
 #ifdef _DEBUG
     CSeq_entry_Handle prot_seh = m_scope->AddTopLevelSeqEntry(*entry);
 

@@ -17425,7 +17425,7 @@ ECB844964226CF5432D24AE82A3DE6E339F141AB4484FC885E38A6FA0C882D8CA830'H,
                   data {
                     {
                       label str "Flags",
-                      data int 14183
+                      data int 46951
                     },
                     {
                       label str "AdjustRange",
@@ -17490,7 +17490,61 @@ FYDGPQVANLQNVDTGFWLDMSNLSDVVLSREIQTGLRARATLEESMPMLENLEERFRRLQETCDAARTEIEESGWTR
 ESASRMEGDEAQGPSRAQQAFQSFVNECNSIEFSFGSFGEHVRVLCARVSRGLAAAGEAIRRCFSCCKGSTHRYAPRD
 DLSPEGASLAETLARFADDMGIERGADGTYDIPLVDDWRRGVPSIEGEGSDSIYEIMMPIYEVMDMDLETRRSFAVQQ
 GHYQDPRASDYDLPRASDYDLPRSPYPTPPLPPRYQLQNMDVEAGFREAVYASFVAGMYNYVVTQPQERIPNSQQVEG
-ILRDMLTNGSQTFRDLMRRWNREVDRE"
+ILRDMLTNGSQTFRDLMRRWNREVDRE",
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "PROT_44",
+                genomic-id gi 385243207,
+                genomic-strand plus,
+                product-type protein,
+                exons {
+                  {
+                    product-start protpos {
+                      amin 0,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 390,
+                      frame 3
+                    },
+                    genomic-start 0,
+                    genomic-end 1172,
+                    parts {
+                      diag 1173
+                    }
+                  }
+                },
+                product-length 391,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 46951
+                    },
+                    {
+                      label str "AdjustRange",
+                      data ints {
+                        0,
+                        1172
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -19896,6 +19950,17 @@ BC3D2D870FA00F8FE3E09700'H,
                   start-codon-found TRUE,
                   stop-codon-found TRUE
                 }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 34407
+                    }
+                  }
+                }
               }
             }
           }
@@ -19937,7 +20002,71 @@ BC3D2D870FA00F8FE3E09700'H,
         length 153,
         seq-data iupacaa "MKLAEALLLRSDQQKKIISLKQRINANVLVQDGDQPSEDPNELLKQVFSLIQ
 EFQKLSYAIHETNALTKLNDGRSLLALLTLRDEFVEQHKTLTAAISNTSRESDRYSTREIKWHKVIPVSSLQKQADDI
-SLKLRDLNVLIQSTNWKIDLIEA"
+SLKLRDLNVLIQSTNWKIDLIEA",
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id local str "PROT_58",
+                genomic-id gi 523529002,
+                genomic-strand plus,
+                product-type protein,
+                exons {
+                  {
+                    product-start protpos {
+                      amin 0,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 13,
+                      frame 3
+                    },
+                    genomic-start 8679,
+                    genomic-end 8720,
+                    parts {
+                      match 3,
+                      diag 39
+                    }
+                  },
+                  {
+                    product-start protpos {
+                      amin 14,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 152,
+                      frame 3
+                    },
+                    genomic-start 0,
+                    genomic-end 417,
+                    parts {
+                      genomic-ins 1,
+                      diag 417
+                    }
+                  }
+                },
+                product-length 153,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 34407
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
