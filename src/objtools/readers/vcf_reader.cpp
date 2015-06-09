@@ -1106,7 +1106,7 @@ CVcfReader::xProcessInfo(
             infos.push_back( key );
         }
         else {
-            string joined = NStr::Join( list<string>( value.begin(), value.end() ), ";" );
+            string joined = NStr::Join( list<string>( value.begin(), value.end() ), "," );
             infos.push_back( key + "=" + joined );
         }
     }
