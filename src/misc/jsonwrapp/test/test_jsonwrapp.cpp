@@ -463,6 +463,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
             cout << j->name << ": " << j->value << endl;
         }
     }
+#if NCBI_HAVE_CXX11
     for_each(obj.begin(), obj.end(), [](const CJson_ConstObject::const_iterator::pair& v) {
         cout << v.name << ": " << v.value << endl;
     });
@@ -484,7 +485,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     for(CJson_Object_pair& v : obj) {
         cout << v.name << ": " << v.value << endl;
     }
-
+#endif
 
 // --------------------------------------------------------------------------
 // array element access
@@ -622,6 +623,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     NON_CONST_ITERATE (CJson_Array, i, arr) {
         cout << *i;
     }
+#if NCBI_HAVE_CXX11
     for_each(arr.begin(), arr.end(), [](const CJson_ConstNode& v) {
         Printout(0,v);
     });
@@ -631,6 +633,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     for(CJson_Node& v: arr) {
         cout << v;
     }
+#endif
 
 
     {
@@ -667,6 +670,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 
         BOOST_CHECK(1 == count(arr.begin(), arr.end(),
             CJson_Document(CJson_Node::eBool).SetValue().SetBool(true)));
+#if NCBI_HAVE_CXX11
         for_each(arrDst2.begin(), arrDst2.end(), [](CJson_Node& v) {
             v.SetNull();
         });
@@ -674,7 +678,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
                     count(arrDst2.begin(), arrDst2.end(), CJson_Document(CJson_Node::eNull)));
         BOOST_CHECK(all_of(arrDst2.begin(), arrDst2.end(),
                     [](const CJson_ConstNode& v)->bool {return v.IsNull();}));
-
+#endif
 // --------------------------------------------------------------------------
 // push_back array into array
         arrDst.push_back( arr);
