@@ -322,7 +322,8 @@ protected:
     typedef rapidjson::Value::ConstValueIterator _ImplCIterator;
 
 public:
-    typedef CJson_ConstNode value_type;
+    typedef CJson_ConstNode   value_type;
+    typedef CJson_ConstNode&  const_reference;
 
     /// Random-access iterator to access const JSON array element.
     /// It is designed to resemble std::vector::const_iterator class.
@@ -465,7 +466,8 @@ protected:
 class CJson_Array : public CJson_ConstArray, public CJson_Node
 {
 public:
-    typedef CJson_Node value_type;
+    typedef CJson_Node        value_type;
+    typedef CJson_Node&       reference;
     typedef CJson_ConstArray::const_iterator const_iterator;
     typedef CJson_ConstArray::iterator             iterator;
 
