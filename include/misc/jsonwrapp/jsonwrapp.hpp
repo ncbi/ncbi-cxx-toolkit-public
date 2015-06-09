@@ -1184,22 +1184,6 @@ inline CJson_ConstObject CJson_ConstNode::GetObject(void) const {
 }
 inline std::string
 CJson_ConstNode::ToString(void) const {
-    if (IsNull()) {
-        return "null";
-    } else if (IsValue()) {
-        const CJson_ConstValue v = GetValue();
-        if (v.IsBool()) {
-            return NStr::BoolToString( v.GetBool());
-        } else if (v.IsString()) {
-            return v.GetString();
-        } else if (v.IsDouble()) {
-            return NStr::NumericToString( v.GetDouble());
-        } else if (v.IsInt8()) {
-            return NStr::NumericToString( v.GetInt8());
-        } else if (v.IsUint8()) {
-            return NStr::NumericToString( v.GetUint8());
-        }
-    }
     ncbi::CNcbiOstrstream os;
     rapidjson::CppOStream ofs(os);
     rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
