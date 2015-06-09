@@ -83,7 +83,8 @@ CWorkerNodeJobContext CJobCommitterThread::AllocJobContext()
 }
 
 void CJobCommitterThread::RecycleJobContextAndCommitJob(
-        SWorkerNodeJobContextImpl* job_context)
+        SWorkerNodeJobContextImpl* job_context,
+        CRequestContextSwitcher& rctx_switcher)
 {
     job_context->m_FirstCommitAttempt = true;
 
@@ -96,6 +97,9 @@ void CJobCommitterThread::RecycleJobContextAndCommitJob(
     WakeUp();
 
     m_ImmediateActions.Push(job_context);
+
+    // We must do it here, before m_TimelineMutex is unlocked
+    rctx_switcher.Release();
 }
 
 void CJobCommitterThread::Stop()

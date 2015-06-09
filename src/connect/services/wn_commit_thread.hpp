@@ -45,15 +45,25 @@ BEGIN_NCBI_SCOPE
 class CRequestContextSwitcher
 {
 public:
+    CRequestContextSwitcher() {}
+
     CRequestContextSwitcher(CRequestContext* new_request_context)
+        : m_SavedRequestContext(&CDiagContext::GetRequestContext())
     {
-        m_SavedRequestContext = &CDiagContext::GetRequestContext();
         CDiagContext::SetRequestContext(new_request_context);
+    }
+
+    void Release()
+    {
+        if (m_SavedRequestContext) {
+            CDiagContext::SetRequestContext(m_SavedRequestContext);
+            m_SavedRequestContext.Reset();
+        }
     }
 
     ~CRequestContextSwitcher()
     {
-        CDiagContext::SetRequestContext(m_SavedRequestContext);
+        Release();
     }
 
 private:
@@ -70,7 +80,8 @@ public:
 
     CWorkerNodeJobContext AllocJobContext();
 
-    void RecycleJobContextAndCommitJob(SWorkerNodeJobContextImpl* job_context);
+    void RecycleJobContextAndCommitJob(SWorkerNodeJobContextImpl* job_context,
+            CRequestContextSwitcher& rctx_switcher);
 
     void Stop();
 

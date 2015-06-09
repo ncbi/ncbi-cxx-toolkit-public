@@ -541,7 +541,8 @@ void SWorkerNodeJobContextImpl::x_RunJob()
     if (!CGridGlobals::GetInstance().IsShuttingDown())
         m_CleanupEventSource->CallEventHandlers();
 
-    m_WorkerNode->m_JobCommitterThread->RecycleJobContextAndCommitJob(this);
+    m_WorkerNode->m_JobCommitterThread->RecycleJobContextAndCommitJob(this,
+            request_state_guard);
 }
 
 void* CMainLoopThread::Main()
@@ -553,6 +554,7 @@ void* CMainLoopThread::Main()
     CWorkerNodeJobContext job_context(
             m_WorkerNode->m_JobCommitterThread->AllocJobContext());
 
+    CRequestContextSwitcher no_op;
     unsigned try_count = 0;
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
         try {
@@ -579,7 +581,7 @@ void* CMainLoopThread::Main()
                     job_context->m_JobCommitStatus =
                             CWorkerNodeJobContext::eCS_Return;
                     m_WorkerNode->m_JobCommitterThread->
-                            RecycleJobContextAndCommitJob(job_context);
+                            RecycleJobContextAndCommitJob(job_context, no_op);
                 }
                 job_context =
                         m_WorkerNode->m_JobCommitterThread->AllocJobContext();
