@@ -1,4 +1,4 @@
-#ifdef MISC_JSONWRAPP___JSONWRAPP_OLD__HPP
+#ifdef MISC_JSONWRAPP___JSONWRAPP__HPP
 #ifdef __GNUC__
 #  error "Both jsonwrapp_old.hpp and jsonwrapp.hpp are used; please use only one of them"
 #endif // __GNUC__
@@ -7,9 +7,15 @@
 #endif 
 #endif
 
+#ifndef MISC_JSONWRAPP___JSONWRAPP_OLD__HPP
+#define MISC_JSONWRAPP___JSONWRAPP_OLD__HPP
 
-#ifndef MISC_JSONWRAPP___JSONWRAPP__HPP
-#define MISC_JSONWRAPP___JSONWRAPP__HPP
+#ifdef __GNUC__
+#  warning "New version of jsonwrapp.hpp is available. Please upgrade."
+#endif // __GNUC__
+#if NCBI_COMPILER_MSVC
+#pragma message(__FILE__ ": warning: New version of jsonwrapp.hpp is available. Please upgrade.")
+#endif 
 
 /*  $Id$
 * ===========================================================================
@@ -71,16 +77,10 @@
 */
 
 #include <corelib/ncbistr.hpp>
-#include <corelib/ncbidbg.hpp>
-#include <iterator>
 
-#define RAPIDJSON_NOMEMBERITERATORCLASS
-#include "rapidjson/rapidjson.h"
-#include "rapidjson/document.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/error/en.h"
+#include "rapidjson_old/document.h"
+#include "rapidjson_old/prettywriter.h"
+#include "rapidjson_old/filestream.h"
 
 
 BEGIN_NCBI_SCOPE
@@ -145,11 +145,7 @@ public:
     std::string ToString(void) const;
 
     ~CJson_ConstNode(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstNode(const CJson_ConstNode& n);
-    /// Note: this does not copy Node data
-    /// Instead, both Node object will point to the same data
     CJson_ConstNode& operator=(const CJson_ConstNode& n);
 
     bool operator!=(const CJson_ConstNode& n) const;
@@ -164,16 +160,12 @@ protected:
     static _Impl*& x_Impl(CJson_ConstNode& v){
         return v.m_Impl;
     }
-    friend class CJson_Node;
     friend class CJson_ConstValue;
     friend class CJson_Array;
     friend class CJson_ConstArray;
     friend class CJson_ConstObject;
-    friend class CJson_Object;
     friend class CJson_WalkHandler;
     friend class CJson_Document;
-    friend class CJson_ConstObject_pair;
-    friend class CJson_Object_pair;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -182,7 +174,7 @@ class CJson_Node : virtual public CJson_ConstNode
 {
 public:
     /// Erase node data and convert it into JSON NULL value
-    CJson_Node& SetNull(void);
+    void SetNull(void);
 
     /// Erase node data and convert it into JSON value
     CJson_Value ResetValue(void);
@@ -203,21 +195,13 @@ public:
     CJson_Object SetObject(void);
 
     ~CJson_Node(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Node(const CJson_Node& n);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Node& operator=(const CJson_Node& n);
-
-    /// Copy Node contents data into this node
-    CJson_Node& AssignCopy(const CJson_ConstNode& n);
 
 protected:
     CJson_Node(void) {
     }
     CJson_Node(_Impl* impl) : CJson_ConstNode(impl) {
-        m_Impl = impl;
     }
     friend class CJson_Value;
     friend class CJson_Array;
@@ -225,8 +209,6 @@ protected:
     friend class CJson_Object;
     friend class CJson_ConstObject;
     friend class CJson_Document;
-    friend class CJson_ConstObject_pair;
-    friend class CJson_Object_pair;
 };
 
 
@@ -260,18 +242,12 @@ public:
     size_t GetStringLength(void) const;
 
     ~CJson_ConstValue(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstValue(const CJson_ConstValue& n);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstValue& operator=(const CJson_ConstValue& n);
 
 protected:
     CJson_ConstValue(void) {}
-    CJson_ConstValue(_Impl* impl) : CJson_ConstNode(impl) {
-        m_Impl = impl;
-    }
+    CJson_ConstValue(_Impl* impl) : CJson_ConstNode(impl) {}
     friend class CJson_ConstNode;
     friend class CJson_WalkHandler;
 };
@@ -282,20 +258,16 @@ class CJson_Value : public CJson_ConstValue, public CJson_Node
 {
 public:
     /// Set primitive value data
-    CJson_Value& SetBool(   bool  value);
-    CJson_Value& SetInt4(   Int4  value);
-    CJson_Value& SetUint4( Uint4  value);
-    CJson_Value& SetInt8(   Int8  value);
-    CJson_Value& SetUint8( Uint8  value);
-    CJson_Value& SetDouble(double value);
-    CJson_Value& SetString(const TStringType& value);
+    void SetBool(   bool  value);
+    void SetInt4(   Int4  value);
+    void SetUint4( Uint4  value);
+    void SetInt8(   Int8  value);
+    void SetUint8( Uint8  value);
+    void SetDouble(double value);
+    void SetString(const TStringType& value);
 
     ~CJson_Value(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Value(const CJson_Value& n);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Value& operator=(const CJson_Value& n);
 
 protected:
@@ -322,19 +294,10 @@ protected:
     typedef rapidjson::Value::ConstValueIterator _ImplCIterator;
 
 public:
-    typedef CJson_ConstNode value_type;
-
     /// Random-access iterator to access const JSON array element.
     /// It is designed to resemble std::vector::const_iterator class.
     class const_iterator {
     public:
-        typedef std::random_access_iterator_tag iterator_category;
-        typedef CJson_ConstNode                 value_type;
-        typedef std::ptrdiff_t                  difference_type;
-        typedef std::ptrdiff_t                  distance_type;
-        typedef CJson_ConstNode*                pointer;
-        typedef CJson_ConstNode&                reference;
-
         ~const_iterator(void) {}
         const_iterator(void);
         const_iterator(const const_iterator& vi);
@@ -343,10 +306,6 @@ public:
         /// Comparison
         bool operator!=(const const_iterator& vi) const;
         bool operator==(const const_iterator& vi) const;
-        bool operator<( const const_iterator& vi) const;
-        bool operator<=(const const_iterator& vi) const;
-        bool operator>( const const_iterator& vi) const;
-        bool operator>=(const const_iterator& vi) const;
 
         /// Increment and decrement
         const_iterator& operator++(void);
@@ -362,28 +321,18 @@ public:
         const CJson_ConstNode& operator*( void) const;
         const CJson_ConstNode* operator->(void) const;
 
-        /// Distance
-        distance_type operator-(const_iterator vi) const;
     protected:
         const_iterator(const _ImplCIterator vi);
         const_iterator(const _ImplIterator vi);
         _ImplIterator m_vi;
         mutable CJson_Node m_v;
         friend class CJson_ConstArray;
-        friend class CJson_Array;
     };
 
     /// Random-access iterator to access non-const JSON array element.
     /// It is designed to resemble std::vector::iterator class.
     class iterator : public const_iterator {
     public:
-        typedef std::random_access_iterator_tag iterator_category;
-        typedef CJson_Node                      value_type;
-        typedef std::ptrdiff_t                  difference_type;
-        typedef std::ptrdiff_t                  distance_type;
-        typedef CJson_Node*                     pointer;
-        typedef CJson_Node&                     reference;
-
         ~iterator(void) {}
         iterator(void);
         iterator(const iterator& i);
@@ -396,9 +345,6 @@ public:
         /// Dereference
         CJson_Node& operator*(void) const;
         CJson_Node* operator->(void) const;
-
-        /// Distance
-        distance_type operator-(iterator vi) const;
 
     private:
         iterator(const _ImplIterator vi);
@@ -418,21 +364,15 @@ public:
     bool empty(void) const;
 
     /// Return a reference to the element at a specified location in the array
-    /// If index is greater than or equal to the size of the array,
-    /// the function throws std::out_of_range exception
     CJson_ConstNode at(size_t index) const;
 
     /// Return a reference to the element at a specified location in the array
-    /// If index is greater than or equal to the size of the array,
-    /// the result is undefined
     CJson_ConstNode operator[](size_t index) const;
 
     /// Return a reference to the first element in the array
-    /// If the array is empty, the result is undefined
     CJson_ConstNode front(void) const;
 
     /// Return a reference to the last element of the array.
-    /// If the array is empty, the result is undefined
     CJson_ConstNode back(void) const;
 
     /// Return a random-access iterator to the first element in the array
@@ -443,18 +383,16 @@ public:
     const_iterator end(void) const;
 
     ~CJson_ConstArray(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstArray(const CJson_ConstArray& n);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstArray& operator=(const CJson_ConstArray& n);
+
+    bool operator!=(const CJson_ConstArray& n) const;
+    bool operator==(const CJson_ConstArray& n) const;
 
 protected:
     CJson_ConstArray(void)  {
     }
     CJson_ConstArray(_Impl* impl) : CJson_ConstNode(impl) {
-        m_Impl = impl;
     }
     static CJson_Node x_MakeNode(_Impl* impl);
     friend class CJson_ConstNode;
@@ -465,7 +403,6 @@ protected:
 class CJson_Array : public CJson_ConstArray, public CJson_Node
 {
 public:
-    typedef CJson_Node value_type;
     typedef CJson_ConstArray::const_iterator const_iterator;
     typedef CJson_ConstArray::iterator             iterator;
 
@@ -474,29 +411,17 @@ public:
 
     /// Erase all elements of the array
     void clear(void);
-    
-    /// Remove an element
-    iterator erase(const_iterator _where);
-
-    /// Remove a range of elements
-    iterator erase(const_iterator _first, const_iterator _last);
 
     /// Return a reference to the element at a specified location in the array
-    /// If index is greater than or equal to the size of the array,
-    /// the function throws std::out_of_range exception
     CJson_Node at(size_t index);
 
     /// Return a reference to the element at a specified location in the array
-    /// If index is greater than or equal to the size of the array,
-    /// the result is undefined
     CJson_Node operator[](size_t index);
 
     /// Return a reference to the first element in the array
-    /// If the array is empty, the result is undefined
     CJson_Node front(void);
 
     /// Return a reference to the last element of the array.
-    /// If the array is empty, the result is undefined
     CJson_Node back(void);
 
     /// Add null element to the end of the array.
@@ -504,19 +429,17 @@ public:
 
     /// Add primitive type element to the end of the array.
 #ifndef NCBI_COMPILER_WORKSHOP
-    template <typename T> void push_back(const T&); // primitive and string
-    template <typename T> void push_back(const T*);
+    template <typename T> void push_back(T); // primitive and string
 #else
-    void push_back(const bool& v);
-    void push_back(const Int4& v);
-    void push_back(const Uint4& v);
-    void push_back(const Int8& v);
-    void push_back(const Uint8& v);
-    void push_back(const float& v);
-    void push_back(const double& v);
+    void push_back(bool v);
+    void push_back(Int4 v);
+    void push_back(Uint4 v);
+    void push_back(Int8 v);
+    void push_back(Uint8 v);
+    void push_back(float v);
+    void push_back(double v);
     void push_back(const CJson_Node::TCharType* v);
     void push_back(const CJson_Node::TStringType& v);
-    void push_back(const CJson_ConstNode& v);
 #endif
 
     /// Add array type element to the end of the array.
@@ -529,18 +452,14 @@ public:
     void pop_back(void);
 
     /// Return a random-access iterator to the first element in the array
-    iterator begin(void) const;
+    iterator begin(void);
 
     /// Return a random-access iterator that points just beyond the end of
     /// the array
-    iterator end(void) const;
+    iterator end(void);
 
     ~CJson_Array(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Array(const CJson_Array& n);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Array& operator=(const CJson_Array& n);
 
 protected:
@@ -552,43 +471,6 @@ protected:
     friend class CJson_Node;
     friend class CJson_Object;
     template<class Type> class CProhibited {};
-};
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CJson_ConstObject value type  - [name,value] pair.
-
-class CJson_Object_pair;
-class CJson_ConstObject_pair {
-protected:
-    typedef rapidjson::Value _Impl;
-public:
-    const CJson_Node::TCharType* name;
-    const CJson_ConstNode value;
-
-    ~CJson_ConstObject_pair(void) {}
-    CJson_ConstObject_pair(void);
-    CJson_ConstObject_pair(const CJson_Node::TCharType* _name, const _Impl& _value);
-    CJson_ConstObject_pair(const CJson_Object_pair& p);
-    CJson_ConstObject_pair& assign(
-        const CJson_Node::TCharType* _name, const _Impl& _value);
-};
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CJson_Object value type  - [name,value] pair.
-
-class CJson_Object_pair {
-protected:
-    typedef rapidjson::Value _Impl;
-public:
-    const CJson_Node::TCharType* name;
-    CJson_Node value;
-
-    ~CJson_Object_pair(void) {}
-    CJson_Object_pair(void);
-    CJson_Object_pair(const CJson_Node::TCharType* _name, _Impl& _value);
-    CJson_Object_pair& assign(const CJson_Node::TCharType* _name, _Impl& _value);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -605,22 +487,24 @@ protected:
     typedef rapidjson::Value::ConstMemberIterator _ImplCIterator;
 
 public:
-    typedef CJson_ConstObject_pair  value_type;
     class iterator;
-
-    /// Bidirectional iterator to access const JSON object element.
+    /// Random-access iterator to access const JSON object element.
     /// It is designed to resemble std::map::const_iterator class.
     /// Dereferencing the iterator returns [name,value] pair.
     class const_iterator {
     public:
-        typedef  CJson_ConstObject_pair pair;
-
-        typedef std::bidirectional_iterator_tag           iterator_category;
-        typedef CJson_ConstObject::const_iterator::pair   value_type;
-        typedef std::ptrdiff_t                            difference_type;
-        typedef std::ptrdiff_t                            distance_type;
-        typedef CJson_ConstObject::const_iterator::pair*  pointer;
-        typedef CJson_ConstObject::const_iterator::pair&  reference;
+        class pair {
+        public:
+            const CJson_Node::TCharType* name;
+            const CJson_ConstNode value;
+            ~pair(void) {}
+        protected:
+            pair(void);
+            pair(const CJson_Node::TCharType* _name, const _Impl& _value);
+            pair& assign(
+                const CJson_Node::TCharType* _name, const _Impl& _value);
+            friend class CJson_ConstObject::const_iterator;
+        };
 
         ~const_iterator(void) {}
         const_iterator(void);
@@ -638,8 +522,12 @@ public:
         /// Increment and decrement
         const_iterator& operator++(void);
         const_iterator& operator++(int);
+        const_iterator& operator+=(int);
+        const_iterator  operator+(int) const;
         const_iterator& operator--(void);
         const_iterator& operator--(int);
+        const_iterator& operator-=(int);
+        const_iterator  operator-(int) const;
 
         /// Dereference
         const pair& operator*(void) const;
@@ -651,23 +539,25 @@ public:
         _ImplIterator m_vi;
         mutable pair m_pvi;
         friend class CJson_ConstObject;
-        friend class CJson_Object;
         friend class iterator;
     };
 
-    /// Bidirectional iterator to access non-const JSON object element.
+    /// Random-access iterator to access non-const JSON object element.
     /// It is designed to resemble std::map::iterator class.
     /// Dereferencing the iterator returns [name,value] pair.
     class iterator {
     public:
-        typedef CJson_Object_pair pair;
-
-        typedef std::bidirectional_iterator_tag     iterator_category;
-        typedef CJson_ConstObject::iterator::pair   value_type;
-        typedef std::ptrdiff_t                      difference_type;
-        typedef std::ptrdiff_t                      distance_type;
-        typedef CJson_ConstObject::iterator::pair*  pointer;
-        typedef CJson_ConstObject::iterator::pair&  reference;
+        class pair {
+        public:
+            const CJson_Node::TCharType* name;
+            CJson_Node value;
+            ~pair(void) {}
+        protected:
+            pair(void);
+            pair(const CJson_Node::TCharType* _name, _Impl& _value);
+            pair& assign(const CJson_Node::TCharType* _name, _Impl& _value);
+            friend class CJson_ConstObject::iterator;
+        };
 
         ~iterator(void) {}
         iterator(void);
@@ -683,12 +573,16 @@ public:
         /// Increment and decrement
         iterator& operator++(void);
         iterator& operator++(int);
+        iterator& operator+=(int);
+        iterator  operator+(int) const;
         iterator& operator--(void);
         iterator& operator--(int);
+        iterator& operator-=(int);
+        iterator  operator-(int) const;
 
         /// Dereference
-        pair& operator*(void) const;
-        pair* operator->(void) const;
+        const pair& operator*(void) const;
+        const pair* operator->(void) const;
 
     private:
         iterator(const _ImplIterator vi);
@@ -706,11 +600,9 @@ public:
     bool  empty(void) const;
 
     /// Access an element with a given name.
-    /// If such element was not found, the function throws std::out_of_range exception
     CJson_ConstNode at(const CJson_Node::TKeyType& name) const;
 
     /// Access an element with a given name.
-    /// If such element does not exist in this object, the result is undefined.
     CJson_ConstNode operator[](const CJson_Node::TKeyType& name) const;
 
     /// Return an iterator that points to the first element in the object
@@ -726,18 +618,16 @@ public:
     bool has(const CJson_Node::TKeyType& name) const;
 
     ~CJson_ConstObject(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstObject(const CJson_ConstObject& v);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_ConstObject& operator=(const CJson_ConstObject& v);
+
+    bool operator!=(const CJson_ConstObject& n) const;
+    bool operator==(const CJson_ConstObject& n) const;
 
 protected:
     CJson_ConstObject(void) {
     }
     CJson_ConstObject( _Impl* impl) : CJson_ConstNode(impl) {
-        m_Impl = impl;
     }
     static CJson_Node x_MakeNode(_Impl* impl);
     friend class CJson_ConstNode;
@@ -750,35 +640,26 @@ class CJson_Object : public CJson_ConstObject, public CJson_Node
 public:
     typedef CJson_ConstObject::const_iterator const_iterator;
     typedef CJson_ConstObject::iterator             iterator;
-    typedef CJson_Object_pair                       value_type;
 
     /// Erase all elements of the object
     void clear(void);
 
     /// Remove an element with a given name from the object
-    /// Returns the number of elements that have been removed
     size_t erase(const CJson_Node::TKeyType& name);
 
-    /// Remove an element
-    iterator erase(const_iterator _where);
-
-    /// Remove a range of elements
-    iterator erase(const_iterator _first, const_iterator _last);
-
     /// Access an element with a given name.
-    /// If such element was not found, the function throws std::out_of_range exception
+    /// If such member does not exist in this object, it will be added.
     CJson_Node at(const CJson_Node::TKeyType& name);
 
     /// Access an element with a given name.
-    /// If such element does not exist in this object, it will be added.
+    /// If such member does not exist in this object, it will be added.
     CJson_Node operator[](const CJson_Node::TKeyType& name);
 
     /// Insert null element into the object
     void insert(const CJson_Node::TKeyType& name);
 
     /// Insert primitive type element into the object
-    template <typename T> void insert(const CJson_Node::TKeyType& name, const T&);
-    template <typename T> void insert(const CJson_Node::TKeyType& name, const T*);
+    template <typename T> void insert(const CJson_Node::TKeyType& name, T);
 
 #ifdef NCBI_COMPILER_WORKSHOP
     void insert(const CJson_Node::TKeyType& name,
@@ -792,20 +673,16 @@ public:
     CJson_Object insert_object(const CJson_Node::TKeyType& name);
 
     /// Return an iterator that points to the first element in the object
-    iterator begin(void) const;
+    iterator begin(void);
 
     /// Return an iterator that points to the location after the last element.
-    iterator end(void) const;
+    iterator end(void);
 
     /// Return an iterator that points to the location of the element.
-    iterator find(const CJson_Node::TKeyType& name) const;
+    iterator find(const CJson_Node::TKeyType& name);
 
     ~CJson_Object(void) {}
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Object(const CJson_Object& v);
-    /// Note: this does not copy Node data
-    /// Instead, both Node objects will point to the same data
     CJson_Object& operator=(const CJson_Object& v);
 
 protected:
@@ -827,7 +704,7 @@ protected:
 /// Provides a mechanism for reading data from a JSON file or document
 /// as a series of events.
 
-class CJson_WalkHandler : public rapidjson::BaseReaderHandler<>
+class CJson_WalkHandler : protected rapidjson::BaseReaderHandler<>
 {
 public:
     CJson_WalkHandler(void);
@@ -838,9 +715,7 @@ public:
     /// @param name
     ///   Name of this object in the parent object, or empty string
     /// if this object has no parent.
-    virtual bool BeginObject(const CJson_Node::TKeyType& /*name*/) {
-        return true;
-    }
+    virtual void BeginObject(const CJson_Node::TKeyType& /*name*/) {}
     
     /// Begin reading object member
     ///
@@ -852,10 +727,8 @@ public:
     ///   if this object has no parent.
     /// @param member
     ///   Member name
-    virtual bool BeginObjectMember(const CJson_Node::TKeyType& /*name*/,
-                                   const CJson_Node::TKeyType& /*member*/) {
-        return true;
-    }
+    virtual void BeginObjectMember(const CJson_Node::TKeyType& /*name*/,
+                                   const CJson_Node::TKeyType& /*member*/) {}
     
     /// Primitive type data has been read
     ///
@@ -866,20 +739,16 @@ public:
     ///   Member name
     /// @param value
     ///   JSON value
-    virtual bool PlainMemberValue(const CJson_Node::TKeyType& /*name*/,
+    virtual void PlainMemberValue(const CJson_Node::TKeyType& /*name*/,
                                   const CJson_Node::TKeyType& /*member*/,
-                                  const CJson_ConstValue& /*value*/) {
-        return true;
-    }
+                                  const CJson_ConstValue& /*value*/) {}
 
     /// End reading object contents
     ///
     /// @param name
     ///   Name of this object in the parent object, or empty string
     ///   if this object has no parent.
-    virtual bool EndObject(const CJson_Node::TKeyType& /*name*/) {
-        return true;
-    }
+    virtual void EndObject(const CJson_Node::TKeyType& /*name*/) {}
 
 
     /// Begin reading array contents
@@ -887,9 +756,7 @@ public:
     /// @param name
     ///   Name of this array in the parent object, or empty string
     ///   if this array has no parent.
-    virtual bool BeginArray(const CJson_Node::TKeyType& /*name*/) {
-        return true;
-    }
+    virtual void BeginArray(const CJson_Node::TKeyType& /*name*/) {}
 
     /// Begin reading array element
     ///
@@ -901,10 +768,8 @@ public:
     ///   if this array has no parent.
     /// @param index
     ///   Index of the array element
-    virtual bool BeginArrayElement(const CJson_Node::TKeyType& /*name*/,
-                                   size_t /*index*/) {
-        return true;
-    }
+    virtual void BeginArrayElement(const CJson_Node::TKeyType& /*name*/,
+                                   size_t /*index*/) {}
 
     /// Primitive type data has been read
     ///
@@ -915,20 +780,16 @@ public:
     ///   Index of the array element
     /// @param value
     ///   JSON value
-    virtual bool PlainElementValue(const CJson_Node::TKeyType& /*name*/,
+    virtual void PlainElementValue(const CJson_Node::TKeyType& /*name*/,
                                    size_t /*index*/,
-                                   const CJson_ConstValue& /*value*/) {
-        return true;
-    }
+                                   const CJson_ConstValue& /*value*/) {}
 
     /// End reading array contents
     ///
     /// @param name
     ///   Name of this array in the parent object, or empty string
     ///   if this array has no parent.
-    virtual bool EndArray(const CJson_Node::TKeyType& /*name*/) {
-        return true;
-    }
+    virtual void EndArray(const CJson_Node::TKeyType& /*name*/) {}
 
     /// Return current stack path as string
     /// For example:  "/root/obj2/arr[3]"
@@ -940,34 +801,37 @@ public:
     bool Read(CJson_Document& doc);
 
 private:
-    bool x_Notify(const rapidjson::Value& v);
-    bool x_BeginObjectOrArray(bool object_type);
+    void x_Notify(const rapidjson::Value& v);
+    void x_BeginObjectOrArray(bool object_type);
     void x_EndObjectOrArray(void);
 
-public:
     // The following functions are named this way because rapidjson requires so
-    bool Null();
-    bool Bool(bool v);
-    bool Int(int v);
-    bool Uint(unsigned v);
-    bool Int64(int64_t v);
-    bool Uint64(uint64_t v);
-    bool Double(double v);
-    bool String(const Ch* buf, rapidjson::SizeType sz, bool c);
-    bool Key(   const Ch* buf, rapidjson::SizeType sz, bool c);
-    bool StartObject();
-    bool EndObject(rapidjson::SizeType sz);
-    bool StartArray();
-    bool EndArray(rapidjson::SizeType sz);
+    void Null();
+    void Bool(bool v);
+    void Int(int v);
+    void Uint(unsigned v);
+    void Int64(int64_t v);
+    void Uint64(uint64_t v);
+    void Double(double v);
+    void String(const Ch* buf, rapidjson::SizeType sz, bool c);
+    void StartObject();
+    void EndObject(rapidjson::SizeType sz);
+    void StartArray();
+    void EndArray(rapidjson::SizeType sz);
 
-private:
+
     void x_SetSource(std::istream* in) {m_in=in;}
-    std::istream* m_in;                       // Input stream
-    std::vector<bool> m_object_type;          // Object (true), or array (false)
-    std::vector<size_t> m_index;              // array element index
+    std::istream* m_in;                      // Input stream
+    std::vector<bool> m_object_type;         // Object (true), or array (false)
+    std::vector<size_t> m_index;             // array element index
     std::vector<CJson_Node::TKeyType> m_name; // object member name
+    bool m_expectName;                       // true, if next string value is member name
 
     friend class CJson_Document;
+    friend class rapidjson::GenericValue<  rapidjson::Value::EncodingType,
+                                           rapidjson::Value::AllocatorType>;
+    friend class rapidjson::GenericReader< rapidjson::Value::EncodingType,
+                                           rapidjson::Value::AllocatorType>;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -975,20 +839,18 @@ private:
 /// CJson_Document
 ///
 /// Serializable, copyable container for JSON data.
+/// To be serializable, root value should be array or object type only.
 
-class CJson_Document : public CJson_Node
+class CJson_Document : public CJson_Value
 {
     typedef rapidjson::Document _DocImpl;
 
 public:
-    CJson_Document(CJson_Node::EJsonType type = CJson_Node::eObject);
-    /// Copy another document contents into this document
+    CJson_Document(CJson_Value::EJsonType type = CJson_Value::eObject);
     CJson_Document(const CJson_Document& v);
-    /// Copy another document contents into this document
     CJson_Document& operator=(const CJson_Document& v);
-    /// Copy another Node contents into this document
+
     CJson_Document(const CJson_ConstNode& v);
-    /// Copy another Node contents into this document
     CJson_Document& operator=(const CJson_ConstNode& v);
 
     ~CJson_Document(void) {
@@ -1024,13 +886,10 @@ public:
     /// Traverse the JSON data stream contents
     static void Walk(std::istream& in, CJson_WalkHandler& walk);
 
-
 private:
     _DocImpl m_DocImpl;
 };
 
-
-/////////////////////////////////////////////////////////////////////////////
 
 /// Extraction operator for JSON document
 inline std::istream& operator>>(std::istream& is, CJson_Document& d) {
@@ -1047,18 +906,10 @@ inline std::ostream& operator<<(std::ostream& os, const CJson_Document& d)
     return os;
 }
 
-/// Insertion operator for JSON node
-inline std::ostream& operator<<(std::ostream& os, const CJson_ConstNode& v)
-{
-    return operator<<(os, CJson_Document(v)); 
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 // inline implementations
-
 #if NCBI_COMPILER_GCC
 #if (NCBI_COMPILER_VERSION == 442) || (NCBI_COMPILER_VERSION == 443)
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -1093,12 +944,21 @@ CJson_ConstNode::operator=(const CJson_ConstNode& n) {
 inline bool
 CJson_ConstNode::operator==(const CJson_ConstNode& n) const
 {
-    return m_Impl->operator==(*n.m_Impl);
+    if (IsNull()) {
+        return n.IsNull();
+    } else if (IsValue()) {
+        return n.IsValue() && ToString() == n.ToString();
+    } else if (IsArray()) {
+        return n.IsArray() && GetArray() == n.GetArray();
+    } else if (IsObject()) {
+        return n.IsObject() && GetObject() == n.GetObject();
+    }
+    return false;
 }
 inline bool
 CJson_ConstNode::operator!=(const CJson_ConstNode& n) const
 {
-    return m_Impl->operator!=(*n.m_Impl);
+    return !this->operator==(n);
 }
 
 inline CJson_Node::CJson_Node(const CJson_Node& n)
@@ -1107,11 +967,6 @@ inline CJson_Node::CJson_Node(const CJson_Node& n)
 inline CJson_Node&
 CJson_Node::operator=(const CJson_Node& n) {
     CJson_ConstNode::operator=(n); return *this;
-}
-inline CJson_Node&
-CJson_Node::AssignCopy(const CJson_ConstNode& n) {
-    m_Impl->CopyFrom( *n.m_Impl, *m_Impl->GetValueAllocator());
-    return *this;
 }
 
 
@@ -1142,8 +997,8 @@ inline bool CJson_ConstNode::IsArray(void) const {
 inline bool CJson_ConstNode::IsObject(void) const {
     return m_Impl->IsObject();
 }
-inline CJson_Node& CJson_Node::SetNull(void) {
-    m_Impl->SetNull( ); return *this;
+inline void CJson_Node::SetNull(void) {
+    m_Impl->SetNull( );
 }
 
 inline CJson_Value CJson_Node::ResetValue(void) {
@@ -1151,11 +1006,9 @@ inline CJson_Value CJson_Node::ResetValue(void) {
     return CJson_Value(m_Impl);
 }
 inline CJson_Value CJson_Node::SetValue(void) {
-    _ASSERT(IsValue());
     return CJson_Value(m_Impl);
 }
 inline CJson_ConstValue CJson_ConstNode::GetValue(void) const {
-    _ASSERT(IsValue());
     return CJson_ConstValue(m_Impl);
 }
 inline CJson_Array CJson_Node::ResetArray(void) {
@@ -1163,25 +1016,23 @@ inline CJson_Array CJson_Node::ResetArray(void) {
     return CJson_Array(m_Impl);
 }
 inline CJson_Array CJson_Node::SetArray(void) {
-    _ASSERT(IsArray());
     return CJson_Array(m_Impl);
 }
 inline CJson_ConstArray CJson_ConstNode::GetArray(void) const {
-    _ASSERT(IsArray());
     return CJson_ConstArray(m_Impl);
 }
+
 inline CJson_Object CJson_Node::ResetObject(void) {
     m_Impl->SetObject();
     return CJson_Object(m_Impl);
 }
 inline CJson_Object CJson_Node::SetObject(void) {
-    _ASSERT(IsObject());
     return CJson_Object(m_Impl);
 }
 inline CJson_ConstObject CJson_ConstNode::GetObject(void) const {
-    _ASSERT(IsObject());
     return CJson_ConstObject(m_Impl);
 }
+
 inline std::string
 CJson_ConstNode::ToString(void) const {
     if (IsNull()) {
@@ -1212,7 +1063,6 @@ CJson_ConstNode::ToString(void) const {
 
 inline CJson_ConstValue::CJson_ConstValue( const CJson_ConstValue& n)
     :  CJson_ConstNode(n) {
-    m_Impl = n.m_Impl;
 }
 inline CJson_ConstValue&
 CJson_ConstValue::operator=(const CJson_ConstValue& n) {
@@ -1220,7 +1070,6 @@ CJson_ConstValue::operator=(const CJson_ConstValue& n) {
 }
 inline CJson_Value::CJson_Value( const CJson_Value& n)
     :  CJson_Node(n) {
-    m_Impl = n.m_Impl;
 }
 inline CJson_Value&
 CJson_Value::operator=(const CJson_Value& n) {
@@ -1278,41 +1127,58 @@ inline size_t CJson_ConstValue::GetStringLength(void) const {
     return m_Impl->GetStringLength();
 }
 
-inline CJson_Value& CJson_Value::SetBool(bool  value) {
-    m_Impl->SetBool(  value); return *this;
+inline void CJson_Value::SetBool(bool  value) {
+    m_Impl->SetBool(  value);
 }
-inline CJson_Value& CJson_Value::SetInt4(Int4 value) {
-    m_Impl->SetInt(   value); return *this;
+inline void CJson_Value::SetInt4(Int4 value) {
+    m_Impl->SetInt(   value);
 }
-inline CJson_Value& CJson_Value::SetUint4(Uint4 value) {
-    m_Impl->SetUint(  value); return *this;
+inline void CJson_Value::SetUint4(Uint4 value) {
+    m_Impl->SetUint(  value);
 }
-inline CJson_Value& CJson_Value::SetInt8(Int8 value) {
-    m_Impl->SetInt64( value); return *this;
+inline void CJson_Value::SetInt8(Int8 value) {
+    m_Impl->SetInt64( value);
 }
-inline CJson_Value& CJson_Value::SetUint8(Uint8 value) {
-    m_Impl->SetUint64(value); return *this;
+inline void CJson_Value::SetUint8(Uint8 value) {
+    m_Impl->SetUint64(value);
 }
-inline CJson_Value& CJson_Value::SetDouble(double value) {
-    m_Impl->SetDouble(value); return *this;
+inline void CJson_Value::SetDouble(double value) {
+    m_Impl->SetDouble(value);
 }
-inline CJson_Value& CJson_Value::SetString(const CJson_Node::TStringType& value) {
-    m_Impl->SetString(value.c_str(), *(m_Impl->GetValueAllocator())); return *this;
+inline void CJson_Value::SetString(const CJson_Node::TStringType& value) {
+    m_Impl->SetString(value.c_str(), *(m_Impl->GetValueAllocator()));
 }
 
 // --------------------------------------------------------------------------
 // CJson_Array methods
+
 inline CJson_ConstArray::CJson_ConstArray( const CJson_ConstArray& n)
     :  CJson_ConstNode(n) {
-    m_Impl = n.m_Impl;
 }
 inline CJson_ConstArray&
 CJson_ConstArray::operator=(const CJson_ConstArray& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
+inline bool
+CJson_ConstArray::operator==(const CJson_ConstArray& n) const {
+    if (size() != n.size()) {
+        return false;
+    }
+    size_t i = 0, c = size();
+    for(; i<c; ++i) {
+        if ( at(i) != n.at(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+inline bool
+CJson_ConstArray::operator!=(const CJson_ConstArray& n) const {
+    return !this->operator==(n);
+}
+
 inline CJson_Array::CJson_Array( const CJson_Array& n)
     :  CJson_Node(n) {
-    m_Impl = n.m_Impl;
 }
 inline CJson_Array&
 CJson_Array::operator=(const CJson_Array& n) {
@@ -1324,13 +1190,6 @@ inline void CJson_Array::reserve(size_t count) {
 inline void CJson_Array::clear(void) {
     m_Impl->Clear();
 }
-inline CJson_Array::iterator CJson_Array::erase(CJson_ConstArray::const_iterator _where) {
-    return CJson_Array::iterator( m_Impl->Erase( _where.m_vi));
-}
-inline CJson_Array::iterator
-CJson_Array::erase(CJson_ConstArray::const_iterator _first, CJson_ConstArray::const_iterator _last) {
-    return CJson_Array::iterator( m_Impl->Erase( _first.m_vi, _last.m_vi));
-}
 inline size_t CJson_ConstArray::size(void) const {
     return m_Impl->Size();
 }
@@ -1341,45 +1200,36 @@ inline bool CJson_ConstArray::empty(void) const {
     return m_Impl->Empty();
 }
 inline CJson_ConstNode CJson_ConstArray::at(size_t index) const {
-    if (index >= size()) {
-        throw std::out_of_range("array index out of range");
-    }
-    return operator[](index);
-}
-inline CJson_Node CJson_Array::at(size_t index) {
-    if (index >= size()) {
-        throw std::out_of_range("array index out of range");
-    }
-    return operator[](index);
-}
-inline CJson_ConstNode CJson_ConstArray::operator[](size_t index) const {
     return CJson_ConstNode(&(m_Impl->operator[](index)));
 }
-inline CJson_Node CJson_Array::operator[](size_t index) {
+inline CJson_Node CJson_Array::at(size_t index) {
     return CJson_Node(&(m_Impl->operator[](index)));
 }
+inline CJson_ConstNode CJson_ConstArray::operator[](size_t index) const {
+    return at(index);
+}
+inline CJson_Node CJson_Array::operator[](size_t index) {
+    return at(index);
+}
 inline CJson_ConstNode CJson_ConstArray::front(void) const {
-    return operator[](0);
+    return at(0);
 }
 inline CJson_Node CJson_Array::front(void) {
-    return operator[](0);
+    return at(0);
 }
 inline CJson_ConstNode CJson_ConstArray::back(void) const {
-    return operator[](size()-1);
+    return at(size()-1);
 }
 inline CJson_Node CJson_Array::back(void) {
-    return operator[](size()-1);
+    return at(size()-1);
 }
-
 // Implicit conversions are prohibited
+
 #ifndef NCBI_COMPILER_WORKSHOP
 // this may fail to compile
 //template <typename T> void CJson_Array::push_back(T) =delete;
 // this will compile:
-template <typename T> inline void CJson_Array::push_back(const T&) {
-    CProhibited<T>::Implicit_conversions_are_prohibited();
-}
-template <typename T> inline void CJson_Array::push_back(const T*) {
+template <typename T> inline void CJson_Array::push_back(T) {
     CProhibited<T>::Implicit_conversions_are_prohibited();
 }
 #define JSW_EMPTY_TEMPLATE template<>
@@ -1390,31 +1240,31 @@ inline void CJson_Array::push_back(void) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv, *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const bool& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(bool v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetBool(v), *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Int4& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(Int4 v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetInt(v), *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Uint4& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(Uint4 v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetUint(v), *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Int8& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(Int8 v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetInt64(v), *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Uint8& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(Uint8 v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetUint64(v), *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const float& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(float v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetDouble(v), *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const double& v) {
+JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(double v) {
     rapidjson::Value sv(m_Impl->GetValueAllocator());
     m_Impl->PushBack( sv.SetDouble(v), *(m_Impl->GetValueAllocator()));
 }
@@ -1426,26 +1276,6 @@ JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(
 JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(
     const CJson_Node::TStringType& value) {
     push_back(value.c_str());
-}
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_ConstNode& v) {
-    rapidjson::Value t(m_Impl->GetValueAllocator());
-    t.CopyFrom( *v.m_Impl, *t.GetValueAllocator());
-    m_Impl->PushBack( t, *(m_Impl->GetValueAllocator()));
-}
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_Node& v) {
-    push_back<CJson_ConstNode>(v);
-}
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_ConstArray& v) {
-    push_back<CJson_ConstNode>(v);
-}
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_Array& v) {
-    push_back<CJson_ConstNode>(v);
-}
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_ConstObject& v) {
-    push_back<CJson_ConstNode>(v);
-}
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_Object& v) {
-    push_back<CJson_ConstNode>(v);
 }
 #undef JSW_EMPTY_TEMPLATE
 
@@ -1473,10 +1303,10 @@ inline CJson_ConstArray::const_iterator
 CJson_ConstArray::end(void) const {
     return const_iterator(m_Impl->End());
 }
-inline CJson_Array::iterator CJson_Array::begin(void) const {
+inline CJson_Array::iterator CJson_Array::begin(void) {
     return iterator(m_Impl->Begin());
 }
-inline CJson_Array::iterator CJson_Array::end(void) const {
+inline CJson_Array::iterator CJson_Array::end(void) {
     return iterator(m_Impl->End());
 }
 
@@ -1503,26 +1333,6 @@ inline bool
 CJson_ConstArray::const_iterator::operator==(
     const CJson_ConstArray::const_iterator& vi) const {
     return m_vi == vi.m_vi;
-}
-inline bool
-CJson_ConstArray::const_iterator::operator<(
-    const CJson_ConstArray::const_iterator& vi) const {
-    return m_vi < vi.m_vi;
-}
-inline bool
-CJson_ConstArray::const_iterator::operator<=(
-    const CJson_ConstArray::const_iterator& vi) const {
-    return m_vi <= vi.m_vi;
-}
-inline bool
-CJson_ConstArray::const_iterator::operator>(
-    const CJson_ConstArray::const_iterator& vi) const {
-    return m_vi > vi.m_vi;
-}
-inline bool
-CJson_ConstArray::const_iterator::operator>=(
-    const CJson_ConstArray::const_iterator& vi) const {
-    return m_vi >= vi.m_vi;
 }
 inline CJson_ConstArray::const_iterator&
 CJson_ConstArray::const_iterator::operator++(void) {
@@ -1564,11 +1374,6 @@ inline const CJson_ConstNode*
 CJson_Array::const_iterator::operator->(void) const {
     x_Impl(m_v) = m_vi; return &m_v;
 }
-inline CJson_ConstArray::const_iterator::distance_type
-CJson_ConstArray::const_iterator::operator-(CJson_ConstArray::const_iterator vi) const {
-    return m_vi - vi.m_vi;
-}
-
 inline CJson_ConstArray::const_iterator::const_iterator(
     const CJson_ConstArray::_ImplCIterator vi)
     : m_vi(const_cast<CJson_ConstArray::_ImplIterator>(vi)),
@@ -1606,10 +1411,6 @@ inline CJson_Node*
 CJson_ConstArray::iterator::operator->(void) const {
     x_Impl(m_v) = m_vi; return &m_v;
 }
-inline CJson_ConstArray::iterator::distance_type
-CJson_ConstArray::iterator::operator-(CJson_ConstArray::iterator vi) const {
-    return m_vi - vi.m_vi;
-}
 inline CJson_ConstArray::iterator::iterator(
     const CJson_ConstArray::_ImplIterator vi) : const_iterator(vi) {
 }
@@ -1619,53 +1420,59 @@ inline CJson_ConstArray::iterator::iterator(
 
 inline CJson_ConstObject::CJson_ConstObject( const CJson_ConstObject& n)
     :  CJson_ConstNode(n) {
-    m_Impl = n.m_Impl;
 }
 inline CJson_ConstObject&
 CJson_ConstObject::operator=(const CJson_ConstObject& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
+inline bool
+CJson_ConstObject::operator==(const CJson_ConstObject& n) const
+{
+    if (size() != n.size()) {
+        return false;
+    }
+    const_iterator i = begin(), e = end();
+    for ( ; i != e; ++i) {
+        const_iterator another = n.find(i->name);
+        if (another == n.end() || another->value != i->value) {
+            return false;
+        }
+    }
+    return true;
+}
+inline bool
+CJson_ConstObject::operator!=(const CJson_ConstObject& n) const
+{
+    return !this->operator==(n);
+}
 inline CJson_Object::CJson_Object( const CJson_Object& n)
     :  CJson_Node(n) {
-    m_Impl = n.m_Impl;
 }
 inline CJson_Object&
 CJson_Object::operator=(const CJson_Object& n) {
     CJson_Node::operator=(n); return *this;
 }
 inline void CJson_Object::clear(void) {
-    m_Impl->RemoveAllMembers();
+    ResetObject();
 }
 inline size_t CJson_Object::erase(const CJson_Node::TKeyType& name) {
     return m_Impl->RemoveMember(name.c_str()) ? 1 : 0;
 }
-inline CJson_Object::iterator CJson_Object::erase(CJson_ConstObject::const_iterator _where) {
-    return CJson_Object::iterator( m_Impl->EraseMember( _where.m_vi));
-}
-inline CJson_Object::iterator
-CJson_Object::erase(CJson_ConstObject::const_iterator _first, CJson_ConstObject::const_iterator _last) {
-    return CJson_Object::iterator( m_Impl->EraseMember( _first.m_vi, _last.m_vi));
-}
 inline size_t CJson_ConstObject::size(void) const {
-    return m_Impl->MemberCount();
+    return m_Impl->SizeObject();
 }
 inline bool CJson_ConstObject::empty(void) const {
-    return m_Impl->ObjectEmpty();
+    return size() == 0;
 }
 inline CJson_ConstNode
 CJson_ConstObject::at(const CJson_Node::TKeyType& name) const {
-    if (!has(name)) {
-        throw std::out_of_range(name + " object member not found");
-    }
     return CJson_ConstNode(&(m_Impl->operator[](name.c_str())));
 }
 inline CJson_Node
 CJson_Object::at(const CJson_Node::TKeyType& name) {
-    if (!has(name)) {
-        throw std::out_of_range(name + " object member not found");
-    }
     return CJson_Object(&(m_Impl->operator[](name.c_str())));
 }
+
 inline CJson_ConstNode
 CJson_ConstObject::operator[](const CJson_Node::TKeyType& name) const {
     return CJson_ConstNode(&(m_Impl->operator[](name.c_str())));
@@ -1678,68 +1485,65 @@ CJson_Object::operator[](const CJson_Node::TKeyType& name) {
     return CJson_Node(&(m_Impl->operator[](name.c_str())));
 }
 
+// Implicit conversions are prohibited
+// this may fail to compile
+//template <typename T> void CJson_Object::insert(const std::string& , T) =delete;
+// this will compile:
+template <typename T> inline void CJson_Object::insert(
+    const CJson_Node::TKeyType& , T) {
+    CProhibited<T>::Implicit_conversions_are_prohibited();
+}
+
 inline void CJson_Object::insert(const CJson_Node::TKeyType& name) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value, a);
 }
-// Implicit conversions are prohibited
-// this may fail to compile
-//template <typename T> void CJson_Object::insert(const std::string& , T) =delete;
-// this will compile:
-template <typename T> inline void CJson_Object::insert(
-    const CJson_Node::TKeyType& , const T&) {
-    CProhibited<T>::Implicit_conversions_are_prohibited();
-}
-template <typename T> inline void CJson_Object::insert(
-    const CJson_Node::TKeyType& , const T*) {
-    CProhibited<T>::Implicit_conversions_are_prohibited();
-}
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const bool& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, bool v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetBool(v), a);
 }
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const Int4& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, Int4 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetInt(v), a);
 }
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const Uint4& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, Uint4 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetUint(v), a);
 }
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const Int8& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, Int8 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetInt64(v), a);
 }
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const Uint8& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, Uint8 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetUint64(v), a);
 }
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const float& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, float v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetDouble(v), a);
 }
 template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const double& v) {
+CJson_Object::insert(const CJson_Node::TKeyType& name, double v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
@@ -1761,34 +1565,7 @@ CJson_Object::insert(const CJson_Node::TKeyType& name,
                      const CJson_Node::TStringType& value) {
     insert(name, value.c_str());
 }
-template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const CJson_ConstNode& v) {
-    rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
-    rapidjson::Value sv_name(name.c_str(), a);
-    rapidjson::Value sv_value(&a);
-    sv_value.CopyFrom( *v.m_Impl, a);
-    m_Impl->AddMember( sv_name, sv_value, a);
-}
-template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const CJson_Node& v) {
-    insert<CJson_ConstNode>(name, v);
-}
-template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const CJson_ConstArray& v) {
-    insert<CJson_ConstNode>(name, v);
-}
-template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const CJson_Array& v) {
-    insert<CJson_ConstNode>(name, v);
-}
-template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const CJson_ConstObject& v) {
-    insert<CJson_ConstNode>(name, v);
-}
-template<> inline void
-CJson_Object::insert(const CJson_Node::TKeyType& name, const CJson_Object& v) {
-    insert<CJson_ConstNode>(name, v);
-}
+
 inline CJson_Array
 CJson_Object::insert_array(const CJson_Node::TKeyType& name) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
@@ -1805,11 +1582,6 @@ CJson_Object::insert_object(const CJson_Node::TKeyType& name) {
     m_Impl->AddMember( sv_name, sv_value.SetObject(), a);
     return operator[](name).SetObject();
 }
-inline bool
-CJson_ConstObject::has(const CJson_Node::TKeyType& name) const {
-    return m_Impl->HasMember(name.c_str());
-}
-
 
 inline CJson_ConstObject::const_iterator
 CJson_ConstObject::begin(void) const {
@@ -1826,19 +1598,22 @@ CJson_ConstObject::find(const CJson_Node::TKeyType& name) const {
 }
 
 inline CJson_Object::iterator
-CJson_Object::begin(void) const {
+CJson_Object::begin(void) {
     return iterator(m_Impl->MemberBegin());
 }
 inline CJson_Object::iterator
-CJson_Object::end(void) const {
+CJson_Object::end(void) {
     return iterator(m_Impl->MemberEnd());
 }
 inline CJson_Object::iterator
-CJson_Object::find(const CJson_Node::TKeyType& name) const {
+CJson_Object::find(const CJson_Node::TKeyType& name) {
     _ImplIterator m = m_Impl->FindMember(name.c_str());
     return m ? iterator(m) : end();
 }
-
+inline bool
+CJson_ConstObject::has(const CJson_Node::TKeyType& name) const {
+    return m_Impl->HasMember(name.c_str());
+}
 
 // --------------------------------------------------------------------------
 // CJson_Object::const_iterator
@@ -1863,12 +1638,28 @@ CJson_ConstObject::const_iterator::operator++(int) {
     ++m_vi; return *this;
 }
 inline CJson_ConstObject::const_iterator&
+CJson_ConstObject::const_iterator::operator+=(int i) {
+    m_vi += i; return *this;
+}
+inline CJson_ConstObject::const_iterator
+CJson_ConstObject::const_iterator::operator+(int i) const {
+    return const_iterator(m_vi + i);
+}
+inline CJson_ConstObject::const_iterator&
 CJson_ConstObject::const_iterator::operator--(void) {
     --m_vi; return *this;
 }
 inline CJson_ConstObject::const_iterator&
 CJson_ConstObject::const_iterator::operator--(int) {
     --m_vi; return *this;
+}
+inline CJson_ConstObject::const_iterator&
+CJson_ConstObject::const_iterator::operator-=(int i) {
+    m_vi -= i; return *this;
+}
+inline CJson_ConstObject::const_iterator
+CJson_ConstObject::const_iterator::operator-(int i) const {
+    return const_iterator(m_vi - i);
 }
 inline CJson_ConstObject::const_iterator&
 CJson_ConstObject::const_iterator::operator=(
@@ -1900,25 +1691,20 @@ CJson_ConstObject::const_iterator::operator==(
     const CJson_ConstObject::iterator& vi) const {
     return m_vi == vi.m_vi;
 }
-
-inline CJson_ConstObject_pair::CJson_ConstObject_pair(void)
+inline CJson_ConstObject::const_iterator::pair::pair(void)
     : name(0), value(JSONWRAPP_MAKENODE(0)) {
 }
-inline CJson_ConstObject_pair::CJson_ConstObject_pair(
+inline CJson_ConstObject::const_iterator::pair::pair(
     const CJson_Node::TCharType* _name, const _Impl& _value)
     : name(_name), value(JSONWRAPP_MAKENODE(const_cast<_Impl*>(&_value))) {
 }
-inline CJson_ConstObject_pair::CJson_ConstObject_pair(const CJson_Object_pair& p)
-    : name(p.name), value(JSONWRAPP_MAKENODE(const_cast<_Impl*>(p.value.m_Impl))) {
-}
-inline CJson_ConstObject_pair&
-CJson_ConstObject_pair::assign(
+inline CJson_ConstObject::const_iterator::pair&
+CJson_ConstObject::const_iterator::pair::assign(
     const CJson_Node::TCharType* _name, const _Impl& _value) {
-    this->~CJson_ConstObject_pair();
-    new (this) CJson_ConstObject_pair(_name, _value);
+    this->~pair();
+    new (this) pair(_name, _value);
     return *this;
 }
-
 inline const CJson_ConstObject::const_iterator::pair&
 CJson_ConstObject::const_iterator::operator*(void) const {
     return m_pvi.assign(m_vi->name.GetString(), m_vi->value);
@@ -1978,6 +1764,14 @@ CJson_ConstObject::iterator::operator++(int) {
     ++m_vi; return *this;
 }
 inline CJson_ConstObject::iterator&
+CJson_ConstObject::iterator::operator+=(int i) {
+    m_vi += i; return *this;
+}
+inline CJson_ConstObject::iterator
+CJson_ConstObject::iterator::operator+(int i) const {
+    return iterator(m_vi + i);
+}
+inline CJson_ConstObject::iterator&
 CJson_ConstObject::iterator::operator--(void) {
     --m_vi; return *this;
 }
@@ -1985,139 +1779,133 @@ inline CJson_ConstObject::iterator&
 CJson_ConstObject::iterator::operator--(int) {
     --m_vi; return *this;
 }
-inline CJson_ConstObject::iterator::pair&
+inline CJson_ConstObject::iterator&
+CJson_ConstObject::iterator::operator-=(int i) {
+    m_vi -= i; return *this;
+}
+inline CJson_ConstObject::iterator
+CJson_ConstObject::iterator::operator-(int i) const {
+    return iterator(m_vi - i);
+}
+inline const CJson_ConstObject::iterator::pair&
 CJson_ConstObject::iterator::operator*(void) const {
     return m_pvi.assign(m_vi->name.GetString(), m_vi->value);
 }
-inline CJson_ConstObject::iterator::pair*
+inline const CJson_ConstObject::iterator::pair*
 CJson_ConstObject::iterator::operator->(void) const {
     return &(m_pvi.assign(m_vi->name.GetString(), m_vi->value));
 }
 
-inline CJson_Object_pair::CJson_Object_pair(void)
+inline CJson_ConstObject::iterator::pair::pair(void)
     : name(0), value(JSONWRAPP_MAKENODE(0)) {
 }
-inline CJson_Object_pair::CJson_Object_pair(
+inline CJson_ConstObject::iterator::pair::pair(
     const CJson_Node::TCharType* _name, _Impl& _value)
     : name(_name), value(JSONWRAPP_MAKENODE(&_value)) {
 }
-inline CJson_Object_pair&
-CJson_Object_pair::assign(
+inline CJson_ConstObject::iterator::pair&
+CJson_ConstObject::iterator::pair::assign(
     const CJson_Node::TCharType* _name, _Impl& _value) {
-    this->~CJson_Object_pair();
-    new (this) CJson_Object_pair(_name, _value);
+    this->~pair();
+    new (this) pair(_name, _value);
     return *this;
 }
-
 inline CJson_ConstObject::iterator::iterator(
     const CJson_Object::_ImplIterator vi)
     : m_vi(vi) {
 }
-
 // --------------------------------------------------------------------------
 // CJson_WalkHandler methods
 
 inline CJson_WalkHandler::CJson_WalkHandler(void)
-    : m_in(0) {
+    : m_in(0), m_expectName(false) {
     m_object_type.push_back(true); m_index.push_back(size_t(-1));
     m_name.push_back(kEmptyStr);
 }
 
-inline bool CJson_WalkHandler::x_Notify(const rapidjson::Value& v) {
-    bool ret = true;
+inline void CJson_WalkHandler::x_Notify(const rapidjson::Value& v) {
     if (m_object_type.back()) {
-        ret = BeginObjectMember(m_name[m_name.size()-2], m_name.back());
-        if (ret) {
-            ret = PlainMemberValue( m_name[m_name.size()-2], m_name.back(),
-                                    const_cast<CJson_Node::_Impl*>(&v));
-        }
-        return ret;
-    }
-    ret = BeginArrayElement(m_name[m_name.size()-2], m_index.back());
-    if (ret) {
-        PlainElementValue(m_name[m_name.size()-2], m_index.back(),
+        BeginObjectMember(m_name[m_name.size()-2], m_name.back());
+        PlainMemberValue( m_name[m_name.size()-2], m_name.back(),
                           const_cast<CJson_Node::_Impl*>(&v));
+        m_expectName = true;
+        return;
     }
+    BeginArrayElement(m_name[m_name.size()-2], m_index.back());
+    PlainElementValue(m_name[m_name.size()-2], m_index.back(),
+                      const_cast<CJson_Node::_Impl*>(&v));
     ++(m_index.back());
-    return ret;
 }
-inline bool CJson_WalkHandler::x_BeginObjectOrArray(bool object_type) {
-    bool ret = true;
+inline void CJson_WalkHandler::x_BeginObjectOrArray(bool object_type) {
     if (m_object_type.size() > 1) {
         if (m_object_type.back()) {
-            ret = BeginObjectMember(m_name[m_name.size()-2], m_name.back());
+            BeginObjectMember(m_name[m_name.size()-2], m_name.back());
         } else {
-            ret = BeginArrayElement(m_name[m_name.size()-2], m_index.back());
+            BeginArrayElement(m_name[m_name.size()-2], m_index.back());
         }
     }
-    if (ret) {
-        m_object_type.push_back(object_type); m_index.push_back(size_t(-1));
-        m_name.push_back(kEmptyStr);
-    }
-    return ret;
+    m_object_type.push_back(object_type); m_index.push_back(size_t(-1));
+    m_name.push_back(kEmptyStr);
+    m_expectName = object_type;
 }
 inline void CJson_WalkHandler::x_EndObjectOrArray(void) {
     m_object_type.pop_back(); m_index.pop_back(); m_name.pop_back();
-    if (!m_object_type.back()) {
+    if (m_object_type.back()) {
+        m_expectName = true;
+    } else {
+        m_expectName = false;
         ++(m_index.back());
     }
 }
-inline bool CJson_WalkHandler::Null() {
-    return x_Notify( (rapidjson::Value::AllocatorType*)0);
+inline void CJson_WalkHandler::Null() {
+    x_Notify( (rapidjson::Value::AllocatorType*)0);
 }
-inline bool CJson_WalkHandler::Bool(bool v) {
-    return x_Notify(rapidjson::Value(v));
+inline void CJson_WalkHandler::Bool(bool v) {
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::Int(int v) { 
-    return x_Notify(rapidjson::Value(v));
+inline void CJson_WalkHandler::Int(int v) { 
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::Uint(unsigned v) { 
-    return x_Notify(rapidjson::Value(v));
+inline void CJson_WalkHandler::Uint(unsigned v) { 
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::Int64(int64_t v) { 
-    return x_Notify(rapidjson::Value(v));
+inline void CJson_WalkHandler::Int64(int64_t v) { 
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::Uint64(uint64_t v) { 
-    return x_Notify(rapidjson::Value(v));
+inline void CJson_WalkHandler::Uint64(uint64_t v) { 
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::Double(double v) { 
-    return x_Notify(rapidjson::Value(v));
+inline void CJson_WalkHandler::Double(double v) { 
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::String(const Ch* buf,
+inline void CJson_WalkHandler::String(const Ch* buf,
     rapidjson::SizeType sz, bool) {
-    return x_Notify(rapidjson::Value(buf,sz));
-}
-inline bool CJson_WalkHandler::Key(const Ch* buf,
-    rapidjson::SizeType sz, bool c) {
-    m_name.back().assign(buf, sz);
-    return true;
-}
-
-inline bool CJson_WalkHandler::StartObject() { 
-    if (!x_BeginObjectOrArray(true)) {
-        return false;
+    if (m_expectName) {
+        m_expectName = false;
+        m_name.back().assign(buf, sz);
+        return;
     }
-    return BeginObject(m_name[m_name.size()-2]);
+    rapidjson::Value v(buf,sz);
+    x_Notify(v);
 }
-inline bool CJson_WalkHandler::EndObject(rapidjson::SizeType) { 
+inline void CJson_WalkHandler::StartObject() { 
+    x_BeginObjectOrArray(true);
+    BeginObject(m_name[m_name.size()-2]);
+}
+inline void CJson_WalkHandler::EndObject(rapidjson::SizeType) { 
     m_name.back().clear();
-    bool ret = EndObject(m_name[m_name.size()-2]);
+    EndObject(m_name[m_name.size()-2]);
     x_EndObjectOrArray();
-    return ret;
 }
-inline bool CJson_WalkHandler::StartArray() { 
-    if (!x_BeginObjectOrArray(false)) {
-        return false;
-    }
-    bool ret = BeginArray(m_name[m_name.size()-2]);
+inline void CJson_WalkHandler::StartArray() { 
+    x_BeginObjectOrArray(false);
+    BeginArray(m_name[m_name.size()-2]);
     m_index.back() = 0;
-    return ret;
 }
-inline bool CJson_WalkHandler::EndArray(rapidjson::SizeType) { 
+inline void CJson_WalkHandler::EndArray(rapidjson::SizeType) { 
     m_index.back() = size_t(-1);
-    bool ret = EndArray(m_name[m_name.size()-2]);
+    EndArray(m_name[m_name.size()-2]);
     x_EndObjectOrArray();
-    return ret;
 }
 
 inline CJson_Node::TKeyType
@@ -2156,35 +1944,35 @@ inline bool CJson_WalkHandler::Read(CJson_Document& doc) {
 inline CJson_Document::CJson_Document( CJson_Value::EJsonType type) {
     switch (type) {
     default:
-    case CJson_Node::eObject: m_DocImpl.SetObject();    break;
-    case CJson_Node::eArray:  m_DocImpl.SetArray();     break;
-    case CJson_Node::eNull:   m_DocImpl.SetNull();      break;
-    case CJson_Node::eBool:   m_DocImpl.SetBool(false); break;
-    case CJson_Node::eNumber: m_DocImpl.SetInt(0);      break;
-    case CJson_Node::eString: m_DocImpl.SetString(kEmptyCStr,0);  break;
+    case CJson_Value::eObject: m_DocImpl.SetObject();    break;
+    case CJson_Value::eArray:  m_DocImpl.SetArray();     break;
+    case CJson_Value::eNull:   m_DocImpl.SetNull();      break;
+    case CJson_Value::eBool:   m_DocImpl.SetBool(false); break;
+    case CJson_Value::eNumber: m_DocImpl.SetInt(0);      break;
+    case CJson_Value::eString: m_DocImpl.SetString(kEmptyCStr);  break;
     }
     m_Impl = &m_DocImpl;
 }
 inline CJson_Document::CJson_Document(const CJson_Document& v) {
-    m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
+    m_DocImpl.AssignCopy(v.m_DocImpl);
     m_Impl = &m_DocImpl;
 }
 inline CJson_Document& CJson_Document::operator=(const CJson_Document& v) {
-    m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
+    m_DocImpl.AssignCopy(v.m_DocImpl);
     return *this;
 }
 inline CJson_Document::CJson_Document(const CJson_ConstNode& v) {
-    m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
+    m_DocImpl.AssignCopy(*v.m_Impl);
     m_Impl = &m_DocImpl;
 }
 inline CJson_Document& CJson_Document::operator=(const CJson_ConstNode& v) {
-    m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
+    m_DocImpl.AssignCopy(*v.m_Impl);
     return *this;
 }
 
 inline bool CJson_Document::Read(std::istream& in) {
     rapidjson::CppIStream ifs(in);
-    m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(ifs);
+    m_DocImpl.ParseStream<rapidjson::kParseDefaultFlags>(ifs);
     return  !m_DocImpl.HasParseError();
 }
 
@@ -2192,7 +1980,7 @@ inline bool CJson_Document::ReadSucceeded(void) {
     return !m_DocImpl.HasParseError();
 }
 inline std::string CJson_Document::GetReadError() const {
-    return rapidjson::GetParseError_En(m_DocImpl.GetParseError());
+    return m_DocImpl.GetParseError();
 }
 
 inline void CJson_Document::Write(std::ostream& out) const {
@@ -2211,11 +1999,11 @@ inline void CJson_Document::Walk(std::istream& in,
     walk.x_SetSource(&in);
     rapidjson::CppIStream ifs(in);
     rapidjson::Reader rdr;
-    rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk);
+    rdr.Parse<rapidjson::kParseDefaultFlags>(ifs,walk);
 }
 
 END_NCBI_SCOPE
 
-#endif  /* MISC_JSONWRAPP___JSONWRAPP__HPP */
+#endif  /* MISC_JSONWRAPP___JSONWRAPP_OLD__HPP */
 
 

@@ -5,13 +5,21 @@ Use jsonwrapp instead.
 
 
 Source:
-https://github.com/miloyip/rapidjson
-release v1.0.2
+rapidjson-0.11.zip
+http://code.google.com/p/rapidjson/
+
 
 
 NCBI modifications:
 
 Search for 'NCBI' in the following files:
 document.h
-filereadstream.h
-filewritestream.h
+filestream.h
+prettywriter.h
+rapidjson.h
+reader.h
+writer.h
+
+
+
+
