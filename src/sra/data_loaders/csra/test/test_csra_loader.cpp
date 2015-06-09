@@ -40,11 +40,14 @@
 #include <objmgr/graph_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <objtools/readers/idmapper.hpp>
 #include <serial/iterator.hpp>
 
 #include <corelib/test_boost.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -876,6 +879,175 @@ BOOST_AUTO_TEST_CASE(FetchSeq7)
         if ( 0 ) {
             for ( ; git; ++git ) {
                 NcbiCout << MSerial_AsnText << git->GetOriginalGraph();
+            }
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq8)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CCSRADataLoader::SLoaderParams params;
+    string csra_name, id;
+    TSeqPos from, to, align_count;
+
+    {
+        csra_name = "ERR669165";
+        id = "GK000001.2";
+        from = 922690;
+        to   = 922760;
+        align_count = 87;
+    }
+    params.m_CSRAFiles.push_back(csra_name);
+    CGBDataLoader::RegisterInObjectManager(*om);
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, params,
+                                                 CObjectManager::eDefault, 88)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    string annot_name = csra_name;
+    string pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    sx_CheckNames(scope, *loc, annot_name);
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
+    sel.SetSearchUnresolved();
+    sel.ExcludeNamedAnnots(pileup_name);
+
+    BOOST_CHECK(scope.GetBioseqHandle(idh));
+    if ( 1 ) {
+        CGraph_CI git(scope, *loc, sel);
+        BOOST_CHECK_EQUAL(git.GetSize(), 1u);
+    }
+
+    if ( 1 ) {
+        CAlign_CI it(scope, *loc, sel);
+        if ( it ) {
+            cout << "Align count: "<<it.GetSize()<<endl;
+            if ( it.GetAnnot().IsNamed() ) {
+                cout << "Annot name: " << it.GetAnnot().GetName()<<endl;
+            }
+        }
+        BOOST_CHECK_EQUAL(align_count, it.GetSize());
+
+        for ( ; it; ++it ) {
+            const CSeq_align& align = *it;
+            ITERATE(CDense_seg::TIds, j, align.GetSegs().GetDenseg().GetIds()) {
+                sx_CheckSeq(scope, idh, **j);
+            }
+        }
+    }
+
+    if ( 1 ) {
+        sel.ResetAnnotsNames();
+        sel.AddNamedAnnots(pileup_name);
+        CGraph_CI git(scope, *loc, sel);
+        BOOST_CHECK_EQUAL(git.GetSize(), 6u);
+        for ( size_t k = 0; k < 6; ++k, ++git ) {
+            const CSeq_graph& graph = git->GetOriginalGraph();
+            string title = graph.GetTitle();
+            NcbiCout << "Pileup graph: " << title << NcbiEndl;
+            typedef unsigned TExpectedPair[2];
+            const TExpectedPair* expected_pairs = 0;
+            size_t expected_count = 0;
+            if ( title == "Number of inserts" ) {
+                static const TExpectedPair expected_I[] = {
+                    { 0, 0 },
+                };
+                expected_pairs = expected_I;
+                expected_count = ArraySize(expected_I);
+            }
+            else if ( title == "Number of A bases" ) {
+                static const TExpectedPair expected_A[] = {
+                    { 0, 0 },
+                };
+                expected_pairs = expected_A;
+                expected_count = ArraySize(expected_A);
+            }
+            else if ( title == "Number of C bases" ) {
+                static const TExpectedPair expected_C[] = {
+                    { 922695, 1 },
+                };
+                expected_pairs = expected_C;
+                expected_count = ArraySize(expected_C);
+            }
+            else if ( title == "Number of G bases" ) {
+                static const TExpectedPair expected_G[] = {
+                    { 922693, 2 },
+                };
+                expected_pairs = expected_G;
+                expected_count = ArraySize(expected_G);
+            }
+            else if ( title == "Number of T bases" ) {
+                static const TExpectedPair expected_T[] = {
+                    { 922692, 1 },
+                    { 922693, 2 },
+                    { 922695, 1 },
+                    { 922750, 1 },
+                };
+                expected_pairs = expected_T;
+                expected_count = ArraySize(expected_T);
+            }
+            else {
+                BOOST_REQUIRE_EQUAL(title, "Number of matches");
+                static const TExpectedPair expected_M[] = {
+                    { 922690, 70 },
+                    { 922691, 74 },
+                    { 922692, 74 },
+                    { 922693, 75 },
+                    { 922694, 80 },
+                    { 922695, 81 },
+                    { 922696, 83 },
+                    { 922697, 83 },
+                    { 922698, 84 },
+                    { 922699, 85 },
+                    { 922745, 1 },
+                    { 922746, 1 },
+                    { 922747, 1 },
+                    { 922748, 1 },
+                    { 922749, 1 },
+                    { 922750, 1 },
+                    { 922751, 2 },
+                    { 922752, 2 },
+                    { 922753, 2 },
+                    { 922754, 2 },
+                    { 922755, 2 },
+                    { 922756, 2 },
+                    { 922757, 2 },
+                    { 922758, 2 },
+                    { 922759, 2 },
+                    { 922760, 2 },
+                };
+                expected_pairs = expected_M;
+                expected_count = ArraySize(expected_M);
+            }
+            map<TSeqPos, unsigned> expected;
+            for ( size_t i = 0; i < expected_count; ++i ) {
+                expected[expected_pairs[i][0]] = expected_pairs[i][1];
+            }
+            CRange<TSeqPos> range = graph.GetLoc().GetTotalRange();
+            for ( TSeqPos pos = from; pos <= to; ++pos ) {
+                TSeqPos i = pos - range.GetFrom();
+                unsigned pileup_value =
+                    graph.GetGraph().IsByte()?
+                    graph.GetGraph().GetByte().GetValues()[i]:
+                    graph.GetGraph().GetInt().GetValues()[i];
+                unsigned expected_value =
+                    expected.count(pos)? expected[pos]: 0;
+                if ( false && pileup_value ) {
+                    NcbiCout << pos << ": " << pileup_value << NcbiEndl;
+                }
+                BOOST_REQUIRE_EQUAL(pileup_value, expected_value);
             }
         }
     }
