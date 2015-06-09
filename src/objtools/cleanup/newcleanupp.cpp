@@ -4742,62 +4742,55 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
         if (rna.GetType() != CRNA_ref::eType_tRNA) {
             return eAction_Nothing;
         }
-        if (!rna.IsSetExt()) {
-            rna.SetExt().SetTRNA();
-            ChangeMade(CCleanupChange::eChangeRNAref);
-        }
-        if ( rna.IsSetExt()  &&
-             rna.GetExt().Which() == NCBI_RNAEXT(TRNA) ) {
-            
-            CRef<CTrna_ext> trna = s_ParseTRnaFromAnticodonString( gb_qual.GetVal(), feat, m_Scope );
-            if( ! trna ) {
-                return eAction_Nothing;
-            }
 
-            x_SeqFeatTRNABC( feat, *trna );
-            if (trna->IsSetAa() || trna->IsSetAnticodon()) {
-                // don't apply at all if there are conflicts
-                bool apply_aa = false;
-                bool apply_anticodon = false;
-                bool ok_to_apply = true;
+        CRef<CTrna_ext> trna = s_ParseTRnaFromAnticodonString(gb_qual.GetVal(), feat, m_Scope);
+        if (!trna) {
+            return eAction_Nothing;
+        }
+
+        x_SeqFeatTRNABC( feat, *trna );
+        if (trna->IsSetAa() || trna->IsSetAnticodon()) {
+            // don't apply at all if there are conflicts
+            bool apply_aa = false;
+            bool apply_anticodon = false;
+            bool ok_to_apply = true;
                 
-                // look for conflict with aa
-                if (trna->IsSetAa() ) {
-                    if (rna.GetExt().GetTRNA().IsSetAa() ) {
-                        if( rna.GetExt().GetTRNA().GetAa().IsIupacaa() ) {
-                            if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
-                                ok_to_apply = false;
-                            }
-                        }
-                    } else {
-                        apply_aa = true;
-                    }
-                }
-                // look for conflict with anticodon
-                if (trna->IsSetAnticodon()) {
-                    if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
-                        if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(),
-                            trna->GetAnticodon(), m_Scope, sequence::fCompareOverlapping) != sequence::eSame) {
+            // look for conflict with aa
+            if (trna->IsSetAa() ) {
+                if (rna.GetExt().GetTRNA().IsSetAa() ) {
+                    if( rna.GetExt().GetTRNA().GetAa().IsIupacaa() ) {
+                        if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
                             ok_to_apply = false;
                         }
-                    } else {
-                        apply_anticodon = true;
                     }
+                } else {
+                    apply_aa = true;
                 }
+            }
+            // look for conflict with anticodon
+            if (trna->IsSetAnticodon()) {
+                if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
+                    if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(),
+                        trna->GetAnticodon(), m_Scope, sequence::fCompareOverlapping) != sequence::eSame) {
+                        ok_to_apply = false;
+                    }
+                } else {
+                    apply_anticodon = true;
+                }
+            }
 
-                if (ok_to_apply) {
-                    if (apply_aa ) {
-                        rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetNcbieaa());
-                        ChangeMade (CCleanupChange::eChange_tRna);
-                    }
-                    if (apply_anticodon) {
-                        CRef<CSeq_loc> anticodon(new CSeq_loc());
-                        anticodon->Add (trna->GetAnticodon());
-                        rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
-                        ChangeMade (CCleanupChange::eChangeAnticodon);
-                    }
-                    return eAction_Erase;
+            if (ok_to_apply) {
+                if (apply_aa ) {
+                    rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetNcbieaa());
+                    ChangeMade (CCleanupChange::eChange_tRna);
                 }
+                if (apply_anticodon) {
+                    CRef<CSeq_loc> anticodon(new CSeq_loc());
+                    anticodon->Add (trna->GetAnticodon());
+                    rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
+                    ChangeMade (CCleanupChange::eChangeAnticodon);
+                }
+                return eAction_Erase;
             }
         }
     }
