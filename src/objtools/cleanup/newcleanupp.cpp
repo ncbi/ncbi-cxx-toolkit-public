@@ -8630,6 +8630,213 @@ s_GetMiRNAProduct( const string &name )
     return kEmptyStr;
 }
 
+bool s_FixncRNA(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna()) {
+        return false;
+    }
+
+    bool any_change = false;
+    CRNA_ref& rna = feat.SetData().SetRna();
+    const CRNA_ref_Base::TType rna_type =
+        (rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown));
+
+    switch (rna_type) {
+    case CRNA_ref::eType_snRNA:
+    case CRNA_ref::eType_scRNA:
+    case CRNA_ref::eType_snoRNA:
+      {{
+
+        string rna_type_name = CRNA_ref::GetRnaTypeName(rna_type);
+        if (rna.IsSetExt() && rna.GetExt().IsName() &&
+            !NStr::EqualNocase(rna.GetExt().GetName(), rna_type_name))
+        {
+            rna.SetExt().SetGen().SetProduct(rna.GetExt().GetName());
+        }
+
+        rna.SetType(CRNA_ref::eType_ncRNA);
+        rna.SetExt().SetGen().SetClass(rna_type_name);
+        any_change = true;
+        break;
+      }}
+    case CRNA_ref::eType_other:
+        if (rna.IsSetExt() && rna.GetExt().IsName()) {
+            string &rna_name = rna.SetExt().SetName();
+            string miRNAproduct;
+            if (s_IsNcrnaName(rna.GetExt().GetName()))
+            {
+                rna.SetType(CRNA_ref::eType_ncRNA);
+                rna.SetExt().SetGen().SetClass(rna_name);
+                any_change = true;
+            }
+            else if (!(miRNAproduct = s_GetMiRNAProduct(rna_name)).empty())
+            {
+                rna.SetType(CRNA_ref::eType_ncRNA);
+                rna.SetExt().SetGen().SetClass("miRNA");
+                rna.SetExt().SetGen().SetProduct(miRNAproduct);
+                any_change = true;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (feat.IsSetQual() &&
+        (rna_type == CRNA_ref::eType_ncRNA ||
+        (rna_type == NCBI_RNAREF(other) &&
+        rna.IsSetExt() && rna.GetExt().IsName() &&
+        rna.GetExt().GetName() == "misc_RNA"))) {
+        CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
+        while (qual_iter != feat.SetQual().end()) {
+            string &qual = (*qual_iter)->SetQual();
+            string &val = (*qual_iter)->SetVal();
+            if (qual == "ncRNA_class") {
+                rna.SetType(CRNA_ref::eType_ncRNA);
+                rna.SetExt().SetGen().SetClass(val);
+                any_change = true;
+                qual_iter = feat.SetQual().erase(qual_iter);
+            }
+            else {
+                ++qual_iter;
+            }
+        }
+        if (feat.SetQual().empty()) {
+            feat.ResetQual();
+        }
+    }
+
+    if (rna_type == NCBI_RNAREF(ncRNA) && rna.IsSetExt() &&
+        rna.GetExt().IsGen() && rna.GetExt().GetGen().IsSetClass() &&
+        NStr::EqualNocase(rna.GetExt().GetGen().GetClass(), "antisense"))
+    {
+        rna.SetExt().SetGen().SetClass("antisense_RNA");
+        any_change = true;
+    }
+    return any_change;
+}
+
+bool s_FixtmRNA(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna()) {
+        return false;
+    }
+
+    bool any_change = false;
+    CRNA_ref& rna = feat.SetData().SetRna();
+
+    if (rna.IsSetType() &&
+        rna.GetType() == CRNA_ref::eType_other &&
+        rna.IsSetExt() &&
+        rna.GetExt().IsName() &&
+        rna.GetExt().GetName() == "tmRNA") {
+        rna.SetType(CRNA_ref::eType_tmRNA);
+    }
+
+    bool is_misc = (rna.IsSetType() &&
+        rna.GetType() == CRNA_ref::eType_other &&
+        rna.IsSetExt() && rna.GetExt().IsName() &&
+        rna.GetExt().GetName() == "misc_RNA");
+    bool is_tmRNA = (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_tmRNA);
+
+    if (feat.IsSetQual() && (is_misc || is_tmRNA)) {
+        CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
+        while (qual_iter != feat.SetQual().end()) {
+            string &qual = (*qual_iter)->SetQual();
+            string &val = (*qual_iter)->SetVal();
+            if (qual == "tag_peptide") {
+                rna.SetType(CRNA_ref::eType_tmRNA);
+                CRef<CRNA_qual> rna_qual(new CRNA_qual);
+                rna_qual->SetQual(qual);
+                rna_qual->SetVal(val);
+                rna.SetExt().SetGen().SetQuals().Set().push_back(rna_qual);
+                any_change = true;
+                qual_iter = feat.SetQual().erase(qual_iter);
+            }
+            else {
+                ++qual_iter;
+            }
+        }
+        if (feat.SetQual().empty()) {
+            feat.ResetQual();
+        }
+    }
+    return any_change;
+}
+
+bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna()) {
+        return false;
+    }
+
+    bool any_change = false;
+    CRNA_ref& rna = feat.SetData().SetRna();
+    if (!rna.IsSetType() || (rna.GetType() != CRNA_ref::eType_other && rna.GetType() != CRNA_ref::eType_miscRNA)) {
+        return false;
+    }
+
+    if (rna.GetType() == CRNA_ref::eType_other) {
+        rna.SetType(CRNA_ref::eType_miscRNA);
+        any_change = true;
+    }
+
+    if (rna.IsSetExt() && rna.GetExt().IsName()) {
+        string &rna_name = rna.SetExt().SetName();
+        if (rna_name != "ncRNA" &&
+            rna_name != "tmRNA" &&
+            rna_name != "misc_RNA")
+        {
+            rna.SetExt().SetGen().SetProduct(rna_name);
+            any_change = true;
+        }
+    }
+    else {
+        rna.SetExt().SetGen().SetProduct("misc_RNA");
+        any_change = true;
+    }
+
+    if (feat.IsSetQual())
+    {
+        CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
+        while (qual_iter != feat.SetQual().end()) {
+            string &qual = (*qual_iter)->SetQual();
+            string &val = (*qual_iter)->SetVal();
+            if (qual == "product") {
+                // e.g. "its1" to "internal transcribed spacer 1"
+                CNewCleanup_imp::TranslateITSName(val);
+                rna.SetExt().SetGen().SetProduct(val);
+                any_change = true;
+                qual_iter = feat.SetQual().erase(qual_iter);
+            }
+            else {
+                ++qual_iter;
+            }
+        }
+    }
+    return false;
+}
+
+
+void CNewCleanup_imp::x_ModernizeRNAFeat(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna()) {
+        return;
+    }
+
+    if (s_FixncRNA(feat)) {
+        ChangeMade(CCleanupChange::eChangeRNAref);
+    }
+    if (s_FixtmRNA(feat)) {
+        ChangeMade(CCleanupChange::eChangeRNAref);
+    }
+    if (x_FixMiscRNA(feat)) {
+        ChangeMade(CCleanupChange::eChangeRNAref);
+    }
+
+
+}
+
 void CNewCleanup_imp::RnaFeatBC (
     CRNA_ref& rna,
     CSeq_feat& seq_feat
@@ -8823,150 +9030,8 @@ void CNewCleanup_imp::RnaFeatBC (
         }
     }
 
-    // this part is like C's ConvertToNcRNA
-    {
-        const CRNA_ref_Base::TType rna_type = 
-            ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );
-        if (rna_type == NCBI_RNAREF(snRNA) || 
-            rna_type == NCBI_RNAREF(scRNA) || 
-            rna_type == NCBI_RNAREF(snoRNA) )
-        {
-            if (rna_type == NCBI_RNAREF(snRNA)) {
-                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "snRNA");
-            } else if (rna_type == NCBI_RNAREF(scRNA)) {
-                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "scRNA");
-            } else if (rna_type == NCBI_RNAREF(snoRNA)) {
-                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "snoRNA");
-            }
-            if ( rna.IsSetExt() && rna.GetExt().IsName() )
-            {
-                x_AddNonCopiedQual (seq_feat.SetQual(), "product", rna.GetExt().GetName().c_str() );
-            }
-            rna.SetExt().SetName("ncRNA");
-            rna.SetType( NCBI_RNAREF(other) );
-            ChangeMade( CCleanupChange::eChangeRNAref );
-        }
-        else if (rna_type == NCBI_RNAREF(other) && rna.IsSetExt() && rna.GetExt().IsName() )
-        {
-            string &rna_name = rna.SetExt().SetName();
-            string miRNAproduct;
-            if (s_IsNcrnaName(rna.GetExt().GetName())) 
-            {
-                x_AddNonCopiedQual (seq_feat.SetQual(), "ncRNA_class", rna_name.c_str() );
-                rna.SetExt().SetName("ncRNA");
-                ChangeMade( CCleanupChange::eChangeRNAref );
-            }
-            else if ( ! (miRNAproduct = s_GetMiRNAProduct (rna_name)).empty() )
-            {
-                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "miRNA");
-                rna_name = "ncRNA";
-                x_AddNonCopiedQual ( seq_feat.SetQual(), "product", miRNAproduct.c_str() );
-                ChangeMade( CCleanupChange::eChangeRNAref );
-            }
-            else if ( 
-                rna_name != "ncRNA" && 
-                rna_name != "tmRNA" &&
-                rna_name != "misc_RNA" )
-            {
-                x_AddNonCopiedQual ( seq_feat.SetQual(), "product", rna_name.c_str() );
-                rna_name = "misc_RNA";
-                ChangeMade( CCleanupChange::eChangeRNAref );
-            }
-        }
-        if (rna_type == NCBI_RNAREF(other) && ! rna.IsSetExt() ) {
-            rna.SetExt().SetName( "misc_RNA" );
-            ChangeMade( CCleanupChange::eChangeRNAref );
-        }
-        if (rna_type == NCBI_RNAREF(other) && rna.IsSetExt() && rna.GetExt().IsName() &&
-            rna.GetExt().GetName() == "misc_RNA" ) 
-        {
-            NON_CONST_ITERATE( CSeq_feat::TQual, qual_iter, seq_feat.SetQual() ) {
-                string &qual = (*qual_iter)->SetQual();
-                if ( qual == "ncRNA_class" ) {
-                    rna.SetExt().SetName( "ncRNA" );
-                    ChangeMade( CCleanupChange::eChangeRNAref );
-                } else if ( qual == "tag_peptide") {
-                    rna.SetExt().SetName( "tmRNA" );
-                    ChangeMade( CCleanupChange::eChangeRNAref );
-                } else if ( qual == "product" ) {
-                    // e.g. "its1" to "internal transcribed spacer 1"
-                    x_TranslateITSNameAndFlag( (*qual_iter)->SetVal() );
-                }
-            }
-        }
-    }
+    x_ModernizeRNAFeat(seq_feat);
 
-    // This part is like C's FixncRNAClass
-    {
-        const CRNA_ref_Base::TType rna_type = 
-            ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );
-        if( rna_type == NCBI_RNAREF(ncRNA) && rna.IsSetExt() &&
-            rna.GetExt().IsGen() && rna.GetExt().GetGen().IsSetClass() &&
-            NStr::EqualNocase( rna.GetExt().GetGen().GetClass(), "antisense")  ) 
-        {
-            rna.SetExt().SetGen().SetClass("antisense_RNA");
-        }
-    }
-
-    // this part is like C's ModernizeRNAFields
-    const CRNA_ref_Base::TType rna_type = 
-        ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );
-    if( rna_type == NCBI_RNAREF(other) && rna.IsSetExt() && rna.GetExt().IsName() )
-    {
-        const string &name = rna.GetExt().GetName();
-        bool need_qual_cleanup = true;
-        if( name == "ncRNA" ) {
-            SET_FIELD(rna, Type, NCBI_RNAREF(ncRNA) );
-            ChangeMade( CCleanupChange::eChangeRNAref );
-        } else if( name == "tmRNA" ) {
-            SET_FIELD(rna, Type, NCBI_RNAREF(tmRNA) );
-            ChangeMade( CCleanupChange::eChangeRNAref );
-        } else if( name == "misc_RNA" ) {
-            SET_FIELD(rna, Type, NCBI_RNAREF(miscRNA) );
-            ChangeMade( CCleanupChange::eChangeRNAref );
-        } else {
-            need_qual_cleanup = false;
-        }
-
-        if( need_qual_cleanup ) {
-            const string name_copy = name; // we're about to destroy name
-            CRNA_gen& rna_gen = rna.SetExt().SetGen();
-
-            if( seq_feat.IsSetQual() ) {
-                vector< CRef< CGb_qual > > new_qual_vec;
-                vector< CRef< CGb_qual > > &qual_vec = GET_MUTABLE(seq_feat, Qual);
-                NON_CONST_ITERATE( vector< CRef< CGb_qual > >, qual_iter, qual_vec ) {
-                    const string &qual = ( (*qual_iter)->IsSetQual() ? (*qual_iter)->GetQual() : kEmptyStr );
-                    const string &val  = ( (*qual_iter)->IsSetVal()  ? (*qual_iter)->GetVal()  : kEmptyStr );
-                    if ( qual == "ncRNA_class" ) {
-                        rna_gen.SetClass( val );
-                    } else if (qual == "product") {
-                        rna_gen.SetProduct( val );
-                    } else if ( qual ==  "tag_peptide") {
-                        CRef<CRNA_qual> rna_qual( new CRNA_qual );
-                        rna_qual->SetQual( qual );
-                        rna_qual->SetVal( val );
-
-                        rna_gen.SetQuals().Set().push_back( rna_qual );
-                    } else {
-                        // keep this one
-                        new_qual_vec.push_back( *qual_iter );
-                    }
-                }
-
-                // update qual vec if changed
-                if( new_qual_vec.empty() ) {
-                    seq_feat.ResetQual();
-                    ChangeMade( CCleanupChange::eRemoveQualifier );
-                } else if( new_qual_vec.size() != qual_vec.size() ) {
-                    seq_feat.SetQual().swap( new_qual_vec );
-                    ChangeMade( CCleanupChange::eChangeQualifiers );
-                }
-            }
-
-            ChangeMade( CCleanupChange::eChangeRNAref );
-        }
-    }
 }
 
 class CCodeBreakCompare

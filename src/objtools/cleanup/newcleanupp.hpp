@@ -510,6 +510,9 @@ private:
 
     bool x_IsDBLinkUserObj( const CSeqdesc & desc );
 
+    bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat);
+    void x_ModernizeRNAFeat(CSeq_feat& feat);
+
 protected:
 
     // variables used for the whole cleaning process
