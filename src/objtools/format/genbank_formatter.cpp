@@ -886,6 +886,7 @@ void CGenbankFormatter::x_Authors
     if (!NStr::EndsWith(authors, '.')) {
         authors += '.';
     }
+    CleanAndCompress(authors, authors.c_str());
     if( ref.GetContext()->Config().DoHTML() ) {
         TryToSanitizeHtml( authors );
     }
