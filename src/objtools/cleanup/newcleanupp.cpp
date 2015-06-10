@@ -2060,7 +2060,17 @@ void CNewCleanup_imp::DbtagBC (
     string& db = GET_MUTABLE (dbtag, Db);
     if (NStr::IsBlank (db)) return;
 
-    x_CleanupStringMarkChanged( db );
+    size_t len = db.length();
+    NStr::TruncateSpacesInPlace(db);
+    if (len != db.length()) {
+        ChangeMade(CCleanupChange::eTrimSpaces);
+    }
+
+    if (dbtag.GetTag().IsStr()) {
+        if (TrimSpacesSemicolonsAndCommas(dbtag.SetTag().SetStr())) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+        }
+    }
 
     if (NStr::EqualNocase(db, "Swiss-Prot")
         || NStr::EqualNocase (db, "SWISSPROT")) {
@@ -2101,10 +2111,10 @@ void CNewCleanup_imp::DbtagBC (
     } else if (NStr::Equal(db, "FlyBase")) {
         db = "FLYBASE";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
-    } else if (NStr::EqualNocase(db, "GreengenesID")) {
+    } else if (NStr::Equal(db, "GreengenesID")) {
         db = "Greengenes";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
-    } else if (NStr::EqualNocase(db, "HMPID")) {
+    } else if (NStr::Equal(db, "HMPID")) {
         db = "HMP";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
@@ -2125,7 +2135,6 @@ void CNewCleanup_imp::DbtagBC (
 
     string& str = GET_MUTABLE(oid, Str);
     if (NStr::IsBlank (str)) return;
-    x_CleanupStringMarkChanged( str );
 
     db = dbtag.GetDb();
     str = dbtag.GetTag().GetStr();
@@ -2166,19 +2175,15 @@ void CNewCleanup_imp::DbtagBC (
         }
     }
 
-    bool all_zero = true;
-    FOR_EACH_CHAR_IN_STRING (it, str) {
-        const char& ch = *it;
-        if (isdigit((unsigned char)(ch))) {
-            if (ch != '0') {
-                all_zero = false;
-            }
-        } else if (!isspace((unsigned char)(ch))) {
-            return;
+    // convert to number if all digits
+    bool all_digits = true;
+    ITERATE(string, s, str) {
+        if (!isdigit(*s)) {
+            all_digits = false;
+            break;
         }
     }
-    
-    if (str[0] != '0'  ||  all_zero) {
+    if (all_digits && !NStr::StartsWith(str, "0")) {
         try {
             // extract the part before the first space for conversion
             string::size_type pos_of_first_space = 0;
@@ -2190,7 +2195,7 @@ void CNewCleanup_imp::DbtagBC (
             // only convert str to int if it fits into the non-negative side
             // of an int.
             int value = NStr::StringToInt(sStrOfNum, NStr::fConvErr_NoThrow);
-            if( value > 0 || (value == 0 && all_zero) ) {
+            if( value > 0) {
                 SET_FIELD ( oid, Id, NStr::StringToUInt(sStrOfNum) );
                 ChangeMade (CCleanupChange::eChangeDbxrefs);
             }
