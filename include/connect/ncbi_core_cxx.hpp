@@ -106,7 +106,7 @@ typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 /// @note  MUST be called in MT applications to make CONNECT MT-safe, or
 ///        CConnIniter must be used as a base-class.
 /// @param reg
-///  Registry to use (CNcbiApplication's registry if NULL)
+///  Registry to use (none if NULL)
 /// @param lock
 ///  Lock to use (new lock will get created if NULL)
 /// @param flag
@@ -124,7 +124,7 @@ extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 ///
 /// Helper hook-up class that installs default logging/registry/locking (but
 /// only if they have not yet been installed explicitly by user) as if by
-/// calling CONNECT_Init() automagically.
+/// calling CONNECT_Init(&CNcbiApplication::GetConfig()) automagically.
 /// @note  Derive your CONNECT-dependent classes from this class for MT safety.
 /// @sa
 ///  CONNECT_Init
