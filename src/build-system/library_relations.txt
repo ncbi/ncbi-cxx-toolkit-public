@@ -114,6 +114,7 @@ auxnet_g needs generic_db_utils
 backendcommon needs $(SDBAPI_LIB)
 backendcommon needs txxmldoc
 backendcommon needs xconnect
+bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_objutil
 bacterial_pipeline_proc needs xalgoalignutil
 bag_access needs $(SEQ_LIBS)
@@ -254,6 +255,7 @@ dbloadb needs asnmuxdblb
 dbloadb needs tea_crypt
 dbloadb_asn needs asngendefs
 ddvlib needs3party ncbidesk
+distance needs xalgophytree
 docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
 dtd_sample_lib needs xser
@@ -877,6 +879,7 @@ pathogen_ctl needs $(SRAREAD_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gencoll_client
 pathogen_ctl needs pathogen_connection
+pathogen_ctl needs simulated_input_repo
 pathogen_ctl needs taxon1
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
@@ -914,7 +917,6 @@ refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
-refseq_ctl needs gencoll_client
 refseq_ctl needs xid_utils
 reftrack_access needs gpipe_common
 reftrack_admin needs reftrack_access
@@ -954,6 +956,7 @@ seqsplit needs seqset
 seqtest needs $(SEQ_LIBS)
 seqtest needs pub
 sequtil needs xncbi
+simulated_input_repo needs xncbi
 smartasn_g needs submit
 smartnet needs3party vibrant
 smartnetclient needs xconnect
