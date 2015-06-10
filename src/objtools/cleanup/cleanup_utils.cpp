@@ -687,7 +687,7 @@ bool Asn2gnbkCompressSpaces (string& val)
     }
   }
     string new_val;
-    new_val.assign(str);
+    new_val = str;
     delete[] str;
 
     if (!NStr::Equal(val, new_val)) {
@@ -759,8 +759,8 @@ bool TrimSpacesSemicolonsAndCommas (string& val)
     }
 
     string new_val;
-    new_val.assign(str);
-    delete str;
+    new_val = str;
+    delete[] str;
 
     if (!NStr::Equal(val, new_val)) {
         val = new_val;
