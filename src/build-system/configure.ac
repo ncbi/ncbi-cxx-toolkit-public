@@ -5612,10 +5612,8 @@ else
                GLEW_LIBDIR=$GLEW_LIBDIR$bit64_sfx
             fi
          fi
-         glew_config="eval PKG_CONFIG_PATH=\"$GLEW_LIBDIR/pkgconfig\" pkg-config"
-      else
-         glew_config=pkg-config
       fi
+      glew_config="eval PKG_CONFIG_PATH=\"$GLEW_LIBDIR/pkgconfig\" pkg-config"
       if pkg-config --version >/dev/null 2>&1; then
          if $glew_config glewmx --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then
