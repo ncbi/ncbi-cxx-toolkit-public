@@ -273,7 +273,9 @@ public:
         int exit_code;
 
         if (CPipe::ExecWait(m_App, m_Args, in, out, err, exit_code) == CPipe::eDone) {
-            return NStr::Sanitize(out.str()) + " / " + v;
+            // Restrict version string to 1024 chars
+            string app_ver(out.str(), 0, 1024);
+            return NStr::Sanitize(app_ver) + " / " + v;
         }
 
         return v;
