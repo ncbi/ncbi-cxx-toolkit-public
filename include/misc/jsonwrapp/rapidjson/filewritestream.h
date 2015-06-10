@@ -92,7 +92,7 @@ class CppOStream {
 public:
     typedef char Ch;    //!< Character type. Only support char.
 
-	CppOStream(std::ostream& out) : out_(&out), current_('\0'), count_(0) {
+	CppOStream(std::ostream& out) : out_(&out), count_(0) {
         Read();
     }
 
@@ -120,7 +120,6 @@ private:
 	void Read() {
     }
 	std::ostream* out_;
-    Ch current_;
 	size_t count_;
 };
 

@@ -77,6 +77,13 @@ class GenericValue;
 */
 template <typename Encoding, typename Allocator> 
 struct GenericMember { 
+//NCBI: added assignment operator; Clang 3.2 wanted it
+    GenericMember& operator= (GenericMember& rhs) {
+        name  = rhs.name;
+        value = rhs.value;
+        return *this;
+    }
+    
     GenericValue<Encoding, Allocator> name;     //!< name of member (must be a string)
     GenericValue<Encoding, Allocator> value;    //!< value of member.
 };

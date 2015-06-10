@@ -1064,7 +1064,7 @@ inline std::ostream& operator<<(std::ostream& os, const CJson_ConstNode& v)
 /////////////////////////////////////////////////////////////////////////////
 // inline implementations
 
-#if NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC) && !defined(__clang__)
 #if (NCBI_COMPILER_VERSION == 442) || (NCBI_COMPILER_VERSION == 443)
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
@@ -1073,7 +1073,7 @@ inline std::ostream& operator<<(std::ostream& os, const CJson_ConstNode& v)
 #define JSONWRAPP_TO_NCBIUTF8(v)        (v)
 
 // workarounds to make it compile
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 442)
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 442) && !defined(__clang__)
 #  define JSONWRAPP_MAKENODE(v) CJson_Node(v)
 #else
 #  define JSONWRAPP_MAKENODE(v) (v)
