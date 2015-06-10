@@ -2049,26 +2049,33 @@ inline bool CJson_WalkHandler::Null() {
     return x_Notify( (rapidjson::Value::AllocatorType*)0);
 }
 inline bool CJson_WalkHandler::Bool(bool v) {
-    return x_Notify(rapidjson::Value(v));
+    rapidjson::Value jv(v);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::Int(int v) { 
-    return x_Notify(rapidjson::Value(v));
+    rapidjson::Value jv(v);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::Uint(unsigned v) { 
-    return x_Notify(rapidjson::Value(v));
+    rapidjson::Value jv(v);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::Int64(int64_t v) { 
-    return x_Notify(rapidjson::Value(v));
+    rapidjson::Value jv(v);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::Uint64(uint64_t v) { 
-    return x_Notify(rapidjson::Value(v));
+    rapidjson::Value jv(v);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::Double(double v) { 
-    return x_Notify(rapidjson::Value(v));
+    rapidjson::Value jv(v);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::String(const Ch* buf,
     rapidjson::SizeType sz, bool) {
-    return x_Notify(rapidjson::Value(buf,sz));
+    rapidjson::Value jv(buf,sz);
+    return x_Notify(jv);
 }
 inline bool CJson_WalkHandler::Key(const Ch* buf,
     rapidjson::SizeType sz, bool c) {
