@@ -219,7 +219,6 @@ protected:
     CJson_Node(_Impl* impl) : CJson_ConstNode(impl) {
         m_Impl = impl;
     }
-    static CJson_Node x_MakeNode(_Impl* impl);
     friend class CJson_Value;
     friend class CJson_Array;
     friend class CJson_ConstArray;
@@ -1075,10 +1074,7 @@ inline std::ostream& operator<<(std::ostream& os, const CJson_ConstNode& v)
 
 // workarounds to make it compile
 #if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 442)
-CJson_Node CJson_Node::x_MakeNode(_Impl* impl) {
-    return CJson_Node(impl);
-}
-#  define JSONWRAPP_MAKENODE(v) CJson_Node::x_MakeNode(v)
+#  define JSONWRAPP_MAKENODE(v) CJson_Node(v)
 #else
 #  define JSONWRAPP_MAKENODE(v) (v)
 #endif
