@@ -130,7 +130,7 @@ public:
     NCBI_DEPRECATED
     TInDels GetGenomicGaps() const { return m_correction_data.m_correction_indels; };
 
-    SCorrectionData GetgenomicCorrctions() const { return m_correction_data; }
+    SCorrectionData GetGenomicCorrections() const { return m_correction_data; }
 
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
