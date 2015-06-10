@@ -8776,7 +8776,7 @@ bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat)
     }
 
     if (rna.IsSetExt() && rna.GetExt().IsName()) {
-        string &rna_name = rna.SetExt().SetName();
+        string rna_name = rna.SetExt().SetName();
         if (rna_name != "ncRNA" &&
             rna_name != "tmRNA" &&
             rna_name != "misc_RNA")
