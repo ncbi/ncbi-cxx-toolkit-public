@@ -8791,10 +8791,6 @@ bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat)
             any_change = true;
         }
     }
-    else {
-        rna.SetExt().SetGen().SetProduct("misc_RNA");
-        any_change = true;
-    }
 
     if (feat.IsSetQual())
     {
