@@ -3612,8 +3612,9 @@ void CDiagBuffer::Flush(void)
     EDiagSev sev = m_Diag->GetSeverity();
     bool is_console = (m_Diag->GetPostFlags() & eDPF_IsConsole) != 0;
     bool is_disabled = SeverityDisabled(sev);
-    // Do nothing if diag severity is lower than allowed
-    if ((!is_console  &&  is_disabled)  ||  IsOssEmpty(*m_Stream)) {
+
+    // Do nothing if diag severity is lower than allowed.
+    if (!is_console  &&  is_disabled) {
         return;
     }
 

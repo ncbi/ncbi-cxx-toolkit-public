@@ -155,13 +155,13 @@ BEGIN_NCBI_SCOPE
 #ifdef   _ASSERT
 #  undef _ASSERT
 #endif
-#define _ASSERT(expr)   NCBI_ASSERT(expr, NULL)
-#define _VERIFY(expr)   NCBI_VERIFY(expr, NULL)
-#define _TROUBLE        NCBI_TROUBLE(NULL)
+#define _ASSERT(expr)   NCBI_ASSERT(expr, "")
+#define _VERIFY(expr)   NCBI_VERIFY(expr, "")
+#define _TROUBLE        NCBI_TROUBLE("")
 
-#define _ALWAYS_ASSERT(expr)   NCBI_ALWAYS_ASSERT(expr, NULL)
-#define _ALWAYS_VERIFY(expr)   NCBI_ALWAYS_VERIFY(expr, NULL)
-#define _ALWAYS_TROUBLE        NCBI_ALWAYS_TROUBLE(NULL)
+#define _ALWAYS_ASSERT(expr)   NCBI_ALWAYS_ASSERT(expr, "")
+#define _ALWAYS_VERIFY(expr)   NCBI_ALWAYS_VERIFY(expr, "")
+#define _ALWAYS_TROUBLE        NCBI_ALWAYS_TROUBLE("")
 
 
 /// Which action to perform.
