@@ -638,6 +638,25 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 
     {
 // --------------------------------------------------------------------------
+// new document from UTF8 string
+        CJson_Document docs("{\"null\": null, \"bool\": true, \"str\": \"str\"}");
+        cout << docs;
+        BOOST_CHECK(docs.ReadSucceeded());
+        BOOST_CHECK(docs.IsObject());
+        BOOST_CHECK(docs.GetObject().at("bool").IsValue());
+        BOOST_CHECK(docs.GetObject().at("bool").GetValue().IsBool());
+        BOOST_CHECK(docs.GetObject().at("bool").GetValue().GetBool());
+
+        docs.ParseString("[\"utf8 string expected\", false, null ]");
+        cout << docs;
+        BOOST_CHECK(docs.ReadSucceeded());
+        BOOST_CHECK(docs.IsArray());
+        BOOST_CHECK(docs.GetArray().size() == 3);
+        BOOST_CHECK(docs.GetArray().at(1).IsValue());
+        BOOST_CHECK(docs.GetArray().at(1).GetValue().IsBool());
+        BOOST_CHECK(!docs.GetArray().at(1).GetValue().GetBool());
+
+// --------------------------------------------------------------------------
 // new document from array
         CJson_Document doc0(arr);
         cout << arr;

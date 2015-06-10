@@ -984,6 +984,8 @@ class CJson_Document : public CJson_Node
 
 public:
     CJson_Document(CJson_Node::EJsonType type = CJson_Node::eObject);
+    /// Create document by parsing UTF8 string
+    CJson_Document(const TStringType& v);
     /// Copy another document contents into this document
     CJson_Document(const CJson_Document& v);
     /// Copy another document contents into this document
@@ -995,6 +997,9 @@ public:
 
     ~CJson_Document(void) {
     }
+
+    /// Read JSON data from a UTF8 string
+    bool ParseString(const TStringType& v);
 
     /// Read JSON data from a stream
     bool Read(std::istream& in);
@@ -2151,6 +2156,10 @@ inline CJson_Document::CJson_Document( CJson_Value::EJsonType type) {
     }
     m_Impl = &m_DocImpl;
 }
+inline CJson_Document::CJson_Document(const CJson_ConstNode::TStringType& v) {
+    m_DocImpl.Parse<rapidjson::kParseStopWhenDoneFlag, rapidjson::UTF8<> >(v.c_str());
+    m_Impl = &m_DocImpl;
+}
 inline CJson_Document::CJson_Document(const CJson_Document& v) {
     m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
     m_Impl = &m_DocImpl;
@@ -2166,6 +2175,11 @@ inline CJson_Document::CJson_Document(const CJson_ConstNode& v) {
 inline CJson_Document& CJson_Document::operator=(const CJson_ConstNode& v) {
     m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
     return *this;
+}
+
+inline bool CJson_Document::ParseString(const CJson_ConstNode::TStringType& v) {
+    m_DocImpl.Parse<rapidjson::kParseStopWhenDoneFlag, rapidjson::UTF8<> >(v.c_str());
+    return  !m_DocImpl.HasParseError();
 }
 
 inline bool CJson_Document::Read(std::istream& in) {
