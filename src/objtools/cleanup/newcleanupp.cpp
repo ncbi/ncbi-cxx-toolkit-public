@@ -8722,27 +8722,28 @@ bool s_FixtmRNA(CSeq_feat& feat)
     bool any_change = false;
     CRNA_ref& rna = feat.SetData().SetRna();
 
-    if (rna.IsSetType() &&
-        rna.GetType() == CRNA_ref::eType_other &&
+    CRNA_ref::TType rna_type = (rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown);
+
+    if (rna_type == CRNA_ref::eType_other &&
         rna.IsSetExt() &&
         rna.GetExt().IsName() &&
         rna.GetExt().GetName() == "tmRNA") {
         rna.SetType(CRNA_ref::eType_tmRNA);
     }
 
-    bool is_misc = (rna.IsSetType() &&
-        rna.GetType() == CRNA_ref::eType_other &&
-        rna.IsSetExt() && rna.GetExt().IsName() &&
-        rna.GetExt().GetName() == "misc_RNA");
-    bool is_tmRNA = (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_tmRNA);
 
-    if (feat.IsSetQual() && (is_misc || is_tmRNA)) {
+    if (feat.IsSetQual() && 
+        (rna_type == CRNA_ref::eType_other || 
+        rna_type == CRNA_ref::eType_tmRNA ||
+        rna_type == CRNA_ref::eType_ncRNA)) {
         CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
         while (qual_iter != feat.SetQual().end()) {
             string &qual = (*qual_iter)->SetQual();
             string &val = (*qual_iter)->SetVal();
             if (qual == "tag_peptide") {
-                rna.SetType(CRNA_ref::eType_tmRNA);
+                if (rna_type == CRNA_ref::eType_other) {
+                    rna.SetType(CRNA_ref::eType_tmRNA);
+                }
                 CRef<CRNA_qual> rna_qual(new CRNA_qual);
                 rna_qual->SetQual(qual);
                 rna_qual->SetVal(val);
