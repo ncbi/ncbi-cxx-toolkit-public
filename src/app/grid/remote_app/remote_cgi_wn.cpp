@@ -201,7 +201,7 @@ public:
     int Do(CWorkerNodeJobContext& job_context)
     {
         if (job_context.IsLogRequested()) {
-            LOG_POST("Job " << job_context.GetJobKey() + " input: " +
+            LOG_POST(Note << "Job " << job_context.GetJobKey() + " input: " +
                 job_context.GetJobInput());
         }
 
@@ -263,9 +263,9 @@ public:
 
         if (job_context.IsLogRequested()) {
             if ( !IsOssEmpty(err) )
-                LOG_POST("STDERR: " << (string)CNcbiOstrstreamToString(err));
+                LOG_POST(Note << "STDERR: " << (string)CNcbiOstrstreamToString(err));
 
-            LOG_POST("Job " << job_context.GetJobKey() <<
+            LOG_POST(Note << "Job " << job_context.GetJobKey() <<
                 " is " << job_context.GetCommitStatusDescription(
                         job_context.GetCommitStatus()) <<
                 ". Exit code: " << ret <<

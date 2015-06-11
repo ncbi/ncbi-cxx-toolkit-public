@@ -73,7 +73,7 @@ public:
     int Do(CWorkerNodeJobContext& context)
     {
         if (context.IsLogRequested()) {
-            LOG_POST(context.GetJobKey() << " is received.");
+            LOG_POST(Note << context.GetJobKey() << " is received.");
         }
 
         CRemoteAppRequest m_Request(m_NetCacheAPI);
@@ -105,17 +105,17 @@ public:
 
         if (context.IsLogRequested()) {
             if (!m_Request.GetInBlobIdOrData().empty()) {
-                LOG_POST(context.GetJobKey()
+                LOG_POST(Note << context.GetJobKey()
                     << " Input data: " << m_Request.GetInBlobIdOrData());
             }
-            LOG_POST(context.GetJobKey()
+            LOG_POST(Note << context.GetJobKey()
                 << " Args: " << m_Request.GetCmdLine());
             if (!m_Request.GetStdOutFileName().empty()) {
-                LOG_POST(context.GetJobKey()
+                LOG_POST(Note << context.GetJobKey()
                     << " StdOutFile: " << m_Request.GetStdOutFileName());
             }
             if (!m_Request.GetStdErrFileName().empty()) {
-                LOG_POST(context.GetJobKey()
+                LOG_POST(Note << context.GetJobKey()
                     << " StdErrFile: " << m_Request.GetStdErrFileName());
             }
         }
@@ -201,12 +201,12 @@ public:
                         "Exited with return code " + NStr::IntToString(ret));
 
         if (context.IsLogRequested()) {
-            LOG_POST("Job " << context.GetJobKey() <<
+            LOG_POST(Note << "Job " << context.GetJobKey() <<
                     " is " << context.GetCommitStatusDescription(
                             context.GetCommitStatus()) <<
                     ". Exit code: " << ret);
             if (!m_Result.GetErrBlobIdOrData().empty()) {
-                LOG_POST(context.GetJobKey() << " Err data: " <<
+                LOG_POST(Note << context.GetJobKey() << " Err data: " <<
                     m_Result.GetErrBlobIdOrData());
             }
         }

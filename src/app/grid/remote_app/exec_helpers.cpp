@@ -198,7 +198,7 @@ void CRemoteAppReaper::CContext::CollectorImpl()
             if (done) {
                 // Log a message for those that had failed to be killed
                 if (it->attempts) {
-                    LOG_POST(Warning << "Successfully waited for a process: " <<
+                    LOG_POST(Note << "Successfully waited for a process: " <<
                             it->process.GetHandle());
                 }
             } else if (it->attempts++) {
@@ -594,7 +594,7 @@ public:
             return CPipe::IProcessWatcher::eStop;
         }
 
-        LOG_POST("Child PID: " << NStr::UInt8ToString((Uint8) pid));
+        LOG_POST(Note << "Child PID: " << NStr::UInt8ToString((Uint8) pid));
 
         return CPipeProcessWatcher_Base::OnStart(pid);
     }
@@ -640,7 +640,9 @@ public:
                     }
                     if (m_JobContext.IsLogRequested() &&
                         ( !non_empty_output || !IsOssEmpty(err) ))
-                        x_Log("exited with zero return code", err);
+                        LOG_POST(Note << m_JobContext.GetJobKey() <<
+                                " (monitor) exited with zero return code: " <<
+                                (string)CNcbiOstrstreamToString(err));
                 }
                 break;
             case CRAMonitor::eJobToReturn:
