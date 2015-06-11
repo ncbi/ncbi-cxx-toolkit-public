@@ -97,16 +97,22 @@ public:
 
     CHandleRangeMap& operator= (const CHandleRangeMap& rmap);
 
+    enum ETransSplicing {
+        eNoTransSplicing,
+        eTransSplicing
+    };
     struct SAddState {
         typedef CHandleRange::TRange TRange;
 
         CSeq_id_Handle  m_PrevId;
         ENa_strand      m_PrevStrand;
+        ETransSplicing  m_TransSplicing;
         TRange          m_PrevRange;
     };
     
     // Add all ranges for each seq-id from a seq-loc
-    void AddLocation(const CSeq_loc& loc);
+    void AddLocation(const CSeq_loc& loc,
+                     ETransSplicing trans_splcing = eNoTransSplicing);
     void AddLocation(const CSeq_loc& loc, SAddState& state);
     // Add range substituting with handle "h"
     void AddRange(const CSeq_id_Handle& h,

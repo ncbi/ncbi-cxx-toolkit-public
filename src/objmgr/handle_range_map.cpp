@@ -84,9 +84,11 @@ void CHandleRangeMap::clear(void)
 }
 
 
-void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
+void CHandleRangeMap::AddLocation(const CSeq_loc& loc,
+                                  ETransSplicing trans_splcing)
 {
     SAddState state;
+    state.m_TransSplicing = trans_splcing;
     AddLocation(loc, state);
 }
 
@@ -240,7 +242,8 @@ void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
                                SAddState& state)
 {
     CHandleRange& hr = m_LocMap[h];
-    if ( state.m_PrevId && h && state.m_PrevId != h ) {
+    if ( state.m_TransSplicing == eNoTransSplicing &&
+         state.m_PrevId && h && state.m_PrevId != h ) {
         m_LocMap[state.m_PrevId].m_MoreAfter = true;
         hr.m_MoreBefore = true;
         if ( m_MasterSeq ) {

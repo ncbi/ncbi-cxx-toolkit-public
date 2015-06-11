@@ -430,11 +430,16 @@ void CAnnotObject_Info::x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
     hrmaps.resize(feat.IsSetProduct()? 2: 1);
     hrmaps[0].clear();
     hrmaps[0].SetMasterSeq(master);
-    hrmaps[0].AddLocation(feat.GetLocation());
+    CHandleRangeMap::ETransSplicing mode = CHandleRangeMap::eNoTransSplicing;
+    if ( feat.IsSetExcept_text() &&
+         feat.GetExcept_text().find("trans-splicing") != NPOS ) {
+        mode = CHandleRangeMap::eTransSplicing;
+    }
+    hrmaps[0].AddLocation(feat.GetLocation(), mode);
     if ( feat.IsSetProduct() ) {
         hrmaps[1].clear();
         hrmaps[1].SetMasterSeq(master);
-        hrmaps[1].AddLocation(feat.GetProduct());
+        hrmaps[1].AddLocation(feat.GetProduct(), mode);
     }
 }
 /* static */
