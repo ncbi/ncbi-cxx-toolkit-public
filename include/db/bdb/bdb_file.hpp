@@ -660,6 +660,9 @@ private:
     void x_ConstructKeyBuf();
     void x_ConstructDataBuf();
 
+    static int x_CompareShim(DB* db, const DBT* dbt1, const DBT* dbt2,
+                             size_t* locp);
+
 private:
     auto_ptr<CBDB_BufferManager>   m_KeyBuf;
     auto_ptr<CBDB_BufferManager>   m_DataBuf;

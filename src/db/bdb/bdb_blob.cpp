@@ -583,12 +583,31 @@ size_t CBDB_LobFile::LobSize() const
     return m_DBT_Data->size;
 }
 
+#if DB_VERSION_MAJOR >= 6
+extern "C" {
+    typedef int (*BDB_CompareFunction_V6)(DB*, const DBT*, const DBT*,
+                                          size_t*);
+    int BDB_Uint4Compare_V6(DB* db, const DBT* dbt1, const DBT* dbt2, size_t*)
+        { return BDB_Uint4Compare(db, dbt1, dbt2); }
+    int BDB_ByteSwap_Uint4Compare_V6(DB* db, const DBT* dbt1, const DBT* dbt2,
+                                    size_t*)
+        { return BDB_ByteSwap_Uint4Compare(db, dbt1, dbt2); }
+}
+#endif
+
 void CBDB_LobFile::SetCmp(DB*)
 {
+#if DB_VERSION_MAJOR >= 6
+    BDB_CompareFunction_V6 func = BDB_Uint4Compare_V6;
+    if (IsByteSwapped()) {
+        func = BDB_ByteSwap_Uint4Compare_V6;
+    }
+#else
     BDB_CompareFunction func = BDB_Uint4Compare;
     if (IsByteSwapped()) {
         func = BDB_ByteSwap_Uint4Compare;
     }
+#endif
 
     _ASSERT(func);
     int ret = m_DB->set_bt_compare(m_DB, func);
