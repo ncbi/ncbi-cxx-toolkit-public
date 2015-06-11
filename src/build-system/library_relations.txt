@@ -879,7 +879,6 @@ pathogen_ctl needs $(SRAREAD_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gencoll_client
 pathogen_ctl needs pathogen_connection
-pathogen_ctl needs simulated_input_repo
 pathogen_ctl needs taxon1
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
@@ -956,7 +955,6 @@ seqsplit needs seqset
 seqtest needs $(SEQ_LIBS)
 seqtest needs pub
 sequtil needs xncbi
-simulated_input_repo needs xncbi
 smartasn_g needs submit
 smartnet needs3party vibrant
 smartnetclient needs xconnect
