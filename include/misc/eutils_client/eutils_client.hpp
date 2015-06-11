@@ -1,5 +1,5 @@
-#ifndef GPIPE_COMMON___EUTILS_CLIENT__HPP
-#define GPIPE_COMMON___EUTILS_CLIENT__HPP
+#ifndef MISC_EUTILS_CLIENT___EUTILS_CLIENT__HPP
+#define MISC_EUTILS_CLIENT___EUTILS_CLIENT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -159,4 +159,4 @@ private:
 END_NCBI_SCOPE
 
 
-#endif  // GPIPE_COMMON___EUTILS_CLIENT__HPP
+#endif  // MISC_EUTILS_CLIENT___EUTILS_CLIENT__HPP
