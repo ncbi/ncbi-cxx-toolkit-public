@@ -3700,6 +3700,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
             CRef<CDbtag> dbp(new CDbtag);
             dbp->SetDb(db);
             dbp->SetTag().SetStr(tag);
+            
             feat.SetDbxref().push_back(dbp);
             ChangeMade(CCleanupChange::eChangeDbxrefs);
             return eAction_Erase;  // mark qual for deletion
@@ -4756,29 +4757,40 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
             bool ok_to_apply = true;
                 
             // look for conflict with aa
-            if (trna->IsSetAa() ) {
-                if (rna.GetExt().GetTRNA().IsSetAa() ) {
-                    if( rna.GetExt().GetTRNA().GetAa().IsIupacaa() ) {
-                        if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
-                            ok_to_apply = false;
-                        }
-                    }
-                } else {
+            if (!rna.IsSetExt() || !rna.GetExt().IsTRNA()) {
+                if (trna->IsSetAa()) {
                     apply_aa = true;
                 }
-            }
-            // look for conflict with anticodon
-            if (trna->IsSetAnticodon()) {
-                if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
-                    if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(),
-                        trna->GetAnticodon(), m_Scope, sequence::fCompareOverlapping) != sequence::eSame) {
-                        ok_to_apply = false;
-                    }
-                } else {
+                if (trna->IsSetAnticodon()) {
                     apply_anticodon = true;
                 }
             }
-
+            else {
+                if (trna->IsSetAa()) {
+                    if (rna.GetExt().GetTRNA().IsSetAa()) {
+                        if (rna.GetExt().GetTRNA().GetAa().IsIupacaa()) {
+                            if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
+                                ok_to_apply = false;
+                            }
+                        }
+                    }
+                    else {
+                        apply_aa = true;
+                    }
+                }
+                // look for conflict with anticodon
+                if (trna->IsSetAnticodon()) {
+                    if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
+                        if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(),
+                            trna->GetAnticodon(), m_Scope, sequence::fCompareOverlapping) != sequence::eSame) {
+                            ok_to_apply = false;
+                        }
+                    }
+                    else {
+                        apply_anticodon = true;
+                    }
+                }
+            }
             if (ok_to_apply) {
                 if (apply_aa ) {
                     rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetNcbieaa());
@@ -7335,11 +7347,19 @@ void CNewCleanup_imp::SeqfeatBC (
     vector< CRef< CDbtag > > new_dbtags;
     EDIT_EACH_DBXREF_ON_SEQFEAT (dbx_it, sf) {
         CDbtag& dbt = **dbx_it;
+        DbtagBC(dbt);
         x_SplitDbtag(dbt, new_dbtags );
     }
     if( ! new_dbtags.empty() ) {
         copy( new_dbtags.begin(), new_dbtags.end(), back_inserter(sf.SetDbxref()) );
     }
+
+    // sort dbxrefs
+    if (!DBXREF_ON_SEQFEAT_IS_SORTED(sf, s_DbtagCompare)) {
+        SORT_DBXREF_ON_SEQFEAT(sf, s_DbtagCompare);
+        ChangeMade(CCleanupChange::eCleanDbxrefs);
+    }
+
 
     CALL_IF_SET( PubSetBC, sf, Cit );
 
