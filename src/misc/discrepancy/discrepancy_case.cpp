@@ -83,6 +83,30 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 }
 
 
+DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
+{
+    if (obj->GetSubtype() != CSeqFeatData::eSubtype_tRNA) return;
+
+}
+
+
+DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
+{
+}
+
+
+DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData)
+{
+    if (obj->GetSubtype() != CSeqFeatData::eSubtype_rRNA) return;
+
+}
+
+
+DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
+{
+}
+
+
 /*
 
 // OVERLAPPING_CDS

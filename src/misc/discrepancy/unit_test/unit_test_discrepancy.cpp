@@ -114,6 +114,49 @@ BOOST_AUTO_TEST_CASE(COUNT_NUCLEOTIDES)
 }
 
 
+BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+    Set->AddTest("COUNT_PROTEINS");
+    Set->Parse(seh);
+    Set->Summarize();
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    //BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "1 nucleotide Bioseq is present");
+}
+
+
+BOOST_AUTO_TEST_CASE(COUNT_TRNAS)
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+    Set->AddTest("COUNT_TRNAS");
+}
+
+
+BOOST_AUTO_TEST_CASE(COUNT_RRNAS)
+{
+    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+    Set->AddTest("COUNT_RRNAS");
+}
+
+
 BOOST_AUTO_TEST_CASE(OVERLAPPING_CDS)
 {
 /*

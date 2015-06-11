@@ -166,7 +166,7 @@ public:
 class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
-    CDiscrepancyContext(objects::CScope& scope) : m_Scope(scope), m_Enable_CSeq_inst(false) {}
+    CDiscrepancyContext(objects::CScope& scope) : m_Scope(scope), m_Enable_CSeq_inst(false), m_Enable_CSeqFeatData(false) {}
     bool AddTest(const string&);
     void Parse(objects::CSeq_entry_Handle);
     void Summarize();
