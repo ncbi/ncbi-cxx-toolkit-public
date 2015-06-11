@@ -1856,7 +1856,8 @@ Int8 s_TestForOverlapEx(const CSeq_loc& loc1,
                 "Multi-bioseq locations are disabled by the flags.");
         }
         // Multi-id locations - no circular_len allowed
-        if (circular_len != kInvalidSeqPos) {
+        if ( circular_len != kInvalidSeqPos &&
+             type != eOverlap_Subset ) {
             NCBI_THROW(CObjmgrUtilException, eBadLocation,
                 "Circular bioseq length can not be specified "
                 "for multi-bioseq locations.");
