@@ -2049,6 +2049,21 @@ void CNewCleanup_imp::OrgmodBC (
     }
 }
 
+bool s_IsAllDigits(const string& str)
+{
+    if (str.length() == 0) {
+        return false;
+    }
+    bool all_digits = true;
+    ITERATE(string, s, str) {
+        if (!isdigit(*s)) {
+            all_digits = false;
+            break;
+        }
+    }
+    return all_digits;
+}
+
 void CNewCleanup_imp::DbtagBC (
     CDbtag& dbtag
 )
@@ -2147,12 +2162,14 @@ void CNewCleanup_imp::DbtagBC (
             dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
             */
-        } else if( NStr::StartsWith (str, "MGD:") ) {
-            dbtag.SetTag().SetStr ("MGI:" + dbtag.GetTag().GetStr().substr (4));
+        }
+        else if (NStr::StartsWith(str, "MGD:")) {
+            dbtag.SetTag().SetStr("MGI:" + dbtag.GetTag().GetStr().substr(4));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
-        } else if( NStr::StartsWith( str, "J:", NStr::eNocase ) ) {
-            dbtag.SetTag().SetStr("J");
-            ChangeMade(CCleanupChange::eChangeDbxrefs);
+        } else if (NStr::StartsWith(str, "J:")) {
+            if (s_IsAllDigits(str.substr(2))) {
+                dbtag.SetTag().SetStr("MGI:");
+            }
         } else {
             string newstr = "MGI:" + str;
             dbtag.SetTag().SetStr(newstr);
@@ -2176,14 +2193,7 @@ void CNewCleanup_imp::DbtagBC (
     }
 
     // convert to number if all digits
-    bool all_digits = true;
-    ITERATE(string, s, str) {
-        if (!isdigit(*s)) {
-            all_digits = false;
-            break;
-        }
-    }
-    if (all_digits && !NStr::StartsWith(str, "0")) {
+    if (s_IsAllDigits(str) && !NStr::StartsWith(str, "0")) {
         try {
             // extract the part before the first space for conversion
             string::size_type pos_of_first_space = 0;
@@ -3562,13 +3572,6 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
             return kFeatBad;
     }
     return kFeatBad;
-}
-
-static
-bool s_IsAllDigits( const string &str )
-{
-    CCachedRegexp all_digits_regex = regexpCache.Get("^[0-9]+$");
-    return all_digits_regex->IsMatch(str);
 }
 
 
@@ -5483,6 +5486,14 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
         return;
     }
 
+    // check if we're trying to split something we shouldn't
+    if (dbt.IsSetDb()) {
+        string db = dbt.GetDb();
+        if (NStr::Equal(db, "MGD") || NStr::Equal(db, "MGI") || NStr::Equal(db, "HGNC")) {
+            return;
+        }
+    }
+
     if ( m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) {
         return;
     }
@@ -5491,16 +5502,6 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
     vector<string> tags;
     NStr::Tokenize( dbt.GetTag().GetStr(), ":", tags );
     _ASSERT( tags.size() >= 2 );
-
-    // check if we're trying to split something we shouldn't
-    if( NStr::EqualNocase( tags.front(), "MGD" ) ||
-        NStr::EqualNocase( tags.front(), "MGI" ) ||
-        NStr::EqualNocase( tags.front(), "HGNC" ) ||
-        NStr::EqualNocase( tags.front(), "RGD" ) ||
-        NStr::EqualNocase( tags.front(), "J" ) )
-    {
-        return;
-    }
 
     // treat the CDbtag argument as the first of the new CDbtags
     dbt.SetTag().SetStr( tags.front() );
