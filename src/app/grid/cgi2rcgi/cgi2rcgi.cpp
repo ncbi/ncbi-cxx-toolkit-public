@@ -908,7 +908,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         status = m_GridClient->GetStatus();
     }
     catch (CNetSrvConnException& e) {
-        LOG_POST("Failed to retrieve job status for " <<
+        ERR_POST("Failed to retrieve job status for " <<
                 grid_ctx.GetJobKey() << ": " << e);
 
         CNetService service(m_NetScheduleAPI.GetService());
@@ -999,11 +999,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         break;
 
     default:
-#ifdef _DEBUG
-        LOG_POST("Unexpected job state");
-#else
-        break;
-#endif
+        LOG_POST(Note << "Unexpected job state");
     }
     SetRequestId(grid_ctx.GetJobKey(), status == CNetScheduleAPI::eDone);
     return phase;

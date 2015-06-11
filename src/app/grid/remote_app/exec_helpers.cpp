@@ -640,9 +640,7 @@ public:
                     }
                     if (m_JobContext.IsLogRequested() &&
                         ( !non_empty_output || !IsOssEmpty(err) ))
-                        LOG_POST(Note << m_JobContext.GetJobKey() <<
-                                " (monitor) exited with zero return code: " <<
-                                (string)CNcbiOstrstreamToString(err));
+                        x_Log("exited with zero return code", err);
                 }
                 break;
             case CRAMonitor::eJobToReturn:
@@ -674,10 +672,10 @@ private:
     inline void x_Log(const string& what, CNcbiOstrstream& sstream)
     {
         if ( !IsOssEmpty(sstream) ) {
-            LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what <<
+            ERR_POST(m_JobContext.GetJobKey() << " (monitor) " << what <<
                      ": " << (string)CNcbiOstrstreamToString(sstream));
         } else {
-            LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what << ".");
+            ERR_POST(m_JobContext.GetJobKey() << " (monitor) " << what << ".");
         }
     }
 
