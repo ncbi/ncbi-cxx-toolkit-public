@@ -272,7 +272,9 @@ static int s_BestNonLocalRank(const CRef<CSeq_id>& id)
 const CSeq_id* CBioseq::GetNonLocalId() const
 {
     CRef<CSeq_id> id = FindBestChoice(GetId(), &s_BestNonLocalRank);
-    if (id.NotEmpty()  &&  !id->IsLocal()) {
+    if (id.Empty()) {
+        return NULL; // No way to verify potential IDs found elsewhere
+    } else if ( !id->IsLocal() ) {
         return &*id;
     }
 
@@ -290,12 +292,11 @@ const CSeq_id* CBioseq::GetNonLocalId() const
             continue;
         }
 
-        // XXX - check that local ID matches id?
         const CSeq_id& id1 = (*it)->GetSeq_id(0);
         const CSeq_id& id2 = (*it)->GetSeq_id(1);
-        if (id1.IsLocal()  &&  !id2.IsLocal()) {
+        if (id1.IsLocal()  &&  id1.Match(*id)  &&  !id2.IsLocal()) {
             return &id2;
-        } else if (id2.IsLocal()  &&  !id1.IsLocal()) {
+        } else if (id2.IsLocal()  &&  id2.Match(*id)  &&  !id1.IsLocal()) {
             return &id1;
         }
     }
