@@ -3032,6 +3032,7 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
             new_rna_ref->SetType( rna_ref_type );
             feat.SetData().SetRna( *new_rna_ref );
             ChangeMade(CCleanupChange::eAddRNAref);
+            x_CleanSeqFeatQuals(feat);
             RnaFeatBC(feat.SetData().SetRna(), feat);
         } else {
             TPROTREF_PROCESSED processed = NCBI_PROTREF(not_set);
@@ -3406,6 +3407,7 @@ void CNewCleanup_imp::GBQualBC (
         if (CGb_qual::CleanupRptUnitSeq(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
+        x_CleanupRptUnit(gbq);
     } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit_range")) {
         if (CGb_qual::CleanupRptUnitRange(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
@@ -3418,7 +3420,7 @@ void CNewCleanup_imp::GBQualBC (
         if (CGb_qual::CleanupReplace(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
-    }
+    }    
     x_ChangeTransposonToMobileElement(gbq);
     x_ChangeInsertionSeqToMobileElement(gbq);
 
