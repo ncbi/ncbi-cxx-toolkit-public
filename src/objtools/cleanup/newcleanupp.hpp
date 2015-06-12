@@ -342,6 +342,7 @@ private:
     };
 
     // Gb_qual cleanup.
+    void x_CleanSeqFeatQuals(CSeq_feat& sf);
     EAction GBQualSeqFeatBC(CGb_qual& gbq, CSeq_feat& seqfeat);
 
     void x_AddNcbiCleanupObject( CSeq_entry &seq_entry );

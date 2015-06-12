@@ -7277,13 +7277,8 @@ bool s_SeqLocAnyNull( const CSeq_loc & loc )
     return false;
 }
 
-void CNewCleanup_imp::SeqfeatBC (
-    CSeq_feat& sf
-)
-
+void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
 {
-    // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
-
     // clean before uniquing
     EDIT_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
         CGb_qual& gbq = **gbq_it;
@@ -7291,31 +7286,42 @@ void CNewCleanup_imp::SeqfeatBC (
     }
 
     // sort/unique gbquals, just alphabetically
-    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompare)) {
-        SORT_GBQUAL_ON_SEQFEAT (sf, s_GbQualCompare);
-        ChangeMade (CCleanupChange::eCleanQualifiers);
+    if (!GBQUAL_ON_SEQFEAT_IS_SORTED(sf, s_GbQualCompare)) {
+        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompare);
+        ChangeMade(CCleanupChange::eCleanQualifiers);
     }
 
     if (!GBQUAL_ON_SEQFEAT_IS_UNIQUE(sf, s_GbQualEqual)) {
-        UNIQUE_GBQUAL_ON_SEQFEAT (sf, s_GbQualEqual);
-        ChangeMade (CCleanupChange::eRemoveQualifier);
+        UNIQUE_GBQUAL_ON_SEQFEAT(sf, s_GbQualEqual);
+        ChangeMade(CCleanupChange::eRemoveQualifier);
     }
 
     // move quals to other parts of the feature as appropriate
-    EDIT_EACH_GBQUAL_ON_SEQFEAT (gbq_it, sf) {
+    EDIT_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
         CGb_qual& gbq = **gbq_it;
-        if( GBQualSeqFeatBC(gbq, sf) == eAction_Erase ) 
+        if (GBQualSeqFeatBC(gbq, sf) == eAction_Erase)
         {
-            ERASE_GBQUAL_ON_SEQFEAT (gbq_it, sf);
-            ChangeMade (CCleanupChange::eRemoveQualifier);
+            ERASE_GBQUAL_ON_SEQFEAT(gbq_it, sf);
+            ChangeMade(CCleanupChange::eRemoveQualifier);
         }
     }
 
     // sort again, putting legal qualifiers first
-    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
+    if (!GBQUAL_ON_SEQFEAT_IS_SORTED(sf, s_GbQualCompareLegalFirst)) {
         SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompareLegalFirst);
-        ChangeMade (CCleanupChange::eCleanQualifiers);
+        ChangeMade(CCleanupChange::eCleanQualifiers);
     }
+
+    REMOVE_IF_EMPTY_GBQUAL_ON_SEQFEAT(sf);
+}
+
+void CNewCleanup_imp::SeqfeatBC (
+    CSeq_feat& sf
+)
+
+{
+    // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
+    x_CleanSeqFeatQuals(sf);
 
     CLEAN_STRING_MEMBER (sf, Title);
 
@@ -7379,15 +7385,7 @@ void CNewCleanup_imp::x_PostSeqFeat( CSeq_feat& sf )
     }
 
     // sort/unique gbquals (yes, must do before *and* after )
-    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
-        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompareLegalFirst);
-        ChangeMade (CCleanupChange::eCleanQualifiers);
-    }
-    if (! GBQUAL_ON_SEQFEAT_IS_UNIQUE (sf, s_GbQualCompareLegalFirst)) {
-        UNIQUE_GBQUAL_ON_SEQFEAT (sf, s_GbQualEqual);
-        ChangeMade (CCleanupChange::eRemoveQualifier);
-    }
-    REMOVE_IF_EMPTY_GBQUAL_ON_SEQFEAT(sf);
+    x_CleanSeqFeatQuals(sf);
 
     EDIT_EACH_DBXREF_ON_SEQFEAT (dbx_it, sf) {
         CDbtag& dbt = **dbx_it;
