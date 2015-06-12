@@ -1148,6 +1148,10 @@ CBlastTabularInfo::SetScores(int score, double bit_score, double evalue)
     m_Score = score;
     CAlignFormatUtil::GetScoreString(evalue, bit_score, 0, score, m_Evalue, 
                                      m_BitScore, total_bit_string, raw_score_string);
+
+    if ((evalue >= 1.0e-180) && (evalue < 0.0009)){
+    	m_Evalue = NStr::DoubleToString(evalue, 2, NStr::fDoubleScientific);
+    }
 }
 
 void 
