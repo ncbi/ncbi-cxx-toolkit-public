@@ -414,14 +414,12 @@ public:
 
 struct SServerTimelineEntry : public CWorkerNodeTimelineEntry
 {
-    SServerAddress m_ServerAddress;
+    const SServerAddress server_address;
+    unsigned discovery_iteration;
 
-    unsigned m_DiscoveryIteration;
-
-    SServerTimelineEntry(const SServerAddress& server_address,
-            unsigned discovery_iteration) :
-        m_ServerAddress(server_address),
-        m_DiscoveryIteration(discovery_iteration)
+    SServerTimelineEntry(const SServerAddress& a, unsigned i) :
+        server_address(a),
+        discovery_iteration(i)
     {
     }
 };
@@ -440,7 +438,7 @@ private:
     {
         bool operator ()(const TEntry* left, const TEntry* right) const
         {
-            return left->m_ServerAddress < right->m_ServerAddress;
+            return left->server_address < right->server_address;
         }
     };
 
@@ -486,12 +484,12 @@ public:
 
     bool IsDiscoveryAction(TEntryRef entry) const
     {
-        return !entry->m_DiscoveryIteration;
+        return !entry->discovery_iteration;
     }
 
     bool IsOutdatedAction(TEntryRef entry) const
     {
-        return entry->m_DiscoveryIteration != m_DiscoveryIteration;
+        return entry->discovery_iteration != m_DiscoveryIteration;
     }
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
@@ -512,7 +510,7 @@ public:
 
     CNetServer GetServer(CNetScheduleAPI api, TEntryRef entry)
     {
-        return api.GetService().GetServer(entry->m_ServerAddress);
+        return api.GetService().GetServer(entry->server_address);
     }
 
     void NextDiscoveryIteration(CNetScheduleAPI api)
@@ -524,7 +522,7 @@ public:
                     CNetService::eIncludePenalized); it; ++it) {
             SServerTimelineEntry* srv_entry = m_ServerTimeline.GetEntry(*it,
                     m_DiscoveryIteration);
-            srv_entry->m_DiscoveryIteration = m_DiscoveryIteration;
+            srv_entry->discovery_iteration = m_DiscoveryIteration;
             if (!srv_entry->IsInTimeline())
                 m_ImmediateActions.Push(srv_entry);
         }
