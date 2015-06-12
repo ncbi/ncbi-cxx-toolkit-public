@@ -317,6 +317,39 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         }
     }
 
+    //convert tandem indels into indel+mism
+    bool keepdoing = true;
+    while(keepdoing) {
+        keepdoing = false;
+        NON_CONST_ITERATE(TInDels, indl, indels) {
+            TInDels::iterator indl_next = indl;
+            if(++indl_next == indels.end())
+                break;
+
+            if(indl->InDelEnd() == indl_next->Loc()) {  // tandem
+                string new_seq = indl->GetInDelV()+indl_next->GetInDelV();
+                int new_seq_len =  new_seq.size();
+                if(indl->GetType() == indl_next->GetType()) {  // combine same
+                    *indl = CInDelInfo(indl->Loc(), indl->Len()+indl_next->Len(), indl->GetType(), new_seq);
+                    indels.erase(indl_next);
+                    keepdoing = true;
+                } else if(!indl->IsMismatch() && !indl_next->IsMismatch()) { // tandem indels
+                    if(indl->Len() == indl_next->Len()) {
+                        *indl = CInDelInfo(indl->Loc(), indl->Len(), CInDelInfo::eMism, new_seq);
+                        indels.erase(indl_next);
+                    } else if(indl->Len() < indl_next->Len()) {
+                        *indl = CInDelInfo(indl->Loc(), indl->Len(), CInDelInfo::eMism, new_seq.substr(0,indl->Len()));
+                        *indl_next = CInDelInfo(indl->InDelEnd(), indl_next->Len()-indl->Len(), indl_next->GetType(), new_seq.substr(indl->Len()));
+                    } else {  // indl_next->Len() < indl->Len()
+                        *indl = CInDelInfo(indl->Loc(), indl->Len()-indl_next->Len(), indl->GetType(), new_seq.substr(0,new_seq_len-indl_next->Len()));
+                        *indl_next = CInDelInfo(indl->InDelEnd(), indl_next->Len(), CInDelInfo::eMism, new_seq.substr(new_seq_len-indl_next->Len()));
+                    }
+                    keepdoing = true;
+                }
+            }
+        }
+    }
+
     m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation, target_len );
     FrameShifts() = indels;
 
