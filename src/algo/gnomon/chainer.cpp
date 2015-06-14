@@ -5273,6 +5273,7 @@ void CChainer::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
 
 #define PROT_CLIP 120
 #define PROT_CLIP_FRAC 0.20
+#define MIN_PART 30
 
 void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) {
     CScope scope(*CObjectManager::GetInstance());
@@ -5445,6 +5446,11 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             _ASSERT(clip.NotEmpty());
 
             editedm.Clip(clip, CGeneModel::eRemoveExons);
+            if(align.Limits().GetFrom() != editedm.Limits().GetFrom() && !editedm.Exons().front().m_ssplice && editedm.Exons().front().Limits().GetLength() < MIN_PART) // short 5' part
+                continue;
+            if(align.Limits().GetTo() != editedm.Limits().GetTo() && !editedm.Exons().back().m_fsplice && editedm.Exons().back().Limits().GetLength() < MIN_PART) // short 3' part
+                continue;
+
             TSignedSeqRange start(0, 2);
             TSignedSeqRange stop(tlen-3, tlen-1);
             TSignedSeqRange rf(start.GetTo()+1,stop.GetFrom()-1);
