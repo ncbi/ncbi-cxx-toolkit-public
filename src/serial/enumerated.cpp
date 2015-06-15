@@ -75,7 +75,7 @@ const string& CEnumeratedTypeValues::GetModuleName(void) const
 void CEnumeratedTypeValues::SetModuleName(const string& name)
 {
     if ( !m_ModuleName.empty() )
-        NCBI_THROW(CSerialException,eFail,"cannot change module name");
+        NCBI_THROW(CSerialException,eFail,"cannot change module name: " + m_ModuleName + " to " + name);
     m_ModuleName = name;
 }
 
@@ -92,7 +92,7 @@ const string& CEnumeratedTypeValues::GetInternalModuleName(void) const
 void CEnumeratedTypeValues::SetInternalName(const string& name)
 {
     if ( IsInternal() || !m_Name.empty() || !m_ModuleName.empty() )
-        NCBI_THROW(CSerialException,eFail, "cannot change (internal) name");
+        NCBI_THROW(CSerialException,eFail, "cannot change (internal) name to " + name);
     m_IsInternal = true;
     m_Name = name;
 }
@@ -117,7 +117,7 @@ TEnumValueType CEnumeratedTypeValues::FindValue(const CTempString& name) const
         i = m.find(name_alt);
         if ( i == m.end() ) {
             NCBI_THROW(CSerialException,eInvalidData,
-                       "invalid value of enumerated type");
+                       "invalid value of enumerated type: " + string(name));
         }
     }
     return i->second;
@@ -140,7 +140,7 @@ const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
         }
         else {
             NCBI_THROW(CSerialException,eInvalidData,
-                       "invalid value of enumerated type");
+                       "invalid value of enumerated type: " + NStr::NumericToString(value));
         }
     }
     return *i->second;
@@ -224,7 +224,7 @@ CEnumeratedTypeValues::NameToValue(void) const
                     m->insert(TNameToValue::value_type(s, i->second));
                 if ( !p.second ) {
                     NCBI_THROW(CSerialException,eInvalidData,
-                               "duplicate enum value name");
+                               "duplicate enum value name: " + s);
                 }
             }
             m_NameToValue = keep;
