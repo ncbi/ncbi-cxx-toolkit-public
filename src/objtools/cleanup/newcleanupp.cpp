@@ -1718,7 +1718,6 @@ void CNewCleanup_imp::x_ConvertOrgref_modToSubSource( CBioSource& biosrc )
     }
 }
 
-
 static CRef<COrgMod> s_StringToOrgMod (
     const string& str
 )
@@ -1744,6 +1743,23 @@ static CRef<COrgMod> s_StringToOrgMod (
     CRef<COrgMod> result(new COrgMod(subtype, value));
 
     return result;
+}
+
+void CNewCleanup_imp::x_ConvertOrgref_modToOrgMod(COrg_ref& org)
+{
+    EDIT_EACH_MOD_ON_ORGREF(it, org) {
+        string str = *it;
+        NStr::TruncateSpacesInPlace(str);
+        CRef<COrgMod> omd = s_StringToOrgMod(str);
+        if (!omd) continue;
+        ADD_ORGMOD_TO_ORGREF(org, omd);
+        ERASE_MOD_ON_ORGREF(it, org);
+        ChangeMade(CCleanupChange::eChangeOrgmod);
+    }
+    if (RAW_FIELD_IS_EMPTY(org, Mod)) {
+        RESET_FIELD(org, Mod);
+        ChangeMade(CCleanupChange::eChangeOrgmod);
+    }
 }
 
 static bool s_DbtagIsBad (
@@ -1789,19 +1805,7 @@ void CNewCleanup_imp::OrgrefBC (
     CLEAN_STRING_MEMBER (org, Common);
     CLEAN_STRING_LIST (org, Syn);
 
-    EDIT_EACH_MOD_ON_ORGREF (it, org) {
-        string str = *it;
-        NStr::TruncateSpacesInPlace(str);
-        CRef<COrgMod> omd  = s_StringToOrgMod (str);
-        if (! omd) continue;
-        ADD_ORGMOD_TO_ORGREF (org, omd);
-        ERASE_MOD_ON_ORGREF (it, org);
-        ChangeMade (CCleanupChange::eChangeOrgmod);
-    }
-    if ( RAW_FIELD_IS_EMPTY(org, Mod) ) {
-        RESET_FIELD (org, Mod);
-        ChangeMade (CCleanupChange::eChangeOrgmod);
-    }
+    x_ConvertOrgref_modToOrgMod(org);
 
     if (FIELD_IS_SET (org, Orgname)) {
         COrgName& onm = GET_MUTABLE (org, Orgname);
@@ -8499,6 +8503,7 @@ void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
     if (any_conversions) {
         if (seqfeat.GetData().IsBiosrc()) {
             x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
+            x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
         }        
     }
 }
@@ -8702,9 +8707,7 @@ bool s_FixncRNA(CSeq_feat& feat)
 
     if (feat.IsSetQual() &&
         (rna_type == CRNA_ref::eType_ncRNA ||
-        (rna_type == NCBI_RNAREF(other) &&
-        rna.IsSetExt() && rna.GetExt().IsName() &&
-        rna.GetExt().GetName() == "misc_RNA"))) {
+         rna_type == NCBI_RNAREF(other))) {
         CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
         while (qual_iter != feat.SetQual().end()) {
             string &qual = (*qual_iter)->SetQual();
