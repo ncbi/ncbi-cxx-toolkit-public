@@ -261,9 +261,6 @@ void CFeatTableEdit::EliminateBadQualifiers()
             if (qualVal == "protein") {
                 continue;
             }
-            if (qualVal == "Name") {
-                continue;
-            }
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
             if (!CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
                 badQuals.push_back(qualVal);
