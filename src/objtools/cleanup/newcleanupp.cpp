@@ -4591,8 +4591,7 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
     string &gb_qual_val = gb_qual.SetVal();
     TRNAREF_TYPE& rna_type = rna.SetType();
     const bool is_std_name = NStr::EqualNocase( gb_qual_qual, "standard_name" );
-    if (NStr::EqualNocase( gb_qual_qual, "product" ) ||
-        (is_std_name && (! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) )) 
+    if (NStr::EqualNocase( gb_qual_qual, "product" )) 
     {
         if (rna_type == NCBI_RNAREF(unknown)) {
             rna_type = NCBI_RNAREF(other);
