@@ -296,6 +296,9 @@ case "\$method" in
 esac
 
 
+trap "touch $x_target_dir/check.failed"  1 2 15
+rm $x_target_dir/check.failed $x_target_dir/check.success > /dev/null 2>&1 
+
 # Set log_site for tests
 NCBI_APPLOG_SITE=testcxx
 export NCBI_APPLOG_SITE
@@ -879,6 +882,12 @@ if \$no_report_err  &&  \$no_db_load; then
       echo "******** ALL TESTS COMPLETED SUCCESSFULLY ********"
       echo
    fi
+fi
+
+if test \$count_err -eq 0; then
+   touch $x_target_dir/check.success
+else 
+   touch $x_target_dir/check.failed
 fi
 
 exit \$count_err

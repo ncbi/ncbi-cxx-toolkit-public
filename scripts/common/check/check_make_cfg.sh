@@ -281,6 +281,8 @@ esac
 
 ## Run
 
+trap "touch \$check_dir/check.failed"  1 2 15
+rm \$check_dir/check.failed \$check_dir/check.success > /dev/null 2>&1 
 
 # Set log_site for tests
 export NCBI_APPLOG_SITE=testcxx
@@ -691,6 +693,12 @@ if ! \$is_db_load; then
    echo "Failed    : \$count_err"
    echo "Absent    : \$count_absent"
    echo
+fi
+
+if test \$count_err -eq 0; then
+   touch \$check_dir/check.success
+else 
+   touch \$check_dir/check.failed
 fi
 
 exit \$count_err
