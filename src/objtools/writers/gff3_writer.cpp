@@ -1458,6 +1458,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
     if (!xAssignFeatureAttributeProduct(record, fc, mf) ||
             !xAssignFeatureAttributeParent(record, fc, mf)  ||
             !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
+            !xAssignFeatureAttributePartial(record, fc, mf) ||
             !xAssignFeatureAttributeException(record, fc, mf) ||
             !xAssignFeatureAttributeExonNumber(record, fc, mf)  ||
             !xAssignFeatureAttributePseudo(record, fc, mf)  ||
@@ -1478,7 +1479,6 @@ bool CGff3Writer::xAssignFeatureAttributes(
             if (!xAssignFeatureAttributeLocusTag(record, fc, mf)  ||
                     !xAssignFeatureAttributeGeneSynonym(record, fc, mf)  ||
                     !xAssignFeatureAttributeOldLocusTag(record, fc, mf)  ||
-                    !xAssignFeatureAttributePartial(record, fc, mf) ||
                     !xAssignFeatureAttributeGeneDesc(record, fc, mf)  ||
                     !xAssignFeatureAttributeGeneBiotype(record, fc, mf) ||
                     !xAssignFeatureAttributeMapLoc(record, fc, mf)) {
@@ -1487,14 +1487,10 @@ bool CGff3Writer::xAssignFeatureAttributes(
             break;
 
         case CSeqFeatData::eSubtype_mRNA:
-            if (!xAssignFeatureAttributePartial(record, fc, mf)) {
-                return false;
-            }
             break;
 
         case CSeqFeatData::eSubtype_cdregion:
-            if (!xAssignFeatureAttributePartial(record, fc, mf)  ||
-                    !xAssignFeatureAttributeProteinId(record, fc, mf)  ||
+            if (!xAssignFeatureAttributeProteinId(record, fc, mf)  ||
                     !xAssignFeatureAttributeTranslationTable(record, fc, mf)  ||
                     !xAssignFeatureAttributeCodeBreak(record, fc, mf)) {
                 return false;
