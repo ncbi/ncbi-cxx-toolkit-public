@@ -39,6 +39,9 @@
 #include <misc/error_codes.hpp>
 
 #include <cmath>
+#include <sstream>
+#include <iterator>
+#include <algorithm>
 
 #define NCBI_USE_ERRCODE_X Misc_EutilsClient
 
@@ -336,17 +339,13 @@ protected:
 
     bool OnEndElement()
     {
-        string contents = GetText();
-
-        if ( !m_InLinkSet  &&
-             m_Path.find("/LinkName") == m_Path.size() - 9) {
-            if (contents == m_LinkName) {
+        if ( !m_InLinkSet && NStr::EndsWith(m_Path, "/LinkName") ) {
+            if ( GetText() == m_LinkName) {
                 m_InLinkSet = true;
             }
         }
-        else if (m_InLinkSet  &&
-                 m_Path.find("/Link/Id") == m_Path.size() - 8) {
-            m_Uids.push_back(NStr::StringToInt(contents));
+        else if (m_InLinkSet && NStr::EndsWith(m_Path, "/Link/Id") ) {
+            m_Uids.push_back(NStr::StringToInt( GetText() ));
         }
         return true;
     }
@@ -669,22 +668,20 @@ void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<int>& uids_from,
                          vector<int>& uids_to,
-                         string xml_path)
+                         string xml_path,
+                         const string command)
 {
-    string params;
-    params += "db=" + NStr::URLEncode(db_to);
-    params += "&dbfrom=" + NStr::URLEncode(db_from);
-    params += "&retmode=xml";
-    params += "&cmd=neighbor";
-
-    string s;
-    ITERATE (vector<int>, it, uids_from) {
-        if ( !s.empty() ) {
-            s += ",";
-        }
-        s += NStr::NumericToString(*it);
-    }
-    params += "&id=" + s;
+    std::ostringstream oss;
+    
+    oss << "db=" << NStr::URLEncode(db_to)
+        << "&dbfrom=" << NStr::URLEncode(db_from)
+        << "&retmode=xml"
+        << "&cmd=" + NStr::URLEncode(command)
+        << "&id=";
+    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<int>(oss, ",") );
+    string params = oss.str();
+    // remove trailing comma
+    params.resize(params.size() - 1);
 
     bool success = false;
     m_Url.clear();
@@ -702,11 +699,10 @@ void CEutilsClient::Link(const string& db_from,
             if ( !m_LinkName.empty() ) {
                 parser.SetLinkName(m_LinkName);
             }
-
             xml::error_messages msgs;
             if(!xml_path.empty()) {
                 string xml_file = xml_path + '.'+NStr::NumericToString(retries+1);
-                
+               
                 CNcbiOfstream ostr(xml_file.c_str());
                 if(ostr.good()) {
                     NcbiStreamCopy(ostr, istr);
@@ -752,22 +748,20 @@ void CEutilsClient::Link(const string& db_from,
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<int>& uids_from,
-                         CNcbiOstream& ostr)
+                         CNcbiOstream& ostr,
+                         const string command)
 {
-    string params;
-    params += "db=" + NStr::URLEncode(db_to);
-    params += "&dbfrom=" + NStr::URLEncode(db_from);
-    params += "&retmode=xml";
-    params += "&cmd=neighbor";
-
-    string s;
-    ITERATE (vector<int>, it, uids_from) {
-        if ( !s.empty() ) {
-            s += ",";
-        }
-        s += NStr::NumericToString(*it);
-    }
-    params += "&id=" + s;
+    std::ostringstream oss;
+    
+    oss << "db=" << NStr::URLEncode(db_to)
+        << "&dbfrom=" << NStr::URLEncode(db_from)
+        << "&retmode=xml"
+        << "&cmd=" + NStr::URLEncode(command)
+        << "&id=";
+    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<int>(oss, ",") );
+    string params = oss.str();
+    // remove trailing comma
+    params.resize(params.size() - 1);
 
     bool success = false;
     m_Url.clear();

@@ -115,12 +115,14 @@ public:
               const string& db_to,
               const vector<int>& uids_from,
               vector<int>& uids_to,
-              string xml_path=kEmptyStr);
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<int>& uids_from,
-              CNcbiOstream& ostr);
+              CNcbiOstream& ostr,
+              const string command="neighbor");
 
     void Summary(const string& db,
                 const vector<int>& uids,
