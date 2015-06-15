@@ -873,14 +873,6 @@ CMultiAligner::x_FindQueryClusters()
         return false;
     }
 
-    if (clusters.size() == 1) {
-        m_Messages.push_back("All queries form only one cluster. No domain"
-                             " information was used for generating constraints."
-                             " Decreasing maximum in-cluster distance or"
-                             " turning off query clustering option"
-                             " may improve results.");
-    }
-
     // Select cluster prototypes
     NON_CONST_ITERATE(CClusterer::TClusters, it, m_Clusterer.SetClusters()) {
 
