@@ -1256,7 +1256,7 @@ string XSDParser::CreateEntityId(
         break;
     }
     if (prefix) {
-        if (m_PrefixToNamespace.find(*prefix) == m_PrefixToNamespace.end()) {
+        if (m_PrefixToNamespace.find(*prefix) == m_PrefixToNamespace.end() && !prefix->empty()) {
             string msg("Namespace prefix not defined: ");
             msg += *prefix;
             ParseError(msg.c_str(), "namespace declaration");
