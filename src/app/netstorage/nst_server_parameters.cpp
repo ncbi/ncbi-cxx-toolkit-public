@@ -78,6 +78,11 @@ void SNetStorageServerParameters::Read(const IRegistry &    reg,
 
     log = GetBoolNoErr("log", default_log);
     log_timing = GetBoolNoErr("log_timing", default_log_timing);
+    log_timing_nst_api = GetBoolNoErr("log_timing_nst_api",
+                                      default_log_timing_nst_api);
+    log_timing_client_socket = GetBoolNoErr("log_timing_client_socket",
+                                            default_log_timing_client_socket);
+
 
     // Deal with potentially encrypted admin client names
     try {

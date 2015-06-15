@@ -30,6 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 
 #include "nst_timing.hpp"
 
@@ -50,6 +51,24 @@ string CNSTTiming::Serialize(void)
     string      retval;
     for ( vector< pair< string, CNSTPreciseTime > >::const_iterator
             k = data.begin(); k != data.end(); ++k ) {
+        if (!retval.empty())
+            retval += " ";
+        retval += k->first + ": " + NST_FormatPreciseTimeAsSec(k->second);
+    }
+
+    data.clear();
+    return retval;
+}
+
+string CNSTTiming::Serialize(CDiagContext_Extra  extra)
+{
+    string  retval;
+    for ( vector< pair< string, CNSTPreciseTime > >::const_iterator
+            k = data.begin(); k != data.end(); ++k ) {
+        if (NStr::StartsWith(k->first, "MS SQL")) {
+            extra.Print(NStr::Replace(k->first, " ", "_"), k->second);
+            continue;
+        }
         if (!retval.empty())
             retval += " ";
         retval += k->first + ": " + NST_FormatPreciseTimeAsSec(k->second);

@@ -53,6 +53,8 @@ struct SNetStorageServerParameters : SServer_Parameters
     unsigned int    network_timeout;
     bool            log;
     bool            log_timing;
+    bool            log_timing_nst_api;
+    bool            log_timing_client_socket;
     string          admin_client_names;
 };
 

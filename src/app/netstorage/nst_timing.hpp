@@ -37,6 +37,8 @@
 #include <vector>
 #include <utility>
 
+#include <corelib/ncbidiag.hpp>
+
 #include "nst_precise_time.hpp"
 
 
@@ -53,6 +55,8 @@ class CNSTTiming
 
         // Also cleans the collected data to avoid double printing
         string Serialize(void);
+        string Serialize(CDiagContext_Extra  extra);
+
         bool  Empty(void) const;
         size_t  Size(void) const;
         void  Clear(void);

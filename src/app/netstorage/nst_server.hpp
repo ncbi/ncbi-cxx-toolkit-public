@@ -68,6 +68,10 @@ public:
     { return m_Log; }
     const bool &  IsLogTiming() const
     { return m_LogTiming; }
+    bool  IsLogTimingNSTAPI() const
+    { return m_LogTimingNSTAPI && m_LogTiming; }
+    bool  IsLogTimingClientSocket() const
+    { return m_LogTimingClientSocket && m_LogTiming; }
 
     unsigned int  GetNetworkTimeout(void) const
     { return m_NetworkTimeout; }
@@ -135,6 +139,8 @@ private:
     int                         m_SigNum;
     bool                        m_Log;
     bool                        m_LogTiming;
+    bool                        m_LogTimingNSTAPI;
+    bool                        m_LogTimingClientSocket;
     string                      m_SessionID;
     unsigned int                m_NetworkTimeout;
     CNSTPreciseTime             m_StartTime;

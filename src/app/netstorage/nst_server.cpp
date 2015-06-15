@@ -52,6 +52,8 @@ CNetStorageServer::CNetStorageServer()
      m_SigNum(0),
      m_Log(default_log),
      m_LogTiming(default_log_timing),
+     m_LogTimingNSTAPI(default_log_timing_nst_api),
+     m_LogTimingClientSocket(default_log_timing_client_socket),
      m_SessionID("s" + x_GenerateGUID()),
      m_NetworkTimeout(0),
      m_StartTime(CNSTPreciseTime::Current()),
@@ -84,6 +86,8 @@ CNetStorageServer::SetParameters(
         m_Port = params.port;
         m_Log = params.log;
         m_LogTiming = params.log_timing;
+        m_LogTimingNSTAPI = params.log_timing_nst_api;
+        m_LogTimingClientSocket = params.log_timing_client_socket;
         m_NetworkTimeout = params.network_timeout;
         m_AdminClientNames = x_GetAdminClientNames(params.admin_client_names);
         return CJsonNode::NewNullNode();
@@ -118,10 +122,14 @@ CNetStorageServer::SetParameters(
     SServer_Parameters      current_params;
     CServer::GetParameters(&current_params);
 
-    if (m_Log == params.log && m_LogTiming == params.log_timing &&
+    if (m_Log == params.log &&
+        m_LogTiming == params.log_timing &&
+        m_LogTimingNSTAPI == params.log_timing_nst_api &&
+        m_LogTimingClientSocket == params.log_timing_client_socket &&
         m_NetworkTimeout == params.network_timeout &&
         current_params.max_connections == params.max_connections &&
-        added.empty() && deleted.empty())
+        added.empty() &&
+        deleted.empty())
         return CJsonNode::NewNullNode();
 
     // Here: there is a difference
@@ -144,6 +152,27 @@ CNetStorageServer::SetParameters(
         diff.SetByKey("log_timing", values);
 
         m_LogTiming = params.log_timing;
+    }
+    if (m_LogTimingNSTAPI != params.log_timing_nst_api) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("Old", CJsonNode::NewBooleanNode(m_LogTimingNSTAPI));
+        values.SetByKey("New", CJsonNode::NewBooleanNode(
+                                            params.log_timing_nst_api));
+        diff.SetByKey("log_timing_nst_api", values);
+
+        m_LogTimingNSTAPI = params.log_timing_nst_api;
+    }
+    if (m_LogTimingClientSocket != params.log_timing_client_socket) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("Old", CJsonNode::NewBooleanNode(
+                                            m_LogTimingClientSocket));
+        values.SetByKey("New", CJsonNode::NewBooleanNode(
+                                            params.log_timing_client_socket));
+        diff.SetByKey("log_timing_client_socket", values);
+
+        m_LogTimingClientSocket = params.log_timing_client_socket;
     }
 
     if (m_NetworkTimeout != params.network_timeout) {

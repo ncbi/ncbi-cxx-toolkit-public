@@ -176,7 +176,8 @@ void CNetStorageHandler::OnRead(void)
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     EIO_Status          status = GetSocket().Read(m_ReadBuffer, kReadBufferSize,
                                                   &n_read);
-    m_Timing.Append("Client socket read", start);
+    if (m_Server->IsLogTimingClientSocket())
+        m_Timing.Append("Client socket read", start);
 
     switch (status) {
     case eIO_Success:
@@ -309,7 +310,9 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
         if (!m_Timing.Empty() && m_Server->IsLogTiming()) {
-            GetDiagContext().Extra().Print("timing", m_Timing.Serialize());
+            string      timing =  m_Timing.Serialize(GetDiagContext().Extra());
+            if (!timing.empty())
+                GetDiagContext().Extra().Print("timing", timing);
         }
         GetDiagContext().PrintRequestStop();
         m_CmdContext.Reset();
@@ -553,8 +556,9 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         m_ObjectBeingWritten.Write(data, data_size);
-        m_Timing.Append("NetStorageAPI write (" +
-                        NStr::NumericToString(data_size) + ")", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI write (" +
+                            NStr::NumericToString(data_size) + ")", start);
         start = 0.0;
         m_Server->GetClientRegistry().AddBytesWritten(m_Client, data_size);
         m_ObjectSize += data_size;
@@ -562,7 +566,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
     catch (const std::exception &  ex) {
         string  message = "Error writing into " +
                           m_ObjectBeingWritten.GetLoc() + ": " + ex.what();
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI writing error (" +
                             NStr::NumericToString(data_size) + ")", start);
         ERR_POST(message);
@@ -581,7 +585,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
     catch (...) {
         string  message = "Unknown exception while writing into " +
                           m_ObjectBeingWritten.GetLoc();
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI writing error (" +
                             NStr::NumericToString(data_size) + ")", start);
         ERR_POST(message);
@@ -614,15 +618,18 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             // This is the object of zero size i.e. there were no write()
             // calls. Thus the remote object was not really created.
             m_ObjectBeingWritten.Write("", 0);
-            m_Timing.Append("NetStorageAPI writing (0)", start);
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI writing (0)", start);
         }
         start = CNSTPreciseTime::Current();
         m_ObjectBeingWritten.Close();
-        m_Timing.Append("NetStorageAPI closing", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI closing", start);
     }
     catch (const CException &  ex) {
         x_SetCmdRequestStatus(eStatus_ServerError);
-        m_Timing.Append("NetStorageAPI finilizing error", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI finilizing error", start);
 
         string  message = "Error while finalizing " +
                           m_ObjectBeingWritten.GetLoc() + ": " + ex.GetMsg();
@@ -829,9 +836,10 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
             EIO_Status  status = GetSocket().Write(output_buffer,
                                                    output_buffer_size,
                                                    &bytes_written);
-            m_Timing.Append("Client socket write (" +
-                            NStr::NumericToString(output_buffer_size) + ")",
-                            start);
+            if (m_Server->IsLogTimingClientSocket())
+                m_Timing.Append("Client socket write (" +
+                                NStr::NumericToString(output_buffer_size) + ")",
+                                start);
             if (status != eIO_Success) {
                 // Error writing to the socket. Log what we can and close the
                 // connection.
@@ -956,7 +964,9 @@ CNetStorageHandler::x_PrintMessageRequestStop(void)
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
         if (!m_Timing.Empty() && m_Server->IsLogTiming()) {
-            GetDiagContext().Extra().Print("timing", m_Timing.Serialize());
+            string      timing =  m_Timing.Serialize(GetDiagContext().Extra());
+            if (!timing.empty())
+                GetDiagContext().Extra().Print("timing", timing);
         }
         GetDiagContext().PrintRequestStop();
         m_CmdContext.Reset();
@@ -1567,7 +1577,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         CJsonNode         object_info = direct_object.GetInfo().ToJSON();
-        m_Timing.Append("NetStorageAPI GetInfo", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetInfo", start);
         start = 0.0;
 
         for (CJsonIterator it = object_info.Iterate(); it; ++it) {
@@ -1580,17 +1591,17 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             AppendWarning(reply, eRemoteObjectInfoWarning,
                           "Error while getting remote object info: " +
                           string(ex.what()));
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (const exception &  ex) {
         AppendWarning(reply, eRemoteObjectInfoWarning,
                       "Error while getting remote object info");
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (...) {
         AppendWarning(reply, eRemoteObjectInfoWarning,
                       "Unknown error while getting remote object info");
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     }
 
@@ -2096,7 +2107,8 @@ CNetStorageHandler::x_ProcessRead(
         while (!direct_object.Eof()) {
             start = CNSTPreciseTime::Current();
             bytes_read = direct_object.Read(buffer, sizeof(buffer));
-            m_Timing.Append("NetStorageAPI read", start);
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI read", start);
             start = 0.0;
 
             m_UTTPWriter.SendChunk(buffer, bytes_read, false);
@@ -2113,7 +2125,8 @@ CNetStorageHandler::x_ProcessRead(
 
         start = CNSTPreciseTime::Current();
         direct_object.Close();
-        m_Timing.Append("NetStorageAPI Close", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Close", start);
         start = 0.0;
 
         reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -2126,14 +2139,14 @@ CNetStorageHandler::x_ProcessRead(
                        CNetStorageServerException::eReadError,
                        string("Object read error: ") + ex.what());
         ERR_POST(ex);
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI read (exception)", start);
         if (!x_PrintTimingIsOn() && !m_Timing.Empty())
             ERR_POST("Object read error timing information: " +
                      m_Timing.Serialize());
     }
     catch (...) {
-        if (double(start) != 0.0)
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI read (unknown exception)", start);
         throw;
     }
@@ -2196,9 +2209,11 @@ CNetStorageHandler::x_ProcessDelete(
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         direct_object.Remove();
-        m_Timing.Append("NetStorageAPI Remove", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Remove", start);
     } catch (...) {
-        m_Timing.Append("NetStorageAPI Remove exception", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Remove exception", start);
         throw;
     }
 
@@ -2268,9 +2283,11 @@ CNetStorageHandler::x_ProcessRelocate(
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         new_object_loc = direct_object.Relocate(new_location_flags);
-        m_Timing.Append("NetStorageAPI Relocate", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Relocate", start);
     } catch (...) {
-        m_Timing.Append("NetStorageAPI Relocate exception", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Relocate exception", start);
         throw;
     }
 
@@ -2318,9 +2335,11 @@ CNetStorageHandler::x_ProcessExists(
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         exists = direct_object.Exists();
-        m_Timing.Append("NetStorageAPI Exists", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Exists", start);
     } catch (...) {
-        m_Timing.Append("NetStorageAPI Exists exception", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Exists exception", start);
         throw;
     }
 
@@ -2352,9 +2371,11 @@ CNetStorageHandler::x_ProcessGetSize(
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         object_size = direct_object.GetSize();
-        m_Timing.Append("NetStorageAPI GetSize", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetSize", start);
     } catch (...) {
-        m_Timing.Append("NetStorageAPI GetSize exception", start);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetSize exception", start);
         throw;
     }
 
@@ -2621,9 +2642,10 @@ CNetStorageHandler::x_SendOverUTTP()
             CNSTPreciseTime     start = CNSTPreciseTime::Current();
             EIO_Status result =
                 GetSocket().Write(output_buffer, output_buffer_size, &written);
-            m_Timing.Append("Client socket write (" +
-                            NStr::NumericToString(output_buffer_size) + ")",
-                            start);
+            if (m_Server->IsLogTimingClientSocket())
+                m_Timing.Append("Client socket write (" +
+                                NStr::NumericToString(output_buffer_size) + ")",
+                                start);
             if (result != eIO_Success) {
                 // Error writing to the socket. Log what we can and close the
                 // connection.

@@ -179,6 +179,8 @@ void NSTValidateServerSection(const IRegistry &  reg,
 
     NSTValidateBool(reg, section, "log", warnings);
     NSTValidateBool(reg, section, "log_timing", warnings);
+    NSTValidateBool(reg, section, "log_timing_nst_api", warnings);
+    NSTValidateBool(reg, section, "log_timing_client_socket", warnings);
     NSTValidateString(reg, section, "admin_client_name", warnings);
 }
 
