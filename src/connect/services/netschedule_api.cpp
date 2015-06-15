@@ -95,8 +95,6 @@ SNetScheduleNotificationThread::SNetScheduleNotificationThread(
     m_API(ns_api),
     m_StopThread(false)
 {
-    m_UDPSocket.SetReuseAddress(eOn);
-
     STimeout rto;
     rto.sec = rto.usec = 0;
     m_UDPSocket.SetTimeout(eIO_Read, &rto);
@@ -126,8 +124,6 @@ void SNetScheduleNotificationThread::CmdAppendPortAndTimeout(
 
 CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 {
-    m_UDPSocket.SetReuseAddress(eOn);
-
     STimeout rto;
     rto.sec = rto.usec = 0;
     m_UDPSocket.SetTimeout(eIO_Read, &rto);
