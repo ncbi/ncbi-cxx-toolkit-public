@@ -917,7 +917,6 @@ BOOST_AUTO_TEST_CASE(TestResultsForMaxClusterDiam)
     //Bad input file - there are two exactly same sequences
 
     BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
-    BOOST_CHECK((int)m_Aligner->GetMessages().size() > 0);
 
     s_TestResults(*m_Aligner);
 }
