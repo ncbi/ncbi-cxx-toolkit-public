@@ -4076,15 +4076,9 @@ CNewCleanup_imp::x_GeneGBQualBC( CGene_ref& gene, const CGb_qual& gb_qual )
         change_made = true;
         gene.SetSyn().push_back(val);
     } else if (NStr::EqualNocase(qual, "gene") ) {
-        change_made = true;
-        if ( ! gene.IsSetLocus() ) {
+        if (!gene.IsSetLocus()) {
             gene.SetLocus(val);
-        } else if (gene.GetLocus() != val) {
-            CGene_ref::TSyn::const_iterator syn_it = 
-                find(gene.GetSyn().begin(), gene.GetSyn().end(), val);
-            if (syn_it == gene.GetSyn().end()) {
-                gene.SetSyn().push_back(val);
-            }            
+            change_made = true;
         }
     }
     if (change_made) {
