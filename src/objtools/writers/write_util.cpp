@@ -743,6 +743,40 @@ bool CWriteUtil::GetQualifier(
     return false;
 }
  
+//  ---------------------------------------------------------------------------
+void CGffFeatureContext::xAssignSequenceIsGenomicRecord()
+//  ---------------------------------------------------------------------------
+{
+    if (!m_bsh || !m_bsh.IsSetDescr()) {
+        m_bSequenceIsGenomicRecord = false;
+        return;
+    }
+    const CSeq_descr& descr = m_bsh.GetDescr();
+    if (!descr.CanGet()) {
+        m_bSequenceIsGenomicRecord = false;
+        return;
+    }
+    const list< CRef< CSeqdesc > >& listDescr = descr.Get();
+    for (list< CRef< CSeqdesc > >::const_iterator cit = listDescr.begin();
+        cit != listDescr.end(); ++cit) {
+        const CSeqdesc& desc = **cit;
+        if (!desc.IsMolinfo()) {
+            continue;
+        }
+        const CMolInfo& molInfo = desc.GetMolinfo();
+        if (!molInfo.IsSetBiomol()) {
+            continue;
+        }
+        CMolInfo::TBiomol bioMol = molInfo.GetBiomol();
+        m_bSequenceIsGenomicRecord = (
+            (bioMol == CMolInfo::eBiomol_genomic) ||
+            (bioMol == CMolInfo::eBiomol_cRNA));
+        return;
+    }
+    m_bSequenceIsGenomicRecord = false;
+    return;
+}
+
 // ----------------------------------------------------------------------------
 CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
 // ----------------------------------------------------------------------------

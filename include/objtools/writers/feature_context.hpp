@@ -52,19 +52,27 @@ public:
         const CFeat_CI& feat_iter,
         CBioseq_Handle bsh=CBioseq_Handle(), 
         CSeq_annot_Handle sah=CSeq_annot_Handle()) :
-        m_ft(feat_iter), m_bsh(bsh), m_sah(sah)
-    {};
+        m_ft(feat_iter), m_bsh(bsh), m_sah(sah),
+        m_bSequenceIsGenomicRecord(false)
+    {
+        xAssignSequenceIsGenomicRecord();
+    };
+
     feature::CFeatTree& FeatTree() { return m_ft; };
     CBioseq_Handle BioseqHandle() const { return m_bsh; };
     CSeq_annot_Handle AnnotHandle() const { return m_sah; };
 
     CMappedFeat FindBestGeneParent(const CMappedFeat& mf);
+    bool IsSequenceGenomicRecord() const { return m_bSequenceIsGenomicRecord; };
 
 protected:
     feature::CFeatTree m_ft;
     CMappedFeat m_mfLastIn, m_mfLastOut;
     CBioseq_Handle m_bsh;
     CSeq_annot_Handle m_sah;
+    bool m_bSequenceIsGenomicRecord;
+
+    void xAssignSequenceIsGenomicRecord();
 
 private:
     CGffFeatureContext(const CGffFeatureContext&);

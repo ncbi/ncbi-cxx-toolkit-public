@@ -2175,33 +2175,6 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
 }
 
 //  ----------------------------------------------------------------------------
-bool sIsSequenceGenomicRecord(CBioseq_Handle bsh)
-//  ----------------------------------------------------------------------------
-{
-    if (!bsh  ||  !bsh.IsSetDescr()) {
-        return false;
-    }
-    const CSeq_descr& descr = bsh.GetDescr();
-    if (!descr.CanGet()) {
-        return false;
-    }
-    const list< CRef< CSeqdesc > >& listDescr = descr.Get();
-    for (list< CRef< CSeqdesc > >::const_iterator cit = listDescr.begin();
-        cit != listDescr.end(); ++cit) {
-        const CSeqdesc& desc = **cit;
-        if (!desc.IsMolinfo()) {
-            continue;
-        }
-        const CMolInfo& molInfo = desc.GetMolinfo();
-        if (!molInfo.IsSetBiomol()) {
-            continue;
-        }
-        return (molInfo.GetBiomol() == CMolInfo::eBiomol_genomic);
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
@@ -2209,7 +2182,7 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
 //  ----------------------------------------------------------------------------
 {
     //applies only to genomic records
-    if (!sIsSequenceGenomicRecord(fc.BioseqHandle())) {
+    if (!fc.IsSequenceGenomicRecord()) {
         return true;
     }
 
