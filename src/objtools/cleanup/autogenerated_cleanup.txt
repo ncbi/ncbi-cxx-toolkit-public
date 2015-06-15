@@ -136,6 +136,7 @@ membermacro CLEAN_AND_COMPRESS_STRING_MEMBER {
     RNA-gen.quals.E.qual ,
     RNA-gen.quals.E.val ,
     Seq-feat.comment ,
+    Gene-ref.locus ,
 }
 
 membermacro CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK {
