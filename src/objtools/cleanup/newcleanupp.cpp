@@ -4577,6 +4577,95 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
 }
 
 
+void CNewCleanup_imp::x_AddToComment(CSeq_feat& feat, const string& comment)
+{
+    if (!feat.IsSetComment()) {
+        feat.SetComment(comment);
+    }
+    else {
+        feat.SetComment() += "; " + comment;
+    }
+    ChangeMade(CCleanupChange::eChangeComment);
+}
+
+CNewCleanup_imp::EAction
+CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& product)
+{
+    TRNAREF_TYPE& rna_type = rna.SetType();
+
+    if (rna_type != CRNA_ref::eType_tRNA && 
+        rna_type != CRNA_ref::eType_other &&
+        rna_type != CRNA_ref::eType_unknown) {
+        return eAction_Nothing;
+    }
+
+    if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsName()) {
+        const string &name = rna.SetExt().SetName();
+        bool justTrnaText = false;
+        string codon;
+        char aa = s_ParseSeqFeatTRnaString(name, &justTrnaText, codon, false);
+        if (aa != '\0') {
+            const bool is_fMet = (NStr::Find(name, "fMet") != NPOS);
+            CRNA_ref_Base::C_Ext::TTRNA &trp = rna.SetExt().SetTRNA();
+            trp.SetAa().SetNcbieaa(aa);
+            if (justTrnaText) {
+                copy(codon.begin(), codon.end(), back_inserter(trp.SetCodon()));
+            }
+            if (aa == 'M') {
+                if (is_fMet) {
+                    x_AddToComment(feat, "fMet");
+                }
+            }
+            x_SeqFeatTRNABC(feat, trp);
+            ChangeMade(CCleanupChange::eChangeRNAref);
+        }
+    }
+    if (rna_type == NCBI_RNAREF(tRNA) && !rna.IsSetExt()) {
+        // this part inserted from: AddQualifierToFeature (sfp, "product", gb_qual_val);
+        bool justTrnaText = false;
+        string codon;
+        char aa = s_ParseSeqFeatTRnaString(product, &justTrnaText, codon, false);
+        if (aa != '\0') {
+
+            CRNA_ref_Base::C_Ext::TTRNA& trna = rna.SetExt().SetTRNA();
+            trna.SetAa().SetNcbieaa(aa);
+
+            if (justTrnaText) {
+                copy(codon.begin(), codon.end(), back_inserter(trna.SetCodon()));
+            }
+            else {
+                x_AddToComment(feat, product);
+            }
+
+            if (aa == 'M') {
+                if (NStr::Find(product, "fMet") != NPOS) {
+                    x_AddToComment(feat, "fMet");
+                }
+            }
+
+            ChangeMade(CCleanupChange::eChangeRNAref);
+        }
+        else {
+            x_AddToComment(feat, product);
+        }
+        return eAction_Erase;
+    }
+    if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsTRNA()) {
+        CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
+        if (trp.IsSetAa() && trp.GetAa().IsNcbieaa()) {
+            string ignored;
+            if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false) &&
+                NStr::IsBlank(ignored)) {
+            } else {
+                x_AddToComment(feat, product);
+            }
+            return eAction_Erase;
+        }
+    }
+    return eAction_Nothing;
+}
+
+
 // homologous to C's HandledGBQualOnRNA.
 // That func was copy-pasted, then translated into C++.
 // Later we can go back and actually refactor the code
@@ -4584,13 +4673,18 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
 CNewCleanup_imp::EAction 
 CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual)
 {
-    if( ! gb_qual.IsSetVal() ) {
+    if( ! gb_qual.IsSetVal() || NStr::IsBlank(gb_qual.GetVal())) {
         return eAction_Nothing;
     }
     const string &gb_qual_qual = gb_qual.GetQual();
     string &gb_qual_val = gb_qual.SetVal();
     TRNAREF_TYPE& rna_type = rna.SetType();
+
     const bool is_std_name = NStr::EqualNocase( gb_qual_qual, "standard_name" );
+    if (is_std_name && rna_type == CRNA_ref::eType_ncRNA) {
+        x_AddToComment(feat, gb_qual_val);
+        return eAction_Erase;
+    }
     if (NStr::EqualNocase( gb_qual_qual, "product" )) 
     {
         if (rna_type == NCBI_RNAREF(unknown)) {
@@ -4605,82 +4699,10 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 ChangeMade(CCleanupChange::eChangeRNAref);
             }
         }
-        if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsName() ) {
-            const string &name = rna.SetExt().SetName();
-            bool justTrnaText = false;
-            string codon;
-            char aa = s_ParseSeqFeatTRnaString( name, &justTrnaText, codon, false );
-            if (aa != '\0') {
-                const bool is_fMet = ( NStr::Find(name, "fMet") != NPOS );
-                CRNA_ref_Base::C_Ext::TTRNA &trp = rna.SetExt().SetTRNA();
-                trp.SetAa().SetNcbieaa(aa);
-                if (justTrnaText) {
-                    copy( codon.begin(), codon.end(), back_inserter(trp.SetCodon()) );
-                }
-                if (aa == 'M') {
-                    if (is_fMet) {
-                        if ( ! feat.IsSetComment() ) {
-                            feat.SetComment("fMet");
-                        } else {
-                            feat.SetComment() += "; fMet";
-                        }
-                    }
-                }
-                x_SeqFeatTRNABC(feat, trp);
-                ChangeMade(CCleanupChange::eChangeRNAref);
-            }
-        }
-        if (rna_type == NCBI_RNAREF(tRNA) && ! rna.IsSetExt() ) {
-            // this part inserted from: AddQualifierToFeature (sfp, "product", gb_qual_val);
-            bool justTrnaText = false;
-            string codon;
-            char aa = s_ParseSeqFeatTRnaString (gb_qual_val, &justTrnaText, codon, false);
-            if (aa != '\0') {
-                
-                CRNA_ref_Base::C_Ext::TTRNA& trna = rna.SetExt().SetTRNA();
-                trna.SetAa().SetNcbieaa(aa);
-                
-                if (justTrnaText) {
-                    copy( codon.begin(), codon.end(), back_inserter(trna.SetCodon()) );
-                } else {
-                    if( ! feat.IsSetComment() ) {
-                        feat.SetComment(gb_qual_val);
-                    } else {
-                        feat.SetComment() += "; " + gb_qual_val;
-                    }
-                }
-                
-                if (aa == 'M') {
-                    if( NStr::Find(gb_qual_val, "fMet") != NPOS ) {
-                        if ( ! feat.IsSetComment() ) {
-                            feat.SetComment("fMet");
-                        } else {
-                            feat.SetComment() += "; fMet";
-                        }
-                    }
-                }
-
-                ChangeMade(CCleanupChange::eChangeRNAref);
-            } else {
-                if ( ! feat.IsSetComment() ) {
-                    feat.SetComment(gb_qual_val);
-                } else {
-                    feat.SetComment() += "; ";
-                    feat.SetComment() += gb_qual_val;
-                }
-                ChangeMade(CCleanupChange::eChangeComment);
-            }
+        if (x_HandleTrnaProductGBQual(feat, rna, gb_qual_val) == eAction_Erase) {
             return eAction_Erase;
         }
-        if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsTRNA() ) {
-            CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
-            if ( trp.IsSetAa() && trp.GetAa().IsNcbieaa() ) {
-                string ignored;
-                if ( trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString (gb_qual_val, NULL, ignored, false)) {
-                    return eAction_Erase;
-                }
-            }
-        }
+
         if( FIELD_IS_SET_AND_IS(rna, Ext, Gen) ) {
             CRNA_gen & rna_gen = rna.SetExt().SetGen();
             if( RAW_FIELD_IS_EMPTY_OR_UNSET(rna_gen, Product) ) {
@@ -4708,13 +4730,7 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 return eAction_Nothing;
             }
             // subsequent /product now added to comment
-            if ( ! feat.IsSetComment() ) {
-                feat.SetComment( gb_qual_val );
-                gb_qual.ResetVal();
-            } else if ( NStr::Find(gb_qual_val, feat.GetComment()) == NPOS) {
-                feat.SetComment() += "; ";
-                feat.SetComment() += gb_qual_val;
-            }
+            x_AddToComment(feat, gb_qual_val);
             ChangeMade(CCleanupChange::eChangeComment);
             return eAction_Erase;
         }
