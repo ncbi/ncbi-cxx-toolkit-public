@@ -8865,6 +8865,9 @@ void CNewCleanup_imp::RnaFeatBC (
 )
 
 {
+    if (!rna.IsSetType()) {
+        rna.SetType(CRNA_ref::eType_other);
+    }
     // move rna.pseudo to feat.pseudo
     if ( FIELD_IS_SET(rna, Pseudo) ) {
         SET_FIELD(seq_feat, Pseudo, true);
