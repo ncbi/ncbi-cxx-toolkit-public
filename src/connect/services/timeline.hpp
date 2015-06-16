@@ -48,11 +48,6 @@ public:
 
     bool IsInTimeline() const {return m_Timeline != NULL;}
 
-    bool IsInTimeline(CWorkerNodeTimeline_Base* timeline) const
-    {
-        return m_Timeline == timeline;
-    }
-
     void MoveTo(CWorkerNodeTimeline_Base* timeline);
 
     const CDeadline GetTimeout() const {return m_Deadline;}
