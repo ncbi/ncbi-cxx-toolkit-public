@@ -416,10 +416,13 @@ struct SServerTimelineEntry : public CWorkerNodeTimelineEntry
 {
     const SServerAddress server_address;
     unsigned discovery_iteration;
+    bool more_jobs;
 
-    SServerTimelineEntry(const SServerAddress& a, unsigned i) :
+    // If iteration is zero, then it's either discovery action or search pattern
+    SServerTimelineEntry(const SServerAddress& a, unsigned i = 0) :
         server_address(a),
-        discovery_iteration(i)
+        discovery_iteration(i),
+        more_jobs(i) // It's set to false for special entries (see above)
     {
     }
 };
@@ -526,6 +529,19 @@ public:
             if (!srv_entry->IsInTimeline())
                 m_ImmediateActions.Push(srv_entry);
         }
+    }
+
+    bool MoreJobs() const
+    {
+        for (TEntryRef entry = m_Timeline.GetHead();
+                entry;
+                entry = m_Timeline.GetNext(entry)) {
+            if (entry->more_jobs && !IsOutdatedAction(entry)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void Suspend(unsigned timeout)

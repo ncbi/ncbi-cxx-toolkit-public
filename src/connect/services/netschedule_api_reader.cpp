@@ -56,7 +56,7 @@ CServerTimelineEntries::TEntry*
 CServerTimelineEntries::GetEntry(SNetServerImpl* server_impl, unsigned iteration)
 {
     const SServerAddress search_address(server_impl->m_ServerInPool->m_Address);
-    TEntry search_pattern(search_address, 0);
+    TEntry search_pattern(search_address);
 
     TTimelineEntries::iterator it(
             m_TimelineEntryByAddress.find(&search_pattern));
@@ -81,7 +81,7 @@ CServerTimelineEntries::~CServerTimelineEntries()
 
 CServerTimeline::CServerTimeline() :
     m_DiscoveryIteration(1),
-    m_DiscoveryAction(new SServerTimelineEntry(SServerAddress(0, 0), 0))
+    m_DiscoveryAction(new SServerTimelineEntry(SServerAddress(0, 0)))
 {
     m_ImmediateActions.Push(m_DiscoveryAction);
 }
@@ -211,6 +211,11 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
             m_Timeline.PushImmediateAction(timeline_entry);
             return true;
         } else {
+            // Cache the result for the server,
+            // so we don't need to ask the server again about matching jobs
+            // while waiting for its notifications
+            timeline_entry->more_jobs = !no_more_jobs;
+
             // No job has been returned by this server;
             // query the server later.
             m_Timeline.PushScheduledAction(timeline_entry);
@@ -262,10 +267,8 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             x_ProcessReadJobNotifications();
         }
 
-        // All servers from immediate actions returned 'no_more_jobs'.
-        // However, this method can be called again to wait for possible
-        // notifications and to query the servers again periodically.
-        if (!matching_job_exists)
+        // All servers returned 'no_more_jobs'.
+        if (!matching_job_exists && !m_Timeline.MoreJobs())
             return CNetScheduleJobReader::eRNJ_NoMoreJobs;
 
         // FIXME Check for interrupt

@@ -62,6 +62,11 @@ public:
         return m_Deadline.GetRemainingTime().IsZero();
     }
 
+    CWorkerNodeTimelineEntry* GetNext() const
+    {
+        return m_Next;
+    }
+
 private:
     CWorkerNodeTimeline_Base* m_Timeline;
     CWorkerNodeTimelineEntry* m_Prev;
@@ -169,6 +174,11 @@ public:
     TRefType GetHead() const
     {
         return TRefType(static_cast<TTimelineEntry*>(m_Head));
+    }
+    TRefType GetNext(TRefType ref) const
+    {
+        _ASSERT(ref);
+        return TRefType(static_cast<TTimelineEntry*>(ref->GetNext()));
     }
     void Shift(TRefType& ref)
     {
