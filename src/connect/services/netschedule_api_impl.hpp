@@ -547,8 +547,8 @@ public:
 
     bool MoreJobs() const
     {
-        for (TTimeline::const_iterator i = m_Timeline.cbegin();
-                i != m_Timeline.cend(); ++i) {
+        for (TTimeline::const_iterator i = m_Timeline.begin();
+                i != m_Timeline.end(); ++i) {
             if ((*i)->more_jobs && !IsOutdatedAction(*i)) {
                 return true;
             }
@@ -582,7 +582,7 @@ private:
 
     static bool Find(const TTimeline& timeline, TEntryRef entry)
     {
-        return find(timeline.cbegin(), timeline.cend(), entry) != timeline.cend();
+        return find(timeline.begin(), timeline.end(), entry) != timeline.end();
     }
 
     static bool Erase(TTimeline& timeline, TEntryRef entry)
