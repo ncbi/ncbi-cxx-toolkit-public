@@ -327,7 +327,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
           { "affinity_may_change",
                                  eNSPT_Int, eNSPA_Optional, "0" },
-          { "group_may_change",  eNSPT_Int, eNSPA_Optional, "0" } } },
+          { "group_may_change",  eNSPT_Int, eNSPA_Optional, "0" },
+          { "prioritized_aff",   eNSPT_Int, eNSPA_Optional, "0" } } },
     { "CFRM",          { &CNetScheduleHandler::x_ProcessConfirm,
                          eNS_Queue | eNS_Reader | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -407,7 +408,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "prioritized_aff",   eNSPT_Int, eNSPA_Optional, "0" } } },
     { "PUT",           { &CNetScheduleHandler::x_ProcessPut,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -2037,6 +2039,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                         m_CommandArguments.wnode_affinity,
                         m_CommandArguments.any_affinity,
                         m_CommandArguments.exclusive_new_aff,
+                        m_CommandArguments.prioritized_aff,
                         cmdv2,
                         m_CommandArguments.group,
                         &job,
@@ -2234,6 +2237,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         curr, &aff_list,
                         m_CommandArguments.wnode_affinity,
                         m_CommandArguments.any_affinity,
+                        false,
                         false,
                         false,
                         "",
@@ -3447,6 +3451,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
                                   m_CommandArguments.reader_affinity,
                                   m_CommandArguments.any_affinity,
                                   m_CommandArguments.exclusive_new_aff,
+                                  m_CommandArguments.prioritized_aff,
                                   m_CommandArguments.group,
                                   m_CommandArguments.affinity_may_change,
                                   m_CommandArguments.group_may_change,
@@ -3800,12 +3805,32 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
                             "without preferred affinities and "
                             "with any_aff flag set to false "
                             "will never match any job.");
-        }
+    }
     if (m_CommandArguments.exclusive_new_aff == true &&
         m_CommandArguments.any_affinity == true)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both any_affinity and "
                    "exclusive_new_aff GET2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.any_affinity == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both prioritized_aff and "
+                   "any_aff GET2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.wnode_affinity == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both prioritized_aff and "
+                   "wnode_aff GET2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.exclusive_new_aff == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both prioritized_aff and "
+                   "exclusive_new_aff GET2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.affinity_token.empty())
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "If the prioritized_aff GET2 flag set to 1 then "
+                   "a non empty list of explicit affinities must be provided.");
 }
 
 
@@ -3820,12 +3845,32 @@ void CNetScheduleHandler::x_CheckReadParameters(void)
                             "without preferred affinities and "
                             "with any_aff flag set to false "
                             "will never match any job.");
-        }
+    }
     if (m_CommandArguments.exclusive_new_aff == true &&
         m_CommandArguments.any_affinity == true)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                   "It is forbidden to have both any_affinity and "
+                   "It is forbidden to have both any_aff and "
                    "exclusive_new_aff READ2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.any_affinity == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both prioritized_aff and "
+                   "any_aff READ2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.reader_affinity == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both prioritized_aff and "
+                   "reader_aff READ2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.exclusive_new_aff == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both prioritized_aff and "
+                   "exclusive_new_aff READ2 flags set to 1.");
+    if (m_CommandArguments.prioritized_aff == true &&
+        m_CommandArguments.affinity_token.empty())
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "If the prioritized_aff READ2 flag set to 1 then "
+                   "a non empty list of explicit affinities must be provided.");
 }
 
 

@@ -255,14 +255,14 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
 // client. In this case non-existed affinities must be resolved and the client
 // must be memorized as a referencer of the affinities.
 // The DB transaction must be set in the outer scope.
-TNSBitVector
+vector<unsigned int>
 CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens)
 {
-    TNSBitVector            result;
+    vector<unsigned int>    result;
 
     for (list<string>::const_iterator  k(tokens.begin());
          k != tokens.end(); ++k)
-        result.set(ResolveAffinity(*k), true);
+        result.push_back(ResolveAffinity(*k));
     return result;
 }
 

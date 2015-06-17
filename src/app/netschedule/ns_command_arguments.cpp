@@ -87,6 +87,7 @@ void SNSCommandArguments::x_Reset()
     pullback = false;
     blacklist = true;
     no_retries = false;
+    prioritized_aff = false;
 
     affinity_may_change = false;
     group_may_change = false;
@@ -303,6 +304,13 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                     NCBI_THROW(CNetScheduleException, eInvalidParameter,
                                "pullback accepted values are 0 and 1.");
                 pullback = (tmp == 1);
+            }
+            else if (key == "prioritized_aff") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "prioritized_aff accepted values are 0 and 1.");
+                prioritized_aff = (tmp == 1);
             }
             break;
         case 'q':

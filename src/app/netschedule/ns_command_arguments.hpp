@@ -90,6 +90,7 @@ struct SNSCommandArguments
     bool            pullback;
     bool            blacklist;  // RETURN2 only: add or not to blacklist
     bool            no_retries; // FPUT2 only
+    bool            prioritized_aff;    // GET2/READ2
 
     // READ/READ2 commands
     bool            affinity_may_change;

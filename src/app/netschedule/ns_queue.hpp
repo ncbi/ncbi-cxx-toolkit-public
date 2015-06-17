@@ -203,6 +203,7 @@ public:
                       bool                      wnode_affinity,
                       bool                      any_affinity,
                       bool                      exclusive_new_affinity,
+                      bool                      prioritized_aff,
                       bool                      new_format,
                       const string &            group,
                       CJob *                    new_job,
@@ -304,6 +305,7 @@ public:
                                 bool                      reader_affinity,
                                 bool                      any_affinity,
                                 bool                      exclusive_new_affinity,
+                                bool                      prioritized_aff,
                                 const string &            group,
                                 bool                      affinity_may_change,
                                 bool                      group_may_change,
@@ -488,13 +490,14 @@ private:
     };
 
     x_SJobPick
-    x_FindVacantJob(const CNSClientId &    client,
-                    const TNSBitVector &   aff_ids,
-                    bool                   use_pref_affinity,
-                    bool                   any_affinity,
-                    bool                   exclusive_new_affinity,
-                    const string &         group,
-                    ECommandGroup          cmd_group);
+    x_FindVacantJob(const CNSClientId &           client,
+                    const vector<unsigned int> &  aff_ids,
+                    bool                          use_pref_affinity,
+                    bool                          any_affinity,
+                    bool                          exclusive_new_affinity,
+                    bool                          prioritized_aff,
+                    const string &                group,
+                    ECommandGroup                 cmd_group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
                              unsigned int         picked_earlier);

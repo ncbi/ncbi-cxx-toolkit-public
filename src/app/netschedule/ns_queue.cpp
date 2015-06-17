@@ -850,6 +850,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                      bool                      wnode_affinity,
                      bool                      any_affinity,
                      bool                      exclusive_new_affinity,
+                     bool                      prioritized_aff,
                      bool                      new_format,
                      const string &            group,
                      CJob *                    new_job,
@@ -863,7 +864,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
     // node
     m_ClientsRegistry.AppendType(client, CNSClient::eWorkerNode);
 
-    TNSBitVector        aff_ids;
+    vector<unsigned int>    aff_ids;
+    TNSBitVector            aff_ids_vector;
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
@@ -892,6 +894,10 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
         x_UnregisterGetListener(client, port);
     }}
 
+    for (vector<unsigned int>::const_iterator k = aff_ids.begin();
+            k != aff_ids.end(); ++k)
+        aff_ids_vector.set(*k, true);
+
     for (;;) {
         // No lock here to make it possible to pick a job
         // simultaneously from many threads
@@ -899,6 +905,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                                wnode_affinity,
                                                any_affinity,
                                                exclusive_new_affinity,
+                                               prioritized_aff,
                                                group, eGet);
         {{
             bool                outdated_job = false;
@@ -913,7 +920,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                     if (timeout != 0 && port > 0)
                         // WGET: // There is no job, so the client might need to
                         // be registered in the waiting list
-                        x_RegisterGetListener( client, port, timeout, aff_ids,
+                        x_RegisterGetListener( client, port, timeout,
+                                               aff_ids_vector,
                                                wnode_affinity, any_affinity,
                                                exclusive_new_affinity,
                                                new_format, group);
@@ -2210,6 +2218,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                bool                      reader_affinity,
                                bool                      any_affinity,
                                bool                      exclusive_new_affinity,
+                               bool                      prioritized_aff,
                                const string &            group,
                                bool                      affinity_may_change,
                                bool                      group_may_change,
@@ -2218,8 +2227,8 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                CNSRollbackInterface * &  rollback_action,
                                string &                  added_pref_aff)
 {
-    CNSPreciseTime      curr = CNSPreciseTime::Current();
-    TNSBitVector        aff_ids;
+    CNSPreciseTime          curr = CNSPreciseTime::Current();
+    vector<unsigned int>    aff_ids;
 
     // This is a reader command, so mark the node type as a reader
     m_ClientsRegistry.AppendType(client, CNSClient::eReader);
@@ -2253,12 +2262,18 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         m_ClientsRegistry.CancelWaiting(client, eRead);
     }}
 
+    TNSBitVector    aff_ids_vector;
+    for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
+            k != aff_ids.end(); ++k)
+        aff_ids_vector.set(*k, true);
+
     for (;;) {
         // No lock here to make it possible to pick a job
         // simultaneously from many threads
         x_SJobPick  job_pick = x_FindVacantJob(client, aff_ids, reader_affinity,
                                                any_affinity,
                                                exclusive_new_affinity,
+                                               prioritized_aff,
                                                group, eRead);
 
         {{
@@ -2271,13 +2286,14 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                     job_pick = x_FindOutdatedJobForReading(client, 0);
 
                 if (job_pick.job_id == 0) {
-                    *no_more_jobs = x_NoMoreReadJobs(client, aff_ids,
+                    *no_more_jobs = x_NoMoreReadJobs(client, aff_ids_vector,
                                                  reader_affinity, any_affinity,
                                                  exclusive_new_affinity, group,
                                                  affinity_may_change,
                                                  group_may_change);
                     if (timeout != 0 && port > 0)
-                        x_RegisterReadListener(client, port, timeout, aff_ids,
+                        x_RegisterReadListener(client, port, timeout,
+                                           aff_ids_vector,
                                            reader_affinity, any_affinity,
                                            exclusive_new_affinity, group);
                     return true;
@@ -2607,16 +2623,17 @@ void CQueue::OptimizeMem()
 
 
 CQueue::x_SJobPick
-CQueue::x_FindVacantJob(const CNSClientId  &  client,
-                        const TNSBitVector &  aff_ids,
-                        bool                  use_pref_affinity,
-                        bool                  any_affinity,
-                        bool                  exclusive_new_affinity,
-                        const string &        group,
-                        ECommandGroup         cmd_group)
+CQueue::x_FindVacantJob(const CNSClientId  &          client,
+                        const vector<unsigned int> &  aff_ids,
+                        bool                          use_pref_affinity,
+                        bool                          any_affinity,
+                        bool                          exclusive_new_affinity,
+                        bool                          prioritized_aff,
+                        const string &                group,
+                        ECommandGroup                 cmd_group)
 {
     x_SJobPick      job_pick = { 0, false, 0 };
-    bool            explicit_aff = aff_ids.any();
+    bool            explicit_aff = !aff_ids.empty();
     bool            effective_use_pref_affinity = use_pref_affinity;
     unsigned int    pref_aff_candidate_job_id = 0;
     unsigned int    exclusive_aff_candidate = 0;
@@ -2648,27 +2665,47 @@ CQueue::x_FindVacantJob(const CNSClientId  &  client,
             vacant_jobs = m_StatusTracker.GetJobs(from_state);
         }
 
+        // Exclude blacklisted jobs
+        vacant_jobs -= blacklisted_jobs;
+        // Keep only the group jobs if the group is provided
+        if (!group.empty())
+            vacant_jobs &= group_jobs;
+
+        // Exclude jobs which have been read or in a process of reading
+        if (cmd_group == eRead)
+            vacant_jobs -= m_ReadJobs;
+
+        if (prioritized_aff) {
+            // The only criteria here is a list of explicit affinities
+            // respecting their order
+            for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
+                    k != aff_ids.end(); ++k) {
+                TNSBitVector    aff_jobs = m_AffinityRegistry.
+                                                    GetJobsWithAffinity(*k);
+                TNSBitVector    candidates = vacant_jobs & aff_jobs;
+                if (candidates.any()) {
+                    job_pick.job_id = *(candidates.first());
+                    job_pick.exclusive = false;
+                    job_pick.aff_id = *k;
+                    return job_pick;
+                }
+            }
+            return job_pick;
+        }
+
+        // HERE: no prioritized affinities
+        TNSBitVector    explicit_aff_vector;
+        for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
+                k != aff_ids.end(); ++k)
+            explicit_aff_vector.set(*k, true);
+
         TNSBitVector::enumerator    en(vacant_jobs.first());
         for (; en.valid(); ++en) {
             unsigned int    job_id = *en;
 
-            if (blacklisted_jobs.get_bit(job_id))
-                continue;
-
-            if (!group.empty()) {
-                if (!group_jobs.get_bit(job_id))
-                    continue;
-            }
-
-            if (cmd_group == eRead) {
-                // Exclude jobs which have been read or in a process of reading
-                if (m_ReadJobs.get_bit(job_id))
-                    continue;
-            }
-
             unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
             if (aff_id != 0 && explicit_aff) {
-                if (aff_ids.get_bit(aff_id)) {
+                if (explicit_aff_vector.get_bit(aff_id)) {
                     job_pick.job_id = job_id;
                     job_pick.exclusive = false;
                     job_pick.aff_id = aff_id;
