@@ -103,13 +103,37 @@ private:
   void x_ReportFastaSeqCount();
 
 public:
-  CAgpValidateApplication() : m_reader( (pAgpErr.Reset(new CAgpErrEx), *pAgpErr), m_comp2len, m_comp2range_coll)
-  {
-    m_agp_version=eAgpVersion_auto;
-    m_use_xml=false;
-  }
+    CAgpValidateApplication();
 };
 
+CAgpValidateApplication::CAgpValidateApplication(void)
+    : m_agp_version(eAgpVersion_auto),
+      m_use_xml(false),
+      m_reader( (pAgpErr.Reset(new CAgpErrEx), *pAgpErr),
+                m_comp2len, m_comp2range_coll)
+{
+    const int build_num =
+#if defined(NCBI_PRODUCTION_VER)
+        NCBI_PRODUCTION_VER
+#elif defined(NCBI_DEVELOPMENT_VER)
+        NCBI_DEVELOPMENT_VER
+#else
+        0
+#endif
+        ;
+
+    const string version_name =
+#if defined(NCBI_PRODUCTION_VER)
+        "production"
+#elif defined(NCBI_DEVELOPMENT_VER)
+        "development"
+#else
+        kEmptyStr
+#endif
+        ;
+
+    SetVersion(CVersionInfo(1, 0, build_num, version_name));
+}
 
 // Print a nicer usage message
 class CArgDesc_agp_validate : public CArgDescriptions
