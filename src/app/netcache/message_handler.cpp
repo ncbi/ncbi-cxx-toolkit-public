@@ -3599,9 +3599,20 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             CNCAlerts::Report(*this, true);
         } else if (section == "alerts") {
             CNCAlerts::Report(*this, false);
+        } else if (section == "sync") {
+            Uint2 slot = 0;
+            bool one_slot = false;
+            if (params.find("port") != params.end()) {
+                try {
+                    slot = NStr::StringToUInt(params["port"]);
+                    one_slot = true;
+                } catch (...) {
+                }
+            }
+            CNCActiveSyncControl::PrintState(*this, slot, one_slot);
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
-            WriteText("netcache, storage, mirror, allalerts, alerts, env, stat\"");
+            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync\"");
         }
         WriteText("\n}}");
     } else {

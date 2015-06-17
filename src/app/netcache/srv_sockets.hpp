@@ -173,6 +173,7 @@ public:
     /// buffer will be expanded to accommodate it if necessary.
     template <typename NumType>
     CSrvSocketTask& WriteNumber(NumType num);
+    CSrvSocketTask& WriteBool(bool b);
     /// Write the exact amount of data into the socket. All the data will be
     /// written, internal write buffer will be expanded to accommodate it
     /// if necessary.

@@ -271,6 +271,7 @@ public:
     void SetFirst(bool f = true) {
         m_First = f;
     }
+    static void PrintState(CSrvSocketTask& task, Uint2 slot, bool one_slot);
 
 private:
     State x_StartScanSlots(void);
@@ -337,6 +338,7 @@ private:
     Uint8 m_LoopStart;
     TSyncSlotsList::const_iterator m_NextSlotIt;
     Uint8 m_StartTime;
+    Uint8 m_CntUnfinished;
 };
 
 

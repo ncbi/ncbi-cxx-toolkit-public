@@ -169,6 +169,16 @@ CSrvTime::Print(char* buf, EFormatType fmt) const
         *(buf++) = '.';
         s_Print6Digs(buf, int(tv_nsec / kNSecsPerUSec));
         break;
+    case eFmtJson:
+        if ( tv_sec == 0 && tv_nsec == 0) {
+            *(buf++) = 'n';
+            *(buf++) = 'u';
+            *(buf++) = 'l';
+            *(buf++) = 'l';
+            break;
+        } else {
+            *(buf++) = '\"';
+        }
     case eFmtHumanSeconds:
     case eFmtHumanUSecs:
         s_Print2Digs(buf, t.tm_mon + 1);
@@ -185,6 +195,9 @@ CSrvTime::Print(char* buf, EFormatType fmt) const
         if (fmt == eFmtHumanUSecs) {
             *(buf++) = '.';
             s_Print6Digs(buf, int(tv_nsec / kNSecsPerUSec));
+        }
+        if (fmt == eFmtJson) {
+            *(buf++) = '\"';
         }
         break;
     }

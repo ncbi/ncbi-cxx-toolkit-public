@@ -302,6 +302,10 @@ protected:
             if (next_state == NULL)
                 return;
             m_CurState = next_state;
+#if 0
+            SetRunnable();
+            return;
+#endif
         }
     }
 

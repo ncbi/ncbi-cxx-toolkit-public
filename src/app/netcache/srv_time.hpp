@@ -74,6 +74,7 @@ public:
     static int TZAdjustment(void);
 
     CSrvTime(void);
+    CSrvTime(Uint8 sec);
     /// Read/set number of seconds since epoch stored in the object.
     time_t& Sec(void);
     time_t Sec(void) const;
@@ -108,7 +109,9 @@ public:
         eFmtHumanSeconds,
         /// Format that can be readable by humans with precision up to
         /// microseconds. This format looks like MM/DD/YYYY hh:mm:ss.ssssss.
-        eFmtHumanUSecs
+        eFmtHumanUSecs,
+        /// For JSON output
+        eFmtJson
     };
     /// Formats time value in the object and writes it in buf. Buffer should
     /// have sufficient size for the whole time (see above formats description

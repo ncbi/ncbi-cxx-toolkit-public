@@ -81,6 +81,12 @@ CSrvTime::CSrvTime(void)
     tv_sec = 0;
     tv_nsec = 0;
 }
+inline
+CSrvTime::CSrvTime(Uint8 sec)
+{
+    tv_sec = sec;
+    tv_nsec = 0;
+}
 
 inline time_t&
 CSrvTime::Sec(void)
@@ -169,6 +175,9 @@ CSrvTime::Current(void)
 
 inline
 CSrvTime::CSrvTime(void)
+{}
+inline
+CSrvTime::CSrvTime(Uint8)
 {}
 
 inline time_t&
@@ -399,6 +408,12 @@ inline CSrvSocketTask&
 CSrvSocketTask::WriteNumber(NumType num)
 {
     return WriteText(NStr::NumericToString(num));
+}
+
+inline CSrvSocketTask&
+CSrvSocketTask::WriteBool(bool b)
+{
+    return WriteText(b ? "true" : "false");
 }
 
 inline void
