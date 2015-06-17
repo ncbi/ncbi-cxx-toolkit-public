@@ -39,6 +39,8 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/error_codes.hpp>
 
+#include <deque>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -412,18 +414,25 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-struct SServerTimelineEntry : public CWorkerNodeTimelineEntry
+struct SServerTimelineEntry : public CObject
 {
     const SServerAddress server_address;
+    CDeadline deadline;
     unsigned discovery_iteration;
     bool more_jobs;
 
     // If iteration is zero, then it's either discovery action or search pattern
     SServerTimelineEntry(const SServerAddress& a, unsigned i = 0) :
         server_address(a),
+        deadline(0, 0),
         discovery_iteration(i),
         more_jobs(i) // It's set to false for special entries (see above)
     {
+    }
+
+    void ResetTimeout(unsigned seconds)
+    {
+        deadline = CDeadline(seconds, 0);
     }
 };
 
@@ -453,36 +462,34 @@ class CServerTimeline
 {
 public:
     typedef CRef<SServerTimelineEntry> TEntryRef;
+    typedef deque<TEntryRef> TTimeline;
 
     CServerTimeline();
 
-    bool HasImmediateActions() const { return !m_ImmediateActions.IsEmpty(); }
-    bool HasScheduledActions() const { return !m_Timeline.IsEmpty(); }
+    bool HasImmediateActions() const { return !m_ImmediateActions.empty(); }
+    bool HasScheduledActions() const { return !m_Timeline.empty(); }
 
     void CheckScheduledActions()
     {
-        while (!m_Timeline.IsEmpty() && m_Timeline.GetHead()->TimeHasCome()) {
-            m_Timeline.MoveHeadTo(&m_ImmediateActions);
+        while (!m_Timeline.empty() &&
+                m_Timeline.front()->deadline.GetRemainingTime().IsZero()) {
+            m_ImmediateActions.push_back(Pop(m_Timeline));
         }
     }
 
     const CDeadline GetNextTimeout() const
     {
-        return m_Timeline.GetHead()->GetTimeout();
+        return m_Timeline.front()->deadline;
     }
 
     TEntryRef PullImmediateAction()
     {
-        TEntryRef entry;
-        m_ImmediateActions.Shift(entry);
-        return entry;
+        return Pop(m_ImmediateActions);
     }
 
     TEntryRef PullScheduledAction()
     {
-        TEntryRef entry;
-        m_Timeline.Shift(entry);
-        return entry;
+        return Pop(m_Timeline);
     }
 
     bool IsDiscoveryAction(TEntryRef entry) const
@@ -497,18 +504,22 @@ public:
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
-        m_ServerTimeline.GetEntry(server_impl, m_DiscoveryIteration)->
-            MoveTo(&m_ImmediateActions);
+        TEntryRef entry(m_ServerTimeline.GetEntry(server_impl,
+                m_DiscoveryIteration));
+
+        if (Erase(m_Timeline, entry) || !Find(m_ImmediateActions, entry)) {
+            m_ImmediateActions.push_back(entry);
+        }
     }
 
     void PushImmediateAction(TEntryRef entry)
     {
-        m_ImmediateActions.Push(entry);
+        m_ImmediateActions.push_back(entry);
     }
 
     void PushScheduledAction(TEntryRef entry)
     {
-        m_Timeline.Push(entry);
+        m_Timeline.push_back(entry);
     }
 
     CNetServer GetServer(CNetScheduleAPI api, TEntryRef entry)
@@ -523,20 +534,22 @@ public:
         for (CNetServiceIterator it =
                 api.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
-            SServerTimelineEntry* srv_entry = m_ServerTimeline.GetEntry(*it,
-                    m_DiscoveryIteration);
+            TEntryRef srv_entry(m_ServerTimeline.GetEntry(*it,
+                    m_DiscoveryIteration));
             srv_entry->discovery_iteration = m_DiscoveryIteration;
-            if (!srv_entry->IsInTimeline())
-                m_ImmediateActions.Push(srv_entry);
+
+            if (!Find(m_Timeline, srv_entry) &&
+                    !Find(m_ImmediateActions, srv_entry)) {
+                m_ImmediateActions.push_back(srv_entry);
+            }
         }
     }
 
     bool MoreJobs() const
     {
-        for (TEntryRef entry = m_Timeline.GetHead();
-                entry;
-                entry = m_Timeline.GetNext(entry)) {
-            if (entry->more_jobs && !IsOutdatedAction(entry)) {
+        for (TTimeline::const_iterator i = m_Timeline.cbegin();
+                i != m_Timeline.cend(); ++i) {
+            if ((*i)->more_jobs && !IsOutdatedAction(*i)) {
                 return true;
             }
         }
@@ -546,21 +559,46 @@ public:
 
     void Suspend(unsigned timeout)
     {
-        m_ImmediateActions.Clear();
-        m_Timeline.Clear();
+        m_ImmediateActions.clear();
+        m_Timeline.clear();
         m_DiscoveryAction->ResetTimeout(timeout);
-        m_Timeline.Push(m_DiscoveryAction);
+        m_Timeline.push_back(m_DiscoveryAction);
     }
 
     void Resume()
     {
-        m_DiscoveryAction->MoveTo(&m_ImmediateActions);
+        m_ImmediateActions.push_back(m_DiscoveryAction);
+        Erase(m_Timeline, m_DiscoveryAction);
     }
 
 private:
+    static TEntryRef Pop(TTimeline& timeline)
+    {
+        TEntryRef entry;
+        timeline.front().Swap(entry);
+        timeline.pop_front();
+        return entry;
+    }
+
+    static bool Find(const TTimeline& timeline, TEntryRef entry)
+    {
+        return find(timeline.cbegin(), timeline.cend(), entry) != timeline.cend();
+    }
+
+    static bool Erase(TTimeline& timeline, TEntryRef entry)
+    {
+        TTimeline::iterator i = find(timeline.begin(), timeline.end(), entry);
+
+        if (i == timeline.end()) {
+            return false;
+        }
+
+        timeline.erase(i);
+        return true;
+    }
+
     CServerTimelineEntries m_ServerTimeline;
 
-    typedef CWorkerNodeTimeline<SServerTimelineEntry, TEntryRef> TTimeline;
     TTimeline m_ImmediateActions, m_Timeline;
 
     unsigned m_DiscoveryIteration;
