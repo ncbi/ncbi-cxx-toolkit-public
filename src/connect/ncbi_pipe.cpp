@@ -41,6 +41,7 @@
 #include <connect/ncbi_util.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #ifdef NCBI_OS_MSWIN
 
@@ -56,6 +57,7 @@
 #  include <sys/time.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
+#  include <poll.h>
 
 #else
 #  error "The CPipe class is supported only on Windows and Unix"
@@ -881,6 +883,9 @@ static string s_UnixError(int error, string& message)
 //
 // CPipeHandle -- Unix version
 //
+NCBI_PARAM_DECL(bool, PIPE, USE_POLL);
+NCBI_PARAM_DEF(bool, PIPE, USE_POLL, false);
+typedef NCBI_PARAM_TYPE(PIPE, USE_POLL) TUsePollParam;
 
 class CPipeHandle
 {
@@ -933,6 +938,9 @@ private:
     // member variables contain the relevant handles of the
     // current process, in which case they won't be closed.
     bool m_SelfHandles;
+
+    // Use poll(2) instead of select(2) per CXX-6074
+    bool m_UsePoll;
 };
 
 
@@ -941,6 +949,10 @@ CPipeHandle::CPipeHandle(void)
       m_Pid((pid_t)(-1)), m_Flags(0),
       m_SelfHandles(false)
 {
+    static TUsePollParam use_poll_param;
+
+    m_UsePoll = use_poll_param.Get();
+    _TRACE("Using Poll:" + NStr::BoolToString(m_UsePoll));
     return;
 }
 
@@ -1601,90 +1613,137 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 {
     CPipe::TChildPollMask poll = 0;
 
-    for (;;) { // Auto-resume if interrupted by a signal
-        struct timeval* tmp;
-        struct timeval  tmo;
+    if(m_UsePoll) {
+        // Required poll(2) structures
+        struct pollfd poll_fds[3] = {
+            {m_ChildStdIn,  POLLOUT|POLLERR, 0},
+            {m_ChildStdOut, POLLIN,  0},
+            {m_ChildStdErr, POLLIN,  0}
+        };
+        int timeout_msec(timeout ? (timeout->sec*1000 + timeout->usec/1000) : 0);    // msec
 
-        if ( timeout ) {
-            // NB: Timeout has already been normalized
-            tmo.tv_sec  = timeout->sec;
-            tmo.tv_usec = timeout->usec;
-            tmp = &tmo;
-        } else {
-            tmp = 0;
-        }
+        // Build poll(2) structure
+        // Negative FDs OK, poll should ignore them
+        // Check the mask
+        if(!(mask & CPipe::fStdIn))
+            poll_fds[0].fd = -1;
+        if(!(mask & CPipe::fStdOut))
+            poll_fds[1].fd = -1;
+        if(!(mask & CPipe::fStdErr))
+            poll_fds[2].fd = -1;
 
-        fd_set rfds;
-        fd_set wfds;
-        fd_set efds;
+        for (;;) { // Auto-resume if interrupted by a signal
+            int n = ::poll(poll_fds, 3, timeout_msec);
 
-        int max = -1;
-        bool rd = false;
-        bool wr = false;
+            if (n == 0) {
+                // timeout
+                break;
+            }
+            if (n > 0) {
+                // no need to check mask here
+                if(poll_fds[0].revents)
+                    poll |= CPipe::fStdIn;
+                if(poll_fds[1].revents)
+                    poll |= CPipe::fStdOut;
+                if(poll_fds[2].revents)
+                    poll |= CPipe::fStdErr;
+                break;
+            }
+            // n < 0
+            if ((n = errno) != EINTR) {
+                PIPE_THROW(n, "poll(2) failed");
+            }
+            // continue, no need to recreate neither timeout, no poll_fds
+        }
+    } else { // Using select(2), as before
+        for (;;) { // Auto-resume if interrupted by a signal
+            struct timeval* tmp;
+            struct timeval  tmo;
 
-        FD_ZERO(&efds);
+            if ( timeout ) {
+                // NB: Timeout has already been normalized
+                tmo.tv_sec  = timeout->sec;
+                tmo.tv_usec = timeout->usec;
+                tmp = &tmo;
+            } else {
+                tmp = 0;
+            }
 
-        if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn  != -1 ) {
-            wr = true;
-            FD_ZERO(&wfds);
-            FD_SET(m_ChildStdIn,  &wfds);
-            FD_SET(m_ChildStdIn,  &efds);
-            if (max < m_ChildStdIn) {
-                max = m_ChildStdIn;
-            }
-        }
-        if ( (mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1 ) {
-            if (!rd) {
-                rd = true;
-                FD_ZERO(&rfds);
-            }
-            FD_SET(m_ChildStdOut, &rfds);
-            FD_SET(m_ChildStdOut, &efds);
-            if (max < m_ChildStdOut) {
-                max = m_ChildStdOut;
-            }
-        }
-        if ( (mask & CPipe::fStdErr)  &&  m_ChildStdErr != -1 ) {
-            if (!rd) {
-                rd = true;
-                FD_ZERO(&rfds);
-            }
-            FD_SET(m_ChildStdErr, &rfds);
-            FD_SET(m_ChildStdErr, &efds);
-            if (max < m_ChildStdErr) {
-                max = m_ChildStdErr;
-            }
-        }
-        _ASSERT(rd  ||  wr);
+            fd_set rfds;
+            fd_set wfds;
+            fd_set efds;
 
-        int n = ::select(max + 1, rd ? &rfds : 0, wr ? &wfds : 0, &efds, tmp);
+            int max = -1;
+            bool rd = false;
+            bool wr = false;
 
-        if (n == 0) {
-            // timeout
-            break;
-        }
-        if (n > 0) {
-            if ( wr
-                 &&  ( FD_ISSET(m_ChildStdIn,  &wfds)  ||
-                       FD_ISSET(m_ChildStdIn,  &efds) ) ) {
-                poll |= CPipe::fStdIn;
+            FD_ZERO(&efds);
+
+            if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn  != -1 ) {
+                wr = true;
+                FD_ZERO(&wfds);
+                FD_SET(m_ChildStdIn,  &wfds);
+                FD_SET(m_ChildStdIn,  &efds);
+                if (max < m_ChildStdIn) {
+                    max = m_ChildStdIn;
+                }
             }
-            if ( (mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1
-                 &&  ( FD_ISSET(m_ChildStdOut, &rfds)  ||
-                       FD_ISSET(m_ChildStdOut, &efds) ) ) {
-                poll |= CPipe::fStdOut;
+            if ( (mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1 ) {
+                if (!rd) {
+                    rd = true;
+                    FD_ZERO(&rfds);
+                }
+                FD_SET(m_ChildStdOut, &rfds);
+                FD_SET(m_ChildStdOut, &efds);
+                if (max < m_ChildStdOut) {
+                    max = m_ChildStdOut;
+                }
             }
-            if ( (mask & CPipe::fStdErr)  &&  m_ChildStdErr != -1
-                 &&  ( FD_ISSET(m_ChildStdErr, &rfds)  ||
-                       FD_ISSET(m_ChildStdErr, &efds) ) ) {
-                poll |= CPipe::fStdErr;
+            if ( (mask & CPipe::fStdErr)  &&  m_ChildStdErr != -1 ) {
+                if (!rd) {
+                    rd = true;
+                    FD_ZERO(&rfds);
+                }
+                FD_SET(m_ChildStdErr, &rfds);
+                FD_SET(m_ChildStdErr, &efds);
+                if (max < m_ChildStdErr) {
+                    max = m_ChildStdErr;
+                }
             }
-            break;
+            _ASSERT(rd  ||  wr);
+            if(max >= FD_SETSIZE) {
+                throw string("file descriptor > FD_SETSIZE, can not use select(2), try setting NCBI_CONFIG__PIPE__USE_POLL, CXX-6074");
+            }
+
+            int n = ::select(max + 1, rd ? &rfds : 0, wr ? &wfds : 0, &efds, tmp);
+
+            if (n == 0) {
+                // timeout
+                break;
+            }
+            if (n > 0) {
+                if ( wr
+                     &&  ( FD_ISSET(m_ChildStdIn,  &wfds)  ||
+                           FD_ISSET(m_ChildStdIn,  &efds) ) ) {
+                    poll |= CPipe::fStdIn;
+                }
+                if ( (mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1
+                     &&  ( FD_ISSET(m_ChildStdOut, &rfds)  ||
+                           FD_ISSET(m_ChildStdOut, &efds) ) ) {
+                    poll |= CPipe::fStdOut;
+                }
+                if ( (mask & CPipe::fStdErr)  &&  m_ChildStdErr != -1
+                     &&  ( FD_ISSET(m_ChildStdErr, &rfds)  ||
+                           FD_ISSET(m_ChildStdErr, &efds) ) ) {
+                    poll |= CPipe::fStdErr;
+                }
+                break;
+            }
+            if ((n = errno) != EINTR) {
+                PIPE_THROW(n, "Failed select()");
+            }
+            // continue
         }
-        if ((n = errno) != EINTR) {
-            PIPE_THROW(n, "Failed select()");
-        }
-        // continue
     }
 
     return poll;
