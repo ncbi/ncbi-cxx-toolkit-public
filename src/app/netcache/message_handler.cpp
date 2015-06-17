@@ -2038,9 +2038,10 @@ CNCMessageHandler::x_StartCommand(void)
         msg += ", client: " + m_ClientParams["client"];
         CNCAlerts::Register(CNCAlerts::eAccessDenied, msg);
         diag_msg.Flush();
-        WriteText("ERR:Command requires administrative privileges\n");
-        GetDiagCtx()->SetRequestStatus(eStatus_NeedAdmin);
-        m_Flags = 0;
+        x_ReportError(eStatus_NeedAdmin);
+        if (!x_IsHttpMode()) {
+            m_Flags = 0;
+        }
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2048,9 +2049,8 @@ CNCMessageHandler::x_StartCommand(void)
         &&  (x_IsFlagSet(fNeedsStorageCache)  ||  m_ForceLocal))
     {
         diag_msg.Flush();
-        GetDiagCtx()->SetRequestStatus(eStatus_JustStarted);
+        x_ReportError(eStatus_JustStarted);
         if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[eStatus_JustStarted]).WriteText("\n");
             m_Flags = 0;
         }
         return &CNCMessageHandler::x_FinishCommand;
@@ -2060,9 +2060,8 @@ CNCMessageHandler::x_StartCommand(void)
         diag_msg.Flush();
         // We'll be here only if generally work for the client is enabled but
         // for current particular cache it is disabled.
-        GetDiagCtx()->SetRequestStatus(eStatus_Disabled);
+        x_ReportError(eStatus_Disabled);
         if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[eStatus_Disabled]).WriteText("\n");
             m_Flags = 0;
         }
         return &CNCMessageHandler::x_FinishCommand;
@@ -2075,9 +2074,10 @@ CNCMessageHandler::x_StartCommand(void)
                                         m_SyncId);
         if (start_res == eNetworkError) {
             diag_msg.Flush();
-            WriteText("ERR:Stale synchronization\n");
-            GetDiagCtx()->SetRequestStatus(eStatus_StaleSync);
-            m_Flags = 0;
+            x_ReportError(eStatus_StaleSync);
+            if (!x_IsHttpMode()) {
+                m_Flags = 0;
+            }
             return &CNCMessageHandler::x_FinishCommand;
         }
         else if (start_res == eServerBusy  ||  CTaskServer::IsInSoftShutdown()) {
@@ -2100,10 +2100,7 @@ CNCMessageHandler::x_StartCommand(void)
     if (x_IsFlagSet(fNeedsSpaceAsPeer)
         && !CNCBlobStorage::AcceptWritesFromPeers()) {
         EHTTPStatus sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
-        GetDiagCtx()->SetRequestStatus(sts);
-        if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[sts]).WriteText("\n");
-        }
+        x_ReportError(sts);
         return &CNCMessageHandler::x_FinishCommand;
     }
         
@@ -2119,9 +2116,8 @@ CNCMessageHandler::x_StartCommand(void)
     {
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_NotAllowed);
-        if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[eStatus_NotAllowed].substr(4)).WriteText("\n");
-        }
+        // why substr?
+        x_ReportError(s_MsgForStatus[eStatus_NotAllowed].substr(4));
         SRV_LOG(Warning, s_MsgForStatus[eStatus_NotAllowed]);
         return &CNCMessageHandler::x_FinishCommand;
     }
@@ -2141,11 +2137,8 @@ CNCMessageHandler::x_StartCommand(void)
     }
     else if (!m_NCBlobKey.IsValid()) {
         diag_msg.Flush();
-        GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-        if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
-            SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
-        }
+        x_ReportError(eStatus_NotFound);
+        SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
         return &CNCMessageHandler::x_FinishCommand;
     }
     else if (m_NCBlobKey.IsICacheKey()) {
@@ -2187,10 +2180,7 @@ CNCMessageHandler::x_StartCommand(void)
             return &CNCMessageHandler::x_ProxyToNextPeer;
         }
         EHTTPStatus sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
-        GetDiagCtx()->SetRequestStatus(sts);
-        if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[sts]).WriteText("\n");
-        }
+        x_ReportError(sts);
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2357,6 +2347,26 @@ CNCMessageHandler::x_JournalBlobPutResult(int status, const string& blob_key, Ui
     }
 }
 
+void
+CNCMessageHandler::x_ReportError( EHTTPStatus sts, bool eol /*= true*/)
+{
+    GetDiagCtx()->SetRequestStatus(sts);
+    x_ReportError( s_MsgForStatus[sts], eol);
+}
+
+void
+CNCMessageHandler::x_ReportError( const string& sts, bool eol /*= true*/)
+{
+// in HTTP mode we leave it to x_CleanCmdResources always
+    if (x_IsFlagSet(fConfirmOnFinish) && !x_IsHttpMode()) {
+        WriteText(sts);
+        if (eol) {
+            WriteText("\n");
+        }
+        x_UnsetFlag(fConfirmOnFinish);
+    }
+}
+
 CNCMessageHandler::State
 CNCMessageHandler::x_WaitForBlobAccess(void)
 {
@@ -2367,10 +2377,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
     if (!m_BlobAccess->IsAuthorized()  &&  !x_IsFlagSet(fDoNotCheckPassword)) {
-        GetDiagCtx()->SetRequestStatus(eStatus_BadPassword);
-        if (!x_IsHttpMode()) {
-            WriteText(s_MsgForStatus[eStatus_BadPassword]).WriteText("\n");
-        }
+        x_ReportError(eStatus_BadPassword);
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2463,10 +2470,8 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
 {
     LOG_CURRENT_FUNCTION
     x_SetFlag(fNoBlobAccessStats);
-    GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
+    x_ReportError(eStatus_NotFound, false);
     if (!x_IsHttpMode()) {
-        x_UnsetFlag(fConfirmOnFinish);
-        WriteText(s_MsgForStatus[eStatus_NotFound]);
         if (m_AgeMax != 0 && m_BlobAccess->IsBlobExists()) {
             WriteText(", AGE=").WriteNumber(m_AgeCur);
             WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
@@ -2681,29 +2686,23 @@ CNCMessageHandler::State
 CNCMessageHandler::x_FinishReadingBlob(void)
 {
     LOG_CURRENT_FUNCTION
-    bool fail = false;
+    bool fail = false, keep_conn = x_IsFlagSet(fConfirmOnFinish);
     string errmsg;
     if (x_IsFlagSet(fReadExactBlobSize)  &&  m_BlobSize != m_Size) {
         fail = true;
-        GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
+        x_ReportError(eStatus_CondFailed);
         SRV_LOG(Error, "Wrong data for blob size " << m_Size
                         << " (received " << m_BlobSize << " bytes)");
-        errmsg = s_MsgForStatus[eStatus_CondFailed];
     }
     else if (m_BlobSize > CNCBlobStorage::GetMaxBlobSizeStore()) {
         fail = true;
-        GetDiagCtx()->SetRequestStatus(eStatus_BlobTooBig);
+        x_ReportError(eStatus_BlobTooBig);
         SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
                         << CNCBlobStorage::GetMaxBlobSizeStore()
                         << " (received " << m_BlobSize << " bytes)");
-        errmsg = "ERR:Blob size exceeds the allowed maximum";
     }
     if (fail) {
-        if (x_IsFlagSet(fConfirmOnFinish)) {
-            if (!x_IsHttpMode()) {
-                WriteText(errmsg).WriteText("\n");
-                x_UnsetFlag(fConfirmOnFinish);
-            }
+        if (keep_conn) {
             return &CNCMessageHandler::x_FinishCommand;
         } else {
             return &CNCMessageHandler::x_CloseCmdAndConn;
@@ -2747,8 +2746,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         if (!x_IsFlagSet(fConfirmOnFinish))
             return &CNCMessageHandler::x_CloseCmdAndConn;
 
-        WriteText("ERR:Error while writing blob\n");
-        x_UnsetFlag(fConfirmOnFinish);
+        x_ReportError("ERR:Error while reading blob");
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2923,25 +2921,20 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
 // client might have no chance (most likely) to receive our error message
 // and might want to retry thinking it was bad luck
         if (x_IsFlagSet(fReadExactBlobSize)  &&  (m_BlobSize + m_ChunkLen) > m_Size) {
-            GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
+            x_ReportError(eStatus_CondFailed);
             SRV_LOG(Error, "Too much data for blob size " << m_Size
                             << " (received at least "
                             << (m_BlobSize + m_ChunkLen) << " bytes)");
-            if (!x_IsHttpMode()) {
-                WriteText(s_MsgForStatus[eStatus_CondFailed]).WriteText("\n");
-            }
             return &CNCMessageHandler::x_CloseCmdAndConn;
         }
         if ((m_BlobSize + m_ChunkLen) > CNCBlobStorage::GetMaxBlobSizeStore()) {
-            GetDiagCtx()->SetRequestStatus(eStatus_BlobTooBig);
+            x_ReportError(eStatus_BlobTooBig);
+            if (x_IsHttpMode()) {
+                x_WriteHttpHeader(eStatus_BlobTooBig, 0, false);
+            }
             SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
                             << CNCBlobStorage::GetMaxBlobSizeStore()
                             << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
-            if (!x_IsHttpMode()) {
-                WriteText("ERR:Blob size exceeds the allowed maximum").WriteText("\n");
-            } else {
-                x_WriteHttpHeader(eStatus_BlobTooBig, 0, false);
-            }
             // I am not going to read it anyway
             m_BlobSize += m_ChunkLen;
             Flush();
@@ -2973,7 +2966,7 @@ CNCMessageHandler::x_ReadBlobChunk(void)
         Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
         if (m_BlobAccess->HasError()) {
             GetDiagCtx()->SetRequestStatus(eStatus_ServerError);
-            if (x_IsFlagSet(fConfirmOnFinish)) {
+            if (x_IsFlagSet(fConfirmOnFinish) && !x_IsHttpMode()) {
                 WriteText("ERR:Server error\n");
                 Flush();
             }
@@ -3090,10 +3083,7 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
     GetDiagCtx()->SetRequestStatus( GetStatusByMessage(m_LastPeerError, eStatus_PeerError));
-    if (x_IsFlagSet(fConfirmOnFinish) && !x_IsHttpMode()) {
-        WriteText(m_LastPeerError).WriteText("\n");
-        x_UnsetFlag(fConfirmOnFinish);
-    }
+    x_ReportError(m_LastPeerError);
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -4495,8 +4485,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_NotImplemented(void)
 {
     LOG_CURRENT_FUNCTION
-    GetDiagCtx()->SetRequestStatus(eStatus_NoImpl);
-    WriteText(s_MsgForStatus[eStatus_NoImpl]).WriteText("\n");
+    x_ReportError(eStatus_NoImpl);
     return &CNCMessageHandler::x_FinishCommand;
 }
 

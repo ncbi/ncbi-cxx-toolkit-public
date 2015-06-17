@@ -272,6 +272,8 @@ private:
     void x_GetCurSlotServers(void);
 
     void x_JournalBlobPutResult(int status, const string& blob_key, Uint2 blob_slot);
+    void x_ReportError( EHTTPStatus sts, bool eol = true);
+    void x_ReportError( const string& sts, bool eol = true);
 
     TNCCmdFlags               m_Flags;
     /// NetCache protocol parser
