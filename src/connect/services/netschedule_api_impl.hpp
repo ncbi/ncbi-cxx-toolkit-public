@@ -415,32 +415,32 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-struct SServerTimelineEntry : public CObject
-{
-    const SServerAddress server_address;
-    CDeadline deadline;
-    unsigned discovery_iteration;
-    bool more_jobs;
-
-    // If iteration is zero, then it's either discovery action or search pattern
-    SServerTimelineEntry(const SServerAddress& a, unsigned i = 0) :
-        server_address(a),
-        deadline(0, 0),
-        discovery_iteration(i),
-        more_jobs(i) // It's set to false for special entries (see above)
-    {
-    }
-
-    void ResetTimeout(unsigned seconds)
-    {
-        deadline = CDeadline(seconds, 0);
-    }
-};
-
 class CServerTimeline
 {
+    struct SEntry : public CObject
+    {
+        const SServerAddress server_address;
+        CDeadline deadline;
+        unsigned discovery_iteration;
+        bool more_jobs;
+
+        // If iteration is zero, then it's either discovery action or search pattern
+        SEntry(const SServerAddress& a, unsigned i = 0) :
+            server_address(a),
+            deadline(0, 0),
+            discovery_iteration(i),
+            more_jobs(i) // It's set to false for special entries (see above)
+        {
+        }
+
+        void ResetTimeout(unsigned seconds)
+        {
+            deadline = CDeadline(seconds, 0);
+        }
+    };
+
 public:
-    typedef CRef<SServerTimelineEntry> TEntryRef;
+    typedef CRef<SEntry> TEntryRef;
     typedef map<SServerAddress, TEntryRef> TServers;
     typedef deque<TEntryRef> TTimeline;
 
@@ -485,7 +485,7 @@ public:
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
         const SServerAddress address(server_impl->m_ServerInPool->m_Address);
-        TEntryRef entry(new SServerTimelineEntry(address, m_DiscoveryIteration));
+        TEntryRef entry(new SEntry(address, m_DiscoveryIteration));
 
         // If it's new server or is postponed or is not found in queues
         if (m_Servers.insert(make_pair(address, entry)).second ||
@@ -518,7 +518,7 @@ public:
                 api.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
             const SServerAddress address((*it)->m_ServerInPool->m_Address);
-            TEntryRef srv_entry(new SServerTimelineEntry(address, m_DiscoveryIteration));
+            TEntryRef srv_entry(new SEntry(address, m_DiscoveryIteration));
 
             // If it's new server
             if (m_Servers.insert(make_pair(address, srv_entry)).second) {

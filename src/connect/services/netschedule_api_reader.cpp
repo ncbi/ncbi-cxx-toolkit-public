@@ -54,7 +54,7 @@ void CNetScheduleJobReader::SetAffinity(const string& affinity)
 
 CServerTimeline::CServerTimeline() :
     m_DiscoveryIteration(1),
-    m_DiscoveryAction(new SServerTimelineEntry(SServerAddress(0, 0)))
+    m_DiscoveryAction(new SEntry(SServerAddress(0, 0)))
 {
     m_ImmediateActions.push_back(m_DiscoveryAction);
 }
