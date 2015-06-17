@@ -8523,6 +8523,8 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
         CRef <COrg_ref> org ( &GET_MUTABLE(seqfeat.SetData(), Org) );
         seqfeat.SetData().SetBiosrc().SetOrg(*org);
         ChangeMade (CCleanupChange::eConvertFeature);
+        x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
+        x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
     }
 }
 
