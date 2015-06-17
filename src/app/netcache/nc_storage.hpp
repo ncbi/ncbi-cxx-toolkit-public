@@ -113,6 +113,7 @@ public:
     static void CheckDiskSpace(void);
     static void MeasureDB(SNCStateStat& state);
 
+    static int GetLatestBlobExpire(void);
     static void GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CNCPeerControl* peer);
     static Uint8 GetMaxSyncLogRecNo(void);
     static void SaveMaxSyncLogRecNo(void);

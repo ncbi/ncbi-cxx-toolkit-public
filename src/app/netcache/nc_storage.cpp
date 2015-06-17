@@ -1883,6 +1883,21 @@ CNCBlobStorage::GetNewBlobId(void)
     return Uint4(s_BlobCounter.Add(1));
 }
 
+int
+CNCBlobStorage::GetLatestBlobExpire(void)
+{
+    int res = CSrvTime::CurSecs();
+    ITERATE( TBucketCacheMap, bkt, s_BucketsCache) {
+        SBucketCache* cache = bkt->second;
+        cache->lock.Lock();
+        ITERATE(TKeyMap, it, cache->key_map) {
+            res = max( res, it->expire); 
+        }
+        cache->lock.Unlock();
+    }
+    return res;
+}
+
 void
 CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CNCPeerControl* peer)
 {

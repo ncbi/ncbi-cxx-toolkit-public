@@ -876,7 +876,8 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
     proxy << ", end " << buf <<endl;
     proxy << "PID - " <<  (Uint8)CProcess::GetCurrentPid() << endl;
     if (CNCBlobStorage::IsDraining()) {
-       proxy << "Draining started" << endl;
+       CSrvTime( CNCBlobStorage::GetLatestBlobExpire()).Print( buf, CSrvTime::eFmtHumanSeconds);
+       proxy << "Draining started, estimated end: " << buf << endl;
     }
     {
         CMiniMutexGuard guard(s_CommonStatLock);
