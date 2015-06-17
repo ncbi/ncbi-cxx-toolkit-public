@@ -841,13 +841,8 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
         CNetScheduleJob job;
         CNetScheduleAPI::EJobStatus job_status;
 
-        CNetScheduleJobReader job_reader(m_NetScheduleAPI.GetJobReader());
-
-        if (IsOptionSet(eJobGroup))
-            job_reader.SetJobGroup(m_Opts.job_group);
-
-        if (IsOptionSet(eAffinity))
-            job_reader.SetAffinity(m_Opts.affinity);
+        CNetScheduleJobReader job_reader(m_NetScheduleAPI.GetJobReader(
+                    m_Opts.job_group, m_Opts.affinity));
 
         CNetScheduleJobReader::EReadNextJobResult rnj_result;
 
@@ -879,7 +874,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
         case CNetScheduleJobReader::eRNJ_Interrupt:
             return 3;
 
-        case CNetScheduleJobReader::eRNJ_Timeout:
+        case CNetScheduleJobReader::eRNJ_NotReady:
             if (IsOptionSet(eWaitTimeout)) {
                 PrintLine("TIMEOUT");
             }

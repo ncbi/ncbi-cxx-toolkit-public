@@ -917,10 +917,11 @@ CNetScheduleExecutor CNetScheduleAPI::GetExecutor()
     return new SNetScheduleExecutorImpl(m_Impl);
 }
 
-CNetScheduleJobReader CNetScheduleAPI::GetJobReader()
+CNetScheduleJobReader CNetScheduleAPI::GetJobReader(const string& group,
+        const string& affinity)
 {
     m_Impl->AllocNotificationThread();
-    return new SNetScheduleJobReaderImpl(m_Impl);
+    return new SNetScheduleJobReaderImpl(m_Impl, group, affinity);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()

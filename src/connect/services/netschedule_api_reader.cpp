@@ -276,7 +276,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             // return eRNJ_Interrupt;
 
         if (timeout == NULL || deadline.GetRemainingTime().IsZero())
-            return CNetScheduleJobReader::eRNJ_Timeout;
+            return CNetScheduleJobReader::eRNJ_NotReady;
 
         // There's still time. Wait for notifications and query the servers.
         if (m_Timeline.HasScheduledActions()) {
@@ -284,7 +284,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             if (deadline < next_event_time) {
                 if (!m_API->m_NotificationThread->
                         m_ReadNotifications.Wait(deadline))
-                    return CNetScheduleJobReader::eRNJ_Timeout;
+                    return CNetScheduleJobReader::eRNJ_NotReady;
                 x_ProcessReadJobNotifications();
             } else if (m_API->m_NotificationThread->
                     m_ReadNotifications.Wait(next_event_time))

@@ -225,7 +225,14 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     CNetScheduleExecutor GetExecutor();
 
     /// Create an instance of CNetScheduleJobReader.
-    CNetScheduleJobReader GetJobReader();
+    ///
+    /// @param group
+    ///     Restrict job retrieval to the specified job group name.
+    /// @param affinity
+    ///     Restrict job retrieval to the specified affinity.
+    ///
+    CNetScheduleJobReader GetJobReader(const string& group = kEmptyStr,
+            const string& affinity = kEmptyStr);
 
     CNetScheduleAdmin GetAdmin();
 
@@ -806,20 +813,24 @@ class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
 {
     NCBI_NET_COMPONENT(NetScheduleJobReader);
 
-    /// Restrict job retrieval to the specified job group name.
+    /// @deprecated
+    ///     Use GetJobReader(group, ...) instead.
     ///
+    NCBI_DEPRECATED
     void SetJobGroup(const string& group_name);
 
-    /// Restrict job retrieval to the specified affinity.
+    /// @deprecated
+    ///     Use GetJobReader(..., affinity) instead.
     ///
+    NCBI_DEPRECATED
     void SetAffinity(const string& affinity);
 
     /// Possible outcomes of ReadNextJob() calls.
     enum EReadNextJobResult {
         eRNJ_JobReady,      ///< A job is returned.
-        eRNJ_Timeout,       ///< Operation has timed out.
-        eRNJ_NoMoreJobs,    ///< There are no more jobs matching
-                            ///< the requested criteria on the server.
+        eRNJ_NotReady,      ///< No matching jobs are ready for reading.
+        eRNJ_Timeout = eRNJ_NotReady,
+        eRNJ_NoMoreJobs,    ///< No matching jobs.
         eRNJ_Interrupt,     ///< ReadNextJob() has been interrupted.
     };
 
@@ -839,9 +850,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
     ///
     /// @param timeout Timeout to wait for job completion.
     ///                If NULL, the method returns immediately.
-    ///
-    /// @return True if a completed job is returned. False if there
-    ///         are no more jobs matching the specified criteria.
     ///
     EReadNextJobResult ReadNextJob(CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,

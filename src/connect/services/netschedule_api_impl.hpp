@@ -569,9 +569,14 @@ private:
 
 struct SNetScheduleJobReaderImpl : public CObject
 {
-    SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl) :
-        m_API(ns_api_impl)
+    SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl,
+            const string& group, const string& affinity) :
+        m_API(ns_api_impl),
+        m_JobGroup(group),
+        m_Affinity(affinity)
     {
+        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
     }
 
     CNetScheduleAPI m_API;
