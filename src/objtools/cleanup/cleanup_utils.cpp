@@ -691,6 +691,7 @@ bool Asn2gnbkCompressSpaces (string& val)
     delete[] str;
 
     if (!NStr::Equal(val, new_val)) {
+        printf("Use new string\n");
         val = new_val;
         return true;
     } else {
@@ -763,6 +764,7 @@ bool TrimSpacesSemicolonsAndCommas (string& val)
     delete[] str;
 
     if (!NStr::Equal(val, new_val)) {
+        printf("Use new string\n");
         val = new_val;
         return true;
     } else {
