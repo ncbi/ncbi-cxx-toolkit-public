@@ -599,6 +599,7 @@ CUrlArgs::iterator CUrlArgs::FindNext(const iterator& iter)
     return x_Find(iter->name, iter);
 }
 
+/* @} */
 
 END_NCBI_SCOPE
 
