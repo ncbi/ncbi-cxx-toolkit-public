@@ -52,33 +52,6 @@ void CNetScheduleJobReader::SetAffinity(const string& affinity)
     m_Impl->m_Affinity = affinity;
 }
 
-CServerTimelineEntries::TEntry*
-CServerTimelineEntries::GetEntry(SNetServerImpl* server_impl, unsigned iteration)
-{
-    const SServerAddress search_address(server_impl->m_ServerInPool->m_Address);
-    TEntry search_pattern(search_address);
-
-    TTimelineEntries::iterator it(
-            m_TimelineEntryByAddress.find(&search_pattern));
-
-    if (it != m_TimelineEntryByAddress.end())
-        return *it;
-
-    TEntry* new_entry = new TEntry(search_address, iteration);
-
-    m_TimelineEntryByAddress.insert(new_entry);
-    new_entry->AddReference();
-
-    return new_entry;
-}
-
-CServerTimelineEntries::~CServerTimelineEntries()
-{
-    ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
-        (*it)->RemoveReference();
-    }
-}
-
 CServerTimeline::CServerTimeline() :
     m_DiscoveryIteration(1),
     m_DiscoveryAction(new SServerTimelineEntry(SServerAddress(0, 0)))

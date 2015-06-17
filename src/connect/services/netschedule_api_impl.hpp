@@ -40,6 +40,7 @@
 #include <connect/services/error_codes.hpp>
 
 #include <deque>
+#include <map>
 
 
 BEGIN_NCBI_SCOPE
@@ -436,32 +437,11 @@ struct SServerTimelineEntry : public CObject
     }
 };
 
-class CServerTimelineEntries
-{
-public:
-    ~CServerTimelineEntries();
-
-    SServerTimelineEntry* GetEntry(SNetServerImpl* server_impl, unsigned iteration);
-
-private:
-    typedef SServerTimelineEntry TEntry;
-
-    struct SLess
-    {
-        bool operator ()(const TEntry* left, const TEntry* right) const
-        {
-            return left->server_address < right->server_address;
-        }
-    };
-
-    typedef set<TEntry*, SLess> TTimelineEntries;
-    TTimelineEntries m_TimelineEntryByAddress;
-};
-
 class CServerTimeline
 {
 public:
     typedef CRef<SServerTimelineEntry> TEntryRef;
+    typedef map<SServerAddress, TEntryRef> TServers;
     typedef deque<TEntryRef> TTimeline;
 
     CServerTimeline();
@@ -504,10 +484,13 @@ public:
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
-        TEntryRef entry(m_ServerTimeline.GetEntry(server_impl,
-                m_DiscoveryIteration));
+        const SServerAddress address(server_impl->m_ServerInPool->m_Address);
+        TEntryRef entry(new SServerTimelineEntry(address, m_DiscoveryIteration));
 
-        if (Erase(m_Timeline, entry) || !Find(m_ImmediateActions, entry)) {
+        // If it's new server or is postponed or is not found in queues
+        if (m_Servers.insert(make_pair(address, entry)).second ||
+                Erase(m_Timeline, entry) ||
+                !Find(m_ImmediateActions, entry)) {
             m_ImmediateActions.push_back(entry);
         }
     }
@@ -534,13 +517,19 @@ public:
         for (CNetServiceIterator it =
                 api.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
-            TEntryRef srv_entry(m_ServerTimeline.GetEntry(*it,
-                    m_DiscoveryIteration));
-            srv_entry->discovery_iteration = m_DiscoveryIteration;
+            const SServerAddress address((*it)->m_ServerInPool->m_Address);
+            TEntryRef srv_entry(new SServerTimelineEntry(address, m_DiscoveryIteration));
 
-            if (!Find(m_Timeline, srv_entry) &&
-                    !Find(m_ImmediateActions, srv_entry)) {
+            // If it's new server
+            if (m_Servers.insert(make_pair(address, srv_entry)).second) {
                 m_ImmediateActions.push_back(srv_entry);
+            } else {
+                srv_entry->discovery_iteration = m_DiscoveryIteration;
+
+                if (!Find(m_Timeline, srv_entry) &&
+                        !Find(m_ImmediateActions, srv_entry)) {
+                    m_ImmediateActions.push_back(srv_entry);
+                }
             }
         }
     }
@@ -597,8 +586,7 @@ private:
         return true;
     }
 
-    CServerTimelineEntries m_ServerTimeline;
-
+    TServers m_Servers;
     TTimeline m_ImmediateActions, m_Timeline;
 
     unsigned m_DiscoveryIteration;
