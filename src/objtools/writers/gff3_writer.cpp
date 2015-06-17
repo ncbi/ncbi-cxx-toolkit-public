@@ -92,53 +92,6 @@ USING_SCOPE(objects);
     ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
 //  ----------------------------------------------------------------------------
-CConstRef<CUser_object> sGetUserObjectByType(
-    const CUser_object& uo,
-    const string& strType )
-//  ----------------------------------------------------------------------------
-{
-    if ( uo.IsSetType() && uo.GetType().IsStr() && 
-            uo.GetType().GetStr() == strType ) {
-        return CConstRef<CUser_object>( &uo );
-    }
-    const CUser_object::TData& fields = uo.GetData();
-    for ( CUser_object::TData::const_iterator it = fields.begin(); 
-            it != fields.end(); 
-            ++it ) {
-        const CUser_field& field = **it;
-        if ( field.IsSetData() ) {
-            const CUser_field::TData& data = field.GetData();
-            if ( data.Which() == CUser_field::TData::e_Object ) {
-                CConstRef<CUser_object> recur = sGetUserObjectByType( 
-                    data.GetObject(), strType );
-                if ( recur ) {
-                    return recur;
-                }
-            }
-        }
-    }
-    return CConstRef<CUser_object>();
-}
-    
-//  ----------------------------------------------------------------------------
-CConstRef<CUser_object> sGetUserObjectByType(
-    const list<CRef<CUser_object > >& uos,
-    const string& strType)
-//  ----------------------------------------------------------------------------
-{
-    CConstRef<CUser_object> pResult;
-    typedef list<CRef<CUser_object > >::const_iterator CIT;
-    for (CIT cit=uos.begin(); cit != uos.end(); ++cit) {
-        const CUser_object& uo = **cit;
-        pResult = sGetUserObjectByType(uo, strType);
-        if (pResult) {
-            return pResult;
-        }
-    }
-    return CConstRef<CUser_object>();
-}
-
-//  ----------------------------------------------------------------------------
 bool sIsTransspliced(const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
@@ -1255,32 +1208,16 @@ bool sGetMethodFromModelEvidence(
     string& method)
 //  ----------------------------------------------------------------------------
 {
-    if ( mf.IsSetExt() ) {
-        CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
-            mf.GetExt(), "ModelEvidence" );
-        if ( model_evidence ) {
-            string strMethod;
-            if ( model_evidence->HasField( "Method" ) ) {
-                method = model_evidence->GetField( 
-                    "Method" ).GetData().GetStr();
-                return true;
-            }
-        }
+    CConstRef<CUser_object> me = CWriteUtil::GetModelEvidence( mf);
+    if (!me  || !me->HasField("Method")) {
+        return false;
     }
-
-    if (mf.IsSetExts()) {
-        CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
-            mf.GetExts(), "ModelEvidence" );
-        if ( model_evidence ) {
-            string strMethod;
-            if ( model_evidence->HasField( "Method" ) ) {
-                method = model_evidence->GetField( 
-                    "Method" ).GetData().GetStr();
-                return true;
-            }
-        }
+    const CUser_field& uf = me->GetField("Method");
+    if (!uf.IsSetData()  ||  !uf.GetData().IsStr()) {
+        return false;
     }
-    return false;
+    method = uf.GetData().GetStr();
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1465,6 +1402,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
             !xAssignFeatureAttributeGene(record, fc, mf)  ||
             !xAssignFeatureAttributeNote(record, fc, mf)  ||
+            !xAssignFeatureAttributeModelEvidence(record, fc, mf)  ||
             !xAssignFeatureAttributeIsOrdered(record, fc, mf)  ||
             !xAssignFeatureAttributeTranscriptId(record, fc, mf)) {
         return false;
@@ -1716,6 +1654,23 @@ bool CGff3Writer::xAssignFeatureAttributeException(
         return true;
     }
     return true; 
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    CMappedFeat mf)
+    //  ----------------------------------------------------------------------------
+{
+    string modelEvidence;
+    if (!CWriteUtil::GetStringForModelEvidence(mf, modelEvidence)) {
+        return true;
+    }
+    if (!modelEvidence.empty()) {
+        record.SetAttribute("model_evidence", modelEvidence);
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

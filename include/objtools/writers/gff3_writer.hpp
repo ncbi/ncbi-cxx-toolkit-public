@@ -152,6 +152,9 @@ protected:
         const CSeq_loc&,
         unsigned int );
 
+    //bool xCreateMicroIntrons(
+    //    CBioseq_Handle);
+
     bool xAssignAlignment(
         CGffFeatureRecord&);
     bool xAssignAlignmentScores(
@@ -434,6 +437,10 @@ protected:
         CGffFeatureContext&,
         CMappedFeat);
     //end mss-234//
+    bool xAssignFeatureAttributeModelEvidence(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        CMappedFeat);
     string xNextGenericId();
     string xNextGeneId();
     string xNextCdsId();

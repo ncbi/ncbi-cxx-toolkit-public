@@ -818,4 +818,221 @@ CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
     return m_mfLastOut;
 }
 
+//  ----------------------------------------------------------------------------
+CConstRef<CUser_object> CWriteUtil::GetUserObjectByType(
+    const CUser_object& uo,
+    const string& strType)
+    //  ----------------------------------------------------------------------------
+{
+    if (uo.IsSetType() && uo.GetType().IsStr() &&
+        uo.GetType().GetStr() == strType) {
+        return CConstRef<CUser_object>(&uo);
+    }
+    const CUser_object::TData& fields = uo.GetData();
+    for (CUser_object::TData::const_iterator it = fields.begin();
+        it != fields.end();
+        ++it) {
+        const CUser_field& field = **it;
+        if (field.IsSetData()) {
+            const CUser_field::TData& data = field.GetData();
+            if (data.Which() == CUser_field::TData::e_Object) {
+                CConstRef<CUser_object> recur = CWriteUtil::GetUserObjectByType(
+                    data.GetObject(), strType);
+                if (recur) {
+                    return recur;
+                }
+            }
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+
+//  ----------------------------------------------------------------------------
+CConstRef<CUser_object> CWriteUtil::GetUserObjectByType(
+    const list<CRef<CUser_object > >& uos,
+    const string& strType)
+    //  ----------------------------------------------------------------------------
+{
+    CConstRef<CUser_object> pResult;
+    typedef list<CRef<CUser_object > >::const_iterator CIT;
+    for (CIT cit = uos.begin(); cit != uos.end(); ++cit) {
+        const CUser_object& uo = **cit;
+        pResult = CWriteUtil::GetUserObjectByType(uo, strType);
+        if (pResult) {
+            return pResult;
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+
+//  ----------------------------------------------------------------------------
+CConstRef<CUser_object> CWriteUtil::GetModelEvidence(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CUser_object> me;
+    if (mf.IsSetExt()) {
+        me = CWriteUtil::GetUserObjectByType(mf.GetExt(), "ModelEvidence");
+    }
+    if (!me  &&  mf.IsSetExts()) {
+        me = CWriteUtil::GetUserObjectByType(mf.GetExts(), "ModelEvidence");
+    }
+    return me;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetStringForModelEvidence(
+    CMappedFeat mf,
+    string& mestr)
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CUser_object> me = CWriteUtil::GetModelEvidence(mf);
+    if (!me) {
+        return false;
+    }
+
+    //contig name
+    CConstRef<CUser_field> uf;
+    string meContigName;
+    if (me->HasField("Contig Name")) {
+        uf = &(me->GetField("Contig Name"));
+    }
+    if (uf.NotEmpty()  &&  uf->IsSetData()  &&  uf->GetData().IsStr()) {
+        meContigName = uf->GetData().GetStr();
+    }
+
+    //assembly
+    uf.Reset();
+    list<string> meAssembly;
+    if (me->HasField("Assembly")) {
+        uf = &(me->GetField("Assembly"));
+    }
+    if (uf.NotEmpty() && uf->IsSetData() && uf->GetData().IsFields()) {
+        typedef vector< CRef< CUser_field > > TFIELDS;
+        const TFIELDS& fields = uf->GetData().GetFields();
+        for (TFIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
+            const CUser_field& curField = **cit;
+            if (!curField.IsSetLabel()) {
+                continue;
+            }
+            if (!curField.GetLabel().IsStr()) {
+                continue;
+            }
+            if (curField.GetLabel().GetStr() != "accession") {
+                continue;
+            }
+            if (!curField.GetData().IsStr()) {
+                continue;
+            }
+            meAssembly.push_back(curField.GetData().GetStr());
+        }
+    }
+
+    //method
+    uf.Reset();
+    string meMethod;
+    if (me->HasField("Method")) {
+        uf = &(me->GetField("Method"));
+    }
+    if (uf.NotEmpty() && uf->IsSetData() && uf->GetData().IsStr()) {
+        meMethod = uf->GetData().GetStr();
+    }
+
+    //mrna, est counts
+    uf.Reset();
+    bool meMrnaEvidence(false), meEstEvidence(false);
+    if (me->HasField("Counts")) {
+        uf = &(me->GetField("Counts"));
+        if (uf->HasField("mRNA")) {
+            meMrnaEvidence = true;
+        }
+        if (uf->HasField("EST")) {
+            meEstEvidence = true;
+        }
+    }
+    if (!meMrnaEvidence  &&  me->HasField("mRNA")) {
+        meMrnaEvidence = true;
+    }
+    if (!meEstEvidence  &&  me->HasField("EST")) {
+        meEstEvidence = true;
+    }
+
+    //gi
+    uf.Reset();
+    int meContigGi(0);
+    if (me->HasField("Contig Gi")) {
+        uf = &(me->GetField("Contig Gi"));
+        if (uf.NotEmpty()  &&  uf->IsSetData()  &&  uf->GetData().IsInt()) {
+            meContigGi = uf->GetData().GetInt();
+        }
+    }
+
+    //contig span
+    uf.Reset();
+    int meSpanFirst(0), meSpanSecond(0);
+    if (me->HasField("Contig Span")) {
+        uf = &(me->GetField("Contig Span"));
+        if (uf.NotEmpty() && uf->IsSetData() && uf->GetData().IsInts()) {
+            if (uf->IsSetNum()  &&  uf->GetNum() == 2) {
+                meSpanFirst = uf->GetData().GetInts()[0];
+                meSpanSecond = uf->GetData().GetInts()[1];
+            }
+        }
+    }
+
+    CNcbiOstrstream ostrstr;
+    ostrstr << "MODEL REFSEQ:  " << "This record is predicted by "
+        << "automated computational analysis. This record is derived from "
+        << "a genomic sequence (" << meContigName << ")";
+
+    if (!meAssembly.empty()) {
+        //int num_assm = meAssembly.size();
+        ostrstr << " and transcript sequence";
+        if (meAssembly.size() > 1) {
+            ostrstr << "s";
+        }
+        ostrstr << " (";
+        int count = 0;
+        string prefix = "";
+        for (list<string>::const_iterator cit = meAssembly.begin(); cit != meAssembly.end(); ++cit) { 
+            ostrstr << prefix << *cit;
+            count++;
+            if (meAssembly.size() == count + 1) {
+                prefix = " and ";
+            }
+            else {
+                prefix = ", ";
+            }
+        }
+        ostrstr << ")";
+    }
+
+    if (!meMethod.empty()) {
+        ostrstr << " annotated using gene prediction method: " << meMethod;
+    }
+
+    if (meMrnaEvidence || meEstEvidence) {
+        ostrstr << ", supported by ";
+        if (meMrnaEvidence  &&  meEstEvidence) {
+            ostrstr << "mRNA and EST ";
+        }
+        else if (meMrnaEvidence) {
+            ostrstr << "mRNA ";
+        }
+        else {
+            ostrstr << "EST ";
+        }
+        // !!! for html we need much more !!!
+        ostrstr << "evidence";
+    }
+
+    const char *documentation_str = "Documentation";
+
+    ostrstr << ".~Also see:~"
+        << "    " << documentation_str << " of NCBI's Annotation Process~    ";
+
+    mestr = CNcbiOstrstreamToString(ostrstr);
+    return true;
+}
+
 END_NCBI_SCOPE

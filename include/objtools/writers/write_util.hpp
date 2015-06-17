@@ -142,6 +142,20 @@ public:
         const string& key,
         string& value);
 
+    static CConstRef<CUser_object> GetUserObjectByType(
+        const CUser_object& uo,
+        const string& strType);
+        
+    static CConstRef<CUser_object> GetUserObjectByType(
+        const list<CRef<CUser_object > >& uos,
+        const string& strType);
+
+    static CConstRef<CUser_object> GetModelEvidence(
+        CMappedFeat);
+
+    static bool GetStringForModelEvidence(
+        CMappedFeat mf,
+        string& mestr);
 };
 
 END_objects_SCOPE
