@@ -1721,6 +1721,8 @@ x_GetDstExon(CSpliced_seg&              spliced,
     bool pstrand_set = false;
     bool aln_protein = false;
     size_t mapped_gaps = 0;
+    int non_gap_gen_start = 0;
+    int non_gap_prod_start = 0;
     int non_gap_gen_end = 0;
     int non_gap_prod_end = 0;
 
@@ -1997,8 +1999,12 @@ x_GetDstExon(CSpliced_seg&              spliced,
             }
             else {
                 mapped_gaps = 0;
-                non_gap_prod_end = prod_end;
-                non_gap_gen_end = gen_end;
+                if (!is_gap) {
+                    non_gap_prod_start = prod_start;
+                    non_gap_gen_start = gen_start;
+                    non_gap_prod_end = prod_end;
+                    non_gap_gen_end = gen_end;
+                }
             }
         }
         else {
@@ -2028,6 +2034,8 @@ x_GetDstExon(CSpliced_seg&              spliced,
         for (; mapped_gaps > 0; mapped_gaps--) {
             parts.pop_back();
         }
+        gen_start = non_gap_gen_start;
+        prod_start = non_gap_prod_start;
         gen_end = non_gap_gen_end;
         prod_end = non_gap_prod_end;
     }

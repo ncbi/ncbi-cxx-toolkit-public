@@ -697,3 +697,71 @@ Seq-align ::= {
     product-length 200
   }
 }
+-- Trimming indels on minus strand: mapping source
+Seq-loc ::= int {
+  from 197,
+  to 1423,
+  id gi 2
+}
+-- Trimming indels on minus strand: mapping destination
+Seq-loc ::= int {
+  from 197,
+  to 1423,
+  id gi 3
+}
+-- Trimming indels on minus strand: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 2,
+    genomic-id gi 5,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1402,
+        product-end nucpos 2643,
+        genomic-start 37962997,
+        genomic-end 37964238,
+        parts {
+          match 687,
+          mismatch 1,
+          match 554
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 2644
+  }
+}
+-- Trimming indels on minus strand: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1402,
+        product-end nucpos 1423,
+        genomic-start 37964217,
+        genomic-end 37964238,
+        parts {
+          match 22
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 2644
+  }
+}
