@@ -434,9 +434,10 @@ gpipe_best_placement needs gpipe_alnutil
 gpipe_best_placement needs xalgoalignutil
 gpipe_clean_prot_names needs $(SDBAPI_LIB)
 gpipe_clean_prot_names needs xdiscrepancy_report
-gpipe_common includes eutils_client
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
+gpipe_common needs xconnect
+gpipe_common needs xmlwrapp
 gpipe_dateutil needs xregexp
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
@@ -457,6 +458,7 @@ gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
 gpipe_meta_access needs gpipe_common
+gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(GPIPE_LOADER_LIBS)
 gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
@@ -1274,6 +1276,8 @@ xasmcompare needs $(SEQ_LIBS)
 xasmcompare needs pub
 xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
+xassembly_svc needs gcaccess_utils
+xassembly_svc needs xgencollstats
 xblast includes blast
 xblast needs xalgoblastdbindex
 xblast needs xalgodustmask
