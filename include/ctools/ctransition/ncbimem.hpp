@@ -51,18 +51,6 @@
 BEGIN_CTRANSITION_SCOPE
 
 
-#undef NLM_EXTERN
-#ifdef NLM_IMPORT
-#define NLM_EXTERN NLM_IMPORT
-#else
-#define NLM_EXTERN extern
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 NLM_EXTERN void*  LIBCALL Nlm_MemNew(size_t size);
 NLM_EXTERN void*  LIBCALL Nlm_MemGet(size_t size, unsigned int flags);
 NLM_EXTERN void*  LIBCALL Nlm_MemMore(void* ptr, size_t size);
@@ -253,17 +241,6 @@ typedef enum {
 Nlm_Boolean Nlm_MemMapAdvise(void* addr, size_t len, EMemMapAdvise advise);
 Nlm_Boolean Nlm_MemMapAdvisePtr(Nlm_MemMapPtr ptr, EMemMapAdvise advise);
 
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#undef NLM_EXTERN
-#ifdef NLM_EXPORT
-#define NLM_EXTERN NLM_EXPORT
-#else
-#define NLM_EXTERN
-#endif
 
 #endif /* _NCBIMEM_ */
 

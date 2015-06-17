@@ -52,18 +52,6 @@
 BEGIN_CTRANSITION_SCOPE
 
 
-#undef NLM_EXTERN
-#ifdef NLM_IMPORT
-#define NLM_EXTERN NLM_IMPORT
-#else
-#define NLM_EXTERN extern
-#endif
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 NLM_EXTERN int LIBCALL Nlm_StrICmp PROTO((const char FAR *a, const char FAR *b));
 NLM_EXTERN int LIBCALL Nlm_StrNICmp PROTO((const char FAR *a, const char FAR *b, size_t max));
 NLM_EXTERN int LIBCALL Nlm_StrIPCmp PROTO((const char FAR *a, const char FAR *b));
@@ -441,20 +429,7 @@ char* LIBCALL Uint8ToString(Nlm_Uint8 value, char* str, size_t str_size)
 }
 
 
-#ifdef __cplusplus
-}
 #endif
-
-
-#undef NLM_EXTERN
-#ifdef NLM_EXPORT
-#define NLM_EXTERN NLM_EXPORT
-#else
-#define NLM_EXTERN
-#endif
-
-#endif
-
 
 END_CTRANSITION_SCOPE
 

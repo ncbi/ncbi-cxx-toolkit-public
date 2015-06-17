@@ -67,7 +67,7 @@
 
 #ifndef LITTLE_ENDIAN
 #define LITTLE_ENDIAN	1234
-#define BIG_ENDIAN	4321
+#define BIG_ENDIAN	    4321
 #define OTHER_ENDIAN	0
 #endif
 
@@ -285,6 +285,9 @@ typedef double		Nlm_FloatHi, PNTR Nlm_FloatHiPtr;
 #endif
 #ifndef EXPORT
 #define EXPORT
+#endif
+#ifndef NLM_EXTERN
+#define NLM_EXTERN
 #endif
 
 #ifndef LIBCALL
