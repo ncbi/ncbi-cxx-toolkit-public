@@ -883,9 +883,9 @@ static string s_UnixError(int error, string& message)
 //
 // CPipeHandle -- Unix version
 //
-NCBI_PARAM_DECL(bool, PIPE, USE_POLL);
-NCBI_PARAM_DEF(bool, PIPE, USE_POLL, false);
-typedef NCBI_PARAM_TYPE(PIPE, USE_POLL) TUsePollParam;
+NCBI_PARAM_DECL(bool, conn, pipe_use_poll);
+NCBI_PARAM_DEF_EX(bool, conn, pipe_use_poll, false, eParam_Default, CONN_PIPE_USE_POLL);
+typedef NCBI_PARAM_TYPE(conn, pipe_use_poll) TUsePollParam;
 
 class CPipeHandle
 {
@@ -1712,7 +1712,9 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             }
             _ASSERT(rd  ||  wr);
             if(max >= FD_SETSIZE) {
-                throw string("file descriptor > FD_SETSIZE, can not use select(2), try setting NCBI_CONFIG__PIPE__USE_POLL, CXX-6074");
+                throw string(
+                    "file descriptor > FD_SETSIZE, can not use"
+                    " select(2), try setting [conn] pipe_use_poll=true");
             }
 
             int n = ::select(max + 1, rd ? &rfds : 0, wr ? &wfds : 0, &efds, tmp);
