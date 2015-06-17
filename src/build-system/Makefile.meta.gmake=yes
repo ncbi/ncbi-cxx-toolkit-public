@@ -11,7 +11,11 @@ endif
 ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
   collect_libs = $(top_srcdir)/scripts/common/impl/collect_outside_libs.sh
   ifneq "" "$(import_root)"
-    outside_lib_root = $(import_root)/../lib/outside
+    ifeq "" "$(filter /%,$(import_root))"
+      outside_lib_root = $(CURDIR)/$(import_root)/../lib/outside
+    else
+      outside_lib_root = $(import_root)/../lib/outside
+    endif
   else
     ifeq "" "$(build_root)"
       build_root = $(CURDIR)/..
