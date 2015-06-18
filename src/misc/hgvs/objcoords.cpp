@@ -751,6 +751,25 @@ void CReportEntry::SetAlignment(CScope& scope, const CSeq_align& align)
                 x_SetRnaCds(scope, feat_iter->GetMappedFeature());
             }
         }
+    } else {
+        // Recalculate CDS offset using the alignment
+        // Check that first exon is not partial
+        const CSpliced_exon &first_exon = *(seg.GetExons().front());
+        if (!(first_exon.IsSetPartial() && first_exon.GetPartial())) {
+            TSeqPos cds_start_on_dna = m_cds->GetLocation().GetStart(eExtreme_Biological);
+            ENa_strand strand = m_cds->GetLocation().GetStrand();
+            TSeqPos rna_start_on_dna;
+            if (strand == eNa_strand_minus) {
+                rna_start_on_dna = seg.GetSeqStop(1);
+            } else {
+                rna_start_on_dna = seg.GetSeqStart(1);
+            }
+            TSeqPos rna_start, cds_start;
+            x_MapPos(*m_mrna_mapper, *m_main_id, rna_start_on_dna, rna_start);
+            x_MapPos(*m_mrna_mapper, *m_main_id, cds_start_on_dna, cds_start);
+            m_cds_offset = cds_start - rna_start;
+            m_cds_offset_set = true;
+        }
     }
 }
 
