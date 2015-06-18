@@ -157,12 +157,11 @@ protected:
             NCBI_THROW(CException, eUnknown, "job content is empty");
         }
         CStringOrBlobStorageReader reader(job_content, nc_api);
-        constexpr size_t bufsize = 5;
-        char buf[bufsize];
-        auto count = bufsize;
-        auto bytes_read = 0UL;
+        char buf[5];
+        size_t count = ArraySize(buf);
+        size_t bytes_read = 0UL;
         reader.Read(buf, count, &bytes_read);
-        const auto is_lzo = IsLZOStream(CTempString(buf, bytes_read));
+        const bool is_lzo = IsLZOStream(CTempString(buf, bytes_read));
         return SStreamProp(is_lzo ? CCompressStream::eLZO : CCompressStream::eZip);
     };
 
@@ -174,8 +173,8 @@ protected:
 
     static bool IsLZOStream(CNcbiIstream& istr)
     {
-	static const size_t buflen = 5;
-	char buf[buflen];
+	char buf[5];
+        const size_t buflen = ArraySize(buf);
         const streamsize readlen = CStreamUtils::Readsome(istr, buf, buflen);
         CStreamUtils::Stepback(istr, buf, readlen);
         return IsLZOStream(CTempString(buf, readlen));
@@ -185,7 +184,7 @@ protected:
     {
         /// LZO magic header (see fStreamFormat flag).
         static const char kMagic[] = { 'L', 'Z', 'O', '\0' };
-        static const auto kMagicSize = 4UL;
+        static const size_t kMagicSize = 4UL;
         return (str.size() < kMagicSize)
             ? false
             : NStr::Equal(CTempString(kMagic, kMagicSize), CTempString(str, 0, kMagicSize));
