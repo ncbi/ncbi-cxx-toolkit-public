@@ -208,6 +208,7 @@ void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
                                const TRange& range, ENa_strand strand)
 {
     SAddState state;
+    state.m_TransSplicing = eNoTransSplicing;
     AddRange(h, range, strand, state);
 }
 
@@ -216,6 +217,7 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
                                const TRange& range, ENa_strand strand)
 {
     SAddState state;
+    state.m_TransSplicing = eNoTransSplicing;
     AddRange(id, range, strand, state);
 }
 
@@ -232,6 +234,7 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
                                TSeqPos from, TSeqPos to, ENa_strand strand)
 {
     SAddState state;
+    state.m_TransSplicing = eNoTransSplicing;
     AddRange(id, from, to, strand, state);
 }
 
