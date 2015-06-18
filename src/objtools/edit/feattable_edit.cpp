@@ -214,20 +214,14 @@ void CFeatTableEdit::SubmitFixProducts()
     for (CFeat_CI it(mHandle, sel); it; ++it){
         CMappedFeat mf = *it;
         //debug CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
-        string product = mf.GetNamedQual("product");
-        if (product.empty()) {
-            product = mf.GetNamedQual("Product");
-        }
+        string product = mf.GetNamedQual("Product");
         CRef<CSeq_feat> pEditedFeature(new CSeq_feat);
         pEditedFeature->Assign(mf.GetOriginalFeature());
-        if (product.empty()) {
-            pEditedFeature->ResetProduct();
+        pEditedFeature->ResetProduct();
+        if (!product.empty()) {
+            pEditedFeature->AddQualifier("product", product);
+            pEditedFeature->RemoveQualifier("Product");
         }
-        else {
-            pEditedFeature->SetProduct(*sProductFromString(product));
-        }
-        pEditedFeature->RemoveQualifier("Product");
-        pEditedFeature->RemoveQualifier("product");
         CSeq_feat_EditHandle feh(mf);
         feh.Replace(*pEditedFeature);
     }   

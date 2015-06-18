@@ -735,7 +735,30 @@ bool CGff2Record::x_MigrateAttributes(
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);
         }
-        //attrs_left.erase(it);
+        list<string> products;
+        NStr::Split(it->second, ",", products);
+        CRef<CGb_qual> pQual;
+        for (list<string>::const_iterator cit = products.begin(); cit != products.end(); ++cit) {
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual("product");
+            pQual->SetVal(*cit);
+            pFeature->SetQual().push_back(pQual);
+        }
+        attrs_left.erase(it);
+    }
+
+    it = attrs_left.find("Product");
+    if (it != attrs_left.end()) {
+        list<string> products;
+        NStr::Split(it->second, ",", products);
+        CRef<CGb_qual> pQual;
+        for (list<string>::const_iterator cit = products.begin(); cit != products.end(); ++cit) {
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual("product");
+            pQual->SetVal(*cit);
+            pFeature->SetQual().push_back(pQual);
+        }
+        attrs_left.erase(it);
     }
 
     it = attrs_left.find("protein_id");

@@ -77,6 +77,8 @@
 #include <algo/phy_tree/dist_methods.hpp>
 #include <objects/biotree/BioTreeContainer.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -1182,6 +1184,9 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();
     fte.SubmitFixProducts();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
 }
 
 //  ----------------------------------------------------------------------------

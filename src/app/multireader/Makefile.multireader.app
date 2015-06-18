@@ -10,7 +10,7 @@ APP =  multireader
 SRC =  multireader
 LIB =  $(OBJEDIT_LIBS) $(XFORMAT_LIBS) \
        xalgophytree biotree fastme xalnmgr tables xobjreadex \
-       xobjutil xconnect xregexp $(PCRE_LIB) $(SOBJMGR_LIBS) 
+       xobjutil xconnect xregexp xcleanup $(PCRE_LIB) $(SOBJMGR_LIBS) 
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
