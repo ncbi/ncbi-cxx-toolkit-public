@@ -34,6 +34,7 @@
 /// Classes pertaining to GRID-based ASN.1 RPC clients
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/stream_utils.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -43,6 +44,8 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <corelib/perf_log.hpp>
 #include <corelib/rwstream.hpp>
+#include <util/compress/lzo.hpp>
+#include <util/compress/stream_util.hpp>
 #include <util/compress/zlib.hpp>
 
 
@@ -66,42 +69,24 @@ public:
 };
 
 ///
-/// Traits class for uncompressed binary ASN.1 streams
-///
-class CAsnBinUncompressed : public CAsnBin
-{
-public:
-    /// Return an object output stream (CObjectOStream)
-    ///
-    /// @param ostr
-    ///   underlying output stream
-    /// @return
-    ///   object stream
-    static CObjectOStream*
-    GetOStream(CNcbiOstream& ostr)
-    {
-        return CObjectOStream::Open(GetDataFormat(), ostr);
-    }
-
-    /// Return an object input stream (CObjectIStream)
-    ///
-    /// @param istr
-    ///   underlying input stream
-    /// @return
-    ///   object stream
-    static CObjectIStream*
-    GetIStream(CNcbiIstream& istr)
-    {
-        return CObjectIStream::Open(GetDataFormat(), istr);
-    }
-};
-
-///
 /// Traits class for compressed binary ASN.1 streams
 ///
 class CAsnBinCompressed : public CAsnBin
 {
 public:
+    typedef int TOwnership;
+
+    struct SStreamProp
+    {
+        SStreamProp(const CCompressStream::EMethod comp_mthd = CCompressStream::eZip)
+            : compress_method(comp_mthd)
+        {
+        }
+
+        CCompressStream::EMethod compress_method;
+    };
+
+
     /// Return an object output stream (CObjectOStream)
     ///
     /// @param ostr
@@ -109,17 +94,16 @@ public:
     /// @return
     ///   object stream
     static CObjectOStream*
-    GetOStream(CNcbiOstream& ostr)
+    GetOStream(CNcbiOstream& ostr, SStreamProp stream_prop = SStreamProp(CCompressStream::eLZO))
     {
-        static const enum ENcbiOwnership ownership = eTakeOwnership;
         auto_ptr<CCompressionOStream> outstr_zip(
             new CCompressionOStream(
                 ostr,
-                new CZipStreamCompressor(),
+                CreateStreamCompressor(stream_prop),
                 CCompressionStream::fOwnProcessor
             )
         );
-        return CObjectOStream::Open(GetDataFormat(), *outstr_zip.release(), ownership);
+        return CObjectOStream::Open(GetDataFormat(), *outstr_zip.release(), eTakeOwnership);
     }
 
     /// Return an object input stream (CObjectIStream)
@@ -131,15 +115,123 @@ public:
     static CObjectIStream*
     GetIStream(CNcbiIstream& istr)
     {
-        static const enum ENcbiOwnership ownership = eTakeOwnership;
+        return GetIStream(istr, GetIStreamProperties(istr));
+    }
+
+    static CObjectIStream*
+    GetIStream(const string& job_content, CNetCacheAPI& nc_api)
+    {
+        SStreamProp sp;
+        return GetIStream(job_content, nc_api, sp);
+    }
+
+    static CObjectIStream*
+    GetIStream(const string& job_content, CNetCacheAPI& nc_api, SStreamProp& streamprop)
+    {
+        streamprop = GetJobStreamProperties(job_content, nc_api);
+        auto_ptr<CStringOrBlobStorageReader> reader(new CStringOrBlobStorageReader(job_content, nc_api));
+        auto_ptr<CRStream> rstr(new CRStream(reader.release(), CRWStreambuf::fOwnReader));
+        return GetIStream(*rstr.release(), streamprop, CCompressionStream::fOwnAll);
+    }
+
+protected:
+    static CObjectIStream*
+    GetIStream(CNcbiIstream& istr,
+               SStreamProp stream_prop,
+               TOwnership ownership = CCompressionStream::fOwnProcessor
+              )
+    {
         auto_ptr<CCompressionIStream> instr_zip(
             new CCompressionIStream(
                 istr,
-                new CZipStreamDecompressor(CZipCompression::fAllowTransparentRead),
-                CCompressionStream::fOwnProcessor
+                CreateStreamDecompressor(stream_prop),
+                ownership
             )
         );
-        return CObjectIStream::Open(GetDataFormat(), *instr_zip.release(), ownership);
+        return CObjectIStream::Open(GetDataFormat(), *instr_zip.release(), eTakeOwnership);
+    }
+
+    static SStreamProp GetJobStreamProperties(const string& job_content, CNetCacheAPI& nc_api)
+    {
+        if (job_content.empty()) {
+            NCBI_THROW(CException, eUnknown, "job content is empty");
+        }
+        CStringOrBlobStorageReader reader(job_content, nc_api);
+        constexpr size_t bufsize = 5;
+        char buf[bufsize];
+        auto count = bufsize;
+        auto bytes_read = 0UL;
+        reader.Read(buf, count, &bytes_read);
+        const auto is_lzo = IsLZOStream(CTempString(buf, bytes_read));
+        return SStreamProp(is_lzo ? CCompressStream::eLZO : CCompressStream::eZip);
+    };
+
+    static SStreamProp
+    GetIStreamProperties(CNcbiIstream& istr)
+    {
+        return SStreamProp(IsLZOStream(istr) ? CCompressStream::eLZO : CCompressStream::eZip);
+    }
+
+    static bool IsLZOStream(CNcbiIstream& istr)
+    {
+	static const size_t buflen = 5;
+	char buf[buflen];
+        const streamsize readlen = CStreamUtils::Readsome(istr, buf, buflen);
+        CStreamUtils::Stepback(istr, buf, readlen);
+        return IsLZOStream(CTempString(buf, readlen));
+    }
+
+    static bool IsLZOStream(const CTempString& str)
+    {
+        /// LZO magic header (see fStreamFormat flag).
+        static const char kMagic[] = { 'L', 'Z', 'O', '\0' };
+        static const auto kMagicSize = 4UL;
+        return (str.size() < kMagicSize)
+            ? false
+            : NStr::Equal(CTempString(kMagic, kMagicSize), CTempString(str, 0, kMagicSize));
+    }
+
+    static CCompressionStreamProcessor* CreateStreamCompressor(const SStreamProp stream_prop)
+    {
+        auto_ptr<CCompressionStreamProcessor> sp;
+        if (stream_prop.compress_method == CCompressStream::eLZO) {
+            sp.reset(new CLZOStreamCompressor());
+        }
+        else {
+            sp.reset(new CZipStreamCompressor());
+        }
+        return sp.release();
+    }
+
+    static CCompressionStreamProcessor* CreateStreamDecompressor(const SStreamProp stream_prop)
+    {
+        auto_ptr<CCompressionStreamProcessor> sp;
+        if (stream_prop.compress_method == CCompressStream::eLZO) {
+            sp.reset(new CLZOStreamDecompressor());
+        }
+        else {
+            sp.reset(new CZipStreamDecompressor());
+        }
+        return sp.release();
+    }
+
+    static string CompMethodToString(const CCompressStream::EMethod method)
+    {
+        switch (method) {
+        case CCompressStream::eNone:
+            return "none";
+        case CCompressStream::eBZip2:
+            return "BZip2";
+        case CCompressStream::eLZO:
+            return "LZO";
+        case CCompressStream::eZip:
+            return "Zip";
+        case CCompressStream::eGZipFile:
+            return "GZipFile";
+        case CCompressStream::eConcatenatedGZipFile:
+            return "GZipFile";
+        };
+        NCBI_THROW(CException, eUnknown, "unexpected compression method");
     }
 };
 
@@ -153,6 +245,7 @@ public:
         eUnexpectedFailure
     };
     virtual const char* GetErrCodeString(void) const;
+
     NCBI_EXCEPTION_DEFAULT(CGridRPCBaseClientException, CException);
 };
 
@@ -162,9 +255,9 @@ public:
 ///
 /// Base class for GRID-based ASN.1 RPC clients
 /// 
-/// TConnectTraits template classes: CAsnBinCompressed and CAsnBinUncompressed
+/// TConnectTraits template classes: CAsnBinCompressed
 ///
-template <typename TConnectTraits, int DefaultTimeout = 20>
+template <typename TConnectTraits = CAsnBinCompressed, int DefaultTimeout = 20>
 class CGridRPCBaseClient : private TConnectTraits
 {
 public:
@@ -185,7 +278,6 @@ public:
         : m_NS_api(CNetScheduleAPI::eAppRegistry, NS_registry_section),
           m_Timeout(DefaultTimeout)
     {
-        ERR_POST(Trace << "NS: " << NS_registry_section);
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         static const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
         const string nc_reg(
@@ -203,7 +295,6 @@ public:
 
     void x_Init(const string& NC_registry_section)
     {
-        ERR_POST(Trace << "NS queue NC: " << NC_registry_section);
         m_NC_api = CNetCacheAPI(CNetCacheAPI::eAppRegistry, NC_registry_section);
         m_Grid_cli.reset(new CGridClient(m_NS_api.GetSubmitter(),
                                          m_NC_api,
@@ -233,14 +324,28 @@ public:
         bool timed_out = false;
         x_PrepareJob(job);
 
-        CNetScheduleNotificationHandler submit_job_handler;
-        submit_job_handler.SubmitJob(m_NS_api.GetSubmitter(),
-                                     job,
-                                     m_Timeout
-                                    );
-        ERR_POST(Trace << "submitted job: " << job.job_id);
         try {
-            x_GetJobReply(submit_job_handler, job, reply);
+            const CNetScheduleAPI::EJobStatus evt = m_Grid_cli->SubmitAndWait(m_Timeout);
+            switch (evt) {
+            case CNetScheduleAPI::eDone:
+            {
+                m_NS_api.GetJobDetails(job);
+                auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(job.output, m_NC_api));
+                *instr >> reply;
+                break;
+            }
+            case CNetScheduleAPI::eFailed:
+                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
+
+            case CNetScheduleAPI::eCanceled:
+                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
+
+            case CNetScheduleAPI::eRunning:
+                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job running");
+
+            default:
+                NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, kEmptyStr);
+            }
         }
         catch (const CGridRPCBaseClientException& e) {
             switch (e.GetErrCode()) {
@@ -263,22 +368,24 @@ protected:
     }
 
     template <class TReply>
-    void x_GetJobReply(CNetScheduleNotificationHandler& job_handler, CNetScheduleJob& job, TReply& reply) const
+    CNetScheduleJob x_GetJobById(const string job_id, TReply& reply) const
     {
+        CNetScheduleNotificationHandler job_handler;
+        CNetScheduleJob job;
+        job.job_id = job_id;
+
         CDeadline deadline(m_Timeout, 0);
         const int status_mask(
             CNetScheduleNotificationHandler::fJSM_Done |
             CNetScheduleNotificationHandler::fJSM_Canceled |
             CNetScheduleNotificationHandler::fJSM_Failed
         );
-        const CNetScheduleAPI::EJobStatus  evt = job_handler.WaitForJobEvent(job.job_id, deadline, m_NS_api, status_mask);
+        const CNetScheduleAPI::EJobStatus evt = job_handler.WaitForJobEvent(job.job_id, deadline, m_NS_api, status_mask);
         switch (evt) {
         case CNetScheduleAPI::eDone:
         {
             m_NS_api.GetJobDetails(job);
-            CStringOrBlobStorageReader reader(job.output, m_NC_api);
-            CRStream rstr(&reader);
-            auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
+            auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(job.output, m_NC_api));
             *instr >> reply;
             break;
         }
@@ -288,53 +395,12 @@ protected:
         case CNetScheduleAPI::eCanceled:
             NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
 
+        case CNetScheduleAPI::eRunning:
+            NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job running");
+
         default:
             NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, kEmptyStr);
         }
-    }
-
-    template <class TReply>
-    void x_GetJobRepliesById(const vector<string> job_ids, vector< CRef<TReply> >& replies) const
-    {
-        CDeadline deadline(m_Timeout, 0);
-        static const CTimeout kTimeout(0, 100L * 1000); // 100ms
-        CDeadline timeslice(kTimeout);
-
-        CNetScheduleNotificationHandler job_handler;
-        list<string> _job_ids(job_ids.begin(), job_ids.end());
-        CPerfLogGuard pl("x_GetJobRepliesById");
-        do {
-            ERASE_ITERATE(list<string>, it, _job_ids) {
-                const string& job_id = *it;
-                //CNetScheduleAPI::EJobStatus job_status;
-                int last_event_index;
-                CNetScheduleJob job;
-                job.job_id = job_id;
-                if (job_handler.WaitForJobCompletion(job, timeslice, m_NS_api) == CNetScheduleAPI::eDone) {
-                    VECTOR_ERASE(it, _job_ids);
-                    CStringOrBlobStorageReader reader(job.output, m_NC_api);
-                    CRStream rstr(&reader);
-                    auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(rstr));
-                    CRef<TReply> reply(new TReply());
-                    *instr >> *reply;
-                    replies.push_back(reply);
-                }
-            }
-        } while (!deadline.IsExpired() && !_job_ids.empty());
-        pl.Post(CRequestStatus::e200_Ok);
-    }
-
-    template <class TReply>
-    CNetScheduleJob x_GetJobById(const string job_id, TReply& reply) const
-    {
-        //CDeadline deadline(m_Timeout, 0);
-        CNetScheduleNotificationHandler job_handler;
-        //CNetScheduleAPI::EJobStatus job_status;
-        //CDeadline job_complete_deadline(0, 10000); // 10ms
-        //int last_event_index;
-        CNetScheduleJob job;
-        job.job_id = job_id;
-        x_GetJobReply(job_handler, job, reply);
         return job;
     }
 
@@ -342,7 +408,7 @@ private:
     mutable CNetScheduleAPI m_NS_api;
     mutable CNetCacheAPI m_NC_api;
     mutable auto_ptr<CGridClient> m_Grid_cli;
-    int m_Timeout;
+    Uint4 m_Timeout;
 };
 
 
