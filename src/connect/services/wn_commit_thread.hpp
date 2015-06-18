@@ -35,7 +35,7 @@
 
 #include <connect/services/grid_worker.hpp>
 
-#include "timeline.hpp"
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -86,8 +86,8 @@ public:
     void Stop();
 
 private:
-    typedef CWorkerNodeTimeline<SWorkerNodeJobContextImpl,
-            CWorkerNodeJobContext> TCommitJobTimeline;
+    typedef CRef<SWorkerNodeJobContextImpl> TEntry;
+    typedef deque<TEntry> TCommitJobTimeline;
 
     virtual void* Main();
 
@@ -95,7 +95,7 @@ private:
 
     void WakeUp()
     {
-        if (m_ImmediateActions.IsEmpty())
+        if (m_ImmediateActions.empty())
             m_Semaphore.Post();
     }
 

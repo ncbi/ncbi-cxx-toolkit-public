@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 //
 
 ///@internal
-struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
+struct SWorkerNodeJobContextImpl : public CObject
 {
     SWorkerNodeJobContextImpl(SGridWorkerNodeImpl* worker_node);
 
@@ -63,6 +63,9 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
     virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
     virtual void JobDelayExpiration(unsigned runtime_inc);
     virtual void x_RunJob();
+
+    const CDeadline GetTimeout() const { return m_Deadline; }
+    void ResetTimeout(unsigned seconds) { m_Deadline = CDeadline(seconds, 0); }
 
     SGridWorkerNodeImpl* m_WorkerNode;
     CNetScheduleJob m_Job;
@@ -88,6 +91,9 @@ struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
 
     CDeadline m_CommitExpiration;
     bool      m_FirstCommitAttempt;
+
+private:
+    CDeadline m_Deadline;
 };
 
 class CJobRunRegistration;

@@ -135,7 +135,8 @@ SWorkerNodeJobContextImpl::SWorkerNodeJobContextImpl(
     m_NetScheduleExecutor(worker_node->m_NSExecutor),
     m_NetCacheAPI(worker_node->m_NetCacheAPI),
     m_JobGeneration(worker_node->m_CurrentJobGeneration),
-    m_CommitExpiration(0, 0)
+    m_CommitExpiration(0, 0),
+    m_Deadline(0, 0)
 {
 }
 

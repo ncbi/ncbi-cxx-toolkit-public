@@ -34,7 +34,6 @@
  */
 
 #include "netservice_api_impl.hpp"
-#include "timeline.hpp"
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/error_codes.hpp>

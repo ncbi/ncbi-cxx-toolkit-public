@@ -69,12 +69,11 @@ CWorkerNodeJobContext CJobCommitterThread::AllocJobContext()
 {
     TFastMutexGuard mutex_lock(m_TimelineMutex);
 
-    if (m_JobContextPool.IsEmpty())
+    if (m_JobContextPool.empty())
         return new SWorkerNodeJobContextImpl(m_WorkerNode);
 
-    CWorkerNodeJobContext job_context;
-
-    m_JobContextPool.Shift(job_context);
+    CWorkerNodeJobContext job_context(m_JobContextPool.front());
+    m_JobContextPool.pop_front();
 
     job_context->m_Job.Reset();
     job_context->m_JobGeneration = m_WorkerNode->m_CurrentJobGeneration;
@@ -96,7 +95,7 @@ void CJobCommitterThread::RecycleJobContextAndCommitJob(
     // the semaphore must be incremented.
     WakeUp();
 
-    m_ImmediateActions.Push(job_context);
+    m_ImmediateActions.push_back(TEntry(job_context));
 
     // We must do it here, before m_TimelineMutex is unlocked
     rctx_switcher.Release();
@@ -115,38 +114,48 @@ void* CJobCommitterThread::Main()
     TFastMutexGuard mutex_lock(m_TimelineMutex);
 
     do {
-        if (m_Timeline.IsEmpty()) {
+        if (m_Timeline.empty()) {
             TFastMutexUnlockGuard mutext_unlock(m_TimelineMutex);
 
             m_Semaphore.Wait();
         } else {
             unsigned sec, nanosec;
 
-            m_Timeline.GetHead()->GetTimeout().GetRemainingTime().GetNano(&sec,
+            m_Timeline.front()->GetTimeout().GetRemainingTime().GetNano(&sec,
                     &nanosec);
 
-            if (sec == 0 && nanosec == 0)
-                m_Timeline.MoveHeadTo(&m_ImmediateActions);
-            else {
+            if (sec == 0 && nanosec == 0) {
+                m_ImmediateActions.push_back(m_Timeline.front());
+                m_Timeline.pop_front();
+            } else {
                 bool wait_interrupted;
                 {
                     TFastMutexUnlockGuard mutext_unlock(m_TimelineMutex);
 
                     wait_interrupted = m_Semaphore.TryWait(sec, nanosec);
                 }
-                if (!wait_interrupted)
-                    m_Timeline.MoveHeadTo(&m_ImmediateActions);
+                if (!wait_interrupted) {
+                    m_ImmediateActions.push_back(m_Timeline.front());
+                    m_Timeline.pop_front();
+                }
             }
         }
 
-        while (!m_ImmediateActions.IsEmpty())
+        while (!m_ImmediateActions.empty()) {
+            TEntry& entry = m_ImmediateActions.front();
+
             // Do not remove the job context from m_ImmediateActions
             // prior to calling x_CommitJob() to avoid race conditions
             // (otherwise, the semaphore can be Post()'ed multiple times
             // by the worker threads while this thread is in x_CommitJob()).
-            m_ImmediateActions.MoveHeadTo(
-                    x_CommitJob(m_ImmediateActions.GetHead()) ?
-                            &m_JobContextPool : &m_Timeline);
+            if (x_CommitJob(entry)) {
+                m_JobContextPool.push_back(entry);
+            } else {
+                m_Timeline.push_back(entry);
+            }
+
+            m_ImmediateActions.pop_front();
+        }
     } while (!CGridGlobals::GetInstance().IsShuttingDown());
 
     return NULL;
