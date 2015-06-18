@@ -2375,3 +2375,65 @@ class Scenario1607( TestBase ):
             pass
         return 0
 
+class Scenario1608( TestBase ):
+    " Scenario1608 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks RDRB blacklist=0|1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 5 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1608' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        jobID1 = self.ns.submitJob( 'TEST', 'bla' )
+        jobID2 = self.ns.submitJob( 'TEST', 'bla' )
+
+        jobID = self.ns.getJob( 'TEST' )[ 0 ]
+        execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
+        jobID = self.ns.getJob( 'TEST' )[ 0 ]
+        execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
+
+
+        output = execAny( ns_client, 'READ2 reader_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ][ 0 ]
+        if jobKey != jobID1:
+            raise Exception( "Unexpected job for executing. "
+                             "Expected the first job" )
+
+        execAny( ns_client, "RDRB job_key=" + jobKey +
+                            " auth_token=" + values[ 'auth_token' ][ 0 ] +
+                            " blacklist=0" )
+        output = execAny( ns_client, 'READ2 reader_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ][ 0 ]
+        if jobKey != jobID1:
+            raise Exception( "Unexpected job for executing. "
+                             "Expected the first job after RDRB blacklist=0" )
+
+        execAny( ns_client, "RDRB job_key=" + jobKey +
+                            " auth_token=" + values[ 'auth_token' ][ 0 ] +
+                            " blacklist=1" )
+        output = execAny( ns_client, 'READ2 reader_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ][ 0 ]
+        if jobKey != jobID2:
+            raise Exception( "Unexpected job for executing. "
+                             "Expected the second job after RDRB blacklist=1" )
+
+        return True
+
