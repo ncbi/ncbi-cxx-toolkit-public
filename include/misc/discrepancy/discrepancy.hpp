@@ -44,6 +44,7 @@ class NCBI_DISCREPANCY_EXPORT CReportObj : public CObject
 public:
     virtual ~CReportObj(){}
     virtual const string& GetText() const = 0;
+    virtual const string& GetShort() const = 0;
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 

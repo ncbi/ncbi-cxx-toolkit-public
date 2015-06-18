@@ -51,8 +51,9 @@ public:
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
+    const string& GetShort() const { return m_ShortName; }
     const string& GetFeatureTable() const { return m_FeatureTable; }
-    const string& GetXML() const {return m_XML; }
+    const string& GetXML() const { return m_XML; }
 
     void SetText(CScope& scope);
     void SetFeatureTable(CScope& scope);
@@ -93,6 +94,7 @@ public:
 
 protected:
     string                m_Text;
+    string                m_ShortName;
     string                m_FeatureTable;
     string                m_XML;
     CConstRef<CBioseq>    m_Bioseq;

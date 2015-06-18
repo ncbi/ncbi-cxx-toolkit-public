@@ -128,6 +128,8 @@ public:
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     void SetDetails(const TReportObjectList& list){ m_Objs = list;}
+    void AddDetails(const CRef<CReportObj> obj){ m_Objs.push_back(obj);}
+    void AddDetails(const vector<CRef<CReportObj>>& v){ m_Objs.insert(m_Objs.end(), v.begin(), v.end());}
 protected:
     string m_Title;
     string m_Msg;
@@ -147,6 +149,7 @@ public:
     virtual TReportItemList GetReport() const { return m_ReportItems;}
     void AddItem(CRef<CReportItem> item){ m_ReportItems.push_back(item);}
     void Add(const string&, CRef<CDiscrepancyObject>);
+    void AddUnique(const string&, CRef<CDiscrepancyObject>);
 protected:
     TReportObjectMap m_Objs;
     TReportItemList m_ReportItems;
@@ -166,7 +169,9 @@ public:
 class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
-    CDiscrepancyContext(objects::CScope& scope) : m_Scope(scope), m_Enable_CSeq_inst(false), m_Enable_CSeqFeatData(false) {}
+    CDiscrepancyContext(objects::CScope& scope) : m_Scope(scope),
+        m_Count_Bioseq(0), m_Count_Seq_feat(0),
+        m_Enable_CSeq_inst(false), m_Enable_CSeqFeatData(false) {}
     bool AddTest(const string&);
     void Parse(objects::CSeq_entry_Handle);
     void Summarize();
@@ -176,6 +181,8 @@ public:
 
     CConstRef<CBioseq> GetCurrentBioseq() const { return m_Current_Bioseq;}
     CConstRef<CSeq_feat> GetCurrentSeq_feat() const { return m_Current_Seq_feat;}
+    size_t GetCountBioseq() const { return m_Count_Bioseq;}
+    size_t GetCountSeq_feat() const { return m_Count_Seq_feat;}
     objects::CScope& GetScope() const { return m_Scope;}
 
     void SetSuspectRules(const string& name);
@@ -191,6 +198,8 @@ protected:
     CConstRef<CSuspect_rule_set> m_ProductRules;
     CConstRef<CSuspect_rule_set> m_OrganelleProductRules;
     string m_SuspectRules;
+    size_t m_Count_Bioseq;
+    size_t m_Count_Seq_feat;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)

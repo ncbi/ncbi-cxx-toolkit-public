@@ -29,11 +29,12 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/macro/String_constraint.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE;
@@ -42,6 +43,8 @@ USING_SCOPE(objects);
 
 DISCREPANCY_MODULE(discrepancy_case);
 
+
+// COUNT_NUCLEOTIDES
 
 DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst)
 {
@@ -62,8 +65,7 @@ DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 }
 
 
-DISCREPANCY_ALIAS(COUNT_NUCLEOTIDES, COUNT_NUCLEOTIDES_ALIAS);
-
+// COUNT_PROTEINS
 
 DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst)
 {
@@ -83,17 +85,131 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 }
 
 
+// COUNT_TRNAS
+// (also report extra and missing tRNAs)
+
+struct DesiredAAData
+{
+    char short_symbol;
+    string long_symbol;
+    size_t num_expected;
+};
+
+static const DesiredAAData desired_aaList [] = {
+    {'A', "Ala", 1 },
+    {'B', "Asx", 0 },
+    {'C', "Cys", 1 },
+    {'D', "Asp", 1 },
+    {'E', "Glu", 1 },
+    {'F', "Phe", 1 },
+    {'G', "Gly", 1 },
+    {'H', "His", 1 },
+    {'I', "Ile", 1 },
+    {'J', "Xle", 0 },
+    {'K', "Lys", 1 },
+    {'L', "Leu", 2 },
+    {'M', "Met", 1 },
+    {'N', "Asn", 1 },
+    {'P', "Pro", 1 },
+    {'Q', "Gln", 1 },
+    {'R', "Arg", 1 },
+    {'S', "Ser", 2 },
+    {'T', "Thr", 1 },
+    {'V', "Val", 1 },
+    {'W', "Trp", 1 },
+    {'X', "Xxx", 0 },
+    {'Y', "Tyr", 1 },
+    {'Z', "Glx", 0 },
+    {'U', "Sec", 0 },
+    {'O', "Pyl", 0 },
+    {'*', "Ter", 0 }
+};
+
+
 DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
 {
     if (obj->GetSubtype() != CSeqFeatData::eSubtype_tRNA) return;
+
+    static size_t countBS = 0;
+    if (countBS != context.GetCountBioseq()) {
+        countBS = context.GetCountBioseq();
+        Summarize();
+        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+        Add("", r);
+    }
+
+    string aa;
+    feature::GetLabel(*context.GetCurrentSeq_feat(), &aa, feature::fFGL_Content);
+    size_t n = aa.find_last_of('-');            // cut off the "tRNA-" prefix
+    if (n != string::npos) aa = aa.substr(n+1); // is there any better way to get the aminoacid name?
+
+    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+    Add(aa, r);
 
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
 {
+    if (m_Objs.empty()) return;
+
+    static map<string, int> DesiredCount;
+    if (DesiredCount.empty()) {
+        for (size_t i = 0; i < sizeof(desired_aaList)/sizeof(desired_aaList[0]); i++) DesiredCount[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
+    }
+
+    CRef<CReportObj> bioseq = m_Objs[""][0];
+    string short_name = bioseq->GetShort();
+
+    size_t total = 0;
+    // count tRNAs
+    for (TReportObjectMap::iterator J = m_Objs.begin(); J != m_Objs.end(); J++) {
+        if (J->first != "") total += J->second.size();
+    }
+    CNcbiOstrstream ss;
+    ss << "sequence " << short_name << " has " << total << " tRNA feature" << (total==1 ? "" : "s");
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
+    item->AddDetails(bioseq);
+    AddItem(CRef<CReportItem>(item.Release()));
+
+    // extra tRNAs
+    for (size_t i = 0; i < sizeof(desired_aaList)/sizeof(desired_aaList[0]); i++) {
+        size_t n = m_Objs.find(desired_aaList[i].long_symbol) == m_Objs.end() ? 0 : m_Objs[desired_aaList[i].long_symbol].size();
+        if (n <= desired_aaList[i].num_expected) continue;
+        CNcbiOstrstream ss;
+        ss << "sequence " << short_name << " has " << n << " trna-" << desired_aaList[i].long_symbol << " feature" << (n==1 ? "" : "s");
+        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
+        item->AddDetails(bioseq);
+        item->AddDetails(m_Objs[desired_aaList[i].long_symbol]);
+        AddItem(CRef<CReportItem>(item.Release()));
+    }
+    for (TReportObjectMap::iterator J = m_Objs.begin(); J != m_Objs.end(); J++) {
+        if (J->first == "" || DesiredCount.find(J->first) != DesiredCount.end()) continue;
+        CNcbiOstrstream ss;
+        ss << "sequence " << short_name << " has " << J->second.size() << " trna-" << J->first << " feature" << (J->second.size()==1 ? "" : "s");
+        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
+        item->AddDetails(bioseq);
+        item->AddDetails(J->second);
+        AddItem(CRef<CReportItem>(item.Release()));
+    }
+
+    // missing tRNAs
+    for (size_t i = 0; i < sizeof(desired_aaList)/sizeof(desired_aaList[0]); i++) {
+        if (!desired_aaList[i].num_expected) continue;
+        size_t n = m_Objs.find(desired_aaList[i].long_symbol) == m_Objs.end() ? 0 : m_Objs[desired_aaList[i].long_symbol].size();
+        if (n >= desired_aaList[i].num_expected) continue;
+        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "sequence "+short_name+" is missing trna-"+desired_aaList[i].long_symbol));
+        item->AddDetails(bioseq);
+        AddItem(CRef<CReportItem>(item.Release()));
+    }
+
+    m_Objs.clear();
 }
 
+DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
+
+
+// COUNT_RRNAS
 
 DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData)
 {

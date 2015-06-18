@@ -122,11 +122,16 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T* obj, CDiscrepanc
 
 void CDiscrepancyCore::Add(const string& s, CRef<CDiscrepancyObject> obj)
 {
-    TReportObjectList& list = this->m_Objs[s];
-    ITERATE(TReportObjectList, it, list) {
+    m_Objs[s].push_back(CRef<CReportObj>(obj.Release()));
+}
+
+
+void CDiscrepancyCore::AddUnique(const string& s, CRef<CDiscrepancyObject> obj)
+{
+    ITERATE(TReportObjectList, it, m_Objs[s]) {
         if(obj->Equal(**it)) return;
     }
-    list.push_back(CRef<CReportObj>(obj.Release()));
+    m_Objs[s].push_back(CRef<CReportObj>(obj.Release()));
 }
 
 
@@ -166,9 +171,11 @@ void CDiscrepancyContext::Parse(objects::CSeq_entry_Handle handle)
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
         if (CType<CBioseq>::Match(i)) {
             m_Current_Bioseq.Reset(m_Scope.GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
+            m_Count_Bioseq++;
         }
         else if (CType<CSeq_feat>::Match(i)) {
             m_Current_Seq_feat.Reset(m_Scope.GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
+            m_Count_Seq_feat++;
         }
 #define HANDLE_DISCREPANCY_TYPE(type) \
         else if (m_Enable_##type && CType<type>::Match(i)) {                                    \

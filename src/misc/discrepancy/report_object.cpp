@@ -62,12 +62,14 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+CConstRef<CSeq_id> GetBestId(const CBioseq&, CSeq_id::E_Choice);
 
 void CReportObject::SetText(CScope& scope)
 {
     if (m_Bioseq) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(*m_Bioseq);
         m_Text = GetTextObjectDescription(bsh);
+        GetBestId(*bsh.GetCompleteBioseq(), CSeq_id::e_Genbank)->GetLabel(&m_ShortName, CSeq_id::eContent);
     }
     else if (m_Seq_feat) {
         m_Text = GetTextObjectDescription(*m_Seq_feat, scope);

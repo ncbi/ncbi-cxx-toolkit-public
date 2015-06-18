@@ -4356,7 +4356,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
         CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
         Add("", r);
 
-cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
+//cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
     }
 }
 
