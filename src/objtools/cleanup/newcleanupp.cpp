@@ -8684,9 +8684,9 @@ bool s_FixncRNA(CSeq_feat& feat)
       }}
     case CRNA_ref::eType_other:
         if (rna.IsSetExt() && rna.GetExt().IsName()) {
-            string &rna_name = rna.SetExt().SetName();
+            string rna_name = rna.SetExt().GetName();
             string miRNAproduct;
-            if (s_IsNcrnaName(rna.GetExt().GetName()))
+            if (s_IsNcrnaName(rna_name))
             {
                 rna.SetType(CRNA_ref::eType_ncRNA);
                 rna.SetExt().SetGen().SetClass(rna_name);
