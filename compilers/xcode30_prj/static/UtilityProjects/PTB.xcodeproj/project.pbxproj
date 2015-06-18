@@ -403,7 +403,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libregexp.a</string>
+        <string>libregexp_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -416,7 +416,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libtest_boost.a</string>
+        <string>libtest_boost_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -429,7 +429,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libtest_mt.a</string>
+        <string>libtest_mt_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -455,7 +455,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libxcser.a</string>
+        <string>libxcser_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -468,7 +468,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libxncbi.a</string>
+        <string>libxncbi_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -481,7 +481,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libxregexp.a</string>
+        <string>libxregexp_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -494,7 +494,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libxregexp_template_tester.a</string>
+        <string>libxregexp_template_tester_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -507,7 +507,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libxser.a</string>
+        <string>libxser_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -520,7 +520,7 @@
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>path</key>
-        <string>libxutil.a</string>
+        <string>libxutil_bootstrap.a</string>
         <key>sourceTree</key>
         <string>BUILT_PRODUCTS_DIR</string>
       </dict>
@@ -11881,7 +11881,7 @@
         <key>name</key>
         <string>ncbicfg.c</string>
         <key>path</key>
-        <string>../xncbi/ncbicfg.c</string>
+        <string>../../../../src/corelib/ncbicfg.c.in</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -13856,23 +13856,6 @@
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>ABCDABCDABCDABCD000003EB</key>
-      <dict>
-        <key>files</key>
-        <array></array>
-        <key>inputPaths</key>
-        <array></array>
-        <key>outputPaths</key>
-        <array></array>
-        <key>isa</key>
-        <string>PBXShellScriptBuildPhase</string>
-        <key>shellPath</key>
-        <string>/bin/sh</string>
-        <key>shellScript</key>
-        <string>cmp -s ../xncbi/ncbicfg.$CONFIGURATION.c ../xncbi/ncbicfg.c&#xa;if test $? -ne 0; then&#xa;cp -p ../xncbi/ncbicfg.$CONFIGURATION.c ../xncbi/ncbicfg.c&#xa;fi&#xa;</string>
-        <key>showEnvVarsInLog</key>
-        <string>0</string>
-      </dict>
       <key>ABCDABCDABCDABCD000003EC</key>
       <dict>
         <key>files</key>
@@ -13940,7 +13923,6 @@
         <string>ABCDABCDABCDABCD000003EE</string>
         <key>buildPhases</key>
         <array>
-          <string>ABCDABCDABCDABCD000003EB</string>
           <string>ABCDABCDABCDABCD000003EC</string>
         </array>
         <key>dependencies</key>
