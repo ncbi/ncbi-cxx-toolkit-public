@@ -334,6 +334,7 @@ public:
                                  CJob &                job,
                                  const string &        auth_token,
                                  bool                  is_ns_rollback,
+                                 bool                  blacklist,
                                  TJobStatus            target_status);
 
     // Erase job from all structures, request delayed db deletion

@@ -2427,6 +2427,7 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
                                      CJob &               job,
                                      const string &       auth_token,
                                      bool                 is_ns_rollback,
+                                     bool                 blacklist,
                                      TJobStatus           target_status)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
@@ -2435,7 +2436,7 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
                                                 target_status,
                                                 is_ns_rollback,
                                                 false);
-    if (is_ns_rollback)
+    if (is_ns_rollback || blacklist == false)
         m_ClientsRegistry.UnregisterJob(job_id, eRead);
     else
         m_ClientsRegistry.MoveJobToBlacklist(job_id, eRead);

@@ -121,7 +121,7 @@ void CNSReadJobRollback::Rollback(CQueue *  queue)
 
         // true -> returned due to rollback
         queue->ReturnReadingJob(m_Client, m_JobId, queue->MakeJobKey(m_JobId),
-                                job, "", true, m_PreviousStatus);
+                                job, "", true, false, m_PreviousStatus);
     } catch (const exception &  ex) {
         ERR_POST("Error while rolling back read requested job: " << ex.what());
     } catch (...) {

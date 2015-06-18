@@ -351,7 +351,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "auth_token",        eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "blacklist",         eNSPT_Int, eNSPA_Optional, "1" } } },
     { "WST",           { &CNetScheduleHandler::x_ProcessFastStatusW,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -3558,6 +3559,7 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
                                             job,
                                             m_CommandArguments.auth_token,
                                             false,
+                                            m_CommandArguments.blacklist,
                                             CNetScheduleAPI::eJobNotFound);
     x_FinalizeReadCommand("RDRB", old_status, job);
 }
