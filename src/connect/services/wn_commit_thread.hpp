@@ -91,6 +91,7 @@ private:
 
     virtual void* Main();
 
+    bool WaitForTimeout();
     bool x_CommitJob(SWorkerNodeJobContextImpl* job_context);
 
     void WakeUp()

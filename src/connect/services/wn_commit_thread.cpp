@@ -108,6 +108,18 @@ void CJobCommitterThread::Stop()
     WakeUp();
 }
 
+bool CJobCommitterThread::WaitForTimeout()
+{
+    CNanoTimeout timeout = m_Timeline.front()->GetTimeout().GetRemainingTime();
+
+    if (timeout.IsZero()) {
+        return true;
+    }
+
+    TFastMutexUnlockGuard mutext_unlock(m_TimelineMutex);
+    return !m_Semaphore.TryWait(timeout);
+}
+
 void* CJobCommitterThread::Main()
 {
     SetCurrentThreadName(m_ThreadName);
@@ -118,27 +130,9 @@ void* CJobCommitterThread::Main()
             TFastMutexUnlockGuard mutext_unlock(m_TimelineMutex);
 
             m_Semaphore.Wait();
-        } else {
-            unsigned sec, nanosec;
-
-            m_Timeline.front()->GetTimeout().GetRemainingTime().GetNano(&sec,
-                    &nanosec);
-
-            if (sec == 0 && nanosec == 0) {
-                m_ImmediateActions.push_back(m_Timeline.front());
-                m_Timeline.pop_front();
-            } else {
-                bool wait_interrupted;
-                {
-                    TFastMutexUnlockGuard mutext_unlock(m_TimelineMutex);
-
-                    wait_interrupted = m_Semaphore.TryWait(sec, nanosec);
-                }
-                if (!wait_interrupted) {
-                    m_ImmediateActions.push_back(m_Timeline.front());
-                    m_Timeline.pop_front();
-                }
-            }
+        } else if (WaitForTimeout()) {
+            m_ImmediateActions.push_back(m_Timeline.front());
+            m_Timeline.pop_front();
         }
 
         while (!m_ImmediateActions.empty()) {
