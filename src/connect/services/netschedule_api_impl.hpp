@@ -447,19 +447,19 @@ public:
     CServerTimeline();
 
     bool HasImmediateActions() const { return !m_ImmediateActions.empty(); }
-    bool HasScheduledActions() const { return !m_Timeline.empty(); }
+    bool HasScheduledActions() const { return !m_ScheduledActions.empty(); }
 
     void CheckScheduledActions()
     {
-        while (!m_Timeline.empty() &&
-                m_Timeline.front()->deadline.GetRemainingTime().IsZero()) {
-            m_ImmediateActions.push_back(Pop(m_Timeline));
+        while (!m_ScheduledActions.empty() &&
+                m_ScheduledActions.front()->deadline.GetRemainingTime().IsZero()) {
+            m_ImmediateActions.push_back(Pop(m_ScheduledActions));
         }
     }
 
     const CDeadline GetNextTimeout() const
     {
-        return m_Timeline.front()->deadline;
+        return m_ScheduledActions.front()->deadline;
     }
 
     TEntryRef PullImmediateAction()
@@ -469,7 +469,7 @@ public:
 
     TEntryRef PullScheduledAction()
     {
-        return Pop(m_Timeline);
+        return Pop(m_ScheduledActions);
     }
 
     bool IsDiscoveryAction(TEntryRef entry) const
@@ -489,7 +489,7 @@ public:
 
         // If it's new server or is postponed or is not found in queues
         if (m_Servers.insert(make_pair(address, entry)).second ||
-                Erase(m_Timeline, entry) ||
+                Erase(m_ScheduledActions, entry) ||
                 !Find(m_ImmediateActions, entry)) {
             m_ImmediateActions.push_back(entry);
         }
@@ -502,7 +502,7 @@ public:
 
     void PushScheduledAction(TEntryRef entry)
     {
-        m_Timeline.push_back(entry);
+        m_ScheduledActions.push_back(entry);
     }
 
     CNetServer GetServer(CNetScheduleAPI api, TEntryRef entry)
@@ -526,7 +526,7 @@ public:
             } else {
                 srv_entry->discovery_iteration = m_DiscoveryIteration;
 
-                if (!Find(m_Timeline, srv_entry) &&
+                if (!Find(m_ScheduledActions, srv_entry) &&
                         !Find(m_ImmediateActions, srv_entry)) {
                     m_ImmediateActions.push_back(srv_entry);
                 }
@@ -536,8 +536,8 @@ public:
 
     bool MoreJobs() const
     {
-        for (TTimeline::const_iterator i = m_Timeline.begin();
-                i != m_Timeline.end(); ++i) {
+        for (TTimeline::const_iterator i = m_ScheduledActions.begin();
+                i != m_ScheduledActions.end(); ++i) {
             if ((*i)->more_jobs && !IsOutdatedAction(*i)) {
                 return true;
             }
@@ -549,15 +549,15 @@ public:
     void Suspend(unsigned timeout)
     {
         m_ImmediateActions.clear();
-        m_Timeline.clear();
+        m_ScheduledActions.clear();
         m_DiscoveryAction->ResetTimeout(timeout);
-        m_Timeline.push_back(m_DiscoveryAction);
+        m_ScheduledActions.push_back(m_DiscoveryAction);
     }
 
     void Resume()
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
-        Erase(m_Timeline, m_DiscoveryAction);
+        Erase(m_ScheduledActions, m_DiscoveryAction);
     }
 
 private:
@@ -587,7 +587,7 @@ private:
     }
 
     TServers m_Servers;
-    TTimeline m_ImmediateActions, m_Timeline;
+    TTimeline m_ImmediateActions, m_ScheduledActions;
 
     unsigned m_DiscoveryIteration;
     TEntryRef m_DiscoveryAction;
