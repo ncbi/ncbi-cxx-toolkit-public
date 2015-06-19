@@ -12,6 +12,8 @@ ASN_DEP = trackmgr
 
 WATCHERS = meric clausen
 
-
 USES_LIBRARIES =  \
     $(COMPRESS_LIBS) trackmgr xconnserv
+
+REQUIRES = LZO
+
