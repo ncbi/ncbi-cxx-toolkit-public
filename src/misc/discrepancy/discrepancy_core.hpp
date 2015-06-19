@@ -129,7 +129,7 @@ public:
     TReportObjectList GetDetails(void) const { return m_Objs;}
     void SetDetails(const TReportObjectList& list){ m_Objs = list;}
     void AddDetails(const CRef<CReportObj> obj){ m_Objs.push_back(obj);}
-    void AddDetails(const vector<CRef<CReportObj>>& v){ m_Objs.insert(m_Objs.end(), v.begin(), v.end());}
+    void AddDetails(const vector<CRef<CReportObj> >& v){ m_Objs.insert(m_Objs.end(), v.begin(), v.end());}
 protected:
     string m_Title;
     string m_Msg;
