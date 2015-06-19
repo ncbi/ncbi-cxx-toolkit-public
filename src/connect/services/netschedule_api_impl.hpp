@@ -414,7 +414,7 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-class CServerTimeline
+class CNetScheduleTimeline
 {
     struct SEntry : public CObject
     {
@@ -443,7 +443,12 @@ public:
     typedef map<SServerAddress, TEntryRef> TServers;
     typedef deque<TEntryRef> TTimeline;
 
-    CServerTimeline();
+    CNetScheduleTimeline() :
+        m_DiscoveryIteration(1),
+        m_DiscoveryAction(new SEntry(SServerAddress(0, 0)))
+    {
+        m_ImmediateActions.push_back(m_DiscoveryAction);
+    }
 
     bool HasImmediateActions() const { return !m_ImmediateActions.empty(); }
     bool HasScheduledActions() const { return !m_ScheduledActions.empty(); }
@@ -619,7 +624,7 @@ struct SNetScheduleJobReaderImpl : public CObject
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
-    bool x_PerformTimelineAction(CServerTimeline::TEntryRef timeline_entry,
+    bool x_PerformTimelineAction(CNetScheduleTimeline::TEntryRef timeline_entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
@@ -631,7 +636,7 @@ struct SNetScheduleJobReaderImpl : public CObject
         const CTimeout* timeout);
 
 private:
-    CServerTimeline m_Timeline;
+    CNetScheduleTimeline m_Timeline;
 };
 
 struct SNetScheduleAdminImpl : public CObject

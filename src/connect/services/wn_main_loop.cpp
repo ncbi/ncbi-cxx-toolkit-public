@@ -624,7 +624,7 @@ void* CMainLoopThread::Main()
 }
 
 bool CMainLoopThread::x_PerformTimelineAction(
-        CServerTimeline::TEntryRef timeline_entry, CNetScheduleJob& job)
+        CNetScheduleTimeline::TEntryRef timeline_entry, CNetScheduleJob& job)
 {
     if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
         if (!x_EnterSuspendedState()) {

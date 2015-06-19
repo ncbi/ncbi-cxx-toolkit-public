@@ -52,13 +52,6 @@ void CNetScheduleJobReader::SetAffinity(const string& affinity)
     m_Impl->m_Affinity = affinity;
 }
 
-CServerTimeline::CServerTimeline() :
-    m_DiscoveryIteration(1),
-    m_DiscoveryAction(new SEntry(SServerAddress(0, 0)))
-{
-    m_ImmediateActions.push_back(m_DiscoveryAction);
-}
-
 // True if a job is returned.
 static bool s_ParseReadJobResponse(const string& response,
         CNetScheduleJob& job,
@@ -152,7 +145,7 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 }
 
 bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
-        CServerTimeline::TEntryRef timeline_entry,
+        CNetScheduleTimeline::TEntryRef timeline_entry,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)

@@ -328,9 +328,9 @@ private:
     SGridWorkerNodeImpl* m_WorkerNode;
     CSemaphore m_Semaphore;
     const string m_ThreadName;
-    CServerTimeline m_Timeline;
+    CNetScheduleTimeline m_Timeline;
 
-    bool x_PerformTimelineAction(CServerTimeline::TEntryRef timeline_entry,
+    bool x_PerformTimelineAction(CNetScheduleTimeline::TEntryRef timeline_entry,
             CNetScheduleJob& job);
     bool x_EnterSuspendedState();
     void x_ProcessRequestJobNotification();
