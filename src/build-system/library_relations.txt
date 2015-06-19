@@ -1459,8 +1459,6 @@ xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
 xslt_xalan needs3party $(XALAN_LIBS)
 xslt_xalan needs3party $(XERCES_LIBS)
-xsmall_assembly needs gcaccess_utils
-xsmall_assembly needs xgencollstats
 xsoap needs xconnect
 xsoap needs xser
 xsoap_server needs xcgi
