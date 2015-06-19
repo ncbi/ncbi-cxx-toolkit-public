@@ -129,14 +129,20 @@ protected:
             return *m_Parent;
         }
 
+        void Exclude(const string& service_name, const TSvrRef& server);
+        void CleanExcluded(const string& service_name);
+        const string& GetExcluded(const string& service_name);
+
     private:
         // Data types
         typedef map<string, TSvrRef>      TDispatchedSet;
+        typedef map<string, string>       TExclusionSummaryMap;
         typedef map<string, unsigned int> TServer2NumMap;
 
         const CDBConnectionFactory* m_Parent;
         CRef<IDBServiceMapper>      m_DBServiceMapper;
         TDispatchedSet              m_DispatchedSet;
+        TExclusionSummaryMap        m_ExclusionSummaryMap;
         TServer2NumMap              m_DispatchNumMap;
         TServer2NumMap              m_ValidationFailureMap;
     };
@@ -158,7 +164,7 @@ private:
         I_DriverContext&            driver_ctx;
         IConnValidator::EConnStatus conn_status;
         impl::CDBHandlerStack       handlers;
-        unsigned int                retries;
+        list<string>                tried;
         // params deliberately left out (potentially call-specific)
     };
 

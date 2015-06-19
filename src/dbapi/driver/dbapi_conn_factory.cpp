@@ -302,8 +302,7 @@ impl::CDBHandlerStack& CDB_DBLB_Delegate::SetOpeningMsgHandlers(void)
 ///////////////////////////////////////////////////////////////////////////////
 CDBConnectionFactory::SOpeningContext::SOpeningContext
 (I_DriverContext& driver_ctx_in)
-    : driver_ctx(driver_ctx_in), conn_status(IConnValidator::eInvalidConn),
-      retries(0)
+    : driver_ctx(driver_ctx_in), conn_status(IConnValidator::eInvalidConn)
 {
 }
 
@@ -465,7 +464,7 @@ CDBConnectionFactory::DispatchServerName(
             if (dsp_srv.Empty()  &&  tried_servers.empty()) {
                 _TRACE("List of servers for service " << service_name
                        << " is exhausted. Giving excluded a try.");
-                rt_data.GetDBServiceMapper().CleanExcluded(service_name);
+                rt_data.CleanExcluded(service_name);
                 dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
             }
 
@@ -489,9 +488,9 @@ CDBConnectionFactory::DispatchServerName(
                     _TRACE("List of servers for service " << service_name
                            << " is exhausted. Giving excluded a try.");
 
-                    rt_data.GetDBServiceMapper().CleanExcluded(service_name);
+                    rt_data.CleanExcluded(service_name);
                     ITERATE(list<TSvrRef>, it, tried_servers) {
-                        rt_data.GetDBServiceMapper().Exclude(service_name, *it);
+                        rt_data.Exclude(service_name, *it);
                     }
                     full_retry_made = true;
                     continue;
@@ -504,7 +503,7 @@ CDBConnectionFactory::DispatchServerName(
             bool found = false;
             ITERATE(list<TSvrRef>, it, tried_servers) {
                 if (**it == *dsp_srv) {
-                    rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+                    rt_data.Exclude(service_name, dsp_srv);
                     found = true;
                     break;
                 }
@@ -557,7 +556,6 @@ CDBConnectionFactory::DispatchServerName(
             return t_con;
         }
         else if (!t_con) {
-            ++ctx.retries;
             bool need_exclude = true;
             if (cur_srv_name == service_name  &&  cur_host == 0  &&  cur_port == 0
                 &&  (ctx.conn_status != IConnValidator::eTempInvalidConn
@@ -577,7 +575,7 @@ CDBConnectionFactory::DispatchServerName(
                     rt_data.IncNumOfValidationFailures(service_name, dsp_srv);
                 } else {
                     // conn_status == IConnValidator::eInvalidConn
-                    rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+                    rt_data.Exclude(service_name, dsp_srv);
                     tried_servers.push_back(dsp_srv);
                 }
             }
@@ -600,7 +598,14 @@ CDBConnectionFactory::MakeValidConnection(
     const CDBConnParams& params)
 {
     _TRACE("Trying to connect to server '" << params.GetServerName()
-          << "', host " << params.GetHost() << ", port " << params.GetPort());
+           << "', host " << impl::ConvertN2A(params.GetHost())
+           << ", port " << params.GetPort());
+    if (params.GetHost() != 0) {
+        ctx.tried.push_back(impl::ConvertN2A(params.GetHost()) + ':'
+                            + NStr::NumericToString(params.GetPort()));
+    } else {
+        ctx.tried.push_back(params.GetServerName());
+    }
 
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx.driver_ctx, params));
 
@@ -653,6 +658,7 @@ CDBConnectionFactory::MakeValidConnection(
                        << params.GetUserName() << "'");
             throw;
         }
+        ctx.tried.pop_back();
         conn->FinishOpening();
     }
     else {
@@ -806,7 +812,18 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     extra.Print(prefix + "name_mapper",
                 rt_data.GetDBServiceMapper().GetName());
 
-    extra.Print(prefix + "retries", ctx.retries);
+    size_t retries = ctx.tried.size();
+    if (ctx.conn_status != IConnValidator::eValidConn) {
+        --retries;
+    }
+    extra.Print(prefix + "retries", retries);
+    if ( !ctx.tried.empty() ) {
+        extra.Print(prefix + "tried", NStr::Join(ctx.tried, " "));
+    }
+    const string& excluded = rt_data.GetExcluded(service);
+    if ( !excluded.empty() ) {
+        extra.Print(prefix + "excluded", excluded);
+    }
     if (connection != NULL) {
         extra.Print(prefix + "conn_reuse_count", connection->GetReuseCount());
     }
@@ -874,8 +891,43 @@ CDBConnectionFactory::CRuntimeData::IncNumOfValidationFailures(
         GetNumOfValidationFailures(server_name) >=
             GetParent().GetMaxNumOfValidationAttempts()) {
         // It is time to finish with this server ...
-        GetDBServiceMapper().Exclude(server_name, dsp_srv);
+        Exclude(server_name, dsp_srv);
     }
+}
+
+void CDBConnectionFactory::CRuntimeData::Exclude(const string& service_name,
+                                                 const TSvrRef& server)
+{
+    GetDBServiceMapper().Exclude(service_name, server);
+    if (server->GetHost() != 0) {
+        string& excluded = m_ExclusionSummaryMap[service_name];
+        if ( !excluded.empty() ) {
+            excluded += ' ';
+        }
+        excluded += (impl::ConvertN2A(server->GetHost()) + ':'
+                     + NStr::NumericToString(server->GetPort()));
+    } else if ( !server->GetName().empty() ) {
+        string& excluded = m_ExclusionSummaryMap[service_name];
+        if ( !excluded.empty() ) {
+            excluded += ' ';
+        }
+        excluded += server->GetName();
+    }
+}
+
+void CDBConnectionFactory::CRuntimeData::CleanExcluded
+(const string& service_name)
+{
+    GetDBServiceMapper().CleanExcluded(service_name);
+    m_ExclusionSummaryMap.erase(service_name);
+}
+
+const string& CDBConnectionFactory::CRuntimeData::GetExcluded
+(const string& service_name)
+{
+    TExclusionSummaryMap::const_iterator it
+        = m_ExclusionSummaryMap.find(service_name);
+    return (it == m_ExclusionSummaryMap.end()) ? kEmptyStr : it->second;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
