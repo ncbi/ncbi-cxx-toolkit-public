@@ -404,7 +404,7 @@ inline void CBlastTabularInfo::x_PrintPercentIdentical(void)
 {
     double perc_ident = 
         (m_AlignLength > 0 ? ((double)m_NumIdent)/m_AlignLength * 100 : 0);
-    m_Ostream << NStr::DoubleToString(perc_ident, 2);
+    m_Ostream << NStr::DoubleToString(perc_ident, 3);
 }
 
 inline void CBlastTabularInfo::x_PrintPercentPositives(void)
