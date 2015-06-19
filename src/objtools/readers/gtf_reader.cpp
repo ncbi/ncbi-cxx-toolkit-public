@@ -132,8 +132,8 @@ bool CGtfReadRecord::x_AssignAttributesFromGff(
                 return false;
             }
         }
-        strKey = x_NormalizedAttributeKey( strKey );
-        strValue = x_NormalizedAttributeValue( strValue );
+        strKey = xNormalizedAttributeKey( strKey );
+        strValue = xNormalizedAttributeValue( strValue );
 		if ( strKey.empty() && strValue.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
             // things. 

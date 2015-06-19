@@ -150,7 +150,7 @@ bool CGvfReadRecord::x_AssignAttributesFromGff(
             }
         }
         strKey = x_NormalizedAttributeKey( strKey );
-        strValue = x_NormalizedAttributeValue( strValue );
+        strValue = xNormalizedAttributeValue( strValue );
 
 		if ( strKey.empty() && strValue.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such

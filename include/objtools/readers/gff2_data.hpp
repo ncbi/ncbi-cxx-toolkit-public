@@ -134,12 +134,6 @@ protected:
     virtual bool x_AssignAttributesFromGff(
         const string& );
 
-    static string x_NormalizedAttributeKey(
-        const string& );
-
-    static string x_NormalizedAttributeValue(
-        const string& );
-
 	bool x_SplitGffAttributes(
 		const string&,
 		vector< string >& ) const;
@@ -180,6 +174,28 @@ protected:
         int,
         CRef<CSeq_feat>,
         TAttributes& ) const;
+
+    //utility helpers:
+    //
+    static string xNormalizedAttributeKey(
+        const string&);
+
+    static string xNormalizedAttributeValue(
+        const string&);
+
+    static bool xMigrateAttributeDefault(
+        TAttributes&,
+        const string&,
+        CRef<CSeq_feat>,
+        const string&,
+        int);
+
+    static bool xMigrateAttributeSingle(
+        TAttributes&,
+        const string&,
+        CRef<CSeq_feat>,
+        const string&,
+        int);
 
     //
     // Data:

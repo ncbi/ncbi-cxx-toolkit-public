@@ -114,7 +114,7 @@ string CGff3ReadRecord::x_NormalizedAttributeKey(
     const string& strRawKey )
 //  ---------------------------------------------------------------------------
 {
-    string strKey = CGff2Record::x_NormalizedAttributeKey( strRawKey );
+    string strKey = CGff2Record::xNormalizedAttributeKey( strRawKey );
     if ( 0 == NStr::CompareNocase( strRawKey, "ID" ) ) {
         return "ID";
     }

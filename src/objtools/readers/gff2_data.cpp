@@ -358,7 +358,7 @@ CRef<CSeq_loc> CGff2Record::GetSeqLoc(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2Record::x_NormalizedAttributeKey(
+string CGff2Record::xNormalizedAttributeKey(
     const string& strRawKey )
 //  ----------------------------------------------------------------------------
 {
@@ -367,7 +367,7 @@ string CGff2Record::x_NormalizedAttributeKey(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2Record::x_NormalizedAttributeValue(
+string CGff2Record::xNormalizedAttributeValue(
     const string& strRawValue )
 //  ----------------------------------------------------------------------------
 {
@@ -544,7 +544,7 @@ bool CGff2Record::x_MigrateAttributes(
 
     it = attrs_left.find("Note");
     if (it != attrs_left.end()) {
-        pFeature->SetComment(x_NormalizedAttributeValue(it->second));
+        pFeature->SetComment(xNormalizedAttributeValue(it->second));
         attrs_left.erase(it);
     }
 
@@ -554,7 +554,7 @@ bool CGff2Record::x_MigrateAttributes(
         NStr::Tokenize(it->second, ",", dbxrefs, NStr::eMergeDelims);
         for (vector<string>::iterator it1 = dbxrefs.begin(); it1 != dbxrefs.end();
                 ++it1 ) {
-            string dbtag = x_NormalizedAttributeValue(*it1);
+            string dbtag = xNormalizedAttributeValue(*it1);
             pFeature->SetDbxref().push_back(CGff2Reader::x_ParseDbtag(dbtag));
         }
         attrs_left.erase(it);
@@ -604,7 +604,8 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("description");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
-            pFeature->SetData().SetGene().SetDesc(it->second);
+            string description = xNormalizedAttributeValue(it->second);
+            pFeature->SetData().SetGene().SetDesc(description);
             attrs_left.erase(it);
         }
     }
@@ -612,7 +613,7 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("exception");
     if (it != attrs_left.end()) {
         pFeature->SetExcept(true);
-        pFeature->SetExcept_text(x_NormalizedAttributeValue(it->second));
+        pFeature->SetExcept_text(xNormalizedAttributeValue(it->second));
         attrs_left.erase(it);
     }
 
@@ -629,7 +630,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         const string strExperimentDefault(
             "experimental evidence, no additional details recorded" );
-        string value = x_NormalizedAttributeValue(it->second);
+        string value = xNormalizedAttributeValue(it->second);
         if (value == strExperimentDefault) {
             pFeature->SetExp_ev(CSeq_feat::eExp_ev_experimental);
         }
@@ -650,7 +651,22 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("gene");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
-            pFeature->SetData().SetGene().SetLocus(it->second);
+            list<string> geneValues;
+            NStr::Split(it->second, ",", geneValues);
+            string value;
+            list<string>::const_iterator cit = geneValues.begin();
+            if (cit != geneValues.end()) {
+                value = xNormalizedAttributeValue(*cit);
+                pFeature->SetData().SetGene().SetLocus(value);
+                cit++;
+                while (cit != geneValues.end()) {
+                    value = xNormalizedAttributeValue(*cit);
+                    pFeature->SetData().SetGene().SetSyn().push_back(value);
+                    cit++;
+                }
+            }
+            string gene = xNormalizedAttributeValue(it->second);
+            pFeature->SetData().SetGene().SetLocus(gene);
             attrs_left.erase(it);
         }
     }
@@ -671,7 +687,7 @@ bool CGff2Record::x_MigrateAttributes(
         NStr::Tokenize(it->second, ",", synonyms, NStr::eMergeDelims);
         for (vector<string>::iterator it1 = synonyms.begin(); it1 != synonyms.end();
                 ++it1 ) {
-            string synonym = x_NormalizedAttributeValue(*it1);
+            string synonym = xNormalizedAttributeValue(*it1);
             pFeature->SetData().SetGene().SetSyn().push_back(synonym);
         }
             attrs_left.erase(it);
@@ -682,7 +698,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         const string strInferenceDefault(
             "non-experimental evidence, no additional details recorded" );
-       string value = x_NormalizedAttributeValue(it->second);
+       string value = xNormalizedAttributeValue(it->second);
         if (value == strInferenceDefault) {
             pFeature->SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
         }
@@ -698,8 +714,8 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("locus_tag");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
-            pFeature->SetData().SetGene().SetLocus_tag(
-                x_NormalizedAttributeValue(it->second));
+            string tag = xNormalizedAttributeValue(it->second);
+            pFeature->SetData().SetGene().SetLocus_tag(tag);
         }
         attrs_left.erase(it);
     }
@@ -708,7 +724,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
             pFeature->SetData().SetGene().SetMaploc(
-                x_NormalizedAttributeValue(it->second));
+                xNormalizedAttributeValue(it->second));
         }
     }
 
@@ -716,7 +732,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         if (pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_ncRNA) {
             pFeature->SetData().SetRna().SetExt().SetGen().SetClass(
-                x_NormalizedAttributeValue(it->second));
+                xNormalizedAttributeValue(it->second));
         }
         attrs_left.erase(it);
     }
@@ -735,31 +751,12 @@ bool CGff2Record::x_MigrateAttributes(
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);
         }
-        list<string> products;
-        NStr::Split(it->second, ",", products);
-        CRef<CGb_qual> pQual;
-        for (list<string>::const_iterator cit = products.begin(); cit != products.end(); ++cit) {
-            pQual.Reset(new CGb_qual);
-            pQual->SetQual("product");
-            pQual->SetVal(*cit);
-            pFeature->SetQual().push_back(pQual);
-        }
-        attrs_left.erase(it);
+        xMigrateAttributeDefault(
+            attrs_left, "product", pFeature, "product", flags);
     }
 
-    it = attrs_left.find("Product");
-    if (it != attrs_left.end()) {
-        list<string> products;
-        NStr::Split(it->second, ",", products);
-        CRef<CGb_qual> pQual;
-        for (list<string>::const_iterator cit = products.begin(); cit != products.end(); ++cit) {
-            pQual.Reset(new CGb_qual);
-            pQual->SetQual("product");
-            pQual->SetVal(*cit);
-            pFeature->SetQual().push_back(pQual);
-        }
-        attrs_left.erase(it);
-    }
+    xMigrateAttributeDefault(
+        attrs_left, "Product", pFeature, "product", flags);
 
     it = attrs_left.find("protein_id");
     if (it != attrs_left.end()) {
@@ -769,13 +766,8 @@ bool CGff2Record::x_MigrateAttributes(
         pLoc->SetId(*pId);
         pFeature->SetProduct(*pLoc);
 
-        CRef<CGb_qual> pQual;
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual("protein_id");
-        pQual->SetVal(protId);
-        pFeature->SetQual().push_back(pQual);
-
-        attrs_left.erase(it);
+        this->xMigrateAttributeDefault(
+            attrs_left, "protein_id", pFeature, "protein_id", flags);
     }
 
     it = attrs_left.find("pseudo");
@@ -794,12 +786,8 @@ bool CGff2Record::x_MigrateAttributes(
             pFeature->SetProduct(*pLoc);
         }
         // mss-362: turn transcript_id attributes into transcript_id quailifiers.
-        CRef<CGb_qual> pQual;
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual("transcript_id");
-        pQual->SetVal(transcriptId);
-        pFeature->SetQual().push_back(pQual);
-        attrs_left.erase(it);
+        xMigrateAttributeSingle(
+            attrs_left, "transcript_id", pFeature, "transcript_id", flags);
     }
 
     it = attrs_left.find("transl_except");
@@ -810,7 +798,7 @@ bool CGff2Record::x_MigrateAttributes(
             for (vector<string>::iterator it1 = codebreaks.begin(); 
                     it1 != codebreaks.end(); ++it1 ) {
                 CRef<CCode_break> pCodeBreak = s_StringToCodeBreak(
-                    x_NormalizedAttributeValue(*it1), *GetSeqId(flags), flags);
+                    xNormalizedAttributeValue(*it1), *GetSeqId(flags), flags);
                 if (pCodeBreak) {
                     pFeature->SetData().SetCdregion().SetCode_break().push_back(
                         pCodeBreak);
@@ -842,16 +830,61 @@ bool CGff2Record::x_MigrateAttributes(
     //
     //  Turn whatever is left into a gbqual:
     //
-    CRef<CGb_qual> pQual;
     while (!attrs_left.empty()) {
-        it = attrs_left.begin();
-        string qual = it->first;
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual(qual);
-        pQual->SetVal(it->second);
-        pFeature->SetQual().push_back(pQual);
-        attrs_left.erase(it);
+        string key = attrs_left.begin()->first;
+        if (!xMigrateAttributeDefault(attrs_left, key, pFeature, key, flags)) {
+            return false;
+        }
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xMigrateAttributeSingle(
+    TAttributes& attributes,
+    const string& attrKey,
+    CRef<CSeq_feat> pFeature,
+    const string& qualKey,
+    int flags)
+    //  -----------------------------------------------------------------------------
+{
+    //retrieve GFF3 attribute as a single value,
+    //  turn unescaped value into gbqual of the same key.
+
+    TAttributes::iterator it = attributes.find(attrKey);
+    if (it == attributes.end()) {
+        return true;
+    }
+    string value = xNormalizedAttributeValue(it->second);
+    pFeature->AddQualifier(qualKey, value);
+    attributes.erase(it);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xMigrateAttributeDefault(
+    TAttributes& attributes,
+    const string& attrKey,
+    CRef<CSeq_feat> pFeature,
+    const string& qualKey,
+    int flags)
+    //  -----------------------------------------------------------------------------
+{
+    //split GFF3 multi-value into individual values, create a gbqual of the
+    // same key for each of the individual values.
+    //
+    TAttributes::iterator it = attributes.find(attrKey);
+    if (it == attributes.end()) {
+        return true;
+    }
+    list<string> values;
+    NStr::Split(it->second, ",", values);
+    for (list<string>::const_iterator cit = values.begin(); cit != values.end();
+            cit++) {
+        string value = xNormalizedAttributeValue(*cit);
+        pFeature->AddQualifier(qualKey, value);
+    }
+    attributes.erase(it);
     return true;
 }
 
@@ -989,7 +1022,7 @@ bool CGff2Record::x_MigrateAttributesSubSource(
         }
         CRef<CSubSource> pSubSource(new CSubSource);
         pSubSource->SetSubtype(sit->second);
-        pSubSource->SetName(ait->second);
+        pSubSource->SetName(xNormalizedAttributeValue(ait->second));
         subType.push_back(pSubSource);
         attrs_left.erase(ait);
     }

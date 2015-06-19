@@ -21,10 +21,6 @@ Seq-annot ::= {
         {
           qual "Name",
           val "EDEN"
-        },
-        {
-          qual "group",
-          val ""
         }
       }
     },
@@ -222,7 +218,11 @@ Seq-annot ::= {
         },
         {
           qual "Parent",
-          val "mRNA00001,mRNA00002"
+          val "mRNA00001"
+        },
+        {
+          qual "Parent",
+          val "mRNA00002"
         }
       },
       xref {
@@ -269,7 +269,11 @@ Seq-annot ::= {
         },
         {
           qual "Parent",
-          val "mRNA00001,mRNA00002"
+          val "mRNA00001"
+        },
+        {
+          qual "Parent",
+          val "mRNA00002"
         }
       },
       xref {
@@ -310,7 +314,11 @@ Seq-annot ::= {
         },
         {
           qual "Parent",
-          val "mRNA00002,mRNA00003"
+          val "mRNA00002"
+        },
+        {
+          qual "Parent",
+          val "mRNA00003"
         }
       },
       xref {
@@ -351,7 +359,11 @@ Seq-annot ::= {
         },
         {
           qual "Parent",
-          val "mRNA00002,mRNA00003"
+          val "mRNA00002"
+        },
+        {
+          qual "Parent",
+          val "mRNA00003"
         }
       },
       xref {
