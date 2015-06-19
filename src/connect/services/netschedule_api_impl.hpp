@@ -499,8 +499,9 @@ public:
         m_ImmediateActions.push_back(entry);
     }
 
-    void PushScheduledAction(TEntryRef entry)
+    void PushScheduledAction(TEntryRef entry, unsigned seconds)
     {
+        entry->ResetTimeout(seconds);
         m_ScheduledActions.push_back(entry);
     }
 
@@ -549,8 +550,7 @@ public:
     {
         m_ImmediateActions.clear();
         m_ScheduledActions.clear();
-        m_DiscoveryAction->ResetTimeout(timeout);
-        m_ScheduledActions.push_back(m_DiscoveryAction);
+        PushScheduledAction(m_DiscoveryAction, timeout);
     }
 
     void Resume()

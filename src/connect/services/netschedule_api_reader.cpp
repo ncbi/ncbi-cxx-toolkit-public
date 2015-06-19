@@ -162,9 +162,7 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
 
     if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
         m_Timeline.NextDiscoveryIteration(m_API);
-
-        timeline_entry->ResetTimeout(READJOB_TIMEOUT);
-        m_Timeline.PushScheduledAction(timeline_entry);
+        m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
         return false;
     }
 
@@ -173,7 +171,6 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
         return false;
 
     CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
-    timeline_entry->ResetTimeout(READJOB_TIMEOUT);
 
     try {
         if (x_ReadJob(server, READJOB_TIMEOUT,
@@ -191,7 +188,7 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
 
             // No job has been returned by this server;
             // query the server later.
-            m_Timeline.PushScheduledAction(timeline_entry);
+            m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
             return false;
         }
     }

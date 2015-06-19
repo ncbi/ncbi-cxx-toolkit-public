@@ -631,8 +631,7 @@ bool CMainLoopThread::x_PerformTimelineAction(
             m_Timeline.NextDiscoveryIteration(m_WorkerNode->m_NetScheduleAPI);
         }
 
-        timeline_entry->ResetTimeout(m_WorkerNode->m_NSTimeout);
-        m_Timeline.PushScheduledAction(timeline_entry);
+        m_Timeline.PushScheduledAction(timeline_entry, m_WorkerNode->m_NSTimeout);
         return false;
     }
 
@@ -643,8 +642,6 @@ bool CMainLoopThread::x_PerformTimelineAction(
 
     CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,
                 timeline_entry));
-
-    timeline_entry->ResetTimeout(m_WorkerNode->m_NSTimeout);
 
     try {
         if (m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
@@ -657,7 +654,8 @@ bool CMainLoopThread::x_PerformTimelineAction(
         } else {
             // No job has been returned by this server;
             // query the server later.
-            m_Timeline.PushScheduledAction(timeline_entry);
+            m_Timeline.PushScheduledAction(timeline_entry,
+                    m_WorkerNode->m_NSTimeout);
             return false;
         }
     }
