@@ -615,7 +615,7 @@
         <key>shellPath</key>
         <string>/bin/sh</string>
         <key>shellScript</key>
-        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export DATATOOL_PATH=../../static/bin/ReleaseDLL&#xa;export TREE_ROOT=../../../..&#xa;export BUILD_TREE_ROOT=../..&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/msvc71_project.dtd -oc msvc71_project -od ../../../../src/build-system/project_tree_builder/msvc71_project.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/property_list.xsd -oc property_list -od ../../../../src/build-system/project_tree_builder/property_list.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;</string>
+        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export DATATOOL_PATH=bin/ReleaseDLL&#xa;export TREE_ROOT=../../../..&#xa;export BUILD_TREE_ROOT=../..&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/msvc71_project.dtd -oc msvc71_project -od ../../../../src/build-system/project_tree_builder/msvc71_project.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/property_list.xsd -oc property_list -od ../../../../src/build-system/project_tree_builder/property_list.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;</string>
         <key>showEnvVarsInLog</key>
         <string>0</string>
       </dict>
@@ -4338,7 +4338,7 @@
         <key>shellPath</key>
         <string>/bin/sh</string>
         <key>shellScript</key>
-        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export DATATOOL_PATH=../../static/bin/ReleaseDLL&#xa;export TREE_ROOT=../../../..&#xa;export BUILD_TREE_ROOT=../..&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/msvc71_project.dtd -oc msvc71_project -od ../../../../src/build-system/project_tree_builder/msvc71_project.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/property_list.xsd -oc property_list -od ../../../../src/build-system/project_tree_builder/property_list.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;</string>
+        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export DATATOOL_PATH=bin/ReleaseDLL&#xa;export TREE_ROOT=../../../..&#xa;export BUILD_TREE_ROOT=../..&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/msvc71_project.dtd -oc msvc71_project -od ../../../../src/build-system/project_tree_builder/msvc71_project.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;&quot;$BUILD_TREE_ROOT/datatool.sh&quot; -oex &quot;&quot; -oA -odi -ocvs -pch ncbi_pch.hpp -m build-system/project_tree_builder/property_list.xsd -oc property_list -od ../../../../src/build-system/project_tree_builder/property_list.def -or build-system/project_tree_builder/ -oR ../../../../&#xa;</string>
         <key>showEnvVarsInLog</key>
         <string>0</string>
       </dict>
