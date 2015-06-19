@@ -563,200 +563,218 @@ void TrimInternalSemicolons (string& str)
 #define comma_space ((',') << 8 | (' '))
 #define semicolon_space ((';') << 8 | (' '))
 
-bool Asn2gnbkCompressSpaces (string& val)
-
+bool Asn2gnbkCompressSpaces(string& val)
 {
     if (val.length() == 0) return false;
 
-    char * str = new char[sizeof (char) * (val.length() + 1)];
+    char * str = new char[sizeof(char) * (val.length() + 1)];
     strcpy(str, val.c_str());
 
-  char     ch;
-  char *   dst;
-  char *   ptr;
+    char     ch;
+    char *   dst;
+    char *   ptr;
 
-  char     curr;
-  char     next;
-  char *   in;
-  char *   out;
-  unsigned short   two_chars;
+    char     curr;
+    char     next;
+    char *   in;
+    char *   out;
+    unsigned short   two_chars;
 
 
-  in = str;
-  out = str;
+    in = str;
+    out = str;
 
-  curr = *in;
-  in++;
-
-  next = 0;
-  two_chars = curr;
-
-  while (curr != '\0') {
-    next = *in;
+    curr = *in;
     in++;
 
-    two_chars = (two_chars << 8) | next;
+    next = 0;
+    two_chars = curr;
 
-    if (two_chars == twocommas) {
-        *out++ = curr;
-        next = ' ';
-    } else if (two_chars == twospaces) {
-    } else if (two_chars == twosemicolons) {
-    } else if (two_chars == bracket_space) {
-        next = curr;
-        two_chars = curr;
-    } else if (two_chars == space_bracket) {
-    } else if (two_chars == space_comma) {
-        *out++ = next;
-        next = curr;
-        *out++ = ' ';
-        while (next == ' ' || next == ',') {
-          next = *in;
-          in++;
+    while (curr != '\0') {
+        next = *in;
+        in++;
+
+        two_chars = (two_chars << 8) | next;
+
+        if (two_chars == twocommas) {
+            *out++ = curr;
+            next = ' ';
         }
-        two_chars = next;
-    } else if (two_chars == space_semicolon) {
-        *out++ = next;
-        next = curr;
-        *out++ = ' ';
-        while (next == ' ' || next == ';') {
-          next = *in;
-          in++;
+        else if (two_chars == twospaces) {
         }
-        two_chars = next;
-    } else if (two_chars == comma_space) {
-        *out++ = curr;
-        *out++ = ' ';
-        while (next == ' ' || next == ',') {
-          next = *in;
-          in++;
+        else if (two_chars == twosemicolons) {
         }
-        two_chars = next;
-    } else if (two_chars == semicolon_space) {
-        *out++ = curr;
-        *out++ = ' ';
-        while (next == ' ' || next == ';') {
-          next = *in;
-          in++;
+        else if (two_chars == bracket_space) {
+            next = curr;
+            two_chars = curr;
         }
-        two_chars = next;
-    } else {
-      *out++ = curr;
+        else if (two_chars == space_bracket) {
+        }
+        else if (two_chars == space_comma) {
+            *out++ = next;
+            next = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ',') {
+                next = *in;
+                in++;
+            }
+            two_chars = next;
+        }
+        else if (two_chars == space_semicolon) {
+            *out++ = next;
+            next = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ';') {
+                next = *in;
+                in++;
+            }
+            two_chars = next;
+        }
+        else if (two_chars == comma_space) {
+            *out++ = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ',') {
+                next = *in;
+                in++;
+            }
+            two_chars = next;
+        }
+        else if (two_chars == semicolon_space) {
+            *out++ = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ';') {
+                next = *in;
+                in++;
+            }
+            two_chars = next;
+        }
+        else {
+            *out++ = curr;
+        }
+
+        curr = next;
     }
 
-     curr = next;
-  }
-
-  if (curr > 0 && curr != ' ') {
-    *out = curr;
-    out++;
-  }
-  *out = '\0';
-
-  /* TrimSpacesAroundString but allow leading/trailing tabs/newlines */
-
-  if (str != NULL && str [0] != '\0') {
-    dst = str;
-    ptr = str;
-    ch = *ptr;
-    while (ch != '\0' && ch == ' ') {
-      ptr++;
-      ch = *ptr;
+    if (curr > 0 && curr != ' ') {
+        *out = curr;
+        out++;
     }
-    while (ch != '\0') {
-      *dst = ch;
-      dst++;
-      ptr++;
-      ch = *ptr;
-    }
-    *dst = '\0';
-    dst = NULL;
-    ptr = str;
-    ch = *ptr;
-    while (ch != '\0') {
-      if (ch != ' ') {
+    *out = '\0';
+
+    /* TrimSpacesAroundString but allow leading/trailing tabs/newlines */
+
+    if (str != NULL && str[0] != '\0') {
+        dst = str;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0' && ch == ' ') {
+            ptr++;
+            ch = *ptr;
+        }
+        while (ch != '\0') {
+            *dst = ch;
+            dst++;
+            ptr++;
+            ch = *ptr;
+        }
+        *dst = '\0';
         dst = NULL;
-      } else if (dst == NULL) {
-        dst = ptr;
-      }
-      ptr++;
-      ch = *ptr;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0') {
+            if (ch != ' ') {
+                dst = NULL;
+            }
+            else if (dst == NULL) {
+                dst = ptr;
+            }
+            ptr++;
+            ch = *ptr;
+        }
+        if (dst != NULL) {
+            *dst = '\0';
+        }
     }
-    if (dst != NULL) {
-      *dst = '\0';
-    }
-  }
     string new_val;
     new_val = str;
     delete[] str;
 
     if (!NStr::Equal(val, new_val)) {
+#ifdef _DEBUG
+#if 0
         printf("Use new string\n");
+#endif
+#endif
         val = new_val;
         return true;
-    } else {
+    }
+    else {
         return false;
     }
 }
 
-bool TrimSpacesSemicolonsAndCommas (string& val)
+bool TrimSpacesSemicolonsAndCommas(string& val)
 {
     if (val.length() == 0) return false;
 
-    char * str = new char[sizeof (char) * (val.length() + 1)];
+    char * str = new char[sizeof(char) * (val.length() + 1)];
     strcpy(str, val.c_str());
 
-  char *  amp;
-  unsigned char    ch;    /* to use 8bit characters in multibyte languages */
-  char *  dst;
-  char *  ptr;
+    char *  amp;
+    unsigned char    ch;    /* to use 8bit characters in multibyte languages */
+    char *  dst;
+    char *  ptr;
 
     dst = str;
     ptr = str;
     ch = *ptr;
     if (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
-      while (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
-        ptr++;
-        ch = *ptr;
-      }
-      while (ch != '\0') {
-        *dst = ch;
-        dst++;
-        ptr++;
-        ch = *ptr;
-      }
-      *dst = '\0';
+        while (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
+            ptr++;
+            ch = *ptr;
+        }
+        while (ch != '\0') {
+            *dst = ch;
+            dst++;
+            ptr++;
+            ch = *ptr;
+        }
+        *dst = '\0';
     }
     amp = NULL;
     dst = NULL;
     ptr = str;
     ch = *ptr;
     while (ch != '\0') {
-      if (ch == '&') {
-        amp = ptr;
-        dst = NULL;
-      } else if (ch <= ' ') {
-        if (dst == NULL) {
-          dst = ptr;
+        if (ch == '&') {
+            amp = ptr;
+            dst = NULL;
         }
-        amp = NULL;
-      } else if (ch == ';') {
-        if (dst == NULL && amp == NULL) {
-          dst = ptr;
+        else if (ch <= ' ') {
+            if (dst == NULL) {
+                dst = ptr;
+            }
+            amp = NULL;
         }
-      } else if (ch == ',') {
-        if (dst == NULL) {
-          dst = ptr;
+        else if (ch == ';') {
+            if (dst == NULL && amp == NULL) {
+                dst = ptr;
+            }
         }
-        amp = NULL;
-      } else {
-        dst = NULL;
-      }
-      ptr++;
-      ch = *ptr;
+        else if (ch == ',') {
+            if (dst == NULL) {
+                dst = ptr;
+            }
+            amp = NULL;
+        }
+        else {
+            dst = NULL;
+        }
+        ptr++;
+        ch = *ptr;
     }
     if (dst != NULL) {
-      *dst = '\0';
+        *dst = '\0';
     }
 
     string new_val;
@@ -764,10 +782,15 @@ bool TrimSpacesSemicolonsAndCommas (string& val)
     delete[] str;
 
     if (!NStr::Equal(val, new_val)) {
+#ifdef _DEBUG
+#if 0
         printf("Use new string\n");
+#endif
+#endif
         val = new_val;
         return true;
-    } else {
+    }
+    else {
         return false;
     }
 }
