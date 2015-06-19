@@ -150,7 +150,7 @@ SAnnotSelector CBedWriter::xGetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
-    sel.SetSortOrder( SAnnotSelector::eSortOrder_None );
+    sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     return sel;
 }
 

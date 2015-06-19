@@ -2613,8 +2613,15 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
             sfdata.SetSite (CSeqFeatData::eSite_other);
         } else if (typ == CSeqFeatData::e_Prot ) {
             CProt_ref &prot_ref = sfdata.SetProt();
-            if( sbtyp == CSeqFeatData::eSubtype_mat_peptide_aa ) {
-                prot_ref.SetProcessed( CProt_ref::eProcessed_mature );
+            switch (sbtyp) {
+                default:
+                    break;
+                case CSeqFeatData::eSubtype_mat_peptide_aa:
+                    prot_ref.SetProcessed(CProt_ref::eProcessed_mature);
+                    break;
+                case CSeqFeatData::eSubtype_sig_peptide_aa:
+                    prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
+                    break;
             }
         }
 
