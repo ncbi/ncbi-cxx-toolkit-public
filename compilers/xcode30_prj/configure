@@ -352,7 +352,7 @@ test -e "$srcroot/$use_projectlst" || Error "$use_projectlst not found"
 
 export PTB_PLATFORM
 export PTB_FLAGS
-export PTB_PATH=./static/bin/ReleaseDLL
+export PTB_PATH=./static/UtilityProjects/bin/ReleaseDLL
 export SLN_PATH=$sln_path/$sln_name
 export TREE_ROOT=$srcroot
 export BUILD_TREE_ROOT=.
