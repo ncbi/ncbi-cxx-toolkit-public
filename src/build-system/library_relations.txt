@@ -450,6 +450,7 @@ gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
+gpipe_jira needs connssl
 gpipe_jira needs gpinit_access
 gpipe_jira needs gpipe_attr
 gpipe_jira needs3party $(GSOAP_LIBS)
