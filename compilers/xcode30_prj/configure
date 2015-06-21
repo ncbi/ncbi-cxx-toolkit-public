@@ -360,6 +360,11 @@ export PTB_PROJECT_REQ="$use_projectlst"
 export PTB_SAVED_CFG_REQ="$use_savedcfg"
 
 ./ptb.sh
+datatool=static/bin/ReleaseDLL/datatool
+if test -x "$PTB_PATH"/datatool  &&
+   test \! -x $datatool -o "$PTB_PATH"/datatool -nt $datatool; then
+  cp "$PTB_PATH"/datatool $datatool
+fi
 if test $? -ne 0; then
   echo "ERROR:  Configuration failed" 1>&2
   cd "$initial_dir"
