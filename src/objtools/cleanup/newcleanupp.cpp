@@ -8653,6 +8653,44 @@ s_GetMiRNAProduct( const string &name )
     return kEmptyStr;
 }
 
+bool s_FixRNAOtherByName(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna()) {
+        return false;
+    }
+
+    CRNA_ref& rna = feat.SetData().SetRna();
+    if (!rna.IsSetType() ||
+        rna.GetType() != CRNA_ref::eType_other ||
+        !rna.IsSetExt() ||
+        !rna.GetExt().IsName()) {
+        return false;
+    }
+
+    string rna_name = rna.GetExt().GetName();
+
+    bool any_change = false;
+            
+    string miRNAproduct;
+    if (s_IsNcrnaName(rna_name))
+    {
+        rna.SetType(CRNA_ref::eType_ncRNA);
+        rna.SetExt().SetGen().SetClass(rna_name);
+        any_change = true;
+    }
+    else if (!(miRNAproduct = s_GetMiRNAProduct(rna_name)).empty())
+    {
+        rna.SetType(CRNA_ref::eType_ncRNA);
+        rna.SetExt().SetGen().SetClass("miRNA");
+        rna.SetExt().SetGen().SetProduct(miRNAproduct);
+        any_change = true;
+    } else if (NStr::Equal(rna_name, "tmRNA")) {
+        rna.SetType(CRNA_ref::eType_tmRNA);
+        any_change = true;
+    }
+    return any_change;
+}
+
 bool s_FixncRNA(CSeq_feat& feat)
 {
     if (!feat.IsSetData() || !feat.GetData().IsRna()) {
@@ -8682,25 +8720,6 @@ bool s_FixncRNA(CSeq_feat& feat)
         any_change = true;
         break;
       }}
-    case CRNA_ref::eType_other:
-        if (rna.IsSetExt() && rna.GetExt().IsName()) {
-            string rna_name = rna.SetExt().GetName();
-            string miRNAproduct;
-            if (s_IsNcrnaName(rna_name))
-            {
-                rna.SetType(CRNA_ref::eType_ncRNA);
-                rna.SetExt().SetGen().SetClass(rna_name);
-                any_change = true;
-            }
-            else if (!(miRNAproduct = s_GetMiRNAProduct(rna_name)).empty())
-            {
-                rna.SetType(CRNA_ref::eType_ncRNA);
-                rna.SetExt().SetGen().SetClass("miRNA");
-                rna.SetExt().SetGen().SetProduct(miRNAproduct);
-                any_change = true;
-            }
-        }
-        break;
     default:
         break;
     }
@@ -8747,13 +8766,6 @@ bool s_FixtmRNA(CSeq_feat& feat)
     CRNA_ref& rna = feat.SetData().SetRna();
 
     CRNA_ref::TType rna_type = (rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown);
-
-    if (rna_type == CRNA_ref::eType_other &&
-        rna.IsSetExt() &&
-        rna.GetExt().IsName() &&
-        rna.GetExt().GetName() == "tmRNA") {
-        rna.SetType(CRNA_ref::eType_tmRNA);
-    }
 
 
     if (feat.IsSetQual() && 
@@ -8842,6 +8854,9 @@ void CNewCleanup_imp::x_ModernizeRNAFeat(CSeq_feat& feat)
         return;
     }
 
+    if (s_FixRNAOtherByName(feat)) {
+        ChangeMade(CCleanupChange::eChangeRNAref);
+    }
     if (s_FixncRNA(feat)) {
         ChangeMade(CCleanupChange::eChangeRNAref);
     }
