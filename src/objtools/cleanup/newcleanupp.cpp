@@ -10742,7 +10742,6 @@ void CNewCleanup_imp::AddProteinTitles(CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     if (CCleanup::AddProteinTitle(bsh)) {
         ChangeMade(CCleanupChange::eAddDescriptor);
-        seq.Assign(*bsh.GetCompleteBioseq());
     }
 }
 
