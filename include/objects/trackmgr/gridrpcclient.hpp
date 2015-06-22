@@ -137,7 +137,7 @@ public:
 protected:
     static CObjectIStream*
     GetIStream(CNcbiIstream& istr,
-               SStreamProp stream_prop,
+               const SStreamProp& stream_prop,
                TOwnership ownership = CCompressionStream::fOwnProcessor
               )
     {
@@ -190,7 +190,7 @@ protected:
             : NStr::Equal(CTempString(kMagic, kMagicSize), CTempString(str, 0, kMagicSize));
     }
 
-    static CCompressionStreamProcessor* CreateStreamCompressor(const SStreamProp stream_prop)
+    static CCompressionStreamProcessor* CreateStreamCompressor(const SStreamProp& stream_prop)
     {
         auto_ptr<CCompressionStreamProcessor> sp;
         if (stream_prop.compress_method == CCompressStream::eLZO) {
@@ -202,7 +202,7 @@ protected:
         return sp.release();
     }
 
-    static CCompressionStreamProcessor* CreateStreamDecompressor(const SStreamProp stream_prop)
+    static CCompressionStreamProcessor* CreateStreamDecompressor(const SStreamProp& stream_prop)
     {
         auto_ptr<CCompressionStreamProcessor> sp;
         if (stream_prop.compress_method == CCompressStream::eLZO) {
