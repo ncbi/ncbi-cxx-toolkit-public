@@ -39,6 +39,8 @@
 
 // generated includes
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 
 // generated classes
 
@@ -79,7 +81,145 @@ string CRNA_ref::GetRnaTypeName (const CRNA_ref::EType rna_type)
     return rna_type_name;
 }
 
+static const string s_TrnaList[] = {
+  "tRNA-Gap",
+  "tRNA-Ala",
+  "tRNA-Asx",
+  "tRNA-Cys",
+  "tRNA-Asp",
+  "tRNA-Glu",
+  "tRNA-Phe",
+  "tRNA-Gly",
+  "tRNA-His",
+  "tRNA-Ile",
+  "tRNA-Xle",
+  "tRNA-Lys",
+  "tRNA-Leu",
+  "tRNA-Met",
+  "tRNA-Asn",
+  "tRNA-Pyl",
+  "tRNA-Pro",
+  "tRNA-Gln",
+  "tRNA-Arg",
+  "tRNA-Ser",
+  "tRNA-Thr",
+  "tRNA-Sec",
+  "tRNA-Val",
+  "tRNA-Trp",
+  "tRNA-OTHER",
+  "tRNA-Tyr",
+  "tRNA-Glx",
+  "tRNA-TERM"
+};
 
+static const string& s_AaName(int aa)
+{
+    int idx = 255;
+
+    if (aa != '*') {
+        idx = aa - 64;
+    } else {
+        idx = 28;   
+    }
+    if ( idx > 0 && idx < 28 ) {
+        return s_TrnaList [idx];
+    }
+    return kEmptyStr;
+}
+
+static int s_ToIupacaa(int aa)
+{
+    vector<char> n(1, static_cast<char>(aa));
+    vector<char> i;
+    CSeqConvert::Convert(n, CSeqUtil::e_Ncbieaa, 0, 1, i, CSeqUtil::e_Iupacaa);
+    return i.front();
+}
+
+static const string& s_GetTrnaProduct(const CTrna_ext& trna)
+{
+    int aa = 0;
+    if ( trna.IsSetAa()  &&  trna.GetAa().IsNcbieaa() ) {
+        aa = trna.GetAa().GetNcbieaa();
+    }
+    aa = s_ToIupacaa(aa);
+
+    return s_AaName(aa);
+}
+
+const string& CRNA_ref::GetRnaProductName(void) const
+{
+    if (!IsSetExt()) {
+        return kEmptyStr;
+    }
+    
+    if (GetExt().IsName()) {
+        return GetExt().GetName();
+    } else if (GetExt().IsGen() && GetExt().GetGen().IsSetProduct()) {           
+        return GetExt().GetGen().GetProduct();
+    } else if (GetExt().IsTRNA()) {
+        return s_GetTrnaProduct(GetExt().GetTRNA());
+    }
+    
+    return kEmptyStr;
+}
+
+static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& remainder)
+{
+    remainder = kEmptyStr;
+    if (NStr::IsBlank(product)) {
+        trna.ResetAa();
+        return;
+    }
+
+    int num_names = sizeof(s_TrnaList) / sizeof (string);
+    string test = product;
+    if (!NStr::StartsWith(product, "tRNA-")) {
+        test = "tRNA-" + test;
+    }
+
+    if (NStr::StartsWith(test, "tRNA-TERM", NStr::eNocase)
+        || NStr::StartsWith(test, "tRNA-STOP", NStr::eNocase)) {
+        trna.SetAa().SetNcbieaa(42);
+        if (test.length() > 9) {
+            remainder = test.substr(9);
+            NStr::TruncateSpacesInPlace(remainder);
+        }
+    } else {
+        remainder = product;
+        for (int i = 0; i < num_names - 1; i++) {
+            if (NStr::StartsWith(test, s_TrnaList[i], NStr::eNocase)) {
+                trna.SetAa().SetNcbieaa(i + 64);
+                remainder = test.substr(s_TrnaList[i].length());
+                break;
+            }
+        }
+    }
+}
+
+void CRNA_ref::SetRnaProductName(const string& product, string& remainder)
+{
+    remainder = kEmptyStr;
+    switch (GetType()) {
+    case CRNA_ref::eType_rRNA:
+    case CRNA_ref::eType_mRNA:
+        if (NStr::IsBlank(product)) {
+            ResetExt();
+        } else {
+            SetExt().SetName(product);
+        }
+        break;
+    case CRNA_ref::eType_tRNA:
+        s_SetTrnaProduct(SetExt().SetTRNA(), product, remainder);
+        break;
+    default:
+        if (NStr::IsBlank(product)) {
+            ResetExt();
+        } else {
+            SetExt().SetGen().SetProduct(product);   
+        }
+        break;
+    }
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

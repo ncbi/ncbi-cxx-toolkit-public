@@ -36,6 +36,9 @@
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -1067,4 +1070,113 @@ BOOST_AUTO_TEST_CASE(Test_GB_3965)
 BOOST_AUTO_TEST_CASE(Test_SQD_2319)
 {
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2012-01-52"), "");
+}
+
+BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
+{
+    CRef<CRNA_ref> rna(new CRNA_ref());
+    rna->SetType(CRNA_ref::eType_mRNA);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), kEmptyStr);
+    
+    string product("mRNA product");
+    rna->SetExt().SetName(product);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+    
+    rna->SetType(CRNA_ref::eType_miscRNA);
+    CRef<CRNA_gen> rna_gen(new CRNA_gen());
+    rna->SetExt().SetGen(*rna_gen);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), kEmptyStr);
+
+    product.assign("miscRNA product");
+    rna_gen->SetProduct(product);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    // the type of RNA does not affect the product name
+    rna->SetType(CRNA_ref::eType_ncRNA);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    rna->SetType(CRNA_ref::eType_tRNA);
+    product.assign("tRNA-Ser");
+    string remainder;
+    rna->SetExt().SetTRNA().SetAa().SetNcbieaa(83);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    rna->SetType(CRNA_ref::eType_ncRNA);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+}
+
+BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
+{
+    CRef<CRNA_ref> rna(new CRNA_ref());
+
+    string remainder;
+    string product("mRNA product");
+    rna->SetType(CRNA_ref::eType_mRNA);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetName(), product);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.resize(0);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), false);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+    
+    product.assign("rRNA product");
+    rna->SetType(CRNA_ref::eType_rRNA);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetName(), product);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.resize(0);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), false);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.assign("miscRNA product");
+    rna->SetType(CRNA_ref::eType_miscRNA);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetGen().GetProduct(), product);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.resize(0);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), false);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    // name containing underscore is not recognized
+    product.assign("tRNA_Ala");
+    rna->SetType(CRNA_ref::eType_tRNA);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().IsSetAa(), false);
+    BOOST_CHECK_EQUAL(remainder, product);
+
+    // it is also case-sensitive
+    product.assign("TRNA-Ala");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().IsSetAa(), false);
+    BOOST_CHECK_EQUAL(remainder, product);
+
+    product.assign("tRNA-Ala");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().IsSetAa(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 65);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.resize(0);
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->IsSetExt(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().IsSetAa(), false);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), kEmptyStr);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.assign("Ser");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 83);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
 }
