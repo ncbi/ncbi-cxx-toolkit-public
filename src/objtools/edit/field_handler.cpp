@@ -51,11 +51,6 @@ BEGIN_SCOPE(edit)
 
 bool CFieldHandler::QualifierNamesAreEquivalent (string name1, string name2)
 {
-    // spaces and underscores do not count
-    NStr::ReplaceInPlace (name1, " ", "");
-    NStr::ReplaceInPlace (name1, "_", "");
-    NStr::ReplaceInPlace (name2, " ", "");
-    NStr::ReplaceInPlace (name2, "_", "");
     // ignore protein at beginning
     if (NStr::StartsWith(name1, "protein ")) {
         name1 = name1.substr(8);
@@ -63,6 +58,15 @@ bool CFieldHandler::QualifierNamesAreEquivalent (string name1, string name2)
     if (NStr::StartsWith(name2, "protein ")) {
         name2 = name2.substr(8);
     }
+
+    // spaces, dashes, and underscores do not count
+    NStr::ReplaceInPlace (name1, " ", "");
+    NStr::ReplaceInPlace (name1, "_", "");
+    NStr::ReplaceInPlace (name1, "-", "");
+    NStr::ReplaceInPlace (name2, " ", "");
+    NStr::ReplaceInPlace (name2, "_", "");
+    NStr::ReplaceInPlace (name2, "-", "");
+    
     return NStr::EqualNocase(name1, name2);
 }
 
