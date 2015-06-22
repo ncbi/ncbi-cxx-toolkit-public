@@ -3560,7 +3560,6 @@ static CRef<CSeq_entry> BuildGapFuzz100DeltaSeq(void)
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
     entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", CSeq_inst::eMol_dna);
     CRef<CDelta_seq> gap_seg(new CDelta_seq());
-    gap_seg->SetLiteral().SetSeq_data().SetGap();
     gap_seg->SetLiteral().SetLength(101);
     gap_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
@@ -15795,8 +15794,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
     misc->SetLocation().SetInt().SetTo(30);
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100",
-                              "Gap of unknown length should have length 100"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureCrossesGap",
                                "Feature crosses gap of unknown length"));
 
@@ -16040,8 +16037,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureBeginsOrEndsInGap)
     misc->SetLocation().SetInt().SetTo(20);
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100",
-                              "Gap of unknown length should have length 100"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureBeginsOrEndsInGap",
                                "Feature begins or ends in gap starting at 13"));
 

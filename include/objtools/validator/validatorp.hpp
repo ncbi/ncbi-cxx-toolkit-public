@@ -1351,6 +1351,7 @@ private:
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
     void ValidateDelta(const CBioseq& seq);
+    void ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq);
     void ValidateDeltaLoc(const CSeq_loc& loc, const CBioseq& seq, TSeqPos& len);
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);
     void ValidateSeqParts(const CBioseq& seq);

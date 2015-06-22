@@ -419,7 +419,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
         case CSeq_id::e_General:
             if (id.GetGeneral().IsSetDb()) {
                 const CDbtag& dbt = id.GetGeneral();
-                int dblen = dbt.GetDb().length();
+                size_t dblen = dbt.GetDb().length();
                 if (dblen < 1) {
                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
                 }
@@ -438,7 +438,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 }
                 if (! s_IsSkippableDbtag(dbt)) {
                     if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
-                        int idlen = dbt.GetTag().GetStr().length();
+                        size_t idlen = dbt.GetTag().GetStr().length();
                         if (idlen > 64) {
                             PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than 64 characters", ctx);
                         }
@@ -3383,6 +3383,20 @@ static bool s_IsGapComponent (const CDelta_seq& seg)
 }
 */
 
+static bool s_IsUnspecified(const CSeq_gap& gap)
+{
+    bool is_unspec = false;
+    ITERATE(CSeq_gap::TLinkage_evidence, ev_itr, gap.GetLinkage_evidence()) {
+        const CLinkage_evidence & evidence = **ev_itr;
+        if (!evidence.CanGetType()) continue;
+        int linktype = evidence.GetType();
+        if (linktype == 8) {
+            is_unspec = true;
+        }
+    }
+    return is_unspec;
+}
+
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
@@ -3564,97 +3578,17 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     if (data.Which() == CSeq_data::e_Gap) {
                         const CSeq_gap& gap = data.GetGap();
 
-                        if(gap.IsSetType())
+                        if (gap.IsSetType()) {
                             gap_type = gap.GetType();
-                        if(gap.IsSetLinkage())
-                            gap_linkage = gap.GetLinkage();
-
-                        if (gap.IsSetLinkage_evidence()) {
-                            int linkcount = 0;
-                            int linkevarray [12];
-                            for (int i = 0; i < 12; i++) {
-                              linkevarray [i] = 0;
+                            if (gap_type == CSeq_gap::eType_unknown && s_IsUnspecified(gap)) {
+                                num_gap_unknown_unspec++;
                             }
-                            bool is_unspec = false;
-                            ITERATE( CSeq_gap::TLinkage_evidence, ev_itr, gap.GetLinkage_evidence() ) {
-                                const CLinkage_evidence & evidence = **ev_itr;
-                                if (! evidence.CanGetType() ) continue;
-                                int linktype = evidence.GetType();
-                                linkcount++;
-                                if (linktype == 8) {
-                                    is_unspec = true;
-                                }
-                                if (linktype == 255) {
-                                    (linkevarray [10])++;
-                                } else if (linktype < 0 || linktype > 9) {
-                                    (linkevarray [11])++;
-                                } else {
-                                    (linkevarray [linktype])++;
-                                }
-                            }
-                            if (linkevarray [8] > 0 && linkcount > linkevarray [8]) {
-                                PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
-                                    "Seq-gap type has unspecified and additional linkage evidence", seq);
-                            }
-                            for (int i = 0; i < 12; i++) {
-                                if (linkevarray [i] > 1) {
-                                    PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
-                                        "Linkage evidence " + linkEvStrings [i] + " appears " +
-                                        NStr::IntToString(linkevarray [i]) + " times", seq);
-                                }
-                            }
-                            if (! gap.IsSetLinkage() || gap.GetLinkage() != CSeq_gap::eLinkage_linked) {
-                                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
-                                    "Seq-gap with linkage evidence must have linkage field set to linked", seq);
-                            }
-                            if (gap.IsSetType()) {
-                                int gaptype = gap.GetType();
-                                if (gaptype == CSeq_gap::eType_short_arm ||
-                                    gaptype == CSeq_gap::eType_heterochromatin ||
-                                    gaptype == CSeq_gap::eType_centromere ||
-                                    gaptype == CSeq_gap::eType_telomere ||
-                                    gaptype == CSeq_gap::eType_contig ||
-                                    gaptype == CSeq_gap::eType_other) {
-                                    PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
-                                        "Seq-gap of type " + NStr::IntToString(gaptype) +
-                                        "should not have linkage evidence", seq);
-                                }
-                                if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
-                                    num_gap_unknown_unspec++;
-                                } else {
-                                    num_gap_known_or_spec++;
-                                }
-                            }
-                        } else {
-                            if (gap.IsSetType()) {
-                                int gaptype = gap.GetType();
-                                if (gaptype == CSeq_gap::eType_scaffold) {
-                                    PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
-                                        "Seq-gap type == scaffold is missing required linkage evidence", seq);
-                                }
-                                if (gaptype == CSeq_gap::eType_repeat && gap.IsSetLinkage() && gap.GetLinkage() == CSeq_gap::eLinkage_linked) 
-                                {
-                                    bool suppress_SEQ_INST_SeqGapProblem = false;
-                                    if (has_gi && seq.IsSetDescr()) 
-                                    {
-                                        ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get())
-                                        {
-                                            if ((**it).IsCreate_date())
-                                            {
-                                                CDate threshold_date(CTime(2012, 10, 1));
-                                                if ((**it).GetCreate_date().Compare(threshold_date) == CDate::eCompare_before)
-                                                    suppress_SEQ_INST_SeqGapProblem = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (!suppress_SEQ_INST_SeqGapProblem)                                  
-                                       PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
-                                          "Seq-gap type == repeat and linkage == linked is missing required linkage evidence", seq);
-                                    
-                                }
+                            else {
+                                num_gap_known_or_spec++;
                             }
                         }
+                        if(gap.IsSetLinkage())
+                            gap_linkage = gap.GetLinkage();
                     }
                 }
                 if ( first ) {
@@ -3675,7 +3609,9 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     gap_linkage != CSeq_gap::eLinkage_unlinked))
                     ++num_adjacent_gaps;
 
-                if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
+                if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap()) {
+                    ValidateSeqGap(lit.GetSeq_data().GetGap(), seq);
+                } else if (!lit.CanGetLength() || lit.GetLength() == 0) {
                     if (!lit.IsSetFuzz() || !lit.GetFuzz().IsLim() || lit.GetFuzz().GetLim() != CInt_fuzz::eLim_unk) {
                         PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
                             "Gap of length 0 in delta chain", seq);
@@ -3832,6 +3768,105 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         }
     }
 
+}
+
+
+bool s_HasGI(const CBioseq& seq)
+{
+    bool has_gi = false;
+    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+        if ((*id_it)->IsGi()) {
+            has_gi = true;
+            break;
+        }
+    }
+    return has_gi;
+}
+
+
+void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
+{
+    if (gap.IsSetLinkage_evidence()) {
+        int linkcount = 0;
+        int linkevarray[12];
+        for (int i = 0; i < 12; i++) {
+            linkevarray[i] = 0;
+        }
+        ITERATE(CSeq_gap::TLinkage_evidence, ev_itr, gap.GetLinkage_evidence()) {
+            const CLinkage_evidence & evidence = **ev_itr;
+            if (!evidence.CanGetType()) continue;
+            int linktype = evidence.GetType();
+            linkcount++;
+            if (linktype == 255) {
+                (linkevarray[10])++;
+            }
+            else if (linktype < 0 || linktype > 9) {
+                (linkevarray[11])++;
+            }
+            else {
+                (linkevarray[linktype])++;
+            }
+        }
+        if (linkevarray[8] > 0 && linkcount > linkevarray[8]) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+                "Seq-gap type has unspecified and additional linkage evidence", seq);
+        }
+        for (int i = 0; i < 12; i++) {
+            if (linkevarray[i] > 1) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+                    "Linkage evidence " + linkEvStrings[i] + " appears " +
+                    NStr::IntToString(linkevarray[i]) + " times", seq);
+            }
+        }
+        if (!gap.IsSetLinkage() || gap.GetLinkage() != CSeq_gap::eLinkage_linked) {
+            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                "Seq-gap with linkage evidence must have linkage field set to linked", seq);
+        }
+        if (gap.IsSetType()) {
+            int gaptype = gap.GetType();
+            if (gaptype == CSeq_gap::eType_short_arm ||
+                gaptype == CSeq_gap::eType_heterochromatin ||
+                gaptype == CSeq_gap::eType_centromere ||
+                gaptype == CSeq_gap::eType_telomere ||
+                gaptype == CSeq_gap::eType_contig ||
+                gaptype == CSeq_gap::eType_other) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                    "Seq-gap of type " + NStr::IntToString(gaptype) +
+                    "should not have linkage evidence", seq);
+            }
+
+        }
+    }
+    else {
+        if (gap.IsSetType()) {
+            int gaptype = gap.GetType();
+            if (gaptype == CSeq_gap::eType_scaffold) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                    "Seq-gap type == scaffold is missing required linkage evidence", seq);
+            }
+            if (gaptype == CSeq_gap::eType_repeat && gap.IsSetLinkage() && gap.GetLinkage() == CSeq_gap::eLinkage_linked)
+            {
+                bool suppress_SEQ_INST_SeqGapProblem = false;
+                if (seq.IsSetDescr() && s_HasGI(seq))
+                {
+                    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get())
+                    {
+                        if ((**it).IsCreate_date())
+                        {
+                            CDate threshold_date(CTime(2012, 10, 1));
+                            if ((**it).GetCreate_date().Compare(threshold_date) == CDate::eCompare_before)
+                                suppress_SEQ_INST_SeqGapProblem = true;
+                            break;
+                        }
+                    }
+                }
+                if (!suppress_SEQ_INST_SeqGapProblem)
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                    "Seq-gap type == repeat and linkage == linked is missing required linkage evidence", seq);
+
+            }
+        }
+    }
 }
 
 
