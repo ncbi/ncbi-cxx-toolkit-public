@@ -8786,8 +8786,11 @@ bool s_FixtmRNA(CSeq_feat& feat)
                 rna.SetExt().SetGen().SetQuals().Set().push_back(rna_qual);
                 any_change = true;
                 qual_iter = feat.SetQual().erase(qual_iter);
-            }
-            else {
+            } else if (qual == "ncRNA_class" && rna_type == CRNA_ref::eType_tmRNA) {
+                rna.SetExt().SetGen().SetClass(val);
+                any_change = true;
+                qual_iter = feat.SetQual().erase(qual_iter);
+            } else {
                 ++qual_iter;
             }
         }
@@ -10633,7 +10636,7 @@ static int s_PcrPrimerSetCompare( const CPCRPrimerSet &s1, const CPCRPrimerSet &
 
     // smaller first
     if( primer_set_1.size() != primer_set_2.size() ) {
-        return (primer_set_1.size() - primer_set_2.size());
+        return int(primer_set_1.size()) - int(primer_set_2.size());
     }
 
     // find so we can compare
