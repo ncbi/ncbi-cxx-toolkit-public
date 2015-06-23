@@ -215,13 +215,14 @@ string sBestMatchType(
     const CSeq_id& target)
 //  ----------------------------------------------------------------------------
 {
-    const char* strProtMatch     = "protein_match";
+    const char* strProtMatch     = "nucleotide_to_protein_match";
     const char* strEstMatch      = "EST_match";
     const char* strTransNucMatch = "translated_nucleotide_match";
     const char* strCdnaMatch     = "cDNA_match";
 
     CSeq_id::EAccessionInfo targetInfo = source.IdentifyAccession();
     CSeq_id::EAccessionInfo sourceInfo =target.IdentifyAccession();
+
 
     if (targetInfo & CSeq_id::fAcc_prot) {
         return strProtMatch;
@@ -620,19 +621,19 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
         default:
             break;
         case CSpliced_exon_chunk::e_Mismatch:
-            record.AddMatch(chunk.GetMismatch());
+            record.AddMatch(chunk.GetMismatch()); 
             break;
         case CSpliced_exon_chunk::e_Diag:
-            record.AddMatch(chunk.GetDiag());
+            record.AddMatch(chunk.GetDiag()); // M
             break;
         case CSpliced_exon_chunk::e_Match:
-            record.AddMatch(chunk.GetMatch());
+            record.AddMatch(chunk.GetMatch()); 
             break;
         case CSpliced_exon_chunk::e_Genomic_ins:
-            record.AddDeletion(chunk.GetGenomic_ins());
+            record.AddDeletion(chunk.GetGenomic_ins()); // D
             break;
         case CSpliced_exon_chunk::e_Product_ins:
-            record.AddInsertion(chunk.GetProduct_ins());
+            record.AddInsertion(chunk.GetProduct_ins()); // I
             break;
         }
     }
@@ -647,19 +648,25 @@ bool CGff3Writer::xAssignAlignmentSplicedTarget(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
+    CSeq_id::EAccessionInfo productInfo;
     string target;
     const CSeq_id& productId = spliced.GetProduct_id();
     CSeq_id_Handle bestH = sequence::GetId(
         productId, *m_pScope, sequence::eGetId_Best);
     if (bestH) {
         bestH.GetSeqId()->GetLabel(&target, CSeq_id::eContent);
+        productInfo = bestH.GetSeqId()->IdentifyAccession();
     }
     else {
         productId.GetLabel(&target, CSeq_id::eContent);
+        productInfo = productId.IdentifyAccession();
     }
 
-    string seqStart = NStr::IntToString(exon.GetProduct_start().AsSeqPos()+1);
-    string seqStop = NStr::IntToString(exon.GetProduct_end().AsSeqPos()+1);
+    const int pos_size = (productInfo & CSeq_id::fAcc_prot) ? 3 : 1;
+
+
+    string seqStart = NStr::IntToString(exon.GetProduct_start().AsSeqPos()/pos_size+1);
+    string seqStop = NStr::IntToString(exon.GetProduct_end().AsSeqPos()/pos_size+1);
     string seqStrand = "+";
     if (spliced.CanGetProduct_strand()  &&  
             spliced.GetProduct_strand() == objects::eNa_strand_minus) {
@@ -882,8 +889,11 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
         stop2 = alnMap.GetStart(0, 0) + alnMap.GetLen(0) - 1;
     }
 
-    target += " " + NStr::IntToString(start2 + 1);
-    target += " " + NStr::IntToString(stop2 + 1);
+    CSeq_id::EAccessionInfo sourceInfo = pSourceId->IdentifyAccession();
+    const int pos_size = (sourceInfo & CSeq_id::fAcc_prot) ? 3 : 1;
+
+    target += " " + NStr::IntToString(start2/pos_size + 1);
+    target += " " + NStr::IntToString(stop2/pos_size + 1);
     target += " " + string(strand == eNa_strand_plus ? "+" : "-");
     record.SetAttribute("Target", target); 
     return true;
