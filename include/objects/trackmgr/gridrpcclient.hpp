@@ -343,7 +343,10 @@ public:
                 NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job running");
 
             default:
-                NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, kEmptyStr);
+                NCBI_THROW(CGridRPCBaseClientException,
+                           eWaitTimeout,
+                           "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
+                          );
             }
         }
         catch (const CGridRPCBaseClientException& e) {
