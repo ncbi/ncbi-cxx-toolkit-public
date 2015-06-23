@@ -8687,6 +8687,9 @@ bool s_FixRNAOtherByName(CSeq_feat& feat)
     } else if (NStr::Equal(rna_name, "tmRNA")) {
         rna.SetType(CRNA_ref::eType_tmRNA);
         any_change = true;
+    } else if (NStr::Equal(rna_name, "misc_RNA")) {
+        rna.ResetExt();
+        any_change = true;
     }
     return any_change;
 }
