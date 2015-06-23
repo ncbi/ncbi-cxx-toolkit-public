@@ -60,6 +60,7 @@ typedef CSimpleBufferT<char> TNCBufferType;
 
 /// Type of access to NetCache blob
 enum ENCAccessType {
+    eNCNone = 0,
     eNCRead,        ///< Read meta information only
     eNCReadData,    ///< Read blob data
     eNCCreate,      ///< Create blob or re-write its contents

@@ -48,6 +48,7 @@ struct SNCBlobSummary;
 
 
 enum ENCCmdFlags {
+    fNoCmdFlags = 0,
     /// Command needs access to the blob.
     fNeedsBlobAccess    = 1 <<  0,
     /// Command needs to generate blob key if it's empty.
@@ -71,8 +72,10 @@ enum ENCCmdFlags {
     /// Byte order should be swapped when reading length of chunks in blob
     /// transfer protocol.
     fSwapLengthBytes    = 1 <<  9,
-    /// Command needs an "OK:" response at the end of successful execution.
-    fConfirmOnFinish    = 1 << 10,
+    /// Command does not need a confirmation at the end of execution.
+    /// Usually, all commands need a reply,
+    /// but storing blob (STOR) may go without (in 'performance' mode)
+    fNoReplyOnFinish    = 1 << 10,
     /// There is exact size of the blob transferred to NetCache.
     fReadExactBlobSize  = 1 << 11,
     /// Client will send blob data for the command and won't send EOF marker.
@@ -110,7 +113,7 @@ enum ENCCmdFlags {
     eProxyBlobWrite     = fNeedsBlobAccess | fNeedsSpaceAsClient,
     eClientBlobWrite    = eProxyBlobWrite  | fComesFromClient,
     eCopyBlobFromPeer   = fNeedsBlobAccess | fNeedsStorageCache | fDoNotProxyToPeers
-                          | fDoNotCheckPassword | fNeedsAdminClient | fConfirmOnFinish,
+                          | fDoNotCheckPassword | fNeedsAdminClient,
     eRunsInStartedSync  = fRunsInStartedSync | fNeedsAdminClient | fNeedsLowerPriority
                           | fNeedsStorageCache,
     eSyncBlobCmd        = eRunsInStartedSync | fNeedsBlobAccess | fDoNotProxyToPeers
@@ -120,6 +123,7 @@ enum ENCCmdFlags {
 typedef Uint4 TNCCmdFlags;
 
 enum ENCProxyCmd {
+    eProxyNone = 0,
     eProxyRead = 1,
     eProxyWrite,
     eProxyHasBlob,
@@ -200,6 +204,7 @@ public:
     State x_FinishCommand(void);
 
 private:
+    void x_ResetFlags(void);
     /// Set additional machine state flag
     void x_SetFlag  (ENCCmdFlags flag);
     /// Remove additional machine state flag
@@ -274,6 +279,7 @@ private:
     void x_JournalBlobPutResult(int status, const string& blob_key, Uint2 blob_slot);
     void x_ReportError( EHTTPStatus sts, bool eol = true);
     void x_ReportError( const string& sts, bool eol = true);
+    CNCMessageHandler& x_ReportOK(const string& sts);
 
     TNCCmdFlags               m_Flags;
     /// NetCache protocol parser
