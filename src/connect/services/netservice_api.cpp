@@ -380,6 +380,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     CConfig* config, const string& config_section,
     const char* const* default_config_sections)
 {
+    _ASSERT(m_Listener);
+
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().
     {
@@ -419,7 +421,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
-    if (CConfig *alt = m_Listener->OnPreInit(api_impl, config, &section)) {
+    if (CConfig *alt = m_Listener->PreInit(api_impl, config, &section)) {
         app_reg_config.reset(alt);
         config = alt;
     }
@@ -466,15 +468,13 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         INetServerConnectionListener* listener)
 {
-    if (config != NULL) {
-        if (m_ClientName.empty()) {
-            m_ClientName = config->GetString(section, "client_name",
-                    CConfig::eErr_NoThrow, kEmptyStr);
-            if (m_ClientName.empty())
-                m_ClientName = config->GetString(section, "client",
-                        CConfig::eErr_NoThrow, kEmptyStr);
-        }
+    _ASSERT(listener);
 
+    if (m_ClientName.empty()) {
+        m_ClientName = listener->GetClientName();
+    }
+
+    if (config != NULL) {
         if (m_LBSMAffinityName.empty())
             m_LBSMAffinityName = config->GetString(section,
                 "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);

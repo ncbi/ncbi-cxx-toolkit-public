@@ -115,6 +115,8 @@ class INetServerConnectionListener : public CObject
 public:
     virtual CRef<INetServerProperties> AllocServerProperties() = 0;
 
+    CConfig* PreInit(CObject* api_impl, CConfig* config, string* section);
+
 // Event handlers.
 public:
     virtual CConfig* OnPreInit(CObject* api_impl,
@@ -124,6 +126,11 @@ public:
     virtual void OnConnected(CNetServerConnection& connection) = 0;
     virtual void OnError(const string& err_msg, CNetServer& server) = 0;
     virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;
+
+    string GetClientName() const { return m_ClientName; }
+
+protected:
+    string m_ClientName;
 };
 
 ///////////////////////////////////////////////////////////////////////////
