@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include <sstream>
+#include <objmgr/util/sequence.hpp>
 
 
 BEGIN_NCBI_SCOPE;
@@ -216,6 +217,31 @@ CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetOrganelleProductRules()
 {
     if (!m_OrganelleProductRules) m_OrganelleProductRules = CSuspect_rule_set::GetOrganelleProductRules();
     return m_OrganelleProductRules;
+}
+
+
+const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
+{
+    static const CBioSource* biosrc;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        biosrc = objects::sequence::GetBioSource(*m_Current_Bioseq);
+    }
+    return biosrc;
+}
+
+
+CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
+{
+    static CBioSource::TGenome genome;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        const CBioSource* biosrc = GetCurrentBiosource();
+        genome = biosrc->GetGenome();
+    }
+    return genome;
 }
 
 

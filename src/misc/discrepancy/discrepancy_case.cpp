@@ -129,6 +129,8 @@ static const DesiredAAData desired_aaList [] = {
 DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
 {
     if (obj->GetSubtype() != CSeqFeatData::eSubtype_tRNA) return;
+    //CBioSource::TGenome genome = context.GetCurrentGenome();
+    //if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
 
     static size_t countBS = 0;
     if (countBS != context.GetCountBioseq()) {
@@ -145,7 +147,6 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
 
     CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
     Add(aa, r);
-
 }
 
 
@@ -206,6 +207,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
     m_Objs.clear();
 }
 
+
 DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 
 
@@ -214,14 +216,59 @@ DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData)
 {
     if (obj->GetSubtype() != CSeqFeatData::eSubtype_rRNA) return;
+    //CBioSource::TGenome genome = context.GetCurrentGenome();
+    //if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
 
+    static size_t countBS = 0;
+    if (countBS != context.GetCountBioseq()) {
+        countBS = context.GetCountBioseq();
+        Summarize();
+        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+        Add("", r);
+    }
+
+    string aa;
+    feature::GetLabel(*context.GetCurrentSeq_feat(), &aa, feature::fFGL_Content);
+    size_t n = aa.find_last_of('-');            // cut off the "rRNA-" prefix
+    if (n != string::npos) aa = aa.substr(n+1); // is there any better way to get the aminoacid name?
+
+    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+    Add(aa, r);
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
 {
+    if (m_Objs.empty()) return;
+
+    CRef<CReportObj> bioseq = m_Objs[""][0];
+    string short_name = bioseq->GetShort();
+
+    size_t total = 0;
+    // count rRNAs
+    for (TReportObjectMap::iterator J = m_Objs.begin(); J != m_Objs.end(); J++) {
+        if (J->first != "") total += J->second.size();
+    }
+    CNcbiOstrstream ss;
+    ss << "sequence " << short_name << " has " << total << " rRNA feature" << (total==1 ? "" : "s");
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
+    item->AddDetails(bioseq);
+    AddItem(CRef<CReportItem>(item.Release()));
+
+    // duplicated rRNA names
+    for (TReportObjectMap::iterator J = m_Objs.begin(); J != m_Objs.end(); J++) {
+        if (J->first == "" || J->second.size() <= 1) continue;
+        CNcbiOstrstream ss;
+        ss << J->second.size() << " rRNA features on " << short_name << " have the same name (" << J->first << ")";
+        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
+        item->AddDetails(bioseq);
+        item->AddDetails(J->second);
+        AddItem(CRef<CReportItem>(item.Release()));
+    }
 }
 
+
+DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 
 /*
 

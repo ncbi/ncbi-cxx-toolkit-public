@@ -33,6 +33,7 @@
 #include <misc/discrepancy/discrepancy.hpp>
 #include "report_object.hpp"
 #include <objects/macro/Suspect_rule_set.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -188,6 +189,10 @@ public:
     void SetSuspectRules(const string& name);
     CConstRef<CSuspect_rule_set> GetProductRules();
     CConstRef<CSuspect_rule_set> GetOrganelleProductRules();
+
+    // Lazy
+    const CBioSource* GetCurrentBiosource();
+    CBioSource::TGenome GetCurrentGenome();
 
 protected:
     objects::CScope& m_Scope;
