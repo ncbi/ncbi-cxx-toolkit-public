@@ -21,7 +21,7 @@ case "`uname -s`" in
    diff testdata/wintestoutput3 $out  ||  errcode=3
    ;;
 
-  FreeBSD )
+  FreeBSD | Darwin )
    # Do not run test2 on FreeBSD. 
    # Some parts of test 2 can exceed available memory in some configurations.
    ;;
