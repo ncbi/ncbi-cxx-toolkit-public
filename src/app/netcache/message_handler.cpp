@@ -2375,6 +2375,9 @@ CNCMessageHandler::x_ReportError( const string& sts, bool eol /*= true*/)
                 WriteText("\n");
             }
         }
+        else {
+            SRV_LOG(Critical, "Protocol error: command: " << string(m_ParsedCmd.command->cmd) << ", report: " << sts);
+        }
     }
 }
 
@@ -2385,6 +2388,9 @@ CNCMessageHandler::x_ReportOK(const string& sts)
         if (!x_IsFlagSet(fNoReplyOnFinish)) {
             x_SetFlag(fNoReplyOnFinish);
             WriteText(sts);
+        }
+        else {
+            SRV_LOG(Critical, "Protocol error: command: " << string(m_ParsedCmd.command->cmd) << ", report: " << sts);
         }
     }
     return *this;
@@ -3108,7 +3114,9 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
     GetDiagCtx()->SetRequestStatus( GetStatusByMessage(m_LastPeerError, eStatus_PeerError));
-    x_ReportError(m_LastPeerError);
+    if (!x_IsFlagSet(fNoReplyOnFinish)) {
+        x_ReportError(m_LastPeerError);
+    }
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -3213,7 +3221,7 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
     if (rst != eStatus_OK) {
         GetDiagCtx()->SetRequestStatus(rst);
     }
-    if (!err_msg.empty()) {
+    if (!err_msg.empty() && !x_IsFlagSet(fNoReplyOnFinish)) {
     	x_ReportError(err_msg);
     }
     return &CNCMessageHandler::x_FinishCommand;
