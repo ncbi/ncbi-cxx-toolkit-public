@@ -42,9 +42,9 @@ BEGIN_SCOPE(NDiscrepancy)
 class NCBI_DISCREPANCY_EXPORT CReportObj : public CObject
 {
 public:
-    virtual ~CReportObj(){}
-    virtual const string& GetText() const = 0;
-    virtual const string& GetShort() const = 0;
+    virtual ~CReportObj(void){}
+    virtual const string& GetText(void) const = 0;
+    virtual const string& GetShort(void) const = 0;
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 
@@ -52,7 +52,7 @@ typedef vector<CRef<CReportObj> > TReportObjectList;
 class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
 {
 public:
-    virtual ~CReportItem(){}
+    virtual ~CReportItem(void){}
     virtual string GetTitle(void) const = 0;
     virtual string GetMsg(void) const = 0;
     virtual TReportObjectList GetDetails(void) const = 0;
@@ -66,33 +66,33 @@ class CDiscrepancySet;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
-    virtual ~CDiscrepancyCase(){}
+    virtual ~CDiscrepancyCase(void){}
     virtual string GetName(void) const = 0;
     virtual string GetType(void) const = 0;
-    virtual void Summarize() = 0;
-    virtual bool Autofix(objects::CScope&){ return false;}
-    virtual TReportItemList GetReport() const = 0;
+    virtual void Summarize(void) = 0;
+    virtual bool Autofix(objects::CScope& scope){ return false;}
+    virtual TReportItemList GetReport(void) const = 0;
 };
 
 
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet() : m_KeepRef(false) {}
-    virtual ~CDiscrepancySet(){}
-    virtual bool AddTest(const string&) = 0;
+    CDiscrepancySet(void) : m_KeepRef(false) {}
+    virtual ~CDiscrepancySet(void){}
+    virtual bool AddTest(const string& name) = 0;
     virtual void Parse(objects::CSeq_entry_Handle) = 0;
-    virtual void Summarize() = 0;
-    virtual const vector<CRef<CDiscrepancyCase> >& GetTests() = 0;
+    virtual void Summarize(void) = 0;
+    virtual const vector<CRef<CDiscrepancyCase> >& GetTests(void) = 0;
 
-    const string& GetFile() const { return m_File;}
-    const string& GetLineage() const { return m_Lineage;}
-    bool GetKeepRef() const { return m_KeepRef;}
+    const string& GetFile(void) const { return m_File;}
+    const string& GetLineage(void) const { return m_Lineage;}
+    bool GetKeepRef(void) const { return m_KeepRef;}
     void SetFile(const string& s){ m_File = s;}
     void SetLineage(const string& s){ m_Lineage = s;}
     virtual void SetSuspectRules(const string&) = 0;
     void SetKeepRef(bool b){ m_KeepRef = b;}
-    static CRef<CDiscrepancySet> New(objects::CScope&);
+    static CRef<CDiscrepancySet> New(objects::CScope& scope);
 
 protected:
     string m_File;
@@ -102,7 +102,7 @@ protected:
 
 
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
-NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames();
+NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(void);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 
 END_SCOPE(NDiscrepancy)
