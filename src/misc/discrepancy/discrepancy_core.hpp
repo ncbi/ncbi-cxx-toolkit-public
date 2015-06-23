@@ -63,7 +63,6 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancyConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create(void) const = 0;
-    virtual bool NotImplemented(void) const { return false;}
     static void Register(const string& name, CDiscrepancyConstructor* ptr);
     static string GetDiscrepancyCaseName(const string& s);
     static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string& name);
@@ -170,11 +169,15 @@ public:
 class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
-    CDiscrepancyContext(objects::CScope& scope) : m_Scope(scope),
-        m_Count_Bioseq(0), m_Count_Seq_feat(0),
-        m_Enable_CSeq_inst(false), m_Enable_CSeqFeatData(false) {}
+    CDiscrepancyContext(objects::CScope& scope) :
+            m_Scope(scope),
+            m_Count_Bioseq(0),
+            m_Count_Seq_feat(0),
+            m_Enable_CSeq_inst(false),
+            m_Enable_CSeqFeatData(false)
+        {}
     bool AddTest(const string& name);
-    void Parse(objects::CSeq_entry_Handle handle);
+    void Parse(const objects::CSeq_entry_Handle& handle);
     void Summarize(void);
     const vector<CRef<CDiscrepancyCase> >& GetTests(void){ return m_Tests;}
 
@@ -229,8 +232,8 @@ protected:
     public:                                                                                                         \
         void Visit(const type*, CDiscrepancyContext&);                                                              \
         void Summarize(void);                                                                                       \
-        string GetName(void) const { return #name;}                                                                 \
-        string GetType(void) const { return #type;}                                                                 \
+        const string& GetName(void) const { return #name;}                                                          \
+        const string& GetType(void) const { return #type;}                                                          \
     protected:                                                                                                      \
         __VA_ARGS__;                                                                                                \
     };                                                                                                              \

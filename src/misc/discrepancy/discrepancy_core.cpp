@@ -114,9 +114,9 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T* obj, CDiscrepanc
         Visit(obj, context);
     }
     catch (CException& e) {
-        stringstream ss;
-        ss << "EXCEPTION caught while processing " << e.what();
-        dynamic_cast<CDiscrepancyCore*>(this)->AddItem(CRef<CReportItem>(new CDiscrepancyItem(GetName(), ss.str())));
+        string ss = "EXCEPTION caught: ";
+        ss += e.what();
+        AddItem(CRef<CReportItem>(new CDiscrepancyItem(GetName(), ss)));
     }
 }
 
@@ -160,7 +160,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
 }
 
 
-void CDiscrepancyContext::Parse(objects::CSeq_entry_Handle handle)
+void CDiscrepancyContext::Parse(const objects::CSeq_entry_Handle& handle)
 {
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);

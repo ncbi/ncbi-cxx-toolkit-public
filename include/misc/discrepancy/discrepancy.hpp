@@ -67,8 +67,8 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
     virtual ~CDiscrepancyCase(void){}
-    virtual string GetName(void) const = 0;
-    virtual string GetType(void) const = 0;
+    virtual const string& GetName(void) const = 0;
+    virtual const string& GetType(void) const = 0;
     virtual void Summarize(void) = 0;
     virtual bool Autofix(objects::CScope& scope){ return false;}
     virtual TReportItemList GetReport(void) const = 0;
@@ -81,7 +81,7 @@ public:
     CDiscrepancySet(void) : m_KeepRef(false) {}
     virtual ~CDiscrepancySet(void){}
     virtual bool AddTest(const string& name) = 0;
-    virtual void Parse(objects::CSeq_entry_Handle) = 0;
+    virtual void Parse(const objects::CSeq_entry_Handle& handle) = 0;
     virtual void Summarize(void) = 0;
     virtual const vector<CRef<CDiscrepancyCase> >& GetTests(void) = 0;
 
