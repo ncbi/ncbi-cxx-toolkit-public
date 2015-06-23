@@ -67,8 +67,8 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
     virtual ~CDiscrepancyCase(void){}
-    virtual const string& GetName(void) const = 0;
-    virtual const string& GetType(void) const = 0;
+    virtual string GetName(void) const = 0;
+    virtual string GetType(void) const = 0;
     virtual void Summarize(void) = 0;
     virtual bool Autofix(objects::CScope& scope){ return false;}
     virtual TReportItemList GetReport(void) const = 0;

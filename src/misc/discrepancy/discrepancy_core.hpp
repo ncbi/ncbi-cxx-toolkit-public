@@ -69,6 +69,7 @@ protected:
     static map<string, CDiscrepancyConstructor*>& GetTable(void);
     static map<string, string>& GetAliasTable(void);
     static map<string, vector<string> >& GetAliasListTable(void);
+private:
     static CDiscrepancyTable m_Table;
 friend string GetDiscrepancyCaseName(const string& s);
 friend vector<string> GetDiscrepancyNames(void);
@@ -232,8 +233,8 @@ protected:
     public:                                                                                                         \
         void Visit(const type*, CDiscrepancyContext&);                                                              \
         void Summarize(void);                                                                                       \
-        const string& GetName(void) const { return #name;}                                                          \
-        const string& GetType(void) const { return #type;}                                                          \
+        string GetName(void) const { return #name;}                                                          \
+        string GetType(void) const { return #type;}                                                          \
     protected:                                                                                                      \
         __VA_ARGS__;                                                                                                \
     };                                                                                                              \
