@@ -514,6 +514,7 @@ public:
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
+    void ValidateMultipleTaxIds(const CSeq_entry_Handle& seh);
     void ValidateCitations (const CSeq_entry_Handle& seh);
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
     void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
@@ -623,10 +624,6 @@ public:
     inline void ResetPseudogeneCount (void) { m_NumPseudogene = 0; }
     inline void IncrementPseudogeneCount (void) { m_NumPseudogene++; }
     inline void AddToPseudogeneCount (SIZE_TYPE num) { m_NumPseudogene += num; }
-
-    // look for multiple taxon IDs
-    inline void SetFirstTaxID (int val) { m_FirstTaxID = val; }
-    inline void SetMultTaxIDs (void) { m_MultTaxIDs = true; }
 
     // set flag for farfetchfailure
     inline void SetFarFetchFailure (void) { m_FarFetchFailure = true; }
@@ -854,8 +851,6 @@ private:
     SIZE_TYPE   m_NumPseudo;
     SIZE_TYPE   m_NumPseudogene;
 
-    int         m_FirstTaxID;
-    bool        m_MultTaxIDs;
 };
 
 

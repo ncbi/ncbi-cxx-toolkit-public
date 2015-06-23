@@ -267,8 +267,6 @@ void CValidError_imp::Reset(void)
     m_NumTpaWithoutHistory = 0;
     m_NumPseudo = 0;
     m_NumPseudogene = 0;
-    m_FirstTaxID = 0;
-    m_MultTaxIDs = false;
     m_FarFetchFailure = false;
     m_IsTbl2Asn = false;
 }
@@ -1018,6 +1016,49 @@ bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se)
 }
 
 
+static bool s_IsPhage(const COrg_ref& org)
+{
+    if (org.IsSetDivision() && NStr::Equal(org.GetDivision(), "PHG")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CValidError_imp::ValidateMultipleTaxIds(const CSeq_entry_Handle& seh)
+{
+    bool has_mult = false;
+    int first_id = 0;
+    int phage_id = 0;
+
+    for (CBioseq_CI bi(seh); bi; ++bi) {
+        for (CSeqdesc_CI desc_ci(*bi, CSeqdesc::e_Source);
+            desc_ci && !has_mult;
+            ++desc_ci) {
+            if (desc_ci->GetSource().IsSetOrg()) {
+                const COrg_ref& org = desc_ci->GetSource().GetOrg();
+                int this_id = org.GetTaxId();
+                if (this_id > 0) {
+                    if (s_IsPhage(org)) {
+                        phage_id = this_id;
+                    } else if (first_id == 0) {
+                        first_id = this_id;
+                    } else if (first_id != this_id) {
+                        has_mult = true;
+                    }
+                }
+            }
+        }
+    }
+    if (has_mult || (phage_id > 0 && first_id > 0)) {
+        PostErr(has_mult ? eDiag_Error : eDiag_Warning, eErr_SEQ_DESCR_MultipleTaxonIDs,
+            "There are multiple taxonIDs in this RefSeq record.",
+            *m_TSE);
+    }
+}
+
+
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
  const CCit_sub* cs)
@@ -1322,10 +1363,8 @@ bool CValidError_imp::Validate
             *m_TSE);
     }
 
-    if ( m_MultTaxIDs && IsRefSeq() && ! IsWP() ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTaxonIDs,
-                "There are multiple taxonIDs in this RefSeq record.",
-                *m_TSE);
+    if ( IsRefSeq() && ! IsWP() ) {
+        ValidateMultipleTaxIds(seh);
     }
 
 
