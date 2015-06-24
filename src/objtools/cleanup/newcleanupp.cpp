@@ -4594,7 +4594,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
     }
 
     if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsName()) {
-        const string &name = rna.SetExt().SetName();
+        string name = rna.GetExt().GetName();
         bool justTrnaText = false;
         string codon;
         char aa = s_ParseSeqFeatTRnaString(name, &justTrnaText, codon, false);
@@ -4656,6 +4656,11 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             return eAction_Erase;
         }
     }
+
+    if (rna.IsSetExt() && rna.GetExt().IsName() && NStr::Equal(rna.GetExt().GetName(), product)) {
+        return eAction_Erase;
+    }
+
     return eAction_Nothing;
 }
 
@@ -4689,7 +4694,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_fea
             }
             break;
         }}
-        case CRNA_ref::eType_tRNA:
+        case CRNA_ref::eType_tRNA:            
             rval = x_HandleTrnaProductGBQual(feat, rna, standard_name);
             break;
         default:
