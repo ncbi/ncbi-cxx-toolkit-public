@@ -35,6 +35,7 @@
 BEGIN_NCBI_SCOPE;
 
 
+static
 map<EHTTPStatus, string> s_MsgForStatus;
 static
 map<string, EHTTPStatus> s_StatusForMsg;
@@ -47,6 +48,7 @@ struct SStatusMsg
 };
 
 
+static string s_UnkStatus = "ERR: Unknown status";
 static SStatusMsg s_StatusMessages[] =
     {
         {eStatus_JustStarted, "ERR:Caching is not completed"},
@@ -89,6 +91,11 @@ EHTTPStatus GetStatusByMessage(const string& msg, EHTTPStatus def)
 	return def;
 }
 
+const string& GetMessageByStatus(EHTTPStatus sts)
+{
+    map<EHTTPStatus, string>::const_iterator m = s_MsgForStatus.find(sts);
+    return m != s_MsgForStatus.end() ? m->second : s_UnkStatus;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // alerts

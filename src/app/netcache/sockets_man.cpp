@@ -743,10 +743,7 @@ MoveAllSockets(SSocketsData* dst_socks, SSocketsData* src_socks)
 void
 PromoteSockAmount(SSocketsData* socks)
 {
-    int total = AtomicAdd(s_TotalSockets, socks->sock_cnt);
-    if (total < 0) {
-        AtomicAdd(s_TotalSockets, -total);
-    }
+    AtomicAdd(s_TotalSockets, socks->sock_cnt);
     socks->sock_cnt = 0;
 }
 

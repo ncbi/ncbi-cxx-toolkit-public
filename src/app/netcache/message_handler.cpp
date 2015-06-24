@@ -2108,8 +2108,7 @@ CNCMessageHandler::x_StartCommand(void)
 
     if (x_IsFlagSet(fNeedsSpaceAsPeer)
         && !CNCBlobStorage::AcceptWritesFromPeers()) {
-        EHTTPStatus sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
-        x_ReportError(sts);
+        x_ReportError(eStatus_NoDiskSpace);
         return &CNCMessageHandler::x_FinishCommand;
     }
         
@@ -2126,8 +2125,8 @@ CNCMessageHandler::x_StartCommand(void)
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_NotAllowed);
         // why substr?
-        x_ReportError(s_MsgForStatus[eStatus_NotAllowed].substr(4));
-        SRV_LOG(Warning, s_MsgForStatus[eStatus_NotAllowed]);
+        x_ReportError(GetMessageByStatus(eStatus_NotAllowed).substr(4));
+        SRV_LOG(Warning, GetMessageByStatus(eStatus_NotAllowed));
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2188,8 +2187,7 @@ CNCMessageHandler::x_StartCommand(void)
             x_GetCurSlotServers();
             return &CNCMessageHandler::x_ProxyToNextPeer;
         }
-        EHTTPStatus sts = CNCBlobStorage::IsDraining() ? eStatus_ShuttingDown : eStatus_NoDiskSpace;
-        x_ReportError(sts);
+        x_ReportError(eStatus_NoDiskSpace);
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2360,7 +2358,7 @@ void
 CNCMessageHandler::x_ReportError( EHTTPStatus sts, bool eol /*= true*/)
 {
     GetDiagCtx()->SetRequestStatus(sts);
-    x_ReportError( s_MsgForStatus[sts], eol);
+    x_ReportError( GetMessageByStatus(sts), eol);
 }
 
 void
@@ -2375,9 +2373,6 @@ CNCMessageHandler::x_ReportError( const string& sts, bool eol /*= true*/)
                 WriteText("\n");
             }
         }
-        else {
-            SRV_LOG(Critical, "Protocol error: command: " << string(m_ParsedCmd.command->cmd) << ", report: " << sts);
-        }
     }
 }
 
@@ -2388,9 +2383,6 @@ CNCMessageHandler::x_ReportOK(const string& sts)
         if (!x_IsFlagSet(fNoReplyOnFinish)) {
             x_SetFlag(fNoReplyOnFinish);
             WriteText(sts);
-        }
-        else {
-            SRV_LOG(Critical, "Protocol error: command: " << string(m_ParsedCmd.command->cmd) << ", report: " << sts);
         }
     }
     return *this;
@@ -2635,7 +2627,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
             if (cmd_status == eStatus_OK) {
                 WriteText("OK:\n");
             } else {
-                WriteText("ERR:\n");
+                WriteText(GetMessageByStatus(EHTTPStatus(cmd_status))).WriteText("\n");
             }
         } else {
             x_WriteHttpResponse();
@@ -3114,9 +3106,7 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
     GetDiagCtx()->SetRequestStatus( GetStatusByMessage(m_LastPeerError, eStatus_PeerError));
-    if (!x_IsFlagSet(fNoReplyOnFinish)) {
-        x_ReportError(m_LastPeerError);
-    }
+    x_ReportError(m_LastPeerError);
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -3221,7 +3211,7 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
     if (rst != eStatus_OK) {
         GetDiagCtx()->SetRequestStatus(rst);
     }
-    if (!err_msg.empty() && !x_IsFlagSet(fNoReplyOnFinish)) {
+    if (!err_msg.empty()) {
     	x_ReportError(err_msg);
     }
     return &CNCMessageHandler::x_FinishCommand;
@@ -3361,7 +3351,7 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
         return m_CmdProcessor;
     }
     if (m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
-        if (m_LatestExist  && m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobExpired()) {
+        if (m_LatestExist  && m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobDead()) {
             return m_CmdProcessor;
         } else {
             return &CNCMessageHandler::x_ReportBlobNotFound;
@@ -3520,6 +3510,8 @@ CNCMessageHandler::x_DoCmd_Health(void)
         health_coeff = "0 (does not accept writes)";
     } else if (!CNCServer::IsCachingComplete()) {
         health_coeff = "0.1 (caching not finished)";
+    } else if (CNCBlobStorage::IsDraining()) {
+        health_coeff = "0.2 (draining)";
     } else if (!CNCServer::IsInitiallySynced()) {
         health_coeff = "0.5 (initial sync not finished)";
     } else if (CNCPeerControl::HasPeerInThrottle()) {
@@ -3723,13 +3715,26 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Put(void)
 {
     LOG_CURRENT_FUNCTION
-    if (x_IsHttpMode()) {
-// if blob does not exist, verify that it is POST, not PUT
-        if (!m_BlobAccess->IsBlobExists() && !x_IsFlagSet(fCanGenerateKey)) {
-            GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
+    if (!m_BlobAccess->IsBlobExists()) {
+        EHTTPStatus sts = eStatus_OK;
+        if (x_IsHttpMode()) {
+    // if blob does not exist, verify that it is POST, not PUT
+            if (!x_IsFlagSet(fCanGenerateKey)) {
+                sts = eStatus_NotFound;
+            }
+            if (CNCBlobStorage::IsDraining()) {
+                // 503 - Service Unavailable
+                sts = eStatus_PeerError;
+            }
+        } else if (CNCBlobStorage::IsDraining()) {
+            sts = eStatus_ShuttingDown;
+        }
+        if (sts != eStatus_OK) {
+            x_ReportError(sts);
             return &CNCMessageHandler::x_FinishCommand;
         }
     }
+
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(0);
     m_BlobAccess->SetBlobVersion(0);
@@ -3938,13 +3943,18 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_IC_Store(void)
 {
     LOG_CURRENT_FUNCTION
+    if (!m_BlobAccess->IsBlobExists() && CNCBlobStorage::IsDraining()) {
+        x_ReportError(eStatus_ShuttingDown);
+        return &CNCMessageHandler::x_FinishCommand;
+    }
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(m_AppSetup->ver_ttl);
     m_BlobAccess->SetBlobVersion(m_BlobVersion);
     // on Store, client expects 'ready' status before sending blob data
     WriteText("OK:\n");
-    if (m_Size == 0)
+    if (m_Size == 0) {
         return &CNCMessageHandler::x_FinishCommand;
+    }
     return &CNCMessageHandler::x_StartReadingBlob;
 }
 
@@ -3988,6 +3998,10 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncStart(void)
 {
     LOG_CURRENT_FUNCTION
+    if (CNCBlobStorage::IsDraining()) {
+        x_ReportError(eStatus_ShuttingDown);
+        return &CNCMessageHandler::x_FinishCommand;
+    }
     TReducedSyncEvents sync_events;
     ESyncInitiateResult sync_res = CNCPeriodicSync::Initiate(m_SrvId, m_Slot,
                                                 &m_LocalRecNo, &m_RemoteRecNo,
@@ -4092,6 +4106,10 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyPut(void)
 {
     LOG_CURRENT_FUNCTION
+    if (!m_BlobAccess->IsBlobExists() && CNCBlobStorage::IsDraining()) {
+        x_ReportError(eStatus_ShuttingDown);
+        return &CNCMessageHandler::x_FinishCommand;
+    }
     m_CopyBlobInfo->ttl = m_BlobTTL;
     m_CopyBlobInfo->password = m_BlobPass;
     m_CopyBlobInfo->blob_ver = m_BlobVersion;

@@ -1733,7 +1733,7 @@ CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data)
     if (cache_data->saved_dead_time != 0) {
         table->time_map.erase(table->time_map.iterator_to(*cache_data));
         AtomicSub(s_CurBlobsCnt, 1);
-        if (s_Draining && s_CurBlobsCnt == 0) {
+        if (CNCBlobStorage::IsDraining() && s_CurBlobsCnt == 0) {
             CTaskServer::RequestShutdown(eSrvSlowShutdown);
         }
     }
@@ -1845,13 +1845,13 @@ CNCBlobStorage::IsCleanStart(void)
 bool
 CNCBlobStorage::NeedStopWrite(void)
 {
-    return s_Draining || (s_IsStopWrite != eNoStop  &&  s_IsStopWrite != eStopWarning);
+    return s_IsStopWrite != eNoStop  &&  s_IsStopWrite != eStopWarning;
 }
 
 bool
 CNCBlobStorage::AcceptWritesFromPeers(void)
 {
-    return !s_Draining && s_IsStopWrite != eStopDiskCritical;
+    return s_IsStopWrite != eStopDiskCritical;
 }
 
 void
@@ -1891,7 +1891,7 @@ CNCBlobStorage::GetLatestBlobExpire(void)
         SBucketCache* cache = bkt->second;
         cache->lock.Lock();
         ITERATE(TKeyMap, it, cache->key_map) {
-            res = max( res, it->expire); 
+            res = max( res, it->dead_time); 
         }
         cache->lock.Unlock();
     }

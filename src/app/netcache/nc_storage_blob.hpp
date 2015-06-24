@@ -121,6 +121,7 @@ public:
     /// If blob doesn't exist then value is undefined.
     bool          IsCurBlobExpired (void) const;
     bool          IsCurVerExpired  (void) const;
+    bool          IsCurBlobDead    (void) const;
     /// Get type of access this holder was created for
     ENCAccessType GetAccessType    (void) const;
 
@@ -414,6 +415,11 @@ inline bool
 CNCBlobAccessor::IsCurVerExpired(void) const
 {
     return m_CurData->ver_expire <= CSrvTime::CurSecs();
+}
+inline bool
+CNCBlobAccessor::IsCurBlobDead(void) const
+{
+    return m_CurData->dead_time < CSrvTime::CurSecs();
 }
 
 inline void

@@ -1022,6 +1022,7 @@ CNCActiveSyncControl::x_CleanRemoteObjects(void)
 void
 CNCActiveSyncControl::x_CalcNextTask(void)
 {
+    do {
     switch (m_NextTask) {
     case eSynEventSend:
         ++m_CurSendEvent;
@@ -1103,6 +1104,9 @@ sync_next_key:
             m_NextTask = eSynNeedFinalize;
         }
     }
+    // when 'draining', only update existing blobs, never get new ones.
+    } while(CNCBlobStorage::IsDraining() &&
+            (m_NextTask == eSynEventGet || m_NextTask == eSynBlobGet));
 }
 
 void

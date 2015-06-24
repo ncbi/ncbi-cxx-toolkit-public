@@ -1192,7 +1192,7 @@ CNCActiveHandler::x_ProcessPeerError(void)
     m_ErrMsg = m_Response;
     m_CmdSuccess = true;
     if (m_SyncCtrl != NULL) {
-        x_FinishSyncCmd(eSynOK);
+        x_FinishSyncCmd(eSynAborted);
     }
     GetDiagCtx()->SetRequestStatus(eStatus_OK);
     return &CNCActiveHandler::x_FinishCommand;
@@ -1277,9 +1277,7 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
         m_CmdSuccess = false;
         return &CNCActiveHandler::x_FinishCommand;
     }
-    if (!m_BlobAccess->IsBlobExists()
-        ||  m_BlobAccess->GetCurBlobDeadTime() < CSrvTime::CurSecs())
-    {
+    if (!m_BlobAccess->IsBlobExists() ||  m_BlobAccess->IsCurBlobDead()) {
         x_FinishSyncCmd(eSynOK);
         return &CNCActiveHandler::x_FinishCommand;
     }
@@ -1374,7 +1372,7 @@ CNCActiveHandler::x_PrepareSyncProlongCmd(void)
         m_CmdSuccess = false;
         return &CNCActiveHandler::x_FinishCommand;
     }
-    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired()) {
+    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobDead()) {
         x_FinishSyncCmd(eSynOK);
         return &CNCActiveHandler::x_FinishCommand;
     }
