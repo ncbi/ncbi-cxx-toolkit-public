@@ -68,7 +68,15 @@ use m_NewCleanup.EnteringEntry { Seq-entry }
 # Should be before other types of cleaning, since other cleaners
 # might remove the ';' at the end of XML codes
 use m_NewCleanup.x_DecodeXMLMarkChanged {
-    std::string
+    Seq-feat.comment ,
+    Seq-feat.title ,
+    Gene-ref.locus ,
+    Gene-ref.syn.E ,
+    Prot-ref.name.E ,
+    Prot-ref.desc ,
+    RNA-ref.ext.name ,
+    Seqdesc.title ,
+    Seqdesc.comment ,
 }
 
 use m_NewCleanup.x_CompressStringSpacesMarkChanged {
