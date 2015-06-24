@@ -631,18 +631,6 @@ void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E
 void x_BasicCleanupBioseq_inst_inst_ext_ext_map_map( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
   void x_BasicCleanupBioseq_inst_inst_ext_ext_map( CMap_ext & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_ref_ETC( CRef_ext & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_equiv_equiv_E( CSeq_loc & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
-void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_equiv( CSeq_loc_equiv & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_mix_mix_E( CSeq_loc & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
-void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_mix_ETC( CSeq_loc_mix & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_ETC( CSeq_loc & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_ETC( CSeq_loc & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
-void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_seg_ETC( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_ETC( CSeg_ext & arg0 );
   void x_BasicCleanupBioseq_inst_inst_ext_ext( CSeq_ext & arg0 );
   void x_BasicCleanupBioseq_inst_inst_ext( CSeq_ext & arg0 );

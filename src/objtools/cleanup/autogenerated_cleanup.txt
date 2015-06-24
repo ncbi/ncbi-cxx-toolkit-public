@@ -214,6 +214,7 @@ use m_NewCleanup.ConvertSeqLocWholeToInt {
     Seq-loc EXCEPT {
         product ,
         Seq-inst.ext.seg.E ,
+        Seq-loc.mix.E
     }
 }
 use m_NewCleanup.SeqLocMixBC { Seq-loc.mix }
