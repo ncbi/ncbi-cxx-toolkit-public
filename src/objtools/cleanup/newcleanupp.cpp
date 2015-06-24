@@ -4660,6 +4660,43 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
 }
 
 
+CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& standard_name)
+{
+    if (!rna.IsSetType()) {
+        return eAction_Nothing;
+    }
+    EAction rval = eAction_Nothing;
+
+    TRNAREF_TYPE rna_type = rna.GetType();
+    switch (rna_type)
+    {
+        case CRNA_ref::eType_ncRNA:
+            x_AddToComment(feat, standard_name);
+            rval = eAction_Erase;
+            break;
+        case CRNA_ref::eType_mRNA:
+        {{
+            if (NStr::IsBlank(standard_name)) {
+                rval = eAction_Erase;
+            } else {
+                string product = rna.GetRnaProductName();
+                if (NStr::IsBlank(product)) {
+                    rna.SetExt().SetName(standard_name);
+                    rval = eAction_Erase;
+                }
+            }
+            break;
+        }}
+        case CRNA_ref::eType_tRNA:
+            rval = x_HandleTrnaProductGBQual(feat, rna, standard_name);
+            break;
+        default:
+            break;
+    }
+    return rval;
+}
+
+
 // homologous to C's HandledGBQualOnRNA.
 // That func was copy-pasted, then translated into C++.
 // Later we can go back and actually refactor the code
@@ -4667,25 +4704,26 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
 CNewCleanup_imp::EAction 
 CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual)
 {
-    if( ! gb_qual.IsSetVal() || NStr::IsBlank(gb_qual.GetVal())) {
+    if( ! gb_qual.IsSetVal()) {
         return eAction_Nothing;
     }
     const string &gb_qual_qual = gb_qual.GetQual();
     string &gb_qual_val = gb_qual.SetVal();
     TRNAREF_TYPE& rna_type = rna.SetType();
 
-    const bool is_std_name = NStr::EqualNocase( gb_qual_qual, "standard_name" );
-    if (is_std_name && rna_type == CRNA_ref::eType_ncRNA) {
-        x_AddToComment(feat, gb_qual_val);
-        return eAction_Erase;
+    if (NStr::EqualNocase(gb_qual_qual, "standard_name")) {
+        return x_HandleStandardNameRnaGBQual(feat, rna, gb_qual_val);
     }
+    if (NStr::IsBlank(gb_qual_val)) {
+        return eAction_Nothing;
+    }
+
     if (NStr::EqualNocase( gb_qual_qual, "product" )) 
     {
         if (rna_type == NCBI_RNAREF(unknown)) {
             rna_type = NCBI_RNAREF(other);
             ChangeMade(CCleanupChange::eChangeRNAref);
         }
-        if (rna_type == NCBI_RNAREF(other) && is_std_name) return eAction_Nothing;
         if ( rna.IsSetExt() && rna.GetExt().IsName() ) {
             const string &name = rna.SetExt().SetName();
             if ( name.empty() ) {
@@ -8882,7 +8920,7 @@ void CNewCleanup_imp::RnaFeatBC (
 )
 
 {
-    if (!rna.IsSetType()) {
+    if (!rna.IsSetType() || rna.GetType() == CRNA_ref::eType_unknown) {
         rna.SetType(CRNA_ref::eType_other);
         ChangeMade(CCleanupChange::eChangeRNAref);
     }
