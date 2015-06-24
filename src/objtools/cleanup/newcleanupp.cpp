@@ -4677,7 +4677,9 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_fea
         case CRNA_ref::eType_mRNA:
         {{
             if (NStr::IsBlank(standard_name)) {
-                rval = eAction_Erase;
+                if (!m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) {
+                    rval = eAction_Erase;
+                }
             } else {
                 string product = rna.GetRnaProductName();
                 if (NStr::IsBlank(product)) {
