@@ -816,7 +816,8 @@ void CChainer::CChainerImpl::ReplacePseudoGeneSeeds(list<CGene>& alts, TChainPoi
         
         CGene& gene = *included_in.front();
         CChain& model = *gene.front();
-        if((!model.PStop(false) && model.FrameShifts().empty()) || algn.PStop(false) || !algn.FrameShifts().empty())
+        //        if((!model.PStop(false) && model.FrameShifts().empty()) || algn.PStop(false) || !algn.FrameShifts().empty())
+        if(!model.PStop(false) || algn.PStop(false) || !algn.FrameShifts().empty())  // use only for pstops
             continue;
 
         int algn_cds_len = algn.FShiftedLen(algn.GetCdsInfo().Cds(),false);
