@@ -6271,7 +6271,7 @@ UMNH	s	Utah Museum of Natural History
 UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection
 UMO<GBR>	s	University Museum of Natural History
 UMO<USA-ME>	s	University of Maine
-UMO<USA-MO>	s	University of Missouri, Museum Support Center
+UMO<USA-MO>	s	Dunn-Palmer Herbarium, University of Missouri, Museum Support Center
 UMOC	s	University of Missouri, Museum of Zoology
 UMRC	c	University of Minnesota Rhizobium Collection
 UMRM	s	W.R. Enns Entomology Museum
@@ -6477,6 +6477,7 @@ UT<USA-TN>	s	University of Tennessee
 UT<USA-UT>	s	University of Utah Herbarium
 UTA	s	University of Texas at Arlington
 UTA:A	s	University of Texas at Arlington, Amphibian Collection
+UTA:R	s	University of Texas at Arlington, Reptile collection
 UTAI	s	Tel Aviv University
 UTC	s	Utah State University, Biology Department
 UTCI	s	University of Tennessee at Chattanooga Insect Collection
