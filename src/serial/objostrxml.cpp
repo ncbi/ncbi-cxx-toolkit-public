@@ -467,14 +467,14 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
 void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
                                   TEnumValueType value)
 {
-    WriteEnum(values, value, values.FindName(value, values.IsInteger()));
+    WriteEnum(values, value, values.FindNameEx(value, values.IsInteger()));
 }
 
 void CObjectOStreamXml::CopyEnum(const CEnumeratedTypeValues& values,
                                  CObjectIStream& in)
 {
     TEnumValueType value = in.ReadEnum(values);
-    WriteEnum(values, value, values.FindName(value, values.IsInteger()));
+    WriteEnum(values, value, values.FindNameEx(value, values.IsInteger()));
 }
 
 void CObjectOStreamXml::WriteEscapedChar(char c)

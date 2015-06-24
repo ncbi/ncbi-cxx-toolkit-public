@@ -55,6 +55,12 @@ public:
     typedef map<CTempString, TEnumValueType, PQuickStringLess> TNameToValue;
     typedef map<TEnumValueType, const string*> TValueToName;
 
+    enum EValueFlags {
+        eNone        = 0,
+        eHideIntName = 1
+    };
+    typedef unsigned int TValueFlags;    ///< Binary OR of EValueFlags
+
     CEnumeratedTypeValues(const char* name, bool isInteger);
     CEnumeratedTypeValues(const string& name, bool isInteger);
     ~CEnumeratedTypeValues(void);
@@ -95,9 +101,9 @@ public:
         }
 
     /// Add name-value pair
-    void AddValue(const string& name, TEnumValueType value);
+    void AddValue(const string& name, TEnumValueType value, TValueFlags flags = eNone);
     /// Add name-value pair
-    void AddValue(const char* name, TEnumValueType value);
+    void AddValue(const char* name,   TEnumValueType value, TValueFlags flags = eNone);
 
     /// Find numeric value by the name of the enum
     ///
@@ -139,6 +145,10 @@ public:
     bool IsBitset(void) const {
         return m_IsBitset;
     }
+
+    TValueFlags GetValueFlags(TEnumValueType) const;
+    const string& FindNameEx(TEnumValueType value, bool allowBadValue) const;
+
 private:
     string m_Name;
     string m_ModuleName;
@@ -147,6 +157,7 @@ private:
     bool m_IsBitset;
     bool m_IsInternal;
     TValues m_Values;
+    map<TEnumValueType, TValueFlags> m_ValueFlags;
     mutable auto_ptr<TNameToValue> m_NameToValue;
     mutable auto_ptr<TValueToName> m_ValueToName;
 };

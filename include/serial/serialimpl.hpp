@@ -549,6 +549,9 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define ADD_ENUM_VALUE(EnumValueName, EnumValueValue) \
     enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue)
 
+#define ADD_ENUM_VALUE_FLAGS(EnumValueName, EnumValueValue, EnumValueFlags) \
+    enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue, EnumValueFlags)
+
 #define END_ENUM_IN_INFO END_ENUM_INFO_METHOD
 #define END_ENUM_INFO END_ENUM_INFO_METHOD
 

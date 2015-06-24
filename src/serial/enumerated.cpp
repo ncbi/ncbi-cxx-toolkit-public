@@ -146,6 +146,15 @@ const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
     return *i->second;
 }
 
+const string& CEnumeratedTypeValues::FindNameEx(TEnumValueType value,
+                                                bool allowBadValue) const
+{
+    if (IsInteger() && (GetValueFlags(value) & eHideIntName) != 0) {
+        return kEmptyStr;
+    }
+    return FindName( value,  allowBadValue);
+}
+
 string CEnumeratedTypeValues::GetDisplayName(TEnumValueType value) const
 {
     string res;
@@ -178,15 +187,25 @@ string CEnumeratedTypeValues::GetDisplayName(TEnumValueType value) const
     return res;
 }
 
-void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)
+void CEnumeratedTypeValues::AddValue(const string& name,
+    TEnumValueType value, TValueFlags flags)
 {
     if ( name.empty() ) {
         NCBI_THROW(CSerialException,eInvalidData,
                    "empty enum value name");
     }
     m_Values.push_back(make_pair(name, value));
+    m_ValueFlags[value] = flags;
     m_ValueToName.reset(0);
     m_NameToValue.reset(0);
+}
+
+
+CEnumeratedTypeValues::TValueFlags
+CEnumeratedTypeValues::GetValueFlags(TEnumValueType value) const
+{
+    map<TEnumValueType, TValueFlags>::const_iterator i = m_ValueFlags.find(value);
+    return i != m_ValueFlags.end() ? i->second : eNone;
 }
 
 DEFINE_STATIC_FAST_MUTEX(s_EnumValuesMutex);
@@ -233,9 +252,10 @@ CEnumeratedTypeValues::NameToValue(void) const
     return *m;
 }
 
-void CEnumeratedTypeValues::AddValue(const char* name, TEnumValueType value)
+void CEnumeratedTypeValues::AddValue(const char* name,
+    TEnumValueType value, TValueFlags flags)
 {
-    AddValue(string(name), value);
+    AddValue(string(name), value, flags);
 }
 
 CEnumeratedTypeInfo::CEnumeratedTypeInfo(size_t size,

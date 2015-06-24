@@ -127,14 +127,14 @@ void CObjectOStreamAsn::WriteEnum(
 void CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
                                   TEnumValueType value)
 {
-    WriteEnum(values,value,values.FindName(value, values.IsInteger()));
+    WriteEnum(values,value,values.FindNameEx(value, values.IsInteger()));
 }
 
 void CObjectOStreamAsn::CopyEnum(const CEnumeratedTypeValues& values,
                                  CObjectIStream& in)
 {
     TEnumValueType value = in.ReadEnum(values);
-    WriteEnum(values, value, values.FindName(value, values.IsInteger()));
+    WriteEnum(values, value, values.FindNameEx(value, values.IsInteger()));
 }
 
 void CObjectOStreamAsn::WriteBool(bool data)

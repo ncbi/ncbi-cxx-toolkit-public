@@ -365,14 +365,14 @@ void CObjectOStreamJson::WriteEnum(const CEnumeratedTypeValues& values,
     string value_str;
     if (values.IsInteger()) {
         value_str = NStr::IntToString(value);
-        const string& name = values.FindName(value, values.IsInteger());
+        const string& name = values.FindNameEx(value, values.IsInteger());
         if (name.empty() || GetWriteNamedIntegersByValue()) {
             WriteKeywordValue(value_str);
         } else {
             WriteValue(name);
         }
     } else {
-        value_str = values.FindName(value, values.IsInteger());
+        value_str = values.FindNameEx(value, values.IsInteger());
         WriteValue(value_str);
     }
 }
