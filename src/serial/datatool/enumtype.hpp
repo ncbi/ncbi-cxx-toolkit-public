@@ -42,7 +42,7 @@ class CEnumDataTypeValue
 {
 public:
     CEnumDataTypeValue(const string& name, TEnumValueType value)
-        : m_SourceLine(0), m_Name(name), m_Value(value), m_IdName(name)
+        : m_SourceLine(0), m_Name(name), m_Value(value), m_Flags(eNone), m_IdName(name)
         {
         }
     
@@ -78,11 +78,25 @@ public:
     void SetEnumId(const string& id) const {
         m_IdName = id;
     }
+
+    enum EValueFlags {
+        eNone        = 0,
+        eHideName = 1
+    };
+    typedef unsigned int TValueFlags;
+
+    void SetFlag(EValueFlags flag) const {
+        m_Flags |= flag;
+    }
+    TValueFlags GetFlags(void) const {
+        return m_Flags;
+    }
 private:
     int m_SourceLine;
     string m_Name;
     TEnumValueType m_Value;
     CComments m_Comments;
+    mutable TValueFlags m_Flags;
     mutable string m_IdName;
 };
 

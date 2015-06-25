@@ -431,9 +431,17 @@ AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
 AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
 {
     ITERATE ( TValues, i, m_Values ) {
-        string id = GetVar( Identifier( i->GetEnumId() ), false);
-        if (!id.empty()) {
-            i->SetEnumId(id);
+        string id(Identifier( i->GetEnumId(), false ));
+        string value;
+        value = GetVar(id + "._hidename", false);
+        if (!value.empty()) {
+            if (NStr::StringToBool(value)) {
+                i->SetFlag(CEnumDataTypeValue::eHideName);
+            }
+        }
+        value = GetVar( id, false);
+        if (!value.empty()) {
+            i->SetEnumId(value);
         }
     }
 // in case client wants std type instead of enum.

@@ -191,8 +191,14 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         }
         ITERATE ( TValues, i, m_Values ) {
             string id = Identifier(i->GetEnumId(), false);
-            cpp <<
-                "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";
+            CEnumDataTypeValue::TValueFlags flags = i->GetFlags();
+            if (flags) {
+                cpp <<
+                    "    ADD_ENUM_VALUE_FLAGS(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<", "<<flags<<");\n";
+            } else {
+                cpp <<
+                    "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";
+            }
         }
         cpp <<
             "}\n"

@@ -57,7 +57,7 @@ public:
 
     enum EValueFlags {
         eNone        = 0,
-        eHideIntName = 1
+        eHideName = 1
     };
     typedef unsigned int TValueFlags;    ///< Binary OR of EValueFlags
 

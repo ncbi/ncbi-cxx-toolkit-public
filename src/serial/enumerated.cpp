@@ -149,7 +149,7 @@ const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
 const string& CEnumeratedTypeValues::FindNameEx(TEnumValueType value,
                                                 bool allowBadValue) const
 {
-    if (IsInteger() && (GetValueFlags(value) & eHideIntName) != 0) {
+    if ((GetValueFlags(value) & eHideName) != 0) {
         return kEmptyStr;
     }
     return FindName( value,  allowBadValue);
