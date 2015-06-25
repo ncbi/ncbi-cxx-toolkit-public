@@ -49,6 +49,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <db/bdb/bdb_expt.hpp>
+#include <db.h>
 
 #include "queue_database.hpp"
 #include "ns_types.hpp"
@@ -147,6 +148,7 @@ int CNetScheduleDApp::Run(void)
         .Print("server", NETSCHEDULED_VERSION)
         .Print("storage", NETSCHEDULED_STORAGE_VERSION)
         .Print("protocol", NETSCHEDULED_PROTOCOL_VERSION)
+        .Print("berkeley_db_version", DB_VERSION_STRING)
         .Print("build", NETSCHEDULED_BUILD_DATE);
 
     const CArgs &           args = GetArgs();
