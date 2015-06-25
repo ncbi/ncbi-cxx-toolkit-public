@@ -45,21 +45,27 @@ map<string, vector<string> >* CDiscrepancyTable::sm_AliasListTable = 0;
 
 map<string, CDiscrepancyConstructor*>& CDiscrepancyConstructor::GetTable()
 {
-    if(!m_Table.sm_Table) m_Table.sm_Table = new map<string, CDiscrepancyConstructor*>;
+    if (!m_Table.sm_Table) {
+        m_Table.sm_Table = new map<string, CDiscrepancyConstructor*>;
+    }
     return *m_Table.sm_Table;
 }
 
 
 map<string, string>& CDiscrepancyConstructor::GetAliasTable()
 {
-    if(!m_Table.sm_AliasTable) m_Table.sm_AliasTable = new map<string, string>;
+    if (!m_Table.sm_AliasTable) {
+        m_Table.sm_AliasTable = new map<string, string>;
+    }
     return *m_Table.sm_AliasTable;
 }
 
 
 map<string, vector<string> >& CDiscrepancyConstructor::GetAliasListTable()
 {
-    if(!m_Table.sm_AliasListTable) m_Table.sm_AliasListTable = new map<string, vector<string> >;
+    if (!m_Table.sm_AliasListTable) {
+        m_Table.sm_AliasListTable = new map<string, vector<string> >;
+    }
     return *m_Table.sm_AliasListTable;
 }
 
@@ -68,9 +74,15 @@ string CDiscrepancyConstructor::GetDiscrepancyCaseName(const string& name)
 {
     map<string, CDiscrepancyConstructor*>& Table = GetTable();
     map<string, string>& AliasTable = GetAliasTable();
-    if (Table.find(name) != Table.end()) return name;
-    if (AliasTable.find(name) != AliasTable.end()) return AliasTable[name];
-    if (name.substr(0, 5) == "DISC_") return GetDiscrepancyCaseName(name.substr(5));
+    if (Table.find(name) != Table.end()) {
+        return name;
+    }
+    if (AliasTable.find(name) != AliasTable.end()) {
+        return AliasTable[name];
+    }
+    if (name.substr(0, 5) == "DISC_") {
+        return GetDiscrepancyCaseName(name.substr(5));
+    }
     return "";
 }
 
@@ -94,7 +106,9 @@ vector<string> GetDiscrepancyNames()
     map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
     vector<string> V;
     ITERATE (MyMap, J, Table) {
-        if (J->first == "NOT_IMPL") continue;
+        if (J->first == "NOT_IMPL") {
+            continue;
+        }
         V.push_back(J->first);
     }
     return V;
@@ -114,36 +128,41 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T* obj, CDiscrepanc
         Visit(obj, context);
     }
     catch (CException& e) {
-        string ss = "EXCEPTION caught: ";
-        ss += e.what();
-        AddItem(CRef<CReportItem>(new CDiscrepancyItem(GetName(), ss)));
+        string ss = "EXCEPTION caught: "; ss += e.what();
+        AddItem(*(new CDiscrepancyItem(GetName(), ss)));
     }
 }
 
 
-void CDiscrepancyCore::Add(const string& s, CRef<CDiscrepancyObject> obj)
+void CDiscrepancyCore::Add(const string& s, CDiscrepancyObject& obj)
 {
-    m_Objs[s].push_back(CRef<CReportObj>(obj.Release()));
+    m_Objs[s].push_back(CRef<CReportObj>(&obj));
 }
 
 
-void CDiscrepancyCore::AddUnique(const string& s, CRef<CDiscrepancyObject> obj)
+void CDiscrepancyCore::AddUnique(const string& s, CDiscrepancyObject& obj)
 {
     ITERATE(TReportObjectList, it, m_Objs[s]) {
-        if(obj->Equal(**it)) return;
+        if (obj.Equal(**it)) {
+            return;
+        }
     }
-    m_Objs[s].push_back(CRef<CReportObj>(obj.Release()));
+    m_Objs[s].push_back(CRef<CReportObj>(&obj));
 }
 
 
-CRef<CDiscrepancySet> CDiscrepancySet::New(objects::CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
+CRef<CDiscrepancySet> CDiscrepancySet::New(CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
 
 
 bool CDiscrepancyContext::AddTest(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
-    if (str.empty()) return false; // no such test
-    if (m_Names.find(str)!=m_Names.end()) return false;  // already there
+    if (str.empty()) {
+        return false; // no such test
+    }
+    if (m_Names.find(str)!=m_Names.end()) {
+        return false;  // already there
+    }
     CRef<CDiscrepancyCase> test = CDiscrepancyConstructor::GetDiscrepancyConstructor(str)->Create();
     m_Names.insert(str);
     m_Tests.push_back(test);
@@ -160,7 +179,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
 }
 
 
-void CDiscrepancyContext::Parse(const objects::CSeq_entry_Handle& handle)
+void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 {
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
@@ -171,11 +190,11 @@ void CDiscrepancyContext::Parse(const objects::CSeq_entry_Handle& handle)
 
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
         if (CType<CBioseq>::Match(i)) {
-            m_Current_Bioseq.Reset(m_Scope.GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
+            m_Current_Bioseq.Reset(m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
             m_Count_Bioseq++;
         }
         else if (CType<CSeq_feat>::Match(i)) {
-            m_Current_Seq_feat.Reset(m_Scope.GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
+            m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
             m_Count_Seq_feat++;
         }
 #define HANDLE_DISCREPANCY_TYPE(type) \
@@ -202,20 +221,26 @@ void CDiscrepancyContext::Summarize()
 void CDiscrepancyContext::SetSuspectRules(const string& name)
 {
     m_SuspectRules = name;
-    if (!m_ProductRules) m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+    if (!m_ProductRules) {
+        m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+    }
 }
 
 
 CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetProductRules()
 {
-    if (!m_ProductRules) m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+    if (!m_ProductRules) {
+        m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+    }
     return m_ProductRules;
 }
 
 
 CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetOrganelleProductRules()
 {
-    if (!m_OrganelleProductRules) m_OrganelleProductRules = CSuspect_rule_set::GetOrganelleProductRules();
+    if (!m_OrganelleProductRules) {
+        m_OrganelleProductRules = CSuspect_rule_set::GetOrganelleProductRules();
+    }
     return m_OrganelleProductRules;
 }
 
@@ -226,7 +251,7 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     static size_t count = 0;
     if (count != m_Count_Bioseq) {
         count = m_Count_Bioseq;
-        biosrc = objects::sequence::GetBioSource(*m_Current_Bioseq);
+        biosrc = sequence::GetBioSource(*m_Current_Bioseq);
     }
     return biosrc;
 }

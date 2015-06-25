@@ -4354,7 +4354,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
             //if (!DoesObjectMatchConstraintChoiceSet(*context.GetCurrentSeq_feat(), constr)) continue;
         }
         CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-        Add("", r);
+        Add("", *r);
 
 //cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
     }
@@ -4365,7 +4365,7 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "it works!"));
     item->SetDetails(m_Objs[""]);
-    AddItem(CRef<CReportItem>(item.Release()));
+    AddItem(*item);
 
 /*
     CNcbiOstrstream ss;
@@ -4405,7 +4405,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData)
             //if (!DoesObjectMatchConstraintChoiceSet(*context.GetCurrentSeq_feat(), constr)) continue;
         }
         CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-        Add("", r);
+        Add("", *r);
 
 cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
     }
@@ -4416,7 +4416,7 @@ DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 {
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "it works!"));
     item->SetDetails(m_Objs[""]);
-    AddItem(CRef<CReportItem>(item.Release()));
+    AddItem(*item);
 
 /*
     CNcbiOstrstream ss;

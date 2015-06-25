@@ -63,7 +63,7 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancyConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create(void) const = 0;
-    static void Register(const string& name, CDiscrepancyConstructor* ptr);
+    static void Register(const string& name, CDiscrepancyConstructor& obj);
     static string GetDiscrepancyCaseName(const string& s);
     static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string& name);
     static map<string, CDiscrepancyConstructor*>& GetTable(void);
@@ -79,9 +79,9 @@ friend class CDiscrepancyContext;
 };
 
 
-inline void CDiscrepancyConstructor::Register(const string& name, CDiscrepancyConstructor* ptr)
+inline void CDiscrepancyConstructor::Register(const string& name, CDiscrepancyConstructor& obj)
 {
-    GetTable()[name] = ptr;
+    GetTable()[name] = &obj;
     GetAliasListTable()[name] = vector<string>();
 }
 
@@ -93,7 +93,9 @@ protected:
     static void Register(const string& name, const string& alias)
     {
         map<string, string>& AliasTable = GetAliasTable();
-        if (AliasTable.find(alias) != AliasTable.end()) return;
+        if (AliasTable.find(alias) != AliasTable.end()) {
+            return;
+        }
         AliasTable[alias] = name;
         map<string, vector<string> >& AliasListTable = GetAliasListTable();
         AliasListTable[name].push_back(alias);
@@ -110,13 +112,17 @@ public:
     {
         SetFilename(filename);
         SetText(scope);
-        if(!keep_ref) DropReference();
+        if(!keep_ref) {
+            DropReference();
+        }
     }
     CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
     {
         SetFilename(filename);
         SetText(scope);
-        if(!keep_ref) DropReference();
+        if(!keep_ref) {
+            DropReference();
+        }
     }
 };
 
@@ -148,9 +154,9 @@ class CDiscrepancyCore : public CDiscrepancyCase
 public:
     void Summarize(void){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
-    void AddItem(CRef<CReportItem> item){ m_ReportItems.push_back(item);}
-    void Add(const string& key, CRef<CDiscrepancyObject> obj);
-    void AddUnique(const string& key, CRef<CDiscrepancyObject> obj);
+    void AddItem(CReportItem& item){ m_ReportItems.push_back(CRef<CReportItem>(&item));}
+    void Add(const string& key, CDiscrepancyObject& obj);
+    void AddUnique(const string& key, CDiscrepancyObject& obj);
 protected:
     TReportObjectMap m_Objs;
     TReportItemList m_ReportItems;
@@ -171,7 +177,7 @@ class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
     CDiscrepancyContext(objects::CScope& scope) :
-            m_Scope(scope),
+            m_Scope(&scope),
             m_Count_Bioseq(0),
             m_Count_Seq_feat(0),
             m_Enable_CSeq_inst(false),
@@ -188,7 +194,7 @@ public:
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat;}
     size_t GetCountBioseq(void) const { return m_Count_Bioseq;}
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
-    objects::CScope& GetScope(void) const { return m_Scope;}
+    objects::CScope& GetScope(void) const { return const_cast<objects::CScope&>(*m_Scope);}
 
     void SetSuspectRules(const string& name);
     CConstRef<CSuspect_rule_set> GetProductRules(void);
@@ -199,7 +205,7 @@ public:
     CBioSource::TGenome GetCurrentGenome(void);
 
 protected:
-    objects::CScope& m_Scope;
+    CRef<objects::CScope> m_Scope;
     set<string> m_Names;
     vector<CRef<CDiscrepancyCase> > m_Tests;
     CConstRef<CBioseq> m_Current_Bioseq;
@@ -233,15 +239,15 @@ protected:
     public:                                                                                                         \
         void Visit(const type*, CDiscrepancyContext&);                                                              \
         void Summarize(void);                                                                                       \
-        string GetName(void) const { return #name;}                                                          \
-        string GetType(void) const { return #type;}                                                          \
+        string GetName(void) const { return #name;}                                                                 \
+        string GetType(void) const { return #type;}                                                                 \
     protected:                                                                                                      \
         __VA_ARGS__;                                                                                                \
     };                                                                                                              \
     class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                           \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyConstructor_##name(void){ Register(#name, this);}                                               \
+        CDiscrepancyConstructor_##name(void){ Register(#name, *this);}                                              \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
     };                                                                                                              \
@@ -262,7 +268,7 @@ protected:
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, this);}                                          \
+        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, *this);}                                         \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
