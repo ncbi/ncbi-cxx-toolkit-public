@@ -682,6 +682,29 @@ void CNewCleanup_imp::x_RemoveSpacesBetweenTildesMarkChanged( std::string & str 
     }
 }
 
+void CNewCleanup_imp::X_CommentTildeFixes( std::string & str )
+{
+#ifndef NCBI_OS_MSWIN
+    string orig = str;
+    NStr::ReplaceInPlace(str, "annotated by GenomeRefine~~", "annotated by GenomeRefine", false, false);
+    NStr::ReplaceInPlace(str, "based on SOLiD3 (Applied Biosystems)~~", "based on SOLiD3 (Applied Biosystems)", false, false);
+    NStr::ReplaceInPlace(str, "Biological resourse center, NITE (NRBC)~~", "Biological resourse center, NITE (NRBC)", false, false);
+    NStr::ReplaceInPlace(str, "developmental01.html~~", "developmental01.html", false, false);
+    NStr::ReplaceInPlace(str, "http://bionano.toyo.ac.jp/~~", "http://bionano.toyo.ac.jp/", false, false);
+    NStr::ReplaceInPlace(str, "http://dictycdb1.biol.tsukuba.ac.jp/acytodb/~~", "http://dictycdb1.biol.tsukuba.ac.jp/acytodb/", false, false);
+    NStr::ReplaceInPlace(str, "http://egg.umh.es~~", "http://egg.umh.es", false, false);
+    NStr::ReplaceInPlace(str, "http://www.aist.go.jp/~~", "http://www.aist.go.jp/", false, false);
+    NStr::ReplaceInPlace(str, "http://www.bio.nite.go.jp/~~", "http://www.bio.nite.go.jp/", false, false);
+    NStr::ReplaceInPlace(str, "http://www.bio.nite.go.jp/ngac/e/~~", "http://www.bio.nite.go.jp/ngac/e/", false, false);
+    NStr::ReplaceInPlace(str, "http://www.brs.kyushu-u.ac.jp/~fcmic/~~", "http://www.brs.kyushu-u.ac.jp/~fcmic/", false, false);
+    NStr::ReplaceInPlace(str, "http://www.miyazaki-u.ac.jp/ir/english/index.html~~", "http://www.miyazaki-u.ac.jp/ir/english/index.html", false, false);
+    NStr::ReplaceInPlace(str, "URL:http://www.bio.nite.go.jp/ngac/e/~~", "URL:http://www.bio.nite.go.jp/ngac/e/", false, false);
+    if (!NStr::Equal(orig, str)) {
+        ChangeMade(CCleanupChange::eTrimSpaces);
+    }
+#endif //NCBI_OS_MSWIN
+}
+
 void CNewCleanup_imp::x_TruncateSpacesMarkChanged( std::string & str )
 {
     const size_t old_str_size = str.length();

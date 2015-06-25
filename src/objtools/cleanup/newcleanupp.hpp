@@ -448,6 +448,7 @@ private:
     void x_CompressStringSpacesMarkChanged( std::string &str );
     void x_StripSpacesMarkChanged( std::string& str );
     void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
+    void X_CommentTildeFixes( std::string & str );
     void x_TruncateSpacesMarkChanged( std::string & str );
     void x_TrimInternalSemicolonsMarkChanged( std::string & str );
 
