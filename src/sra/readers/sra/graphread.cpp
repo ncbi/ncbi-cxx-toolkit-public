@@ -42,18 +42,11 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seqtable/seqtable__.hpp>
-#include <klib/rc.h>
 #include <serial/objistrasnb.hpp>
 #include <serial/serial.hpp>
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
-#include <kdb/table.h>
-#include <kdb/meta.h>
-#include <kdb/namelist.h>
-#include <kdb/index.h>
-#include <vdb/vdb-priv.h>
-#include <vdb/table.h>
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -99,10 +92,17 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
 
     uint64_t last_row = curs->m_Cursor.GetMaxRowId();
     SSeqInfo info;
-    const KIndex* idx;
-    if ( rc_t rc = VTableOpenIndexRead(curs->m_Table, &idx, "sid") ) {
-        LOG_POST(Warning<<"CVDBGraphDb: cannot open SID index: "<<
-                 CSraRcFormatter(rc)<<". Scanning sequentially.");
+    CVDBTableIndex idx;
+    try {
+        idx = CVDBTableIndex(curs->m_Table, "sid");
+    }
+    catch ( CSraException& exc ) {
+        if ( exc.GetErrCode() != exc.eNotFoundIndex ) {
+            throw;
+        }
+    }
+    if ( !idx ) {
+        LOG_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
         for ( uint64_t row = 1; row <= last_row; ++row ) {
             // read range and names
             TSeqPos len = *curs->LEN(row), row_size = *curs->LEN(row);
@@ -135,23 +135,13 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
             info.m_RowSize = *curs->LEN(row);
             info.m_StartBase = *curs->START(row);
             info.m_RowFirst = row;
-            int64_t first;
-            uint64_t count;
-            if ( rc_t rc = KIndexFindText(idx, info.m_SeqId.c_str(),
-                                          &first, &count, 0, 0) ) {
-                NCBI_THROW2(CSraException, eInitFailed,
-                            "Cannot read SID index", rc);
-            }
-            _ASSERT(int64_t(row) == first);
-            _ASSERT(count > 0);
-            info.m_RowLast = row += count-1;
+            pair<int64_t, uint64_t> range = idx.Find(info.m_SeqId.c_str());
+            _ASSERT(row == uint64_t(range.first));
+            _ASSERT(range.second);
+            info.m_RowLast = row += range.second-1;
             info.m_SeqLength =
                 TSeqPos(*curs->START(row)+*curs->LEN(row)-info.m_StartBase);
             m_SeqList.push_back(info);
-        }
-        if ( rc_t rc = KIndexRelease(idx) ) {
-            NCBI_THROW2(CSraException, eInitFailed,
-                        "Cannot release SID index", rc);
         }
     }
     Put(curs);
