@@ -42,16 +42,11 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
-#include <klib/rc.h>
 #include <serial/objistrasnb.hpp>
 #include <serial/serial.hpp>
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
-#include <vdb/vdb-priv.h>
-#include <kdb/table.h>
-#include <kdb/meta.h>
-#include <kdb/namelist.h>
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -64,16 +59,16 @@ BEGIN_NAMESPACE(objects);
 NCBI_PARAM_DECL(bool, WGS, MASTER_DESCR);
 NCBI_PARAM_DEF(bool, WGS, MASTER_DESCR, true);
 
-NCBI_PARAM_DECL(string, WGS, GI_INDEX);
-NCBI_PARAM_DEF(string, WGS, GI_INDEX, "");
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CWGSGiResolver
 /////////////////////////////////////////////////////////////////////////////
 
 
-#define DEGAULT_GI_INDEX_PATH NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
+NCBI_PARAM_DECL(string, WGS, GI_INDEX);
+NCBI_PARAM_DEF(string, WGS, GI_INDEX, "");
+
+#define DEGAULT_GI_INDEX_PATH                                   \
+    NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
 
 
 CWGSGiResolver::CWGSGiResolver(void)
@@ -168,6 +163,152 @@ CTempString CWGSGiResolver::Find(TGi gi) const
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CWGSProtAccResolver
+/////////////////////////////////////////////////////////////////////////////
+
+
+NCBI_PARAM_DECL(string, WGS, PROT_ACC_INDEX);
+NCBI_PARAM_DEF(string, WGS, PROT_ACC_INDEX, "");
+
+#define DEGAULT_PROT_ACC_INDEX_PATH                                     \
+    NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_prot_acc_ranges"
+
+
+CWGSProtAccResolver::CWGSProtAccResolver(void)
+{
+    string path = NCBI_PARAM_TYPE(WGS, PROT_ACC_INDEX)::GetDefault();
+    if ( path.empty() ) {
+        path = DEGAULT_PROT_ACC_INDEX_PATH;
+    }
+    x_Load(path);
+}
+
+
+CWGSProtAccResolver::~CWGSProtAccResolver(void)
+{
+}
+
+
+void CWGSProtAccResolver::x_Load(const string& file_name)
+{
+    m_ProtAccIndex.clear();
+    CNcbiIfstream in(file_name.c_str());
+    if ( !in ) {
+        // no index file
+        return;
+    }
+    int line = 0;
+    string acc1, acc2;
+    SAccession acc;
+    char eol[128];
+    for ( ;; ) {
+        ++line;
+        if ( !in.get(acc.accession, sizeof(acc.accession)) ) {
+            if ( in.eof() ) {
+                // end of data
+                return;
+            }
+        }
+        acc.accession[kMaxAccessionLength] = '\0';
+        size_t length = strlen(acc.accession);
+        if ( length < kMinAccessionLength ) {
+            break; // error
+        }
+        in >> acc1 >> acc2;
+        if ( !in ) {
+            break; // error
+        }
+        if ( !in.getline(eol, sizeof(eol)) ) {
+            // incomplete line
+            break; // error
+        }
+        SAccInfo info1(acc1);
+        SAccInfo info2(acc2);
+        if ( info1.m_Id <= 0 || info1.m_Id > info2.m_Id ||
+             info1.m_Prefix != info2.m_Prefix ||
+             info1.m_Length != info2.m_Length ) {
+            break; // error
+        }
+        m_ProtAccIndex[info1.m_Prefix].insert
+            (TProtAccIndex2::value_type(CRange<uint64_t>(info1.m_Id, info2.m_Id), acc));
+    }
+    ERR_POST_X(1, "CWGSProtAccResolver: "
+               "bad index file format: "<<file_name<<":"<<line);
+    m_ProtAccIndex.clear();
+}
+
+
+CWGSProtAccResolver::SAccInfo::SAccInfo(void)
+    : m_Id(0),
+      m_Length(0)
+{
+}
+
+
+CWGSProtAccResolver::SAccInfo::SAccInfo(const string& acc)
+    : m_Id(0),
+      m_Length(0)
+{
+    SIZE_TYPE prefix = 0;
+    while ( prefix < acc.size() && isalpha((unsigned char)(acc[prefix])) ) {
+        ++prefix;
+    }
+    if ( prefix == acc.size() || prefix == 0 ) {
+        return;
+    }
+    m_Id = NStr::StringToNumeric<uint64_t>(acc.substr(prefix), NStr::fConvErr_NoThrow);
+    if ( m_Id ) {
+        m_Prefix = acc.substr(0, prefix);
+        m_Length = acc.size();
+    }
+}
+
+
+string CWGSProtAccResolver::SAccInfo::GetAcc(void) const
+{
+    string acc = m_Prefix;
+    string suffix = NStr::NumericToString(m_Id);
+    _ASSERT(acc.size() + suffix.size() <= m_Length);
+    acc.resize(m_Length-suffix.size(), '0');
+    return acc + suffix;
+}
+
+
+CWGSProtAccResolver::TAccessionList
+CWGSProtAccResolver::FindAll(const string& acc) const
+{
+    TAccessionList ret;
+    SAccInfo info(acc);
+    if ( info.m_Id ) {
+        TProtAccIndex::const_iterator it(m_ProtAccIndex.find(info.m_Prefix));
+        if ( it != m_ProtAccIndex.end() ) {
+            for ( TProtAccIndex2::const_iterator it2(it->second.begin(CRange<uint64_t>(info.m_Id, info.m_Id)));
+                  it2; ++it2 ) {
+                ret.push_back(it2->second.accession);
+            }
+        }
+    }
+    return ret;
+}
+
+
+CTempString CWGSProtAccResolver::Find(const string& acc) const
+{
+    CTempString ret;
+    CWGSProtAccResolver::TAccessionList accs = FindAll(acc);
+    if ( !accs.empty() ) {
+        if ( accs.size() > 1 ) {
+            NCBI_THROW_FMT(CSraException, eOtherError,
+                           "more than one WGS accession can contain protein "<<acc);
+        }
+        ret = *accs.begin();
+    }
+    return ret;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CWGSDb_Impl
 /////////////////////////////////////////////////////////////////////////////
 
@@ -237,7 +378,10 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDB& db)
       INIT_VDB_COLUMN(PROTEIN_LEN),
       INIT_VDB_COLUMN(PROTEIN_NAME),
       INIT_VDB_COLUMN(TITLE),
-      INIT_VDB_COLUMN(REF_GI)
+      INIT_OPTIONAL_VDB_COLUMN(SEQ_ID),
+      INIT_OPTIONAL_VDB_COLUMN(SEQ_ID_GNL),
+      INIT_OPTIONAL_VDB_COLUMN(REF_GI),
+      INIT_OPTIONAL_VDB_COLUMN(REF_ACC)
 {
 }
 
@@ -661,6 +805,26 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
 }
 
 
+static inline TGi s_ToGi(uint64_t gi, const char* method)
+{
+    if ( sizeof(TIntId) != sizeof(gi) && uint64_t(TIntId(gi)) != gi ) {
+        NCBI_THROW_FMT(CSraException, eDataError,
+                       method<<": GI is too big: "<<gi);
+    }
+    return TIntId(gi);
+}
+
+
+static inline TGi s_ToGi(int64_t gi, const char* method)
+{
+    if ( sizeof(TIntId) != sizeof(gi) && int64_t(TIntId(gi)) != gi ) {
+        NCBI_THROW_FMT(CSraException, eDataError,
+                       method<<": GI is too big: "<<gi);
+    }
+    return TIntId(gi);
+}
+
+
 pair<TGi, TGi> CWGSDb_Impl::GetNucGiRange(void)
 {
     pair<TGi, TGi> ret;
@@ -669,8 +833,10 @@ pair<TGi, TGi> CWGSDb_Impl::GetNucGiRange(void)
             pair<int64_t, uint64_t> row_range =
                 idx->m_NUC_ROW_ID.GetRowIdRange(idx->m_Cursor);
             if ( row_range.second ) {
-                ret.first = TIntId(row_range.first);
-                ret.second = TIntId(row_range.first + row_range.second - 1);
+                ret.first = s_ToGi(row_range.first,
+                                   "CWGSDb::GetNucGiRange()");
+                ret.second = s_ToGi(row_range.first + row_range.second - 1,
+                                    "CWGSDb::GetNucGiRange()");
             }
         }
         Put(idx);
@@ -687,8 +853,10 @@ pair<TGi, TGi> CWGSDb_Impl::GetProtGiRange(void)
             pair<int64_t, uint64_t> row_range =
                 idx->m_PROT_ROW_ID.GetRowIdRange(idx->m_Cursor);
             if ( row_range.second ) {
-                ret.first = TIntId(row_range.first);
-                ret.second = TIntId(row_range.first + row_range.second - 1);
+                ret.first = s_ToGi(row_range.first,
+                                   "CWGSDb::GetProtGiRange()");
+                ret.second = s_ToGi(row_range.first + row_range.second - 1,
+                                    "CWGSDb::GetProtGiRange()");
             }
         }
         Put(idx);
@@ -767,6 +935,28 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
         Put(idx);
     }
     return ret;
+}
+
+
+uint64_t CWGSDb_Impl::GetProtAccRowId(const string& acc)
+{
+    if ( !m_ProtAccIndex ) {
+        CRef<SProtTableCursor> prot = Prot();
+        try {
+            m_ProtAccIndex = CVDBTableIndex(prot->m_Table, "gb_accession");
+        }
+        catch ( CSraException& exc ) {
+            if ( exc.GetErrCode() != CSraException::eNotFoundIndex ) {
+                throw;
+            }
+        }
+        Put(prot);
+        if ( !m_ProtAccIndex ) {
+            return 0;
+        }
+    }
+    pair<int64_t, uint64_t> range = m_ProtAccIndex.Find(acc);
+    return range.second? range.first: 0;
 }
 
 
@@ -906,13 +1096,7 @@ bool CWGSSeqIterator::HasGi(void) const
 CSeq_id::TGi CWGSSeqIterator::GetGi(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetGi");
-    NCBI_gi gi = *m_Seq->GI(m_CurrId);
-    if ( sizeof(TIntId) != sizeof(NCBI_gi) &&
-         NCBI_gi(TIntId(gi)) != gi ) {
-        NCBI_THROW_FMT(CSraException, eDataError,
-                       "CWGSSeqIterator::GetGi() GI is too big: "<<gi);
-    }
-    return CSeq_id::TGi(TIntId(gi));
+    return s_ToGi(*m_Seq->GI(m_CurrId), "CWGSSeqIterator::GetGi()");
 }
 
 
@@ -2477,17 +2661,25 @@ int CWGSProteinIterator::GetAccVersion(void) const
 CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 {
     CRef<CSeq_id> id;
-    CTempString acc = GetAccession();
-    if ( !acc.empty() ) {
-        id = GetDb().GetAccSeq_id(acc, GetAccVersion());
+    if ( m_Prot->m_SEQ_ID ) {
+        CTempString id_str = *CVDBStringValue(m_Prot->SEQ_ID(m_CurrId));
+        if ( !id_str.empty() ) {
+            id = new CSeq_id(id_str);
+        }
     }
-    else {
-        id = GetDb().GetProteinSeq_id(m_CurrId);
-    }
-    if ( id && m_Prot->m_GB_ACCESSION ) {
-        CTempString name = m_Prot->GB_ACCESSION(m_CurrId);
-        if ( !name.empty() ) {
-            sx_SetName(*id, name);
+    if ( !id ) {
+        CTempString acc = GetAccession();
+        if ( !acc.empty() ) {
+            id = GetDb().GetAccSeq_id(acc, GetAccVersion());
+        }
+        else {
+            id = GetDb().GetProteinSeq_id(m_CurrId);
+        }
+        if ( id && m_Prot->m_GB_ACCESSION ) {
+            CTempString name = m_Prot->GB_ACCESSION(m_CurrId);
+            if ( !name.empty() ) {
+                sx_SetName(*id, name);
+            }
         }
     }
     return id;
@@ -2496,7 +2688,17 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 {
-    return GetDb().GetGeneralSeq_id(GetProteinName());
+    CRef<CSeq_id> id;
+    if ( m_Prot->m_SEQ_ID_GNL ) {
+        CTempString id_str = *CVDBStringValue(m_Prot->SEQ_ID_GNL(m_CurrId));
+        if ( !id_str.empty() ) {
+            id = new CSeq_id(id_str);
+        }
+    }
+    if ( !id ) {
+        id = GetDb().GetGeneralSeq_id(GetProteinName());
+    }
+    return id;
 }
 
 
@@ -2527,16 +2729,31 @@ TSeqPos CWGSProteinIterator::GetSeqLength(void) const
 }
 
 
+bool CWGSProteinIterator::HasRefGi(void) const
+{
+    x_CheckValid("CWGSProteinIterator::HasRefGi");
+    return m_Prot->m_REF_GI;
+}
+
+
 CSeq_id::TGi CWGSProteinIterator::GetRefGi(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetRefGi");
-    NCBI_gi gi = *m_Prot->REF_GI(m_CurrId);
-    if ( sizeof(TIntId) != sizeof(NCBI_gi) &&
-         NCBI_gi(TIntId(gi)) != gi ) {
-        NCBI_THROW_FMT(CSraException, eDataError,
-                       "CWGSProteinIterator::GetRefGi() GI is too big: "<<gi);
-    }
-    return CSeq_id::TGi(TIntId(gi));
+    return s_ToGi(*m_Prot->REF_GI(m_CurrId), "CWGSProteinIterator::GetRefGi()");
+}
+
+
+bool CWGSProteinIterator::HasRefAcc(void) const
+{
+    x_CheckValid("CWGSProteinIterator::HasRefAcc");
+    return m_Prot->m_REF_ACC;
+}
+
+
+CTempString CWGSProteinIterator::GetRefAcc(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetRefAcc");
+    return *CVDBStringValue(m_Prot->REF_ACC(m_CurrId));
 }
 
 
@@ -2626,7 +2843,13 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(void) const
     interval.SetFrom(0);
     interval.SetTo(length-1);
     interval.SetStrand(eNa_strand_plus);
-    interval.SetId().SetGi(GetRefGi());
+    CSeq_id& ref_id = interval.SetId();
+    if ( HasRefGi() ) {
+        ref_id.SetGi(GetRefGi());
+    }
+    else {
+        ref_id.Set(GetRefAcc());
+    }
     inst->SetExt().SetDelta().Set().push_back(seg);
     inst->SetLength(length);
     return inst;

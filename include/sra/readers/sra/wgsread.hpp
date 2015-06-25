@@ -99,6 +99,52 @@ private:
 };
 
 
+class NCBI_SRAREAD_EXPORT CWGSProtAccResolver
+{
+public:
+    CWGSProtAccResolver(void);
+    ~CWGSProtAccResolver(void);
+
+    bool IsValid(void) const {
+        return !m_ProtAccIndex.empty();
+    }
+
+    struct SAccInfo {
+        SAccInfo(void);
+        explicit SAccInfo(const string& acc);
+
+        string GetAcc(void) const;
+
+        string m_Prefix;
+        uint64_t m_Id;
+        size_t m_Length;
+    };
+
+    // return all WGS accessions that could contain protein accession
+    typedef vector<CTempString> TAccessionList;
+    TAccessionList FindAll(const string& acc) const;
+
+    // return single WGS accession that could contain protein accession
+    // return empty string if there are no accession candidates
+    // throw an exception if there are more than one candidate
+    CTempString Find(const string& acc) const;
+
+private:
+    void x_Load(const string& file_name);
+
+    enum {
+        kMinAccessionLength = 6,
+        kMaxAccessionLength = 6
+    };
+    struct SAccession {
+        char accession[kMaxAccessionLength+1];
+    };
+    typedef CRangeMultimap<SAccession, uint64_t> TProtAccIndex2;
+    typedef map<string, TProtAccIndex2> TProtAccIndex;
+    TProtAccIndex m_ProtAccIndex;
+};
+
+
 class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject
 {
 public:
@@ -202,10 +248,14 @@ public:
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
     uint64_t GetProtGiRowId(TGi gi);
 
+    // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
+    uint64_t GetProtAccRowId(const string& acc);
+
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
     friend class CWGSGiIterator;
+    friend class CWGSProtAccIterator;
     friend class CWGSProteinIterator;
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
@@ -282,7 +332,10 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
         DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
         DECLARE_VDB_COLUMN_AS_STRING(TITLE);
+        DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID);
+        DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID_GNL);
         DECLARE_VDB_COLUMN_AS(NCBI_gi, REF_GI);
+        DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
     };
 
     // get table accessor object for exclusive access
@@ -321,6 +374,7 @@ private:
     CVDBObjectCache<SScfTableCursor> m_Scf;
     CVDBObjectCache<SIdxTableCursor> m_Idx;
     CVDBObjectCache<SProtTableCursor> m_Prot;
+    CVDBTableIndex m_ProtAccIndex;
 
     bool m_IsSetMasterDescr;
     TMasterDescr m_MasterDescr;
@@ -396,6 +450,11 @@ public:
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
     uint64_t GetProtGiRowId(TGi gi) const {
         return GetNCObject().GetProtGiRowId(gi);
+    }
+
+    // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
+    uint64_t GetProtAccRowId(const string& acc) const {
+        return GetNCObject().GetProtAccRowId(acc);
     }
 
     enum EDescrFilter {
@@ -707,7 +766,10 @@ public:
     CTempString GetProteinName(void) const;
 
     void GetIds(CBioseq::TId& ids) const;
+    bool HasRefGi(void) const;
     CSeq_id::TGi GetRefGi(void) const;
+    bool HasRefAcc(void) const;
+    CTempString GetRefAcc(void) const;
 
     TSeqPos GetSeqLength(void) const;
 
