@@ -3593,8 +3593,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 }
                 if ( first ) {
                     EDiagSev sev = eDiag_Error;
-                    if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1
-                        || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
+                    if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
+                        && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
                         sev = eDiag_Warning;
                     }
                     if (! is_circular) {
@@ -3686,8 +3686,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
     if ( last_is_gap ) {
         EDiagSev sev = eDiag_Error;
-        if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1
-            || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
+        if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
+            && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
             sev = eDiag_Warning;
         }
         if (! is_circular) {
