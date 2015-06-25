@@ -8792,8 +8792,13 @@ bool s_FixncRNA(CSeq_feat& feat)
             string &qual = (*qual_iter)->SetQual();
             string &val = (*qual_iter)->SetVal();
             if (qual == "ncRNA_class") {
+                string product = rna.GetRnaProductName();
                 rna.SetType(CRNA_ref::eType_ncRNA);
                 rna.SetExt().SetGen().SetClass(val);
+                if (!NStr::IsBlank(product)) {
+                    string remainder;
+                    rna.SetRnaProductName(product, remainder);
+                }
                 any_change = true;
                 qual_iter = feat.SetQual().erase(qual_iter);
             }
@@ -8827,6 +8832,7 @@ bool s_FixtmRNA(CSeq_feat& feat)
 
     CRNA_ref::TType rna_type = (rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown);
 
+    string product = rna.GetRnaProductName();
 
     if (feat.IsSetQual() && 
         (rna_type == CRNA_ref::eType_other || 
@@ -8857,6 +8863,10 @@ bool s_FixtmRNA(CSeq_feat& feat)
         if (feat.SetQual().empty()) {
             feat.ResetQual();
         }
+    }
+    if (any_change) {
+        string remainder;
+        rna.SetRnaProductName(product, remainder);
     }
     return any_change;
 }
