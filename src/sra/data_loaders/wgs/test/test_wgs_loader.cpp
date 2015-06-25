@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <sra/readers/sra/wgsread.hpp>
@@ -995,11 +995,35 @@ BOOST_AUTO_TEST_CASE(FetchSeq20)
 }
 
 
-const char* s_ProteinFile = 
+#if 0
+const string s_ProteinFile = 
                     "/net/snowman/vol/export2/dondosha/SVN64/trunk/internal/c++/src/internal/ID/WGS/XXXX01";
+const string s_ProteinVDBAcc     = "AXXX01";
+const string s_ProteinContigId   = "AXXX01000001";
+const string s_ProteinScaffoldId = "AXXX01S000001";
+const string s_ProteinProteinId  = "AXXX01P000001";
+const size_t s_ProteinContigDescCount = 14;
+const size_t s_ProteinContigPubCount = 4;
+const string s_ProteinProteinAcc = "AXXX01P000001";
+const size_t s_ProteinProteinDescCount = 9;
+const size_t s_ProteinProteinPubCount = 2;
+#else
+const string s_ProteinFile = 
+                    "/home/dondosha/trunk/internal/c++/src/internal/ID/WGS/JTED01";
+const string s_ProteinVDBAcc     = "JTED01";
+const string s_ProteinContigId   = "JTED01000001";
+const string s_ProteinScaffoldId = "JTED01S000001";
+const string s_ProteinProteinId  = "JTED01P000001";
+const size_t s_ProteinContigDescCount = 11;
+const size_t s_ProteinContigPubCount = 2;
+const string s_ProteinProteinAcc = "EDT30481.1";
+const size_t s_ProteinProteinDescCount = 13;
+const size_t s_ProteinProteinPubCount = 2;
+#endif
 
 BOOST_AUTO_TEST_CASE(FetchSeq21)
 {
+    // WGS VDB with proteins: access contig
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
         return;
     }
@@ -1008,17 +1032,20 @@ BOOST_AUTO_TEST_CASE(FetchSeq21)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AXXX01000001");
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinContigId);
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
-    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 14);
-    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 4);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set),
+                      s_ProteinContigDescCount);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
+                      s_ProteinContigPubCount);
 }
 
 
 BOOST_AUTO_TEST_CASE(FetchSeq22)
 {
+    // WGS VDB with proteins: check non-existend scaffold
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
         return;
     }
@@ -1027,7 +1054,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq22)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AXXX01S000001");
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinScaffoldId);
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(!bsh);
@@ -1036,6 +1063,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq22)
 
 BOOST_AUTO_TEST_CASE(FetchSeq23)
 {
+    // WGS VDB with proteins: access protein by name
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
         return;
     }
@@ -1044,13 +1072,77 @@ BOOST_AUTO_TEST_CASE(FetchSeq23)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("AXXX01P000001");
+    string name_id = "gb||"+s_ProteinProteinId;
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(name_id);
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
-    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 9);
-    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set),
+                      s_ProteinProteinDescCount);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
+                      s_ProteinProteinPubCount);
     BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq24)
+{
+    // WGS VDB with proteins: access protein by GB accession
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinProteinAcc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set),
+                      s_ProteinProteinDescCount);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
+                      s_ProteinProteinPubCount);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq25)
+{
+    // WGS VDB with proteins: access protein by GB accession with wrong version
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinProteinAcc+"1");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq26)
+{
+    // WGS VDB with proteins: access protein by wrong GB accession with
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = s_ProteinProteinAcc;
+    acc[3] += 1;
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
 }
 
 
@@ -1286,10 +1378,10 @@ BOOST_AUTO_TEST_CASE(GITest)
     //bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AABR01000100.1"));
     //BOOST_CHECK(bh);
 
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(TIntId(25725721)));
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25725721));
     BOOST_CHECK(bh);
 
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(TIntId(2)));
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(!bh);
 }
 
