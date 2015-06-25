@@ -4678,6 +4678,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_fea
     switch (rna_type)
     {
         case CRNA_ref::eType_rRNA:
+        case CRNA_ref::eType_premsg:
             if (NStr::IsBlank(previous_product)) {
                 string remainder;
                 rna.SetRnaProductName(standard_name, remainder);
