@@ -96,6 +96,7 @@ public:
     bool IsCorrectVersion(const SAccFileInfo& info) const;
 
     bool FindGi(SAccFileInfo& info, TGi gi) const;
+    bool FindProtAcc(SAccFileInfo& info, const string& acc) const;
 
     const CWGSDb& GetDb(void) const
         {
@@ -188,10 +189,12 @@ private:
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
     CWGSGiResolver m_GiResolver;
+    CWGSProtAccResolver m_ProtAccResolver;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;
     bool m_ResolveGIs;
+    bool m_ResolveProtAccs;
 };
 
 

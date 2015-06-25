@@ -118,6 +118,16 @@ static bool GetResolveGIsParem(void)
 }
 
 
+NCBI_PARAM_DECL(bool, WGS_LOADER, RESOLVE_PROT_ACCS);
+NCBI_PARAM_DEF(bool, WGS_LOADER, RESOLVE_PROT_ACCS, true);
+
+
+static bool GetResolveProtAccsParem(void)
+{
+    return NCBI_PARAM_TYPE(WGS_LOADER, RESOLVE_PROT_ACCS)::GetDefault();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -204,7 +214,8 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     : m_WGSVolPath(params.m_WGSVolPath),
       m_FoundFiles(GetGCSize()),
       m_AddWGSMasterDescr(GetMasterDescrParam()),
-      m_ResolveGIs(GetResolveGIsParem())
+      m_ResolveGIs(GetResolveGIsParem()),
+      m_ResolveProtAccs(GetResolveProtAccsParem())
 {
     if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
         m_WGSVolPath = GetWGSVolPath();
@@ -270,6 +281,40 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc)
     default:
         return ret;
     }
+
+    if ( (type & CSeq_id::fAcc_prot) && acc.size() <= 10 ) {
+        if ( m_ResolveProtAccs ) {
+            if ( !m_FixedFiles.empty() ) {
+                ITERATE ( TFixedFiles, it, m_FixedFiles ) {
+                    if ( it->second->FindProtAcc(ret, acc) ) {
+                        return ret;
+                    }
+                }
+            }
+            else if ( m_ProtAccResolver.IsValid() ) {
+                CWGSProtAccResolver::TAccessionList accs =
+                    m_ProtAccResolver.FindAll(acc);
+                ITERATE ( CWGSProtAccResolver::TAccessionList, it, accs ) {
+                    CConstRef<CWGSFileInfo> file = GetWGSFile(*it);
+                    if ( !file ) {
+                        continue;
+                    }
+                    if ( file->FindProtAcc(ret, acc) ) {
+                        return ret;
+                    }
+                }
+            }
+            else {
+                ITERATE ( TFoundFiles, it, m_FoundFiles ) {
+                    if ( it->second->FindProtAcc(ret, acc) ) {
+                        return ret;
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
     SIZE_TYPE prefix_len = NStr::StartsWith(acc, "NZ_")? 9: 6;
     if ( acc.size() <= prefix_len ) {
         return ret;
@@ -316,31 +361,29 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     CWGSFileInfo::SAccFileInfo ret;
     if ( m_ResolveGIs && idh.IsGi() ) {
         TGi gi = idh.GetGi();
-        if ( !m_FoundFiles.empty() ) {
+        if ( !m_FixedFiles.empty() ) {
             ITERATE ( TFixedFiles, it, m_FixedFiles ) {
                 if ( it->second->FindGi(ret, gi) ) {
                     return ret;
                 }
             }
         }
-        else {
-            if ( m_GiResolver.IsValid() ) {
-                CWGSGiResolver::TAccessionList accs = m_GiResolver.FindAll(gi);
-                ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
-                    CConstRef<CWGSFileInfo> file = GetWGSFile(*it);
-                    if ( !file ) {
-                        continue;
-                    }
-                    if ( file->FindGi(ret, gi) ) {
-                        return ret;
-                    }
+        else if ( m_GiResolver.IsValid() ) {
+            CWGSGiResolver::TAccessionList accs = m_GiResolver.FindAll(gi);
+            ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
+                CConstRef<CWGSFileInfo> file = GetWGSFile(*it);
+                if ( !file ) {
+                    continue;
+                }
+                if ( file->FindGi(ret, gi) ) {
+                    return ret;
                 }
             }
-            else {
-                ITERATE ( TFoundFiles, it, m_FoundFiles ) {
-                    if ( it->second->FindGi(ret, gi) ) {
-                        return ret;
-                    }
+        }
+        else {
+            ITERATE ( TFoundFiles, it, m_FoundFiles ) {
+                if ( it->second->FindGi(ret, gi) ) {
+                    return ret;
                 }
             }
         }
@@ -365,7 +408,12 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     if ( !text_id ) {
         return ret;
     }
-    ret = GetFileInfo(text_id->GetAccession());
+    if ( text_id->IsSetAccession() ) {
+        ret = GetFileInfo(text_id->GetAccession());
+    }
+    if ( !ret && text_id->IsSetName() ) {
+        ret = GetFileInfo(text_id->GetName());
+    }
     if ( !ret ) {
         return ret;
     }
@@ -772,11 +820,24 @@ bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info) const
 
 bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
 {
-    CWGSGiIterator gi_it(m_WGSDb, gi);
-    if ( gi_it ) {
+    CWGSGiIterator it(m_WGSDb, gi);
+    if ( it ) {
         info.file = this;
-        info.row_id = gi_it.GetRowId();
-        info.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
+        info.row_id = it.GetRowId();
+        info.seq_type = it.GetSeqType() == it.eProt? 'P': '\0';
+        info.has_version = false;
+        return true;
+    }
+    return false;
+}
+
+
+bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
+{
+    if ( uint64_t row_id = m_WGSDb.GetProtAccRowId(acc) ) {
+        info.file = this;
+        info.row_id = row_id;
+        info.seq_type = 'P';
         info.has_version = false;
         return true;
     }
