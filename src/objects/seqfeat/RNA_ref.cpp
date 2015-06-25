@@ -202,6 +202,7 @@ void CRNA_ref::SetRnaProductName(const string& product, string& remainder)
     switch (GetType()) {
     case CRNA_ref::eType_rRNA:
     case CRNA_ref::eType_mRNA:
+    case CRNA_ref::eType_premsg:
         if (NStr::IsBlank(product)) {
             ResetExt();
         } else {
@@ -213,7 +214,10 @@ void CRNA_ref::SetRnaProductName(const string& product, string& remainder)
         break;
     default:
         if (NStr::IsBlank(product)) {
-            ResetExt();
+            SetExt().SetGen().ResetProduct();
+            if (!GetExt().GetGen().IsSetClass() && !GetExt().GetGen().IsSetQuals()) {
+                ResetExt();
+            }
         } else {
             SetExt().SetGen().SetProduct(product);   
         }
