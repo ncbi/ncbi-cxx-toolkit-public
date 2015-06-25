@@ -388,51 +388,69 @@ void SNetScheduleAPIImpl::x_ClearNode()
     }
 }
 
+CNetScheduleConfigLoader::CNetScheduleConfigLoader(
+        const CTempString& qinf2_prefix, const CTempString& qinf2_section,
+        const CTempString& getp2_prefix, const CTempString& getp2_section) :
+    m_Qinf2Prefix(qinf2_prefix), m_Qinf2Section(qinf2_section),
+    m_Getp2Prefix(getp2_prefix), m_Getp2Section(getp2_section)
+{
+}
+
+bool CNetScheduleConfigLoader::Transform(const CTempString& prefix, string& name)
+{
+    // Only params starting with provided prefix are used
+    if (NStr::StartsWith(name, prefix)) {
+        name.erase(0, prefix.size());
+        return true;
+    }
+
+    return false;
+}
+
 CConfig* CNetScheduleConfigLoader::Parse(const TParams& params,
-        const CTempString& prefix, EParseMode mode)
+        const CTempString& prefix)
 {
     auto_ptr<CConfig::TParamTree> result;
-    const string kQueueParameter = "queue_name";
 
-    ITERATE(CNetScheduleAPI::TQueueParams, it, params) {
-        string param;
-        if (mode == eGetQueueName && it->first == kQueueParameter) {
-            param = it->first;
-        } else if (NStr::StartsWith(it->first, prefix)) {
-            param = it->first.substr(prefix.size());
-        } else {
-            continue;
+    ITERATE(TParams, it, params) {
+        string param = it->first;
+
+        if (Transform(prefix, param)) {
+            if (!result.get()) {
+                result.reset(new CConfig::TParamTree);
+            }
+
+            result->AddNode(CConfig::TParamValue(param, it->second));
         }
-
-        if (!result.get()) {
-            result.reset(new CConfig::TParamTree);
-        }
-
-        result->AddNode(CConfig::TParamValue(param, it->second));
     }
 
     return result.get() ? new CConfig(result.release()) : NULL;
 }
 
-CConfig* CNetScheduleConfigLoader::Get(const CTempString* literals,
-        SNetScheduleAPIImpl* impl, string* section, EParseMode mode)
+CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
+        CConfig* config, string& section)
 {
-    _ASSERT(literals);
     _ASSERT(impl);
+
+    // If it is disabled explicitly
+    if (config && !config->GetBool(section, "load_config_from_ns",
+                CConfig::eErr_NoThrow, true)) {
+        return NULL;
+    }
 
     TParams queue_params;
     impl->GetQueueParams(kEmptyStr, queue_params);
 
-    if (CConfig* result = Parse(queue_params, *literals++, mode)) {
-        *section = *literals;
+    if (CConfig* result = Parse(queue_params, m_Qinf2Prefix)) {
+        section = m_Qinf2Section;
         return result;
     }
 
     try {
         impl->GetQueueParams(queue_params);
 
-        if (CConfig* result = Parse(queue_params, *++literals, mode)) {
-            *section = *++literals;
+        if (CConfig* result = Parse(queue_params, m_Getp2Prefix)) {
+            section = m_Getp2Section;
             return result;
         }
     }
@@ -440,6 +458,24 @@ CConfig* CNetScheduleConfigLoader::Get(const CTempString* literals,
     }
 
     return NULL;
+}
+
+CNetScheduleOwnConfigLoader::CNetScheduleOwnConfigLoader() :
+    CNetScheduleConfigLoader(
+            "ns.",  "netschedule_conf_from_netschedule",
+            "ns::", "netschedule_conf_from_netschedule_GETP2")
+{
+}
+
+bool CNetScheduleOwnConfigLoader::Transform(const CTempString& prefix,
+        string& name)
+{
+    // If it's "service to queue" special case (we do not know queue name)
+    if (name == "queue_name") {
+        return true;
+    }
+
+    return CNetScheduleConfigLoader::Transform(prefix, name);
 }
 
 void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
@@ -549,6 +585,7 @@ void CNetScheduleServerListener::OnInit(
     _ASSERT(ns_impl);
 
     auto_ptr<CConfig> config_holder;
+    CNetScheduleOwnConfigLoader loader;
 
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
@@ -630,20 +667,17 @@ void CNetScheduleServerListener::OnInit(
 
         SetAuthString(ns_impl);
 
-        // If we should not load config from NetSchedule server
-        // or have already done it
-        if (phase || !CNetScheduleConfigLoader::Use(config, config_section)) {
-            break;
+        // If we should load config from NetSchedule server
+        // and have not done it already
+        if (!phase) {
+            if (CConfig* alt = loader.Get(ns_impl, config, config_section)) {
+                config_holder.reset(alt);
+                config = alt;
+                continue;
+            }
         }
 
-        const CTempString kLiterals[] = {
-            "ns.",      "netschedule_conf_from_netschedule",
-            "ns::",     "netschedule_conf_from_netschedule_GETP2"
-        };
-        config_holder.reset(
-                CNetScheduleConfigLoader::Get(kLiterals, ns_impl,
-                    &config_section, CNetScheduleConfigLoader::eGetQueueName));
-        config = config_holder.get();
+        break;
     }
 }
 

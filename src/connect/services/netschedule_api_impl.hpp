@@ -75,29 +75,37 @@ struct SNetScheduleServerProperties : public INetServerProperties
     bool affs_synced;
 };
 
-// A namespace-like helper class to load configuration from NetSchedule server
 class CNetScheduleConfigLoader
 {
 public:
-    enum EParseMode {
-        eDefault,
-        eGetQueueName
-    };
+    CNetScheduleConfigLoader(
+            const CTempString& qinf2_prefix,
+            const CTempString& qinf2_section,
+            const CTempString& getp2_prefix,
+            const CTempString& getp2_section);
 
-    static bool Use(CConfig* config, const string& section)
-    {
-        return config && config->GetBool(section, "load_config_from_ns",
-                CConfig::eErr_NoThrow, false);
-    }
+    CConfig* Get(SNetScheduleAPIImpl* impl, CConfig* config, string& section);
 
-    static CConfig* Get(const CTempString* literals, SNetScheduleAPIImpl* impl,
-            string* section, EParseMode mode = eDefault);
+protected:
+    virtual bool Transform(const CTempString& prefix, string& name);
 
 private:
     typedef CNetScheduleAPI::TQueueParams TParams;
+    CConfig* Parse(const TParams& params, const CTempString& prefix);
 
-    static CConfig* Parse(const TParams& params, const CTempString& prefix,
-            EParseMode mode);
+    const CTempString m_Qinf2Prefix;
+    const CTempString m_Qinf2Section;
+    const CTempString m_Getp2Prefix;
+    const CTempString m_Getp2Section;
+};
+
+class CNetScheduleOwnConfigLoader : public CNetScheduleConfigLoader
+{
+public:
+    CNetScheduleOwnConfigLoader();
+
+protected:
+    bool Transform(const CTempString& prefix, string& name);
 };
 
 class CNetScheduleServerListener : public INetServerConnectionListener

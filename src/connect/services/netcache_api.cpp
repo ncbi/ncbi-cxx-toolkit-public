@@ -102,18 +102,10 @@ CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
             m_ClientName = api.GetExecutor().GetClientName();
         }
 
-        // If we are not forced to load config from NetSchedule
-        // and have either config or service name, then nothing to do here
-        if (!CNetScheduleConfigLoader::Use(config, *config_section) &&
-                (config || !nc_impl->m_Service->m_ServiceName.empty())) {
-            return NULL;
-        }
-
-        const CTempString kLiterals[] = {
-            "nc.",      "netcache_conf_from_netschedule",
-            "nc::",     "netcache_conf_from_netschedule_GETP2"
-        };
-        return CNetScheduleConfigLoader::Get(kLiterals, api, config_section);
+        CNetScheduleConfigLoader loader(
+                "nc.",  "netcache_conf_from_netschedule",
+                "nc::", "netcache_conf_from_netschedule_GETP2");
+        return loader.Get(api, config, *config_section);
     }
 
     return NULL;
