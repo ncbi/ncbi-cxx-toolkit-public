@@ -982,7 +982,6 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
     int line_length = alnRoInfo->currActualLineLen;    
     int start_length = alnRoInfo->maxStartLen;
     int id_length = alnRoInfo->maxIdLen;
-    int max_feature_num = alnRoInfo->max_feature_num;
     if (alnRoInfo->show_align_stats) {
         id_length += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
     }
