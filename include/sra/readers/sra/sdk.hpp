@@ -107,7 +107,8 @@ public:
         eNotFoundTable, ///< DB table not found
         eNotFoundColumn,///< DB column not found
         eNotFoundValue, ///< DB value not found
-        eDataError      ///< VDB data is incorrect
+        eDataError,     ///< VDB data is incorrect
+        eNotFoundIndex  ///< VDB index not found
     };
     /// Constructors.
     CSraException(const CDiagCompileInfo& info,

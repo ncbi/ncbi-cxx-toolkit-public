@@ -182,6 +182,7 @@ const char* CSraException::GetErrCodeString(void) const
     case eNotFoundColumn: return "eNotFoundColumn";
     case eNotFoundValue: return "eNotFoundValue";
     case eDataError:    return "eDataError";
+    case eNotFoundIndex: return "eNotFoundIndex";
     default:            return CException::GetErrCodeString();
     }
 }

@@ -84,6 +84,7 @@ DEFINE_SRA_REF_TRAITS(VDBManager, const);
 DEFINE_SRA_REF_TRAITS(VDatabase, const);
 DEFINE_SRA_REF_TRAITS(VTable, const);
 DEFINE_SRA_REF_TRAITS(VCursor, const);
+DEFINE_SRA_REF_TRAITS(KIndex, const);
 DEFINE_SRA_REF_TRAITS(KConfig, const);
 DEFINE_SRA_REF_TRAITS(KDBManager, const);
 DEFINE_SRA_REF_TRAITS(KNSManager, );
@@ -498,6 +499,43 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
         }
     }
     VSchemaRelease(schema);
+}
+
+
+void CVDBTableIndex::Init(const CVDBTable& table, const char* index_name)
+{
+    if ( rc_t rc = VTableOpenIndexRead(table, x_InitPtr(), index_name) ) {
+        *x_InitPtr() = 0;
+        if ( GetRCObject(rc) == RCObject(rcIndex) &&
+             GetRCState(rc) == rcNotFound ) {
+            // no such index
+            NCBI_THROW3(CSraException, eNotFoundIndex,
+                        "Cannot open VDB table index", rc, index_name);
+        }
+        else {
+            NCBI_THROW3(CSraException, eOtherError,
+                        "Cannot open VDB table index", rc, index_name);
+        }
+    }
+}
+
+
+pair<int64_t, uint64_t> CVDBTableIndex::Find(const string& value) const
+{
+    pair<int64_t, uint64_t> range;
+    if ( rc_t rc = KIndexFindText(*this, value.c_str(),
+                                  &range.first, &range.second, 0, 0) ) {
+        if ( GetRCObject(rc) == RCObject(rcString) &&
+             GetRCState(rc) == rcNotFound ) {
+            // no such value
+            range.first = range.second = 0;
+        }
+        else {
+            NCBI_THROW3(CSraException, eOtherError,
+                        "Cannot find value in index", rc, value);
+        }
+    }
+    return range;
 }
 
 

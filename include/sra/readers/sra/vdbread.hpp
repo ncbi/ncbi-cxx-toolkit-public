@@ -50,6 +50,7 @@ struct VResolver;
 struct VDatabase;
 struct VTable;
 struct VCursor;
+struct KIndex;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -58,6 +59,7 @@ DECLARE_SRA_REF_TRAITS(VDBManager, const);
 DECLARE_SRA_REF_TRAITS(VDatabase, const);
 DECLARE_SRA_REF_TRAITS(VTable, const);
 DECLARE_SRA_REF_TRAITS(VCursor, const);
+DECLARE_SRA_REF_TRAITS(KIndex, const);
 DECLARE_SRA_REF_TRAITS(KConfig, const);
 DECLARE_SRA_REF_TRAITS(KDBManager, const);
 DECLARE_SRA_REF_TRAITS(KNSManager, );
@@ -270,6 +272,25 @@ public:
 
     void Init(const CVDB& db, const char* table_name);
     void Init(const CVDBMgr& mgr, const string& acc_or_path);
+};
+
+
+class NCBI_SRAREAD_EXPORT CVDBTableIndex
+    : public CSraRef<const KIndex>
+{
+public:
+    CVDBTableIndex(void)
+        {
+        }
+    CVDBTableIndex(const CVDBTable& table, const char* index_name)
+        {
+            Init(table, index_name);
+        }
+    
+    pair<int64_t, uint64_t> Find(const string& value) const;
+    
+private:
+    void Init(const CVDBTable& table, const char* index_name);
 };
 
 
