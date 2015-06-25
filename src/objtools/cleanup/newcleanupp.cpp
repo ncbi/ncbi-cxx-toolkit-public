@@ -682,7 +682,7 @@ void CNewCleanup_imp::x_RemoveSpacesBetweenTildesMarkChanged( std::string & str 
     }
 }
 
-void CNewCleanup_imp::X_CommentTildeFixes( std::string & str )
+void CNewCleanup_imp::X_CommentTildeFixes(std::string & str)
 {
 #ifndef NCBI_OS_MSWIN
     string orig = str;
@@ -8757,8 +8757,11 @@ bool s_FixRNAOtherByName(CSeq_feat& feat)
         rna.SetType(CRNA_ref::eType_ncRNA);
         rna.SetExt().SetGen().SetClass(rna_name);
         any_change = true;
-    }
-    else if (!(miRNAproduct = s_GetMiRNAProduct(rna_name)).empty())
+    } else if (NStr::Equal(rna_name, "ncRNA")) {
+        rna.ResetExt();
+        rna.SetType(CRNA_ref::eType_ncRNA);
+        any_change = true;
+    } else if (!(miRNAproduct = s_GetMiRNAProduct(rna_name)).empty())
     {
         rna.SetType(CRNA_ref::eType_ncRNA);
         rna.SetExt().SetGen().SetClass("miRNA");
@@ -8768,7 +8771,8 @@ bool s_FixRNAOtherByName(CSeq_feat& feat)
         rna.SetType(CRNA_ref::eType_tmRNA);
         any_change = true;
     } else if (NStr::Equal(rna_name, "misc_RNA")) {
-        rna.ResetExt();
+        string remainder;
+        rna.SetRnaProductName("", remainder);
         any_change = true;
     }
     return any_change;
@@ -8841,6 +8845,15 @@ bool s_FixncRNA(CSeq_feat& feat)
         rna.SetExt().SetGen().SetClass("antisense_RNA");
         any_change = true;
     }
+
+    if (rna_type == NCBI_RNAREF(ncRNA)) {
+        string product_name = rna.GetRnaProductName();
+        if (NStr::Equal(product_name, "ncRNA")) {
+            string remainder;
+            rna.SetRnaProductName("", remainder);
+            any_change = true;
+        }
+    }
     return any_change;
 }
 
@@ -8890,6 +8903,14 @@ bool s_FixtmRNA(CSeq_feat& feat)
     if (any_change) {
         string remainder;
         rna.SetRnaProductName(product, remainder);
+    }
+    if (rna_type == NCBI_RNAREF(tmRNA)) {
+        string product_name = rna.GetRnaProductName();
+        if (NStr::Equal(product_name, "tmRNA")) {
+            string remainder;
+            rna.SetRnaProductName("", remainder);
+            any_change = true;
+        }
     }
     return any_change;
 }
