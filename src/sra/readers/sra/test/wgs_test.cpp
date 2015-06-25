@@ -99,6 +99,16 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
 
+    arg_desc->AddOptionalKey("contig_row", "ContigRow",
+                             "contig row to fetch",
+                             CArgDescriptions::eInt8);
+    arg_desc->AddOptionalKey("scaffold_row", "ScaffoldRow",
+                             "scaffold row to fetch",
+                             CArgDescriptions::eInt8);
+    arg_desc->AddOptionalKey("protein_row", "ProteinRow",
+                             "protein row to fetch",
+                             CArgDescriptions::eInt8);
+
     arg_desc->AddFlag("gi_range", "Print GI range if any");
     arg_desc->AddFlag("gi_check", "Check GI index");
     arg_desc->AddOptionalKey("gi", "GI",
@@ -353,18 +363,35 @@ int CWGSTestApp::Run(void)
     }
     
     bool is_component = false, is_scaffold = false, is_protein = false;
-    uint64_t row = wgs_db.ParseContigRow(path);
-    if ( row ) {
-        is_component = true;
-    }
-    if ( !row ) {
-        if ( (row = wgs_db.ParseScaffoldRow(path)) ) {
+    uint64_t row = 0;
+    if ( args["contig_row"] || args["scaffold_row"] || args["protein_row"] ) {
+        if ( args["contig_row"] ) {
+            row = args["contig_row"].AsInt8();
+            is_component = true;
+        }
+        else if ( args["scaffold_row"] ) {
+            row = args["scaffold_row"].AsInt8();
             is_scaffold = true;
         }
-    }
-    if ( !row ) {
-        if ( (row = wgs_db.ParseProteinRow(path)) ) {
+        else if ( args["protein_row"] ) {
+            row = args["protein_row"].AsInt8();
             is_protein = true;
+        }
+    }
+    else {
+        row = wgs_db.ParseContigRow(path);
+        if ( row ) {
+            is_component = true;
+        }
+        if ( !row ) {
+            if ( (row = wgs_db.ParseScaffoldRow(path)) ) {
+                is_scaffold = true;
+            }
+        }
+        if ( !row ) {
+            if ( (row = wgs_db.ParseProteinRow(path)) ) {
+                is_protein = true;
+            }
         }
     }
     if ( row && !args["limit_count"] ) {
