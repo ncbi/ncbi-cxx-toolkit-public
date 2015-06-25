@@ -669,6 +669,9 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
    { "WrongOrganismFor16SrRNA",
 "16S ribosomal RNA is not present in eukaryotic ribosomes." } },
+   { eErr_SEQ_DESCR_InconsistentWGSFlags,
+   { "InconsistentWGSFlags",
+"WGS indicators are used inconsistently in this record." } },
 
 /* SEQ_GENERIC */
 

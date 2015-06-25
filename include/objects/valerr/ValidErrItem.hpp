@@ -250,6 +250,7 @@ enum EErrType {
     eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
     eErr_SEQ_DESCR_WrongBiomolForTechnique,
     eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
+    eErr_SEQ_DESCR_InconsistentWGSFlags,
     ERR_CODE_END(SEQ_DESCR),
 
 
