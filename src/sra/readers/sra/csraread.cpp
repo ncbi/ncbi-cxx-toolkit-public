@@ -40,15 +40,10 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
-#include <klib/rc.h>
 #include <objtools/readers/iidmapper.hpp>
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
-#include <vdb/vdb-priv.h>
-#include <kdb/table.h>
-#include <kdb/meta.h>
-#include <kdb/namelist.h>
 
 #include <sstream>
 #include <algorithm>
