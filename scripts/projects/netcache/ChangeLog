@@ -110,8 +110,13 @@ May 19, 2015
 version 6.8.7
 Corrected format of alert reports.
 
-June 19, 2019
+June 19, 2015
 version 6.8.8
 Bug fix release
 
-
+June 26, 2015
+version 6.8.9
+Added report of estimated draining end.
+Reviewed and corrected error reporting and command confirmations.
+Added report of synchronization state, corrected synchronization algorithm.
+Modified synchronization in 'drain' state to allow updating of existing blobs.
