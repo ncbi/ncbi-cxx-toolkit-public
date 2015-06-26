@@ -3351,7 +3351,7 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
         return m_CmdProcessor;
     }
     if (m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
-        if (m_LatestExist  && m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobDead()) {
+        if (m_LatestExist  && m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobExpired()) {
             return m_CmdProcessor;
         } else {
             return &CNCMessageHandler::x_ReportBlobNotFound;
