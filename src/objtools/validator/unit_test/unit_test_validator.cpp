@@ -1653,14 +1653,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral(10);
     entry->SetSeq().SetInst().SetLength(94);
     SetTech(entry, CMolInfo::eTech_wgs);
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "First delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "There is 1 adjacent gap in delta seq"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     SetTech(entry, CMolInfo::eTech_htgs_0);
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[2]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[2]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2833,7 +2833,7 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3198,8 +3198,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "First delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TerminalGap", "Gap at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TerminalGap", "Gap at end of sequence"));
 
@@ -4781,7 +4781,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     SetTech(entry, CMolInfo::eTech_wgs);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "InconsistentWGSFlags",
                               "Mol-info.tech of wgs should have WGS accession"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
