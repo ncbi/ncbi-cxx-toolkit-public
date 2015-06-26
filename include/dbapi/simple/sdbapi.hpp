@@ -443,6 +443,12 @@ public:
                       Int4          value,
                       ESDB_Type     type = eSDB_Int4,
                       ESP_ParamType param_type = eSP_In);
+#if !NCBI_INT8_IS_LONG
+    void SetParameter(CTempString   name,
+                      long          value,
+                      ESDB_Type     type = eSDB_Int4,
+                      ESP_ParamType param_type = eSP_In);
+#endif
     /// Assign short integer value to the parameter.
     /// If data type requested is not short integer then attempt to do
     /// conversion will be made. If conversion is impossible exception
@@ -1218,6 +1224,15 @@ void CSDB_DeadlockException::x_InitErrCode(CException::EErrCode err_code)
     _ASSERT((TErrCode)err_code == (TErrCode)CSDB_Exception::eLowLevel);
 }
 
+
+#if !NCBI_INT8_IS_LONG
+inline
+void CQuery::SetParameter(CTempString name, long value, ESDB_Type type,
+                          ESP_ParamType param_type)
+{
+    SetParameter(name, static_cast<int>(value), type, param_type);
+}
+#endif
 
 inline
 void CQuery::SetOutputParameter(CTempString name, ESDB_Type type)
