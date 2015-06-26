@@ -1339,39 +1339,50 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
         return CNcbiOstrstreamToString(str);
     }
 
-    str << "There ";
-    if ( numBases > 1 ) {
-        str << "are ";
-    } else {
-        str << "is ";
+    if( ! sm_FirstComment ) {
+        str << "\n";
     }
-    str << numBases;
-    str << " base modification file";
-    if ( numBases > 1 ) {
-        str << "s";
-    }
-    if( bHtml ) {
-        string pfx = " (";
-        string sfx = "";
-        int j = 0;
-        FOR_EACH_STRING_IN_VECTOR (itr, sBasemodURLs) {
-            string url = *itr;
-            if ( ! url.empty() ) {
-                j++;
-                str << pfx << "<a href=\"" << url << "\">" << j << "</a>";
-                if ( numBases == 2 ) {
-                    pfx = " and ";
-                } else if ( j == numBases - 1 ) {
-                    pfx = ", and ";
-                } else {
-                    pfx = ", ";
+
+    if ( numBases == 1 ) {
+        str << "This genome has a ";
+        if( bHtml ) {
+            FOR_EACH_STRING_IN_VECTOR (itr, sBasemodURLs) {
+                string url = *itr;
+                if ( ! url.empty() ) {
+                    str << "<a href=\"" << url << "\">" << "base modification file" << "</a>";
                 }
-                sfx = ")";
             }
+        } else {
+            str << "base modification file";
         }
-        str << sfx;
+        str << " available.";
+    } else {
+        str << "There are ";
+        str << numBases;
+        str << " base modification files";
+        if( bHtml ) {
+            string pfx = " (";
+            string sfx = "";
+            int j = 0;
+            FOR_EACH_STRING_IN_VECTOR (itr, sBasemodURLs) {
+                string url = *itr;
+                if ( ! url.empty() ) {
+                    j++;
+                    str << pfx << "<a href=\"" << url << "\">" << j << "</a>";
+                    if ( numBases == 2 ) {
+                        pfx = " and ";
+                    } else if ( j == numBases - 1 ) {
+                        pfx = ", and ";
+                    } else {
+                        pfx = ", ";
+                    }
+                    sfx = ")";
+                }
+            }
+            str << sfx;
+        }
+        str << " available for this genome.";
     }
-    str << " available for this genome.";
 
     return CNcbiOstrstreamToString(str);
 }
