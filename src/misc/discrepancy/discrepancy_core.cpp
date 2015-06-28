@@ -37,37 +37,9 @@ BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-CDiscrepancyTable CDiscrepancyConstructor::m_Table;
-map<string, CDiscrepancyConstructor*>* CDiscrepancyTable::sm_Table = 0;
-map<string, string>* CDiscrepancyTable::sm_AliasTable = 0;
-map<string, vector<string> >* CDiscrepancyTable::sm_AliasListTable = 0;
-
-
-map<string, CDiscrepancyConstructor*>& CDiscrepancyConstructor::GetTable()
-{
-    if (!m_Table.sm_Table) {
-        m_Table.sm_Table = new map<string, CDiscrepancyConstructor*>;
-    }
-    return *m_Table.sm_Table;
-}
-
-
-map<string, string>& CDiscrepancyConstructor::GetAliasTable()
-{
-    if (!m_Table.sm_AliasTable) {
-        m_Table.sm_AliasTable = new map<string, string>;
-    }
-    return *m_Table.sm_AliasTable;
-}
-
-
-map<string, vector<string> >& CDiscrepancyConstructor::GetAliasListTable()
-{
-    if (!m_Table.sm_AliasListTable) {
-        m_Table.sm_AliasListTable = new map<string, vector<string> >;
-    }
-    return *m_Table.sm_AliasListTable;
-}
+CSafeStatic<map<string, CDiscrepancyConstructor*> > CDiscrepancyConstructor::sm_Table;
+CSafeStatic<map<string, string> > CDiscrepancyConstructor::sm_AliasTable;
+CSafeStatic<map<string, vector<string> > > CDiscrepancyConstructor::sm_AliasListTable;
 
 
 string CDiscrepancyConstructor::GetDiscrepancyCaseName(const string& name)
@@ -256,7 +228,6 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     return biosrc;
 }
 
-//CSafeStatic<>
 
 CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 {

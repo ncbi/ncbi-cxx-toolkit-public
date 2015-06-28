@@ -41,36 +41,22 @@ BEGIN_SCOPE(NDiscrepancy)
 /// Housekeeping classes
 class CDiscrepancyConstructor;
 
-class CDiscrepancyTable  // singleton!
-{
-friend class CDiscrepancyConstructor;
-private:
-    static map<string, CDiscrepancyConstructor*> *sm_Table; // = 0
-    static map<string, string> *sm_AliasTable;  // = 0
-    static map<string, vector<string> > *sm_AliasListTable; // = 0
 
-    CDiscrepancyTable(void){}
-    ~CDiscrepancyTable(void)
-    {
-        delete sm_Table;
-        delete sm_AliasTable;
-        delete sm_AliasListTable;
-    }
-};
-
-
-class NCBI_DISCREPANCY_EXPORT CDiscrepancyConstructor
+class CDiscrepancyConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create(void) const = 0;
     static void Register(const string& name, CDiscrepancyConstructor& obj);
     static string GetDiscrepancyCaseName(const string& s);
     static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string& name);
-    static map<string, CDiscrepancyConstructor*>& GetTable(void);
-    static map<string, string>& GetAliasTable(void);
-    static map<string, vector<string> >& GetAliasListTable(void);
+    static map<string, CDiscrepancyConstructor*>& GetTable(void) { return sm_Table.Get();}
+    static map<string, string>& GetAliasTable(void) { return sm_AliasTable.Get();}
+    static map<string, vector<string> >& GetAliasListTable(void) { return sm_AliasListTable.Get();}
 private:
-    static CDiscrepancyTable m_Table;
+    static CSafeStatic<map<string, CDiscrepancyConstructor*> > sm_Table;
+    static CSafeStatic<map<string, string> > sm_AliasTable;
+    static CSafeStatic<map<string, vector<string> > > sm_AliasListTable;
+
 friend string GetDiscrepancyCaseName(const string& s);
 friend vector<string> GetDiscrepancyNames(void);
 friend vector<string> GetDiscrepancyAliases(const string& name);
