@@ -5287,11 +5287,11 @@ static string GetRuleText(const CSuspect_rule& rule)
 
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
 {
-    if (obj->GetSubtype() != CSeqFeatData::eSubtype_prot) {
+    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
     }
     CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-    const CProt_ref& prot = obj->GetProt();
+    const CProt_ref& prot = obj.GetProt();
     string prot_name = *(prot.GetName().begin()); 
 
     ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {
@@ -5344,11 +5344,11 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 
 DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData)
 {
-    if (obj->GetSubtype() != CSeqFeatData::eSubtype_prot) {
+    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
     }
     CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
-    const CProt_ref& prot = obj->GetProt();
+    const CProt_ref& prot = obj.GetProt();
     string prot_name = *(prot.GetName().begin()); 
 
     ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {

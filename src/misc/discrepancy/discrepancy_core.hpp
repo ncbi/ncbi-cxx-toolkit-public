@@ -166,8 +166,8 @@ protected:
 template<typename T> class CDiscrepancyVisitor : public CDiscrepancyCore
 {
 public:
-    void Call(const T* node, CDiscrepancyContext& context);
-    virtual void Visit(const T* node, CDiscrepancyContext& context) = 0;
+    void Call(const T& node, CDiscrepancyContext& context);
+    virtual void Visit(const T& node, CDiscrepancyContext& context) = 0;
 };
 
 
@@ -188,7 +188,7 @@ public:
     void Summarize(void);
     const vector<CRef<CDiscrepancyCase> >& GetTests(void){ return m_Tests;}
 
-    template<typename T> void Call(CDiscrepancyVisitor<T>* disc, const T* obj){ disc->Call(obj, *this);}
+    template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
     CConstRef<CBioseq> GetCurrentBioseq(void) const { return m_Current_Bioseq;}
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat;}
@@ -224,10 +224,13 @@ protected:
 
 // MACRO definitions
 
+// The following two macros are required to make sure all modules get loaded from the library
+// Use this in discrepancy_core.cpp when adding a new module
 #define DISCREPANCY_LINK_MODULE(name) \
     struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(void){ dummy=0;} };            \
     static CDiscrepancyModule_##name module_##name;
 
+// Use this in the new module
 #define DISCREPANCY_MODULE(name) \
     struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(void){ dummy=0;} };            \
     void* CDiscrepancyModule_##name::dummy=0;
@@ -237,7 +240,7 @@ protected:
     class CDiscrepancyCase_##name : public CDiscrepancyVisitor<type>                                                \
     {                                                                                                               \
     public:                                                                                                         \
-        void Visit(const type*, CDiscrepancyContext&);                                                              \
+        void Visit(const type&, CDiscrepancyContext&);                                                              \
         void Summarize(void);                                                                                       \
         string GetName(void) const { return #name;}                                                                 \
         string GetType(void) const { return #type;}                                                                 \
@@ -252,7 +255,7 @@ protected:
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
     };                                                                                                              \
     static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
-    void CDiscrepancyCase_##name::Visit(const type* obj, CDiscrepancyContext& context)
+    void CDiscrepancyCase_##name::Visit(const type& obj, CDiscrepancyContext& context)
 
 
 #define DISCREPANCY_SUMMARIZE(name) \

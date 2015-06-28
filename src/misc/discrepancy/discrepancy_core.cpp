@@ -122,7 +122,7 @@ vector<string> GetDiscrepancyAliases(const string& name)
 }
 
 
-template<typename T> void CDiscrepancyVisitor<T>::Call(const T* obj, CDiscrepancyContext& context)
+template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepancyContext& context)
 {
     try {
         Visit(obj, context);
@@ -199,9 +199,9 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         }
 #define HANDLE_DISCREPANCY_TYPE(type) \
         else if (m_Enable_##type && CType<type>::Match(i)) {                                    \
-            const type* obj = CType<type>::Get(i);                                              \
+            const type& obj = *CType<type>::Get(i);                                             \
             NON_CONST_ITERATE(vector<CDiscrepancyVisitor<type>* >, it, m_All_##type) {          \
-                Call(*it, obj);                                                                 \
+                Call(**it, obj);                                                                \
             }                                                                                   \
         }
         HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
@@ -256,6 +256,7 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     return biosrc;
 }
 
+//CSafeStatic<>
 
 CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 {

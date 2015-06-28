@@ -48,7 +48,7 @@ DISCREPANCY_MODULE(discrepancy_case);
 
 DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst)
 {
-    CSeq_inst::TMol mol = obj->GetMol();
+    CSeq_inst::TMol mol = obj.GetMol();
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
         return;
     }
@@ -71,7 +71,7 @@ DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 
 DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst)
 {
-    if (obj->GetMol() != CSeq_inst::eMol_aa) {
+    if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
     }
     CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
@@ -132,7 +132,7 @@ static const DesiredAAData desired_aaList [] = {
 
 DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
 {
-    if (obj->GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
+    if (obj.GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
         return;
     }
     //CBioSource::TGenome genome = context.GetCurrentGenome();
@@ -237,7 +237,7 @@ DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 
 DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData)
 {
-    if (obj->GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
+    if (obj.GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
         return;
     }
     //CBioSource::TGenome genome = context.GetCurrentGenome();
