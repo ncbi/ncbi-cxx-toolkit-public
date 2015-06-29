@@ -752,13 +752,21 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
                 stable_sort(m_Fwd.begin(),   m_Fwd.end());
                 temp += NStr::UInt8ToString(m_Fwd.size());
             }
+            size_t down = 0;
             if (!m_FwdFB.empty()) {
                 stable_sort(m_FwdFB.begin(), m_FwdFB.end());
                 if (!m_Fwd.empty())
                     temp += " + ";
                 temp += NStr::UInt8ToString(m_FwdFB.size());
+                ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_FwdFB) {
+                    if (cp->status != eIO_Success)
+                        ++down;
+                }
+                if (down)
+                    temp += " - " + NStr::UInt8ToString(down);
             }
-            temp += m_Fwd.size() + m_FwdFB.size() == 1 ? " port" : " ports";
+            temp +=
+                m_Fwd.size() + m_FwdFB.size() - down == 1 ? " port" : " ports";
         } else {
             status = eIO_Unknown;
             temp = "No connection ports found, please contact " + HELP_EMAIL;
