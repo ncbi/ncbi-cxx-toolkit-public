@@ -34,6 +34,14 @@
 
 
 {
+   NCBI VDB ver 2.5.0 -- uninit value created on stack in string_vprintf (printf.c:3374)
+   Memcheck:Cond
+   ...
+   fun:add_aws_nodes
+}
+
+
+{
     corelib/CFileUtil::GetTotalDiskSpace, PANFS, CXX-5713 because DLL is not supposed to be closed
     Memcheck:Leak
     fun:malloc
